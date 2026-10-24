@@ -5,7 +5,8 @@ paths:
 
 # Owl Nest editor
 
-User-facing reference: `doc/pages/editor.md`. Every authored object ships full editor support in the
+User-facing reference: the editor pages listed under *The editor* in `doc/help.yml` (`doc/pages/editor*.md`);
+internals in `doc/pages/editor_internals.md`. Every authored object ships full editor support in the
 same PR (see `ongoing-quality.md`, *Editor Coverage*).
 
 ## Project system

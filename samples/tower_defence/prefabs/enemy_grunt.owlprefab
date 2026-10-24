@@ -1,0 +1,24 @@
+Prefab: EnemyGrunt
+Version: 1
+Entities:
+  - Entity: 7600000000001038001
+    Tag:
+      tag: Enemy
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1.56, 1.56, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/enemies/grunt.png
+      columns: 8
+      rows: 9
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    RendererTag:
+      Name: sprites

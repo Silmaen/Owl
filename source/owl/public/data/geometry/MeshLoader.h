@@ -216,8 +216,9 @@ public:
 
 	/**
 	 * @brief
-	 *  List the external files a `.gltf` names (buffer and image URIs that are not embedded `data:` URIs).
-	 * @param[in] iFilePath Path to the `.gltf` file.
+	 *  List the external files a `.gltf` or a `.glb` names (buffer and image URIs that are not embedded `data:` URIs),
+	 *  such as the shared texture of a kit of `.glb` models.
+	 * @param[in] iFilePath Path to the `.gltf` or `.glb` file.
 	 * @return The URIs, relative to the folder of the file; empty for another format or an unreadable file.
 	 */
 	[[nodiscard]] static auto getExternalFiles(const std::filesystem::path& iFilePath) -> std::vector<std::string>;

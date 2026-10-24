@@ -14,7 +14,9 @@
 #include "renderer/ClipSpace.h"
 #include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
+#include "renderer/Renderer2DLayer.h"
 #include "renderer/RendererIsometricLayer.h"
+#include "renderer/utils/Billboards.h"
 #include "scene/Scene.h"
 #include "scene/component/components.h"
 
@@ -117,11 +119,31 @@ auto hitLocal(const Ray& iRay, const math::mat4& iWorld, const Shape iShape, con
 	return tMin;
 }
 
-// Index of the stack layer drawing an entity, and whether that layer is isometric.
+// Index of the stack layer drawing an entity, whether that layer is isometric and how it turns its sprites.
 struct Route {
 	size_t layer = 0;
 	bool isometric = false;
+	renderer::Renderer2DLayer::Billboard billboard = renderer::Renderer2DLayer::Billboard::None;
 };
+
+// The entity itself or its nearest ancestor holding a tag (any entity without a tag); invalid when none does.
+auto taggedSelfOrAncestor(const Scene& iScene, const Entity& iEntity, const std::string_view iTag) -> Entity {
+	if (iTag.empty())
+		return iEntity;
+	Entity current = iEntity;
+	// The depth bound stops a malformed hierarchy that loops.
+	for (size_t depth = 0; current && depth < 256; ++depth) {
+		if (current.hasComponent<component::Tag>() && current.getComponent<component::Tag>().tag == iTag)
+			return current;
+		if (!current.hasComponent<component::Hierarchy>())
+			break;
+		const auto parent = current.getComponent<component::Hierarchy>().parentId;
+		if (parent == core::UUID{0})
+			break;
+		current = iScene.findEntityByUUID(parent);
+	}
+	return Entity{};
+}
 
 auto routeOf(const Entity& iEntity) -> Route {
 	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
@@ -134,8 +156,12 @@ auto routeOf(const Entity& iEntity) -> Route {
 				layers, [&name](const auto& iLayer) -> bool { return iLayer && iLayer->getName() == name; });
 		index = found != layers.end() ? static_cast<size_t>(found - layers.begin()) : 0;
 	}
+	const auto* const layer2D = dynamic_cast<const renderer::Renderer2DLayer*>(layers[index].get());
 	return {.layer = index,
-			.isometric = dynamic_cast<const renderer::RendererIsometricLayer*>(layers[index].get()) != nullptr};
+			.isometric = dynamic_cast<const renderer::RendererIsometricLayer*>(layers[index].get()) != nullptr,
+			.billboard = layer2D != nullptr && layer2D->getSpace() == renderer::Renderer2DLayer::Space::World
+								 ? layer2D->getBillboard()
+								 : renderer::Renderer2DLayer::Billboard::None};
 }
 
 struct Hit {
@@ -183,13 +209,21 @@ auto pickEntity(Scene& ioScene, const math::vec2& iPixel, const std::string_view
 	const auto consider = [&](const entt::entity iHandle, const Shape iShape, const math::box3f& iBox,
 							  const bool iSprite) -> void {
 		const Entity entity{iHandle, &ioScene};
-		if (!iTag.empty() &&
-			(!entity.hasComponent<component::Tag>() || entity.getComponent<component::Tag>().tag != iTag))
+		const Entity tagged = taggedSelfOrAncestor(ioScene, entity, iTag);
+		if (!tagged)
 			return;
 		if (!ioScene.isEffectivelyVisible(entity, false))
 			return;
 		const Route route = routeOf(entity);
-		const math::Transform world = ioScene.getWorldTransform(entity);
+		math::Transform world = ioScene.getWorldTransform(entity);
+		if (iSprite && route.billboard != renderer::Renderer2DLayer::Billboard::None) {
+			const Entity camera = ioScene.getPrimaryCamera();
+			const auto frame = renderer::utils::makeBillboardFrame(
+					route.billboard, camera ? ioScene.getWorldTransform(camera)() : math::identity<float, 4>());
+			world = math::Transform{renderer::utils::billboardMatrix(
+					frame, world.translation(), world.scale(),
+					entity.getComponent<component::Transform>().transform.rotation().z())};
+		}
 		if (route.isometric) {
 			if (!iSprite)
 				return;
@@ -202,7 +236,7 @@ auto pickEntity(Scene& ioScene, const math::vec2& iPixel, const std::string_view
 			const math::vec4 rect = renderer::getSpriteScreenRect(*isoCamera, sprite);
 			if (iPixel.x() < rect.x() || iPixel.x() > rect.z() || iPixel.y() < rect.y() || iPixel.y() > rect.w())
 				return;
-			const Hit hit{.entity = entity,
+			const Hit hit{.entity = tagged,
 						  .layer = route.layer,
 						  .distance = -isoCamera->getViewDepth(world.translation())};
 			if (isBetter(hit, best))
@@ -212,7 +246,7 @@ auto pickEntity(Scene& ioScene, const math::vec2& iPixel, const std::string_view
 		if (!ray)
 			return;
 		if (const auto distance = hitLocal(*ray, world(), iShape, iBox); distance) {
-			const Hit hit{.entity = entity, .layer = route.layer, .distance = *distance};
+			const Hit hit{.entity = tagged, .layer = route.layer, .distance = *distance};
 			if (isBetter(hit, best))
 				best = hit;
 		}

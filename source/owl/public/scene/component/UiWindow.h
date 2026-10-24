@@ -21,7 +21,8 @@ namespace owl::scene::component {
  * The window rectangle (`UiRect`) includes the title bar. Its children are laid out in the content area under the bar
  * and clipped to it. A window stays inside the screen, blocks the mouse for the world and the widgets under it, and is
  * drawn after the windows below it (its rank in the `Renderer2D` sort key), so it covers their text. Closing hides the entity (`Visibility`); a script
- * shows it again with `ui.set_visible`.
+ * shows it again with `ui.set_visible`. A modal window, while shown, keeps the focus and lets the mouse reach nothing
+ * outside it, the other windows included.
  */
 struct OWL_API UiWindow {
 	/// Text of the title bar.
@@ -40,6 +41,8 @@ struct OWL_API UiWindow {
 	bool draggable = true;
 	/// Whether the title bar shows a close button.
 	bool closable = true;
+	/// Whether the window, while shown, is a dialog: the mouse and the focus reach nothing else.
+	bool modal = false;
 	/// Lua function called when the close button is pressed (before the window is hidden).
 	std::string onCloseCallback;
 

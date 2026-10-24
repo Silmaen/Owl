@@ -1,9 +1,12 @@
-# Tower defence: no tower built, the first wave called at once and played at double speed: the runners walk the road
+# Tower defence: no tower built, the first wave called at once and played at double speed: the goblins walk the road
 # from the gate to the keep and each one costs a life.
-scene: ../../../samples/tower_defence/scenes/map_01.owl
+scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
+  - frames: 2
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
   - frames: 30
-  - expect: {gamestate: tower_route, greater: 40}
+  - expect: {gamestate: tower_route, greater: 5}
   - expect: {gamestate: tower_lives, equals: 20}
   - expect: {gamestate: tower_wave, equals: 0}
   - input: {key: Space, frames: 2}

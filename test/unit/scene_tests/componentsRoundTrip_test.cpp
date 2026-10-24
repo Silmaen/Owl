@@ -21,6 +21,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
 
 using namespace owl;
 
@@ -776,6 +777,7 @@ TEST(ComponentRoundTrip, RenderTarget) {
 				target.targetName = "mirror";
 				target.size = {320, 180};
 				target.clearColor = {0.1f, 0.2f, 0.3f, 1.f};
+				target.hiddenLayers = {"marks", "overlay"};
 				iEnt.addComponent<scene::component::UiImage>().renderTarget = "mirror";
 			},
 			[](const scene::Entity& iEnt) -> void {
@@ -785,6 +787,9 @@ TEST(ComponentRoundTrip, RenderTarget) {
 				EXPECT_EQ(target.size.x(), 320u);
 				EXPECT_EQ(target.size.y(), 180u);
 				EXPECT_NEAR(target.clearColor.z(), 0.3f, 1e-6f);
+				EXPECT_EQ(target.hiddenLayers, (std::vector<std::string>{"marks", "overlay"}));
+				EXPECT_FALSE(target.drawsLayer("marks"));
+				EXPECT_TRUE(target.drawsLayer("world"));
 				EXPECT_EQ(iEnt.getComponent<scene::component::UiImage>().renderTarget, "mirror");
 			});
 }

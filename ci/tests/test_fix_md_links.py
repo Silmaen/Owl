@@ -38,3 +38,38 @@ def test_img_source_points_at_the_flat_doxygen_images(tmp_path: Path) -> None:
     assert (
         fix_md_links.fix_links('<img src="engine_assets/logo/a.png" width="9">', page) == '<img src="a.png" width="9">'
     )
+
+
+def _toc(tmp_path: Path) -> Path:
+    (tmp_path / "doc" / "pages").mkdir(parents=True)
+    for name, anchor in (("home", "page-home"), ("tour", "page-tour"), ("guide", "page-guide"), ("api", "page-api")):
+        (tmp_path / "doc" / "pages" / f"{name}.md").write_text(f"# {name} {{#{anchor}}}\n")
+    (tmp_path / "README.md").write_text("# Readme\n")
+    toc = tmp_path / "doc" / "help.yml"
+    toc.write_text(
+        "Groups:\n"
+        "  - title: Start\n    pages:\n      - doc/pages/home.md\n      - README.md\n      - doc/pages/tour.md\n"
+        "  - title: Guides\n    pages:\n      - doc/pages/guide.md\n      - doc/pages/api.md\n"
+    )
+    return toc
+
+
+def test_readme_lists_the_first_page_of_each_group(tmp_path: Path) -> None:
+    toc = _toc(tmp_path)
+    text = fix_md_links.fix_links("# Readme\n", tmp_path / "README.md", toc)
+    assert text == "# Readme\n\n- \\subpage page-home\n- \\subpage page-guide\n"
+
+
+def test_group_head_lists_the_rest_of_its_group_without_the_readme(tmp_path: Path) -> None:
+    toc = _toc(tmp_path)
+    home = tmp_path / "doc" / "pages" / "home.md"
+    assert fix_md_links.fix_links("# home\n", home, toc).endswith("- \\subpage page-tour\n")
+    assert fix_md_links.fix_links("x\n", tmp_path / "doc" / "pages" / "api.md", toc) == "x\n"
+
+
+def test_repository_toc_lists_every_doc_page_once() -> None:
+    groups = fix_md_links.read_toc(fix_md_links._TOC)
+    pages = [page for group in groups for page in group]
+    assert len(pages) == len(set(pages))
+    doc_pages = {page.resolve() for page in (fix_md_links._TOC.parent / "pages").glob("*.md")}
+    assert doc_pages <= set(pages)

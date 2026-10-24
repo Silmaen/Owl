@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <stop_token>
 #include <string>
@@ -113,7 +114,7 @@ protected:
 }// namespace
 
 TEST_F(LuaSandbox, dangerousGlobalsAbsent) {
-	ASSERT_TRUE(run("ok = io == nil and os == nil and debug == nil and require == nil and package == nil "
+	ASSERT_TRUE(run("ok = io == nil and os == nil and debug == nil and package == nil "
 					"and dofile == nil and loadfile == nil and string.dump == nil"));
 	EXPECT_TRUE(flag("ok"));
 }
@@ -382,4 +383,73 @@ TEST_F(LuaSandbox, wrapRejectsANonFunction) {
 					"dead = not pcall(g)\n"));
 	EXPECT_TRUE(flag("ok"));
 	EXPECT_TRUE(flag("dead"));
+}
+
+TEST_F(LuaSandbox, requireLoadsAModuleOnceThroughTheReader) {
+	int reads = 0;
+	engine.setModuleReader([&reads](const std::string& iPath) -> std::optional<std::vector<uint8_t>> {
+		++reads;
+		if (iPath == "scripts/game/towers.lua")
+			return toBuffer("loads = (loads or 0) + 1\nreturn { range = function() return 3 end }");
+		if (iPath == "scripts/empty.lua")
+			return toBuffer("x_from_module = 4");
+		return std::nullopt;
+	});
+	ASSERT_TRUE(run("local a = require('scripts.game.towers')\n"
+					"local b = require 'scripts.game.towers'\n"
+					"same = a == b\n"
+					"range = a.range()\n"
+					"empty = require('scripts.empty') == true\n"));
+	EXPECT_TRUE(flag("same"));
+	EXPECT_EQ(engine.getGlobalInt("range"), 3);
+	EXPECT_EQ(engine.getGlobalInt("loads"), 1);
+	EXPECT_TRUE(flag("empty"));
+	EXPECT_EQ(engine.getGlobalInt("x_from_module"), 4);
+	EXPECT_EQ(reads, 2);
+}
+
+TEST_F(LuaSandbox, requireRefusesBadNamesMissingModulesAndCycles) {
+	engine.setModuleReader([](const std::string& iPath) -> std::optional<std::vector<uint8_t>> {
+		if (iPath == "loop.lua")
+			return toBuffer("return require('loop')");
+		if (iPath == "broken.lua")
+			return toBuffer("this is not lua");
+		if (iPath == "bytes.lua")
+			return std::vector<uint8_t>{0x1b, 'L', 'u', 'a', 0x55, 0};
+		return std::nullopt;
+	});
+	ASSERT_TRUE(run("local ok1, e1 = pcall(require, '../etc/passwd')\n"
+					"badName = not ok1 and e1:find('not a module name') ~= nil\n"
+					"local ok2, e2 = pcall(require, 'missing.one')\n"
+					"missing = not ok2 and e2:find('missing/one.lua', 1, true) ~= nil\n"
+					"local ok3, e3 = pcall(require, 'loop')\n"
+					"cycle = not ok3 and e3:find('requires itself') ~= nil\n"
+					"local ok4, e4 = pcall(require, 'broken')\n"
+					"broken = not ok4 and e4:find('cannot load') ~= nil\n"
+					"local ok5 = pcall(require, 'bytes')\n"
+					"bytes = not ok5\n"
+					"local ok6 = pcall(require, 'loop')\n"
+					"cycleAgain = not ok6\n"));
+	EXPECT_TRUE(flag("badName"));
+	EXPECT_TRUE(flag("missing"));
+	EXPECT_TRUE(flag("cycle"));
+	EXPECT_TRUE(flag("broken"));
+	EXPECT_TRUE(flag("bytes"));
+	EXPECT_TRUE(flag("cycleAgain"));
+}
+
+TEST_F(LuaSandbox, requireWithoutReaderRaisesAnError) {
+	ASSERT_TRUE(run("local ok, err = pcall(require, 'scripts.anything')\n"
+					"refused = not ok and err:find('no module can be read') ~= nil\n"));
+	EXPECT_TRUE(flag("refused"));
+}
+
+TEST_F(LuaSandbox, aModuleRunsUnderTheMemoryCeiling) {
+	engine.setModuleReader([](const std::string& iPath) -> std::optional<std::vector<uint8_t>> {
+		if (iPath == "greedy.lua")
+			return toBuffer("local t = {} for i = 1, 1e9 do t[i] = string.rep('x', 1024) .. i end return t");
+		return std::nullopt;
+	});
+	ASSERT_TRUE(run("local ok = pcall(require, 'greedy')\nstopped = not ok\n"));
+	EXPECT_TRUE(flag("stopped"));
 }

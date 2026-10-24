@@ -1,0 +1,56 @@
+# Tower defence: the keyboard cursor builds an archer on the first pad (E, Enter, 1), then Enter twice raises it to
+# level 2; the gold of the first wave pays for level 3, where the wheel offers the two power-ups, the second one
+# locked until the first level is won; the gold of the next waves pays for the first power-up: piercing arrows.
+scene: ../../../samples/tower_defence/scenes/level_01.owl
+steps:
+  - frames: 2
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 30
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - expect: {gamestate: tower_cursor, equals: 3}
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - expect: {gamestate: tower_towers, equals: 1}
+  - expect: {gamestate: tower_gold, equals: 150}
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - expect: {gamestate: tower_ring, equals: 2}
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - expect: {gamestate: tower_top_level, equals: 2}
+  - expect: {gamestate: tower_gold, equals: 94}
+  - input: {key: Space, frames: 2}
+  - input: {key: F, frames: 2}
+  - frames: 500
+  - expect: {gamestate: tower_gold, greater: 83}
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - expect: {gamestate: tower_top_level, equals: 3}
+  - expect: {gamestate: tower_upgrades, equals: 2}
+  # The second power-up is locked: choosing it changes nothing.
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - expect: {gamestate: tower_hover, equals: 2}
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - expect: {gamestate: tower_power, equals: ""}
+  - input: {key: Backspace, frames: 2}
+  - frames: 200
+  - input: {key: Space, frames: 2}
+  - frames: 500
+  - input: {key: Space, frames: 2}
+  - frames: 500
+  - expect: {gamestate: tower_gold, greater: 104}
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - expect: {gamestate: tower_power, equals: pierce}

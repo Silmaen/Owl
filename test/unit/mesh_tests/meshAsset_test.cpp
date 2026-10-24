@@ -16,6 +16,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -162,6 +163,27 @@ TEST_F(MeshAssetTest, gltfListsItsExternalFiles) {
 	EXPECT_EQ(files.front(), "multiple_triangle_uv.bin");
 	EXPECT_TRUE(MeshLoader::getExternalFiles(cubePath()).empty());
 	EXPECT_TRUE(MeshLoader::getExternalFiles("/nowhere/crate.gltf").empty());
+}
+
+TEST_F(MeshAssetTest, glbListsTheImagesItNames) {
+	const std::string json = R"({"asset":{"version":"2.0"},"images":[{"uri":"Textures/colormap.png"},)"
+							 R"({"uri":"data:image/png;base64,AA=="}],"buffers":[{"byteLength":4}]})";
+	const auto padded = json + std::string((4 - json.size() % 4) % 4, ' ');
+	const auto word = [](const uint32_t iValue) -> std::string {
+		std::string bytes(sizeof(iValue), '\0');
+		std::memcpy(bytes.data(), &iValue, sizeof(iValue));
+		return bytes;
+	};
+	const std::string glb = "glTF" + word(2) + word(static_cast<uint32_t>(20 + padded.size())) +
+							word(static_cast<uint32_t>(padded.size())) + "JSON" + padded;
+	const auto path = std::filesystem::temp_directory_path() / "owl_kit_tile.glb";
+	std::ofstream(path, std::ios::binary) << glb;
+	const auto files = MeshLoader::getExternalFiles(path);
+	ASSERT_EQ(files.size(), 1u);
+	EXPECT_EQ(files.front(), "Textures/colormap.png");
+	std::ofstream(path, std::ios::binary) << "glTF";
+	EXPECT_TRUE(MeshLoader::getExternalFiles(path).empty());
+	std::filesystem::remove(path);
 }
 
 namespace {

@@ -1,10 +1,11 @@
--- Settings of Tower defence: master volume and interface size; Reset progress forgets the maps defended; Back (or
--- Esc, pad B) saves and returns to the title. Effects share the master volume (gap G9).
+-- Settings of Tower defence: master volume and interface size; Reset progress forgets the levels, stars and
+-- upgrades, Reset tutorial offers the tutorial of the first level again; Back (or Esc, pad B) saves and returns to the
+-- title. Effects share the master volume (gap G9).
 
 properties = {
     { name = "ui_scale_min", type = "float", default = 0.75, min = 0.1 },
     { name = "ui_scale_max", type = "float", default = 2.0, min = 0.1 },
-    { name = "map_count", type = "int", default = 1, min = 1 },
+    { name = "map_count", type = "int", default = 10, min = 1 },
     { name = "wipe_color", type = "color", default = { 0.1, 0.14, 0.24, 1 } },
 }
 
@@ -79,9 +80,21 @@ function on_reset_progress_clicked()
     for i = 1, map_count do
         settings.reset(string.format("tower_done_%02d", i))
         settings.reset(string.format("tower_best_%02d", i))
+        settings.reset(string.format("tower_stars_%02d", i))
+    end
+    for _, family in ipairs({ "archer", "cannon", "frost", "rain", "shield", "treasury" }) do
+        settings.reset("tower_up_" .. family)
     end
     settings.save()
     update_labels()
+end
+
+-- The tutorial of the first level is offered again.
+function on_reset_tutorial_clicked()
+    settings.reset("tower_tutorial")
+    settings.save()
+    sound.play("sounds/ui/click.wav")
+    gamestate.set("tower_tutorial_reset", true)
 end
 
 function on_reset_clicked()

@@ -1,0 +1,98 @@
+Prefab: Tower_archer_pierce
+Version: 1
+Entities:
+  - Entity: 7600000000001356001
+    Tag:
+      tag: Tower
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.78, 0.78, 0.78]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 7600000000001356002
+    Tag:
+      tag: TowerPart0
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001356001
+    MeshRenderer:
+      mesh: models/td/tower-round-bottom-b.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001356003
+    Tag:
+      tag: TowerPart1
+    Transform:
+      translation: [0, 0.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001356001
+    MeshRenderer:
+      mesh: models/td/tower-round-middle-a.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001356004
+    Tag:
+      tag: TowerPart2
+    Transform:
+      translation: [0, 1.2, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001356001
+    MeshRenderer:
+      mesh: models/td/tower-round-top-b.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001356005
+    Tag:
+      tag: TowerWeapon
+    Transform:
+      translation: [0, 1.7, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001356001
+    MeshRenderer:
+      mesh: models/td/weapon-ballista.glb
+      color: [1, 0.5, 0.4, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001356006
+    Tag:
+      tag: TowerPart4
+    Transform:
+      translation: [0.32, 1.6, 0.32]
+      rotation: [0, 0, 0]
+      scale: [0.9, 0.9, 0.9]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001356001
+    MeshRenderer:
+      mesh: models/castle/flag.glb
+      color: [1, 0.3, 0.25, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world

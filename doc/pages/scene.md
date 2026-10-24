@@ -69,8 +69,6 @@ added (or duplicated) `PhysicBody` gets a body at the next physics frame.
 
 ## Scene Lifecycle
 
-![Scene Lifecycle](../images/scene_lifecycle.svg)
-
 ```mermaid
 stateDiagram-v2
     [*] --> Editing : Scene loaded
@@ -87,14 +85,14 @@ stateDiagram-v2
 
 ### Lifecycle Methods
 
-| Method                             | When Called        | What It Does                                                                |
-|------------------------------------|--------------------|-----------------------------------------------------------------------------|
-| `onStartRuntime()`                 | Play pressed       | Initialize physics, start sounds with `playOnStart`, reset animated sprites |
-| `onUpdateRuntime(timestep)`        | Each frame (Play)  | Runs the scene's systems phase by phase (below), then renders               |
-| `onRenderRuntime()`                | Each frame (Pause) | Render only, no simulation                                                  |
-| `onUpdateEditor(timestep, camera)` | Each frame (Edit)  | Render with editor camera                                                   |
-| `onEndRuntime()`                   | Stop pressed       | Stop sounds, destroy physics                                                |
-| `onViewportResize(size)`           | Viewport resized   | Resize all cameras                                                          |
+| Method                             | When Called        | What It Does                                                               |
+|------------------------------------|--------------------|----------------------------------------------------------------------------|
+| `onStartRuntime()`                 | Play pressed       | Init physics and `playOnStart` sounds, create scene and entity Lua scripts |
+| `onUpdateRuntime(timestep)`        | Each frame (Play)  | Runs the scene's systems phase by phase (below), then renders              |
+| `onRenderRuntime()`                | Each frame (Pause) | Render only, no simulation                                                 |
+| `onUpdateEditor(timestep, camera)` | Each frame (Edit)  | Render with editor camera                                                  |
+| `onEndRuntime()`                   | Stop pressed       | Stop sounds, destroy physics                                               |
+| `onViewportResize(size)`           | Viewport resized   | Resize all cameras                                                         |
 
 ### Systems and phases {#systems}
 
@@ -174,7 +172,18 @@ The engine systems live in `scene::systems` (private, `source/owl/private/scene/
 
 ## Component Reference {#components}
 
-![Component Overview](../images/component_overview.svg)
+```mermaid
+flowchart LR
+    E[Entity] --> M["Mandatory<br/>ID, Tag, Transform,<br/>Visibility, Hierarchy"]
+    E --> R["Rendering<br/>SpriteRenderer, MeshRenderer,<br/>Tilemap, Light, Text, ..."]
+    E --> C["Camera<br/>Camera, RenderTarget"]
+    E --> G["Gameplay<br/>Player, PhysicBody, Trigger,<br/>EntityLink, NativeScript"]
+    E --> B["Behaviour<br/>Oscillator, Patrol, Drift,<br/>FollowTarget, LightFlicker"]
+    E --> A["Audio<br/>SoundSource, SoundListener"]
+    E --> S["Scripting<br/>LuaScript"]
+    E --> U["UI<br/>Canvas, UiRect, UiText,<br/>UiButton, ..."]
+    E --> P["Prefab<br/>PrefabLink"]
+```
 
 ### Game components (open registry) {#component-registry}
 
@@ -260,7 +269,8 @@ YAML key: `SpriteRenderer`
 #### AnimatedSpriteRenderer
 
 YAML key: `AnimatedSpriteRenderer`: a spritesheet of `columns × rows` frames played from `firstFrame` to `lastFrame`
-every `frameDuration` seconds, looping or not, tinted by `color`. The optional `speedCurve` multiplies each frame's
+every `frameDuration` seconds, looping or not, tinted by `color`, lit by the 2D lights unless `lit` is false (written
+only when false: badges and markers keep their colour). The optional `speedCurve` multiplies each frame's
 `dt` by its value at the normalized progress inside `[firstFrame, lastFrame]` (omitted from the file when empty). Field
 table, UVs and runtime behaviour: [Renderer > Animated Sprites](renderer.md#animated-sprites).
 
@@ -561,16 +571,19 @@ YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
 
 #### RenderTarget {#rendertarget}
 
-| Field        | Type     | Default        | Description                                |
-|--------------|----------|----------------|--------------------------------------------|
-| `enabled`    | `bool`   | `true`         | Off keeps the last image                   |
-| `targetName` | `string` | `minimap`      | Name the `UiImage` of the HUD refers to    |
-| `size`       | `vec2ui` | `{256, 256}`   | Size of the image, in pixels               |
-| `clearColor` | `vec4`   | `{0, 0, 0, 1}` | Colour of the image where nothing is drawn |
+| Field          | Type       | Default        | Description                                               |
+|----------------|------------|----------------|-----------------------------------------------------------|
+| `enabled`      | `bool`     | `true`         | Off keeps the last image                                  |
+| `targetName`   | `string`   | `minimap`      | Name the `UiImage` of the HUD refers to                   |
+| `size`         | `vec2ui`   | `{256, 256}`   | Size of the image, in pixels                              |
+| `clearColor`   | `vec4`     | `{0, 0, 0, 1}` | Colour of the image where nothing is drawn                |
+| `hiddenLayers` | `string[]` | `[]`           | Layers of the renderer stack the image leaves out         |
 
 YAML key: `RenderTarget`. On an entity with a `Camera`: that camera draws the scene each frame into an off-screen
 image of `size` pixels instead of the screen, and a `UiImage` whose `renderTarget` is `targetName` shows it
 ([HUD system > Minimap](design/hud-system.md#minimap)). With a `FollowTarget` on the same entity it makes a minimap.
+`hiddenLayers` keeps the markers drawn over the world (a build wheel, the hints of a tutorial) out of the image; the
+inspector shows a **Draw** switch per layer of the stack.
 
 ### Gameplay Components
 
@@ -901,7 +914,9 @@ height of the font (before format 3 it filled the ink height of the string, so o
 A panel with a title bar, drawn as a batch of its own over the windows before it. Its `UiRect` includes the bar; the
 children are laid out in the area under it and clipped to it. A window stays inside the screen, blocks the mouse for
 the widgets and the world under it, comes to the front when clicked (it becomes the last child of its parent), moves
-with its title bar and hides itself with the close button (`Visibility`; `ui.set_visible` shows it again).
+with its title bar and hides itself with the close button (`Visibility`; `ui.set_visible` shows it again). A modal
+window is a dialog: while it is shown, the focus stays in it and the mouse reaches nothing outside it, the other
+windows included.
 
 | Field             | Type     | Description                                      |
 |-------------------|----------|--------------------------------------------------|
@@ -913,6 +928,7 @@ with its title bar and hides itself with the close button (`Visibility`; `ui.set
 | `titleTextColor`  | `vec4`   | Colour of the title and of the close mark        |
 | `draggable`       | `bool`   | The title bar drags the window                   |
 | `closable`        | `bool`   | Show the close button                            |
+| `modal`           | `bool`   | While shown, keep the focus and the mouse in it  |
 | `onCloseCallback` | `string` | Lua function called when the close button is hit |
 
 #### UiLayout
@@ -1038,7 +1054,7 @@ in the file.
 | `overriddenComponents` | `vector<string>`       | `overrides`  | Per-component override keys preserved on update |
 
 On the root entity of a prefab instance only; children are tracked through `uuidMapping`
-([Editor prefab workflow](editor.md)).
+([Prefabs in Owl Nest](editor_scene.md#prefabs)).
 
 An override key is `canonicalUUID:ComponentKey` (e.g. `5100000000000000003:AnimatedSpriteRenderer`).
 A listed component keeps its instance state on update, whether it was modified, added or removed.
@@ -1064,8 +1080,6 @@ the instance only are kept. `revertComponent()` reverts a single component and c
 `findInstanceRoot()` finds the instance an entity belongs to.
 
 ## Transform Hierarchy
-
-![ECS Pipeline](../images/ecs_pipeline.svg)
 
 Entities support parent-child relationships via the `Hierarchy` component.
 

@@ -154,6 +154,17 @@ struct OWL_API RuntimeTimings {
 
 /**
  * @brief
+ *  How a 2D layer takes its 2D lighting (`Scene::applyLighting2D`).
+ */
+struct OWL_API Layer2DLighting {
+	/// The lights and the sprites meet on the ground plane (x, z) of a Y-up world (billboard layers).
+	bool groundPlane = false;
+	/// The layer draws into a 3D scene (billboards or depth tested): it follows the light and exposure of the scene.
+	bool inScene3D = false;
+};
+
+/**
+ * @brief
  *  Class describing a scene.
  */
 class OWL_API Scene final {
@@ -1199,10 +1210,36 @@ public:
 	 *  Give the `Light2D` entities and the shadow-casting sprites of the layer being drawn to `Renderer2D`, which the
 	 *  2D, tilemap and isometric renderers read; without an enabled light the 2D lighting is turned off.
 	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 * @param[in] iLayer How the layer being drawn takes its lighting: a billboard layer places the lights on the
+	 *  ground plane (x, z), without shadow; a layer of a 3D scene (billboards or depth tested) takes the light of the
+	 *  3D scene as its ambient and undoes the exposure compensation of the camera.
 	 */
-	void applyLighting2D(bool iEditorMode);
+	void applyLighting2D(bool iEditorMode, const Layer2DLighting& iLayer = {});
+
+	/**
+	 * @brief
+	 *  The 2D lighting gathered by the last `applyLighting2D`.
+	 * @return The lights, occluders and ambient given to `Renderer2D`.
+	 */
+	[[nodiscard]] auto getLighting2D() const -> const renderer::Lighting2D& { return m_lighting2D; }
+
+	/**
+	 * @brief
+	 *  Whether the render stack has a world `Renderer2D` layer that is depth tested or turns its sprites to the camera:
+	 *  the editor then draws the layers in their stack order, like Play, instead of one 2D composite under the 3D ones.
+	 * @return True when such a layer exists.
+	 */
+	[[nodiscard]] static auto hasDepthTested2DLayer() -> bool;
 
 private:
+	/**
+	 * @brief
+	 *  Draw the 2D entities routed to the 2D layer being drawn: sprites, animated sprites, circles, texts and raycast
+	 *  plates, turned to the camera and sorted by their view distance in a layer of a 3D scene.
+	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 */
+	void render2D(bool iEditorMode);
+
 	/**
 	 * @brief
 	 *  Cut every parent cycle by moving one entity of each cycle to the root.
@@ -1884,6 +1921,8 @@ private:
 	const renderer::RenderLayer* mp_currentLayer = nullptr;
 	/// Whether `renderWithStack` draws a render target: no overlay, no HUD.
 	bool m_drawingRenderTarget = false;
+	/// The render target being drawn, whose hidden layers are skipped; null for the main view.
+	const component::RenderTarget* mp_drawnTarget = nullptr;
 	/// Camera of the frame-graph run in progress (`renderWithStack`).
 	const renderer::Camera* mp_renderCamera = nullptr;
 	/// Lights of the frame, as `Renderer3D` reads them.

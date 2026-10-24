@@ -1,0 +1,115 @@
+Prefab: Tower_archer_double
+Version: 1
+Entities:
+  - Entity: 7600000000001359001
+    Tag:
+      tag: Tower
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.78, 0.78, 0.78]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 7600000000001359002
+    Tag:
+      tag: TowerPart0
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001359001
+    MeshRenderer:
+      mesh: models/td/tower-round-bottom-b.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001359003
+    Tag:
+      tag: TowerPart1
+    Transform:
+      translation: [0, 0.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001359001
+    MeshRenderer:
+      mesh: models/td/tower-round-middle-a.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001359004
+    Tag:
+      tag: TowerPart2
+    Transform:
+      translation: [0, 1.2, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001359001
+    MeshRenderer:
+      mesh: models/td/tower-round-top-b.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001359005
+    Tag:
+      tag: TowerWeapon
+    Transform:
+      translation: [-0.2, 1.7, 0]
+      rotation: [0, 0, 0]
+      scale: [0.75, 0.75, 0.75]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001359001
+    MeshRenderer:
+      mesh: models/td/weapon-ballista.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001359006
+    Tag:
+      tag: TowerWeapon
+    Transform:
+      translation: [0.2, 1.7, 0]
+      rotation: [0, 0, 0]
+      scale: [0.75, 0.75, 0.75]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001359001
+    MeshRenderer:
+      mesh: models/td/weapon-ballista.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7600000000001359007
+    Tag:
+      tag: TowerPart5
+    Transform:
+      translation: [0.32, 1.6, 0.32]
+      rotation: [0, 0, 0]
+      scale: [0.9, 0.9, 0.9]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001359001
+    MeshRenderer:
+      mesh: models/castle/flag.glb
+      color: [0.6, 0.8, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world

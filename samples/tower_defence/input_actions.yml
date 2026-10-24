@@ -14,6 +14,33 @@ actions:
       - {key: Down, component: y}
       - {key: Up, component: y, scale: -1}
       - {gamepad_stick: left}
+  - name: turn_left
+    type: button
+    bindings:
+      - {key: Z}
+      - {gamepad_button: LeftBumper}
+      - {gamepad_button: DpadUp}
+  - name: turn_right
+    type: button
+    bindings:
+      - {key: C}
+      - {gamepad_button: DpadDown}
+  - name: zoom
+    type: axis
+    bindings:
+      - {key: R, scale: -1}
+      - {key: V}
+      - {gamepad_stick: right, component: y}
+  - name: rain
+    type: button
+    bindings:
+      - {key: D4}
+      - {gamepad_button: LeftThumb}
+  - name: shield
+    type: button
+    bindings:
+      - {key: D5}
+      - {gamepad_button: RightThumb}
   - name: next_pad
     type: button
     bindings:

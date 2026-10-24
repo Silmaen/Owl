@@ -789,12 +789,41 @@ auto MeshLoader::loadMeshFromMemory(const std::span<const uint8_t> iData, const 
 	return {};
 }
 
+namespace {
+// The JSON text of a `.gltf`, or of the first chunk of a `.glb` (12-byte header, then length, type and data).
+auto gltfJsonText(const std::filesystem::path& iFilePath) -> std::optional<std::string> {
+	std::ifstream file{iFilePath, std::ios::binary};
+	if (!file)
+		return std::nullopt;
+	std::string bytes{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
+	if (iFilePath.extension() == ".gltf")
+		return bytes;
+	constexpr size_t headerSize = 12;
+	constexpr size_t chunkHeaderSize = 8;
+	constexpr uint32_t jsonChunk = 0x4E4F534A;
+	if (bytes.size() < headerSize + chunkHeaderSize || !bytes.starts_with("glTF"))
+		return std::nullopt;
+	const auto word = [&bytes](const size_t iOffset) -> uint32_t {
+		uint32_t value = 0;
+		std::memcpy(&value, bytes.data() + iOffset, sizeof(value));
+		return value;
+	};
+	const uint32_t length = word(headerSize);
+	if (word(headerSize + 4) != jsonChunk || headerSize + chunkHeaderSize + length > bytes.size())
+		return std::nullopt;
+	return bytes.substr(headerSize + chunkHeaderSize, length);
+}
+}// namespace
+
 auto MeshLoader::getExternalFiles(const std::filesystem::path& iFilePath) -> std::vector<std::string> {
-	if (iFilePath.extension() != ".gltf")
+	if (iFilePath.extension() != ".gltf" && iFilePath.extension() != ".glb")
+		return {};
+	const auto text = gltfJsonText(iFilePath);
+	if (!text)
 		return {};
 	std::vector<std::string> files;
 	try {
-		const auto document = nlohmann::json::parse(std::ifstream{iFilePath});
+		const auto document = nlohmann::json::parse(*text);
 		for (const char* section: {"buffers", "images"}) {
 			const auto found = document.find(section);
 			if (found == document.end() || !found->is_array())

@@ -1,0 +1,19 @@
+# Tower defence, Skip tutorial on the briefing of Greenmarch Ford (Backspace, pad B): the level starts without it, and
+# the restarted level offers it no more.
+scene: ../../../samples/tower_defence/scenes/level_01.owl
+steps:
+  - frames: 2
+  - expect: {gamestate: tower_tutorial_offered, equals: true}
+  - input: {key: Backspace, frames: 2}
+  - frames: 3
+  - expect: {gamestate: tower_briefing, equals: false}
+  - expect: {gamestate: tower_tutorial_step, equals: "off"}
+  - expect: {gamestate: tower_tutorial_state, equals: skipped}
+  - input: {key: Escape, frames: 2}
+  - frames: 3
+  - input: {key: Down, frames: 2}
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 90
+  - expect: {gamestate: tower_briefing, equals: true}
+  - expect: {gamestate: tower_tutorial_offered, equals: false}

@@ -1,0 +1,294 @@
+-- The world map of Tower defence, between the levels: an inked map where the road from the capital is traced to
+-- the last site open. A site is locked (grey ruin), open (a Horde camp under a red banner) or done (a human keep under
+-- a blue banner, and its stars). A won level opens the next one: the next stretch of the road is drawn dash by dash
+-- (`tower_map_reveal` in the game state, set by defence.lua), then its site rises.
+--
+-- - `levels`: one string per site, "name|waves|unlock|new enemies|modifiers"; `level_scenes`: the scene of each site (empty for a level still
+--   to come); `upgrades_scene`: the screen where the stars buy upgrades.
+-- - `MapRoot` holds the map and its sites, scaled down when the screen is narrower than the map so that every site
+--   shows; the banners wave, the clouds drift (fading over the names of the sites) and the sea glints.
+-- - A click on an open site, Q / E, Tab or the D-pad choose it, Enter, pad A or March! starts it; Bonuses lists what
+--   the levels won unlocked, Upgrades opens the upgrades screen; Escape, pad B or Back returns to the title.
+-- - Progress: the `tower_done_NN` and `tower_stars_NN` settings; mirrored in `tower_map_*` game state keys.
+
+properties = {
+    { name = "levels", type = "strings", default = {} },
+    { name = "level_scenes", type = "strings", default = {} },
+    { name = "upgrades_scene", type = "string", default = "scenes/upgrades.owl" },
+    { name = "map_width", type = "float", default = 32.0, min = 1 },
+    { name = "map_height", type = "float", default = 18.0, min = 1 },
+    { name = "cloud_speed", type = "float", default = 0.25, min = 0 },
+    { name = "cloud_alpha", type = "float", default = 0.5, min = 0, max = 1 },
+    { name = "name_drop", type = "float", default = 2.2, min = 0 },
+    { name = "dot_time", type = "float", default = 0.08, min = 0.01 },
+    { name = "wipe_color", type = "color", default = { 0.1, 0.14, 0.24, 1 } },
+}
+
+local sites = {}            -- { scene, name, waves, unlock, id, ring, flag, stars = {ids}, dots = {ids}, done, open, stars_won }
+local selected = 0
+local leaving = false
+local reveal, reveal_clock, reveal_index = 0, 0.0, 0
+local ids = {}
+local clock = 0.0
+local map_root, fitted = 0, { w = 0, h = 0, scale = 1.0 }
+local clouds, glints = {}, {}
+local FLAG_FRAMES = 4
+
+local function set(id, text)
+    if id ~= 0 then ui.set_text(id, text) end
+end
+
+local function by_x(list)
+    local out = {}
+    for _, id in ipairs(list) do
+        local x, y = transform.get_position(id)
+        out[#out + 1] = { id = id, x = x, y = y }
+    end
+    table.sort(out, function(a, b) return a.x < b.x end)
+    return out
+end
+
+local function done_key(index)
+    return string.format("tower_done_%02d", index)
+end
+
+local function stars_key(index)
+    return string.format("tower_stars_%02d", index)
+end
+
+local function refresh_panel()
+    local site = sites[selected]
+    if site == nil then return end
+    set(ids.name, site.name)
+    if site.scene == "" then
+        set(ids.info, "A land still to conquer: this level comes later.")
+    elseif site.done then
+        set(ids.info, string.format("%s waves - defended, %d of 3 stars%s", site.waves, site.stars_won,
+                site.twists ~= "" and (" - " .. site.twists) or ""))
+    else
+        local coming = site.new ~= "" and ("new: " .. site.new) or "the Horde is coming"
+        if site.twists ~= "" then coming = coming .. " - " .. site.twists end
+        set(ids.info, string.format("%s waves - %s", site.waves, site.open and coming or "locked"))
+    end
+    set(ids.unlock, "Win to unlock: " .. site.unlock)
+    ui.set_button_enabled(ids.march, site.open and site.scene ~= "")
+    for index, other in ipairs(sites) do ui.set_visible(other.ring, index == selected) end
+    gamestate.set("tower_map_selected", selected)
+end
+
+local function select(index)
+    if sites[index] == nil or not sites[index].open then return end
+    if selected ~= index then sound.play("sounds/ui/click.wav") end
+    selected = index
+    refresh_panel()
+end
+
+local function show_site(site)
+    local frame = site.done and 2 or (site.open and 1 or 0)
+    isometric.set_sprite_frame(site.id, frame)
+    if site.flag ~= 0 then ui.set_visible(site.flag, site.open or site.done) end
+    for star, id in ipairs(site.stars) do
+        ui.set_visible(id, site.done)
+        isometric.set_sprite_frame(id, star <= site.stars_won and 1 or 0)
+    end
+end
+
+function on_create()
+    if not ui.is_transition_active() then
+        ui.transition_play("wipe_down", 0.4, wipe_color.r, wipe_color.g, wipe_color.b)
+    end
+    time.set_scale(1.0)
+    time.set_paused(false)
+    ids.name, ids.info = scene.find_entity("SiteName"), scene.find_entity("SiteInfo")
+    ids.unlock, ids.march = scene.find_entity("SiteUnlock"), scene.find_entity("MarchButton")
+    ids.bonus, ids.bonus_back = scene.find_entity("BonusWindow"), scene.find_entity("BonusBackButton")
+    local site_ids, rings, stars = by_x(scene.find_entities("Site")), by_x(scene.find_entities("SiteRing")),
+            by_x(scene.find_entities("SiteStar"))
+    local flags = by_x(scene.find_entities("SiteFlag"))
+    map_root = scene.find_entity("MapRoot")
+    for index, id in ipairs(scene.find_entities("Cloud")) do
+        local x, y, z = transform.get_position(id)
+        clouds[#clouds + 1] = { id = id, x = x, y = y, z = z, speed = cloud_speed * (0.7 + 0.2 * index) }
+    end
+    for index, id in ipairs(scene.find_entities("SeaGlint")) do glints[#glints + 1] = { id = id, phase = index * 1.7 } end
+    reveal = gamestate.get("tower_map_reveal", 0)
+    gamestate.remove("tower_map_reveal")
+    local open_count = 0
+    for index, text in ipairs(levels) do
+        local fields = {}
+        for field in string.gmatch(text .. "|", "([^|]*)|") do fields[#fields + 1] = field end
+        local name, waves, unlock, new = fields[1], fields[2], fields[3], fields[4] or ""
+        local twists = fields[5] or ""
+        local site = { scene = level_scenes[index] or "", name = name or "?", waves = waves or "?", unlock = unlock or "",
+                       id = site_ids[index] and site_ids[index].id or 0, ring = rings[index] and rings[index].id or 0,
+                       flag = flags[index] and flags[index].id or 0, new = new, twists = twists, stars = {}, dots = {},
+                       x = site_ids[index] and site_ids[index].x or 0, y = site_ids[index] and site_ids[index].y or 0 }
+        for star = 1, 3 do
+            local entry = stars[(index - 1) * 3 + star]
+            site.stars[star] = entry and entry.id or 0
+        end
+        for _, dot in ipairs(by_x(scene.find_entities("PathDot " .. index))) do site.dots[#site.dots + 1] = dot.id end
+        site.done = settings.get(done_key(index), false) == true
+        site.stars_won = settings.get(stars_key(index), 0)
+        site.open = site.done or index == 1 or (sites[index - 1] ~= nil and sites[index - 1].done)
+        if site.open then open_count = index end
+        sites[index] = site
+    end
+    for index, site in ipairs(sites) do
+        -- The stretch being revealed starts hidden; every other stretch shows up to the last open site.
+        local shown = site.open and index ~= reveal
+        for _, dot in ipairs(site.dots) do ui.set_visible(dot, shown) end
+        if index == reveal then site.open, site.rising = false, true end
+        show_site(site)
+    end
+    for index = #sites, 1, -1 do
+        if sites[index].open and (not sites[index].done or selected == 0) then
+            selected = index
+            if not sites[index].done then break end
+        end
+    end
+    if selected == 0 then selected = 1 end
+    for index = 1, #sites do
+        local line = scene.find_entity("BonusLine" .. index)
+        local site = sites[index]
+        set(line, (site.done and "+ " or "- ") .. site.unlock .. (site.done and "" or " (win " .. site.name .. ")"))
+    end
+    ui.set_visible(ids.bonus, false)
+    gamestate.set("tower_map_open", open_count)
+    gamestate.set("tower_map", true)
+    refresh_panel()
+end
+
+local function leave(path, jingle)
+    if leaving then return end
+    leaving = true
+    if jingle then sound.play("sounds/ui/start.wav") end
+    scene.transition_to(path, "wipe_down", 0.35, wipe_color.r, wipe_color.g, wipe_color.b)
+end
+
+function on_march_clicked()
+    local site = sites[selected]
+    if site ~= nil and site.open and site.scene ~= "" then leave(site.scene, true) end
+end
+
+function on_back_clicked()
+    leave("scenes/title.owl", false)
+end
+
+function on_upgrades_clicked()
+    leave(upgrades_scene, false)
+end
+
+function on_bonus_clicked()
+    ui.set_visible(ids.bonus, true)
+    ui.raise_window(ids.bonus)
+    if ids.bonus_back ~= 0 then ui.set_focus(ids.bonus_back) end
+    gamestate.set("tower_map_bonus", true)
+end
+
+function on_bonus_closed()
+    ui.set_visible(ids.bonus, false)
+    if ids.march ~= 0 then ui.set_focus(ids.march) end
+    gamestate.set("tower_map_bonus", false)
+end
+
+-- The next stretch of the road, dot by dot, then the site of the level it opens.
+local function update_reveal(dt)
+    local site = sites[reveal]
+    if site == nil or not site.rising then return end
+    reveal_clock = reveal_clock + dt
+    while reveal_clock >= dot_time and reveal_index < #site.dots do
+        reveal_clock = reveal_clock - dot_time
+        reveal_index = reveal_index + 1
+        ui.set_visible(site.dots[reveal_index], true)
+        sound.play("sounds/ui/click.wav")
+    end
+    if reveal_index >= #site.dots and reveal_clock >= 0.3 then
+        site.rising, site.open = false, true
+        show_site(site)
+        sound.play("sounds/game/build.wav")
+        select(reveal)
+        gamestate.set("tower_map_open", reveal)
+    end
+    gamestate.set("tower_map_dots_shown", reveal_index)
+end
+
+-- The map shrinks to fit a screen narrower than it (the camera shows its whole height).
+local function fit_map()
+    local w, h = scene.get_viewport_size()
+    if map_root == 0 or h == 0 or (w == fitted.w and h == fitted.h) then return end
+    fitted.w, fitted.h = w, h
+    fitted.scale = math.min(1.0, map_height * w / h / map_width)
+    transform.set_scale(map_root, fitted.scale, fitted.scale, 1.0)
+    gamestate.set("tower_map_scale", fitted.scale)
+end
+
+-- Banners waving, clouds drifting across the map (wrapping round), glints of the sea coming and going.
+local function animate(real)
+    for index, site in ipairs(sites) do
+        if site.flag ~= 0 and (site.open or site.done) then
+            local row = site.done and 1 or 0
+            isometric.set_sprite_frame(site.flag, row * FLAG_FRAMES + math.floor(clock * 7.0 + index) % FLAG_FRAMES)
+        end
+    end
+    for _, cloud in ipairs(clouds) do
+        cloud.x = cloud.x + cloud.speed * real
+        if cloud.x > map_width / 2 + 3 then cloud.x = cloud.x - map_width - 6 end
+        local y = cloud.y + 0.15 * math.sin(clock * 0.3 + cloud.speed * 9)
+        transform.set_position(cloud.id, cloud.x, y, cloud.z)
+        -- A cloud thins out over a site and the ribbon of its name so that both stay readable.
+        local near = 1.0
+        for _, site in ipairs(sites) do
+            local dx = math.abs(cloud.x - site.x) / 4.5
+            local dy = math.min(math.abs(y - site.y), math.abs(y - site.y + name_drop)) / 1.8
+            near = math.min(near, math.max(dx, dy))
+        end
+        entity.set_tint(cloud.id, 1.0, 1.0, 1.0, cloud_alpha * math.min(1.0, math.max(0.0, near - 0.4) / 0.6))
+    end
+    for _, glint in ipairs(glints) do
+        local a = math.max(0.0, math.sin(clock * 0.9 + glint.phase))
+        entity.set_tint(glint.id, 1.0, 1.0, 1.0, 0.85 * a * a)
+    end
+end
+
+function on_update(dt)
+    local real = time.real_delta()
+    clock = clock + real
+    fit_map()
+    animate(real)
+    update_reveal(real)
+    -- The open, unfinished sites bob a little.
+    for _, site in ipairs(sites) do
+        if site.open and not site.done and site.id ~= 0 then
+            local s = 2.4 * (1.0 + 0.04 * math.sin(clock * 3.0))
+            transform.set_scale(site.id, s, s, 1.0)
+        end
+    end
+    if leaving or gamestate.get("tower_map_bonus", false) then
+        if input.is_action_just_pressed("ui_cancel") then on_bonus_closed() end
+        return
+    end
+    if input.is_action_just_pressed("ui_cancel") or input.is_action_just_pressed("cancel") then
+        on_back_clicked()
+        return
+    end
+    local step = 0
+    if input.is_action_just_pressed("next_pad") then step = 1 end
+    if input.is_action_just_pressed("prev_pad") then step = -1 end
+    if step ~= 0 then
+        local index = selected
+        repeat
+            index = index + step
+        until index < 1 or index > #sites or sites[index].open
+        if index >= 1 and index <= #sites then select(index) end
+    end
+    if input.is_action_just_pressed("confirm") then on_march_clicked() end
+    if input.is_action_just_pressed("primary") and not ui.is_mouse_over_ui() then
+        local picked = scene.pick_entity(nil, nil, "Site")
+        for index, site in ipairs(sites) do
+            if site.id == picked then
+                if index == selected then on_march_clicked() else select(index) end
+            end
+        end
+    end
+end

@@ -1,7 +1,10 @@
 # Tower defence: F doubles the scene clock (time.set_scale), the pause (Escape) stops it: the enemies walk no further
 # while the pause window is open, and walk on once it is closed with Escape again.
-scene: ../../../samples/tower_defence/scenes/map_01.owl
+scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
+  - frames: 2
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
   - frames: 30
   - expect: {gamestate: tower_speed, equals: 1}
   - input: {key: F, frames: 2}

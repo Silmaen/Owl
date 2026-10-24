@@ -1,0 +1,26 @@
+# Tower defence, Thornwood Pass: the briefing card opens the level and Enter dismisses it; the fog of the level takes
+# 15 % off the range of the towers; after the second wave the night falls (announced) and the night effects apply on
+# top: archers see less far, goblins run faster.
+scene: ../../../samples/tower_defence/scenes/level_02.owl
+steps:
+  - frames: 5
+  - expect: {gamestate: tower_briefing, equals: true}
+  - expect: {gamestate: tower_countdown, equals: 25}
+  - frames: 60
+  - expect: {gamestate: tower_countdown, equals: 25}
+  - input: {key: Enter, frames: 2}
+  - frames: 2
+  - expect: {gamestate: tower_briefing, equals: false}
+  - expect: {gamestate: tower_phase, equals: day}
+  - expect: {gamestate: tower_archer_range, equals: 255}
+  - expect: {gamestate: tower_goblin_speed, equals: 90}
+  - input: {key: F, frames: 2}
+  - input: {key: Space, frames: 2}
+  - frames: 500
+  - input: {key: Space, frames: 2}
+  - frames: 500
+  - expect: {gamestate: tower_wave, equals: 2}
+  - expect: {gamestate: tower_phase, equals: night}
+  - expect: {gamestate: tower_phase_changes, equals: 1}
+  - expect: {gamestate: tower_archer_range, equals: 217}
+  - expect: {gamestate: tower_goblin_speed, equals: 115}

@@ -1,0 +1,19 @@
+Prefab: Shadow
+Version: 1
+Entities:
+  - Entity: 7600000000000614001
+    Tag:
+      tag: Shadow
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.5, 0.35, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 0.6]
+      tilingFactor: 1
+      texture: nam:textures/fx/shadow.png
+    RendererTag:
+      Name: ground

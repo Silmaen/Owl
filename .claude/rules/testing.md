@@ -72,7 +72,7 @@ launch the runner).
 ## Scenario tests (`test/unit/scenarios/*.owltest`, label `scenario`)
 
 - `OwlRunner --scenario <file>` plays a sample scene headless with injected inputs and checks the world (format:
-  `doc/pages/editor.md#scripted-headless-runs-scenario`). Each file is a CTest case, no CMake edit needed.
+  `doc/pages/editor_internals.md#scripted-headless-runs-scenario`). Each file is a CTest case, no CMake edit needed.
 - `scene:` / `project:` / `assets:` are relative to the `.owltest`; fixtures sit in `test/unit/test_helper/assets/scenarios/`.
 - Pin thresholds loosely (a gameplay tweak should not break them) and check one behaviour per file.
 

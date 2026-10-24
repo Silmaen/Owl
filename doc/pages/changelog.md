@@ -11,1250 +11,311 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Sample game Tower defence (`samples/tower_defence/`), first map in basic art: 8 timed waves called early for a bonus, archer, cannon and frost towers on build pads with a build ring, runners, soldiers and armoured enemies on the road graph, double speed and pause, end stats counted up, keyboard, mouse or gamepad; generators in `tools/samples/tower_defence/`, maps and waves as data.
-- Help panel diagrams: `tools/doc/mermaid_svg.py` draws every mermaid fence of the bundled pages as plain SVG (flowchart, sequence, state, class) into `help_bundle/images/mermaid/`, run by `cmake/HelpAssets.cmake`.
-- Help panel rendering: hanging indent and aligned numbers in lists, ordered lists keep their start number, GFM task lists drawn as checkboxes, inline code as a flat tinted span.
-- Lua `scene.spawn_prefab` (a prefab instantiated at runtime, its scripts started at the next safe point of the frame) and `entity.add_component`.
-- Lua `time.set_scale`, `time.set_paused`, their getters and `time.real_delta`: a scene clock driving the ticks, physics, animations and `dt`, the UI kept in real time (`Scene::setTimeScale`, `setPaused`); Breakout pauses with it.
-- Lua `ui.is_world_blocked`: whether a shown `UiWindow` holds the world interactions back.
-- Lua `ui.set_image`, `ui.set_image_frame` and `ui.get_image_frame`, with the `Columns`, `Rows` and `Frame` sprite sheet grid of `UiImage`.
-- Lua `scene.pick_entity` and `scene::pickEntity`: the sprite, circle or mesh under a viewport pixel, in 2D, isometric and 3D.
-- Lua `scene.pick_entity` and `scene::pickEntity` take an optional tag, so a ring or a passer-by drawn in front does not hide a tower; `scene.get_viewport_size` and `scene.get_viewport_mouse` for edge scrolling.
-- A save keeps the cells of the tilemaps changed in game (`SaveManager::restoreTilemapCells`), put back before the colliders are built.
-- `core::task::Scheduler::parallelFor`, and `Scene::setTaskScheduler` / `setParallelMinEntities`: `prepareWorldTransforms` and the spatial boxes of scenes above 4096 entities are prepared in parallel (`frame/editor_update/forest50000` 1.68 to 0.91 ms).
-- Benchmarks `frame/editor_update/{flat,forest,moving_flat,moving_forest}50000`, each with a `_serial` twin.
-- Benchmark `renderer2d/text/100_strings_changing`: strings never seen in the previous frames, the cost of laying text out.
-- Engine Demo tavern: a hub level played on foot (`FirstPersonController`) from an empty house of the hub, with a cellar key, a trapdoor, a chest in `scenes/tavern_cellar.owl` lit by a lantern spot light and a ladder back up.
-- Outline of the silhouette of an entity and its subtree (`Scene::setOutline`, `renderer::OutlinePass`), in full where it shows and dimmed behind other geometry: the Owl Nest selection of a mesh and what a first-person walker aims at use it.
-- `FirstPersonController` component (walk, run, look, jump, step climbing) whose body box collides with the `MeshRenderer` world boxes through `data::geometry::moveBoxAmong`, waits for the meshes to load, and Lua `entity.set_first_person_enabled`; an interaction trigger answers what the walker aims at within `reach`, its box outlined.
-- Voxel tilesets accept `normalTexture` and `roughnessTexture` (`.owltileset` keys, Tileset editor fields, packed by export); `voxel.slang` reads them and averages the far texels of such atlases; the demo blocks are redrawn at 128 px and the isometric art gets more detail.
-- `ProceduralSky` component (clear sky and dusk glow prefiltered on a worker like an HDRI; sun, detailed moon and pixel-sharp stars drawn by the sky shader) and benchmark `sky/*`.
-- `DayNightCycle` component: time of day, sun and moon path driving a directional `Light` and the sky, night exposure on the cameras in Play, Lua `entity.get_time_of_day`, `set_time_of_day`, `set_day_night_enabled`; the voxel level uses it.
-- `RenderTarget` component (the camera of its entity drawn off-screen under a name), `UiImage.renderTarget` and `FollowTarget` component; the voxel level shows a minimap in its HUD (`MinimapCamera` of `huds/voxel.owlhud`).
-- Tuned constants of the Engine Demo and sample-game scripts are script `properties` edited in the inspector.
-- Test `EditorCoverage` (gui_tests): fails when a data member of a component has no widget in its inspector function, or when a key read by `applyConfig` of a render layer has no field in the layer overrides of Scene Settings; a runtime-only member is listed in the test with its reason.
-- Owl Nest: a double-click on an `.owlprefab` opens it as a document (`DocumentKind::Prefab`, hierarchy, inspector, undo, atomic save with its name and version, canonical UUIDs kept), and the Content Browser draws a sphere rendered with the material as the thumbnail of an `.owlmat`.
-- Owl Nest viewport: the selected `Oscillator` draws its range and the selected `Patrol` its route; a waypoint is picked with a click and moved with a gizmo, as one undoable `component.set`.
-- `Oscillator`, `Patrol` and `Drift` components with the systems `owl.oscillators` (a body moves through the physics step), `owl.patrols` and `owl.drift`, and Lua `entity.set_oscillator_enabled`, `set_patrol_enabled`, `set_drift_enabled` with their `is_` getters.
-- `LightFlicker` component and `owl.light_flicker` system: a fire, candle or pulsing `Light` or `Light2D` (and the tint of a sprite) flickers from its seed and the scene time, with colour shift, position jitter, dips and a `follow` target whose scale breathes with it; `Scene::getRuntimeSeconds()`, Lua `entity.set_flicker_enabled` / `is_flicker_enabled`.
-- Reversed-Z depth on both backends: `math::perspectiveReversedZ` (infinite far plane) and `math::orthoReversedZ`, and the public `renderer/ClipSpace.h` every camera builds its projection through.
-- Camera-relative 3D shading: `Renderer3D` uploads `projection * cameraRelativeView(view)` and the shaders work relative to the eye, so rendering stays precise far from the origin.
-- Image test `far_origin`: the lights scene moved 2^20 m away renders like at the origin, shadows included.
-- Script properties: `color` (sRGB picker), `vec2`, `vec3`, `entity` (UUID picker), `numbers` and `strings` lists, optional `min`, `max` and `step`, and a reset button per inspector field that shows the default of the script (`ScriptValue`, `ScriptProperty::defaultValue`, `ScriptInstance::setProperty(const ScriptProperty&)`).
-- `SceneScript`: a scene owns one optional script (`SceneScript:` key, `Scene::getSceneScript`) that runs before the entity scripts without an `entity_id`, edited in the new Scene Settings **Script** section through `scene.set_script`.
-- Owl Nest inspector: a Lua script lists its engine hooks (defined or not, with the line and an **Open** button that reveals it in the code editor), and every named handler (HUD widgets, timer, interaction and Lua-callback triggers) shows the script that defines it or a warning.
-- `ScriptEngine::extractFunctions` and `getHookNames`; `gui::component::openAssetAtLine` and `setInspectedScene`.
-- Owl Nest Scene Settings: layer overrides for every key of the raycast (fog, floor and ceiling tilesets), mesh and voxel layers (sun and ambient lighting), through the new `scene.set_renderers` command.
-- `renderer::RenderGraph` (`Renderer::getRenderGraph()`): passes declare the targets they read and write, the graph orders them, drops the useless ones and pools the transient targets; `Scene::renderWithStack` records one pass per renderer-stack layer.
-- HDR scene colour: the world layers render linear into an `Rgba16F` target and a `colour encode` pass (`renderer::ColorEncoder`) tone maps and sRGB-encodes it; the HUD and the editor overlays stay drawn after it.
-- Per-camera tone mapping (`renderer::ToneMapping`: `None`, `PbrNeutral`, `Aces`, saved as `camera.toneMapping`) and a **Tone mapping** combo in the Owl Nest Camera inspector.
-- RHI: `AttachmentSpecification::Format::Rgba16F`, `Framebuffer::getAttachmentTexture`, `copyAttachment`, `isLinearColor`, `getBound`, `isLinearTargetBound` and `RenderCommand::getClearColor`.
-- `MeshRenderer` component: a `.gltf`, `.glb` or `.obj` file drawn in 3D with its glTF base colour, a tint, a texture override and alpha blending, in YAML, the inspector and Lua (`entity.set_mesh`, `get_mesh`, tint).
-- `RendererMesh` render-stack layer: opaque meshes, then the blended ones back-to-front, lit like the voxel layer; the Engine Demo stack has one (`mesh_world`).
-- `renderer::MeshCache` in `EngineContext`: one shared `MeshResource` per file (geometry, GPU meshes, material texture), read from the pack or the asset folders and reloaded when the file changes.
-- `MeshLoader::loadMesh` / `loadMeshFromMemory` return the glTF base-colour material with the mesh and read a `.gltf` from a pack, whose mesh files `AssetScanner` now packs.
-- Owl Nest: a mesh dropped from the Content Browser on the viewport becomes a `MeshRenderer` entity under the cursor (`mesh.create` command), and the rotation snap step is an editor setting.
-- Owl Nest: dropping a mesh in a project without a `RendererMesh` layer offers to add one, through the new `project.add_render_layer` command.
-- Owl Nest mesh viewer (`MeshDocument`): a mesh file opened from the Content Browser context menu or the inspector shows alone under an orbit camera, textured or shaded, with its figures and a **Place in Scene** button.
-- Owl Nest Content Browser: mesh thumbnails rendered by the GPU with their material, in a **Textured**, **Shaded** or **Flat** style picked in the toolbar.
-- Owl Nest viewport: a selected mesh is outlined by its bounding box, and the 3D view draws its grid on the ground (XZ plane), an option of **Show**.
-- Owl Nest inspector: a `MeshRenderer` without a texture of its own shows the texture of the material, faded.
-- Owl Nest viewport: a right drag looks around and a middle drag pans without Alt or Ctrl (`CameraEditor::Navigation::mouseLook`).
-- Owl Nest viewport: in the 3D view each camera shows a 3D model, pickable, and its real frustum topped by a triangle for its up, instead of the flat 2D marker.
-- Owl Nest viewport: **Pilot Selected Camera** (Camera menu, context menu of a camera in the view or the Hierarchy) renders the view through a camera entity, with its projection, and moving the view moves the camera, one undoable `entity.set_transform` per gesture.
-- Owl Nest viewport: a selected camera shows its view in a corner inset (**Show > Camera preview**), drawn by the new `Scene::renderEditorView`.
-- Owl Nest viewport: while the right button is held, W A S D (Z Q S D on AZERTY) fly the 3D view, Q and E move it down and up, Shift speeds it up and the wheel sets the speed.
-- Picking in 3D: `Renderer3D` writes the entity id of every draw (`MeshDrawParams`), so meshes and voxel worlds are selected by a click.
-- `Light` component (`Directional`, `Point`, `Spot`: on/off, colour, intensity, range, cone angles, shadow settings) with its inspector, viewport markers and gizmos, `entity.create_light`, Hierarchy create menus and Lua (`entity.set_light_color`, `get_light_color`, `set_light_intensity`, `get_light_intensity`, `set_light_enabled`, `is_light_enabled`, `set_light_range`).
-- Forward lights: up to 64 lights in a storage buffer (`renderer::GpuLight`) light the mesh and voxel layers, point and spot lights falling to zero at `range`; a scene without a light keeps the sun and ambient of the layer.
-- Cascaded shadow maps for the first shadow-casting directional light (`renderer::computeShadowCascades`, 1 to 4 cascades, texel-snapped, 3x3 PCF) drawn by one frame-graph pass per cascade; image test `lights` checks them on both backends.
-- RHI: `AttachmentSpecification::Format::RedFloat`, `RenderGraph::TargetFormat::Depth` and an explicit size for a transient target.
-- Engine Demo: `tavern` scene (G from the main menu), a table set with brass dishes by a flickering fireplace in a dark stone room, from Poly Haven CC0 glTF models and texture sets (`tools/demo/fetch_polyhaven.py`) and a procedural hearth and fire (`tools/demo/generate_meshes.py`).
-- `OwlRunner --frame-bench --pick X,Y` logs the entity under a pixel of the capture; image tests `mesh` and `RenderPick` check meshes and picking on both backends.
-- PBR materials: `.owlmat` files (versioned YAML) with the `Standard` (Filament), `Unlit` and `Toon` shading models, clearcoat, sheen and anisotropy layers, six texture maps (separate metallic and roughness), instances through a `parent` and `renderer::MaterialLibrary` sharing one material per file with hot reload.
-- `MeshRenderer` material slots: one per submesh (glTF primitive, OBJ group) holding a `.owlmat` and per-entity overrides, kept by prefabs; the mesh loader reads every glTF material and `AssetScanner` packs materials, parents, maps and overrides.
-- Image-based lighting: the `Environment` component lights meshes and voxel worlds with an equirectangular `.hdr` (GGX-prefiltered levels, order-2 spherical harmonics, split-sum DFG table) and draws it as the sky; without one the layer ambient is a constant sky.
-- Separate `metallicMap` and `roughnessMap` in `.owlmat` with a per-map channel (`metallicChannel`, `roughnessChannel`, `occlusionChannel`), so a packed ARM image or separate grey images both work.
-- Owl Nest material inspector: a reset button per field (default, or stop overriding on an instance or slot), **Reset all**, channel combos and a **Use the occlusion map as ARM** button.
-- Scene lighting: the layer sun lights only a scene without any `Light`, and the `Environment` component gets an `ambient` colour for the constant sky used without an HDRI.
-- Owl Nest **Editor ambient** slider in the viewport **Show** menu (`EditorSettings::editorAmbient`): a grey light on lit 3D surfaces in Edit mode only.
-- Per-camera post-process stack (`renderer::PostProcessSettings`, `camera.postProcess`): exposure in EV, bloom chain in the frame graph, vignette and a `.cube` colour-grading LUT, applied by the colour encode pass.
-- Shader sources may `#include "x.slangh"` (next to the file, then `shaders/common/`); the SPIR-V cache hashes the expanded text.
-- Owl Nest material document (`MaterialDocument`): parameters, parent and per-field overrides, a sphere or cube preview, undo, and a save that updates every entity using the material.
-- Voxel block surfaces: `BlockSurface` (metallic, roughness, emissive, clearcoat) per block type, packed into the voxel vertices and edited in the **Blocks** section of the `VoxelWorld` inspector.
-- Engine Demo: the voxel terrain gets a Poly Haven sky and per-block surfaces (glossy water, icy snow).
-- Owl Nest: **New Material** in the Content Browser, a Materials section in the `MeshRenderer` inspector, a `.owlmat` dragged onto a mesh, Environment and Post process inspectors, `material.create` and `material.assign` commands, Lua `entity.set_material` / `get_material`.
-- Image test `pbr`: gold, plastic, rough steel, clearcoat, emissive and toon spheres under a procedural HDR sky, with bloom, vignette and a warm LUT.
- runs the benchmarks several times and writes a proposed baseline and the thresholds the measured spread calls for.
-- Physical light units: a directional `Light` is an illuminance in lux (100 000) and a point or spot one a power in lumens (800), with inverse-square falloff cut off smoothly at `range`.
-- Camera exposure in EV100 (`PostProcessSettings::ev100`, default 15) applied to the physical lights before shading, and an `autoExposure` with `autoExposureMin`, `autoExposureMax` and `autoExposureSpeed` measured on the GPU (`PostProcess::recordExposure`).
-- `Environment.intensity` is a luminance in nits (default 10 000) and the render-stack layers take `SunIlluminance` and `AmbientLuminance` next to `SunDirection` and `Ambient`.
-- Materials: `emissiveLuminance` in nits replaces `emissiveStrength` (glTF emissive 1 imports as 1000 nits), plus `ior`, `clearcoatIor` and a `normalConvention` (`OpenGl` or `DirectX`); voxel `BlockSurface.emissive` is a luminance in nits.
-- Owl Nest: a reset button (↺) on every field of the Light and Environment inspectors and of the camera Post process section.
-- `data::geometry::LooseOctree`, `math::Frustum` and `math::transformBox`: a loose octree of boxes keyed by entity index with frustum and box queries, whose root grows toward far boxes.
-- `Scene::getMeshSpatialIndex`, `getSpriteSpatialIndex` and `getCullingStatistics`: two octrees refiled only when a world matrix or a mesh changes, which the mesh pass and the 2D sprite loop use to skip entities outside the view frustum.
-- Instanced mesh drawing: `RendererMesh` groups opaque meshes by mesh, material and texture into one instanced draw each, with per-instance data (`renderer::MeshInstance`) in a storage buffer.
-- GPU frustum culling of mesh instances (`mesh_culling.slang`, `renderer::utils::MeshCullingPass`) writing one `DrawIndexedIndirectCommand` per group, drawn by `Renderer3D::drawMeshIndirect`; the Null backend culls on the CPU.
-- Hi-Z occlusion culling for the `RendererMesh` layer (`OcclusionCulling`, `OcclusionScale`, editable in the Owl Nest Scene Settings): an occluder depth pass builds a max-depth pyramid that drops hidden instances; the Engine Demo `tavern` enables it.
-- `RendererMesh::Statistics::instancedBatchCount`, `visibleInstanceCount` and `occlusionLevelCount`; benchmarks `culling/octree/*` and `culling/mesh_flush/*`; image test `occlusion`.
-- RHI: `RenderCommand::drawIndexedIndirectAt` (one indirect command) and `ComputeShader::bindTexture` (sampled textures in compute shaders, OpenGL and Vulkan).
-- `RendererRaycast::drawSprites` draws every visible sprite in one instanced call (`raycast_sprite.slang`), sorted far to near on the GPU by `BitonicSortPass` and hidden behind the wall of their column; image test `raycast_sprites`.
-- `Light2D` component (`Ambient`, `Point`, `Spot`) and `renderer::Lighting2D`: 2D lights summed in the sprite, tilemap and isometric shaders, up to 64 per frame, in YAML, the inspector and Lua.
-- `SpriteRenderer` gains `normalMap`, `castShadows` and `lit`: normal-mapped sprites and sprites that block the 2D lights.
-- 2D shadows: a polar shadow map per light built on the CPU from the sprites flagged `castShadows`, with a soft penumbra.
-- Lit tilemaps: chunked tilemaps receive the 2D lights and shadows.
-- Lit isometric sprites and tiles through the `_normal` and `_depth` atlases of `tools/iso_atlas` found beside an albedo atlas.
-- Owl Nest: **Light 2D** inspector, sprite **2D Lighting** fields, **Ambient 2D / Point 2D / Spot 2D** in the Light menu (`entity.create_light2d`), hierarchy icons and viewport markers.
-- Engine Demo: the `platformer_house` torches carry warm `Light2D` and the scene a `HouseAmbient`; image tests `lights2d`, `tilemap_lit` and `iso_town_night_640x360`.
+- `Renderer2D` layer keys `Billboard` and `DepthTest`: sprites in a 3D scene face the camera, are depth-tested and
+  follow its sky, sun and exposure (`Renderer3D::getSurfaceLight`), 2D lights on the ground plane.
+- Sample game Tower defence (`samples/tower_defence/`): a campaign of 10 levels in 3D on an inked world map, nine kinds
+  of the Horde as 8-direction billboards, towers raised to level 3 then a power-up, a build wheel, spells, day and
+  night with their effects, level modifiers and briefings, a skippable tutorial, unlocks and upgrades bought with the
+  stars.
+- Lua `require` of the modules of a project (sandboxed, packed by the export), modal `UiWindow`, `ui.set_size` and
+  `ui.get_rect`, `RenderTarget.hiddenLayers` to keep markers out of a minimap.
+- `AnimatedSpriteRenderer.lit`, and Lua `ui.set_text` / `ui.get_text` reach a world `TextRenderer`.
+- Engine Demo tavern: a hub level played on foot with the `FirstPersonController` component.
+- Lua `scene.spawn_prefab`, `entity.add_component`, `scene.pick_entity`, `time.set_scale` / `set_paused` and
+  `ui.set_image`.
+- `ProceduralSky`, `DayNightCycle`, `LightFlicker`, `Oscillator`, `Patrol`, `Drift`, `RenderTarget` and `FollowTarget`
+  components.
+- Silhouette outline of an entity (`Scene::setOutline`, `renderer::OutlinePass`) and picking of meshes and voxel worlds
+  in 3D.
+- Reversed-Z depth and camera-relative 3D shading, precise far from the origin.
+- `renderer::RenderGraph`, HDR scene colour with per-camera tone mapping and a per-camera post-process stack (bloom,
+  vignette, `.cube` LUT).
+- `MeshRenderer` component and `RendererMesh` layer for `.gltf`, `.glb` and `.obj` meshes, with `renderer::MeshCache`.
+- `Light` component (`Directional`, `Point`, `Spot`) with forward lights, cascaded shadow maps and physical units (lux,
+  lumens, `ev100`).
+- PBR materials (`.owlmat`: `Standard`, `Unlit`, `Toon`), image-based lighting through `Environment`, voxel
+  `BlockSurface`.
+- Mesh culling and batching: `data::geometry::LooseOctree`, instanced draws, GPU frustum culling, Hi-Z occlusion.
+- `Light2D` component with 2D shadows, normal-mapped sprites, lit tilemaps and isometric tiles.
+- `SceneScript` (one script per scene) and script properties `color`, `vec2`, `vec3`, `entity`, lists, ranges and reset
+  buttons.
+- Owl Nest: prefab, mesh and material documents, mesh drop and thumbnails, 3D viewport navigation, **Pilot Selected
+  Camera**.
+- Owl Nest: script hooks and handlers listed in the inspector with an **Open** button, layer overrides in Scene
+  Settings.
+- Help panel: mermaid diagrams as SVG (`tools/doc/mermaid_svg.py`), task lists, list indents, and pages describing the
+  editor.
+- Help panel: images fit table columns and enlarge on click, roadmap status as coloured tags, links to a heading,
+  browser-like Back / Forward (mouse side buttons) restoring the scroll.
+- A save keeps the tilemap cells changed in game; `core::task::Scheduler::parallelFor` prepares large scenes in
+  parallel.
 
 ### Changed
 
-- Documentation reorganised: short README landing page, one guide per audience (game makers, C++ developers, contributors), consistent page titles, `<img width>` honoured in the help and CMake 4.4 required
-- Build: no C++ module scan of every source (on by default since the CMake 4.4 minimum), a clean rebuild from a warm ccache in 6 s instead of 13 s.
-- Build: an engine `.cpp` edit links only the engine, not every program using it (`CMAKE_LINK_DEPENDS_NO_SHARED`), 2.8 s instead of 3.5 s.
-- Build: the Clang presets choose lld through `CMAKE_LINKER_TYPE`, and the engine public include path comes from its header file set only.
-- `QuadInstance` back to 80 bytes, the normal-map index and the 2D light flags packed into its padding.
-- `utils::getLighting2DState` returns a reference, and unlit tilemaps no longer bind the 2D light buffers: a static tilemap frame is back near its cost before the 2D lighting.
-- `math::Frustum` folds its near-plane tolerance into the plane when it is built: no per-box cost, and the other planes have none.
-- `Renderer2D::drawString` keeps the laid-out glyphs of a string while its font, text and layout stay, so a still HUD or world text is no longer laid out at every frame.
+- Documentation reorganised: short README, one guide per audience, help sidebar grouped by theme, diagrams redrawn as
+  mermaid.
+- Meshes and voxel worlds are lit by the `Standard` model, depth is `Depth32F`, scene format 6 converts to physical
+  lights and format 7 moves camera scripts to `SceneScript`.
+- Build: C++ module scan off, lld on Clang presets, a warm ccache rebuild hits every unit; `Renderer2D::drawString`
+  keeps unchanged laid-out strings.
+- CI: benchmarks run on ready pull requests, Clang-Tidy is scoped by `clang-scan-deps`, heavy jobs and image tests are
+  sharded or nightly.
+- Help panel: hovered links underlined, internal and web links told apart, headings in clear H1–H4 steps.
+- Lua API reference split into one generated page per theme behind an index (`getLuaReferencePages`).
+- Owl Nest screenshots taken from a neutral path (`/home/user/OwlEngine`): no local path shows.
+- The version is written only in `CMakeLists.txt`; Owl Nest shows it in its title bar and Lua `engine.version()` returns
+  it.
 
-- Lua `entity.set/get_light_color`, `set/get_light_intensity`, `set_light_enabled`, `is_light_enabled` and `set_light_range` (the radius) also reach a `Light2D`.
-- Scripts: a property the scene does not list takes the declared default at Play (`ScriptInstance::getDeclaredProperties`); the tuning constants of the platformer player, the raycast level, the breakout ball, paddle and game, the Sokoban game, the Wolfenstein exploration and the hub and isometric town scripts are script properties.
-- Engine Demo: the platformer moving platforms use `Oscillator`, the isometric clouds `Drift` and the hub wanderers `Patrol` (`hub_wanderer.lua` only picks the sprite frames); `moving_platform_h.lua`, `moving_platform_v.lua` and `iso_cloud.lua` are removed.
-- Engine Demo: the tavern fire, candles and flame cards and the platformer torches use `LightFlicker`; `platformer/flicker.lua` is removed and `mesh/tavern.lua` only returns to the menu.
-- Depth attachment format `Depth24Stencil8` is now `Depth32F` (32-bit float, no stencil) on Vulkan and OpenGL.
-- `ShadowSettings::viewProjections` is replaced by `relativeViewProjections` and `origins`, each cascade relative to its own light camera.
-- `math::Frustum` and `FrustumCullingPass::extractFrustumPlanes` use the reversed-Z planes, and `Frustum::classify` keeps a box lying on a plane.
-- The Hi-Z pyramid keeps the farthest (smallest) depth and the shadow comparisons follow the reversed-Z depth.
-- Scene format 7: a migration moves the script of the primary camera to `SceneScript` when it never names `entity_id`; the Engine Demo tavern scene uses it.
-- Roadmap: editor reach before the v0.5.0 release (scripts, Lua functions and tuned values visible in Owl Nest, behaviour components, editor fixes), `design/editor-reach.md`.
-- CI benchmarks: a failed case is measured again alone 5 times (`--confirm_rounds`), and a failure publishes `linux-bench.proposed-baseline.json`, the baseline with the failed cases set to their confirmed median and the new cases added.
-- Bench baseline recalibrated on the frame graph and linear HDR code (build 39239, 5 rounds): the editor update costs about 1 µs more per frame, the shaders compile about 20 % slower; four noisy benchmarks get wider thresholds.
-- Bench baseline recalibrated with the lights (build 39286, 5 rounds): the mesh gallery editor update costs 60 % more with its three shadow cascades, the voxel shader compiles 58 % slower; three noisy benchmarks get wider thresholds.
-- Bench baseline recalibrated with the physical lights and the tavern (build 39353, 5 rounds): the tavern replaces the mesh gallery samples, the voxel terrain loads 21 % slower with its HDR sky, six noisy benchmarks get wider thresholds; the voxel mesher reads each block's packed surface from the registry instead of packing it per quad.
-- Roadmap toward 1.0 extended to worlds of any scale: camera-relative rendering, 64-bit positions, articulated bodies, gravity, time warp, planetary terrain, world partition (`design/large-worlds.md`), two v0.7.0 sample games and a pool of optional ones.
-- Vulkan: a draw keeps one pipeline per attachment layout (linear and display), created on its first bind to a framebuffer of that layout.
-- Meshes and voxel worlds are lit by the `Standard` model (Burley diffuse, GGX specular, image-based ambient) instead of Lambert; image-test references regenerated.
-- Each submesh gets its own compact vertex buffer, sized from its index count.
-- Image-test references regenerated: world text is slightly bolder, lit 3D and voxel scenes lighter in the shadows, transparent meshes blend more vividly; HUD-only scenes are unchanged.
-- CI: the benchmarks run on ready pull requests and `PR Ready` waits for them (five checks).
-- OpenGL `ComputeShader::bindStorageBuffer` binds at the given binding.
+### Removed
 
-- The version is written only in `CMakeLists.txt`: the engine exposes its commit (`getVersionFullString()`), Owl Nest shows it in the title bar and on the File screen, Lua `engine.version()` fills the Engine Demo menu, the shipped projects export the engine version and the README badge reads the latest release.
-- CI: a pull request changing a CMake file no longer runs the whole Clang-Tidy: the merge base is configured too and only the units whose compile command moved join the diff scope.
-- CI: Clang-Tidy and the Static Analyzer configure `linux-clang-tidy` without compiling it and scope a pull request with `clang-scan-deps`, which removes a 26 min build from the slowest pull-request check.
-- Build: ccache gets the sloppiness precompiled headers need and Clang PCHs carry no header mtime, so a warm rebuild hits every unit, fresh checkout included (4 s instead of 108 s for `linux-clang-release`).
-- CI: the Windows agents get the ccache directory, size and compression of the Linux ones (`env.CCACHE_*`).
-- CI: the custom build dialog shows only the parameters meant to be set by hand (CTest arguments, benchmark calibration).
-- CI: `Build` logs the ccache statistics of the build when the tree compiles through ccache.
-- CI: CTest runs the tests in parallel (`Test -- --jobs=<n>`, default the processors available).
-- CI: off `main`, the release tree is only configured for Doxygen (`Build -- --configure_only`), no longer compiled, which saves 10 to 14 min per Linux x64 Clang pull request.
-- CI: Sanitizer Address leaves the pull requests for every `main` push; `PR Ready` waits for four checks.
-- CI: a `main` push builds GCC on its release preset only, and runs arm64, the whole-tree Clang-Tidy and Include Check nightly, which cuts about 2 h of Linux agents and 40 min of the Windows agent per merge.
-- Tests: the image tests run as six parallel CTest shards, and the voxel HUD is captured at one resolution instead of three.
-- Tests: scenarios starting with `# slow` are labelled `slow`, left out of pull requests and `main` pushes and run by arm64 and a nightly Linux x64 Clang run.
-- Tests: scenario `voxel_explore` plays the voxel terrain alone (landing, block targeting, chunk eviction, objective), the lines only `hub_progress` covered.
-- Tests: the export end-to-end test is one case per shipped project in four parallel shards, the deep reparenting test walks 256 links instead of 1000, and the Unicode font tests add only the glyph they check.
-- CI: the test reports reach `TestReports.zip` (they are written under `test/test/`).
-- Tests: the font, core, gui, renderer, sound and script binaries no longer wait for one another (`RESOURCE_LOCK` removed: 40 rounds of the six at once and 15 parallel suite runs under ASan, no failure).
-- Tests: each test process gets a temporary directory of its own (`TMPDIR` / `TMP` / `TEMP`, removed at exit), so two processes never write the same temporary file.
-- Coverage: Clang builds instrument for gcov only, dropping the unused source-based counters (same lines measured, about 5 % faster tests).
-- CI: the artifacts keep the test reports (`TestReports.zip`), the coverage, the documentation and the packages, no longer the binaries nor the libraries.
-- Bench threshold of the flat `path/long_query` cases widened to 30 %: on the bench agent they switch between two modes about 15 % apart.
-- Scene and prefab format 6: `convertToPhysicalLights` turns the old light and environment factors into physical values that look the same at EV100 15.
-- glTF files load every mesh of their default scene with its node transforms (every mesh once without a scene), mirrored transforms flipping the winding.
+- `OWL_HELP_FETCH_BADGES` option: the help shows no remote badge.
 
 ### Fixed
 
-- `owl_bench --filter=sample/editor_update` measures the scenes again, and the first frame of a scene (its mesh loading) stays out of the batch calibration.
-- Owl Nest no longer crashes when **Play** starts a scene without a primary camera (an empty untitled scene).
-- GCC 15 builds decode HDR environments again: the flat scanline loop of stb_image was miscompiled at `-O2` and above.
-- MinGW GCC links the renderer tests again: the bloom level count is compared by value, not through the exported constant.
-- Owl Nest: the **UiText** inspector shows its font (combo, drop target and preview), as the Text one does.
-- OpenGL: the SPIR-V to GLSL translation names each storage block after its variable, which fixes the link errors of a vertex and a fragment shader sharing storage buffers.
-- GCC builds again: the post-process LUT is held by value in `Scene`, no reference bound to a temporary path.
-- Vulkan pipelines turn blending off on a colour attachment whose format cannot blend, and data attachments (`RedInteger`, `RedFloat`) get nearest samplers.
-- Owl Nest Content Browser: the right-click menu opens again (it was drawn outside the window that opened it).
-- Owl Nest keeps the desktop identifier `owl-nest-owl-engine-editor` whatever its version, so a desktop entry keeps its icon.
-- Owl Nest: the **Open** buttons of the texture maps of a material work, and `.txt` files open in the code editor.
-- `MeshLoader`: a glTF mesh of several primitives indexes the vertices of each one, the OBJ loader keeps the third UV of a face, and glTF UVs follow the engine convention.
-- `mesh3d.slang` reads every attribute of `Mesh3DVertex` (atlas sub-rect, ambient occlusion), which removes two Vulkan validation warnings.
-- Clang 23 builds: its `[[clang::lifetimebound]]` suggestions and the strict-only lifetime-safety checks (false positives on `push_back`) are off, and `MeshVertexCoordinate` declares its explicit instantiations (`extern template`) for the exported class deriving from it; the null window drops its write-only window counter.
-- Documentation site: screenshots keep their colours in dark mode (the theme inverted every image of a table or an image block).
-- Normal maps are no longer mirrored on Vulkan: the cotangent frame follows the handedness of the screen derivatives.
-- Package publication: an archive over 100 MB (Owl Nest) also sends its fields in the query string, which the upload module of the delivery server forwards.
-- `MeshCullingPass.h` includes the header of `math::identity`, so it compiles on its own (include check).
-- Lua `save.list_saves`, `save.has_save` and `save.delete_save` never throw on a save folder another process changes: a vanished file is skipped.
-- The scenes of the Engine Demo and of the sample games are saved at the current scene format, so loading them skips the migrations (iso town 30 times faster to load); a test keeps them there.
+- An export follows the scenes and assets named in a list-of-strings script property; it packs the external images of
+  a `.glb`; Owl Nest no longer crashes on **Play** without a primary camera; Lua
+  `save.*` listing never throws.
+- GCC 15 HDR decoding, MinGW renderer test link, Vulkan blending on non-blendable formats and mirrored normal maps on
+  Vulkan.
+- Mesh entities drawing an unchanged file material share it, so the mesh pass instances them: one draw per model and
+  material instead of one per entity.
 
 ## [0.4.0] - 2026-10-20
 
 ### Added
 
-- Sample game Breakout (`samples/breakout/`), the first of `samples/`: five levels, three lives, bricks of one to three hits, wide-paddle and slow-ball power-ups, pause, settings and best score, played with keyboard, mouse or gamepad; its art, sounds and levels come from `tools/samples/breakout/`.
-- `samples/` ships beside the Engine Demo: installed in the Owl Nest package, listed under **Sample games** on the File screen (`panel::findSampleGames`), each sample exported and played headless by the end-to-end export test, its HUDs checked like the demo's.
-- Sample game Wolfenstein mini (`samples/wolfenstein/`): three raycast floors to explore with treasure, keys and locked doors, secret walls, a fog-of-war minimap and an exit elevator, a tally of items, secrets and map explored in % per floor, best tally kept, saves, keyboard, mouse and gamepad, game rules in Lua only.
-- Sample game Sokoban (`samples/sokoban/`): ten levels of rising difficulty, each a three-layer tilemap edited in the Owl Nest tilemap editor, undo and restart, moves and pushes counted, levels done and best moves kept, level select, settings and victory, played with keyboard, mouse or gamepad; its art, sounds, levels and menus come from `tools/samples/sokoban/`, and Lua `isometric.get_size` gives the grid size of a tilemap.
-- `owl_bench` group `mcp`: `tools/call` and `ping` round trips over loopback HTTP into a headless editor session, the MCP and command libraries of Owl Nest now built with `OWL_BENCHMARK` even without the editor.
-- Scenario files take an optional `project` (the project of the scene, else found above it) and `assets` (extra asset folders), so a test fixture scene can live beside the tests and use a game project.
-- Lua `scene.find_entities(tag)`: every entity with a tag; in the Engine Demo iso town a road built on a tree clears it and the bulldozer removes trees (3 funds).
-- Owl Nest opens images (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`) in a read-only viewer: wheel zoom to 3200 %, pan, fit and 1:1, pixel grid, checkerboard, file information and the tile grid of the tilesets that use the image.
-- Owl Nest font documents show the font even when no text uses it: sample text at five sizes drawn by the engine's text renderer with outline and box toggles, the MSDF atlas with a glyph readout, and the charset coverage by Unicode block.
-- Owl Nest opens `.slang` shaders in the code editor with Slang syntax highlighting (keywords, types, semantics, intrinsics, comments, preprocessor).
-- Engine Demo hub redesigned as a 64×40 RPG village: plaza with an animated fountain, church, market, fields, forest edge, river with three bridges, a shrine for the victory portal, signposts, labels and flags on the four level houses, villagers with idle and walk frames (two on grid pathfinding), butterflies, sparrows and a church bell.
-- Engine Demo hub: the four level houses carry an outlined title, the villagers a name tag growing in near the hero (no other place label), and signposts and villagers answer on E with a line in the HUD.
-- Engine Demo raycast minimap is a fog of war: rays cast in Lua reveal the cells in the field of view, closed doors stop them, the seen cells survive saves, and a marker shows the facing.
-- Engine Demo hub sound less repetitive: a 48 s wind loop, bird scenes and wind gusts at random gaps, four footsteps with random volume, a rarer bell, and a light babbling brook for the river and a distinct fountain loop, quiet and heard only within about 5 cells.
-- Engine Demo sounds: hub ambience, river and fountain loops, footsteps, doors, board, lever, gate, portal hum and bell; raycast ambience, doors, push-walls, treasure / food / ammo pick-ups and elevator, synthesised by `engine_demo/sounds/generate_sounds.py` (no download).
-- A `SoundSource` with `playOnStart` loads its sound file on first use, like `sound.play`, so ambience loops play in the runner.
-- `ui_scale` player setting: every HUD grows by this factor in game (0.5 to 3, never in the HUD editor); the Engine Demo starts at 100 % with an Interface Size slider (75 to 200 %) in its settings menu.
-- Engine Demo HUDs and menus authored at a large size and laid out in corner `UiLayout` groups with ratio sizes, so nothing overlaps from 75 to 200 % interface size and 4:3 to 21:9 (`DemoHudLayout_test.cpp`).
-- Owl Nest viewport: the frame stats chip can be hidden (right-click it, or Show > Frame stats).
-- `entity.get_link(entity_id)`: the entity an `EntityLink` points at, readable from Lua.
-- Engine Demo iso town grown to a 64×64 map written by `tools/iso_atlas` (hills, a river with bridges, a park with a pond, a town centre, industrial and harbour districts with a railway and a pier, 195 buildings, 277 trees), twelve vehicles on one-way and slow streets, factory smoke, glints on the water, blinking lights, gulls and a day and night tint, an objective of 100 trips, and its sounds (engine loops, ambience, surf, horn, coin, tool clicks, bell) synthesised by `engine_demo/sounds/generate_town_sounds.py`; the 24×24 town stays as `iso_town_small`, a test fixture in `test/unit/test_helper/assets/scenarios` and `test/unit/test_helper/assets/render_tests`.
-- Engine Demo coverage: the iso town gets a one-way street and a slow road (navigation exceptions, vehicles slow down on costly cells), the hub an information board (`UiScrollView`), relative HUD units, a lever opening a gate through an `EntityLink`, a villager walking a `cells` navigation layer, wandering villagers, cloud shadows and chimney smoke, and the raycast level a 2D minimap layer.
-- Engine Demo platformer rebuilt as a 197×32 level in three zones (meadow, farm and factory from the Pixel Platformer expansions: 90 coins, hearts, spikes, water pits, moving platforms and lifts, a climb to a plateau, a secret cave and a tower to the door), with five checkpoints (respawn point in the gamestate), three parallax layers, animated water, flags and beacons, a camera that leads, snaps to pixels and shakes, a hit flash with invulnerability, coin pops and fades.
-- Lua `entity.set_tint` / `entity.get_tint`: read and write the colour of a sprite, for hit flashes and fades.
-- Text outline and background box: `UiText` and `Text` take an optional `outlineWidth` / `outlineColor` (a dilated MSDF coverage in the same draw) and `backgroundColor` / `backgroundPadding` (a box behind the text), absent from the file when unset, with inspector fields; the Engine Demo hub text gets a black outline.
-- Engine Demo progression: each level of the hub has a victory objective in its HUD (platformer: reach the door; raycast: take the elevator of E1M1; Iso Town: 100 vehicle trips; voxel: walk 100 blocks from the landing point), completing it sets `level_<name>_done` and returns to the hub, whose HUD counts "Levels completed: n / 4" and wakes the victory portal only when all four are done.
-- Engine Demo hero walk cycle: four generated frames under the Tiny Dungeon characters of `town_atlas.png`, played while the hub player moves, idle when still.
-- `OwlRunner --frame-bench --assets <dir>` adds an asset directory (the isometric render test fixtures now live in `test/unit/test_helper/assets/render_tests`).
-- Engine Demo redrawn with the Kenney CC0 packs: the world map is a Tiny Town (48×24 tilemap, Tiny Dungeon hero, houses to the platformer, raycast, voxel and a new Iso Town house), the platformer uses Pixel Platformer tiles, an astronaut with idle / walk / jump frames and a parallax backdrop, both from `Nearest`-filtered tilesets built from the packs' sheets at a pixel-exact 3× camera.
-- Navigation authored from the tileset and the isometric view: tiles carry `connections` (sides a road joins, written by `tools/iso_atlas`, edited in the Tileset Editor with screen-oriented arrows), `NavProfile` gains `mode` (`connections`, `cells`, legacy `rules`) and per-cell `overrides`, the Tilemap inspector keeps global options only, the Navigation tool of the isometric view cycles a side two-way / exit only / enter only / closed and sets a cell cost (`nav.set_edge`, `nav.set_cell_cost`, `nav.clear_cell`, undoable), and `iso_town` drops its hand-written rules.
-- Pathfinding for vehicles that keep their heading: `PathOptions` (`noReverse`, `heading`) and `path.find` / `path.find_now` options forbid the move back to the cell just left except at a dead end (flat search over cell and entry direction), and `iso_town` vehicles drive to random road cells without U-turns, looping round the whole cell at a dead end.
-- Navigation overlay in the game and in Owl Nest Play: `path.set_debug`, `path.show_route` and `path.clear_routes` draw the graph and the route of each vehicle, F3 in the Engine Demo and the eye button of the Play view.
-- Engine Demo vehicles with eight headings: `vehicles.png` is an 8 × 2 sheet (a frame every 45° per model, lights on the front), one sprite per vehicle in `iso_town` picks its frame from its heading with the new Lua `isometric.set_sprite_frame` / `get_sprite_frame`, vehicles keep to the right as seen on screen on their lane and turn corners along a quarter circle.
-- Tilemap editor node tool: select corners of the isometric terrain (Shift for several), drag or press +/- to change their height with the neighbours adapting, and edit the four corner heights of a cell in Cell Properties, each one undo step.
-- Relative HUD units: the size and the offset of a `UiRect` can be a ratio of the parent or screen width or height (`size_unit`, `offset_unit`, per number), with a unit selector in the inspector that converts the value, the gizmo and `hud.set_rect` / `hud.move` / `hud.add_widget` keeping the units; older files are unchanged.
-- Engine Demo art: six Kenney CC0 packs (Tiny Town, Tiny Dungeon, Pixel Platformer and its farm and industrial expansions, Micro Roguelike) under `engine_demo/textures/kenney/`.
-- Tile-graph pathfinding (`scene::nav`): a graph read from the overlay (roads, tracks) or the terrain of a tilemap through its `navigation` rules (cost per tile, one-way moves, slope limits), exact A* and a hierarchical search over the 32 x 32 chunks, chunk-by-chunk incremental update, requests spread over frames by the `owl.navigation` system, Lua `path.*`, an inspector section and a graph and test-path overlay in the viewport, `path/*` benches, and the `iso_town` vehicles driving to destinations over the road graph and re-routing when a road is bulldozed ([Pathfinding](pathfinding.md)).
-- Draw-order sort key: every 2D primitive carries a `depth` (larger is nearer, as in the isometric layer) and draws by increasing depth, then by type (quads, circles, lines, text), then in submission order, one instanced draw per type and depth; sprites, circles and text take their world z, HUD windows no longer need a batch each (B-10).
-- Persistent isometric chunk buffers: tilemaps of the isometric layer keep one GPU instance buffer per 32 x 32 chunk and layer (`tile.slang`), uploaded in the prepare phase only for the chunks whose cells, corner heights (`TilemapAsset::getChunkHeightGeneration`) or tileset changed (a static frame uploads 0 byte, a one-cell edit one chunk), on OpenGL and Vulkan; the 512² frame drops from 218 to 16 µs and the zoomed-out one from 1.43 ms to 17 µs.
-- Road junctions in the Engine Demo: 14 more road overlay tiles (corners, T, cross, dead ends, isolated, all on every slope) drawn by `tools/iso_atlas`, the build and bulldoze tool re-tiles a cell and its four neighbours from the mask of its road neighbours, and the `iso_town` navigation rules follow the arms of each tile.
-- Isometric town demo (`scenes/iso_town.owl`, **O** from the main menu): a sloped 24×24 map with roads along both axes, buildings, vehicles looping on a ring road and a mouse, keyboard and gamepad build-road tool in Lua, with Lua `isometric.pick_cell`, `get_cell`, `set_cell`, `get_slope`, `get_height` and `ui.is_mouse_over_ui`, a road tile along Y in the atlas generator, scenarios and image tests.
-- HUD scroll views and virtualised lists: `UiScrollView` (clipped content larger than the view, vertical and horizontal, bars drawn and draggable, mouse wheel, `ui_scroll` action, focus scrolled into view) and `UiList` (a model of any number of rows of which only those in view are drawn and bound from Lua, selection by mouse and keys), Lua `ui.scroll_get` / `ui.scroll_set` / `ui.list_*`, Scroll View and List in the HUD editor palette and `hud.add_widget`, inspector support, a scrolling list in the sample inventory and a 1000-row list in the `hud` bench.
-- `hud.extract_canvas` command (Scene Hierarchy context menu "Extract Canvas to .owlhud..."): writes a root canvas and
-  its widgets to an `.owlhud`, removes them from the scene and sets the scene's `Hud:` key, as one undo step.
-- Raycast level of the Engine Demo: Wolfenstein 3D E1M1 with treasure, food, health and ammo picked up on contact, the inventory window of the former inventory demo (**Tab** or Y, slots, tooltips, journal list, gamepad focus), the five secret pushwalls counted through the Lua `pushwall` table and an elevator that ends the level.
-- HUD editor in Owl Nest: an `.owlhud` (and, from the Scene ribbon, the canvases of a scene) opens in a pixel viewport with resolution presets and a custom size, a colour or image backdrop, the reference resolution framed, a rect gizmo (move, edges, anchors, pivot) snapped to pixels and to the edges of siblings, parent and screen, a widget palette (click, drag and drop, texture drop), box and Ctrl-click multi-select with group move and delete, and `hud.add_widget`, `hud.set_rect`, `hud.set_anchors`, `hud.set_pivot`, `hud.move`, `hud.delete` and `hud.reparent` commands (undoable, journaled, reachable through MCP); `Scene::renderHud` draws a HUD at any size.
-- Keyboard and gamepad focus for the HUD: the `ui_*` actions move it to the nearest button or slider (held, they repeat), `ui_accept` clicks, left and right adjust a slider (`UiSlider.step`), `ui_cancel` closes the top window, the focus stays in the top window, the mouse takes it where it moves, a gold frame shows it; `UiFocus` (focusable, initial, neighbours by entity UUID, focus callback, highlight; `Canvas.wrapFocus` wraps the focus at the ends of a menu) with inspector support (entity pickers), Lua `ui.set_focus` / `ui.get_focus`, and the sample menus playable with a gamepad alone (scenario `main_menu_focus`).
-- Isometric objects and vehicles: the `IsometricObject` component draws a building of a generated sheet as one depth-correct slice per footprint tile (inspector with sheet drop and building list, undoable, picked in the viewport), the layer sends every opaque sprite as a 64-byte matrix-free `IsometricSprite` (`drawSprites` for thousands of vehicles, off-screen ones dropped on the CPU), the foot snaps to whole pixels at integer zoom, `tools/iso_atlas` writes a vehicle sheet, and `iso/*` benches enter the baseline.
-- Action map editor in Owl Nest: `input_actions.yml` opens in a document with its own undo stack (add, rename, remove
-  actions, kind, bindings with scale, dead zone, curve and gamepad slot), a "press a key" capture of keyboard, mouse and
-  gamepad bindings, a live reading of every action, a reload of the saved map in the running editor, and the built-in
-  map in the project templates.
-- HUD windows: `UiWindow` (title bar, drag, close, raise on click, kept inside the screen, blocks the mouse for the
-  world and the widgets under it), `UiLayout` (row, column, grid), clipping by scissor (`Renderer2D::setScissor`, on
-  OpenGL and Vulkan) for windows and for panels with `clipChildren`, `UiTooltip` after a hover delay and a `UiToolCursor`
-  sprite following the mouse, each window drawn as its own batch, Lua `ui.raise_window`, `ui.set_window_title`,
-  `ui.set_tooltip` and `ui.set_tool_cursor`, inspector support in Owl Nest and a draggable "Controls" window in the
-  sample project.
-- Isometric atlas generator `tools/iso_atlas` (Pillow, seeded, deterministic): terrain × 19 slopes, foundations, road and rail overlays, five sliced buildings and two trees as albedo + normal + depth at 1x, 2x and half size; it replaces the placeholder art and the generator of the isometric sample.
-- HUD asset: an `.owlhud` file (own format, root key `Hud`) loaded into its own scene by a `HudLibrary` in
-  `EngineContext`, cached per path and shared across scenes and transitions, named by the scene key `Hud:` or the
-  project `DefaultHud`, drawn and clicked over the scene, found by Lua `ui.find` (then `scene.find_entity`), kept in
-  saves, packed by the exporter, with a Content Browser kind and thumbnail and, in Owl Nest, New HUD, editing in a
-  scene document and an undoable `scene.set_hud` command from Scene Settings (Default HUD in Project Settings).
-- Isometric terrain: a corner-height grid on `TilemapAsset` (tilemap format 3, migrated from 2) with the 19 slopes
-  derived from it, terraforming (raise, lower, level, areas), a (terrain, slope) table and foundations in the tileset,
-  overlays drawn along the slope, slope-aware picking (`scene::terrain::pickTerrain`), and in Owl Nest an isometric
-  preview of the tilemap with raise / lower / level tools, an overlay brush and a slope table in the tileset editor.
-- HUD pass: canvases leave the render layers for an implicit last pass in pixels (`HudPass`) whose layout,
-  computed once per frame (`HudLayout`), is the one `UiInputSystem` hit-tests; `UiRect` nests, uses Y-down pixels with
-  min / max anchors besides the 9 presets, `Canvas` gains a 1280×720 reference resolution with three scale modes, and
-  scene format 4 migrates every `UiRect` without moving it on screen.
-- Isometric layer `RendererIsometric`: a real 2:1 dimetric `IsometricCamera` (pan, power-of-two zoom, Vulkan flip,
-  usable depth), depth-tested billboards anchored at their foot with alpha cutout and translucent ones sorted back to
-  front, `Tileset::kind`, and an isometric viewport mode in Owl Nest (locked view, world-axis cursor, tile highlight).
-- Editor command API v2: `Vec2`, `Vec4`, `Color` and `Enum` arguments with defaults and choices, structured result
-  data, new commands `component.set`, `scene.save`, `edit.undo` and `edit.redo`, edits refused during Play, and every
-  command runnable from the command palette through an argument form.
-- Fixed simulation tick: a project `simulation.tickRate` (60 Hz by default, `maxTicksPerFrame` bound) drives
-  `SimulationClock`, the systems' `tick` functions, Lua `on_tick(dt)` and `time.tick_alpha()`, and the physics steps.
-- Input frames: a plain-data `InputFrame` sampled per tick and per frame (`Scene::getInputFrame`) gives
-  `isKeyJustPressed` / `isKeyJustReleased`, mouse edges and the wheel in C++ and Lua (`input.is_key_just_pressed`, …),
-  injection moves into the input layer so it works on GLFW too, and the hand-written edge latches are gone.
-- Gamepads: 16 pad slots in `InputState` / `InputFrame` (buttons with edges, sticks, triggers) read through
-  `glfwGetGamepadState`, connect / disconnect events, an optional project mapping file packed with the game, Null
-  injection and scenario `gamepad` steps, Lua `input.is_gamepad_*` / `get_gamepad_axis` / `get_gamepad_stick`, and a
-  radial dead zone with a response curve (`input::AxisResponse`) ready for the action map.
-- Editor session: `session::EditorSession` (scene, undo, command registry, bounded play for N frames or ticks at a fixed
-  step, frame capture with `encodeImagePng`, statistics) implemented by `EditorLayer` and by a `HeadlessSession` on the
-  Null renderer for tests and tools.
-- MCP dispatcher `OwlNestMcp`: socket-free JSON-RPC 2.0 (MCP 2025-11-25, 2026-07-28 accepted) exposing every editor
-  command as a tool and the scene, entities, assets, prefabs, documentation and statistics as resources.
-- Editor console and journal: a command-line syntax with `$n` result references, a Console panel (history,
-  completion, `help`), a journal of every command whatever its source, `.owlmacro` macros replayed as one undo step
-  (Content Browser, `macro.run`, scenario `macro:` steps), and the inspector edits and gizmo drags as registry commands.
-- MCP Streamable HTTP transport on `127.0.0.1` (`cpp-httplib`, no TLS), off by default: requests queued for the main
-  loop and held during a gesture or a modal, a 256-bit bearer token in a `0600` file, `Host` / `Origin` / content
-  type / body size / queue checks, `TCP_NODELAY` on its sockets, file arguments kept inside the project, and its
-  settings tab and status bar indicator.
-- MCP `play.run` tool: plays the scene for N frames or ticks with held input actions and returns the viewport as a PNG
-  image with the phase timings; `session::resolveActionHolds` is shared with the scenario `actions:` steps, and the
-  [MCP server guide](mcp.md) gives the client setup.
-- The Animation editor outlines the current frame on the spritesheet thumbnail, with a **Show Current Frame** toggle.
-- Input action map: an `input_actions.yml` (buttons, axes and vectors bound to keys, mouse buttons, gamepad buttons,
-  axes and sticks with dead zone and curve) packed with the game, built-in `move` / `jump` / `interact` / `ui_*`
-  actions, `Scene::getActions` per tick and per frame, Lua `input.is_action_*` / `get_action_value` /
-  `get_action_vector`, and scenario `actions:` steps.
-- Windows: `OwlNest.exe` and `OwlRunner.exe` (so every exported game) carry the Owl icon and version information, from `source/owlnest/resources/` (`owl.ico` built by `tools/editor/generate_app_icon.py`).
-- Optional code signing of the Windows binaries in the `Package` action (`ci/utils/signing.py`): `signtool` with a certificate of the agent's store (`OWL_SIGN_THUMBPRINT`) or `osslsigncode` with a `.pfx` (`OWL_SIGN_CERTIFICATE`, password in `OWL_SIGN_PASSWORD`), off when none is set.
+- Sample games in `samples/` (Breakout, Wolfenstein mini, Sokoban), installed with Owl Nest and listed under **Sample
+  games** on the File screen.
+- Isometric layer `RendererIsometric` with a 2:1 dimetric `IsometricCamera`, depth-tested billboards, `IsometricObject`
+  component and an isometric viewport mode in Owl Nest.
+- Isometric terrain: a corner-height grid on `TilemapAsset` with 19 slopes, terraforming, overlays, slope-aware picking
+  and a node tool in the tilemap editor.
+- Isometric Engine Demo: a 64x64 iso town with roads, junctions, buildings and vehicles with eight headings, generated
+  by `tools/iso_atlas`.
+- Tile-graph pathfinding (`scene::nav`) read from overlays or terrain rules, with `PathOptions` for vehicles and a
+  navigation overlay (`path.set_debug`).
+- Draw-order sort key: every 2D primitive carries a `depth`; isometric tilemaps keep persistent GPU chunk buffers.
+- HUD asset: `.owlhud` files loaded by a `HudLibrary`, drawn by an implicit `HudPass` in pixels, found by `ui.find` and
+  packed by the exporter.
+- HUD widgets: `UiWindow`, `UiLayout`, `UiScrollView` and virtualised lists, `UiTooltip`, `UiToolCursor`, clipping
+  (`Renderer2D::setScissor`) and relative units (`size_unit`, `offset_unit`).
+- HUD keyboard and gamepad focus, and the `ui_scale` player setting.
+- Owl Nest HUD editor, `hud.extract_canvas` command, and a read-only image viewer.
+- Owl Nest action map editor (`input_actions.yml`) and the input action map with Lua `input.is_action_*`.
+- Fixed simulation tick (`simulation.tickRate`, `SimulationClock`, Lua `on_tick`) and `InputFrame` edges in C++ and Lua.
+- Gamepads: 16 slots with buttons, sticks, triggers, dead zones and response curves (`input::AxisResponse`), and Lua
+  `input.is_gamepad_*`.
+- `session::EditorSession` with a `HeadlessSession`, the `OwlNestMcp` JSON-RPC dispatcher, an opt-in MCP HTTP transport
+  on `127.0.0.1` and the `play.run` tool.
+- Editor console, command journal, `.owlmacro` macros, and command API v2 (`component.set`, `scene.save`, `edit.undo`,
+  `edit.redo`).
+- Text: aspect-correct layout with alignment, word wrap and fit modes, UTF-8 code points, an outline and background box,
+  and a font document in Owl Nest.
+- Persistent 32x32 tilemap chunks and `.owltilemap` format 2 (binary payload, migrated from format 1).
+- Owl Nest `.slang` syntax highlighting, a **Show Current Frame** toggle in the Animation editor, a hideable frame stats
+  chip.
+- Lua `scene.find_entities(tag)`, `entity.get_link`, `entity.set_tint` and `entity.get_tint`.
+- A `SoundSource` with `playOnStart` loads its sound on first use.
+- Engine Demo: hub redesigned as an RPG village, rebuilt platformer, Wolfenstein E1M1 raycast level with a fog-of-war
+  minimap, Kenney CC0 art, sounds and victory objectives.
+- Windows binaries carry the Owl icon and version information, with optional code signing in the `Package` action.
+- `owl_bench` group `mcp`, and scenario files take `project` and `assets`.
 
 ### Changed
 
-- README: every supported platform is the one a CI machine builds and tests on every change.
-- Bench baseline refreshed from five runs on the bench agent on the v0.4.0 code, with the `mcp`, `path` and `hud/frame/1000_row_list` cases; wider thresholds for the noisy physics, MCP and game-over load cases.
-- README and `doc/images/showcase/`: a title and a play screenshot of each sample game (Breakout, Sokoban, Wolfenstein mini).
-- Engine Demo controls are never shown for good in game: each level shows its keys in a hint that hides after a few seconds (`controls_hint.lua`), the main menu lists them all, and the platformer's Controls window is gone.
-- Engine Demo hub: a fence closes the south entrance and invisible walls the map edges, the river slows the hero to 40 % with splashing steps (`hub/wade_1..4`, less damage), and a soft home-made chime replaces `sounds/ui/start.wav` (`tools/demo/generate_sounds.py`).
-- Owl Nest documentation illustrated by real editor screenshots (`doc/images/nest/`, refreshed by `tools/doc/capture_nest.py`) instead of the outdated panel diagram, and the help bundle copies the sub-folders of `doc/images/`.
-- Sample games: each has menus of its own (arcade neon for Breakout, a wooden warehouse for Sokoban, stone and steel over a turning raycast view for Wolfenstein mini) with a How to play window, the controls shown only there and in the pause window, its own start jingle and coloured transitions (`scene.transition_to` takes a colour); Breakout gets a level select with cleared marks and best scores, and the Wolfenstein mini tally counts its ratios up line by line instead of showing them during play.
-- README showcase: the product is named Owl Engine, with its pitch, Engine Demo screenshots (`doc/images/showcase/`), a GitHub social preview and how it is built with Claude Code under the maintainer's review.
-- Engine Demo project named OwlEngineDemo (its save folder too).
-- Engine Demo main menu titled Owl Engine Demo, in English, with the current version and without the mouse readout.
-- Repository layout: `docker_run.sh` at the root, unit tests, `bench/`, `fuzz/` and the Conan package test under `test/`, the icon and Doxygen filter scripts under `tools/`.
-- Every test fixture (scene, renderer, render references, scenario and mesh files) lives in `test/unit/test_helper/assets/<category>/`, found through `test::getTestAssetsPath()`.
-- Engine shaders live in `engine_assets/shaders/<renderer>/<name>.slang` (the `slang` folder level is gone) and engine fonts in `engine_assets/fonts/` (one flat folder, licences as `LICENSE-<family>.txt`).
-- Asset trees reorganised: the Engine Demo sorts its textures (`tilemaps`, `atlases`, `sprites`, `items`, `iso`, `wolf3d`, `ui`), sounds (`hub`, `raycast`, `platformer`, `town`, `ui`) and scripts (`hub`, `platformer`, `raycast`, `iso`, `voxel`, `ui`) by area; Kenney sheets are gathered in `textures/tilemaps/`.
-- The Engine Demo asset generators moved from the asset folders to `tools/demo/` and write into the new layout.
-- The editor icon rasterizer moved to `source/owlnest/assets_sources/generate_icons.py`.
-- Text stays smooth at any size: the font atlas distance range grows from 2 to 6 px (atlas cache version 2) and the outline is an antialiased band computed from the signed distance instead of a sampled dilation.
-- The cursor captured by a voxel player is given back when the scene stops wanting capture (level change, Stop in Owl Nest), not only on Escape.
-- Engine Demo HUD texts and menu canvases are about 25 % bigger, with the boxes widened where a line would overflow.
-- Show > Navigation graph of the isometric viewport is "Navigation graph and routes" and shares its drawing with the game (`scene::nav::drawNavigationGraph`).
-- `sample_project/` is renamed `engine_demo/`, the Engine Demo: an all-in-one showcase of the engine features, apart from the planned sample games.
-- Play overlay of the Owl Nest viewport: the controls fold into a corner handle (**F10**, kept in the settings), the "Playing" message fades after two seconds, and clicks on the overlay no longer reach the game.
-- The sample project and the project templates draw their HUD from `.owlhud` files (`huds/gameplay.owlhud` for the
-  templates and the platformer, one each for the world map, the raycast demo and the isometric test) and no widget
-  names the `ui` layer any more; scene and prefab format 5 drops `RendererTag: ui` from canvases and widgets.
-- Engine systems (platformer player, voxel player, interaction triggers, doors and pushwalls) and the sample and
-  template scripts read actions instead of keys; `RaycastDoor` / `RaycastPushWall` `interactionKey` becomes
-  `interactionAction` (an old `interactionKey: 0` still disables it).
-- Bench baseline taken again on `linux-build-hephaistos` (median of 5 runs of 2026-10-15) after the v0.4.0 performance
-  fixes, replacing the local estimates of the new benchmarks.
-- Text layout: glyphs keep the font aspect at one scale per em, with horizontal and vertical alignment, UTF-8 word
-  wrap and clip / shrink / overflow fit on `UiText` and `Renderer2D::drawString` (`StringData::layout`); scene format
-  3 keeps legacy `UiText` centred.
-- UTF-8 text decoded to code points (U+FFFD for invalid input), `Font` on `char32_t`, a Latin charset with `œ`, `€`
-  and typographic punctuation plus extra ranges per font (`.owlfont`, edited in the new font document), and the atlas
-  cached on disk.
-- Renderer2D transients sized like the instances (20 000 per batch), texture slots found by backend id, no allocation
-  in a frame; `ScopedActive` takes a `RendererId` from `RendererDescriptors::getId` instead of a name.
-- Tilemaps render from persistent 32 × 32 chunks cached per asset, uploaded only when a cell changes, culled against
-  the view, drawn with the full entity transform and the layer parallax, without the 16 384-cell cap, from the layers'
-  `onRender` (`RendererTilemap::prepareTilemap`, `TilemapLayer::setTile`).
-- `.owltilemap` format 2: cells kept in shared 32 × 32 chunks (terrain, overlay, flags) and saved as a checksummed
-  little-endian binary payload after the YAML header; format 1 files migrate, Owl Nest undoes tilemaps by chunk.
-- Version 0.4.0 in development: plan of the release in `design/isometric-worlds.md`, sized for a Transport Tycoon-like
-  game, with the isometric decisions revised (real dimetric camera, depth with alpha cutout, corner heights on the map).
-- Aspect-correct text, management-game HUD widgets, the fixed simulation tick and gamepad dead zones moved to v0.4.0;
-  tile-graph pathfinding moved to v0.5.0; HUD design moved to `design/hud-system.md`.
-- File dialogues through the desktop portal and the inventory demo moved to v0.4.0, node editing of other assets folded
-  into the v0.7.0 visual scripting, HUD planned in Y-down pixels.
-- Editor console and command journal with `.owlmacro` macros planned in v0.4.0, Lua editor scripts in v0.5.0
-  (`design/editor-scripting.md`); every edit gesture becomes a registry command.
-- Roadmap replanned: v0.4.0 expected 2026-11-01 and gains tile-graph pathfinding, the 2D draw-order sort key and HUD
-  scroll views and lists; the rest of the old v0.5.0 is spread over the later releases, which merge into four (v0.5.0
-  3D core and lighting, v0.6.0 content and scripting, v0.7.0 gameplay and simulation, v0.8.0 opening and release
-  candidate), 1.0 expected 2027-10-31.
-- Sound editor for Owl Nest planned in v0.6.0 (preview, trim, loop points, volume, pitch, variants).
-- Sample games planned beside the Engine Demo: small real games (Breakout, Sokoban, Mini Transport Tycoon, …), one or
-  two per release from v0.5.0, in `design/sample-games.md`.
-- Clang-Tidy and Static Analyzer configurations no longer run the unit tests: `vendor.silmaen.run_tests` turns off a
-  preset's Test step.
-- Owl Nest file dialogues on Linux go through `xdg-desktop-portal` over D-Bus, parented to the editor window, instead
-  of GTK, whose start-up froze the UI; D-Bus joins the Linux runtime dependencies.
-- Windows: Owl Nest and the runner are GUI programs, no console window opens with them; started from cmd or PowerShell they write their output (`--export`, `--scenario`, `--smoke-test`, `--frame-bench`, the log) to that console (`platform::attachParentConsole`), and a redirected output (CTest, `> file`) stays redirected.
-- The Owl Nest package installs the editor SVG icons in `assets/icons/` with the other editor icons (rasterized at run time in the theme's colours), no `assets_sources/` folder any more; a development tree still reads them from `source/owlnest/assets_sources/icons/`.
+- Engine Demo controls appear as timed hints, its HUDs scale with the interface size, and the project is named
+  `OwlEngineDemo` (`sample_project/` becomes `engine_demo/`).
+- Engine systems and scripts read input actions instead of keys; `RaycastDoor` / `RaycastPushWall` `interactionKey`
+  becomes `interactionAction`.
+- Repository layout: `docker_run.sh` at the root, tests, `bench/`, `fuzz/` under `test/`, shaders in
+  `engine_assets/shaders/<renderer>/`, generators in `tools/demo/`.
+- Text stays smooth at any size (font atlas distance range 6 px) and `Renderer2D` transients no longer allocate in a
+  frame.
+- Tilemaps render from cached chunks, culled against the view, without the 16384-cell cap.
+- Owl Nest file dialogues on Linux use `xdg-desktop-portal` over D-Bus; Windows programs open no console window.
+- Owl Nest documentation illustrated by real screenshots and the README showcases Owl Engine and its sample games.
+- Roadmap replanned: later releases merged into v0.5.0 to v0.8.0, 1.0 expected 2027-10-31; sample games planned in
+  `design/sample-games.md`.
 
 ### Deprecated
 
 - Lua `input.is_key_pressed`, `is_key_just_*`, `is_mouse_button_pressed` and `is_mouse_button_just_*`: read an action
-  (`input.is_action_pressed`, `is_action_just_pressed`) instead.
+  instead.
 
 ### Removed
 
-- The unused `Roboto-Bold` and `Roboto-Italic` engine fonts (Roboto Regular stays, the UI fallback font).
-- Engine sample content: `engine_assets/{scenes,templates,textures,animations,tilesets}` (the Engine Demo plays that role; the scene templates were not used by any feature), the old editor sample scenes of `source/owlnest/assets/scenes`, the unused Micro Roguelike licence and the unused `hazard` / `platform` / `player` / `lava_tile` sprites of the demo; the tests that read some of them keep their fixtures in `test/*/assets`.
-- Engine Demo unused assets: 1071 Kenney per-tile images, previews and sheets (only the packed sheets read by `generate_kenney_atlases.py` and the licences stay), the `@2x` / `@0.5x` isometric atlases and tilesets, and two unused atlases, 1089 files and 5.3 MB in all (`tools.iso_atlas` now writes the `1x` level by default).
-- Engine Demo scenes outside the hub, `iso_test.owl` and `inventory_demo.owl` (menu shortcuts **I** and **N** included), with their key lock, vehicle and player scripts; the isometric render fixtures moved to `test/unit/test_helper/assets/render_tests`.
-- `UiPanel::layout`, `spacing` and `padding`, which nothing read (a `UiLayout` arranges children); files that still
-  carry the keys load without complaint and no longer write them.
+- Unused engine fonts, engine sample content (`engine_assets/{scenes,templates,textures,animations,tilesets}`) and
+  unused Engine Demo assets and scenes.
+- `UiPanel::layout`, `spacing` and `padding` (a `UiLayout` arranges children).
 
 ### Fixed
 
-- The OpenGL fallback opens its window before closing the failed Vulkan one, so GLFW is not initialised twice (LeakSanitizer reported the X11 tables of the second init).
-- Vulkan no longer crashes on a driver older than Vulkan 1.3: device selection requires a Vulkan 1.3 device with every feature the backend uses, logs each skipped device with what it lacks and the selected one with its driver, and the editor and the runner fall back to OpenGL (a toast in Owl Nest) when Vulkan cannot start.
-- `GraphContext::getVersion` on Vulkan reports the minor version instead of repeating the major one.
-- Vulkan `drawIndexedIndirect` enables the `drawIndirectCount` feature it needs, and is skipped with a warning on a device without it.
-- `PublishDoc` and `PublishPackage` send only the filled fields: the site refused the empty `hash` of a documentation upload since its API checks every path field.
-- The sanitizer presets multiply the Lua time quota of the scenario and export tests by 4 (`OWL_SCRIPT_TIME_SCALE`), as the emulated arm64 ones do by 8.
-- A stalled `OwlRunner --scenario` run (a Windows run once hung 600 s after its verdict) ends after 120 s with code 7 and says where it stalled (starting, the step and frame playing, or the shutdown) instead of waiting for the CTest timeout.
-- Starting a scene loads its HUD before the scripts run: the first `scene.find_entity` or `ui.find` of an `on_create` no longer pays for the HUD fonts, which overran the 250 ms Lua time quota of the sample games under AddressSanitizer and qemu.
-- The emulated arm64 runs of the scenario and export tests multiply the Lua time quota by 8 (`OWL_SCRIPT_TIME_SCALE`): a save listing or a settings write under qemu overran the 250 ms of a native call.
-- The minimaps of Wolfenstein mini and of the Engine Demo raycast level keep their share of the screen at 1080p and above: a `Space: Screen` `Renderer2D` layer takes a `ReferenceHeight` (screen height in units, its width following the aspect ratio, editable in Scene Settings), 720 for both.
-- A shown `UiWindow` (a pause menu, an inventory) holds the world interactions back: the press of `interact` that opens a raycast door, slides a secret wall or calls `on_interact` waits until the window is closed, the click on Resume included (Wolfenstein mini could open a door from its pause window).
-- Wolfenstein mini minimap: a slid secret wall shows and stops the fog in the cell where it stopped, instead of reading as floor and letting the fog see the room behind it; that cell is now a wall for the reach check of `generate_levels.py`, which reopens a room of floors 2 and 3 a slid wall had cut off.
-- Owl Nest switching project unloads the previous one: its documents close (unsaved changes kept in recovery), and its textures, sounds, fonts, HUDs, voxel meshes and previews are dropped (`AssetLibrary::remove` / `removeIf` / `clear`, `Application::unloadAssetsFrom`), so a sample game no longer draws the Engine Demo images of the same name.
-- The game export follows the scene paths, sound files and `nam:` / `pat:` textures given as string properties of a `LuaScript` (a `next_scene` property), like those quoted in its script; Breakout, Wolfenstein and Sokoban name their next level that way instead of listing the level scenes in Lua (gap G16).
-- Lua `gamestate.set` and `settings.set` keep a string that reads as a number (`"0110"`) a string instead of storing a float, so a string of digits survives a save (the fog of the Engine Demo raycast minimap came back broken after a load).
-- The emulated arm64 build finds the `fast_float` headers that the c4core headers of rapidyaml include: the engine requires and links `fast_float` directly.
-- The arm64 build (Debug under qemu) passes the Engine Demo scenarios: the raycast level sets its minimap fog up over a few frames instead of overrunning the script time quota, and scenarios take the `OWL_TEST_TIMEOUT` of their preset (3600 s on the arm64 presets) instead of a fixed 300 s.
-- Game export packs every sound file a script names in quotes, not only literal `sound.play("…")` arguments (random variants of the Engine Demo hub ambience and footsteps were missing from exported games).
-- Play in Owl Nest reads the game's settings like the runner: the project's `game_settings.yml` defaults and the player's overrides are loaded when a project opens (the Engine Demo HUD scale, player speed and volumes were ignored in the editor).
-- A `SoundSource` with `playOnStart` loads its sound asset on first use (it used to play only a sound a script had loaded before).
-- Turning in the Engine Demo raycast level is smooth: the yaw is kept by the script instead of read back from a transform that only follows the body on the physics tick.
-- Owl Nest isometric Navigation tool and graph overlay stay linked: selecting the tool turns the graph on and leaving it restores it, switching the graph off from Show leaves the tool, and entering Play leaves the tool.
-- The export of a game packs the texture of a `UiToolCursor` (a packed game lacked the platformer cursor image).
-- The hub player comes back from a level at its door (the restore moved the transform, which the physics body overwrote).
-- HUD layout looks each component storage up once per pass instead of once per widget: `hud/layout/500_widgets` 39.7 to 34.2 µs, below its cost before the scroll views (37.0 µs).
-- Engine Demo vehicles whose cell is bulldozed under them drive off to the road cell they came from and find a way again (a bypass built beside the cut used to leave them stuck), and a U-turn goes through the middle of the cell, symmetric on the way in and out.
-- Engine Demo vehicles turn back through a half circle swinging left across to the opposite lane, and plan their route again at the next cell boundary when roads are built or bulldozed (`town_replans`).
-- Play no longer leaves the runtime edits of `isometric.set_cell` in the edit scene: the running scene works on its own copy of the tilemap assets it shares with the edit scene, so Stop restores the map.
-- A Lua callback failing on every frame logs its error once, then a repeat counter at most once per second, instead of flooding the log.
-- `isometric.pick_cell` reads the mouse in viewport pixels, so the cell under the cursor is right when the game plays inside an Owl Nest viewport.
-- Owl Nest no longer crashes in the Stats panel after a Stop or a scene transition: the hovered entity of a replaced scene is dropped instead of read.
-- Owl Nest no longer crashes when Play is stopped from the viewport button or F7: the stop runs at the start of the next frame, not while the running scene is still being drawn.
-- Saving a scene or a HUD keeps the entity order of its file instead of reversing it on every save (`Scene::getAllEntities` returns the creation order).
-- The HUD Editor button of the ribbon has its own dual-colour ribbon icon instead of the `.owlhud` asset icon.
-- HUD and 2D text legibility at low resolution: the text shader averages four taps over the pixel footprint of small text (no more ragged aliased glyphs), and a shrinking HUD scale mode keeps text at 12 screen pixels at least (never past its authored size); image test `hud_text`.
-- The raycast demo hint shows its text again (the `HUDHint` widget had no rectangle nor text).
-- The inspector reads a script's properties from its file in the asset folders and keeps them when the script does
-  not load, instead of emptying them (scripts then ran with `nil` properties in Play).
-- Text drawing is about 5 times faster again: glyph boxes and advances of the first 256 code points come from a table
-  built with the font.
-- HUD text is about 15 % cheaper per frame: a left-aligned text no longer measures its lines twice, a glyph's matrix is
-  composed in place, and `Scene::getHud` stops copying the HUD path.
-- Transient quads and circles are back to their v0.3.0 speed: they flush every 4 096 matrices, glyphs keep 20 000 per
-  batch.
-- `clean` works again on Ninja build trees: the help bundle moves to `<build>/help_bundle/`, out of the way of the
-  generator's `help` target (an existing `<build>/help/` is renamed at configure).
-- Windows GCC builds on `main` publish their artifacts again: `BuildArtefact.zip` leaves out Owl Nest's static
-  libraries, which pushed it past the 300 MB limit of the server.
-- `FileDialog` no longer reads past the end of a filter, leaks the saved path, or asserts when no dialogue can open.
-- The bundled `coin.owlanim` spins at a steady speed: its speed curve, which made it speed up and slow down, is gone.
-- The Animation editor preview reads the sheet from the top left, like the game, instead of from the bottom row.
-- Packages no longer carry what the tested tree's runs wrote next to the binaries (`OwlNest_recovery/`, logs, settings, ImGui layouts, caches, even as empty folders): `cmake/InstallRuntime.cmake` installs only the third-party libraries and the Slang modules.
-- Windows: the Slang standard modules (`slang-standard-module-<version>/`) are packaged by the slang recipe and copied next to the binaries (`cmake/Vulkan.cmake`), as on Linux; `slang-llvm.dll` (CPU targets, about 80 MB, never used) is no longer shipped.
+- Vulkan: a driver older than 1.3 no longer crashes (the OpenGL fallback opens its window first),
+  `GraphContext::getVersion` reports the minor version and `drawIndexedIndirect` enables its feature.
+- Owl Nest no longer crashes in the Stats panel after Stop, nor when Play is stopped from the viewport or F7, and
+  switching project unloads the previous one.
+- Play reads `game_settings.yml` like the runner and no longer leaves `isometric.set_cell` edits in the edit scene.
+- Export packs the scene paths and sounds named in `LuaScript` properties and the `UiToolCursor` texture; Lua
+  `gamestate.set` keeps digit strings as strings.
+- Saving a scene or HUD keeps its entity order, and a Lua callback failing every frame logs once.
+- Text drawing is about 5 times faster again and HUD text cheaper per frame.
+- CI: `PublishDoc` and `PublishPackage` send only filled fields, a stalled `OwlRunner --scenario` ends after 120 s, and
+  sanitizer and arm64 runs scale the Lua time quota.
+- Packages no longer carry run leftovers and the Windows packages include the Slang standard modules.
 
 ## [0.3.0] - 2026-10-11
 
 ### Added
 
-- Owl Nest default layout, built on the first launch instead of floating panels: documents in the centre, Hierarchy and
-  Properties on the right, Content Browser, Log and Stats below; presets Default and Hierarchy Left (`Alt+1`, `Alt+2`)
-  and **Reset Layout** in **View > Layout**.
-- Owl Nest status bar: simulation mode, active document and entity count, last autosave, graphics backend, and the
-  unseen warnings and errors (click to open the Log).
-- `UiLayer::setBottomBarCallback`, `setDockLayoutCallback` and `getDockSpaceId`; `LogBuffer::getWarningCount`.
-- Lucide icon font merged into the UI fonts, its glyphs as UTF-8 string constants in `gui/IconFont.h`; the status bar
-  shows them.
-- `IconBank` rasterizes each icon at 16, 24 and 32 px times the monitor scale besides the 64 px cell,
-  `getIcon(name, size)` picks the tier of the drawn size, so small icons are sharp instead of scaled down.
-- GUI widget kit (`gui/widgets/`): `beginProperties` / `propertyFloat` / `propertyVec3` / `propertyBool` label-value
-  grid with reset to default, `vectorField` with axis marks, `sectionHeader` with a menu button, `iconButton`,
-  `richTooltip` with shortcut, `searchField` and `matchesFilter`, `emptyState`, `badge` and `chip`, and `ToastQueue`
-  notifications.
-- Owl Nest ribbon reorganised: File button opening a full File screen (projects, packaging, settings, help, exit; it
-  replaces the welcome window), Home and View tabs, the active document's tab in the accent colour, quick access Save /
-  Undo / Redo, collapse with `Ctrl+F1`; `Ribbon::setBackstage`, `addQuickAccess`, `setCollapsed`, `selectTab` and button
-  shortcuts.
-- Owl Nest ribbon draws Lucide glyphs like the File screen, its labels a step smaller, and a toggled button in grey; the
-  inspector draws its rows and headers a step smaller; headers, combo lists and slider grabs are grey too, the accent
-  being kept for the selected entity and switches.
-- Owl Nest viewport overlays: gizmo tools and snap (top-left), Play / Pause / Step / Stop (top-centre), camera markers
-  and stats toggles (top-right), a frame-time chip (bottom-left), the axis gizmo (bottom-right) and a play-colour frame
-  while the scene runs; the ribbon drops its Playback and Gizmo groups; `ActionRegistry::run`.
-- Owl Nest panels: the inspector puts every label on the left of its field; the Hierarchy gets an Add button, a name
-  search and component icons; the Content Browser gets root chips, a breadcrumb, search, grid / list views, image
-  thumbnails filling their tile and a colour per asset family; the Log filters become chips; empty panels say what to
-  do.
-- `OwlNest --project <dir>` opens a project at start-up.
-- Owl Nest command palette, opened by pressing `Shift` twice or from the search box of the ribbon tab row: a fuzzy
-  search over every editor action, with its shortcut, the entities of the active scene and the asset files.
-- Owl Nest Content Browser folder tree on the left (asset roots and their folders, unfolded down to the folder shown),
-  replacing the root chips.
-- Owl Nest Hierarchy rows in the mockup style: thin chevrons, component glyphs coloured by kind, child counts,
-  visibility switches on every row, an accent bar on the selection; the inspector header shows the entity glyph, its
-  name, an **Add** button and its id.
-- `gui::widgets::treeRow`, `button`, `beginCombo` / `combo` (a thin chevron instead of the filled arrow) and
-  `Ribbon::setSearchBox`; component headers draw a chevron and frame their section as a card.
-- Owl Nest style guide ([design page](design/nest-style-guide.md)): colour tokens, text roles, spacing, icons, the
-  widget to use for each need and the interaction rules.
-- `gui::widgets::toggle` (left / right switch, used for the inspector booleans), `checkbox` (a box the size of a capital
-  letter, replacing `ImGui::Checkbox` in Owl Nest), `subHeader` (grey caption of a nested block) and a coloured `chip`
-  (Log level filters).
-- Owl Nest Editor Settings in tabs (General, Gizmo Snap, Camera, Appearance, Shortcuts) built on the property grid.
-- Owl Nest engine parameters, Project Settings and Scene Settings in property grids under sections with a Lucide icon,
-  like the inspector; the Editor Settings tabs and every panel tab get an icon.
-- `gui::widgets::propertyInt`, `propertyText`, `menuItem` (glyph column, shortcut, destructive entries in red) and
-  `menuHeader`; `sectionHeader` also takes a `gui::icon` glyph.
-- Owl Nest ribbon icons drawn as duotone SVGs (`icons/ribbon/`), the accent on one part only like the component icons;
-  the Help panel opens among the documents instead of the right column.
-- Owl Nest viewport: 2D orthographic / 3D perspective view (`CameraEditor::setProjection`), Frame selection (`F`,
-  `CameraEditor::frame`), a Show menu (grid of the snap step, camera markers, trigger icons), Local / World gizmo axes
-  (`Guizmo::Space`), the snap step shown in the toolbar and a Playing banner.
-- Owl Nest Content Browser previews of scenes and prefabs (rendered off-screen, `AssetThumbnails`) and of sounds
-  (`sound::readWaveform`); the status bar shows the graphics device, the previews still to make and a notification bell
-  (`ToastQueue::getHistory`).
-- Owl Nest Voxel Palette, Tile Palette and the tilemap and tileset editor panels in the inspector layout (sections,
-  property grids, tile swatches `gui::widgets::imageTile`); the File screen uses the duotone icons of the ribbon;
-  document tabs carry the glyph of their type (`documentWindowTitle`).
-- Owl Nest inspector: the tilemap, tileset and script fields get **Open** (in their editor,
-  `gui::component::setOpenAssetHandler`) and **Clear** buttons, and the properties of a Lua script are read again when
-  its file changes, without a Refresh button.
-- Owl Nest text size applied at once from the Editor Settings or `Ctrl+=` / `Ctrl+-` / `Ctrl+0`
-  (`UiLayer::setTextScale`, 75 to 150 %).
-- Owl Nest context menus on the viewport (entity or view options), the document tabs (save, close, close others, reveal,
-  copy path) and the node graphs; a common drag preview (`gui::widgets::dragPreview`).
-- Owl Nest Content Browser previews of tilesets (atlas) and 3D models (isometric shaded faces,
-  `AssetThumbnails::projectMesh`); atlas swatches in the tileset and tilemap fields of the inspector; dialog buttons
-  drawn with `gui::widgets::button` (`ButtonSpec::width`).
-- Owl Nest camera controls: **Reset View** (`Home`), six axis views (`CameraEditor::viewAlong`), **Frame Scene**
-  (`Shift+F`) and the selected camera viewpoint (`CameraEditor::lookFrom`) from the ribbon **View > Camera** group, a
-  viewport Camera menu and the command palette; a clickable view-cube; orbit, pan and zoom speeds, vertical inversion
-  and dead zone in a **Camera** settings tab (`CameraEditor::Navigation`).
-- Owl Nest Log level chips show their message count and the Log tab its warnings and errors; the search and a labelled
-  Clear button sit on the right.
-- Owl Nest Content Browser family chips with counts, an extension badge on the tiles, and context menus with a title,
-  Lucide icons and Delete in red, like the Hierarchy menus.
-- `gui::widgets::notice`: an inline warning in the inspector, shown for an animated sprite without a sprite sheet and a
-  Lua script without a path.
-- Owl Nest inspector: component headers and vector fields use the kit (⋮ menu, reset buttons), and saving a document
-  shows a toast.
-- Owl Nest UI font Inter (Regular, SemiBold) in `engine_assets/fonts/inter/`, text roles `gui::TextStyle`
-  (`UiLayer::pushTextStyle`) and scaling to the primary monitor content scale (`UiLayer::getDpiScale`).
-- Owl Nest Stats panel: Vulkan submits, queue / device drains, fence waits and pace wait per frame, with their maximum
-  over the last 2 s.
-- `OwlShaderBake` build tool (render module): compiles every `engine_assets/shaders/*/slang/*.slang` for Vulkan and
-  OpenGL during the build, in the layout of `renderer::utils::getPrecompiledShaderPath`.
-- Frame bench `cpu_pace_wait_ms`: CPU time a Vulkan frame waits on its fence and swapchain image, to tell engine work
-  from presentation pacing.
-- Optional engine modules: `OWL_MODULE_RENDER`, `OWL_MODULE_PHYSICS`, `OWL_MODULE_AUDIO`, `OWL_MODULE_SCRIPT` and
-  `OWL_MODULE_GUI` (Conan options `render`, `physics`, `audio`, `script`, `gui`) leave out a module and its third
-  parties while its public API stays, backed by the Null backend or a no-op; `OWL_WITH_<MODULE>` and
-  `find_package(OwlEngine COMPONENTS Physics)` tell a game what is built in.
-- `linux-clang-minimal` preset (every optional module off: 23 Conan packages instead of 47), for local checks.
-- `OWL_REQUIRE_MODULE(<MODULE>)` (`testHelper.h`) skips a test whose module is not built.
-- Architecture page: the engine's extension points (renderer-stack layers, application layers, extra data) and those the
-  open component registry and the phased systems will add.
-- `DependencyReport` CI action, run on every `main` build of Build Linux x64 / Clang: the Conan dependencies with a
-  newer version on ConanCenter (`conan graph outdated`, `cci.*` false positives dropped), logged and counted, never
-  failing the build.
-- Hot reload in Owl Nest and the development runner: textures, scenes, tilesets, tilemaps and Lua scripts reload when
-  their file changes, a failed reload keeps the previous version with an error naming the file
-  ([Editor](editor.md#editor-hot-reload)).
-- Slang shaders recompile and swap live on Vulkan and OpenGL; the pipelines of the draws using them are rebuilt with
-  their own state and binding block, a compilation error keeps the running binaries.
-- `platform::FileWatcher` polls directory trees on a background thread, so watching costs one atomic read per frame;
-  `app::HotReload` dispatches the changes (`AppParams::hotReload`, *Hot Reload* in *Parameters*,
-  `OwlRunner --no-hot-reload`, `--frame-bench --hot-reload`), never with an asset pack open.
-- `stylemix` image test: a voxel world, perspective Renderer2D sprites, a `Space: Screen` HUD (canvas, text, progress
-  bar) and the voxel crosshair in one frame, on Vulkan and OpenGL.
-- Typed Lua binding registry: each binding is one declaration (table, name, typed parameters and returns, description)
-  that registers the function and generates the new [Lua API reference](lua-api.md); a test fails when the page or
-  `scripting.md` drifts from the registry.
-- Editor command API: `commands::CommandRegistry` names the scene commands (`entity.create`, `entity.delete`,
-  `component.add`, `prefab.instantiate`...) with typed, validated arguments; the hierarchy, the inspector menus, the
-  shortcuts, the tests and the runner's new `command` / `undo` / `redo` scenario steps all run them through the scene
-  `UndoManager` (library `OwlNestCommands`).
-- `EngineSceneTemplates` test: every component and field of the scenes shipped in `engine_assets` survives a load / save
-  round trip, so a key the serializer ignores fails CI.
-- Owl Nest project templates: the new-project dialogue asks for a name, a folder and a template (empty 2D, raycast,
-  voxel, mixed styles) copied from `engine_assets/project_templates/`.
-- Owl Nest session restore: opening a project again reopens its tabs, the active tab and the selected entity
-  (`ProjectSession` in `OwlNest_settings.yml`).
-- Owl Nest autosave and crash recovery: modified documents are copied aside every 60 s and at exit (`RecoveryManager`,
-  outside the project), and the next opening of the project offers to recover them.
-- Actionable error messages: scene, Lua script and pack failures name the file, the entity (tag, id, line) and end with
-  a `Fix:` hint, in the editor log and the runner (`scene::fixHint`, `pack::describe` / `pack::fixHint`,
-  `ScriptInstance::setEntityName`).
-- Windowing evaluation in `windowing-input.md`: Owl stays on GLFW (SDL3 rejected, gamepads included), OpenAL Soft is
-  kept, SDL GPU is not an option.
-- Benchmarks: first baseline `bench/baseline/linux-bench.json` (141 benchmarks, 112 metrics, median of 5 runs), the
-  nightly bench pinned to the agent that measured it.
-- CodeStyle `test-assertions` sub-check: every gtest test asserts something; the 26 that only ran code now check its
-  effect (or say `EXPECT_NO_THROW`), e.g. a trigger timer is seen firing and stopping.
-- clang-tidy and the static analyzer analyse the tests too (`test/.clang-tidy` relaxes only what a test is right to do);
-  the 224 findings they raised are fixed.
-- Coverage gate: the `Coverage` action publishes the line and branch coverage to TeamCity, and the Linux Clang build
-  fails when the line coverage drops more than one point below its last successful build.
-- CodeStyle `python` sub-check: `ruff check`, `ruff format --check`, `mypy` and the `ci/tests` pytest suite (never run
-  in CI before) on the CI code (configured in `pyproject.toml`; `black`, never run, removed).
-- `OwlRunner --scenario <file.owltest>`: scripted headless runs (frames, held inputs, expectations on entities and the
-  game state), with four sample scenarios run by CTest (label `scenario`).
-- `OwlRunner --frame-bench` measures the cold start (`startup_ms`: engine ready, first frame), so start-up time has a
-  number on a real backend.
-- Wayland smoke test (`owl_wayland_smoke`, label `wayland`): the runner presents frames on a headless weston with Vulkan
-  and OpenGL; skipped where weston is missing.
-- Nightly fuzzing: `linux-fuzz` preset (libFuzzer + AddressSanitizer) and `Fuzz` CI action running every `owl_*_fuzzer`
-  for five minutes, failing inputs published by the `Fuzzing` TeamCity configuration.
-- Benchmarks in CI: `owl_bench` compiled on every pull request (`linux-clang-debug`), run nightly on `main` by the
-  `Bench` action against `bench/baseline/linux-bench.json`; a median slower by more than 15 % twice fails the build.
-- Optional Conan binary cache (`OWL_CONAN_CACHE_URL`, remote `owl-cache`): read before ConanCenter, filled by every CI
-  build with the binaries of Owl's graph it built, even when the install fails midway, skipped with a warning when
-  unreachable.
-- `PR Ready` composite TeamCity configuration: red when any ready-PR configuration is red, the single check to require
-  on `main`.
-- Conan profiles for Windows MinGW (`windows-clang`, `windows-gcc`), DLLs deployed next to the binaries.
-- `Clang Static Analyzer` CI configuration (`ClangTidy -- --tool=analyzer`); both analyses close the TeamCity chain and
-  are the checks to require on `main`.
+- Owl Nest default layout with Default and Hierarchy Left presets, a status bar, a command palette (`Shift` twice) and
+  `OwlNest --project <dir>`.
+- Owl Nest File screen and reorganised ribbon with quick access, duotone SVG icons and the Lucide icon font
+  (`gui/IconFont.h`).
+- GUI widget kit (`gui/widgets/`: property grids, toggles, checkboxes, tooltips, chips, `ToastQueue`), the Inter UI font
+  and a style guide (`design/nest-style-guide.md`).
+- Owl Nest panels in the inspector style: Hierarchy search and icons, Content Browser folder tree, family chips,
+  previews of scenes, prefabs, sounds, tilesets and meshes.
+- Owl Nest viewport overlays, 2D / 3D views, Frame selection, Local / World gizmo axes, camera views with a view cube,
+  and context menus.
+- Owl Nest Editor Settings in tabs, text size shortcuts (`Ctrl+=`, `Ctrl+-`, `Ctrl+0`) and **Open** / **Clear** buttons
+  on asset fields.
+- Owl Nest project templates (empty 2D, raycast, voxel, mixed), session restore, autosave with crash recovery
+  (`RecoveryManager`) and the sample project on the File screen.
+- Hot reload of textures, scenes, tilesets, tilemaps and Lua scripts, and live recompilation of Slang shaders
+  (`platform::FileWatcher`, `app::HotReload`).
+- Editor command API: `commands::CommandRegistry` (`entity.create`, `component.add`, `prefab.instantiate`, ...) with
+  scenario `command` / `undo` / `redo` steps.
+- `scene::SystemSchedule` (named systems in fixed phases) and `scene::ComponentRegistry` for game-defined components.
+- `OwlShaderBake` precompiles engine shaders; actionable errors with a `Fix:` hint; typed Lua binding registry
+  generating the [Lua API reference](lua-api.md).
+- Versioned file formats (`FormatVersion`, migration chain in `core::DocumentFormat`) with atomic writes
+  (`platform::writeFileAtomic`).
+- Optional engine modules (`OWL_MODULE_RENDER`, `PHYSICS`, `AUDIO`, `SCRIPT`, `GUI`) and the `linux-clang-minimal`
+  preset.
+- `GameExporter` shared by *Pack Game*, `OwlNest --export` and tests; runner `--headless`, `--smoke-test` and
+  `--scenario <file.owltest>`.
+- `OwlRunner --frame-bench` with CPU phases, GPU timestamps, cold start and `--capture <png>`; `owl_bench` harness with
+  a baseline.
+- Conan 2 for every preset (`conanfile.py`, `conan.lock`, `conan/recipes/`), `conan create .` packaging checked by
+  `test_package/`, and an optional binary cache.
 - `./docker_run.sh` runs any build, test or CI command in the Docker build image (`--gui`, `--perf`).
-- Versioned file formats: scenes, prefabs, saves, tilesets, tilemaps, animation clips, voxel structures, node graphs,
-  settings and `owl_project.yml` carry a `FormatVersion`; files without it load as version 1, newer files are refused
-  with a clear error, older ones go through a registered migration chain (`core::DocumentFormat`).
-- `platform::writeFileAtomic` (temporary file, `fsync`, atomic rename) now writes all those files: a crash or a full
-  disk keeps the previous file instead of truncating it.
-- `bench/` engine benchmark harness (scene, serialization, Renderer2D, voxel, Lua, physics, Slang), built with
-  `-DOWL_BENCHMARK=ON`.
-- `ClangTidy` CI action: on a pull request, analyses only the touched `.cpp` files plus every `.cpp` whose include
-  closure (`ninja -t deps`) holds a touched header; elsewhere, everything.
-- Conan 2 builds every preset from ConanCenter and the local recipes of `conan/recipes/` (`conanfile.py`, `conan.lock`).
-- Every Linux preset builds on Conan, pinned by `conan.lock`, and `conan create .` packages OwlEngine, checked by
-  `test_package/` (`find_package(OwlEngine)`).
-- `-DOWL_PROFILER=tracy` puts Tracy (ConanCenter, on demand) behind the `OWL_PROFILE_*` macros: CPU zones, frame marks,
-  named Taskflow workers, OpenGL and Vulkan GPU zones, tracked allocations ([Profiling](profiling.md)).
-- `-DOWL_LOG_LEVEL=<level>` compiles out the log macros below a level.
-- `OwlRunner --frame-bench`: deterministic frame benchmark with CPU phase timings, GPU timestamps (Vulkan, OpenGL) and
-  Vulkan queue-drain counters, JSON report; RHI gains `GpuFrameTiming`, `RenderCounters` and a vsync request.
-- Image tests (`owl_render_tests`, CTest label `render`): six reference scenes rendered offscreen on lavapipe and
-  llvmpipe, compared to versioned PNGs with a per-pixel tolerance (PR-18).
-- `OwlRunner --frame-bench --capture <png>` renders into an offscreen framebuffer and writes the last frame;
-  `Framebuffer::readColorAttachment` and `renderer::writeImagePng` back it.
-- OpenGL GLSL fallback: without `GL_ARB_gl_spirv` (llvmpipe, GL 4.5 drivers) the Slang SPIR-V is translated to GLSL 4.50
-  by spirv-cross, `OWL_OPENGL_SHADERS=glsl|spirv` forces the choice.
-- `owlnest_tests` category: undo manager, every scene command family, node-graph commands and entity snapshots, linked
-  through the new `OwlNestCore` editor library.
-- `GameExporter` (`data::assets::pack`): one export path shared by *Pack Game*, `OwlNest --export <project> <output>`
-  and the tests.
-- Runner `--headless` (Null window, renderer and sound) and `--smoke-test [frames]` (plays every packed scene, non-zero
-  exit code on any error log).
-- `export_tests` (CTest label `export`): exports `sample_project`, moves the game out of its export folder and
-  smoke-tests every scene headless.
-- `Application::setExitCode()`: `main` returns it, and 1 when the application ended in the `Error` state.
-- `scene::SystemSchedule`: the runtime frame is a list of named systems in fixed phases (`SystemPhase`) that a game
-  adds, replaces or removes, for every scene (`getDefault()`) or one (`Scene::getSystems()`).
-- `scene::ComponentRegistry`: a game registers its own components, which scenes and prefabs then save and load,
-  duplication and the Play copy keep, and the editor adds, removes and inspects (`component.add`, inspector body),
-  replacing the closed component lists for these uses.
-- CodeStyle `doc-identifiers` sub-check: a symbol, a file or an `OWL_*` option cited between backticks in `doc/pages`
-  must exist in the repository, so a rename can no longer leave a page describing code that is gone.
-- First Python tests of the CI tooling (`ci/tests/`, pytest) cover masking, publication and the secret scan.
-- The Owl Nest archive holds the sample project (`sample_project/`), opened from a **Sample project** card of the File
-  screen (`panel::findSampleProject`).
+- CI: `DependencyReport`, `Fuzz` (libFuzzer nightly), `Bench`, a Clang Static Analyzer configuration and the `PR Ready`
+  composite check.
+- CI: diff-scoped `ClangTidy`, a coverage gate, CodeStyle sub-checks (`python`, `secrets`, `test-assertions`,
+  `doc-identifiers`) and Windows MinGW Conan profiles.
 
 ### Changed
 
-- Linux arm64 CI cross compiled on x64 (`linux-cross-arm64`: Clang, lld, an arm64 sysroot), only the tests under
-  qemu-user; the fully emulated build runs once a week.
-- Owl Nest asset-kind (28) and component (25) icons redrawn on one 24-unit grid with a duotone fill: a fixed colour per
-  asset family, the theme text colour plus one accent piece for components.
-- `gui::Theme` is now a set of semantic tokens (surfaces, text levels, one accent, play, status and axis colours) from
-  which `UiLayer::setTheme` derives every ImGui colour, with distinct hover and press states; presets Owl Dark and Owl
-  Light (`UiLayer::getTheme`).
-- Owl Nest shows the Tile Palette only with the active tilemap document and the Voxel Palette only when the scene holds
-  a `VoxelWorld`.
-- Wayland start-up skips libdecor and the GTK stack it loads when the compositor draws the decorations itself (KWin,
-  wlroots, COSMIC): 30 ms less on KDE Plasma 6.
-- Scenes, prefabs and entity snapshots are read with rapidyaml (`core::YamlNode`, yaml-cpp still writes, files
-  unchanged): a 10 000-entity scene loads in 7.3 µs per entity instead of 121, an undo snapshot in 2.9 µs instead of
-  107.
-- Prefab instantiation copies the components through the registry and links only the instance's children: 4-6 µs per
-  entity instead of 240-370.
-- A format 1 scene or prefab without a name-only `EntityLink` is read as is, without the yaml-cpp migration pass: the
-  sample scenes load 22 to 36 times faster.
-- Lighter pull-request CI: five checks (Code Style, Linux Clang, Windows Clang, Sanitizer Address, Clang-Tidy) gate
-  `PR Ready`; GCC and Include Check run on `main`, the Thread and UB sanitizers and the Static Analyzer nightly, and the
-  *Clang Minimal Modules* job is removed.
-- `find_package(OwlEngine)` exposes EnTT as its only public dependency: yaml-cpp left the public headers (render-stack
-  `defaultConfig`, `overrides` and `RenderLayer::applyConfig` carry YAML text), and imgui comes with the optional
-  `Owl::Gui` target (`COMPONENTS Gui`, `<owlgui.h>`), `<owl.h>` no longer including `gui/utils.h`; `test_package` checks
-  both targets, no public header names a yaml-cpp type (`AssetScanner` keeps its scene walk private) and CodeStyle
-  (`public-deps`) rejects a public include of a third-party header the package does not provide.
-- The help bundle is generated in `<build>/help/` instead of `engine_assets/help/`, installed as `assets/help/` by both
-  CPack components; `HelpPanel` falls back to its build tree.
-- `libOwlEngine.so` exports only the `OWL_API` symbols (hidden visibility, `--exclude-libs,ALL`): 3 763 dynamic symbols
-  instead of 17 841, none from the statically linked yaml-cpp, spdlog, Lua, msdfgen, zstd or libpng, so a game linking
-  its own copy no longer risks interposition.
-- A configure needs neither the network nor Doxygen: `poetry sync` runs only when `poetry.lock` changed, help badges
-  come from their cache (`OWL_HELP_FETCH_BADGES=ON`, set by the packaged presets, downloads), the `documentation` target
-  exists when Doxygen is found (`OWL_ENABLE_DOCUMENTATION=ON` requires it) and its `Doxyfile` is generated in the build
-  tree with absolute paths and the venv's Python.
-- Owl RHI named and documented (*Owl RHI* in the renderer page): Vulkan reference, OpenGL frozen fallback, Null
-  recording the state of each draw for tests, and the list of classes a further backend implements.
-- Owl RHI pipeline objects: a `PipelineState` (topology, culling, blending, depth test and write) given to
-  `DrawData::init` drives every draw on both backends, instead of global depth toggles, a topology picked from the
-  shader name `"line"` and hard-coded blending; `Renderer3D::createMesh` takes one (`opaqueMeshState`,
-  `transparentMeshState`) and `drawMeshes` loses `iDepthWrite`.
-- Owl RHI explicit bindings: `RenderCommand::bindTextures(span)` sets the textures of the active renderer block, Vulkan
-  `Texture2D::bind(slot)` honours its slot, and OpenGL keeps a binding table per block, so no renderer re-binds its
-  uniform buffer or textures after another one drew.
-- Vulkan records each frame in one command buffer with two real frames in flight: no `vkQueueWaitIdle` on the hot path,
-  transitions, clears and uploads inside the frame, one submission per frame (B-01, B-19).
-- Vulkan render passes load what earlier passes drew (only the first pass of a frame clears depth and the swapchain
-  image), and the swapchain image is written only after its acquire semaphore, with one render-finished semaphore per
-  image (B-02, B-19).
-- Vulkan uniforms and CPU-written storage buffers go through a per-frame ring, so several cameras or `drawMesh` models
-  in one frame are correct, and descriptor sets come from per-frame pools reset in one call (B-03, B-04, B-23).
-- Vulkan `readPixel` no longer stalls: the pick is read two frames later, as on OpenGL; the frame bench reports the
-  remaining blocking waits as `fence_wait`.
-- Vulkan memory goes through the Vulkan Memory Allocator (ConanCenter `vulkan-memory-allocator` 3.3.0): buffers,
-  textures and attachments are sub-allocations instead of one `vkAllocateMemory` each, and host-visible buffers stay
-  mapped (B-11).
-- Owl Nest `EditorLayer` split: `GamePackager` (wizard, validation, export), `RibbonBuilder`, editor resources and
-  project / asset opening (`EditorLayerProject.cpp`, one `classifyAsset` table instead of three extension chains);
-  `EditorLayer.cpp` drops from 2 668 to under 1 000 lines.
-- `scene::LevelTransition`: the editor Play mode and the runner share the level lookup (pack, then asset folders), the
-  level load and the arrival placement of teleports and saved-game loads; Play in the editor now also finds levels in an
-  open pack.
-- Packages without a rebuild: `cpack` writes the `OwlEngine` and `OwlNest` archives (CPack components) from the release
-  tree the Clang builds test on `main`, the nightly x64 package jobs only publish them, and assets are located at run
-  time (`OWL_DEVELOPMENT`, `OWL_PACKAGE_ENGINE`, `OWL_PACKAGING` and the `package-engine-*` / `package-app-nest-*`
-  presets removed, `package-linux` for arm64).
-- Engine modules are layered (`core` up to `gui`) and the public headers follow it, checked by the CodeStyle
-  `module-deps` sub-check: the 10-module include cycle is gone; `PhysicsSettings` and `PhysicsSnapshot` moved to `scene`
-  (aliases kept in `physics`), `MeshLoader` to `data::geometry` (alias kept in `data`), and
-  `GameExporterSettings::rendererStack` became `rendererStackYaml`; `input::Input::init()` without argument picks GLFW.
-- Tests: the per-binary ctest timeout drops from 1 h to 10 min (`OWL_TEST_TIMEOUT`, 1 h on the emulated arm64), so a
-  hung binary no longer stalls a build for hours.
-- CI: the emulated arm64 nightly builds Clang only, on a `linux-emulated` preset without coverage, benchmarks or image
-  tests, so it fits its time limit.
-- EnTT 4.0.0 (C++20), Taskflow 4.1.0, OpenAL Soft 1.25.2, msdfgen 1.13, msdf-atlas-gen 1.4 and tinyobjloader rc13,
-  through local Conan recipes until ConanCenter publishes them.
-- Third-party dependencies at their latest versions: glfw 3.5.1 (local recipe, its Wayland seat patch now upstream),
-  freetype 2.14.3 and tinyxml2 11.0.0 (msdfgen recipe), libalsa 1.2.16.1 (OpenAL Soft recipe), brotli 1.2.0, flac 1.5.0
-  and plutovg 1.3.3 (overrides), CMake 4.4.4 build tool, wayland-protocols 1.49 (file dialogs).
-- Owl Nest code editor on imgui-color-text-edit 1.92.9 (its `DocPos` cursor API; the status line still shows the visual
-  column), with headless tests of editing, search, undo and save.
-- Bench baseline taken again on `linux-build-hephaistos` (median of 5 runs of 2026-10-11): the first Slang compilation
-  of a process costs 230 ms there since #233, the prefab, scene loading and Lua gains of v0.3.0 are now guarded.
-- Performance targets get a status: Vulkan ≤ OpenGL (PRIME present floor), Box2D (1.68 ms SSE2 by default) and the
-  Renderer2D quads off `worldIndex` (14-24 ns) accepted as measured, the shader cache read before the precompiled SPIR-V
-  validated.
-- CI on teamcity-github-bridge 1.11.0: findings pinned to the PR diff as Check Run annotations, doc-only PRs skip the
-  C++ matrix, a `[skip ci]` phrase, `main` left to the VCS trigger, a fixed PR Ready check name (`checkName`), pull
-  requests labelled by changed paths and assigned to their author.
-- TeamCity: Include Check and PR Ready move to the root beside Code Style (GitHub checks `Include Check` and
-  `PR Ready`).
-- CI: Windows builds compute the coverage on `main` only, no longer on pull requests.
-- CI on Conan everywhere and on a single Ubuntu 26.04 image (`builder-ubuntu2604`: GCC 15, Clang 22) for every Linux
-  preset and `./docker_run.sh`.
-- CI: release build and tests on `main` only; arm64 builds and every package nightly (they held the agents for hours and
-  packages publish to the site).
-- CI in two levels: Code Style and Include Check in parallel, then every build, sanitizer and analysis after Code Style
-  only.
-- CI: `Experiment/*` pull requests run the fast subset only; secrets reach `ci_action.py` through `env.*` parameters;
-  the CI flow is documented case by case (`main`, draft, ready, experiment, doc-only).
-- TeamCity DSL laid out like EvenementLoto's (`common/`, `build/`, `quality/`, `packaging/`), chain Code Style →
-  builds → sanitizers → analyses → packages; PR builds named by their real branch; configs version 2026.2.
-- TeamCity follows the EvenementLoto model: findings annotated on the diff by default, PRs built from their
-  `Feature/*` / `Experiment/*` head branch, packages never on a PR, no `/ci full` comment.
-- Explicit windowing platform (`OWL_WINDOW_PLATFORM` / `windowPlatform` in `config.yml`: `auto`, `wayland`, `x11`), with
-  fallback to `auto` when the requested one fails.
-- Wayland `app_id` / X11 `WM_CLASS` per application and a hidden user desktop entry (`platform::installDesktopEntry`) so
-  Wayland compositors show the Owl icon.
-- `SIGINT` / `SIGTERM` close the application cleanly; `Window::getPresentedFrames()` and an exit log report the
-  presented frame count.
-- `./docker_run.sh --gpu=intel|nvidia` (PRIME offload) and `--platform=wayland|x11`, with a warning when the desktop
-  session is locked.
-- GLFW `FEATURE_UNAVAILABLE` errors (window position / icon under Wayland) logged at trace level instead of error.
-- The memory tracker is no longer on by default in Debug (it doubled the live allocations and skewed Debug timings): opt
-  in with `OWL_ENABLE_MEMORY_TRACKER`.
-- A log message below the verbosity no longer formats nor evaluates its arguments, and the log file is flushed on
-  warnings only.
-- Voxel chunks are meshed on the task workers from an immutable `ChunkNeighborhood` copy and uploaded under a per-frame
-  budget (`VoxelMeshingConfig`): the streaming frame peak drops from 14.3 ms to 0.35 ms on the main thread (PR-24).
-- Roadmap rethought toward 1.0.0: v0.3.0 Foundations, renumbered releases, three reading levels (`ROADMAP.md`,
-  `doc/pages/roadmap.md`, `doc/pages/design/`).
-- Changelog split the same way: one line per release in `CHANGELOG.md`, details in `doc/pages/changelog.md`.
-- clang-tidy decoupled from the compiler: `CMAKE_CXX_CLANG_TIDY` unset, the analysis is a `ClangTidy` step on
-  `Build/Quality/Clang-Tidy` driven by `compile_commands.json`.
-- `Scene::getWorldsBuffer()` replaced by `Scene::getWorldMatrices()`, `Renderer2D::setSceneWorldsBuffer()` by
-  `Renderer2D::setSceneWorlds()`; `renderer::utils::WorldTransformPass` removed.
-- Physics runs at a fixed step (60 Hz by default, per-scene `Physics:` settings edited in *Scene Settings*) with an
-  accumulator, a bound on steps per frame and interpolated transforms; the result no longer depends on the frame rate
-  and `on_collision` still fires once per pair and frame.
-- Performance: the Box2D solver runs multi-threaded on a dedicated Taskflow executor (`workerCount`, automatic above 2
-  000 dynamic bodies), 5 000 stacked boxes going from 5.1 to 3.2 ms per step with 4 workers.
-- Sanitizers now fail the build on their first report (`-fno-sanitize-recover=all`, `halt_on_error=1` set by ctest),
-  sanitizer presets run the tests with `--gtest_shuffle`, and the UB job no longer captures a stack trace per allocation
-  (its tests went from about 30 min to under 10 s).
-- `SceneSerializer::deserialize`, `deserializeFromBuffer` and `applyParsed` return a `SceneLoadResult`
-  (`owl::expected<void, SceneLoadError>`) instead of `bool`.
-- Each scene owns its physics world, its script bindings and its UI mouse state (`PhysicCommand` calls take the scene,
-  `ScriptInstance::setScene`, `Scene::getUiInputState`): several scenes run side by side and a destroyed scene leaves
-  nothing dangling.
-- `Scene::onUpdateRuntime` holds no gameplay any more: scripts, voxel player, raycast doors, physics, links, triggers,
-  sound, animation and the game-over message are engine systems (`scene::systems`, `owl.*`), in the same order as
-  before.
-- `EntityLink` references its target by UUID (`linkedEntityId`), the name kept for display and as fallback: renaming the
-  target keeps the link, and `duplicateSubtree` and prefab instantiation relink the copies to each other; scene and
-  prefab formats move to version 2, whose migration binds the old name-only links.
-- `app::EngineContext`, owned by `Application` and reached from each scene, holds the screen transition, the game
-  settings and the voxel mesh cache instead of static storage: `ScreenTransition` and `SettingsManager` are instances,
-  `RendererVoxel` takes a `VoxelMeshCache`, and an isolated test creates its own context.
-- Documentation faithful to the code: renderer namespaces and vertex layout, editor ribbon paths, TeamCity DSL names,
-  built-in settings, a Docker Quick Start, one contributor guide (`doc/pages/contributing.md`) and a security policy
-  limited to the latest minor release.
-- Doxygen really checks the public API: `EXTRACT_ALL` no longer hides the undocumented elements, so the `documentation`
-  target fails on any of them, and the ~650 that were missing (members, enum values, parameters) are documented.
-- 10 000-sprite CPU frame under its v0.3.0 target: world matrices in a persistent dense per-entity cache, checked by
-  compare and recomposed only on change (no per-frame maps, no matrix decomposition), inherited visibility computed in
-  the same pass: `editor_update/flat10000` 2.60 → 0.33 ms, 1 000-deep chains 10× cheaper to query and build.
-- `math::Transform::operator()` builds the TRS matrix in closed form and skips the trigonometry of null angles (74 → 4.2
-  ns), Renderer2D finds a texture slot by pointer before the backend compare: transient quads 86 → 17 ns, scene-world
-  quads 10.8 → 9.4 ns.
-- Faster Box2D: poses copied to the entities in parallel, plus an opt-in AVX2 build on x86_64 (`OWL_PHYSICS_AVX2`, off
-  by default since CPUs without AVX2 then run without physics): 5 000 bodies in contact step in 1.44 ms on 8 workers
-  with AVX2 instead of 1.68 ms.
-- Raycast: the CPU walks the DDA itself for the column depths and stats instead of reading the GPU pass back twice per
-  frame, so the frame no longer drains mid-way (Vulkan: one submission, no fence wait; `raycast_demo` 1.5 to 3.5 times
-  faster on both backends).
-- Lua back under its audit cost: the bindings are light C functions instead of one closure each, the bound scene and
-  `time.delta()` live on the C++ side of the state, `coroutine.wrap` is no longer a Lua chunk compiled per state and the
-  callback names are interned once: creating an instance is 40 % faster and a third smaller, an empty callback a third
-  cheaper.
-- Vulkan: successive batches on one framebuffer share a render pass, and `RenderCommand::clear` no longer clears again a
-  pass that just cleared on load (Intel: 40 µs less GPU per 2D frame).
-- Owl Nest animation editor in the inspector style: Preview, Spritesheet, Playback, Speed Curve and Timeline sections
-  with icons, property rows with reset and tooltips, icon transport buttons, the sheet grid beside its thumbnail, the
-  timeline bar in the accent colour and no scrollbar on the whole tab.
+- Scenes, prefabs and snapshots are read with rapidyaml (about 17 times faster) and prefab instantiation is about 60
+  times faster.
+- Vulkan records one command buffer with two frames in flight, uses a per-frame ring and the Vulkan Memory Allocator,
+  and `readPixel` no longer stalls.
+- Owl RHI named and documented, with `PipelineState` objects and explicit `bindTextures`.
+- Physics runs at a fixed step (60 Hz, per-scene settings) on a multi-threaded Box2D solver; each scene owns its physics
+  world and script bindings.
+- `find_package(OwlEngine)` exposes EnTT as its only public dependency (imgui in the optional `Owl::Gui` target) and
+  `libOwlEngine.so` exports only `OWL_API` symbols.
+- Dependencies updated; windowing: `OWL_WINDOW_PLATFORM` (`auto`, `wayland`, `x11`), per-application `app_id`, clean
+  `SIGINT` / `SIGTERM` exit.
+- Performance: 10000 sprites under target, closed-form `math::Transform`, faster raycast, Lua bindings and Vulkan
+  batching.
+- Lighter pull-request CI on a single Ubuntu 26.04 image (GCC 15, Clang 22), arm64 cross-compiled with qemu tests, heavy
+  jobs nightly.
+- Roadmap rethought toward 1.0.0 and the changelog split into `CHANGELOG.md` and `doc/pages/changelog.md`.
 
 ### Deprecated
 
-- `OWL_ENABLE_PROFILING`, replaced by `OWL_PROFILER=chrome`.
-- `OWL_FORCE_X11=1`, replaced by `OWL_WINDOW_PLATFORM=x11` (still honoured, with a warning).
+- `OWL_ENABLE_PROFILING` (use `OWL_PROFILER=chrome`) and `OWL_FORCE_X11=1` (use `OWL_WINDOW_PLATFORM=x11`).
 
 ### Removed
 
-- Theme presets Dark, Dark Blue, Nord, Solarized and the editor `theme.yml`; the `imgui.ini` copied over
-  `OwlNest_imgui.ini` at every build (the default layout is built by the editor now).
-- Dead CMake: the no-op `FORCE_RELEASE` flag (`THIRD_PARTY_RELEASE`), the unused `print_target_properties` and
-  `dump_cmake_variables`, the orphan `cmake/Python.cmake`.
-- `ScriptEngine::loadScript` / `loadScriptFromBuffer` and the shared Lua state behind them, which no script ever ran in
-  (each `ScriptInstance` has its own).
-- 97 dead `NOLINT` check names (checks `.clang-tidy` does not enable), and the CodeStyle `nolint` sub-check that keeps
-  them out.
-- DepManager: `depmanager.yml`, `cmake/Depmanager.cmake`, `owl_engine.py`, the `ConfigureRemote` CI action and the
-  *Define Remote* TeamCity step; Conan 2 is the only provider (`OWL_DEPENDENCY_PROVIDER` is gone) and other projects
-  take OwlEngine from the packaged archive.
-- Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces
-  `debug_break()`).
-- LeakSanitizer preset, option and TeamCity job: on Linux ASan already reports leaks.
-- `parallelForEach` / `parallelForIndex` (`core/task/ParallelUtils.h`), which nothing called, and the
-  `Scheduler::getImpl()` accessor that only they used.
-- The generic `core::IFactory` / `FactoryProduct` / `ProductAllocator`, whose only user was the mesh extra data:
-  `data::extradata::ExtraDataRegistry` (`ExtraDataPid`, `getExtraDataPid<T>()`) replaces it, and `ExtraDataContainer`
-  copies now clone the values instead of default-constructing them.
-- `RenderAPI` / `RenderCommand` `drawLine`, `drawLineInstanced`, `setDepthTest`, `setDepthMask`, `beginTextureLoad` and
-  `endTextureLoad`, replaced by `PipelineState` and `bindTextures`.
-- `ScriptEngine::init`, `shutdown`, `isInitialized` and `getActiveScene`, and `PhysicCommand::releaseScene`: no global
-  points to an active scene any more.
-- `Scene::updateRaycastDynamicWalls`, replaced by the `owl.raycast_walls` system.
-- `RendererVoxel::init`, `shutdown` and `clearCache` (now `VoxelMeshCache::clear`).
+- Theme presets Dark, Dark Blue, Nord and Solarized, and the editor `theme.yml`.
+- DepManager (`depmanager.yml`, `cmake/Depmanager.cmake`, `ConfigureRemote`), the unused `tinyxml2`, `zeus` and
+  `debugbreak` dependencies and the LeakSanitizer preset.
+- Dead code: `ScriptEngine::loadScript`, `parallelForEach`, `core::IFactory`, `RenderCommand::drawLine`,
+  `Scene::updateRaycastDynamicWalls` and unused `NOLINT` names.
 
 ### Fixed
 
-- OpenAL: a sound no longer fails with `alGenSources: Out of Memory` when many play at once (finished sources are
-  reclaimed, then the oldest one-shot is cut) nor on an error left by an earlier call.
-- Owl Nest: the Translation, Rotation and Scale reset buttons no longer share one ImGui ID; the Voxel Palette hides
-  while its scene plays or another document is active; a dropped file opens from the root the Content Browser shows, and
-  a newly opened document comes to the front of its dock.
-- Owl Nest: pressing `Shift` twice opens the command palette (the Shift modifier key reported with it cancelled the
-  tap), the main window no longer shows a scroll bar, and the ribbon drop-down carets are chevrons.
-- `./docker_run.sh --gui` lends the host cursor themes, so Owl Nest shows the desktop cursor instead of Adwaita.
-- Owl Nest node canvas (Scene Flow): the GraphEditor minimap no longer covers the canvas with white triangles, node
-  titles stay readable when zoomed out, and the canvas follows the theme.
-- Editor icons drawn with the `white` keyword (components, panels...) follow the theme text colour, so they no longer
-  stay white in Owl Light.
-- Owl Nest Ctrl and Alt shortcuts work while a panel (hierarchy, properties, content browser...) has the keyboard focus,
-  not only with the viewport focused.
-- Box2D runs on `workerCount` threads again, without the two spare threads that slowed the 2-worker step of a settled 5
-  000-body pile by 60 % on the nightly benchmark agent.
-- Gameplay no longer slows down at high frame rates: `Timestep::getSeconds` keeps sub-millisecond frames (a 3.3 ms frame
-  counted 3 ms, a 0.5 ms one 0), and `owl.physics_poses` gives scripts the simulated body poses so a
-  `physics.set_transform` of the read pose no longer rewinds the body.
-- `DependencyReport` sees every package of the graph (flac, libalsa: resolved through `owl-local` whatever the cache
-  holds), finds the update a `cci.*` snapshot hid (plutovg 1.3.3) and checks the local recipes' sources upstream (glfw,
-  wayland-protocols); run on the tree before the dependency round, it lists the nine updates made.
-- Nightly sanitizers: TSan ignores the GLib / Pango races of the GTK stack GLFW loads (`test/unit/tsan.supp`), and the static
-  analyzer no longer reports a false leak in `SystemSchedule_test.cpp`.
-- Sanitizer Thread on `main`: the races inside the glycin image loader, GIO and the Vulkan validation layer
-  (uninstrumented system libraries) are suppressed, so `owl_wayland_smoke` and the Vulkan image tests pass again.
-- `conan create` exports `source/tools`, which the engine build needs since `OwlShaderBake`.
-- Runner and editor start without compiling Slang: the build compiles the engine shaders to SPIR-V (`OwlShaderBake`,
-  into `bin/assets`, installed in both CPack components and embedded in a game pack), compute shaders included, and
-  `renderer::utils::loadOrCompileSpirv` uses them before the cache when their key matches the source; first frame
-  630-860 → 270-440 ms with an empty cache, 440-570 → 270-410 ms with a warm one.
-- Slang warning 41012 is filtered again: Slang 2026.19 prints it as `warning[E41012]`.
-- Precompiled or cached SPIR-V that is absent, truncated, garbled, of another stage or key, or refused by the driver
-  (Vulkan module or pipeline, OpenGL compilation, GLSL translation) is compiled again from the Slang source and cached,
-  with a log naming the file and the reason, instead of failing the shader or reaching the driver.
-- Sanitizers: `SceneComponent.name` compares the component names as strings, not pointers, and LeakSanitizer ignores the
-  GTK caches libdecor leaves in the Wayland smoke test (`test/unit/lsan.supp`).
-- `main` builds again: the conflict marker left in `VulkanHandler.h` is resolved and the `MemoryAllocator` singleton
-  lives in its source file, so hidden visibility no longer duplicates it (`-Wunique-object-duplication`);
-  `linux-clang-minimal` builds and passes again (Null shader reload without Slang, hot-reload tests skipped without the
-  render or script module).
-- `core_task` scheduler tests no longer fail on a loaded machine: they wait for the worker (condition and 30 s deadline)
-  instead of sleeping 5 ms.
-- The raycast layer no longer leaves the depth test on for the layers drawn after it (a HUD layer then drew
-  depth-tested).
-- OpenGL on the SPIR-V path (NVIDIA): the HUD, text and every Renderer2D draw without an entity reappear; the `quad`,
-  `circle` and `text` shaders gave the scene and transient world buffers one block type, which the driver bound to a
-  single buffer, and a test checks every shipped shader keeps one block type per storage buffer.
-- Documentation promising what the engine does not do: `scene.load_scene`, `scene.transition_to`, `scene.quit`, `door.*`
-  and `pushwall.*` are now documented, while Box2D joints and per-category volumes are described as not available yet.
-- The scene templates of `engine_assets/templates/` (main menu, pause menu, game over) use the current `UiRect` /
-  `UiText` / `UiButton` / `UiPanel` keys and lose the dropped `editorVisible`: their UI was silently ignored at load.
-- `Matrix::norm()` is the Frobenius norm: it summed `a_ij * a_ji` (wrong for any non-symmetric matrix) and read out of
-  range on a non-square one.
-- The Lua sandbox bytecode test loads its whole fake chunk: the literal was cut at its embedded NUL.
-- CodeStyle now checks `test/` and `source/owlnest/runner` (it pointed at a missing `source/owlrunner`, skipped in
-  silence; a missing root now fails): 48 test file headers, typos and formatting fixed.
-- CI build logs: only compiler, linker and Ninja errors show as errors in TeamCity, warnings as warnings (every compiler
-  line was red).
-- CI: the native `DefineTeamCityVariables` step runs on a host Python older than 3.12 again, and the TeamCity step ids
-  say what they build (`Build_Preset`, `Build_Release_Main`).
-- MinGW Release: the physics tests link again, passing the exported `PhysicsSettings` limits by value (an odr-use of a
-  `static constexpr` member of an `OWL_API` class needs an import MinGW never emits).
-- CI: build artifacts leave out the test executables, keeping the Windows `BuildArtefact.zip` under the server's 300 MB
-  limit.
-- Windows: test binaries and `OwlRunner` exit again: the Box2D solver pool is released with the physics world and the
-  Lua watchdog is never destroyed, so no static destructor waits for threads Windows already killed.
-- Windows: the frame bench runner test quotes its whole command line, which `cmd /c` otherwise mangles.
-- OpenGL picking no longer stalls the pipeline each hovered frame: `readPixel` reads through a fenced pixel pack buffer
-  and returns the latest completed value; the viewport ignores an entity destroyed since.
-- Textures: `generateMips` is honoured on both backends (OpenGL `glGenerateTextureMipmap`, Vulkan blit chain) and now
-  defaults to `false`; `Nearest` filtering applies on Vulkan too (the raycast walls rendered blurred there), and
-  `Linear` magnifies linearly on OpenGL as on Vulkan.
-- OpenGL textures: `R8` allocates a valid `GL_R8` storage (was `GL_RED_INTEGER`) and `Rgba32F` uploads floats.
-- GLFW no longer crashes at init on a Wayland compositor without input devices (no `wl_seat`, e.g. headless weston).
-- Wayland works again on Linux: GLFW comes from a local recipe building both backends against the system Wayland
-  (ConanCenter's built X11 only, and with Wayland on shipped a libwayland that hid the system one from the GPU drivers).
-- `importSharedLibs.py` copies a library next to the binaries again when its package changed, instead of keeping the
-  first copy forever (a stale X11-only `libglfw.so.3`, an old `libopenal.so.1`).
-- Linux binaries link with `--as-needed`: they no longer require every `libxcb-*` that Conan's `xorg/system` lists, so
-  Owl Nest and exported games start on a desktop missing an unused one (`libxcb-ewmh2`, `libxcb-dri2-0`); the OpenGL
-  backend keeps the GL library GLFW loads resident, so its Mesa driver is not unloaded before LeakSanitizer runs.
-- TSan builds: the Lua time quota fires again, the watchdog setting the hook from its own thread because TSan holds back
-  the interrupt signal.
-- TSan: the Vulkan image tests no longer fail on races inside lavapipe and the validation layer, suppressed by library
-  in `test/unit/tsan.supp`.
-- Windows: packed assets keep `/` in their pack paths (`AssetScanner` wrote `scenes\level.owl`), so an exported game
-  finds its scenes, fonts and textures.
-- Image tests cap llvmpipe at SSE4.1 with Mesa's shader cache off, so a CI agent without AVX no longer fails the tilemap
-  capture.
-- `OwlRunner --frame-bench` links on MinGW again: its report no longer goes through `std::println`, whose console path
-  needs `libstdc++exp`.
-- Runtime lifecycle on EnTT hooks: removing a `PhysicBody`, `Tilemap`, raycast door or pushwall in Play destroys its
-  Box2D body (no ghost collider), a `PhysicBody` added or duplicated in Play gets a body of its own, removing a
-  `LuaScript` calls `on_destroy` and removing a `SoundSource` stops it; `destroyEntity` and `destroyEntityWithChildren`
-  release scripts, bodies and sounds too (PR-13).
-- Vulkan: Owl Nest text and images render again with ImGui 1.92.9, whose backend expects sampled-image texture sets and
-  more descriptor sets than the ImGui pool allowed.
-- CI: the engine package builds its documentation again (the Documentation step required a release preset, which a
-  package preset has not, so Publish Documentation found nothing).
-- Hierarchies deeper than 64 levels: world transforms, inherited visibility and `setParent` cycle checks walk the whole
-  chain, so `setParent` no longer corrupts a deep entity's position; world matrices are composed once on the CPU and
-  uploaded by `Renderer2D` (the `world_transform` compute pass, which recomposed them on the GPU with the same 64-level
-  cap, is removed).
-- Pack extraction and the texture / font pack caches now detect and log failed writes instead of failing silently.
-- `./docker_run.sh` works from a git worktree: it mounts the main git directory and finds the shared `fake_home`.
-- TeamCity: `triggerOnPrDraft` is written explicitly on every configuration (the plugin defaults to `true`, so draft PRs
-  ran the whole matrix).
-- Conan on Windows: host settings and options go through a generated profile (cmd.exe split `&:shared=…` at `&`), and
-  configure stops when `conan install` produced no toolchain.
-- `ClangTidy` analyses only the repository's own translation units: the third-party sources a Conan build compiles
-  (imgui backends, `imgui_stdlib.cpp`) no longer fail the gate.
-- `run_command` reads stdout and stderr concurrently: on Windows it read them one after the other, so the Conan install
-  showed nothing and hung once its stderr pipe filled.
-- Conan package builds run their Python generators with the interpreter that runs Conan (glad needs jinja2, missing from
-  MSYS2's Python), and `owl-local` is registered again only when missing, no longer wiping its recipe cache at every
-  configure.
-- `libmp3lame` local recipe: MinGW Clang builds it with autotools (ConanCenter's recipe ran `nmake`, taking it for
-  clang-cl).
-- Conan profiles force one version per build tool (`cmake/4.4.4`, `pkgconf/2.5.1` through `[replace_tool_requires]`,
-  `CMAKE_POLICY_VERSION_MINIMUM=3.5` for old upstream projects), instead of one per recipe range.
-- Windows test binaries no longer copy gtest DLLs: Conan links gtest statically.
-- `Log` names its file sink with `SPDLOG_FILENAME_T`, so Windows builds against spdlog with or without wide filenames
-  (Conan's has none).
-- `windows-gcc` Conan profile pins MinGW's `gcc.exe` by full path: in the MSYS2 bash of autotools builds a bare `gcc`
-  was MSYS's POSIX compiler (mpg123 failed); ImGuizmo and plutovg are shared, and the imgui backends and imgui_stdlib
-  compiled into the engine drop their API macro, as a shared imgui declares them dllimport on Windows.
-- CI: Doxygen moves to Linux x64 Clang, which builds the release on every run for it (release tests stay on `main`);
-  Windows x64 Clang drops its artifact-size gate, wrong whenever a run skips the release.
-- `conan.lock` pins the current `slang` recipe revision (a fresh Conan cache, as on a new agent, could not resolve the
-  old one).
-- Windows CI: dependencies from Conan, built by the agent's GCC 16 toolchain (the prebuilt DepManager packages broke the
-  GCC test runtime and the Clang link).
-- TeamCity: every `ci_action.py` step runs in the build image again (lost in the DSL relayout: `poetry: not found`).
-- Windows build with a recent libstdc++ (MSYS2): every file now includes the standard headers it uses, checked by the
-  `std-includes` Code Style audit and the `linux-include-check` strict-libc++ build (`OWL_INCLUDE_CHECK`).
-- `ClangTidy` runs one job per available core by default instead of a single process (`--jobs=N` still overrides).
-- Doxygen on Windows: `doc/fix_md_links.py` writes its output as UTF-8, the locale codepage could not encode the doc
-  pages' `✅` / `❌`.
-- Client log macros with arguments (`OWL_INFO("… {}", x)`) went to the engine logger instead of `APP`.
-- `OWL_ENABLE_PROFILING` never enabled the Chrome profiler (the header tested another macro).
-- Installed OwlEngine package: headers under `include/` again, no `-Werror -Weverything` imposed on consumers, preset
-  install prefix honoured.
-- `PhysicCommand` no longer keeps a dangling `Scene*` once its scene is destroyed (each scene owns its physics world),
-  and the core, physics and renderer tests no longer depend on their order.
-- Memory tracker with `OWL_ENABLE_STACKTRACE`: an `AllocationInfo` built outside the tracker no longer deadlocks on
-  cpptrace's mutex.
-- OpenGL under Wayland no longer freezes after the first frame when the window is not shown: vsync is paced by the
-  engine instead of blocking in `eglSwapBuffers`.
-- Wayland framebuffer kept at the window size (`GLFW_SCALE_FRAMEBUFFER` off), so HiDPI outputs no longer get a
-  swapchain / viewport mismatch.
-- Owl Nest disables ImGui multi-viewports under Wayland instead of enabling windows GLFW cannot place.
-- Vulkan descriptor sets are written at draw time with every declared binding (default white texture and empty buffers
-  for unbound ones): no more `VUID-08114`, lavapipe no longer crashes.
-- Vulkan colour samplers no longer enable depth comparison, which made lavapipe sample textures as plain white.
-- Vulkan background quad flipped to Vulkan clip space: gradients, textures and skyboxes now match OpenGL.
-- OpenGL: the main context is made current again after ImGui platform windows, so the window keeps rendering.
-- OpenGL: Renderer2D rebinds its texture units after the tilemap pass, which reuses units 0..n.
-- OpenGL SPIR-V: `InstanceIndex` / `VertexIndex` mapped to the OpenGL built-ins, so instanced 2D draws show on NVIDIA.
-- Shader cache key covers backend, module, Slang version, macros and profile (B-05), not only the source.
-- Raycast scenes no longer leak their textures past the device: the per-frame sprite, wall and door lists are cleared
-  after drawing.
-- `raycast_demo.owl` uses asset-relative texture paths instead of absolute paths from one machine.
-- Voxel worlds now show in the exported game: `Scene::renderWithStack` meshes them for the runner and the editor alike
-  (D-03).
-- `SceneSerializer::serialize`, `PrefabSerializer::serialize`, `SettingsManager::saveUserSettings` and the editor's
-  `Project::loadFromFile` / `saveToFile` return `bool`; Lua `settings.save()` returns whether it succeeded.
-- Inspector edits serialize only the edited component, only while it is edited (`InspectorEditTracker`,
-  `SceneSerializer::serializeComponentToString`): an idle inspector on a 13-component entity drops from 3.1 ms to 0.03
-  ms per frame, and an edit records one undo step when it ends.
-- Editor undo restores entities in place: undoing an edit of a parent no longer detaches and moves its children, and the
-  entity handle, UUID and sibling slot survive.
-- Deleting an entity keeps its children's world position and sibling order, and undoing the deletion puts them back
-  exactly.
-- Editor dirty flag driven by an undo generation counter: "save, undo, edit" and an edit merged into the saved step now
-  mark the document as modified.
-- `Scene::getEntityCount()` counts the entities instead of always returning 0; the round-trip tests that compared 0 to 0
-  now check real counts.
-- Prefab "Update from Prefab" / "Revert to Prefab" work in place: the instance keeps its hierarchy and placement, new
-  and removed prefab entities follow, editor edits mark overrides (shown in the inspector, revertable per component,
-  undoable), and Unlink is undoable.
-- Textures picked inside an asset directory are saved as `nam:` relative names, no longer as absolute `pat:` paths that
-  break on another machine and in the pack.
-- Export rewrites the remaining absolute `pat:` references of scenes, tilesets and tilemaps to the packed `nam:` entry;
-  `raycast_demo.owl` no longer points at a developer checkout.
-- `AssetScanner` packs the `VoxelWorld` tileset and its atlas, and the `UiText` font.
-- Voxel edits and streamed-in chunks re-mesh every neighbour chunk whose faces or ambient occlusion they change, edge
-  and corner chunks included; a chunk generated with old parameters or already streamed out is dropped (D-08).
-- The project icon is found in the asset directories too, so the exported game gets its icon.
-- `runner.yml` and `game_info.yml` are written with a YAML emitter: a game name or description with `:` or `#` no longer
-  corrupts them.
-- Re-exporting over a previous export replaces the bundled shared libraries instead of keeping stale ones.
-- `launch.sh` no longer adds the current directory to `LD_LIBRARY_PATH` when it is empty.
-- The runner exits with code 1 when `runner.yml` or the first scene is missing.
-- A missing tilemap or tileset at scene start is logged as a warning instead of being ignored silently.
-- Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and
-  `HelpPanel` matches page ids case-insensitively.
-- `scene.destroy_entity` is deferred to the end of the frame (`Scene::destroyEntityDeferred`): a script destroying its
-  own entity no longer frees its running Lua state, and the destroyed entity gets `on_destroy` once, loses its Box2D
-  body and takes its children with it.
-- Lua `on_collision(other_id)` is now called: Box2D begin-touch contact events reach both entities' scripts once per
-  touching pair, skipping entities hidden or pending destruction; `on_trigger_enter` / `on_trigger_exit` /
-  `on_triggered` now receive the documented `other_id`.
-- An `EntityLink` whose target is missing (misspelt, destroyed or renamed) is ignored with a single warning instead of
-  crashing `onUpdateRuntime`.
-- Play no longer shares voxel chunks with the editor scene: `VoxelWorld` copies are deep, so blocks broken or placed in
-  Play no longer stay in the editor scene after Stop.
-- A script hiding an entity, or a trigger teleporting the player, takes effect in the same frame: the per-pass caches
-  are armed after scripts, physics, links and triggers.
-- Scene loading validates its input: a malformed scene fails with a typed `SceneLoadError` and is rolled back,
-  duplicated UUIDs are renamed, dangling parents and hierarchy cycles are moved to the root, and the editor names the
-  reason a scene cannot be opened.
-- SceneFlow: creating a teleport link no longer adds a second `Transform` to the new trigger entity (assertion in Debug,
-  storage corruption in Release).
-- A teleport to a missing or corrupted level keeps the current level playing, in the editor and in the runner, instead
-  of leaving a stopped runtime.
-- Owl Nest animation editor plays again (Play did nothing, only the steps moved) and the Markdown / SVG previews of the
-  code editor refresh: the documents without a scene are advanced every frame (`DocumentManager::updateSceneless`).
-- The packaged Owl Nest draws its icons again: the archive ships the SVG sources the editor rasterizes
-  (`assets_sources/icons/`).
-- Draw calls written for the parameter order of imgui before 1.92.8 (flags before thickness) no longer fail and draw
-- Nightly checks green again: `documentWindowTitle` no longer stores a value it overwrites (static analyzer), and the multi-threaded physics steps of 100 bodies, dominated by the worker wake-up, get a 40 % threshold (`bench/thresholds.json`).
-- The Linux arm64 packages are published as arm64 instead of overwriting the x64 entry of the site: `PublishPackage` reads the platform from the archive name, not from the machine that cross compiled it.
-  nothing: the tick of a checked box, the tile and cell selection outlines of the tileset and tilemap editors, the
-  palette swatch outlines, the Play frame of the viewport, and in imguizmo the curve editor points, the graph editor
-  links and node borders and the gradient markers (patched in the local recipe).
+- Wayland: GLFW from a local recipe, no freeze after the first frame, framebuffer at window size, no multi-viewports.
+- OpenGL: SPIR-V draws on NVIDIA, picking without stalls, `generateMips`, `R8` and `Rgba32F` uploads.
+- Vulkan: samplers, background quad, descriptor sets and Owl Nest text with ImGui 1.92.9.
+- Editor undo restores entities in place, deleting keeps children in place, and the dirty flag follows an undo
+  generation counter.
+- Prefab update and revert work in place, and exports rewrite `pat:` texture paths and pack voxel tilesets and `UiText`
+  fonts.
+- `scene.destroy_entity` is deferred to the end of the frame, Lua `on_collision(other_id)` is called, and a teleport to
+  a missing level keeps the current one.
 
 ### Security
 
-- CI secrets never reach argv or the log: the publication password comes from `OWL_DEPLOY_PASSWORD`, exported by the
-  TeamCity step only, and `--password` / `--remote_passwd` are refused.
-- `ci.utils.secrets` masks every registered secret in every CI log record and the value of any sensitive flag in a
-  logged command (`run_command`).
-- Publication no longer downloads and runs the server's `api.py`: the upload client lives in `ci/utils/publish.py`, runs
-  in process and requires HTTPS.
-- `CodeStyle` gains a `secrets` sub-check that fails on a tracked `.env` or a committed key, token or URL password.
-- CMake configure no longer prints `.env` values, only their keys.
-- `.owlpack` reader hardened against forged packs: no write outside the extraction directory (`..`, absolute paths,
-  symbolic links), sizes bounded by the file before any allocation, typed errors instead of escaping exceptions;
-  `OWL_FUZZING` builds a libFuzzer target on `PackReader`.
-- Lua sandbox hardened: chunks load as text only (bytecode refused, also through `load`), `string.dump` removed,
-  `setmetatable` refuses `__gc`, `collectgarbage` restricted, string metatable locked.
-- Lua quotas per `ScriptInstance` (`ScriptQuotas`): 64 MiB memory ceiling through a custom allocator and a 250 ms time
-  budget per call through a watchdog thread; a script exceeding one is disabled instead of freezing or exhausting the
-  game.
-- Every engine call into Lua is protected with a stack trace, host reads of globals bypass script metatables, and
-  bindings run behind an exception trampoline: no C++ exception crosses a Lua frame (PR-14: D-06, D-16).
+- CI secrets never reach argv or the log (`OWL_DEPLOY_PASSWORD`, `ci.utils.secrets`), and publication no longer runs the
+  server's `api.py`.
+- `.owlpack` reader hardened against forged packs, and CMake configure no longer prints `.env` values.
+- Lua sandbox hardened (no bytecode, `string.dump` removed) with per-instance memory and time quotas (`ScriptQuotas`).
 
 ## [0.2.1] - 2026-06-27
 
 ### Added
 
-- **Voxel data model** — `owl::data::voxel`: `BlockRegistry`, 16³ `Chunk` (RLE encode/decode), sparse `VoxelWorld`. New
-  `voxel_tests` category.
-- **Chunk meshing** — `ChunkMesher`: greedy meshing with hidden-face culling, per-face atlas UVs, cross-chunk neighbour
-  culling.
-- **Block metadata** — 16-bit orientation + state per block (`BlockMeta`); `orientedFace` remaps per-face textures; RLE
-  gained an optional `:meta` suffix (legacy-compatible).
-- **Ambient occlusion** — per-vertex four-corner AO baked into the mesh, AO-aware greedy merge; toggle via
-  `VoxelWorld.ambientOcclusion`.
-- **Transparent / water rendering** — separate back-to-front pass with depth-write off (`ChunkMesher::meshByKind`), plus
-  dynamic `RenderCommand::setDepthMask` on Vulkan.
-- **3D forward rendering** — `Renderer3D`: depth-tested textured forward path with one directional light (`mesh3d`
-  shader).
-- **`RendererVoxel` layer + `VoxelWorld` component** — draws voxel entities (per-entity mesh cache, tileset atlas with
-  shader `frac()` tiling); per-chunk CPU frustum culling (`FrustumCullingPass`).
-- **Depth-aware rendering** — `Depth24Stencil8` on editor viewport + swapchain framebuffers; 3D depth on, 2D depth off.
-- **Voxel worlds in the editor viewport** — rendered and navigable while editing, not only in Play.
-- **Procedural terrain** — `math::PerlinNoise` (seeded 2D/3D + fBm) + `TerrainGenerator` (layering, shoreline, caves,
-  biomes), seed-reproducible.
-- **Terrain streaming** — `VoxelWorld.proceduralTerrain`: async chunk stream in/out around the camera (task `Scheduler`)
-  with mesh pruning; demo `scenes/voxel_terrain.owl`.
-- **Voxel player** — `VoxelPlayer`: first-person walk/run/jump with AABB-vs-voxel collision (`moveAabb`); mouse-look
-  (opt-in cursor capture), double-tap-Space fly mode.
-- **Block interaction** — break / place blocks via `raycastVoxel` (grid DDA), crosshair + wireframe highlight, dirties
-  border neighbour chunks.
-- **Voxel editor (Owl Nest)** — Voxel Palette brush (place/erase, undoable, stroke-coalesced), `.owlvoxstruct` structure
-  capture/stamp, tile thumbnails.
-- **3D cameras** — reusable `Camera3DController` (free-fly / first-person) + `FlyCamera` component (replaces the demo
-  fly-camera Lua script).
-- **Editor camera overhaul** — DCC-style navigation (Alt = look/pan/dolly, Ctrl = orbit/pan, wheel = zoom) on every
-  viewport, corner XYZ gizmo, larger editor-only voxel view distance.
-- **Window cursor mode** — `Window::setCursorMode` (Normal/Disabled) for first-person mouse-look.
-- **Block + world textures** — new `voxel_blocks.owltileset` (16 faces); regenerated 2D platformer + world-map atlases
-  (procedural generators).
+- Voxel data model `owl::data::voxel` (`BlockRegistry`, 16³ `Chunk` with RLE, sparse `VoxelWorld`) and `ChunkMesher`
+  with greedy meshing and ambient occlusion.
+- Block metadata (orientation and state per block), transparent and water pass, and a `Renderer3D` depth-tested forward
+  path with one directional light.
+- `RendererVoxel` layer and `VoxelWorld` component, with voxel worlds rendered and navigable in the editor viewport.
+- Procedural terrain (`math::PerlinNoise`, `TerrainGenerator`) streamed in and out around the camera.
+- `VoxelPlayer` first-person controller with voxel collision, and block breaking and placing through `raycastVoxel`.
+- Owl Nest voxel editor: Voxel Palette brush and `.owlvoxstruct` structures.
+- `Camera3DController` and `FlyCamera` component, DCC-style editor camera navigation and `Window::setCursorMode`.
+- New `voxel_blocks.owltileset` and regenerated 2D platformer and world-map atlases.
 
 ### Changed
 
-- **Module taxonomy reorganization** (breaking — public namespaces changed): `app` split from `core`
-  (`Application` / `EntryPoint` / `Layer`); new `platform` module (`FileDialog`, `fileToString`, `openExternalUrl`);
-  asset packing `io::pack` → `data::assets::pack` (`io` is now device-only); `CameraOrthoController` `input` →
-  `renderer`; `physic` → `physics`; `data::component` → `data::meshrange`. Rules in `.claude/rules/module-layout.md`.
+- Module taxonomy reorganised (breaking, public namespaces changed): `app` split from `core`.
 
 ### Removed
 
-- **Chunk Inspector panel** — voxel-editor chunk-diagnostics panel dropped (low value).
+- Chunk Inspector panel.
 
 ### Fixed
 
-- **`math::Matrix` initializer-list ctor out-of-bounds read** — it copied a fixed `NCol*NRow` elements from any list
-  (ASan stack-buffer-overflow on a short one); now clamps to the list size and zero-fills the rest.
-- **Vulkan pipeline storm** — `pushPipeline` built a new pipeline per `DrawData` (thousands per voxel scene); now
-  deduplicated + refcounted by pipeline signature, so identical chunks share one.
-- **Vulkan `vkDestroyDevice` object leak** — the static `IconBank` atlas was freed after device destruction; now cleared
-  in `EditorLayer::onDetach`. Added `vkSetDebugUtilsObjectName` instrumentation.
-- **Vulkan `UPDATE_AFTER_BIND` cascade** — one shared per-frame descriptor set was rewritten mid-frame; replaced by a
-  fence-recycled `DescriptorRing` (a distinct set per draw). Owl Nest now runs with zero validation messages.
-- **Voxel atlas bleeding** — fixed via half-texel `tileRect` inset, seamless block textures, and `SampleGrad` tiling.
-- **OpenGL: all `Renderer2D` content invisible** — `UniformBuffer::bind()` was a no-op while 2D/tilemap/3D share GL
-  binding 0; `bind()` now re-binds and each renderer re-asserts its UBO before drawing (Vulkan unaffected).
-- **Vulkan validation fixes** — distinct queue families (`EXCLUSIVE` swapchain sharing), enabled `shaderDrawParameters`,
-  and clear a `StorageBuffer`'s descriptor binding before its `VkBuffer` is destroyed.
-- **Vulkan batch-fence deadlock** — `beginBatch()` is now idempotent (was the freeze when entering a voxel scene).
-- **Vulkan render-pass incompatibility flood** (`renderPass-02684`) — the swapchain framebuffer gained a matching
-  `Depth24Stencil8` attachment so all scene pipelines share one layout.
+- `math::Matrix` initializer-list constructor read out of bounds.
+- Vulkan: pipeline storm, device-destruction leak, descriptor update cascade, validation errors, batch-fence deadlock
+  and render-pass incompatibility.
+- OpenGL: all `Renderer2D` content was invisible; voxel atlas bleeding.
 
 ## [0.2.0] - 2026-06-02
 
 ### Added
 
-- **Renderer stack architecture** — composable per-scene renderer pipeline: `RenderLayer` / `RenderStack` /
-  `RenderLayerFactory` + `RendererTag` component, YAML round-trip (`RendererStack:` / per-scene `EnabledRenderers:`
-  with overrides), Project Settings composition UI, and a dockable per-scene Scene Settings panel.
-- **Raycasting renderer** — `RendererRaycast` / `RendererRaycastLayer`, per-column DDA, configurable FOV / max distance
-  / sky / floor, `Tileset.FilterMode`, and the `scenes/raycast_demo.owl` sample (Wolfenstein 3D E1L1, 64×64).
-- **Raycast world detail** — textured floors / ceilings (`emitTexturedBackdrop`) and uniform distance fog
-  (`RaycastConfig.fogColor` / `fogStart` / `fogEnd`).
-- **Raycast sprites (billboards)** — `SpriteRenderer` / `AnimatedSpriteRenderer` rendered as camera-facing strips with
-  per-column z-buffer occlusion, plus per-sprite world-size and Z-offset overrides; the same components stay 2D on
-  `Renderer2D` layers.
-- **Variable wall heights and transparent walls** — `TileMeta.wallHeight` (`[0, 8]`) and `TileMeta.transparent`
-  (alpha-only, up to 8 back-to-front hits per ray).
-- **Doors and pushwalls** — animated `RaycastDoor` / `RaycastPushWall` components with built-in `interactionKey` or Lua
-  activation and auto-managed Box2D collision; editor tile pickers and gizmos.
-- **Tilemap system** — `scene::Tileset` (`.owltileset`) and a standalone `.owltilemap` `TilemapAsset`, edited in the
-  `TilemapDocument` (multi-layer, Properties / Canvas / Palette, paint-erase strokes, per-stroke undo).
-- **In-viewport camera markers** — every `component::Camera` entity draws a dot + facing arrow + FOV cone.
-- **Scene transition effects** — `Fade{In,Out}` + `Wipe{Left,Right,Up,Down}` with custom tint; Lua `ui.transition_play`
-  (and back-compat `ui.transition_fade_in/out`).
-- **GPU compute foundation** — Slang `[shader("compute")]` programs, `gpu::ComputeShader`, `gpu::StorageBuffer`
-  (with `getData()` readback on all backends), and `RenderCommand::storageBufferMemoryBarrier()`.
-- **Compute pre-pass utilities** — `WorldTransformPass` (#33) and `RaycastDDAPass` (#35), both adopted this release,
-  plus
-  `BitonicSortPass` (#32) and `FrustumCullingPass` + indirect-draw API (#34) shipped and headless-tested for adoption in
-  v0.3.0.
-- **Per-renderer Vulkan descriptor blocks** — backend-neutral `gpu::RendererDescriptors` (no-op on Null / OpenGL).
-- **Renderer test coverage** — `RendererTilemap_test` (instanced-path stats) and `BitonicSortPass` padding / empty-input
-  cases.
-- **Editor & build niceties** — snap-to-grid translation gizmo (`Snap` toggle + `Step`), ribbon dropdown buttons, ccache
-  compiler launcher (`cmake/CompilerCache.cmake`), and the Lua `physics.set_gravity_scale(entity, scale)` API.
+- Renderer stack architecture: composable per-scene `RenderLayer` / `RenderStack` pipeline.
+- Raycasting renderer `RendererRaycast` with textured floors and ceilings, fog, billboard sprites, variable and
+  transparent walls.
+- Animated `RaycastDoor` and `RaycastPushWall` components.
+- Tilemap system: `scene::Tileset` (`.owltileset`), standalone `.owltilemap` `TilemapAsset` and an editor.
+- Camera markers in the editor viewport and snap-to-grid translation gizmo.
+- Scene transition effects (`Fade*`, `Wipe*`) with Lua `ui.transition_play`.
+- GPU compute foundation (`gpu::ComputeShader`, `gpu::StorageBuffer`) with `WorldTransformPass`, `RaycastDDAPass` and
+  `BitonicSortPass`.
+- Per-renderer Vulkan descriptor blocks (`gpu::RendererDescriptors`).
 
 ### Changed
 
-- **Renderer modernization** — `Renderer2D` rewritten as instanced + per-instance SSBO (Phase 1); per-frame world
-  matrices produced by the `WorldTransformPass` compute pre-pass, with instances carrying an `int32_t worldIndex`
-  instead of a `mat4` (Phase 2); raycast walls drawn by `RaycastDDAPass` + `raycast_stripe.slang` in one instanced
-  call (Phase 3). Public draw APIs preserved.
-- **Tilemap rendering** routes through the instanced `RendererTilemap`: deferred into `Renderer2D::flush` (after the
-  background, before sprites) and combined into a single drawcall for the whole scene — per-instance `layerZ` / atlas /
-  `textureSlot`, distinct tilesets across the shader's 32-texture array. Replaces the per-cell `Renderer2D::drawQuad`
-  fallback.
-- **2D entity draws** drop the redundant `getWorldTransform` when `worldIndex` covers them; the world-transform cache
-  stays for the raycast DDA, physics, `EntityLink`, text glyphs and the editor.
-- **Performance** — scene loading ~550× faster (memory-tracker O (N²) fix, UUID→entity cache, in-memory SPIR-V cache;
-  `raycast_demo` ~22 s → ~40 ms) plus async load; in-game wins via scratch-buffer pooling and per-pass render-loop
-  caches.
-- **`Scene.EnabledRenderers`** now overrides layer order, not just enable / disable.
-- **Editor keyboard shortcuts** (Ctrl+S, Ctrl+Z, …) bypass `WantCaptureKeyboard`; modifier-less keys still yield to
-  focused text widgets.
-- **Tooling** — renderer sources reorganized by renderer kind; `CodeStyle` CI action bundled into one read-only command;
-  CMake globbing made configure-aware; TeamCity switched to plugin-event triggers; Oxford English spelling sweep across
-  comments and prose; version bumped to `0.2.0` and `doc/pages/roadmap.md` reorganized.
+- `Renderer2D` rewritten as instanced with a per-instance storage buffer, and tilemaps routed through the instanced
+  `RendererTilemap`.
+- Scene loading about 550 times faster.
+- `Scene.EnabledRenderers` overrides layer order, and editor shortcuts (`Ctrl+S`, `Ctrl+Z`, ...) bypass
+  `WantCaptureKeyboard`.
+- Renderer sources reorganised by kind; the `CodeStyle` CI action is one read-only command.
 
 ### Fixed
 
-- **Tilemaps (and raycast door / pushwall tilesets) were missing from packaged
-  games.** `AssetScanner` never followed the `Tilemap` component's
-  `tilemapPath` nor the `RaycastDoor` / `RaycastPushWall` `tilesetPath`, so the
-  `.owltilemap`, its `.owltileset`, and the atlas textures were absent from the
-  `.owlpack`; and `Scene::resolveAllTilemapAssets` loaded those YAML assets
-  from disk only. Both are now wired: the scanner packs the whole
-  tilemap → tileset → texture chain (and standalone door / pushwall tilesets),
-  and asset resolution tries the open pack before the filesystem (like the
-  Lua-script path). Editor / loose-file runs were unaffected.
-- **Vulkan compute pipeline** — `ComputeShader::dispatch` now records on a one-shot command buffer (was recording into a
-  closed buffer → SIGSEGV); entry-point name corrected to `main`; Slang source lookup fixed to
-  `shaders/<renderer>/slang/<name>.slang`; `world_transform.slang` wraps its matrix in a struct for correct
-  column-major SPIR-V decorations.
-- **Raycaster** — player rotation now applied; walls actually drawn; HUD no longer rotates with the camera; broken
-  empty-cell convention, wall blurriness, stripe flicker under motion, cell-coordinate half-extent and FOV-aspect bugs
-  fixed.
-- **Editor** rendered tilemaps in 2D regardless of `RendererTag` — fixed.
-- **Empty render-stack layers** caused multi-scene flicker — fixed in `Scene::renderWithStack`.
-- **Hidden triggers** no longer fire — `Scene::onUpdateRuntime` skips `gameVisible == false` triggers, clearing timers
-  and overlap state with a synthetic `onTriggerExit`.
-- **Packaging** — packaged games now ship the engine assets they need (`PackReader::entrySize()` reports uncompressed
-  size); asymmetric `CameraOrtho` projections fixed on Vulkan.
-- **Build / CI** — mingw-gcc 15 link passes `-Wa,-mbig-obj` on Windows GCC; `get_git_hash` made resilient; the
-  `HelpIndex` badge test skips cleanly offline.
+- Tilemaps and raycast tilesets were missing from packaged games; packaged games ship the engine assets they need.
+- Vulkan `ComputeShader::dispatch` recorded into the wrong command buffer.
+- Raycaster: player rotation, wall drawing and HUD rotating with the camera.
+- Editor drew tilemaps in 2D regardless of `RendererTag`; empty render-stack layers flickered multi-scene views.
+- Hidden triggers no longer fire.
+- mingw-gcc 15 link on Windows and a resilient `get_git_hash`.
 
 ## [0.1.1] - 2026-04-30
 

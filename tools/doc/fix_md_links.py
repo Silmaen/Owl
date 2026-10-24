@@ -7,8 +7,10 @@ the filtered file, so links into sub-directories (`design/owl-rhi.md`) and back 
 (`../roadmap.md`) work. Links whose target has no anchor (root `CHANGELOG.md`, `ROADMAP.md`) are
 left untouched.
 
-A line `<!-- subpage: page.md -->` becomes `\\subpage page-id`: it gives Doxygen its page tree (GitHub and the
-help panel never show it).
+A line `<!-- subpage: page.md -->` becomes `\\subpage page-id` (GitHub and the help panel never show it). The page
+tree comes from `doc/help.yml`, the order of the help panel: the README (main page) lists the first page of each
+group, the first page of a group the other pages of its group; the markers attach the pages outside the help (the
+design pages).
 
 Usage in Doxyfile:
     FILTER_PATTERNS = *.md="python3 /path/to/fix_md_links.py"
@@ -41,6 +43,39 @@ PAGE_MAP = {
 _ANCHOR = re.compile(r"\{#([A-Za-z0-9_-]+)\}")
 _SUBPAGE = re.compile(r"<!--\s*subpage:\s*([A-Za-z0-9_./-]+\.md)\s*-->")
 _LINK = re.compile(r"\[([^\]]+)\]\(([A-Za-z0-9_./-]+\.md)\)")
+_TOC = Path(__file__).resolve().parents[2] / "doc" / "help.yml"
+_TOC_GROUP = re.compile(r"^  - title: (.+)$")
+_TOC_PAGE = re.compile(r"^      - ([A-Za-z0-9_./-]+\.md)$")
+
+
+def read_toc(toc: Path) -> list[list[Path]]:
+    """The groups of `doc/help.yml`, each the absolute paths of its pages in order (root = the folder above doc/)."""
+    root = toc.resolve().parents[1]
+    groups: list[list[Path]] = []
+    try:
+        lines = toc.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return groups
+    for line in lines:
+        if _TOC_GROUP.match(line):
+            groups.append([])
+        elif (page := _TOC_PAGE.match(line)) and groups:
+            groups[-1].append((root / page.group(1)).resolve())
+    return groups
+
+
+def toc_subpages(source: Path, toc: Path = _TOC) -> list[Path]:
+    """The pages Doxygen hangs under `source`, in the order of the help."""
+    main = toc.resolve().parents[1] / "README.md"
+    groups = [[page for page in group if page != main] for group in read_toc(toc)]
+    groups = [group for group in groups if group]
+    src = source.resolve()
+    if src == main:
+        return [group[0] for group in groups]
+    for group in groups:
+        if group[0] == src:
+            return group[1:]
+    return []
 
 
 def _anchor_of(target: Path) -> str | None:
@@ -54,8 +89,9 @@ def _anchor_of(target: Path) -> str | None:
     return m.group(1) if m else None
 
 
-def fix_links(content: str, source: Path | None = None) -> str:
-    """Replace [text](X.md) links with [text](@ref page-id) when the target page has an anchor."""
+def fix_links(content: str, source: Path | None = None, toc: Path = _TOC) -> str:
+    """Replace [text](X.md) links with [text](@ref page-id) when the target page has an anchor, and append the
+    `\\subpage` list `doc/help.yml` gives `source`."""
 
     def replace_link(m: re.Match) -> str:
         text = m.group(1)
@@ -77,7 +113,12 @@ def fix_links(content: str, source: Path | None = None) -> str:
 
     # Doxygen copies the project logo and the `doc/images` files flat next to the pages.
     content = content.replace('src="engine_assets/logo/', 'src="').replace('src="doc/images/', 'src="')
-    return _LINK.sub(replace_link, _SUBPAGE.sub(replace_subpage, content))
+    content = _LINK.sub(replace_link, _SUBPAGE.sub(replace_subpage, content))
+    if source is not None:
+        ids = [page_id for page in toc_subpages(source, toc) if (page_id := _anchor_of(page))]
+        if ids:
+            content = content.rstrip("\n") + "\n\n" + "".join(f"- \\subpage {page_id}\n" for page_id in ids)
+    return content
 
 
 if __name__ == "__main__":

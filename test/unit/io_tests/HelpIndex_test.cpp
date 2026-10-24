@@ -75,7 +75,8 @@ TEST(HelpIndex, IndexHasCoreLandingPages) {
 	// Pages used by HelpPanel's default routing or by F1 contextual help.
 	for (const char* required: {"editor", "scene", "scripting", "renderer", "physics", "sound"})
 		EXPECT_TRUE(ids.contains(required)) << "expected page '" << required << "' missing from index";
-	// At least the landing page bundled with this PR.
+	// The start page of the panel and the tour of the File screen.
+	EXPECT_TRUE(ids.contains("nest_help"));
 	EXPECT_TRUE(ids.contains("getting_started"));
 }
 
@@ -83,12 +84,10 @@ TEST(HelpIndex, BundledPagesHaveDoxygenSyntaxScrubbed) {
 	const auto root = helpRoot();
 	const auto editor = readBundledFile(root / "editor.md");
 	ASSERT_FALSE(editor.empty());
-	// Heading-trailing Doxygen anchors must be stripped.
-	EXPECT_EQ(editor.find("# Using Owl Nest {#page-editor}"), std::string::npos);
 	// `[TOC]` lines must be dropped (the source file has one).
 	EXPECT_EQ(editor.find("\n[TOC]\n"), std::string::npos);
-	// First H1 must be the clean form.
-	EXPECT_NE(editor.find("# Using Owl Nest\n"), std::string::npos);
+	// Heading anchors stay: the renderer takes them as the link targets of their headings.
+	EXPECT_NE(editor.find("# The Owl Nest Window {#page-editor}\n"), std::string::npos);
 }
 
 TEST(HelpIndex, BundledPagesRewriteImageReferences) {
@@ -98,9 +97,10 @@ TEST(HelpIndex, BundledPagesRewriteImageReferences) {
 	// Image references in source pages use `../images/foo.svg`; the bundled copy must rewrite them.
 	EXPECT_EQ(scene.find("(../images/"), std::string::npos);
 	EXPECT_NE(scene.find("(images/"), std::string::npos);
-	// And the actual image files must be present alongside the page.
-	EXPECT_TRUE(fs::exists(root / "images" / "scene_lifecycle.svg"));
-	EXPECT_TRUE(fs::exists(root / "images" / "component_overview.svg"));
+	// And every image the page references (mermaid diagrams included) must be present alongside it.
+	const std::regex imageRef{R"(\]\((images/[^)]+)\))"};
+	for (auto it = std::sregex_iterator(scene.begin(), scene.end(), imageRef); it != std::sregex_iterator(); ++it)
+		EXPECT_TRUE(fs::exists(root / (*it)[1].str())) << (*it)[1].str();
 }
 
 TEST(HelpIndex, BundledPagesPreserveExternalTextLinks) {
@@ -108,39 +108,17 @@ TEST(HelpIndex, BundledPagesPreserveExternalTextLinks) {
 	const auto readme = readBundledFile(root / "README.md");
 	ASSERT_FALSE(readme.empty());
 	// External text links (`[text](https://...)`) must be preserved; the renderer routes them
-	// to the user's default browser. Image refs (`![alt](https://...)`) are downloaded at
-	// configure time and rewritten to local paths — see `BadgesAreFetchedAndCachedLocally`.
+	// to the user's default browser.
 	EXPECT_NE(readme.find("](https://owl.argawaen.net)"), std::string::npos);
 }
 
-TEST(HelpIndex, BadgesAreFetchedAndCachedLocally) {
-	const auto root = helpRoot();
-	const auto readme = readBundledFile(root / "README.md");
-	ASSERT_FALSE(readme.empty());
-
-	// Badge fetching happens at configure time over HTTPS (`img.shields.io`), one badge at a time.
-	// A badge that downloads is rewritten in the README to `images/badges/<sha>.svg`; one that fails
-	// (offline / sandboxed CI runner, rate-limiting, timeout) keeps its original shields.io URL. The
-	// fetch is therefore partial in general, so we must NOT assert that every shields.io URL is gone —
-	// that all-or-nothing check is what made this test flaky. Instead, collect the badges that WERE
-	// rewritten and verify each resolves to a real on-disk SVG (the fetch + cache + rewrite pipeline).
-	constexpr std::string_view marker = "](images/badges/";
-	std::vector<std::string> rewritten;
-	for (size_t pos = readme.find(marker); pos != std::string::npos; pos = readme.find(marker, pos + 1)) {
-		const size_t start = pos + 2;// skip "]("
-		const size_t end = readme.find(')', start);
-		if (end == std::string::npos)
-			break;
-		rewritten.push_back(readme.substr(start, end - start));
-	}
-	if (rewritten.empty())
-		GTEST_SKIP() << "no badges were fetched at configure time (offline build agent?)";
-
-	for (const auto& relative: rewritten) {
-		const auto body = readBundledFile(root / relative);
-		EXPECT_FALSE(body.empty()) << "rewritten badge missing on disk: " << relative;
-		EXPECT_NE(body.find("<svg"), std::string::npos) << "cached badge is not an SVG: " << relative;
-	}
+TEST(HelpIndex, BadgesBecomeColouredTags) {
+	const auto roadmap = readBundledFile(helpRoot() / "roadmap.md");
+	ASSERT_FALSE(roadmap.empty());
+	// The status badges are `badge:` images the renderer draws: nothing is fetched from the network.
+	EXPECT_EQ(roadmap.find("img.shields.io"), std::string::npos);
+	EXPECT_EQ(roadmap.find("![Done][done]"), std::string::npos);
+	EXPECT_NE(roadmap.find("![Done](badge:2ea043)"), std::string::npos);
 }
 
 TEST(HelpIndex, ReadmeLogoCopiedToImages) {

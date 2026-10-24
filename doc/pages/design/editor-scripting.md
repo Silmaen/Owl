@@ -36,7 +36,7 @@ that touch them, the inspector field edit (`component.set`) and the gizmo transf
 **Status: done.** Parser and printer in `commands/CommandLine.h`, journal in `commands/CommandJournal.h` (bound to the
 registry, owned by the session), macros in `commands/Macro.h` (`macro.run`, undo groups of `UndoManager`), console
 without UI in `session/Console.h` and its panel in `panel/ConsolePanel.h`; user documentation in
-[Editor](../editor.md#editor-console). The inspector field edit (`component.set replace=true`), the gizmo drag
+[Editor](../editor_console.md#editor-console). The inspector field edit (`component.set replace=true`), the gizmo drag
 (`entity.set_transform`) and the inspector rename (`entity.rename`) are registry commands. Gestures still pushing an
 undo command directly: the scene settings panel (physics, layers), "Revert to Prefab" and "Apply to Prefab", "Route to
 layer" in the hierarchy, the voxel brush and tile painting, and the edits of the asset documents (tilemap, tileset,

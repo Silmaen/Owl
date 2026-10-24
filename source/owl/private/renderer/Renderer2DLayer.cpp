@@ -30,6 +30,17 @@ auto parseSpace(const std::string& iValue) -> Renderer2DLayer::Space {
 	return Renderer2DLayer::Space::World;
 }
 
+auto parseBillboard(const std::string& iValue) -> Renderer2DLayer::Billboard {
+	std::string lower = iValue;
+	std::ranges::transform(lower, lower.begin(),
+						   [](const unsigned char iC) -> char { return static_cast<char>(std::tolower(iC)); });
+	if (lower == "upright")
+		return Renderer2DLayer::Billboard::Upright;
+	if (lower == "full")
+		return Renderer2DLayer::Billboard::Full;
+	return Renderer2DLayer::Billboard::None;
+}
+
 }// namespace
 
 void Renderer2DLayer::registerWithFactory() {
@@ -57,7 +68,9 @@ void Renderer2DLayer::onBeginFrame(const Camera& iCamera) {
 		Renderer2D::beginScene(ortho);
 	} else {
 		Renderer2D::beginScene(iCamera);
+		Renderer2D::setDepthTest(m_depthTest);
 	}
+	m_cameraWorld = math::inverse(iCamera.getView());
 }
 
 void Renderer2DLayer::onRender(scene::Scene& ioScene) {
@@ -80,6 +93,10 @@ void Renderer2DLayer::applyConfig(const std::string& iConfig) {
 		m_space = parseSpace(v.as<std::string>());
 	if (const auto v = config["ReferenceHeight"]; v && v.IsScalar())
 		m_referenceHeight = std::max(0.f, v.as<float>(0.f));
+	if (const auto v = config["Billboard"]; v && v.IsScalar())
+		m_billboard = parseBillboard(v.as<std::string>());
+	if (const auto v = config["DepthTest"]; v && v.IsScalar())
+		m_depthTest = v.as<bool>(false);
 }
 
 void Renderer2DLayer::setViewport(const math::vec2ui& iViewport) {

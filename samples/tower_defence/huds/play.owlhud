@@ -18,7 +18,7 @@ Entities:
       scaleMode: ScaleWithHeight
   - Entity: 7490000000000000002
     Tag:
-      tag: StatsBar
+      tag: TopLeft
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -31,24 +31,19 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.4, 0.065]
+      size: [0.5, 0.21]
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [16, 8]
-    UiPanel:
-      backgroundColor: [0.08, 0.07, 0.1, 0.75]
-      borderColor: [0.55, 0.45, 0.3, 0.6]
-      borderWidth: 1
-      clipChildren: false
     UiLayout:
-      arrangement: Row
-      crossAlign: Center
-      spacing: 8
+      arrangement: Column
+      crossAlign: Start
+      spacing: 3
       padding: 0
       columns: 1
       cellSize: [0, 0]
   - Entity: 7490000000000000003
     Tag:
-      tag: LivesText
+      tag: PhaseBar
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -61,26 +56,22 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.45, 1]
+      size: [0.78, 0.26]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
-      text: 'Lives 20'
-      color: [1, 0.6, 0.55, 1]
-      fontSize: 26
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: OpenSans-Bold
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/panel_stats.png
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 6
+      padding: 2
+      columns: 1
+      cellSize: [0, 0]
   - Entity: 7490000000000000004
     Tag:
-      tag: GoldText
+      tag: PhaseText
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -88,29 +79,53 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000002
+      parentId: 7490000000000000003
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.45, 1]
+      size: [0.8, 0.75]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
-      text: 'Gold 220'
-      color: [0.97, 0.77, 0.3, 1]
-      fontSize: 26
-      horizontalAlignment: Center
+      outlineWidth: 0
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Day'
+      color: [0.16, 0.09, 0.04, 1]
+      fontSize: 20
+      horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
   - Entity: 7490000000000000005
+    Tag:
+      tag: PhaseIcon
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000003
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.12, 0.75]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/daynight.png
+      columns: 2
+      rows: 1
+      frame: 0
+  - Entity: 7490000000000000006
     Tag:
       tag: WaveText
     Transform:
@@ -120,24 +135,82 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000001
+      parentId: 7490000000000000002
     UiRect:
-      anchorMin: [0.5, 0]
-      anchorMax: [0.5, 0]
-      pivot: [0.5, 0]
-      size: [0.4, 0.065]
-      sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 8]
-    UiPanel:
-      backgroundColor: [0.08, 0.07, 0.1, 0.75]
-      borderColor: [0.55, 0.45, 0.3, 0.6]
-      borderWidth: 1
-      clipChildren: false
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.31]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/panel_wave.png
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineWidth: 0
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Wave 0 / 8 - next in 25 s'
-      color: [0.95, 0.92, 0.84, 1]
+      color: [0.16, 0.09, 0.04, 1]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 7490000000000000007
+    Tag:
+      tag: StatsBar
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000002
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.78, 0.31]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/panel_stats.png
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 8
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7490000000000000008
+    Tag:
+      tag: LivesText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000007
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.45, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 0
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Lives 20'
+      color: [0.55, 0.08, 0.05, 1]
       fontSize: 26
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -146,8 +219,100 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
-  - Entity: 7490000000000000006
+      font: MedievalSharp
+  - Entity: 7490000000000000009
+    Tag:
+      tag: GoldText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000007
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.45, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 0
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Gold 240'
+      color: [0.45, 0.3, 0.02, 1]
+      fontSize: 26
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 7490000000000000010
+    Tag:
+      tag: Minimap
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000001
+    UiRect:
+      anchorMin: [1, 0]
+      anchorMax: [1, 0]
+      pivot: [1, 0]
+      size: [0.3, 0.24]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [-16, 8]
+  - Entity: 7490000000000000011
+    Tag:
+      tag: MinimapImage
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000010
+    UiRect:
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [0.9, 0.87]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      renderTarget: minimap
+  - Entity: 7490000000000000012
+    Tag:
+      tag: MinimapFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000010
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/frame.png
+  - Entity: 7490000000000000013
     Tag:
       tag: ButtonBar
     Transform:
@@ -172,7 +337,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7490000000000000007
+  - Entity: 7490000000000000014
     Tag:
       tag: MenuButton
     Transform:
@@ -182,7 +347,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000006
+      parentId: 7490000000000000013
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -191,16 +356,16 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.48, 0.11, 0.11, 1]
-      hoverColor: [0.78, 0.24, 0.18, 1]
-      pressedColor: [0.3, 0.06, 0.06, 1]
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_menu_clicked
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Menu'
-      color: [0.95, 0.92, 0.84, 1]
+      color: [0.95, 0.88, 0.72, 1]
       fontSize: 24
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -209,14 +374,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
     UiFocus:
       focusable: false
       initial: false
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7490000000000000008
+  - Entity: 7490000000000000015
     Tag:
       tag: MenuButtonFrame
     Transform:
@@ -226,7 +391,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000007
+      parentId: 7490000000000000014
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -237,7 +402,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7490000000000000009
+  - Entity: 7490000000000000016
     Tag:
       tag: SpeedButton
     Transform:
@@ -247,7 +412,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000006
+      parentId: 7490000000000000013
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -256,16 +421,16 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.48, 0.11, 0.11, 1]
-      hoverColor: [0.78, 0.24, 0.18, 1]
-      pressedColor: [0.3, 0.06, 0.06, 1]
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_speed_clicked
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Speed x1'
-      color: [0.95, 0.92, 0.84, 1]
+      color: [0.95, 0.88, 0.72, 1]
       fontSize: 24
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -274,14 +439,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
     UiFocus:
       focusable: false
       initial: false
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7490000000000000010
+  - Entity: 7490000000000000017
     Tag:
       tag: SpeedButtonFrame
     Transform:
@@ -291,7 +456,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000009
+      parentId: 7490000000000000016
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -302,7 +467,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7490000000000000011
+  - Entity: 7490000000000000018
     Tag:
       tag: CallButton
     Transform:
@@ -312,7 +477,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000006
+      parentId: 7490000000000000013
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -321,16 +486,16 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.48, 0.11, 0.11, 1]
-      hoverColor: [0.78, 0.24, 0.18, 1]
-      pressedColor: [0.3, 0.06, 0.06, 1]
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_call_clicked
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Call wave'
-      color: [0.95, 0.92, 0.84, 1]
+      color: [0.95, 0.88, 0.72, 1]
       fontSize: 24
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -339,14 +504,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
     UiFocus:
       focusable: false
       initial: false
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7490000000000000012
+  - Entity: 7490000000000000019
     Tag:
       tag: CallButtonFrame
     Transform:
@@ -356,7 +521,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000011
+      parentId: 7490000000000000018
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -367,249 +532,34 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
-  - Entity: 7490000000000000013
+  - Entity: 7490000000000000020
     Tag:
-      tag: InfoPanel
+      tag: SpellBar
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Visibility:
-      gameVisible: false
+      gameVisible: true
     Hierarchy:
       parentId: 7490000000000000001
     UiRect:
       anchorMin: [0, 1]
       anchorMax: [0, 1]
       pivot: [0, 1]
-      size: [0.72, 0.15]
+      size: [0.5, 0.075]
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [16, -8]
-    UiPanel:
-      backgroundColor: [0.07, 0.09, 0.16, 0.9]
-      borderColor: [0.85, 0.65, 0.25, 1]
-      borderWidth: 3
-      clipChildren: false
     UiLayout:
       arrangement: Row
       crossAlign: Center
-      spacing: 10
+      spacing: 6
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7490000000000000014
-    Tag:
-      tag: InfoTexts
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7490000000000000013
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.74, 0.9]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiLayout:
-      arrangement: Column
-      crossAlign: Start
-      spacing: 2
-      padding: 0
-      columns: 1
-      cellSize: [0, 0]
-  - Entity: 7490000000000000015
-    Tag:
-      tag: InfoText
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7490000000000000014
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 0.5]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
-      text: ''
-      color: [0.82, 0.84, 0.9, 0.95]
-      fontSize: 20
-      horizontalAlignment: Left
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-  - Entity: 7490000000000000016
-    Tag:
-      tag: InfoTitle
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7490000000000000014
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 0.45]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
-      text: ''
-      color: [0.97, 0.77, 0.3, 1]
-      fontSize: 26
-      horizontalAlignment: Left
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: OpenSans-Bold
-  - Entity: 7490000000000000017
-    Tag:
-      tag: InfoIcon
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7490000000000000013
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.16, 0.85]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: nam:textures/icons.png
-      columns: 4
-      rows: 1
-      frame: 0
-  - Entity: 7490000000000000018
-    Tag:
-      tag: MessageText
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7490000000000000001
-    UiRect:
-      anchorMin: [0.5, 0.3]
-      anchorMax: [0.5, 0.3]
-      pivot: [0.5, 0.3]
-      size: [0.9, 0.14]
-      sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0]
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
-      text: ''
-      color: [0.95, 0.92, 0.84, 1]
-      fontSize: 40
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: true
-      fit: Shrink
-      minFontSize: 12
-      font: OpenSans-ExtraBold
-  - Entity: 7490000000000000019
-    Tag:
-      tag: PauseWindow
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy:
-      parentId: 7490000000000000001
-    UiRect:
-      anchorMin: [0.5, 0.5]
-      anchorMax: [0.5, 0.5]
-      pivot: [0.5, 0.5]
-      size: [1.25, 0.86]
-      sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0]
-    UiWindow:
-      title: 'Paused'
-      titleBarHeight: 40
-      titleFontSize: 28
-      bodyColor: [0.08, 0.1, 0.17, 0.97]
-      titleColor: [0.42, 0.1, 0.1, 1]
-      titleTextColor: [0.95, 0.92, 0.84, 1]
-      draggable: false
-      closable: false
-      onCloseCallback: ''
-    UiLayout:
-      arrangement: Column
-      crossAlign: Center
-      spacing: 8
-      padding: 10
-      columns: 1
-      cellSize: [0, 0]
-  - Entity: 7490000000000000020
-    Tag:
-      tag: ControlsText
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7490000000000000019
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.96, 0.38]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiText:
-      outlineWidth: 2
-      text: "Build, sell     click a pad or a tower, then a badge; right click closes\nPads            Q / E or Tab, D-pad; Enter or pad A opens and builds\n                1 2 3 pick a tower, X or pad X sells, Backspace or pad B closes\nNext wave       Space, pad Y, the Call wave button (bonus gold)\nSpeed x2        F, pad RB          Pause   Escape, P, pad Start\nCamera          WASD, arrows, left stick, mouse on an edge"
-      color: [0.97, 0.77, 0.3, 1]
-      fontSize: 19
-      horizontalAlignment: Left
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0.2
-      wrap: true
-      fit: Shrink
-      minFontSize: 12
-      font: JetBrainsMono-Regular
   - Entity: 7490000000000000021
     Tag:
-      tag: QuitButton
+      tag: ShieldButton
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -617,26 +567,26 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000019
+      parentId: 7490000000000000020
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.12]
+      size: [0.48, 0.9]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.48, 0.11, 0.11, 1]
-      hoverColor: [0.78, 0.24, 0.18, 1]
-      pressedColor: [0.3, 0.06, 0.06, 1]
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
-      onClickCallback: on_pause_quit
+      onClickCallback: on_shield_clicked
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
-      text: 'Quit to title'
-      color: [0.95, 0.92, 0.84, 1]
-      fontSize: 30
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Shield wall'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -644,16 +594,16 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
     UiFocus:
-      focusable: true
+      focusable: false
       initial: false
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
   - Entity: 7490000000000000022
     Tag:
-      tag: QuitButtonFrame
+      tag: ShieldButtonFrame
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -674,7 +624,7 @@ Entities:
       texture: nam:textures/ui/banner.png
   - Entity: 7490000000000000023
     Tag:
-      tag: RestartButton
+      tag: RainButton
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -682,26 +632,26 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000019
+      parentId: 7490000000000000020
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.12]
+      size: [0.48, 0.9]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.48, 0.11, 0.11, 1]
-      hoverColor: [0.78, 0.24, 0.18, 1]
-      pressedColor: [0.3, 0.06, 0.06, 1]
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
-      onClickCallback: on_pause_restart
+      onClickCallback: on_rain_clicked
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
-      text: 'Restart map'
-      color: [0.95, 0.92, 0.84, 1]
-      fontSize: 30
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Rain of arrows'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -709,16 +659,16 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
     UiFocus:
-      focusable: true
+      focusable: false
       initial: false
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
   - Entity: 7490000000000000024
     Tag:
-      tag: RestartButtonFrame
+      tag: RainButtonFrame
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -739,7 +689,74 @@ Entities:
       texture: nam:textures/ui/banner.png
   - Entity: 7490000000000000025
     Tag:
-      tag: ResumeButton
+      tag: MessageText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7490000000000000001
+    UiRect:
+      anchorMin: [0.5, 0.62]
+      anchorMax: [0.5, 0.62]
+      pivot: [0.5, 0.62]
+      size: [0.7, 0.14]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: ''
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 40
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+      font: Cinzel
+  - Entity: 7490000000000000026
+    Tag:
+      tag: PauseWindow
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7490000000000000001
+    UiRect:
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [1.3, 0.94]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0]
+    UiWindow:
+      title: 'Paused'
+      titleBarHeight: 40
+      titleFontSize: 28
+      bodyColor: [0.17, 0.1, 0.06, 0.97]
+      titleColor: [0.38, 0.13, 0.08, 1]
+      titleTextColor: [0.95, 0.88, 0.72, 1]
+      draggable: false
+      closable: false
+      onCloseCallback: ''
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 4
+      padding: 8
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7490000000000000027
+    Tag:
+      tag: ControlsText
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -747,25 +764,86 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000019
+      parentId: 7490000000000000026
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.12]
+      size: [0.96, 0.3]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      text: "Build, upgrade  click a pad or a tower, then a badge; right click closes\nPads            Q / E or Tab, D-pad; Enter or pad A opens and picks\n                1 2 3 pick a badge, X or pad X sells, Backspace or pad B closes\nNext wave       Space, pad Y, the Call wave button (bonus gold)\nSpeed x2        F, pad RB          Pause   Escape, P, pad Start\nCamera          WASD, arrows, left stick, mouse on an edge\nTurn, zoom      Z / C, pad LB / D-pad up and down; wheel, R / V, right stick"
+      color: [0.97, 0.77, 0.3, 1]
+      fontSize: 16
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0.1
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7490000000000000028
+    Tag:
+      tag: EffectsText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000026
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.96, 0.25]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      text: ''
+      color: [0.88, 0.8, 0.64, 0.95]
+      fontSize: 15
+      horizontalAlignment: Left
+      verticalAlignment: Top
+      kerning: 0
+      lineSpacing: 0.05
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7490000000000000029
+    Tag:
+      tag: SkipTutorialButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000026
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.08]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.48, 0.11, 0.11, 1]
-      hoverColor: [0.78, 0.24, 0.18, 1]
-      pressedColor: [0.3, 0.06, 0.06, 1]
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
-      onClickCallback: on_pause_resume
+      onClickCallback: on_tutorial_skipped
     UiText:
       outlineWidth: 2
-      outlineColor: [0.1, 0.05, 0.04, 1]
-      text: 'Resume'
-      color: [0.95, 0.92, 0.84, 1]
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Skip tutorial'
+      color: [0.95, 0.88, 0.72, 1]
       fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -774,16 +852,16 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: MedievalSharp
     UiFocus:
       focusable: true
-      initial: true
+      initial: false
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7490000000000000026
+  - Entity: 7490000000000000030
     Tag:
-      tag: ResumeButtonFrame
+      tag: SkipTutorialButtonFrame
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -791,7 +869,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7490000000000000025
+      parentId: 7490000000000000029
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -802,3 +880,917 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/ui/banner.png
+  - Entity: 7490000000000000031
+    Tag:
+      tag: QuitButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000026
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.08]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_pause_quit
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Quit to the map'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7490000000000000032
+    Tag:
+      tag: QuitButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000031
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/banner.png
+  - Entity: 7490000000000000033
+    Tag:
+      tag: RestartButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000026
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.08]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_pause_restart
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Restart level'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7490000000000000034
+    Tag:
+      tag: RestartButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000033
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/banner.png
+  - Entity: 7490000000000000035
+    Tag:
+      tag: ResumeButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000026
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.08]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_pause_resume
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Resume'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7490000000000000036
+    Tag:
+      tag: ResumeButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000035
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/banner.png
+  - Entity: 7490000000000000037
+    Tag:
+      tag: BriefingCard
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7490000000000000001
+    UiRect:
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [1.16, 0.8]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0]
+    UiWindow:
+      title: ''
+      titleBarHeight: 10
+      titleFontSize: 1
+      bodyColor: [0.88, 0.79, 0.6, 1]
+      titleColor: [0.3, 0.18, 0.09, 1]
+      titleTextColor: [0.97, 0.77, 0.3, 1]
+      draggable: false
+      closable: false
+      modal: true
+      onCloseCallback: ''
+  - Entity: 7490000000000000038
+    Tag:
+      tag: BriefingBody
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000037
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [0.9, 0.68]
+      sizeUnit: [ParentWidth, ScreenHeight]
+      offset: [0, 0.02]
+      offsetUnit: [ScreenHeight, ScreenHeight]
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 3
+      padding: 2
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7490000000000000039
+    Tag:
+      tag: BriefingButtons
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000038
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.08]
+      sizeUnit: [ParentWidth, ScreenHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 14
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7490000000000000040
+    Tag:
+      tag: BriefingSkipButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000039
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.4, 0.9]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_tutorial_skipped
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Skip tutorial'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 22
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7490000000000000041
+    Tag:
+      tag: BriefingSkipButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000040
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/banner.png
+  - Entity: 7490000000000000042
+    Tag:
+      tag: BriefingButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000039
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.4, 0.9]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_briefing_closed
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'To arms!'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7490000000000000043
+    Tag:
+      tag: BriefingButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000042
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/banner.png
+  - Entity: 7490000000000000044
+    Tag:
+      tag: BriefingRow6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000038
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.98, 0.065]
+      sizeUnit: [ParentWidth, ScreenHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 8
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7490000000000000045
+    Tag:
+      tag: BriefingLine6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000044
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.84, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 0
+      text: ''
+      color: [0.22, 0.12, 0.05, 1]
+      fontSize: 21
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0.05
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7490000000000000046
+    Tag:
+      tag: BriefingIcon6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000044
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.08, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/briefing_icons.png
+      columns: 6
+      rows: 3
+      frame: 0
+  - Entity: 7490000000000000047
+    Tag:
+      tag: BriefingRow5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000038
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.98, 0.065]
+      sizeUnit: [ParentWidth, ScreenHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 8
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7490000000000000048
+    Tag:
+      tag: BriefingLine5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000047
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.84, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 0
+      text: ''
+      color: [0.22, 0.12, 0.05, 1]
+      fontSize: 21
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0.05
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7490000000000000049
+    Tag:
+      tag: BriefingIcon5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000047
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.08, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/briefing_icons.png
+      columns: 6
+      rows: 3
+      frame: 0
+  - Entity: 7490000000000000050
+    Tag:
+      tag: BriefingRow4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000038
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.98, 0.065]
+      sizeUnit: [ParentWidth, ScreenHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 8
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7490000000000000051
+    Tag:
+      tag: BriefingLine4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000050
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.84, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 0
+      text: ''
+      color: [0.22, 0.12, 0.05, 1]
+      fontSize: 21
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0.05
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7490000000000000052
+    Tag:
+      tag: BriefingIcon4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000050
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.08, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/briefing_icons.png
+      columns: 6
+      rows: 3
+      frame: 0
+  - Entity: 7490000000000000053
+    Tag:
+      tag: BriefingRow3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000038
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.98, 0.065]
+      sizeUnit: [ParentWidth, ScreenHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 8
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7490000000000000054
+    Tag:
+      tag: BriefingLine3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000053
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.84, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 0
+      text: ''
+      color: [0.22, 0.12, 0.05, 1]
+      fontSize: 21
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0.05
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7490000000000000055
+    Tag:
+      tag: BriefingIcon3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000053
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.08, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/briefing_icons.png
+      columns: 6
+      rows: 3
+      frame: 0
+  - Entity: 7490000000000000056
+    Tag:
+      tag: BriefingRow2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000038
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.98, 0.065]
+      sizeUnit: [ParentWidth, ScreenHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 8
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7490000000000000057
+    Tag:
+      tag: BriefingLine2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000056
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.84, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 0
+      text: ''
+      color: [0.22, 0.12, 0.05, 1]
+      fontSize: 21
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0.05
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7490000000000000058
+    Tag:
+      tag: BriefingIcon2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000056
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.08, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/briefing_icons.png
+      columns: 6
+      rows: 3
+      frame: 0
+  - Entity: 7490000000000000059
+    Tag:
+      tag: BriefingRow1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000038
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.98, 0.065]
+      sizeUnit: [ParentWidth, ScreenHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 8
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7490000000000000060
+    Tag:
+      tag: BriefingLine1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000059
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.84, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 0
+      text: ''
+      color: [0.22, 0.12, 0.05, 1]
+      fontSize: 21
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0.05
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 7490000000000000061
+    Tag:
+      tag: BriefingIcon1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000059
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.08, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/ui/briefing_icons.png
+      columns: 6
+      rows: 3
+      frame: 0
+  - Entity: 7490000000000000062
+    Tag:
+      tag: BriefingTitle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7490000000000000038
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.98, 0.1]
+      sizeUnit: [ParentWidth, ScreenHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [0.55, 0.36, 0.2, 1]
+      texture: nam:textures/ui/banner.png
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: ''
+      color: [0.97, 0.77, 0.3, 1]
+      fontSize: 44
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: Cinzel

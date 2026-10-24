@@ -285,6 +285,32 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 			ioOverrides["ReferenceHeight"] = std::clamp(referenceHeight, 0.f, 16384.f);
 			changed = true;
 		}
+		const std::string billboard =
+				ioOverrides["Billboard"] ? ioOverrides["Billboard"].as<std::string>("None") : std::string{"None"};
+		gui::widgets::propertyLabel("Billboard",
+									"World space in a 3D scene: Upright turns the sprites around the world Y axis to "
+									"the camera, Full lays them in the screen plane; their 2D lights then sit on the "
+									"ground plane (x, z).");
+		if (gui::widgets::beginCombo("##billboard", billboard.c_str())) {
+			for (const auto* candidate: {"None", "Upright", "Full"}) {
+				const bool selected = (billboard == candidate);
+				if (ImGui::Selectable(candidate, selected) && !selected) {
+					ioOverrides["Billboard"] = std::string{candidate};
+					changed = true;
+				}
+				if (selected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		std::ignore = gui::widgets::propertyReset(false);
+		bool depthTest = ioOverrides["DepthTest"] ? ioOverrides["DepthTest"].as<bool>(false) : false;
+		if (gui::widgets::propertyBool("Depth Test", depthTest, false,
+									   "Hide the sprites behind the meshes and voxels drawn by the layers before this "
+									   "one, and draw them back to front.")) {
+			ioOverrides["DepthTest"] = depthTest;
+			changed = true;
+		}
 	} else if (iTypeKey == "RendererIsometric") {
 		changed = renderIsometricOverrides(ioOverrides);
 	} else if (iTypeKey == "RendererMesh") {

@@ -25,6 +25,7 @@ void UiWindow::serialize(const core::Serializer& iOut) const {
 	emitter << YAML::Key << "titleTextColor" << YAML::Value << titleTextColor;
 	emitter << YAML::Key << "draggable" << YAML::Value << draggable;
 	emitter << YAML::Key << "closable" << YAML::Value << closable;
+	emitter << YAML::Key << "modal" << YAML::Value << modal;
 	emitter << YAML::Key << "onCloseCallback" << YAML::Value << onCloseCallback;
 	emitter << YAML::EndMap;
 }
@@ -47,6 +48,8 @@ void UiWindow::deserialize(const core::Serializer& iNode) {
 		draggable = node["draggable"].as<bool>();
 	if (node["closable"])
 		closable = node["closable"].as<bool>();
+	if (node["modal"])
+		modal = node["modal"].as<bool>();
 	if (node["onCloseCallback"])
 		onCloseCallback = node["onCloseCallback"].as<std::string>();
 }

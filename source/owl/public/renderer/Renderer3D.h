@@ -235,6 +235,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Light a white diffuse surface of a normal receives from the ambient (environment, constant sky or layer
+	 *  ambient), the directional scene lights and the layer sun, as the 3D shaders see it: irradiance over pi,
+	 *  pre-exposed. Point and spot lights are left out. The sprites of a 3D scene take it as their ambient.
+	 * @param[in] iNormal The unit normal of the surface.
+	 * @return The linear light factor (1 lights a white surface to white before the exposure compensation).
+	 */
+	[[nodiscard]] static auto getSurfaceLight(const math::vec3& iNormal) -> math::vec3;
+
+	/**
+	 * @brief
 	 *  Exposure of a camera set to an exposure value at ISO 100: 1 / (1.2 · 2^EV100).
 	 * @param[in] iEv100 The exposure value (15 sunny day, 4 candle-lit room).
 	 * @return The exposure.

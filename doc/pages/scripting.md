@@ -291,8 +291,10 @@ end
 
 `scene.pick_entity([x, y])` returns the entity drawn under a viewport pixel, the mouse by default (0 when none): the
 sprites, circles and meshes of the world, not the UI (`ui.is_mouse_over_ui()` tells when the mouse is on a widget).
-An entity of an isometric layer is picked on its sprite as drawn, any other one on the ray of the primary camera; a
-hit in a later layer of the render stack wins, then the nearest one.
+An entity of an isometric layer is picked on its sprite as drawn, any other one on the ray of the primary camera (a
+sprite of a billboard layer turned to it); a hit in a later layer of the render stack wins, then the nearest one. With
+a tag (`scene.pick_entity(nil, nil, "Tower")`) only the entities of that tag and their children count, and a hit on a
+child returns its tagged ancestor: a tower made of several meshes is picked as one.
 
 ### `time`
 
@@ -611,17 +613,43 @@ destroyed; each of them gets `on_destroy()` once, loses its Box2D body and stops
 
 | Available                                          | Removed or restricted                                         |
 |----------------------------------------------------|---------------------------------------------------------------|
-| `base` (print, type, pairs, ipairs, tostring, ...) | `io`, `os`, `debug`, `package`, `require`: not opened         |
+| `base` (print, type, pairs, ipairs, tostring, ...) | `io`, `os`, `debug`, `package`: not opened                    |
 | `table` (insert, remove, sort, ...)                | `dofile`, `loadfile`: removed                                 |
 | `string` (format, find, sub, ...)                  | `string.dump`: removed                                        |
 | `math` (sin, cos, sqrt, random, ...)               | `load`: text chunks only, whatever `mode` the script passes   |
 | `utf8`                                             | `setmetatable`: a metatable with `__gc` is refused            |
 | `coroutine`                                        | `collectgarbage`: only `"count"` and `"isrunning"`            |
 |                                                    | `getmetatable("")`: returns `false` (string metatable locked) |
+| `require` (the modules of the project)             | `require`: module names only, text chunks, see below          |
 
 Scripts and packs are loaded as **source text only**: a precompiled (bytecode) chunk is
 refused by the engine and by `load`, since forged bytecode can crash the interpreter.
 `load(text, name, mode, env)` still works, its chunk runs in the script's own state.
+
+### Modules (`require`)
+
+A long script splits into modules: `require("scripts.game.towers")` reads `scripts/game/towers.lua` of the project
+(the open pack, then the asset folders, like the scripts), runs it once as a text chunk and returns what it returns
+(`true` when it returns nothing); every later `require` of the same name in the same script instance returns that
+value. A module name is words of letters, digits and `_` joined by dots: no path, no `..`. A module requiring itself
+while it loads, a missing module and a syntax error raise an error in the caller. A module shares the globals of its
+script (its `properties` among them, read inside functions: the module runs before they are set), and runs under the
+memory ceiling and the time budget of the call that required it. Keep the hooks (`on_create`, `on_update`, the HUD
+callbacks) in the script of the entity, where Owl Nest lists them; the modules hold the rest. Require them in
+`on_create` (or in a function): the inspector reads the `properties` of a script by running its top level alone,
+without its modules.
+
+```lua
+-- scripts/game/towers.lua
+local towers = {}
+function towers.range(kind) return kind == "archer" and archer_range or 3.0 end
+return towers
+
+-- scripts/game/defence.lua
+local towers
+function on_create() towers = require("scripts.game.towers") end
+function on_update(dt) local r = towers.range("archer") end
+```
 
 ### Quotas
 
@@ -684,7 +712,7 @@ In Play (editor) and in the development runner, saving a `.lua` file replaces ev
 3. `on_create` runs, then the old instance is dropped **without** `on_destroy`.
 
 Other globals start from the new file: keep the state that must survive in properties. See
-[Editor](editor.md#editor-hot-reload).
+[Editor](editor_assets.md#editor-hot-reload).
 
 ## Asset Packing
 
@@ -697,7 +725,7 @@ included in the `.owlpack` binary archive with `AssetType::Script`.
 
 The scanner then follows what a script names: the scene paths (ending in `.owl`), the sound files (`.wav`, `.ogg`,
 `.mp3`, `.flac`, or any argument of `sound.play`) and the serialized textures (`nam:` / `pat:`) quoted in the script,
-and the same values given as `string` properties in the scene. A level can thus name the next one in a property
+the modules it requires (scanned in turn), and the same values given as `string` properties in the scene. A level can thus name the next one in a property
 (`next_scene: scenes/level_2.owl`) edited in the inspector: the export packs it and scans it in turn. A path built at
 run time (`"scenes/level_" .. n .. ".owl"`) is not seen; write it out or give it as a property.
 

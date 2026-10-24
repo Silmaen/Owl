@@ -10,19 +10,49 @@
 #include "ScriptLoader.h"
 
 #include "app/Application.h"
+#include "platform/FileUtils.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <variant>
+#include <vector>
 
 namespace owl::scene {
+
+namespace {
+
+auto fileBytes(const std::filesystem::path& iFile) -> std::vector<uint8_t> {
+	const std::string text = platform::fileToString(iFile);
+	return {text.begin(), text.end()};
+}
+
+// The modules of `require` are read like the scripts: the open pack, then the asset folders, then the working folder.
+auto readModule(const std::string& iPath) -> std::optional<std::vector<uint8_t>> {
+	if (app::Application::instanced()) {
+		const auto& app = app::Application::get();
+		if (app.packContains(iPath))
+			if (auto data = app.loadFromPack(iPath))
+				return data;
+		for (const auto& [title, assetsPath]: app.getAssetDirectories())
+			if (const auto resolved = assetsPath / iPath; exists(resolved))
+				return fileBytes(resolved);
+	}
+	if (exists(std::filesystem::path{iPath}))
+		return fileBytes(iPath);
+	return std::nullopt;
+}
+
+}// namespace
 
 auto loadScriptInstance(Scene& ioScene, const component::LuaScript& iScript, const uint64_t iEntityId,
 						const std::string& iEntityName) -> uniq<script::ScriptInstance> {
 	auto instance = mkUniq<script::ScriptInstance>();
 	instance->setEntityName(iEntityName);
 	instance->setScene(&ioScene);
+	instance->setModuleReader(readModule);
 	bool loaded = false;
 	if (app::Application::instanced()) {
 		const auto& app = app::Application::get();

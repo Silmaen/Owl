@@ -36,20 +36,25 @@ namespace owl::nest::codeEditor {
  * strikethrough / autolinks). Rendering walks the parsed block list and emits ImGui
  * widgets:
  *
- * - headings get scaled fonts (`PushFont(font, baseSize × ratio)`) and a separator
- *   under H1/H2;
+ * - headings use the strong font in clear size steps (H1 to H4), with space above them, a rule under H1 (theme
+ *   accent) and H2, H3 in the accent colour, H5 / H6 muted; each records the position of its anchor (`{#id}` or GitHub slug) so
+ *   `scrollToAnchor()` can reach it;
  * - paragraphs are wrapped text with inline emphasis, strong, strikethrough, code,
- *   and links (internal links go through `LinkCallback`, external `http(s)://` links
- *   open in the user's default browser);
+ *   and links (internal links, in the accent colour, go through `LinkCallback`; external `http(s)://` links, in
+ *   the info colour with an external-link glyph, open in the user's default browser); a hovered link is underlined,
+ *   brighter, and shows the hand cursor;
+ * - `![label](badge:rrggbb)` images (the status badges of the help bundle) are drawn as coloured tags;
  * - code blocks are rendered as a read-only `TextEditor` with syntax highlighting
  *   (one cached `TextEditor` per code block);
- * - tables are rendered with `ImGui::BeginTable` (borders + row stripes);
+ * - tables are rendered with `ImGui::BeginTable` (borders + row stripes); a cell holding only images shows them at
+ *   the column width (a head row of images is drawn as a body row);
  * - local images (SVG / PNG / JPG, paths relative to `setBaseDirectory()`) are
  *   loaded once via `lunasvg` / `stb_image` and cached as ImGui textures. Remote
  *   `http(s)://` URLs are normally pre-fetched at configure time by
  *   `cmake/HelpAssets.cmake` and rewritten to local paths; if a remote URL still
  *   reaches the renderer (download failure), it is rendered as a clickable button
- *   that opens the URL in the user's default browser.
+ *   that opens the URL in the user's default browser. An image shown smaller than its size opens, on click, at up
+ *   to the size of the main window in a popup.
  *
  * Re-parsing is debounced (~250 ms) so heavy content does not re-build the block
  * list on every keystroke.
@@ -124,6 +129,48 @@ public:
 
 	/**
 	 * @brief
+	 *  Show a text at once, without the debounce of `update()` (a page opened in the help).
+	 * @param[in] iText The Markdown source.
+	 */
+	void setText(const std::string& iText) {
+		m_pendingText = iText;
+		m_renderedText = iText;
+		m_needsRebuild = true;
+		m_dirty = false;
+	}
+
+	/**
+	 * @brief
+	 *  Scroll to a heading on the next frames: its anchor (`{#id}` or GitHub slug of its text), the top when empty.
+	 * @param[in] iAnchor The anchor, without `#`.
+	 */
+	void scrollToAnchor(const std::string& iAnchor) {
+		m_pendingAnchor = iAnchor;
+		m_anchorFrames = kAnchorFrames;
+		m_scrollFrames = kAnchorFrames;
+		m_pendingScrollY = iAnchor.empty() ? 0.0f : -1.0f;
+	}
+
+	/**
+	 * @brief
+	 *  Scroll to a vertical position on the next frame (a page left by Back, at its former position).
+	 * @param[in] iScrollY The scroll position, in pixels.
+	 */
+	void scrollTo(const float iScrollY) {
+		m_pendingAnchor.clear();
+		m_scrollFrames = kAnchorFrames;
+		m_pendingScrollY = iScrollY;
+	}
+
+	/**
+	 * @brief
+	 *  Vertical scroll position of the last rendered frame.
+	 * @return The scroll position, in pixels.
+	 */
+	[[nodiscard]] auto getScrollY() const -> float { return m_scrollY; }
+
+	/**
+	 * @brief
 	 *  Render the most recent stable text inside the current ImGui child / window.
 	 *        Triggers a (re)parse if `update()` flagged the buffer as needing a rebuild.
 	 * @param[in] iSize Target area; ignored if zero.
@@ -192,9 +239,26 @@ private:
 
 	/**
 	 * @brief
+	 *  Render a heading: strong font at the size of its level, space above, rule under H1 / H2; records its anchor.
+	 * @param[in] iHeading The heading.
+	 */
+	void renderHeading(const MdHeading& iHeading);
+
+	/**
+	 * @brief
 	 *  Render one inline-span sequence with emphasis / code / link handling.
 	 */
 	void renderInlineSpans(const std::vector<MdInline>& iSpans);
+
+	/**
+	 * @brief
+	 *  Hover, click and underline of the last drawn item of a link (one word of it).
+	 * @param[in] iLinkId Index of the link in rendering order.
+	 * @param[in] iExternal True for a web link (tooltip with the URL).
+	 * @param[in] iHref The link target.
+	 * @param[in] iUnderlineLeft Left end of the underline: the word, or the previous word of the link on the line.
+	 */
+	void decorateLinkItem(int iLinkId, bool iExternal, const std::string& iHref, float iUnderlineLeft);
 
 	/**
 	 * @brief
@@ -213,6 +277,37 @@ private:
 	 *  Render a list (UL / OL).
 	 */
 	void renderList(const MdList& iList, size_t& ioCodeIndex);
+
+	/**
+	 * @brief
+	 *  Render one table cell: its images at the column width when it holds only images, else its inline spans.
+	 * @param[in] iSpans The cell content.
+	 */
+	void renderTableCell(const std::vector<MdInline>& iSpans);
+
+	/**
+	 * @brief
+	 *  Draw a loaded image at a size; when it is shown smaller than its own size, a click opens it enlarged.
+	 * @param[in] iSrc Image source (cache key).
+	 * @param[in] iEntry The loaded image.
+	 * @param[in] iWidth Width shown, in pixels.
+	 */
+	void drawImage(const std::string& iSrc, const ImageEntry& iEntry, float iWidth);
+
+	/**
+	 * @brief
+	 *  Draw the popup of the enlarged image, when one is open.
+	 */
+	void renderZoom();
+
+	/**
+	 * @brief
+	 *  Draw a status badge as a coloured tag on the current line.
+	 * @param[in] iLabel The badge text.
+	 * @param[in] iColour The colour, `rrggbb` or `rgb` hex (neutral when empty or malformed).
+	 * @param[in,out] ioFirstOnLine `false` when a previous span already emitted on the line.
+	 */
+	void renderBadge(const std::string& iLabel, const std::string& iColour, bool& ioFirstOnLine);
 
 	/**
 	 * @brief
@@ -268,9 +363,35 @@ private:
 	std::vector<CodeEditorEntry> m_codeEditors;
 	/// Cache of image textures keyed by raw source string.
 	std::unordered_map<std::string, ImageEntry> m_imageCache;
+	/// Vertical position of each heading anchor in the content, filled while rendering.
+	std::unordered_map<std::string, float> m_anchorY;
+	/// Anchor to scroll to once the content is laid out, empty when none.
+	std::string m_pendingAnchor;
+	/// Frames left during which the scroll follows `m_pendingAnchor` (the layout of a new text settles).
+	int m_anchorFrames = 0;
+	/// Frames left during which `m_pendingScrollY` is applied.
+	int m_scrollFrames = 0;
+	/// Scroll position to apply before the next frames, negative when none.
+	float m_pendingScrollY = -1.0f;
+	/// Scroll position of the last frame.
+	float m_scrollY = 0.0f;
+	/// Link under the mouse on the last frame (index in rendering order), -1 when none.
+	int m_hoveredLink = -1;
+	/// Link under the mouse on the frame being rendered.
+	int m_nextHoveredLink = -1;
+	/// Links rendered so far on the frame being rendered.
+	int m_linkCount = 0;
+	/// True until the first block of the frame is drawn (no space above a leading heading).
+	bool m_firstBlock = true;
+	/// Source of the image shown enlarged, empty when none.
+	std::string m_zoomSrc;
+	/// True when a click asked for the enlarged image popup this frame.
+	bool m_zoomRequested = false;
 
 	/// Debounce window (seconds).
 	static constexpr float kDebounceSeconds = 0.25f;
+	/// Frames the scroll follows an anchor or a position after `scrollToAnchor` / `scrollTo`.
+	static constexpr int kAnchorFrames = 4;
 };
 
 }// namespace owl::nest::codeEditor

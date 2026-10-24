@@ -61,7 +61,7 @@ using LuaFunction = int (*)(lua_State*);
  *  Declaration of one Lua binding: the function scripts call and its documentation.
  *
  * The registry (getLuaBindings) is the single source of the registered functions and of the generated reference
- * page `doc/pages/lua-api.md`.
+ * pages `doc/pages/lua-api*.md`.
  */
 struct LuaBinding {
 	/// Lua table holding the function (`transform`).
@@ -105,10 +105,41 @@ OWL_API auto getLuaTables() -> const std::vector<LuaTable>&;
 
 /**
  * @brief
- *  Generate the Markdown reference page of the bindings (`doc/pages/lua-api.md`).
- * @return The page.
+ *  One theme page of the Lua API reference: a few related tables.
  */
-OWL_API auto generateLuaReference() -> std::string;
+struct LuaReferencePage {
+	/// File name in `doc/pages/` (`lua-api-physics.md`).
+	std::string_view file;
+	/// Page title, after `Lua API: ` (`Physics`).
+	std::string_view title;
+	/// Tables of the page, in order; every table of getLuaTables is on exactly one page.
+	std::vector<std::string_view> tables;
+};
+
+/**
+ * @brief
+ *  The theme pages of the Lua API reference, in reading order.
+ * @return The pages.
+ */
+OWL_API auto getLuaReferencePages() -> const std::vector<LuaReferencePage>&;
+
+/**
+ * @brief
+ *  One generated Markdown file of the Lua API reference.
+ */
+struct LuaReferenceFile {
+	/// File name in `doc/pages/`.
+	std::string name;
+	/// Markdown content.
+	std::string content;
+};
+
+/**
+ * @brief
+ *  Generate the Markdown reference of the bindings: the index `lua-api.md`, then one file per LuaReferencePage.
+ * @return The files, index first.
+ */
+OWL_API auto generateLuaReference() -> std::vector<LuaReferenceFile>;
 
 /**
  * @brief

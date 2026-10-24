@@ -37,9 +37,10 @@ class Scene;
  * Tests the visible `SpriteRenderer`, `AnimatedSpriteRenderer`, `CircleRenderer` and `MeshRenderer` entities (not
  * the UI). An entity routed to an isometric layer of the render stack is tested on the screen rectangle of its
  * sprite, through `makeRuntimeIsometricCamera`; any other one on the ray of the primary camera through the pixel:
- * a sprite on its unit quad, a circle on its disc, a mesh on its bounding box. A hit in a later layer of the stack
- * (drawn over) wins, then the nearest hit. With a tag, only the entities of that tag are tested, so a range ring or
- * a passer-by drawn in front does not hide the one asked for.
+ * a sprite on its unit quad (turned to the camera in a billboard layer), a circle on its disc, a mesh on its bounding
+ * box. A hit in a later layer of the stack (drawn over) wins, then the nearest hit. With a tag, only the entities of
+ * that tag and their descendants are tested, so a range ring or a passer-by drawn in front does not hide the one asked
+ * for, and a hit on a part of a tagged entity (a tower built of meshes) returns that entity.
  * @param[in,out] ioScene The scene (its world transforms are read).
  * @param[in] iPixel The pixel, in viewport pixels from the top left.
  * @param[in] iTag The tag of the entities to test, empty for every entity.

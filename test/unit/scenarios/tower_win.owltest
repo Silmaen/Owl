@@ -1,8 +1,12 @@
-# Tower defence: the whole first map at double speed, the keyboard cursor building towers along the road as the
-# gold comes in (E to the next pad, Enter opens the ring, 1 archer, 2 cannon, 3 frost; a build without the gold is
-# refused): the eight waves are held, the map is marked done and the victory scene counts the stats up.
-scene: ../../../samples/tower_defence/scenes/map_01.owl
+# Tower defence: the whole first level at double speed, the keyboard cursor building and raising towers as the
+# gold comes in (E and Q move between pads, Enter opens the wheel, 1 archer, 2 cannon, 3 frost; on a tower 1 raises
+# it, Backspace closes): a level built without upgrades falls, this one holds the eight waves (the last one at
+# night); the level is marked done with its stars and the victory scene counts the stats up.
+scene: ../../../samples/tower_defence/scenes/level_01.owl
 steps:
+  - frames: 2
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
   - frames: 30
   - input: {key: F, frames: 2}
   - input: {key: E, frames: 2}
@@ -17,23 +21,121 @@ steps:
   - frames: 1
   - input: {key: D1, frames: 2}
   - frames: 1
-  - expect: {gamestate: tower_towers, equals: 2}
-  - expect: {gamestate: tower_gold, equals: 80}
+  - frames: 600
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D2, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D3, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D2, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 500
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 400
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
   - frames: 400
   - input: {key: E, frames: 2}
   - frames: 1
-  - input: {key: Enter, frames: 2}
-  - frames: 1
-  - input: {key: D2, frames: 2}
-  - frames: 1
-  - frames: 500
   - input: {key: E, frames: 2}
   - frames: 1
-  - input: {key: Enter, frames: 2}
+  - input: {key: E, frames: 2}
   - frames: 1
-  - input: {key: D3, frames: 2}
-  - frames: 1
-  - frames: 500
   - input: {key: E, frames: 2}
   - frames: 1
   - input: {key: E, frames: 2}
@@ -42,69 +144,74 @@ steps:
   - frames: 1
   - input: {key: D1, frames: 2}
   - frames: 1
-  - frames: 500
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 400
   - input: {key: E, frames: 2}
   - frames: 1
-  - input: {key: Enter, frames: 2}
-  - frames: 1
-  - input: {key: D2, frames: 2}
-  - frames: 1
-  - frames: 600
-  - input: {key: E, frames: 2}
-  - frames: 1
-  - input: {key: Enter, frames: 2}
-  - frames: 1
-  - input: {key: D1, frames: 2}
-  - frames: 1
-  - frames: 600
-  - input: {key: E, frames: 2}
-  - frames: 1
-  - input: {key: Enter, frames: 2}
-  - frames: 1
-  - input: {key: D2, frames: 2}
-  - frames: 1
-  - frames: 600
   - input: {key: E, frames: 2}
   - frames: 1
   - input: {key: Enter, frames: 2}
   - frames: 1
   - input: {key: D1, frames: 2}
   - frames: 1
-  - frames: 600
-  - input: {key: E, frames: 2}
-  - frames: 1
+  - frames: 400
   - input: {key: Enter, frames: 2}
   - frames: 1
-  - input: {key: D3, frames: 2}
+  - input: {key: D1, frames: 2}
   - frames: 1
-  - frames: 600
-  - input: {key: E, frames: 2}
+  - input: {key: Backspace, frames: 2}
   - frames: 1
+  - frames: 400
   - input: {key: Enter, frames: 2}
   - frames: 1
-  - input: {key: D2, frames: 2}
+  - input: {key: D1, frames: 2}
   - frames: 1
-  - frames: 600
-  - input: {key: E, frames: 2}
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 400
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
+  - frames: 1
+  - input: {key: Q, frames: 2}
   - frames: 1
   - input: {key: Enter, frames: 2}
   - frames: 1
   - input: {key: D1, frames: 2}
   - frames: 1
-  - frames: 600
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 400
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
+  - input: {key: E, frames: 2}
+  - frames: 1
   - input: {key: E, frames: 2}
   - frames: 1
   - input: {key: Enter, frames: 2}
   - frames: 1
   - input: {key: D2, frames: 2}
   - frames: 1
-  - frames: 3300
+  - frames: 400
+  - input: {key: Enter, frames: 2}
+  - frames: 1
+  - input: {key: D1, frames: 2}
+  - frames: 1
+  - input: {key: Backspace, frames: 2}
+  - frames: 1
+  - frames: 1200
   - expect: {gamestate: tower_wave, equals: 8}
   - expect: {gamestate: tower_won, equals: true}
   - expect: {gamestate: tower_lost, equals: false}
   - expect: {gamestate: tower_done, equals: true}
-  - expect: {gamestate: tower_lives, greater: 5}
-  - expect: {gamestate: tower_towers, greater: 6}
+  - expect: {gamestate: tower_night, equals: true}
+  - expect: {gamestate: tower_result_stars, greater: 0}
+  - expect: {gamestate: tower_upgrades, greater: 3}
   - frames: 400
   - expect: {entity: StatLine1, exists: true}
   - expect: {gamestate: tower_tally_done, equals: true}

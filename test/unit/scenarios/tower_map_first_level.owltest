@@ -1,0 +1,29 @@
+# Tower defence world map from a fresh save: the map shrinks to fit the screen, the first site is chosen and shows
+# on screen, a click on it marches to Greenmarch Ford, whose briefing Backspace dismisses (skipping the tutorial);
+# Quit to the map in the pause window comes back to the map.
+scene: ../../../samples/tower_defence/scenes/world_map.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: tower_map_selected, equals: 1}
+  - expect: {gamestate: tower_map_open, equals: 1}
+  - expect: {gamestate: tower_map_scale, less: 1.0}
+  - input: {mouse_pos: [288, 525], frames: 3}
+  - input: {mouse: Left, mouse_pos: [288, 525], frames: 2}
+  - frames: 120
+  - expect: {entity: Terrain, exists: true}
+  - expect: {gamestate: tower_map, equals: 1}
+  - expect: {gamestate: tower_briefing, equals: true}
+  - input: {key: Backspace, frames: 2}
+  - frames: 2
+  - expect: {gamestate: tower_briefing, equals: false}
+  - input: {key: Escape, frames: 2}
+  - frames: 5
+  - expect: {gamestate: tower_paused, equals: true}
+  - input: {key: Down, frames: 2}
+  - frames: 2
+  - input: {key: Down, frames: 2}
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 120
+  - expect: {entity: Site, exists: true}
+  - expect: {gamestate: tower_map, equals: true}

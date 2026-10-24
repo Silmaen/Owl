@@ -12,7 +12,9 @@
 #include "core/Serializer.h"
 #include "math/vectors.h"
 
+#include <algorithm>
 #include <string>
+#include <vector>
 
 namespace owl::renderer::gpu {
 class Framebuffer;
@@ -26,8 +28,8 @@ namespace owl::scene::component {
  *  rear-view mirror, a security monitor.
  *
  * Each frame, before the main view, the scene renders the world through the `Camera` of the entity (which is not the
- * primary camera) into an image of `size` pixels, the overlays and the HUD left out. A `UiImage` whose `renderTarget`
- * is `targetName` displays it.
+ * primary camera) into an image of `size` pixels, the overlays, the HUD and the `hiddenLayers` of the renderer stack
+ * left out. A `UiImage` whose `renderTarget` is `targetName` displays it.
  */
 struct OWL_API RenderTarget {
 	/// Whether the image is drawn each frame; off keeps the last image.
@@ -38,6 +40,8 @@ struct OWL_API RenderTarget {
 	math::vec2ui size{256, 256};
 	/// Colour of the image where nothing is drawn.
 	math::vec4 clearColor{0.f, 0.f, 0.f, 1.f};
+	/// Names of the layers of the renderer stack the image leaves out (the markers drawn over the world).
+	std::vector<std::string> hiddenLayers;
 
 	/// Runtime: the image drawn into, made on the first frame.
 	shared<renderer::gpu::Framebuffer> m_framebuffer;
@@ -48,6 +52,16 @@ struct OWL_API RenderTarget {
 	 * @return The display name.
 	 */
 	static auto name() -> const char* { return "Render Target"; }
+
+	/**
+	 * @brief
+	 *  Whether the image draws a layer of the renderer stack.
+	 * @param[in] iLayer The name of the layer.
+	 * @return False when the layer is one of `hiddenLayers`.
+	 */
+	[[nodiscard]] auto drawsLayer(const std::string& iLayer) const -> bool {
+		return std::ranges::find(hiddenLayers, iLayer) == hiddenLayers.end();
+	}
 
 	/**
 	 * @brief
