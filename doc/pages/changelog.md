@@ -11,10 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `Renderer2D` layer keys `Billboard` and `DepthTest`: sprites in a 3D scene face the camera, depth-tested and lit by 2D
-  lights.
-- Sample game Tower defence (`samples/tower_defence/`): level 1 in 3D with billboard enemies, upgradable towers and
-  waves.
+- `Renderer2D` layer keys `Billboard` and `DepthTest`: sprites in a 3D scene face the camera, are depth-tested and
+  follow its sky, sun and exposure (`Renderer3D::getSurfaceLight`), 2D lights on the ground plane.
+- Sample game Tower defence (`samples/tower_defence/`): a campaign of 3 levels in 3D on a parchment world map, the Horde
+  as 8-direction billboards, towers raised to level 3 then a power-up, a build wheel, spells and unlocks.
+- `AnimatedSpriteRenderer.lit`, and Lua `ui.set_text` / `ui.get_text` reach a world `TextRenderer`.
 - Engine Demo tavern: a hub level played on foot with the `FirstPersonController` component.
 - Lua `scene.spawn_prefab`, `entity.add_component`, `scene.pick_entity`, `time.set_scale` / `set_paused` and
   `ui.set_image`.
@@ -71,6 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `save.*` listing never throws.
 - GCC 15 HDR decoding, MinGW renderer test link, Vulkan blending on non-blendable formats and mirrored normal maps on
   Vulkan.
+- Mesh entities drawing an unchanged file material share it, so the mesh pass instances them: one draw per model and
+  material instead of one per entity.
 
 ## [0.4.0] - 2026-10-20
 
