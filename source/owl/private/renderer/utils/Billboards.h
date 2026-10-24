@@ -12,6 +12,7 @@
 #include "renderer/Renderer2DLayer.h"
 
 #include <cmath>
+#include <cstddef>
 
 namespace owl::renderer::utils {
 

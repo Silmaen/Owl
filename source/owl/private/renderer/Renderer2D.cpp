@@ -151,8 +151,7 @@ struct TextureSlotEntry {
 struct InternalData {
 	struct CameraData {
 		math::mat4 viewProjection;
-		// x: 1 when the bound framebuffer stores linear colour; y: 2D light count; z: 1 when the lights are on the
-		// ground plane (x, z); w: padding to a std140 vec4.
+		// x: linear target, y: 2D light count, z: lights on the ground plane (x, z), w: std140 padding.
 		std::array<int32_t, 4> flags{};
 		// rgb: linear ambient of the 2D lights; w: 1 when the 2D lighting is on.
 		math::vec4 ambient{1.f, 1.f, 1.f, 0.f};
