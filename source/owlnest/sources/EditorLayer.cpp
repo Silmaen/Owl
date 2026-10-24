@@ -1197,8 +1197,15 @@ void EditorLayer::updateFramePacing() {
 	auto& app = app::Application::get();
 	m_frameMeter.addFrame(app.getLastFrameTimings().workMs, panel::FrameMeter::clock::now());
 	for (const auto& timing: renderer::gpu::RenderCommand::popGpuFrameTimings()) m_frameMeter.addGpu(timing.busyMs);
+	// A detached panel is a window of its own (X11): its focus keeps the editor in the foreground.
+	const bool focused =
+			app.getWindow().isFocused() ||
+			(ImGui::GetCurrentContext() != nullptr &&
+			 std::ranges::any_of(ImGui::GetPlatformIO().Viewports, [](const ImGuiViewport* iViewport) -> bool {
+				 return (iViewport->Flags & ImGuiViewportFlags_IsFocused) != 0;
+			 }));
 	// A play driven from MCP keeps its pace when the caller's window has the focus.
-	const bool background = !app.getWindow().isFocused() && !m_playDriver.isActive();
+	const bool background = !focused && !m_playDriver.isActive();
 	const int limit = background && m_settings.backgroundFrameRateLimit > 0 ? m_settings.backgroundFrameRateLimit
 																			: m_settings.frameRateLimit;
 	app.setFrameRateLimit(static_cast<uint32_t>(std::max(limit, 0)));
