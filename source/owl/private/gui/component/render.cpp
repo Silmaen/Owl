@@ -2045,6 +2045,8 @@ void renderProps(UiWindow& ioComponent) {
 	fieldTooltip("The title bar drags the window; it stays inside the screen.");
 	prop::Checkbox("Closable", &ioComponent.closable);
 	fieldTooltip("Show a close button that hides the window (ui.set_visible shows it again).");
+	prop::Checkbox("Modal", &ioComponent.modal);
+	fieldTooltip("While shown, the window keeps the focus and the mouse reaches nothing outside it (a dialog).");
 	handlerRow("On Close Callback", ioComponent.onCloseCallback, nullptr,
 			   "Lua function called when the close button is pressed.");
 }

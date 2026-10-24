@@ -315,7 +315,8 @@ The Engine Demo HUDs and menu canvases follow one recipe, checked by `DemoHudLay
   buttons shown at once).
 - What lives inside a group (a label in its panel, an icon under a count) may overlap on purpose, except the children
   of a `UiLayout`, which must stay inside the content area of their container.
-- A popup (a window hidden at start: the information board, the inventory) is compared with the other popups only; every
+- A popup (a window hidden at start: the information board, the inventory) is compared with the other popups only; a
+  modal popup (`UiWindow.modal`, a dialog taking the mouse and the focus while shown) is not compared at all; every
   top-level widget must fit in the viewport.
 - Controls are never on screen for good in game: the main menu lists them (the pause leads there), and a level shows
   its own keys in a hint that `controls_hint.lua` hides after a few seconds, last in its corner group so that hiding

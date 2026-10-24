@@ -84,10 +84,15 @@ protected:
 void checkLayout(const shared<scene::Scene>& iScene, const std::string& iName) {
 	const auto& scn = iScene;
 	std::set<entt::entity> popups;
+	std::set<entt::entity> modals;
 	for (const auto entity: scn->registry.view<scene::component::Visibility>()) {
 		auto& visibility = scn->registry.get<scene::component::Visibility>(entity);
-		if (!visibility.gameVisible && scn->registry.all_of<scene::component::UiWindow>(entity))
+		if (const auto* window = scn->registry.try_get<scene::component::UiWindow>(entity);
+			!visibility.gameVisible && window != nullptr) {
 			popups.insert(entity);
+			if (window->modal)
+				modals.insert(entity);
+		}
 		visibility.gameVisible = true;
 	}
 
@@ -125,6 +130,10 @@ void checkLayout(const shared<scene::Scene>& iScene, const std::string& iName) {
 			for (size_t i = 0; i < topLevel.size(); ++i) {
 				for (size_t j = i + 1; j < topLevel.size(); ++j) {
 					if (popups.contains(topLevel[i]->entity) != popups.contains(topLevel[j]->entity))
+						continue;
+					// A modal popup is a dialog: while shown it takes the mouse and the focus from every other window,
+					// so it may lie over another popup; two non-modal popups, or anything else, still may not overlap.
+					if (modals.contains(topLevel[i]->entity) || modals.contains(topLevel[j]->entity))
 						continue;
 					EXPECT_FALSE(overlaps(topLevel[i]->bounds, topLevel[j]->bounds))
 							<< where << ": " << describe(*scn, *topLevel[i]) << " overlaps "

@@ -911,7 +911,9 @@ height of the font (before format 3 it filled the ink height of the string, so o
 A panel with a title bar, drawn as a batch of its own over the windows before it. Its `UiRect` includes the bar; the
 children are laid out in the area under it and clipped to it. A window stays inside the screen, blocks the mouse for
 the widgets and the world under it, comes to the front when clicked (it becomes the last child of its parent), moves
-with its title bar and hides itself with the close button (`Visibility`; `ui.set_visible` shows it again).
+with its title bar and hides itself with the close button (`Visibility`; `ui.set_visible` shows it again). A modal
+window is a dialog: while it is shown, the focus stays in it and the mouse reaches nothing outside it, the other
+windows included.
 
 | Field             | Type     | Description                                      |
 |-------------------|----------|--------------------------------------------------|
@@ -923,6 +925,7 @@ with its title bar and hides itself with the close button (`Visibility`; `ui.set
 | `titleTextColor`  | `vec4`   | Colour of the title and of the close mark        |
 | `draggable`       | `bool`   | The title bar drags the window                   |
 | `closable`        | `bool`   | Show the close button                            |
+| `modal`           | `bool`   | While shown, keep the focus and the mouse in it  |
 | `onCloseCallback` | `string` | Lua function called when the close button is hit |
 
 #### UiLayout

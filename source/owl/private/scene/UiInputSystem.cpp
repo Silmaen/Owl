@@ -558,6 +558,16 @@ auto findTopWindow(const FocusSurfaces& iSurfaces) -> TopWindow {
 		if (surface == nullptr)
 			continue;
 		for (const auto& node: iSurfaces.layoutFor(inHud)->getNodes() | std::views::reverse) {
+			if (const auto* window = surface->registry.try_get<component::UiWindow>(node.entity);
+				window != nullptr && window->modal)
+				return {.surface = surface, .node = &node};
+		}
+	}
+	for (const bool inHud: {true, false}) {
+		Scene* const surface = iSurfaces.surfaceOf(inHud);
+		if (surface == nullptr)
+			continue;
+		for (const auto& node: iSurfaces.layoutFor(inHud)->getNodes() | std::views::reverse) {
 			if (surface->registry.all_of<component::UiWindow>(node.entity))
 				return {.surface = surface, .node = &node};
 		}
@@ -961,6 +971,16 @@ void bindVisibleRows(Scene& ioSurface, const Scene* iActive, const ui::HudLayout
 	}
 }
 
+// The modal window laid out last on a surface (a shown one: hidden entities are not laid out), or none.
+auto modalWindowOf(const Scene& iSurface, const ui::HudLayout& iLayout) -> const ui::HudNode* {
+	for (const auto& node: iLayout.getNodes() | std::views::reverse) {
+		if (const auto* window = iSurface.registry.try_get<component::UiWindow>(node.entity);
+			window != nullptr && window->modal)
+			return &node;
+	}
+	return nullptr;
+}
+
 auto hasShownWindow(Scene& ioSurface) -> bool {
 	for (const auto entity: ioSurface.registry.view<component::UiWindow>()) {
 		if (ioSurface.isEffectivelyVisible(Entity{entity, &ioSurface}, false))
@@ -1011,8 +1031,18 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 						  dragScrollBar(*iScene, hud, iViewportSize, iMousePos, iMousePressed);
 	const ui::HudLayout* hudLayout = hud != nullptr ? &layoutOf(*hud, iViewportSize) : nullptr;
 	const auto& layout = layoutOf(*iScene, iViewportSize);
-	const Probe hudProbe = hud != nullptr && !dragging ? probeSurface(*hud, *hudLayout, iMousePos) : Probe{};
-	const Probe sceneProbe = dragging || hudProbe.consumes() ? Probe{} : probeSurface(*iScene, layout, iMousePos);
+	Probe hudProbe = hud != nullptr && !dragging ? probeSurface(*hud, *hudLayout, iMousePos) : Probe{};
+	Probe sceneProbe = dragging || hudProbe.consumes() ? Probe{} : probeSurface(*iScene, layout, iMousePos);
+	// A shown modal window takes the mouse: outside it, the click and the hover reach nothing.
+	const ui::HudNode* modal = hud != nullptr ? modalWindowOf(*hud, *hudLayout) : nullptr;
+	const bool modalInHud = modal != nullptr;
+	if (modal == nullptr)
+		modal = modalWindowOf(*iScene, layout);
+	const bool blockedByModal = modal != nullptr && (modalInHud ? hudProbe.window : sceneProbe.window) != modal;
+	if (blockedByModal) {
+		hudProbe = Probe{};
+		sceneProbe = Probe{};
+	}
 	if (clicked && !dragging) {
 		if (hudProbe.window != nullptr)
 			clickWindow(*hud, *iScene, true, hudProbe, iMousePos);
@@ -1048,7 +1078,7 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 	if (hud != nullptr)
 		updateWidgets(*hud, iScene, *hudLayout, hudProbe.interactive, shownFocus(true), iMousePos, iMousePressed,
 					  clicked);
-	state.consuming = dragging || hudProbe.consumes() || sceneProbe.consumes();
+	state.consuming = dragging || blockedByModal || hudProbe.consumes() || sceneProbe.consumes();
 	bindVisibleRows(*iScene, iScene, layout);
 	if (hud != nullptr)
 		bindVisibleRows(*hud, iScene, *hudLayout);
