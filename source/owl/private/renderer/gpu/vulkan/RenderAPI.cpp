@@ -216,10 +216,28 @@ auto RenderAPI::popGpuFrameTimings() -> std::vector<GpuFrameTiming> {
 
 auto RenderAPI::getRenderCounters() const -> RenderCounters { return internal::FrameProfiler::get().getCounters(); }
 
-void RenderAPI::setVSync(const bool iEnabled) { internal::VulkanCore::get().setVSync(iEnabled); }
+namespace {
+// Apply a present request; a running swap chain is rebuilt at the next frame when its present mode changes.
+template<typename Apply>
+void changePresent(const RenderAPI& iApi, Apply&& iApply) {
+	auto& core = internal::VulkanCore::get();
+	if (iApi.getState() != RenderAPI::State::Ready) {
+		std::forward<Apply>(iApply)(core);
+		return;
+	}
+	const VkPresentModeKHR before = core.getPresentMode();
+	std::forward<Apply>(iApply)(core);
+	if (core.getPresentMode() != before)
+		internal::VulkanHandler::get().setResize();
+}
+}// namespace
+
+void RenderAPI::setVSync(const bool iEnabled) {
+	changePresent(*this, [iEnabled](internal::VulkanCore& ioCore) -> void { ioCore.setVSync(iEnabled); });
+}
 
 void RenderAPI::setLowLatencyPresent(const bool iEnabled) {
-	internal::VulkanCore::get().setLowLatencyPresent(iEnabled);
+	changePresent(*this, [iEnabled](internal::VulkanCore& ioCore) -> void { ioCore.setLowLatencyPresent(iEnabled); });
 }
 
 auto RenderAPI::getPresentMode() const -> std::string {

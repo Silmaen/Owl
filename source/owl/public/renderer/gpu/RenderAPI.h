@@ -346,9 +346,9 @@ public:
 
 	/**
 	 * @brief
-	 *  Record the vertical synchronisation request. On Vulkan it selects the present mode of the next swap chain
-	 *  creation (FIFO when on, MAILBOX instead with the low-latency present, IMMEDIATE when off and available);
-	 *  OpenGL uses the window swap interval.
+	 *  Record the vertical synchronisation request. On Vulkan it selects the present mode of the swap chain (FIFO
+	 *  when on, MAILBOX instead with the low-latency present, IMMEDIATE when off and available), rebuilt at the next
+	 *  frame when the mode changes; OpenGL uses the window swap interval.
 	 * @param[in] iEnabled True to synchronise presentation with the display.
 	 */
 	virtual void setVSync([[maybe_unused]] bool iEnabled) {}

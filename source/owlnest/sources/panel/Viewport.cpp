@@ -1265,7 +1265,7 @@ void Viewport::renderOverlayToolbar() {
 		const auto& meter = m_parent->getFrameMeter();
 		const auto gpu = meter.getGpuMs();
 		gui::UiLayer::pushTextStyle(gui::TextStyle::Value);
-		const auto text = std::format("{:.0f} fps  {:.2f} ms CPU{}", meter.getPotentialFps(), meter.getWorkMs(),
+		const auto text = std::format("{:.2f} ms CPU{}", meter.getWorkMs(),
 									  gpu.has_value() ? std::format("  {:.2f} ms GPU", *gpu) : "");
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextColored(gui::vec(theme.textMuted), " %s ", text.c_str());
@@ -1281,9 +1281,10 @@ void Viewport::renderOverlayToolbar() {
 		}
 		gui::widgets::itemTooltip(
 				"Frame stats", nullptr,
-				std::format("Frames per second the frame cost allows, the waits for the display excluded ({:.0f} "
-							"displayed). Click to open the Stats panel, right-click to hide it (Show menu to bring it "
-							"back).",
+				std::format("Cost of a frame, the waits for the display excluded ({:.0f} fps displayed). Capped by the "
+							"display, the CPU and the GPU lower their clocks, so a frame costs more than at full load: "
+							"Stats > Measure at Full Load gives the real rate. Click to open the Stats panel, "
+							"right-click to hide it (Show menu to bring it back).",
 							meter.getDisplayFps())
 						.c_str());
 		addOverlayRect(currentOverlayRect());

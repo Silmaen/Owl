@@ -1147,9 +1147,24 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 								  gpu.has_value() ? std::format("{:.2f} ms GPU", *gpu) : std::string{"GPU not timed"})
 							  .c_str());
 	ImGui::Text("%s", std::format("Possible FPS: {:.0f}", m_frameMeter.getPotentialFps()).c_str());
-	gui::widgets::itemTooltip("Possible FPS", nullptr,
-							  "Frames per second the frame cost would allow without waiting for the display: 1000 / "
-							  "the slower of CPU and GPU.");
+	gui::widgets::itemTooltip(
+			"Possible FPS", nullptr,
+			"1000 / the slower of CPU and GPU. Capped by the display, the CPU and the GPU lower their clocks: a frame "
+			"costs more than at full load, so this is no capacity. Measure at Full Load gives the real rate.");
+	if (m_fullLoadProbe.isRunning()) {
+		ImGui::TextDisabled("Measuring at full load...");
+	} else {
+		if (gui::widgets::button("Measure at Full Load", {.glyph = gui::icon::gauge, .label = "Measure at Full Load"}))
+			startFullLoadMeasure();
+		gui::widgets::itemTooltip("Measure at Full Load", nullptr,
+								  "Lift vsync, the frame rate limit and the idle wait for 3 s: 1 s for the clocks to "
+								  "rise, then 2 s measured. The fans may spin up meanwhile.");
+	}
+	if (const auto& result = m_fullLoadProbe.getResult(); result.has_value())
+		ImGui::Text("%s", std::format("Full load: {:.0f} fps, {:.2f} ms CPU, {}", result->fps, result->workMs,
+									  result->gpuMs.has_value() ? std::format("{:.2f} ms GPU", *result->gpuMs)
+																: std::string{"GPU not timed"})
+								  .c_str());
 	ImGui::Separator();
 	ImGui::Text("%s", std::format("Profiler: {}{}", magic_enum::enum_name(debug::getProfilerBackend()),
 								  debug::isProfilerConnected() ? " (connected)" : "")
@@ -1197,8 +1212,19 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 
 void EditorLayer::updateFramePacing() {
 	auto& app = app::Application::get();
-	m_frameMeter.addFrame(app.getLastFrameTimings().workMs, panel::FrameMeter::clock::now());
-	for (const auto& timing: renderer::gpu::RenderCommand::popGpuFrameTimings()) m_frameMeter.addGpu(timing.busyMs);
+	const auto now = panel::FrameMeter::clock::now();
+	const double workMs = app.getLastFrameTimings().workMs;
+	m_frameMeter.addFrame(workMs, now);
+	for (const auto& timing: renderer::gpu::RenderCommand::popGpuFrameTimings()) {
+		m_frameMeter.addGpu(timing.busyMs);
+		m_fullLoadProbe.addGpu(timing.busyMs);
+	}
+	if (m_fullLoadProbe.isRunning()) {
+		if (m_fullLoadProbe.addFrame(workMs, now))
+			app.getWindow().setVSync(app.getInitParams().vSync);
+		app.setFrameRateLimit(0);
+		return;
+	}
 	// A detached panel is a window of its own (X11): its focus keeps the editor in the foreground.
 	const bool focused =
 			app.getWindow().isFocused() ||
@@ -1213,6 +1239,11 @@ void EditorLayer::updateFramePacing() {
 	app.setFrameRateLimit(static_cast<uint32_t>(std::max(limit, 0)));
 	if (m_settings.idleWaitMs > 0 && isIdle())
 		app.requestIdleWait(std::chrono::milliseconds{m_settings.idleWaitMs});
+}
+
+void EditorLayer::startFullLoadMeasure() {
+	m_fullLoadProbe.start(panel::FullLoadProbe::clock::now());
+	app::Application::get().getWindow().setVSync(false);
 }
 
 auto EditorLayer::isIdle() const -> bool {

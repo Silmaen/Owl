@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Frame rate cap: `Application::setFrameRateLimit` and `frameRateLimit` in `config.yml`; Owl Nest settings *Frame Rate Limit* and *Background Frame Rate* (15 fps by default while another window has the focus).
 - `lowLatencyPresent` in `config.yml` (*Engine parameters > Backends*): Vulkan MAILBOX for a lower input latency, without display pacing.
+- Stats > **Measure at Full Load**: 3 s without vsync, frame rate limit or idle wait, then the real frame rate and its CPU and GPU cost (`panel::FullLoadProbe`); Vulkan rebuilds its swap chain when the vsync changes at runtime.
 - Owl Nest idle mode: in Edit with nothing held or pending, the editor waits for an input (*Idle Wait*, 250 ms at most) instead of drawing every frame; MCP requests wake it.
 - `core::FramePacer`, `Application::requestIdleWait`, `Scheduler::hasPendingTasks`, `FontPreviewCache::hasPending`, `Window::isFocused`, `waitEvents`, `wakeUp` and `setLowLatencyPresent`.
 - `Renderer2D` layer keys `Billboard` and `DepthTest`: sprites in a 3D scene face the camera, are depth-tested and
@@ -57,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Vulkan presents in FIFO under vsync instead of MAILBOX, and under Wayland in MAILBOX paced to the refresh rate: an idle Owl Nest no longer keeps the GPU at full load.
-- The viewport frame chip and the Stats panel show the CPU and GPU cost of a frame and the frame rate it allows, the waits for the display excluded (`FrameTimings::workMs`, `panel::FrameMeter`); the draw calls stay in Stats only.
+- The viewport frame chip shows the CPU and GPU cost of a frame, the waits for the display excluded (`FrameTimings::workMs`, `panel::FrameMeter`); the frame rate it allows and the draw calls stay in Stats.
 - A viewport hidden behind another tab no longer draws its scene, unless the MCP server is on.
 - Documentation reorganised: short README, one guide per audience, help sidebar grouped by theme, diagrams redrawn as
   mermaid.

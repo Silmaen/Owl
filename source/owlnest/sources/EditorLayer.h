@@ -30,6 +30,7 @@
 #include "panel/ConsolePanel.h"
 #include "panel/ContentBrowser.h"
 #include "panel/FrameMeter.h"
+#include "panel/FullLoadProbe.h"
 #include "panel/GpuCounterMonitor.h"
 #include "panel/HelpPanel.h"
 #include "panel/LogPanel.h"
@@ -812,6 +813,12 @@ private:
 	 */
 	[[nodiscard]] auto isIdle() const -> bool;
 
+	/**
+	 * @brief
+	 *  Lift every frame cap (vsync, frame rate limit, idle wait) for a few seconds and measure the frame rate.
+	 */
+	void startFullLoadMeasure();
+
 
 	/**
 	 * @brief
@@ -1073,6 +1080,8 @@ private:
 	panel::GpuCounterMonitor m_gpuCounters;
 	/// CPU and GPU cost of the frames, the waits for the display excluded.
 	panel::FrameMeter m_frameMeter;
+	/// Frame rate of the editor running flat out, measured on request from the Stats panel.
+	panel::FullLoadProbe m_fullLoadProbe;
 	/// Open documents (scenes, HUDs, assets, scripts, node graphs...).
 	DocumentManager m_documents;
 	/// Id of the hot reload listener registered at attach.

@@ -12,7 +12,7 @@ few translucent overlays. Scenes can sit side by side: drag a scene tab out of t
 | Top left     | Gizmo mode (Select, Move, Rotate, Scale), Local / World, **Snap** and its step (a click: presets)                                         |
 | Top centre   | Play (Resume), Pause, Step, Stop; while playing a chevron (`F10`) folds them into a corner handle                                         |
 | Top right    | The view (**2D**, **3D**, or **Iso**), **Show**, the isometric **Navigation tool**, **Frame selection**, the **Camera** menu, frame stats |
-| Bottom left  | Frame rate the frame cost allows, CPU and GPU time of a frame (display waits excluded): a click opens Stats                               |
+| Bottom left  | CPU and GPU time of a frame, the waits for the display excluded: a click opens Stats                                                      |
 | Bottom right | The view-cube; above it the preview of the selected camera                                                                                |
 
 **Show** toggles the grid, the camera and light markers, the trigger icons, the camera preview and, in the isometric
