@@ -21,7 +21,7 @@ flowchart LR
 | [The Owl Nest window](editor.md)       | The editor, then one page per part: viewport, inspector, documents   |
 | [Scene and Components](scene.md)       | Entities, hierarchy, every component, HUD, triggers, serialization   |
 | [Scripting Games in Lua](scripting.md) | Scripts on entities, lifecycle, properties, sandbox                  |
-| [Lua API Reference](lua-api.md)        | Every Lua table and function (generated)                             |
+| [Lua API Reference](lua-api.md)        | Every Lua table and function, one page per theme (generated)         |
 
 ## Gameplay systems
 

@@ -7,16 +7,19 @@ paths:
 
 # Lua scripting (Lua 5.5)
 
-User-facing reference: `doc/pages/scripting.md` (guide) and `doc/pages/lua-api.md` (generated, never by hand).
+User-facing reference: `doc/pages/scripting.md` (guide), `doc/pages/lua-api.md` (index) and the
+`doc/pages/lua-api-<theme>.md` pages (both generated, never by hand).
 
 - Public: `ScriptEngine` (static: quotas, property extraction; no scene, no Lua state), `ScriptInstance` (one isolated `lua_State` per entity),
   `ScriptProperty`. Private: `LuaEngine` (raw `lua_State*` wrapper), `LuaBindings`.
 - Lua headers only through `source/owl/private/core/external/lua.h` (diagnostic suppression).
 - **Typed binding registry** (`LuaBindings.h`): every binding is one `LuaBinding` in `declareBindings()`
   (`LuaBindings.cpp`: table, name, C function, description, typed params / returns); `registerBindings` registers
-  them and `generateLuaReference()` writes `doc/pages/lua-api.md`. Adding or changing a binding: edit the
-  declaration, then copy the page the failing `LuaBindingRegistry.ReferencePageMatchesTheRegistry` test writes to
-  the temporary folder over `doc/pages/lua-api.md`. Every `table.fn(` in `scripting.md` must be bound (tested).
+  them and `generateLuaReference()` writes the index `lua-api.md` and one page per `LuaReferencePage`
+  (`getLuaReferencePages()`: a new table goes on one of them, a new page also into `doc/help.yml` under *Scripting*).
+  Adding or changing a binding: edit the declaration, run `owl_script_tests_unit_test`, then copy the pages the
+  failing `LuaBindingRegistry.ReferencePageMatchesTheRegistry` writes to `lua-api/` in its working directory
+  (`<build>/test/lua-api/` under ctest) over `doc/pages/`. Every `table.fn(` in `scripting.md` must be bound (tested).
 - Tables (`getLuaTables()`): `transform`, `physics`, `input`, `sound`, `scene`, `time`, `log`, `entity`, `ui`,
   `gamestate`, `save`, `settings`, `trigger`, `door`, `pushwall`, `isometric`, `path`, `engine`.
 - Sandbox: only `base`, `table`, `string`, `math`, `utf8`, `coroutine`; `io`, `os`, `dofile`, `loadfile`,

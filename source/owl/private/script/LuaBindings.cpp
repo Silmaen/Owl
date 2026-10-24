@@ -2748,27 +2748,70 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 	return s_tables;
 }
 
-auto generateLuaReference() -> std::string {
-	std::string page = "# Lua API reference {#page-lua-api}\n\n[TOC]\n\n"
-					   "Every table and function a script can call. This page is generated from the binding registry "
-					   "(`getLuaBindings()` in `source/owl/private/script/LuaBindings.cpp`): do not edit it by hand. "
-					   "When a binding changes, `owl_script_tests_unit_test` fails and writes the new page to "
-					   "the temporary folder (the failure names the file): copy it over this one. See [Lua "
-					   "scripting](scripting.md) for the "
-					   "callbacks, the properties and the sandbox.\n\n"
-					   "An `entity` is the integer UUID of an entity (`entity_id` in its own script, "
-					   "`scene.find_entity` for the others); `[name: type]` is optional.\n";
-	for (const auto& table: getLuaTables()) {
-		page += std::format("\n## `{}`\n\n{}\n\n", table.name, table.description);
-		std::vector<std::array<std::string, 3>> rows{{"Function", "Returns", "Description"}};
-		for (const auto& binding: getLuaBindings()) {
-			if (binding.table == table.name)
-				rows.push_back(
-						{describeSignature(binding), describeReturns(binding), std::string{binding.description}});
+auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
+	static const std::vector<LuaReferencePage> s_pages{
+			{.file = "lua-api-entities.md", .title = "Entities and transforms", .tables = {"entity", "transform"}},
+			{.file = "lua-api-scene.md", .title = "Scene, engine and log", .tables = {"scene", "engine", "log"}},
+			{.file = "lua-api-input.md", .title = "Input", .tables = {"input"}},
+			{.file = "lua-api-physics.md", .title = "Physics", .tables = {"physics"}},
+			{.file = "lua-api-sound.md", .title = "Sound", .tables = {"sound"}},
+			{.file = "lua-api-time.md", .title = "Time and timers", .tables = {"time", "trigger"}},
+			{.file = "lua-api-ui.md", .title = "HUD", .tables = {"ui"}},
+			{.file = "lua-api-saves.md",
+			 .title = "Game state, saves and settings",
+			 .tables = {"gamestate", "save", "settings"}},
+			{.file = "lua-api-raycast.md", .title = "Raycast doors and push-walls", .tables = {"door", "pushwall"}},
+			{.file = "lua-api-isometric.md", .title = "Isometric terrain and paths", .tables = {"isometric", "path"}},
+	};
+	return s_pages;
+}
+
+auto generateLuaReference() -> std::vector<LuaReferenceFile> {
+	const auto pageId = [](const std::string_view iFile) -> std::string {
+		return "page-" + std::string{iFile.substr(0, iFile.find('.'))};
+	};
+	const auto findTable = [](const std::string_view iName) -> const LuaTable* {
+		const auto found = std::ranges::find(getLuaTables(), iName, &LuaTable::name);
+		return found == getLuaTables().end() ? nullptr : &*found;
+	};
+	std::vector<LuaReferenceFile> files;
+	std::string index =
+			"# Lua API reference {#page-lua-api}\n\n[TOC]\n\n"
+			"Every table and function a script can call, one page per theme. These pages are generated from "
+			"the binding registry (`getLuaBindings()` in `source/owl/private/script/LuaBindings.cpp`): do "
+			"not edit them by hand. When a binding changes, `owl_script_tests_unit_test` fails and writes "
+			"the new pages to `lua-api/` in its working directory (the failure names the folder): copy "
+			"them over `doc/pages/`. See [Lua scripting](scripting.md) for the callbacks, the properties "
+			"and the sandbox.\n\n"
+			"An `entity` is the integer UUID of an entity (`entity_id` in its own script, "
+			"`scene.find_entity` for the others); `[name: type]` is optional.\n\n## Pages\n\n";
+	std::vector<std::array<std::string, 3>> indexRows{{"Page", "Table", "Content"}};
+	files.push_back({.name = "lua-api.md", .content = {}});
+	for (const auto& page: getLuaReferencePages()) {
+		std::string content = std::format("# Lua API: {} {{#{}}}\n\n[TOC]\n\n", page.title, pageId(page.file));
+		content += "Generated from the binding registry, do not edit by hand: see the [Lua API reference](lua-api.md) "
+				   "for the conventions and the other pages.\n";
+		bool firstRow = true;
+		for (const auto tableName: page.tables) {
+			const auto* table = findTable(tableName);
+			if (table == nullptr)
+				continue;
+			indexRows.push_back({firstRow ? std::format("[{}]({})", page.title, page.file) : std::string{},
+								 std::format("`{}`", table->name), std::string{table->description}});
+			firstRow = false;
+			content += std::format("\n## `{}`\n\n{}\n\n", table->name, table->description);
+			std::vector<std::array<std::string, 3>> rows{{"Function", "Returns", "Description"}};
+			for (const auto& binding: getLuaBindings()) {
+				if (binding.table == table->name)
+					rows.push_back(
+							{describeSignature(binding), describeReturns(binding), std::string{binding.description}});
+			}
+			content += markdownTable(rows);
 		}
-		page += markdownTable(rows);
+		files.push_back({.name = std::string{page.file}, .content = std::move(content)});
 	}
-	return page;
+	files.front().content = index + markdownTable(indexRows);
+	return files;
 }
 
 void setBoundScene(lua_State* iState, scene::Scene* iScene) { LuaEngine::setHostPointer(iState, iScene); }

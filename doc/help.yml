@@ -36,6 +36,16 @@ Groups:
     pages:
       - doc/pages/scripting.md
       - doc/pages/lua-api.md
+      - doc/pages/lua-api-entities.md
+      - doc/pages/lua-api-scene.md
+      - doc/pages/lua-api-input.md
+      - doc/pages/lua-api-physics.md
+      - doc/pages/lua-api-sound.md
+      - doc/pages/lua-api-time.md
+      - doc/pages/lua-api-ui.md
+      - doc/pages/lua-api-saves.md
+      - doc/pages/lua-api-raycast.md
+      - doc/pages/lua-api-isometric.md
   - title: Engine for C++ developers
     pages:
       - doc/pages/guide_engine_developer.md
