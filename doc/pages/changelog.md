@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Settings.
 - Help panel: mermaid diagrams as SVG (`tools/doc/mermaid_svg.py`), task lists, list indents, and pages describing the
   editor.
+- Help panel: images fit table columns and enlarge on click, roadmap status as coloured tags, links to a heading,
+  browser-like Back / Forward (mouse side buttons) restoring the scroll.
 - A save keeps the tilemap cells changed in game; `core::task::Scheduler::parallelFor` prepares large scenes in
   parallel.
 
@@ -53,6 +55,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeps unchanged laid-out strings.
 - CI: benchmarks run on ready pull requests, Clang-Tidy is scoped by `clang-scan-deps`, heavy jobs and image tests are
   sharded or nightly.
+- Help panel: hovered links underlined, internal and web links told apart, headings in clear H1–H4 steps.
+- Lua API reference split into one generated page per theme behind an index (`getLuaReferencePages`).
+- Owl Nest screenshots taken from a neutral path (`/home/user/OwlEngine`): no local path shows.
 - The version is written only in `CMakeLists.txt`; Owl Nest shows it in its title bar and Lua `engine.version()` returns
   it.
 
