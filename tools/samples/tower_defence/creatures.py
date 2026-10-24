@@ -440,11 +440,112 @@ def troll() -> Model:
     return m
 
 
+MAGE_ROBE = (96, 52, 132)
+MAGE_DARK = (62, 32, 90)
+ARCANE = (120, 220, 255)
+BARREL = (150, 98, 52)
+FUSE = (255, 170, 40)
+CHIEF_SKIN = (70, 112, 48)
+GOLD_DARK = (168, 128, 44)
+
+
+def ogre_mage() -> Model:
+    """An ogre mage, 1.0 tall: one head with a long white beard, a purple robe to the feet, a staff with a glowing blue
+    orb (it shields the Horde around it)."""
+    m = Model(stride=0.3, bob=0.03)
+    m.pivots = {"hip": (0.0, 0.3, 0.0), "shoulder": (0.0, 0.66, 0.0)}
+    for side, bone in ((1.0, "leg_l"), (-1.0, "leg_r")):
+        m.capsule((side * 0.1, 0.3, 0.0), (side * 0.11, 0.08, 0.0), 0.07, MAGE_DARK, bone)
+        m.ellipsoid((side * 0.11, 0.04, 0.05), (0.065, 0.04, 0.09), OGRE_DARK, bone)
+    m.ellipsoid((0.0, 0.26, 0.0), (0.22, 0.2, 0.19), MAGE_ROBE)
+    m.ellipsoid((0.0, 0.5, 0.03), (0.22, 0.2, 0.18), MAGE_ROBE)
+    m.ellipsoid((0.0, 0.46, 0.14), (0.08, 0.2, 0.06), MAGE_DARK)
+    m.ellipsoid((0.0, 0.36, 0.02), (0.2, 0.03, 0.17), GOLD)
+    m.ellipsoid((0.0, 0.66, -0.01), (0.2, 0.08, 0.14), MAGE_ROBE)
+    for side in (1.0, -1.0):
+        m.ellipsoid((side * 0.17, 0.69, 0.0), (0.08, 0.05, 0.08), GOLD_DARK)
+    m.ellipsoid((0.0, 0.8, 0.04), (0.095, 0.09, 0.09), OGRE_SKIN)
+    m.ellipsoid((0.0, 0.72, 0.1), (0.06, 0.08, 0.04), BONE)
+    m.capsule((0.0, 0.7, 0.12), (0.0, 0.6, 0.13), 0.03, BONE, end_radius=0.01)
+    for side in (1.0, -1.0):
+        m.ellipsoid((side * 0.033, 0.82, 0.12), (0.014, 0.011, 0.01), ARCANE)
+        m.capsule((side * 0.04, 0.88, 0.04), (side * 0.09, 0.96, 0.02), 0.014, BONE, end_radius=0.004)
+    m.capsule((0.22, 0.64, 0.0), (0.25, 0.42, 0.06), 0.06, MAGE_ROBE, "arm_l")
+    m.ellipsoid((0.25, 0.4, 0.07), (0.045, 0.04, 0.045), OGRE_SKIN, "arm_l")
+    m.capsule((-0.22, 0.64, 0.0), (-0.25, 0.42, 0.06), 0.06, MAGE_ROBE, "arm_r")
+    m.ellipsoid((-0.25, 0.4, 0.07), (0.045, 0.04, 0.045), OGRE_SKIN, "arm_r")
+    m.capsule((-0.25, 0.05, 0.08), (-0.26, 0.9, 0.1), 0.016, WOOD, "weapon")
+    m.ellipsoid((-0.26, 0.95, 0.1), (0.055, 0.055, 0.055), ARCANE, "weapon")
+    for k in range(3):
+        a = k * 2.0 * math.pi / 3
+        m.capsule(
+            (-0.26, 0.88, 0.1), (-0.26 + 0.05 * math.cos(a), 0.97, 0.1 + 0.05 * math.sin(a)), 0.008, GOLD, "weapon"
+        )
+    return m
+
+
+def sapper() -> Model:
+    """A goblin sapper, 0.6 tall: a leather cap with goggles, a powder keg on its back and a lit fuse in its hand (it
+    bursts at the keep, or where it falls)."""
+    m = goblin()
+    m.parts = [part for part in m.parts if part.bone != "weapon"]
+    m.ellipsoid((0.0, 0.3, -0.11), (0.085, 0.11, 0.075), BARREL)
+    for y in (0.22, 0.38):
+        m.ellipsoid((0.0, y, -0.11), (0.088, 0.012, 0.078), METAL_DARK)
+    m.capsule((0.0, 0.41, -0.11), (0.03, 0.46, -0.13), 0.008, (60, 50, 40))
+    m.ellipsoid((0.0, 0.462, -0.01), (0.07, 0.03, 0.065), LEATHER)
+    for side in (1.0, -1.0):
+        m.ellipsoid((side * 0.03, 0.45, 0.07), (0.022, 0.016, 0.012), (200, 220, 230))
+    m.capsule((-0.115, 0.2, 0.05), (-0.12, 0.28, 0.1), 0.01, (60, 50, 40), "weapon")
+    m.ellipsoid((-0.12, 0.29, 0.105), (0.022, 0.026, 0.022), FUSE, "weapon")
+    return m
+
+
+def chieftain() -> Model:
+    """The orc chieftain, 1.0 tall and broad: a horned iron helm, gold plate over a red tabard, a black cape, a skull
+    on the belt and a two-handed axe (the boss of the last level, drawn bigger than the grunts)."""
+    m = Model(stride=0.45, bob=0.025)
+    m.pivots = {"hip": (0.0, 0.3, 0.0), "shoulder": (0.0, 0.62, 0.0)}
+    for side, bone in ((1.0, "leg_l"), (-1.0, "leg_r")):
+        m.capsule((side * 0.1, 0.3, 0.0), (side * 0.11, 0.08, 0.0), 0.065, LEATHER_DARK, bone)
+        m.capsule((side * 0.11, 0.17, 0.02), (side * 0.11, 0.08, 0.0), 0.072, METAL_DARK, bone)
+        m.ellipsoid((side * 0.112, 0.045, 0.04), (0.07, 0.045, 0.095), METAL_DARK, bone)
+    m.ellipsoid((0.0, 0.5, -0.12), (0.22, 0.3, 0.05), CLOTH_BLACK)
+    m.ellipsoid((0.0, 0.33, 0.0), (0.17, 0.06, 0.13), LEATHER_DARK)
+    m.box((0.0, 0.28, 0.12), (0.07, 0.08, 0.012), CLOTH_RED)
+    m.ellipsoid((0.0, 0.48, 0.0), (0.2, 0.18, 0.14), GOLD_DARK)
+    m.ellipsoid((0.0, 0.5, 0.05), (0.15, 0.13, 0.1), GOLD)
+    m.ellipsoid((0.0, 0.37, 0.0), (0.19, 0.03, 0.14), LEATHER_DARK)
+    m.ellipsoid((0.0, 0.36, 0.14), (0.035, 0.035, 0.03), BONE)
+    for side in (1.0, -1.0):
+        m.ellipsoid((side * 0.22, 0.62, 0.0), (0.1, 0.07, 0.1), METAL)
+        for spike in (-0.05, 0.0, 0.05):
+            m.capsule((side * 0.25, 0.67, spike), (side * 0.3, 0.76, spike), 0.014, METAL_DARK, end_radius=0.003)
+    m.ellipsoid((0.0, 0.74, 0.03), (0.1, 0.095, 0.095), CHIEF_SKIN)
+    m.ellipsoid((0.0, 0.7, 0.09), (0.075, 0.045, 0.05), SKIN_DARK)
+    m.ellipsoid((0.0, 0.8, 0.0), (0.11, 0.06, 0.11), METAL_DARK)
+    for side in (1.0, -1.0):
+        m.capsule((side * 0.09, 0.82, 0.0), (side * 0.2, 0.92, -0.02), 0.022, BONE, end_radius=0.006)
+        m.capsule((side * 0.04, 0.69, 0.13), (side * 0.05, 0.75, 0.15), 0.013, BONE)
+        m.ellipsoid((side * 0.036, 0.76, 0.112), (0.017, 0.011, 0.01), RED_EYE)
+    m.capsule((0.22, 0.6, 0.0), (0.24, 0.4, 0.06), 0.05, CHIEF_SKIN, "arm_l")
+    m.capsule((0.24, 0.45, 0.04), (0.24, 0.4, 0.06), 0.056, GOLD_DARK, "arm_l")
+    m.capsule((-0.22, 0.6, 0.0), (-0.24, 0.4, 0.06), 0.05, CHIEF_SKIN, "arm_r")
+    m.capsule((-0.24, 0.45, 0.04), (-0.24, 0.4, 0.06), 0.056, GOLD_DARK, "arm_r")
+    m.capsule((-0.24, 0.3, 0.06), (-0.24, 0.82, 0.16), 0.02, WOOD, "weapon")
+    for side in (1.0, -1.0):
+        m.box((-0.24, 0.78, 0.15 + side * 0.07), (0.014, 0.1, 0.06), METAL, "weapon", tilt=0.3 * side)
+    return m
+
+
 CREATURES: dict[str, Callable[[], Model]] = {
     "goblin": goblin,
     "grunt": grunt,
     "ogre": ogre,
     "wolf": wolf_rider,
     "troll": troll,
+    "ogre_mage": ogre_mage,
+    "sapper": sapper,
+    "chieftain": chieftain,
 }
 """The creature models, by kind."""

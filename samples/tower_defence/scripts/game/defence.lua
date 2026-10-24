@@ -7,7 +7,12 @@
 -- - The values of the towers and of the enemies are properties of this script, the same for every level unless a
 --   level overrides one in the inspector. A pad on high ground gives its tower `height_bonus` more range per step.
 -- - Towers go from level 1 to 3, then take one power-up of two; the second power-up of each tower is unlocked by
---   winning the first level (`tower_done_01`).
+--   winning the first level (`tower_done_01`). The upgrades bought with the stars (`tower_up_<family>` settings, the
+--   upgrades screen) raise the towers, the spells and the treasury of every level.
+-- - The Horde: goblins, grunts, ogres, wolf riders, trolls (they heal), ogre mages (they ward the enemies around them
+--   against damage, fire burns through), goblin sappers (3 lives at the keep, a blast hurting the Horde when killed)
+--   and the chieftain (armoured, rallies the Horde, half slowed and never frozen, 10 lives). The first one of a kind in
+--   a level shows its name and how to beat it.
 -- - Waves are timed: a countdown before each one; calling it early (Space, pad Y, the HUD button) pays
 --   `early_bonus` gold per second left. Every enemy reaching the keep costs a life. From the wave `night_from` the
 --   sky turns to dusk then night and the torches are lit.
@@ -93,6 +98,25 @@ properties = {
     { name = "troll_speed", type = "float", default = 1.05 },
     { name = "troll_gold", type = "int", default = 18 },
     { name = "troll_regen", type = "float", default = 7.0, min = 0 },
+    { name = "mage_hp", type = "float", default = 160.0 },
+    { name = "mage_speed", type = "float", default = 0.8 },
+    { name = "mage_gold", type = "int", default = 26 },
+    { name = "mage_ward", type = "float", default = 45.0, min = 0 },
+    { name = "mage_ward_every", type = "float", default = 6.0, min = 0.5 },
+    { name = "mage_ward_radius", type = "float", default = 1.6, min = 0 },
+    { name = "sapper_hp", type = "float", default = 42.0 },
+    { name = "sapper_speed", type = "float", default = 1.75 },
+    { name = "sapper_gold", type = "int", default = 12 },
+    { name = "sapper_lives", type = "int", default = 3, min = 1 },
+    { name = "sapper_blast", type = "float", default = 40.0, min = 0 },
+    { name = "sapper_blast_radius", type = "float", default = 1.2, min = 0 },
+    { name = "chieftain_hp", type = "float", default = 2000.0 },
+    { name = "chieftain_speed", type = "float", default = 0.5 },
+    { name = "chieftain_gold", type = "int", default = 200 },
+    { name = "chieftain_lives", type = "int", default = 10, min = 1 },
+    { name = "chieftain_arrow", type = "float", default = 0.5, min = 0, max = 1 },
+    { name = "chieftain_rally", type = "float", default = 1.25, min = 1 },
+    { name = "chieftain_rally_radius", type = "float", default = 2.0, min = 0 },
     { name = "arrow_speed", type = "float", default = 9.0, min = 0.1 },
     { name = "ball_flight", type = "float", default = 0.8, min = 0.1 },
     { name = "camera_pitch", type = "float", default = -0.75, min = -1.5, max = -0.2 },
@@ -135,7 +159,8 @@ local POWER_TEXT = {
 }
 local UNLOCK_SETTING = "tower_done_01"
 -- What winning each level the first time unlocks, as the tally says it.
-local UNLOCKS = { "the second power-up of each tower", "Rain of arrows", "the Royal treasury", "Shield wall" }
+local UNLOCKS = { "the second power-up of each tower", "Rain of arrows", "the Royal treasury", "Shield wall",
+                  "the Keep walls, with 3 stars on all five levels" }
 local UNLOCK_NAME = "Greenmarch Ford"
 local PROJECTILE = { archer = "prefabs/projectile_arrow.owlprefab", cannon = "prefabs/projectile_ball.owlprefab",
                      fire = "prefabs/projectile_fireball.owlprefab", frost = "prefabs/projectile_shard.owlprefab" }
@@ -148,8 +173,25 @@ local GRASS_TOP = 0.4                     -- height of the grass over the base o
 local FOOT_SHARE = 34.0 / 96.0
 local sprite_lift = 0.5
 local TOWARD_VIEW = 0.25                  -- billboards come this far toward the camera, off the ground they stand on
-local BAR_HEIGHT = { goblin = 0.62, grunt = 0.86, ogre = 1.12, wolf = 0.82, troll = 0.98 }
-local SHADOW_SIZE = { goblin = 0.45, grunt = 0.6, ogre = 0.9, wolf = 0.8, troll = 0.6 }
+local BAR_HEIGHT = { goblin = 0.62, grunt = 0.86, ogre = 1.12, wolf = 0.82, troll = 0.98, ogre_mage = 1.1,
+                     sapper = 0.66, chieftain = 1.5 }
+local SHADOW_SIZE = { goblin = 0.45, grunt = 0.6, ogre = 0.9, wolf = 0.8, troll = 0.6, ogre_mage = 0.85, sapper = 0.45,
+                      chieftain = 1.1 }
+-- The name of each kind of the Horde and how to beat it, shown the first time it marches in a level.
+local FOES = {
+    goblin = { "Goblins", "quick and frail: archers" },
+    grunt = { "Orc grunts", "sturdy: any tower" },
+    ogre = { "Ogres", "arrows glance off them: cannons and frost" },
+    wolf = { "Wolf riders", "very fast: frost towers slow them" },
+    troll = { "Trolls", "they heal: burst them with cannons, fire stops the healing" },
+    ogre_mage = { "Ogre mages", "they ward the Horde around them: kill them first, fire burns through wards" },
+    sapper = { "Goblin sappers", "a keg blows 3 lives at the keep: shoot them early, their blast hurts the Horde" },
+    chieftain = { "The orc chieftain", "armoured, rallies the Horde, 10 lives: cannons and the vulnerability aura" },
+}
+-- Upgrades bought with the stars on the upgrades screen: the tier of each family (`tower_up_<family>` settings).
+local UPGRADE_FAMILIES = { "archer", "cannon", "frost", "rain", "shield", "treasury" }
+local bought = {}
+local foes_seen = {}
 local DIRECTIONS = 8
 
 local camera_id, cursor_id, ring_id, sky_id = 0, 0, 0, 0
@@ -302,17 +344,44 @@ end
 
 -- Set up --------------------------------------------------------------------------------------------------------------
 
+local function tier(family, level)
+    return (bought[family] or 0) >= level
+end
+
+-- The values of the towers and the enemies, the tiers bought with the stars applied to the towers.
 local function read_stats()
+    for _, family in ipairs(UPGRADE_FAMILIES) do
+        bought[family] = settings.get("tower_up_" .. family, 0)
+    end
     stats.archer = { cost = archer_cost, range = archer_range, damage = archer_damage, reload = archer_reload }
     stats.cannon = { cost = cannon_cost, range = cannon_range, damage = cannon_damage, reload = cannon_reload,
                      splash = cannon_splash }
     stats.frost = { cost = frost_cost, range = frost_range, damage = frost_damage, reload = frost_reload,
                     slow = frost_slow, time = frost_time }
+    local a, c, f = stats.archer, stats.cannon, stats.frost
+    if tier("archer", 1) then a.damage = a.damage * 1.15 end
+    if tier("archer", 2) then a.range = a.range * 1.12 end
+    if tier("archer", 3) then a.reload = a.reload * 0.85 end
+    if tier("cannon", 1) then c.cost = math.floor(c.cost * 0.85 + 0.5) end
+    if tier("cannon", 2) then c.splash = c.splash * 1.2 end
+    if tier("cannon", 3) then c.damage = c.damage * 1.2 end
+    if tier("frost", 1) then f.time = f.time * 1.3 end
+    if tier("frost", 2) then f.slow = f.slow * 0.85 end
+    if tier("frost", 3) then f.range = f.range * 1.12 end
     stats.goblin = { hp = goblin_hp, speed = goblin_speed, gold = goblin_gold, arrow = 1.0 }
     stats.grunt = { hp = grunt_hp, speed = grunt_speed, gold = grunt_gold, arrow = 1.0 }
     stats.ogre = { hp = ogre_hp, speed = ogre_speed, gold = ogre_gold, arrow = ogre_arrow }
     stats.wolf = { hp = wolf_hp, speed = wolf_speed, gold = wolf_gold, arrow = 1.0 }
     stats.troll = { hp = troll_hp, speed = troll_speed, gold = troll_gold, arrow = 1.0, regen = troll_regen }
+    stats.ogre_mage = { hp = mage_hp, speed = mage_speed, gold = mage_gold, arrow = 1.0, ward = mage_ward }
+    stats.sapper = { hp = sapper_hp, speed = sapper_speed, gold = sapper_gold, arrow = 1.0, lives = sapper_lives,
+                     blast = sapper_blast }
+    stats.chieftain = { hp = chieftain_hp, speed = chieftain_speed, gold = chieftain_gold, arrow = chieftain_arrow,
+                        lives = chieftain_lives, boss = true, scale = 1.35 }
+    local bounty = tier("treasury", 2) and 1.1 or 1.0
+    for _, kind in ipairs({ "goblin", "grunt", "ogre", "wolf", "troll", "ogre_mage", "sapper", "chieftain" }) do
+        stats[kind].gold = math.floor(stats[kind].gold * bounty + 0.5)
+    end
 end
 
 -- The stats of a tower at its level and power-up, its range grown by the height of its pad.
@@ -450,10 +519,14 @@ function on_create()
     view.distance = camera_distance
     place_camera()
     -- What the campaign unlocked: the spells, more gold, more lives (`tower_done_NN`, `tower_stars_NN` settings).
-    spells.rain = { unlocked = settings.get("tower_done_02", false) == true, clock = 0.0, cooldown = rain_cooldown,
-                    radius = rain_radius, title = "Rain of arrows", casts = 0 }
+    spells.rain = { unlocked = settings.get("tower_done_02", false) == true, clock = 0.0,
+                    cooldown = rain_cooldown * (tier("rain", 1) and 0.8 or 1.0),
+                    damage = rain_damage * (tier("rain", 2) and 1.3 or 1.0),
+                    radius = rain_radius * (tier("rain", 3) and 1.25 or 1.0), title = "Rain of arrows", casts = 0 }
     spells.shield = { unlocked = settings.get("tower_done_04", false) == true, clock = 0.0,
-                      cooldown = shield_cooldown, radius = shield_radius, title = "Shield wall", casts = 0 }
+                      cooldown = shield_cooldown * (tier("shield", 1) and 0.8 or 1.0),
+                      time = shield_time + (tier("shield", 2) and 2.0 or 0.0),
+                      radius = shield_radius * (tier("shield", 3) and 1.25 or 1.0), title = "Shield wall", casts = 0 }
     show(hud.rain, spells.rain.unlocked)
     show(hud.shield, spells.shield.unlocked)
     local bonus_gold = settings.get("tower_done_03", false) == true and treasury_gold or 0
@@ -461,7 +534,9 @@ function on_create()
     for number = 1, 5 do
         if settings.get(string.format("tower_stars_%02d", number), 0) < 3 then all_stars = false end
     end
-    gold, lives_left = start_gold + bonus_gold, lives + (all_stars and walls_lives or 0)
+    local chest = tier("treasury", 1) and 40 or 0
+    local masons = tier("treasury", 3) and 2 or 0
+    gold, lives_left = start_gold + bonus_gold + chest, lives + masons + (all_stars and walls_lives or 0)
     gamestate.set("tower_start_gold", gold)
     wave_count = #waves
     countdown = first_wave_delay
@@ -511,7 +586,7 @@ end
 local function parse_wave(text)
     local queue = {}
     for group in string.gmatch(text or "", "[^;]+") do
-        local kind, count, gap, letter = string.match(group, "^%s*(%a+)%s+(%d+)%s+([%d%.]+)%s*(%a?)%s*$")
+        local kind, count, gap, letter = string.match(group, "^%s*([%a_]+)%s+(%d+)%s+([%d%.]+)%s*(%a?)%s*$")
         if kind ~= nil and stats[kind] ~= nil and stats[kind].hp ~= nil then
             for i = 1, tonumber(count) do
                 local road = letter == "b" and 2 or (letter == "a" and 1 or (#queue % 2) + 1)
@@ -559,7 +634,7 @@ local function spawn_enemy(kind, road)
     local id = scene.spawn_prefab("prefabs/enemy_" .. kind .. ".owlprefab", billboard_at(x, y, z))
     if id == 0 then return end
     local _, size = transform.get_scale(id)
-    sprite_lift = size * FOOT_SHARE
+    local lift = size * FOOT_SHARE
     local bar = scene.spawn_prefab("prefabs/health_bar.owlprefab", x, y + 1.0, z)
     show(bar, false)
     local shadow = scene.spawn_prefab("prefabs/shadow.owlprefab", x, y + 0.03, z)
@@ -569,12 +644,22 @@ local function spawn_enemy(kind, road)
     end
     local hp = base.hp * (1.0 + hp_growth * (wave - 1))
     spawned = spawned + 1
+    if not foes_seen[kind] then
+        foes_seen[kind] = true
+        local foe = FOES[kind]
+        if foe ~= nil and level_number > 1 and kind ~= "goblin" and kind ~= "grunt" then
+            message(foe[1] .. "!\n" .. foe[2], 3.5)
+        end
+        gamestate.set("tower_seen_" .. kind, true)
+    end
     if road == 2 then gamestate.set("tower_spawned_b", (gamestate.get("tower_spawned_b", 0)) + 1) end
     local side = ((spawned * 37) % 7) / 6.0 - 0.5
     enemies[#enemies + 1] = {
         id = id, bar = bar, shadow = shadow, kind = kind, hp = hp, max = hp, speed = base.speed, gold = base.gold,
-        arrow = base.arrow, regen = base.regen or 0.0, road = road or 1, distance = 0.0, side = side * 0.28, slow = 0.0, slow_factor = 1.0, frozen = 0.0,
-        frost_hits = 0, burn = 0.0, x = x, y = y, z = z, dx = 1.0, dz = 0.0, walk = spawned * 0.37, frame = -1,
+        arrow = base.arrow, regen = base.regen or 0.0, road = road or 1, distance = 0.0, side = side * 0.28,
+        slow = 0.0, slow_factor = 1.0, frozen = 0.0, frost_hits = 0, burn = 0.0, x = x, y = y, z = z, dx = 1.0,
+        dz = 0.0, walk = spawned * 0.37, frame = -1, lift = lift, lives = base.lives or 1, boss = base.boss == true,
+        ward = 0.0, ward_clock = base.ward and 1.5 or nil, ward_give = base.ward, blast = base.blast,
     }
 end
 
@@ -688,9 +773,17 @@ local function remove_enemy(index, dying)
     table.remove(enemies, index)
 end
 
-local function hurt(foe, amount)
+local blast
+
+-- Damage to an enemy: a ward takes it first unless it burns (`through_ward`); a kill pays and may blow a keg.
+local function hurt(foe, amount, through_ward)
     if foe.dead then return end
     if foe.vulnerable then amount = amount * aura_damage end
+    if foe.ward > 0.0 and not through_ward then
+        local taken = math.min(foe.ward, amount)
+        foe.ward = foe.ward - taken
+        amount = amount - taken
+    end
     foe.hp = foe.hp - amount
     if foe.hp <= 0 then
         gold = gold + foe.gold
@@ -704,6 +797,7 @@ local function hurt(foe, amount)
                 break
             end
         end
+        if foe.blast ~= nil then blast(foe) end
         return
     end
     foe.flash = 0.09
@@ -713,6 +807,43 @@ local function hurt(foe, amount)
         transform.set_scale(foe.bar, 0.5 * share, 0.07, 1.0)
         entity.set_tint(foe.bar, 1.0 - share * 0.8, 0.25 + share * 0.65, 0.2, 1.0)
     end
+end
+
+-- A sapper killed on the road: its keg bursts and hurts the Horde around it.
+function blast(foe)
+    play("sounds/game/cannon.wav")
+    spawn_ring(foe.x, foe.y, foe.z, sapper_blast_radius, 1.0, 0.6, 0.2)
+    emit(foe.x, foe.y + 0.3, foe.z, 14, 2.2, 1.0, 0.55, 0.15, 0.14, 0.5, 1.4)
+    local hit = {}
+    for _, other in ipairs(enemies) do
+        local dx, dz = other.x - foe.x, other.z - foe.z
+        if dx * dx + dz * dz <= sapper_blast_radius * sapper_blast_radius then hit[#hit + 1] = other end
+    end
+    for _, other in ipairs(hit) do hurt(other, foe.blast) end
+    gamestate.set("tower_blasts", gamestate.get("tower_blasts", 0) + 1)
+end
+
+-- An ogre mage wards the Horde around it (itself included) every few seconds.
+local function cast_ward(mage)
+    for _, other in ipairs(enemies) do
+        local dx, dz = other.x - mage.x, other.z - mage.z
+        if dx * dx + dz * dz <= mage_ward_radius * mage_ward_radius then
+            other.ward = math.max(other.ward, mage.ward_give)
+        end
+    end
+    spawn_ring(mage.x, mage.y, mage.z, mage_ward_radius, 0.55, 0.75, 1.0)
+    gamestate.set("tower_wards", gamestate.get("tower_wards", 0) + 1)
+end
+
+-- The speed factor of an enemy near the chieftain (its war cry).
+local function rally_of(foe)
+    for _, other in ipairs(enemies) do
+        if other.boss and other ~= foe then
+            local dx, dz = other.x - foe.x, other.z - foe.z
+            if dx * dx + dz * dz <= chieftain_rally_radius * chieftain_rally_radius then return chieftain_rally end
+        end
+    end
+    return 1.0
 end
 
 -- The fallen: the three frames of the fall, then a fade.
@@ -745,7 +876,14 @@ local function update_enemies(dt)
     local index = 1
     while index <= #enemies do
         local foe = enemies[index]
-        local speed = foe.speed
+        local speed = foe.speed * rally_of(foe)
+        if foe.ward_clock ~= nil then
+            foe.ward_clock = foe.ward_clock - dt
+            if foe.ward_clock <= 0.0 then
+                foe.ward_clock = mage_ward_every
+                cast_ward(foe)
+            end
+        end
         if foe.frozen > 0.0 then
             foe.frozen = foe.frozen - dt
             speed = 0.0
@@ -755,7 +893,7 @@ local function update_enemies(dt)
         end
         if foe.burn > 0.0 then
             foe.burn = foe.burn - dt
-            hurt(foe, fire_damage * dt)
+            hurt(foe, fire_damage * dt, true)
         elseif foe.regen > 0.0 and foe.hp < foe.max then
             foe.hp = math.min(foe.max, foe.hp + foe.regen * dt)
         end
@@ -771,7 +909,7 @@ local function update_enemies(dt)
                 local row = ATTACK_ROW + (math.floor(foe.attack / 0.18) % 2)
                 isometric.set_sprite_frame(foe.id, row * DIRECTIONS + direction_of(foe.dx, foe.dz))
                 if foe.attack >= 0.72 then
-                    lives_left = lives_left - 1
+                    lives_left = lives_left - foe.lives
                     leaks = leaks + 1
                     play("sounds/game/leak.wav")
                     emit(foe.x, foe.y + 0.5, foe.z, 5, 1.2, 0.9, 0.85, 0.7, 0.14, 0.4, 0.6)
@@ -792,10 +930,11 @@ local function update_enemies(dt)
                     foe.frame = frame
                     isometric.set_sprite_frame(foe.id, frame)
                 end
-                transform.set_position(foe.id, billboard_at(x, y, z))
+                transform.set_position(foe.id, billboard_at(x, y, z, foe.lift))
                 if foe.bar ~= 0 then transform.set_position(foe.bar, billboard_at(x, y, z, BAR_HEIGHT[foe.kind])) end
                 if foe.shadow ~= 0 then transform.set_position(foe.shadow, x, y + 0.03, z) end
-                local tint = foe.frozen > 0.0 and "frozen" or (foe.slow > 0.0 and "slow" or (foe.burn > 0.0 and "burn" or "plain"))
+                local tint = foe.frozen > 0.0 and "frozen" or (foe.slow > 0.0 and "slow" or (foe.burn > 0.0 and "burn"
+                        or (foe.ward > 0.0 and "ward" or "plain")))
                 if (foe.flash or 0.0) > 0.0 then
                     foe.flash = foe.flash - dt
                     tint = "flash"
@@ -806,6 +945,7 @@ local function update_enemies(dt)
                     elseif tint == "frozen" then entity.set_tint(foe.id, 0.75, 0.95, 1.0, 1.0)
                     elseif tint == "slow" then entity.set_tint(foe.id, 0.65, 0.82, 1.0, 1.0)
                     elseif tint == "burn" then entity.set_tint(foe.id, 1.0, 0.7, 0.5, 1.0)
+                    elseif tint == "ward" then entity.set_tint(foe.id, 0.8, 0.75, 1.0, 1.0)
                     else entity.set_tint(foe.id, 1.0, 1.0, 1.0, 1.0) end
                 end
                 index = index + 1
@@ -929,8 +1069,8 @@ local function land(shot)
         hurt(foe, s.damage * foe.arrow)
     else
         foe.slow = s.time
-        foe.slow_factor = s.slow
-        if shot.power == "freeze" then
+        foe.slow_factor = foe.boss and (1.0 - (1.0 - s.slow) * 0.5) or s.slow
+        if shot.power == "freeze" and not foe.boss then
             foe.frost_hits = foe.frost_hits + 1
             if foe.frost_hits % 3 == 0 then foe.frozen = freeze_time end
         end
@@ -1062,12 +1202,12 @@ local function cast(name)
             emit(target.x + math.cos(a) * r, target.y + 2.2, target.z + math.sin(a) * r, 1, 0.2, 0.95, 0.9, 0.75, 0.1, 0.5, -4.0)
         end
         spawn_ring(target.x, target.y, target.z, spell.radius, 0.95, 0.9, 0.7)
-        for _, foe in ipairs(hit) do hurt(foe, rain_damage) end
+        for _, foe in ipairs(hit) do hurt(foe, spell.damage) end
     else
         play("sounds/game/build.wav")
         spawn_ring(target.x, target.y, target.z, spell.radius, 1.0, 0.85, 0.3)
         emit(target.x, target.y + 0.4, target.z, 12, 1.6, 1.0, 0.85, 0.35, 0.12, 0.6, 0.8)
-        for _, foe in ipairs(hit) do foe.frozen = math.max(foe.frozen, shield_time) end
+        for _, foe in ipairs(hit) do foe.frozen = math.max(foe.frozen, foe.boss and spell.time * 0.5 or spell.time) end
     end
     gamestate.set("tower_" .. name .. "_casts", spell.casts)
 end
@@ -1665,7 +1805,9 @@ local function finish(won)
         settings.set(done, true)
         gamestate.set("tower_done", true)
         if kept > settings.get(best, 0) then settings.set(best, kept) end
-        if stars_for(kept) > settings.get(stars, 0) then settings.set(stars, stars_for(kept)) end
+        local before = settings.get(stars, 0)
+        gamestate.set("tower_result_stars_gained", math.max(0, stars_for(kept) - before))
+        if stars_for(kept) > before then settings.set(stars, stars_for(kept)) end
         settings.save()
         message("The keep holds!", end_delay)
     else

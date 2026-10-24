@@ -89,6 +89,20 @@ def mesh(path: str, colour: y.Colour = (1, 1, 1, 1)) -> str:
     return f"MeshRenderer:\n  mesh: {path}\n  color: {y.vec(*colour)}\n  transparent: false\n" + MESH
 
 
+THEMES: dict[str, tuple[str, y.Colour, y.Colour]] = {
+    "grass": ("", (1, 1, 1, 1), (1, 1, 1, 1)),
+    "snow": ("snow-", (1, 1, 1, 1), (1, 1, 1, 1)),
+    "ash": ("snow-", (0.5, 0.42, 0.4, 1), (0.3, 0.25, 0.24, 1)),
+}
+"""Per theme of a level: the prefix of the kit models, the tint of the tiles and of the trees and rocks."""
+
+
+def tile_mesh(level: mp.LevelData, name: str, decor: bool = False) -> str:
+    """The ``MeshRenderer`` of a tile or decor model of the kit in the theme of a level."""
+    prefix, tile_tint, decor_tint = THEMES[level.theme]
+    return mesh(f"{TD}/{prefix}{name}.glb", decor_tint if decor else tile_tint)
+
+
 def light2d(
     kind: str, colour: tuple[float, float, float], intensity: float, radius: float, falloff: float, enabled: bool = True
 ) -> str:
@@ -185,7 +199,7 @@ def terrain(entities: y.Entities, level: mp.LevelData, parent: int) -> None:
             if steps > 0:
                 entities.add(
                     "Terrain",
-                    [mesh(f"{TD}/tile.glb")],
+                    [tile_mesh(level, "tile")],
                     position=(x, 0, z),
                     scale=(1, VS * steps, 1),
                     parent=parent,
@@ -211,7 +225,7 @@ def terrain(entities: y.Entities, level: mp.LevelData, parent: int) -> None:
                 name, quarters = "tile-hill", rng.randrange(4)
             entities.add(
                 "Terrain",
-                [mesh(f"{TD}/{name}.glb")],
+                [tile_mesh(level, name)],
                 position=(x, base, z),
                 rotation=(0, quarters * math.pi / 2, 0),
                 scale=(1, VS, 1),
@@ -225,7 +239,7 @@ def terrain(entities: y.Entities, level: mp.LevelData, parent: int) -> None:
                     size = rng.uniform(0.85, 1.2)
                     entities.add(
                         "Tree",
-                        [mesh(f"{TD}/{model}.glb")],
+                        [tile_mesh(level, model, decor=True)],
                         position=(x + dx, top, z + dz),
                         rotation=(0, rng.uniform(0, 6.28), 0),
                         scale=(size, size, size),
@@ -235,7 +249,7 @@ def terrain(entities: y.Entities, level: mp.LevelData, parent: int) -> None:
                 model = rng.choice(("detail-rocks", "detail-rocks-large"))
                 entities.add(
                     "Rocks",
-                    [mesh(f"{TD}/{model}.glb")],
+                    [tile_mesh(level, model, decor=True)],
                     position=(x, top, z),
                     rotation=(0, rng.uniform(0, 6.28), 0),
                     parent=parent,
@@ -410,7 +424,9 @@ def level_scene(level: mp.LevelData) -> str:
     )
     entities.add("MinimapCamera", [minimap], position=(cx, 30, cz), rotation=(-math.pi / 2, 0, 0))
     ground = entities.add("Terrain", [])
-    countryside = mesh(f"{TD}/tile.glb", (0.86, 0.95, 0.86, 1))
+    prefix, tint, _ = THEMES[level.theme]
+    shade = (0.86, 0.95, 0.86, 1) if level.theme == "grass" else (tint[0] * 0.92, tint[1] * 0.92, tint[2] * 0.92, 1)
+    countryside = mesh(f"{TD}/{prefix}tile.glb", shade)
     entities.add("Countryside", [countryside], position=(cx, -0.06, cz), scale=(160, 1, 160), parent=ground)
     terrain(entities, level, ground)
     for path in roads:
@@ -590,6 +606,8 @@ def tower_prefab(key: str) -> str:
 
 
 ENEMIES = tuple(CREATURES)
+ENEMY_SCALE = {"chieftain": 1.35}
+"""Enemies drawn bigger than the others (the boss)."""
 """Enemy kinds, a sheet each."""
 
 
@@ -598,7 +616,9 @@ def prefabs() -> dict[str, str]:
     out = {}
     for kind in ENEMIES:
         sheet = y.frames(f"textures/enemies/{kind}.png", DIRECTIONS, FRAMES, 0) + SPRITES
-        out[f"enemy_{kind}"] = single(f"Enemy{kind.title()}", "Enemy", [sheet], (SPRITE_SIZE, SPRITE_SIZE, 1))
+        size = SPRITE_SIZE * ENEMY_SCALE.get(kind, 1.0)
+        name = "Enemy" + kind.title().replace("_", "")
+        out[f"enemy_{kind}"] = single(name, "Enemy", [sheet], (size, size, 1))
     for key in TOWER_PARTS:
         out[f"tower_{key}"] = tower_prefab(key)
     for index, kind in enumerate(("arrow", "ball", "fireball", "shard")):

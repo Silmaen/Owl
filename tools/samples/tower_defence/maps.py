@@ -14,8 +14,11 @@ Heights: one digit per cell, the number of steps of ``HEIGHT_STEP`` the ground s
 takes the lower height of its two road neighbours; a pad on a higher step gives its tower more range.
 
 A wave is a list of groups ``"kind count gap [road]"`` separated by ``;``: ``count`` enemies of ``kind`` (``goblin``,
-``grunt``, ``ogre``, ``wolf``, ``troll``) one every ``gap`` seconds, the groups one after the other, on the road ``a``
-or ``b`` of a level with two gates (both in turn when it is left out).
+``grunt``, ``ogre``, ``wolf``, ``troll``, ``ogre_mage``, ``sapper``, ``chieftain``) one every ``gap`` seconds, the
+groups one after the other, on the road ``a`` or ``b`` of a level with two gates (both in turn when it is left out).
+
+A level has a ``theme``: ``grass`` (the green tiles of the kit), ``snow`` (its snow tiles) or ``ash`` (the snow tiles
+darkened to ash, dead pines).
 """
 
 from __future__ import annotations
@@ -50,6 +53,8 @@ class LevelData:
     """Lives at the start: one is lost per enemy reaching the keep."""
     start_hour: float = 9.5
     """Time of day of the first wave."""
+    theme: str = "grass"
+    """Look of the tiles: ``grass``, ``snow`` or ``ash``."""
 
     @property
     def width(self) -> int:
@@ -282,5 +287,117 @@ STONEBRIDGE = LevelData(
     start_hour=8.0,
 )
 
-LEVELS = [GREENMARCH_FORD, THORNWOOD_PASS, STONEBRIDGE]
+FROSTMERE = LevelData(
+    number=4,
+    name="Frostmere",
+    layout=(
+        "TT.T..T..T.~~..TT.TT",
+        ".G#####....~~.T....T",
+        "...P..#..P.~~.......",
+        ".T..P.#.r..~~..P....",
+        "....../####==##..KKK",
+        ".T...P....P~~.#P.KKK",
+        "...........~~P#..KKK",
+        "..T..P...P.~~####KKK",
+        ".T.........~~#...KKK",
+        "....P######==#...KKK",
+        "...P.#..T..~~..T....",
+        ".T...#.P...~~.....T.",
+        "..P..#.....~~.......",
+        ".G####..T..~~..T..T.",
+        "T..T..T.TT.~~T..TT.T",
+    ),
+    heights=(
+        "11111111110000111111",
+        "11111111110000111111",
+        "11111111110000111111",
+        "11111111110000111111",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000011110000000000",
+        "00000011110000000000",
+        "00000011110000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+    ),
+    waves=(
+        "goblin 10 0.7 a; wolf 6 0.8 b",
+        "grunt 6 1.1; sapper 3 1.5 b",
+        "ogre_mage 1 2; grunt 8 0.9",
+        "wolf 10 0.5 a; troll 4 1.2 b",
+        "sapper 6 0.9; goblin 12 0.45",
+        "ogre_mage 2 2.5; ogre 2 2.5; grunt 8 0.8",
+        "troll 8 0.9 a; wolf 10 0.5 b",
+        "ogre_mage 3 2; troll 6 1.0; sapper 6 0.8",
+        "ogre 4 2.0; grunt 12 0.6; wolf 10 0.5",
+        "ogre_mage 4 1.8; ogre 4 2.0; troll 8 0.8; sapper 8 0.7",
+    ),
+    night_from=7,
+    start_gold=320,
+    start_hour=14.5,
+    theme="snow",
+)
+
+THE_BLACK_GATE = LevelData(
+    number=5,
+    name="The Black Gate",
+    layout=(
+        "rr.T..r...T..r..T.rr",
+        ".G######...r.P...r..",
+        "..P....#..P.####....",
+        ".r..P..#.r..#..#....",
+        "...r...######.P#.KKK",
+        ".T....P..P..r..#.KKK",
+        "..r.......T...P#.KKK",
+        ".T........r..P.##KKK",
+        "...T..T...P#####.KKK",
+        ".r...P.....#..P..KKK",
+        "..T...######..T.....",
+        ".r..P.#.P..r...T..r.",
+        "..P...#....T........",
+        ".G#####..r....r..T..",
+        "rr.T...r..T...rr..rr",
+    ),
+    heights=(
+        "00000000000002222222",
+        "00000000000002222222",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000111111000000000",
+        "00000111111000000000",
+        "00000111111000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+        "00000001111000000000",
+        "00000001111000000000",
+        "00000000000000000000",
+        "00000000000000000000",
+    ),
+    waves=(
+        "grunt 8 1.0 a; goblin 10 0.6 b",
+        "wolf 10 0.5; sapper 4 1.2 a",
+        "troll 6 1.1; ogre_mage 1 2",
+        "ogre 3 2.4 a; grunt 10 0.8 b",
+        "sapper 8 0.8; wolf 12 0.45",
+        "ogre_mage 2 2.2; troll 8 0.9; grunt 8 0.8",
+        "ogre 4 2.0; ogre_mage 2 2.0 b; wolf 12 0.45 a",
+        "troll 12 0.7; sapper 8 0.7",
+        "grunt 16 0.5; ogre 5 1.8",
+        "ogre_mage 4 1.6; ogre 5 1.8; troll 10 0.7",
+        "wolf 16 0.4; sapper 10 0.6; grunt 12 0.6",
+        "chieftain 1 1 a; ogre_mage 3 2.0; ogre 6 1.6; troll 10 0.7",
+    ),
+    night_from=6,
+    start_gold=360,
+    start_hour=16.5,
+    theme="ash",
+)
+
+LEVELS = [GREENMARCH_FORD, THORNWOOD_PASS, STONEBRIDGE, FROSTMERE, THE_BLACK_GATE]
 """Every level, in the order of the campaign."""
