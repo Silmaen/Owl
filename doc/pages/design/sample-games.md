@@ -153,53 +153,67 @@ Shipped in `samples/tower_defence/` (how to play: its `README.md`): a first map 
 gameplay. Plan of 2026-10-24: a small campaign in the spirit of Warcraft 1 and 2, the Horde (goblins, orcs, ogres)
 against human towers and a human keep, in real 3D, mixing as many rendering styles as the engine has.
 
-| Item     | Plan                                                                                                                               |                                                                                         |
-|----------|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
-| Play     | 5 levels of 8 to 12 waves, on 3D terrain with relief, between visits to a world map and its upgrades screen                       |                                                                                         |
-| Win/lose | Every wave held with a life left / the 20 lives lost; 3, 2 or 1 stars for 18, 10 or fewer lives kept                               |                                                                                         |
-| Waves    | Timed, called early for gold; from the wave `night_from` the day-night cycle turns to dusk, then night with torches                |                                                                                         |
-| Towers   | Archer, cannon, frost on build pads; levels 1, 2, 3, then one power-up of two; sold for half of what was spent                     |                                                                                         |
-| Enemies  | `Renderer2D` `sprites`: billboards, depth test                                                                                     | 8 directions x 9 frames (walk, attack, death), lit like the 3D scene; hit flash, sparks |
-| Relief   | Plateaus, ramps, a river and its bridge; a pad on high ground gives its tower +15 % range per height step                          |                                                                                         |
-| Controls | As in the first map (mouse, keyboard cursor, gamepad), plus Z / C or pad LB, D-pad up / down turn the view by 45°, the wheel zooms |                                                                                         |
-| Scenes   | `title`, `world_map`, `upgrades`, `level_01` to `level_05`, `settings`, `victory` (stats, stars credited, unlock), `game_over`    |                                                                                         |
-| Saves    | No slot: `tower_done_NN`, `tower_stars_NN` (best), `tower_best_NN`, `tower_up_<family>` settings; unlocks follow from the wins     |                                                                                         |
+| Item      | Plan                                                                                                                               |                                                                                         |
+|-----------|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| Play      | 10 levels of 8 to 12 waves, on 3D terrain with relief, between visits to a world map and its upgrades screen                       |                                                                                         |
+| Win/lose  | Every wave held with a life left / the 20 lives lost; 3, 2 or 1 stars for 18, 10 or fewer lives kept                               |                                                                                         |
+| Waves     | Timed, called early for gold; the `night_waves` of a level are fought at night, dusk or dawn announced between two waves           |                                                                                         |
+| Day/night | `time_effects` of `defence.lua`: a bonus or a malus by day and by night for every tower and enemy kind                             | Sun or moon on the HUD, legend in the pause window                                      |
+| Modifiers | Per level (`modifiers`): fog, blizzard, blood moon, drought, gale, plunder, long night, effects of the same form                   | Briefing, world map panel, pause window                                                 |
+| Briefing  | A parchment card before the first wave: nights, modifiers, new enemies; a click, Enter or pad A starts                             | Time paused until then                                                                  |
+| Towers    | Archer, cannon, frost on build pads; levels 1, 2, 3, then one power-up of two; sold for half of what was spent                     |                                                                                         |
+| Enemies   | `Renderer2D` `sprites`: billboards, depth test                                                                                     | 8 directions x 9 frames (walk, attack, death), lit like the 3D scene; hit flash, sparks |
+| Relief    | Plateaus, ramps, rivers and bridges; a pad on high ground gives its tower +15 % range per height step                              |                                                                                         |
+| Controls  | As in the first map (mouse, keyboard cursor, gamepad), plus Z / C or pad LB, D-pad up / down turn the view by 45°, the wheel zooms |                                                                                         |
+| Scenes    | `title`, `world_map`, `upgrades`, `level_01` to `level_10`, `settings`, `victory` (stats, stars credited, unlock), `game_over`     |                                                                                         |
+| Saves     | No slot: `tower_done_NN`, `tower_stars_NN` (best), `tower_best_NN`, `tower_up_<family>` settings; unlocks follow from the wins     |                                                                                         |
 
-| #   | Level           | Terrain                                                    | New                                                        |
-|-----|-----------------|------------------------------------------------------------|------------------------------------------------------------|
-| 1   | Greenmarch Ford | One plateau, a ramp down, a river crossed by a bridge      | Goblins, grunts, ogres in the last waves; the last at dusk |
-| 2   | Thornwood Pass  | Two plateaus and a road winding between them through woods | Wolf riders (fast, in packs); night waves with torches     |
-| 3   | Stonebridge     | Two gates, two roads meeting before a long bridge          | Trolls (regenerate); waves split between the two roads     |
-| 4   | Frostmere       | Snow tiles, a plateau gate, a river crossed by two bridges | Ogre mages (ward the Horde around them), goblin sappers    |
-| 5   | The Black Gate  | Ash land (snow tiles darkened), two winding roads          | The orc chieftain (armoured boss, rallies, 10 lives)       |
+| #  | Level           | Terrain                                                    | Theme | Nights             | Modifiers           | New                    |
+|----|-----------------|------------------------------------------------------------|-------|--------------------|---------------------|------------------------|
+| 1  | Greenmarch Ford | One plateau, a ramp down, a river crossed by a bridge      | grass | 4, 8               |                     | Goblins, grunts, ogres |
+| 2  | Thornwood Pass  | Two plateaus and a road winding between them through woods | grass | 3, 6, 9, 10        | fog                 | Wolf riders            |
+| 3  | Stonebridge     | Two gates, two roads meeting before a long bridge          | grass | 3, 4, 7, 8, 10     |                     | Trolls                 |
+| 4  | Mirefen Marsh   | Two rivers, two gates, four bridges                        | marsh | 3, 6, 9, 10        | fog                 | Goblin sappers         |
+| 5  | Frostmere       | A plateau gate, a river crossed by two bridges             | snow  | 3, 6, 9, 10        | blizzard            | Ogre mages             |
+| 6  | Highpeak Watch  | A high plateau, two ramps down                             | snow  | 3, 4, 7, 8, 11     | gale                | Orc berserkers         |
+| 7  | Sunscorch Flats | Two gates on open sand                                     | dry   | 5, 10              | drought             |                        |
+| 8  | Ashfall Ridge   | A road climbing a ridge and down again                     | ash   | 2, 4, 6, 8, 10, 11 | blood moon          |                        |
+| 9  | Ravenhold       | Two long winding roads                                     | ash   | 3, 4, 7, 8, 11, 12 | plunder, long night |                        |
+| 10 | The Black Gate  | Two winding roads to the fortress gate                     | ash   | 4, 8, 11, 12       | blood moon          | The orc chieftain      |
 
-| Enemy         | Mechanic                                                                 | Counter                                 |
-|---------------|--------------------------------------------------------------------------|-----------------------------------------|
-| Wolf rider    | Speed 2.1                                                                | Frost                                   |
-| Troll         | Regenerates 7 hp/s, not while burning                                    | Cannon bursts, fire shells              |
-| Ogre mage     | Every 6 s a ward absorbing 45 damage on the Horde within 1.6             | Kill it first; burning ignores wards    |
-| Goblin sapper | Fast, 3 lives at the keep; killed, its keg hurts the Horde within 1.2    | Archers' range, kill it in the crowd    |
-| Chieftain     | 2000 hp, arrows ×0.5, half slowed, never frozen, rallies (+25 % speed)   | Cannons, the vulnerability aura         |
+| Enemy         | Mechanic                                                               | Day / night                      | Counter                              |
+|---------------|------------------------------------------------------------------------|----------------------------------|--------------------------------------|
+| Wolf rider    | Speed 2.1                                                              | +15 % damage taken / +20 % speed | Frost                                |
+| Troll         | Regenerates 7 hp/s, not while burning                                  | No healing / heals 50 % more     | Cannon bursts, fire shells           |
+| Ogre mage     | Every 6 s a ward absorbing 45 damage on the Horde within 1.6           | Wards −20 % / +50 %              | Kill it first; burning ignores wards |
+| Goblin sapper | Fast, 3 lives at the keep; killed, its keg hurts the Horde within 1.2  | −10 % / +20 % speed              | Archers' range, kill it in the crowd |
+| Orc berserker | Up to 90 % faster as it loses its life                                 | +10 % damage taken / +15 % speed | Frost, then burst                    |
+| Chieftain     | 2000 hp, arrows ×0.5, half slowed, never frozen, rallies (+25 % speed) | +10 % / −15 % damage taken       | Cannons, the vulnerability aura      |
 
-| Star upgrades  | Tier 1 (1 star)          | Tier 2 (2 stars)        | Tier 3 (3 stars)  |
-|----------------|--------------------------|-------------------------|-------------------|
-| Archers        | +15 % damage             | +12 % range             | 15 % faster       |
-| Cannons        | Cost −15 %               | Bursts +20 %            | +20 % damage      |
-| Frost          | Chill +30 % longer       | Slower chilled enemies  | +12 % range       |
-| Rain of arrows | Cooldown −20 %           | +30 % damage            | Radius +25 %      |
-| Shield wall    | Cooldown −20 %           | +2 s                    | Radius +25 %      |
-| Treasury       | +40 starting gold        | +10 % gold per kill     | +2 lives          |
+| Star upgrades  | Tier 1 (1 star)    | Tier 2 (2 stars)       | Tier 3 (3 stars) | Tier 4 (4 stars)  |
+|----------------|--------------------|------------------------|------------------|-------------------|
+| Archers        | +15 % damage       | +12 % range            | 15 % faster      | +10 % range       |
+| Cannons        | Cost −15 %         | Bursts +20 %           | +20 % damage     | 15 % faster       |
+| Frost          | Chill +30 % longer | Slower chilled enemies | +12 % range      | +20 % damage      |
+| Rain of arrows | Cooldown −20 %     | +30 % damage           | Radius +25 %     | +30 % damage      |
+| Shield wall    | Cooldown −20 %     | +2 s                   | Radius +25 %     | Cooldown −20 %    |
+| Treasury       | +40 starting gold  | +10 % gold per kill    | +2 lives         | +60 starting gold |
 
-- Stars: the best of each level is kept, the upgrades screen spends their sum (15 at most for 36 of tiers): replaying
+- Stars: the best of each level is kept, the upgrades screen spends their sum (30 at most for 60 of tiers): replaying
   a level for more stars credits the difference; Refund all is free.
 
-| Level won        | Unlocks                                                                         |
-|------------------|---------------------------------------------------------------------------------|
-| Greenmarch Ford  | The second power-up of each tower (double shot, shock wave, vulnerability aura) |
-| Thornwood Pass   | Rain of arrows: a spell on a spot of the road, damage in an area, 45 s cooldown |
-| Stonebridge      | Royal treasury: 60 more starting gold on every level                            |
-| Frostmere        | Shield wall: a spell stopping the enemies on a spot for 5 s, 60 s cooldown      |
-| 3 stars on all 5 | Keep walls: 5 more lives on every level                                         |
+| Level won         | Unlocks                                                                         |
+|-------------------|---------------------------------------------------------------------------------|
+| Greenmarch Ford   | The second power-up of each tower (double shot, shock wave, vulnerability aura) |
+| Thornwood Pass    | Rain of arrows: a spell on a spot of the road, damage in an area, 45 s cooldown |
+| Stonebridge       | Royal treasury: 60 more starting gold on every level                            |
+| Mirefen Marsh     | Fletchers' guild: archers cost 10 % less (an effect `archer any cost 0.9`)      |
+| Frostmere         | Shield wall: a spell stopping the enemies on a spot for 5 s, 60 s cooldown      |
+| Highpeak Watch    | Watchtowers: every tower +5 % range                                             |
+| Sunscorch Flats   | Harvest tithe: +10 % gold per kill                                              |
+| Ashfall Ridge     | Night watch: towers +10 % range at night                                        |
+| Ravenhold         | Royal guard: 3 more lives on every level                                        |
+| 3 stars on all 10 | Keep walls: 5 more lives on every level                                         |
 
 | Tower  | Level 2 | Level 3   | Power-up A (from the start)                        | Power-up B (Greenmarch Ford won)                |
 |--------|---------|-----------|----------------------------------------------------|-------------------------------------------------|
@@ -209,11 +223,14 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
 
 - Costs: level 2 at 80 % of the tower price, level 3 at 120 %, a power-up at 150 %; the ring of a tower shows the next
   step with its price, the two power-ups side by side at level 3 (a locked one says which level unlocks it), and Sell.
+- Menus: the parade of the Horde, the keep, the archer tower and the road under them are pixel art rendered like the
+  Horde (`scenery.py`, the models of `creatures.py`).
 - World map (`world_map.owl`): a hand-inked map drawn by `world_map_art.py` at 80 pixels per unit (pixel for pixel on
   2560 x 1440, `MapRoot` scaled down to fit a narrower screen): inked coast with ripple lines and a ship, rivers
   between banks, a frozen lake, hatched mountains (snowy, black, a volcano), painted forests, fields, faint tracks,
-  region and site names, a cartouche, a compass rose, paper grain and vignette; waving banners, drifting clouds and
-  glints of the sea animated by `world_map.lua`. The road from the capital is shown up to the last site open and the
+  region and site names, a cartouche, a compass rose, paper grain and vignette, the marsh of Mirefen and the dunes
+  of Sunscorch; waving banners, drifting clouds (thinning over the site names) and glints of the sea animated by
+  `world_map.lua`. The road from the capital is shown up to the last site open and the
   next stretch is traced dash by dash after a win.
 - Sites on the world map: locked (a grey ruin), open (a Horde camp under a red banner, bobbing), done (a human keep
   under a blue banner and its stars); a click, Q / E or the D-pad picks an open site, Enter, pad A or March! starts
@@ -251,11 +268,13 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
   `tower_title`, `tower_world_map`, `tower_map_first_level` (fresh save: the map fits, a click on level 1 marches,
   Quit to the map comes back), `tower_upgrades_screen` (a win credits stars, a tier bought then refunded),
   `tower_level_wolves` (level 2), `tower_level_roads` (level 3, both roads), `tower_level_frostmere` (sappers, a mage's
-  wards), `tower_level_black_gate`.
+  wards), `tower_level_black_gate`, `tower_night_and_fog` (briefing shown and dismissed, the fog and the night effects
+  on the range of an archer and the speed of a goblin), `tower_drought` (a cheaper cannon).
 - Size: **M–L**.
-- Done: the five levels in 3D with relief (green, snow and ash themes), the Horde of eight kinds in 8 directions with
-  walk, attack and death frames, each level bringing a new one with its counter, tower upgrades and power-ups, the
-  build wheel, the night waves, the minimap, the inked world map, the unlocks, the star upgrades and the medieval look.
+- Done: the ten levels in 3D with relief (grass, marsh, snow, sand and ash themes), the Horde of nine kinds in 8
+  directions with walk, attack and death frames introduced across the campaign with their counters, tower upgrades and
+  power-ups, the build wheel, day and night alternating with their effects, the level modifiers and the briefing, the
+  minimap, the inked world map, the unlocks, the star upgrades and the medieval look.
 
 ### Mini Transport Tycoon
 

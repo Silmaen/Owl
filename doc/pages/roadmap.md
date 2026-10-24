@@ -158,7 +158,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] Help reading: gallery tables, coloured status tags, anchored links, browser-like history, Lua API per theme ([Nest UI](design/nest-ui.md#in-editor-documentation))
 - ![Done][done] Lua gaps of the sample games: spawn a prefab, tilemap cells kept by saves, `ui.set_image`, pause and time scale, entity under the mouse ([Gaps](design/sample-games.md#sample-games-gaps))
 - ![Done][done] Sample game: a tower defence, first map in basic art ([Sample games](design/sample-games.md#sample-games-tower-defence))
-- ![In Progress][progress] Tower defence campaign: 5 levels in 3D with relief, sprite enemies, tower upgrades, world map, star upgrades ([Sample games](design/sample-games.md#sample-games-tower-defence))
+- ![In Progress][progress] Tower defence campaign: 10 levels in 3D, day and night, modifiers, sprite enemies, world map, star upgrades ([Sample games](design/sample-games.md#sample-games-tower-defence))
 
 ## v0.4.0 -- 2026-10-20
 
