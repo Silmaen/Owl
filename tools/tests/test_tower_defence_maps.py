@@ -87,7 +87,8 @@ def test_the_horde_is_introduced_across_the_campaign() -> None:
 
 
 def test_the_level_modifiers_and_effects_exist_in_the_rules() -> None:
-    rules = (gen.ROOT / "scripts" / "game" / "defence.lua").read_text()
+    game = gen.ROOT / "scripts" / "game"
+    rules = "".join(path.read_text() for path in [game / "defence.lua", *sorted((game / "td").glob("*.lua"))])
     for level in mp.LEVELS:
         for key in level.modifiers:
             assert f"\n    {key} = {{" in rules, key

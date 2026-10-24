@@ -635,7 +635,9 @@ value. A module name is words of letters, digits and `_` joined by dots: no path
 while it loads, a missing module and a syntax error raise an error in the caller. A module shares the globals of its
 script (its `properties` among them, read inside functions: the module runs before they are set), and runs under the
 memory ceiling and the time budget of the call that required it. Keep the hooks (`on_create`, `on_update`, the HUD
-callbacks) in the script of the entity, where Owl Nest lists them; the modules hold the rest.
+callbacks) in the script of the entity, where Owl Nest lists them; the modules hold the rest. Require them in
+`on_create` (or in a function): the inspector reads the `properties` of a script by running its top level alone,
+without its modules.
 
 ```lua
 -- scripts/game/towers.lua
@@ -644,7 +646,8 @@ function towers.range(kind) return kind == "archer" and archer_range or 3.0 end
 return towers
 
 -- scripts/game/defence.lua
-local towers = require("scripts.game.towers")
+local towers
+function on_create() towers = require("scripts.game.towers") end
 function on_update(dt) local r = towers.range("archer") end
 ```
 
