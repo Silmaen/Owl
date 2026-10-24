@@ -25,6 +25,10 @@ User-facing reference: `doc/pages/scripting.md` (guide), `doc/pages/lua-api.md` 
 - Sandbox: only `base`, `table`, `string`, `math`, `utf8`, `coroutine`; `io`, `os`, `dofile`, `loadfile`,
   `string.dump` are removed, `load` is text-only, `setmetatable` refuses `__gc`, `collectgarbage` keeps
   `count` / `isrunning`. Never re-open them. Chunks load in mode `"t"` only (no bytecode).
+- `require` is the sandbox's own (`LuaEngine::setModuleReader`, not `package`): dotted names of `[A-Za-z0-9_]` words
+  only (no path, no `..`), read as `a/b.lua` from the pack then the asset folders, cached per state, under the
+  script's quotas; the export packs the required modules. Require modules in `on_create`: Owl Nest runs a script's top
+  level alone to read its properties.
 - Quotas per `ScriptInstance` (`ScriptQuotas`: 64 MiB, 250 ms per call by default): allocator ceiling +
   watchdog thread (signal → count hook). Quota exceeded → instance disabled; plain error → logged, retried.
 - Every host call into Lua goes through `LuaEngine::protectedCall` (pcall + traceback); host reads/writes
