@@ -6,8 +6,13 @@ one editor start per shot. Each shot sets the editor up through its own means on
 `OwlNest_settings.yml` (documents, active tab, selected entity), synthetic mouse and keyboard events (XTest) and the
 MCP server. The display is then grabbed, cropped and written as an optimised PNG.
 
+The editor prints project paths (File screen, recent projects, sample games): it runs from the repository mounted at
+the neutral path `/home/user/OwlEngine`, with `/home/user` as its home, so no local path shows.
+
 Usage (from the repository root):
-    ./docker_run.sh poetry run python tools/doc/capture_nest.py [--build output/build/linux-clang-release]
+    mkdir -p output/nest_capture/home
+    OWL_DOCKER_MOUNTS="$PWD/output/nest_capture/home:/home/user $PWD:/home/user/OwlEngine" \
+        ./docker_run.sh poetry run python tools/doc/capture_nest.py [--build output/build/linux-clang-release]
         [--only main_window,console] [--raw output/nest_capture/raw]
 """
 
@@ -51,17 +56,43 @@ class Shot:
     steps: list[Step] = field(default_factory=list)
     crop: tuple[int, int, int, int] | None = None
     settle: float = 12.0
+    # Where the pointer rests during the grab (a hovered link), else PARK.
+    pointer: tuple[int, int] | None = None
+    # A check of the editor, not an illustration of the documentation: written to --proof, not to --out.
+    proof: bool = False
 
 
 # Coordinates are screen pixels of the default layout at 1920 x 1080 (ribbon tabs, Content Browser tiles, Console
-# tab and line, viewport Play button): a moved widget means new coordinates here. Steps: ("wait", s), ("click", x, y),
-# ("dclick", x, y), ("rclick", x, y), ("move", x, y), ("key", "ctrl+grave"), ("type", text), ("mcp", tool, args).
+# tab and line, viewport Play button, help sidebar): a moved widget means new coordinates here. Steps: ("wait", s),
+# ("click", x, y[, button]), ("dclick", x, y), ("rclick", x, y), ("move", x, y), ("scroll", x, y, notches: > 0 down),
+# ("key", "ctrl+grave"), ("type", text), ("mcp", tool, args).
+# View > Panels > Help: the help opens among the documents, on its start page.
+HELP_OPEN: list[Step] = [("click", 163, 18), ("click", 420, 70), ("wait", 3)]
+HELP_CROP = (0, 125, 1456, 752)
+
+
+def help_page(title: str) -> list[Step]:
+    """Open the help, filter its sidebar on a title, open the first page found, then clear the filter."""
+    return [
+        *HELP_OPEN,
+        ("click", 220, 181),
+        ("type", title),
+        ("wait", 1),
+        ("click", 120, 241),
+        ("wait", 2),
+        ("click", 220, 181),
+        ("key", "ctrl+a"),
+        ("key", "BackSpace"),
+        ("wait", 2),
+    ]
+
+
 SHOTS: list[Shot] = [
     Shot(
         "main_window",
         documents=["scenes/iso_town.owl"],
         selected=4300000000000000010,
-        steps=[("dclick", 538, 900), ("wait", 25)],
+        steps=[("dclick", 730, 900), ("wait", 25)],
     ),
     Shot(
         "file_screen",
@@ -95,25 +126,70 @@ SHOTS: list[Shot] = [
         crop=(0, 760, 1460, 1050),
     ),
     Shot("play_mode", documents=["scenes/platformer_house.owl"], steps=[("click", 689, 175), ("wait", 8)]),
-    # The help panel, opened by View > Panels > Help among the documents, on its start page, then a page with a mermaid
-    # diagram and the README picked in its sidebar.
-    Shot(
-        "help_home",
-        documents=["scenes/iso_town.owl"],
-        steps=[("click", 163, 18), ("click", 420, 70), ("wait", 3)],
-        crop=(0, 125, 1456, 752),
-    ),
+    # The help panel among the documents, on its start page.
+    Shot("help_home", documents=["scenes/iso_town.owl"], steps=HELP_OPEN, crop=HELP_CROP),
+    # Checks of the help renderer: a mermaid diagram, the README, a gallery table, a hovered link, the heading levels,
+    # the roadmap badges, a page of the Lua API.
     Shot(
         "help_diagram",
         documents=["scenes/iso_town.owl"],
-        steps=[("click", 163, 18), ("click", 420, 70), ("wait", 3), ("click", 100, 504), ("wait", 3)],
-        crop=(0, 125, 1456, 752),
+        steps=help_page("Architecture"),
+        crop=HELP_CROP,
+        proof=True,
+    ),
+    Shot("help_readme", documents=["scenes/iso_town.owl"], steps=help_page("Owl Engine"), crop=HELP_CROP, proof=True),
+    Shot(
+        "help_gallery",
+        documents=["scenes/iso_town.owl"],
+        steps=[*help_page("Getting Started"), ("scroll", 940, 450, 30), ("wait", 2)],
+        crop=HELP_CROP,
+        proof=True,
     ),
     Shot(
-        "help_readme",
+        "help_link_hover",
         documents=["scenes/iso_town.owl"],
-        steps=[("click", 163, 18), ("click", 420, 70), ("wait", 3), ("click", 102, 288), ("wait", 3)],
-        crop=(0, 125, 1456, 752),
+        steps=[*HELP_OPEN, ("move", 930, 559), ("wait", 1)],
+        crop=HELP_CROP,
+        pointer=(930, 559),
+        proof=True,
+    ),
+    Shot(
+        "help_headings",
+        documents=["scenes/iso_town.owl"],
+        steps=[*help_page("Scene and Components"), ("scroll", 940, 450, 56), ("wait", 2)],
+        crop=HELP_CROP,
+        proof=True,
+    ),
+    Shot(
+        "help_anchor",
+        documents=["scenes/iso_town.owl"],
+        steps=[*help_page("Hierarchy and Inspector"), ("click", 935, 371), ("wait", 3)],
+        crop=HELP_CROP,
+        proof=True,
+    ),
+    # The mouse back button (X1, X11 button 8) over the panel goes back to the page the link left, where it was.
+    Shot(
+        "help_back",
+        documents=["scenes/iso_town.owl"],
+        steps=[
+            *help_page("Getting Started"),
+            ("scroll", 940, 450, 30),
+            ("wait", 2),
+            ("click", 690, 729),
+            ("wait", 3),
+            ("click", 940, 450, 8),
+            ("wait", 3),
+        ],
+        crop=HELP_CROP,
+        proof=True,
+    ),
+    Shot("help_roadmap", documents=["scenes/iso_town.owl"], steps=help_page("Roadmap"), crop=HELP_CROP, proof=True),
+    Shot(
+        "help_lua_api",
+        documents=["scenes/iso_town.owl"],
+        steps=help_page("Lua API: Time"),
+        crop=HELP_CROP,
+        proof=True,
     ),
 ]
 
@@ -193,7 +269,15 @@ class XDisplay:
         time.sleep(0.1)
 
     def type(self, text: str) -> None:
-        names = {" ": "space", ".": "period", "=": "equal", "_": "underscore", "/": "slash", "-": "minus"}
+        names = {
+            " ": "space",
+            ".": "period",
+            "=": "equal",
+            "_": "underscore",
+            "/": "slash",
+            "-": "minus",
+            ":": "colon",
+        }
         for char in text:
             keysym = names.get(char, char)
             sym = self.x11.XStringToKeysym(keysym.encode())
@@ -290,13 +374,17 @@ def run_steps(xd: XDisplay, mcp: Mcp | None, steps: list[Step]) -> None:
         if kind == "wait":
             time.sleep(step[1])
         elif kind == "click":
-            xd.click(step[1], step[2])
+            xd.click(step[1], step[2], *step[3:])
         elif kind == "dclick":
             xd.click(step[1], step[2], double=True)
         elif kind == "rclick":
             xd.click(step[1], step[2], button=3)
         elif kind == "move":
             xd.move(step[1], step[2])
+        elif kind == "scroll":
+            xd.move(step[1], step[2])
+            for _ in range(abs(step[3])):
+                xd.click(step[1], step[2], button=5 if step[3] > 0 else 4)
         elif kind == "key":
             xd.key(step[1])
         elif kind == "type":
@@ -307,24 +395,30 @@ def run_steps(xd: XDisplay, mcp: Mcp | None, steps: list[Step]) -> None:
                 print(f"  mcp {step[1]}: {json.dumps(result)[:300]}", file=sys.stderr)
 
 
-# The File screen prints the project paths: open a copy of the projects at a short path (inside the container) so no
-# local path shows; a link would not do, the editor resolves it.
-NEUTRAL_ROOT = Path("/tmp/OwlEngine")
+# The repository and the home the editor sees (bind mounts, see the usage): a symbolic link would not do, the editor
+# resolves it.
+NEUTRAL_ROOT = Path("/home/user/OwlEngine")
+NEUTRAL_HOME = Path("/home/user")
 
 
-def link_neutral_root() -> None:
-    shutil.rmtree(NEUTRAL_ROOT, ignore_errors=True)
-    for folder in ("engine_demo", "samples"):
-        shutil.copytree(ROOT / folder, NEUTRAL_ROOT / folder)
+def check_neutral_root() -> bool:
+    if (NEUTRAL_ROOT / "engine_demo" / "owl_project.yml").is_file() and os.access(NEUTRAL_HOME, os.W_OK):
+        return True
+    print(
+        f"Mount the repository at {NEUTRAL_ROOT} and a writable folder at {NEUTRAL_HOME} (see --help).", file=sys.stderr
+    )
+    return False
 
 
 def capture(shot: Shot, args: argparse.Namespace) -> Image.Image | None:
-    run_dir = ROOT / "output" / "nest_capture" / "run"
+    run_dir = NEUTRAL_ROOT / "output" / "nest_capture" / "run"
     run_dir.mkdir(parents=True, exist_ok=True)
     demo = NEUTRAL_ROOT / "engine_demo"
     write_settings(run_dir, shot, demo)
-    binary = (ROOT / args.build / "bin" / "OwlNest").resolve()
-    env = dict(os.environ, DISPLAY=DISPLAY, VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/lvp_icd.json")
+    binary = NEUTRAL_ROOT / args.build / "bin" / "OwlNest"
+    env = dict(
+        os.environ, DISPLAY=DISPLAY, HOME=str(NEUTRAL_HOME), VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/lvp_icd.json"
+    )
     env.pop("WAYLAND_DISPLAY", None)
     env.pop("XDG_RUNTIME_DIR", None)
     command = [str(binary), "--project", str(demo)]
@@ -346,10 +440,10 @@ def capture(shot: Shot, args: argparse.Namespace) -> Image.Image | None:
         time.sleep(shot.settle)
         mcp = None
         if any(step[0] == "mcp" for step in shot.steps):
-            mcp = Mcp(Path(os.environ.get("HOME", "/fhome")))
+            mcp = Mcp(NEUTRAL_HOME)
             mcp.call("initialize", {"protocolVersion": "2025-11-25", "capabilities": {}, "clientInfo": {"name": "doc"}})
         run_steps(xd, mcp, shot.steps)
-        xd.move(*PARK)
+        xd.move(*(shot.pointer or PARK))
         time.sleep(1.5)
         image = ImageGrab.grab(xdisplay=DISPLAY).convert("RGB")
         if args.raw:
@@ -371,6 +465,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--build", default="output/build/linux-clang-release", help="Build tree holding bin/OwlNest.")
     parser.add_argument("--out", default="doc/images/nest", help="Folder of the screenshots.")
+    parser.add_argument("--proof", default="output/nest_capture/proof", help="Folder of the editor checks.")
     parser.add_argument("--only", default="", help="Comma-separated shot names (default: all).")
     parser.add_argument("--raw", default="", help="Also keep the uncropped frames in this folder.")
     args = parser.parse_args()
@@ -378,7 +473,8 @@ def main() -> int:
     if shutil.which("Xvfb") is None:
         print("Xvfb is missing from the image.", file=sys.stderr)
         return 1
-    link_neutral_root()
+    if not check_neutral_root():
+        return 1
     xvfb = subprocess.Popen(
         ["Xvfb", DISPLAY, "-screen", "0", f"{WIDTH}x{HEIGHT}x24", "-nolisten", "tcp"],
         stdout=subprocess.DEVNULL,
@@ -387,8 +483,6 @@ def main() -> int:
     failures = 0
     try:
         time.sleep(2)
-        out = ROOT / args.out
-        out.mkdir(parents=True, exist_ok=True)
         for shot in SHOTS:
             if wanted and shot.name not in wanted:
                 continue
@@ -396,6 +490,8 @@ def main() -> int:
             if image is None:
                 failures += 1
                 continue
+            out = ROOT / (args.proof if shot.proof else args.out)
+            out.mkdir(parents=True, exist_ok=True)
             size = save_png(image, out / f"{shot.name}.png")
             print(f"{shot.name}.png: {image.width}x{image.height}, {size // 1024} KB")
     finally:

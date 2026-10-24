@@ -88,10 +88,14 @@ The user documentation lives in `doc/pages/` and changes in the same pull reques
 - The Owl Nest screenshots in `doc/images/nest/` are made by `tools/doc/capture_nest.py`, headless inside the build
   image: a private Xvfb display, Owl Nest on lavapipe with the Engine Demo, one editor start per shot, set up through
   the reopened session, synthetic clicks and keys (XTest) and the MCP server, then grabbed, cropped and written as PNG
-  of at most 400 KB. After a build, refresh them all, or some, with
-  `./docker_run.sh poetry run python tools/doc/capture_nest.py [--only main_window,console]`; `--raw` and a folder keep the
-  full frames. The shots, their gestures and their crops are listed at the top of the script: a moved button means
-  new coordinates there. Look at every image before committing it.
+  of at most 400 KB. The editor runs from the repository mounted at `/home/user/OwlEngine` with `/home/user` as its
+  home, so the shots show no local path. After a build, refresh them all, or some, with
+  `mkdir -p output/nest_capture/home` then
+  `OWL_DOCKER_MOUNTS="$PWD/output/nest_capture/home:/home/user $PWD:/home/user/OwlEngine" ./docker_run.sh poetry run
+  python tools/doc/capture_nest.py [--only main_window,console]`; `--raw` and a folder keep the full frames. The
+  checks of the help renderer (gallery, hovered link, headings, anchor, Back, roadmap tags, Lua API) go to a folder of
+  their own (`--proof`). The shots, their gestures and their crops are listed at the top of the
+  script: a moved button means new coordinates there. Look at every image before committing it.
 - Every symbol, file or `OWL_*` option a page cites between backticks must exist: the Code Style gate checks it
   (see [Continuous Integration](continuous_integration.md)).
 - `doc/pages/changelog.md` gets one line under `[Unreleased]` per change, and `doc/pages/roadmap.md` the badge of
