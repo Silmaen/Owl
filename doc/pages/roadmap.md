@@ -157,6 +157,7 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] Owl Nest user help: an editor start page, editor pages per part, a sidebar grouped by theme, no planning page in the help ([Nest UI](design/nest-ui.md#in-editor-documentation))
 - ![Done][done] Lua gaps of the sample games: spawn a prefab, tilemap cells kept by saves, `ui.set_image`, pause and time scale, entity under the mouse ([Gaps](design/sample-games.md#sample-games-gaps))
 - ![Done][done] Sample game: a tower defence, first map in basic art ([Sample games](design/sample-games.md#sample-games-tower-defence))
+- ![In Progress][progress] Tower defence campaign: 3D levels with relief, sprite enemies, tower upgrades, world map ([Sample games](design/sample-games.md#sample-games-tower-defence))
 
 ## v0.4.0 -- 2026-10-20
 
