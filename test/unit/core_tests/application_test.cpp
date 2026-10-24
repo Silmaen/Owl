@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <app/Application.h>
+#include <chrono>
 #include <event/KeyEvent.h>
 #include <filesystem>
 #include <fstream>
@@ -91,6 +92,8 @@ TEST(Core, AppParamsSerialize) {
 	paramsIni.renderer = owl::renderer::gpu::RenderAPI::Type::OpenGL;
 	paramsIni.windowPlatform = owl::window::Platform::X11;
 	paramsIni.installDesktopEntry = false;
+	paramsIni.lowLatencyPresent = true;
+	paramsIni.frameRateLimit = 30;
 	auto tmpFile = std::filesystem::temp_directory_path() / "param.yml";
 	paramsIni.saveToFile(tmpFile);
 
@@ -106,7 +109,30 @@ TEST(Core, AppParamsSerialize) {
 	EXPECT_EQ(paramsIni.renderer, paramsLoad.renderer);
 	EXPECT_EQ(paramsIni.windowPlatform, paramsLoad.windowPlatform);
 	EXPECT_EQ(paramsIni.installDesktopEntry, paramsLoad.installDesktopEntry);
+	EXPECT_TRUE(paramsLoad.lowLatencyPresent);
+	EXPECT_EQ(paramsLoad.frameRateLimit, 30u);
 	remove(tmpFile);
+}
+
+TEST(Core, ApplicationFrameRateLimit) {
+	Log::init(Log::Level::Off);
+	const AppParams params{.name = "limited",
+						   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+						   .hasGui = false,
+						   .isDummy = true,
+						   .useConfigFile = false,
+						   .frameRateLimit = 100};
+	auto app = owl::mkShared<Application>(params);
+	EXPECT_EQ(app->getFrameRateLimit(), 100u);
+	app->setFrameRateLimit(0);
+	EXPECT_EQ(app->getFrameRateLimit(), 0u);
+	app->requestIdleWait(std::chrono::milliseconds{100});
+	owl::event::KeyPressedEvent keyEv(owl::input::key::A, 1);
+	app->onEvent(keyEv);
+	EXPECT_DOUBLE_EQ(app->getLastFrameTimings().workMs, 0.0);
+	Application::invalidate();
+	app.reset();
+	Log::invalidate();
 }
 
 TEST(Core, AppParamsUnknownPlatform) {

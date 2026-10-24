@@ -586,6 +586,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Apply what the running scene asked this frame: stop (`scene.quit()`), screen transition, teleport, save or load.
+	 * @param[in] iScene The running scene.
+	 */
+	void handleRuntimeRequests(const shared<scene::Scene>& iScene);
+
+	/**
+	 * @brief
 	 *  Render the view of the selected camera entity into the preview framebuffer, when the option is on and the
 	 *  camera is neither piloted nor a raycast one.
 	 * @param[in] iScene The edited scene.
@@ -794,6 +801,8 @@ private:
 	std::size_t m_overlayCount = 0;
 	/// Whether the window was focused last frame (used to detect a focus transition).
 	bool m_wasFocused = false;
+	/// False while the viewport window is hidden behind another tab or collapsed: its scene is not drawn.
+	bool m_visible = true;
 	/// ImGui close state — set to false by ImGui when the tab's close X is clicked.
 	bool m_pOpen = true;
 };

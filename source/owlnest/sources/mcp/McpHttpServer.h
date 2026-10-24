@@ -53,6 +53,8 @@ struct HttpOptions {
 	size_t workerThreads{8};
 	/// Time after a served request during which a client counts as active.
 	std::chrono::milliseconds activeWindow{std::chrono::seconds{10}};
+	/// Called on a server thread once a message is queued, to wake a main loop waiting for events.
+	std::function<void()> onQueued{};// NOLINT(readability-redundant-member-init) callers may omit it
 };
 
 /**

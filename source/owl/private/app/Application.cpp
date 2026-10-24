@@ -21,6 +21,7 @@
 #include "input/Input.h"
 #include "renderer/Renderer.h"
 #include "renderer/RendererVoxel.h"
+#include "renderer/gpu/RenderCommand.h"
 #include "scene/HudLibrary.h"
 #include "sound/SoundSystem.h"
 #if OWL_WITH_GUI
@@ -33,7 +34,9 @@ OWL_DIAG_POP
 
 #endif
 
+#include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <csignal>
 #include <cstddef>
 #include <cstdint>
@@ -292,8 +295,11 @@ void Application::createMainWindow() {
 	});
 
 	input::Input::init(mp_appWindow->getType());
+	if (m_initParams.lowLatencyPresent)
+		mp_appWindow->setLowLatencyPresent(true);
 	if (!m_initParams.vSync)
 		mp_appWindow->setVSync(false);
+	setFrameRateLimit(m_initParams.frameRateLimit);
 
 	OWL_CORE_INFO("Window Created.")
 }
@@ -445,6 +451,13 @@ void Application::setWindowTitle(const std::string& iTitle) {
 
 void Application::close() { m_state = State::Stopped; }
 
+void Application::setFrameRateLimit(const uint32_t iFramesPerSecond) {
+	if (iFramesPerSecond == m_frameRateLimit)
+		return;
+	m_frameRateLimit = iFramesPerSecond;
+	m_framePacer.setRate(iFramesPerSecond, core::FramePacer::clock::now());
+}
+
 void Application::invalidate() { s_instance = nullptr; }
 
 void Application::run() {
@@ -466,6 +479,10 @@ void Application::run() {
 			close();
 			break;
 		}
+		if (m_idleWait.count() > 0 && m_quietFrames >= idleSettleFrames)
+			mp_appWindow->waitEvents(m_idleWait);
+		m_idleWait = std::chrono::milliseconds{0};
+		m_quietFrames = std::min(m_quietFrames + 1, idleSettleFrames);
 		OWL_CORE_FRAME_ADVANCE
 		const bool timed = m_frameTimingsEnabled;
 		const auto now = [timed]() -> clock::time_point { return timed ? clock::now() : clock::time_point{}; };
@@ -474,6 +491,7 @@ void Application::run() {
 		auto tLayers = tStart;
 		auto tGui = tStart;
 		auto tEnd = tStart;
+		const double paceWaitStart = timed ? renderer::gpu::RenderCommand::getRenderCounters().paceWaitMs : 0.0;
 		m_stepper.update();
 		input::Input::beginFrame();
 
@@ -522,6 +540,7 @@ void Application::run() {
 		m_scheduler.frame(m_stepper);
 		if (timed) {
 			const auto tDone = clock::now();
+			const double paceWait = renderer::gpu::RenderCommand::getRenderCounters().paceWaitMs - paceWaitStart;
 			m_lastFrameTimings = {.beginFrameMs = elapsedMs(tStart, tBegin),
 								  .layersMs = elapsedMs(tBegin, tLayers),
 								  .guiMs = elapsedMs(tLayers, tGui),
@@ -529,8 +548,13 @@ void Application::run() {
 								  .soundMs = elapsedMs(tEnd, tSound),
 								  .presentMs = elapsedMs(tSound, tPresent),
 								  .schedulerMs = elapsedMs(tPresent, tDone),
-								  .totalMs = elapsedMs(tStart, tDone)};
+								  .totalMs = elapsedMs(tStart, tDone),
+								  .paceWaitMs = paceWait,
+								  .workMs = 0.0};
+			m_lastFrameTimings.workMs = std::max(0.0, m_lastFrameTimings.totalMs - m_lastFrameTimings.presentMs -
+															  m_lastFrameTimings.paceWaitMs);
 		}
+		m_framePacer.wait();
 		OWL_PROFILE_FRAME_MARK()
 #if OWL_TRACKER_VERBOSITY >= 3
 		{
@@ -556,6 +580,7 @@ void Application::run() {
 void Application::onEvent(event::Event& ioEvent) {
 	OWL_PROFILE_FUNCTION()
 
+	m_quietFrames = 0;
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::WindowCloseEvent>(
 			[this]<typename T0>(T0&& ioPh1) -> bool { return onWindowClosed(std::forward<T0>(ioPh1)); });
@@ -670,6 +695,8 @@ void AppParams::loadFromFile(const std::filesystem::path& iFile) {
 						  window::platformName(windowPlatform))
 		get(appConfig, "installDesktopEntry", installDesktopEntry);
 		get(appConfig, "hotReload", hotReload);
+		get(appConfig, "lowLatencyPresent", lowLatencyPresent);
+		get(appConfig, "frameRateLimit", frameRateLimit);
 	}
 }
 
@@ -688,6 +715,8 @@ void AppParams::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "windowPlatform" << YAML::Value << std::string(window::platformName(windowPlatform));
 	out << YAML::Key << "installDesktopEntry" << YAML::Value << installDesktopEntry;
 	out << YAML::Key << "hotReload" << YAML::Value << hotReload;
+	out << YAML::Key << "lowLatencyPresent" << YAML::Value << lowLatencyPresent;
+	out << YAML::Key << "frameRateLimit" << YAML::Value << frameRateLimit;
 
 	out << YAML::EndMap;
 	out << YAML::EndMap;

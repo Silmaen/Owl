@@ -155,6 +155,12 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			cameraDeadZone = std::clamp(config["cameraDeadZone"].as<int>(), 0, 20);
 		if (config["autosaveIntervalSeconds"])
 			autosaveIntervalSeconds = std::clamp(config["autosaveIntervalSeconds"].as<int>(), 0, 3600);
+		if (config["frameRateLimit"])
+			frameRateLimit = std::clamp(config["frameRateLimit"].as<int>(), 0, 1000);
+		if (config["backgroundFrameRateLimit"])
+			backgroundFrameRateLimit = std::clamp(config["backgroundFrameRateLimit"].as<int>(), 0, 1000);
+		if (config["idleWaitMs"])
+			idleWaitMs = std::clamp(config["idleWaitMs"].as<int>(), 0, 1000);
 		readKey(config, "mcpEnabled", mcpEnabled);
 		if (config["mcpPort"])
 			mcpPort = std::clamp(config["mcpPort"].as<int>(), 1024, 65535);
@@ -207,6 +213,9 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "cameraInvertY" << YAML::Value << cameraInvertY;
 	out << YAML::Key << "cameraDeadZone" << YAML::Value << cameraDeadZone;
 	out << YAML::Key << "autosaveIntervalSeconds" << YAML::Value << autosaveIntervalSeconds;
+	out << YAML::Key << "frameRateLimit" << YAML::Value << frameRateLimit;
+	out << YAML::Key << "backgroundFrameRateLimit" << YAML::Value << backgroundFrameRateLimit;
+	out << YAML::Key << "idleWaitMs" << YAML::Value << idleWaitMs;
 	out << YAML::Key << "mcpEnabled" << YAML::Value << mcpEnabled;
 	out << YAML::Key << "mcpPort" << YAML::Value << mcpPort;
 	out << YAML::Key << "layoutPreset" << YAML::Value << layoutPreset;

@@ -12,12 +12,15 @@ few translucent overlays. Scenes can sit side by side: drag a scene tab out of t
 | Top left     | Gizmo mode (Select, Move, Rotate, Scale), Local / World, **Snap** and its step (a click: presets)                                         |
 | Top centre   | Play (Resume), Pause, Step, Stop; while playing a chevron (`F10`) folds them into a corner handle                                         |
 | Top right    | The view (**2D**, **3D**, or **Iso**), **Show**, the isometric **Navigation tool**, **Frame selection**, the **Camera** menu, frame stats |
-| Bottom left  | Frame rate, frame time and draw calls: a click opens Stats                                                                                |
+| Bottom left  | CPU and GPU time of a frame, the waits for the display excluded: a click opens Stats                                                      |
 | Bottom right | The view-cube; above it the preview of the selected camera                                                                                |
 
 **Show** toggles the grid, the camera and light markers, the trigger icons, the camera preview and, in the isometric
 mode, the navigation graph (Shift-click tests a path); its **Editor ambient** slider (0 to 2) adds a grey light to
 the lit 3D surfaces in Edit only, never in Play.
+
+A viewport hidden behind another tab or collapsed does not draw its scene (a running one still steps), unless the MCP
+server is on: its captures read the viewport back.
 
 The gizmo and view overlays show in Edit only. In Play a frame in the play colour outlines the viewport (see
 [Play mode](editor_play.md)).

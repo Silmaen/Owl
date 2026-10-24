@@ -81,6 +81,8 @@ private:
 	renderer::gpu::RenderAPI::Type m_originalRenderer{};
 	/// Sound value at the time the dialog was opened.
 	sound::SoundAPI::Type m_originalSound{};
+	/// Low-latency present when the dialog opened (a change requires a restart).
+	bool m_originalLowLatency{false};
 	/// Whether the restart warning should be displayed.
 	bool m_showRestartWarning = false;
 	/// Whether the popup should be opened on the next render call.

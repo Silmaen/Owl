@@ -171,6 +171,7 @@ void Viewport::onRender() {
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
 	const bool visible = ImGui::Begin(m_name.c_str(), &m_pOpen, flags);
+	m_visible = visible;
 	if (m_parent != nullptr)
 		m_parent->renderDocumentTabMenu(*mp_document);
 	m_focused = ImGui::IsWindowFocused();
@@ -273,6 +274,15 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 			m_editorCamera.onUpdate(iTimeStep);
 	}
 
+	// A viewport hidden behind another tab draws nothing; a running scene still steps.
+	if (!m_visible && (m_parent == nullptr || !m_parent->rendersHiddenViewports())) {
+		if (mp_document->state() == SceneDocument::State::Play) {
+			activeScene->onUpdateRuntime(iTimeStep, /*iRender=*/false);
+			handleRuntimeRequests(activeScene);
+		}
+		return;
+	}
+
 	// Render
 	m_framebuffer->bind();
 	renderer::gpu::RenderCommand::setClearColor({0.1f, 0.1f, 0.1f, 1});
@@ -340,19 +350,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				scene::UiInputSystem::update(activeScene.get(), m_framebuffer->getSpecification().size, vpMouse,
 											 mousePressed, iTimeStep.getSeconds(), wheel);
 				activeScene->onUpdateRuntime(iTimeStep);
-				// Handle quit request from Lua (scene.quit()) → request stop.
-				if (activeScene->quitRequested)
-					mp_document->requestStop();
-				if (auto pending = app::Application::get().getEngineContext().getScreenTransition().pendingLoadPath();
-					pending) {
-					activeScene->teleportRequest.pending = true;
-					activeScene->teleportRequest.levelName = *pending;
-					activeScene->teleportRequest.targetName.clear();
-					activeScene->teleportRequest.initialVelocity = {0.f, 0.f};
-					activeScene->teleportRequest.rotationDelta = 0.f;
-				}
-				mp_document->handleTeleportRequest(getSize());
-				mp_document->handleSaveLoadRequest(getSize());
+				handleRuntimeRequests(activeScene);
 				break;
 			}
 		case SceneDocument::State::Pause:
@@ -382,6 +380,21 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 
 	m_framebuffer->unbind();
 	renderCameraPreview(activeScene);
+}
+
+void Viewport::handleRuntimeRequests(const shared<scene::Scene>& iScene) {
+	// Handle quit request from Lua (scene.quit()) → request stop.
+	if (iScene->quitRequested)
+		mp_document->requestStop();
+	if (auto pending = app::Application::get().getEngineContext().getScreenTransition().pendingLoadPath(); pending) {
+		iScene->teleportRequest.pending = true;
+		iScene->teleportRequest.levelName = *pending;
+		iScene->teleportRequest.targetName.clear();
+		iScene->teleportRequest.initialVelocity = {0.f, 0.f};
+		iScene->teleportRequest.rotationDelta = 0.f;
+	}
+	mp_document->handleTeleportRequest(getSize());
+	mp_document->handleSaveLoadRequest(getSize());
 }
 
 void Viewport::renderCameraPreview(const shared<scene::Scene>& iScene) {
@@ -1249,11 +1262,11 @@ void Viewport::renderOverlayToolbar() {
 	const bool frameChip = settings.showFrameChip;
 	if (frameChip &&
 		beginOverlay(std::format("##vpFps{:x}", id), {m_lower.x() + margin, m_upper.y() - margin}, {0.f, 1.f})) {
-		const auto stats = renderer::Renderer2D::getStats();
-		const float fps = ImGui::GetIO().Framerate;
+		const auto& meter = m_parent->getFrameMeter();
+		const auto gpu = meter.getGpuMs();
 		gui::UiLayer::pushTextStyle(gui::TextStyle::Value);
-		const auto text =
-				std::format("{:.0f} fps  {:.2f} ms  {} draws", fps, fps > 0.f ? 1000.f / fps : 0.f, stats.drawCalls);
+		const auto text = std::format("{:.2f} ms CPU{}", meter.getWorkMs(),
+									  gpu.has_value() ? std::format("  {:.2f} ms GPU", *gpu) : "");
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextColored(gui::vec(theme.textMuted), " %s ", text.c_str());
 		gui::UiLayer::popTextStyle();
@@ -1268,7 +1281,12 @@ void Viewport::renderOverlayToolbar() {
 		}
 		gui::widgets::itemTooltip(
 				"Frame stats", nullptr,
-				"Click to open the Stats panel, right-click to hide it (Show menu to bring it back).");
+				std::format("Cost of a frame, the waits for the display excluded ({:.0f} fps displayed). Capped by the "
+							"display, the CPU and the GPU lower their clocks, so a frame costs more than at full load: "
+							"Stats > Measure at Full Load gives the real rate. Click to open the Stats panel, "
+							"right-click to hide it (Show menu to bring it back).",
+							meter.getDisplayFps())
+						.c_str());
 		addOverlayRect(currentOverlayRect());
 	}
 	if (frameChip)

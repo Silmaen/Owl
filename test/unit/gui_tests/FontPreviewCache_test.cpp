@@ -35,6 +35,8 @@ TEST(FontPreviewCache, PumpPendingNoOpWhenEmpty) {
 	core::Log::init(core::Log::Level::Off);
 	auto& cache = gui::FontPreviewCache::get();
 	cache.clear();
+	EXPECT_FALSE(cache.hasPending());
 	EXPECT_NO_THROW(cache.pumpPending());// nothing pending
+	EXPECT_FALSE(cache.hasPending());
 	core::Log::invalidate();
 }

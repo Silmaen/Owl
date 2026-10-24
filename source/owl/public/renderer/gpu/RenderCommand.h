@@ -359,6 +359,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Record the low-latency present request (see `RenderAPI::setLowLatencyPresent`).
+	 * @param[in] iEnabled True to prefer MAILBOX over FIFO.
+	 */
+	static void setLowLatencyPresent(const bool iEnabled) {
+		if (m_renderAPI)
+			m_renderAPI->setLowLatencyPresent(iEnabled);
+	}
+
+	/**
+	 * @brief
 	 *  Describe how frames are presented.
 	 * @return The present mode name.
 	 */

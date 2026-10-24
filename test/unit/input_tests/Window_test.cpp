@@ -10,6 +10,8 @@
 
 #include <window/Window.h>
 
+#include <chrono>
+
 using namespace owl::window;
 
 TEST(Window, creation) {
@@ -29,6 +31,11 @@ TEST(Window, creation) {
 	EXPECT_TRUE(wnd->isVSync());
 	wnd->onUpdate();
 	wnd->setVSync(false);
+	EXPECT_FALSE(wnd->isVSync());
+	EXPECT_TRUE(wnd->isFocused());
+	wnd->waitEvents(std::chrono::milliseconds{500});// returns at once: a null window has no event
+	wnd->wakeUp();
+	wnd->setLowLatencyPresent(true);
 	EXPECT_FALSE(wnd->isVSync());
 	owl::core::Log::invalidate();
 }

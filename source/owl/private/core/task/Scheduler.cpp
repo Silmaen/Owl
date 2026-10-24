@@ -90,6 +90,10 @@ auto Scheduler::isTaskInQueue(const size_t iTaskId) const -> bool {
 		   }) != mp_impl->tasksQueue.end();
 }
 
+auto Scheduler::hasPendingTasks() const -> bool {
+	return !mp_impl->runningTasks.empty() || !mp_impl->tasksQueue.empty();
+}
+
 auto Scheduler::getWorkerCount() const -> uint32_t {
 	return std::max(static_cast<uint32_t>(mp_impl->executor.num_workers()), 1u);
 }

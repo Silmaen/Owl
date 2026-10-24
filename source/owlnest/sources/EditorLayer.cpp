@@ -30,6 +30,7 @@
 #include <gui/utils.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/Menu.h>
+#include <gui/widgets/Tooltip.h>
 #include <physics/PhysicCommand.h>
 #include <platform/AtomicFile.h>
 #include <renderer/gpu/RenderCommand.h>
@@ -410,6 +411,8 @@ void EditorLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
 	app::Application::get().enableDocking();
+	app::Application::get().setFrameTimingsEnabled(true);
+	renderer::gpu::RenderCommand::setGpuTimestampsEnabled(renderer::gpu::RenderCommand::hasGpuTimestamps());
 	m_hotReloadListener = app::Application::get().getHotReload().addListener(
 			[this](const std::filesystem::path& iFile) -> void { onAssetFileChanged(iFile); });
 
@@ -643,7 +646,9 @@ void EditorLayer::onAttach() {
 	});
 
 	mp_mcp = mkUniq<mcp::McpServer>(
-			*this, mcp::McpServerOptions{.dispatcher = {.helpRoot = panel::HelpPanel::resolveHelpRoot()}});
+			*this, mcp::McpServerOptions{
+						   .dispatcher = {.helpRoot = panel::HelpPanel::resolveHelpRoot()},
+						   .http = {.onQueued = []() -> void { app::Application::get().getWindow().wakeUp(); }}});
 
 	newScene();
 	if (!m_startupProject.empty())
@@ -657,6 +662,8 @@ void EditorLayer::onDetach() {
 
 	app::Application::get().getHotReload().removeListener(m_hotReloadListener);
 	gui::component::setNavigationGraphSwitch({});
+	renderer::gpu::RenderCommand::setGpuTimestampsEnabled(false);
+	app::Application::get().setFrameTimingsEnabled(false);
 
 	saveProjectSession();
 	// Sync keybinding overrides before saving
@@ -703,6 +710,7 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
 	gui::FontPreviewCache::get().pumpPending();
+	updateFramePacing();
 
 	m_recovery.setInterval(static_cast<float>(m_settings.autosaveIntervalSeconds));
 	m_toasts.update(iTimeStep.getSeconds());
@@ -1131,7 +1139,32 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 		return;
 	}
 	ImGui::Begin(panelWindow::title(gui::icon::gauge, "Stats", panelWindow::stats).c_str());
-	ImGui::Text("%s", std::format("FPS: {:.2f}", iTimeStep.getFps()).c_str());
+	ImGui::Text("%s", std::format("Displayed FPS: {:.1f} (last frame {:.2f} ms)", m_frameMeter.getDisplayFps(),
+								  iTimeStep.getMilliseconds())
+							  .c_str());
+	const auto gpu = m_frameMeter.getGpuMs();
+	ImGui::Text("%s", std::format("Frame cost: {:.2f} ms CPU, {}", m_frameMeter.getWorkMs(),
+								  gpu.has_value() ? std::format("{:.2f} ms GPU", *gpu) : std::string{"GPU not timed"})
+							  .c_str());
+	ImGui::Text("%s", std::format("Possible FPS: {:.0f}", m_frameMeter.getPotentialFps()).c_str());
+	gui::widgets::itemTooltip(
+			"Possible FPS", nullptr,
+			"1000 / the slower of CPU and GPU. Capped by the display, the CPU and the GPU lower their clocks: a frame "
+			"costs more than at full load, so this is no capacity. Measure at Full Load gives the real rate.");
+	if (m_fullLoadProbe.isRunning()) {
+		ImGui::TextDisabled("Measuring at full load...");
+	} else {
+		if (gui::widgets::button("Measure at Full Load", {.glyph = gui::icon::gauge, .label = "Measure at Full Load"}))
+			startFullLoadMeasure();
+		gui::widgets::itemTooltip("Measure at Full Load", nullptr,
+								  "Lift vsync, the frame rate limit and the idle wait for 3 s: 1 s for the clocks to "
+								  "rise, then 2 s measured. The fans may spin up meanwhile.");
+	}
+	if (const auto& result = m_fullLoadProbe.getResult(); result.has_value())
+		ImGui::Text("%s", std::format("Full load: {:.0f} fps, {:.2f} ms CPU, {}", result->fps, result->workMs,
+									  result->gpuMs.has_value() ? std::format("{:.2f} ms GPU", *result->gpuMs)
+																: std::string{"GPU not timed"})
+								  .c_str());
 	ImGui::Separator();
 	ImGui::Text("%s", std::format("Profiler: {}{}", magic_enum::enum_name(debug::getProfilerBackend()),
 								  debug::isProfilerConnected() ? " (connected)" : "")
@@ -1175,6 +1208,67 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 	ImGui::Text("Aspect ratio: %f", static_cast<double>(vpSize.ratio()));
 	renderGpuCounters();
 	ImGui::End();
+}
+
+void EditorLayer::updateFramePacing() {
+	auto& app = app::Application::get();
+	const auto now = panel::FrameMeter::clock::now();
+	const double workMs = app.getLastFrameTimings().workMs;
+	m_frameMeter.addFrame(workMs, now);
+	for (const auto& timing: renderer::gpu::RenderCommand::popGpuFrameTimings()) {
+		m_frameMeter.addGpu(timing.busyMs);
+		m_fullLoadProbe.addGpu(timing.busyMs);
+	}
+	if (m_fullLoadProbe.isRunning()) {
+		if (m_fullLoadProbe.addFrame(workMs, now))
+			app.getWindow().setVSync(app.getInitParams().vSync);
+		app.setFrameRateLimit(0);
+		return;
+	}
+	// A detached panel is a window of its own (X11): its focus keeps the editor in the foreground.
+	const bool focused =
+			app.getWindow().isFocused() ||
+			(ImGui::GetCurrentContext() != nullptr &&
+			 std::ranges::any_of(ImGui::GetPlatformIO().Viewports, [](const ImGuiViewport* iViewport) -> bool {
+				 return (iViewport->Flags & ImGuiViewportFlags_IsFocused) != 0;
+			 }));
+	// A play driven from MCP keeps its pace when the caller's window has the focus.
+	const bool background = !focused && !m_playDriver.isActive();
+	const int limit = background && m_settings.backgroundFrameRateLimit > 0 ? m_settings.backgroundFrameRateLimit
+																			: m_settings.frameRateLimit;
+	app.setFrameRateLimit(static_cast<uint32_t>(std::max(limit, 0)));
+	if (m_settings.idleWaitMs > 0 && isIdle())
+		app.requestIdleWait(std::chrono::milliseconds{m_settings.idleWaitMs});
+}
+
+void EditorLayer::startFullLoadMeasure() {
+	m_fullLoadProbe.start(panel::FullLoadProbe::clock::now());
+	app::Application::get().getWindow().setVSync(false);
+}
+
+auto EditorLayer::isIdle() const -> bool {
+	if (m_playDriver.isActive() || !m_toasts.getToasts().empty() || gui::FontPreviewCache::get().hasPending() ||
+		app::Application::get().getTaskScheduler().hasPendingTasks())
+		return false;
+	if (const auto [ready, requested] = m_contentBrowser.getPreviewProgress(); ready < requested)
+		return false;
+	if (std::ranges::any_of(m_documents.list(), [](const auto& iDocument) -> bool {
+			return iDocument && iDocument->type() == DocumentType::Scene &&
+				   static_cast<const SceneDocument*>(iDocument.get())->state() != SceneDocument::State::Edit;
+		}))
+		return false;
+	if (ImGui::GetCurrentContext() == nullptr)
+		return true;
+	if (ImGui::IsAnyItemActive() || ImGui::IsAnyMouseDown())
+		return false;
+	for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_NamedKey_END; ++key) {
+		// A connected gamepad drives no editor gesture; the mouse buttons are checked above.
+		if (key >= ImGuiKey_GamepadStart && key <= ImGuiKey_GamepadRStickDown)
+			continue;
+		if (ImGui::IsKeyDown(static_cast<ImGuiKey>(key)))
+			return false;
+	}
+	return true;
 }
 
 void EditorLayer::renderGpuCounters() {

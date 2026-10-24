@@ -202,6 +202,8 @@ void McpHttpServer::Impl::onPost(const httplib::Request& iRequest, httplib::Resp
 		}
 		queue.push_back(job);
 	}
+	if (options.onQueued)
+		options.onQueued();
 	if (future.wait_for(options.requestTimeout) != std::future_status::ready) {
 		if (!job->claimed.exchange(true)) {
 			{

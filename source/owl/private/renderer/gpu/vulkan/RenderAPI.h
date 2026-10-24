@@ -229,9 +229,16 @@ public:
 	/**
 	 * @brief
 	 *  Select the present mode of the next swap chain creation.
-	 * @param[in] iEnabled True for MAILBOX or FIFO, false for IMMEDIATE when available.
+	 * @param[in] iEnabled True for FIFO (MAILBOX with the low-latency present), false for IMMEDIATE when available.
 	 */
 	void setVSync(bool iEnabled) override;
+
+	/**
+	 * @brief
+	 *  Prefer MAILBOX over FIFO at the next swap chain creation when vertical synchronisation is on.
+	 * @param[in] iEnabled True to prefer MAILBOX.
+	 */
+	void setLowLatencyPresent(bool iEnabled) override;
 
 	/**
 	 * @brief

@@ -65,6 +65,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Check if requested entries still wait for pumpPending().
+	 * @return True when an entry is queued.
+	 */
+	[[nodiscard]] auto hasPending() const -> bool { return !m_pending.empty(); }
+
+	/**
+	 * @brief
 	 *  Drop every cached entry, releasing the underlying framebuffers.
 	 */
 	void clear();

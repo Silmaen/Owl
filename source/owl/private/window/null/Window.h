@@ -10,6 +10,7 @@
 
 #include "window/Window.h"
 
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -148,6 +149,33 @@ public:
 	 * @return True when fullscreen.
 	 */
 	[[nodiscard]] auto isFullscreen() const -> bool override { return false; }
+
+	/**
+	 * @brief
+	 *  Ignore the low-latency present request: a null window presents nothing.
+	 * @param[in] iEnabled Unused.
+	 */
+	void setLowLatencyPresent([[maybe_unused]] bool iEnabled) override {}
+
+	/**
+	 * @brief
+	 *  Check if the window has the input focus.
+	 * @return Always true: a null window is never in the background.
+	 */
+	[[nodiscard]] auto isFocused() const -> bool override { return true; }
+
+	/**
+	 * @brief
+	 *  Return at once: a null window receives no event.
+	 * @param[in] iTimeout Unused.
+	 */
+	void waitEvents([[maybe_unused]] std::chrono::milliseconds iTimeout) override {}
+
+	/**
+	 * @brief
+	 *  Nothing to wake: waitEvents() never sleeps.
+	 */
+	void wakeUp() override {}
 
 	/**
 	 * @brief
