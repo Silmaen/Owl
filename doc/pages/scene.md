@@ -69,8 +69,6 @@ added (or duplicated) `PhysicBody` gets a body at the next physics frame.
 
 ## Scene Lifecycle
 
-![Scene Lifecycle](../images/scene_lifecycle.svg)
-
 ```mermaid
 stateDiagram-v2
     [*] --> Editing : Scene loaded
@@ -87,14 +85,14 @@ stateDiagram-v2
 
 ### Lifecycle Methods
 
-| Method                             | When Called        | What It Does                                                                |
-|------------------------------------|--------------------|-----------------------------------------------------------------------------|
-| `onStartRuntime()`                 | Play pressed       | Initialize physics, start sounds with `playOnStart`, reset animated sprites |
-| `onUpdateRuntime(timestep)`        | Each frame (Play)  | Runs the scene's systems phase by phase (below), then renders               |
-| `onRenderRuntime()`                | Each frame (Pause) | Render only, no simulation                                                  |
-| `onUpdateEditor(timestep, camera)` | Each frame (Edit)  | Render with editor camera                                                   |
-| `onEndRuntime()`                   | Stop pressed       | Stop sounds, destroy physics                                                |
-| `onViewportResize(size)`           | Viewport resized   | Resize all cameras                                                          |
+| Method                             | When Called        | What It Does                                                               |
+|------------------------------------|--------------------|----------------------------------------------------------------------------|
+| `onStartRuntime()`                 | Play pressed       | Init physics and `playOnStart` sounds, create scene and entity Lua scripts |
+| `onUpdateRuntime(timestep)`        | Each frame (Play)  | Runs the scene's systems phase by phase (below), then renders              |
+| `onRenderRuntime()`                | Each frame (Pause) | Render only, no simulation                                                 |
+| `onUpdateEditor(timestep, camera)` | Each frame (Edit)  | Render with editor camera                                                  |
+| `onEndRuntime()`                   | Stop pressed       | Stop sounds, destroy physics                                               |
+| `onViewportResize(size)`           | Viewport resized   | Resize all cameras                                                         |
 
 ### Systems and phases {#systems}
 
@@ -174,7 +172,18 @@ The engine systems live in `scene::systems` (private, `source/owl/private/scene/
 
 ## Component Reference {#components}
 
-![Component Overview](../images/component_overview.svg)
+```mermaid
+flowchart LR
+    E[Entity] --> M["Mandatory<br/>ID, Tag, Transform,<br/>Visibility, Hierarchy"]
+    E --> R["Rendering<br/>SpriteRenderer, MeshRenderer,<br/>Tilemap, Light, Text, ..."]
+    E --> C["Camera<br/>Camera, RenderTarget"]
+    E --> G["Gameplay<br/>Player, PhysicBody, Trigger,<br/>EntityLink, NativeScript"]
+    E --> B["Behaviour<br/>Oscillator, Patrol, Drift,<br/>FollowTarget, LightFlicker"]
+    E --> A["Audio<br/>SoundSource, SoundListener"]
+    E --> S["Scripting<br/>LuaScript"]
+    E --> U["UI<br/>Canvas, UiRect, UiText,<br/>UiButton, ..."]
+    E --> P["Prefab<br/>PrefabLink"]
+```
 
 ### Game components (open registry) {#component-registry}
 
@@ -1038,7 +1047,7 @@ in the file.
 | `overriddenComponents` | `vector<string>`       | `overrides`  | Per-component override keys preserved on update |
 
 On the root entity of a prefab instance only; children are tracked through `uuidMapping`
-([Editor prefab workflow](editor.md)).
+([Prefabs in Owl Nest](editor_scene.md#prefabs)).
 
 An override key is `canonicalUUID:ComponentKey` (e.g. `5100000000000000003:AnimatedSpriteRenderer`).
 A listed component keeps its instance state on update, whether it was modified, added or removed.
@@ -1064,8 +1073,6 @@ the instance only are kept. `revertComponent()` reverts a single component and c
 `findInstanceRoot()` finds the instance an entity belongs to.
 
 ## Transform Hierarchy
-
-![ECS Pipeline](../images/ecs_pipeline.svg)
 
 Entities support parent-child relationships via the `Hierarchy` component.
 

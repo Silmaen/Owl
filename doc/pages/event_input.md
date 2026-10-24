@@ -25,8 +25,6 @@ flowchart LR
 
 ## Event System
 
-![Event Dispatch](../images/event_dispatch.svg)
-
 ### Event Base Class
 
 Every event derives from `owl::event::Event` (declared in `event/Event.h`):
@@ -325,7 +323,7 @@ actions:
 ```
 
 The map is edited in Owl Nest, with a "press a key" capture and a live reading of every action: see the
-[action map editor](editor.md#editor-action-map).
+[action map editor](editor_documents.md#editor-action-map).
 
 | Binding key                                                              | Meaning                                                                    |
 |--------------------------------------------------------------------------|----------------------------------------------------------------------------|
@@ -477,5 +475,5 @@ auto EditorLayer::onKeyPressed(const event::KeyPressedEvent& iEvent) -> bool {
 ```
 
 See [Architecture](architecture.md) for the overall engine structure,
-[Editor](editor.md) for the Owl Nest application, and [Scene](scene.md) for
+[Owl Nest help](nest_help.md) for the editor, and [Scene](scene.md) for
 the entity-component system.

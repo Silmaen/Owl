@@ -50,6 +50,10 @@ class MermaidError(ValueError):
 # --------------------------------------------------------------------------------------------------------
 
 
+# Distance between two edges joining the same pair of nodes.
+PARALLEL_GAP = 14.0
+
+
 def char_width(ch: str, size: float = FONT_SIZE) -> float:
     """Approximate advance of one character of a proportional sans font."""
     if ch in "il.,'|:;!`":
@@ -866,9 +870,35 @@ def draw_graph(graph: Graph, routes: list[Route]) -> str:
         bounds.add(node.x - node.w / 2, node.y - node.h / 2, node.x + node.w / 2, node.y + node.h / 2)
     groups_svg = _draw_groups(graph, bounds)
 
-    for route in routes:
+    # Direct edges joining the same two nodes (both ways) would draw on one another: spread them across the flow.
+    pairs: dict[frozenset[str], list[int]] = {}
+    for index, route in enumerate(routes):
+        if len(route.items) == 2:
+            pairs.setdefault(frozenset((route.edge.src, route.edge.dst)), []).append(index)
+    spread: dict[int, float] = {}
+    along_at: dict[int, float] = {}
+    for members in pairs.values():
+        if len(members) < 2:
+            continue
+        labels = [routes[index].edge.label for index in members if routes[index].edge.label]
+        if horizontal:
+            needed = max((len(label) * LINE_HEIGHT + 10 for label in labels), default=PARALLEL_GAP)
+        else:
+            needed = max((max(text_width(line, 12.0) for line in label) + 16 for label in labels), default=PARALLEL_GAP)
+        ends = [routes[members[0]].items[0].node, routes[members[0]].items[-1].node]
+        room = min((n.h if horizontal else n.w) for n in ends if n is not None) * 0.7
+        gap = max(PARALLEL_GAP, min(needed, room))
+        for rank, index in enumerate(members):
+            spread[index] = (rank - (len(members) - 1) / 2) * gap
+            # Labels that do not fit side by side are staggered along the edges instead.
+            along_at[index] = 0.5 if gap >= needed else 0.3 + 0.4 * rank / (len(members) - 1)
+
+    for index, route in enumerate(routes):
         edge = route.edge
         points = _route_points(route, horizontal, flow_sign)
+        if spread.get(index):
+            shift = spread[index]
+            points = [(x, y + shift) if horizontal else (x + shift, y) for x, y in points]
         d = f"M{points[0][0]:.1f} {points[0][1]:.1f}"
         for (ax, ay), (bx, by) in zip(points, points[1:], strict=False):
             if horizontal:
@@ -889,7 +919,8 @@ def draw_graph(graph: Graph, routes: list[Route]) -> str:
         if edge.label:
             seg = len(points) - 2 - route.label_seg if route.reversed else route.label_seg
             (ax, ay), (bx, by) = points[seg], points[seg + 1]
-            _label_box(labels_svg, bounds, edge.label, (ax + bx) / 2, (ay + by) / 2)
+            t = along_at.get(index, 0.5)
+            _label_box(labels_svg, bounds, edge.label, ax + (bx - ax) * t, ay + (by - ay) * t)
 
     for edge in graph.edges:
         if edge.src != edge.dst:

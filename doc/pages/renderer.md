@@ -28,7 +28,25 @@ nothing once the slots have grown. A static HUD costs a hash and a compare per s
 
 ## Architecture
 
-![Renderer Architecture](../images/renderer_architecture.svg)
+```mermaid
+flowchart TD
+    Scene["Scene::renderWithStack"] --> Stack["RenderStack<br/>RenderLayer adapters"]
+    Stack --> R2D["Renderer2D<br/>RendererTilemap"]
+    Stack --> Ray[RendererRaycast]
+    Stack --> Iso[RendererIsometric]
+    Stack --> Vox[RendererVoxel]
+    Stack --> Mesh[RendererMesh]
+    Scene --> Bg[BackgroundRenderer]
+    Bg -->|flushed by| R2D
+    Ray --> R2D
+    Vox --> R3D[Renderer3D]
+    Mesh --> R3D
+    R2D --> RC[RenderCommand]
+    Ray --> RC
+    Iso --> RC
+    R3D --> RC
+    RC --> API["gpu::RenderAPI<br/>vulkan, opengl, null"]
+```
 
 Every renderer kind, the render stack and the base building blocks (`Camera`, `Texture`, `Shader`, `Buffer`,
 `Framebuffer`, `RenderAPI`, `RenderCommand`) live in the single `owl::renderer` namespace: the public facades in
@@ -976,7 +994,7 @@ reload bumps `getGeneration`. On OpenGL the program is replaced. On Vulkan every
 rebuilds its pipeline with its own `PipelineState`, vertex input and binding-block layout; the pipeline name carries
 the generation so the deduplication never hands back a pipeline of the old binaries, and the old one is released
 through `deferRelease`. The binding layout comes from the renderer block, not from the shader: a reload changes code,
-not bindings. `app::HotReload` calls it when a watched `.slang` file changes (see [Editor](editor.md#editor-hot-reload)).
+not bindings. `app::HotReload` calls it when a watched `.slang` file changes (see [Editor](editor_assets.md#editor-hot-reload)).
 
 ### Vulkan frames in flight
 
@@ -1053,7 +1071,18 @@ captures do not depend on AVX.
 
 ## Renderer2D: The Batch Renderer {#renderer2d}
 
-![Renderer2D Pipeline](../images/renderer_2d_pipeline.svg)
+```mermaid
+flowchart TD
+    Begin["beginScene(camera)<br/>camera UBO, startBatch"] --> Draw["drawQuad, drawCircle,<br/>drawLine, drawString"]
+    Draw --> Inst["instances per kind<br/>runs in depth order"]
+    Inst -->|batch full| Next["nextBatch<br/>flush, startBatch"]
+    Next --> Draw
+    Inst -->|endScene| Flush["flush: beginBatch,<br/>bindTextures, world SSBOs"]
+    Flush --> Bg["BackgroundRenderer<br/>flushPending"]
+    Bg --> Tm["RendererTilemap<br/>flushPending"]
+    Tm --> Runs["drawRuns: upload SSBO,<br/>drawDataInstanced per run"]
+    Runs --> End[endBatch]
+```
 
 ### Lifecycle
 
@@ -1465,7 +1494,21 @@ A `BufferLayout` is an initializer list of `BufferElement{name, type}` entries; 
 
 ## Camera System {#camera-system}
 
-![Camera System](../images/camera_system.svg)
+```mermaid
+classDiagram
+    class Camera {
+        projection
+        view
+        viewProjection
+    }
+    Camera <|-- CameraOrtho
+    Camera <|-- CameraEditor
+    Camera <|-- SceneCamera
+    Camera <|-- IsometricCamera
+    CameraOrthoController --> CameraOrtho : drives
+    IsometricCamera --> CameraOrtho : projection
+    Camera3DController --> FlyCamera : moves Transform
+```
 
 ### Camera (base class)
 
