@@ -7,14 +7,21 @@
  */
 
 #include "panel/HelpPanel.h"
+#include "document/codeEditor/MarkdownDocument.h"
 #include "nestTestHelper.h"
 #include "testHelper.h"
 
 #include <algorithm>
+#include <cctype>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <map>
+#include <set>
 #include <sstream>
 #include <string>
+#include <type_traits>
+#include <variant>
 #include <vector>
 
 using namespace owl;
@@ -39,6 +46,46 @@ void writeIndex(const std::filesystem::path& iHelpDir) {
 auto bundlePages() -> std::vector<nest::panel::HelpPanel::HelpPage> {
 	return nest::panel::HelpPanel::readIndex(std::filesystem::path{OWL_HELP_BUILD_DIR} / "index.yml");
 }
+
+auto lower(std::string iText) -> std::string {
+	std::ranges::transform(iText, iText.begin(),
+						   [](const unsigned char iCh) -> char { return static_cast<char>(std::tolower(iCh)); });
+	return iText;
+}
+
+// Every heading anchor and every link href of a block tree.
+// NOLINTBEGIN(misc-no-recursion)
+void collect(const std::vector<nest::codeEditor::MdBlock>& iBlocks, std::set<std::string>& ioAnchors,
+			 std::vector<std::string>& ioLinks) {
+	using namespace nest::codeEditor;
+	const auto spans = [&ioLinks](const std::vector<MdInline>& iSpans) -> void {
+		for (const auto& span: iSpans)
+			if (span.kind == InlineKind::LinkStart)
+				ioLinks.push_back(span.text);
+	};
+	for (const auto& block: iBlocks) {
+		std::visit(
+				[&]<typename T>(const T& iVal) -> void {
+					if constexpr (std::is_same_v<T, MdHeading>) {
+						ioAnchors.insert(iVal.anchor);
+						spans(iVal.spans);
+					} else if constexpr (std::is_same_v<T, MdParagraph>) {
+						spans(iVal.spans);
+					} else if constexpr (std::is_same_v<T, MdTable>) {
+						for (const auto& row: iVal.headRows)
+							for (const auto& cell: row) spans(cell);
+						for (const auto& row: iVal.bodyRows)
+							for (const auto& cell: row) spans(cell);
+					} else if constexpr (std::is_same_v<T, MdList>) {
+						for (const auto& item: iVal.items) collect(item, ioAnchors, ioLinks);
+					} else if constexpr (std::is_same_v<T, MdBlockQuote>) {
+						collect(iVal.body, ioAnchors, ioLinks);
+					}
+				},
+				block.data);
+	}
+}
+// NOLINTEND(misc-no-recursion)
 
 }// namespace
 
@@ -130,4 +177,51 @@ TEST_F(HelpPanelTest, BundleHoldsNoPlanningPageNorStaleSyntax) {
 		EXPECT_EQ(text.find("\n[TOC]\n"), std::string::npos) << page.path;
 		EXPECT_EQ(text.find("](design/"), std::string::npos) << page.path;
 	}
+}
+
+TEST(HelpPanel, ParseLinkSplitsThePageAndTheAnchor) {
+	using nest::panel::HelpPanel;
+	const auto full = HelpPanel::parseLink("../pages/scene.md#fixed-tick");
+	EXPECT_EQ(full.pageId, "scene");
+	EXPECT_EQ(full.anchor, "fixed-tick");
+	const auto page = HelpPanel::parseLink("roadmap.md");
+	EXPECT_EQ(page.pageId, "roadmap");
+	EXPECT_TRUE(page.anchor.empty());
+	const auto local = HelpPanel::parseLink("#components");
+	EXPECT_TRUE(local.pageId.empty());
+	EXPECT_EQ(local.anchor, "components");
+}
+
+TEST_F(HelpPanelTest, EveryLinkOfTheBundleReachesAPageAndAHeading) {
+	const auto pages = bundlePages();
+	ASSERT_FALSE(pages.empty());
+	const std::filesystem::path root{OWL_HELP_BUILD_DIR};
+	std::map<std::string, std::set<std::string>> anchors;
+	std::map<std::string, std::vector<std::string>> links;
+	for (const auto& page: pages) {
+		nest::codeEditor::MarkdownDocument doc;
+		ASSERT_TRUE(doc.parse(readText(root / page.path))) << page.path;
+		collect(doc.blocks(), anchors[page.id], links[page.id]);
+	}
+	size_t checked = 0;
+	for (const auto& [pageId, hrefs]: links) {
+		// The changelog is history: its links stay as they were written.
+		if (pageId == "changelog")
+			continue;
+		for (const auto& href: hrefs) {
+			if (href.starts_with("http://") || href.starts_with("https://") || href.starts_with("mailto:"))
+				continue;
+			const auto target = nest::panel::HelpPanel::parseLink(href);
+			const auto targetId = target.pageId.empty() ? pageId : target.pageId;
+			const auto found = std::ranges::find_if(pages, [&](const nest::panel::HelpPanel::HelpPage& iPage) -> bool {
+				return lower(iPage.id) == lower(targetId);
+			});
+			ASSERT_NE(found, pages.end()) << pageId << ": " << href;
+			if (!target.anchor.empty()) {
+				EXPECT_TRUE(anchors[found->id].contains(target.anchor)) << pageId << ": no heading for " << href;
+				++checked;
+			}
+		}
+	}
+	EXPECT_GT(checked, 0u);
 }

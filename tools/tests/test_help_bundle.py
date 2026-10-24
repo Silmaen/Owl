@@ -25,9 +25,12 @@ def test_external_links_anchors_and_images_are_kept() -> None:
     assert h.rewrite_page(text, BUNDLED) == text
 
 
-def test_badges_become_inline_code_and_their_definitions_go() -> None:
-    text = "- ![Done][done] Item\n- ![x](https://img.shields.io/badge/x-1-blue)\n\n[done]: https://img.shields.io/badge/-Done-2ea043\n"
-    assert h.rewrite_page(text, BUNDLED) == "- `Done` Item\n- `x`\n\n"
+def test_badges_become_coloured_tags_and_their_definitions_go() -> None:
+    text = (
+        "- ![Done][done] Item\n- ![x](https://img.shields.io/badge/x-1-blue)\n\n"
+        "[done]: https://img.shields.io/badge/-Done-2EA043?style=flat-square\n"
+    )
+    assert h.rewrite_page(text, BUNDLED) == "- ![Done](badge:2ea043) Item\n- ![x](badge:)\n\n"
 
 
 def test_fenced_code_is_left_alone() -> None:

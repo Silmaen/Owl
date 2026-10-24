@@ -5,8 +5,9 @@ The help panel reads plain Markdown without the web around it, so every page is 
 
 * a link to a page that is not in the bundle (a design page, a source file, `LICENSE`) becomes its text: the help
   never shows a link that leads nowhere;
-* a status badge (a shields.io image, inline or by reference) becomes its label as inline code, and the reference
-  definitions of the badges go: the panel never fetches an image from the network.
+* a status badge (a shields.io image, inline or by reference) becomes `![label](badge:<colour>)`, which the panel
+  draws as a coloured tag, and the reference definitions of the badges go: the panel never fetches an image from the
+  network.
 
 Links to bundled pages, external links (`http(s)://`, `mailto:`) and anchors (`#section`) are kept. Fenced code
 blocks are left untouched.
@@ -27,10 +28,17 @@ _INLINE_IMAGE = re.compile(r"!\[([^\]\n]*)\]\((https?://[^)\s]+)\)")
 _REF_IMAGE = re.compile(r"!\[([^\]\n]*)\]\[([^\]\n]+)\]")
 _LINK = re.compile(r"(?<![!\]])\[([^\]\n]+)\]\(([^)\s]+)\)")
 _KEPT_SCHEMES = ("http://", "https://", "mailto:", "#")
+_BADGE_COLOUR = re.compile(r"-([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})(?:\?|$)")
 
 
 def _is_badge(url: str) -> bool:
     return any(f"//{host}/" in url for host in _BADGE_HOSTS)
+
+
+def _badge(label: str, url: str) -> str:
+    """The `badge:` image of a shields.io badge: its label, and its colour when the URL gives one in hex."""
+    colour = _BADGE_COLOUR.search(url)
+    return f"![{label}](badge:{colour.group(1).lower() if colour else ''})"
 
 
 def _page_id(target: str) -> str | None:
@@ -42,19 +50,20 @@ def _page_id(target: str) -> str | None:
 
 
 def rewrite_page(text: str, bundled: set[str]) -> str:
-    """Rewrite one page: links outside `bundled` (lower-case page ids) to text, badges to inline code."""
+    """Rewrite one page: links outside `bundled` (lower-case page ids) to text, badges to `badge:` images."""
     lines = text.split("\n")
-    badge_refs = set()
+    badge_refs: dict[str, str] = {}
     for line in lines:
         match = _REF_DEF.match(line)
         if match and _is_badge(match.group(2)):
-            badge_refs.add(match.group(1).lower())
+            badge_refs[match.group(1).lower()] = match.group(2)
 
     def image(match: re.Match[str]) -> str:
-        return f"`{match.group(1)}`" if _is_badge(match.group(2)) else match.group(0)
+        return _badge(match.group(1), match.group(2)) if _is_badge(match.group(2)) else match.group(0)
 
     def ref_image(match: re.Match[str]) -> str:
-        return f"`{match.group(1)}`" if match.group(2).lower() in badge_refs else match.group(0)
+        url = badge_refs.get(match.group(2).lower())
+        return _badge(match.group(1), url) if url is not None else match.group(0)
 
     def link(match: re.Match[str]) -> str:
         target = match.group(2)

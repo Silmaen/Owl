@@ -84,12 +84,10 @@ TEST(HelpIndex, BundledPagesHaveDoxygenSyntaxScrubbed) {
 	const auto root = helpRoot();
 	const auto editor = readBundledFile(root / "editor.md");
 	ASSERT_FALSE(editor.empty());
-	// Heading-trailing Doxygen anchors must be stripped.
-	EXPECT_EQ(editor.find("# The Owl Nest Window {#page-editor}"), std::string::npos);
 	// `[TOC]` lines must be dropped (the source file has one).
 	EXPECT_EQ(editor.find("\n[TOC]\n"), std::string::npos);
-	// First H1 must be the clean form.
-	EXPECT_NE(editor.find("# The Owl Nest Window\n"), std::string::npos);
+	// Heading anchors stay: the renderer takes them as the link targets of their headings.
+	EXPECT_NE(editor.find("# The Owl Nest Window {#page-editor}\n"), std::string::npos);
 }
 
 TEST(HelpIndex, BundledPagesRewriteImageReferences) {
@@ -114,13 +112,13 @@ TEST(HelpIndex, BundledPagesPreserveExternalTextLinks) {
 	EXPECT_NE(readme.find("](https://owl.argawaen.net)"), std::string::npos);
 }
 
-TEST(HelpIndex, BadgesBecomeText) {
+TEST(HelpIndex, BadgesBecomeColouredTags) {
 	const auto roadmap = readBundledFile(helpRoot() / "roadmap.md");
 	ASSERT_FALSE(roadmap.empty());
-	// The status badges are labels in the help: nothing is fetched from the network.
+	// The status badges are `badge:` images the renderer draws: nothing is fetched from the network.
 	EXPECT_EQ(roadmap.find("img.shields.io"), std::string::npos);
 	EXPECT_EQ(roadmap.find("![Done][done]"), std::string::npos);
-	EXPECT_NE(roadmap.find("`Done`"), std::string::npos);
+	EXPECT_NE(roadmap.find("![Done](badge:2ea043)"), std::string::npos);
 }
 
 TEST(HelpIndex, ReadmeLogoCopiedToImages) {

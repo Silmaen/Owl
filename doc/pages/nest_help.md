@@ -51,5 +51,7 @@ A longer walk through the same steps: [Getting started](getting_started.md).
 
 - `F1` opens the help; over a component of the inspector it opens the page of that component.
 - The sidebar groups the pages by theme; the filter at its top keeps the titles that contain what you type.
-- Links between pages stay in the panel, with **<** and **>** to go back and forward; web links open in your browser.
+- Links between pages (accent colour) stay in the panel; web links (blue, with an arrow) open in your browser.
+- The arrows of the toolbar, the mouse side buttons or `Alt+Left` / `Alt+Right` go back and forward like a web
+  browser; the house returns to this page. A click on a reduced image shows it larger.
 - The **Help** window is a tab among the documents: drag it out to read beside the viewport.

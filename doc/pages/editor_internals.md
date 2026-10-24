@@ -182,11 +182,15 @@ steps:
 `doc/help.yml` lists the help pages by group in sidebar order. At configure time `cmake/HelpAssets.cmake` copies them
 flat into `<build>/help_bundle/` with an `index.yml` (id, title, group, path), strips the Doxygen syntax, rewrites the
 image paths, renders the mermaid fences to `images/mermaid/<sha>.svg` (`tools/doc/mermaid_svg.py`: flowchart,
-sequence, state and class diagrams; another kind fails the configure) and turns links to pages outside the bundle
-and status badges into text (`tools/doc/help_bundle.py`). Every `doc/pages/*.md` must be listed; the design pages
+sequence, state and class diagrams; another kind fails the configure), turns links to pages outside the bundle into
+text and status badges into `![label](badge:rrggbb)` images, drawn as coloured tags (`tools/doc/help_bundle.py`). The
+heading anchors (`{#id}`) stay: `codeEditor::MarkdownDocument` takes them, or the GitHub slug of the heading, as the
+link targets of the headings. Every `doc/pages/*.md` must be listed; the design pages
 never are. Both CPack components install the bundle as `assets/help/`.
 
 `panel::HelpPanel` reads the bundle of its build tree first (`OWL_HELP_BUILD_DIR`), then `help/` in the asset
 directories, so a development build never shows another copy. The first page of the index is the start page. Links
-to `.md` pages navigate inside the panel; `http(s)://` and `mailto:` links open in the browser
-(`platform::openExternalUrl`). Doxygen builds the same tree from `doc/help.yml` (`tools/doc/fix_md_links.py`).
+to `.md` pages navigate inside the panel, to the top of the page or to the heading of their `#anchor`
+(`HelpPanel::parseLink`, `MarkdownPreview::scrollToAnchor`); `http(s)://` and `mailto:` links open in the browser
+(`platform::openExternalUrl`). The history keeps the scroll position of each page left, restored by Back and Forward.
+A test follows every link of the bundle to its page and heading. Doxygen builds the same tree from `doc/help.yml` (`tools/doc/fix_md_links.py`).

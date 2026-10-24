@@ -10,19 +10,18 @@
 # (the design pages of `doc/pages/design/` never are: they are plans, read in the Doxygen documentation). The
 # configure copies them flat, writes `index.yml` (id, title, group, path of each page, in that order) and makes them
 # plain Markdown for the md4c-based `HelpPanel`:
-#  * Doxygen syntax goes (`{#page-anchor}`, `[TOC]`, the `<!-- subpage: x.md -->` markers);
+#  * Doxygen syntax goes (`[TOC]`, the `<!-- subpage: x.md -->` markers), but the heading anchors (`{#id}`): the
+#    renderer reads them as the link targets of their headings;
 #  * image references point at `images/`: `../images/foo.svg` (doc/pages) and `doc/images/foo.png` (README) keep
 #    their sub-folder of `doc/images/`, `engine_assets/<dir>/foo.png` (the README logo) becomes `images/foo.png`;
 #  * mermaid fences become `images/mermaid/<sha>.svg` drawn by `tools/doc/mermaid_svg.py`;
 #  * `tools/doc/help_bundle.py` turns the links to pages outside the bundle into text and the status badges into
-#    inline code, so the help shows no dead link and fetches nothing.
+#    `badge:` images the renderer draws as coloured tags, so the help shows no dead link and fetches nothing.
 # External links (`[text](https://...)`) are kept: the renderer opens them in the default browser.
 # =============================================================================
 
 function(_owl_help_scrub_markdown IN_FILE OUT_FILE)
     file(READ "${IN_FILE}" CONTENT)
-    # Strip ATX-heading Doxygen anchors:  "# Title {#page-foo}" -> "# Title"
-    string(REGEX REPLACE "([ \t]*\\{#[A-Za-z0-9_-]+\\})+[ \t]*(\r?\n|$)" "\\2" CONTENT "${CONTENT}")
     # Drop bare "[TOC]" lines.
     string(REGEX REPLACE "(^|\r?\n)[ \t]*\\[TOC\\][ \t]*(\r?\n|$)" "\\1" CONTENT "${CONTENT}")
     # Rewrite "../images/foo.svg" (doc/pages convention) -> "images/foo.svg".

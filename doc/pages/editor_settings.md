@@ -71,4 +71,8 @@ opens the page of that component. The help pages ship with the editor: they need
 ![The help among the documents: the pages grouped by theme on the left, the start page on the right](../images/nest/help_home.png)
 
 The sidebar groups the pages by theme, in reading order; the filter keeps the titles holding what you type. Links
-between pages stay in the panel (**<** and **>** go back and forward), web links open in the browser.
+between pages, in the accent colour, stay in the panel and open the page at its top or at the heading they name; web
+links, in blue with an arrow, open in the browser; a hovered link is underlined. The back and forward arrows of the
+toolbar, the mouse side buttons and `Alt+Left` / `Alt+Right` go through the pages read, each back where you left it;
+the house returns to the start page. An image shown smaller than its size opens larger on a click, and the status of
+a roadmap item shows as a coloured tag.
