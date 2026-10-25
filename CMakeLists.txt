@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 4.4)
 set(PROJECT_PREFIX OWL)
 set(PROJECT_PREFIX_LOWER owl)
 set(ENGINE_NAME OwlEngine)
-project(Owl VERSION 0.5.0 LANGUAGES C CXX)
+project(Owl VERSION 0.6.0 LANGUAGES C CXX)
 if (WIN32)
     # Icon and version information of the executables (owl_windows_application).
     enable_language(RC)
