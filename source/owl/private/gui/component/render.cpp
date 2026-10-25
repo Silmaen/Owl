@@ -1665,6 +1665,16 @@ auto editList(std::vector<Element>& ioList, const bool iAdd, DrawElement&& iDraw
 	return changed;
 }
 
+// Height of a string property field: its wrapped text, from one line up to eight, then it scrolls.
+auto stringFieldHeight(const std::string& iText, const float iWidth) -> float {
+	constexpr float maxLines = 8.f;
+	const auto& style = ImGui::GetStyle();
+	const float lineHeight = ImGui::GetTextLineHeight();
+	const float wrapWidth = std::max(1.f, iWidth - style.FramePadding.x * 2.f - style.ScrollbarSize);
+	const float textHeight = ImGui::CalcTextSize(iText.c_str(), nullptr, false, wrapWidth).y;
+	return std::clamp(textHeight, lineHeight, lineHeight * maxLines) + style.FramePadding.y * 2.f;
+}
+
 // Inspector row of one script property: the editor of its type, then a reset button to the value the script declares.
 void drawScriptProperty(script::ScriptProperty& ioProperty) {
 	using Type = script::ScriptPropertyType;
@@ -1702,7 +1712,8 @@ void drawScriptProperty(script::ScriptProperty& ioProperty) {
 			case Type::String:
 				{
 					auto value = std::get<std::string>(ioProperty.value);
-					if (ImGui::InputText(iId, &value))
+					if (ImGui::InputTextMultiline(iId, &value, {fieldWidth, stringFieldHeight(value, fieldWidth)},
+												  ImGuiInputTextFlags_WordWrap))
 						ioProperty.value = value;
 					break;
 				}
