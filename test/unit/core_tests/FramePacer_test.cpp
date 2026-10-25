@@ -59,8 +59,9 @@ TEST(FramePacer, ZeroDisablesThePacing) {
 
 TEST(FramePacer, WaitSleepsOutThePeriod) {
 	FramePacer pacer;
-	pacer.setPeriod(20ms, FramePacer::clock::now());
+	// The period starts at the instant given to setPeriod: measure from it, a loaded machine may run late after it.
 	const auto start = FramePacer::clock::now();
+	pacer.setPeriod(20ms, start);
 	pacer.wait();
-	EXPECT_GE(FramePacer::clock::now() - start, 15ms);
+	EXPECT_GE(FramePacer::clock::now() - start, 20ms);
 }
