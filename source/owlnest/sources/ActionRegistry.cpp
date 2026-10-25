@@ -292,7 +292,8 @@ auto ActionRegistry::dispatchImGuiChords() -> size_t {
 		const auto& shortcut = action.currentShortcut;
 		if (shortcut.isEmpty())
 			continue;
-		const bool isChord = hasFlag(shortcut.modifiers, Modifiers::Ctrl) || hasFlag(shortcut.modifiers, Modifiers::Alt);
+		const bool isChord =
+				hasFlag(shortcut.modifiers, Modifiers::Ctrl) || hasFlag(shortcut.modifiers, Modifiers::Alt);
 		const bool isFunctionKey = shortcut.key >= input::key::F1 && shortcut.key <= input::key::F12;
 		if (!isFunctionKey && (!isChord || typing))
 			continue;

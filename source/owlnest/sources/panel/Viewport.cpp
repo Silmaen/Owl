@@ -1673,9 +1673,10 @@ void Viewport::renderViewOverlay() {
 			ImGui::EndPopup();
 		}
 		ImGui::SameLine();
-		if (iconButton("show", {.glyph = gui::icon::eye,
-								.tooltip = "Show",
-								.description = "Grid, camera markers, trigger icons, the HUD and the editor ambient light."}))
+		if (iconButton("show",
+					   {.glyph = gui::icon::eye,
+						.tooltip = "Show",
+						.description = "Grid, camera markers, trigger icons, the HUD and the editor ambient light."}))
 			ImGui::OpenPopup("##show");
 		if (ImGui::BeginPopup("##show")) {
 			const auto option = [](const char* iLabel, bool& ioFlag) -> void {

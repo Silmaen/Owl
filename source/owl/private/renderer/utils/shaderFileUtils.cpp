@@ -191,7 +191,7 @@ auto remapBuiltinsForOpenGl(std::vector<uint32_t>& ioSpirv) -> uint32_t {
 			ioSpirv[i + 2] = spv::ExecutionModeOriginLowerLeft;
 			++patched;
 		} else if ((ioSpirv[i] & 0xffffu) == opDecorate && wordCount >= 4 && i + 3 < ioSpirv.size() &&
-			ioSpirv[i + 2] == decorationBuiltIn) {
+				   ioSpirv[i + 2] == decorationBuiltIn) {
 			auto& builtin = ioSpirv[i + 3];
 			if (builtin == spv::BuiltInInstanceIndex) {
 				builtin = spv::BuiltInInstanceId;
