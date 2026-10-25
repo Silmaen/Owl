@@ -139,7 +139,6 @@ is linked, and the engine shaders are baked again.
 | `linux-include-check`                | Strict-libc++ include check  |
 | `linux-clang-minimal`                | Every optional module off    |
 | `linux-cross-arm64`                  | arm64 cross build (Debug)    |
-| `linux-emulated`                     | arm64 build under QEMU       |
 | `linux-bench`                        | `owl_bench` harness          |
 | `linux-fuzz`                         | libFuzzer targets            |
 
@@ -252,8 +251,7 @@ find "$sysroot" -type l -lname '/*' -exec sh -c \
 ./docker_run.sh ctest --test-dir output/build/linux-cross-arm64 --output-on-failure -j8
 ```
 
-A sysroot outside the repository is mounted with `OWL_DOCKER_MOUNTS`. `linux-emulated` keeps the former build, the
-whole toolchain under QEMU in the arm64 image (CI: once a week).
+A sysroot outside the repository is mounted with `OWL_DOCKER_MOUNTS`.
 
 ## Running Tests
 
@@ -404,7 +402,7 @@ it nothing.
 | `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/unit/render_tests`, label `render`)                           |
 | `OWL_RENDER_TEST_SHARDS`                   | 6       | Parallel CTest entries the image tests are split into                            |
 | `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, in seconds                                        |
-| `OWL_SCRIPT_TIME_SCALE`                    | 1       | Lua quota multiplier, scenario and export tests (8 emulated, 4 sanitizers)       |
+| `OWL_SCRIPT_TIME_SCALE`                    | 1       | Lua quota multiplier, scenario and export tests (8 arm64 on QEMU, 4 sanitizers)  |
 | `OWL_CONAN_PROFILE`                        | (auto)  | Conan host profile, default `conan/profiles/<os>-<compiler>[-<arch>]`            |
 | `OWL_CONAN_BUILD_PROFILE`                  | (auto)  | Conan build profile, default `conan/profiles/<os>-<compiler>`                    |
 | `OWL_SYSROOT`                              | (auto)  | arm64 sysroot of the cross toolchain, default `/opt/sysroot/aarch64-linux-gnu`   |

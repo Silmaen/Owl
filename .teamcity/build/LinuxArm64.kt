@@ -12,28 +12,14 @@ val arm64Clang = presetBuild("Build_LinuxArm64_Clang", "Clang", "linux-cross-arm
     }
 }
 
-// The former fully emulated build (the whole toolchain under QEMU, 1 to 2 hours), kept once a week during the
-// transition to the cross build, as a reference on a native arm64 userland.
-val arm64Emulated = presetBuild("Build_LinuxArm64_Emulated", "Clang (emulated)", "linux-emulated",
-        onPullRequest = false) {
-    params {
-        text("docker_build_platform", "linux/arm64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
-        text("extra_tc_vars", "-- --emulated", display = ParameterDisplay.HIDDEN, allowEmpty = true)
-        fullSuite()
-    }
-    weeklyOnMain()
-}
-
 val linuxArm64 = Project {
     id = RelativeId("Build_LinuxArm64")
     name = "Build Linux arm64"
 
     buildType(arm64Clang)
-    buildType(arm64Emulated)
-    buildTypesOrder = arrayListOf(arm64Clang, arm64Emulated)
 
     params {
         text("platform", "Linux", display = ParameterDisplay.HIDDEN, allowEmpty = true)
-        text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true) // host architecture: arm64 is cross compiled (or emulated) on x64
+        text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true) // host architecture: arm64 is cross compiled on x64
     }
 }

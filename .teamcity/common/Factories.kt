@@ -1,6 +1,5 @@
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
-import jetbrains.buildServer.configs.kotlin.triggers.ScheduleTrigger
 import jetbrains.buildServer.configs.kotlin.triggers.schedule
 
 /*
@@ -60,27 +59,6 @@ fun BuildType.nightlyOnMain() {
             id = "nightly"
             schedulingPolicy = daily {
                 hour = 2
-            }
-            branchFilter = """
-                +:main
-                +:refs/heads/main
-            """.trimIndent()
-            withPendingChangesOnly = true
-        }
-    }
-}
-
-/**
- * Builds `main` once a week (Sunday night), when it changed, instead of on every push.
- */
-fun BuildType.weeklyOnMain() {
-    disableSettings("vcsTrigger")
-    triggers {
-        schedule {
-            id = "weekly"
-            schedulingPolicy = weekly {
-                dayOfWeek = ScheduleTrigger.DAY.Sunday
-                hour = 3
             }
             branchFilter = """
                 +:main

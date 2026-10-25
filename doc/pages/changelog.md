@@ -79,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- The emulated arm64 TeamCity build (*Clang (emulated)*, weekly) and its `linux-emulated` preset: the cross compiled arm64 build covers arm64.
 - `OWL_HELP_FETCH_BADGES` option: the help shows no remote badge.
 
 ### Fixed

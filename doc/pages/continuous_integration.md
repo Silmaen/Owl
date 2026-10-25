@@ -45,7 +45,6 @@ flowchart TD
     Wx --> WxC[Clang]
     Wx --> WxG[GCC]
     La --> LaC[Clang, cross compiled]
-    La --> LaE[Clang, emulated]
     San --> SA[Address]
     San --> ST[Thread]
     San --> SU[Undefined Behavior]
@@ -114,8 +113,7 @@ flowchart LR
   Thread and UB sanitizers and the Static Analyzer, which are not pull-request checks.
 - arm64 cross compiles the `linux-cross-arm64` preset on an x64 agent (Clang, lld, the image's arm64 sysroot) and
   runs only the tests under qemu-user: Debug without coverage, benchmarks or image tests (`OWL_RENDER_TESTS=OFF`,
-  lavapipe's output depends on the CPU). The former fully emulated `linux-emulated` build stays as
-  *Clang (emulated)*, once a week, during the transition.
+  lavapipe's output depends on the CPU).
 - **Grey**: every `main` push, never on a pull request: GCC parity (release preset only) and Sanitizer Address.
 - Uncoloured: Clang-Tidy, on every ready pull request (its diff) and nightly on `main` (the whole tree).
 
@@ -180,7 +178,6 @@ The build-and-test template of every configuration of the build and packaging su
 | Build Windows x64 / Clang                          | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
 | Build Linux x64 / GCC, Windows x64 / GCC (release) | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Build Linux arm64 / Clang (cross compiled)         | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Build Linux arm64 / Clang (emulated)               | ❌           | weekly           | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Benchmarks (`linux-bench`)                         | ❌           | ✅                | ❌        | ✅        | ❌                 | ❌           | ❌           |
 | Fuzzing (`linux-fuzz`)                             | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Sanitizer Address (+ LSan)                         | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
@@ -206,11 +203,10 @@ GitHub, always run a configuration.
 - **`Experiment/*` pull requests** run the fast subset only (the draft one): the full-matrix configurations carry
   `prTriggerBranchesOverride = EXCLUDE_EXPERIMENT`. Their required checks are therefore *Skipped*: an experiment is not
   meant to be merged as such; move the work to a `Feature/*` branch to get the full verdict.
-- **`main` push**: every configuration but the emulated arm64 one and the packages, through the templates' VCS trigger; the release
+- **`main` push**: every configuration but the nightly ones (blue) and the packages, through the templates' VCS trigger; the release
   build and its tests (the `release_preset` steps) run only there, a pull request gets its verdict from the debug
   build in half the time.
-- **Nightly** (02:00, `main`, only when it changed): every package, which publishes to the site. **Weekly**
-  (Sunday 03:00): the emulated arm64 build (1 to 2 hours).
+- **Nightly** (02:00, `main`, only when it changed): every package, which publishes to the site.
 - **Packages without a rebuild**: on `main`, the Clang builds package their tested release tree (`Package Release`,
   release preset flagged `package` in its `vendor.silmaen` block, both archives kept as artifacts). The x64 package
   configurations (`publishBuild()`) build nothing: they take those archives and the documentation from the build of
