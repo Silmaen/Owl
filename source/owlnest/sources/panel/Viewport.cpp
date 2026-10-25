@@ -315,6 +315,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				if (m_parent != nullptr) {
 					const float ambient = m_parent->getSettings().editorAmbient;
 					activeScene->setEditorAmbient({ambient, ambient, ambient});
+					activeScene->setEditorHudVisible(m_parent->getSettings().showHud);
 				}
 				updateSelectionOutline(activeScene);
 				activeScene->onUpdateEditor(iTimeStep, getActiveCamera());
@@ -1674,7 +1675,7 @@ void Viewport::renderViewOverlay() {
 		ImGui::SameLine();
 		if (iconButton("show", {.glyph = gui::icon::eye,
 								.tooltip = "Show",
-								.description = "Grid, camera markers, trigger icons and the editor ambient light."}))
+								.description = "Grid, camera markers, trigger icons, the HUD and the editor ambient light."}))
 			ImGui::OpenPopup("##show");
 		if (ImGui::BeginPopup("##show")) {
 			const auto option = [](const char* iLabel, bool& ioFlag) -> void {
@@ -1687,6 +1688,7 @@ void Viewport::renderViewOverlay() {
 			option("Camera markers", settings.showCameraGizmos);
 			option("Camera preview", settings.showCameraPreview);
 			option("Trigger icons", settings.showTriggerIcons);
+			option("HUD", settings.showHud);
 			option("Frame stats", settings.showFrameChip);
 			if (m_isometric)
 				option("Navigation graph and routes", settings.showNavGraph);

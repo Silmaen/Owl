@@ -86,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenGL on the SPIR-V path no longer draws the scene upside down under an upright HUD: the fragment origin is the OpenGL lower left, as on the GLSL path.
 - F1 opens the help, and F5 to F10 drive Play, while a panel of Owl Nest holds the keyboard focus, not only over the viewport.
 - A string script property is edited in a multiline field that wraps its text and grows up to eight lines.
+- **Show > HUD** in the viewport hides the scene HUD while editing; Play always draws it (`Scene::setEditorHudVisible`).
 - An export follows the scenes and assets named in a list-of-strings script property; it packs the external images of
   a `.glb`; Owl Nest no longer crashes on **Play** without a primary camera; Lua
   `save.*` listing never throws.

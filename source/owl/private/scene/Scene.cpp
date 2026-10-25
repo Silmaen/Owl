@@ -926,7 +926,8 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 				if (m_drawingRenderTarget)
 					return;
 				renderOverlays(*mp_renderCamera);
-				ui::HudPass::render(*this, m_viewportSize, status == Status::Editing);
+				if (status != Status::Editing || m_editorHudVisible)
+					ui::HudPass::render(*this, m_viewportSize, status == Status::Editing);
 				renderToast();
 			});
 	if (graph.compile()) {

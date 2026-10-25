@@ -137,6 +137,7 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 		readKey(config, "showCameraPreview", showCameraPreview);
 		readKey(config, "showFrameChip", showFrameChip);
 		readKey(config, "showGrid", showGrid);
+		readKey(config, "showHud", showHud);
 		if (config["editorAmbient"])
 			editorAmbient = std::clamp(config["editorAmbient"].as<float>(), 0.f, 2.f);
 		readKey(config, "gridOnGround", gridOnGround);
@@ -201,6 +202,7 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "showCameraPreview" << YAML::Value << showCameraPreview;
 	out << YAML::Key << "showFrameChip" << YAML::Value << showFrameChip;
 	out << YAML::Key << "showGrid" << YAML::Value << showGrid;
+	out << YAML::Key << "showHud" << YAML::Value << showHud;
 	out << YAML::Key << "editorAmbient" << YAML::Value << editorAmbient;
 	out << YAML::Key << "gridOnGround" << YAML::Value << gridOnGround;
 	out << YAML::Key << "showNavGraph" << YAML::Value << showNavGraph;
