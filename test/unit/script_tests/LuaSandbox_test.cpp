@@ -40,6 +40,9 @@ auto toBuffer(const std::string& iText) -> std::vector<uint8_t> { return {iText.
 
 constexpr ScriptQuotas g_SmallQuotas{.memoryBytes = size_t{8} * 1024 * 1024, .timePerCallMs = 50};
 
+// For the cases that do not test the time quota: throwing a C++ exception costs tens of ms under an emulator.
+constexpr ScriptQuotas g_RoomyQuotas{.memoryBytes = size_t{8} * 1024 * 1024, .timePerCallMs = 5000};
+
 [[noreturn]] auto throwingBinding([[maybe_unused]] lua_State* iState) -> int { throw std::runtime_error("boom"); }
 
 [[noreturn]] auto throwingIntBinding([[maybe_unused]] lua_State* iState) -> int { throw 42; }
@@ -253,16 +256,18 @@ TEST_F(LuaSandbox, cppExceptionInBindingBecomesLuaError) {
 	static constexpr luaL_Reg funcs[] = {{"throw", throwingBinding},
 										 {"throw_int", throwingIntBinding},
 										 {nullptr, nullptr}};
-	LuaEngine::registerGuardedTable(engine.getState(), "hostile", funcs);
-	ASSERT_TRUE(run("local ok, err = pcall(hostile.throw)\n"
-					"caught = not ok and err:find('C%+%+ exception: boom') ~= nil\n"
-					"local ok2, err2 = pcall(hostile.throw_int)\n"
-					"caughtUnknown = not ok2 and err2:find('unknown C%+%+ exception') ~= nil\n"
-					"function on_update() hostile.throw() end\n"));
-	EXPECT_TRUE(flag("caught"));
-	EXPECT_TRUE(flag("caughtUnknown"));
-	EXPECT_FALSE(engine.callFunction("on_update"));
-	EXPECT_EQ(engine.getLastStatus(), LuaStatus::RuntimeError);
+	const LuaEngine roomy{g_RoomyQuotas};
+	LuaEngine::registerGuardedTable(roomy.getState(), "hostile", funcs);
+	ASSERT_TRUE(roomy.loadBuffer(toBuffer("local ok, err = pcall(hostile.throw)\n"
+										  "caught = not ok and err:find('C%+%+ exception: boom') ~= nil\n"
+										  "local ok2, err2 = pcall(hostile.throw_int)\n"
+										  "caughtUnknown = not ok2 and err2:find('unknown C%+%+ exception') ~= nil\n"
+										  "function on_update() hostile.throw() end\n"),
+								 "sandbox_test"));
+	EXPECT_TRUE(roomy.getGlobalBool("caught").value_or(false));
+	EXPECT_TRUE(roomy.getGlobalBool("caughtUnknown").value_or(false));
+	EXPECT_FALSE(roomy.callFunction("on_update"));
+	EXPECT_EQ(roomy.getLastStatus(), LuaStatus::RuntimeError);
 }
 
 TEST_F(LuaSandbox, bindingArgumentErrorNamesTheBinding) {

@@ -30,7 +30,7 @@ val globalBuild = Template {
         text("cmake_preset", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
         checkbox("run_coverage", "false", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
         checkbox("run_tests", "true", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
-        // The tests labelled `slow` are left out, except by arm64 and the nightly Linux x64 Clang run (`fullSuite`).
+        // The tests labelled `slow` are left out, except by the nightly Slow Suite (`fullSuite`).
         text("test_args", "-- --label_exclude=slow", label = "CTest arguments",
                 description = "Arguments of the Test steps; empty runs every test, the slow ones included",
                 display = ParameterDisplay.NORMAL, allowEmpty = true)

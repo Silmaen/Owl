@@ -88,12 +88,13 @@ flowchart LR
         IC[Include Check]
     end
     subgraph L2[Level 2: after Code Style]
-        LxR[Linux x64 Clang Release] & LxG[Linux x64 GCC] & LxC[Linux x64 Clang Debug] & WxC[Windows x64 Clang]
+        LxR[Linux x64 Clang Release] & LxG[Linux x64 GCC] & LxC[Linux x64 Clang Debug] & LxS[Slow Suite]
+        WxC[Windows x64 Clang]
         SA[Sanitizer Address] & ST[Sanitizer Thread] & SU[Sanitizer UB]
         CT[Clang-Tidy] & AN[Static Analyzer]
         LaC[Linux arm64 Clang]
     end
-    CS --> LxR & LxG & LxC & WxC & SA & ST & SU & CT & AN & LaC
+    CS --> LxR & LxG & LxC & LxS & WxC & SA & ST & SU & CT & AN & LaC
     LxR --> PL[Packages Linux x64]
     WxC --> PW[Packages Windows x64]
     LaC --> PA[Packages Linux arm64]
@@ -101,14 +102,15 @@ flowchart LR
     classDef mainOnly fill:#d1ecf1,stroke:#0c5460,color:#0c5460
     classDef afterMerge fill:#e2e3e5,stroke:#383d41,color:#383d41
     class CS,LxR draft
-    class IC,LxC,LaC,PL,PW,PA,ST,SU,AN mainOnly
+    class IC,LxC,LxS,LaC,PL,PW,PA,ST,SU,AN mainOnly
     class LxG,WxC,SA afterMerge
 ```
 
 - **Yellow**: also run on draft pull requests (the fast verdict: Code Style and Linux x64 Clang Release).
-- **Slow tests**: the Test steps pass `-- --label_exclude=slow` (`test_args`); arm64 and Linux x64 Clang Debug
-  (`fullSuite()`) run every test.
-- **Blue**: nightly on `main`, when it changed: Linux x64 Clang Debug (full suite and its own coverage), arm64,
+- **Slow tests**: the Test steps pass `-- --label_exclude=slow` (`test_args`); only the Slow Suite (`fullSuite()`)
+  runs every test, on the `linux-clang-release` tree, where a slow scenario takes seconds instead of the minutes of
+  Debug with coverage or QEMU. Nightly only, its schedule sees the changes no push built for it.
+- **Blue**: nightly on `main`, when it changed: Linux x64 Clang Debug (its own coverage), the Slow Suite, arm64,
   Include Check, the packages (they publish to the site), the Thread and UB sanitizers and the Static Analyzer, which
   are not pull-request checks.
 - arm64 cross compiles the `linux-cross-arm64` preset on an x64 agent (Clang, lld, the image's arm64 sysroot) and
@@ -179,7 +181,8 @@ The build-and-test template of every configuration of the build and packaging su
 | Build Linux x64 / Clang Release (Doxygen)            | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
 | Build Linux x64 / GCC (Debug, coverage)              | ✅           | —                | ❌        | ✅        | ❌                 | ⏭           | ❌           |
 | Build Windows x64 / Clang Release                    | ✅           | —                | ❌        | ✅        | ❌                 | ⏭           | ❌           |
-| Build Linux x64 / Clang Debug (full suite, coverage) | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux x64 / Clang Debug (coverage)             | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux x64 / Slow Suite (Release, every test)   | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Build Linux arm64 / Clang (cross compiled)           | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Benchmarks (`linux-bench`)                           | ❌           | ✅                | ❌        | ✅        | ❌                 | ❌           | ❌           |
 | Fuzzing (`linux-fuzz`)                               | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
@@ -194,7 +197,7 @@ The build-and-test template of every configuration of the build and packaging su
 A draft pull request runs Code Style and Linux x64 Clang Release only: the fast verdict. A ready pull request runs six
 checks (Code Style, Linux Clang Release, Linux GCC, Windows Clang, Clang-Tidy, Benchmarks), the ones `PR Ready`
 requires: after Code Style, the three builds take one agent each and start together. A `main` push runs the three
-builds and Sanitizer Address; Linux Clang Debug (full suite, Clang coverage), arm64, the whole-tree Clang-Tidy,
+builds and Sanitizer Address; Linux Clang Debug (Clang coverage), the Slow Suite, arm64, the whole-tree Clang-Tidy,
 Include Check, the Thread and Undefined Behavior sanitizers and the Static Analyzer run nightly.
 
 ✅ runs · ❌ not run · ⏭ a "Skipped" check is published, which GitHub counts as passing. A manual run, and *Re-run* in
