@@ -34,7 +34,7 @@ Owl Engine ships two kinds of example content:
 | Mini Minecraft      | Minecraft             | voxel, build and break, inventory               | v0.4.0        |         |
 | One-room Zelda-like | The Legend of Zelda   | top-down, dialogue, enemy AI, 2D lights         | v0.7.0        |         |
 | Marble or mini kart | Marble Madness / Kart | 3D, Jolt physics, shadows                       | v0.7.0        |         |
-| Networked Bomberman | Bomberman             | tilemap, deterministic simulation, multiplayer  | v0.8.0        |         |
+| Networked Bomberman | Bomberman             | tilemap, deterministic simulation, multiplayer  | v0.9.0        |         |
 | Lunar lander        | Lunar Lander          | 3D, thrust and gravity, planetary terrain, legs | v0.7.0        |         |
 | Asteroid field      | Star Fox / X-Wing     | 6DoF flight, 3D steering AI, trails, HUD marks  | v0.7.0        |         |
 

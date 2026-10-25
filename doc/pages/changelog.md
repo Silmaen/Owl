@@ -57,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Roadmap replanned toward 1.0 at the end of 2026: v0.6.0 to v0.9.0 two weeks apart, a 0.9.x hardening phase, Android and the Web in 1.0, every target exported from every Owl Nest host, localisation, accessibility and a local crash reporter.
 - Vulkan presents in FIFO under vsync instead of MAILBOX, and under Wayland in MAILBOX paced to the refresh rate: an idle Owl Nest no longer keeps the GPU at full load.
 - The viewport frame chip shows the CPU and GPU cost of a frame, the waits for the display excluded (`FrameTimings::workMs`, `panel::FrameMeter`); the frame rate it allows and the draw calls stay in Stats.
 - A viewport hidden behind another tab no longer draws its scene, unless the MCP server is on.

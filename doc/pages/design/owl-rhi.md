@@ -81,7 +81,7 @@ is needed to keep the 2D, raycast and voxel paths working. See [3D core](3d-core
 
 ## v0.8.0 — new backends
 
-- ![Planned][planned] WebGPU backend (Dawn or wgpu through `webgpu.h`), the third platform for 1.0 (see
+- ![Planned][planned] WebGPU backend (Dawn or wgpu through `webgpu.h`), the Web target of 1.0 (see
   [Modding and platforms](modding-platforms.md))
 - ![To evaluate][evaluate] Metal (macOS) and D3D12 — after 1.0, the maintainer has no Mac
 

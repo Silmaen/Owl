@@ -37,20 +37,42 @@ in [Simulation and networking](simulation-networking.md)), summarised in the
 
 ## Platforms
 
-- Web export — the **third platform** required for 1.0
-    - WebGPU backend for the [Owl RHI](owl-rhi.md) (Dawn or wgpu through `webgpu.h`)
-    - Emscripten build target
-    - HTML5 template with loading screen
-    - Async asset loading adapted for web
-- Cross-platform packaging and target selector, see [Game export](game-export.md)
+Android and Web are both in 1.0 (v0.8.0).
+
+### Android {#platforms-android}
+
+- Vulkan renderer, OpenAL Soft sound
+- Conan NDK cross build
+- A new Android window and input backend next to GLFW and Null (GLFW does not support Android; it stays on desktop)
+- Touch input as prerequisite
+- APK packaging and signing, see [Game export](game-export.md)
+
+### Web {#platforms-web}
+
+- WebGPU backend for the [Owl RHI](owl-rhi.md), shaders in WGSL
+- Emscripten build target, HTML5 template with loading screen
+- Async asset loading adapted for the web
+- A local HTTP server for "run in browser"
+- No networking on the Web in 1.0 ([networking](simulation-networking.md))
+
+### Other
+
+- Cross-platform export and target selector, see [Game export](game-export.md)
 - Gamepad improvements, see [Windowing and input](windowing-input.md)
+
+## Windows SDK compatible with MSVC {#platforms-msvc}
+
+v0.9.0: besides MinGW (kept), a Windows build with the MSVC ABI so the SDK links from Visual Studio.
+
+- First path to evaluate: clang-cl with the Windows SDK and CRT through xwin inside the Docker image; compiled on the
+  Linux agents, `hecate` runs the tests
+- Real `cl.exe` only if a user needs it
 
 ## After 1.0 (To evaluate)
 
 - ![To evaluate][evaluate] macOS (Metal backend) — the maintainer has no Mac
-- ![To evaluate][evaluate] Android support
-    - Touch input backend
-    - Vulkan mobile renderer (OpenGL ES not planned: OpenGL is frozen)
-    - APK packaging from Owl Nest
+- ![To evaluate][evaluate] WASM game modules and compiled mods
+- ![To evaluate][evaluate] AAB for Google Play
+- ![To evaluate][evaluate] AppImage and Flatpak
 
 [evaluate]: https://img.shields.io/badge/-To_evaluate-8250df?style=flat-square
