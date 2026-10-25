@@ -8,6 +8,7 @@
 
 #include "panel/AsyncProgressModal.h"
 
+#include <core/Log.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
@@ -97,6 +98,11 @@ void AsyncProgressModal::onImGuiRender() {
 			}
 		}
 		ImGui::EndPopup();
+	} else if (isFinished()) {
+		// ImGui closed the popup by itself: let go, or the editor refuses the next operation.
+		if (m_state->hasError.load())
+			OWL_CORE_ERROR("{} {}", m_title, m_state->getError())
+		close();
 	}
 }
 

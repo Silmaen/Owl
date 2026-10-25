@@ -36,8 +36,12 @@ void GamePackager::onRender() {
 }
 
 void GamePackager::packScene(const std::filesystem::path& iScenePath) {
-	if (iScenePath.empty() || mp_progress->isActive())
+	if (iScenePath.empty())
 		return;
+	if (mp_progress->isActive()) {
+		OWL_CORE_WARN("GamePackager: Cannot pack the scene while another operation runs.")
+		return;
+	}
 
 	const std::string defaultPackName = iScenePath.stem().string() + ".owlpack";
 	const auto destPath = platform::FileDialog::saveFile("Owl Scene Pack (*.owlpack)|owlpack\n", defaultPackName);
