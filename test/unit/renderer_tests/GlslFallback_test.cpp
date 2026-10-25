@@ -11,7 +11,15 @@
 #include "testHelper.h"
 
 #include <core/Log.h>
+#include <core/Macros.h>
 #include <renderer/utils/shaderFileUtils.h>
+
+OWL_DIAG_PUSH
+OWL_DIAG_DISABLE_CLANG("-Wold-style-cast")
+OWL_DIAG_DISABLE_CLANG("-Wshadow")
+OWL_DIAG_DISABLE_GCC("-Wshadow")
+#include <spirv_cross.hpp>
+OWL_DIAG_POP
 
 #include <cstddef>
 #include <filesystem>
@@ -69,6 +77,20 @@ TEST(GlslFallback, openGlSpirvUsesOpenGlInstanceBuiltin) {
 	const auto glsl = renderer::utils::crossCompileToGlsl(vertex, "quad_builtins");
 	ASSERT_TRUE(glsl.has_value());
 	EXPECT_NE(glsl->find("gl_InstanceID"), std::string::npos);
+	core::Log::invalidate();
+}
+
+TEST(GlslFallback, openGlSpirvFragmentOriginIsLowerLeft) {
+	core::Log::init(core::Log::Level::Off);
+	const auto source = readFile(findRoot() / "engine_assets" / "shaders" / "color_encode" / "color_encode.slang");
+	auto compiled = renderer::utils::compileSlangToSpirv(source, "color_encode_origin", /*iForVulkan=*/false);
+	ASSERT_TRUE(compiled.success);
+	auto& fragment = compiled.spirvData[ShaderType::Fragment];
+	EXPECT_GE(renderer::utils::remapBuiltinsForOpenGl(fragment), 1u);
+	EXPECT_EQ(renderer::utils::remapBuiltinsForOpenGl(fragment), 0u);
+	const auto reflected = spirv_cross::Compiler(fragment);
+	EXPECT_TRUE(reflected.get_execution_mode_bitset().get(spv::ExecutionModeOriginLowerLeft));
+	EXPECT_FALSE(reflected.get_execution_mode_bitset().get(spv::ExecutionModeOriginUpperLeft));
 	core::Log::invalidate();
 }
 

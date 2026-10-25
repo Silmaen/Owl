@@ -63,11 +63,13 @@ TEST(EditorSettings, ViewportDisplayOptionsRoundTrip) {
 	std::filesystem::create_directories(dir);
 	EditorSettings settings;
 	EXPECT_TRUE(settings.showGrid);
+	EXPECT_TRUE(settings.showHud);
 	EXPECT_TRUE(settings.showTriggerIcons);
 	EXPECT_FALSE(settings.gizmoWorldSpace);
 	EXPECT_TRUE(settings.showCameraPreview);
 	settings.showCameraPreview = false;
 	settings.showGrid = false;
+	settings.showHud = false;
 	settings.editorAmbient = 0.6f;
 	settings.showTriggerIcons = false;
 	settings.gizmoWorldSpace = true;
@@ -78,6 +80,7 @@ TEST(EditorSettings, ViewportDisplayOptionsRoundTrip) {
 	EditorSettings loaded;
 	loaded.loadFromFile(dir / "settings.yml");
 	EXPECT_FALSE(loaded.showGrid);
+	EXPECT_FALSE(loaded.showHud);
 	EXPECT_FLOAT_EQ(loaded.editorAmbient, 0.6f);
 	EXPECT_FALSE(loaded.showTriggerIcons);
 	EXPECT_TRUE(loaded.gizmoWorldSpace);

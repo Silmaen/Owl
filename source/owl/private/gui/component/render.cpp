@@ -82,7 +82,9 @@ auto row(const char* iLabel, Draw&& iDraw) -> bool {
 	ImGui::PushStyleColor(ImGuiCol_Text, vec(UiLayer::getTheme().textMuted));
 	ImGui::TextUnformatted(iLabel, iLabel + visible);
 	ImGui::PopStyleColor();
-	ImGui::SameLine(startX + labelWidth);
+	// SetCursorPosX, not SameLine(x): inside a group SameLine adds the group offset to a position that holds it already.
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(startX + labelWidth);
 	ImGui::SetNextItemWidth(-FLT_MIN);
 	const std::string id = std::string{"##"} + iLabel;
 	return std::forward<Draw>(iDraw)(id.c_str());
@@ -1665,22 +1667,30 @@ auto editList(std::vector<Element>& ioList, const bool iAdd, DrawElement&& iDraw
 	return changed;
 }
 
+// Height of a string property field: its wrapped text, from one line up to eight, then it scrolls.
+auto stringFieldHeight(const std::string& iText, const float iWidth) -> float {
+	constexpr float maxLines = 8.f;
+	const auto& style = ImGui::GetStyle();
+	const float lineHeight = ImGui::GetTextLineHeight();
+	const float wrapWidth = std::max(1.f, iWidth - style.FramePadding.x * 2.f - style.ScrollbarSize);
+	const float textHeight = ImGui::CalcTextSize(iText.c_str(), nullptr, false, wrapWidth).y;
+	return std::clamp(textHeight, lineHeight, lineHeight * maxLines) + style.FramePadding.y * 2.f;
+}
+
 // Inspector row of one script property: the editor of its type, then a reset button to the value the script declares.
 void drawScriptProperty(script::ScriptProperty& ioProperty) {
 	using Type = script::ScriptPropertyType;
 	const bool modified = ioProperty.value != ioProperty.defaultValue;
 	const float side = ImGui::GetFrameHeight();
-	const float fieldWidth = [&]() -> float {
-		// The label column is 38 % of the row, the reset button takes one frame.
-		const float available = ImGui::GetContentRegionAvail().x;
-		return std::max(side, std::floor(available * 0.62f) - side - ImGui::GetStyle().ItemSpacing.x);
-	}();
 	const float step = ioProperty.step.value_or(0.1f);
 	const bool ranged = ioProperty.min || ioProperty.max;
 	const float rangeMin = ranged ? ioProperty.min.value_or(-FLT_MAX) : 0.f;
 	const float rangeMax = ranged ? ioProperty.max.value_or(FLT_MAX) : 0.f;
 	bool addRequested = false;
 	prop::row(ioProperty.name.c_str(), [&](const char* iId) -> bool {
+		// Measured after the label: the field takes what is left of the row but the reset button.
+		const float fieldWidth =
+				std::max(side, std::floor(ImGui::GetContentRegionAvail().x) - side - ImGui::GetStyle().ItemSpacing.x);
 		ImGui::SetNextItemWidth(fieldWidth);
 		switch (ioProperty.type) {
 			case Type::Float:
@@ -1702,7 +1712,8 @@ void drawScriptProperty(script::ScriptProperty& ioProperty) {
 			case Type::String:
 				{
 					auto value = std::get<std::string>(ioProperty.value);
-					if (ImGui::InputText(iId, &value))
+					if (ImGui::InputTextMultiline(iId, &value, {fieldWidth, stringFieldHeight(value, fieldWidth)},
+												  ImGuiInputTextFlags_WordWrap))
 						ioProperty.value = value;
 					break;
 				}

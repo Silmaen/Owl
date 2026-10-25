@@ -27,6 +27,9 @@ what is planned; what exists is in the guides ([contributors](../guide_contribut
 | [PCG graphs](pcg-graphs.md)                           | Procedural generation graphs                               |
 | [HUD system](hud-system.md)                           | The HUD and its text                                       |
 | [Game export](game-export.md)                         | Exporting a game from Owl Nest                             |
+| [Localisation](localisation.md)                       | String tables and languages                                |
+| [Accessibility](accessibility.md)                     | UI scale, colour-blind modes, subtitles                    |
+| [Crash reporter](crash-reporter.md)                   | Local crash reports, nothing sent automatically            |
 | [Sample games](sample-games.md)                       | The sample games                                           |
 | [Owl Nest UI](nest-ui.md)                             | The editor user interface                                  |
 | [Owl Nest style guide](nest-style-guide.md)           | Rules every editor panel follows                           |
@@ -37,9 +40,11 @@ what is planned; what exists is in the guides ([contributors](../guide_contribut
 
 <!-- subpage: 2d-complete.md -->
 <!-- subpage: 3d-core.md -->
+<!-- subpage: accessibility.md -->
 <!-- subpage: ci-streamlining.md -->
 <!-- subpage: conan-migration.md -->
 <!-- subpage: content-pipeline.md -->
+<!-- subpage: crash-reporter.md -->
 <!-- subpage: editor-reach.md -->
 <!-- subpage: editor-scripting.md -->
 <!-- subpage: foundations.md -->
@@ -49,6 +54,7 @@ what is planned; what exists is in the guides ([contributors](../guide_contribut
 <!-- subpage: isometric-worlds.md -->
 <!-- subpage: isometric.md -->
 <!-- subpage: large-worlds.md -->
+<!-- subpage: localisation.md -->
 <!-- subpage: mcp-server.md -->
 <!-- subpage: modding-platforms.md -->
 <!-- subpage: nest-style-guide.md -->

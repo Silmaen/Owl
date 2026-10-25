@@ -4,11 +4,12 @@ Owl Engine is the engine that mixes rendering styles (2D, raycast, voxel, isomet
 
 | Version | Date                | Status      | Theme                                                                            |
 |---------|---------------------|-------------|----------------------------------------------------------------------------------|
-| 1.0.0   | Expected 2027-10-31 | Planned     | Stable: API frozen, SDK, two showcase games, Linux + Windows + Web               |
-| 0.8.0   | Expected 2027-09-15 | Planned     | Opening: networking, modding, Web backend, API freeze, release candidate         |
-| 0.7.0   | Expected 2027-06-30 | Planned     | Gameplay & simulation: AI, 2D / 3D physics, audio, determinism, replay           |
-| 0.6.0   | Expected 2027-04-15 | Planned     | Content & scripting: asset cook, animation, PCG, visual scripting                |
-| 0.5.0   | Expected 2027-01-31 | In progress | 3D core & lighting: meshes, PBR, 2D / 3D lights, shadows, render graph           |
+| 1.0.0   | Expected 2026-12-31 | Planned     | Stable: a 0.9.x validated and proven, API frozen, four platforms flawless        |
+| 0.9.0   | Expected 2026-12-15 | Planned     | Release candidate: networking, API and format freeze, SDK, hardening phase       |
+| 0.8.0   | Expected 2026-12-06 | Planned     | Ship everywhere: export from any host, Android, Web, mods, accessibility         |
+| 0.7.0   | Expected 2026-11-22 | Planned     | Gameplay & simulation: AI, 2D / 3D physics, audio, determinism, replay           |
+| 0.6.0   | Expected 2026-11-08 | Planned     | Content & scripting: asset cook, animation, PCG, visual scripting, localisation  |
+| 0.5.0   | Released 2026-10-25 | Released    | 3D core & lighting: meshes, PBR, 2D / 3D lights, shadows, render graph           |
 | 0.4.0   | Released 2026-10-20 | Released    | Isometric renderer, pathfinding, MCP server, gamepad, HUD editor, 3 sample games |
 | 0.3.0   | Released 2026-10-11 | Released    | Foundations: bugs, safety nets, Owl RHI, Conan, ergonomic Owl Nest               |
 | 0.2.1   | Released 2026-06-27 | Released    | Voxel engine                                                                     |

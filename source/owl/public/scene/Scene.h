@@ -355,6 +355,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Show or hide the HUD while the scene is edited; Play always draws it.
+	 * @param[in] iVisible True to draw the HUD in Edit mode.
+	 */
+	void setEditorHudVisible(const bool iVisible) { m_editorHudVisible = iVisible; }
+
+	/**
+	 * @brief
+	 *  Whether the HUD is drawn while the scene is edited.
+	 * @return True when the HUD is drawn in Edit mode.
+	 */
+	[[nodiscard]] auto isEditorHudVisible() const -> bool { return m_editorHudVisible; }
+
+	/**
+	 * @brief
 	 *  Draw the edited scene through a camera, as `onUpdateEditor` does, without advancing anything: no toast timer, no
 	 *  voxel streaming (it follows the camera of `onUpdateEditor`). A second view of the same frame (the camera preview
 	 *  of the editor) draws with it.
@@ -1931,6 +1945,8 @@ private:
 	renderer::Lighting2D m_lighting2D;
 	/// Light added to every lit surface in Edit mode.
 	math::vec3 m_editorAmbient{0.f, 0.f, 0.f};
+	/// Whether the HUD is drawn in Edit mode.
+	bool m_editorHudVisible = true;
 	/// Targets the colour encode of the frame reads.
 	struct PostTargets {
 		/// The linear scene colour.

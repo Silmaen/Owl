@@ -48,3 +48,39 @@ measured on 2026-10-19 and 2026-10-20:
 | Smaller artefacts      | Done: test reports, coverage, documentation and packages only, no binaries nor libraries                         |
 | Fewer duplicate builds | Done: the bridge plugin cancels superseded builds and reuses a green verdict for the same commit                 |
 | Shorter builds         | Done: measured (cold `linux-clang-release`: 2685 s CPU, tests 40 %, Owl Nest 29 %), ccache warm on every agent   |
+
+## Cost review 2026-10 {#ci-streamlining-cost-review}
+
+Measured on 20 merged pull requests (#307 to #326), `main` from 19 to 24 October and 14 nights; agent-minutes over
+the window.
+
+| Build                    | Trigger | Median (min) | Agent-min | Unique failures | Note                          |
+|--------------------------|---------|-------------:|----------:|----------------:|-------------------------------|
+| Code Style               | PR      |          1.3 |        52 |               0 |                               |
+| Linux Clang              | PR      |           17 |       432 |               2 |                               |
+| Windows Clang            | PR      |         25.5 |       541 |               6 | first to fail 6 times         |
+| Clang-Tidy               | PR      |           16 |       462 |               3 |                               |
+| Bench                    | PR      |           10 |       265 |               8 |                               |
+| Linux GCC                | main    |           17 |       405 |               1 |                               |
+| Windows GCC              | main    |           28 |       624 |               2 | duplicates Linux GCC          |
+| Sanitizer Address        | main    |           18 |       362 |               2 |                               |
+| Sanitizer Thread         | nightly |           22 |       317 |               0 |                               |
+| Sanitizer UB             | nightly |         15.5 |       246 |               0 |                               |
+| Static Analyzer          | nightly |           50 |       630 |               2 |                               |
+| Fuzz                     | nightly |         14.5 |       181 |               0 |                               |
+| Include Check            | nightly |           36 |       106 |               1 |                               |
+
+Decisions:
+
+- One GCC build only (Debug, tests and coverage, on pull requests and `main`); Windows GCC is removed.
+- The nightly suites and Bench stay as they are (the Bench reds were explained changes or real regressions).
+- The single Windows agent `hecate` is the bottleneck (31 min median queue on `main`).
+- GitHub branch protection "require branches to be up to date" is on, with the admin bypass kept for trivial pull
+  requests.
+
+Planned, in parallel with v0.6.0 development:
+
+- A fast stage 0 reported first.
+- A `/check --quick` skill (with `--fix`) for agents; no git hook.
+- The Android, Web and arm64 runners (v0.8.0) build at night and at release, on a pull request only when its diff
+  touches their backend.

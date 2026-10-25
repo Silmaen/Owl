@@ -29,7 +29,7 @@ PackReader thread-safety audit + a worker-friendly API.
 ## Hot reload
 
 - Assets, Slang shaders and Lua scripts hot reload ship in v0.3.0 (see [Foundations](foundations.md))
-- ![To evaluate][evaluate] Hot reload of a C++ game module (game code built as a shared library, swapped while the
+- ![Planned][planned] Hot reload of a C++ game module (v0.6.0) (game code built as a shared library, swapped while the
   editor runs, state kept through serialization)
 
 ## Animation

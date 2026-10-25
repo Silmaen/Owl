@@ -346,7 +346,9 @@ OWL_WINDOW_PLATFORM=x11 output/build/linux-clang-release/bin/OwlNest       # X11
 - Under Wayland the editor keeps detached panels inside its main window (GLFW cannot position windows); use X11 for
   native detached windows.
 - Under Wayland the icon comes from a hidden desktop entry written to `~/.local/share/applications/<app_id>.desktop`
-  (`installDesktopEntry: false` in `config.yml` to opt out).
+  (`installDesktopEntry: false` in `config.yml` to opt out); `./docker_run.sh --gui` mounts the host
+  `~/.local/share/applications` there, so the compositor finds it. A CLion Docker toolchain needs the same volume
+  (`~/.local/share/applications` to `/fhome/.local/share/applications`).
 - A locked or hidden session presents no frame: X11 windows that wait for presentation (vsync on, or any NVIDIA
   PRIME window) crawl at about one frame per second until shown again (`./docker_run.sh` warns when the session is
   locked).

@@ -178,6 +178,7 @@ auto getShaderCacheKey(const std::string& iSource, const std::string& iModuleNam
 
 auto remapBuiltinsForOpenGl(std::vector<uint32_t>& ioSpirv) -> uint32_t {
 	constexpr size_t headerWords = 5;
+	constexpr uint32_t opExecutionMode = 16;
 	constexpr uint32_t opDecorate = 71;
 	constexpr uint32_t decorationBuiltIn = 11;
 	uint32_t patched = 0;
@@ -185,8 +186,12 @@ auto remapBuiltinsForOpenGl(std::vector<uint32_t>& ioSpirv) -> uint32_t {
 		const uint32_t wordCount = ioSpirv[i] >> 16u;
 		if (wordCount == 0)
 			break;
-		if ((ioSpirv[i] & 0xffffu) == opDecorate && wordCount >= 4 && i + 3 < ioSpirv.size() &&
-			ioSpirv[i + 2] == decorationBuiltIn) {
+		if ((ioSpirv[i] & 0xffffu) == opExecutionMode && wordCount >= 3 && i + 2 < ioSpirv.size() &&
+			ioSpirv[i + 2] == spv::ExecutionModeOriginUpperLeft) {
+			ioSpirv[i + 2] = spv::ExecutionModeOriginLowerLeft;
+			++patched;
+		} else if ((ioSpirv[i] & 0xffffu) == opDecorate && wordCount >= 4 && i + 3 < ioSpirv.size() &&
+				   ioSpirv[i + 2] == decorationBuiltIn) {
 			auto& builtin = ioSpirv[i + 3];
 			if (builtin == spv::BuiltInInstanceIndex) {
 				builtin = spv::BuiltInInstanceId;

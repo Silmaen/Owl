@@ -92,6 +92,8 @@ struct EditorSettings {
 	bool showFrameChip = true;
 	/// Whether the viewport draws a grid of the snap step in Edit mode.
 	bool showGrid = true;
+	/// Whether the viewport draws the scene HUD in Edit mode (Play always draws it).
+	bool showHud = true;
 	/// Grey light (0 to 2) added to every lit 3D surface in Edit mode only, to work in dark places.
 	float editorAmbient = 0.15f;
 	/// Whether the 3D perspective view draws the grid on the ground (XZ plane, `y = 0`) instead of the XY plane.

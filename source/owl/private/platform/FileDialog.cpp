@@ -86,15 +86,22 @@ auto parentWindow() -> nfdwindowhandle_t {
 	return handle;
 }
 
+// Absolute, native separators, UTF-8: Windows refuses to open a dialogue on a default folder it cannot parse.
 auto defaultDirectory() -> std::string {
-	return app::Application::get().getAssetDirectories().front().assetsPath.string();
+	std::error_code error;
+	auto directory = std::filesystem::absolute(app::Application::get().getAssetDirectories().front().assetsPath, error);
+	if (error || !std::filesystem::is_directory(directory, error))
+		return {};
+	directory.make_preferred();
+	const auto utf8 = directory.u8string();
+	return {utf8.begin(), utf8.end()};
 }
 
 auto finishDialog(const nfdresult_t iResult, nfdu8char_t* iOutPath, const std::string_view iWhat)
 		-> std::filesystem::path {
 	std::filesystem::path resultPath;
 	if (iResult == NFD_OKAY) {
-		resultPath = std::filesystem::path{iOutPath};
+		resultPath = std::filesystem::path{std::u8string_view{reinterpret_cast<const char8_t*>(iOutPath)}};
 		NFD_FreePathU8(iOutPath);
 	} else if (iResult == NFD_ERROR) {
 		OWL_CORE_ERROR("FileDialog: Error while {} ({}).", iWhat, NFD::GetError())
@@ -114,7 +121,7 @@ auto FileDialog::openFile(const std::string& iFilter) -> std::filesystem::path {
 	nfdopendialogu8args_t args{};
 	args.filterList = filters.items.data();
 	args.filterCount = static_cast<nfdfiltersize_t>(filters.items.size());
-	args.defaultPath = defaultDir.c_str();
+	args.defaultPath = defaultDir.empty() ? nullptr : defaultDir.c_str();
 	args.parentWindow = parentWindow();
 	nfdu8char_t* outPath = nullptr;
 	const auto result = NFD_OpenDialogU8_With(&outPath, &args);
@@ -129,7 +136,7 @@ auto FileDialog::saveFile(const std::string& iFilter, const std::string& iDefaul
 	nfdsavedialogu8args_t args{};
 	args.filterList = filters.items.data();
 	args.filterCount = static_cast<nfdfiltersize_t>(filters.items.size());
-	args.defaultPath = defaultDir.c_str();
+	args.defaultPath = defaultDir.empty() ? nullptr : defaultDir.c_str();
 	args.defaultName = iDefaultName.empty() ? nullptr : iDefaultName.c_str();
 	args.parentWindow = parentWindow();
 	nfdu8char_t* outPath = nullptr;
@@ -142,7 +149,7 @@ auto FileDialog::pickFolder() -> std::filesystem::path {
 		return {};
 	const std::string defaultDir = defaultDirectory();
 	nfdpickfolderu8args_t args{};
-	args.defaultPath = defaultDir.c_str();
+	args.defaultPath = defaultDir.empty() ? nullptr : defaultDir.c_str();
 	args.parentWindow = parentWindow();
 	nfdu8char_t* outPath = nullptr;
 	const auto result = NFD_PickFolderU8_With(&outPath, &args);

@@ -15,8 +15,8 @@ few translucent overlays. Scenes can sit side by side: drag a scene tab out of t
 | Bottom left  | CPU and GPU time of a frame, the waits for the display excluded: a click opens Stats                                                      |
 | Bottom right | The view-cube; above it the preview of the selected camera                                                                                |
 
-**Show** toggles the grid, the camera and light markers, the trigger icons, the camera preview and, in the isometric
-mode, the navigation graph (Shift-click tests a path); its **Editor ambient** slider (0 to 2) adds a grey light to
+**Show** toggles the grid, the camera and light markers, the trigger icons, the camera preview, the HUD (Edit only,
+Play always draws it) and, in the isometric mode, the navigation graph (Shift-click tests a path); its **Editor ambient** slider (0 to 2) adds a grey light to
 the lit 3D surfaces in Edit only, never in Play.
 
 A viewport hidden behind another tab or collapsed does not draw its scene (a running one still steps), unless the MCP

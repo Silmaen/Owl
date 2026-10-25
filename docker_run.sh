@@ -2,7 +2,7 @@
 # Run a command inside the Owl build image, mirroring CLion's "Docker Owl" toolchain.
 #
 # Usage: ./docker_run.sh [--gui] [--gpu=auto|intel|nvidia] [--platform=auto|wayland|x11] [--perf] [--] <command...>
-#   --gui       expose the GPU, X11/Wayland display and PulseAudio (run OwlNest, Vulkan/OpenGL tests).
+#   --gui       expose the GPU, X11/Wayland display, PulseAudio and the host desktop entries (run OwlNest, GPU tests).
 #   --gpu=      on a hybrid laptop, pin Vulkan, EGL and GLX to one GPU (nvidia = PRIME render offload); implies --gui.
 #   --platform= windowing platform of the engine (sets OWL_WINDOW_PLATFORM); implies --gui.
 #   --perf      allow perf / gdb / valgrind / TSan (ptrace + perf events, no seccomp/AppArmor confinement).
@@ -89,6 +89,10 @@ if [[ ${gui} -eq 1 ]]; then
 		-v "/run/user/${uid}:/run/user/${uid}"
 		-e PULSE_SERVER="unix:/run/user/${uid}/pulse/native")
 	[[ -n "${WAYLAND_DISPLAY:-}" ]] && args+=(-e WAYLAND_DISPLAY="${WAYLAND_DISPLAY}")
+	# A Wayland window gets its icon from the desktop entry the engine writes: it must reach the host compositor.
+	host_applications="${XDG_DATA_HOME:-${HOME}/.local/share}/applications"
+	mkdir -p "${host_applications}"
+	args+=(-v "${host_applications}:/fhome/.local/share/applications")
 	# The image only ships Adwaita: lend the host cursor themes so the window keeps the desktop cursor.
 	cursor_theme="${XCURSOR_THEME:-$(gsettings get org.gnome.desktop.interface cursor-theme 2>/dev/null | tr -d "'")}"
 	cursor_size="${XCURSOR_SIZE:-$(gsettings get org.gnome.desktop.interface cursor-size 2>/dev/null)}"

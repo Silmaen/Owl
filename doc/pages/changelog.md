@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-25
+
 ### Added
 
 - Frame rate cap: `Application::setFrameRateLimit` and `frameRateLimit` in `config.yml`; Owl Nest settings *Frame Rate Limit* and *Background Frame Rate* (15 fps by default while another window has the focus).
@@ -57,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Roadmap replanned toward 1.0 at the end of 2026: v0.6.0 to v0.9.0 two weeks apart, a 0.9.x hardening phase, Android and the Web in 1.0, every target exported from every Owl Nest host, localisation, accessibility and a local crash reporter.
 - Vulkan presents in FIFO under vsync instead of MAILBOX, and under Wayland in MAILBOX paced to the refresh rate: an idle Owl Nest no longer keeps the GPU at full load.
 - The viewport frame chip shows the CPU and GPU cost of a frame, the waits for the display excluded (`FrameTimings::workMs`, `panel::FrameMeter`); the frame rate it allows and the draw calls stay in Stats.
 - A viewport hidden behind another tab no longer draws its scene, unless the MCP server is on.
@@ -80,6 +83,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- OpenGL on the SPIR-V path no longer draws the scene upside down under an upright HUD: the fragment origin is the OpenGL lower left, as on the GLSL path.
+- F1 opens the help, and F5 to F10 drive Play, while a panel of Owl Nest holds the keyboard focus, not only over the viewport.
+- The native file dialogues open on Windows: their default folder is absolute with native separators (Windows refused it and opened nothing, so **Pack Scene** and the packaging wizard did nothing), and paths go through UTF-8 both ways.
+- Inspector rows of Owl Nest keep their fields and reset buttons inside the component frame: the field column no longer shifts by one indent inside the component group.
+- A string script property is edited in a multiline field that wraps its text and grows up to eight lines.
+- **Show > HUD** in the viewport hides the scene HUD while editing; Play always draws it (`Scene::setEditorHudVisible`).
+- The villagers of the Engine Demo hub count five levels, the tavern included.
+- `docker_run.sh --gui` writes the desktop entries into the host applications folder, so Owl Nest started from the image has its icon on Wayland.
 - An export follows the scenes and assets named in a list-of-strings script property; it packs the external images of
   a `.glb`; Owl Nest no longer crashes on **Play** without a primary camera; Lua
   `save.*` listing never throws.

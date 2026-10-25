@@ -72,13 +72,102 @@ flowchart LR
 - Shaders: precompiled at build time and embedded in the pack (v0.3.0), no Slang compile at first run.
 - The exported binaries keep the build-tree RPATH after `$ORIGIN`; harmless (`$ORIGIN` comes first) but not clean.
 
-## v0.8.0 — cross-platform packaging
+## v0.8.0 — export to every target
 
-- Cross-compile packaging from any host
-    - Package a Linux game from Windows and a Windows game from Linux
-    - Pre-built runner binaries per target platform (downloaded or bundled)
-    - Cross-platform shared library bundling (resolve target-platform `.so`/`.dll`)
-- Target platform selector in Pack Game
-    - Choose target: Linux x64, Windows x64, Web (independently of host)
-    - Automatic runner binary selection for target platform
-    - Platform-specific post-processing (launcher script for Linux, .zip for Windows, HTML template for the Web)
+Plan of the export for the five targets, summarised in the [Roadmap](../roadmap.md); the platforms themselves are in
+[Modding and platforms](modding-platforms.md).
+
+| Item                   | Subject                                                | Anchor                    |
+|------------------------|--------------------------------------------------------|---------------------------|
+| Hosts and targets      | Any host exports any target                            | `game-export-targets`     |
+| Runner templates       | The five release runners shipped in every Nest package | `game-export-templates`   |
+| Shaders per target     | Baked at export by the host, none at runtime           | `game-export-shaders`     |
+| Signing                | Owl never signs for the developer                      | `game-export-signing`     |
+| Game code              | Lua and node graphs everywhere, C++ through the SDK    | `game-export-game-code`   |
+| Export report          | Size, shaders, unused assets, warnings                 | `game-export-report`      |
+| Smoke tests per target | Every target exported and played in CI                 | `game-export-smoke-tests` |
+
+### Hosts and targets {#game-export-targets}
+
+- Owl Nest ships on linux-x64, linux-arm64, windows-x64.
+- Games target linux-x64, linux-arm64, windows-x64, android-arm64, web; the game developer chooses a set of targets
+  per export.
+- Every host exports every target.
+- A Linux game is a portable tar.gz with its libraries bundled and found through `$ORIGIN`, built on the Ubuntu 26.04
+  glibc (no older glibc).
+- Release runners only, no debug runner: diagnostics come from the `runner.yml` log level and console, the crash
+  reporter ([Crash reporter](crash-reporter.md)) and Play in the Nest.
+- A Windows game carries its project icon in its executable (PE resource patch at export).
+
+### Runner templates {#game-export-templates}
+
+- Every Nest package bundles the five release runners: no download, no template manager, no signed manifest; the
+  versions are coupled by construction.
+- Size: about 10 MB compressed per runner once Slang is removed (measured: Linux runner and libraries 71 MB, of which
+  Slang 43 MB).
+- Release pipeline: each runner is built once, then each Nest package is assembled with all of them; the Android,
+  Web and arm64 runners are built at night and at release, on a pull request only when its diff touches their backend.
+- Build image: the Android NDK, emsdk, xwin with `clang-cl` and `lld-link`, and a headless browser join the build image
+  (the maintainer extends the image).
+
+### Shaders per target {#game-export-shaders}
+
+The host (Slang lives in the Nest) bakes every shader of the pack, engine and project, for each chosen target:
+
+| Target         | Shader format                                                                       |
+|----------------|-------------------------------------------------------------------------------------|
+| Vulkan desktop | SPIR-V                                                                              |
+| Vulkan Android | SPIR-V 1.3                                                                          |
+| WebGPU         | WGSL                                                                                |
+| OpenGL         | SPIR-V for GL 4.6 (`ARB_gl_spirv`): OpenGL is a desktop fallback on recent drivers  |
+
+Rules:
+
+- No shader is generated at runtime in a shipped game; future material, particle and post graphs generate at cook
+  time.
+- Shader compilation leaves `libOwlEngine` for an editor-side library (`OwlShaderCompiler`) used by the Nest,
+  `OwlShaderBake` and the tests.
+- The runner links no Slang and fails with a clear error on a missing shader.
+
+Current state:
+
+- `OwlShaderBake` bakes the engine shaders only (SPIR-V for Vulkan and OpenGL).
+- `GameExporter` does nothing with shaders.
+- A project `.slang` is compiled at first run by `loadOrCompileSpirv` (`source/owl/private/renderer/utils/shaderFileUtils.cpp`).
+- The only macro is `BACKEND_<api>`, so the variant set is finite.
+- Baking project shaders at cook time comes in v0.6.0 with the cook ([Content pipeline](content-pipeline.md)).
+
+### Signing {#game-export-signing}
+
+Owl never signs a game for its developer.
+
+| Target          | Signature                                                                                                                                                                              |
+|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Windows         | The export signs the game executable from any host: Authenticode in C++ on OpenSSL with a `.pfx`, or a custom signing command (covers cloud services); last step, after the icon patch |
+| Android debug   | APK signature schemes v2 and v3 in C++ (no JDK); the Nest generates a debug keystore on the first Android export, kept in the Nest settings, never in the project                      |
+| Android release | Keystore provided by the developer, path in the Nest settings outside the project; password asked at export or kept in the OS keychain (libsecret, Windows Credential Manager)         |
+| Google Play     | AAB: after 1.0                                                                                                                                                                         |
+
+- Signing Owl's own binaries (Nest, runners): the provider is chosen separately (SignPath Foundation, OV certificate;
+  Azure Artifact Signing excludes individuals outside the US and Canada); it blocks no code.
+
+### Game code {#game-export-game-code}
+
+- Lua and node graphs (compiled to Lua) export to every target from every host.
+- A game with its own C++ goes through the SDK and its own CI.
+- WASM modules: after 1.0, with mods.
+
+### Export report {#game-export-report}
+
+After each export: size per target, shaders baked, unused assets, warnings.
+
+### Smoke tests per target {#game-export-smoke-tests}
+
+Every target is exported and played in CI:
+
+| Target  | Where                                                                                |
+|---------|--------------------------------------------------------------------------------------|
+| Linux   | Linux agents                                                                         |
+| Windows | `hecate` agent                                                                       |
+| Web     | Headless browser                                                                     |
+| Android | The maintainer's tablet over adb, nightly; device setup decided when the port starts |

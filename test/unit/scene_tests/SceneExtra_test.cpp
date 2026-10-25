@@ -119,3 +119,12 @@ TEST(Scene, BackgroundTextureComponent) {
 	ent.addComponent<component::BackgroundTexture>();
 	EXPECT_TRUE(ent.hasComponent<component::BackgroundTexture>());
 }
+
+TEST(Scene, EditorHudVisibleByDefaultAndToggled) {
+	Scene sc;
+	EXPECT_TRUE(sc.isEditorHudVisible());
+	sc.setEditorHudVisible(false);
+	EXPECT_FALSE(sc.isEditorHudVisible());
+	sc.setEditorHudVisible(true);
+	EXPECT_TRUE(sc.isEditorHudVisible());
+}

@@ -1531,7 +1531,7 @@ Entities:
     scriptPath: scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Villager"}
-    - {name: lines, type: string, value: "Nice day for a walk. The four houses along the high street are the levels.|I cross the village every day. Mind the fountain, the stones are slippery.|Have you seen the lever in the east meadow? It opens the old gate in the west grove."}
+    - {name: lines, type: string, value: "Nice day for a walk. The five houses of the village are the levels.|I cross the village every day. Mind the fountain, the stones are slippery.|Have you seen the lever in the east meadow? It opens the old gate in the west grove."}
     - {name: follow, type: string, value: "Villager"}
 - Entity: 2000000000000000438
   Tag: {tag: Talk_Guard}
@@ -1545,7 +1545,7 @@ Entities:
     scriptPath: scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Guard"}
-    - {name: lines, type: string, value: "Halt! Ah, it is only you. Mind the lava in the north west forest, it is deadly.|All quiet on the square. When the four levels are done, the shrine will wake up.|The river stings. Cross it by the bridges."}
+    - {name: lines, type: string, value: "Halt! Ah, it is only you. Mind the lava in the north west forest, it is deadly.|All quiet on the square. When the five levels are done, the shrine will wake up.|The river stings. Cross it by the bridges."}
     - {name: follow, type: string, value: "Guard"}
 - Entity: 2000000000000000439
   Tag: {tag: Talk_Wizard}
@@ -1629,7 +1629,7 @@ Entities:
     scriptPath: scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Merchant3"}
-    - {name: lines, type: string, value: "Cider of the village, stored since the last harvest.|They say the portal glows when the four levels are done."}
+    - {name: lines, type: string, value: "Cider of the village, stored since the last harvest.|They say the portal glows when the five levels are done."}
     - {name: follow, type: string, value: "Merchant3"}
 - Entity: 2000000000000000445
   Tag: {tag: Talk_Priest}
