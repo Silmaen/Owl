@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Coverage` reads only the notes of its own build tree: another compiler's tree in the same checkout no longer makes gcov fail.
 - `LuaSandbox.cppExceptionInBindingBecomesLuaError` runs under a roomy time quota: throwing C++ exceptions under QEMU no longer exceeds the 50 ms one.
+- `FramePacer.WaitSleepsOutThePeriod` measures from the start of the period: a late thread under QEMU no longer makes the wait look short.
 
 ## [0.5.0] - 2026-10-25
 
