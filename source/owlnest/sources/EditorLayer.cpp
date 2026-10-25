@@ -1422,7 +1422,11 @@ void EditorLayer::packScene() {
 }
 
 void EditorLayer::packGame() {
-	if (m_project.isLoaded() && !m_asyncProgress.isActive())
+	if (m_asyncProgress.isActive()) {
+		OWL_CORE_WARN("EditorLayer: Cannot pack the game while another operation runs.")
+		return;
+	}
+	if (m_project.isLoaded())
 		m_packager.open();
 }
 

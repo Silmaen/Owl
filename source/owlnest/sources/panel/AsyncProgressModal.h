@@ -109,6 +109,9 @@ public:
 	/**
 	 * @brief
 	 *  Render the modal. Call every frame from onImGuiRender().
+	 *
+	 * When ImGui closed the popup without its Close button, the modal deactivates itself once the operation is
+	 * finished and logs its error, if any.
 	 */
 	void onImGuiRender();
 

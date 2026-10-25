@@ -86,7 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - OpenGL on the SPIR-V path no longer draws the scene upside down under an upright HUD: the fragment origin is the OpenGL lower left, as on the GLSL path.
 - F1 opens the help, and F5 to F10 drive Play, while a panel of Owl Nest holds the keyboard focus, not only over the viewport.
-- The native file dialogues open on Windows: their default folder is absolute with native separators (Windows refused it and opened nothing, so **Pack Scene** and the packaging wizard did nothing), and paths go through UTF-8 both ways.
+- **Pack Game** and **Pack Scene** no longer do nothing after a progress popup that ImGui closed by itself: the popup lets go once its operation ends, and a refused pack is logged.
+- The native file dialogues get an absolute default folder with native separators, and paths go through UTF-8 both ways.
 - Inspector rows of Owl Nest keep their fields and reset buttons inside the component frame: the field column no longer shifts by one indent inside the component group.
 - A string script property is edited in a multiline field that wraps its text and grows up to eight lines.
 - **Show > HUD** in the viewport hides the scene HUD while editing; Play always draws it (`Scene::setEditorHudVisible`).
