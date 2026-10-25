@@ -88,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A string script property is edited in a multiline field that wraps its text and grows up to eight lines.
 - **Show > HUD** in the viewport hides the scene HUD while editing; Play always draws it (`Scene::setEditorHudVisible`).
 - The villagers of the Engine Demo hub count five levels, the tavern included.
+- `docker_run.sh --gui` writes the desktop entries into the host applications folder, so Owl Nest started from the image has its icon on Wayland.
 - An export follows the scenes and assets named in a list-of-strings script property; it packs the external images of
   a `.glb`; Owl Nest no longer crashes on **Play** without a primary camera; Lua
   `save.*` listing never throws.
