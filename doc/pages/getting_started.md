@@ -57,8 +57,8 @@ Both ship next to `bin/` in the Owl Nest archive and open from the File screen:
 - **Engine Demo** (`engine_demo/`, the **Engine Demo** card): the all-in-one showcase, an RPG hub leading to a
   platformer, a raycast level, an isometric town and a voxel terrain. Play any scene to see how Lua scripts, HUDs,
   sound and triggers fit together.
-- **Sample games** (`samples/`, the **Sample games** list): Breakout, Sokoban and a Wolfenstein mini, small complete
-  games of a readable size to start a project from.
+- **Sample games** (`samples/`, the **Sample games** list): Breakout, Sokoban, a Wolfenstein mini and a tower defence,
+  small complete games of a readable size to start a project from.
 
 ![The File screen: the Engine Demo card, the sample games and the recent projects](../images/nest/file_screen.png)
 
@@ -77,6 +77,11 @@ driven by the day-night cycle over the voxel terrain.*
 
 | ![Breakout](../images/showcase/breakout.png) | ![Sokoban](../images/showcase/sokoban.png) | ![Wolfenstein mini](../images/showcase/wolfenstein.png) |
 |----------------------------------------------|--------------------------------------------|---------------------------------------------------------|
+
+| ![Tower defence: the world map](../images/showcase/tower_world_map.png)          | ![Tower defence: wolf riders on the bridges of Frostmere](../images/showcase/tower_frostmere.png) |
+|----------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+
+*The tower defence: the hand-inked world map between the levels, and a level in 3D with relief.*
 
 ## Where to Go Next
 

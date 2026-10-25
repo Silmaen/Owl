@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: Windows x64 Clang and Linux x64 GCC run on ready pull requests and `main` only, no longer on drafts nor `Experiment/*`.
 - CI: `linux-cross-arm64` is a Release tree, tested under QEMU at night and packaged by Package Linux arm64.
 - `/check --quick`: the fast loop for agents (touched tests and CodeStyle), with `--fix` to apply the formatters first.
+- Docs: screenshots of the tower defence (title, world map, briefing, two levels) in Getting Started and the sample games page.
 
 ### Removed
 
