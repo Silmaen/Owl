@@ -151,9 +151,11 @@ OWL_API auto getShaderCacheKey(const std::string& iSource, const std::string& iM
  * @brief
  *  Make Slang's SPIR-V valid for `GL_ARB_gl_spirv`: the Vulkan-only `InstanceIndex` / `VertexIndex` built-ins become
  *  the OpenGL `InstanceId` / `VertexId` (`gl_InstanceID`, `gl_VertexID`). Slang subtracts the base instance / vertex
- *  from them, which is exact as long as draws use a zero base, as every Owl draw does.
+ *  from them, which is exact as long as draws use a zero base, as every Owl draw does. The fragment origin
+ *  `OriginUpperLeft` becomes `OriginLowerLeft`, the OpenGL window origin the GLSL path has: `SV_Position` then counts
+ *  rows from the bottom, like the rows of an OpenGL texture.
  * @param[in,out] ioSpirv SPIR-V words, patched in place.
- * @return Number of decorations changed.
+ * @return Number of decorations and execution modes changed.
  */
 OWL_API auto remapBuiltinsForOpenGl(std::vector<uint32_t>& ioSpirv) -> uint32_t;
 

@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- OpenGL on the SPIR-V path no longer draws the scene upside down under an upright HUD: the fragment origin is the OpenGL lower left, as on the GLSL path.
 - An export follows the scenes and assets named in a list-of-strings script property; it packs the external images of
   a `.glb`; Owl Nest no longer crashes on **Play** without a primary camera; Lua
   `save.*` listing never throws.
