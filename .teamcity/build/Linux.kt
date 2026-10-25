@@ -22,16 +22,23 @@ val linuxClangRelease = presetBuild("Build_LinuxX64_ClangRelease", "Clang", "lin
         }
     }
 }
-// Once a night on `main`, when it changed: Clang Debug runs the whole suite (the `slow` tests the pushes leave out)
-// and measures its own coverage, beside the GCC one.
+// Once a night on `main`, when it changed: Clang Debug measures its own coverage, beside the GCC one.
 val linuxClang = presetBuild("Build_LinuxX64_Clang", "Clang Debug", "linux-clang-debug", onPullRequest = false,
+        nightly = true) {
+    failureConditions {
+        coverageDrop()
+    }
+}
+
+// Once a night on `main`, when it changed: the whole suite, the `slow` tests the other builds leave out included, on
+// the release tree where a slow scenario takes seconds (in Debug with coverage, minutes). Nightly only, so its
+// schedule sees the changes no push built for it. Neither documented nor packaged: Linux Clang does both.
+val linuxSlowSuite = presetBuild("Build_LinuxX64_SlowSuite", "Slow Suite", "linux-clang-release", onPullRequest = false,
         nightly = true) {
     params {
         fullSuite()
     }
-    failureConditions {
-        coverageDrop()
-    }
+    disableSettings("Documentation", "Deploy")
 }
 
 val linuxX64 = Project {
@@ -41,7 +48,8 @@ val linuxX64 = Project {
     buildType(linuxClangRelease)
     buildType(linuxGcc)
     buildType(linuxClang)
-    buildTypesOrder = arrayListOf(linuxClangRelease, linuxGcc, linuxClang)
+    buildType(linuxSlowSuite)
+    buildTypesOrder = arrayListOf(linuxClangRelease, linuxGcc, linuxClang, linuxSlowSuite)
 
     params {
         text("platform", "Linux", display = ParameterDisplay.HIDDEN, allowEmpty = true)
