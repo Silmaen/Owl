@@ -153,6 +153,11 @@ Shipped in `samples/tower_defence/` (how to play: its `README.md`): a first map 
 gameplay. Plan of 2026-10-24: a small campaign in the spirit of Warcraft 1 and 2, the Horde (goblins, orcs, ogres)
 against human towers and a human keep, in real 3D, mixing as many rendering styles as the engine has.
 
+| ![The title screen, the parade of the Horde in pixel art](../../images/showcase/tower_title.png) | ![The world map and its open sites](../../images/showcase/tower_world_map.png)         |
+|--------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| ![The briefing card of Greenmarch Ford](../../images/showcase/tower_briefing.png)               | ![Wolf riders crossing the bridges of Frostmere](../../images/showcase/tower_frostmere.png) |
+| ![Sunscorch Flats: towers on the plateaus, the keep at the end of the road](../../images/showcase/tower_sunscorch.png) |                                                                                   |
+
 | Item      | Plan                                                                                                                               |                                                                                         |
 |-----------|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
 | Play      | 10 levels of 8 to 12 waves, on 3D terrain with relief, between visits to a world map and its upgrades screen                       |                                                                                         |

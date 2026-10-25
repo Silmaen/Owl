@@ -56,8 +56,6 @@ class PublishDoc(BaseAction):
 
         # Determine documentation directory
         build_dir = preset.get_build_dir()
-        if preset.release_preset not in [None, ""]:
-            build_dir = preset.get_release_build_dir()
         doc_dir = build_dir / "Documentation" / "html"
 
         # Get version

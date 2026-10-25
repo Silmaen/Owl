@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- CI: one tree per configuration; the tested release tree is the one packaged, so no configuration builds a second preset.
+- CI: Linux x64 Clang Release is the fast verdict (drafts, ready pull requests, doc-only pull requests, `main`); drafts run Code Style and it only.
+- CI: coverage is measured on Linux x64 GCC (every ready pull request and `main`) and by Clang Debug nightly, each with its coverage-drop gate; Windows measures none.
+- CI: Windows x64 Clang and Linux x64 GCC run on ready pull requests and `main` only, no longer on drafts nor `Experiment/*`.
+- CI: `linux-cross-arm64` is a Release tree, tested under QEMU at night and packaged by Package Linux arm64.
+- `/check --quick`: the fast loop for agents (touched tests and CodeStyle), with `--fix` to apply the formatters first.
+- Docs: screenshots of the tower defence (title, world map, briefing, two levels) in Getting Started and the sample games page.
+
+### Removed
+
+- CI: Windows GCC configuration, the `package-linux` and `package-linux-cross-arm64` presets (`cmake/CMakePresetsPackage.json`), the `release_preset` mechanism and the Windows-only coverage step.
+
+### Fixed
+
+- `Coverage` reads only the notes of its own build tree: another compiler's tree in the same checkout no longer makes gcov fail.
+
 ## [0.5.0] - 2026-10-25
 
 ### Added

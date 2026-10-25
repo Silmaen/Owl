@@ -19,12 +19,12 @@ the server when `main` advances.
 
 The CI surface covers:
 
-| Area               | Coverage                                                                                    |
-|--------------------|---------------------------------------------------------------------------------------------|
-| Build / Test       | Linux x64 and Windows x64 — Clang + GCC each; Linux ARM64 (cross compiled) — Clang only     |
-| Quality            | clang-tidy, 3 blocking sanitizers (Address + Leak, Thread, UB), Code Style aggregator       |
-| Packaging          | Engine + Owl Nest archives of the tested release tree, per platform — only on `main`        |
-| GitHub integration | Draft PR suppression, Check Runs (tests, timings, diff annotations), ready_for_review reuse |
+| Area               | Coverage                                                                                                                               |
+|--------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| Build / Test       | Linux x64 — Clang Release, GCC Debug, Clang Debug (nightly); Windows x64 — Clang Release; Linux ARM64 (cross compiled) — Clang Release |
+| Quality            | clang-tidy, 3 blocking sanitizers (Address + Leak, Thread, UB), Code Style aggregator                                                  |
+| Packaging          | Engine + Owl Nest archives of the tested release tree, per platform — only on `main`                                                   |
+| GitHub integration | Draft PR suppression, Check Runs (tests, timings, diff annotations), ready_for_review reuse                                            |
 
 ## Project tree
 
@@ -40,10 +40,10 @@ flowchart TD
     Root --> San[Sanitizers]
     Root --> An[Analysis]
     Root --> Pkg[Package]
-    Lx --> LxC[Clang]
-    Lx --> LxG[GCC]
-    Wx --> WxC[Clang]
-    Wx --> WxG[GCC]
+    Lx --> LxR[Clang Release]
+    Lx --> LxG[GCC Debug]
+    Lx --> LxC[Clang Debug]
+    Wx --> WxC[Clang Release]
     La --> LaC[Clang, cross compiled]
     San --> SA[Address]
     San --> ST[Thread]
@@ -57,21 +57,21 @@ flowchart TD
     Pkg --> PW[Windows x64]
 ```
 
-| File                      | Content                                                                              |
-|---------------------------|--------------------------------------------------------------------------------------|
-| `settings.kts`            | The project: parameters, VCS root, templates, sub-projects and their order           |
-| `common/Vcs.kt`           | The git VCS root, the GitHub App connection id                                       |
-| `common/Templates.kt`     | Global Build (configure → package steps) and Tool Build (Code Style)                 |
-| `common/Helpers.kt`       | `mainBranchOnly()`, `githubBridge()`, `after()`, `ciAction()`, `CODE_ONLY_PATHS`     |
-| `common/Factories.kt`     | `presetBuild()`, `analysisBuild()`, `packageBuild()`, `publishBuild()`               |
-| `quality/CodeStyle.kt`    | The gate every other configuration waits for (root project)                          |
-| `quality/IncludeCheck.kt` | Every file compiled alone, level 1 beside Code Style (root project)                  |
-| `build/*.kt`              | Build Linux x64, Build Windows x64, Build Linux arm64                                |
-| `quality/Sanitizers.kt`   | The three sanitizers, after Code Style                                               |
-| `quality/PrReady.kt`      | The `PR Ready` merge gate (root project): red when any ready-PR configuration is red |
-| `quality/Analysis.kt`     | Clang-Tidy and Static Analyzer, after Code Style                                     |
-| `quality/Fuzz.kt`         | Nightly fuzzing: `Fuzz` action on `linux-fuzz`, failing inputs published             |
-| `packaging/Package.kt`    | Engine and Owl Nest archives, published after the build that tested their platform   |
+| File                      | Content                                                                                            |
+|---------------------------|----------------------------------------------------------------------------------------------------|
+| `settings.kts`            | The project: parameters, VCS root, templates, sub-projects and their order                         |
+| `common/Vcs.kt`           | The git VCS root, the GitHub App connection id                                                     |
+| `common/Templates.kt`     | Global Build (configure → package steps) and Tool Build (Code Style)                               |
+| `common/Helpers.kt`       | `mainBranchOnly()`, `githubBridge()`, `after()`, `ciAction()`, `coverageDrop()`, `CODE_ONLY_PATHS` |
+| `common/Factories.kt`     | `presetBuild()`, `analysisBuild()`, `publishBuild()`                                               |
+| `quality/CodeStyle.kt`    | The gate every other configuration waits for (root project)                                        |
+| `quality/IncludeCheck.kt` | Every file compiled alone, level 1 beside Code Style (root project)                                |
+| `build/*.kt`              | Build Linux x64, Build Windows x64, Build Linux arm64                                              |
+| `quality/Sanitizers.kt`   | The three sanitizers, after Code Style                                                             |
+| `quality/PrReady.kt`      | The `PR Ready` merge gate (root project): red when any ready-PR configuration is red               |
+| `quality/Analysis.kt`     | Clang-Tidy and Static Analyzer, after Code Style                                                   |
+| `quality/Fuzz.kt`         | Nightly fuzzing: `Fuzz` action on `linux-fuzz`, failing inputs published                           |
+| `packaging/Package.kt`    | Engine and Owl Nest archives, published after the build that tested their platform                 |
 
 The configuration ids are the ones the server already knew (`Build_LinuxX64_Clang`, `Build_Quality_ClangTidy`, …),
 so the build history is kept. Everything a build does lives in `ci/` (`ci_action.py <Action> <preset>`); the DSL only
@@ -88,37 +88,41 @@ flowchart LR
         IC[Include Check]
     end
     subgraph L2[Level 2: after Code Style]
-        LxC[Linux x64 Clang] & LxG[Linux x64 GCC] & WxC[Windows x64 Clang]
-        WxG[Windows x64 GCC]
+        LxR[Linux x64 Clang Release] & LxG[Linux x64 GCC] & LxC[Linux x64 Clang Debug] & WxC[Windows x64 Clang]
         SA[Sanitizer Address] & ST[Sanitizer Thread] & SU[Sanitizer UB]
         CT[Clang-Tidy] & AN[Static Analyzer]
         LaC[Linux arm64 Clang]
     end
-    CS --> LxC & LxG & WxC & WxG & SA & ST & SU & CT & AN & LaC
-    LxC --> PL[Packages Linux x64]
+    CS --> LxR & LxG & LxC & WxC & SA & ST & SU & CT & AN & LaC
+    LxR --> PL[Packages Linux x64]
     WxC --> PW[Packages Windows x64]
     LaC --> PA[Packages Linux arm64]
     classDef draft fill:#fff3cd,stroke:#856404,color:#856404
     classDef mainOnly fill:#d1ecf1,stroke:#0c5460,color:#0c5460
     classDef afterMerge fill:#e2e3e5,stroke:#383d41,color:#383d41
-    class CS,LxC,WxC draft
-    class IC,LaC,PL,PW,PA,ST,SU,AN mainOnly
-    class LxG,WxG,SA afterMerge
+    class CS,LxR draft
+    class IC,LxC,LaC,PL,PW,PA,ST,SU,AN mainOnly
+    class LxG,WxC,SA afterMerge
 ```
 
-- **Yellow**: also run on draft pull requests (fast feedback subset).
-- **Slow tests**: the Test steps pass `-- --label_exclude=slow` (`test_args`); arm64 and a nightly run of Linux x64
-  Clang on `main` (`nightlyFullSuite` trigger, 1 am) run every test.
-- **Blue**: nightly on `main`, when it changed: arm64, Include Check, the packages (they publish to the site), the
-  Thread and UB sanitizers and the Static Analyzer, which are not pull-request checks.
+- **Yellow**: also run on draft pull requests (the fast verdict: Code Style and Linux x64 Clang Release).
+- **Slow tests**: the Test steps pass `-- --label_exclude=slow` (`test_args`); arm64 and Linux x64 Clang Debug
+  (`fullSuite()`) run every test.
+- **Blue**: nightly on `main`, when it changed: Linux x64 Clang Debug (full suite and its own coverage), arm64,
+  Include Check, the packages (they publish to the site), the Thread and UB sanitizers and the Static Analyzer, which
+  are not pull-request checks.
 - arm64 cross compiles the `linux-cross-arm64` preset on an x64 agent (Clang, lld, the image's arm64 sysroot) and
-  runs only the tests under qemu-user: Debug without coverage, benchmarks or image tests (`OWL_RENDER_TESTS=OFF`,
-  lavapipe's output depends on the CPU).
-- **Grey**: every `main` push, never on a pull request: GCC parity (release preset only) and Sanitizer Address.
+  runs only the tests under qemu-user: the Release tree of `linux-clang-release` without documentation, benchmarks
+  or image tests (`OWL_RENDER_TESTS=OFF`, lavapipe's output depends on the CPU). Release, because QEMU multiplies the
+  cost of every instruction.
+- **Grey**: not on drafts. Linux x64 GCC (Debug, tests and coverage) and Windows x64 Clang run on ready pull requests
+  and `main` pushes (they are `PR Ready` checks); Sanitizer Address runs on `main` pushes only.
 - Uncoloured: Clang-Tidy, on every ready pull request (its diff) and nightly on `main` (the whole tree).
 
-Manual triggers always work; the custom build dialog shows only the CTest arguments (`test_args`) and the benchmark calibration, every other parameter is hidden. Orthogonal to the colours, a pull request that changes **only** documentation (`doc/`, `*.md`,
-`.claude/`, `LICENSE`) runs just Code Style and Linux x64 Clang, see [Doc-only pull requests](#doc-only-pull-requests).
+Manual triggers always work; the custom build dialog shows only the CTest arguments (`test_args`) and the benchmark
+calibration, every other parameter is hidden. Orthogonal to the colours, a pull request that changes **only**
+documentation (`doc/`, `*.md`, `.claude/`, `LICENSE`) runs just Code Style and Linux x64 Clang Release, see
+[Doc-only pull requests](#doc-only-pull-requests).
 
 ## VCS root
 
@@ -144,54 +148,54 @@ The build-and-test template of every configuration of the build and packaging su
 `toolBuild`). Each step is a `ci_action.py` action run in the build image, except the first, which sets
 `docker_image` from the preset's `vendor.silmaen` block:
 
-| Step                      | Condition                                                      |
-|---------------------------|----------------------------------------------------------------|
-| Determine docker (native) | always                                                         |
-| Clean output              | always                                                         |
-| Clean release             | `release_preset` non-empty + default branch                    |
-| Build                     | always                                                         |
-| Test                      | `run_tests == true`                                            |
-| Code Coverage             | `run_coverage == true`; on Windows, default branch only        |
-| Build Release             | `release_preset` non-empty + default branch                    |
-| Configure Release (docs)  | `release_preset` + `run_documentation`, off the default branch |
-| Test Release              | `release_preset` non-empty + default branch + `run_tests`      |
-| Package Release           | `release_preset` + default branch + `package_release`          |
-| Documentation             | `run_documentation == true`                                    |
-| Package                   | `run_package == true`                                          |
-| Publish Package           | `publish_package` + on default branch                          |
-| Publish Documentation     | `publish_package` + default branch + `publish_doc`             |
+| Step                      | Condition                                                         |
+|---------------------------|-------------------------------------------------------------------|
+| Determine docker (native) | always                                                            |
+| Clean output              | always                                                            |
+| Build                     | always                                                            |
+| Test                      | `run_tests == true`                                               |
+| Code Coverage             | `run_coverage == true`                                            |
+| Documentation             | `run_documentation == true` (a Release preset with documentation) |
+| Package                   | `run_package == true` + default branch                            |
+| Publish Package           | `publish_package` + on default branch                             |
+| Publish Documentation     | `publish_package` + default branch + `publish_doc`                |
 
 - **Coverage**: the Code Coverage step publishes the line and branch coverage of `gcovr.cfg`'s scope (the engine
   without its platform backends, which headless tests cannot reach) as TeamCity statistics (`CodeCoverageL`,
-  `CodeCoverageB` and their absolute counts). Linux x64 / Clang fails when the line coverage drops more than one
-  point below its last successful build (`COVERAGE_DROP`).
+  `CodeCoverageB` and their absolute counts). a configuration with the gate fails when the line coverage drops more than one
+  point below its last successful build (`coverageDrop()` in `common/Helpers.kt`). Linux x64 / GCC (every ready pull
+  request and `main`) and Linux x64 / Clang Debug (nightly) each carry the gate; Windows measures none.
+- **One tree per configuration**: a configuration builds, tests, documents and packages its own preset; the package
+  configurations (`publishBuild()`) rebuild nothing and publish the archives and documentation of the tested build.
 - **Secrets**: Publish Package and Publish Documentation read `OWL_DEPLOY_PASSWORD`, an `env.*` parameter of the
   template set from the `%deploy_passwd%` password parameter of the server: the secret never appears on a command
   line and TeamCity masks it in the log, on the Linux (Docker) and Windows agents alike.
 
 ## What runs when
 
-| Configuration                                      | `main` push | Nightly (`main`) | Draft PR | Ready PR | `Experiment/*` PR | Doc-only PR | `[skip ci]` |
-|----------------------------------------------------|-------------|------------------|----------|----------|-------------------|-------------|-------------|
-| Code Style                                         | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
-| Build Linux x64 / Clang (Doxygen)                  | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
-| Build Windows x64 / Clang                          | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
-| Build Linux x64 / GCC, Windows x64 / GCC (release) | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Build Linux arm64 / Clang (cross compiled)         | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Benchmarks (`linux-bench`)                         | ❌           | ✅                | ❌        | ✅        | ❌                 | ❌           | ❌           |
-| Fuzzing (`linux-fuzz`)                             | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Sanitizer Address (+ LSan)                         | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Sanitizer Thread, Sanitizer UB                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Clang-Tidy                                         | ❌           | ✅                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Static Analyzer                                    | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Include Check                                      | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| PR Ready (merge gate, no agent)                    | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Packages (one per platform, × 3)                   | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Configuration                                        | `main` push | Nightly (`main`) | Draft PR | Ready PR | `Experiment/*` PR | Doc-only PR | `[skip ci]` |
+|------------------------------------------------------|-------------|------------------|----------|----------|-------------------|-------------|-------------|
+| Code Style                                           | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
+| Build Linux x64 / Clang Release (Doxygen)            | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
+| Build Linux x64 / GCC (Debug, coverage)              | ✅           | —                | ❌        | ✅        | ❌                 | ⏭           | ❌           |
+| Build Windows x64 / Clang Release                    | ✅           | —                | ❌        | ✅        | ❌                 | ⏭           | ❌           |
+| Build Linux x64 / Clang Debug (full suite, coverage) | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Build Linux arm64 / Clang (cross compiled)           | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Benchmarks (`linux-bench`)                           | ❌           | ✅                | ❌        | ✅        | ❌                 | ❌           | ❌           |
+| Fuzzing (`linux-fuzz`)                               | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Sanitizer Address (+ LSan)                           | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Sanitizer Thread, Sanitizer UB                       | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Clang-Tidy                                           | ❌           | ✅                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Static Analyzer                                      | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Include Check                                        | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| PR Ready (merge gate, no agent)                      | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Packages (one per platform, × 3)                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 
-A ready pull request runs five checks (Code Style, Linux Clang, Windows Clang, Clang-Tidy, Benchmarks), the ones `PR Ready`
-requires: after Code Style, the three builds take one agent each and start together. A `main` push runs Linux and
-Windows Clang, GCC on its release preset and Sanitizer Address; arm64, the whole-tree Clang-Tidy, Include Check, the
-Thread and Undefined Behavior sanitizers and the Static Analyzer run nightly.
+A draft pull request runs Code Style and Linux x64 Clang Release only: the fast verdict. A ready pull request runs six
+checks (Code Style, Linux Clang Release, Linux GCC, Windows Clang, Clang-Tidy, Benchmarks), the ones `PR Ready`
+requires: after Code Style, the three builds take one agent each and start together. A `main` push runs the three
+builds and Sanitizer Address; Linux Clang Debug (full suite, Clang coverage), arm64, the whole-tree Clang-Tidy,
+Include Check, the Thread and Undefined Behavior sanitizers and the Static Analyzer run nightly.
 
 ✅ runs · ❌ not run · ⏭ a "Skipped" check is published, which GitHub counts as passing. A manual run, and *Re-run* in
 GitHub, always run a configuration.
@@ -203,15 +207,13 @@ GitHub, always run a configuration.
 - **`Experiment/*` pull requests** run the fast subset only (the draft one): the full-matrix configurations carry
   `prTriggerBranchesOverride = EXCLUDE_EXPERIMENT`. Their required checks are therefore *Skipped*: an experiment is not
   meant to be merged as such; move the work to a `Feature/*` branch to get the full verdict.
-- **`main` push**: every configuration but the nightly ones (blue) and the packages, through the templates' VCS trigger; the release
-  build and its tests (the `release_preset` steps) run only there, a pull request gets its verdict from the debug
-  build in half the time.
-- **Nightly** (02:00, `main`, only when it changed): every package, which publishes to the site.
-- **Packages without a rebuild**: on `main`, the Clang builds package their tested release tree (`Package Release`,
-  release preset flagged `package` in its `vendor.silmaen` block, both archives kept as artifacts). The x64 package
-  configurations (`publishBuild()`) build nothing: they take those archives and the documentation from the build of
-  the same chain and publish them. arm64 has no tested release tree and cross compiles
-  `package-linux-cross-arm64` (`packageBuild()`).
+- **`main` push**: every configuration but the nightly ones (blue) and the packages, through the templates' VCS
+  trigger.
+- **Nightly** (02:00, `main`, only when it changed): Linux x64 Clang Debug, every package (they publish to the site).
+- **Packages without a rebuild**: on `main`, each tested build with `package: true` in its preset's `vendor.silmaen`
+  block (`linux-clang-release`, `windows-clang-release`, `linux-cross-arm64`) writes both archives in its own tree
+  (`Package` step, kept as artifacts). The three package configurations (`publishBuild()`) build nothing: they take
+  those archives and the documentation from the build of the same chain and publish them.
 
 ## Triggering
 
@@ -239,8 +241,8 @@ verdict is republished when the PR turns ready) and `skipPhrase = [skip ci]`.
 ### Required checks
 
 Require **one** check in the branch protection of `main`: **`PR Ready`**. It is a composite configuration
-(`quality/PrReady.kt`): it uses no agent, depends on the five configurations a ready pull request runs (Code Style,
-Linux x64 Clang, Windows x64 Clang, Clang-Tidy, Benchmarks) and turns red, naming the failed dependency, as
+(`quality/PrReady.kt`): it uses no agent, depends on the six configurations a ready pull request runs (Code Style,
+Linux x64 Clang Release, Linux x64 GCC, Windows x64 Clang, Clang-Tidy, Benchmarks) and turns red, naming the failed dependency, as
 soon as one of them is red. Like them it is not run for drafts nor `Experiment/…` pull requests (the PR
 cannot be merged until it is ready), and it skips documentation-only pull requests rather than pulling the whole
 matrix in. GitHub shows a check by the tail of its name (`checkName.stripPrefix = "TeamCity / Owl / "`).
@@ -260,8 +262,8 @@ their input:
   markdown files; `doc-identifiers` checks that every symbol, file or `OWL_*` option cited between backticks in
   `doc/pages` exists in the repository (`ci/utils/doc_identifiers.py`: the changelog, the roadmap and the design
   pages are skipped, the short list of names living elsewhere is `EXCEPTIONS`, each with its reason).
-- **Linux x64 Clang** — the only BT whose preset sets `OWL_ENABLE_DOCUMENTATION=ON`; it builds the release
-  everywhere (its tests stay on `main`) and Doxygen documents it, with `WARN_AS_ERROR=YES`
+- **Linux x64 Clang Release** — the only BT whose preset (`linux-clang-release`) sets `OWL_ENABLE_DOCUMENTATION=ON`;
+  Doxygen documents it, with `WARN_AS_ERROR=YES`
   over `doc/`, `README.md`, `CHANGELOG.md`, `ROADMAP.md` and `CONTRIBUTING.md`.
 
 A doc-only PR is therefore still gated — by the two configurations that can
@@ -421,10 +423,10 @@ GNU/clang (`file:42:7: error: …`) and MSVC shapes.
 
 Two consequences for this repository:
 
-1. **Annotations are enabled on five configurations only** — Linux x64 Clang,
+1. **Annotations are enabled on five configurations only** — Linux x64 Clang Release,
    Windows x64 Clang, Clang-Tidy, Include Check and Code Style. The same compile
-   error reported by six configurations would otherwise be annotated six times
-   on the same line; these five are the ones whose findings are distinct.
+   error reported by every configuration would otherwise be annotated once per
+   configuration on the same line; these five are the ones whose findings are distinct.
 2. **`ci/actions/code_style.py` prints in that shape on purpose.** Every
    finding goes through its `_diag()` helper as
    `<repo-relative path>:<line>:<column>: error: <check>: <message>`, and the
@@ -585,8 +587,8 @@ new BT, follow one of the existing patterns:
   (`build/Linux.kt`, `build/Windows.kt`, `build/LinuxArm64.kt`), added to its `Project`.
 - **Quality / sanitizer-style one-off**: a `presetBuild(...)` in `quality/Sanitizers.kt`, added to the
   `sanitizers` project.
-- **Packaging build**: in `packaging/Package.kt`, `publishBuild(...)` for a platform whose Clang build packages its
-  release tree, `packageBuild(...)` for one that has none.
+- **Packaging build**: in `packaging/Package.kt`, `publishBuild(...)` for a platform whose tested build has
+  `package: true` in its preset.
 
 ### Validate locally
 

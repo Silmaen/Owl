@@ -2,10 +2,10 @@ import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.failureConditions.BuildFailureOnMetric
 import jetbrains.buildServer.configs.kotlin.failureConditions.failOnMetricChange
 
-// GCC parity on `main` only: a pull request gets its verdict from Clang. Release only, as on Linux.
-val windowsGcc = presetBuild("Build_WindowsX64_Gcc", "GCC", "windows-gcc-release", onPullRequest = false)
-
-val windowsClang = presetBuild("Build_WindowsX64_Clang", "Clang", "windows-clang-debug", onDraft = true) {
+// The single Windows agent is the bottleneck: one release tree, on ready pull requests only (drafts get the Linux
+// verdict), tested and, on `main`, packaged for the Windows x64 package to publish. No coverage: `gcovr.cfg` leaves
+// the Windows-only code out, Linux measures the rest.
+val windowsClang = presetBuild("Build_WindowsX64_Clang", "Clang", "windows-clang-release") {
     failureConditions {
         failOnMetricChange {
             id = "BUILD_EXT_1"
@@ -22,9 +22,7 @@ val windowsX64 = Project {
     id = RelativeId("Build_WindowsX64")
     name = "Build Windows x64"
 
-    buildType(windowsGcc)
     buildType(windowsClang)
-    buildTypesOrder = arrayListOf(windowsGcc, windowsClang)
 
     params {
         text("platform", "Windows", display = ParameterDisplay.HIDDEN, allowEmpty = true)

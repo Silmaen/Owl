@@ -136,7 +136,7 @@ planets for worlds of any scale ([details](design/gameplay-systems.md), [simulat
 procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual scripting compiled to Lua. Critical path:
 the cook, double positions with a floating origin, visual scripting; the rest may slip to v0.7.0.
 
-- ![Planned][planned] CI: one GCC build (Debug, tests, coverage), a fast first stage, a quick check for agents ([CI streamlining](design/ci-streamlining.md#ci-streamlining-cost-review))
+- ![Done][done] CI: one GCC build (Debug, tests, coverage), a fast first stage, a quick check for agents ([CI streamlining](design/ci-streamlining.md#ci-streamlining-cost-review))
 - ![Planned][planned] Offline asset pipeline: cook, cache, asset GUIDs ([Content](design/content-pipeline.md))
 - ![Planned][planned] Binary runtime scene format produced by the cook
 - ![Planned][planned] Parallel pack `readEntry`

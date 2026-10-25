@@ -28,11 +28,6 @@ class DefineTeamCityVariables(BaseAction):
             if preset.docker_parameters not in [None, ""]:
                 set_teamcity_parameter("docker_parameters", preset.docker_parameters)
 
-        if preset.release_preset not in [None, ""]:
-            set_teamcity_parameter("release_preset", preset.release_preset)
-            release = PresetConfig(preset.release_preset)
-            # The tested release tree is the one packaged: no package job rebuilds it.
-            set_teamcity_parameter("package_release", str(release.run_package).lower())
         if preset.cmake_preset not in [None, ""]:
             set_teamcity_parameter("cmake_preset", preset.cmake_preset)
         if preset.run_tests is not None:
@@ -46,17 +41,15 @@ class DefineTeamCityVariables(BaseAction):
         if preset.publish_doc is not None:
             set_teamcity_parameter("publish_doc", str(preset.publish_doc).lower())
         # Nothing downstream reads the binaries nor the libraries (the package configurations take the archives): the
-        # artifacts keep the test reports, the coverage, the documentation and the packages.
-        artifact_path = "+:output/build/%cmake_preset%/test/test/*.xml => TestReports.zip!debug/"
+        # artifacts keep the test reports, the coverage, the documentation and the packages of the one tree built.
+        tree = "output/build/%cmake_preset%"
+        artifact_path = f"+:{tree}/test/test/*.xml => TestReports.zip"
         if preset.run_coverage:
-            artifact_path += """
-+:output/build/%cmake_preset%/Coverage => Coverage.zip"""
-        if preset.release_preset not in [None, ""]:
-            artifact_path += """
-+:output/build/%release_preset%/test/test/*.xml => TestReports.zip!release/
-+:output/build/%release_preset%/Documentation/html => Documentation.zip
-+:output/build/%release_preset%/*.zip
-+:output/build/%release_preset%/*.tar.gz"""
+            artifact_path += f"\n+:{tree}/Coverage => Coverage.zip"
+        if preset.run_documentation:
+            artifact_path += f"\n+:{tree}/Documentation/html => Documentation.zip"
+        if preset.run_package:
+            artifact_path += f"\n+:{tree}/*.zip\n+:{tree}/*.tar.gz"
         log.info(f"Setting artifact path:\n{artifact_path}")
         set_teamcity_parameter("artifact_path", artifact_path)
 

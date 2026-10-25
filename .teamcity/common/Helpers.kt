@@ -2,11 +2,14 @@ import jetbrains.buildServer.configs.kotlin.BuildFeatures
 import jetbrains.buildServer.configs.kotlin.BuildType
 import jetbrains.buildServer.configs.kotlin.Dependencies
 import jetbrains.buildServer.configs.kotlin.FailureAction
+import jetbrains.buildServer.configs.kotlin.FailureConditions
 import jetbrains.buildServer.configs.kotlin.ParameterDisplay
 import jetbrains.buildServer.configs.kotlin.ParametrizedWithType
 import jetbrains.buildServer.configs.kotlin.ReuseBuilds
 import jetbrains.buildServer.configs.kotlin.Triggers
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
+import jetbrains.buildServer.configs.kotlin.failureConditions.BuildFailureOnMetric
+import jetbrains.buildServer.configs.kotlin.failureConditions.failOnMetricChange
 import jetbrains.buildServer.configs.kotlin.triggers.VcsTrigger
 import jetbrains.buildServer.configs.kotlin.triggers.vcs
 
@@ -140,4 +143,19 @@ fun ParametrizedWithType.fullSuite() {
     text("test_args", "", label = "CTest arguments",
             description = "Arguments of the Test steps; empty runs every test, the slow ones included",
             display = ParameterDisplay.NORMAL, allowEmpty = true)
+}
+
+/**
+ * Fails a build whose line coverage drops more than one point below the last successful build of the same
+ * configuration.
+ */
+fun FailureConditions.coverageDrop() {
+    failOnMetricChange {
+        id = "COVERAGE_DROP"
+        metric = BuildFailureOnMetric.MetricType.COVERAGE_LINE_PERCENTAGE
+        threshold = 1
+        units = BuildFailureOnMetric.MetricUnit.DEFAULT_UNIT
+        comparison = BuildFailureOnMetric.MetricComparison.LESS
+        compareTo = build { buildRule = lastSuccessful() }
+    }
 }
