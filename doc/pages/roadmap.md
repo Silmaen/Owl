@@ -165,7 +165,7 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Planned][planned] Sample games: a Mini Minecraft, and combat (guards, weapons) in the Wolfenstein mini ([Sample games](design/sample-games.md))
 - ![To evaluate][evaluate] Sample game from the pool: a station trader ([Pool](design/sample-games.md#sample-games-pool))
 
-## v0.5.0 -- Expected 2026-10-28
+## v0.5.0 -- 2026-10-25
 
 **Goal:** A focused 3D core on the repaired Owl RHI — static meshes, PBR, lights and shadows for 2D, isometric and 3D,
 render graph, essential post-processing — with full 3D editing ([details](design/3d-core.md)).

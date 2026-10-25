@@ -9,7 +9,7 @@ Owl Engine is the engine that mixes rendering styles (2D, raycast, voxel, isomet
 | 0.8.0   | Expected 2026-12-06 | Planned     | Ship everywhere: export from any host, Android, Web, mods, accessibility         |
 | 0.7.0   | Expected 2026-11-22 | Planned     | Gameplay & simulation: AI, 2D / 3D physics, audio, determinism, replay           |
 | 0.6.0   | Expected 2026-11-08 | Planned     | Content & scripting: asset cook, animation, PCG, visual scripting, localisation  |
-| 0.5.0   | Expected 2026-10-28 | In progress | 3D core & lighting: meshes, PBR, 2D / 3D lights, shadows, render graph           |
+| 0.5.0   | Released 2026-10-25 | Released    | 3D core & lighting: meshes, PBR, 2D / 3D lights, shadows, render graph           |
 | 0.4.0   | Released 2026-10-20 | Released    | Isometric renderer, pathfinding, MCP server, gamepad, HUD editor, 3 sample games |
 | 0.3.0   | Released 2026-10-11 | Released    | Foundations: bugs, safety nets, Owl RHI, Conan, ergonomic Owl Nest               |
 | 0.2.1   | Released 2026-06-27 | Released    | Voxel engine                                                                     |
