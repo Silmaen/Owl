@@ -123,34 +123,9 @@ fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<
 /**
  * The packages of one platform. Never triggered by a pull request, nor by each push to `main`:
  * they are published once a night from `main` (when it changed), because each one publishes to
- * the site; a manual run packages on demand. It waits for the configuration that built and tested
- * the same platform: an archive built from code whose tests fail has no business existing.
- * Built and published here: the platforms without a tested release tree (arm64, cross compiled).
- *
- * @param idValue The configuration id.
- * @param buildName The configuration name.
- * @param cmakePreset The packaging preset.
- * @param platformName The agent platform, `Linux` or `Windows`.
- * @param tested The configuration that built and tested that platform.
- * @param extraParams Platform-specific parameters (docker platform for arm64).
- */
-fun packageBuild(idValue: String, buildName: String, cmakePreset: String, platformName: String,
-                 tested: BuildType, extraParams: ParametrizedWithType.() -> Unit = {}) =
-        presetBuild(idValue, buildName, cmakePreset, onPullRequest = false, nightly = true,
-                gates = listOf(codeStyle, tested)) {
-            params {
-                text("platform", platformName, display = ParameterDisplay.HIDDEN, allowEmpty = true)
-                text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
-                text("publish_package", "true", display = ParameterDisplay.HIDDEN, allowEmpty = true)
-                text("test_args", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
-                extraParams()
-            }
-        }
-
-/**
- * The packages of a platform whose tested build packages its release tree on `main`
- * (`Package_Release_Main`): this configuration rebuilds nothing, it publishes the archives (and
- * the documentation) of that build, same commit. Nightly, like [packageBuild].
+ * the site; a manual run packages on demand. The tested release tree of the platform writes its
+ * archives on `main`: this configuration rebuilds nothing, it publishes the archives (and the
+ * documentation) of that build, same commit, so an archive never comes from untested code.
  *
  * @param idValue The configuration id.
  * @param buildName The configuration name.
@@ -158,9 +133,10 @@ fun packageBuild(idValue: String, buildName: String, cmakePreset: String, platfo
  * @param platformName The agent platform, `Linux` or `Windows`.
  * @param tested The configuration that built, tested and packaged that platform.
  * @param archive The archive extension of the platform.
+ * @param extraParams Platform-specific parameters (docker platform for arm64).
  */
 fun publishBuild(idValue: String, buildName: String, releasePreset: String, platformName: String,
-                 tested: BuildType, archive: String) =
+                 tested: BuildType, archive: String, extraParams: ParametrizedWithType.() -> Unit = {}) =
         presetBuild(idValue, buildName, releasePreset, onPullRequest = false, nightly = true,
                 gates = listOf(codeStyle, tested)) {
             params {
@@ -168,6 +144,7 @@ fun publishBuild(idValue: String, buildName: String, releasePreset: String, plat
                 text("architecture", "amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
                 text("publish_package", "true", display = ParameterDisplay.HIDDEN, allowEmpty = true)
                 text("test_args", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
+                extraParams()
             }
             dependencies {
                 artifacts(tested) {
@@ -179,6 +156,6 @@ fun publishBuild(idValue: String, buildName: String, releasePreset: String, plat
                     """.trimIndent()
                 }
             }
-            // The archives come from the tested build: cleaning, building or packaging again would lose them.
-            disableSettings("Clean_Output_Folder", "Build_Preset", "Test_Preset", "Deploy")
+            // The archives come from the tested build: cleaning, building, documenting or packaging again would lose them.
+            disableSettings("Clean_Output_Folder", "Build_Preset", "Test_Preset", "Documentation", "Deploy")
         }

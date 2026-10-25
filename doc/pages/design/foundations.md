@@ -131,9 +131,8 @@ build switch:
 - every tree runs `cpack` and writes one archive per CPack component, `OwlEngine-…` (`lib/`, `include/`, `assets/`,
   CMake config) and `OwlNest-…` (`bin/<platform>_<arch>/`: Nest, the runner, shared libraries, assets), copying
   only what ships from a tree that also holds tests and their outputs;
-- on `main`, the Clang builds package the release tree they have just tested (`Package Release`); the nightly x64
-  package configurations publish those archives and the documentation without building; arm64, which has no tested
-  release tree, builds `package-linux` (the release build without tests).
+- on `main`, the Clang release builds package the tree they have just tested; arm64 does the same in its nightly
+  cross build; the nightly package configurations publish those archives and the documentation without building.
 
 The SDK is Release only: a Debug consumer links the Release library through CMake's
 imported-configuration fallback.

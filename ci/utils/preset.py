@@ -42,7 +42,6 @@ class PresetConfig:
         self.is_valid = False
 
         # action related fields
-        self.release_preset: str | None = None
         self.run_coverage: bool = False
         self.run_tests: bool = True
         self.run_documentation: bool = False
@@ -64,7 +63,7 @@ class PresetConfig:
 
     def __import(self):
         """Internal import method: read CMakePresets.json and import the values of this preset."""
-        from ci.utils.cmake import get_preset_config, list_cmake_presets
+        from ci.utils.cmake import get_preset_config
 
         self.raw_config = get_preset_config(self.cmake_preset)
         if not self.raw_config:
@@ -104,8 +103,6 @@ class PresetConfig:
                         self.archive_format = "zip"
                     else:
                         self.archive_format = "tar.gz"
-                if "release_preset" in vendor_conf and vendor_conf["release_preset"] in list_cmake_presets():
-                    self.release_preset = vendor_conf["release_preset"]
                 if "publish_doc" in vendor_conf:
                     self.publish_doc = is_true(vendor_conf["publish_doc"])
                 if "package" in vendor_conf:
@@ -126,8 +123,9 @@ class PresetConfig:
             if "OWL_ENABLE_COVERAGE" in cache_variables:
                 self.run_coverage = is_true(cache_variables["OWL_ENABLE_COVERAGE"]) and self.run_tests
             if "OWL_ENABLE_DOCUMENTATION" in cache_variables:
-                self.run_documentation = is_true(cache_variables["OWL_ENABLE_DOCUMENTATION"]) and (
-                    "Release" in self.cmake_build_types or self.release_preset not in [None, ""]
+                # Doxygen documents the release tree only.
+                self.run_documentation = (
+                    is_true(cache_variables["OWL_ENABLE_DOCUMENTATION"]) and "Release" in self.cmake_build_types
                 )
             if "CMAKE_CXX_COMPILER" in cache_variables:
                 self.compiler = cache_variables["CMAKE_CXX_COMPILER"]
@@ -184,17 +182,6 @@ class PresetConfig:
         if self.build_directory is not None:
             return self.build_directory
         return root / "output" / "build" / self.cmake_preset
-
-    def get_release_build_dir(self) -> Path:
-        """
-        Get the release build directory for this preset.
-
-        :return: The Path to the release build directory.
-        """
-        if self.release_preset is None:
-            return Path()
-        cc = PresetConfig(self.release_preset)
-        return cc.get_build_dir()
 
     def get_docker_image(self) -> str:
         """

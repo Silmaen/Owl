@@ -1,11 +1,10 @@
 import jetbrains.buildServer.configs.kotlin.*
 
-// One configuration per platform publishes both archives (Engine SDK, Owl Nest). The x64 ones come from the tested
-// release tree; arm64 has none (its tested build is a debug one) and cross compiles its own on x64.
+// One configuration per platform publishes both archives (Engine SDK, Owl Nest), taken from the tested release tree.
 val packageLinux = publishBuild("Package_LinuxX64_Engine", "Linux x64",
-        "linux-clang-release", "Linux", linuxClang, archive = "tar.gz")
-val packageArm64 = packageBuild("Package_LinuxArm64_Engine", "Linux arm64",
-        "package-linux-cross-arm64", "Linux", arm64Clang) {
+        "linux-clang-release", "Linux", linuxClangRelease, archive = "tar.gz")
+val packageArm64 = publishBuild("Package_LinuxArm64_Engine", "Linux arm64",
+        "linux-cross-arm64", "Linux", arm64Clang, archive = "tar.gz") {
     text("docker_build_platform", "linux/amd64", display = ParameterDisplay.HIDDEN, allowEmpty = true)
 }
 val packageWindows = publishBuild("Package_WindowsX64_Engine", "Windows x64",

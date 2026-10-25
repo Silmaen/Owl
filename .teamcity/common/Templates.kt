@@ -43,10 +43,6 @@ val globalBuild = Template {
         text("extra_tc_vars", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
         checkbox("run_documentation", "false", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
         checkbox("run_package", "false", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
-        text("release_preset", "", display = ParameterDisplay.HIDDEN, allowEmpty = true)
-        // The release tree of `main` writes the archives (release preset flagged `package`); only the package
-        // configurations publish them.
-        checkbox("package_release", "false", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
         checkbox("publish_package", "false", checked = "true", unchecked = "false", display = ParameterDisplay.HIDDEN)
         // Secrets reach ci_action.py through its environment, never its command line
         // (visible to `ps`, echoed in the log). The referenced parameters are password
@@ -84,17 +80,6 @@ val globalBuild = Template {
         }
 
         script {
-            ciAction("Clean", "Clean_Release", displayName = "Clean Release",
-                preset = "%release_preset%")
-            conditions {
-                doesNotMatch("release_preset", "^${'$'}")
-                // The release build and its tests run on `main` only: a pull request
-                // gets its verdict from the debug build, in half the time.
-                equals("teamcity.build.branch.is_default", "true")
-            }
-        }
-
-        script {
             ciAction("Build", "Build_Preset", displayName = "Build", extraArgs = "%build_args%")
         }
 
@@ -109,77 +94,23 @@ val globalBuild = Template {
             ciAction("Coverage", "Code_Coverage", displayName = "Code Coverage")
             conditions {
                 equals("run_coverage", "true")
-                doesNotEqual("platform", "Windows")
-            }
-        }
-
-        script {
-            // Windows computes the coverage on `main` only, not on pull requests.
-            ciAction("Coverage", "Code_Coverage_Windows", displayName = "Code Coverage")
-            conditions {
-                equals("run_coverage", "true")
-                equals("platform", "Windows")
-                equals("teamcity.build.branch.is_default", "true")
-            }
-        }
-
-        script {
-            ciAction("Build", "Build_Release_Main", displayName = "Build Release",
-                preset = "%release_preset%")
-            conditions {
-                doesNotMatch("release_preset", "^${'$'}")
-                // The release build and its tests run on `main` only: a pull request
-                // gets its verdict from the debug build, in half the time.
-                equals("teamcity.build.branch.is_default", "true")
-            }
-        }
-
-        script {
-            // Elsewhere the release tree only serves Doxygen, which reads the sources: configured, not compiled.
-            ciAction("Build", "Build_Release_Doc", displayName = "Configure Release",
-                preset = "%release_preset%", extraArgs = "-- --configure_only")
-            conditions {
-                doesNotMatch("release_preset", "^${'$'}")
-                doesNotEqual("teamcity.build.branch.is_default", "true")
-                equals("run_documentation", "true")
-            }
-        }
-
-        script {
-            ciAction("Test", "Test_Release_Main", displayName = "Test Release",
-                preset = "%release_preset%", extraArgs = "%test_args%")
-            conditions {
-                doesNotMatch("release_preset", "^${'$'}")
-                // The release build and its tests run on `main` only: a pull request
-                // gets its verdict from the debug build, in half the time.
-                equals("teamcity.build.branch.is_default", "true")
-                equals("run_tests", "true")
-            }
-        }
-
-        script {
-            ciAction("Package", "Package_Release_Main", displayName = "Package Release",
-                preset = "%release_preset%")
-            conditions {
-                doesNotMatch("release_preset", "^${'$'}")
-                equals("teamcity.build.branch.is_default", "true")
-                equals("package_release", "true")
             }
         }
 
         script {
             ciAction("Documentation", "Documentation")
             conditions {
-                // Documents the release build (a package preset is one; a debug preset with
-                // documentation builds its release for it, off `main` too).
+                // A release tree with documentation (`linux-clang-release`), pull requests included.
                 equals("run_documentation", "true")
             }
         }
 
         script {
+            // The tested release tree of `main` writes its archives; the package configurations publish them.
             ciAction("Package", "Deploy", displayName = "Package")
             conditions {
                 equals("run_package", "true")
+                equals("teamcity.build.branch.is_default", "true")
             }
         }
 

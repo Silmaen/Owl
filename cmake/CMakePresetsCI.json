@@ -23,7 +23,6 @@
       },
       "vendor": {
         "silmaen": {
-          "release_preset": "",
           "run_tests": false
         }
       }
@@ -36,11 +35,6 @@
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "OFF",
         "OWL_TESTING": "OFF"
-      },
-      "vendor": {
-        "silmaen": {
-          "release_preset": ""
-        }
       }
     },
     {
@@ -53,11 +47,6 @@
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON",
         "OWL_TEST_SHUFFLE": "ON"
-      },
-      "vendor": {
-        "silmaen": {
-          "release_preset": ""
-        }
       }
     },
     {
@@ -70,11 +59,6 @@
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON",
         "OWL_TEST_SHUFFLE": "ON"
-      },
-      "vendor": {
-        "silmaen": {
-          "release_preset": ""
-        }
       }
     },
     {
@@ -87,29 +71,23 @@
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "OFF",
         "OWL_TEST_SHUFFLE": "ON"
-      },
-      "vendor": {
-        "silmaen": {
-          "release_preset": ""
-        }
       }
     },
     {
       "name": "linux-cross-arm64",
-      "inherits": "linux-clang-debug",
+      "inherits": "linux-clang-release",
       "toolchainFile": "${sourceDir}/cmake/toolchains/linux-aarch64-clang.cmake",
       "cacheVariables": {
         "OWL_TEST_TIMEOUT": "3600",
         "OWL_SCRIPT_TIME_SCALE": "8",
-        "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_DOCUMENTATION": "OFF",
-        "OWL_BENCHMARK": "OFF",
         "OWL_RENDER_TESTS": "OFF"
       },
       "vendor": {
         "silmaen": {
           "docker_image": "builder-cross-arm64-ubuntu2604",
-          "release_preset": ""
+          "package": true,
+          "publish_doc": false
         }
       }
     },
@@ -119,11 +97,11 @@
       "cacheVariables": {
         "OWL_BENCHMARK": "ON",
         "OWL_TESTING": "OFF",
-        "OWL_BUILD_NEST": "OFF"
+        "OWL_BUILD_NEST": "OFF",
+        "OWL_ENABLE_DOCUMENTATION": "OFF"
       },
       "vendor": {
         "silmaen": {
-          "release_preset": "",
           "package": false
         }
       }
@@ -136,11 +114,11 @@
         "OWL_ENABLE_ADDRESS_SANITIZER": "ON",
         "OWL_BENCHMARK": "OFF",
         "OWL_TESTING": "OFF",
-        "OWL_BUILD_NEST": "OFF"
+        "OWL_BUILD_NEST": "OFF",
+        "OWL_ENABLE_DOCUMENTATION": "OFF"
       },
       "vendor": {
         "silmaen": {
-          "release_preset": "",
           "package": false
         }
       }
@@ -156,11 +134,11 @@
         "OWL_MODULE_GUI": "OFF",
         "OWL_BUILD_NEST": "OFF",
         "OWL_BENCHMARK": "OFF",
-        "OWL_RENDER_TESTS": "OFF"
+        "OWL_RENDER_TESTS": "OFF",
+        "OWL_ENABLE_DOCUMENTATION": "OFF"
       },
       "vendor": {
         "silmaen": {
-          "release_preset": "",
           "package": false
         }
       }
@@ -170,11 +148,11 @@
       "inherits": "linux-clang-release",
       "cacheVariables": {
         "OWL_INCLUDE_CHECK": "ON",
-        "OWL_BENCHMARK": "ON"
+        "OWL_BENCHMARK": "ON",
+        "OWL_ENABLE_DOCUMENTATION": "OFF"
       },
       "vendor": {
         "silmaen": {
-          "release_preset": "",
           "package": false
         }
       }

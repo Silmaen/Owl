@@ -138,7 +138,7 @@ is linked, and the engine shaders are baked again.
 | `linux-sanitizer-undefined-behavior` | UndefinedBehaviorSanitizer   |
 | `linux-include-check`                | Strict-libc++ include check  |
 | `linux-clang-minimal`                | Every optional module off    |
-| `linux-cross-arm64`                  | arm64 cross build (Debug)    |
+| `linux-cross-arm64`                  | arm64 cross build (Release)  |
 | `linux-bench`                        | `owl_bench` harness          |
 | `linux-fuzz`                         | libFuzzer targets            |
 
@@ -149,9 +149,8 @@ SDK: `lib/`, `include/`, `assets/`, `lib/cmake/OwlEngine/`) and, when the editor
 runner, their shared libraries and assets in `bin/<platform>_<arch>/`, the editor SVG icons in
 `bin/<platform>_<arch>/assets/icons/`, the Engine Demo in `engine_demo/` and the sample games in
 `samples/`). The SDK ships the Release library only: build the engine in Debug from the sources for a Debug one. The CI packages the release tree it has just
-tested (`linux-clang-release`, `windows-clang-release`), so the archive holds the tested binaries;
-`package-linux-cross-arm64` (the arm64 cross build without the tests) packages arm64, which has no tested release
-tree.
+tested (`linux-clang-release`, `windows-clang-release`, `linux-cross-arm64`: the presets with `package: true`), so the
+archive holds the tested binaries.
 
 ```bash
 ./docker_run.sh cmake --build output/build/linux-clang-release
@@ -219,7 +218,7 @@ Until then a user starts the unsigned program through **More info** > **Run anyw
 
 ### arm64 cross compilation
 
-`linux-cross-arm64` (and `package-linux-cross-arm64`) build for Linux arm64 on an x86_64 machine, with the toolchain
+`linux-cross-arm64` (a Release tree inheriting `linux-clang-release`) builds for Linux arm64 on an x86_64 machine, with the toolchain
 file `cmake/toolchains/linux-aarch64-clang.cmake`: Clang `--target=aarch64-linux-gnu`, lld and an arm64 sysroot.
 Only the binaries the build runs (`OwlShaderBake`) and the tests go through `qemu-aarch64`, started by the kernel's
 `binfmt_misc`.

@@ -28,11 +28,11 @@ natively, never install a tool on the host; if a tool is missing from the image,
 ./docker_run.sh --perf perf ...                                      # ptrace / perf events
 ```
 
-- **Clang presets only** for dev, tests and coverage: `linux-clang-release` (default),
-  `linux-clang-debug` (coverage on). GCC presets exist for CI parity only.
+- **Clang presets** for dev and tests: `linux-clang-release` (default), `linux-clang-debug`. Coverage is measured
+  with both compilers: `linux-gcc-debug` (the pull-request gate) and `linux-clang-debug` (nightly).
 - Other presets: `linux-clang-tidy`, `linux-sanitizer-{address,thread,undefined-behavior}`,
-  `linux-cross-arm64` (arm64 nightly, tests under QEMU), `linux-clang-minimal` (every optional engine module off,
-  `OWL_MODULE_*`, see `doc/pages/building.md`), `windows-{gcc,clang}-{release,debug}`, `package-linux` (arm64 packages; `cpack` works in any tree).
+  `linux-cross-arm64` (arm64 release, nightly, tests under QEMU, packaged), `linux-clang-minimal` (every optional engine module off,
+  `OWL_MODULE_*`, see `doc/pages/building.md`), `windows-{gcc,clang}-{release,debug}`; `cpack` works in any release tree.
 - Dependencies: Conan 2 only (`conanfile.py`, `conan.lock`); in a worktree add `-DOWL_CONAN_HOME=/fhome/.conan2-owl`;
   see `.claude/rules/dependencies.md`.
 - Output: `output/build/<preset>/{bin,lib}`, install in `output/install/<preset>/`.
@@ -48,11 +48,11 @@ natively, never install a tool on the host; if a tool is missing from the image,
 |----------------------------------------------------|------------------------------------------------------------------------------------------------|
 | `Build`                                            | Configure + build the preset.                                                                  |
 | `Test`                                             | CTest with reports.                                                                            |
-| `Coverage`                                         | gcovr through `gcovr.cfg` (never pass filters on the CLI); use `linux-clang-debug`.            |
+| `Coverage`                                         | gcovr via `gcovr.cfg` (never CLI filters); `linux-gcc-debug` or `linux-clang-debug`.           |
 | `CodeStyle`                                        | Read-only gate: clang-format, codespell, comment quality, docs, cpp-style, headers, ruff/mypy. |
 | `ClangTidy`                                        | clang-tidy (or `--tool=analyzer`) over `compile_commands.json`; PR = diff-scoped.              |
 | `Documentation`                                    | Doxygen with `WARN_AS_ERROR=YES`.                                                              |
-| `Bench`                                            | `owl_bench` against `test/bench/baseline/<preset>.json` (e.g. `linux-bench`).                       |
+| `Bench`                                            | `owl_bench` against `test/bench/baseline/<preset>.json` (e.g. `linux-bench`).                  |
 | `Fuzz`                                             | libFuzzer targets for a fixed time each (`linux-fuzz`).                                        |
 | `IncludeCheck`                                     | Every header and source compiled alone on strict libc++, no PCH (`linux-include-check`).       |
 | `DependencyReport`                                 | Informative list of dependencies with a newer version.                                         |

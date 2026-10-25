@@ -84,7 +84,8 @@ class Coverage(BaseAction):
                     "suspicious_hits.warn_once_per_file",
                     "--json-summary",
                     f"{summary_file}",
-                    ".",
+                    # Only this tree's notes: another compiler's tree in the same checkout breaks gcov.
+                    f"{preset.get_build_dir()}",
                 ]
             )
             if exit_code != 0:

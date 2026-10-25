@@ -48,6 +48,7 @@ measured on 2026-10-19 and 2026-10-20:
 | Smaller artefacts      | Done: test reports, coverage, documentation and packages only, no binaries nor libraries                         |
 | Fewer duplicate builds | Done: the bridge plugin cancels superseded builds and reuses a green verdict for the same commit                 |
 | Shorter builds         | Done: measured (cold `linux-clang-release`: 2685 s CPU, tests 40 %, Owl Nest 29 %), ccache warm on every agent   |
+| Single tree            | Done: one tree per configuration, tested then packaged; Linux Clang Release is the fast verdict                  |
 
 ## Cost review 2026-10 {#ci-streamlining-cost-review}
 
@@ -73,14 +74,28 @@ the window.
 Decisions:
 
 - One GCC build only (Debug, tests and coverage, on pull requests and `main`); Windows GCC is removed.
+- One tree per configuration: Release for the pull-request verdict, the tests and the packages, Debug only for GCC and the nightly Clang.
 - The nightly suites and Bench stay as they are (the Bench reds were explained changes or real regressions).
 - The single Windows agent `hecate` is the bottleneck (31 min median queue on `main`).
 - GitHub branch protection "require branches to be up to date" is on, with the admin bypass kept for trivial pull
   requests.
 
+Measured on the last green `main` builds before the single-tree layout:
+
+| Build                   | Total (min) | Detail                                                                                 |
+|-------------------------|------------:|----------------------------------------------------------------------------------------|
+| Linux Clang             |          31 | debug tests 8 min against 2 min 20 for release tests                                   |
+| Windows Clang           |        32.5 | debug build 17.5 min at 59 % ccache; debug tests 5 min 52 against 1 min 03 for release |
+| Linux arm64             |          65 | debug tests 50 min under QEMU                                                          |
+| Package arm64 (rebuild) |          16 | ccache hit rate 2.7 %                                                                  |
+
+Done in this cycle:
+
+- A fast stage 0: a draft pull request runs Code Style and Linux x64 Clang Release only.
+- One GCC build (Debug, tests, coverage); the Clang Debug build with its coverage runs nightly.
+- A `/check --quick` skill (with `--fix`) for agents; no git hook.
+
 Planned, in parallel with v0.6.0 development:
 
-- A fast stage 0 reported first.
-- A `/check --quick` skill (with `--fix`) for agents; no git hook.
 - The Android, Web and arm64 runners (v0.8.0) build at night and at release, on a pull request only when its diff
   touches their backend.
