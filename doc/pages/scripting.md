@@ -671,7 +671,7 @@ The hook keeps firing until the call returns, so a script cannot swallow the err
 `pcall` and loop on.
 
 The environment variable `OWL_SCRIPT_TIME_SCALE` (a whole factor) multiplies the default time budget of the
-process; the scenario and export tests set it from the CMake option of the same name: 8 on the emulated arm64 presets,
+process; the scenario and export tests set it from the CMake option of the same name: 8 on the arm64 preset (tests under QEMU),
 4 on the sanitizer presets, where every call runs many times slower than natively.
 
 ### What happens on failure
