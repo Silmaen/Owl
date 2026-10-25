@@ -145,11 +145,12 @@ public:
 
 	/**
 	 * @brief
-	 *  Run the actions whose Ctrl or Alt chord ImGui saw pressed this frame, unless a text field is being edited.
+	 *  Run the actions whose Ctrl or Alt chord ImGui saw pressed this frame, unless a text field is being edited, and
+	 *  those on a function key (F1 to F12), which never types text.
 	 *
 	 * Called once per ImGui frame. The UI layer swallows key events while an ImGui window has the keyboard focus
-	 * (any panel, or the menu layer `Alt` toggles), so chords would only work with the viewport focused; this reads
-	 * them from ImGui instead. An action already run by `dispatch` for the same press is not run twice.
+	 * (any panel, or the menu layer `Alt` toggles), so these shortcuts would only work with the viewport focused; this
+	 * reads them from ImGui instead. An action already run by `dispatch` for the same press is not run twice.
 	 * @return The number of actions run.
 	 */
 	auto dispatchImGuiChords() -> size_t;

@@ -38,6 +38,8 @@ protected:
 								  [this]() -> void { ++m_runs; });
 		m_registry.registerAction("plain.w", "Plain", {input::key::W, Modifiers::None},
 								  [this]() -> void { ++m_plainRuns; });
+		m_registry.registerAction("help.context", "Help", {input::key::F1, Modifiers::None},
+								  [this]() -> void { ++m_helpRuns; });
 	}
 
 	void TearDown() override {
@@ -60,6 +62,7 @@ protected:
 	ActionRegistry m_registry;
 	int m_runs = 0;
 	int m_plainRuns = 0;
+	int m_helpRuns = 0;
 };
 
 }// namespace
@@ -91,6 +94,14 @@ TEST_F(ActionRegistryChordTest, IgnoresSuspendedRegistryAndPlainKeys) {
 	frame(false, false, ImGuiKey_W);
 	frame(false, true, ImGuiKey_W);
 	EXPECT_EQ(m_plainRuns, 0);
+}
+
+TEST_F(ActionRegistryChordTest, RunsFunctionKeysEvenWhilePanelsHoldTheKeyboard) {
+	frame(false, false, ImGuiKey_F1);
+	frame(false, true, ImGuiKey_F1);
+	frame(false, true, ImGuiKey_F1);
+	frame(false, false, ImGuiKey_F1);
+	EXPECT_EQ(m_helpRuns, 1);
 }
 
 TEST(ActionRegistryRun, RunsActionsByIdentifier) {

@@ -284,13 +284,17 @@ auto ActionRegistry::toImGuiChord(const Shortcut& iShortcut) -> int {
 auto ActionRegistry::dispatchImGuiChords() -> size_t {
 	auto runByEvent = std::move(m_runByEvent);
 	m_runByEvent.clear();
-	if (m_suspended || ImGui::GetIO().WantTextInput)
+	if (m_suspended)
 		return 0;
+	const bool typing = ImGui::GetIO().WantTextInput;
 	size_t count = 0;
 	for (const auto& action: m_actions) {
 		const auto& shortcut = action.currentShortcut;
-		if (shortcut.isEmpty() ||
-			(!hasFlag(shortcut.modifiers, Modifiers::Ctrl) && !hasFlag(shortcut.modifiers, Modifiers::Alt)))
+		if (shortcut.isEmpty())
+			continue;
+		const bool isChord = hasFlag(shortcut.modifiers, Modifiers::Ctrl) || hasFlag(shortcut.modifiers, Modifiers::Alt);
+		const bool isFunctionKey = shortcut.key >= input::key::F1 && shortcut.key <= input::key::F12;
+		if (!isFunctionKey && (!isChord || typing))
 			continue;
 		const int chord = toImGuiChord(shortcut);
 		if (chord == 0 || !ImGui::IsKeyChordPressed(chord) || runByEvent.contains(action.id))
