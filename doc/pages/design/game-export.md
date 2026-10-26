@@ -72,6 +72,37 @@ flowchart LR
 - Shaders: precompiled at build time and embedded in the pack (v0.3.0), no Slang compile at first run.
 - The exported binaries keep the build-tree RPATH after `$ORIGIN`; harmless (`$ORIGIN` comes first) but not clean.
 
+## v0.6.0 — a game ships only its content
+
+### What the pack holds {#game-export-content}
+
+`AssetScanner::collectEngineAssets` adds every shader, font, `logo/` and `icons/` file of every asset directory of the
+session, Owl Nest's included. Measured on the Breakout export: 80 SPIR-V, 80 hashes and 26 Slang sources for a game
+drawn by `Renderer2D` alone, the 17 engine fonts, the trigger and light gizmos of the viewport, both owl logos.
+
+| Content       | Packed                                                                        |
+|---------------|-------------------------------------------------------------------------------|
+| Shaders       | SPIR-V of the renderers of the `RendererStack` and of the passes they use     |
+| Shader source | None                                                                          |
+| Fonts         | Fonts referenced by the scenes, HUDs and scripts, plus the default font       |
+| Engine images | The window icon of the game                                                   |
+| Owl Nest      | Nothing: the scanner reads the engine and project directories only            |
+
+The export report lists what was left out.
+
+### Reading in the pack {#game-export-in-memory}
+
+The runner opens the pack and extracts every entry into `<game>/assets/` before loading anything
+(`Application::init`, `extractPack`): the compressed and obfuscated pack ends as readable files next to the game.
+
+| Item            | Target                                                                             |
+|-----------------|------------------------------------------------------------------------------------|
+| Loaders         | Textures, meshes, sounds, fonts, Lua, documents and shaders load from bytes        |
+| Asset lookup    | A pack-backed source in `AssetSearchPaths`, before the asset directories           |
+| `readEntry`     | Thread-safe and parallel, for the async texture and mesh loads                     |
+| Extraction      | None at runtime; `extractPack` stays for the tools                                 |
+| Streamed sounds | Read from the pack through a libsndfile virtual I/O                                |
+
 ## v0.8.0 — export to every target
 
 Plan of the export for the five targets, summarised in the [Roadmap](../roadmap.md); the platforms themselves are in
