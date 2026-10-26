@@ -46,6 +46,7 @@ constexpr float g_hierarchyRatio = 0.42f;
 constexpr std::array g_panels{panelWindow::hierarchy,    panelWindow::properties,  panelWindow::contentBrowser,
 							  panelWindow::log,          panelWindow::console,     panelWindow::stats,
 							  panelWindow::voxelPalette, panelWindow::tilePalette, panelWindow::sceneSettings,
+							  panelWindow::assetImport,
 							  panelWindow::help};
 
 auto isPanelWindow(const ImGuiID iWindowId) -> bool {
@@ -110,7 +111,8 @@ void DockLayout::build(const uint32_t iDockSpaceId, const LayoutPreset iPreset,
 
 	ImGui::DockBuilderDockWindow(panelWindow::hierarchy, hierarchy);
 	for (const auto* name:
-		 {panelWindow::properties, panelWindow::tilePalette, panelWindow::voxelPalette, panelWindow::sceneSettings})
+		 {panelWindow::properties, panelWindow::tilePalette, panelWindow::voxelPalette, panelWindow::sceneSettings,
+		  panelWindow::assetImport})
 		ImGui::DockBuilderDockWindow(name, properties);
 	// The help pages need width: they open among the documents.
 	ImGui::DockBuilderDockWindow(panelWindow::help, center);

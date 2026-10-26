@@ -9,6 +9,7 @@
 #pragma once
 
 #include "AssetThumbnails.h"
+#include "../commands/CommandRegistry.h"
 
 #include <owlgui.h>
 
@@ -228,6 +229,32 @@ public:
 		m_meshOpenCallback = std::move(iCallback);
 	}
 
+	/// Signature of the callback running a registry command: true when it succeeded.
+	using CommandCallback = std::function<bool(const std::string& iName, const commands::CommandArgs& iArgs)>;
+
+	/**
+	 * @brief
+	 *  Set the callback running the file gestures (rename, move, delete, cook) as registry commands.
+	 * @param[in] iCallback The callback.
+	 */
+	void setCommandCallback(CommandCallback iCallback) { m_commandCallback = std::move(iCallback); }
+
+	/**
+	 * @brief
+	 *  Set the callback showing the import settings of an asset.
+	 * @param[in] iCallback Called with the asset path.
+	 */
+	void setImportSettingsCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_importSettingsCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
+	 *  Get the file or folder last clicked.
+	 * @return Its path, empty when nothing is selected.
+	 */
+	[[nodiscard]] auto getSelectedPath() const -> const std::filesystem::path& { return m_selectedPath; }
+
 private:
 	/// The actual folder
 	std::filesystem::path m_currentPath;
@@ -368,6 +395,15 @@ private:
 	 */
 	void moveItem(const std::filesystem::path& iSource, const std::filesystem::path& iDestDir);
 
+	/**
+	 * @brief
+	 *  Run a file gesture through the command callback and rescan on success.
+	 * @param[in] iName Command name.
+	 * @param[in] iArgs Command arguments.
+	 * @return True when the command ran.
+	 */
+	auto runCommand(const std::string& iName, const commands::CommandArgs& iArgs) -> bool;
+
 	/// Callback for opening a scene file from the browser.
 	std::function<void(const std::filesystem::path&)> m_sceneOpenCallback;
 	std::function<void(const std::filesystem::path&)> m_codeOpenCallback;
@@ -391,6 +427,10 @@ private:
 	std::function<void(const std::filesystem::path&)> m_meshPlaceCallback;
 	/// Called when a mesh is opened from its context menu.
 	std::function<void(const std::filesystem::path&)> m_meshOpenCallback;
+	/// Runs the file gestures as registry commands.
+	CommandCallback m_commandCallback;
+	/// Called to show the import settings of an asset.
+	std::function<void(const std::filesystem::path&)> m_importSettingsCallback;
 };
 
 }// namespace owl::nest::panel

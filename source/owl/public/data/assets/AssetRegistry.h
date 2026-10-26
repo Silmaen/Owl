@@ -219,6 +219,24 @@ public:
 
 	/**
 	 * @brief
+	 *  Rewrite the asset references of an Owl document by GUID, the rest of the text kept byte for byte.
+	 *
+	 * Only the values of the reference keys (`texture`, `mesh`, `scriptPath`, `tilesetPath`...) of a block YAML text are
+	 * changed, and only when the registry knows the file; what follows a document end (`...`) is kept as is.
+	 * @param[in] iText The document text.
+	 * @return The rewritten text.
+	 */
+	[[nodiscard]] auto rewriteReferences(std::string_view iText) const -> std::string;
+
+	/**
+	 * @brief
+	 *  Get the scanned directories that accept sidecars (the projects edited in Owl Nest).
+	 * @return Their paths, highest priority first.
+	 */
+	[[nodiscard]] auto getEditableDirectories() const -> std::vector<std::filesystem::path>;
+
+	/**
+	 * @brief
 	 *  Snapshot of every registered asset.
 	 * @return The entries, in no particular order.
 	 */

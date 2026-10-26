@@ -13,6 +13,8 @@
 #include "core/external/yaml.h"
 
 #include <algorithm>
+#include <array>
+#include <format>
 #include <map>
 #include <mutex>
 #include <ranges>
@@ -435,6 +437,61 @@ auto AssetRegistry::toAssetReference(const std::string_view iPath) const -> std:
 		return std::string{iPath};
 	const auto entry = find(*guid);
 	return formatReference(*guid, entry ? entry->path : std::string{iPath});
+}
+
+auto AssetRegistry::rewriteReferences(const std::string_view iText) const -> std::string {
+	static constexpr std::array<std::string_view, 22> referenceKeys{
+			"texture",		  "normalTexture",	"roughnessTexture", "baseColorMap", "metallicMap",	 "roughnessMap",
+			"normalMap",	  "occlusionMap",	"emissiveMap",		"mesh",			"material",		 "parent",
+			"scriptPath",	  "hdri",			"tilesetPath",		"tilemapPath",	"prefabAssetPath", "atlasPath",
+			"soundAsset",	  "LevelName",		"Hud",				"Tileset"};
+	const auto headerEnd = std::min(iText.size(), iText.find("\n...\n"));
+	std::string out;
+	out.reserve(iText.size());
+	size_t cursor = 0;
+	while (cursor < headerEnd) {
+		const auto lineEnd = std::min(headerEnd, iText.find('\n', cursor));
+		const auto line = iText.substr(cursor, lineEnd - cursor);
+		cursor = lineEnd == headerEnd ? headerEnd : lineEnd + 1;
+		const auto separator = line.find(": ");
+		auto keyStart = line.find_first_not_of(' ');
+		if (keyStart != std::string_view::npos && line.substr(keyStart).starts_with("- "))
+			keyStart += 2;
+		std::string rewritten;
+		if (separator != std::string_view::npos && keyStart != std::string_view::npos && keyStart < separator &&
+			std::ranges::find(referenceKeys, line.substr(keyStart, separator - keyStart)) != referenceKeys.end()) {
+			auto value = line.substr(separator + 2);
+			while (!value.empty() && (value.back() == ' ' || value.back() == '\r')) value.remove_suffix(1);
+			const bool quoted = value.size() >= 2 && (value.front() == '\'' || value.front() == '"') &&
+								value.back() == value.front();
+			const auto bare = quoted ? value.substr(1, value.size() - 2) : value;
+			std::string reference;
+			if (bare.starts_with(g_TextureNamePrefix))
+				reference = toAssetReference(bare.substr(g_TextureNamePrefix.size()));
+			else if (bare.starts_with("pat:"))
+				reference = toAssetReference(bare.substr(4));
+			else if (!bare.starts_with(g_GuidReferencePrefix))
+				reference = toAssetReference(bare);
+			if (reference.starts_with(g_GuidReferencePrefix)) {
+				const auto quote = quoted ? std::string(1, value.front()) : std::string{};
+				rewritten = std::format("{}{}{}{}", line.substr(0, separator + 2), quote, reference, quote);
+			}
+		}
+		out += rewritten.empty() ? std::string{line} : rewritten;
+		if (lineEnd != headerEnd)
+			out += '\n';
+	}
+	out.append(iText.substr(headerEnd));
+	return out;
+}
+
+auto AssetRegistry::getEditableDirectories() const -> std::vector<std::filesystem::path> {
+	const ReadLock lock(m_mutex);
+	std::vector<std::filesystem::path> directories;
+	for (const auto& root: m_roots)
+		if (root.editable)
+			directories.push_back(root.path);
+	return directories;
 }
 
 auto AssetRegistry::getEntries() const -> std::vector<Entry> {

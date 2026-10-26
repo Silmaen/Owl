@@ -11,6 +11,7 @@
 #include "../AssetKind.h"
 #include "../DockLayout.h"
 
+#include <data/assets/AssetMeta.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
@@ -36,6 +37,7 @@
 #include <optional>
 #include <string>
 #include <system_error>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -340,7 +342,9 @@ void ContentBrowser::requestScan(const std::filesystem::path& iPath) {
 				if (!exists(iPath) || !is_directory(iPath))
 					return;
 				std::error_code ec;
-				for (const auto& entry: std::filesystem::directory_iterator(iPath, ec)) buffer->push_back(entry);
+				for (const auto& entry: std::filesystem::directory_iterator(iPath, ec))
+					if (entry.path().extension() != data::assets::g_MetaExtension)
+						buffer->push_back(entry);
 				std::ranges::sort(*buffer, [](const auto& iA, const auto& iB) -> auto {
 					if (iA.is_directory() != iB.is_directory())
 						return iA.is_directory();
@@ -720,6 +724,14 @@ void ContentBrowser::renderContextMenu() {
 		if (m_selectedPath.extension() == ".owlmacro" && m_codeOpenCallback &&
 			gui::widgets::menuItem({.glyph = gui::icon::fileCode2, .label = "Edit as Text"}))
 			m_codeOpenCallback(m_selectedPath);
+		if (!isDir && data::assets::importerOf(m_selectedPath) == data::assets::Importer::Texture &&
+			m_importSettingsCallback &&
+			gui::widgets::menuItem({.glyph = gui::icon::slidersHorizontal, .label = "Import Settings"}))
+			m_importSettingsCallback(m_selectedPath);
+		if (data::assets::importerOf(m_selectedPath) || isDir) {
+			if (gui::widgets::menuItem({.glyph = gui::icon::package, .label = isDir ? "Cook Folder" : "Cook"}))
+				std::ignore = runCommand("asset.cook", {{"path", m_selectedPath.string()}});
+		}
 		if (gui::widgets::menuItem({.glyph = gui::icon::pencil, .label = "Rename"})) {
 			m_renaming = true;
 			m_renameBuffer = itemName;
@@ -755,17 +767,8 @@ void ContentBrowser::renderContextMenu() {
 			ImGui::CloseCurrentPopup();
 		}
 		if (submitted || okClicked) {
-			if (!m_renameBuffer.empty()) {
-				const auto newPath = m_selectedPath.parent_path() / m_renameBuffer;
-				std::error_code ec;
-
-				std::filesystem::rename(m_selectedPath, newPath, ec);
-				if (ec)
-
-					OWL_CORE_ERROR("Failed to rename '{}': {}.", m_selectedPath.filename().string(), ec.message())
-				else
-					m_rescanRequested = true;
-			}
+			if (!m_renameBuffer.empty() && m_renameBuffer != m_selectedPath.filename().string())
+				std::ignore = runCommand("asset.rename", {{"path", m_selectedPath.string()}, {"name", m_renameBuffer}});
 			m_renaming = false;
 			m_selectedPath.clear();
 
@@ -813,19 +816,19 @@ void ContentBrowser::renderContextMenu() {
 void ContentBrowser::deleteSelected() {
 	if (m_selectedPath.empty() || !exists(m_selectedPath))
 		return;
-
-	std::error_code ec;
-	if (is_directory(m_selectedPath)) {
-		std::filesystem::remove_all(m_selectedPath, ec);
-	} else {
-		std::filesystem::remove(m_selectedPath, ec);
-	}
-
-	if (ec)
-		OWL_CORE_ERROR("Failed to delete '{}': {}.", m_selectedPath.filename().string(), ec.message())
-
+	std::ignore = runCommand("asset.delete", {{"path", m_selectedPath.string()}});
 	m_selectedPath.clear();
-	m_rescanRequested = true;
+}
+
+auto ContentBrowser::runCommand(const std::string& iName, const commands::CommandArgs& iArgs) -> bool {
+	if (!m_commandCallback) {
+		OWL_CORE_WARN("ContentBrowser: No command runner, {} ignored.", iName)
+		return false;
+	}
+	const bool done = m_commandCallback(iName, iArgs);
+	if (done)
+		m_rescanRequested = true;
+	return done;
 }
 
 void ContentBrowser::createFolder() {
@@ -901,25 +904,9 @@ void ContentBrowser::handleFileDrop(const std::vector<std::filesystem::path>& iP
 }
 
 void ContentBrowser::moveItem(const std::filesystem::path& iSource, const std::filesystem::path& iDestDir) {
-	const auto destPath = iDestDir / iSource.filename();
-	if (iSource == destPath)
+	if (iSource.parent_path() == iDestDir || iSource == iDestDir)
 		return;
-
-	std::error_code ec;
-	std::filesystem::rename(iSource, destPath, ec);
-	if (ec) {
-		// rename fails across filesystems, fall back to copy + delete
-		std::filesystem::copy(
-				iSource, destPath,
-				std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing, ec);
-		if (!ec) {
-			std::filesystem::remove_all(iSource, ec);
-		}
-		if (ec)
-			OWL_CORE_ERROR("Failed to move '{}': {}.", iSource.filename().string(), ec.message())
-	}
-	if (!ec)
-		m_rescanRequested = true;
+	std::ignore = runCommand("asset.move", {{"path", iSource.string()}, {"folder", iDestDir.string()}});
 }
 
 }// namespace owl::nest::panel

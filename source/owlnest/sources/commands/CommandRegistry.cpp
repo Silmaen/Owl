@@ -14,6 +14,7 @@
 #include "ComponentCommands.h"
 #include "EntityCommands.h"
 #include "HierarchyCommands.h"
+#include "AssetCommands.h"
 #include "HudCommands.h"
 #include "Macro.h"
 #include "PrefabCommands.h"
@@ -1106,6 +1107,7 @@ CommandRegistry::CommandRegistry() {
 		 .factory = {},
 		 .run = redoEdit});
 	addHudCommands(*this);
+	addAssetCommands(*this);
 	add(getMacroRunSpec());
 }
 

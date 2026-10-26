@@ -39,6 +39,7 @@
 #include "panel/ProjectSettings.h"
 #include "panel/RecoveryPrompt.h"
 #include "panel/SceneHierarchy.h"
+#include "panel/AssetImport.h"
 #include "panel/SceneSettings.h"
 #include "panel/SettingsPanel.h"
 #include "panel/StatusBar.h"
@@ -1173,6 +1174,8 @@ private:
 	panel::ProjectSettings m_projectSettings;
 	/// Scene-wide rendering / physics settings panel.
 	panel::SceneSettings m_sceneSettings;
+	/// Import settings of the asset selected in the content browser.
+	panel::AssetImport m_assetImport;
 	/// Log output panel (filterable).
 	panel::LogPanel m_logPanel;
 	/// Command console and journal of the session.

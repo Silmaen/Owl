@@ -15,6 +15,7 @@
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -235,4 +236,36 @@ TEST_F(AssetRegistryTest, NewFileIsRegistered) {
 	EXPECT_FALSE(registry.find(*guid));
 	registry.removeDirectory(m_root);
 	EXPECT_EQ(registry.size(), 0u);
+}
+
+TEST_F(AssetRegistryTest, RewriteReferencesTouchesOnlyReferenceKeys) {
+	AssetRegistry registry;
+	std::ignore = registry.addDirectory(m_root, true);
+	const auto texture = formatReference(*registry.findGuid("textures/hero.png"), "textures/hero.png");
+	const auto script = formatReference(*registry.findGuid("scripts/hero.lua"), "scripts/hero.lua");
+	const std::string text = std::format("# comment\n"
+										 "Entities:\n"
+										 "  - Entity: 1\n"
+										 "    SpriteRenderer:\n"
+										 "      texture: nam:textures/hero.png\n"
+										 "    LuaScript:\n"
+										 "      scriptPath: 'scripts/hero.lua'\n"
+										 "      properties:\n"
+										 "        - name: icon\n"
+										 "          value: textures/hero.png\n"
+										 "    Other:\n"
+										 "      mesh: missing.glb\n"
+										 "      tilesetPath: {}\n"
+										 "...\n"
+										 "texture: textures/hero.png\n",
+										 texture);
+	const auto rewritten = registry.rewriteReferences(text);
+	EXPECT_NE(rewritten.find("      texture: " + texture + "\n"), std::string::npos);
+	EXPECT_NE(rewritten.find("      scriptPath: '" + script + "'\n"), std::string::npos);
+	EXPECT_NE(rewritten.find("          value: textures/hero.png\n"), std::string::npos);
+	EXPECT_NE(rewritten.find("      mesh: missing.glb\n"), std::string::npos);
+	EXPECT_TRUE(rewritten.starts_with("# comment\nEntities:\n"));
+	EXPECT_TRUE(rewritten.ends_with("...\ntexture: textures/hero.png\n"));
+	EXPECT_EQ(registry.rewriteReferences(rewritten), rewritten);
+	EXPECT_EQ(registry.getEditableDirectories().size(), 1u);
 }
