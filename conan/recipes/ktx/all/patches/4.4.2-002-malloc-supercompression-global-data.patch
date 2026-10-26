@@ -1,0 +1,22 @@
+--- a/lib/basis_encode.cpp
++++ b/lib/basis_encode.cpp
+@@ -869,7 +869,9 @@
+                  + image_desc_size * num_images
+                  + bfh.m_endpoint_cb_file_size + bfh.m_selector_cb_file_size
+                  + bfh.m_tables_file_size;
+-        bgd = new ktx_uint8_t[bgd_size];
++        bgd = (ktx_uint8_t*)malloc(bgd_size);
++        if (!bgd)
++            return KTX_OUT_OF_MEMORY;
+         ktxBasisLzGlobalHeader& bgdh = *reinterpret_cast<ktxBasisLzGlobalHeader*>(bgd);
+         bgdh.endpointCount = (uint16_t)bfh.m_total_endpoints;
+         bgdh.endpointsByteLength = bfh.m_endpoint_cb_file_size;
+@@ -1051,7 +1053,7 @@
+ 
+ cleanup:
+     if (bgd) {
+-        delete bgd;
++        free(bgd);
+         priv._supercompressionGlobalData = 0;
+         priv._sgdByteLength = 0;
+     }
