@@ -3,3 +3,5 @@ Guid: 23010d4f1ca2445c
 Importer: Texture
 Settings:
   Nearest: false
+  Compression: Etc1s
+  Mips: true

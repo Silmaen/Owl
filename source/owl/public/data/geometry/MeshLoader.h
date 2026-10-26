@@ -33,13 +33,15 @@ struct OWL_API MeshImage {
 	std::vector<uint8_t> pixels;
 	/// Name of the image (its URI, or its name when embedded).
 	std::string name;
+	/// KTX2 bytes of a cooked image, transcoded by the renderer for its GPU; empty when `pixels` holds the image.
+	std::vector<uint8_t> cooked;
 
 	/**
 	 * @brief
 	 *  Check if the image holds no pixel.
 	 * @return True when nothing was decoded.
 	 */
-	[[nodiscard]] auto isEmpty() const -> bool { return pixels.empty(); }
+	[[nodiscard]] auto isEmpty() const -> bool { return pixels.empty() && cooked.empty(); }
 };
 
 /**
