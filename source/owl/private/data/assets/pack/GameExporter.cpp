@@ -12,6 +12,8 @@
 
 #include "app/Application.h"
 #include "core/external/yaml.h"
+#include "data/assets/AssetRegistry.h"
+#include "data/assets/cook/CookCache.h"
 #include "data/assets/pack/PackWriter.h"
 #include "input/ActionMap.h"
 
@@ -47,6 +49,17 @@ auto readText(const std::filesystem::path& iFile) -> std::optional<std::string> 
 	std::stringstream buffer;
 	buffer << in.rdbuf();
 	return buffer.str();
+}
+
+// Import settings of a packed asset: its sidecar when the registry knows it, the defaults of its importer otherwise.
+auto metaOf(const AssetReference& iRef) -> AssetMeta {
+	if (app::Application::instanced()) {
+		const auto& registry = app::Application::get().getAssetRegistry();
+		if (const auto guid = registry.findGuid(iRef.diskPath.generic_string()); guid)
+			if (const auto entry = registry.find(*guid); entry)
+				return entry->meta;
+	}
+	return AssetMeta{.guid = AssetGuid{0}, .importer = importerOf(iRef.diskPath).value_or(Importer::Copy), .texture = {}};
 }
 
 auto isRelocatable(const AssetReference& iRef) -> bool {
@@ -213,6 +226,8 @@ auto GameExporter::getErrorMessage(const ExportError iError) -> std::string_view
 			return "cannot copy the runner executable";
 		case ExportError::Cancelled:
 			return "cancelled";
+		case ExportError::CookFailed:
+			return "an asset could not be cooked, see the log";
 	}
 	return "unknown error";
 }
@@ -308,9 +323,22 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		return unexpected{ExportError::OutputDirectory};
 	}
 
-	report(iProgress, 0.15f, std::format("Building pack ({} assets)...", assets.size()));
+	report(iProgress, 0.05f, std::format("Cooking {} assets...", assets.size()));
 	PackWriter writer;
-	for (const auto& ref: assets) {
+	cook::CookCache cache(iSettings.cookCacheDirectory.empty()
+								  ? iSettings.projectDirectory / ".owl" / "cache" / "cooked"
+								  : iSettings.cookCacheDirectory);
+	std::vector<std::string> packPaths;
+	packPaths.reserve(assets.size());
+	for (size_t index = 0; index < assets.size(); ++index) {
+		const auto& ref = assets[index];
+		if (isCancelled(iCancel)) {
+			OWL_CORE_WARN("GameExporter: Export cancelled.")
+			return unexpected{ExportError::Cancelled};
+		}
+		report(iProgress, 0.05f + 0.15f * static_cast<float>(index) / static_cast<float>(assets.size()),
+			   std::format("Cooking {}...", ref.packPath));
+		packPaths.push_back(ref.packPath);
 		if (isRelocatable(ref)) {
 			if (const auto text = readText(ref.diskPath); text) {
 				// Only the YAML header is text: what follows a document-end line (tilemap chunks) is copied as is.
@@ -321,7 +349,20 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 				continue;
 			}
 		}
-		writer.addFile(ref.diskPath, ref.packPath, ref.assetType);
+		auto cooked = cache.cook(ref.diskPath, metaOf(ref), ref.packPath);
+		if (!cooked) {
+			OWL_CORE_ERROR("GameExporter: Cannot cook '{}': {}.", ref.packPath, cook::describe(cooked.error()))
+			return unexpected{ExportError::CookFailed};
+		}
+		writer.addData(*cooked, ref.packPath, ref.assetType);
+	}
+	std::ignore = cache.saveManifest();
+	result.cookedAssets = cache.getStats().cooked;
+	result.cacheHits = cache.getStats().hits;
+	if (app::Application::instanced()) {
+		const auto index = app::Application::get().getAssetRegistry().serializeIndex(packPaths);
+		writer.addData(std::vector<uint8_t>(index.begin(), index.end()), std::string{g_assetIndexEntry},
+					   AssetType::Other);
 	}
 	if (const auto settingsPath = iSettings.projectDirectory / "game_settings.yml"; exists(settingsPath))
 		writer.addFile(settingsPath, "game_settings.yml", AssetType::Other);

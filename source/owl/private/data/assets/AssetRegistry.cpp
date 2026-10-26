@@ -364,12 +364,12 @@ auto AssetRegistry::loadIndex(const std::string_view iText) -> size_t {
 			OWL_CORE_WARN("Assets: Pack index entry '{}' is no GUID, skipped.", item.first.as<std::string>())
 			continue;
 		}
-		const auto path = item.second.as<std::string>();
-		m_entries.insert_or_assign(
-				*guid,
-				Entry{.meta = AssetMeta{.guid = *guid, .importer = importerOf(path).value_or(Importer::Copy), .texture = {}},
-					  .root = {},
-					  .path = path});
+		const bool detailed = item.second.IsMap();
+		const auto path = detailed ? item.second["Path"].as<std::string>("") : item.second.as<std::string>();
+		AssetMeta meta{.guid = *guid, .importer = importerOf(path).value_or(Importer::Copy), .texture = {}};
+		if (detailed)
+			get(item.second, "Nearest", meta.texture.nearest);
+		m_entries.insert_or_assign(*guid, Entry{.meta = meta, .root = {}, .path = path});
 		++count;
 	}
 	rebuildPathIndex();
@@ -377,13 +377,21 @@ auto AssetRegistry::loadIndex(const std::string_view iText) -> size_t {
 }
 
 auto AssetRegistry::serializeIndex(const std::vector<std::string>& iPaths) const -> std::string {
-	std::map<std::string, std::string> sorted;
+	std::map<std::string, Entry> sorted;
 	for (const auto& path: iPaths)
 		if (const auto guid = findGuid(path); guid)
-			sorted.emplace(path, formatGuid(*guid));
+			if (auto entry = find(*guid); entry)
+				sorted.emplace(path, std::move(*entry));
 	YAML::Emitter out;
 	out << YAML::BeginMap << YAML::Key << "Assets" << YAML::Value << YAML::BeginMap;
-	for (const auto& [path, guid]: sorted) out << YAML::Key << guid << YAML::Value << path;
+	for (const auto& [path, entry]: sorted) {
+		out << YAML::Key << formatGuid(entry.meta.guid) << YAML::Value;
+		if (entry.meta.texture.nearest)
+			out << YAML::Flow << YAML::BeginMap << YAML::Key << "Path" << YAML::Value << path << YAML::Key << "Nearest"
+				<< YAML::Value << true << YAML::EndMap;
+		else
+			out << path;
+	}
 	out << YAML::EndMap << YAML::EndMap;
 	return std::string{out.c_str()} + "\n";
 }

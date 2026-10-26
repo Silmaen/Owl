@@ -58,6 +58,8 @@ struct OWL_API ExportSettings {
 	std::string rendererStackYaml;
 	/// Pack flags (compression, obfuscation).
 	PackFlags packFlags{PackFlags::Default};
+	/// Cook cache directory; empty for `<projectDirectory>/.owl/cache/cooked`.
+	std::filesystem::path cookCacheDirectory;
 };
 
 /**
@@ -77,6 +79,8 @@ enum struct ExportError : uint8_t {
 	RunnerCopy,
 	/// The export was cancelled by the caller.
 	Cancelled,
+	/// An asset could not be cooked (a corrupt image, a compression failure).
+	CookFailed,
 };
 
 /**
@@ -94,6 +98,10 @@ struct OWL_API ExportReport {
 	size_t assetCount{0};
 	/// Size of the pack in bytes.
 	uintmax_t packBytes{0};
+	/// Assets cooked during this export (the others came from the cook cache).
+	size_t cookedAssets{0};
+	/// Assets served by the cook cache.
+	size_t cacheHits{0};
 };
 
 /**

@@ -62,10 +62,8 @@ auto cookTexture(const AssetMeta& iMeta, const std::span<const uint8_t> iSource,
 	OWL_PROFILE_FUNCTION()
 
 	if (iMeta.texture.compression == TextureCompression::None) {
-		if (!renderer::peekImageSize(iSource)) {
-			OWL_CORE_WARN("Cook: '{}' is no readable image.", iName)
-			return unexpected{CookError::InvalidSource};
-		}
+		if (!renderer::peekImageSize(iSource))
+			OWL_CORE_WARN("Cook: '{}' is no readable image, packed as is: the game will not show it.", iName)
 		return std::vector<uint8_t>(iSource.begin(), iSource.end());
 	}
 	const auto decoded = renderer::decodeImageBytes(iSource, 4);

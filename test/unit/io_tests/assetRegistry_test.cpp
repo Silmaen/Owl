@@ -210,11 +210,16 @@ TEST_F(AssetRegistryTest, PackIndexRoundTrip) {
 	AssetRegistry registry;
 	std::ignore = registry.addDirectory(m_root, true);
 	const auto guid = registry.findGuid("textures/hero.png");
+	auto meta = registry.find(*guid)->meta;
+	meta.texture.nearest = true;
+	ASSERT_TRUE(registry.setMeta(meta));
 	const auto index = registry.serializeIndex({"textures/hero.png", "scripts/hero.lua", "unknown.png"});
 
 	AssetRegistry runner;
 	EXPECT_EQ(runner.loadIndex(index), 2u);
 	EXPECT_EQ(runner.toAssetPath(formatReference(*guid, "old/path.png")), "textures/hero.png");
+	EXPECT_TRUE(runner.find(*guid)->meta.texture.nearest);
+	EXPECT_FALSE(runner.find(*registry.findGuid("scripts/hero.lua"))->meta.texture.nearest);
 	EXPECT_EQ(runner.loadIndex("not: [yaml"), 0u);
 }
 

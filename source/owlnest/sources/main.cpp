@@ -26,12 +26,14 @@ namespace owl {
 
 namespace {
 
-// Command line of a headless export: `OwlNest --export <project> <output>`.
+// Command line of a headless export: `OwlNest --export <project> <output> [--cook-cache <dir>]`.
 struct ExportCommand {
 	// Project folder or `owl_project.yml` file.
 	std::filesystem::path project;
 	// Parent folder of the exported game.
 	std::filesystem::path output;
+	// Cook cache folder, empty for the one of the project.
+	std::filesystem::path cookCache;
 };
 
 auto parseExportCommand(const int iArgc, char** iArgv) -> std::optional<ExportCommand> {
@@ -40,11 +42,17 @@ auto parseExportCommand(const int iArgc, char** iArgv) -> std::optional<ExportCo
 		if (std::string_view(args[i]) != "--export")
 			continue;
 		if (i + 2 >= args.size()) {
-			std::fputs("Usage: OwlNest --export <project dir or owl_project.yml> <output dir>\n", stderr);
+			std::fputs("Usage: OwlNest --export <project dir or owl_project.yml> <output dir> [--cook-cache <dir>]\n",
+					   stderr);
 			return ExportCommand{};
 		}
-		return ExportCommand{.project = std::filesystem::absolute(args[i + 1]),
-							 .output = std::filesystem::absolute(args[i + 2])};
+		ExportCommand command{.project = std::filesystem::absolute(args[i + 1]),
+							  .output = std::filesystem::absolute(args[i + 2]),
+							  .cookCache = {}};
+		for (size_t j = 1; j + 1 < args.size(); ++j)
+			if (std::string_view(args[j]) == "--cook-cache")
+				command.cookCache = std::filesystem::absolute(args[j + 1]);
+		return command;
 	}
 	return std::nullopt;
 }
@@ -112,7 +120,8 @@ private:
 			return 1;
 		}
 		addAssetDirectory({"Project: " + project.name, project.projectDirectory});
-		const auto settings = project.makeExportSettings(iCommand.output, iRunnerDir);
+		auto settings = project.makeExportSettings(iCommand.output, iRunnerDir);
+		settings.cookCacheDirectory = iCommand.cookCache;
 		std::vector<data::assets::pack::AssetReference> assets;
 		for (const auto& warning: data::assets::pack::GameExporter::validate(settings, assets))
 			OWL_WARN("Export: {}.", warning)

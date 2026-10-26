@@ -60,7 +60,9 @@ TEST(AssetCook, UncompressedTextureKeepsItsSource) {
 	ASSERT_TRUE(cooked);
 	EXPECT_EQ(*cooked, png);
 	const std::vector<uint8_t> broken{1, 2, 3, 4};
-	EXPECT_EQ(cookAsset(textureMeta(TextureCompression::None), broken, "broken.png").error(), CookError::InvalidSource);
+	const auto keptAsIs = cookAsset(textureMeta(TextureCompression::None), broken, "broken.png");
+	ASSERT_TRUE(keptAsIs);
+	EXPECT_EQ(*keptAsIs, broken);
 	EXPECT_EQ(cookAsset(textureMeta(TextureCompression::Uastc), broken, "broken.png").error(), CookError::InvalidSource);
 }
 

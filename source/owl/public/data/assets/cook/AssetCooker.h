@@ -54,7 +54,7 @@ enum struct CookError : uint8_t {
 /**
  * @brief
  *  Cook one asset: a compressed texture becomes KTX2 (mipmaps included), a scene, prefab or HUD becomes the binary
- *  scene format, any other asset is checked and kept as is.
+ *  scene format, any other asset is kept as is (an unreadable image only warns).
  * @param[in] iMeta The asset sidecar (importer and settings).
  * @param[in] iSource Bytes of the source file.
  * @param[in] iName Asset path, for log messages.
