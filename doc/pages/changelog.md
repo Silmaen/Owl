@@ -18,10 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Binary scenes: scenes, prefabs and HUDs are cooked to a binary tree loaded without parsing, 1.7x to 2.2x faster.
 - Owl Nest Import panel and `asset.*` commands (import settings, rename, move, delete, cook, clear cache).
 - `OwlNest --upgrade-assets` creates sidecars and rewrites references by GUID; `--export` takes `--cook-cache`.
+- Project setting **ImGui overlay** (`imGui`): an exported game creates its ImGui layer and packs its fonts only when it is on.
 
 ### Changed
 
 - Shipped projects carry sidecars and GUID references; the Engine Demo PBR textures are cooked to ETC1S and UASTC.
+- An exported game packs only its engine files and initialises only its renderer families (`RendererSet`): packs about 3.3 MiB smaller.
 - CI: one tree per configuration; the tested release tree is the one packaged, so no configuration builds a second preset.
 - CI: Linux x64 Clang Release is the fast verdict (drafts, ready pull requests, doc-only pull requests, `main`); drafts run Code Style and it only.
 - CI: coverage is measured on Linux x64 GCC (every ready pull request and `main`) and by Clang Debug nightly, each with its coverage-drop gate; Windows measures none.
@@ -38,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- ETC1S texture cook under ASan: a local `ktx` recipe patches libktx to allocate the BasisLZ global data with `malloc`, as `ktxTexture2_Destroy` frees it with `free`.
 - `Coverage` reads only the notes of its own build tree: another compiler's tree in the same checkout no longer makes gcov fail.
 - `LuaSandbox.cppExceptionInBindingBecomesLuaError` runs under a roomy time quota: throwing C++ exceptions under QEMU no longer exceeds the 50 ms one.
 - `FramePacer.WaitSleepsOutThePeriod` measures from the start of the period: a late thread under QEMU no longer makes the wait look short.

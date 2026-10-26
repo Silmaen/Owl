@@ -15,6 +15,7 @@
 #include "renderer/CameraOrtho.h"
 #include "renderer/RenderGraph.h"
 #include "renderer/RenderStack.h"
+#include "renderer/RendererSet.h"
 
 #include <cstdint>
 #include <functional>
@@ -92,10 +93,19 @@ public:
 	 *  Compile all renderer shaders.
 	 *
 	 * Must be called after initContext(). If a progress callback is provided, it is
-	 * called before each shader compilation with the shader index, total count, and name.
+	 * called before each shader compilation with the shader index, total count, and name. Only the renderer families
+	 * of the set are initialised and registered as stack layers.
 	 * @param[in] iProgress Optional progress callback.
+	 * @param[in] iRenderers Renderer families to initialise.
 	 */
-	static void initShaders(const ShaderProgressCallback& iProgress = {});
+	static void initShaders(const ShaderProgressCallback& iProgress = {}, const RendererSet& iRenderers = {});
+
+	/**
+	 * @brief
+	 *  Get the renderer families initialised by initShaders().
+	 * @return The set given to initShaders().
+	 */
+	[[nodiscard]] static auto getRendererSet() -> const RendererSet&;
 
 	/**
 	 * @brief
@@ -210,6 +220,8 @@ private:
 	static RenderStack m_renderStack;
 	/// Frame graph of the scene renders.
 	static RenderGraph m_renderGraph;
+	/// Renderer families initialised by initShaders().
+	static RendererSet m_rendererSet;
 };
 
 }// namespace owl::renderer

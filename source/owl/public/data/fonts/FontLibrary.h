@@ -9,10 +9,12 @@
 #pragma once
 
 #include "data/fonts/Font.h"
+#include <array>
 #include <cstddef>
 #include <filesystem>
 #include <list>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 /**
@@ -20,6 +22,14 @@
  *  Namespace for font management.
  */
 namespace owl::data::fonts {
+
+/// Name of the default font, always loaded and packed with a game.
+constexpr std::string_view g_DefaultFontName{"OpenSans-Regular"};
+
+/// Font files of the ImGui overlay (`gui::UiLayer`: body, strong, code, icons), relative to an asset directory.
+constexpr std::array<std::string_view, 4> g_UiFontFiles{"fonts/Inter-Regular.ttf", "fonts/Inter-SemiBold.ttf",
+														"fonts/JetBrainsMono-Regular.ttf", "fonts/lucide.ttf"};
+
 /**
  * @brief
  *  Class for managing the fonts.

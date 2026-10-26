@@ -358,6 +358,8 @@ void Renderer3D::shutdown() {
 	gpu::RendererDescriptors::release(k_RendererKey);
 }
 
+auto Renderer3D::isReady() -> bool { return g_Data != nullptr; }
+
 void Renderer3D::beginScene(const Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 

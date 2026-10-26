@@ -69,6 +69,8 @@ void readProjectConfig(const YAML::Node& iConfig, Project& oProject) {
 		oProject.gamepadMappings = iConfig["gamepadMappings"].as<std::string>();
 	if (const auto win = iConfig["window"]; win)
 		readWindowSettings(win, oProject.window);
+	if (iConfig["imGui"])
+		oProject.imGui = iConfig["imGui"].as<bool>();
 	if (const auto simulation = iConfig["simulation"]; simulation)
 		readSimulationSettings(simulation, oProject.simulation);
 	if (const auto stack = iConfig["RendererStack"]; stack)
@@ -132,6 +134,7 @@ auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const 
 			.tickRate = simulation.tickRate,
 			.maxTicksPerFrame = simulation.maxTicksPerFrame,
 			.rendererStackYaml = rendererStack.isEmpty() ? std::string{} : rendererStack.toYaml(),
+			.imGui = imGui,
 			.packFlags = data::assets::pack::PackFlags::Default,
 			.cookCacheDirectory = {}};
 }
@@ -161,6 +164,8 @@ auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {
 	out << YAML::Key << "fullscreen" << YAML::Value << window.fullscreen;
 	out << YAML::Key << "resizable" << YAML::Value << window.resizable;
 	out << YAML::EndMap;// window
+	if (imGui)
+		out << YAML::Key << "imGui" << YAML::Value << true;
 	if (simulation != scene::SimulationSettings{}) {
 		out << YAML::Key << "simulation" << YAML::Value << YAML::BeginMap;
 		out << YAML::Key << "tickRate" << YAML::Value << simulation.tickRate;

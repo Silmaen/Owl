@@ -51,7 +51,7 @@ auto loadPackedSettings(const std::string& iFontEntry) -> FontSettings {
 
 }// namespace
 
-FontLibrary::FontLibrary() : m_defaultFontName("OpenSans-Regular") {
+FontLibrary::FontLibrary() : m_defaultFontName(g_DefaultFontName) {
 	m_fonts["null"] = nullptr;
 	m_fonts[m_defaultFontName] = nullptr;
 }
@@ -64,7 +64,7 @@ void FontLibrary::init() {
 
 void FontLibrary::destroy() {
 	m_fonts.clear();
-	m_defaultFontName = "OpenSans-Regular";
+	m_defaultFontName = g_DefaultFontName;
 }
 
 FontLibrary::~FontLibrary() = default;

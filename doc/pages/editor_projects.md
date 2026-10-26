@@ -38,12 +38,14 @@ the changes (they are not undo steps).
 | Section        | Fields                                                                                             |
 |----------------|----------------------------------------------------------------------------------------------------|
 | General        | Name, first scene, default HUD (for the scenes that name none), version, author, description, icon |
-| Window         | Width (320 to 7680), height (240 to 4320), fullscreen, resizable                                   |
+| Window         | Width (320 to 7680), height (240 to 4320), fullscreen, resizable, ImGui overlay                    |
 | Input          | Gamepad mappings file (SDL_GameControllerDB format), **Edit Input Actions**                        |
 | Simulation     | Tick rate (1 to 1000 per second, 60 by default), max ticks per frame (1 to 64, 8 by default)       |
 | Renderer Stack | The layers that draw every scene, in order, with their configuration                               |
 
-An empty version follows the engine version. The tick rate applies from the next Play
+An empty version follows the engine version and an empty icon gives the Owl logo. **ImGui overlay** (off by default)
+makes the exported game create an ImGui layer and pack its fonts, for a game whose C++ code draws with ImGui; a game
+drawing its interface with HUDs leaves it off. The tick rate applies from the next Play
 ([fixed simulation tick](scene.md#fixed-tick)); the window and simulation settings are what the exported game uses.
 `game_settings.yml`, beside `owl_project.yml`, holds the default game settings the player can change through the Lua
 `settings` API.
@@ -64,16 +66,20 @@ document drops its copy.
 (textures, sounds, scripts, scenes): cancel to fix them, or pack anyway. It then writes `<output>/<GameName>/` behind
 a progress dialog (spaces and reserved characters of the name become `_`):
 
-| File                       | Content                                                                       |
-|----------------------------|-------------------------------------------------------------------------------|
-| `<GameName>.owlpack`       | Every asset of the project, the engine shaders and fonts, `game_settings.yml` |
-| `<GameName>` / `.exe`      | The game executable (a copy of `OwlRunner`)                                   |
-| `*.so` / `*.dll`           | The shared libraries of the engine                                            |
-| `runner.yml`               | First scene, pack, window, renderer stack, icon                               |
-| `game_info.yml`            | Name, version, author, description, engine version, date, platform            |
-| `launch.sh` (Linux)        | Starts the game with its libraries                                            |
-| `<GameName>.zip` (Windows) | The game folder as an archive, next to it                                     |
-| icon                       | The project icon                                                              |
+| File                       | Content                                                                                                            |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `<GameName>.owlpack`       | The assets the scenes reference, the shaders of the renderers the game uses, the default font, `game_settings.yml` |
+| `<GameName>` / `.exe`      | The game executable (a copy of `OwlRunner`)                                                                        |
+| `*.so` / `*.dll`           | The shared libraries of the engine                                                                                 |
+| `runner.yml`               | First scene, pack, window, renderer stack, renderer families, ImGui, icon                                          |
+| `game_info.yml`            | Name, version, author, description, engine version, date, platform                                                 |
+| `launch.sh` (Linux)        | Starts the game with its libraries                                                                                 |
+| `<GameName>.zip` (Windows) | The game folder as an archive, next to it                                                                          |
+| icon                       | The project icon, or the Owl logo                                                                                  |
+
+The game initialises the renderer families of its renderer stack only (`Renderers` in `runner.yml`): raycast,
+isometric, and `Renderer3D` for a mesh or voxel layer or a scene with an `Environment`. Owl Nest itself keeps every
+renderer. The end of the export lists those families and the number of engine shader files left out.
 
 **Scene > Scene > Pack Scene** packs the active scene alone into an `.owlpack`.
 

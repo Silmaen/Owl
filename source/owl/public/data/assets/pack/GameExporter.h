@@ -12,9 +12,12 @@
 #include "core/expected.h"
 #include "math/vectors.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <string>
+#include <vector>
 
 namespace owl::data::assets::pack {
 /**
@@ -32,7 +35,7 @@ struct OWL_API ExportSettings {
 	std::string author;
 	/// Short game description.
 	std::string description;
-	/// Game icon, relative to the project directory or to an asset directory.
+	/// Game icon, relative to the project directory or to an asset directory; empty for the Owl logo.
 	std::string icon;
 	/// HUD asset of the scenes that name none (`DefaultHud`), relative to an asset directory, forwarded to `runner.yml`.
 	std::string defaultHud;
@@ -56,6 +59,8 @@ struct OWL_API ExportSettings {
 	uint32_t maxTicksPerFrame{8};
 	/// Project renderer stack as YAML (`RendererStackConfig::toYaml`), forwarded to `runner.yml`; empty for none.
 	std::string rendererStackYaml;
+	/// Whether the game draws an ImGui overlay: the runner creates its ImGui layer and the pack holds its fonts.
+	bool imGui{false};
 	/// Pack flags (compression, obfuscation).
 	PackFlags packFlags{PackFlags::Default};
 	/// Cook cache directory; empty for `<projectDirectory>/.owl/cache/cooked`.
@@ -102,6 +107,10 @@ struct OWL_API ExportReport {
 	size_t cookedAssets{0};
 	/// Assets served by the cook cache.
 	size_t cacheHits{0};
+	/// Optional renderer families the game initialises (`RendererSet::getNames`), besides the 2D family.
+	std::vector<std::string> renderers;
+	/// Engine files of the scan left out of the pack: shaders of the renderers the game does not use.
+	size_t engineFilesSkipped{0};
 };
 
 /**

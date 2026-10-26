@@ -15,11 +15,15 @@
 #include "data/assets/AssetRegistry.h"
 #include "data/assets/cook/CookCache.h"
 #include "data/assets/pack/PackWriter.h"
+#include "data/fonts/FontLibrary.h"
 #include "input/ActionMap.h"
+#include "renderer/RenderStack.h"
+#include "renderer/RendererSet.h"
 
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <iterator>
 #include <sstream>
 
 namespace owl::data::assets::pack {
@@ -71,18 +75,81 @@ auto isRelocatable(const AssetReference& iRef) -> bool {
 	return ext == ".owltileset" || ext == ".owltilemap" || ext == ".owlprefab" || ext == ".owlhud";
 }
 
-auto resolveIcon(const ExportSettings& iSettings) -> std::optional<std::filesystem::path> {
-	if (iSettings.icon.empty())
-		return std::nullopt;
-	if (auto local = iSettings.projectDirectory / iSettings.icon; exists(local))
-		return local;
+constexpr std::string_view g_defaultIcon{"logo/logo_owl_low.png"};
+
+auto iconOf(const ExportSettings& iSettings) -> std::string {
+	return iSettings.icon.empty() ? std::string{g_defaultIcon} : iSettings.icon;
+}
+
+auto findInAssetDirectories(const std::filesystem::path& iRelative) -> std::optional<std::filesystem::path> {
 	if (!app::Application::instanced())
 		return std::nullopt;
 	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-		if (auto candidate = assetsPath / iSettings.icon; exists(candidate))
+		if (auto candidate = assetsPath / iRelative; exists(candidate))
 			return candidate;
 	}
 	return std::nullopt;
+}
+
+auto resolveIcon(const ExportSettings& iSettings) -> std::optional<std::filesystem::path> {
+	const auto icon = iconOf(iSettings);
+	if (auto local = iSettings.projectDirectory / icon; exists(local))
+		return local;
+	return findInAssetDirectories(icon);
+}
+
+// A scene with an `Environment` draws its sky and lights through `Renderer3D`, whatever its stack.
+auto hasEnvironment(const AssetReference& iRef) -> bool {
+	if (iRef.assetType != AssetType::Scene)
+		return false;
+	try {
+		const auto entities = YAML::LoadFile(iRef.diskPath.string())["Entities"];
+		return entities && std::ranges::any_of(entities, [](const YAML::Node& iEntity) -> bool {
+				   return static_cast<bool>(iEntity["Environment"]);
+			   });
+	} catch (...) {
+		OWL_CORE_WARN("GameExporter: Cannot read scene '{}' for its renderers.", iRef.diskPath.string())
+		return false;
+	}
+}
+
+auto rendererSetOf(const ExportSettings& iSettings, const std::vector<AssetReference>& iAssets)
+		-> renderer::RendererSet {
+	const auto stack = iSettings.rendererStackYaml.empty()
+							   ? renderer::RendererStackConfig::makeDefault()
+							   : renderer::RendererStackConfig::fromYaml(iSettings.rendererStackYaml);
+	auto set = renderer::RendererSet::base();
+	for (const auto& entry: stack.entries) set |= renderer::RendererSet::forLayerType(entry.typeKey);
+	if (!set.renderer3D && std::ranges::any_of(iAssets, hasEnvironment))
+		set.renderer3D = true;
+	return set;
+}
+
+// Keeps the shaders of the renderer families of the game and adds the fonts of its ImGui overlay.
+auto selectEngineFiles(const ExportSettings& iSettings, const renderer::RendererSet& iRenderers,
+					   std::vector<AssetReference>& ioAssets) -> size_t {
+	const auto folders = iRenderers.getShaderFolders();
+	const auto skipped = std::erase_if(ioAssets, [&folders](const AssetReference& iRef) -> bool {
+		const std::filesystem::path path{iRef.packPath};
+		if (path.empty() || *path.begin() != "shaders")
+			return false;
+		const auto folder = std::next(path.begin());
+		return folder == path.end() || std::ranges::find(folders, folder->string()) == folders.end();
+	});
+	if (!iSettings.imGui)
+		return skipped;
+	for (const auto file: fonts::g_UiFontFiles) {
+		const std::string packPath{file};
+		if (std::ranges::any_of(ioAssets,
+								[&packPath](const AssetReference& iRef) -> bool { return iRef.packPath == packPath; }))
+			continue;
+		if (const auto disk = findInAssetDirectories(packPath); disk)
+			ioAssets.push_back({.packPath = packPath, .diskPath = *disk, .assetType = AssetType::Font});
+		else
+			OWL_CORE_WARN("GameExporter: ImGui font '{}' not found, the overlay falls back to the ImGui font.",
+						  packPath)
+	}
+	return skipped;
 }
 
 auto resolveFirstScene(const std::string& iFirstScene, const std::vector<AssetReference>& iAssets) -> std::string {
@@ -128,7 +195,7 @@ void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem:
 
 void writeRunnerConfig(const ExportSettings& iSettings, const std::filesystem::path& iGameDir,
 					   const std::string& iFirstScene, const std::string& iPackFile, const std::string& iIcon,
-					   const std::string& iGamepadMappings) {
+					   const std::string& iGamepadMappings, const std::vector<std::string>& iRenderers) {
 	YAML::Emitter out;
 	out << YAML::BeginMap;
 	out << YAML::Key << "RunnerConfig" << YAML::Value << YAML::BeginMap;
@@ -153,6 +220,8 @@ void writeRunnerConfig(const ExportSettings& iSettings, const std::filesystem::p
 	out << YAML::Key << "MaxTicksPerFrame" << YAML::Value << iSettings.maxTicksPerFrame;
 	if (!iSettings.rendererStackYaml.empty())
 		out << YAML::Key << "RendererStack" << YAML::Value << YAML::Load(iSettings.rendererStackYaml);
+	out << YAML::Key << "Renderers" << YAML::Value << YAML::Flow << iRenderers;
+	out << YAML::Key << "ImGui" << YAML::Value << iSettings.imGui;
 	out << YAML::EndMap;
 	out << YAML::EndMap;
 	std::ofstream file(iGameDir / "runner.yml");
@@ -315,8 +384,16 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		OWL_CORE_ERROR("GameExporter: OwlRunner executable not found in '{}'.", iSettings.runnerDirectory.string())
 		return unexpected{ExportError::RunnerNotFound};
 	}
+	const auto renderers = rendererSetOf(iSettings, assets);
+	const auto engineFilesSkipped = selectEngineFiles(iSettings, renderers, assets);
+	std::string rendererList{"Renderer2D"};
+	for (const auto& name: renderers.getNames()) rendererList += " + " + name;
+	OWL_CORE_INFO("GameExporter: Renderers {}, {} unused engine shader files left out.", rendererList,
+				  engineFilesSkipped)
 	const auto baseName = sanitizeFilename(iSettings.gameName);
 	ExportReport result;
+	result.renderers = renderers.getNames();
+	result.engineFilesSkipped = engineFilesSkipped;
 	result.gameDirectory = iSettings.outputDirectory / baseName;
 	result.assetCount = assets.size();
 	if (std::error_code ec; !std::filesystem::create_directories(result.gameDirectory, ec) && ec) {
@@ -407,19 +484,19 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 	report(iProgress, 0.82f, "Writing configuration...");
 	std::string iconEntry;
 	if (const auto iconSrc = resolveIcon(iSettings); iconSrc) {
-		const auto iconDst = result.gameDirectory / iSettings.icon;
+		const auto iconDst = result.gameDirectory / iconOf(iSettings);
 		std::error_code ec;
 		std::filesystem::create_directories(iconDst.parent_path(), ec);
 		std::filesystem::copy_file(*iconSrc, iconDst, std::filesystem::copy_options::overwrite_existing, ec);
 		if (ec)
 			OWL_CORE_WARN("GameExporter: Cannot copy icon {}: {}.", iconSrc->string(), ec.message())
 		else
-			iconEntry = iSettings.icon;
-	} else if (!iSettings.icon.empty()) {
-		OWL_CORE_WARN("GameExporter: Icon '{}' not found, the game keeps the default icon.", iSettings.icon)
+			iconEntry = iconOf(iSettings);
+	} else {
+		OWL_CORE_WARN("GameExporter: Icon '{}' not found, the game has no window icon.", iconOf(iSettings))
 	}
 	writeRunnerConfig(iSettings, result.gameDirectory, resolveFirstScene(iSettings.firstScene, assets), packFilename,
-					  iconEntry, mappingsEntry);
+					  iconEntry, mappingsEntry, result.renderers);
 	writeMetadata(iSettings, result.gameDirectory);
 	if (isCancelled(iCancel)) {
 		OWL_CORE_WARN("GameExporter: Export cancelled.")

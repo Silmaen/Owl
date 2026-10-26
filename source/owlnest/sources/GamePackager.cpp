@@ -287,10 +287,13 @@ void GamePackager::startPacking() {
 				}
 				const auto seconds =
 						std::chrono::duration<double>(std::chrono::steady_clock::now() - startTime).count();
-				state->setMessage(std::format("Packed {} assets ({:.2f} MiB)\nOutput: {}\nDuration: {:.1f}s",
+				std::string renderers{"Renderer2D"};
+				for (const auto& name: result->renderers) renderers += ", " + name;
+				state->setMessage(std::format("Packed {} assets ({:.2f} MiB)\nRenderers: {} ({} unused engine shader "
+											  "files left out)\nOutput: {}\nDuration: {:.1f}s",
 											  result->assetCount,
-											  static_cast<double>(result->packBytes) / (1024.0 * 1024.0),
-											  result->gameDirectory.string(), seconds));
+											  static_cast<double>(result->packBytes) / (1024.0 * 1024.0), renderers,
+											  result->engineFilesSkipped, result->gameDirectory.string(), seconds));
 			},
 			[state]() -> void { state->completed.store(true); }));
 }

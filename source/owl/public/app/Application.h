@@ -20,6 +20,7 @@
 #include "data/assets/pack/PackReader.h"
 #include "data/fonts/FontLibrary.h"
 #include "event/AppEvent.h"
+#include "renderer/RendererSet.h"
 #include "renderer/gpu/RenderAPI.h"
 #include "sound/SoundAPI.h"
 #include "window/Window.h"
@@ -73,6 +74,8 @@ struct OWL_API AppParams {
 	sound::SoundAPI::Type sound{sound::SoundAPI::Type::OpenAl};
 	/// If the application should use ImGui overlay.
 	bool hasGui{true};
+	/// Renderer families initialised with the renderer (`renderers` in `runner.yml` for a game).
+	renderer::RendererSet renderers{};
 	/// If extra debugging symbols should be loaded.
 	bool useDebugging{false};
 	/// Run application in Dummy mode.
