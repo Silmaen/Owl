@@ -213,12 +213,13 @@ auto bakeShaders(std::vector<AssetReference>& ioAssets, const std::filesystem::p
 		const std::filesystem::path packPath{ref.packPath};
 		const auto name = packPath.stem().string();
 		const auto renderer = packPath.parent_path().filename().string();
+		const auto moduleName = std::format("{}/{}", renderer, name);
 		// Expanded as the game expands it from its pack, so that the keys match.
 		const auto source = renderer::utils::readShaderSource(packPath);
 		bool compiled = false;
 		for (const bool forVulkan: {true, false}) {
 			const std::string api = forVulkan ? "vulkan" : "opengl";
-			const auto cacheKey = renderer::utils::getShaderCacheKey(source, renderer + "/" + name, forVulkan);
+			const auto cacheKey = renderer::utils::getShaderCacheKey(source, moduleName, forVulkan);
 			if (hasCurrentSpirv(ioAssets, name, renderer, api, cacheKey))
 				continue;
 			compiled = true;

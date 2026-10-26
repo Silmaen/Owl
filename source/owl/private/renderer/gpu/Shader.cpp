@@ -51,9 +51,7 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 	if (RenderCommand::requireInit()) {
 		// Try to find as a .slang file first
 		const auto slangPath = std::filesystem::path(iFile.string() + ".slang");
-		if (exists(slangPath) && is_regular_file(slangPath)) {
-			sources = {slangPath};
-		} else if (data::assets::isPackedAsset(slangPath)) {
+		if ((exists(slangPath) && is_regular_file(slangPath)) || data::assets::isPackedAsset(slangPath)) {
 			sources = {slangPath};
 		} else if (exists(iFile) && is_regular_file(iFile)) {
 			sources = {iFile};
