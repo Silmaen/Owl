@@ -107,8 +107,9 @@ void runSetParent(Runner& ioRunner) {
 	shared<scene::Scene> scn;
 	std::vector<scene::Entity> ents;
 	for (const auto& [count, shape]: {std::pair{1000U, Shape::Chain}, std::pair{10000U, Shape::Wide}}) {
+		const auto buildName = std::format("scene/set_parent/{}{}_build", shapeName(shape), count);
 		ioRunner.measureWithSetup(
-				std::format("scene/set_parent/{}{}_build", shapeName(shape), count), count,
+				buildName, count,
 				[&]() -> void {
 					scn = mkShared<scene::Scene>();
 					ents.clear();
@@ -122,7 +123,7 @@ void runSetParent(Runner& ioRunner) {
 					for (uint32_t i = 1; i < count; ++i)
 						scn->setParent(ents[i], shape == Shape::Chain ? ents[i - 1] : ents[0]);
 				});
-		if (shape == Shape::Chain)
+		if (shape == Shape::Chain && ioRunner.wants(buildName))
 			ioRunner.metric("scene/set_parent/chain1000_leaf_x_after_reparent",
 							static_cast<double>(fullWalkWorldX(*scn, ents.back())),
 							"(expected 999, world position must be preserved)");

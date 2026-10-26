@@ -85,14 +85,14 @@ void runHudBenches(Runner& ioRunner) {
 					 [&]() -> void { layout.compute(*sc, g_viewport, false); });
 	const auto frameName = std::format("hud/frame/{}_widgets", widgets);
 	ioRunner.measure(frameName, widgets, [&]() -> void { scene::ui::HudPass::render(*sc, g_viewport, false); });
-	if (!ioRunner.wants(frameName))
-		return;
-	renderer::Renderer2D::resetStats();
-	scene::ui::HudPass::render(*sc, g_viewport, false);
-	ioRunner.metric(frameName + "_draw_calls", static_cast<double>(renderer::Renderer2D::getStats().drawCalls),
-					"draw calls (one frame)");
-	ioRunner.metric(std::format("hud/layout/{}_widgets_nodes", widgets), static_cast<double>(layout.getNodes().size()),
-					"widgets laid out");
+	if (ioRunner.wants(frameName)) {
+		renderer::Renderer2D::resetStats();
+		scene::ui::HudPass::render(*sc, g_viewport, false);
+		ioRunner.metric(frameName + "_draw_calls", static_cast<double>(renderer::Renderer2D::getStats().drawCalls),
+						"draw calls (one frame)");
+		ioRunner.metric(std::format("hud/layout/{}_widgets_nodes", widgets),
+						static_cast<double>(layout.getNodes().size()), "widgets laid out");
+	}
 	constexpr uint32_t rows = 1000;
 	const auto listScene = makeListScene(rows);
 	const auto listName = std::format("hud/frame/{}_row_list", rows);

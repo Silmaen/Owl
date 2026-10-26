@@ -328,9 +328,13 @@ class Bench(BaseAction):
                 again: dict = {"results": []}
                 for reg in regressions:
                     command = [str(binary), f"--filter={reg.name}", f"--json={confirm_file}"]
+                    measured: list[dict] = []
                     if run_command(command, cwd=binary.parent) == 0:
                         report = json.loads(confirm_file.read_text(encoding="utf-8"))
-                        again["results"] += exact_results(report, reg.name)["results"]
+                        measured = exact_results(report, reg.name)["results"]
+                    if not measured:
+                        log.warning(f"Bench: {reg.name} measured nothing alone, its full-run median stands.")
+                    again["results"] += measured
                 log.info(f"Bench: confirmation round {index + 1}/{confirm_rounds} done.")
                 rounds.append(again)
                 current = best_of(current, again)
