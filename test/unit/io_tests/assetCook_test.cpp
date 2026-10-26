@@ -8,6 +8,7 @@
 
 #include "testHelper.h"
 
+#include <core/YamlNode.h>
 #include <data/assets/cook/AssetCooker.h>
 #include <data/assets/cook/CookCache.h>
 #include <renderer/TextureDecoder.h>
@@ -158,4 +159,23 @@ TEST(AssetCook, CacheCooksOnceAndPersists) {
 		EXPECT_FALSE(cache.isCached(source, meta));
 	}
 	std::filesystem::remove_all(root);
+}
+
+TEST(AssetCook, SceneDocumentsBecomeBinaryTrees) {
+	const std::string scene = "Scene: level\nEntities:\n  - Entity: 1\n    Tag:\n      tag: hero\n";
+	const AssetMeta meta{.guid = AssetGuid{3}, .importer = Importer::Document, .texture = {}};
+	const auto cooked = cookAsset(meta, std::vector<uint8_t>(scene.begin(), scene.end()), "scenes/level.owl");
+	ASSERT_TRUE(cooked);
+	const std::string binary(cooked->begin(), cooked->end());
+	ASSERT_TRUE(core::isBinaryYaml(binary));
+	const core::YamlDocument document{binary};
+	EXPECT_EQ(document.getRoot()["Entities"][0]["Tag"]["tag"].as<std::string>(), "hero");
+	EXPECT_EQ(cookAsset(meta, *cooked, "scenes/level.owl").value(), *cooked);
+
+	const std::string tileset = "Tileset: blocks\n";
+	const std::vector<uint8_t> tilesetBytes(tileset.begin(), tileset.end());
+	EXPECT_EQ(cookAsset(meta, tilesetBytes, "tilesets/blocks.owltileset").value(), tilesetBytes);
+	const std::string broken = "Scene: [unclosed\n";
+	EXPECT_EQ(cookAsset(meta, std::vector<uint8_t>(broken.begin(), broken.end()), "scenes/broken.owl").error(),
+			  CookError::InvalidSource);
 }

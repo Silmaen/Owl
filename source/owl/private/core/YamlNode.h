@@ -313,6 +313,17 @@ private:
 	ryml::id_type m_id = ryml::NONE;
 };
 
+/// Magic of a YAML tree stored in binary: the cooked form of the scenes, prefabs and HUDs of a pack.
+inline constexpr std::string_view g_BinaryYamlMagic{"OWLB"};
+
+/**
+ * @brief
+ *  Tell whether a text is a YAML tree stored in binary (`YamlDocument::toBinary`).
+ * @param[in] iText The text.
+ * @return True when it starts with `g_BinaryYamlMagic`.
+ */
+[[nodiscard]] OWL_API auto isBinaryYaml(std::string_view iText) noexcept -> bool;
+
 /**
  * @brief
  *  A parsed YAML text (rapidyaml tree), the owner of the `YamlNode` views on it.
@@ -329,10 +340,10 @@ public:
 
 	/**
 	 * @brief
-	 *  Parse a YAML text (its first document, like `YAML::Load`).
-	 * @param[in] iYaml The text, copied into the tree.
+	 *  Parse a YAML text (its first document, like `YAML::Load`), or load a tree stored in binary.
+	 * @param[in] iYaml The text, copied into the tree, or the bytes of `toBinary`.
 	 * @param[in] iSourceName File or buffer name for the error messages.
-	 * @throw YamlError On a syntax error.
+	 * @throw YamlError On a syntax error or a malformed binary tree.
 	 */
 	explicit YamlDocument(std::string_view iYaml, std::string_view iSourceName = {});
 
@@ -349,7 +360,23 @@ public:
 	 */
 	[[nodiscard]] auto getRoot() const noexcept -> YamlNode { return {&m_tree, m_root}; }
 
+	/**
+	 * @brief
+	 *  Store the tree in binary: a string table and the nodes in depth-first order, no text to parse back.
+	 * @return The bytes, starting with `g_BinaryYamlMagic`.
+	 */
+	[[nodiscard]] auto toBinary() const -> std::string;
+
 private:
+	/**
+	 * @brief
+	 *  Build the tree from the bytes of `toBinary`.
+	 * @param[in] iBytes The bytes.
+	 * @param[in] iSourceName File or buffer name for the error messages.
+	 * @throw YamlError When the bytes are truncated or inconsistent.
+	 */
+	void loadBinary(std::string_view iBytes, std::string_view iSourceName);
+
 	/// The parsed tree.
 	ryml::Tree m_tree;
 	/// Root of the first document.

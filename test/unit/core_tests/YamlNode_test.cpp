@@ -173,3 +173,54 @@ TEST(YamlNode, ReadsWhatYamlCppWrites) {
 	EXPECT_TRUE(root["flag"].as<bool>());
 	EXPECT_EQ(root["big"].as<uint64_t>(), 18446744073709551615ULL);
 }
+
+TEST(YamlBinary, RoundTripKeepsTheTree) {
+	constexpr std::string_view text = R"(Scene: level
+FormatVersion: 9
+Empty: {}
+List: []
+Null: ~
+QuotedNull: "~"
+Text: 'a: b'
+Entities:
+  - Entity: 12
+    Transform:
+      translation: [1, 2.5, -3]
+    Tags: [a, b, a]
+  - Entity: 13
+    Name: "été"
+)";
+	const YamlDocument source{text, "source"};
+	const auto binary = source.toBinary();
+	EXPECT_TRUE(isBinaryYaml(binary));
+	EXPECT_FALSE(isBinaryYaml(text));
+	const YamlDocument loaded{binary, "binary"};
+	const auto root = loaded.getRoot();
+	EXPECT_TRUE(root.isSameAs(source.getRoot()));
+	EXPECT_TRUE(root["Null"].isNull());
+	EXPECT_TRUE(root["QuotedNull"].isScalar());
+	EXPECT_EQ(root["QuotedNull"].as<std::string>(), "~");
+	EXPECT_EQ(root["Text"].as<std::string>(), "a: b");
+	EXPECT_TRUE(root["Empty"].isMap());
+	EXPECT_EQ(root["List"].size(), 0u);
+	EXPECT_EQ(root["Entities"].size(), 2u);
+	EXPECT_EQ(root["Entities"][0]["Transform"]["translation"][1].as<float>(), 2.5f);
+	EXPECT_EQ(root["Entities"][1]["Name"].as<std::string>(), "été");
+	EXPECT_LT(YamlDocument{binary}.toBinary().size(), binary.size() + 1);
+}
+
+TEST(YamlBinary, MalformedBytesThrow) {
+	const YamlDocument source{"a: [1, 2, {b: c}]\nd: e\n"};
+	const auto binary = source.toBinary();
+	for (size_t size = g_BinaryYamlMagic.size(); size < binary.size(); ++size)
+		EXPECT_THROW(YamlDocument(std::string_view{binary}.substr(0, size)), YamlError) << size;
+	auto wrongVersion = binary;
+	wrongVersion[4] = 9;
+	EXPECT_THROW(YamlDocument{wrongVersion}, YamlError);
+	auto badString = binary;
+	badString[16] = static_cast<char>(0xFF);
+	badString[17] = static_cast<char>(0xFF);
+	EXPECT_THROW(YamlDocument{badString}, YamlError);
+	const YamlDocument empty{std::string_view{}};
+	EXPECT_FALSE(YamlDocument{empty.toBinary()}.getRoot().isMap());
+}

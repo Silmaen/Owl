@@ -345,7 +345,14 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 				const auto headerEnd = std::min(text->size(), text->find("\n...\n"));
 				auto relocated = relocateAbsolutePaths(text->substr(0, headerEnd), assets);
 				relocated.append(*text, headerEnd);
-				writer.addData(std::vector<uint8_t>(relocated.begin(), relocated.end()), ref.packPath, ref.assetType);
+				// Scenes, HUDs and prefabs are cooked after the relocation, which depends on the other assets.
+				auto cooked = cook::cookAsset(metaOf(ref), std::vector<uint8_t>(relocated.begin(), relocated.end()),
+											  ref.packPath);
+				if (!cooked) {
+					OWL_CORE_ERROR("GameExporter: Cannot cook '{}': {}.", ref.packPath, cook::describe(cooked.error()))
+					return unexpected{ExportError::CookFailed};
+				}
+				writer.addData(*cooked, ref.packPath, ref.assetType);
 				continue;
 			}
 		}

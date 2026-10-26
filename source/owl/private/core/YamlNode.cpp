@@ -18,10 +18,79 @@
 #include <string_view>
 #include <system_error>
 #include <type_traits>
+#include <tuple>
+#include <cstddef>
+#include <cstdint>
+#include <vector>
+#include <utility>
+#include <unordered_map>
 
 namespace owl::core {
 
 namespace {
+
+constexpr uint32_t g_binaryVersion = 1;
+
+/// Flags of a node in the binary form.
+enum struct BinaryNode : uint8_t {
+	Key = 1U << 0U,///< The node has a key.
+	Val = 1U << 1U,///< The node has a value.
+	Map = 1U << 2U,///< The node is a map.
+	Seq = 1U << 3U,///< The node is a sequence.
+	Null = 1U << 4U,///< The value is null.
+	Quoted = 1U << 5U,///< The value was quoted (never read as null).
+};
+
+constexpr auto has(const uint8_t iFlags, const BinaryNode iFlag) -> bool {
+	return (iFlags & static_cast<uint8_t>(iFlag)) != 0;
+}
+
+void appendU32(std::string& ioOut, const uint32_t iValue) {
+	for (uint32_t shift = 0; shift < 32; shift += 8) ioOut.push_back(static_cast<char>((iValue >> shift) & 0xFFU));
+}
+
+// Bounds-checked reader of the binary form: the bytes may come from an untrusted pack.
+class BinaryReader final {
+public:
+	BinaryReader(const std::string_view iBytes, const std::string_view iSourceName)
+		: m_bytes{iBytes}, m_source{iSourceName} {}
+
+	auto u8() -> uint8_t {
+		need(1);
+		return static_cast<uint8_t>(m_bytes[m_offset++]);
+	}
+
+	auto u32() -> uint32_t {
+		need(4);
+		uint32_t value = 0;
+		for (uint32_t shift = 0; shift < 32; shift += 8)
+			value |= static_cast<uint32_t>(static_cast<uint8_t>(m_bytes[m_offset++])) << shift;
+		return value;
+	}
+
+	auto bytes(const size_t iCount) -> std::string_view {
+		need(iCount);
+		const auto view = m_bytes.substr(m_offset, iCount);
+		m_offset += iCount;
+		return view;
+	}
+
+	[[nodiscard]] auto remaining() const -> size_t { return m_bytes.size() - m_offset; }
+
+	[[noreturn]] void fail(const std::string_view iWhat) const {
+		throw YamlError(std::format("YAML: Binary tree '{}' is {}.", m_source, iWhat));
+	}
+
+private:
+	void need(const size_t iCount) const {
+		if (iCount > remaining())
+			fail("truncated");
+	}
+
+	std::string_view m_bytes;
+	std::string_view m_source;
+	size_t m_offset{0};
+};
 
 auto toView(const ryml::csubstr iText) noexcept -> std::string_view { return {iText.str, iText.len}; }
 
@@ -279,6 +348,10 @@ auto YamlNode::begin() const noexcept -> Iterator {
 
 YamlDocument::YamlDocument(const std::string_view iYaml, const std::string_view iSourceName)
 	: m_tree{throwingCallbacks()} {
+	if (isBinaryYaml(iYaml)) {
+		loadBinary(iYaml, iSourceName);
+		return;
+	}
 	const ryml::csubstr text{iYaml.data(), iYaml.size()};
 	ryml::EventHandlerTree handler{throwingCallbacks()};
 	ryml::Parser parser{&handler};
@@ -288,6 +361,136 @@ YamlDocument::YamlDocument(const std::string_view iYaml, const std::string_view 
 	m_root = m_tree.root_id();
 	if (m_tree.is_stream(m_root))
 		m_root = m_tree.first_child(m_root);
+}
+
+auto isBinaryYaml(const std::string_view iText) noexcept -> bool { return iText.starts_with(g_BinaryYamlMagic); }
+
+auto YamlDocument::toBinary() const -> std::string {
+	std::unordered_map<std::string_view, uint32_t> indices;
+	std::vector<std::string_view> strings;
+	const auto intern = [&indices, &strings](const ryml::csubstr iText) -> uint32_t {
+		const auto view = toView(iText);
+		const auto [found, inserted] = indices.try_emplace(view, static_cast<uint32_t>(strings.size()));
+		if (inserted)
+			strings.push_back(view);
+		return found->second;
+	};
+	std::string nodes;
+	uint32_t nodeCount = 0;
+	std::vector<ryml::id_type> pending;
+	if (m_root != ryml::NONE)
+		pending.push_back(m_root);
+	while (!pending.empty()) {
+		const auto id = pending.back();
+		pending.pop_back();
+		uint8_t flags = 0;
+		const bool hasKey = m_tree.has_key(id);
+		const bool hasVal = m_tree.has_val(id);
+		const bool null = hasVal && m_tree.val_is_null(id);
+		if (hasKey)
+			flags |= static_cast<uint8_t>(BinaryNode::Key);
+		if (hasVal)
+			flags |= static_cast<uint8_t>(BinaryNode::Val);
+		if (m_tree.is_map(id))
+			flags |= static_cast<uint8_t>(BinaryNode::Map);
+		if (m_tree.is_seq(id))
+			flags |= static_cast<uint8_t>(BinaryNode::Seq);
+		if (null)
+			flags |= static_cast<uint8_t>(BinaryNode::Null);
+		if (hasVal && m_tree.is_val_quoted(id))
+			flags |= static_cast<uint8_t>(BinaryNode::Quoted);
+		nodes.push_back(static_cast<char>(flags));
+		if (hasKey)
+			appendU32(nodes, intern(m_tree.key(id)));
+		if (hasVal && !null)
+			appendU32(nodes, intern(m_tree.val(id)));
+		if (m_tree.is_container(id)) {
+			appendU32(nodes, static_cast<uint32_t>(m_tree.num_children(id)));
+			const auto first = pending.size();
+			for (auto child = m_tree.first_child(id); child != ryml::NONE; child = m_tree.next_sibling(child))
+				pending.push_back(child);
+			std::reverse(pending.begin() + static_cast<std::ptrdiff_t>(first), pending.end());
+		}
+		++nodeCount;
+	}
+	std::string blob;
+	std::string out{g_BinaryYamlMagic};
+	appendU32(out, g_binaryVersion);
+	appendU32(out, nodeCount);
+	appendU32(out, static_cast<uint32_t>(strings.size()));
+	for (const auto& text: strings) {
+		appendU32(out, static_cast<uint32_t>(blob.size()));
+		appendU32(out, static_cast<uint32_t>(text.size()));
+		blob.append(text);
+	}
+	appendU32(out, static_cast<uint32_t>(blob.size()));
+	out += blob;
+	out += nodes;
+	return out;
+}
+
+void YamlDocument::loadBinary(const std::string_view iBytes, const std::string_view iSourceName) {
+	BinaryReader reader{iBytes, iSourceName};
+	std::ignore = reader.bytes(g_BinaryYamlMagic.size());
+	if (reader.u32() != g_binaryVersion)
+		reader.fail("of an unknown version");
+	const auto nodeCount = reader.u32();
+	const auto stringCount = reader.u32();
+	// Each string costs 8 bytes of table and each node at least one byte: larger counts are lies.
+	if (stringCount > reader.remaining() / 8 || nodeCount > reader.remaining())
+		reader.fail("inconsistent");
+	std::vector<std::pair<uint32_t, uint32_t>> ranges(stringCount);
+	for (auto& [offset, length]: ranges) {
+		offset = reader.u32();
+		length = reader.u32();
+	}
+	const auto blobSize = reader.u32();
+	const auto blob = reader.bytes(blobSize);
+	for (const auto& [offset, length]: ranges)
+		if (offset > blobSize || length > blobSize - offset)
+			reader.fail("inconsistent");
+	m_tree.reserve(static_cast<ryml::id_type>(nodeCount) + 1);
+	m_tree.reserve_arena(blobSize);
+	const auto arena = m_tree.copy_to_arena(ryml::csubstr{blob.data(), blob.size()});
+	const auto text = [&reader, &ranges, &arena](const uint32_t iIndex) -> ryml::csubstr {
+		if (iIndex >= ranges.size())
+			reader.fail("inconsistent");
+		return arena.sub(ranges[iIndex].first, ranges[iIndex].second);
+	};
+
+	// Containers being filled, with the number of children still to read.
+	std::vector<std::pair<ryml::id_type, uint32_t>> parents;
+	for (uint32_t index = 0; index < nodeCount; ++index) {
+		while (!parents.empty() && parents.back().second == 0) parents.pop_back();
+		if (index > 0 && parents.empty())
+			reader.fail("inconsistent");
+		const auto flags = reader.u8();
+		const ryml::id_type id = parents.empty() ? m_tree.root_id() : m_tree.append_child(parents.back().first);
+		if (!parents.empty())
+			--parents.back().second;
+		const ryml::csubstr key = has(flags, BinaryNode::Key) ? text(reader.u32()) : ryml::csubstr{};
+		const bool hasKey = has(flags, BinaryNode::Key);
+		if (has(flags, BinaryNode::Map) || has(flags, BinaryNode::Seq)) {
+			const bool isMap = has(flags, BinaryNode::Map);
+			if (hasKey)
+				isMap ? m_tree.to_map(id, key) : m_tree.to_seq(id, key);
+			else
+				isMap ? m_tree.to_map(id) : m_tree.to_seq(id);
+			const auto children = reader.u32();
+			if (children > nodeCount)
+				reader.fail("inconsistent");
+			parents.emplace_back(id, children);
+			continue;
+		}
+		const ryml::csubstr val =
+				has(flags, BinaryNode::Null) || !has(flags, BinaryNode::Val) ? ryml::csubstr{} : text(reader.u32());
+		const ryml::type_bits style = has(flags, BinaryNode::Quoted) ? ryml::VAL_SQUO : ryml::type_bits{0};
+		if (hasKey)
+			m_tree.to_keyval(id, key, val, style);
+		else
+			m_tree.to_val(id, val, style);
+	}
+	m_root = nodeCount == 0 ? ryml::NONE : m_tree.root_id();
 }
 
 }// namespace owl::core

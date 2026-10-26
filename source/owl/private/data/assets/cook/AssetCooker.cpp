@@ -10,12 +10,18 @@
 
 #include "data/assets/cook/AssetCooker.h"
 
+#include "core/YamlNode.h"
 #include "core/external/ktx.h"
 #include "renderer/TextureDecoder.h"
+#include "scene/EntityLinkMigration.h"
+#include "scene/PrefabSerializer.h"
+#include "scene/SceneSerializer.h"
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
+#include <filesystem>
+#include <string>
 #include <thread>
 #include <utility>
 
@@ -32,6 +38,40 @@ constexpr ktx_uint32_t g_etc1sQuality = 128;
 
 constexpr uint32_t g_textureCookerVersion = 1;
 constexpr uint32_t g_copyCookerVersion = 1;
+constexpr uint32_t g_documentCookerVersion = 1;
+
+auto isSceneDocument(const std::filesystem::path& iFile) -> bool {
+	const auto extension = iFile.extension();
+	return extension == ".owl" || extension == ".owlhud" || extension == ".owlprefab";
+}
+
+// A scene, HUD or prefab upgraded to the current format and stored as a binary tree: the runner skips the parse.
+auto cookSceneDocument(const std::span<const uint8_t> iSource, const std::string_view iName)
+		-> expected<std::vector<uint8_t>, CookError> {
+	OWL_PROFILE_FUNCTION()
+
+	std::string text{iSource.begin(), iSource.end()};
+	if (core::isBinaryYaml(text))
+		return std::vector<uint8_t>(iSource.begin(), iSource.end());
+	const auto kind = scene::documentKindOf(std::filesystem::path{iName});
+	const auto& format =
+			kind == scene::DocumentKind::Prefab ? scene::PrefabSerializer::format() : scene::SceneSerializer::format(kind);
+	try {
+		auto document = mkUniq<core::YamlDocument>(text, iName);
+		if (!scene::canReadWithoutMigration(document->getRoot(), format)) {
+			if (const auto version = core::upgradeDocumentText(format, text, iName); !version) {
+				OWL_CORE_WARN("Cook: Cannot upgrade '{}': {}.", iName, core::describe(version.error()))
+				return unexpected{CookError::InvalidSource};
+			}
+			document = mkUniq<core::YamlDocument>(text, iName);
+		}
+		const auto binary = document->toBinary();
+		return std::vector<uint8_t>(binary.begin(), binary.end());
+	} catch (const core::YamlError& error) {
+		OWL_CORE_WARN("Cook: '{}' does not parse: {}.", iName, error.what())
+		return unexpected{CookError::InvalidSource};
+	}
+}
 
 // Halve an RGBA8 level with a box filter; an odd edge averages the texels it has.
 auto downsample(const std::vector<uint8_t>& iPixels, const math::vec2ui iSize) -> std::vector<uint8_t> {
@@ -152,12 +192,13 @@ auto getCookerVersion(const Importer iImporter) -> uint32_t {
 	switch (iImporter) {
 		case Importer::Texture:
 			return g_textureCookerVersion;
+		case Importer::Document:
+			return g_documentCookerVersion;
 		case Importer::Copy:
 		case Importer::Mesh:
 		case Importer::Sound:
 		case Importer::Script:
 		case Importer::Font:
-		case Importer::Document:
 			return g_copyCookerVersion;
 	}
 	return g_copyCookerVersion;
@@ -168,12 +209,15 @@ auto cookAsset(const AssetMeta& iMeta, const std::span<const uint8_t> iSource, c
 	switch (iMeta.importer) {
 		case Importer::Texture:
 			return cookTexture(iMeta, iSource, iName);
+		case Importer::Document:
+			if (isSceneDocument(std::filesystem::path{iName}))
+				return cookSceneDocument(iSource, iName);
+			break;
 		case Importer::Copy:
 		case Importer::Mesh:
 		case Importer::Sound:
 		case Importer::Script:
 		case Importer::Font:
-		case Importer::Document:
 			break;
 	}
 	return std::vector<uint8_t>(iSource.begin(), iSource.end());
