@@ -113,6 +113,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Replace the texture by levels given in full (mipmaps included, no mipmap generated): size and format follow.
+	 * @param[in] iLevels The levels, finest first, in a format the backend supports.
+	 * @return True when the levels were uploaded.
+	 */
+	auto setLevels(const TextureLevels& iLevels) -> bool override;
+
+	/**
+	 * @brief
 	 *  Switch the sampler between linear and nearest filtering.
 	 * Waits for the device to be idle before replacing the sampler: meant for load time and editor actions.
 	 * @param[in] iMode The new filter mode.

@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "core/SerializerImpl.h"
+#include "data/assets/AssetReference.h"
 #include "math/YamlSerializers.h"
 #include "scene/component/RaycastDoor.h"
 
@@ -21,7 +22,8 @@ void RaycastDoor::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	if (!tilesetPath.empty())
-		iOut.getImpl()->emitter << YAML::Key << "tilesetPath" << YAML::Value << tilesetPath;
+		iOut.getImpl()->emitter << YAML::Key << "tilesetPath" << YAML::Value
+								<< data::assets::toAssetReference(tilesetPath);
 	iOut.getImpl()->emitter << YAML::Key << "faceTileIndex" << YAML::Value << faceTileIndex;
 	iOut.getImpl()->emitter << YAML::Key << "lateralTileIndex" << YAML::Value << lateralTileIndex;
 	iOut.getImpl()->emitter << YAML::Key << "openingDirection" << YAML::Value
@@ -37,7 +39,7 @@ void RaycastDoor::serialize(const core::Serializer& iOut) const {
 void RaycastDoor::deserialize(const core::Serializer& iNode) {
 	const auto& node = iNode.getImpl()->node;
 	if (node["tilesetPath"])
-		tilesetPath = node["tilesetPath"].as<std::string>();
+		tilesetPath = data::assets::toAssetPath(node["tilesetPath"].as<std::string>());
 	if (node["faceTileIndex"])
 		faceTileIndex = node["faceTileIndex"].as<uint32_t>();
 	if (node["lateralTileIndex"])

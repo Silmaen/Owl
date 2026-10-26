@@ -150,7 +150,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/wolf3d/sprites/key_blue.png
+      texture: gid:757ea777d122d3af:textures/wolf3d/sprites/key_blue.png
   - Entity: 3100000000000000007
     Tag:
       tag: GoldKeyIcon
@@ -171,7 +171,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/wolf3d/sprites/key_yellow.png
+      texture: gid:58087b3156b9845f:textures/wolf3d/sprites/key_yellow.png
   - Entity: 3100000000000000008
     Tag:
       tag: ToastText
@@ -334,7 +334,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plate.png
+      texture: gid:0bcddcb325526f99:textures/ui/plate.png
   - Entity: 3100000000000000013
     Tag:
       tag: ResumeButton
@@ -399,4 +399,4 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plate.png
+      texture: gid:0bcddcb325526f99:textures/ui/plate.png

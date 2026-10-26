@@ -12,6 +12,7 @@
 #include "data/geometry/StaticMesh.h"
 #include "data/geometry/extradata/TriangleNormals.h"
 #include "data/geometry/extradata/TriangleUVCoordinate.h"
+#include "renderer/TextureDecoder.h"
 
 // TinyGLTF + implementation
 #define TINYGLTF_IMPLEMENTATION
@@ -82,8 +83,19 @@ void logCompleteness(const std::string& iLoader, const std::string& iName, const
 				  !iHasNormals || iMesh.isExtraDataDefinedOnAllTriangles<TriangleNormals>() ? "complete" : "incomplete")
 }
 
+// Marks a glTF image holding the KTX2 bytes of a cooked image instead of pixels.
+constexpr std::string_view g_ktx2MimeType{"image/ktx2"};
+
 // Decode an encoded image to RGBA8, bottom row first like every engine texture.
 auto decodeImageBytes(const std::span<const uint8_t> iBytes, const std::string& iName) -> std::optional<MeshImage> {
+	if (renderer::isKtx2(iBytes)) {
+		const auto size = renderer::peekImageSize(iBytes);
+		if (!size) {
+			OWL_CORE_WARN("MeshLoader: Cannot read the cooked image {}.", iName)
+			return std::nullopt;
+		}
+		return MeshImage{.size = *size, .pixels = {}, .name = iName, .cooked = {iBytes.begin(), iBytes.end()}};
+	}
 	int width = 0;
 	int height = 0;
 	int channels = 0;
@@ -263,6 +275,18 @@ auto decodeGltfImage(tinygltf::Image* oImage, [[maybe_unused]] const int iImageI
 					 [[maybe_unused]] std::string* oWarning, [[maybe_unused]] const int iRequestedWidth,
 					 [[maybe_unused]] const int iRequestedHeight, const unsigned char* iBytes, const int iSize,
 					 [[maybe_unused]] void* iUserData) -> bool {
+	const std::span<const uint8_t> bytes{iBytes, static_cast<size_t>(std::max(iSize, 0))};
+	if (renderer::isKtx2(bytes)) {
+		// A cooked image keeps its KTX2 bytes: the renderer transcodes them for its GPU.
+		const auto size = renderer::peekImageSize(bytes);
+		if (!size)
+			return false;
+		oImage->image.assign(bytes.begin(), bytes.end());
+		oImage->mimeType = std::string{g_ktx2MimeType};
+		oImage->width = static_cast<int>(size->x());
+		oImage->height = static_cast<int>(size->y());
+		return true;
+	}
 	int width = 0;
 	int height = 0;
 	int channels = 0;
@@ -363,6 +387,11 @@ auto readGltfImage(const tinygltf::Model& iModel, const int iTextureIndex) -> Me
 	const auto& image = iModel.images[static_cast<size_type>(source)];
 	MeshImage result;
 	result.name = image.uri.empty() ? image.name : image.uri;
+	if (image.mimeType == g_ktx2MimeType) {
+		result.size = {static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height)};
+		result.cooked = image.image;
+		return result;
+	}
 	if (image.width <= 0 || image.height <= 0 || image.component != 4 || image.bits != 8 ||
 		image.image.size() != static_cast<size_t>(image.width) * static_cast<size_t>(image.height) * 4u) {
 		OWL_CORE_WARN("MeshLoader::loadGltf: Image {} could not be decoded, ignored.", result.name)

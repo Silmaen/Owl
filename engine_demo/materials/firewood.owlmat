@@ -2,8 +2,8 @@ Material:
   FormatVersion: 1
   metallic: 1
   roughness: 1
-  baseColorMap: nam:textures/pbr/bark_brown_02/bark_brown_02_diff.jpg
-  metallicMap: nam:textures/pbr/bark_brown_02/bark_brown_02_arm.jpg
-  roughnessMap: nam:textures/pbr/bark_brown_02/bark_brown_02_arm.jpg
-  normalMap: nam:textures/pbr/bark_brown_02/bark_brown_02_nor.jpg
-  occlusionMap: nam:textures/pbr/bark_brown_02/bark_brown_02_arm.jpg
+  baseColorMap: gid:4e17ec88b9a3b3d5:textures/pbr/bark_brown_02/bark_brown_02_diff.jpg
+  metallicMap: gid:b573e955f851c8e3:textures/pbr/bark_brown_02/bark_brown_02_arm.jpg
+  roughnessMap: gid:b573e955f851c8e3:textures/pbr/bark_brown_02/bark_brown_02_arm.jpg
+  normalMap: gid:a0e926951a8650a0:textures/pbr/bark_brown_02/bark_brown_02_nor.jpg
+  occlusionMap: gid:b573e955f851c8e3:textures/pbr/bark_brown_02/bark_brown_02_arm.jpg

@@ -3,8 +3,8 @@ Material:
   metallic: 1
   roughness: 1
   baseColor: [0.62, 0.55, 0.5, 1]
-  baseColorMap: nam:textures/pbr/rough_wood/rough_wood_diff.jpg
-  metallicMap: nam:textures/pbr/rough_wood/rough_wood_arm.jpg
-  roughnessMap: nam:textures/pbr/rough_wood/rough_wood_arm.jpg
-  normalMap: nam:textures/pbr/rough_wood/rough_wood_nor.jpg
-  occlusionMap: nam:textures/pbr/rough_wood/rough_wood_arm.jpg
+  baseColorMap: gid:867c1a678504d31c:textures/pbr/rough_wood/rough_wood_diff.jpg
+  metallicMap: gid:616808f3e6b90728:textures/pbr/rough_wood/rough_wood_arm.jpg
+  roughnessMap: gid:616808f3e6b90728:textures/pbr/rough_wood/rough_wood_arm.jpg
+  normalMap: gid:005786811a1f1154:textures/pbr/rough_wood/rough_wood_nor.jpg
+  occlusionMap: gid:616808f3e6b90728:textures/pbr/rough_wood/rough_wood_arm.jpg

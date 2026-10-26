@@ -23,7 +23,7 @@ Entities:
     Hierarchy:
       parentId: 7600000000000781001
     MeshRenderer:
-      mesh: models/td/tower-square-bottom-a.glb
+      mesh: gid:87f3006362b66279:models/td/tower-square-bottom-a.glb
       color: [1, 1, 1, 1]
       transparent: false
     RendererTag:
@@ -40,7 +40,7 @@ Entities:
     Hierarchy:
       parentId: 7600000000000781001
     MeshRenderer:
-      mesh: models/td/tower-square-top-a.glb
+      mesh: gid:9cbcb817fe527fe1:models/td/tower-square-top-a.glb
       color: [1, 1, 1, 1]
       transparent: false
     RendererTag:
@@ -57,7 +57,7 @@ Entities:
     Hierarchy:
       parentId: 7600000000000781001
     MeshRenderer:
-      mesh: models/td/weapon-cannon.glb
+      mesh: gid:b58ebc6b7e941563:models/td/weapon-cannon.glb
       color: [1, 1, 1, 1]
       transparent: false
     RendererTag:

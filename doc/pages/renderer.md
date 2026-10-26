@@ -1367,6 +1367,15 @@ only); the mipmap levels stay those allocated at creation.
 | `Rgb8`    | 3        | 24         | Non-transparent images |
 | `Rgba8`   | 4        | 32         | Standard textures      |
 | `Rgba32F` | 4        | 128        | HDR / floating-point   |
+| `Bc7`     | 4        | 8          | Compressed, desktop    |
+| `Astc4x4` | 4        | 8          | Compressed, ARM/mobile |
+
+`Bc7` and `Astc4x4` hold 4x4 blocks of 16 bytes (`isCompressed(format)`). `RenderAPI::supportsFormat` (also
+`RenderCommand::supportsFormat`) tells whether the device samples a format: Vulkan from the `textureCompressionBC`
+and `textureCompressionASTC_LDR` device features, OpenGL from BPTC (core in 4.2) and
+`KHR_texture_compression_astc_ldr`. `Texture2D::setLevels` uploads a chain of levels, finest first, in a supported
+format. A KTX2 texture cooked by the [pipeline](design/content-pipeline.md#content-pipeline-cook) is transcoded at
+load by `TextureDecoder` to `Bc7`, else `Astc4x4`, else `Rgba8`.
 
 ### Serialization Format
 

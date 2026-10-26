@@ -1,6 +1,6 @@
 Tileset: walls
 Version: 1
-texture: nam:textures/tiles.png
+texture: gid:d2f69fd3e31fc83f:textures/tiles.png
 tileWidth: 64
 tileHeight: 64
 columns: 4

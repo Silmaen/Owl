@@ -10,6 +10,7 @@
 
 #include "../EntitySnapshot.h"
 #include "../UndoManager.h"
+#include "AssetCommands.h"
 #include "CommandJournal.h"
 #include "ComponentCommands.h"
 #include "EntityCommands.h"
@@ -1106,6 +1107,7 @@ CommandRegistry::CommandRegistry() {
 		 .factory = {},
 		 .run = redoEdit});
 	addHudCommands(*this);
+	addAssetCommands(*this);
 	add(getMacroRunSpec());
 }
 

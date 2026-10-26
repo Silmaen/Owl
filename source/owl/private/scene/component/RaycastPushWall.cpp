@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "core/SerializerImpl.h"
+#include "data/assets/AssetReference.h"
 #include "math/YamlSerializers.h"
 #include "scene/component/RaycastPushWall.h"
 
@@ -19,7 +20,8 @@ void RaycastPushWall::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	if (!tilesetPath.empty())
-		iOut.getImpl()->emitter << YAML::Key << "tilesetPath" << YAML::Value << tilesetPath;
+		iOut.getImpl()->emitter << YAML::Key << "tilesetPath" << YAML::Value
+								<< data::assets::toAssetReference(tilesetPath);
 	iOut.getImpl()->emitter << YAML::Key << "tileIndex" << YAML::Value << tileIndex;
 	iOut.getImpl()->emitter << YAML::Key << "slideDirection" << YAML::Value << YAML::Flow << YAML::BeginSeq
 							<< slideDirection.x() << slideDirection.y() << YAML::EndSeq;
@@ -33,7 +35,7 @@ void RaycastPushWall::serialize(const core::Serializer& iOut) const {
 void RaycastPushWall::deserialize(const core::Serializer& iNode) {
 	const auto& node = iNode.getImpl()->node;
 	if (node["tilesetPath"])
-		tilesetPath = node["tilesetPath"].as<std::string>();
+		tilesetPath = data::assets::toAssetPath(node["tilesetPath"].as<std::string>());
 	if (node["tileIndex"])
 		tileIndex = node["tileIndex"].as<uint32_t>();
 	if (auto sdNode = node["slideDirection"]; sdNode && sdNode.isSequence() && sdNode.size() >= 2)

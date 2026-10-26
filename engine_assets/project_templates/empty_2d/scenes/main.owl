@@ -1,5 +1,5 @@
 Scene: Main
-Hud: huds/gameplay.owlhud
+Hud: gid:809945ed0918c168:huds/gameplay.owlhud
 EnabledRenderers:
   - Name: world
     Enabled: true

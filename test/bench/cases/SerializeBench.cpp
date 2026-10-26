@@ -8,6 +8,7 @@
 
 #include "cases/Cases.h"
 
+#include <core/YamlNode.h>
 #include <scene/Entity.h>
 #include <scene/PrefabSerializer.h>
 #include <scene/SceneSerializer.h>
@@ -49,6 +50,20 @@ void runSceneRoundTrip(Runner& ioRunner) {
 				});
 		ioRunner.measure(std::format("serialize/scene_parse_only/{}", count), count,
 						 [&]() -> void { doNotOptimize(scene::SceneSerializer::parseBuffer(buffer).valid); });
+		const auto binary = core::YamlDocument{yaml}.toBinary();
+		ioRunner.metric(std::format("serialize/scene_binary_size/{}", count), static_cast<double>(binary.size()),
+						"bytes");
+		const std::vector<uint8_t> binaryBuffer(binary.begin(), binary.end());
+		ioRunner.measureWithSetup(
+				std::format("serialize/scene_from_binary/{}", count), count,
+				[&]() -> void {
+					target.reset();
+					target = mkShared<scene::Scene>();
+				},
+				[&]() -> void {
+					const scene::SceneSerializer loader(target);
+					doNotOptimize(loader.deserializeFromBuffer(binaryBuffer));
+				});
 	}
 }
 

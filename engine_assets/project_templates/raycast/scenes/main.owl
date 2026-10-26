@@ -1,5 +1,5 @@
 Scene: Main
-Hud: huds/gameplay.owlhud
+Hud: gid:f33f4146dad24e3d:huds/gameplay.owlhud
 EnabledRenderers:
   - Name: raycast_world
     Enabled: true
@@ -39,7 +39,7 @@ Entities:
     Hierarchy:
       parentId: 0
     LuaScript:
-      scriptPath: scripts/player.lua
+      scriptPath: gid:9125edbf0fdb3c86:scripts/player.lua
       properties:
         - name: speed
           type: float
@@ -55,7 +55,7 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Tilemap:
-      tilemapPath: tilemaps/room.owltilemap
+      tilemapPath: gid:301cc0ce8bae94a9:tilemaps/room.owltilemap
     Visibility:
       gameVisible: true
     Hierarchy:

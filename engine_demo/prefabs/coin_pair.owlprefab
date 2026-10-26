@@ -42,7 +42,7 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/atlases/platformer_atlas.png
+    texture: gid:b73ffdaedb487204:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -57,7 +57,7 @@ Entities:
   Hierarchy:
     parentId: 5100000000000000001
   LuaScript:
-    scriptPath: scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
 - Entity: 5100000000000000003
   Tag:
     tag: CoinRight
@@ -80,7 +80,7 @@ Entities:
     - 1
     - 1
     - 1
-    texture: nam:textures/atlases/platformer_atlas.png
+    texture: gid:b73ffdaedb487204:textures/atlases/platformer_atlas.png
     columns: 20
     rows: 16
     firstFrame: 151
@@ -95,4 +95,4 @@ Entities:
   Hierarchy:
     parentId: 5100000000000000001
   LuaScript:
-    scriptPath: scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua

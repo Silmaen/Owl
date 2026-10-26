@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "core/SerializerImpl.h"
+#include "data/assets/AssetReference.h"
 #include "scene/component/VoxelWorld.h"
 
 #include <cstdint>
@@ -109,7 +110,8 @@ void VoxelWorld::serialize(const core::Serializer& iOut) const {
 	emitter << YAML::Key << "Ambient" << YAML::Value << YAML::Flow << YAML::BeginSeq << ambient.x() << ambient.y()
 			<< ambient.z() << YAML::EndSeq;
 	if (!tilesetPath.empty())
-		emitter << YAML::Key << "Tileset" << YAML::Value << tilesetPath.generic_string();
+		emitter << YAML::Key << "Tileset" << YAML::Value
+				<< data::assets::toAssetReference(tilesetPath.generic_string());
 	emitter << YAML::Key << "ProceduralTerrain" << YAML::Value << proceduralTerrain;
 	emitter << YAML::Key << "StreamRadius" << YAML::Value << streamRadius;
 	emitter << YAML::Key << "StreamHeight" << YAML::Value << streamHeight;
@@ -175,7 +177,7 @@ void VoxelWorld::deserialize(const core::Serializer& iNode) {
 	tilesetPath.clear();
 	tileset.reset();
 	if (const auto ts = node["Tileset"]; ts)
-		tilesetPath = ts.as<std::string>();
+		tilesetPath = data::assets::toAssetPath(ts.as<std::string>());
 	registry = data::voxel::BlockRegistry{};
 	if (const auto blocks = node["Blocks"]; blocks && blocks.isSequence()) {
 		for (const auto blockNode: blocks) {

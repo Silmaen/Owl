@@ -8,9 +8,12 @@
 
 #include "testHelper.h"
 
+#include <data/assets/AssetMeta.h>
+#include <data/assets/cook/AssetCooker.h>
 #include <data/geometry/MeshLoader.h>
 #include <data/geometry/extradata/TriangleNormals.h>
 #include <data/geometry/extradata/TriangleUVCoordinate.h>
+#include <renderer/TextureDecoder.h>
 
 #include <algorithm>
 #include <cmath>
@@ -22,6 +25,7 @@
 #include <iterator>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 using namespace owl;
@@ -188,6 +192,14 @@ TEST_F(MeshAssetTest, glbListsTheImagesItNames) {
 
 namespace {
 
+// Pieces of glTF added to a fixture to give it a textured material.
+constexpr std::string_view g_indicesKey = R"("indices":2)";
+constexpr std::string_view g_indicesWithMaterial = R"("indices":2,"material":0)";
+constexpr char g_closingBrace = '\x7d';
+constexpr std::string_view g_textureTail =
+		R"(,"images":[{"uri":"albedo.png"}],"textures":[{"source":0}],"materials":[{"pbrMetallicRoughness":)"
+		R"({"baseColorTexture":{"index":0}}}]})";
+
 auto twoMaterialsPath() -> std::filesystem::path { return test::getTestAssetsPath("mesh_tests") / "two_materials.glb"; }
 
 }// namespace
@@ -351,4 +363,36 @@ TEST_F(MeshAssetTest, gltfPlacesEveryNodeMeshWithItsTransform) {
 	EXPECT_EQ(scaled.getVertex(0)->getPosition(), (math::vec3{0.f, 10.f, 0.f}));
 	EXPECT_EQ(scaled.getVertex(2)->getPosition(), (math::vec3{0.f, 12.f, 0.f}));
 	EXPECT_EQ(loaded.submeshes.size(), 2u);
+}
+
+TEST_F(MeshAssetTest, gltfKeepsTheBytesOfACookedImage) {
+	const auto folder = test::getTestAssetsPath("mesh_tests");
+	const auto source = readBytes(folder / "multiple_triangle_uv.gltf");
+	std::string gltf(source.begin(), source.end());
+	gltf.replace(gltf.find(g_indicesKey), g_indicesKey.size(), g_indicesWithMaterial);
+	gltf.replace(gltf.rfind(g_closingBrace), 1, g_textureTail);
+	const std::vector<uint8_t> pixels(8 * 4 * 4, 0x60);
+	const data::assets::AssetMeta meta{
+			.guid = data::assets::AssetGuid{1},
+			.importer = data::assets::Importer::Texture,
+			.texture = {.nearest = false, .compression = data::assets::TextureCompression::Uastc, .mips = true}};
+	const auto cooked = data::assets::cook::cookAsset(meta, renderer::encodeImagePng({8, 4}, pixels), "albedo.png");
+	ASSERT_TRUE(cooked);
+	const MeshFileReader reader = [&](const std::string& iPath) -> std::optional<std::vector<uint8_t>> {
+		if (iPath == "packed/multiple_triangle_uv.bin")
+			return readBytes(folder / "multiple_triangle_uv.bin");
+		if (iPath == "packed/albedo.png")
+			return *cooked;
+		return std::nullopt;
+	};
+	const std::vector<uint8_t> bytes(gltf.begin(), gltf.end());
+	const auto loaded =
+			MeshLoader::loadMeshFromMemory(bytes, ".gltf", "packed/multiple_triangle_uv.gltf", "packed", reader);
+	ASSERT_NE(loaded.mesh, nullptr);
+	ASSERT_EQ(loaded.materials.size(), 1u);
+	const auto& image = loaded.materials.front().baseColor;
+	EXPECT_FALSE(image.isEmpty());
+	EXPECT_TRUE(image.pixels.empty());
+	EXPECT_EQ(image.cooked, *cooked);
+	EXPECT_EQ(image.size, (math::vec2ui{8, 4}));
 }

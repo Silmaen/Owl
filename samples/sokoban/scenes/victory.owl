@@ -48,7 +48,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: scripts/ui/warehouse.lua
+      scriptPath: gid:539d0a97cc5de522:scripts/ui/warehouse.lua
   - Entity: 7330000000000000004
     Tag:
       tag: CorridorWall
@@ -62,7 +62,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -82,7 +82,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -102,7 +102,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -122,7 +122,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 1
@@ -142,7 +142,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 3
@@ -162,7 +162,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -182,7 +182,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -202,7 +202,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -222,7 +222,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -242,7 +242,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 1
@@ -262,7 +262,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -282,7 +282,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -302,7 +302,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -322,7 +322,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -342,7 +342,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 3
@@ -362,7 +362,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 1
@@ -382,7 +382,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -402,7 +402,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -422,7 +422,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -442,7 +442,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -462,7 +462,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -482,7 +482,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 1
@@ -502,7 +502,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -522,7 +522,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -542,7 +542,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 3
@@ -562,7 +562,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -582,7 +582,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -602,7 +602,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 1
@@ -622,7 +622,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -642,7 +642,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -662,7 +662,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -682,7 +682,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -702,7 +702,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -722,7 +722,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 1
@@ -742,7 +742,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 3
@@ -762,7 +762,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -782,7 +782,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -802,7 +802,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -822,7 +822,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -842,7 +842,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 1
@@ -862,7 +862,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -882,7 +882,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -902,7 +902,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -922,7 +922,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -942,7 +942,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 3
@@ -962,7 +962,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 1
@@ -982,7 +982,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -1002,7 +1002,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -1022,7 +1022,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -1042,7 +1042,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 0
@@ -1062,7 +1062,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 2
@@ -1082,7 +1082,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 1
@@ -1102,7 +1102,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 4
@@ -1122,7 +1122,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 4
@@ -1142,7 +1142,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 4
@@ -1162,7 +1162,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 6
@@ -1182,7 +1182,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 6
@@ -1202,7 +1202,7 @@ Entities:
       parentId: 7330000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 6
@@ -1225,7 +1225,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: scripts/ui/victory.lua
+      scriptPath: gid:3193f030c995eecc:scripts/ui/victory.lua
   - Entity: 7330000000000000063
     Tag:
       tag: ResultGroup
@@ -1346,7 +1346,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plank.png
+      texture: gid:2a9b340c4719670c:textures/ui/plank.png
   - Entity: 7330000000000000067
     Tag:
       tag: LevelsButton
@@ -1411,7 +1411,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plank.png
+      texture: gid:2a9b340c4719670c:textures/ui/plank.png
   - Entity: 7330000000000000069
     Tag:
       tag: ScoreLabel

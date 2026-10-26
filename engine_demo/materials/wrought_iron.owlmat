@@ -3,8 +3,8 @@ Material:
   metallic: 1
   roughness: 1
   baseColor: [0.35, 0.33, 0.32, 1]
-  baseColorMap: nam:textures/pbr/rusty_metal_02/rusty_metal_02_diff.jpg
-  metallicMap: nam:textures/pbr/rusty_metal_02/rusty_metal_02_arm.jpg
-  roughnessMap: nam:textures/pbr/rusty_metal_02/rusty_metal_02_arm.jpg
-  normalMap: nam:textures/pbr/rusty_metal_02/rusty_metal_02_nor.jpg
-  occlusionMap: nam:textures/pbr/rusty_metal_02/rusty_metal_02_arm.jpg
+  baseColorMap: gid:2cb24a73d5a41b0a:textures/pbr/rusty_metal_02/rusty_metal_02_diff.jpg
+  metallicMap: gid:c0ed8d09232a82c8:textures/pbr/rusty_metal_02/rusty_metal_02_arm.jpg
+  roughnessMap: gid:c0ed8d09232a82c8:textures/pbr/rusty_metal_02/rusty_metal_02_arm.jpg
+  normalMap: gid:a36c382dbcbc9f22:textures/pbr/rusty_metal_02/rusty_metal_02_nor.jpg
+  occlusionMap: gid:c0ed8d09232a82c8:textures/pbr/rusty_metal_02/rusty_metal_02_arm.jpg

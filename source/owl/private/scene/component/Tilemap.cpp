@@ -9,6 +9,7 @@
 
 #include "../TilemapCodec.h"
 #include "core/SerializerImpl.h"
+#include "data/assets/AssetReference.h"
 #include "scene/TilemapAsset.h"
 #include "scene/component/Tilemap.h"
 
@@ -440,7 +441,8 @@ auto readNavigation(const core::YamlNode& iNode) -> nav::NavProfile {
 
 void emitInline(YAML::Emitter& iEmitter, const scene::TilemapAsset& iAsset) {
 	if (!iAsset.tilesetPath.empty())
-		iEmitter << YAML::Key << "tilesetPath" << YAML::Value << iAsset.tilesetPath.generic_string();
+		iEmitter << YAML::Key << "tilesetPath" << YAML::Value
+				 << data::assets::toAssetReference(iAsset.tilesetPath.generic_string());
 	iEmitter << YAML::Key << "width" << YAML::Value << iAsset.width;
 	iEmitter << YAML::Key << "height" << YAML::Value << iAsset.height;
 	iEmitter << YAML::Key << "cellSize" << YAML::Value << iAsset.cellSize;
@@ -463,7 +465,7 @@ void emitInline(YAML::Emitter& iEmitter, const scene::TilemapAsset& iAsset) {
 auto readInline(const core::YamlNode& iNode) -> shared<scene::TilemapAsset> {
 	auto asset = mkShared<scene::TilemapAsset>();
 	if (iNode["tilesetPath"])
-		asset->tilesetPath = iNode["tilesetPath"].as<std::string>();
+		asset->tilesetPath = data::assets::toAssetPath(iNode["tilesetPath"].as<std::string>());
 	if (iNode["width"])
 		asset->width = std::clamp(iNode["width"].as<uint32_t>(), 1u, scene::TilemapAsset::maxGridSide);
 	if (iNode["height"])
@@ -498,7 +500,8 @@ void Tilemap::serialize(const core::Serializer& iOut) const {
 	emitter << YAML::Key << key();
 	emitter << YAML::BeginMap;
 	if (!tilemapPath.empty()) {
-		emitter << YAML::Key << "tilemapPath" << YAML::Value << tilemapPath.generic_string();
+		emitter << YAML::Key << "tilemapPath" << YAML::Value
+				<< data::assets::toAssetReference(tilemapPath.generic_string());
 	} else if (asset) {
 		emitter << YAML::Key << "inline" << YAML::Value << YAML::BeginMap;
 		emitInline(emitter, *asset);
@@ -515,7 +518,7 @@ void Tilemap::deserialize(const core::Serializer& iNode) {
 	asset.reset();
 	navigation = readNavigation(root["navigation"]);
 	if (root["tilemapPath"]) {
-		tilemapPath = root["tilemapPath"].as<std::string>();
+		tilemapPath = data::assets::toAssetPath(root["tilemapPath"].as<std::string>());
 		// `asset` is left null on purpose: scene loading resolves it via `Scene::loadAssetReferences`.
 		return;
 	}

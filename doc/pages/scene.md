@@ -1134,6 +1134,15 @@ See [Physics > Hierarchy Interaction](physics.md) for details.
 | `parseBuffer(data, name)`           | Parse YAML only (worker thread)              |
 | `applyParsed(parsed)`               | Create the entities of a parsed scene (main) |
 
+### Asset references {#scene-asset-references}
+
+An asset field (`mesh`, `material`, `parent`, `hdri`, `scriptPath`, `tilesetPath`, `tilemapPath`, `prefabAssetPath`,
+`atlasPath`, `soundAsset`, `LevelName`, the scene `Hud`, the `VoxelWorld` tileset, texture maps) is written
+`gid:<16 hex>:<path hint>`: a GUID the project knows resolves to the file's current path, an unknown one to the
+hint. A plain path, `nam:` and `pat:` still load. The Lua functions taking an asset path (`set_mesh`, `set_material`,
+`load_scene`, `sound.play`, `spawn_prefab`, `ui.set_image`) accept a `gid:` reference too. See
+[Content pipeline](design/content-pipeline.md#content-pipeline-cook).
+
 ```mermaid
 flowchart LR
     F[".owl file or pack entry"] --> P["parseBuffer<br/>worker thread"]

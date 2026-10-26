@@ -1,6 +1,6 @@
 Tileset: blocks
 Version: 1
-texture: nam:textures/tiles.png
+texture: gid:f55e6ffa44068d5e:textures/tiles.png
 tileWidth: 64
 tileHeight: 64
 columns: 4

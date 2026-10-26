@@ -10,8 +10,11 @@
 
 #include <app/Application.h>
 #include <core/external/yaml.h>
+#include <data/assets/AssetMeta.h>
+#include <data/assets/AssetRegistry.h>
 #include <data/assets/pack/GameExporter.h>
 #include <data/assets/pack/PackReader.h>
+#include <renderer/TextureDecoder.h>
 #include <renderer/gpu/Texture.h>
 
 #include <algorithm>
@@ -23,6 +26,7 @@
 #include <format>
 #include <fstream>
 #include <regex>
+#include <span>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -152,7 +156,8 @@ protected:
 				.fullscreen = false,
 				.resizable = true,
 				.rendererStackYaml = {},
-				.packFlags = PackFlags::Default};
+				.packFlags = PackFlags::Default,
+				.cookCacheDirectory = {}};
 	}
 
 	std::filesystem::path m_root;
@@ -211,6 +216,41 @@ TEST_F(GameExporterFixture, ValidateReportsMissingPieces) {
 	settings.firstScene = "scenes/missing";
 	EXPECT_GE(GameExporter::validate(settings, assets).size(), 4u);
 	EXPECT_TRUE(assets.empty());
+}
+
+TEST_F(GameExporterFixture, ExportCooksTexturesAndPacksTheIndex) {
+	const std::vector<uint8_t> pixels(16 * 16 * 4, 0x80);
+	const auto png = renderer::encodeImagePng({16, 16}, pixels);
+	{
+		std::ofstream file(m_project / "textures" / "a.png", std::ios::binary);
+		file.write(reinterpret_cast<const char*>(png.data()), static_cast<std::streamsize>(png.size()));
+	}
+	auto& app = app::Application::get();
+	app.removeAssetDirectory(m_project);
+	app.addAssetDirectory({"Project: test", m_project}, true);
+	auto& registry = app.getAssetRegistry();
+	const auto guid = registry.findGuid("textures/a.png");
+	ASSERT_TRUE(guid);
+	auto meta = registry.find(*guid)->meta;
+	meta.texture.compression = data::assets::TextureCompression::Uastc;
+	ASSERT_TRUE(registry.setMeta(meta));
+
+	auto settings = makeSettings();
+	settings.cookCacheDirectory = m_root / "cook";
+	const auto first = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(first.has_value());
+	EXPECT_GE(first->cookedAssets, 1u);
+	const auto cooked = readPackEntry(first->packFile, "textures/a.png");
+	EXPECT_TRUE(renderer::isKtx2(std::span{reinterpret_cast<const uint8_t*>(cooked.data()), cooked.size()}));
+	EXPECT_EQ(readPackEntry(first->packFile, "textures/b.png"), "PNG-B");
+	const auto index = readPackEntry(first->packFile, std::string{g_assetIndexEntry});
+	EXPECT_NE(index.find(data::assets::formatGuid(*guid)), std::string::npos);
+	EXPECT_FALSE(exists(m_project / ".owl"));
+
+	const auto second = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(second.has_value());
+	EXPECT_EQ(second->cookedAssets, 0u);
+	EXPECT_EQ(second->cacheHits, first->cookedAssets + first->cacheHits);
 }
 
 TEST_F(GameExporterFixture, ExportWritesAPlayableFolder) {
@@ -329,7 +369,7 @@ auto packPathsUnder(const std::filesystem::path& iProject, const std::string& iF
 	std::vector<std::string> paths;
 	std::error_code ec;
 	for (const auto& entry: std::filesystem::recursive_directory_iterator(iProject / iFolder, ec)) {
-		if (entry.is_regular_file())
+		if (entry.is_regular_file() && entry.path().extension() != owl::data::assets::g_MetaExtension)
 			paths.push_back(entry.path().lexically_relative(iProject).generic_string());
 	}
 	return paths;
@@ -340,8 +380,9 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 	const auto workDir = root / "cwd";
 	std::filesystem::create_directories(workDir);
 
-	ASSERT_EQ(runCommand(std::format("cd '{}' && '{}' --export '{}' '{}' > export.txt 2>&1", workDir.string(),
-									 (iBinDir / "OwlNest").string(), iProject.string(), (root / "out").string())),
+	ASSERT_EQ(runCommand(std::format("cd '{}' && '{}' --export '{}' '{}' --cook-cache '{}' > export.txt 2>&1",
+									 workDir.string(), (iBinDir / "OwlNest").string(), iProject.string(),
+									 (root / "out").string(), (root / "cook").string())),
 			  0)
 			<< readFile(workDir / "export.txt");
 	const auto exported = exportedGameFolder(root / "out");

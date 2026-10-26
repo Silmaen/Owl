@@ -13,7 +13,7 @@ Entities:
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/goblin.png
+      texture: gid:53995a05462dbfe3:textures/enemies/goblin.png
       columns: 8
       rows: 9
       firstFrame: 0

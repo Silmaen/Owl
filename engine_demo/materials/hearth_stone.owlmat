@@ -2,8 +2,8 @@ Material:
   FormatVersion: 1
   metallic: 1
   roughness: 1
-  baseColorMap: nam:textures/pbr/stacked_stone_wall/stacked_stone_wall_diff.jpg
-  metallicMap: nam:textures/pbr/stacked_stone_wall/stacked_stone_wall_arm.jpg
-  roughnessMap: nam:textures/pbr/stacked_stone_wall/stacked_stone_wall_arm.jpg
-  normalMap: nam:textures/pbr/stacked_stone_wall/stacked_stone_wall_nor.jpg
-  occlusionMap: nam:textures/pbr/stacked_stone_wall/stacked_stone_wall_arm.jpg
+  baseColorMap: gid:b0835bf3583e82b1:textures/pbr/stacked_stone_wall/stacked_stone_wall_diff.jpg
+  metallicMap: gid:d7c3823270a2675f:textures/pbr/stacked_stone_wall/stacked_stone_wall_arm.jpg
+  roughnessMap: gid:d7c3823270a2675f:textures/pbr/stacked_stone_wall/stacked_stone_wall_arm.jpg
+  normalMap: gid:d57a27e8c69a1b9e:textures/pbr/stacked_stone_wall/stacked_stone_wall_nor.jpg
+  occlusionMap: gid:d7c3823270a2675f:textures/pbr/stacked_stone_wall/stacked_stone_wall_arm.jpg

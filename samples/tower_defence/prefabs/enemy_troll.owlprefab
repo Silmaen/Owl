@@ -13,7 +13,7 @@ Entities:
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/troll.png
+      texture: gid:a72960725db0407d:textures/enemies/troll.png
       columns: 8
       rows: 9
       firstFrame: 0

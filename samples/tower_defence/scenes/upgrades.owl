@@ -50,7 +50,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/menu/sky.png
+      texture: gid:de0c7a4c77a32af0:textures/menu/sky.png
   - Entity: 7450000000000000004
     Tag:
       tag: TitleTorch
@@ -63,7 +63,7 @@ Entities:
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/fx/fire.png
+      texture: gid:8921f86c3605ff50:textures/fx/fire.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -83,7 +83,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.6, 0.25, 0.35]
       tilingFactor: 1
-      texture: nam:textures/puff.png
+      texture: gid:a2fd5d94b524841a:textures/puff.png
   - Entity: 7450000000000000006
     Tag:
       tag: TitleTorch
@@ -96,7 +96,7 @@ Entities:
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/fx/fire.png
+      texture: gid:8921f86c3605ff50:textures/fx/fire.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -116,7 +116,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.6, 0.25, 0.35]
       tilingFactor: 1
-      texture: nam:textures/puff.png
+      texture: gid:a2fd5d94b524841a:textures/puff.png
   - Entity: 7450000000000000008
     Tag:
       tag: TitleTorch
@@ -129,7 +129,7 @@ Entities:
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/fx/fire.png
+      texture: gid:8921f86c3605ff50:textures/fx/fire.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -149,7 +149,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.6, 0.25, 0.35]
       tilingFactor: 1
-      texture: nam:textures/puff.png
+      texture: gid:a2fd5d94b524841a:textures/puff.png
   - Entity: 7450000000000000010
     Tag:
       tag: Meadow
@@ -163,7 +163,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: [9, 1]
-      texture: nam:textures/menu/ground.png
+      texture: gid:db1c267539984b51:textures/menu/ground.png
   - Entity: 7450000000000000011
     Tag:
       tag: Parade
@@ -175,7 +175,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: scripts/ui/parade.lua
+      scriptPath: gid:83b62d131ad337a8:scripts/ui/parade.lua
       properties:
         - name: fireworks
           type: bool
@@ -196,7 +196,7 @@ Entities:
       parentId: 7450000000000000011
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/goblin.png
+      texture: gid:53995a05462dbfe3:textures/enemies/goblin.png
       columns: 8
       rows: 9
       firstFrame: 6
@@ -216,7 +216,7 @@ Entities:
       parentId: 7450000000000000011
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/wolf.png
+      texture: gid:b6fa77623decac22:textures/enemies/wolf.png
       columns: 8
       rows: 9
       firstFrame: 6
@@ -236,7 +236,7 @@ Entities:
       parentId: 7450000000000000011
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/grunt.png
+      texture: gid:bcf0aba60932970d:textures/enemies/grunt.png
       columns: 8
       rows: 9
       firstFrame: 6
@@ -256,7 +256,7 @@ Entities:
       parentId: 7450000000000000011
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/sapper.png
+      texture: gid:487719d0fdafd3cb:textures/enemies/sapper.png
       columns: 8
       rows: 9
       firstFrame: 6
@@ -276,7 +276,7 @@ Entities:
       parentId: 7450000000000000011
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/troll.png
+      texture: gid:a72960725db0407d:textures/enemies/troll.png
       columns: 8
       rows: 9
       firstFrame: 6
@@ -296,7 +296,7 @@ Entities:
       parentId: 7450000000000000011
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/ogre.png
+      texture: gid:5347b1415c63966c:textures/enemies/ogre.png
       columns: 8
       rows: 9
       firstFrame: 6
@@ -316,7 +316,7 @@ Entities:
       parentId: 7450000000000000011
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/ogre_mage.png
+      texture: gid:5012d794091eb6ba:textures/enemies/ogre_mage.png
       columns: 8
       rows: 9
       firstFrame: 6
@@ -336,7 +336,7 @@ Entities:
       parentId: 7450000000000000011
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/grunt.png
+      texture: gid:bcf0aba60932970d:textures/enemies/grunt.png
       columns: 8
       rows: 9
       firstFrame: 6
@@ -356,7 +356,7 @@ Entities:
       parentId: 7450000000000000011
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/chieftain.png
+      texture: gid:cc7366a596750b37:textures/enemies/chieftain.png
       columns: 8
       rows: 9
       firstFrame: 6
@@ -376,7 +376,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/menu/tower.png
+      texture: gid:5e552d7b4590347d:textures/menu/tower.png
   - Entity: 7450000000000000022
     Tag:
       tag: ParadeKeep
@@ -390,7 +390,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/menu/keep.png
+      texture: gid:e7178b75e802fec0:textures/menu/keep.png
   - Entity: 7450000000000000023
     Tag:
       tag: UpgradesCanvas
@@ -407,7 +407,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: scripts/ui/upgrades.lua
+      scriptPath: gid:13b8a57737595363:scripts/ui/upgrades.lua
   - Entity: 7450000000000000024
     Tag:
       tag: UpgradesBoard
@@ -528,7 +528,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7450000000000000028
     Tag:
       tag: BackButton
@@ -593,7 +593,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7450000000000000030
     Tag:
       tag: UpgradeRow6
@@ -683,7 +683,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7450000000000000033
     Tag:
       tag: UpgradeCost6
@@ -736,7 +736,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -760,7 +760,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -784,7 +784,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -808,7 +808,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -965,7 +965,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7450000000000000043
     Tag:
       tag: UpgradeCost5
@@ -1018,7 +1018,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1042,7 +1042,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1066,7 +1066,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1090,7 +1090,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1247,7 +1247,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7450000000000000053
     Tag:
       tag: UpgradeCost4
@@ -1300,7 +1300,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1324,7 +1324,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1348,7 +1348,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1372,7 +1372,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1529,7 +1529,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7450000000000000063
     Tag:
       tag: UpgradeCost3
@@ -1582,7 +1582,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1606,7 +1606,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1630,7 +1630,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1654,7 +1654,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1811,7 +1811,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7450000000000000073
     Tag:
       tag: UpgradeCost2
@@ -1864,7 +1864,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1888,7 +1888,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1912,7 +1912,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -1936,7 +1936,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -2093,7 +2093,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7450000000000000083
     Tag:
       tag: UpgradeCost1
@@ -2146,7 +2146,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -2170,7 +2170,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -2194,7 +2194,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0
@@ -2218,7 +2218,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       frame: 0

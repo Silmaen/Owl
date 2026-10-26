@@ -9,6 +9,7 @@
 #include "data/assets/pack/AssetScanner.h"
 
 #include "app/Application.h"
+#include "data/assets/AssetReference.h"
 #include "data/fonts/FontSettings.h"
 #include "data/geometry/MeshLoader.h"
 
@@ -52,7 +53,7 @@ void pushWarning(std::vector<std::string>* ioWarnings, const std::string& iKind,
 		ioWarnings->push_back(std::format("{} '{}' referenced by {} not found", iKind, iName, iSource));
 }
 
-auto resolveDataAsset(const std::string& iRelative) -> std::optional<AssetReference> {
+auto resolveDataAssetPath(const std::string& iRelative) -> std::optional<AssetReference> {
 	if (iRelative.empty())
 		return std::nullopt;
 	if (const std::filesystem::path absPath(iRelative); absPath.is_absolute() && std::filesystem::exists(absPath))
@@ -66,6 +67,11 @@ auto resolveDataAsset(const std::string& iRelative) -> std::optional<AssetRefere
 			return AssetReference{.packPath = iRelative, .diskPath = p, .assetType = AssetType::Other};
 	}
 	return std::nullopt;
+}
+
+// Reads a `gid:` reference at the current path of its asset.
+auto resolveDataAsset(const std::string& iReference) -> std::optional<AssetReference> {
+	return resolveDataAssetPath(data::assets::toAssetPath(iReference));
 }
 
 auto readYamlScalar(const std::filesystem::path& iFile, const char* iKey) -> std::string {
@@ -97,7 +103,7 @@ void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName,
 void scanHud(const std::string& iHudPath, const std::string& iSource, std::set<std::string>& ioVisitedScenes,
 			 std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings);
 
-auto resolveTexture(const std::string& iSerialized) -> std::optional<AssetReference> {
+auto resolveTexturePath(const std::string& iSerialized) -> std::optional<AssetReference> {
 	if (iSerialized.size() < 4)
 		return std::nullopt;
 	const auto key = iSerialized.substr(0, 4);
@@ -134,6 +140,11 @@ auto resolveTexture(const std::string& iSerialized) -> std::optional<AssetRefere
 	return AssetReference{.packPath = packPath, .diskPath = resolvedPath, .assetType = AssetType::Texture};
 }
 
+// Reads a `gid:` reference at the current path of its asset.
+auto resolveTexture(const std::string& iReference) -> std::optional<AssetReference> {
+	return resolveTexturePath(data::assets::fromTextureReference(iReference));
+}
+
 void addFontSidecar(std::vector<AssetReference>& ioAssets, const AssetReference& iFont) {
 	const auto diskPath = fonts::FontSettings::sidecarPath(iFont.diskPath);
 	if (!exists(diskPath))
@@ -165,7 +176,7 @@ auto resolveFont(const std::string& iFontName) -> std::optional<AssetReference> 
 	return std::nullopt;
 }
 
-auto resolveSound(const std::string& iSoundAsset) -> std::optional<AssetReference> {
+auto resolveSoundPath(const std::string& iSoundAsset) -> std::optional<AssetReference> {
 	if (iSoundAsset.empty())
 		return std::nullopt;
 	// Absolute path: resolve directly.
@@ -186,7 +197,12 @@ auto resolveSound(const std::string& iSoundAsset) -> std::optional<AssetReferenc
 	return std::nullopt;
 }
 
-auto resolveScript(const std::string& iScriptPath) -> std::optional<AssetReference> {
+// Reads a `gid:` reference at the current path of its asset.
+auto resolveSound(const std::string& iReference) -> std::optional<AssetReference> {
+	return resolveSoundPath(data::assets::toAssetPath(iReference));
+}
+
+auto resolveScriptPath(const std::string& iScriptPath) -> std::optional<AssetReference> {
 	if (iScriptPath.empty())
 		return std::nullopt;
 	// If the path is absolute and exists, use it directly.
@@ -207,7 +223,12 @@ auto resolveScript(const std::string& iScriptPath) -> std::optional<AssetReferen
 	return std::nullopt;
 }
 
-auto resolveScene(const std::string& iLevelName) -> std::optional<std::filesystem::path> {
+// Reads a `gid:` reference at the current path of its asset.
+auto resolveScript(const std::string& iReference) -> std::optional<AssetReference> {
+	return resolveScriptPath(data::assets::toAssetPath(iReference));
+}
+
+auto resolveScenePath(const std::string& iLevelName) -> std::optional<std::filesystem::path> {
 	if (iLevelName.empty())
 		return std::nullopt;
 
@@ -229,6 +250,11 @@ auto resolveScene(const std::string& iLevelName) -> std::optional<std::filesyste
 			return p;
 	}
 	return std::nullopt;
+}
+
+// Reads a `gid:` reference at the current path of its asset.
+auto resolveScene(const std::string& iReference) -> std::optional<std::filesystem::path> {
+	return resolveScenePath(data::assets::toAssetPath(iReference));
 }
 
 void followScene(const std::string& iName, const std::string& iSource,// NOLINT(misc-no-recursion)

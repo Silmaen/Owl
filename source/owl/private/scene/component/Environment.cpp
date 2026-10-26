@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "core/SerializerImpl.h"
+#include "data/assets/AssetReference.h"
 #include "scene/component/Environment.h"
 
 #include <string>
@@ -18,7 +19,7 @@ void Environment::serialize(const core::Serializer& iOut) const {
 	auto& out = iOut.getImpl()->emitter;
 	out << YAML::Key << key();
 	out << YAML::BeginMap;// Environment
-	out << YAML::Key << "hdri" << YAML::Value << hdri.generic_string();
+	out << YAML::Key << "hdri" << YAML::Value << data::assets::toAssetReference(hdri.generic_string());
 	out << YAML::Key << "intensity" << YAML::Value << intensity;
 	out << YAML::Key << "ambient" << YAML::Value << YAML::Flow << YAML::BeginSeq << ambient.x() << ambient.y()
 		<< ambient.z() << YAML::EndSeq;
@@ -30,7 +31,7 @@ void Environment::serialize(const core::Serializer& iOut) const {
 void Environment::deserialize(const core::Serializer& iNode) {
 	const auto& node = iNode.getImpl()->node;
 	if (node["hdri"])
-		hdri = node["hdri"].as<std::string>();
+		hdri = data::assets::toAssetPath(node["hdri"].as<std::string>());
 	if (node["intensity"])
 		intensity = node["intensity"].as<float>();
 	if (const auto color = node["ambient"]; color && color.isSequence() && color.size() >= 3)

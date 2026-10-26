@@ -12,7 +12,10 @@
 #include "Project.h"
 #include <app/EntryPoint.h>
 #include <core/Core.h>
+#include <data/assets/AssetRegistry.h>
 #include <gui/UiLayer.h>
+#include <platform/AtomicFile.h>
+#include <platform/FileUtils.h>
 
 #include <cstdio>
 #include <filesystem>
@@ -26,12 +29,14 @@ namespace owl {
 
 namespace {
 
-// Command line of a headless export: `OwlNest --export <project> <output>`.
+// Command line of a headless export: `OwlNest --export <project> <output> [--cook-cache <dir>]`.
 struct ExportCommand {
 	// Project folder or `owl_project.yml` file.
 	std::filesystem::path project;
 	// Parent folder of the exported game.
 	std::filesystem::path output;
+	// Cook cache folder, empty for the one of the project.
+	std::filesystem::path cookCache;
 };
 
 auto parseExportCommand(const int iArgc, char** iArgv) -> std::optional<ExportCommand> {
@@ -40,11 +45,27 @@ auto parseExportCommand(const int iArgc, char** iArgv) -> std::optional<ExportCo
 		if (std::string_view(args[i]) != "--export")
 			continue;
 		if (i + 2 >= args.size()) {
-			std::fputs("Usage: OwlNest --export <project dir or owl_project.yml> <output dir>\n", stderr);
+			std::fputs("Usage: OwlNest --export <project dir or owl_project.yml> <output dir> [--cook-cache <dir>]\n",
+					   stderr);
 			return ExportCommand{};
 		}
-		return ExportCommand{.project = std::filesystem::absolute(args[i + 1]),
-							 .output = std::filesystem::absolute(args[i + 2])};
+		ExportCommand command{.project = std::filesystem::absolute(args[i + 1]),
+							  .output = std::filesystem::absolute(args[i + 2]),
+							  .cookCache = {}};
+		for (size_t j = 1; j + 1 < args.size(); ++j)
+			if (std::string_view(args[j]) == "--cook-cache")
+				command.cookCache = std::filesystem::absolute(args[j + 1]);
+		return command;
+	}
+	return std::nullopt;
+}
+
+// Project whose assets get sidecars and GUID references: `OwlNest --upgrade-assets <project dir>`.
+auto parseUpgradeCommand(const int iArgc, char** iArgv) -> std::optional<std::filesystem::path> {
+	const std::span args(iArgv, static_cast<size_t>(iArgc));
+	for (size_t i = 1; i + 1 < args.size(); ++i) {
+		if (std::string_view(args[i]) == "--upgrade-assets")
+			return std::filesystem::absolute(args[i + 1]);
 	}
 	return std::nullopt;
 }
@@ -112,7 +133,8 @@ private:
 			return 1;
 		}
 		addAssetDirectory({"Project: " + project.name, project.projectDirectory});
-		const auto settings = project.makeExportSettings(iCommand.output, iRunnerDir);
+		auto settings = project.makeExportSettings(iCommand.output, iRunnerDir);
+		settings.cookCacheDirectory = iCommand.cookCache;
 		std::vector<data::assets::pack::AssetReference> assets;
 		for (const auto& warning: data::assets::pack::GameExporter::validate(settings, assets))
 			OWL_WARN("Export: {}.", warning)
@@ -125,9 +147,67 @@ private:
 		return 0;
 	}
 };
+
+// Headless Owl Nest: gives every asset of a project a sidecar, rewrites its documents by GUID, then stops.
+class OwlNestUpgrade final : public app::Application {
+public:
+	OwlNestUpgrade() = delete;
+	OwlNestUpgrade(const app::AppParams& iParam, const std::filesystem::path& iProject) : Application(iParam) {
+		setExitCode(upgrade(iProject));
+		close();
+	}
+
+private:
+	auto upgrade(const std::filesystem::path& iProject) -> int {
+		if (getState() != State::Running)
+			return 1;
+		if (!is_directory(iProject)) {
+			OWL_ERROR("Upgrade: Project folder {} not found.", iProject.string())
+			return 1;
+		}
+		addAssetDirectory({"Project", iProject}, true);
+		const auto& registry = getAssetRegistry();
+		int failed = 0;
+		size_t files = 0;
+		for (const auto& entry: registry.getEntries()) {
+			if (entry.meta.importer != data::assets::Importer::Document)
+				continue;
+			const auto file = entry.root / entry.path;
+			const auto text = platform::fileToString(file);
+			const auto rewritten = registry.rewriteReferences(text);
+			if (rewritten == text)
+				continue;
+			if (const auto written = platform::writeFileAtomic(file, rewritten); !written) {
+				OWL_ERROR("Upgrade: Cannot write {}: {}.", file.string(), platform::describe(written.error()))
+				++failed;
+				continue;
+			}
+			++files;
+		}
+		OWL_INFO("Upgrade: {} asset(s) with a GUID, {} document(s) rewritten.", registry.size(), files)
+		return failed == 0 ? 0 : 1;
+	}
+};
 OWL_DIAG_POP
 
 auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
+	if (const auto project = parseUpgradeCommand(iArgc, iArgv); project) {
+		std::filesystem::current_path(executableDirectory(iArgv));
+		return mkShared<OwlNestUpgrade>(
+				AppParams{
+						.args = iArgv,
+						.name = "Owl Nest - Upgrade",
+#ifdef OWL_ASSETS_LOCATION
+						.assetsPattern = OWL_ASSETS_LOCATION,
+#endif
+						.argCount = iArgc,
+						.renderer = renderer::gpu::RenderAPI::Type::Null,
+						.sound = sound::SoundAPI::Type::Null,
+						.hasGui = false,
+						.isDummy = true,
+				},
+				*project);
+	}
 	if (const auto command = parseExportCommand(iArgc, iArgv); command) {
 		// Engine and editor assets are searched from the working directory: start from the executable's.
 		const auto exeDir = executableDirectory(iArgv);

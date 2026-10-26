@@ -49,7 +49,7 @@ Entities:
     VoxelWorld:
       SunDirection: [-0.4, -1, -0.6]
       Ambient: [0.4, 0.4, 0.45]
-      Tileset: tilesets/blocks.owltileset
+      Tileset: gid:a1f9a88bb51ae840:tilesets/blocks.owltileset
       ProceduralTerrain: true
       StreamRadius: 3
       StreamHeight: 2

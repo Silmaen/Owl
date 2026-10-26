@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "core/SerializerImpl.h"
+#include "data/assets/AssetReference.h"
 #include "scene/component/SoundSource.h"
 
 namespace owl::scene::component {
@@ -15,7 +16,8 @@ namespace owl::scene::component {
 void SoundSource::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
-	iOut.getImpl()->emitter << YAML::Key << "soundAsset" << YAML::Value << sound.soundAsset;
+	iOut.getImpl()->emitter << YAML::Key << "soundAsset" << YAML::Value
+							<< data::assets::toAssetReference(sound.soundAsset);
 	iOut.getImpl()->emitter << YAML::Key << "category" << YAML::Value
 							<< std::string(magic_enum::enum_name(sound.category));
 	iOut.getImpl()->emitter << YAML::Key << "volume" << YAML::Value << sound.volume;
@@ -30,7 +32,7 @@ void SoundSource::serialize(const core::Serializer& iOut) const {
 
 void SoundSource::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["soundAsset"])
-		sound.soundAsset = iNode.getImpl()->node["soundAsset"].as<std::string>();
+		sound.soundAsset = data::assets::toAssetPath(iNode.getImpl()->node["soundAsset"].as<std::string>());
 	if (iNode.getImpl()->node["category"])
 		sound.category =
 				magic_enum::enum_cast<SceneSound::Category>(iNode.getImpl()->node["category"].as<std::string>())

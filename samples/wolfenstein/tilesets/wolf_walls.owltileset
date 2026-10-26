@@ -1,6 +1,6 @@
 Tileset: wolf_walls
 FormatVersion: 1
-texture: nam:textures/wolf3d/walls_full.png
+texture: gid:1085aa7a1dd13208:textures/wolf3d/walls_full.png
 tileWidth: 128
 tileHeight: 128
 columns: 16

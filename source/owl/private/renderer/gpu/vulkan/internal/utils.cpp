@@ -253,6 +253,20 @@ void copyBufferToImage(VkCommandBuffer iCmd, VkBuffer iBuffer, VkImage iImage, c
 	vkCmdCopyBufferToImage(iCmd, iBuffer, iImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 }
 
+void copyBufferToImageLevel(VkCommandBuffer iCmd, VkBuffer iBuffer, VkImage iImage, const math::vec2ui& iSize,
+							const uint32_t iLevel, const VkDeviceSize iBufferOffset) {
+	const VkBufferImageCopy region{.bufferOffset = iBufferOffset,
+								   .bufferRowLength = 0,
+								   .bufferImageHeight = 0,
+								   .imageSubresource = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+														.mipLevel = iLevel,
+														.baseArrayLayer = 0,
+														.layerCount = 1},
+								   .imageOffset = {0, 0, 0},
+								   .imageExtent = {iSize.x(), iSize.y(), 1}};
+	vkCmdCopyBufferToImage(iCmd, iBuffer, iImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+}
+
 void copyImageToBuffer(VkCommandBuffer iCmd, VkImage iImage, VkBuffer iBuffer, const math::vec2ui& iSize,
 					   const math::vec2i& iOffset, const VkDeviceSize iBufferOffset) {
 	const VkBufferImageCopy region{.bufferOffset = iBufferOffset,

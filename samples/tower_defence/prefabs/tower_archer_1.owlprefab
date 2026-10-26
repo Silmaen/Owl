@@ -23,7 +23,7 @@ Entities:
     Hierarchy:
       parentId: 7600000000000773001
     MeshRenderer:
-      mesh: models/td/tower-round-bottom-a.glb
+      mesh: gid:a119be8287acff0e:models/td/tower-round-bottom-a.glb
       color: [1, 1, 1, 1]
       transparent: false
     RendererTag:
@@ -40,7 +40,7 @@ Entities:
     Hierarchy:
       parentId: 7600000000000773001
     MeshRenderer:
-      mesh: models/td/tower-round-top-a.glb
+      mesh: gid:d164b2cbab90e7da:models/td/tower-round-top-a.glb
       color: [1, 1, 1, 1]
       transparent: false
     RendererTag:
@@ -57,7 +57,7 @@ Entities:
     Hierarchy:
       parentId: 7600000000000773001
     MeshRenderer:
-      mesh: models/td/weapon-ballista.glb
+      mesh: gid:ae7b1eaf37da859b:models/td/weapon-ballista.glb
       color: [1, 1, 1, 1]
       transparent: false
     RendererTag:

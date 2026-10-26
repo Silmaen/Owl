@@ -173,6 +173,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Tell whether textures of a pixel format can be sampled.
+	 * @param[in] iFormat The pixel format.
+	 * @return True when the active API samples it; false without API.
+	 */
+	static auto supportsFormat(const ImageFormat iFormat) -> bool {
+		return m_renderAPI && m_renderAPI->supportsFormat(iFormat);
+	}
+
+	/**
+	 * @brief
 	 *  Reset value for the frame to render.
 	 */
 	static void beginFrame() {

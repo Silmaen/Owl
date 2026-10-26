@@ -1,8 +1,8 @@
 Scene: Tavern
 FormatVersion: 7
-Hud: huds/tavern.owlhud
+Hud: gid:e94eef5baaf85b8b:huds/tavern.owlhud
 SceneScript:
-  scriptPath: scripts/mesh/tavern.lua
+  scriptPath: gid:3e54f245cf8d438a:scripts/mesh/tavern.lua
 EnabledRenderers:
   - Name: world
     Enabled: false
@@ -54,11 +54,11 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/floor.glb
+      mesh: gid:8e225694fa77a686:meshes/tavern/floor.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/stone_floor.owlmat
+        - material: gid:b1ad9e8bd80c7116:materials/stone_floor.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -71,11 +71,11 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/wall.glb
+      mesh: gid:43efc39542b809f5:meshes/tavern/wall.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/plaster_wall.owlmat
+        - material: gid:8512b9bf427e808b:materials/plaster_wall.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -88,11 +88,11 @@ Entities:
       rotation: [0, 1.5708, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/wall.glb
+      mesh: gid:43efc39542b809f5:meshes/tavern/wall.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/plaster_wall.owlmat
+        - material: gid:8512b9bf427e808b:materials/plaster_wall.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -105,11 +105,11 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/post.glb
+      mesh: gid:16a8caccbc74c159:meshes/tavern/post.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/rough_wood.owlmat
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -122,11 +122,11 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/hearth.glb
+      mesh: gid:1251a0a03adc92ac:meshes/tavern/hearth.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/hearth_stone.owlmat
+        - material: gid:d0d96e83e6d7c9ad:materials/hearth_stone.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -140,11 +140,11 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000007}
     MeshRenderer:
-      mesh: meshes/tavern/mantel_beam.glb
+      mesh: gid:459b05f4be29739e:meshes/tavern/mantel_beam.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/rough_wood.owlmat
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -158,11 +158,11 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000007}
     MeshRenderer:
-      mesh: meshes/tavern/fire_grate.glb
+      mesh: gid:89843a9af180a580:meshes/tavern/fire_grate.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/wrought_iron.owlmat
+        - material: gid:f9f1a050f98c61fa:materials/wrought_iron.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -176,11 +176,11 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000007}
     MeshRenderer:
-      mesh: meshes/tavern/embers.glb
+      mesh: gid:b6d3728e11241262:meshes/tavern/embers.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/embers.owlmat
+        - material: gid:abf50c8e52291db0:materials/embers.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -194,11 +194,11 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000007}
     MeshRenderer:
-      mesh: meshes/tavern/firewood.glb
+      mesh: gid:f71bf1edba865b12:meshes/tavern/firewood.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/charred_firewood.owlmat
+        - material: gid:e3b79204f1106b55:materials/charred_firewood.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -212,11 +212,11 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000007}
     MeshRenderer:
-      mesh: meshes/tavern/flames.glb
+      mesh: gid:0fed644054241ec6:meshes/tavern/flames.glb
       color: [1, 1, 1, 1]
       transparent: true
       materials:
-        - material: materials/flame.owlmat
+        - material: gid:c2025f33188c0ee3:materials/flame.owlmat
     RendererTag:
       Name: mesh_world
     LightFlicker:
@@ -257,7 +257,7 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000007}
     MeshRenderer:
-      mesh: meshes/tavern/brass_candleholders/brass_candleholders.gltf
+      mesh: gid:53741fa61a5f918a:meshes/tavern/brass_candleholders/brass_candleholders.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -534,7 +534,7 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000007}
     MeshRenderer:
-      mesh: meshes/tavern/brass_pot_01/brass_pot_01.gltf
+      mesh: gid:22b16103fbad1418:meshes/tavern/brass_pot_01/brass_pot_01.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -552,7 +552,7 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000007}
     MeshRenderer:
-      mesh: meshes/tavern/brass_pan_01/brass_pan_01.gltf
+      mesh: gid:b9295356356e4b62:meshes/tavern/brass_pan_01/brass_pan_01.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -569,11 +569,11 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/log_stack.glb
+      mesh: gid:f4c4425df21a866f:meshes/tavern/log_stack.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/firewood.owlmat
+        - material: gid:a3c3d8ae6344b4e6:materials/firewood.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -586,7 +586,7 @@ Entities:
       rotation: [0, 0.8, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/wooden_bucket_01/wooden_bucket_01.gltf
+      mesh: gid:83063b8c251d370f:meshes/tavern/wooden_bucket_01/wooden_bucket_01.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -604,7 +604,7 @@ Entities:
       rotation: [0, 1.5708, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/wooden_bookshelf_worn/wooden_bookshelf_worn.gltf
+      mesh: gid:87c4c15a8354d013:meshes/tavern/wooden_bookshelf_worn/wooden_bookshelf_worn.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -621,7 +621,7 @@ Entities:
       rotation: [0, 0.35, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/wooden_table_02/wooden_table_02.gltf
+      mesh: gid:ea34c77ce5dfb5a1:meshes/tavern/wooden_table_02/wooden_table_02.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -639,11 +639,11 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000031}
     MeshRenderer:
-      mesh: meshes/tavern/candle.glb
+      mesh: gid:6287d04c2c0ec73b:meshes/tavern/candle.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/candle_wax.owlmat
+        - material: gid:63797bca55b45210:materials/candle_wax.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -657,11 +657,11 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000031}
     MeshRenderer:
-      mesh: meshes/tavern/candle_flame.glb
+      mesh: gid:70bab3bc30e6e6f3:meshes/tavern/candle_flame.glb
       color: [1, 1, 1, 1]
       transparent: true
       materials:
-        - material: materials/candle_flame.owlmat
+        - material: gid:3345176051c32741:materials/candle_flame.owlmat
     RendererTag:
       Name: mesh_world
     LightFlicker:
@@ -704,7 +704,7 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000031}
     MeshRenderer:
-      mesh: meshes/tavern/brass_pot_02/brass_pot_02.gltf
+      mesh: gid:eb16823212ff2d2d:meshes/tavern/brass_pot_02/brass_pot_02.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -722,7 +722,7 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000031}
     MeshRenderer:
-      mesh: meshes/tavern/carved_wooden_plate/carved_wooden_plate.gltf
+      mesh: gid:a3c38affdeea3bb1:meshes/tavern/carved_wooden_plate/carved_wooden_plate.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -740,7 +740,7 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000031}
     MeshRenderer:
-      mesh: meshes/tavern/yellow_onion/yellow_onion.gltf
+      mesh: gid:fee285b91f9233bf:meshes/tavern/yellow_onion/yellow_onion.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -758,7 +758,7 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000031}
     MeshRenderer:
-      mesh: meshes/tavern/brass_goblets/brass_goblets.gltf
+      mesh: gid:f245a1cb45a77208:meshes/tavern/brass_goblets/brass_goblets.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -778,7 +778,7 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000031}
     MeshRenderer:
-      mesh: meshes/tavern/wooden_bowl_01/wooden_bowl_01.gltf
+      mesh: gid:20dd1efa1aa956e3:meshes/tavern/wooden_bowl_01/wooden_bowl_01.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -795,7 +795,7 @@ Entities:
       rotation: [0, 0.5, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/folding_wooden_stool/folding_wooden_stool.gltf
+      mesh: gid:6e052359171a021f:meshes/tavern/folding_wooden_stool/folding_wooden_stool.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -812,7 +812,7 @@ Entities:
       rotation: [0, -0.3, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/folding_wooden_stool/folding_wooden_stool.gltf
+      mesh: gid:6e052359171a021f:meshes/tavern/folding_wooden_stool/folding_wooden_stool.gltf
       color: [1, 1, 1, 1]
       transparent: false
       materials:
@@ -829,11 +829,11 @@ Entities:
       rotation: [0, 1.5708, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/wall.glb
+      mesh: gid:43efc39542b809f5:meshes/tavern/wall.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/plaster_wall.owlmat
+        - material: gid:8512b9bf427e808b:materials/plaster_wall.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -846,11 +846,11 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/wall.glb
+      mesh: gid:43efc39542b809f5:meshes/tavern/wall.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/plaster_wall.owlmat
+        - material: gid:8512b9bf427e808b:materials/plaster_wall.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -863,11 +863,11 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/post.glb
+      mesh: gid:16a8caccbc74c159:meshes/tavern/post.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/rough_wood.owlmat
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -880,11 +880,11 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/post.glb
+      mesh: gid:16a8caccbc74c159:meshes/tavern/post.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/rough_wood.owlmat
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -897,11 +897,11 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/post.glb
+      mesh: gid:16a8caccbc74c159:meshes/tavern/post.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/rough_wood.owlmat
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -914,16 +914,16 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/trapdoor.glb
+      mesh: gid:4737c4c847bb73ad:meshes/tavern/trapdoor.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/rough_wood.owlmat
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
     RendererTag:
       Name: mesh_world
     Trigger: {Type: Interaction, CallbackName: on_trapdoor_interact}
     LuaScript:
-      scriptPath: scripts/tavern/cellar_trapdoor.lua
+      scriptPath: gid:2dd17fbdb3fc55a5:scripts/tavern/cellar_trapdoor.lua
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000111
@@ -935,11 +935,11 @@ Entities:
       scale: [1, 1, 1]
     Hierarchy: {parentId: 3900000000000000110}
     MeshRenderer:
-      mesh: meshes/tavern/trapdoor_iron.glb
+      mesh: gid:faf9fbf89c541806:meshes/tavern/trapdoor_iron.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/wrought_iron.owlmat
+        - material: gid:f9f1a050f98c61fa:materials/wrought_iron.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -952,16 +952,16 @@ Entities:
       rotation: [0, 0.7, 0]
       scale: [1.5, 1.5, 1.5]
     MeshRenderer:
-      mesh: meshes/tavern/key.glb
+      mesh: gid:6b6ae67c5693e17a:meshes/tavern/key.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/old_brass.owlmat
+        - material: gid:983b8470490b1ef3:materials/old_brass.owlmat
     RendererTag:
       Name: mesh_world
     Trigger: {Type: Interaction, CallbackName: on_key_interact}
     LuaScript:
-      scriptPath: scripts/tavern/cellar_key.lua
+      scriptPath: gid:7af04864368f7cff:scripts/tavern/cellar_key.lua
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000113
@@ -1011,11 +1011,11 @@ Entities:
       rotation: [0, -1.5708, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/wall_sconce.glb
+      mesh: gid:78bb303e4c2374f5:meshes/tavern/wall_sconce.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/wrought_iron.owlmat
+        - material: gid:f9f1a050f98c61fa:materials/wrought_iron.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -1028,11 +1028,11 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/candle.glb
+      mesh: gid:6287d04c2c0ec73b:meshes/tavern/candle.glb
       color: [1, 1, 1, 1]
       transparent: false
       materials:
-        - material: materials/candle_wax.owlmat
+        - material: gid:63797bca55b45210:materials/candle_wax.owlmat
     RendererTag:
       Name: mesh_world
     Visibility:
@@ -1045,11 +1045,11 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     MeshRenderer:
-      mesh: meshes/tavern/candle_flame.glb
+      mesh: gid:70bab3bc30e6e6f3:meshes/tavern/candle_flame.glb
       color: [1, 1, 1, 1]
       transparent: true
       materials:
-        - material: materials/candle_flame.owlmat
+        - material: gid:3345176051c32741:materials/candle_flame.owlmat
     RendererTag:
       Name: mesh_world
     LightFlicker:

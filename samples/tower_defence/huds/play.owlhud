@@ -61,7 +61,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/panel_stats.png
+      texture: gid:a11bf3bef58698cc:textures/ui/panel_stats.png
     UiLayout:
       arrangement: Row
       crossAlign: Center
@@ -121,7 +121,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/daynight.png
+      texture: gid:962bb3798e0cdf4c:textures/ui/daynight.png
       columns: 2
       rows: 1
       frame: 0
@@ -145,7 +145,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/panel_wave.png
+      texture: gid:1311fa8d524457c1:textures/ui/panel_wave.png
     UiText:
       outlineWidth: 0
       outlineColor: [0.16, 0.09, 0.04, 1]
@@ -180,7 +180,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/panel_stats.png
+      texture: gid:a11bf3bef58698cc:textures/ui/panel_stats.png
     UiLayout:
       arrangement: Row
       crossAlign: Center
@@ -311,7 +311,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/frame.png
+      texture: gid:a41d6bcaf8efe6a5:textures/ui/frame.png
   - Entity: 7490000000000000013
     Tag:
       tag: ButtonBar
@@ -401,7 +401,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7490000000000000016
     Tag:
       tag: SpeedButton
@@ -466,7 +466,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7490000000000000018
     Tag:
       tag: CallButton
@@ -531,7 +531,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7490000000000000020
     Tag:
       tag: SpellBar
@@ -621,7 +621,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7490000000000000023
     Tag:
       tag: RainButton
@@ -686,7 +686,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7490000000000000025
     Tag:
       tag: MessageText
@@ -879,7 +879,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7490000000000000031
     Tag:
       tag: QuitButton
@@ -944,7 +944,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7490000000000000033
     Tag:
       tag: RestartButton
@@ -1009,7 +1009,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7490000000000000035
     Tag:
       tag: ResumeButton
@@ -1074,7 +1074,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7490000000000000037
     Tag:
       tag: BriefingCard
@@ -1219,7 +1219,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7490000000000000042
     Tag:
       tag: BriefingButton
@@ -1284,7 +1284,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7490000000000000044
     Tag:
       tag: BriefingRow6
@@ -1360,7 +1360,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/briefing_icons.png
+      texture: gid:83ba6bc951ee12c4:textures/ui/briefing_icons.png
       columns: 6
       rows: 3
       frame: 0
@@ -1439,7 +1439,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/briefing_icons.png
+      texture: gid:83ba6bc951ee12c4:textures/ui/briefing_icons.png
       columns: 6
       rows: 3
       frame: 0
@@ -1518,7 +1518,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/briefing_icons.png
+      texture: gid:83ba6bc951ee12c4:textures/ui/briefing_icons.png
       columns: 6
       rows: 3
       frame: 0
@@ -1597,7 +1597,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/briefing_icons.png
+      texture: gid:83ba6bc951ee12c4:textures/ui/briefing_icons.png
       columns: 6
       rows: 3
       frame: 0
@@ -1676,7 +1676,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/briefing_icons.png
+      texture: gid:83ba6bc951ee12c4:textures/ui/briefing_icons.png
       columns: 6
       rows: 3
       frame: 0
@@ -1755,7 +1755,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/briefing_icons.png
+      texture: gid:83ba6bc951ee12c4:textures/ui/briefing_icons.png
       columns: 6
       rows: 3
       frame: 0
@@ -1779,7 +1779,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [0.55, 0.36, 0.2, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
     UiText:
       outlineWidth: 2
       outlineColor: [0.16, 0.09, 0.04, 1]

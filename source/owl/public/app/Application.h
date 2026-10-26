@@ -16,6 +16,7 @@
 #include "core/Timestep.h"
 #include "core/task/Scheduler.h"
 #include "core/task/Task.h"
+#include "data/assets/AssetRegistry.h"
 #include "data/assets/pack/PackReader.h"
 #include "data/fonts/FontLibrary.h"
 #include "event/AppEvent.h"
@@ -326,10 +327,11 @@ public:
 
 	/**
 	 * @brief
-	 *  Add an asset directory (inserted at front, highest priority).
+	 *  Add an asset directory (inserted at front, highest priority) and register the GUIDs of its assets.
 	 * @param[in] iDir The asset directory to add.
+	 * @param[in] iEditable True for a project edited in Owl Nest: its assets without `.owlmeta` sidecar get one.
 	 */
-	void addAssetDirectory(const AssetDirectory& iDir);
+	void addAssetDirectory(const AssetDirectory& iDir, bool iEditable = false);
 
 	/**
 	 * @brief
@@ -476,6 +478,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Access to the GUIDs of the assets of the asset directories (or of the open pack).
+	 * @return The asset registry.
+	 */
+	[[nodiscard]] auto getAssetRegistry() -> data::assets::AssetRegistry& { return m_assetRegistry; }
+
+	/**
+	 * @brief
+	 *  Access to the GUIDs of the assets of the asset directories (or of the open pack).
+	 * @return The asset registry.
+	 */
+	[[nodiscard]] auto getAssetRegistry() const -> const data::assets::AssetRegistry& { return m_assetRegistry; }
+
+	/**
+	 * @brief
 	 *  Turn the hot reload on or off; it stays off while an asset pack is open.
 	 * @param[in] iEnabled True to watch the asset directories.
 	 */
@@ -597,6 +613,8 @@ private:
 	std::filesystem::path m_workingDirectory;
 	/// Base Path to the asset Directory.
 	std::list<AssetDirectory> m_assetDirectories;
+	/// GUIDs of the assets of the asset directories.
+	data::assets::AssetRegistry m_assetRegistry;
 	/// Time steps management.
 	core::Timestep m_stepper;
 	/// Initialization parameters.

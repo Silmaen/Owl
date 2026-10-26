@@ -16,7 +16,9 @@
 #include "internal/utils.h"
 #include "renderer/TextureDecoder.h"
 
+#include <algorithm>
 #include <cstring>
+#include <vector>
 
 namespace owl::renderer::gpu::vulkan {
 
@@ -138,6 +140,72 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 		data.createView();
 	if (data.textureSampler == nullptr)
 		data.createSampler();
+}
+auto Texture2D::setLevels(const TextureLevels& iLevels) -> bool {
+	if (iLevels.levels.empty() || iLevels.size.surface() == 0) {
+		OWL_CORE_WARN("Vulkan Texture: No level to set on '{}'.", getName())
+		return false;
+	}
+	VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+	switch (iLevels.format) {
+		case ImageFormat::Bc7:
+			format = VK_FORMAT_BC7_UNORM_BLOCK;
+			break;
+		case ImageFormat::Astc4x4:
+			format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
+			break;
+		case ImageFormat::Rgba8:
+			break;
+		case ImageFormat::None:
+		case ImageFormat::R8:
+		case ImageFormat::Rgb8:
+		case ImageFormat::Rgba32F:
+			OWL_CORE_WARN("Vulkan Texture: Levels in format {} are not supported.",
+						  magic_enum::enum_name(iLevels.format))
+			return false;
+	}
+	VkDeviceSize total = 0;
+	for (const auto& level: iLevels.levels) total += level.size();
+	auto staging = internal::createBuffer(total, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, internal::MemoryUsage::Upload,
+										  "tex.staging");
+	if (staging.mapped == nullptr)
+		return false;
+	std::vector<VkDeviceSize> offsets;
+	offsets.reserve(iLevels.levels.size());
+	VkDeviceSize offset = 0;
+	for (const auto& level: iLevels.levels) {
+		offsets.push_back(offset);
+		std::memcpy(static_cast<uint8_t*>(staging.mapped) + offset, level.data(), level.size());
+		offset += level.size();
+	}
+
+	auto specs = m_specification;
+	specs.size = iLevels.size;
+	specs.format = iLevels.format;
+	specs.levelCount = static_cast<uint32_t>(iLevels.levels.size());
+	reallocate(specs);
+	auto& vkd = internal::Descriptors::get();
+	m_textureId = vkd.registerNewTexture();
+	auto& data = vkd.getTextureData(m_textureId);
+	data.debugName = !getName().empty() ? getName() : getPath().filename().string();
+	data.mipLevels = specs.levelCount;
+	data.nearest = specs.filterMode == FilterMode::Nearest;
+	data.format = format;
+	createImage(m_textureId, specs.size);
+	internal::VulkanHandler::get().recordTransfer([&data, &staging, &offsets, &specs](VkCommandBuffer iCmd) -> void {
+		internal::transitionImageLayout(iCmd, data.textureImage, VK_IMAGE_LAYOUT_UNDEFINED,
+										VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, data.mipLevels);
+		for (uint32_t level = 0; level < data.mipLevels; ++level) {
+			const math::vec2ui size{std::max(1u, specs.size.x() >> level), std::max(1u, specs.size.y() >> level)};
+			internal::copyBufferToImageLevel(iCmd, staging.buffer, data.textureImage, size, level, offsets[level]);
+		}
+		internal::transitionImageLayout(iCmd, data.textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+										VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, data.mipLevels);
+	});
+	internal::releaseBuffer(staging);
+	data.createView();
+	data.createSampler();
+	return true;
 }
 OWL_DIAG_POP
 

@@ -40,10 +40,35 @@ ignores it.
 |----------------|-------------------------------------------------------------------------------|
 | Background     | **Create Folder**, **New Material**, **Import File...**, **Import Folder...** |
 | File or folder | **Open**, **Rename**, **Delete**                                              |
+| Texture        | **Import Settings** (selects it in the Import panel), **Cook**                |
+| Folder         | **Cook Folder**                                                               |
 | Mesh           | **Open** (the mesh viewer), **Place in Scene**                                |
 | Macro          | **Edit as Text**                                                              |
 
 **New Material** creates `New Material.owlmat` in the folder shown and opens it in the material editor.
+
+## Asset identity and import settings {#editor-asset-import}
+
+Every asset of the project has a `<file>.owlmeta` sidecar holding its GUID and, for a texture, its import settings
+(see [Content pipeline](design/content-pipeline.md#content-pipeline-cook)). The browser hides the sidecars and
+treats them as part of their file:
+
+- **Rename**, drag to another folder and **Delete** run the `asset.rename`, `asset.move` and `asset.delete` commands:
+  the sidecar follows the file, and every reference written by GUID keeps resolving.
+- **Cook** and **Cook Folder** run `asset.cook`: the asset is cooked into the project cache now, as the export would.
+
+The **Import** panel (docked with Properties) shows the selected asset:
+
+| Field                     | Content                                                                              |
+|---------------------------|--------------------------------------------------------------------------------------|
+| File, importer, GUID      | Name, importer of the file, GUID with a copy button                                  |
+| Pixel art                 | Nearest-texel filtering                                                              |
+| Pack storage              | `None` (source file), `Uastc` (quality) or `Etc1s` (size): KTX2 Basis Universal      |
+| Mipmaps                   | Mip chain built by the cook (compressed textures)                                    |
+| Cache state, **Cook Now** | Whether the cooked result is in the cache for the current bytes and settings         |
+
+Each setting has a reset button; a change is one undo step (`asset.set_import`). **Apply to Folder** gives the
+settings to every texture of the folder shown.
 
 ## Hot reload {#editor-hot-reload}
 

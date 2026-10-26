@@ -13,7 +13,7 @@ Entities:
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/wolf.png
+      texture: gid:b6fa77623decac22:textures/enemies/wolf.png
       columns: 8
       rows: 9
       firstFrame: 0

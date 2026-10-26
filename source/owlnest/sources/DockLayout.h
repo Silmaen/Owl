@@ -47,6 +47,8 @@ constexpr auto voxelPalette = "###VoxelPalette";
 constexpr auto tilePalette = "###TilePalette";
 /// Per-scene settings.
 constexpr auto sceneSettings = "###SceneSettings";
+/// Import settings of the asset selected in the content browser.
+constexpr auto assetImport = "###AssetImport";
 /// Bundled documentation.
 constexpr auto help = "###Help";
 

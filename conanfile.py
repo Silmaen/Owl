@@ -72,6 +72,9 @@ class OwlEngineConan(ConanFile):
         "openal-soft/*:shared": True,
         "libsndfile/*:shared": True,
         "libsndfile/*:programs": False,
+        "xxhash/*:utility": False,
+        # libktx only: the KTX command-line tools cap the C++ standard at 17 and pull fmt.
+        "ktx/*:tools": False,
         "glad/*:gl_profile": "compatibility",
         "glad/*:gl_version": "4.6",
         "spdlog/*:use_std_fmt": True,
@@ -123,6 +126,7 @@ class OwlEngineConan(ConanFile):
         # The only public dependency of Owl::OwlEngine (scene/Scene.h, scene/Entity.h include it).
         self.requires("entt/4.0.0", transitive_headers=True)
         self.requires("cpptrace/1.0.4")
+        self.requires("ktx/4.4.2")
         self.requires("magic_enum/0.9.8")
         self.requires("msdf-atlas-gen/1.4")
         self.requires("nativefiledialog-extended/1.4.1")
@@ -135,6 +139,7 @@ class OwlEngineConan(ConanFile):
         self.requires("rapidyaml/0.15.2")
         # c4core (rapidyaml) includes fast_float in its headers; linked directly so every target finds them (arm64).
         self.requires("fast_float/8.2.10")
+        self.requires("xxhash/0.8.4")
         self.requires("yaml-cpp/0.9.0")
         self.requires("zstd/1.5.7")
         if self.options.render:

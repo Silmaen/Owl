@@ -10,6 +10,8 @@
 
 #include "data/assets/AssetSearchPaths.h"
 
+#include "data/assets/AssetReference.h"
+
 #include "app/Application.h"
 
 #include <filesystem>
@@ -53,21 +55,22 @@ auto readFileText(const std::filesystem::path& iPath) -> std::optional<std::stri
 
 }// namespace
 
-auto readAssetText(const std::filesystem::path& iRelative) -> std::optional<std::string> {
-	if (iRelative.empty())
+auto readAssetText(const std::filesystem::path& iReference) -> std::optional<std::string> {
+	if (iReference.empty())
 		return std::nullopt;
+	const std::filesystem::path relative{toAssetPath(iReference.generic_string())};
 	if (app::Application::instanced()) {
 		const auto& app = app::Application::get();
-		if (const std::string rel = iRelative.generic_string(); app.hasOpenPack() && app.packContains(rel)) {
+		if (const std::string rel = relative.generic_string(); app.hasOpenPack() && app.packContains(rel)) {
 			if (const auto data = app.loadFromPack(rel); data)
 				return std::string{data->begin(), data->end()};
 		}
 	}
 	for (const auto& directory: getAssetSearchPaths()) {
-		if (auto text = readFileText(directory / iRelative); text)
+		if (auto text = readFileText(directory / relative); text)
 			return text;
 	}
-	return readFileText(iRelative);
+	return readFileText(relative);
 }
 
 }// namespace owl::data::assets

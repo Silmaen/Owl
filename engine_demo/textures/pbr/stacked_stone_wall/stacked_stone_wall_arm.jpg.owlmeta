@@ -1,0 +1,7 @@
+FormatVersion: 1
+Guid: d7c3823270a2675f
+Importer: Texture
+Settings:
+  Nearest: false
+  Compression: Etc1s
+  Mips: true

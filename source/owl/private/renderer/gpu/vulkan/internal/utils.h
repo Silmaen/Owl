@@ -266,6 +266,19 @@ void copyBufferToImage(VkCommandBuffer iCmd, VkBuffer iBuffer, VkImage iImage, c
 
 /**
  * @brief
+ *  Record the copy of one mipmap level from a buffer (image in `TRANSFER_DST_OPTIMAL`).
+ * @param[in] iCmd The command buffer.
+ * @param[in] iBuffer The buffer.
+ * @param[in] iImage The image handle.
+ * @param[in] iSize Size of the level in texels.
+ * @param[in] iLevel The mipmap level.
+ * @param[in] iBufferOffset Offset of the level data in the buffer.
+ */
+void copyBufferToImageLevel(VkCommandBuffer iCmd, VkBuffer iBuffer, VkImage iImage, const math::vec2ui& iSize,
+							uint32_t iLevel, VkDeviceSize iBufferOffset);
+
+/**
+ * @brief
  *  Record an image to buffer copy (image in `TRANSFER_SRC_OPTIMAL`).
  * @param[in] iCmd The command buffer.
  * @param[in] iImage The image handle.

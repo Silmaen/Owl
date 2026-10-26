@@ -13,7 +13,7 @@ Entities:
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/ogre_mage.png
+      texture: gid:5012d794091eb6ba:textures/enemies/ogre_mage.png
       columns: 8
       rows: 9
       firstFrame: 0

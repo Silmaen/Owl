@@ -9,17 +9,35 @@
 
 #include "renderer/TextureDecoder.h"
 
+#include "core/external/ktx.h"
+#include "renderer/gpu/RenderCommand.h"
+
 #include <png.h>
 #include <stb_image.h>
 
+#include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <span>
 #include <vector>
 
 namespace owl::renderer {
 
 namespace {
+
+constexpr std::array<uint8_t, 12> g_ktx2Identifier{0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32,
+												   0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A};
+constexpr size_t g_ktx2WidthOffset = 20;
+constexpr size_t g_ktx2HeaderSize = 28;
+
+auto readUint32(const std::span<const uint8_t> iBytes, const size_t iOffset) -> uint32_t {
+	uint32_t value = 0;
+	std::memcpy(&value, iBytes.data() + iOffset, sizeof(value));
+	return value;
+}
+
 auto makeDecodedImage(stbi_uc* iData, int iWidth, int iHeight, int iChannels) -> DecodedImage {
 	DecodedImage out;
 	if (iData == nullptr) {
@@ -44,6 +62,11 @@ auto makeDecodedImage(stbi_uc* iData, int iWidth, int iHeight, int iChannels) ->
 auto peekImageSize(std::span<const uint8_t> iBytes) -> std::optional<math::vec2ui> {
 	if (iBytes.empty()) {
 		return std::nullopt;
+	}
+	if (isKtx2(iBytes)) {
+		if (iBytes.size() < g_ktx2HeaderSize)
+			return std::nullopt;
+		return math::vec2ui{readUint32(iBytes, g_ktx2WidthOffset), readUint32(iBytes, g_ktx2WidthOffset + 4)};
 	}
 	int width = 0;
 	int height = 0;
@@ -132,6 +155,76 @@ auto encodeImagePng(const math::vec2ui iSize, const std::span<const uint8_t> iRg
 	}
 	png.resize(bytes);
 	return png;
+}
+
+auto isKtx2(const std::span<const uint8_t> iBytes) -> bool {
+	return iBytes.size() >= g_ktx2Identifier.size() &&
+		   std::equal(g_ktx2Identifier.begin(), g_ktx2Identifier.end(), iBytes.begin());
+}
+
+auto pickKtx2Target() -> gpu::ImageFormat {
+	if (gpu::RenderCommand::supportsFormat(gpu::ImageFormat::Bc7))
+		return gpu::ImageFormat::Bc7;
+	if (gpu::RenderCommand::supportsFormat(gpu::ImageFormat::Astc4x4))
+		return gpu::ImageFormat::Astc4x4;
+	return gpu::ImageFormat::Rgba8;
+}
+
+auto transcodeKtx2(const std::span<const uint8_t> iBytes, const gpu::ImageFormat iTarget)
+		-> std::optional<gpu::TextureLevels> {
+	OWL_PROFILE_FUNCTION()
+
+	ktx_transcode_fmt_e target = KTX_TTF_RGBA32;
+	switch (iTarget) {
+		case gpu::ImageFormat::Bc7:
+			target = KTX_TTF_BC7_RGBA;
+			break;
+		case gpu::ImageFormat::Astc4x4:
+			target = KTX_TTF_ASTC_4x4_RGBA;
+			break;
+		case gpu::ImageFormat::Rgba8:
+			break;
+		case gpu::ImageFormat::None:
+		case gpu::ImageFormat::R8:
+		case gpu::ImageFormat::Rgb8:
+		case gpu::ImageFormat::Rgba32F:
+			OWL_CORE_WARN("TextureDecoder: Cannot transcode KTX2 to {}.", magic_enum::enum_name(iTarget))
+			return std::nullopt;
+	}
+	ktxTexture2* texture = nullptr;
+	if (const auto result = ktxTexture2_CreateFromMemory(iBytes.data(), iBytes.size(),
+														 KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
+		result != KTX_SUCCESS) {
+		OWL_CORE_WARN("TextureDecoder: Unreadable KTX2 texture ({}).", ktxErrorString(result))
+		return std::nullopt;
+	}
+	if (ktxTexture2_NeedsTranscoding(texture)) {
+		if (const auto result = ktxTexture2_TranscodeBasis(texture, target, 0); result != KTX_SUCCESS) {
+			OWL_CORE_WARN("TextureDecoder: Cannot transcode KTX2 texture ({}).", ktxErrorString(result))
+			ktxTexture2_Destroy(texture);
+			return std::nullopt;
+		}
+	} else if (iTarget != gpu::ImageFormat::Rgba8) {
+		OWL_CORE_WARN("TextureDecoder: KTX2 texture holds no Basis Universal data.")
+		ktxTexture2_Destroy(texture);
+		return std::nullopt;
+	}
+	gpu::TextureLevels levels{.size = {texture->baseWidth, texture->baseHeight}, .format = iTarget, .levels = {}};
+	auto* base = ktxTexture(texture);
+	const auto* data = ktxTexture_GetData(base);
+	for (ktx_uint32_t level = 0; level < texture->numLevels; ++level) {
+		ktx_size_t offset = 0;
+		if (ktxTexture_GetImageOffset(base, level, 0, 0, &offset) != KTX_SUCCESS)
+			break;
+		const auto size = ktxTexture_GetImageSize(base, level);
+		levels.levels.emplace_back(data + offset, data + offset + size);
+	}
+	ktxTexture2_Destroy(texture);
+	if (levels.levels.empty()) {
+		OWL_CORE_WARN("TextureDecoder: KTX2 texture has no level.")
+		return std::nullopt;
+	}
+	return levels;
 }
 
 }// namespace owl::renderer

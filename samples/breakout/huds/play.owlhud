@@ -268,7 +268,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/button_frame.png
+      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
   - Entity: 7090000000000000010
     Tag:
       tag: RestartButton
@@ -331,7 +331,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/button_frame.png
+      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
   - Entity: 7090000000000000012
     Tag:
       tag: ResumeButton
@@ -394,4 +394,4 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/button_frame.png
+      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png

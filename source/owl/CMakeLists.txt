@@ -121,6 +121,8 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE tinyobjloader REQUIRED
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE ufbx REQUIRED)
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE spdlog REQUIRED)
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zstd REQUIRED MODULE_TARGET "zstd::libzstd_static")
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE xxHash REQUIRED MODULE_TARGET "xxHash::xxhash")
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Ktx REQUIRED MODULE_TARGET "KTX::ktx")
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Taskflow REQUIRED MODULE_TARGET "Taskflow::Taskflow")
 # yaml-cpp: the public headers carry YAML as text (renderer/RenderStack.h), never yaml-cpp types
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp REQUIRED)

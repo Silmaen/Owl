@@ -1,6 +1,6 @@
 Tileset: iso_ground
 FormatVersion: 1
-texture: nam:textures/iso/tiles.png
+texture: gid:3638efd51eb96fc3:textures/iso/tiles.png
 tileWidth: 64
 tileHeight: 48
 columns: 16

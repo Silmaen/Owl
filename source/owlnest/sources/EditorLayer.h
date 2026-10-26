@@ -23,6 +23,7 @@
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
 #include "mcp/McpServer.h"
+#include "panel/AssetImport.h"
 #include "panel/AsyncProgressModal.h"
 #include "panel/Backstage.h"
 #include "panel/CommandFormWindow.h"
@@ -1173,6 +1174,8 @@ private:
 	panel::ProjectSettings m_projectSettings;
 	/// Scene-wide rendering / physics settings panel.
 	panel::SceneSettings m_sceneSettings;
+	/// Import settings of the asset selected in the content browser.
+	panel::AssetImport m_assetImport;
 	/// Log output panel (filterable).
 	panel::LogPanel m_logPanel;
 	/// Command console and journal of the session.

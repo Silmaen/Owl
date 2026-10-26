@@ -6,5 +6,5 @@ Material:
   roughness: 1
   emissive: [1, 0.62, 0.32]
   emissiveLuminance: 5000
-  baseColorMap: nam:textures/fire/flame.png
-  emissiveMap: nam:textures/fire/flame.png
+  baseColorMap: gid:701842bb56c1c315:textures/fire/flame.png
+  emissiveMap: gid:701842bb56c1c315:textures/fire/flame.png

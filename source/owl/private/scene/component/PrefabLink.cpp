@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "core/SerializerImpl.h"
+#include "data/assets/AssetReference.h"
 #include "scene/component/PrefabLink.h"
 
 #include <cstdint>
@@ -45,7 +46,8 @@ auto PrefabLink::clearOverride(const uint64_t iCanonicalUuid, const std::string&
 void PrefabLink::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;// PrefabLink
-	iOut.getImpl()->emitter << YAML::Key << "prefabAssetPath" << YAML::Value << prefabAssetPath;
+	iOut.getImpl()->emitter << YAML::Key << "prefabAssetPath" << YAML::Value
+							<< data::assets::toAssetReference(prefabAssetPath);
 	iOut.getImpl()->emitter << YAML::Key << "syncedVersion" << YAML::Value << syncedVersion;
 	if (!uuidMapping.empty()) {
 		iOut.getImpl()->emitter << YAML::Key << "uuidMapping" << YAML::Value << YAML::BeginSeq;
@@ -67,7 +69,7 @@ void PrefabLink::serialize(const core::Serializer& iOut) const {
 
 void PrefabLink::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["prefabAssetPath"])
-		prefabAssetPath = iNode.getImpl()->node["prefabAssetPath"].as<std::string>();
+		prefabAssetPath = data::assets::toAssetPath(iNode.getImpl()->node["prefabAssetPath"].as<std::string>());
 	if (iNode.getImpl()->node["syncedVersion"])
 		syncedVersion = iNode.getImpl()->node["syncedVersion"].as<uint32_t>();
 	if (auto mappingNode = iNode.getImpl()->node["uuidMapping"]; mappingNode) {

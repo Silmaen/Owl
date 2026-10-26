@@ -8,6 +8,7 @@
 
 #include "owlpch.h"
 
+#include "data/assets/AssetReference.h"
 #include "renderer/Material.h"
 
 #include "core/FormatVersionYaml.h"
@@ -78,10 +79,10 @@ auto mapCodec(const MaterialMap iMap, const std::string_view iKey) -> FieldCodec
 				ioTo.maps[index] = iFrom.maps[index];
 			},
 			.emit = [index](YAML::Emitter& ioOut, const MaterialParameters& iValues) -> void {
-				ioOut << iValues.maps[index];
+				ioOut << data::assets::toTextureReference(iValues.maps[index]);
 			},
 			.read = [index](MaterialParameters& ioTo, const YAML::Node& iNode) -> void {
-				ioTo.maps[index] = iNode.as<std::string>();
+				ioTo.maps[index] = data::assets::fromTextureReference(iNode.as<std::string>());
 			},
 			.equal = [index](const MaterialParameters& iA, const MaterialParameters& iB) -> bool {
 				return iA.maps[index] == iB.maps[index];
@@ -244,7 +245,7 @@ auto MaterialAsset::toYaml() const -> std::string {
 	out << YAML::Key << "Material" << YAML::Value << YAML::BeginMap;
 	core::emitFormatVersion(out, g_materialFormat);
 	if (!parent.empty())
-		out << YAML::Key << "parent" << YAML::Value << parent.generic_string();
+		out << YAML::Key << "parent" << YAML::Value << data::assets::toAssetReference(parent.generic_string());
 	emitFields(out, values, parent.empty() ? g_allMaterialFields : overrides);
 	out << YAML::EndMap << YAML::EndMap;
 	return out.c_str();
@@ -269,7 +270,7 @@ auto MaterialAsset::fromYaml(const std::string& iYaml) -> std::optional<Material
 	}
 	MaterialAsset asset;
 	if (const auto parent = node["parent"]; parent && parent.IsScalar())
-		asset.parent = parent.as<std::string>();
+		asset.parent = data::assets::toAssetPath(parent.as<std::string>());
 	const uint32_t fields = readFields(node, asset.values);
 	asset.overrides = asset.parent.empty() ? g_allMaterialFields : fields;
 	return asset;

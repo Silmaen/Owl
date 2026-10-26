@@ -14,7 +14,7 @@ Entities:
     SpriteRenderer:
       color: [0.92, 0.3, 0.3, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -23,7 +23,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int

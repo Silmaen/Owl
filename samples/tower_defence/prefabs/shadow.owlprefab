@@ -14,6 +14,6 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 0.6]
       tilingFactor: 1
-      texture: nam:textures/fx/shadow.png
+      texture: gid:9e7474d8e5ce6372:textures/fx/shadow.png
     RendererTag:
       Name: ground

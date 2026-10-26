@@ -176,6 +176,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Check if the logical device enables BC compressed textures (`textureCompressionBC`).
+	 * @return True when BC7 images may be sampled.
+	 */
+	[[nodiscard]] auto hasTextureCompressionBc() const -> bool { return m_textureCompressionBc; }
+
+	/**
+	 * @brief
+	 *  Check if the logical device enables ASTC LDR compressed textures (`textureCompressionASTC_LDR`).
+	 * @return True when ASTC 4x4 images may be sampled.
+	 */
+	[[nodiscard]] auto hasTextureCompressionAstc() const -> bool { return m_textureCompressionAstc; }
+
+	/**
+	 * @brief
 	 *  Get why no device could be used, worded for a player.
 	 * @return The reason, empty when a device was selected.
 	 */
@@ -394,6 +408,10 @@ private:
 	uniq<PhysicalDeviceCapabilities> m_phyProps;
 	/// Whether the logical device enables the optional `drawIndirectCount` feature.
 	bool m_drawIndirectCount = false;
+	/// Whether the logical device enables the optional `textureCompressionBC` feature.
+	bool m_textureCompressionBc = false;
+	/// Whether the logical device enables the optional `textureCompressionASTC_LDR` feature.
+	bool m_textureCompressionAstc = false;
 	/// Why no device could be used, empty when one was selected.
 	std::string m_failureReason;
 	/// The graphic queue.

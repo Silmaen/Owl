@@ -1,6 +1,6 @@
 Tileset: platformer_ext
 FormatVersion: 1
-texture: nam:textures/atlases/platformer_ext_atlas.png
+texture: gid:163b4439fd9ebaf7:textures/atlases/platformer_ext_atlas.png
 tileWidth: 18
 tileHeight: 18
 columns: 16

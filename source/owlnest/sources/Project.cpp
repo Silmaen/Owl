@@ -132,7 +132,8 @@ auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const 
 			.tickRate = simulation.tickRate,
 			.maxTicksPerFrame = simulation.maxTicksPerFrame,
 			.rendererStackYaml = rendererStack.isEmpty() ? std::string{} : rendererStack.toYaml(),
-			.packFlags = data::assets::pack::PackFlags::Default};
+			.packFlags = data::assets::pack::PackFlags::Default,
+			.cookCacheDirectory = {}};
 }
 
 auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {

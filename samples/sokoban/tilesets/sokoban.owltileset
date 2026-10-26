@@ -1,6 +1,6 @@
 Tileset: sokoban
 FormatVersion: 1
-texture: nam:textures/sokoban_tiles.png
+texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
 tileWidth: 16
 tileHeight: 16
 columns: 8
