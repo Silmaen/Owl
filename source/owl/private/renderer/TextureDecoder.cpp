@@ -29,6 +29,8 @@ namespace {
 
 constexpr std::array<uint8_t, 12> g_ktx2Identifier{0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32,
 												   0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A};
+// Full KTX2 header: libktx leaks its memory stream when it cannot read one, so shorter data never reaches it.
+constexpr size_t g_ktx2FullHeaderSize = 80;
 constexpr size_t g_ktx2WidthOffset = 20;
 constexpr size_t g_ktx2HeaderSize = 28;
 
@@ -190,6 +192,10 @@ auto transcodeKtx2(const std::span<const uint8_t> iBytes, const gpu::ImageFormat
 		case gpu::ImageFormat::Rgba32F:
 			OWL_CORE_WARN("TextureDecoder: Cannot transcode KTX2 to {}.", magic_enum::enum_name(iTarget))
 			return std::nullopt;
+	}
+	if (iBytes.size() < g_ktx2FullHeaderSize) {
+		OWL_CORE_WARN("TextureDecoder: Unreadable KTX2 texture ({} bytes, shorter than its header).", iBytes.size())
+		return std::nullopt;
 	}
 	ktxTexture2* texture = nullptr;
 	if (const auto result = ktxTexture2_CreateFromMemory(iBytes.data(), iBytes.size(),

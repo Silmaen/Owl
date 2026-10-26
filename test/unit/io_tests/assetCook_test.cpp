@@ -104,6 +104,9 @@ TEST(AssetCook, Etc1sWithoutMipsHasOneLevel) {
 	EXPECT_EQ(rgba->levels.size(), 1u);
 	const std::vector<uint8_t> notKtx{0, 1, 2};
 	EXPECT_FALSE(renderer::transcodeKtx2(notKtx, renderer::gpu::ImageFormat::Rgba8));
+	const std::vector<uint8_t> truncated(cooked->begin(), cooked->begin() + 40);
+	EXPECT_TRUE(renderer::isKtx2(truncated));
+	EXPECT_FALSE(renderer::transcodeKtx2(truncated, renderer::gpu::ImageFormat::Rgba8));
 }
 
 TEST(AssetCook, OtherAssetsAreCopied) {

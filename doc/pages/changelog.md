@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `transcodeKtx2` refuses data shorter than a KTX2 header before libktx, which leaked its memory stream on it (Sanitizer Address).
 - `PackReader::readEntry` is thread-safe: asynchronous texture loads no longer share one file stream unguarded.
 - ETC1S texture cook under ASan: a local `ktx` recipe patches libktx to allocate the BasisLZ global data with `malloc`, as `ktxTexture2_Destroy` frees it with `free`.
 - `Coverage` reads only the notes of its own build tree: another compiler's tree in the same checkout no longer makes gcov fail.
