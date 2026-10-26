@@ -93,6 +93,32 @@ auto SetSceneHudCommand::typeId() const -> size_t {
 	return kTypeHash;
 }
 
+SetFloatingOriginCommand::SetFloatingOriginCommand(const scene::FloatingOriginSettings& iBefore,
+												   const scene::FloatingOriginSettings& iAfter)
+	: m_before{iBefore}, m_after{iAfter} {}
+
+SetFloatingOriginCommand::~SetFloatingOriginCommand() = default;
+
+void SetFloatingOriginCommand::undo(scene::Scene& ioScene) { ioScene.getFloatingOriginSettings() = m_before; }
+
+void SetFloatingOriginCommand::redo(scene::Scene& ioScene) { ioScene.getFloatingOriginSettings() = m_after; }
+
+auto SetFloatingOriginCommand::description() const -> std::string { return "Edit the scene floating origin"; }
+
+auto SetFloatingOriginCommand::mergeWith(const SceneUndoCommand& iOther) -> bool {
+	const auto* other = dynamic_cast<const SetFloatingOriginCommand*>(&iOther);
+	if (other == nullptr)
+		return false;
+	m_after = other->m_after;
+	m_timestamp = other->m_timestamp;
+	return true;
+}
+
+auto SetFloatingOriginCommand::typeId() const -> size_t {
+	constexpr size_t kTypeHash = 0x536574466c4fULL;// "SetFlO"
+	return kTypeHash;
+}
+
 SetSceneScriptCommand::SetSceneScriptCommand(std::string iBefore, std::string iAfter)
 	: m_before{std::move(iBefore)}, m_after{std::move(iAfter)} {}
 

@@ -38,6 +38,7 @@
 #include <array>
 #include <cctype>
 #include <charconv>
+#include <cmath>
 #include <cstddef>
 #include <exception>
 #include <filesystem>
@@ -426,6 +427,21 @@ auto setSceneRenderers(const shared<scene::Scene>& ioScene, const CommandArgs& i
 	if (before == afterYaml)
 		return fail(CommandError::NotApplicable, "the scene already has this renderer configuration");
 	return PreparedCommand{.command = mkUniq<ModifyEnabledRenderersCommand>(before, afterYaml), .applied = false};
+}
+
+auto setFloatingOrigin(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto before = ioScene->getFloatingOriginSettings();
+	auto after = before;
+	after.enabled = iArgs.getBool("enabled", before.enabled);
+	if (const auto radius = iArgs.get<double>("shift_radius"); radius) {
+		if (!std::isfinite(*radius) || *radius < scene::FloatingOriginSettings::minShiftRadius)
+			return fail(CommandError::InvalidArgument, std::format("`shift_radius` must be at least {}",
+																   scene::FloatingOriginSettings::minShiftRadius));
+		after.shiftRadius = *radius;
+	}
+	if (after == before)
+		return fail(CommandError::NotApplicable, "the scene already has these floating origin settings");
+	return PreparedCommand{.command = mkUniq<SetFloatingOriginCommand>(before, after), .applied = false};
 }
 
 auto setSceneScript(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
@@ -1053,6 +1069,14 @@ CommandRegistry::CommandRegistry() {
 								  "writes it.",
 				   .defaultValue = std::string{}}},
 		 .factory = setSceneRenderers});
+	add({.name = "scene.set_floating_origin",
+		 .description = "Edit the floating origin of the scene: at runtime the world origin follows the primary camera "
+						"once it is farther than the shift radius.",
+		 .args = {{.name = "enabled", .type = ArgType::Bool, .description = "Move the world origin with the camera."},
+				  {.name = "shift_radius",
+				   .type = ArgType::Number,
+				   .description = "Distance from the origin, in world units, beyond which the origin moves."}},
+		 .factory = setFloatingOrigin});
 	add({.name = "scene.set_script",
 		 .description = "Choose the script the scene owns (`SceneScript`), with its property values; empty removes "
 						"it. It runs before the entity scripts and has no entity.",

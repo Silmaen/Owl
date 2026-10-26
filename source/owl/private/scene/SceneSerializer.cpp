@@ -233,6 +233,32 @@ auto deserializePhysicsSettings(const core::YamlNode& iNode) -> PhysicsSettings 
 	return settings.clamped();
 }
 
+void serializeFloatingOrigin(YAML::Emitter& ioEmitter, const Scene& iScene) {
+	const auto& settings = iScene.getFloatingOriginSettings();
+	const auto& origin = iScene.getWorldOrigin();
+	if (settings == FloatingOriginSettings{} && origin == math::vec3d{0.0, 0.0, 0.0})
+		return;
+	ioEmitter << YAML::Key << "FloatingOrigin" << YAML::Value << YAML::BeginMap;
+	ioEmitter << YAML::Key << "enabled" << YAML::Value << settings.enabled;
+	ioEmitter << YAML::Key << "shiftRadius" << YAML::Value << settings.shiftRadius;
+	ioEmitter << YAML::Key << "origin" << YAML::Value << YAML::Flow << YAML::BeginSeq << origin.x() << origin.y()
+			  << origin.z() << YAML::EndSeq;
+	ioEmitter << YAML::EndMap;
+}
+
+void deserializeFloatingOrigin(Scene& ioScene, const core::YamlNode& iNode) {
+	FloatingOriginSettings settings;
+	math::vec3d origin{0.0, 0.0, 0.0};
+	if (iNode.isMap()) {
+		settings.enabled = iNode["enabled"].as<bool>(settings.enabled);
+		settings.shiftRadius = iNode["shiftRadius"].as<double>(settings.shiftRadius);
+		if (const auto originNode = iNode["origin"]; originNode)
+			origin = originNode.as<math::vec3d>();
+	}
+	ioScene.getFloatingOriginSettings() = settings.clamped();
+	ioScene.shiftWorldOrigin(origin);
+}
+
 void linkIntoHierarchy(Scene& ioScene, const Entity& iEntity) {
 	const core::UUID uuid = iEntity.getUUID();
 	auto& hierarchy = iEntity.getComponent<component::Hierarchy>();
@@ -352,6 +378,7 @@ auto SceneSerializer::serializeToString() const -> std::string {
 									<< renderer::enabledToYaml(enabled);
 		}
 		serializePhysicsSettings(sOut.getImpl()->emitter, mp_scene->getPhysicsSettings());
+		serializeFloatingOrigin(sOut.getImpl()->emitter, *mp_scene);
 		if (const auto& sceneScript = mp_scene->getSceneScript(); !sceneScript.scriptPath.empty())
 			sceneScript.serializeAs(sOut, "SceneScript");
 	}
@@ -460,6 +487,8 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	const auto& sData = *iParsed.serializer;
 	const auto previousRenderers = mp_scene->getEnabledRenderers();
 	const auto previousPhysics = mp_scene->getPhysicsSettings();
+	const auto previousFloatingOrigin = mp_scene->getFloatingOriginSettings();
+	const auto previousWorldOrigin = mp_scene->getWorldOrigin();
 	const auto previousHud = mp_scene->getHudPath();
 	const auto previousSceneScript = mp_scene->getSceneScript();
 	const bool isScene = iParsed.kind == DocumentKind::Scene;
@@ -475,6 +504,8 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 		rollback(mp_scene, created);
 		mp_scene->getEnabledRenderers() = previousRenderers;
 		mp_scene->getPhysicsSettings() = previousPhysics;
+		mp_scene->getFloatingOriginSettings() = previousFloatingOrigin;
+		mp_scene->shiftWorldOrigin(previousWorldOrigin);
 		mp_scene->setHudPath(previousHud);
 		mp_scene->getSceneScript() = previousSceneScript;
 		return unexpected{SceneLoadError::InvalidEntity};
@@ -493,6 +524,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 			if (const auto enabled = root["EnabledRenderers"]; enabled)
 				mp_scene->getEnabledRenderers() = renderer::enabledFromYaml(enabled);
 			mp_scene->getPhysicsSettings() = deserializePhysicsSettings(root["Physics"]);
+			deserializeFloatingOrigin(*mp_scene, root["FloatingOrigin"]);
 			mp_scene->getSceneScript() = component::LuaScript{};
 			if (const auto script = root["SceneScript"]; script.isMap()) {
 				const core::Serializer scriptNode;

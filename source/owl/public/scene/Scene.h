@@ -16,12 +16,14 @@
 #include "input/ActionFrame.h"
 #include "input/InputFrame.h"
 #include "math/Transform.h"
+#include "math/vectors.h"
 #include "renderer/Camera.h"
 #include "renderer/Lighting2D.h"
 #include "renderer/RenderGraph.h"
 #include "renderer/RenderStack.h"
 #include "renderer/Renderer3D.h"
 #include "renderer/ShadowCascades.h"
+#include "scene/FloatingOriginSettings.h"
 #include "scene/PhysicsSettings.h"
 #include "scene/SimulationClock.h"
 #include "scene/SystemSchedule.h"
@@ -96,6 +98,7 @@ struct LightFlicker;
 struct Oscillator;
 struct Patrol;
 struct Drift;
+struct WorldPosition;
 struct FollowTarget;
 struct RenderTarget;
 struct ProceduralSky;
@@ -885,6 +888,46 @@ public:
 
 	/**
 	 * @brief
+	 *  Access the scene's floating origin settings (mutable), read every frame by the `owl.floating_origin` system.
+	 * @return The floating origin settings.
+	 */
+	[[nodiscard]] auto getFloatingOriginSettings() -> FloatingOriginSettings& { return m_floatingOriginSettings; }
+
+	/**
+	 * @brief
+	 *  Access the scene's floating origin settings (const).
+	 * @return The floating origin settings.
+	 */
+	[[nodiscard]] auto getFloatingOriginSettings() const -> const FloatingOriginSettings& {
+		return m_floatingOriginSettings;
+	}
+
+	/**
+	 * @brief
+	 *  World position of the scene origin: the point the float `Transform` of a root entity is relative to.
+	 * @return The world origin, in double precision.
+	 */
+	[[nodiscard]] auto getWorldOrigin() const -> const math::vec3d& { return m_worldOrigin; }
+
+	/**
+	 * @brief
+	 *  Move the world origin, keeping every root entity where it is in the world.
+	 *
+	 * A root entity with a `WorldPosition` is placed again from it; any other root entity is translated by the shift.
+	 * Children follow their parent.
+	 * @param[in] iOrigin The new world origin.
+	 */
+	void shiftWorldOrigin(const math::vec3d& iOrigin);
+
+	/**
+	 * @brief
+	 *  Bring the `WorldPosition` and the `Transform` of every root entity in step: a moved `Transform` updates the world
+	 *  position, an edited world position moves the `Transform`.
+	 */
+	void syncWorldPositions();
+
+	/**
+	 * @brief
 	 *  Fixed simulation clock of the scene (mutable): the ticks of `onUpdateRuntime`, the physics steps.
 	 *
 	 * `onStartRuntime()` resets it and gives it the simulation settings of the engine context (the project's tick
@@ -1274,6 +1317,10 @@ private:
 	renderer::EnabledRenderersConfig m_enabledRenderers;
 	/// Interpolation and solver settings of the scene's physics world.
 	PhysicsSettings m_physicsSettings;
+	/// Floating origin settings of the scene.
+	FloatingOriginSettings m_floatingOriginSettings;
+	/// World position of the scene origin.
+	math::vec3d m_worldOrigin{0.0, 0.0, 0.0};
 	/// Fixed-tick accumulator of the runtime (systems' `tick`, physics steps).
 	SimulationClock m_simulationClock;
 	/// Context given to the systems' `tick` functions, reused from frame to frame.
@@ -2070,6 +2117,10 @@ OWL_API void Scene::onComponentAdded<component::Patrol>(const Entity& iEntity, c
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>(const Entity& iEntity, component::Drift& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::WorldPosition>(const Entity& iEntity,
+															   component::WorldPosition& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::FollowTarget>(const Entity& iEntity,

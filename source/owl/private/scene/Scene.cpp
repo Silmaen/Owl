@@ -231,6 +231,8 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_gameState = iOther->m_gameState;
 	newScene->m_enabledRenderers = iOther->m_enabledRenderers;
 	newScene->m_physicsSettings = iOther->m_physicsSettings;
+	newScene->m_floatingOriginSettings = iOther->m_floatingOriginSettings;
+	newScene->m_worldOrigin = iOther->m_worldOrigin;
 	newScene->m_hudPath = iOther->m_hudPath;
 	newScene->m_sceneScript = iOther->m_sceneScript;
 	newScene->m_documentKind = iOther->m_documentKind;
@@ -339,6 +341,7 @@ void Scene::onStartRuntime() {
 	m_timeScale = 1.f;
 	m_paused = false;
 	m_pendingSpawns.clear();
+	syncWorldPositions();
 	const auto heldInput = input::Input::readState();
 	m_frameInput.reset(heldInput);
 	m_tickInput.reset(heldInput);
@@ -744,6 +747,7 @@ void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Came
 	OWL_PROFILE_FUNCTION()
 
 	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
+	syncWorldPositions();
 	// Stream procedural voxel terrain around the editor camera (its world position is the inverse-view translation).
 	const math::mat4 camToWorld = inverse(iCamera.getView());
 	updateVoxelStreaming(math::vec3{camToWorld(0, 3), camToWorld(1, 3), camToWorld(2, 3)});

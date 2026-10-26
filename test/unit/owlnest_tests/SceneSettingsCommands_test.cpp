@@ -98,6 +98,28 @@ TEST_F(SceneSettingsCommandsTest, SetSceneScriptCommandUndoesAndRefusesBadInput)
 	EXPECT_TRUE(scene->getSceneScript().scriptPath.empty());
 }
 
+TEST_F(SceneSettingsCommandsTest, SetFloatingOriginCommandUndoesAndRefusesBadInput) {
+	const CommandRegistry registry;
+	auto scene = mkShared<scene::Scene>();
+	SceneUndoManager undo;
+	ASSERT_NE(registry.find("scene.set_floating_origin"), nullptr);
+	ASSERT_TRUE(
+			registry.execute("scene.set_floating_origin", {{"enabled", true}, {"shift_radius", 500.0}}, scene, undo));
+	EXPECT_TRUE(scene->getFloatingOriginSettings().enabled);
+	EXPECT_DOUBLE_EQ(scene->getFloatingOriginSettings().shiftRadius, 500.0);
+	const auto same = registry.execute("scene.set_floating_origin", {{"enabled", true}}, scene, undo);
+	ASSERT_FALSE(same);
+	EXPECT_EQ(same.error().error, CommandError::NotApplicable);
+	const auto wrong = registry.execute("scene.set_floating_origin", {{"shift_radius", 0.0}}, scene, undo);
+	ASSERT_FALSE(wrong);
+	EXPECT_EQ(wrong.error().error, CommandError::InvalidArgument);
+	undo.undo(*scene);
+	EXPECT_FALSE(scene->getFloatingOriginSettings().enabled);
+	EXPECT_DOUBLE_EQ(scene->getFloatingOriginSettings().shiftRadius, scene::FloatingOriginSettings{}.shiftRadius);
+	undo.redo(*scene);
+	EXPECT_TRUE(scene->getFloatingOriginSettings().enabled);
+}
+
 TEST_F(SceneSettingsCommandsTest, PatrolWaypointsAreEditedThroughComponentSetAndUndo) {
 	const CommandRegistry registry;
 	auto scene = mkShared<scene::Scene>();

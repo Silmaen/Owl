@@ -477,6 +477,35 @@ void SceneSettings::renderPhysicsSection() const {
 		mp_undoManager->push(mkUniq<commands::ModifyPhysicsSettingsCommand>(before, edited));
 }
 
+void SceneSettings::renderWorldOriginSection() const {
+	if (!gui::widgets::sectionHeader("World Origin", gui::icon::globe, false).open)
+		return;
+	const scene::FloatingOriginSettings defaults;
+	const auto& before = m_scene->getFloatingOriginSettings();
+	bool enabled = before.enabled;
+	auto radius = static_cast<float>(before.shiftRadius);
+	commands::CommandArgs args;
+	if (gui::widgets::beginProperties("##worldOrigin")) {
+		if (gui::widgets::propertyBool("Floating Origin", enabled, defaults.enabled,
+									   "Move the world origin onto the primary camera when it goes farther than the "
+									   "shift radius, so that far worlds keep a fine precision."))
+			args.set("enabled", enabled);
+		if (gui::widgets::propertyFloat("Shift Radius", radius, static_cast<float>(defaults.shiftRadius), 10.f,
+										"%.0f m", "Distance from the origin beyond which the origin moves."))
+			args.set("shift_radius",
+					 std::max(static_cast<double>(radius), scene::FloatingOriginSettings::minShiftRadius));
+		gui::widgets::endProperties();
+	}
+	const auto& origin = m_scene->getWorldOrigin();
+	ImGui::TextDisabled("Origin: %.3f, %.3f, %.3f. Entities with a World Position keep it in double.", origin.x(),
+						origin.y(), origin.z());
+	gui::widgets::endSection();
+	if (args.getValues().empty())
+		return;
+	const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
+	std::ignore = target.execute("scene.set_floating_origin", args);
+}
+
 void SceneSettings::renderScriptSection() {
 	if (m_scene->getDocumentKind() != scene::DocumentKind::Scene)
 		return;
@@ -563,6 +592,7 @@ void SceneSettings::onImGuiRender() {
 	ImGui::Separator();
 
 	renderPhysicsSection();
+	renderWorldOriginSection();
 	renderHudSection();
 	renderScriptSection();
 

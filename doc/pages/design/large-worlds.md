@@ -88,7 +88,7 @@ A renderer-stack layer, like the voxel and isometric ones, composing with the 3D
 - World partition: streaming cells on world coordinates, additive scenes loaded and unloaded around the focus
 - Camera tracks in the sequencer, for cutscenes
 
-## Delivery
+## Delivery {#large-worlds-delivery}
 
 | Release | Items                                                                                                  |
 |---------|--------------------------------------------------------------------------------------------------------|
@@ -97,5 +97,13 @@ A renderer-stack layer, like the voxel and isometric ones, composing with the 3D
 | v0.7.0  | Articulated bodies, gravity fields, time warp, simulation LOD, planetary terrain, HUD markers, audio   |
 | v0.8.0  | World partition, camera tracks, joysticks and throttles with many axes                                 |
 | v0.9.0  | Interest management                                                                                    |
+
+World positions in double ship in three steps:
+
+| Step                                                                                  | Status      |
+|---------------------------------------------------------------------------------------|-------------|
+| `WorldPosition`, world origin and its shift, `FloatingOrigin:` scene settings, editor | Done        |
+| Physics bodies, sound sources and particles follow a shift of the origin              | Planned     |
+| Owl Nest gizmos, picking, snapping and camera in world coordinates                    | Planned     |
 
 Sample games that exercise these bricks are listed in [Sample games](sample-games.md).

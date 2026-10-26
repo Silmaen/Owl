@@ -191,6 +191,79 @@ private:
 
 /**
  * @brief
+ *  Undoable edit of a scene's `FloatingOriginSettings` (enabled, shift radius).
+ *
+ * Successive edits within the `UndoManager` merge window collapse into one history entry.
+ */
+class SetFloatingOriginCommand final : public SceneUndoCommand {
+public:
+	SetFloatingOriginCommand(const SetFloatingOriginCommand&) = delete;
+
+	SetFloatingOriginCommand(SetFloatingOriginCommand&&) = default;
+
+	auto operator=(const SetFloatingOriginCommand&) -> SetFloatingOriginCommand& = delete;
+
+	auto operator=(SetFloatingOriginCommand&&) -> SetFloatingOriginCommand& = default;
+
+	/**
+	 * @brief
+	 *  Construct from the settings before and after the edit.
+	 * @param[in] iBefore Settings prior to the edit.
+	 * @param[in] iAfter Settings after the edit.
+	 */
+	SetFloatingOriginCommand(const scene::FloatingOriginSettings& iBefore, const scene::FloatingOriginSettings& iAfter);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~SetFloatingOriginCommand() override;
+
+	/**
+	 * @brief
+	 *  Restore the settings prior to the edit.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void undo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Apply the edited settings again.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void redo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Description.
+	 * @return Human-readable description for menus and tooltips.
+	 */
+	[[nodiscard]] auto description() const -> std::string override;
+
+	/**
+	 * @brief
+	 *  Coalesce two consecutive floating origin edits into one undo step.
+	 * @param[in] iOther The newer command.
+	 * @return True when the merge succeeded.
+	 */
+	[[nodiscard]] auto mergeWith(const SceneUndoCommand& iOther) -> bool override;
+
+	/**
+	 * @brief
+	 *  Stable identifier of the command type for merge compatibility checks.
+	 * @return The command type id.
+	 */
+	[[nodiscard]] auto typeId() const -> size_t override;
+
+private:
+	/// Settings before the edit.
+	scene::FloatingOriginSettings m_before;
+	/// Settings after the edit.
+	scene::FloatingOriginSettings m_after;
+};
+
+/**
+ * @brief
  *  Undoable choice of the HUD asset a scene draws (its `Hud:` key).
  */
 class SetSceneHudCommand final : public SceneUndoCommand {

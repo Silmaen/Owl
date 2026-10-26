@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project setting **ImGui overlay** (`imGui`): an exported game creates its ImGui layer and packs its fonts only when it is on.
 - `readAssetBytes`, `findPackedAsset` and `isPackedAsset`: one lookup, the open pack first, for every loader.
 - The export compiles the project shaders and bakes the font atlases into the pack (`ExportReport::shadersBaked`).
+- `WorldPosition` component in double and a scene floating origin (`FloatingOrigin:`, `scene.set_floating_origin`) for worlds far from zero.
 
 ### Changed
 

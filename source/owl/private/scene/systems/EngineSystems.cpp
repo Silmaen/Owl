@@ -166,6 +166,7 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.light_flicker", SystemPhase::PostPhysics, &updateLightFlickers);
 	add("owl.entity_links", SystemPhase::PostPhysics, &updateEntityLinks);
 	add("owl.triggers", SystemPhase::PostPhysics, &updateTriggers);
+	add("owl.floating_origin", SystemPhase::PostPhysics, &updateFloatingOrigin);
 	add("owl.navigation", SystemPhase::Late, &updateNavigation);
 	add("owl.sound", SystemPhase::Late, &updateSound);
 	add("owl.sprite_animation", SystemPhase::Late, &updateAnimatedSprites);
