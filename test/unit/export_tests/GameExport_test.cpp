@@ -157,14 +157,17 @@ protected:
 		writeFile(m_runner / "libfake.so", "NEW-LIB");
 		app::Application::get().addAssetDirectory({"Project: test", m_project});
 		// The engine shaders baked by the build, as Owl Nest finds them in its working directory.
-		std::error_code ec;
-		m_bakedAssets = std::filesystem::canonical("/proc/self/exe", ec).parent_path() / "assets";
-		if (!ec && exists(m_bakedAssets))
+#ifdef OWL_BAKED_ASSETS_DIR
+		if (const std::filesystem::path baked{OWL_BAKED_ASSETS_DIR}; exists(baked / "shaders")) {
+			m_bakedAssets = baked;
 			app::Application::get().addAssetDirectory({"Baked shaders", m_bakedAssets});
+		}
+#endif
 	}
 
 	void TearDown() override {
-		app::Application::get().removeAssetDirectory(m_bakedAssets);
+		if (!m_bakedAssets.empty())
+			app::Application::get().removeAssetDirectory(m_bakedAssets);
 		app::Application::get().removeAssetDirectory(m_project);
 		std::filesystem::remove_all(m_root);
 	}
@@ -347,7 +350,8 @@ TEST_F(GameExporterFixture, ExportPacksOnlyTheEngineFilesOfTheGame) {
 		GTEST_SKIP() << "No engine shaders in the asset directories of the test.";
 	EXPECT_TRUE(flat->renderers.empty());
 	EXPECT_GT(flat->engineFilesSkipped, 0u);
-	EXPECT_EQ(flat->shadersBaked, 0u) << "the engine shaders come baked by the build";
+	if (!m_bakedAssets.empty())
+		EXPECT_EQ(flat->shadersBaked, 0u) << "the engine shaders come baked by the build";
 	for (const auto* absent: {"shaders/renderer3D/", "shaders/raycast_dda/", "shaders/isometric/",
 							  "shaders/frustum_culling/", "icons/", "logo/", "fonts/Inter-Regular.ttf"})
 		EXPECT_FALSE(hasPrefix(flatEntries, absent)) << absent;
@@ -375,8 +379,8 @@ TEST_F(GameExporterFixture, ExportPacksOnlyTheEngineFilesOfTheGame) {
 
 TEST_F(GameExporterFixture, ExportBakesTheShadersOfTheProject) {
 	const auto engineQuad = data::assets::readAssetText("shaders/renderer2D/quad.slang");
-	if (!engineQuad)
-		GTEST_SKIP() << "No engine shaders in the asset directories of the test.";
+	if (!engineQuad || m_bakedAssets.empty())
+		GTEST_SKIP() << "No engine shaders baked by the build in the asset directories of the test.";
 	writeFile(m_project / "shaders" / "renderer2D" / "quad.slang", *engineQuad + "\n// Project variant.\n");
 	auto settings = makeSettings();
 	settings.cookCacheDirectory = m_root / "cook";
