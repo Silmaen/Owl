@@ -219,6 +219,7 @@ Checked on 2026-10-09 with `conan search -r conancenter` (Conan 2.33). "Owl (Con
 | ufbx                  | 0.20.1         | 0.23.1          | local recipe          | static  | Absent from ConanCenter (single source file)                                   |
 | vulkan                | 1.4.341 (SDK)  | 1.4.357.0       | ConanCenter           | shared  | vulkan-headers, vulkan-loader, vulkan-utility-libraries                        |
 | vulkan-memory-alloc.  | —              | 3.3.0           | ConanCenter           | header  | VMA: every Vulkan buffer and image is a sub-allocation (B-11)                  |
+| xxhash                | —              | 0.8.4           | ConanCenter           | static  | XXH3-128 keys of the asset cook cache                                          |
 | yaml-cpp              | 0.8.0          | 0.9.0           | ConanCenter           | static  |                                                                                |
 | zeus                  | 1.3.1          | —               | removed               | —       | Dead fallback branch of `core/expected.h`                                      |
 | zlib                  | 1.3.1          | 1.3.2           | ConanCenter           | static  | Transitive                                                                     |

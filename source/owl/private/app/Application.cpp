@@ -397,8 +397,9 @@ Application::~Application() {
 	invalidate();
 }
 
-void Application::addAssetDirectory(const AssetDirectory& iDir) {
+void Application::addAssetDirectory(const AssetDirectory& iDir, const bool iEditable) {
 	m_assetDirectories.push_front(iDir);
+	std::ignore = m_assetRegistry.addDirectory(iDir.assetsPath, iEditable);
 	if (m_hotReload.isEnabled())
 		m_hotReload.watchDirectory(iDir.assetsPath);
 }
@@ -406,6 +407,7 @@ void Application::addAssetDirectory(const AssetDirectory& iDir) {
 void Application::removeAssetDirectory(const std::filesystem::path& iPath) {
 	m_assetDirectories.remove_if([&iPath](const AssetDirectory& iDir) -> bool { return iDir.assetsPath == iPath; });
 	m_hotReload.unwatchDirectory(iPath);
+	m_assetRegistry.removeDirectory(iPath);
 	std::ignore = unloadAssetsFrom(iPath);
 }
 
@@ -734,6 +736,10 @@ auto Application::openPack(const std::filesystem::path& iPackFile) -> bool {
 		return false;
 	}
 	OWL_CORE_INFO("Opened asset pack: {} ({} entries).", iPackFile.string(), m_packReader.getHeader().entryCount)
+	if (const auto index = m_packReader.readEntry(std::string{data::assets::pack::g_assetIndexEntry}); index) {
+		const auto count = m_assetRegistry.loadIndex(std::string(index->begin(), index->end()));
+		OWL_CORE_INFO("Pack: {} asset GUID(s) in the index.", count)
+	}
 	m_hotReload.setEnabled(false);
 	return true;
 }

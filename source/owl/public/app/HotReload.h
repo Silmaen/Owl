@@ -8,6 +8,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "data/assets/AssetRegistry.h"
 #include "platform/FileWatcher.h"
 
 #include <chrono>
@@ -157,6 +158,14 @@ private:
 	 *  Take the watcher's changes and reload each file.
 	 */
 	void dispatchChanges();
+
+	/**
+	 * @brief
+	 *  Register an asset file that appeared, or forget one that left; a changed sidecar is read again.
+	 * @param[in,out] ioRegistry The asset registry.
+	 * @param[in] iFile The changed file.
+	 */
+	static void trackInRegistry(data::assets::AssetRegistry& ioRegistry, const std::filesystem::path& iFile);
 
 	/// Background poller of the watched directories.
 	platform::FileWatcher m_watcher;

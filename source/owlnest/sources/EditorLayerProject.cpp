@@ -739,7 +739,8 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 		OWL_ERROR("Open Project: Cannot load {}.", configFile.string())
 		return;
 	}
-	app::Application::get().addAssetDirectory({std::format("Project: {}", m_project.name), m_project.projectDirectory});
+	app::Application::get().addAssetDirectory({std::format("Project: {}", m_project.name), m_project.projectDirectory},
+											  true);
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app::Application::get().getEngineContext().loadActionMap(m_project.projectDirectory);
 	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);

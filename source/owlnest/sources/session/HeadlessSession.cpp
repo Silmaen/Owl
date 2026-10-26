@@ -102,7 +102,7 @@ auto HeadlessSession::loadScene(const std::filesystem::path& iPath) -> expected<
 			app.removeAssetDirectory(m_project);
 		m_project = project;
 		if (!m_project.empty())
-			app.addAssetDirectory({.title = "Session project", .assetsPath = m_project});
+			app.addAssetDirectory({.title = "Session project", .assetsPath = m_project}, true);
 	}
 	const auto loaded = mkShared<scene::Scene>();
 	if (const scene::SceneSerializer serializer{loaded}; !serializer.deserialize(path))

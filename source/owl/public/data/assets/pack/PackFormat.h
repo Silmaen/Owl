@@ -29,6 +29,9 @@ constexpr uint64_t g_maxTocSize = 64ULL << 20U;
 /// Upper bound on a single decompressed entry (1 GiB); larger claims are rejected before any allocation.
 constexpr uint64_t g_maxEntrySize = 1ULL << 30U;
 
+/// Pack entry mapping the GUID of each packed asset to its path (`AssetRegistry::serializeIndex`).
+constexpr std::string_view g_assetIndexEntry{"asset_index.yml"};
+
 /// Pack file flags.
 enum struct PackFlags : uint8_t {
 	None = 0,///< No flag.

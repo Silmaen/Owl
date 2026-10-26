@@ -21,6 +21,8 @@
 #include <cctype>
 #include <cstdint>
 #include <string>
+#include <system_error>
+#include <tuple>
 
 namespace owl::app {
 
@@ -65,6 +67,19 @@ void HotReload::removeListener(const uint32_t iId) {
 	std::erase_if(m_listeners, [iId](const auto& iEntry) -> bool { return iEntry.first == iId; });
 }
 
+void HotReload::trackInRegistry(data::assets::AssetRegistry& ioRegistry, const std::filesystem::path& iFile) {
+	std::error_code error;
+	auto assetFile = iFile;
+	if (iFile.extension() == data::assets::g_MetaExtension) {
+		assetFile.replace_extension();
+		ioRegistry.forgetFile(assetFile);
+	}
+	if (std::filesystem::exists(assetFile, error))
+		std::ignore = ioRegistry.registerFile(assetFile);
+	else
+		ioRegistry.forgetFile(assetFile);
+}
+
 void HotReload::dispatchChanges() {
 	OWL_PROFILE_FUNCTION()
 
@@ -76,6 +91,8 @@ auto HotReload::reloadFile(const std::filesystem::path& iFile) -> Report {
 
 	Report report{.file = iFile};
 	const auto extension = lowerExtension(iFile);
+	if (Application::instanced())
+		trackInRegistry(Application::get().getAssetRegistry(), iFile);
 	const auto count = [&report](const bool iSuccess) -> void {
 		if (iSuccess)
 			++report.reloaded;

@@ -72,6 +72,7 @@ class OwlEngineConan(ConanFile):
         "openal-soft/*:shared": True,
         "libsndfile/*:shared": True,
         "libsndfile/*:programs": False,
+        "xxhash/*:utility": False,
         "glad/*:gl_profile": "compatibility",
         "glad/*:gl_version": "4.6",
         "spdlog/*:use_std_fmt": True,
@@ -135,6 +136,7 @@ class OwlEngineConan(ConanFile):
         self.requires("rapidyaml/0.15.2")
         # c4core (rapidyaml) includes fast_float in its headers; linked directly so every target finds them (arm64).
         self.requires("fast_float/8.2.10")
+        self.requires("xxhash/0.8.4")
         self.requires("yaml-cpp/0.9.0")
         self.requires("zstd/1.5.7")
         if self.options.render:
