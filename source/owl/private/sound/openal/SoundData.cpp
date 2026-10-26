@@ -56,8 +56,7 @@ auto memorySeek(const sf_count_t iOffset, const int iWhence, void* iUser) -> sf_
 
 auto memoryRead(void* oBuffer, const sf_count_t iCount, void* iUser) -> sf_count_t {
 	auto* file = static_cast<MemoryFile*>(iUser);
-	const auto count =
-			std::clamp<sf_count_t>(iCount, 0, static_cast<sf_count_t>(file->bytes->size()) - file->position);
+	const auto count = std::clamp<sf_count_t>(iCount, 0, static_cast<sf_count_t>(file->bytes->size()) - file->position);
 	std::memcpy(oBuffer, file->bytes->data() + file->position, static_cast<size_t>(count));
 	file->position += count;
 	return count;
@@ -139,7 +138,8 @@ auto alFormatName(const ALenum iFormat) -> std::string {
 SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iSpecifications} {
 	const auto bytes = data::assets::readAssetBytes(m_specification.file);
 	if (!bytes) {
-		OWL_CORE_WARN("SoundData: File '{}' not found in the pack nor the asset folders.", m_specification.file.string())
+		OWL_CORE_WARN("SoundData: File '{}' not found in the pack nor the asset folders.",
+					  m_specification.file.string())
 		return;
 	}
 	SF_VIRTUAL_IO io{.get_filelen = memoryLength,

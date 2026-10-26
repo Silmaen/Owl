@@ -255,9 +255,10 @@ Shaders are written in **Slang** (`.slang` files), a single-source shading langu
 4. **Caching**: SPIR-V binaries are cached as `.spv` files with hash-based validation
 5. **Precompiled**: the build runs the shader bake tool (`source/tools/shader_bake/main.cpp`), which writes the
    SPIR-V of every engine shader, for both APIs, to `bin/assets/shaders/<renderer>/spirv/<api>/`
-   (`getPrecompiledShaderPath`); both CPack components install it and a game pack embeds it. `loadOrCompileSpirv` reads
-   the cache, then this output, and compiles with Slang only when neither matches the cache key of the current source
-   (an edited shader, a game shader, hot reload, another Slang version)
+   (`getPrecompiledShaderPath`); both CPack components install it and a game pack embeds it, with the project shaders
+   compiled by the export. `loadOrCompileSpirv` reads the cache, then the open pack, then this output, and compiles
+   with Slang only when none matches the cache key of the current source (an edited shader, hot reload, another
+   Slang version)
 6. **Recovery**: stored SPIR-V is checked before a driver sees it (`checkSpirv`: header, instructions that fill the
    file, `OpFunctionEnd` last, an entry point of the expected stage); an absent, truncated, garbled or misplaced file,
    or one the driver still refuses (Vulkan module or pipeline creation, OpenGL compilation, spirv-cross translation of
@@ -380,8 +381,8 @@ flowchart TD
     Exp --> Folder["runner.yml, game_info.yml,<br/>OwlRunner"]
     Folder -->|PackFile| Reader["PackReader::tryOpen"]
     Pack --> Reader
-    Reader --> Ext["extractPack<br/>into assets/"]
-    Reader --> Load["Application::loadFromPack<br/>scenes, scripts, HUDs"]
+    Reader --> Bytes["readAssetBytes<br/>pack first, then asset folders"]
+    Bytes --> Load["Loaders from bytes<br/>scenes, textures, sounds, fonts, shaders"]
 ```
 
 Owl Nest can export a standalone game package via **Project > Pack Game**. The `AssetScanner`
@@ -391,13 +392,16 @@ textures (`nam:` / `pat:`) quoted in Lua scripts or given as string or list-of-s
 `next_scene` property, the `level_scenes` of a world map), recursively.
 
 Discovered assets are compressed with **zstd** and written to a `.owlpack` binary archive with an XOR-obfuscated table
-of contents. At start, the game runner opens the pack named by `PackFile` in `runner.yml` with `PackReader`, extracts it into
-its `assets/` folder (`extractPack`) and reads scenes, scripts and HUDs through `Application::loadFromPack`.
+of contents. At start, the game runner opens the pack named by `PackFile` in `runner.yml` with `PackReader`; every loader
+reads its entries in memory through `data::assets::readAssetBytes` (the open pack first, then the asset directories),
+and `AssetLibrary::find` resolves a name to a pack entry before a file. Nothing is extracted nor written next to the
+game: the export bakes the font atlases and the project shaders into the pack. `PackReader::readEntry` is thread-safe,
+so asynchronous loads decompress their entries in parallel.
 
 A pack is treated as untrusted input: `PackReader::tryOpen` bounds every offset and size by the real file size and
 by `g_maxTocSize` / `g_maxEntrySize` before allocating, rejects absolute or `..` entry paths, and returns a typed
-`PackOpenError` instead of throwing. `extractPack` confines every entry to the destination directory (symbolic links
-resolved) and reports failed writes as `PackExtractError`. The `OWL_FUZZING` option builds a libFuzzer target,
+`PackOpenError` instead of throwing. `extractPack`, for the tools, confines every entry to the destination directory
+(symbolic links resolved) and reports failed writes as `PackExtractError`. The `OWL_FUZZING` option builds a libFuzzer target,
 `owl_pack_reader_fuzzer`, over the reader.
 
 ## Dependency Management

@@ -98,16 +98,33 @@ shader of an unused renderer.
 
 ### Reading in the pack {#game-export-in-memory}
 
-The runner opens the pack and extracts every entry into `<game>/assets/` before loading anything
-(`Application::init`, `extractPack`): the compressed and obfuscated pack ends as readable files next to the game.
+Status: done. The runner opens the pack and every loader reads its entries in memory; nothing is extracted, and
+nothing is written next to the game (no `assets/`, no `cache/`).
 
-| Item            | Target                                                                             |
-|-----------------|------------------------------------------------------------------------------------|
-| Loaders         | Textures, meshes, sounds, fonts, Lua, documents and shaders load from bytes        |
-| Asset lookup    | A pack-backed source in `AssetSearchPaths`, before the asset directories           |
-| `readEntry`     | Thread-safe and parallel, for the async texture and mesh loads                     |
-| Extraction      | None at runtime; `extractPack` stays for the tools                                 |
-| Streamed sounds | Read from the pack through a libsndfile virtual I/O                                |
+| Item         | Choice                                                                                                    |
+|--------------|-----------------------------------------------------------------------------------------------------------|
+| Asset lookup | `readAssetBytes`: the open pack first, then the asset directories; `AssetLibrary::find` sees pack entries |
+| Loaders      | Textures, sounds (libsndfile virtual I/O), fonts, ImGui fonts, shader sources and SPIR-V from bytes       |
+| `readEntry`  | Thread-safe: the read of the stored block is serialised, deobfuscation and zstd run in parallel           |
+| Font atlases | Baked at export into `cache/font/`; a game writes no atlas cache and warns when one is missing            |
+| Extraction   | None at runtime; `extractPack` stays for the tools                                                        |
+| Checks       | Every shipped project exported and played headless, then on lavapipe with OpenAL on its null device       |
+
+The lavapipe run of `GameExportEndToEnd` fails on any warning, on any shader compiled at start and on any file
+written next to the game.
+
+### Project shaders {#game-export-project-shaders}
+
+Status: done. A project shader (`<project>/shaders/<renderer>/<name>.slang`, which replaces the engine shader of the
+same name) is compiled by the export for Vulkan and OpenGL; the game compiles no shader at start.
+
+| Item    | Choice                                                                                                    |
+|---------|-----------------------------------------------------------------------------------------------------------|
+| Trigger | A packed `.slang` whose stored SPIR-V is missing or does not match the cache key of its expanded source   |
+| Source  | Expanded from its pack path, includes looked up as the game looks them up, so that the keys match         |
+| Output  | `shaders/<renderer>/spirv/<api>/` with its `.hash`, kept in the cook cache: a second export compiles none |
+| Failure | A shader that does not compile stops the export (`ExportError::CookFailed`)                               |
+| Report  | `ExportReport::shadersBaked`                                                                              |
 
 ## v0.8.0 — export to every target
 
@@ -151,12 +168,12 @@ Plan of the export for the five targets, summarised in the [Roadmap](../roadmap.
 
 The host (Slang lives in the Nest) bakes every shader of the pack, engine and project, for each chosen target:
 
-| Target         | Shader format                                                                       |
-|----------------|-------------------------------------------------------------------------------------|
-| Vulkan desktop | SPIR-V                                                                              |
-| Vulkan Android | SPIR-V 1.3                                                                          |
-| WebGPU         | WGSL                                                                                |
-| OpenGL         | SPIR-V for GL 4.6 (`ARB_gl_spirv`): OpenGL is a desktop fallback on recent drivers  |
+| Target         | Shader format                                                                      |
+|----------------|------------------------------------------------------------------------------------|
+| Vulkan desktop | SPIR-V                                                                             |
+| Vulkan Android | SPIR-V 1.3                                                                         |
+| WebGPU         | WGSL                                                                               |
+| OpenGL         | SPIR-V for GL 4.6 (`ARB_gl_spirv`): OpenGL is a desktop fallback on recent drivers |
 
 Rules:
 
@@ -169,10 +186,9 @@ Rules:
 Current state:
 
 - `OwlShaderBake` bakes the engine shaders only (SPIR-V for Vulkan and OpenGL).
-- `GameExporter` does nothing with shaders.
-- A project `.slang` is compiled at first run by `loadOrCompileSpirv` (`source/owl/private/renderer/utils/shaderFileUtils.cpp`).
+- `GameExporter` compiles the project shaders ([Project shaders](#game-export-project-shaders)); the runner still
+  links Slang to recompile a SPIR-V its driver rejects.
 - The only macro is `BACKEND_<api>`, so the variant set is finite.
-- Baking project shaders at cook time comes in v0.6.0 with the cook ([Content pipeline](content-pipeline.md)).
 
 ### Signing {#game-export-signing}
 

@@ -12,11 +12,11 @@
 
 #include "StorageBuffer.h"
 #include "Texture.h"
+#include "data/assets/AssetSearchPaths.h"
 #include "internal/Descriptors.h"
 #include "internal/VulkanCore.h"
 #include "internal/VulkanHandler.h"
 #include "internal/utils.h"
-#include "data/assets/AssetSearchPaths.h"
 #include "renderer/Renderer.h"
 #include "renderer/utils/shaderFileUtils.h"
 

@@ -97,7 +97,8 @@ constexpr auto g_lavapipeEnvironment = "GALLIUM_OVERRIDE_CPU_CAPS=sse4.1 MESA_SH
 
 auto canRunOnLavapipe() -> bool {
 	const auto* display = std::getenv("DISPLAY");
-	return display != nullptr && *display != '\0' && exists(std::filesystem::path{"/usr/share/vulkan/icd.d/lvp_icd.json"});
+	return display != nullptr && *display != '\0' &&
+		   exists(std::filesystem::path{"/usr/share/vulkan/icd.d/lvp_icd.json"});
 }
 
 auto runCommand(const std::string& iCommand) -> int {
@@ -543,9 +544,9 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 
 	// The GPU run loads every shader, texture, font and sound, all from the pack.
 	if (canRunOnLavapipe()) {
-		const int gpuExitCode = runCommand(std::format(
-				"cd '{}' && {} '{}' --smoke-test 5 > runner_gpu.txt 2>&1", workDir.string(), g_lavapipeEnvironment,
-				(moved / "launch.sh").string()));
+		const int gpuExitCode =
+				runCommand(std::format("cd '{}' && {} '{}' --smoke-test 5 > runner_gpu.txt 2>&1", workDir.string(),
+									   g_lavapipeEnvironment, (moved / "launch.sh").string()));
 		const auto gpuLog = readFile(workDir / "Owl.log");
 		EXPECT_EQ(gpuExitCode, 0) << readFile(workDir / "runner_gpu.txt");
 		EXPECT_EQ(logProblems(gpuLog), "");

@@ -66,20 +66,21 @@ document drops its copy.
 (textures, sounds, scripts, scenes): cancel to fix them, or pack anyway. It then writes `<output>/<GameName>/` behind
 a progress dialog (spaces and reserved characters of the name become `_`):
 
-| File                       | Content                                                                                                            |
-|----------------------------|--------------------------------------------------------------------------------------------------------------------|
-| `<GameName>.owlpack`       | The assets the scenes reference, the shaders of the renderers the game uses, the default font, `game_settings.yml` |
-| `<GameName>` / `.exe`      | The game executable (a copy of `OwlRunner`)                                                                        |
-| `*.so` / `*.dll`           | The shared libraries of the engine                                                                                 |
-| `runner.yml`               | First scene, pack, window, renderer stack, renderer families, ImGui, icon                                          |
-| `game_info.yml`            | Name, version, author, description, engine version, date, platform                                                 |
-| `launch.sh` (Linux)        | Starts the game with its libraries                                                                                 |
-| `<GameName>.zip` (Windows) | The game folder as an archive, next to it                                                                          |
-| icon                       | The project icon, or the Owl logo                                                                                  |
+| File                       | Content                                                                                                                                                  |
+|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `<GameName>.owlpack`       | The assets the scenes reference, the shaders of the renderers the game uses (project shaders compiled), the fonts and their atlases, `game_settings.yml` |
+| `<GameName>` / `.exe`      | The game executable (a copy of `OwlRunner`)                                                                                                              |
+| `*.so` / `*.dll`           | The shared libraries of the engine                                                                                                                       |
+| `runner.yml`               | First scene, pack, window, renderer stack, renderer families, ImGui, icon                                                                                |
+| `game_info.yml`            | Name, version, author, description, engine version, date, platform                                                                                       |
+| `launch.sh` (Linux)        | Starts the game with its libraries                                                                                                                       |
+| `<GameName>.zip` (Windows) | The game folder as an archive, next to it                                                                                                                |
+| icon                       | The project icon, or the Owl logo                                                                                                                        |
 
 The game initialises the renderer families of its renderer stack only (`Renderers` in `runner.yml`): raycast,
 isometric, and `Renderer3D` for a mesh or voxel layer or a scene with an `Environment`. Owl Nest itself keeps every
-renderer. The end of the export lists those families and the number of engine shader files left out.
+renderer. The end of the export lists those families, the number of engine shader files left out and the number of
+project shaders compiled. The game reads everything from its pack in memory and writes nothing next to itself.
 
 **Scene > Scene > Pack Scene** packs the active scene alone into an `.owlpack`.
 

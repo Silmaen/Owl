@@ -224,8 +224,7 @@ Font::Font(std::filesystem::path iPath, const bool iIsDefault, FontSettings iSet
 		OWL_CORE_ERROR("Font: Failed to initialize Freetype library.")
 		return;
 	}
-	msdfgen::FontHandle* font =
-			loadFontData(ft, fontBytes->data(), static_cast<int>(fontBytes->size()));
+	msdfgen::FontHandle* font = loadFontData(ft, fontBytes->data(), static_cast<int>(fontBytes->size()));
 	if (font == nullptr) {
 		OWL_CORE_ERROR("Font: Failed to load font: {}.", m_path.string())
 		deinitializeFreetype(ft);
