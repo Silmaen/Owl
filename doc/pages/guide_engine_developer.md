@@ -16,10 +16,19 @@ Doxygen documentation of `source/owl/public/`.
 
 ## Renderers
 
-| Page                                    | What you learn                      |
-|-----------------------------------------|-------------------------------------|
-| [Voxel Engine](voxel.md)                | Chunks, meshing, streaming          |
-| [Raycaster Method](raycaster_method.md) | The raycast wall and floor renderer |
+Each rendering style is a layer of the renderer stack; the voxel engine and the raycaster have their own page, the
+others a section of the renderer page.
+
+| Page                                                     | What you learn                                   |
+|----------------------------------------------------------|--------------------------------------------------|
+| [Renderer2D](renderer.md#renderer2d)                     | The batch renderer of sprites, shapes and text   |
+| [Chunked tilemaps](renderer.md#chunked-tilemaps)         | GPU tilemap chunks rebuilt only when changed     |
+| [Isometric layer](renderer.md#renderer-isometric)        | The 2:1 dimetric layer and its entities          |
+| [Raycaster](renderer.md#renderer-raycaster)              | The raycast layer: pipeline, configuration, pose |
+| [Raycaster Method](raycaster_method.md)                  | The raycast wall and floor algorithm             |
+| [Voxel Engine](voxel.md)                                 | Chunks, meshing, streaming                       |
+| [3D Forward Renderer](renderer.md#renderer3d)            | Meshes, materials, image-based lighting          |
+| [Post-process](renderer.md#renderer-post-process)        | The post-process settings of a camera            |
 
 ## Subsystems
 

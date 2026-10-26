@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: the `slow` tests run in a nightly Slow Suite on the Linux x64 release tree; arm64 and Clang Debug leave them out.
 - `/check --quick`: the fast loop for agents (touched tests and CodeStyle), with `--fix` to apply the formatters first.
 - Docs: screenshots of the tower defence (title, world map, briefing, two levels) in Getting Started and the sample games page.
+- Docs: the engine developer guide lists every renderer: the 2D, tilemap, isometric, 3D and post-process sections join the voxel and raycaster pages.
 
 ### Removed
 
