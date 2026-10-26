@@ -44,6 +44,7 @@
         "OWL_BENCHMARK": "OFF",
         "OWL_ENABLE_ADDRESS_SANITIZER": "ON",
         "OWL_SCRIPT_TIME_SCALE": "4",
+        "OWL_TEST_TIMEOUT": "1800",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON",
         "OWL_TEST_SHUFFLE": "ON"
@@ -56,6 +57,7 @@
         "OWL_BENCHMARK": "OFF",
         "OWL_ENABLE_THREAD_SANITIZER": "ON",
         "OWL_SCRIPT_TIME_SCALE": "4",
+        "OWL_TEST_TIMEOUT": "1800",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON",
         "OWL_TEST_SHUFFLE": "ON"
@@ -68,6 +70,7 @@
         "OWL_BENCHMARK": "OFF",
         "OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER": "ON",
         "OWL_SCRIPT_TIME_SCALE": "4",
+        "OWL_TEST_TIMEOUT": "1800",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "OFF",
         "OWL_TEST_SHUFFLE": "ON"
