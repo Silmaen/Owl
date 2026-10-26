@@ -376,47 +376,47 @@ it nothing.
 
 ## CMake Options
 
-| Option                                     | Default | Description                                                                      |
-|--------------------------------------------|---------|----------------------------------------------------------------------------------|
-| `OWL_BUILD_SHARED`                         | ON      | Build engine as shared library                                                   |
-| `OWL_BUILD_NEST`                           | ON      | Build Owl Nest editor                                                            |
-| `OWL_TESTING`                              | ON      | Enable unit tests                                                                |
-| `OWL_ENABLE_COVERAGE`                      | OFF     | Code coverage (auto-enabled in debug presets)                                    |
-| `OWL_ENABLE_STACKTRACE`                    | OFF     | Memory tracker stacktrace (performance impact)                                   |
-| `OWL_ENABLE_PROFILING`                     | OFF     | Deprecated: same as `OWL_PROFILER=chrome`                                        |
-| `OWL_USE_RELEASE_THIRD_PARTY`              | ON      | Use release builds of third-party libraries                                      |
-| `OWL_ENABLE_VULKAN_LAYERS`                 | OFF     | Copy Vulkan layers to binary directory                                           |
-| `OWL_ENABLE_CLANG_TIDY`                    | OFF     | Enable clang-tidy static analysis                                                |
-| `OWL_ENABLE_ADDRESS_SANITIZER`             | OFF     | AddressSanitizer                                                                 |
-| `OWL_ENABLE_THREAD_SANITIZER`              | OFF     | ThreadSanitizer                                                                  |
-| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER`  | OFF     | UndefinedBehaviorSanitizer                                                       |
-| `OWL_ENABLE_MEMORY_SANITIZER`              | OFF     | MemorySanitizer (Clang-only)                                                     |
-| `OWL_ENABLE_DOCUMENTATION`                 | OFF     | Require Doxygen (otherwise `documentation` exists only when Doxygen is found)    |
-| `OWL_ENABLE_RENDERER_VERBOSE_CAPABILITIES` | OFF     | Log every capability of the graphics device at start-up                          |
-| `OWL_ENABLE_SHADER_REFLECT_RESOURCES`      | OFF     | Log the resources reflected from every compiled shader                           |
-| `OWL_USE_CCACHE`                           | ON      | ccache (PCH sloppiness set) or sccache as launcher                               |
-| `OWL_BENCHMARK`                            | OFF     | `owl_bench` harness (`test/bench/`), with the Owl Nest MCP libraries             |
-| `OWL_INCLUDE_CHECK`                        | OFF     | `owl_include_check`: every header and source compiled alone (Clang only)         |
-| `OWL_TEST_SHUFFLE`                         | OFF     | Run every test binary with `--gtest_shuffle`                                     |
-| `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/unit/render_tests`, label `render`)                           |
-| `OWL_RENDER_TEST_SHARDS`                   | 6       | Parallel CTest entries the image tests are split into                            |
-| `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, in seconds                                        |
-| `OWL_SCRIPT_TIME_SCALE`                    | 1       | Lua quota multiplier, scenario and export tests (8 arm64 on QEMU, 4 sanitizers)  |
-| `OWL_CONAN_PROFILE`                        | (auto)  | Conan host profile, default `conan/profiles/<os>-<compiler>[-<arch>]`            |
-| `OWL_CONAN_BUILD_PROFILE`                  | (auto)  | Conan build profile, default `conan/profiles/<os>-<compiler>`                    |
-| `OWL_SYSROOT`                              | (auto)  | arm64 sysroot of the cross toolchain, default `/opt/sysroot/aarch64-linux-gnu`   |
-| `OWL_CONAN_HOME`                           | (empty) | `CONAN_HOME` for the install (empty: Conan's default)                            |
-| `OWL_CONAN_BUILD`                          | missing | Value of `conan install --build`                                                 |
-| `OWL_FUZZING`                              | OFF     | libFuzzer targets in `test/fuzz/` (Clang-only)                                   |
-| `OWL_ENABLE_MEMORY_TRACKER`                | OFF     | Allocation tracker, opt-in in every build type (Debug included)                  |
-| `OWL_PROFILER`                             | none    | `OWL_PROFILE_*` backend: `none`, `tracy` or `chrome` ([Profiling](profiling.md)) |
-| `OWL_LOG_LEVEL`                            | trace   | Lowest log level compiled in (`trace` to `off`)                                  |
-| `OWL_MODULE_RENDER`                        | ON      | OpenGL / Vulkan backends, GLFW, Slang ([Engine modules](#engine-modules))        |
-| `OWL_MODULE_PHYSICS`                       | ON      | Box2D physics ([Engine modules](#engine-modules))                                |
-| `OWL_PHYSICS_AVX2`                         | OFF     | Box2D built with AVX2 on x86_64 ([Physics](physics.md#multi-threaded-solver))    |
-| `OWL_MODULE_AUDIO`                         | ON      | OpenAL backend, libsndfile ([Engine modules](#engine-modules))                   |
-| `OWL_MODULE_SCRIPT`                        | ON      | Lua scripting ([Engine modules](#engine-modules))                                |
-| `OWL_MODULE_GUI`                           | ON      | ImGui layer, widgets, `Owl::Gui` ([Engine modules](#engine-modules))             |
+| Option                                     | Default | Description                                                                                         |
+|--------------------------------------------|---------|-----------------------------------------------------------------------------------------------------|
+| `OWL_BUILD_SHARED`                         | ON      | Build engine as shared library                                                                      |
+| `OWL_BUILD_NEST`                           | ON      | Build Owl Nest editor                                                                               |
+| `OWL_TESTING`                              | ON      | Enable unit tests                                                                                   |
+| `OWL_ENABLE_COVERAGE`                      | OFF     | Code coverage (auto-enabled in debug presets)                                                       |
+| `OWL_ENABLE_STACKTRACE`                    | OFF     | Memory tracker stacktrace (performance impact)                                                      |
+| `OWL_ENABLE_PROFILING`                     | OFF     | Deprecated: same as `OWL_PROFILER=chrome`                                                           |
+| `OWL_USE_RELEASE_THIRD_PARTY`              | ON      | Use release builds of third-party libraries                                                         |
+| `OWL_ENABLE_VULKAN_LAYERS`                 | OFF     | Copy Vulkan layers to binary directory                                                              |
+| `OWL_ENABLE_CLANG_TIDY`                    | OFF     | Enable clang-tidy static analysis                                                                   |
+| `OWL_ENABLE_ADDRESS_SANITIZER`             | OFF     | AddressSanitizer                                                                                    |
+| `OWL_ENABLE_THREAD_SANITIZER`              | OFF     | ThreadSanitizer                                                                                     |
+| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER`  | OFF     | UndefinedBehaviorSanitizer                                                                          |
+| `OWL_ENABLE_MEMORY_SANITIZER`              | OFF     | MemorySanitizer (Clang-only)                                                                        |
+| `OWL_ENABLE_DOCUMENTATION`                 | OFF     | Require Doxygen (otherwise `documentation` exists only when Doxygen is found)                       |
+| `OWL_ENABLE_RENDERER_VERBOSE_CAPABILITIES` | OFF     | Log every capability of the graphics device at start-up                                             |
+| `OWL_ENABLE_SHADER_REFLECT_RESOURCES`      | OFF     | Log the resources reflected from every compiled shader                                              |
+| `OWL_USE_CCACHE`                           | ON      | ccache (PCH sloppiness set) or sccache as launcher                                                  |
+| `OWL_BENCHMARK`                            | OFF     | `owl_bench` harness (`test/bench/`), with the Owl Nest MCP libraries                                |
+| `OWL_INCLUDE_CHECK`                        | OFF     | `owl_include_check`: every header and source compiled alone (Clang only)                            |
+| `OWL_TEST_SHUFFLE`                         | OFF     | Run every test binary with `--gtest_shuffle`                                                        |
+| `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/unit/render_tests`, label `render`)                                              |
+| `OWL_RENDER_TEST_SHARDS`                   | 6       | Parallel CTest entries the image tests are split into                                               |
+| `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, in seconds                                                           |
+| `OWL_SCRIPT_TIME_SCALE`                    | 1       | Lua quota multiplier, scenario and export tests (8 arm64 on QEMU, 4 sanitizers and coverage builds) |
+| `OWL_CONAN_PROFILE`                        | (auto)  | Conan host profile, default `conan/profiles/<os>-<compiler>[-<arch>]`                               |
+| `OWL_CONAN_BUILD_PROFILE`                  | (auto)  | Conan build profile, default `conan/profiles/<os>-<compiler>`                                       |
+| `OWL_SYSROOT`                              | (auto)  | arm64 sysroot of the cross toolchain, default `/opt/sysroot/aarch64-linux-gnu`                      |
+| `OWL_CONAN_HOME`                           | (empty) | `CONAN_HOME` for the install (empty: Conan's default)                                               |
+| `OWL_CONAN_BUILD`                          | missing | Value of `conan install --build`                                                                    |
+| `OWL_FUZZING`                              | OFF     | libFuzzer targets in `test/fuzz/` (Clang-only)                                                      |
+| `OWL_ENABLE_MEMORY_TRACKER`                | OFF     | Allocation tracker, opt-in in every build type (Debug included)                                     |
+| `OWL_PROFILER`                             | none    | `OWL_PROFILE_*` backend: `none`, `tracy` or `chrome` ([Profiling](profiling.md))                    |
+| `OWL_LOG_LEVEL`                            | trace   | Lowest log level compiled in (`trace` to `off`)                                                     |
+| `OWL_MODULE_RENDER`                        | ON      | OpenGL / Vulkan backends, GLFW, Slang ([Engine modules](#engine-modules))                           |
+| `OWL_MODULE_PHYSICS`                       | ON      | Box2D physics ([Engine modules](#engine-modules))                                                   |
+| `OWL_PHYSICS_AVX2`                         | OFF     | Box2D built with AVX2 on x86_64 ([Physics](physics.md#multi-threaded-solver))                       |
+| `OWL_MODULE_AUDIO`                         | ON      | OpenAL backend, libsndfile ([Engine modules](#engine-modules))                                      |
+| `OWL_MODULE_SCRIPT`                        | ON      | Lua scripting ([Engine modules](#engine-modules))                                                   |
+| `OWL_MODULE_GUI`                           | ON      | ImGui layer, widgets, `Owl::Gui` ([Engine modules](#engine-modules))                                |
 
 ## Engine modules
 

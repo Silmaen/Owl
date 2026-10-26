@@ -13,6 +13,7 @@
 #include "app/Application.h"
 #include "core/external/glfw3.h"
 #include "core/external/imgui.h"
+#include "data/assets/AssetSearchPaths.h"
 #include "gui/FontPreviewCache.h"
 #include "gui/utils.h"
 #include "renderer/gpu/RenderCommand.h"
@@ -27,6 +28,8 @@ OWL_DIAG_DISABLE_CLANG("-Wzero-as-null-pointer-constant")
 OWL_DIAG_POP
 
 #include <cstdint>
+#include <cstring>
+#include <filesystem>
 
 namespace owl::gui {
 
@@ -152,43 +155,34 @@ void applyMetrics(const Theme& iTheme, ImGuiStyle& ioStyle) {
 
 std::vector<shared<renderer::gpu::Texture>> g_deferredTextureReleases;
 
-auto resolveAssetFile(const std::filesystem::path& iRelative) -> std::filesystem::path {
-	if (!app::Application::instanced())
-		return {};
-	const auto& app = app::Application::get();
-	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
-		const auto full = assetsPath / iRelative;
-		if (exists(full))
-			return full;
-	}
-	return {};
+// The atlas owns the font data and frees it with `IM_FREE`: a pack entry or a file, copied into `IM_ALLOC` memory.
+auto addFont(const std::filesystem::path& iRelative, const float iSize, ImFontConfig& ioConfig) -> ImFont* {
+	const auto bytes = data::assets::readAssetBytes(iRelative);
+	if (!bytes || bytes->empty())
+		return nullptr;
+	void* data = IM_ALLOC(bytes->size());
+	std::memcpy(data, bytes->data(), bytes->size());
+	return ImGui::GetIO().Fonts->AddFontFromMemoryTTF(data, static_cast<int>(bytes->size()), iSize, &ioConfig);
 }
 
 // Private-use area: the text fonts' own glyphs there would shadow the Lucide icons merged after them.
 constexpr ImWchar g_privateUseExcluded[] = {0xE000, 0xF8FF, 0};
 
 auto loadFont(const char* iRelative, const float iSize) -> ImFont* {
-	const auto path = resolveAssetFile(iRelative);
-	if (path.empty())
-		return nullptr;
 	ImFontConfig config;
 	config.GlyphExcludeRanges = g_privateUseExcluded;
-	return ImGui::GetIO().Fonts->AddFontFromFileTTF(path.string().c_str(), iSize, &config);
+	return addFont(iRelative, iSize, config);
 }
 
 // Merge the Lucide glyphs (`gui::icon`) into the font loaded last.
 void mergeIconFont(const float iSize) {
-	const auto path = resolveAssetFile("fonts/lucide.ttf");
-	if (path.empty()) {
-		OWL_CORE_WARN("UiLayer: could not load lucide.ttf from engine_assets/fonts/, icons render as boxes.")
-		return;
-	}
 	ImFontConfig config;
 	config.MergeMode = true;
 	config.PixelSnapH = true;
 	// Lucide draws on a 24-unit grid centred on the em box; this sits it on the text's optical centre.
 	config.GlyphOffset = {0.f, iSize * 0.12f};
-	ImGui::GetIO().Fonts->AddFontFromFileTTF(path.string().c_str(), iSize, &config);
+	if (addFont("fonts/lucide.ttf", iSize, config) == nullptr)
+		OWL_CORE_WARN("UiLayer: could not load lucide.ttf from engine_assets/fonts/, icons render as boxes.")
 }
 }// namespace
 

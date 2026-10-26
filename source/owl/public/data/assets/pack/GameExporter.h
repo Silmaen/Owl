@@ -111,6 +111,8 @@ struct OWL_API ExportReport {
 	std::vector<std::string> renderers;
 	/// Engine files of the scan left out of the pack: shaders of the renderers the game does not use.
 	size_t engineFilesSkipped{0};
+	/// Shaders compiled by the export because the pack held no up-to-date SPIR-V for them (project shaders).
+	size_t shadersBaked{0};
 };
 
 /**

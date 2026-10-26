@@ -98,6 +98,11 @@ foreach (child ${children})
                             OWL_RUNNER_EXECUTABLE="$<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner>")
                 endif ()
             endif ()
+            # export_tests find the engine shaders baked by OwlShaderBake, as Owl Nest does from its working directory.
+            if (${child} STREQUAL "export_tests")
+                target_compile_definitions(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
+                        OWL_BAKED_ASSETS_DIR="${CMAKE_BINARY_DIR}/bin/assets")
+            endif ()
             # render_tests run OwlRunner on lavapipe / llvmpipe and compare its captures to reference images; they need
             # a display, so ctest starts them under xvfb-run when it exists. Label `render` to run or skip them alone.
             if (${child} STREQUAL "render_tests")
@@ -108,7 +113,6 @@ foreach (child ${children})
                     target_compile_definitions(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
                             OWL_RUNNER_EXECUTABLE="$<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner>")
                 endif ()
-                find_program(XVFB_RUN_PROGRAM xvfb-run)
             endif ()
             # A category whose cases each start their own process (OwlRunner, OwlNest) is split into gtest shards: parallel
             # ctest entries named `<test>_<n>`. The image tests get a fixed X server number per shard (`xvfb-run -a` picks
@@ -137,8 +141,15 @@ foreach (child ${children})
                     set(shardEnvironment "GTEST_TOTAL_SHARDS=${shardCount};GTEST_SHARD_INDEX=${shardIndex}")
                 endif ()
                 set(TEST_LAUNCHER "")
+                # export_tests also play every exported game on lavapipe: their own server numbers.
+                if (${child} STREQUAL "render_tests" OR ${child} STREQUAL "export_tests")
+                    find_program(XVFB_RUN_PROGRAM xvfb-run)
+                endif ()
                 if (${child} STREQUAL "render_tests" AND XVFB_RUN_PROGRAM)
                     math(EXPR serverNumber "90 + ${shard}")
+                    set(TEST_LAUNCHER ${XVFB_RUN_PROGRAM} -n ${serverNumber} -s "-screen 0 1280x1024x24")
+                elseif (${child} STREQUAL "export_tests" AND XVFB_RUN_PROGRAM)
+                    math(EXPR serverNumber "80 + ${shard}")
                     set(TEST_LAUNCHER ${XVFB_RUN_PROGRAM} -n ${serverNumber} -s "-screen 0 1280x1024x24")
                 endif ()
                 add_test(NAME ${testName} COMMAND ${TEST_LAUNCHER} ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${reportName}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})

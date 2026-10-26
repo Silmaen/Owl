@@ -15,12 +15,17 @@
 #include "data/assets/AssetRegistry.h"
 #include "data/assets/cook/CookCache.h"
 #include "data/assets/pack/PackWriter.h"
+#include "data/fonts/Font.h"
 #include "data/fonts/FontLibrary.h"
+#include "data/fonts/FontSettings.h"
 #include "input/ActionMap.h"
 #include "renderer/RenderStack.h"
 #include "renderer/RendererSet.h"
+#include "renderer/gpu/Shader.h"
+#include "renderer/utils/shaderFileUtils.h"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <fstream>
 #include <iterator>
@@ -150,6 +155,120 @@ auto selectEngineFiles(const ExportSettings& iSettings, const renderer::Renderer
 						  packPath)
 	}
 	return skipped;
+}
+
+constexpr std::array g_shaderStages{renderer::gpu::ShaderType::Vertex, renderer::gpu::ShaderType::Fragment,
+									renderer::gpu::ShaderType::Compute};
+
+// True when the stored SPIR-V of every stage of a shader matches its source, for one API.
+auto hasCurrentSpirv(const std::vector<AssetReference>& iAssets, const std::string& iName, const std::string& iRenderer,
+					 const std::string& iApi, const std::string& iCacheKey) -> bool {
+	size_t found = 0;
+	for (const auto stage: g_shaderStages) {
+		const auto packPath = renderer::utils::getPrecompiledShaderPath(iName, iRenderer, iApi, stage).generic_string();
+		const auto ref = std::ranges::find(iAssets, packPath, &AssetReference::packPath);
+		if (ref == iAssets.end())
+			continue;
+		if (!renderer::utils::isShaderCacheValid(ref->diskPath, iCacheKey))
+			return false;
+		++found;
+	}
+	return found > 0;
+}
+
+// The stages of a shader baked by an earlier export, when all of them match the source.
+auto findBakedStages(const std::filesystem::path& iCacheDir, const std::string& iName, const std::string& iRenderer,
+					 const std::string& iApi, const std::string& iCacheKey) -> std::vector<std::filesystem::path> {
+	std::vector<std::filesystem::path> entries;
+	for (const auto stage: g_shaderStages) {
+		const auto entry = renderer::utils::getPrecompiledShaderPath(iName, iRenderer, iApi, stage);
+		if (std::error_code ec; !std::filesystem::is_regular_file(iCacheDir / entry, ec))
+			continue;
+		if (!renderer::utils::isShaderCacheValid(iCacheDir / entry, iCacheKey))
+			return {};
+		entries.push_back(entry);
+	}
+	return entries;
+}
+
+// Points the pack entry at a baked file, adding the entry when the scan had none.
+void useBakedFile(std::vector<AssetReference>& ioAssets, const std::string& iPackPath,
+				  const std::filesystem::path& iDiskPath) {
+	if (const auto ref = std::ranges::find(ioAssets, iPackPath, &AssetReference::packPath); ref != ioAssets.end())
+		ref->diskPath = iDiskPath;
+	else
+		ioAssets.push_back({.packPath = iPackPath, .diskPath = iDiskPath, .assetType = AssetType::Other});
+}
+
+// Compiles every packed shader whose SPIR-V is missing or outdated, into the cook cache; the game compiles none.
+auto bakeShaders(std::vector<AssetReference>& ioAssets, const std::filesystem::path& iCacheDir)
+		-> expected<size_t, ExportError> {
+	std::vector<AssetReference> sources;
+	std::ranges::copy_if(ioAssets, std::back_inserter(sources), [](const AssetReference& iRef) -> bool {
+		const std::filesystem::path path{iRef.packPath};
+		return path.extension() == ".slang" && *path.begin() == "shaders";
+	});
+	size_t baked = 0;
+	for (const auto& ref: sources) {
+		const std::filesystem::path packPath{ref.packPath};
+		const auto name = packPath.stem().string();
+		const auto renderer = packPath.parent_path().filename().string();
+		const auto moduleName = std::format("{}/{}", renderer, name);
+		// Expanded as the game expands it from its pack, so that the keys match.
+		const auto source = renderer::utils::readShaderSource(packPath);
+		bool compiled = false;
+		for (const bool forVulkan: {true, false}) {
+			const std::string api = forVulkan ? "vulkan" : "opengl";
+			const auto cacheKey = renderer::utils::getShaderCacheKey(source, moduleName, forVulkan);
+			if (hasCurrentSpirv(ioAssets, name, renderer, api, cacheKey))
+				continue;
+			compiled = true;
+			if (const auto stored = findBakedStages(iCacheDir, name, renderer, api, cacheKey); !stored.empty()) {
+				for (const auto& entry: stored) {
+					useBakedFile(ioAssets, entry.generic_string(), iCacheDir / entry);
+					useBakedFile(ioAssets, entry.generic_string() + ".hash", (iCacheDir / entry).string() + ".hash");
+				}
+				continue;
+			}
+			const auto result = renderer::utils::compileSlangToSpirv(source, name, forVulkan);
+			if (!result.success) {
+				OWL_CORE_ERROR("GameExporter: Cannot compile shader '{}' for {}.", ref.packPath, api)
+				return unexpected{ExportError::CookFailed};
+			}
+			for (const auto& [stage, spirv]: result.spirvData) {
+				const auto entry = renderer::utils::getPrecompiledShaderPath(name, renderer, api, stage);
+				const auto file = iCacheDir / entry;
+				std::error_code ec;
+				std::filesystem::create_directories(file.parent_path(), ec);
+				if (!renderer::utils::writeCachedShader(file, spirv)) {
+					OWL_CORE_ERROR("GameExporter: Cannot write the SPIR-V '{}'.", file.string())
+					return unexpected{ExportError::CookFailed};
+				}
+				renderer::utils::writeShaderHash(file, cacheKey);
+				useBakedFile(ioAssets, entry.generic_string(), file);
+				useBakedFile(ioAssets, entry.generic_string() + ".hash", file.string() + ".hash");
+			}
+		}
+		if (compiled)
+			++baked;
+	}
+	return baked;
+}
+
+// Bakes the MSDF atlas of the scene and HUD fonts into the pack, so that the game does not build it at start.
+auto bakeFontAtlases(const std::vector<AssetReference>& iTextFonts, PackWriter& ioWriter) -> size_t {
+	size_t baked = 0;
+	for (const auto& ref: iTextFonts) {
+		const fonts::Font font{ref.diskPath, false, fonts::FontSettings::loadForFont(ref.diskPath)};
+		const auto& atlas = font.getAtlasCacheFile();
+		if (std::error_code ec; atlas.empty() || !std::filesystem::is_regular_file(atlas, ec)) {
+			OWL_CORE_WARN("GameExporter: No atlas for font '{}', the game generates it at start.", ref.packPath)
+			continue;
+		}
+		ioWriter.addFile(atlas, fonts::Font::getPackedAtlasPath(atlas).generic_string(), AssetType::Other);
+		++baked;
+	}
+	return baked;
 }
 
 auto resolveFirstScene(const std::string& iFirstScene, const std::vector<AssetReference>& iAssets) -> std::string {
@@ -385,15 +504,26 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		return unexpected{ExportError::RunnerNotFound};
 	}
 	const auto renderers = rendererSetOf(iSettings, assets);
+	std::vector<AssetReference> textFonts;
+	std::ranges::copy_if(assets, std::back_inserter(textFonts), [](const AssetReference& iRef) -> bool {
+		return iRef.assetType == AssetType::Font && std::filesystem::path{iRef.packPath}.extension() == ".ttf";
+	});
 	const auto engineFilesSkipped = selectEngineFiles(iSettings, renderers, assets);
+	const auto cookDirectory = iSettings.cookCacheDirectory.empty()
+									   ? iSettings.projectDirectory / ".owl" / "cache" / "cooked"
+									   : iSettings.cookCacheDirectory;
+	const auto shadersBaked = bakeShaders(assets, cookDirectory / "shaders");
+	if (!shadersBaked)
+		return unexpected{shadersBaked.error()};
 	std::string rendererList{"Renderer2D"};
 	for (const auto& name: renderers.getNames()) rendererList += " + " + name;
-	OWL_CORE_INFO("GameExporter: Renderers {}, {} unused engine shader files left out.", rendererList,
-				  engineFilesSkipped)
+	OWL_CORE_INFO("GameExporter: Renderers {}, {} unused engine shader files left out, {} shader(s) baked.",
+				  rendererList, engineFilesSkipped, *shadersBaked)
 	const auto baseName = sanitizeFilename(iSettings.gameName);
 	ExportReport result;
 	result.renderers = renderers.getNames();
 	result.engineFilesSkipped = engineFilesSkipped;
+	result.shadersBaked = *shadersBaked;
 	result.gameDirectory = iSettings.outputDirectory / baseName;
 	result.assetCount = assets.size();
 	if (std::error_code ec; !std::filesystem::create_directories(result.gameDirectory, ec) && ec) {
@@ -404,9 +534,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 
 	report(iProgress, 0.05f, std::format("Cooking {} assets...", assets.size()));
 	PackWriter writer;
-	cook::CookCache cache(iSettings.cookCacheDirectory.empty()
-								  ? iSettings.projectDirectory / ".owl" / "cache" / "cooked"
-								  : iSettings.cookCacheDirectory);
+	cook::CookCache cache(cookDirectory);
 	std::vector<std::string> packPaths;
 	packPaths.reserve(assets.size());
 	for (size_t index = 0; index < assets.size(); ++index) {
@@ -443,6 +571,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		writer.addData(*cooked, ref.packPath, ref.assetType);
 	}
 	std::ignore = cache.saveManifest();
+	OWL_CORE_INFO("GameExporter: {} font atlas(es) baked.", bakeFontAtlases(textFonts, writer))
 	result.cookedAssets = cache.getStats().cooked;
 	result.cacheHits = cache.getStats().hits;
 	if (app::Application::instanced()) {

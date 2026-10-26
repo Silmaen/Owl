@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <app/Application.h>
+#include <data/assets/pack/PackWriter.h>
 #include <data/fonts/Font.h>
 #include <data/fonts/FontLibrary.h>
 #include <data/fonts/FontSettings.h>
@@ -206,4 +207,43 @@ TEST(FontSettings, sidecarFile) {
 	EXPECT_FALSE(missing.loadFromFile(dir / "missing.owlfont"));
 	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
+}
+
+TEST_F(FontUnicode, gameReadsTheAtlasBakedInItsPack) {
+	std::filesystem::path atlas;
+	{
+		const Font baked(m_font);
+		atlas = baked.getAtlasCacheFile();
+	}
+	ASSERT_TRUE(std::filesystem::is_regular_file(atlas));
+	EXPECT_EQ(Font::getPackedAtlasPath(atlas), std::filesystem::path("cache") / "font" / atlas.filename());
+	const auto pack = m_dir / "game.owlpack";
+	data::assets::pack::PackWriter writer;
+	writer.addFile(m_font, "fonts/OwlUnicodeTest.ttf", data::assets::pack::AssetType::Font);
+	writer.addFile(atlas, Font::getPackedAtlasPath(atlas).generic_string(), data::assets::pack::AssetType::Other);
+	ASSERT_TRUE(writer.write(pack));
+	clearCache();
+	ASSERT_TRUE(m_app->openPack(pack));
+	{
+		const Font packed("fonts/OwlUnicodeTest.ttf");
+		EXPECT_TRUE(packed.isAtlasFromCache());
+		EXPECT_TRUE(packed.hasGlyph(U'A'));
+	}
+	EXPECT_EQ(cachedAtlasCount(), 0u);
+	m_app->closePack();
+}
+
+TEST_F(FontUnicode, gameWithoutBakedAtlasWritesNoCache) {
+	const auto pack = m_dir / "game.owlpack";
+	data::assets::pack::PackWriter writer;
+	writer.addFile(m_font, "fonts/OwlUnicodeTest.ttf", data::assets::pack::AssetType::Font);
+	ASSERT_TRUE(writer.write(pack));
+	ASSERT_TRUE(m_app->openPack(pack));
+	{
+		const Font packed("fonts/OwlUnicodeTest.ttf");
+		EXPECT_FALSE(packed.isAtlasFromCache());
+		EXPECT_TRUE(packed.hasGlyph(U'A'));
+	}
+	EXPECT_EQ(cachedAtlasCount(), 0u);
+	m_app->closePack();
 }

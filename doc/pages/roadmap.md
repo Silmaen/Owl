@@ -140,8 +140,8 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Done][done] Offline asset pipeline: cook, content-addressed cache, asset GUIDs, KTX2 BC7/ASTC texture compression ([Content](design/content-pipeline.md))
 - ![Done][done] Binary runtime scene format produced by the cook
 - ![Done][done] A game packs only what it uses: shaders of its renderer stack, its fonts, no Owl Nest asset ([Game export](design/game-export.md#game-export-content))
-- ![Planned][planned] Games read their assets from the pack in memory, with a parallel `readEntry`; nothing extracted to disk ([Game export](design/game-export.md#game-export-in-memory))
-- ![Planned][planned] Project shaders baked by the cook, no shader compiled at the first run of a game ([Game export](design/game-export.md#game-export-shaders))
+- ![Done][done] Games read their assets from the pack in memory, with a parallel `readEntry`; nothing extracted to disk ([Game export](design/game-export.md#game-export-in-memory))
+- ![Done][done] Project shaders baked by the cook, no shader compiled at the first run of a game ([Game export](design/game-export.md#game-export-project-shaders))
 - ![Planned][planned] Localisation of games: string tables edited in Owl Nest, `tr()` in Lua, fonts per language ([Localisation](design/localisation.md))
 - ![Planned][planned] World positions in double with a floating origin, through scene, physics, audio and Owl Nest ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Spline component and its editor: paths, lanes, rails ([Large worlds](design/large-worlds.md))

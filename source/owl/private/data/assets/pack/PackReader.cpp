@@ -9,6 +9,7 @@
 #include "data/assets/pack/PackReader.h"
 
 #include <cstring>
+#include <mutex>
 #include <string_view>
 
 namespace owl::data::assets::pack {
@@ -229,11 +230,16 @@ auto PackReader::readEntry(const std::string& iPath) const -> std::optional<std:
 
 	try {
 		// Offsets and sizes were bounded by the file size in `tryOpen`.
-		m_fileStream.clear();
-		m_fileStream.seekg(static_cast<std::streamoff>(entry->dataOffset));
 		std::vector<uint8_t> block(entry->dataSize);
-		m_fileStream.read(reinterpret_cast<char*>(block.data()), static_cast<std::streamsize>(block.size()));
-		if (static_cast<uint64_t>(m_fileStream.gcount()) != entry->dataSize) {
+		uint64_t readSize = 0;
+		{
+			const std::scoped_lock<std::mutex> lock{*mp_readMutex};
+			m_fileStream.clear();
+			m_fileStream.seekg(static_cast<std::streamoff>(entry->dataOffset));
+			m_fileStream.read(reinterpret_cast<char*>(block.data()), static_cast<std::streamsize>(block.size()));
+			readSize = static_cast<uint64_t>(m_fileStream.gcount());
+		}
+		if (readSize != entry->dataSize) {
 			OWL_CORE_WARN("Pack: short read on entry '{}'.", iPath)
 			return std::nullopt;
 		}

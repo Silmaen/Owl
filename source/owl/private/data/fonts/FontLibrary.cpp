@@ -11,7 +11,7 @@
 
 #include "app/Application.h"
 #include "data/assets/AssetSearchPaths.h"
-#include "data/assets/pack/PackExtractor.h"
+#include "data/assets/pack/PackFormat.h"
 
 #include <cstddef>
 #include <filesystem>
@@ -75,17 +75,8 @@ void FontLibrary::loadFont(const std::string& iName) {
 		const auto& reader = app::Application::get().getPackReader();
 		for (const auto& entry: reader.listEntries(data::assets::pack::AssetType::Font)) {
 			if (std::filesystem::path(entry).stem() == iName) {
-				auto data = app::Application::get().loadFromPack(entry);
-				if (data) {
-					const auto tempFile = std::filesystem::temp_directory_path() / "owl_pack_cache" /
-										  std::filesystem::path(entry).filename();
-					if (assets::pack::writeEntryFile(tempFile, *data)) {
-						m_fonts.emplace(
-								iName, mkShared<Font>(tempFile, iName == m_defaultFontName, loadPackedSettings(entry)));
-						return;
-					}
-					OWL_CORE_WARN("FontLibrary: cannot cache pack entry '{}', trying font directories.", entry)
-				}
+				m_fonts.emplace(iName, mkShared<Font>(entry, iName == m_defaultFontName, loadPackedSettings(entry)));
+				return;
 			}
 		}
 	}

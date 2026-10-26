@@ -19,11 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest Import panel and `asset.*` commands (import settings, rename, move, delete, cook, clear cache).
 - `OwlNest --upgrade-assets` creates sidecars and rewrites references by GUID; `--export` takes `--cook-cache`.
 - Project setting **ImGui overlay** (`imGui`): an exported game creates its ImGui layer and packs its fonts only when it is on.
+- `readAssetBytes`, `findPackedAsset` and `isPackedAsset`: one lookup, the open pack first, for every loader.
+- The export compiles the project shaders and bakes the font atlases into the pack (`ExportReport::shadersBaked`).
 
 ### Changed
 
 - Shipped projects carry sidecars and GUID references; the Engine Demo PBR textures are cooked to ETC1S and UASTC.
 - An exported game packs only its engine files and initialises only its renderer families (`RendererSet`): packs about 3.3 MiB smaller.
+- An exported game reads its textures, sounds, fonts and shaders from the pack in memory: no `assets/` extraction, no cache written next to it.
+- `GameExportEndToEnd` also plays every exported project on lavapipe and fails on a shader compiled at start or a file written beside the game.
 - CI: one tree per configuration; the tested release tree is the one packaged, so no configuration builds a second preset.
 - CI: Linux x64 Clang Release is the fast verdict (drafts, ready pull requests, doc-only pull requests, `main`); drafts run Code Style and it only.
 - CI: coverage is measured on Linux x64 GCC (every ready pull request and `main`) and by Clang Debug nightly, each with its coverage-drop gate; Windows measures none.
@@ -40,6 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- GLFW on X11 keeps Xlib and its extensions loaded after `glfwTerminate`: LeakSanitizer no longer reports their caches as leaks when a game window closes.
+- The coverage presets (`linux-gcc-debug`, `linux-clang-debug`) multiply the Lua time quota by 4: a gcov build of the Tower Defence scenarios ran out of it on a busy agent.
+- `transcodeKtx2` refuses data shorter than a KTX2 header before libktx, which leaked its memory stream on it (Sanitizer Address).
+- `PackReader::readEntry` is thread-safe: asynchronous texture loads no longer share one file stream unguarded.
 - ETC1S texture cook under ASan: a local `ktx` recipe patches libktx to allocate the BasisLZ global data with `malloc`, as `ktxTexture2_Destroy` frees it with `free`.
 - `Coverage` reads only the notes of its own build tree: another compiler's tree in the same checkout no longer makes gcov fail.
 - `LuaSandbox.cppExceptionInBindingBecomesLuaError` runs under a roomy time quota: throwing C++ exceptions under QEMU no longer exceeds the 50 ms one.

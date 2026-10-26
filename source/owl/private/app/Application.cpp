@@ -15,7 +15,7 @@
 #include "core/external/yaml.h"
 #include "core/utils/StringUtils.h"
 #include "data/assets/AssetSearchPaths.h"
-#include "data/assets/pack/PackExtractor.h"
+#include "data/assets/pack/PackReader.h"
 #include "event/GamepadEvent.h"
 #include "event/MouseEvent.h"
 #include "input/Input.h"
@@ -114,18 +114,8 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		auto packPath = std::filesystem::path(m_initParams.packFile);
 		if (packPath.is_relative())
 			packPath = m_workingDirectory / packPath;
-		if (openPack(packPath)) {
-			const auto assetsDir = m_workingDirectory / "assets";
-			if (const auto extracted = data::assets::pack::extractPack(m_packReader, assetsDir); extracted) {
-				OWL_CORE_INFO("Pack: extracted {} entries into '{}' ({} up to date).", extracted->written,
-							  assetsDir.string(), extracted->skipped)
-			} else {
-				OWL_CORE_ERROR("Pack: Extraction of '{}' into '{}' failed ({})."
-							   " Fix: check that the runner folder is writable and has free space, or pack the game "
-							   "again.",
-							   packPath.string(), assetsDir.string(), magic_enum::enum_name(extracted.error()))
-			}
-		}
+		// The loaders read the pack entries in memory.
+		openPack(packPath);
 	}
 	// Lowest priority first: a development tree finds the engine and app assets above the working directory.
 	{

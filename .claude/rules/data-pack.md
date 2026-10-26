@@ -19,8 +19,9 @@ User-facing reference: `doc/pages/architecture.md`, `doc/pages/voxel.md`.
 - `AssetScanner` walks scene YAML for `nam:` / `pat:` textures, fonts and teleport scene references
   (recursive).
 - `SceneSerializer::deserializeFromBuffer()` loads a scene from memory (pack or network).
-- `Application::openPack()` / `loadFromPack()` / `packContains()`; texture, font and script loaders try the
-  open pack first, then the filesystem. Pack assets are extracted to `owl_pack_cache/` temp files.
+- `Application::openPack()` / `loadFromPack()` / `packContains()`; loaders read through `data::assets::readAssetBytes`
+  (open pack first, then the asset directories) and never extract nor write a file: a game writes nothing beside
+  itself. `PackReader::readEntry` is thread-safe.
 - The runner opens the pack named by `PackFile` in `runner.yml`; Owl Nest *Project → Pack Game* writes one.
 - `GameExporter` is the only export path (*Pack Game*, `OwlNest --export`, `export_tests`). Any asset reference a
   component adds must be followed by `AssetScanner`, or the end-to-end export test fails.

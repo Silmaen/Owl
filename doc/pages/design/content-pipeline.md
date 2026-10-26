@@ -61,7 +61,6 @@ Still open:
 - Atlas generation
 - Mesh optimisation
 - LOD generation
-- Project shaders baked by the cook
 
 ## Binary scene format {#content-pipeline-binary}
 

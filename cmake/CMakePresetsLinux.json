@@ -42,7 +42,8 @@
         "gcc-debug"
       ],
       "cacheVariables": {
-        "OWL_ENABLE_COVERAGE": "ON"
+        "OWL_ENABLE_COVERAGE": "ON",
+        "OWL_SCRIPT_TIME_SCALE": "4"
       },
       "vendor": {
         "silmaen": {
@@ -75,6 +76,7 @@
       ],
       "cacheVariables": {
         "OWL_ENABLE_COVERAGE": "ON",
+        "OWL_SCRIPT_TIME_SCALE": "4",
         "OWL_ENABLE_DOCUMENTATION": "ON",
         "OWL_BENCHMARK": "ON"
       }

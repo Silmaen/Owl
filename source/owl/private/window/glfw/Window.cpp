@@ -26,9 +26,23 @@
 #include <cstddef>
 #include <cstdlib>
 
+#ifdef OWL_PLATFORM_LINUX
+#include <dlfcn.h>
+#endif
+
 namespace owl::window::glfw {
 
 namespace {
+
+#ifdef OWL_PLATFORM_LINUX
+// GLFW unloads Xlib and its extensions at glfwTerminate: their process-lifetime caches would show as leaks to LSan.
+void keepX11LibrariesLoaded() {
+	for (const char* library: {"libX11.so.6", "libX11-xcb.so.1", "libxcb.so.1", "libXcursor.so.1", "libXrandr.so.2",
+							   "libXinerama.so.1", "libXrender.so.1", "libXxf86vm.so.1", "libXi.so.6", "libXext.so.6"})
+		dlopen(library, RTLD_LAZY | RTLD_NOLOAD | RTLD_NODELETE);
+}
+#endif
+
 uint8_t g_GlfwWindowCount = 0;
 Platform g_GlfwPlatform = Platform::None;
 // Joystick events are global in GLFW: they go to the first window still open.
@@ -100,6 +114,10 @@ auto initGlfw(const Platform iRequested) -> bool {
 		success = glfwInit() == GLFW_TRUE;
 	}
 	g_GlfwPlatform = success ? fromGlfwPlatform(glfwGetPlatform()) : Platform::None;
+#ifdef OWL_PLATFORM_LINUX
+	if (g_GlfwPlatform == Platform::X11)
+		keepX11LibrariesLoaded();
+#endif
 	return success;
 }
 

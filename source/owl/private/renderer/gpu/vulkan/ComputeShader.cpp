@@ -12,6 +12,7 @@
 
 #include "StorageBuffer.h"
 #include "Texture.h"
+#include "data/assets/AssetSearchPaths.h"
 #include "internal/Descriptors.h"
 #include "internal/VulkanCore.h"
 #include "internal/VulkanHandler.h"
@@ -27,7 +28,6 @@ OWL_DIAG_DISABLE_GCC("-Wshadow")
 OWL_DIAG_POP
 
 #include <format>
-#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -39,18 +39,16 @@ auto loadSlangSource(const std::string& iShaderName, const std::string& iRendere
 	const auto relative = std::filesystem::path("shaders") / iRenderer / (iShaderName + std::string(".slang"));
 	const auto sourcePath =
 			Renderer::getTextureLibrary().find(relative.generic_string()).value_or(std::filesystem::path{});
-	if (sourcePath.empty() || !exists(sourcePath)) {
+	if (sourcePath.empty()) {
 		OWL_CORE_ERROR("Vulkan compute shader: source not found for '{}' / '{}'.", iRenderer, iShaderName)
 		return {};
 	}
-	std::ifstream in(sourcePath, std::ios::binary);
-	if (!in.is_open()) {
+	auto source = data::assets::readAssetText(sourcePath);
+	if (!source) {
 		OWL_CORE_ERROR("Vulkan compute shader: cannot open '{}'.", sourcePath.string())
 		return {};
 	}
-	std::stringstream ss;
-	ss << in.rdbuf();
-	return ss.str();
+	return std::move(*source);
 }
 
 struct ReflectedBindings {

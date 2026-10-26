@@ -227,7 +227,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Check whether the atlas was read from the disk cache instead of being generated.
+	 *  Check whether the atlas was read from the disk cache or the pack instead of being generated.
 	 * @return True on a cache hit.
 	 */
 	[[nodiscard]] auto isAtlasFromCache() const -> bool { return m_atlasFromCache; }
@@ -239,6 +239,21 @@ public:
 	 * @return The folder path.
 	 */
 	[[nodiscard]] static auto getAtlasCacheDirectory() -> std::filesystem::path;
+
+	/**
+	 * @brief
+	 *  Atlas cache file of this font, written unless a pack is open; the export bakes it into the pack.
+	 * @return The file path, empty when the font failed to load.
+	 */
+	[[nodiscard]] auto getAtlasCacheFile() const -> const std::filesystem::path& { return m_atlasCacheFile; }
+
+	/**
+	 * @brief
+	 *  Pack entry of a baked atlas: `cache/font/` and the name of the cache file.
+	 * @param[in] iCacheFile The atlas cache file (`getAtlasCacheFile`).
+	 * @return The entry path, relative to the pack root.
+	 */
+	[[nodiscard]] static auto getPackedAtlasPath(const std::filesystem::path& iCacheFile) -> std::filesystem::path;
 
 	/**
 	 * @brief
@@ -267,8 +282,10 @@ private:
 	FontSettings m_settings;
 	/// If this font is the default one.
 	bool m_default = false;
-	/// True when the atlas came from the disk cache.
+	/// True when the atlas came from the disk cache or the pack.
 	bool m_atlasFromCache = false;
+	/// Atlas cache file, named after the stem of the font and its atlas key.
+	std::filesystem::path m_atlasCacheFile;
 };
 
 }// namespace owl::data::fonts

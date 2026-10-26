@@ -14,6 +14,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <mutex>
 #include <optional>
 #include <string_view>
 #include <unordered_map>
@@ -127,6 +128,8 @@ public:
 	/**
 	 * @brief
 	 *  Read and decompress an entry by path.
+	 *
+	 * Thread-safe: only the read of the stored block is serialised, the decoding of entries runs in parallel.
 	 * @param[in] iPath The asset path.
 	 * @return The decompressed data, or nullopt on failure (never throws).
 	 */
@@ -196,6 +199,8 @@ private:
 
 	/// Open pack file stream — `mutable` so const lookups can re-seek for blob reads.
 	mutable std::ifstream m_fileStream;
+	/// Serialises the seek and read of `m_fileStream` between threads; held apart so the reader stays movable.
+	uniq<std::mutex> mp_readMutex = mkUniq<std::mutex>();
 	/// Cached pack header (magic, version, TOC offset/size).
 	PackHeader m_header{};
 	/// Table of contents — one entry per packed asset.

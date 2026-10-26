@@ -267,14 +267,16 @@ public:
 
 	/**
 	 * @brief
-	 *  Find the file path of the given Asset name.
+	 *  Find the file path of the given Asset name: the entry of the open pack, else a file of the asset folders.
 	 * @param iName Name of the asset.
-	 * @return Path to the file or nullopt if not found.
+	 * @return Path to the file (relative pack entry or file on disk) or nullopt if not found.
 	 */
 	[[nodiscard]] auto find(const std::string& iName) const -> std::optional<std::filesystem::path> {
 		if (AssetType::extensions().empty())
 			return std::nullopt;
 		const std::vector<std::string> ext = AssetType::extensions();
+		if (auto packed = findPackedAsset(iName, ext); packed)
+			return packed;
 		// get a list of directory to search.
 		const std::filesystem::path name(iName);
 		const bool hasExtension = name.has_extension();
