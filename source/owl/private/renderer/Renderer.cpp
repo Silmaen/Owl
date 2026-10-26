@@ -32,6 +32,7 @@ namespace owl::renderer {
 Renderer::State Renderer::m_internalState = State::Created;
 shared<Renderer::SceneData> Renderer::m_sceneData = nullptr;
 shared<Renderer::ShaderLibrary> Renderer::m_shaderLibrary = nullptr;
+RendererSet Renderer::m_rendererSet;
 shared<Renderer::TextureLibrary> Renderer::m_textureLibrary = nullptr;
 RenderStack Renderer::m_renderStack;
 RenderGraph Renderer::m_renderGraph;
@@ -64,9 +65,10 @@ void Renderer::initContext() {
 	}
 }
 
-void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
+void Renderer::initShaders(const ShaderProgressCallback& iProgress, const RendererSet& iRenderers) {
 	OWL_PROFILE_FUNCTION()
 
+	m_rendererSet = iRenderers;
 	if (iProgress)
 		iProgress(0, 5, "renderer2D (quad, circle, line, text)");
 	Renderer2D::init();
@@ -78,24 +80,36 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 	OutlinePass::init();
 	PostProcess::init();
 
-	RendererRaycast::init();
+	if (iRenderers.raycast)
+		RendererRaycast::init();
 	RendererTilemap::init();
-	RendererIsometric::init();
-	Renderer3D::init();
-	RendererMesh::init();
+	if (iRenderers.isometric)
+		RendererIsometric::init();
+	if (iRenderers.renderer3D) {
+		Renderer3D::init();
+		RendererMesh::init();
+	}
 
 	Renderer2DLayer::registerWithFactory();
-	RendererRaycastLayer::registerWithFactory();
-	RendererVoxelLayer::registerWithFactory();
-	RendererMeshLayer::registerWithFactory();
-	RendererIsometricLayer::registerWithFactory();
+	if (iRenderers.raycast)
+		RendererRaycastLayer::registerWithFactory();
+	if (iRenderers.renderer3D) {
+		RendererVoxelLayer::registerWithFactory();
+		RendererMeshLayer::registerWithFactory();
+	}
+	if (iRenderers.isometric)
+		RendererIsometricLayer::registerWithFactory();
 
 	m_internalState = State::Running;
 }
 
+auto Renderer::getRendererSet() -> const RendererSet& { return m_rendererSet; }
+
 void Renderer::shutdown() {
-	RendererMesh::shutdown();
-	Renderer3D::shutdown();
+	if (m_rendererSet.renderer3D) {
+		RendererMesh::shutdown();
+		Renderer3D::shutdown();
+	}
 	RendererIsometric::shutdown();
 	RendererTilemap::shutdown();
 	RendererRaycast::shutdown();

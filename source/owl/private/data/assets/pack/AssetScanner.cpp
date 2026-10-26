@@ -10,6 +10,7 @@
 
 #include "app/Application.h"
 #include "data/assets/AssetReference.h"
+#include "data/fonts/FontLibrary.h"
 #include "data/fonts/FontSettings.h"
 #include "data/geometry/MeshLoader.h"
 
@@ -707,36 +708,11 @@ void collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 				}
 			}
 		}
-		if (const auto fontsDir = assetsPath / "fonts"; exists(fontsDir)) {
-			for (const auto& item: std::filesystem::recursive_directory_iterator(fontsDir)) {
-				if (!item.is_regular_file())
-					continue;
-				const auto ext = item.path().extension().string();
-				if (ext != ".ttf" && ext != ".otf")
-					continue;
-				const AssetReference font{.packPath = relative(item.path(), assetsPath).generic_string(),
-										  .diskPath = item.path(),
-										  .assetType = AssetType::Font};
-				if (!hasAsset(ioAssets, font.packPath))
-					ioAssets.push_back(font);
-				addFontSidecar(ioAssets, font);
-			}
-		}
-		for (const auto* dirName: {"logo", "icons"}) {
-			const auto dir = assetsPath / dirName;
-			if (!exists(dir))
-				continue;
-			for (const auto& item: std::filesystem::recursive_directory_iterator(dir)) {
-				if (!item.is_regular_file())
-					continue;
-				const auto ext = item.path().extension().string();
-				if (ext != ".png" && ext != ".jpg" && ext != ".jpeg")
-					continue;
-				if (const auto rel = relative(item.path(), assetsPath).generic_string(); !hasAsset(ioAssets, rel)) {
-					ioAssets.push_back({.packPath = rel, .diskPath = item.path(), .assetType = AssetType::Texture});
-				}
-			}
-		}
+	}
+	if (auto font = resolveFont(std::string{fonts::g_DefaultFontName}); font) {
+		if (!hasAsset(ioAssets, font->packPath))
+			ioAssets.push_back(*font);
+		addFontSidecar(ioAssets, *font);
 	}
 }
 

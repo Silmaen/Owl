@@ -229,6 +229,10 @@ void ProjectSettings::onImGuiRender() {
 						gui::widgets::propertyBool("Fullscreen", m_localProject.window.fullscreen, defaults.fullscreen);
 				std::ignore =
 						gui::widgets::propertyBool("Resizable", m_localProject.window.resizable, defaults.resizable);
+				std::ignore = gui::widgets::propertyBool(
+						"ImGui Overlay", m_localProject.imGui, false,
+						"The exported game creates an ImGui layer and packs its fonts; off for a game drawing its "
+						"interface with HUDs only.");
 				gui::widgets::endProperties();
 			}
 			gui::widgets::endSection();

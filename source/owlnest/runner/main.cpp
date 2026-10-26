@@ -21,6 +21,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -43,6 +44,10 @@ struct EarlyConfig {
 	uint32_t width{1280};
 	// Window height.
 	uint32_t height{720};
+	// Whether the game draws an ImGui overlay; without the key, a development runner keeps it.
+	bool imGui{true};
+	// Renderer families of the game; without the key, all of them.
+	renderer::RendererSet renderers;
 };
 
 auto readEarlyConfig(const std::filesystem::path& iWorkDir) -> EarlyConfig {
@@ -66,6 +71,10 @@ auto readEarlyConfig(const std::filesystem::path& iWorkDir) -> EarlyConfig {
 				cfg.width = w.as<uint32_t>();
 			if (const auto h = rc["WindowHeight"]; h)
 				cfg.height = h.as<uint32_t>();
+			if (const auto gui = rc["ImGui"]; gui)
+				cfg.imGui = gui.as<bool>();
+			if (const auto renderers = rc["Renderers"]; renderers)
+				cfg.renderers = renderer::RendererSet::fromNames(renderers.as<std::vector<std::string>>());
 		}
 	} catch (const std::exception& iEx) {
 		std::fputs("Warning: failed to parse runner.yml: ", stderr);
@@ -223,7 +232,7 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 		return createScenarioApplication(iArgc, iArgv, callerDir, *scenario);
 
 	const auto workDir = std::filesystem::current_path();
-	const auto [packFile, gameName, icon, width, height] = readEarlyConfig(workDir);
+	const auto [packFile, gameName, icon, width, height, imGui, renderers] = readEarlyConfig(workDir);
 	const auto options = parseOptions(iArgc, iArgv);
 
 	AppParams params{
@@ -236,6 +245,8 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 			.width = width,
 			.height = height,
 			.argCount = iArgc,
+			.hasGui = imGui,
+			.renderers = renderers,
 			.packFile = packFile,
 			.hotReload = packFile.empty() && !options.noHotReload,
 	};

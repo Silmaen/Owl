@@ -397,7 +397,7 @@ void RendererVoxel::prepareWorld(VoxelMeshCache& ioCache, scene::component::Voxe
 								 const int iEntityId) {
 	OWL_PROFILE_FUNCTION()
 
-	if (!g_GpuDrawEnabled)
+	if (!g_GpuDrawEnabled || !Renderer3D::isReady())
 		return;
 	// No atlas yet (unconfigured, or not resolved before runtime starts): skip silently rather than warn per frame.
 	if (!ioComponent.tileset || !ioComponent.tileset->texture)

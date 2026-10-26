@@ -198,6 +198,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Check whether the renderer is initialised.
+	 * @return True between init() and shutdown().
+	 */
+	[[nodiscard]] static auto isReady() -> bool;
+
+	/**
+	 * @brief
 	 *  Begin a frame: bind the camera and enable depth testing.
 	 * @param[in] iCamera The camera whose view-projection drives the frame.
 	 */

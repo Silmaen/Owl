@@ -56,6 +56,8 @@ struct Project {
 	};
 	/// Window settings for the game.
 	WindowSettings window;
+	/// Whether the exported game draws an ImGui overlay (`imGui:`): its runner creates the ImGui layer and packs its fonts.
+	bool imGui{false};
 
 	/// Fixed simulation tick of the game (`simulation:`): rate of `on_tick` and of the physics steps.
 	scene::SimulationSettings simulation;

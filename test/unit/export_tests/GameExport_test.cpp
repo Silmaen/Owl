@@ -29,6 +29,7 @@
 #include <span>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <vector>
 
@@ -156,6 +157,7 @@ protected:
 				.fullscreen = false,
 				.resizable = true,
 				.rendererStackYaml = {},
+				.imGui = false,
 				.packFlags = PackFlags::Default,
 				.cookCacheDirectory = {}};
 	}
@@ -294,6 +296,59 @@ TEST_F(GameExporterFixture, ExportWritesAPlayableFolder) {
 	const auto scene = readPackEntry(result->packFile, "scenes/level.owl");
 	EXPECT_NE(scene.find("nam:textures/a.png"), std::string::npos);
 	EXPECT_EQ(scene.find("pat:"), std::string::npos);
+}
+
+TEST_F(GameExporterFixture, ExportPacksOnlyTheEngineFilesOfTheGame) {
+	const auto entriesOf = [](const std::filesystem::path& iPack) -> std::vector<std::string> {
+		PackReader reader;
+		if (!reader.open(iPack))
+			return {};
+		return reader.listEntries();
+	};
+	const auto hasPrefix = [](const std::vector<std::string>& iEntries, const std::string_view iPrefix) -> bool {
+		return std::ranges::any_of(iEntries,
+								   [&](const std::string& iEntry) -> bool { return iEntry.starts_with(iPrefix); });
+	};
+	auto settings = makeSettings();
+	settings.icon.clear();
+	const auto flat = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(flat.has_value());
+	const auto flatEntries = entriesOf(flat->packFile);
+	if (!hasPrefix(flatEntries, "shaders/renderer2D/"))
+		GTEST_SKIP() << "No engine shaders in the asset directories of the test.";
+	EXPECT_TRUE(flat->renderers.empty());
+	EXPECT_GT(flat->engineFilesSkipped, 0u);
+	for (const auto* absent: {"shaders/renderer3D/", "shaders/raycast_dda/", "shaders/isometric/",
+							  "shaders/frustum_culling/", "icons/", "logo/", "fonts/Inter-Regular.ttf"})
+		EXPECT_FALSE(hasPrefix(flatEntries, absent)) << absent;
+	EXPECT_TRUE(hasPrefix(flatEntries, "fonts/OpenSans-Regular.ttf"));
+	EXPECT_TRUE(exists(flat->gameDirectory / "logo" / "logo_owl_low.png"));
+	const auto flatConfig = YAML::LoadFile((flat->gameDirectory / "runner.yml").string())["RunnerConfig"];
+	EXPECT_FALSE(flatConfig["ImGui"].as<bool>());
+	EXPECT_EQ(flatConfig["Icon"].as<std::string>(), "logo/logo_owl_low.png");
+	EXPECT_TRUE(flatConfig["Renderers"].IsSequence());
+	EXPECT_EQ(flatConfig["Renderers"].size(), 0u);
+
+	settings.rendererStackYaml = "- Type: Renderer2D\n  Name: world\n- Type: RendererMesh\n  Name: meshes\n";
+	settings.imGui = true;
+	const auto meshes = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(meshes.has_value());
+	EXPECT_EQ(meshes->renderers, std::vector<std::string>{"Renderer3D"});
+	const auto meshEntries = entriesOf(meshes->packFile);
+	for (const auto* present: {"shaders/renderer3D/", "shaders/mesh_culling/", "fonts/lucide.ttf"})
+		EXPECT_TRUE(hasPrefix(meshEntries, present)) << present;
+	EXPECT_FALSE(hasPrefix(meshEntries, "shaders/raycast_dda/"));
+	const auto meshConfig = YAML::LoadFile((meshes->gameDirectory / "runner.yml").string())["RunnerConfig"];
+	EXPECT_TRUE(meshConfig["ImGui"].as<bool>());
+	EXPECT_EQ(meshConfig["Renderers"].as<std::vector<std::string>>(), std::vector<std::string>{"Renderer3D"});
+}
+
+TEST_F(GameExporterFixture, AnEnvironmentBringsRenderer3D) {
+	writeFile(m_project / "scenes" / "level.owl",
+			  "Scene: level\nEntities:\n  - Entity: 1\n    Environment:\n      showSky: true\n");
+	const auto result = GameExporter::exportGame(makeSettings(), {});
+	ASSERT_TRUE(result.has_value());
+	EXPECT_EQ(result->renderers, std::vector<std::string>{"Renderer3D"});
 }
 
 TEST_F(GameExporterFixture, ExportPacksTheHudsAndTheirAssets) {

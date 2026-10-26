@@ -76,19 +76,25 @@ flowchart LR
 
 ### What the pack holds {#game-export-content}
 
-`AssetScanner::collectEngineAssets` adds every shader, font, `logo/` and `icons/` file of every asset directory of the
-session, Owl Nest's included. Measured on the Breakout export: 80 SPIR-V, 80 hashes and 26 Slang sources for a game
-drawn by `Renderer2D` alone, the 17 engine fonts, the trigger and light gizmos of the viewport, both owl logos.
+Status: done. On the shipped projects a pack is about 3.3 MiB smaller than one holding every engine file (Breakout
+1.5 MiB against 4.8, Engine Demo 46 against 49): no engine font beyond the default, no viewport gizmo, no owl logo, no
+shader of an unused renderer.
 
-| Content       | Packed                                                                        |
-|---------------|-------------------------------------------------------------------------------|
-| Shaders       | SPIR-V of the renderers of the `RendererStack` and of the passes they use     |
-| Shader source | None                                                                          |
-| Fonts         | Fonts referenced by the scenes, HUDs and scripts, plus the default font       |
-| Engine images | The window icon of the game                                                   |
-| Owl Nest      | Nothing: the scanner reads the engine and project directories only            |
+| Content       | Packed                                                                                              |
+|---------------|-----------------------------------------------------------------------------------------------------|
+| Shaders       | Folders of the `RendererSet` of the game (`RendererSet::getShaderFolders`), sources and SPIR-V      |
+| Fonts         | Fonts referenced by the scenes and HUDs, the default font, the ImGui fonts when the project asks    |
+| Engine images | None in the pack; the window icon is copied beside the game, the Owl logo when the project has none |
+| Owl Nest      | Nothing: icons and logos are never collected                                                        |
 
-The export report lists what was left out.
+| Decision           | Choice                                                                                                                           |
+|--------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| Renderer families  | `RendererSet`: 2D family always, raycast, isometric, `Renderer3D` (mesh and voxel layers)                                        |
+| Families of a game | Layer types of its stack, plus `Renderer3D` when a scene holds an `Environment` (sky, lights)                                    |
+| Runtime            | `Renderers` in `runner.yml` → `AppParams::renderers` → `Renderer::initShaders` and layer factory                                 |
+| Shader sources     | Kept: the SPIR-V cache key hashes the source, and the runner recompiles a rejected binary (v0.8.0 removes Slang from the runner) |
+| ImGui              | Project setting `imGui` (off): `ImGui` in `runner.yml` → `AppParams::hasGui`, fonts `g_UiFontFiles`                              |
+| Checks             | `RendererSet_test`, `ExportPacksOnlyTheEngineFilesOfTheGame`; every shipped project smoke-tested on lavapipe and llvmpipe        |
 
 ### Reading in the pack {#game-export-in-memory}
 

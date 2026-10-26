@@ -43,7 +43,7 @@ public:
 	 *  Scan a single scene file and return all referenced assets.
 	 * @param[in] iSceneFile Absolute path to the scene file.
 	 * @param[out] oWarnings Optional output filled with messages for unresolvable references.
-	 * @return All discovered asset references (including the scene itself).
+	 * @return All discovered asset references: the scene itself, the engine shaders and the default font included.
 	 */
 	[[nodiscard]] static auto scanScene(const std::filesystem::path& iSceneFile,
 										std::vector<std::string>* oWarnings = nullptr) -> std::vector<AssetReference>;

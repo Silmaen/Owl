@@ -231,38 +231,41 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	// Compile renderer shaders with an ImGui loading screen.
 	{
 #if OWL_WITH_GUI
-		renderer::Renderer::initShaders([this](const uint32_t iCurrent, const uint32_t iTotal,
-											   const std::string& iName) -> void {
-			OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
-			// Render a loading frame if ImGui is available.
-			if (mp_imGuiLayer && mp_appWindow && !m_minimized) {
-				renderer::gpu::RenderCommand::beginFrame();
-				if (renderer::gpu::RenderCommand::getState() == renderer::gpu::RenderAPI::State::Ready) {
-					mp_imGuiLayer->begin();
-					const auto* viewport = ImGui::GetMainViewport();
-					ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-					ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_Always);
-					if (ImGui::Begin("##Loading", nullptr,
-									 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-											 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize)) {
-						ImGui::Text("Loading engine...");
-						const auto progress = static_cast<float>(iCurrent) / static_cast<float>(iTotal);
-						ImGui::ProgressBar(progress, ImVec2(-1, 0));
-						ImGui::Text("Compiling shader: %s", iName.c_str());
+		renderer::Renderer::initShaders(
+				[this](const uint32_t iCurrent, const uint32_t iTotal, const std::string& iName) -> void {
+					OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
+					// Render a loading frame if ImGui is available.
+					if (mp_imGuiLayer && mp_appWindow && !m_minimized) {
+						renderer::gpu::RenderCommand::beginFrame();
+						if (renderer::gpu::RenderCommand::getState() == renderer::gpu::RenderAPI::State::Ready) {
+							mp_imGuiLayer->begin();
+							const auto* viewport = ImGui::GetMainViewport();
+							ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+							ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_Always);
+							if (ImGui::Begin("##Loading", nullptr,
+											 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+													 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+													 ImGuiWindowFlags_AlwaysAutoResize)) {
+								ImGui::Text("Loading engine...");
+								const auto progress = static_cast<float>(iCurrent) / static_cast<float>(iTotal);
+								ImGui::ProgressBar(progress, ImVec2(-1, 0));
+								ImGui::Text("Compiling shader: %s", iName.c_str());
+							}
+							ImGui::End();
+							mp_imGuiLayer->end();
+						}
+						renderer::gpu::RenderCommand::endFrame();
+						mp_appWindow->onUpdate();
 					}
-					ImGui::End();
-					mp_imGuiLayer->end();
-				}
-				renderer::gpu::RenderCommand::endFrame();
-				mp_appWindow->onUpdate();
-			}
-		});
+				},
+				m_initParams.renderers);
 #else
-		renderer::Renderer::initShaders([]([[maybe_unused]] const uint32_t iCurrent,
-										   [[maybe_unused]] const uint32_t iTotal,
-										   [[maybe_unused]] const std::string& iName) -> void {
-			OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
-		});
+		renderer::Renderer::initShaders(
+				[]([[maybe_unused]] const uint32_t iCurrent, [[maybe_unused]] const uint32_t iTotal,
+				   [[maybe_unused]] const std::string& iName) -> void {
+					OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
+				},
+				m_initParams.renderers);
 #endif
 		m_scheduler.waitEmptyQueue();
 
