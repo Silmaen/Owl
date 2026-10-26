@@ -64,7 +64,8 @@ TEST(AssetCook, UncompressedTextureKeepsItsSource) {
 	const auto keptAsIs = cookAsset(textureMeta(TextureCompression::None), broken, "broken.png");
 	ASSERT_TRUE(keptAsIs);
 	EXPECT_EQ(*keptAsIs, broken);
-	EXPECT_EQ(cookAsset(textureMeta(TextureCompression::Uastc), broken, "broken.png").error(), CookError::InvalidSource);
+	EXPECT_EQ(cookAsset(textureMeta(TextureCompression::Uastc), broken, "broken.png").error(),
+			  CookError::InvalidSource);
 }
 
 TEST(AssetCook, UastcTextureTranscodesWithItsMipChain) {
@@ -107,8 +108,8 @@ TEST(AssetCook, Etc1sWithoutMipsHasOneLevel) {
 
 TEST(AssetCook, OtherAssetsAreCopied) {
 	const std::vector<uint8_t> lua{'-', '-', ' ', 'x'};
-	const auto cooked = cookAsset(AssetMeta{.guid = AssetGuid{2}, .importer = Importer::Script, .texture = {}}, lua,
-								  "a.lua");
+	const auto cooked =
+			cookAsset(AssetMeta{.guid = AssetGuid{2}, .importer = Importer::Script, .texture = {}}, lua, "a.lua");
 	ASSERT_TRUE(cooked);
 	EXPECT_EQ(*cooked, lua);
 	EXPECT_FALSE(describe(CookError::EncodeFailed).empty());

@@ -46,7 +46,8 @@ auto PrefabLink::clearOverride(const uint64_t iCanonicalUuid, const std::string&
 void PrefabLink::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;// PrefabLink
-	iOut.getImpl()->emitter << YAML::Key << "prefabAssetPath" << YAML::Value << data::assets::toAssetReference(prefabAssetPath);
+	iOut.getImpl()->emitter << YAML::Key << "prefabAssetPath" << YAML::Value
+							<< data::assets::toAssetReference(prefabAssetPath);
 	iOut.getImpl()->emitter << YAML::Key << "syncedVersion" << YAML::Value << syncedVersion;
 	if (!uuidMapping.empty()) {
 		iOut.getImpl()->emitter << YAML::Key << "uuidMapping" << YAML::Value << YAML::BeginSeq;

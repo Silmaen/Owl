@@ -211,7 +211,7 @@ auto createTexture(const data::geometry::MeshImage& iImage) -> shared<gpu::Textu
 	if (!iImage.cooked.empty()) {
 		const auto levels = transcodeKtx2(iImage.cooked, pickKtx2Target());
 		auto texture = levels ? gpu::Texture2D::create(gpu::Texture2D::Specification{.size = levels->size,
-																					   .format = gpu::ImageFormat::Rgba8})
+																					 .format = gpu::ImageFormat::Rgba8})
 							  : nullptr;
 		if (!texture || !texture->setLevels(*levels)) {
 			OWL_CORE_WARN("MeshCache: Cannot upload the cooked image {}.", iImage.name)

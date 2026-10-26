@@ -8,8 +8,8 @@
 #include "owlpch.h"
 
 #include "core/SerializerImpl.h"
-#include "data/assets/AssetReference.h"
 #include "core/YamlNode.h"
+#include "data/assets/AssetReference.h"
 #include "scene/component/LuaScript.h"
 
 #include <array>

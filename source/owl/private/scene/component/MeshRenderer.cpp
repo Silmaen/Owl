@@ -36,7 +36,8 @@ void MeshRenderer::serialize(const core::Serializer& iOut) const {
 		for (const auto& slot: materials) {
 			out << YAML::BeginMap;
 			if (!slot.material.empty())
-				out << YAML::Key << "material" << YAML::Value << data::assets::toAssetReference(slot.material.generic_string());
+				out << YAML::Key << "material" << YAML::Value
+					<< data::assets::toAssetReference(slot.material.generic_string());
 			if (!slot.overrides.isEmpty())
 				out << YAML::Key << "overrides" << YAML::Value << YAML::Load(slot.overrides.toYaml());
 			out << YAML::EndMap;

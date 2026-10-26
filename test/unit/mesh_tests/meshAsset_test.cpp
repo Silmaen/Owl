@@ -192,6 +192,14 @@ TEST_F(MeshAssetTest, glbListsTheImagesItNames) {
 
 namespace {
 
+// Pieces of glTF added to a fixture to give it a textured material.
+constexpr std::string_view g_indicesKey = R"("indices":2)";
+constexpr std::string_view g_indicesWithMaterial = R"("indices":2,"material":0)";
+constexpr char g_closingBrace = '\x7d';
+constexpr std::string_view g_textureTail =
+		R"(,"images":[{"uri":"albedo.png"}],"textures":[{"source":0}],"materials":[{"pbrMetallicRoughness":)"
+		R"({"baseColorTexture":{"index":0}}}]})";
+
 auto twoMaterialsPath() -> std::filesystem::path { return test::getTestAssetsPath("mesh_tests") / "two_materials.glb"; }
 
 }// namespace
@@ -361,16 +369,13 @@ TEST_F(MeshAssetTest, gltfKeepsTheBytesOfACookedImage) {
 	const auto folder = test::getTestAssetsPath("mesh_tests");
 	const auto source = readBytes(folder / "multiple_triangle_uv.gltf");
 	std::string gltf(source.begin(), source.end());
-	gltf.replace(gltf.find("\"indices\":2"), std::string_view{"\"indices\":2"}.size(), "\"indices\":2,\"material\":0");
-	gltf.replace(gltf.rfind('}'), 1,
-				 ",\"images\":[{\"uri\":\"albedo.png\"}],\"textures\":[{\"source\":0}],"
-				 "\"materials\":[{\"pbrMetallicRoughness\":{\"baseColorTexture\":{\"index\":0}}}]}");
+	gltf.replace(gltf.find(g_indicesKey), g_indicesKey.size(), g_indicesWithMaterial);
+	gltf.replace(gltf.rfind(g_closingBrace), 1, g_textureTail);
 	const std::vector<uint8_t> pixels(8 * 4 * 4, 0x60);
-	const data::assets::AssetMeta meta{.guid = data::assets::AssetGuid{1},
-									   .importer = data::assets::Importer::Texture,
-									   .texture = {.nearest = false,
-												   .compression = data::assets::TextureCompression::Uastc,
-												   .mips = true}};
+	const data::assets::AssetMeta meta{
+			.guid = data::assets::AssetGuid{1},
+			.importer = data::assets::Importer::Texture,
+			.texture = {.nearest = false, .compression = data::assets::TextureCompression::Uastc, .mips = true}};
 	const auto cooked = data::assets::cook::cookAsset(meta, renderer::encodeImagePng({8, 4}, pixels), "albedo.png");
 	ASSERT_TRUE(cooked);
 	const MeshFileReader reader = [&](const std::string& iPath) -> std::optional<std::vector<uint8_t>> {

@@ -8,8 +8,8 @@
 
 #include "owlpch.h"
 
-#include "renderer/Material.h"
 #include "data/assets/AssetReference.h"
+#include "renderer/Material.h"
 
 #include "core/FormatVersionYaml.h"
 #include "core/external/yaml.h"

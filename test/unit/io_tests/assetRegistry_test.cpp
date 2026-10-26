@@ -18,6 +18,7 @@
 #include <format>
 #include <fstream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 using namespace owl::data::assets;
@@ -85,7 +86,9 @@ TEST(AssetMeta, ImporterFromExtension) {
 }
 
 TEST(AssetMeta, TextRoundTrip) {
-	const AssetMeta meta{.guid = AssetGuid{7}, .importer = Importer::Texture, .texture = {.nearest = true, .compression = TextureCompression::Uastc, .mips = false}};
+	const AssetMeta meta{.guid = AssetGuid{7},
+						 .importer = Importer::Texture,
+						 .texture = {.nearest = true, .compression = TextureCompression::Uastc, .mips = false}};
 	const auto text = serializeMeta(meta);
 	EXPECT_NE(text.find("FormatVersion"), std::string::npos);
 	const auto read = parseMeta(text, "test");

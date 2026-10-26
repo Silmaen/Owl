@@ -68,8 +68,11 @@ struct OWL_API TextureLevels {
 	math::vec2ui size{0, 0};
 	/// Format of every level.
 	ImageFormat format{ImageFormat::Rgba8};
-	/// Data of each level, finest first; a level of `w x h` texels holds `ceil(w/4) * ceil(h/4)` blocks when
-	/// compressed, `w * h` pixels otherwise.
+	/**
+	 * @brief
+	 *  Data of each level, finest first: a level of `w x h` texels holds `ceil(w/4) * ceil(h/4)` blocks when
+	 *  compressed, `w * h` pixels otherwise.
+	 */
 	std::vector<std::vector<uint8_t>> levels;
 };
 

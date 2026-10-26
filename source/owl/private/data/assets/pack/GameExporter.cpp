@@ -59,7 +59,9 @@ auto metaOf(const AssetReference& iRef) -> AssetMeta {
 			if (const auto entry = registry.find(*guid); entry)
 				return entry->meta;
 	}
-	return AssetMeta{.guid = AssetGuid{0}, .importer = importerOf(iRef.diskPath).value_or(Importer::Copy), .texture = {}};
+	return AssetMeta{.guid = AssetGuid{0},
+					 .importer = importerOf(iRef.diskPath).value_or(Importer::Copy),
+					 .texture = {}};
 }
 
 auto isRelocatable(const AssetReference& iRef) -> bool {

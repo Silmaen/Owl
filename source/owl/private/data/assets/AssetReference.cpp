@@ -45,7 +45,8 @@ auto parseReference(const std::string_view iReference) -> ParsedReference {
 		OWL_CORE_WARN("Assets: Malformed GUID reference '{}', read as a path.", iReference)
 		return {.guid = std::nullopt, .path = std::string{iReference}};
 	}
-	return {.guid = guid, .path = separator == std::string_view::npos ? std::string{} : std::string{body.substr(separator + 1)}};
+	return {.guid = guid,
+			.path = separator == std::string_view::npos ? std::string{} : std::string{body.substr(separator + 1)}};
 }
 
 auto formatReference(const AssetGuid iGuid, const std::string_view iPathHint) -> std::string {

@@ -16,8 +16,8 @@
 #include "internal/utils.h"
 #include "renderer/TextureDecoder.h"
 
-#include <cstring>
 #include <algorithm>
+#include <cstring>
 #include <vector>
 
 namespace owl::renderer::gpu::vulkan {
@@ -160,7 +160,8 @@ auto Texture2D::setLevels(const TextureLevels& iLevels) -> bool {
 		case ImageFormat::R8:
 		case ImageFormat::Rgb8:
 		case ImageFormat::Rgba32F:
-			OWL_CORE_WARN("Vulkan Texture: Levels in format {} are not supported.", magic_enum::enum_name(iLevels.format))
+			OWL_CORE_WARN("Vulkan Texture: Levels in format {} are not supported.",
+						  magic_enum::enum_name(iLevels.format))
 			return false;
 	}
 	VkDeviceSize total = 0;

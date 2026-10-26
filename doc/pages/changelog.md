@@ -9,8 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Asset GUIDs: every asset of a project opened in Owl Nest gets a `.owlmeta` sidecar, and `AssetRegistry` maps GUID and path.
+- Asset references written by GUID (`gid:<guid>:<path hint>`): renaming or moving a file keeps every reference valid.
+- Asset cook: the export cooks every packed asset through a content-addressed cache in `<project>/.owl/cache/cooked/`.
+- Texture compression: KTX2 Basis Universal (UASTC, ETC1S) with mips, transcoded at load to BC7, ASTC 4x4 or RGBA8.
+- Binary scenes: scenes, prefabs and HUDs are cooked to a binary tree loaded without parsing, 1.7x to 2.2x faster.
+- Owl Nest Import panel and `asset.*` commands (import settings, rename, move, delete, cook, clear cache).
+- `OwlNest --upgrade-assets` creates sidecars and rewrites references by GUID; `--export` takes `--cook-cache`.
+
 ### Changed
 
+- Shipped projects carry sidecars and GUID references; the Engine Demo PBR textures are cooked to ETC1S and UASTC.
 - CI: one tree per configuration; the tested release tree is the one packaged, so no configuration builds a second preset.
 - CI: Linux x64 Clang Release is the fast verdict (drafts, ready pull requests, doc-only pull requests, `main`); drafts run Code Style and it only.
 - CI: coverage is measured on Linux x64 GCC (every ready pull request and `main`) and by Clang Debug nightly, each with its coverage-drop gate; Windows measures none.

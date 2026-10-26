@@ -22,7 +22,8 @@ void RaycastDoor::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	if (!tilesetPath.empty())
-		iOut.getImpl()->emitter << YAML::Key << "tilesetPath" << YAML::Value << data::assets::toAssetReference(tilesetPath);
+		iOut.getImpl()->emitter << YAML::Key << "tilesetPath" << YAML::Value
+								<< data::assets::toAssetReference(tilesetPath);
 	iOut.getImpl()->emitter << YAML::Key << "faceTileIndex" << YAML::Value << faceTileIndex;
 	iOut.getImpl()->emitter << YAML::Key << "lateralTileIndex" << YAML::Value << lateralTileIndex;
 	iOut.getImpl()->emitter << YAML::Key << "openingDirection" << YAML::Value

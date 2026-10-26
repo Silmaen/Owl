@@ -10,11 +10,11 @@
 
 #include "../EntitySnapshot.h"
 #include "../UndoManager.h"
+#include "AssetCommands.h"
 #include "CommandJournal.h"
 #include "ComponentCommands.h"
 #include "EntityCommands.h"
 #include "HierarchyCommands.h"
-#include "AssetCommands.h"
 #include "HudCommands.h"
 #include "Macro.h"
 #include "PrefabCommands.h"

@@ -13,13 +13,14 @@
 #include <data/assets/AssetRegistry.h>
 #include <data/assets/cook/CookCache.h>
 #include <gui/IconFont.h>
-#include <gui/widgets/IconButton.h>
 #include <gui/widgets/Combo.h>
 #include <gui/widgets/EmptyState.h>
+#include <gui/widgets/IconButton.h>
 #include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/Toggle.h>
 
 #include <array>
+#include <cstddef>
 #include <format>
 #include <tuple>
 #include <utility>
@@ -130,10 +131,10 @@ void AssetImport::onImGuiRender() {
 								  .label = "Apply to Folder",
 								  .tooltip = "Apply to Folder",
 								  .description = "Give these settings to every texture of the folder of this one."})) {
-			commands::CommandArgs args{{"nearest", meta.texture.nearest},
-									   {"compression", std::string{g_compressionNames[static_cast<size_t>(
-															   meta.texture.compression)]}},
-									   {"mips", meta.texture.mips}};
+			commands::CommandArgs args{
+					{"nearest", meta.texture.nearest},
+					{"compression", std::string{g_compressionNames[static_cast<size_t>(meta.texture.compression)]}},
+					{"mips", meta.texture.mips}};
 			args.set("path", m_path.parent_path().string());
 			const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
 			std::ignore = target.execute("asset.set_import", args);

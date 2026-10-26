@@ -11,8 +11,8 @@
 #include "EditorSettings.h"
 #include "Project.h"
 #include <app/EntryPoint.h>
-#include <data/assets/AssetRegistry.h>
 #include <core/Core.h>
+#include <data/assets/AssetRegistry.h>
 #include <gui/UiLayer.h>
 #include <platform/AtomicFile.h>
 #include <platform/FileUtils.h>

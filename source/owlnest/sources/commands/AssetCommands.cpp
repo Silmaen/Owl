@@ -84,13 +84,16 @@ auto compressionOf(const std::string& iName) -> TextureCompression {
 	return TextureCompression::None;
 }
 
-auto cacheOf(const std::filesystem::path& iRoot) -> std::filesystem::path { return iRoot / ".owl" / "cache" / "cooked"; }
+auto cacheOf(const std::filesystem::path& iRoot) -> std::filesystem::path {
+	return iRoot / ".owl" / "cache" / "cooked";
+}
 
 auto setImportSettings(const shared<scene::Scene>& /*ioScene*/, const CommandArgs& iArgs)
 		-> expected<PreparedCommand, CommandFailure> {
 	const auto path = resolvePath(iArgs.getText("path"));
 	if (!path)
-		return fail(CommandError::InvalidArgument, std::format("asset.set_import: `{}` not found", iArgs.getText("path")));
+		return fail(CommandError::InvalidArgument,
+					std::format("asset.set_import: `{}` not found", iArgs.getText("path")));
 	std::vector<AssetMeta> before;
 	std::vector<AssetMeta> after;
 	for (const auto& entry: entriesOf(*path)) {
@@ -134,7 +137,8 @@ auto renameAsset(const CommandContext& /*iContext*/, const CommandArgs& iArgs)
 						 .data = {{"path", target.string()}}};
 }
 
-auto moveAsset(const CommandContext& /*iContext*/, const CommandArgs& iArgs) -> expected<CommandResult, CommandFailure> {
+auto moveAsset(const CommandContext& /*iContext*/, const CommandArgs& iArgs)
+		-> expected<CommandResult, CommandFailure> {
 	const auto path = resolvePath(iArgs.getText("path"));
 	const auto folder = resolvePath(iArgs.getText("folder"));
 	if (!path || !folder)
@@ -170,7 +174,8 @@ auto cookAssets(const CommandContext& /*iContext*/, const CommandArgs& iArgs)
 		return fail(CommandError::InvalidArgument, std::format("asset.cook: `{}` not found", iArgs.getText("path")));
 	const auto entries = entriesOf(*path);
 	if (entries.empty())
-		return fail(CommandError::NotApplicable, std::format("asset.cook: no asset with a sidecar in `{}`", path->string()));
+		return fail(CommandError::NotApplicable,
+					std::format("asset.cook: no asset with a sidecar in `{}`", path->string()));
 	int64_t failed = 0;
 	int64_t cooked = 0;
 	int64_t hits = 0;
@@ -206,8 +211,7 @@ auto upgradeReferences(const CommandContext& /*iContext*/, const CommandArgs& /*
 	int64_t files = 0;
 	int64_t failed = 0;
 	for (const auto& entry: registry.getEntries()) {
-		if (entry.meta.importer != Importer::Document ||
-			std::ranges::find(roots, entry.root) == roots.end())
+		if (entry.meta.importer != Importer::Document || std::ranges::find(roots, entry.root) == roots.end())
 			continue;
 		const auto file = entry.root / entry.path;
 		const auto text = platform::fileToString(file);
@@ -257,12 +261,12 @@ void SetImportSettingsCommand::apply(const std::vector<AssetMeta>& iMetas) {
 		if (!entry)
 			continue;
 		const auto name = "nam:" + entry->path;
-		const auto mode =
-				meta.texture.nearest ? renderer::gpu::FilterMode::Nearest : renderer::gpu::FilterMode::Linear;
-		library.forEach([&name, mode](const std::string& iName, const shared<renderer::gpu::Texture2D>& iTexture) -> void {
-			if (iTexture && iName == name)
-				iTexture->setFilterMode(mode);
-		});
+		const auto mode = meta.texture.nearest ? renderer::gpu::FilterMode::Nearest : renderer::gpu::FilterMode::Linear;
+		library.forEach(
+				[&name, mode](const std::string& iName, const shared<renderer::gpu::Texture2D>& iTexture) -> void {
+					if (iTexture && iName == name)
+						iTexture->setFilterMode(mode);
+				});
 	}
 }
 
@@ -272,21 +276,20 @@ void addAssetCommands(CommandRegistry& ioRegistry) {
 						   .required = true,
 						   .description = "Asset file or folder, absolute or relative to an asset folder.",
 						   .projectPath = true};
-	ioRegistry.add({.name = "asset.set_import",
-					.description = "Change the import settings of a texture, or of every texture of a folder (undoable).",
-					.args = {pathSpec,
-							 {.name = "nearest",
-							  .type = ArgType::Bool,
-							  .description = "Nearest-texel filtering (pixel art)."},
-							 {.name = "compression",
-							  .type = ArgType::Enum,
-							  .description = "Storage in a pack: the source file, or Basis Universal KTX2.",
-							  .choices = {"None", "Uastc", "Etc1s"}},
-							 {.name = "mips",
-							  .type = ArgType::Bool,
-							  .description = "Mipmap chain built by the cook (compressed textures)."}},
-					.factory = setImportSettings,
-					.allowedInPlay = true});
+	ioRegistry.add(
+			{.name = "asset.set_import",
+			 .description = "Change the import settings of a texture, or of every texture of a folder (undoable).",
+			 .args = {pathSpec,
+					  {.name = "nearest", .type = ArgType::Bool, .description = "Nearest-texel filtering (pixel art)."},
+					  {.name = "compression",
+					   .type = ArgType::Enum,
+					   .description = "Storage in a pack: the source file, or Basis Universal KTX2.",
+					   .choices = {"None", "Uastc", "Etc1s"}},
+					  {.name = "mips",
+					   .type = ArgType::Bool,
+					   .description = "Mipmap chain built by the cook (compressed textures)."}},
+			 .factory = setImportSettings,
+			 .allowedInPlay = true});
 	ioRegistry.add({.name = "asset.rename",
 					.description = "Rename an asset file or folder with its sidecars: the references follow its GUID.",
 					.args = {pathSpec,

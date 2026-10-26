@@ -7,8 +7,8 @@
  */
 #include "owlpch.h"
 
-#include "scene/SceneSerializer.h"
 #include "data/assets/AssetReference.h"
+#include "scene/SceneSerializer.h"
 
 #include "EntityLinkMigration.h"
 #include "HudLayoutMigration.h"

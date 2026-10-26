@@ -193,7 +193,7 @@ auto transcodeKtx2(const std::span<const uint8_t> iBytes, const gpu::ImageFormat
 	}
 	ktxTexture2* texture = nullptr;
 	if (const auto result = ktxTexture2_CreateFromMemory(iBytes.data(), iBytes.size(),
-														  KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
+														 KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
 		result != KTX_SUCCESS) {
 		OWL_CORE_WARN("TextureDecoder: Unreadable KTX2 texture ({}).", ktxErrorString(result))
 		return std::nullopt;

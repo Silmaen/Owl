@@ -321,9 +321,9 @@ auto AssetRegistry::copyFile(const std::filesystem::path& iFrom, const std::file
 	}
 	if (!writeMeta(metaPathOf(to), meta))
 		return std::nullopt;
-	m_entries.insert_or_assign(meta.guid, Entry{.meta = meta,
-												.root = root->path,
-												.path = to.lexically_relative(root->path).generic_string()});
+	m_entries.insert_or_assign(
+			meta.guid,
+			Entry{.meta = meta, .root = root->path, .path = to.lexically_relative(root->path).generic_string()});
 	rebuildPathIndex();
 	return meta.guid;
 }
@@ -441,10 +441,11 @@ auto AssetRegistry::toAssetReference(const std::string_view iPath) const -> std:
 
 auto AssetRegistry::rewriteReferences(const std::string_view iText) const -> std::string {
 	static constexpr std::array<std::string_view, 22> referenceKeys{
-			"texture",		  "normalTexture",	"roughnessTexture", "baseColorMap", "metallicMap",	 "roughnessMap",
-			"normalMap",	  "occlusionMap",	"emissiveMap",		"mesh",			"material",		 "parent",
-			"scriptPath",	  "hdri",			"tilesetPath",		"tilemapPath",	"prefabAssetPath", "atlasPath",
-			"soundAsset",	  "LevelName",		"Hud",				"Tileset"};
+			"texture",      "normalTexture",   "roughnessTexture", "baseColorMap", "metallicMap",
+			"roughnessMap", "normalMap",       "occlusionMap",     "emissiveMap",  "mesh",
+			"material",     "parent",          "scriptPath",       "hdri",         "tilesetPath",
+			"tilemapPath",  "prefabAssetPath", "atlasPath",        "soundAsset",   "LevelName",
+			"Hud",          "Tileset"};
 	const auto headerEnd = std::min(iText.size(), iText.find("\n...\n"));
 	std::string out;
 	out.reserve(iText.size());

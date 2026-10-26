@@ -13,17 +13,17 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <format>
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <type_traits>
 #include <tuple>
-#include <cstddef>
-#include <cstdint>
-#include <vector>
-#include <utility>
+#include <type_traits>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace owl::core {
 
@@ -31,14 +31,14 @@ namespace {
 
 constexpr uint32_t g_binaryVersion = 1;
 
-/// Flags of a node in the binary form.
+// Flags of a node in the binary form.
 enum struct BinaryNode : uint8_t {
-	Key = 1U << 0U,///< The node has a key.
-	Val = 1U << 1U,///< The node has a value.
-	Map = 1U << 2U,///< The node is a map.
-	Seq = 1U << 3U,///< The node is a sequence.
-	Null = 1U << 4U,///< The value is null.
-	Quoted = 1U << 5U,///< The value was quoted (never read as null).
+	Key = 1U << 0U,// The node has a key.
+	Val = 1U << 1U,// The node has a value.
+	Map = 1U << 2U,// The node is a map.
+	Seq = 1U << 3U,// The node is a sequence.
+	Null = 1U << 4U,// The value is null.
+	Quoted = 1U << 5U,// The value was quoted (never read as null).
 };
 
 constexpr auto has(const uint8_t iFlags, const BinaryNode iFlag) -> bool {

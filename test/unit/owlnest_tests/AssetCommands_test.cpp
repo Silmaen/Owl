@@ -24,6 +24,8 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <tuple>
+#include <variant>
 #include <vector>
 
 using namespace owl;
@@ -109,9 +111,9 @@ TEST_F(AssetCommandsTest, SetImportIsUndoable) {
 }
 
 TEST_F(AssetCommandsTest, SetImportOnAFolderChangesEveryTexture) {
-	const auto result = run("asset.set_import", {{"path", (m_root / "textures").string()},
-												 {"compression", std::string{"Uastc"}},
-												 {"mips", false}});
+	const auto result =
+			run("asset.set_import",
+				{{"path", (m_root / "textures").string()}, {"compression", std::string{"Uastc"}}, {"mips", false}});
 	ASSERT_TRUE(result);
 	EXPECT_EQ(std::get<int64_t>(result->data.at("assets")), 2);
 	for (const auto* path: {"textures/a.png", "textures/b.png"}) {

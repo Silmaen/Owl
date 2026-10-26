@@ -36,7 +36,7 @@ The engine library (`source/owl/`) is organized into the following modules:
 | `input`    | Keyboard, mouse, and gamepad input abstraction                                    |
 | `window`   | Window creation and management                                                    |
 | `gui`      | ImGui/ImGuizmo integration for editor UI                                          |
-| `data`     | Data structures + their loaders: geometry/mesh, fonts, assets (+ `pack`), `voxel` |
+| `data`     | Data structures + their loaders: geometry/mesh, fonts, assets (+ `pack`, `cook`), `voxel` |
 | `math`     | Math utilities (vectors, matrices, quaternions, transforms)                       |
 | `debug`    | Profiling, memory tracking, stack traces (cpptrace)                               |
 | `event`    | Event system (application, input, window events)                                  |

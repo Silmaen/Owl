@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "AssetThumbnails.h"
 #include "../commands/CommandRegistry.h"
+#include "AssetThumbnails.h"
 
 #include <owlgui.h>
 

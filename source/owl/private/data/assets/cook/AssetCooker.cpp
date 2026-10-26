@@ -29,11 +29,11 @@ namespace owl::data::assets::cook {
 
 namespace {
 
-/// `VK_FORMAT_R8G8B8A8_UNORM`: colour textures are uploaded unorm, the shaders convert from sRGB.
+// `VK_FORMAT_R8G8B8A8_UNORM`: colour textures are uploaded unorm, the shaders convert from sRGB.
 constexpr uint32_t g_vkFormatRgba8Unorm = 37;
-/// Zstandard level of the UASTC supercompression: the cook runs offline, the pack is read many times.
+// Zstandard level of the UASTC supercompression: the cook runs offline, the pack is read many times.
 constexpr ktx_uint32_t g_zstdLevel = 18;
-/// Quality of the ETC1S encoder (1 to 255).
+// Quality of the ETC1S encoder (1 to 255).
 constexpr ktx_uint32_t g_etc1sQuality = 128;
 
 constexpr uint32_t g_textureCookerVersion = 1;
@@ -54,8 +54,8 @@ auto cookSceneDocument(const std::span<const uint8_t> iSource, const std::string
 	if (core::isBinaryYaml(text))
 		return std::vector<uint8_t>(iSource.begin(), iSource.end());
 	const auto kind = scene::documentKindOf(std::filesystem::path{iName});
-	const auto& format =
-			kind == scene::DocumentKind::Prefab ? scene::PrefabSerializer::format() : scene::SceneSerializer::format(kind);
+	const auto& format = kind == scene::DocumentKind::Prefab ? scene::PrefabSerializer::format()
+															 : scene::SceneSerializer::format(kind);
 	try {
 		auto document = mkUniq<core::YamlDocument>(text, iName);
 		if (!scene::canReadWithoutMigration(document->getRoot(), format)) {

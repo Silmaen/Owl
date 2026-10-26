@@ -27,14 +27,30 @@ constexpr std::array<core::MigrationStep, 0> g_metaMigrations{};
 constexpr core::DocumentFormat g_metaFormat{.name = "Asset meta", .migrations = g_metaMigrations};
 
 constexpr std::array<std::pair<std::string_view, Importer>, 25> g_importerByExtension{{
-		{".png", Importer::Texture},	   {".jpg", Importer::Texture},		 {".jpeg", Importer::Texture},
-		{".bmp", Importer::Texture},	   {".tga", Importer::Texture},		 {".hdr", Importer::Copy},
-		{".glb", Importer::Mesh},		   {".gltf", Importer::Mesh},		 {".obj", Importer::Mesh},
-		{".fbx", Importer::Mesh},		   {".wav", Importer::Sound},		 {".ogg", Importer::Sound},
-		{".mp3", Importer::Sound},		   {".flac", Importer::Sound},		 {".lua", Importer::Script},
-		{".ttf", Importer::Font},		   {".otf", Importer::Font},		 {".owl", Importer::Document},
-		{".owlmat", Importer::Document},   {".owltileset", Importer::Document}, {".owltilemap", Importer::Document},
-		{".owlhud", Importer::Document},   {".owlprefab", Importer::Document},	 {".owlanim", Importer::Document},
+		{".png", Importer::Texture},
+		{".jpg", Importer::Texture},
+		{".jpeg", Importer::Texture},
+		{".bmp", Importer::Texture},
+		{".tga", Importer::Texture},
+		{".hdr", Importer::Copy},
+		{".glb", Importer::Mesh},
+		{".gltf", Importer::Mesh},
+		{".obj", Importer::Mesh},
+		{".fbx", Importer::Mesh},
+		{".wav", Importer::Sound},
+		{".ogg", Importer::Sound},
+		{".mp3", Importer::Sound},
+		{".flac", Importer::Sound},
+		{".lua", Importer::Script},
+		{".ttf", Importer::Font},
+		{".otf", Importer::Font},
+		{".owl", Importer::Document},
+		{".owlmat", Importer::Document},
+		{".owltileset", Importer::Document},
+		{".owltilemap", Importer::Document},
+		{".owlhud", Importer::Document},
+		{".owlprefab", Importer::Document},
+		{".owlanim", Importer::Document},
 		{".owlvoxstruct", Importer::Document},
 }};
 
@@ -174,8 +190,7 @@ auto readMeta(const std::filesystem::path& iMetaFile) -> expected<AssetMeta, Met
 
 auto writeMeta(const std::filesystem::path& iMetaFile, const AssetMeta& iMeta) -> expected<void, MetaError> {
 	if (const auto written = platform::writeFileAtomic(iMetaFile, serializeMeta(iMeta)); !written) {
-		OWL_CORE_WARN("Assets: Cannot write sidecar '{}': {}.", iMetaFile.string(),
-					  platform::describe(written.error()))
+		OWL_CORE_WARN("Assets: Cannot write sidecar '{}': {}.", iMetaFile.string(), platform::describe(written.error()))
 		return unexpected{MetaError::WriteFailed};
 	}
 	return {};

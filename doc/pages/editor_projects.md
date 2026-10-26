@@ -85,5 +85,14 @@ OwlNest --export <project dir or owl_project.yml> <output dir>
 <output dir>/<GameName>/launch.sh --headless --smoke-test 60
 ```
 
+Cooked assets are cached in `<project>/.owl/cache/cooked/`; `--cook-cache <dir>` puts the cache elsewhere (a CI
+workspace shared between builds). `OwlNest --upgrade-assets <project dir>` creates the missing `.owlmeta` sidecars and
+rewrites the asset references of the project documents by GUID, as the `asset.upgrade_references` command does.
+
+```bash
+OwlNest --export <project> <output dir> --cook-cache <cache dir>
+OwlNest --upgrade-assets <project dir>
+```
+
 On Windows the game executable is not signed: SmartScreen may warn the players at the first start (**More info**,
 then **Run anyway**).

@@ -20,7 +20,8 @@ void RaycastPushWall::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	if (!tilesetPath.empty())
-		iOut.getImpl()->emitter << YAML::Key << "tilesetPath" << YAML::Value << data::assets::toAssetReference(tilesetPath);
+		iOut.getImpl()->emitter << YAML::Key << "tilesetPath" << YAML::Value
+								<< data::assets::toAssetReference(tilesetPath);
 	iOut.getImpl()->emitter << YAML::Key << "tileIndex" << YAML::Value << tileIndex;
 	iOut.getImpl()->emitter << YAML::Key << "slideDirection" << YAML::Value << YAML::Flow << YAML::BeginSeq
 							<< slideDirection.x() << slideDirection.y() << YAML::EndSeq;

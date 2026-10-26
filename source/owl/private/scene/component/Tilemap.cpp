@@ -8,8 +8,8 @@
 #include "owlpch.h"
 
 #include "../TilemapCodec.h"
-#include "data/assets/AssetReference.h"
 #include "core/SerializerImpl.h"
+#include "data/assets/AssetReference.h"
 #include "scene/TilemapAsset.h"
 #include "scene/component/Tilemap.h"
 
@@ -441,7 +441,8 @@ auto readNavigation(const core::YamlNode& iNode) -> nav::NavProfile {
 
 void emitInline(YAML::Emitter& iEmitter, const scene::TilemapAsset& iAsset) {
 	if (!iAsset.tilesetPath.empty())
-		iEmitter << YAML::Key << "tilesetPath" << YAML::Value << data::assets::toAssetReference(iAsset.tilesetPath.generic_string());
+		iEmitter << YAML::Key << "tilesetPath" << YAML::Value
+				 << data::assets::toAssetReference(iAsset.tilesetPath.generic_string());
 	iEmitter << YAML::Key << "width" << YAML::Value << iAsset.width;
 	iEmitter << YAML::Key << "height" << YAML::Value << iAsset.height;
 	iEmitter << YAML::Key << "cellSize" << YAML::Value << iAsset.cellSize;
@@ -499,7 +500,8 @@ void Tilemap::serialize(const core::Serializer& iOut) const {
 	emitter << YAML::Key << key();
 	emitter << YAML::BeginMap;
 	if (!tilemapPath.empty()) {
-		emitter << YAML::Key << "tilemapPath" << YAML::Value << data::assets::toAssetReference(tilemapPath.generic_string());
+		emitter << YAML::Key << "tilemapPath" << YAML::Value
+				<< data::assets::toAssetReference(tilemapPath.generic_string());
 	} else if (asset) {
 		emitter << YAML::Key << "inline" << YAML::Value << YAML::BeginMap;
 		emitInline(emitter, *asset);

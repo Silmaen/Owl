@@ -16,7 +16,8 @@ namespace owl::scene::component {
 void SoundSource::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
-	iOut.getImpl()->emitter << YAML::Key << "soundAsset" << YAML::Value << data::assets::toAssetReference(sound.soundAsset);
+	iOut.getImpl()->emitter << YAML::Key << "soundAsset" << YAML::Value
+							<< data::assets::toAssetReference(sound.soundAsset);
 	iOut.getImpl()->emitter << YAML::Key << "category" << YAML::Value
 							<< std::string(magic_enum::enum_name(sound.category));
 	iOut.getImpl()->emitter << YAML::Key << "volume" << YAML::Value << sound.volume;

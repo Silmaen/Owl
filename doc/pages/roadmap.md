@@ -137,8 +137,8 @@ procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual s
 the cook, double positions with a floating origin, visual scripting; the rest may slip to v0.7.0.
 
 - ![Done][done] CI: one GCC build (Debug, tests, coverage), a fast first stage, a quick check for agents ([CI streamlining](design/ci-streamlining.md#ci-streamlining-cost-review))
-- ![Planned][planned] Offline asset pipeline: cook, cache, asset GUIDs ([Content](design/content-pipeline.md))
-- ![Planned][planned] Binary runtime scene format produced by the cook
+- ![Done][done] Offline asset pipeline: cook, content-addressed cache, asset GUIDs, KTX2 BC7/ASTC texture compression ([Content](design/content-pipeline.md))
+- ![Done][done] Binary runtime scene format produced by the cook
 - ![Planned][planned] Parallel pack `readEntry`
 - ![Planned][planned] Project shaders baked by the cook, no shader compiled at the first run of a game ([Game export](design/game-export.md#game-export-shaders))
 - ![Planned][planned] Localisation of games: string tables edited in Owl Nest, `tr()` in Lua, fonts per language ([Localisation](design/localisation.md))
