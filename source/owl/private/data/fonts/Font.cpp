@@ -10,6 +10,7 @@
 #include "data/fonts/Font.h"
 
 #include "app/Application.h"
+#include "data/assets/AssetSearchPaths.h"
 #include "renderer/gpu/Texture.h"
 
 #undef INFINITE
@@ -17,6 +18,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <format>
@@ -87,14 +89,9 @@ private:
 	uint64_t m_hash = 14695981039346656037ull;
 };
 
-auto readFileBytes(const std::filesystem::path& iPath) -> std::vector<uint8_t> {
-	std::ifstream in(iPath, std::ios::binary);
-	return {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
-}
-
-auto computeAtlasKey(const std::filesystem::path& iFontPath, const std::vector<CodePointRange>& iRanges) -> uint64_t {
+auto computeAtlasKey(const std::vector<uint8_t>& iFontBytes, const std::vector<CodePointRange>& iRanges) -> uint64_t {
 	Hasher hasher;
-	hasher.add(readFileBytes(iFontPath));
+	hasher.add(iFontBytes);
 	hasher.addValue(g_atlasCacheVersion);
 	hasher.addValue(g_emSize);
 	hasher.addValue(g_pixelRange);
@@ -112,8 +109,12 @@ auto cacheFilePath(const std::string& iStem, const uint64_t iKey) -> std::filesy
 }
 
 template<typename T>
-auto readValue(std::ifstream& ioStream, T& oValue) -> bool {
-	return static_cast<bool>(ioStream.read(reinterpret_cast<char*>(&oValue), sizeof(T)));
+auto readValue(const std::span<const uint8_t> iBytes, size_t& ioOffset, T& oValue) -> bool {
+	if (iBytes.size() - ioOffset < sizeof(T))
+		return false;
+	std::memcpy(&oValue, iBytes.data() + ioOffset, sizeof(T));
+	ioOffset += sizeof(T);
+	return true;
 }
 
 template<typename T>
@@ -121,26 +122,32 @@ void writeValue(std::ofstream& ioStream, const T& iValue) {
 	ioStream.write(reinterpret_cast<const char*>(&iValue), sizeof(T));
 }
 
+// The atlas of a pack entry or of the disk cache, when its key and size match.
 auto readCachedAtlas(const std::filesystem::path& iPath, const uint64_t iKey, const math::vec2ui& iSize)
 		-> std::optional<AtlasBitmap> {
-	if (!exists(iPath))
+	if (!data::assets::isPackedAsset(iPath) && !exists(iPath))
 		return std::nullopt;
-	std::ifstream in(iPath, std::ios::binary);
+	const auto bytes = data::assets::readAssetBytes(iPath);
+	if (!bytes)
+		return std::nullopt;
+	size_t offset = 0;
 	std::array<char, 8> magic{};
 	uint32_t version = 0;
 	uint64_t key = 0;
 	AtlasBitmap bitmap;
-	if (!in.read(magic.data(), magic.size()) || !readValue(in, version) || !readValue(in, key) ||
-		!readValue(in, bitmap.size.x()) || !readValue(in, bitmap.size.y()) || magic != g_atlasCacheMagic ||
-		version != g_atlasCacheVersion || key != iKey || bitmap.size != iSize) {
+	if (!readValue(*bytes, offset, magic) || !readValue(*bytes, offset, version) || !readValue(*bytes, offset, key) ||
+		!readValue(*bytes, offset, bitmap.size.x()) || !readValue(*bytes, offset, bitmap.size.y()) ||
+		magic != g_atlasCacheMagic || version != g_atlasCacheVersion || key != iKey || bitmap.size != iSize) {
 		OWL_CORE_WARN("Font: Atlas cache '{}' does not match, regenerating.", iPath.string())
 		return std::nullopt;
 	}
-	bitmap.pixels.resize(static_cast<size_t>(iSize.x()) * iSize.y() * g_channels);
-	if (!in.read(reinterpret_cast<char*>(bitmap.pixels.data()), static_cast<std::streamsize>(bitmap.pixels.size()))) {
+	const size_t pixelCount = static_cast<size_t>(iSize.x()) * iSize.y() * g_channels;
+	if (bytes->size() - offset < pixelCount) {
 		OWL_CORE_WARN("Font: Atlas cache '{}' is truncated, regenerating.", iPath.string())
 		return std::nullopt;
 	}
+	bitmap.pixels.assign(bytes->begin() + static_cast<std::ptrdiff_t>(offset),
+						 bytes->begin() + static_cast<std::ptrdiff_t>(offset + pixelCount));
 	return bitmap;
 }
 
@@ -207,7 +214,8 @@ auto createTexture(AtlasBitmap& ioBitmap) -> shared<renderer::gpu::Texture2D> {
 Font::Font(std::filesystem::path iPath, const bool iIsDefault, FontSettings iSettings)
 	: m_path{std::move(iPath)}, m_settings{std::move(iSettings)}, m_default{iIsDefault} {
 	OWL_SCOPE_UNTRACK
-	if (!exists(m_path)) {
+	const auto fontBytes = data::assets::readAssetBytes(m_path);
+	if (!fontBytes || fontBytes->empty()) {
 		OWL_CORE_ERROR("Font: Font file {} does not exists.", m_path.string())
 		return;
 	}
@@ -216,7 +224,8 @@ Font::Font(std::filesystem::path iPath, const bool iIsDefault, FontSettings iSet
 		OWL_CORE_ERROR("Font: Failed to initialize Freetype library.")
 		return;
 	}
-	msdfgen::FontHandle* font = loadFont(ft, m_path.string().c_str());
+	msdfgen::FontHandle* font =
+			loadFontData(ft, fontBytes->data(), static_cast<int>(fontBytes->size()));
 	if (font == nullptr) {
 		OWL_CORE_ERROR("Font: Failed to load font: {}.", m_path.string())
 		deinitializeFreetype(ft);
@@ -250,13 +259,19 @@ Font::Font(std::filesystem::path iPath, const bool iIsDefault, FontSettings iSet
 	const math::vec2ui size{static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 
 	const auto stem = m_path.stem().string();
-	const uint64_t key = computeAtlasKey(m_path, ranges);
-	const auto cachePath = cacheFilePath(stem, key);
-	auto bitmap = readCachedAtlas(cachePath, key, size);
+	const uint64_t key = computeAtlasKey(*fontBytes, ranges);
+	m_atlasCacheFile = cacheFilePath(stem, key);
+	// A game reads the atlas baked in its pack and writes nothing next to itself.
+	const bool fromPack = app::Application::instanced() && app::Application::get().hasOpenPack();
+	auto bitmap = fromPack ? readCachedAtlas(getPackedAtlasPath(m_atlasCacheFile), key, size)
+						   : readCachedAtlas(m_atlasCacheFile, key, size);
 	m_atlasFromCache = bitmap.has_value();
 	if (!bitmap) {
 		bitmap = generateAtlas(m_data->glyphs, size);
-		writeCachedAtlas(cachePath, stem, key, *bitmap);
+		if (fromPack)
+			OWL_CORE_WARN("Font {}: Atlas not baked in the pack, generated at start. Fix: pack the game again.", stem)
+		else
+			writeCachedAtlas(m_atlasCacheFile, stem, key, *bitmap);
 	}
 	m_atlasTexture = createTexture(*bitmap);
 	m_name = stem;
@@ -280,6 +295,10 @@ auto Font::getAtlasCacheDirectory() -> std::filesystem::path {
 	if (app::Application::instanced())
 		return app::Application::get().getWorkingDirectory() / "cache" / "font";
 	return std::filesystem::temp_directory_path() / "owl_cache" / "font";
+}
+
+auto Font::getPackedAtlasPath(const std::filesystem::path& iCacheFile) -> std::filesystem::path {
+	return std::filesystem::path{"cache"} / "font" / iCacheFile.filename();
 }
 
 void Font::reload(const FontSettings& iSettings) {

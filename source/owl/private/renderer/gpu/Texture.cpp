@@ -12,7 +12,7 @@
 #include "app/Application.h"
 #include "core/task/Scheduler.h"
 #include "data/assets/AssetReference.h"
-#include "data/assets/pack/PackExtractor.h"
+#include "data/assets/AssetSearchPaths.h"
 #include "null/Texture.h"
 #include "renderer/Renderer.h"
 #include "renderer/TextureDecoder.h"
@@ -30,6 +30,7 @@
 #include <span>
 #include <sstream>
 #include <string>
+#include <system_error>
 
 namespace owl::renderer::gpu {
 
@@ -45,6 +46,20 @@ auto createFromKtx2(const std::span<const uint8_t> iBytes, const std::string& iN
 	auto texture = Texture2D::create(Texture::Specification{.size = levels->size, .format = ImageFormat::Rgba8});
 	if (texture == nullptr || !texture->setLevels(*levels))
 		return nullptr;
+	return texture;
+}
+
+// An image file read in memory (pack entry), decoded as `Texture2D(path)` decodes a file.
+auto createFromImageBytes(const std::span<const uint8_t> iBytes, const std::string& iName) -> shared<Texture2D> {
+	auto decoded = decodeImageBytes(iBytes);
+	if (!decoded.valid) {
+		OWL_CORE_WARN("Texture2D: Cannot decode the packed image '{}'.", iName)
+		return nullptr;
+	}
+	auto texture = Texture2D::create(Texture::Specification{.size = decoded.size, .format = decoded.format});
+	if (texture == nullptr)
+		return nullptr;
+	texture->setData(decoded.pixels.data(), static_cast<uint32_t>(decoded.pixels.size()));
 	return texture;
 }
 
@@ -135,6 +150,18 @@ Texture2D::Texture2D(std::filesystem::path iPath) : Texture{std::move(iPath)} {}
 Texture2D::Texture2D(const Specification& iSpecs) : Texture{iSpecs} {}
 
 auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> {
+	if (std::error_code error; iFile.is_relative() && !std::filesystem::exists(iFile, error)) {
+		// A pack entry (`AssetLibrary::find` in a game) is decoded in memory.
+		if (const auto bytes = data::assets::readAssetBytes(iFile); bytes) {
+			const auto name = iFile.generic_string();
+			auto texture = isKtx2(*bytes) ? createFromKtx2(*bytes, name) : createFromImageBytes(*bytes, name);
+			if (texture != nullptr) {
+				texture->m_name = name;
+				applyImportSettings(*texture, name);
+			}
+			return texture;
+		}
+	}
 	const auto api = RenderCommand::getApi();
 	switch (api) {
 		case RenderAPI::Type::Null:
@@ -266,17 +293,10 @@ auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) 
 					}
 					return texture;
 				}
-				const auto tempFile = std::filesystem::temp_directory_path() / "owl_pack_cache" /
-									  std::filesystem::path(val).filename();
-				if (data::assets::pack::writeEntryFile(tempFile, *data)) {
-					auto texture = create(tempFile);
-					if (texture != nullptr) {
-						texture->m_name = val;
-						applyImportSettings(*texture, val);
-						return texture;
-					}
-				} else {
-					OWL_CORE_WARN("Texture2D: cannot cache pack entry '{}', trying asset directories.", val)
+				if (auto texture = createFromImageBytes(*data, val); texture != nullptr) {
+					texture->m_name = val;
+					applyImportSettings(*texture, val);
+					return texture;
 				}
 			}
 		}

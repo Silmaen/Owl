@@ -15,7 +15,9 @@
 #include "data/assets/AssetRegistry.h"
 #include "data/assets/cook/CookCache.h"
 #include "data/assets/pack/PackWriter.h"
+#include "data/fonts/Font.h"
 #include "data/fonts/FontLibrary.h"
+#include "data/fonts/FontSettings.h"
 #include "input/ActionMap.h"
 #include "renderer/RenderStack.h"
 #include "renderer/RendererSet.h"
@@ -150,6 +152,22 @@ auto selectEngineFiles(const ExportSettings& iSettings, const renderer::Renderer
 						  packPath)
 	}
 	return skipped;
+}
+
+// Bakes the MSDF atlas of the scene and HUD fonts into the pack, so that the game does not build it at start.
+auto bakeFontAtlases(const std::vector<AssetReference>& iTextFonts, PackWriter& ioWriter) -> size_t {
+	size_t baked = 0;
+	for (const auto& ref: iTextFonts) {
+		const fonts::Font font{ref.diskPath, false, fonts::FontSettings::loadForFont(ref.diskPath)};
+		const auto& atlas = font.getAtlasCacheFile();
+		if (std::error_code ec; atlas.empty() || !std::filesystem::is_regular_file(atlas, ec)) {
+			OWL_CORE_WARN("GameExporter: No atlas for font '{}', the game generates it at start.", ref.packPath)
+			continue;
+		}
+		ioWriter.addFile(atlas, fonts::Font::getPackedAtlasPath(atlas).generic_string(), AssetType::Other);
+		++baked;
+	}
+	return baked;
 }
 
 auto resolveFirstScene(const std::string& iFirstScene, const std::vector<AssetReference>& iAssets) -> std::string {
@@ -385,6 +403,10 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		return unexpected{ExportError::RunnerNotFound};
 	}
 	const auto renderers = rendererSetOf(iSettings, assets);
+	std::vector<AssetReference> textFonts;
+	std::ranges::copy_if(assets, std::back_inserter(textFonts), [](const AssetReference& iRef) -> bool {
+		return iRef.assetType == AssetType::Font && std::filesystem::path{iRef.packPath}.extension() == ".ttf";
+	});
 	const auto engineFilesSkipped = selectEngineFiles(iSettings, renderers, assets);
 	std::string rendererList{"Renderer2D"};
 	for (const auto& name: renderers.getNames()) rendererList += " + " + name;
@@ -443,6 +465,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		writer.addData(*cooked, ref.packPath, ref.assetType);
 	}
 	std::ignore = cache.saveManifest();
+	OWL_CORE_INFO("GameExporter: {} font atlas(es) baked.", bakeFontAtlases(textFonts, writer))
 	result.cookedAssets = cache.getStats().cooked;
 	result.cacheHits = cache.getStats().hits;
 	if (app::Application::instanced()) {

@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -39,6 +40,34 @@ namespace owl::data::assets {
  */
 [[nodiscard]] OWL_API auto isInDirectory(const std::filesystem::path& iPath, const std::filesystem::path& iDirectory)
 		-> bool;
+
+/**
+ * @brief
+ *  Read the bytes of an asset: from the open pack first, then from the asset search paths, then the path itself.
+ * @param[in] iReference Path of the asset, relative to an asset directory (or a path on disk), or a `gid:` reference.
+ * @return The bytes, or nothing when no source holds the asset.
+ */
+[[nodiscard]] OWL_API auto readAssetBytes(const std::filesystem::path& iReference)
+		-> std::optional<std::vector<uint8_t>>;
+
+/**
+ * @brief
+ *  Check whether the open pack holds an entry.
+ * @param[in] iPath Path of the asset relative to the pack root.
+ * @return True when a pack is open and holds the entry.
+ */
+[[nodiscard]] OWL_API auto isPackedAsset(const std::filesystem::path& iPath) -> bool;
+
+/**
+ * @brief
+ *  Find an asset in the open pack by name, as `AssetLibrary::find` searches an asset directory: the name itself, then
+ *  the name with each extension, at the pack root first, then in any folder.
+ * @param[in] iName Name of the asset, with or without extension, possibly with folders.
+ * @param[in] iExtensions Extensions tried when the name has none (with their dot).
+ * @return The pack entry, or nothing when no pack is open or none matches.
+ */
+[[nodiscard]] OWL_API auto findPackedAsset(const std::string& iName, const std::vector<std::string>& iExtensions)
+		-> std::optional<std::filesystem::path>;
 
 /**
  * @brief

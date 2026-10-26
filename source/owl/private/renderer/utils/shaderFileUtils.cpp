@@ -25,6 +25,7 @@ OWL_DIAG_POP
 
 #include <algorithm>
 #include <cctype>
+#include <cstring>
 #include <exception>
 #include <expected>
 #include <format>
@@ -32,6 +33,7 @@ OWL_DIAG_POP
 #include <functional>
 #include <mutex>
 #include <slang-tag-version.h>
+#include <sstream>
 #include <vector>
 
 namespace owl::renderer::utils {
@@ -284,12 +286,13 @@ auto extractSpirv(slang::IBlob* iBlob) -> std::vector<uint32_t> {
 namespace {
 // NOLINTNEXTLINE(misc-no-recursion): each file is expanded at most once.
 void expandIncludes(const std::filesystem::path& iFile, std::vector<std::filesystem::path>& ioSeen, std::string& oOut) {
-	std::ifstream in(iFile, std::ios::in | std::ios::binary);
-	if (!in) {
+	const auto text = data::assets::readAssetText(iFile);
+	if (!text) {
 		OWL_CORE_WARN("Shader: Cannot read '{}'.", iFile.string())
 		return;
 	}
 	ioSeen.push_back(iFile.lexically_normal());
+	std::istringstream in{*text};
 	std::string line;
 	while (std::getline(in, line)) {
 		const auto start = line.find_first_not_of(" \t");
@@ -306,7 +309,7 @@ void expandIncludes(const std::filesystem::path& iFile, std::vector<std::filesys
 		const std::string name = line.substr(open + 1, close - open - 1);
 		std::filesystem::path found;
 		for (const auto& candidate: {iFile.parent_path() / name, iFile.parent_path().parent_path() / "common" / name}) {
-			if (exists(candidate)) {
+			if (exists(candidate) || data::assets::isPackedAsset(candidate)) {
 				found = candidate.lexically_normal();
 				break;
 			}
@@ -511,26 +514,22 @@ struct StoredProblem {
 auto readStoredStage(const std::filesystem::path& iFile, const std::string& iCacheKey, const gpu::ShaderType iStage)
 		-> std::expected<std::vector<uint32_t>, StoredProblem> {
 	using enum StoredProblem::Kind;
-	std::error_code error;
-	if (!exists(iFile, error))
+	// Read from disk or the pack, not the in-memory cache: a file replaced since must be checked again.
+	const auto bytes = data::assets::readAssetBytes(iFile);
+	if (!bytes)
 		return std::unexpected{StoredProblem{.kind = Absent, .reason = "absent"}};
-	if (!isShaderCacheValid(iFile, iCacheKey))
+	const auto storedKey = data::assets::readAssetText(iFile.string() + ".hash");
+	if (!storedKey || storedKey->substr(0, storedKey->find('\n')) != computeShaderHash(iCacheKey))
 		return std::unexpected{
 				StoredProblem{.kind = Outdated, .reason = "key of another source or Slang version, or no .hash"}};
-	const auto bytes = file_size(iFile, error);
-	if (error || bytes == 0)
+	if (bytes->empty())
+		return std::unexpected{StoredProblem{.kind = Damaged, .reason = "empty (0 bytes)"}};
+	if (bytes->size() % sizeof(uint32_t) != 0)
 		return std::unexpected{
 				StoredProblem{.kind = Damaged,
-							  .reason = std::format("unreadable or empty ({})", error ? error.message() : "0 bytes")}};
-	if (bytes % sizeof(uint32_t) != 0)
-		return std::unexpected{
-				StoredProblem{.kind = Damaged,
-							  .reason = std::format("{} bytes, not a whole number of SPIR-V words", bytes)}};
-	// Read from disk, not the in-memory cache: a file replaced since must be checked again.
-	std::vector<uint32_t> words(static_cast<size_t>(bytes) / sizeof(uint32_t));
-	std::ifstream in(iFile, std::ios::in | std::ios::binary);
-	if (!in.read(reinterpret_cast<char*>(words.data()), static_cast<std::streamsize>(bytes)))
-		return std::unexpected{StoredProblem{.kind = Damaged, .reason = "read error"}};
+							  .reason = std::format("{} bytes, not a whole number of SPIR-V words", bytes->size())}};
+	std::vector<uint32_t> words(bytes->size() / sizeof(uint32_t));
+	std::memcpy(words.data(), bytes->data(), bytes->size());
 	if (auto problem = checkSpirv(words, iStage); problem.has_value())
 		return std::unexpected{StoredProblem{.kind = Damaged, .reason = std::move(*problem)}};
 	return words;
@@ -630,6 +629,17 @@ auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderNa
 					true);
 			loaded.has_value()) {
 			OWL_CORE_INFO("Using cached {} shader {}/{}.", api, iRenderer, iShaderName)
+			return loaded;
+		}
+	}
+	if (data::assets::isPackedAsset(getPrecompiledShaderPath(iShaderName, iRenderer, api, iStages.front()))) {
+		if (auto loaded = tryFolder(
+					[&](const gpu::ShaderType iStage) -> std::filesystem::path {
+						return getPrecompiledShaderPath(iShaderName, iRenderer, api, iStage);
+					},
+					false);
+			loaded.has_value()) {
+			OWL_CORE_INFO("Using precompiled {} shader {}/{} from the pack.", api, iRenderer, iShaderName)
 			return loaded;
 		}
 	}

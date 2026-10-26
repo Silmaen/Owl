@@ -8,8 +8,17 @@
 #include "owlpch.h"
 
 #include "SoundData.h"
+
 #include "core/external/openal.h"
+#include "data/assets/AssetSearchPaths.h"
+
 #include <sndfile.h>
+
+#include <algorithm>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <vector>
 
 namespace owl::sound::openal {
 
@@ -22,6 +31,42 @@ enum struct SoundDataType : uint8_t {
 };
 
 namespace {
+
+// libsndfile reads the sound from memory: a pack entry or a file read whole.
+struct MemoryFile {
+	const std::vector<uint8_t>* bytes = nullptr;///< The encoded sound.
+	sf_count_t position = 0;///< Read cursor.
+};
+
+auto memoryLength(void* iUser) -> sf_count_t {
+	return static_cast<sf_count_t>(static_cast<MemoryFile*>(iUser)->bytes->size());
+}
+
+auto memorySeek(const sf_count_t iOffset, const int iWhence, void* iUser) -> sf_count_t {
+	auto* file = static_cast<MemoryFile*>(iUser);
+	const auto size = static_cast<sf_count_t>(file->bytes->size());
+	sf_count_t target = iOffset;
+	if (iWhence == SEEK_CUR)
+		target += file->position;
+	else if (iWhence == SEEK_END)
+		target += size;
+	file->position = std::clamp<sf_count_t>(target, 0, size);
+	return file->position;
+}
+
+auto memoryRead(void* oBuffer, const sf_count_t iCount, void* iUser) -> sf_count_t {
+	auto* file = static_cast<MemoryFile*>(iUser);
+	const auto count =
+			std::clamp<sf_count_t>(iCount, 0, static_cast<sf_count_t>(file->bytes->size()) - file->position);
+	std::memcpy(oBuffer, file->bytes->data() + file->position, static_cast<size_t>(count));
+	file->position += count;
+	return count;
+}
+
+auto memoryWrite(const void* /*iBuffer*/, sf_count_t /*iCount*/, void* /*iUser*/) -> sf_count_t { return 0; }
+
+auto memoryTell(void* iUser) -> sf_count_t { return static_cast<MemoryFile*>(iUser)->position; }
+
 auto sfFormatConvert(const int iSfFormat) -> SoundDataType {
 	switch (iSfFormat & SF_FORMAT_SUBMASK) {
 		case SF_FORMAT_PCM_24:
@@ -92,13 +137,19 @@ auto alFormatName(const ALenum iFormat) -> std::string {
 }// namespace
 
 SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iSpecifications} {
-	if (!exists(m_specification.file))
+	const auto bytes = data::assets::readAssetBytes(m_specification.file);
+	if (!bytes) {
+		OWL_CORE_WARN("SoundData: File '{}' not found in the pack nor the asset folders.", m_specification.file.string())
 		return;
-	// load sound
-	SF_INFO sfInfo;
-	auto* const file =
-
-			sf_open(reinterpret_cast<const char*>(m_specification.file.u8string().c_str()), SFM_READ, &sfInfo);
+	}
+	SF_VIRTUAL_IO io{.get_filelen = memoryLength,
+					 .seek = memorySeek,
+					 .read = memoryRead,
+					 .write = memoryWrite,
+					 .tell = memoryTell};
+	MemoryFile memory{.bytes = &*bytes};
+	SF_INFO sfInfo{};
+	auto* const file = sf_open_virtual(&io, SFM_READ, &sfInfo, &memory);
 	if (file == nullptr) {
 		OWL_CORE_WARN("SoundData: Failed to open file '{}'.", m_specification.file.string())
 		return;

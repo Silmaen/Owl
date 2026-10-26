@@ -20,6 +20,7 @@
 #include <fstream>
 #include <ios>
 #include <string>
+#include <thread>
 #include <vector>
 
 using namespace owl::data::assets::pack;
@@ -195,6 +196,40 @@ TEST_F(PackWriterReaderTest, many_entries) {
 		const std::string resultStr(result.value().begin(), result.value().end());
 		EXPECT_EQ(resultStr, expected);
 	}
+}
+
+TEST_F(PackWriterReaderTest, parallel_reads_return_every_entry) {
+	const auto packPath = m_tempDir / "test_parallel.owlpack";
+
+	PackWriter writer;
+	constexpr size_t count = 64;
+	for (size_t i = 0; i < count; ++i) {
+		const std::string data(1024 + i * 97, static_cast<char>('a' + i % 26));
+		writer.addData(std::vector<uint8_t>(data.begin(), data.end()), std::format("entry_{:03d}.dat", i),
+					   AssetType::Other);
+	}
+	ASSERT_TRUE(writer.write(packPath, PackFlags::Default));
+
+	PackReader reader;
+	ASSERT_TRUE(reader.open(packPath));
+	constexpr size_t threadCount = 8;
+	std::vector<size_t> mismatches(threadCount, 0);
+	{
+		std::vector<std::jthread> threads;
+		threads.reserve(threadCount);
+		for (size_t t = 0; t < threadCount; ++t) {
+			threads.emplace_back([&reader, &mismatches, t]() -> void {
+				for (size_t i = 0; i < count; ++i) {
+					const size_t index = (i + t * 7) % count;
+					const auto entry = reader.readEntry(std::format("entry_{:03d}.dat", index));
+					if (!entry.has_value() || entry->size() != 1024 + index * 97 ||
+						entry->front() != static_cast<uint8_t>('a' + index % 26))
+						++mismatches[t];
+				}
+			});
+		}
+	}
+	for (size_t t = 0; t < threadCount; ++t) EXPECT_EQ(mismatches[t], 0u) << "thread " << t;
 }
 
 TEST_F(PackWriterReaderTest, empty_pack) {

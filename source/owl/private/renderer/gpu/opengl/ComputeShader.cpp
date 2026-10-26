@@ -13,10 +13,12 @@
 #include "Shader.h"
 
 #include "core/external/opengl46.h"
+#include "data/assets/AssetSearchPaths.h"
 #include "renderer/Renderer.h"
 #include "renderer/utils/shaderFileUtils.h"
 
-#include <sstream>
+#include <string>
+#include <utility>
 
 namespace owl::renderer::gpu::opengl {
 
@@ -26,18 +28,16 @@ auto loadSlangSource(const std::string& iShaderName, const std::string& iRendere
 	const auto relative = std::filesystem::path("shaders") / iRenderer / (iShaderName + std::string(".slang"));
 	const auto sourcePath =
 			Renderer::getTextureLibrary().find(relative.generic_string()).value_or(std::filesystem::path{});
-	if (sourcePath.empty() || !exists(sourcePath)) {
+	if (sourcePath.empty()) {
 		OWL_CORE_ERROR("OpenGL compute shader: source not found for '{}' / '{}'.", iRenderer, iShaderName)
 		return {};
 	}
-	std::ifstream in(sourcePath, std::ios::binary);
-	if (!in.is_open()) {
+	auto source = data::assets::readAssetText(sourcePath);
+	if (!source) {
 		OWL_CORE_ERROR("OpenGL compute shader: cannot open '{}'.", sourcePath.string())
 		return {};
 	}
-	std::stringstream ss;
-	ss << in.rdbuf();
-	return ss.str();
+	return std::move(*source);
 }
 // Build and link a compute program from SPIR-V; 0 when the stage or the link fails (logged).
 auto linkProgram(const std::vector<uint32_t>& iSpirv, const std::string& iName) -> GLuint {

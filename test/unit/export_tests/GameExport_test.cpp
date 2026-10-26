@@ -79,6 +79,24 @@ auto readPackEntry(const std::filesystem::path& iPack, const std::string& iEntry
 }
 
 #ifdef OWL_PLATFORM_LINUX
+// Every warning, error or critical line of a log, one per line.
+auto logProblems(const std::string& iLog) -> std::string {
+	std::string problems;
+	static const std::regex g_problem(R"(\[(warning|error|critical)\][^\n]*)");
+	for (auto it = std::sregex_iterator(iLog.begin(), iLog.end(), g_problem); it != std::sregex_iterator(); ++it)
+		problems += it->str() + "\n";
+	return problems;
+}
+
+// Vulkan on lavapipe (CPU capped as in the image tests) and OpenAL Soft on its null device: no GPU, no sound card.
+constexpr auto g_lavapipeEnvironment = "GALLIUM_OVERRIDE_CPU_CAPS=sse4.1 MESA_SHADER_CACHE_DISABLE=true "
+									   "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json ALSOFT_DRIVERS=null";
+
+auto canRunOnLavapipe() -> bool {
+	const auto* display = std::getenv("DISPLAY");
+	return display != nullptr && *display != '\0' && exists(std::filesystem::path{"/usr/share/vulkan/icd.d/lvp_icd.json"});
+}
+
 auto runCommand(const std::string& iCommand) -> int {
 	// NOLINTNEXTLINE(bugprone-command-processor) Launching the game is the test.
 	const int status = std::system(iCommand.c_str());
@@ -479,13 +497,24 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 	const int exitCode = runCommand(std::format("cd '{}' && '{}' --headless --smoke-test 60 > runner.txt 2>&1",
 												workDir.string(), (moved / "launch.sh").string()));
 	const auto log = readFile(workDir / "Owl.log");
-	std::string problems;
-	static const std::regex g_problem(R"(\[(warning|error|critical)\][^\n]*)");
-	for (auto it = std::sregex_iterator(log.begin(), log.end(), g_problem); it != std::sregex_iterator(); ++it)
-		problems += it->str() + "\n";
 	EXPECT_EQ(exitCode, 0) << readFile(workDir / "runner.txt");
-	EXPECT_TRUE(problems.empty()) << problems;
+	EXPECT_EQ(logProblems(log), "");
 	EXPECT_NE(log.find(std::format("Smoke test passed on {} scene(s)", sceneCount)), std::string::npos) << log;
+
+	// The GPU run loads every shader, texture, font and sound, all from the pack.
+	if (canRunOnLavapipe()) {
+		const int gpuExitCode = runCommand(std::format(
+				"cd '{}' && {} '{}' --smoke-test 5 > runner_gpu.txt 2>&1", workDir.string(), g_lavapipeEnvironment,
+				(moved / "launch.sh").string()));
+		const auto gpuLog = readFile(workDir / "Owl.log");
+		EXPECT_EQ(gpuExitCode, 0) << readFile(workDir / "runner_gpu.txt");
+		EXPECT_EQ(logProblems(gpuLog), "");
+		EXPECT_EQ(gpuLog.find("Compiling Slang shader"), std::string::npos) << "a shader was compiled at start";
+		EXPECT_NE(gpuLog.find(std::format("Smoke test passed on {} scene(s)", sceneCount)), std::string::npos)
+				<< gpuLog;
+	}
+	for (const auto* written: {"assets", "cache"})
+		EXPECT_FALSE(exists(moved / written)) << written << " written next to the game";
 	std::error_code ec;
 	std::filesystem::remove_all(root, ec);
 }
