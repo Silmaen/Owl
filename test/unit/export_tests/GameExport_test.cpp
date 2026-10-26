@@ -350,8 +350,9 @@ TEST_F(GameExporterFixture, ExportPacksOnlyTheEngineFilesOfTheGame) {
 		GTEST_SKIP() << "No engine shaders in the asset directories of the test.";
 	EXPECT_TRUE(flat->renderers.empty());
 	EXPECT_GT(flat->engineFilesSkipped, 0u);
-	if (!m_bakedAssets.empty())
+	if (!m_bakedAssets.empty()) {
 		EXPECT_EQ(flat->shadersBaked, 0u) << "the engine shaders come baked by the build";
+	}
 	for (const auto* absent: {"shaders/renderer3D/", "shaders/raycast_dda/", "shaders/isometric/",
 							  "shaders/frustum_culling/", "icons/", "logo/", "fonts/Inter-Regular.ttf"})
 		EXPECT_FALSE(hasPrefix(flatEntries, absent)) << absent;
