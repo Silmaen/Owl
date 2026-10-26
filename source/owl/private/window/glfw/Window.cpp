@@ -35,12 +35,14 @@ namespace owl::window::glfw {
 namespace {
 
 #ifdef OWL_PLATFORM_LINUX
-// GLFW unloads Xlib at glfwTerminate: its process-lifetime caches would then show as leaks to LeakSanitizer.
+// GLFW unloads Xlib and its extensions at glfwTerminate: their process-lifetime caches would show as leaks to LSan.
 void keepX11LibrariesLoaded() {
-	for (const char* library: {"libX11.so.6", "libX11-xcb.so.1", "libxcb.so.1"})
+	for (const char* library: {"libX11.so.6", "libX11-xcb.so.1", "libxcb.so.1", "libXcursor.so.1", "libXrandr.so.2",
+							   "libXinerama.so.1", "libXrender.so.1", "libXxf86vm.so.1", "libXi.so.6", "libXext.so.6"})
 		dlopen(library, RTLD_LAZY | RTLD_NOLOAD | RTLD_NODELETE);
 }
 #endif
+
 uint8_t g_GlfwWindowCount = 0;
 Platform g_GlfwPlatform = Platform::None;
 // Joystick events are global in GLFW: they go to the first window still open.

@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- GLFW on X11 keeps Xlib loaded after `glfwTerminate`: LeakSanitizer no longer reports its caches as leaks when a game window closes.
+- GLFW on X11 keeps Xlib and its extensions loaded after `glfwTerminate`: LeakSanitizer no longer reports their caches as leaks when a game window closes.
 - The coverage presets (`linux-gcc-debug`, `linux-clang-debug`) multiply the Lua time quota by 4: a gcov build of the Tower Defence scenarios ran out of it on a busy agent.
 - `transcodeKtx2` refuses data shorter than a KTX2 header before libktx, which leaked its memory stream on it (Sanitizer Address).
 - `PackReader::readEntry` is thread-safe: asynchronous texture loads no longer share one file stream unguarded.
