@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "core/SerializerImpl.h"
+#include "data/assets/AssetReference.h"
 #include "core/YamlNode.h"
 #include "scene/component/LuaScript.h"
 
@@ -118,7 +119,7 @@ auto readValue(const core::YamlNode& iNode, const script::ScriptPropertyType iTy
 
 void writeFields(YAML::Emitter& ioEmitter, const LuaScript& iScript) {
 	ioEmitter << YAML::BeginMap;
-	ioEmitter << YAML::Key << "scriptPath" << YAML::Value << iScript.scriptPath;
+	ioEmitter << YAML::Key << "scriptPath" << YAML::Value << data::assets::toAssetReference(iScript.scriptPath);
 	if (!iScript.properties.empty()) {
 		ioEmitter << YAML::Key << "properties" << YAML::Value << YAML::BeginSeq;
 		for (const auto& prop: iScript.properties) {
@@ -166,7 +167,7 @@ auto LuaScript::fromYaml(const std::string& iText) -> std::optional<LuaScript> {
 
 void LuaScript::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["scriptPath"])
-		scriptPath = iNode.getImpl()->node["scriptPath"].as<std::string>();
+		scriptPath = data::assets::toAssetPath(iNode.getImpl()->node["scriptPath"].as<std::string>());
 	properties.clear();
 	if (const auto propsNode = iNode.getImpl()->node["properties"]; propsNode && propsNode.isSequence()) {
 		for (const auto propNode: propsNode) {

@@ -11,6 +11,7 @@
 
 #include "app/Application.h"
 #include "core/task/Scheduler.h"
+#include "data/assets/AssetReference.h"
 #include "data/assets/pack/PackExtractor.h"
 #include "null/Texture.h"
 #include "renderer/Renderer.h"
@@ -26,9 +27,24 @@
 #include <format>
 #include <fstream>
 #include <span>
+#include <string>
 #include <sstream>
 
 namespace owl::renderer::gpu {
+
+namespace {
+
+void applyImportSettings(Texture2D& ioTexture, const std::string& iName) {
+	if (!app::Application::instanced())
+		return;
+	const auto& registry = app::Application::get().getAssetRegistry();
+	if (const auto guid = registry.findGuid(iName); guid) {
+		if (const auto entry = registry.find(*guid); entry && entry->meta.texture.nearest)
+			ioTexture.setFilterMode(FilterMode::Nearest);
+	}
+}
+
+}// namespace
 
 Texture::Texture(std::filesystem::path iPath) : m_path{std::move(iPath)} {}
 
@@ -39,7 +55,7 @@ Texture::Texture(const Specification& iSpecs) : m_specification{iSpecs} {}
 		return "emp:";
 	}
 	if (!m_name.empty()) {
-		return "nam:" + m_name;
+		return data::assets::toTextureReference("nam:" + m_name);
 	}
 	if (!m_path.empty()) {
 		// A file inside an asset directory is saved by name so the scene stays portable (packs, other machines).
@@ -48,7 +64,7 @@ Texture::Texture(const Specification& iSpecs) : m_specification{iSpecs} {}
 			for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 				if (const auto rel = normalized.lexically_relative(assetsPath.lexically_normal());
 					!rel.empty() && *rel.begin() != "..")
-					return "nam:" + rel.generic_string();
+					return data::assets::toTextureReference("nam:" + rel.generic_string());
 			}
 		}
 		return "pat:" + m_path.string();
@@ -212,10 +228,11 @@ auto resolveTextureSource(std::string_view iKey, const std::string& iValue) -> R
 }// namespace
 
 auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) -> shared<Texture2D> {
-	if (iTextureSerializedName.size() < 4)
+	const auto serialized = data::assets::fromTextureReference(iTextureSerializedName);
+	if (serialized.size() < 4)
 		return nullptr;
-	const auto key = iTextureSerializedName.substr(0, 4);
-	const auto val = iTextureSerializedName.substr(4);
+	const auto key = serialized.substr(0, 4);
+	const auto val = serialized.substr(4);
 	if (key == "emp:")
 		return create(Specification{.size = {0, 0}, .format = ImageFormat::Rgb8});
 	if (key == "nam:") {
@@ -228,6 +245,7 @@ auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) 
 					auto texture = create(tempFile);
 					if (texture != nullptr) {
 						texture->m_name = val;
+						applyImportSettings(*texture, val);
 						return texture;
 					}
 				} else {
@@ -241,8 +259,10 @@ auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) 
 			for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 				if (const std::filesystem::path filePath = assetsPath / name; std::filesystem::exists(filePath)) {
 					auto texture = create(filePath);
-					if (texture != nullptr)
+					if (texture != nullptr) {
 						texture->m_name = val;
+						applyImportSettings(*texture, val);
+					}
 					return texture;
 				}
 			}
@@ -261,28 +281,29 @@ auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) 
 
 auto Texture2D::createFromSerializedAsync(const std::string& iTextureSerializedName, core::task::Scheduler& ioScheduler)
 		-> shared<Texture2D> {
-	if (iTextureSerializedName.size() < 4) {
+	const auto serialized = data::assets::fromTextureReference(iTextureSerializedName);
+	if (serialized.size() < 4) {
 		return nullptr;
 	}
-	const auto key = iTextureSerializedName.substr(0, 4);
+	const auto key = serialized.substr(0, 4);
 	// "emp:" and "siz:" do not carry a decodable image; use the sync factory.
 	if (key == "emp:" || key == "siz:") {
-		return createFromSerialized(iTextureSerializedName);
+		return createFromSerialized(serialized);
 	}
 	if (key != "nam:" && key != "pat:") {
 		return nullptr;
 	}
-	const auto val = iTextureSerializedName.substr(4);
+	const auto val = serialized.substr(4);
 
 	auto source = resolveTextureSource(key, val);
 	if (source.bytes.empty()) {
 		// Could not get bytes; fall back to sync path which handles the warning + failure cleanly.
-		return createFromSerialized(iTextureSerializedName);
+		return createFromSerialized(serialized);
 	}
 
 	const auto peeked = peekImageSize(source.bytes);
 	if (!peeked) {
-		return createFromSerialized(iTextureSerializedName);
+		return createFromSerialized(serialized);
 	}
 
 	auto texture = create(Specification{.size = *peeked, .format = ImageFormat::Rgba8, .generateMips = false});
@@ -291,6 +312,7 @@ auto Texture2D::createFromSerializedAsync(const std::string& iTextureSerializedN
 	}
 	if (!source.name.empty()) {
 		texture->m_name = source.name;
+		applyImportSettings(*texture, source.name);
 	}
 	if (!source.path.empty()) {
 		texture->m_path = source.path;
@@ -329,14 +351,15 @@ auto Texture2D::createFromSerializedAsync(const std::string& iTextureSerializedN
 }
 
 auto Texture2D::createFromSerializedForDeserialize(const std::string& iTextureSerializedName) -> shared<Texture2D> {
+	const auto serialized = data::assets::fromTextureReference(iTextureSerializedName);
 	if (!app::Application::instanced())
-		return createFromSerialized(iTextureSerializedName);
+		return createFromSerialized(serialized);
 	auto& library = Renderer::getTextureLibrary();
-	if (library.exists(iTextureSerializedName))
-		return library.get(iTextureSerializedName);
-	auto texture = createFromSerializedAsync(iTextureSerializedName, app::Application::get().getTaskScheduler());
+	if (library.exists(serialized))
+		return library.get(serialized);
+	auto texture = createFromSerializedAsync(serialized, app::Application::get().getTaskScheduler());
 	if (texture)
-		library.add(iTextureSerializedName, texture);
+		library.add(serialized, texture);
 	return texture;
 }
 

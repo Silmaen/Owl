@@ -44,8 +44,6 @@ enum struct Importer : uint8_t {
 struct OWL_API TextureImportSettings {
 	/// Nearest-texel filtering (pixel art) instead of bilinear.
 	bool nearest{false};
-	/// Mipmaps generated at upload (ignored with nearest filtering).
-	bool mips{false};
 
 	/**
 	 * @brief

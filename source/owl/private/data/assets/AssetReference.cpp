@@ -64,4 +64,17 @@ auto toAssetReference(const std::string_view iPath) -> std::string {
 	return std::string{iPath};
 }
 
+auto toTextureReference(const std::string_view iSerialized) -> std::string {
+	if (!iSerialized.starts_with(g_TextureNamePrefix))
+		return std::string{iSerialized};
+	auto reference = toAssetReference(iSerialized.substr(g_TextureNamePrefix.size()));
+	return reference.starts_with(g_GuidReferencePrefix) ? reference : std::string{iSerialized};
+}
+
+auto fromTextureReference(const std::string_view iSerialized) -> std::string {
+	if (!iSerialized.starts_with(g_GuidReferencePrefix))
+		return std::string{iSerialized};
+	return std::format("{}{}", g_TextureNamePrefix, toAssetPath(iSerialized));
+}
+
 }// namespace owl::data::assets

@@ -14,6 +14,7 @@
 #include "core/Core.h"
 #include "core/Macros.h"
 #include "core/external/lua.h"
+#include "data/assets/AssetReference.h"
 #include "data/assets/AssetSearchPaths.h"
 #include "input/ActionFrame.h"
 #include "input/Gamepad.h"
@@ -398,7 +399,7 @@ auto luaInputGetGamepadStick(lua_State* iState) -> int {
 }
 
 auto luaSoundPlay(lua_State* iState) -> int {
-	const char* assetPath = luaL_checkstring(iState, 1);
+	const auto assetPath = data::assets::toAssetPath(luaL_checkstring(iState, 1));
 	if (sound::SoundSystem::getState() != sound::SoundSystem::State::Running) {
 		lua_pushinteger(iState, static_cast<lua_Integer>(sound::invalidSoundHandle));
 		return 1;
@@ -578,7 +579,7 @@ auto luaSceneLoadScene(lua_State* iState) -> int {
 		return 0;
 	const char* levelName = luaL_checkstring(iState, 1);
 	activeScene->teleportRequest.pending = true;
-	activeScene->teleportRequest.levelName = levelName;
+	activeScene->teleportRequest.levelName = data::assets::toAssetPath(levelName);
 	activeScene->teleportRequest.targetName.clear();
 	activeScene->teleportRequest.initialVelocity = {0.f, 0.f};
 	activeScene->teleportRequest.rotationDelta = 0.f;
@@ -860,7 +861,7 @@ auto luaEntitySetMesh(lua_State* iState) -> int {
 		lua_pushboolean(iState, 0);
 		return 1;
 	}
-	entity->getComponent<scene::component::MeshRenderer>().setMeshPath(path);
+	entity->getComponent<scene::component::MeshRenderer>().setMeshPath(data::assets::toAssetPath(path));
 	lua_pushboolean(iState, 1);
 	return 1;
 }
@@ -875,7 +876,7 @@ auto luaEntityGetMesh(lua_State* iState) -> int {
 
 auto luaEntitySetMaterial(lua_State* iState) -> int {
 	const auto slot = static_cast<int64_t>(luaL_checkinteger(iState, 2));
-	const std::string path = luaL_checkstring(iState, 3);
+	const std::string path = data::assets::toAssetPath(luaL_checkstring(iState, 3));
 	const auto entity = findEntity(iState);
 	if (!entity || !entity->hasComponent<scene::component::MeshRenderer>() || slot < -1) {
 		lua_pushboolean(iState, 0);

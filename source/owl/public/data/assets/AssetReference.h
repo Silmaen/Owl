@@ -87,4 +87,23 @@ struct OWL_API ParsedReference {
  */
 [[nodiscard]] OWL_API auto toAssetReference(std::string_view iPath) -> std::string;
 
+/// Prefix of a texture serialized by name, relative to an asset directory.
+inline constexpr std::string_view g_TextureNamePrefix{"nam:"};
+
+/**
+ * @brief
+ *  Turn a texture serialized by name (`nam:<path>`) into a reference by GUID when the registry knows the file.
+ * @param[in] iSerialized A texture serialized string (`nam:`, `pat:`, `gid:`, `emp:`...).
+ * @return `gid:<guid>:<path>` for a known `nam:` texture, the string unchanged otherwise.
+ */
+[[nodiscard]] OWL_API auto toTextureReference(std::string_view iSerialized) -> std::string;
+
+/**
+ * @brief
+ *  Turn a texture reference by GUID into a texture serialized by name, at the current path of the file.
+ * @param[in] iSerialized A texture serialized string.
+ * @return `nam:<path>` for a `gid:` reference, the string unchanged otherwise.
+ */
+[[nodiscard]] OWL_API auto fromTextureReference(std::string_view iSerialized) -> std::string;
+
 }// namespace owl::data::assets

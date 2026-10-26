@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "TilemapCodec.h"
+#include "data/assets/AssetReference.h"
 #include "core/FormatVersionYaml.h"
 #include "core/SerializerImpl.h"
 #include "core/external/yaml.h"
@@ -114,7 +115,7 @@ auto readPayload(const YAML::Node& iRoot, const codec::TilemapFileParts& iParts,
 
 auto parseHeader(const YAML::Node& iRoot, TilemapAsset& oParsed) -> bool {
 	if (iRoot["tilesetPath"])
-		oParsed.tilesetPath = iRoot["tilesetPath"].as<std::string>();
+		oParsed.tilesetPath = data::assets::toAssetPath(iRoot["tilesetPath"].as<std::string>());
 	if (iRoot["width"])
 		oParsed.width = std::max(1u, iRoot["width"].as<uint32_t>());
 	if (iRoot["height"])
@@ -433,7 +434,7 @@ auto TilemapAsset::serializeToString(const std::string_view iName) const -> std:
 	emitter << YAML::Key << "Tilemap" << YAML::Value << std::string{iName};
 	core::emitFormatVersion(emitter, g_tilemapFormat);
 	if (!tilesetPath.empty())
-		emitter << YAML::Key << "tilesetPath" << YAML::Value << tilesetPath.generic_string();
+		emitter << YAML::Key << "tilesetPath" << YAML::Value << data::assets::toAssetReference(tilesetPath.generic_string());
 	emitter << YAML::Key << "width" << YAML::Value << width;
 	emitter << YAML::Key << "height" << YAML::Value << height;
 	emitter << YAML::Key << "cellSize" << YAML::Value << cellSize;

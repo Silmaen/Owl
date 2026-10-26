@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "core/SerializerImpl.h"
+#include "data/assets/AssetReference.h"
 #include "scene/component/Trigger.h"
 
 namespace owl::scene::component {
@@ -19,7 +20,7 @@ void Trigger::serialize(const core::Serializer& iOut) const {
 	if (trigger.type == SceneTrigger::TriggerType::Teleport || trigger.type == SceneTrigger::TriggerType::Victory ||
 		trigger.type == SceneTrigger::TriggerType::Death) {
 		if (!trigger.levelName.empty())
-			iOut.getImpl()->emitter << YAML::Key << "LevelName" << YAML::Value << trigger.levelName;
+			iOut.getImpl()->emitter << YAML::Key << "LevelName" << YAML::Value << data::assets::toAssetReference(trigger.levelName);
 		if (!trigger.targetName.empty())
 			iOut.getImpl()->emitter << YAML::Key << "TargetName" << YAML::Value << trigger.targetName;
 	}
@@ -44,7 +45,7 @@ void Trigger::deserialize(const core::Serializer& iNode) {
 			trigger.type = triggerType.value();
 	}
 	if (iNode.getImpl()->node["LevelName"])
-		trigger.levelName = iNode.getImpl()->node["LevelName"].as<std::string>();
+		trigger.levelName = data::assets::toAssetPath(iNode.getImpl()->node["LevelName"].as<std::string>());
 	if (iNode.getImpl()->node["TargetName"])
 		trigger.targetName = iNode.getImpl()->node["TargetName"].as<std::string>();
 	if (iNode.getImpl()->node["TimerDuration"])

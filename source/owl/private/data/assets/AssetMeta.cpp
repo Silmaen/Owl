@@ -128,7 +128,6 @@ auto parseMeta(const std::string_view iText, const std::string_view iSourceName)
 		}
 		if (const auto settings = root["Settings"]; settings && meta.importer == Importer::Texture) {
 			get(settings, "Nearest", meta.texture.nearest);
-			get(settings, "Mips", meta.texture.mips);
 		}
 	} catch (const YAML::Exception& exception) {
 		OWL_CORE_WARN("Assets: Cannot read sidecar '{}': {}.", iSourceName, exception.what())
@@ -146,7 +145,6 @@ auto serializeMeta(const AssetMeta& iMeta) -> std::string {
 	if (iMeta.importer == Importer::Texture) {
 		out << YAML::Key << "Settings" << YAML::Value << YAML::BeginMap;
 		out << YAML::Key << "Nearest" << YAML::Value << iMeta.texture.nearest;
-		out << YAML::Key << "Mips" << YAML::Value << iMeta.texture.mips;
 		out << YAML::EndMap;
 	}
 	out << YAML::EndMap;

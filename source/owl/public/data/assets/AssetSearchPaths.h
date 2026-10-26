@@ -43,9 +43,9 @@ namespace owl::data::assets {
 /**
  * @brief
  *  Read the text of an asset: from the open pack first, then from the asset search paths, then the path itself.
- * @param[in] iRelative Path of the asset, relative to an asset directory (or a path on disk).
+ * @param[in] iReference Path of the asset, relative to an asset directory (or a path on disk), or a `gid:` reference.
  * @return The text, or nothing when no source holds the asset.
  */
-[[nodiscard]] OWL_API auto readAssetText(const std::filesystem::path& iRelative) -> std::optional<std::string>;
+[[nodiscard]] OWL_API auto readAssetText(const std::filesystem::path& iReference) -> std::optional<std::string>;
 
 }// namespace owl::data::assets

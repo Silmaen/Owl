@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "core/SerializerImpl.h"
+#include "data/assets/AssetReference.h"
 #include "math/YamlSerializers.h"
 #include "renderer/MeshCache.h"
 #include "scene/component/MeshRenderer.h"
@@ -22,7 +23,7 @@ void MeshRenderer::serialize(const core::Serializer& iOut) const {
 	auto& out = iOut.getImpl()->emitter;
 	out << YAML::Key << key();
 	out << YAML::BeginMap;// MeshRenderer
-	out << YAML::Key << "mesh" << YAML::Value << meshPath.generic_string();
+	out << YAML::Key << "mesh" << YAML::Value << data::assets::toAssetReference(meshPath.generic_string());
 	out << YAML::Key << "color" << YAML::Value << color;
 	if (texture)
 		out << YAML::Key << "texture" << YAML::Value << texture->getSerializeString();
@@ -35,7 +36,7 @@ void MeshRenderer::serialize(const core::Serializer& iOut) const {
 		for (const auto& slot: materials) {
 			out << YAML::BeginMap;
 			if (!slot.material.empty())
-				out << YAML::Key << "material" << YAML::Value << slot.material.generic_string();
+				out << YAML::Key << "material" << YAML::Value << data::assets::toAssetReference(slot.material.generic_string());
 			if (!slot.overrides.isEmpty())
 				out << YAML::Key << "overrides" << YAML::Value << YAML::Load(slot.overrides.toYaml());
 			out << YAML::EndMap;
@@ -48,7 +49,7 @@ void MeshRenderer::serialize(const core::Serializer& iOut) const {
 void MeshRenderer::deserialize(const core::Serializer& iNode) {
 	const auto& node = iNode.getImpl()->node;
 	if (node["mesh"])
-		setMeshPath(node["mesh"].as<std::string>());
+		setMeshPath(data::assets::toAssetPath(node["mesh"].as<std::string>()));
 	if (node["color"])
 		color = node["color"].as<math::vec4>();
 	if (node["texture"])
@@ -60,7 +61,7 @@ void MeshRenderer::deserialize(const core::Serializer& iNode) {
 		for (const auto item: slots) {
 			MaterialSlot slot;
 			if (const auto path = item["material"]; path && path.isScalar())
-				slot.material = path.as<std::string>();
+				slot.material = data::assets::toAssetPath(path.as<std::string>());
 			if (const auto overrides = item["overrides"]; overrides && overrides.isMap())
 				slot.overrides = renderer::MaterialOverrides::fromYaml(overrides.emit());
 			materials.push_back(std::move(slot));

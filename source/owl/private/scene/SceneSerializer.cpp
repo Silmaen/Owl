@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "scene/SceneSerializer.h"
+#include "data/assets/AssetReference.h"
 
 #include "EntityLinkMigration.h"
 #include "HudLayoutMigration.h"
@@ -345,7 +346,7 @@ auto SceneSerializer::serializeToString() const -> std::string {
 	mp_scene->assignEntityLinkIds();
 	if (m_kind == DocumentKind::Scene) {
 		if (const auto& hudPath = mp_scene->getHudPath(); hudPath)
-			sOut.getImpl()->emitter << YAML::Key << "Hud" << YAML::Value << *hudPath;
+			sOut.getImpl()->emitter << YAML::Key << "Hud" << YAML::Value << data::assets::toAssetReference(*hudPath);
 		if (const auto& enabled = mp_scene->getEnabledRenderers(); !enabled.isEmpty()) {
 			sOut.getImpl()->emitter << YAML::Key << "EnabledRenderers" << YAML::Value
 									<< renderer::enabledToYaml(enabled);
@@ -488,7 +489,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 			mp_scene->setHudPath(std::string{});
 		} else {
 			if (const auto hud = root["Hud"]; hud.isScalar())
-				mp_scene->setHudPath(hud.as<std::string>());
+				mp_scene->setHudPath(data::assets::toAssetPath(hud.as<std::string>()));
 			if (const auto enabled = root["EnabledRenderers"]; enabled)
 				mp_scene->getEnabledRenderers() = renderer::enabledFromYaml(enabled);
 			mp_scene->getPhysicsSettings() = deserializePhysicsSettings(root["Physics"]);
