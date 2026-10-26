@@ -79,7 +79,7 @@ Entities:
     Hierarchy:
       {}
     LuaScript:
-      scriptPath: scripts/ui/main_menu.lua
+      scriptPath: gid:c88a96679209db15:scripts/ui/main_menu.lua
   - Entity: 700000000000000021
     Tag: {tag: SaveGroup}
     Transform:
@@ -244,7 +244,7 @@ Entities:
     Hierarchy: {parentId: 700000000000000020}
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/logo_owl.png
+      texture: gid:97910e78cf83f623:textures/ui/logo_owl.png
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]

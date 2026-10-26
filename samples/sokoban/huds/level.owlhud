@@ -201,7 +201,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plank.png
+      texture: gid:2a9b340c4719670c:textures/ui/plank.png
   - Entity: 7290000000000000008
     Tag:
       tag: RestartButton
@@ -266,7 +266,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plank.png
+      texture: gid:2a9b340c4719670c:textures/ui/plank.png
   - Entity: 7290000000000000010
     Tag:
       tag: UndoButton
@@ -331,7 +331,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plank.png
+      texture: gid:2a9b340c4719670c:textures/ui/plank.png
   - Entity: 7290000000000000012
     Tag:
       tag: MessageText
@@ -494,7 +494,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plank.png
+      texture: gid:2a9b340c4719670c:textures/ui/plank.png
   - Entity: 7290000000000000017
     Tag:
       tag: LevelsButton
@@ -559,7 +559,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plank.png
+      texture: gid:2a9b340c4719670c:textures/ui/plank.png
   - Entity: 7290000000000000019
     Tag:
       tag: PauseRestartButton
@@ -624,7 +624,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plank.png
+      texture: gid:2a9b340c4719670c:textures/ui/plank.png
   - Entity: 7290000000000000021
     Tag:
       tag: ResumeButton
@@ -689,4 +689,4 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plank.png
+      texture: gid:2a9b340c4719670c:textures/ui/plank.png

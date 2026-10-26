@@ -15,6 +15,6 @@ Entities:
       color: [1, 1, 1, 0.8]
       lit: false
       tilingFactor: 1
-      texture: nam:textures/puff.png
+      texture: gid:a2fd5d94b524841a:textures/puff.png
     RendererTag:
       Name: sprites

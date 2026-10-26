@@ -13,7 +13,7 @@ Entities:
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/grunt.png
+      texture: gid:bcf0aba60932970d:textures/enemies/grunt.png
       columns: 8
       rows: 9
       firstFrame: 0

@@ -61,7 +61,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/world_map.png
+      texture: gid:2a57eef91fc3ba61:textures/ui/world_map.png
   - Entity: 7440000000000000005
     Tag:
       tag: SeaGlint
@@ -76,7 +76,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 0]
       tilingFactor: 1
-      texture: nam:textures/ui/wave.png
+      texture: gid:9c701d519e3367c7:textures/ui/wave.png
   - Entity: 7440000000000000006
     Tag:
       tag: SeaGlint
@@ -91,7 +91,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 0]
       tilingFactor: 1
-      texture: nam:textures/ui/wave.png
+      texture: gid:9c701d519e3367c7:textures/ui/wave.png
   - Entity: 7440000000000000007
     Tag:
       tag: SeaGlint
@@ -106,7 +106,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 0]
       tilingFactor: 1
-      texture: nam:textures/ui/wave.png
+      texture: gid:9c701d519e3367c7:textures/ui/wave.png
   - Entity: 7440000000000000008
     Tag:
       tag: SeaGlint
@@ -121,7 +121,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 0]
       tilingFactor: 1
-      texture: nam:textures/ui/wave.png
+      texture: gid:9c701d519e3367c7:textures/ui/wave.png
   - Entity: 7440000000000000009
     Tag:
       tag: SeaGlint
@@ -136,7 +136,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 0]
       tilingFactor: 1
-      texture: nam:textures/ui/wave.png
+      texture: gid:9c701d519e3367c7:textures/ui/wave.png
   - Entity: 7440000000000000010
     Tag:
       tag: SeaGlint
@@ -151,7 +151,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 0]
       tilingFactor: 1
-      texture: nam:textures/ui/wave.png
+      texture: gid:9c701d519e3367c7:textures/ui/wave.png
   - Entity: 7440000000000000011
     Tag:
       tag: SeaGlint
@@ -166,7 +166,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 0]
       tilingFactor: 1
-      texture: nam:textures/ui/wave.png
+      texture: gid:9c701d519e3367c7:textures/ui/wave.png
   - Entity: 7440000000000000012
     Tag:
       tag: Capital
@@ -180,7 +180,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/sites.png
+      texture: gid:f216ae51422cb89f:textures/ui/sites.png
       columns: 4
       rows: 1
       firstFrame: 3
@@ -201,7 +201,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000014
     Tag:
       tag: PathDot 1
@@ -216,7 +216,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000015
     Tag:
       tag: PathDot 1
@@ -231,7 +231,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000016
     Tag:
       tag: SiteRing
@@ -246,7 +246,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
-      texture: nam:textures/fx/ring.png
+      texture: gid:7ab27ea1f33c136c:textures/fx/ring.png
   - Entity: 7440000000000000017
     Tag:
       tag: Site
@@ -260,7 +260,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/sites.png
+      texture: gid:f216ae51422cb89f:textures/ui/sites.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -280,7 +280,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/flags.png
+      texture: gid:8dc0ee028e6e54ea:textures/ui/flags.png
       columns: 4
       rows: 2
       firstFrame: 0
@@ -300,7 +300,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -320,7 +320,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -340,7 +340,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -361,7 +361,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000023
     Tag:
       tag: PathDot 2
@@ -376,7 +376,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000024
     Tag:
       tag: PathDot 2
@@ -391,7 +391,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000025
     Tag:
       tag: PathDot 2
@@ -406,7 +406,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000026
     Tag:
       tag: PathDot 2
@@ -421,7 +421,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000027
     Tag:
       tag: PathDot 2
@@ -436,7 +436,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000028
     Tag:
       tag: PathDot 2
@@ -451,7 +451,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000029
     Tag:
       tag: PathDot 2
@@ -466,7 +466,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000030
     Tag:
       tag: SiteRing
@@ -481,7 +481,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
-      texture: nam:textures/fx/ring.png
+      texture: gid:7ab27ea1f33c136c:textures/fx/ring.png
   - Entity: 7440000000000000031
     Tag:
       tag: Site
@@ -495,7 +495,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/sites.png
+      texture: gid:f216ae51422cb89f:textures/ui/sites.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -515,7 +515,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/flags.png
+      texture: gid:8dc0ee028e6e54ea:textures/ui/flags.png
       columns: 4
       rows: 2
       firstFrame: 0
@@ -535,7 +535,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -555,7 +555,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -575,7 +575,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -596,7 +596,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000037
     Tag:
       tag: PathDot 3
@@ -611,7 +611,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000038
     Tag:
       tag: PathDot 3
@@ -626,7 +626,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000039
     Tag:
       tag: PathDot 3
@@ -641,7 +641,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000040
     Tag:
       tag: PathDot 3
@@ -656,7 +656,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000041
     Tag:
       tag: PathDot 3
@@ -671,7 +671,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000042
     Tag:
       tag: PathDot 3
@@ -686,7 +686,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000043
     Tag:
       tag: PathDot 3
@@ -701,7 +701,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000044
     Tag:
       tag: PathDot 3
@@ -716,7 +716,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000045
     Tag:
       tag: PathDot 3
@@ -731,7 +731,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000046
     Tag:
       tag: PathDot 3
@@ -746,7 +746,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000047
     Tag:
       tag: SiteRing
@@ -761,7 +761,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
-      texture: nam:textures/fx/ring.png
+      texture: gid:7ab27ea1f33c136c:textures/fx/ring.png
   - Entity: 7440000000000000048
     Tag:
       tag: Site
@@ -775,7 +775,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/sites.png
+      texture: gid:f216ae51422cb89f:textures/ui/sites.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -795,7 +795,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/flags.png
+      texture: gid:8dc0ee028e6e54ea:textures/ui/flags.png
       columns: 4
       rows: 2
       firstFrame: 0
@@ -815,7 +815,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -835,7 +835,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -855,7 +855,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -876,7 +876,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000054
     Tag:
       tag: PathDot 4
@@ -891,7 +891,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000055
     Tag:
       tag: PathDot 4
@@ -906,7 +906,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000056
     Tag:
       tag: SiteRing
@@ -921,7 +921,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
-      texture: nam:textures/fx/ring.png
+      texture: gid:7ab27ea1f33c136c:textures/fx/ring.png
   - Entity: 7440000000000000057
     Tag:
       tag: Site
@@ -935,7 +935,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/sites.png
+      texture: gid:f216ae51422cb89f:textures/ui/sites.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -955,7 +955,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/flags.png
+      texture: gid:8dc0ee028e6e54ea:textures/ui/flags.png
       columns: 4
       rows: 2
       firstFrame: 0
@@ -975,7 +975,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -995,7 +995,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1015,7 +1015,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1036,7 +1036,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000063
     Tag:
       tag: PathDot 5
@@ -1051,7 +1051,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000064
     Tag:
       tag: PathDot 5
@@ -1066,7 +1066,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000065
     Tag:
       tag: PathDot 5
@@ -1081,7 +1081,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000066
     Tag:
       tag: PathDot 5
@@ -1096,7 +1096,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000067
     Tag:
       tag: PathDot 5
@@ -1111,7 +1111,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000068
     Tag:
       tag: PathDot 5
@@ -1126,7 +1126,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000069
     Tag:
       tag: PathDot 5
@@ -1141,7 +1141,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000070
     Tag:
       tag: PathDot 5
@@ -1156,7 +1156,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000071
     Tag:
       tag: SiteRing
@@ -1171,7 +1171,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
-      texture: nam:textures/fx/ring.png
+      texture: gid:7ab27ea1f33c136c:textures/fx/ring.png
   - Entity: 7440000000000000072
     Tag:
       tag: Site
@@ -1185,7 +1185,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/sites.png
+      texture: gid:f216ae51422cb89f:textures/ui/sites.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -1205,7 +1205,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/flags.png
+      texture: gid:8dc0ee028e6e54ea:textures/ui/flags.png
       columns: 4
       rows: 2
       firstFrame: 0
@@ -1225,7 +1225,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1245,7 +1245,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1265,7 +1265,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1286,7 +1286,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000078
     Tag:
       tag: PathDot 6
@@ -1301,7 +1301,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000079
     Tag:
       tag: PathDot 6
@@ -1316,7 +1316,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000080
     Tag:
       tag: PathDot 6
@@ -1331,7 +1331,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000081
     Tag:
       tag: SiteRing
@@ -1346,7 +1346,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
-      texture: nam:textures/fx/ring.png
+      texture: gid:7ab27ea1f33c136c:textures/fx/ring.png
   - Entity: 7440000000000000082
     Tag:
       tag: Site
@@ -1360,7 +1360,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/sites.png
+      texture: gid:f216ae51422cb89f:textures/ui/sites.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -1380,7 +1380,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/flags.png
+      texture: gid:8dc0ee028e6e54ea:textures/ui/flags.png
       columns: 4
       rows: 2
       firstFrame: 0
@@ -1400,7 +1400,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1420,7 +1420,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1440,7 +1440,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1461,7 +1461,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000088
     Tag:
       tag: PathDot 7
@@ -1476,7 +1476,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000089
     Tag:
       tag: PathDot 7
@@ -1491,7 +1491,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000090
     Tag:
       tag: PathDot 7
@@ -1506,7 +1506,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000091
     Tag:
       tag: PathDot 7
@@ -1521,7 +1521,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000092
     Tag:
       tag: PathDot 7
@@ -1536,7 +1536,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000093
     Tag:
       tag: PathDot 7
@@ -1551,7 +1551,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000094
     Tag:
       tag: PathDot 7
@@ -1566,7 +1566,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000095
     Tag:
       tag: PathDot 7
@@ -1581,7 +1581,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000096
     Tag:
       tag: PathDot 7
@@ -1596,7 +1596,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000097
     Tag:
       tag: PathDot 7
@@ -1611,7 +1611,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000098
     Tag:
       tag: SiteRing
@@ -1626,7 +1626,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
-      texture: nam:textures/fx/ring.png
+      texture: gid:7ab27ea1f33c136c:textures/fx/ring.png
   - Entity: 7440000000000000099
     Tag:
       tag: Site
@@ -1640,7 +1640,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/sites.png
+      texture: gid:f216ae51422cb89f:textures/ui/sites.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -1660,7 +1660,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/flags.png
+      texture: gid:8dc0ee028e6e54ea:textures/ui/flags.png
       columns: 4
       rows: 2
       firstFrame: 0
@@ -1680,7 +1680,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1700,7 +1700,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1720,7 +1720,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1741,7 +1741,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000105
     Tag:
       tag: PathDot 8
@@ -1756,7 +1756,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000106
     Tag:
       tag: PathDot 8
@@ -1771,7 +1771,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000107
     Tag:
       tag: PathDot 8
@@ -1786,7 +1786,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000108
     Tag:
       tag: PathDot 8
@@ -1801,7 +1801,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000109
     Tag:
       tag: PathDot 8
@@ -1816,7 +1816,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000110
     Tag:
       tag: SiteRing
@@ -1831,7 +1831,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
-      texture: nam:textures/fx/ring.png
+      texture: gid:7ab27ea1f33c136c:textures/fx/ring.png
   - Entity: 7440000000000000111
     Tag:
       tag: Site
@@ -1845,7 +1845,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/sites.png
+      texture: gid:f216ae51422cb89f:textures/ui/sites.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -1865,7 +1865,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/flags.png
+      texture: gid:8dc0ee028e6e54ea:textures/ui/flags.png
       columns: 4
       rows: 2
       firstFrame: 0
@@ -1885,7 +1885,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1905,7 +1905,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1925,7 +1925,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -1946,7 +1946,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000117
     Tag:
       tag: PathDot 9
@@ -1961,7 +1961,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000118
     Tag:
       tag: PathDot 9
@@ -1976,7 +1976,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000119
     Tag:
       tag: PathDot 9
@@ -1991,7 +1991,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000120
     Tag:
       tag: PathDot 9
@@ -2006,7 +2006,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000121
     Tag:
       tag: PathDot 9
@@ -2021,7 +2021,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000122
     Tag:
       tag: PathDot 9
@@ -2036,7 +2036,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000123
     Tag:
       tag: PathDot 9
@@ -2051,7 +2051,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000124
     Tag:
       tag: PathDot 9
@@ -2066,7 +2066,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000125
     Tag:
       tag: SiteRing
@@ -2081,7 +2081,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
-      texture: nam:textures/fx/ring.png
+      texture: gid:7ab27ea1f33c136c:textures/fx/ring.png
   - Entity: 7440000000000000126
     Tag:
       tag: Site
@@ -2095,7 +2095,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/sites.png
+      texture: gid:f216ae51422cb89f:textures/ui/sites.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -2115,7 +2115,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/flags.png
+      texture: gid:8dc0ee028e6e54ea:textures/ui/flags.png
       columns: 4
       rows: 2
       firstFrame: 0
@@ -2135,7 +2135,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -2155,7 +2155,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -2175,7 +2175,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -2196,7 +2196,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000132
     Tag:
       tag: PathDot 10
@@ -2211,7 +2211,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000133
     Tag:
       tag: PathDot 10
@@ -2226,7 +2226,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000134
     Tag:
       tag: PathDot 10
@@ -2241,7 +2241,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000135
     Tag:
       tag: PathDot 10
@@ -2256,7 +2256,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000136
     Tag:
       tag: PathDot 10
@@ -2271,7 +2271,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ui/path_dash.png
+      texture: gid:844a75e13097239d:textures/ui/path_dash.png
   - Entity: 7440000000000000137
     Tag:
       tag: SiteRing
@@ -2286,7 +2286,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.82, 0.3, 0.9]
       tilingFactor: 1
-      texture: nam:textures/fx/ring.png
+      texture: gid:7ab27ea1f33c136c:textures/fx/ring.png
   - Entity: 7440000000000000138
     Tag:
       tag: Site
@@ -2300,7 +2300,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/sites.png
+      texture: gid:f216ae51422cb89f:textures/ui/sites.png
       columns: 4
       rows: 1
       firstFrame: 0
@@ -2320,7 +2320,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/flags.png
+      texture: gid:8dc0ee028e6e54ea:textures/ui/flags.png
       columns: 4
       rows: 2
       firstFrame: 0
@@ -2340,7 +2340,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -2360,7 +2360,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -2380,7 +2380,7 @@ Entities:
       parentId: 7440000000000000003
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/ui/stars.png
+      texture: gid:6e086c4f303a0bb3:textures/ui/stars.png
       columns: 2
       rows: 1
       firstFrame: 0
@@ -2401,7 +2401,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 0.5]
       tilingFactor: 1
-      texture: nam:textures/ui/cloud.png
+      texture: gid:4f42b25bc164cfc9:textures/ui/cloud.png
   - Entity: 7440000000000000144
     Tag:
       tag: Cloud
@@ -2416,7 +2416,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 0.5]
       tilingFactor: 1
-      texture: nam:textures/ui/cloud.png
+      texture: gid:4f42b25bc164cfc9:textures/ui/cloud.png
   - Entity: 7440000000000000145
     Tag:
       tag: Cloud
@@ -2431,7 +2431,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 0.5]
       tilingFactor: 1
-      texture: nam:textures/ui/cloud.png
+      texture: gid:4f42b25bc164cfc9:textures/ui/cloud.png
   - Entity: 7440000000000000146
     Tag:
       tag: Cloud
@@ -2446,7 +2446,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 0.5]
       tilingFactor: 1
-      texture: nam:textures/ui/cloud.png
+      texture: gid:4f42b25bc164cfc9:textures/ui/cloud.png
   - Entity: 7440000000000000147
     Tag:
       tag: MapCanvas
@@ -2463,7 +2463,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: scripts/ui/world_map.lua
+      scriptPath: gid:a95c1296a1cb3ed3:scripts/ui/world_map.lua
       properties:
         - name: levels
           type: strings
@@ -2611,7 +2611,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7440000000000000152
     Tag:
       tag: BonusButton
@@ -2676,7 +2676,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7440000000000000154
     Tag:
       tag: UpgradesButton
@@ -2741,7 +2741,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7440000000000000156
     Tag:
       tag: MarchButton
@@ -2806,7 +2806,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7440000000000000158
     Tag:
       tag: SiteTexts
@@ -3027,7 +3027,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/banner.png
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7440000000000000165
     Tag:
       tag: BonusLine10

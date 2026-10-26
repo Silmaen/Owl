@@ -13,7 +13,7 @@ Entities:
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/fx/fire.png
+      texture: gid:8921f86c3605ff50:textures/fx/fire.png
       columns: 4
       rows: 1
       firstFrame: 0

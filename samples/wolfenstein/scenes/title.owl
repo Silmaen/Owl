@@ -34,7 +34,7 @@ Entities:
       primary: true
       fixedAspectRatio: false
     LuaScript:
-      scriptPath: scripts/ui/title_view.lua
+      scriptPath: gid:17bea809a98c911c:scripts/ui/title_view.lua
       properties:
         - name: turn_speed
           type: float
@@ -50,7 +50,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     Tilemap:
-      tilemapPath: tilemaps/level_3.owltilemap
+      tilemapPath: gid:576f14da08956f69:tilemaps/level_3.owltilemap
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000003
@@ -77,7 +77,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/table.png
+      texture: gid:0bae311c1cdd4af2:textures/wolf3d/sprites/table.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000005
@@ -94,7 +94,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/spears.png
+      texture: gid:ee57c2f586e58d13:textures/wolf3d/sprites/spears.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000006
@@ -111,7 +111,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/spears.png
+      texture: gid:ee57c2f586e58d13:textures/wolf3d/sprites/spears.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000007
@@ -128,7 +128,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+      texture: gid:1bef1afa598d7f84:textures/wolf3d/sprites/lamp_ceiling_candle.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000008
@@ -145,7 +145,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
+      texture: gid:99dd0887b5978745:textures/wolf3d/sprites/lamp_ceiling.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000009
@@ -162,7 +162,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
+      texture: gid:99dd0887b5978745:textures/wolf3d/sprites/lamp_ceiling.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000010
@@ -179,7 +179,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+      texture: gid:1bef1afa598d7f84:textures/wolf3d/sprites/lamp_ceiling_candle.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000011
@@ -196,7 +196,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/spears.png
+      texture: gid:ee57c2f586e58d13:textures/wolf3d/sprites/spears.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000012
@@ -213,7 +213,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/spears.png
+      texture: gid:ee57c2f586e58d13:textures/wolf3d/sprites/spears.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000013
@@ -230,7 +230,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/tree_pot.png
+      texture: gid:2f8b81d58ed9d729:textures/wolf3d/sprites/tree_pot.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000014
@@ -247,7 +247,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/tree_pot.png
+      texture: gid:2f8b81d58ed9d729:textures/wolf3d/sprites/tree_pot.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000015
@@ -264,7 +264,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+      texture: gid:1bef1afa598d7f84:textures/wolf3d/sprites/lamp_ceiling_candle.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000016
@@ -281,7 +281,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/armor.png
+      texture: gid:6423115ffca2cf1d:textures/wolf3d/sprites/armor.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000017
@@ -298,7 +298,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/pit_water.png
+      texture: gid:a0a99118551ea7e8:textures/wolf3d/sprites/pit_water.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000018
@@ -315,7 +315,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/blue_pot.png
+      texture: gid:f8f542ab0542825b:textures/wolf3d/sprites/blue_pot.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000019
@@ -332,7 +332,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/blue_pot.png
+      texture: gid:f8f542ab0542825b:textures/wolf3d/sprites/blue_pot.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000020
@@ -349,7 +349,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/table_chairs.png
+      texture: gid:df7a58c368c95502:textures/wolf3d/sprites/table_chairs.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000021
@@ -366,7 +366,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/table_chairs.png
+      texture: gid:df7a58c368c95502:textures/wolf3d/sprites/table_chairs.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000022
@@ -383,7 +383,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/tree_pot.png
+      texture: gid:2f8b81d58ed9d729:textures/wolf3d/sprites/tree_pot.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000023
@@ -400,7 +400,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/tree_pot.png
+      texture: gid:2f8b81d58ed9d729:textures/wolf3d/sprites/tree_pot.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000024
@@ -417,7 +417,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
+      texture: gid:99dd0887b5978745:textures/wolf3d/sprites/lamp_ceiling.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000025
@@ -434,7 +434,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/armor.png
+      texture: gid:6423115ffca2cf1d:textures/wolf3d/sprites/armor.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000026
@@ -451,7 +451,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+      texture: gid:1bef1afa598d7f84:textures/wolf3d/sprites/lamp_ceiling_candle.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000027
@@ -468,7 +468,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/pilar.png
+      texture: gid:463b5e47ccfa390c:textures/wolf3d/sprites/pilar.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000028
@@ -485,7 +485,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/pilar.png
+      texture: gid:463b5e47ccfa390c:textures/wolf3d/sprites/pilar.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000029
@@ -502,7 +502,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_pilar.png
+      texture: gid:85d63581f13e877e:textures/wolf3d/sprites/lamp_pilar.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000030
@@ -519,7 +519,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+      texture: gid:1bef1afa598d7f84:textures/wolf3d/sprites/lamp_ceiling_candle.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000031
@@ -536,7 +536,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/pilar.png
+      texture: gid:463b5e47ccfa390c:textures/wolf3d/sprites/pilar.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000032
@@ -553,7 +553,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/pilar.png
+      texture: gid:463b5e47ccfa390c:textures/wolf3d/sprites/pilar.png
     RendererTag:
       Name: raycast_world
   - Entity: 3300000000000000033
@@ -572,7 +572,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: scripts/ui/title.lua
+      scriptPath: gid:956c92a3ae4c2827:scripts/ui/title.lua
   - Entity: 3300000000000000034
     Tag:
       tag: TitleArt
@@ -594,7 +594,7 @@ Entities:
       offsetUnit: [ScreenHeight, ScreenHeight]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/title.png
+      texture: gid:4023898092f80ec7:textures/ui/title.png
   - Entity: 3300000000000000035
     Tag:
       tag: ButtonPanel
@@ -685,7 +685,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plate.png
+      texture: gid:0bcddcb325526f99:textures/ui/plate.png
   - Entity: 3300000000000000038
     Tag:
       tag: SettingsButton
@@ -750,7 +750,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plate.png
+      texture: gid:0bcddcb325526f99:textures/ui/plate.png
   - Entity: 3300000000000000040
     Tag:
       tag: HowToButton
@@ -815,7 +815,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plate.png
+      texture: gid:0bcddcb325526f99:textures/ui/plate.png
   - Entity: 3300000000000000042
     Tag:
       tag: ContinueButton
@@ -880,7 +880,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plate.png
+      texture: gid:0bcddcb325526f99:textures/ui/plate.png
   - Entity: 3300000000000000044
     Tag:
       tag: NewGameButton
@@ -945,7 +945,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plate.png
+      texture: gid:0bcddcb325526f99:textures/ui/plate.png
   - Entity: 3300000000000000046
     Tag:
       tag: RecordBoard
@@ -1139,7 +1139,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plate.png
+      texture: gid:0bcddcb325526f99:textures/ui/plate.png
   - Entity: 3300000000000000052
     Tag:
       tag: HowToControls

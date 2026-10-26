@@ -53,7 +53,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: scripts/ui/settings.lua
+      scriptPath: gid:199499423f681f10:scripts/ui/settings.lua
   - Entity: 3310000000000000004
     Tag:
       tag: SettingsList
@@ -148,7 +148,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plate.png
+      texture: gid:0bcddcb325526f99:textures/ui/plate.png
   - Entity: 3310000000000000007
     Tag:
       tag: ResetButton
@@ -213,7 +213,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plate.png
+      texture: gid:0bcddcb325526f99:textures/ui/plate.png
   - Entity: 3310000000000000009
     Tag:
       tag: UiScaleSlider

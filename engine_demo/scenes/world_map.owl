@@ -1,6 +1,6 @@
 Scene: untitled
 FormatVersion: 7
-Hud: huds/world_map.owlhud
+Hud: gid:f3336c61a6af17b1:huds/world_map.owlhud
 EnabledRenderers:
 - {Name: raycast_world, Enabled: false}
 Entities:
@@ -12,7 +12,7 @@ Entities:
     scale: [1, 1, 1]
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/ui/controls_hint.lua
+    scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.lua
     properties:
     - {name: hint, type: string, value: HudHint}
     - {name: duration, type: float, value: 4.5}
@@ -23,7 +23,7 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   Tilemap:
-    tilemapPath: tilemaps/world_map.owltilemap
+    tilemapPath: gid:c9887101a7a153d0:tilemaps/world_map.owltilemap
     navigation: {mode: cells, layer: 2, source: terrain, maxRise: 0, climbCost: 0, allowSteep: false}
   Visibility: {gameVisible: true}
 - Entity: 9100000000000000011
@@ -99,7 +99,7 @@ Entities:
   Player: {primary: true, linearImpulse: 0, jumpImpulse: 0, canJump: false}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/world_player.lua
+    scriptPath: gid:0e92d49b91a88417:scripts/hub/world_player.lua
     properties:
     - {name: speed, type: float, value: 5}
 - Entity: 2000000000000000021
@@ -110,7 +110,7 @@ Entities:
     scale: [1.1111111, 1.1111111, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
     columns: 12
     rows: 21
     firstFrame: 148
@@ -159,7 +159,7 @@ Entities:
     lastFrame: 201
     frameDuration: 0.4
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000200
   Tag: {tag: Smoke_1_1}
   Transform:
@@ -233,7 +233,7 @@ Entities:
     lastFrame: 203
     frameDuration: 0.4
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000203
   Tag: {tag: Smoke_2_1}
   Transform:
@@ -307,7 +307,7 @@ Entities:
     lastFrame: 205
     frameDuration: 0.4
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000206
   Tag: {tag: Smoke_3_1}
   Transform:
@@ -381,7 +381,7 @@ Entities:
     lastFrame: 203
     frameDuration: 0.4
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000209
   Tag: {tag: Smoke_4_1}
   Transform:
@@ -453,7 +453,7 @@ Entities:
     lastFrame: 203
     frameDuration: 0.4
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000603
   Tag: {tag: Smoke_5_1}
   Transform:
@@ -496,7 +496,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "Level 5, the tavern: find the key, open the cellar.|Tavern. A 3D room to search, with a cellar under the trapdoor."}
@@ -516,7 +516,7 @@ Entities:
     lastFrame: 205
     frameDuration: 0.4
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000306
   Tag: {tag: Flag_ShrineW}
   Transform:
@@ -532,7 +532,7 @@ Entities:
     lastFrame: 201
     frameDuration: 0.4
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000307
   Tag: {tag: Flag_ShrineE}
   Transform:
@@ -548,7 +548,7 @@ Entities:
     lastFrame: 203
     frameDuration: 0.4
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000050
   Tag: {tag: Teleporter}
   Transform:
@@ -632,7 +632,7 @@ Entities:
     scale: [1.2, 1.2, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
     columns: 12
     rows: 21
     firstFrame: 83
@@ -650,7 +650,7 @@ Entities:
     scale: [1.3, 1.3, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
     columns: 12
     rows: 21
     firstFrame: 116
@@ -676,7 +676,7 @@ Entities:
     scale: [1.0, 1.0, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
     columns: 12
     rows: 21
     firstFrame: 81
@@ -699,7 +699,7 @@ Entities:
     scale: [1.0, 1.0, 1]
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
     columns: 12
     rows: 21
     firstFrame: 149
@@ -722,9 +722,9 @@ Entities:
     lastFrame: 159
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   LuaScript:
-    scriptPath: scripts/hub/hub_villager.lua
+    scriptPath: gid:9090f1881ffa4d14:scripts/hub/hub_villager.lua
     properties:
     - {name: idle_a, type: float, value: 159.0}
     - {name: idle_b, type: float, value: 242.0}
@@ -748,9 +748,9 @@ Entities:
     lastFrame: 156
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   LuaScript:
-    scriptPath: scripts/hub/hub_villager.lua
+    scriptPath: gid:9090f1881ffa4d14:scripts/hub/hub_villager.lua
     properties:
     - {name: idle_a, type: float, value: 156.0}
     - {name: idle_b, type: float, value: 233.0}
@@ -774,7 +774,7 @@ Entities:
     lastFrame: 144
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   Patrol:
     mode: PingPong
     speed: 0.9
@@ -786,7 +786,7 @@ Entities:
       - [29.5, -14.5, 0.5]
       - [35.5, -14.5, 0.5]
   LuaScript:
-    scriptPath: scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
     properties:
     - {name: idle_a, type: float, value: 144}
     - {name: idle_b, type: float, value: 218}
@@ -807,7 +807,7 @@ Entities:
     lastFrame: 157
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   Patrol:
     mode: PingPong
     speed: 1.1
@@ -819,7 +819,7 @@ Entities:
       - [39.5, -21.5, 0.5]
       - [52.5, -21.5, 0.5]
   LuaScript:
-    scriptPath: scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
     properties:
     - {name: idle_a, type: float, value: 157}
     - {name: idle_b, type: float, value: 236}
@@ -840,7 +840,7 @@ Entities:
     lastFrame: 145
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   Patrol:
     mode: PingPong
     speed: 0.7
@@ -852,7 +852,7 @@ Entities:
       - [8.5, -28.5, 0.5]
       - [19.5, -28.5, 0.5]
   LuaScript:
-    scriptPath: scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
     properties:
     - {name: idle_a, type: float, value: 145}
     - {name: idle_b, type: float, value: 221}
@@ -873,7 +873,7 @@ Entities:
     lastFrame: 146
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   Patrol:
     mode: PingPong
     speed: 0
@@ -884,7 +884,7 @@ Entities:
     waypoints:
       - [42.5, -23.5, 0.5]
   LuaScript:
-    scriptPath: scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
     properties:
     - {name: idle_a, type: float, value: 146}
     - {name: idle_b, type: float, value: 224}
@@ -905,7 +905,7 @@ Entities:
     lastFrame: 160
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   Patrol:
     mode: PingPong
     speed: 0
@@ -916,7 +916,7 @@ Entities:
     waypoints:
       - [46.5, -23.5, 0.5]
   LuaScript:
-    scriptPath: scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
     properties:
     - {name: idle_a, type: float, value: 160}
     - {name: idle_b, type: float, value: 245}
@@ -937,7 +937,7 @@ Entities:
     lastFrame: 147
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   Patrol:
     mode: PingPong
     speed: 0
@@ -948,7 +948,7 @@ Entities:
     waypoints:
       - [50.5, -23.5, 0.5]
   LuaScript:
-    scriptPath: scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
     properties:
     - {name: idle_a, type: float, value: 147}
     - {name: idle_b, type: float, value: 227}
@@ -969,7 +969,7 @@ Entities:
     lastFrame: 158
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   Patrol:
     mode: PingPong
     speed: 0
@@ -980,7 +980,7 @@ Entities:
     waypoints:
       - [30.5, -13.5, 0.5]
   LuaScript:
-    scriptPath: scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
     properties:
     - {name: idle_a, type: float, value: 158}
     - {name: idle_b, type: float, value: 239}
@@ -1001,7 +1001,7 @@ Entities:
     lastFrame: 146
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   Patrol:
     mode: PingPong
     speed: 0
@@ -1012,7 +1012,7 @@ Entities:
     waypoints:
       - [6.5, -9.5, 0.5]
   LuaScript:
-    scriptPath: scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
     properties:
     - {name: idle_a, type: float, value: 146}
     - {name: idle_b, type: float, value: 224}
@@ -1033,7 +1033,7 @@ Entities:
     lastFrame: 216
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   Patrol:
     mode: PingPong
     speed: 0.35
@@ -1045,7 +1045,7 @@ Entities:
       - [10.5, -28.5, 0.5]
       - [12.5, -28.5, 0.5]
   LuaScript:
-    scriptPath: scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
     properties:
     - {name: idle_a, type: float, value: 216}
     - {name: idle_b, type: float, value: 217}
@@ -1067,7 +1067,7 @@ Entities:
     lastFrame: 216
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   Patrol:
     mode: PingPong
     speed: 0.35
@@ -1079,7 +1079,7 @@ Entities:
       - [16.5, -28.5, 0.5]
       - [17.5, -28.5, 0.5]
   LuaScript:
-    scriptPath: scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
     properties:
     - {name: idle_a, type: float, value: 216}
     - {name: idle_b, type: float, value: 217}
@@ -1101,7 +1101,7 @@ Entities:
     lastFrame: 216
     frameDuration: 0.1
     loop: false
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   Patrol:
     mode: PingPong
     speed: 0.35
@@ -1113,7 +1113,7 @@ Entities:
       - [47.5, -27.5, 0.5]
       - [49.5, -27.5, 0.5]
   LuaScript:
-    scriptPath: scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
     properties:
     - {name: idle_a, type: float, value: 216}
     - {name: idle_b, type: float, value: 217}
@@ -1135,7 +1135,7 @@ Entities:
     lastFrame: 207
     frameDuration: 0.11
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000328
   Tag: {tag: Butterfly_2}
   Transform:
@@ -1151,7 +1151,7 @@ Entities:
     lastFrame: 209
     frameDuration: 0.11
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000329
   Tag: {tag: Butterfly_3}
   Transform:
@@ -1167,7 +1167,7 @@ Entities:
     lastFrame: 211
     frameDuration: 0.11
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000330
   Tag: {tag: Butterfly_4}
   Transform:
@@ -1183,7 +1183,7 @@ Entities:
     lastFrame: 213
     frameDuration: 0.11
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000331
   Tag: {tag: Butterfly_5}
   Transform:
@@ -1199,7 +1199,7 @@ Entities:
     lastFrame: 207
     frameDuration: 0.11
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000332
   Tag: {tag: Butterfly_6}
   Transform:
@@ -1215,7 +1215,7 @@ Entities:
     lastFrame: 209
     frameDuration: 0.11
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000333
   Tag: {tag: Butterfly_7}
   Transform:
@@ -1231,7 +1231,7 @@ Entities:
     lastFrame: 211
     frameDuration: 0.11
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000334
   Tag: {tag: Butterfly_8}
   Transform:
@@ -1247,7 +1247,7 @@ Entities:
     lastFrame: 213
     frameDuration: 0.11
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000335
   Tag: {tag: Sparrow_1}
   Transform:
@@ -1263,7 +1263,7 @@ Entities:
     lastFrame: 215
     frameDuration: 0.09
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000336
   Tag: {tag: Sparrow_2}
   Transform:
@@ -1279,7 +1279,7 @@ Entities:
     lastFrame: 215
     frameDuration: 0.09
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000337
   Tag: {tag: Sparrow_3}
   Transform:
@@ -1295,7 +1295,7 @@ Entities:
     lastFrame: 215
     frameDuration: 0.09
     loop: true
-    texture: nam:textures/atlases/town_atlas.png
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 - Entity: 2000000000000000338
   Tag: {tag: Cloud_1}
   Transform:
@@ -1458,7 +1458,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "Level 1, the platformer: run and jump over spikes and water, then reach the door at the top of the factory tower.|Platformer house. Keep an eye out for the secret cave behind the farm cliff."}
@@ -1472,7 +1472,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "Level 2, the raycast house: Wolfenstein in first person. Find an elevator, the secrets hide a second one.|Raycast house. Open the doors with E, and the minimap only shows what you have seen."}
@@ -1486,7 +1486,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "Level 3, the isometric town: build roads with the mouse and make the cars drive 100 trips.|Iso Town. Right click bulldozes, the cars follow the road graph."}
@@ -1500,7 +1500,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "Level 4, the voxel terrain: walk 100 blocks away from where you land. Space jumps, double tap flies.|Voxel house. The terrain is generated as you walk."}
@@ -1514,7 +1514,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "Danger! The lava crater is deadly. Keep away from it.|Crater of lava ahead: one step and it is over."}
@@ -1528,7 +1528,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Villager"}
     - {name: lines, type: string, value: "Nice day for a walk. The five houses of the village are the levels.|I cross the village every day. Mind the fountain, the stones are slippery.|Have you seen the lever in the east meadow? It opens the old gate in the west grove."}
@@ -1542,7 +1542,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Guard"}
     - {name: lines, type: string, value: "Halt! Ah, it is only you. Mind the lava in the north west forest, it is deadly.|All quiet on the square. When the five levels are done, the shrine will wake up.|The river stings. Cross it by the bridges."}
@@ -1556,7 +1556,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Wizard"}
     - {name: lines, type: string, value: "The portal in the shrine sleeps until you have finished the five levels.|Platformer, raycast, isometric town, voxels, tavern: five houses, five worlds.|My spells are only a little Lua. The bell is not mine, though."}
@@ -1570,7 +1570,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Knight"}
     - {name: lines, type: string, value: "I guard the high street. The raycast house is on the left, the iso town on the right.|A hero walks the village! Try the board near the entrance.|Finish every level and come back: the portal will answer."}
@@ -1584,7 +1584,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Farmer"}
     - {name: lines, type: string, value: "Wheat, cabbages and carrots. The hens are not for sale.|Rain is late this year. The river is full, though.|Do not step on my beds, friend."}
@@ -1598,7 +1598,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Merchant1"}
     - {name: lines, type: string, value: "Fresh bread! Nothing for sale today, but the smell is free.|The bakery opens before the bell. Come early next time."}
@@ -1612,7 +1612,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Merchant2"}
     - {name: lines, type: string, value: "Milk and cheese. The best of the valley.|The market is quiet. Everybody is busy with the levels."}
@@ -1626,7 +1626,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Merchant3"}
     - {name: lines, type: string, value: "Cider of the village, stored since the last harvest.|They say the portal glows when the five levels are done."}
@@ -1640,7 +1640,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Priest"}
     - {name: lines, type: string, value: "Peace be with you. The bell rings now and then, do not mind it.|The shrine in the north east keeps the portal. Only the finished levels wake it.|The church stands here since before the village."}
@@ -1654,7 +1654,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Woodcutter"}
     - {name: lines, type: string, value: "I fell trees all day. The crater to the north is none of my business.|The forest is dense here. Stay on the footpath.|A bench of logs, a few mushrooms. That is all I need."}

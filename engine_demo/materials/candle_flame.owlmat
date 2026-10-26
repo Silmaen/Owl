@@ -1,5 +1,5 @@
 Material:
   FormatVersion: 1
-  parent: materials/flame.owlmat
+  parent: gid:c2025f33188c0ee3:materials/flame.owlmat
   emissive: [1, 0.72, 0.42]
   emissiveLuminance: 7000

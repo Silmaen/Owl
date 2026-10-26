@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -361,6 +362,8 @@ TEST_F(TilemapStorage, SampleTilemapsAreFormatThree) {
 		TilemapAsset asset;
 		ASSERT_TRUE(asset.deserializeFromString(text)) << file;
 		EXPECT_GT(asset.layers.at(0).getOccupiedCount(), 0u) << file;
-		EXPECT_EQ(asset.serializeToString(file.stem().string()), text) << file;
+		// Without a registry the references by GUID are written back as their path hint.
+		static const std::regex guidPrefix{"gid:[0-9a-f]{16}:"};
+		EXPECT_EQ(asset.serializeToString(file.stem().string()), std::regex_replace(text, guidPrefix, "")) << file;
 	}
 }

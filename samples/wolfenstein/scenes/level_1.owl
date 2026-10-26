@@ -1,6 +1,6 @@
 Scene: untitled
 FormatVersion: 7
-Hud: huds/play.owlhud
+Hud: gid:2aca072032ec1145:huds/play.owlhud
 EnabledRenderers:
   - Name: world
     Enabled: false
@@ -50,7 +50,7 @@ Entities:
     SoundListener:
       primary: true
     LuaScript:
-      scriptPath: scripts/game/player.lua
+      scriptPath: gid:893b2068ea9674f0:scripts/game/player.lua
       properties:
         - name: speed
           type: float
@@ -69,7 +69,7 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Tilemap:
-      tilemapPath: tilemaps/level_1.owltilemap
+      tilemapPath: gid:0da107b16dbc1d15:tilemaps/level_1.owltilemap
     Visibility:
       gameVisible: true
     RendererTag:
@@ -84,7 +84,7 @@ Entities:
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/game/level.lua
+      scriptPath: gid:5e81c9cc6d265f5d:scripts/game/level.lua
       properties:
         - name: level
           type: int
@@ -102,7 +102,7 @@ Entities:
     Visibility:
       gameVisible: true
     SoundSource:
-      soundAsset: sounds/game/ambience.wav
+      soundAsset: gid:6ff567cb2c75ab28:sounds/game/ambience.wav
       category: Ambient
       volume: 0.4
       pitch: 1
@@ -119,11 +119,11 @@ Entities:
       rotation: [0, 0, 0]
       scale: [5, 5, 1]
     Tilemap:
-      tilemapPath: tilemaps/level_1_minimap.owltilemap
+      tilemapPath: gid:a4d146df0667a958:tilemaps/level_1_minimap.owltilemap
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/game/explore.lua
+      scriptPath: gid:7c8b109aeb22a4f4:scripts/game/explore.lua
     RendererTag:
       Name: overlay
   - Entity: 3480048288261586588
@@ -179,7 +179,7 @@ Entities:
     Hierarchy:
       parentId: 6659090543560894601
     RaycastDoor:
-      tilesetPath: tilesets/wolf_walls.owltileset
+      tilesetPath: gid:d76bbf90720807dd:tilesets/wolf_walls.owltileset
       faceTileIndex: 98
       lateralTileIndex: 100
       openingDirection: North
@@ -200,7 +200,7 @@ Entities:
     Hierarchy:
       parentId: 6659090543560894601
     RaycastDoor:
-      tilesetPath: tilesets/wolf_walls.owltileset
+      tilesetPath: gid:d76bbf90720807dd:tilesets/wolf_walls.owltileset
       faceTileIndex: 102
       lateralTileIndex: 100
       openingDirection: East
@@ -221,7 +221,7 @@ Entities:
     Hierarchy:
       parentId: 6659090543560894601
     RaycastDoor:
-      tilesetPath: tilesets/wolf_walls.owltileset
+      tilesetPath: gid:d76bbf90720807dd:tilesets/wolf_walls.owltileset
       faceTileIndex: 98
       lateralTileIndex: 100
       openingDirection: North
@@ -242,7 +242,7 @@ Entities:
     Hierarchy:
       parentId: 6659090543560894601
     RaycastDoor:
-      tilesetPath: tilesets/wolf_walls.owltileset
+      tilesetPath: gid:d76bbf90720807dd:tilesets/wolf_walls.owltileset
       faceTileIndex: 98
       lateralTileIndex: 100
       openingDirection: East
@@ -263,7 +263,7 @@ Entities:
     Hierarchy:
       parentId: 6659090543560894601
     RaycastDoor:
-      tilesetPath: tilesets/wolf_walls.owltileset
+      tilesetPath: gid:d76bbf90720807dd:tilesets/wolf_walls.owltileset
       faceTileIndex: 98
       lateralTileIndex: 100
       openingDirection: East
@@ -284,13 +284,13 @@ Entities:
     Hierarchy:
       parentId: 6659090543560894601
     LuaScript:
-      scriptPath: scripts/game/locked_door.lua
+      scriptPath: gid:128aeddd6600c94d:scripts/game/locked_door.lua
       properties:
         - name: key
           type: string
           value: gold
     RaycastDoor:
-      tilesetPath: tilesets/wolf_walls.owltileset
+      tilesetPath: gid:d76bbf90720807dd:tilesets/wolf_walls.owltileset
       faceTileIndex: 104
       lateralTileIndex: 100
       openingDirection: North
@@ -322,9 +322,9 @@ Entities:
     Hierarchy:
       parentId: 8756038727306955966
     LuaScript:
-      scriptPath: scripts/game/secret.lua
+      scriptPath: gid:f5ecfc9bc14b376f:scripts/game/secret.lua
     RaycastPushWall:
-      tilesetPath: tilesets/wolf_walls.owltileset
+      tilesetPath: gid:d76bbf90720807dd:tilesets/wolf_walls.owltileset
       tileIndex: 1
       slideDirection: [-1, 0]
       slideDistance: 2
@@ -343,9 +343,9 @@ Entities:
     Hierarchy:
       parentId: 8756038727306955966
     LuaScript:
-      scriptPath: scripts/game/secret.lua
+      scriptPath: gid:f5ecfc9bc14b376f:scripts/game/secret.lua
     RaycastPushWall:
-      tilesetPath: tilesets/wolf_walls.owltileset
+      tilesetPath: gid:d76bbf90720807dd:tilesets/wolf_walls.owltileset
       tileIndex: 53
       slideDirection: [0, -1]
       slideDistance: 2
@@ -364,9 +364,9 @@ Entities:
     Hierarchy:
       parentId: 8756038727306955966
     LuaScript:
-      scriptPath: scripts/game/secret.lua
+      scriptPath: gid:f5ecfc9bc14b376f:scripts/game/secret.lua
     RaycastPushWall:
-      tilesetPath: tilesets/wolf_walls.owltileset
+      tilesetPath: gid:d76bbf90720807dd:tilesets/wolf_walls.owltileset
       tileIndex: 50
       slideDirection: [0, 1]
       slideDistance: 2
@@ -394,7 +394,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/treasure_calice.png
+      texture: gid:2436643b7fe9530f:textures/wolf3d/sprites/treasure_calice.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -403,7 +403,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -420,7 +420,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/sausages.png
+      texture: gid:c72da1797396b132:textures/wolf3d/sprites/sausages.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -429,7 +429,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -446,7 +446,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/food.png
+      texture: gid:a6c0b90e1ba7ab3f:textures/wolf3d/sprites/food.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -455,7 +455,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -472,7 +472,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/treasure_cross.png
+      texture: gid:3ebd2aad9ea3b474:textures/wolf3d/sprites/treasure_cross.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -481,7 +481,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -498,7 +498,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/treasure.png
+      texture: gid:e2466cb23728903b:textures/wolf3d/sprites/treasure.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -507,7 +507,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -524,7 +524,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/treasure_crown.png
+      texture: gid:06e6f1c078950afa:textures/wolf3d/sprites/treasure_crown.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -533,7 +533,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -550,7 +550,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/treasure_cross.png
+      texture: gid:3ebd2aad9ea3b474:textures/wolf3d/sprites/treasure_cross.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -559,7 +559,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -576,7 +576,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/treasure_calice.png
+      texture: gid:2436643b7fe9530f:textures/wolf3d/sprites/treasure_calice.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -585,7 +585,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -602,7 +602,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/treasure_crown.png
+      texture: gid:06e6f1c078950afa:textures/wolf3d/sprites/treasure_crown.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -611,7 +611,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -628,7 +628,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/food.png
+      texture: gid:a6c0b90e1ba7ab3f:textures/wolf3d/sprites/food.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -637,7 +637,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -654,7 +654,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/treasure.png
+      texture: gid:e2466cb23728903b:textures/wolf3d/sprites/treasure.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -663,7 +663,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -680,7 +680,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/food.png
+      texture: gid:a6c0b90e1ba7ab3f:textures/wolf3d/sprites/food.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -689,7 +689,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -706,7 +706,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/treasure_calice.png
+      texture: gid:2436643b7fe9530f:textures/wolf3d/sprites/treasure_calice.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -715,7 +715,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -732,7 +732,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/treasure.png
+      texture: gid:e2466cb23728903b:textures/wolf3d/sprites/treasure.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -741,7 +741,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -758,7 +758,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/key_yellow.png
+      texture: gid:58087b3156b9845f:textures/wolf3d/sprites/key_yellow.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -767,7 +767,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -784,7 +784,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/treasure_cross.png
+      texture: gid:3ebd2aad9ea3b474:textures/wolf3d/sprites/treasure_cross.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -793,7 +793,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -810,7 +810,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/food.png
+      texture: gid:a6c0b90e1ba7ab3f:textures/wolf3d/sprites/food.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -819,7 +819,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -836,7 +836,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/treasure_cross.png
+      texture: gid:3ebd2aad9ea3b474:textures/wolf3d/sprites/treasure_cross.png
     Trigger:
       Type: LuaCallback
       CallbackName: on_pickup
@@ -845,7 +845,7 @@ Entities:
     Hierarchy:
       parentId: 5652357851195159757
     LuaScript:
-      scriptPath: scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
       properties:
         - name: item
           type: string
@@ -873,7 +873,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/armor.png
+      texture: gid:6423115ffca2cf1d:textures/wolf3d/sprites/armor.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -897,7 +897,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/armor.png
+      texture: gid:6423115ffca2cf1d:textures/wolf3d/sprites/armor.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -921,7 +921,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+      texture: gid:1bef1afa598d7f84:textures/wolf3d/sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -938,7 +938,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/table_chairs.png
+      texture: gid:df7a58c368c95502:textures/wolf3d/sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -962,7 +962,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/table_chairs.png
+      texture: gid:df7a58c368c95502:textures/wolf3d/sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -986,7 +986,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/cooking_tools.png
+      texture: gid:e64ecf2ca5d5df03:textures/wolf3d/sprites/cooking_tools.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1003,7 +1003,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
+      texture: gid:99dd0887b5978745:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1020,7 +1020,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/table_chairs.png
+      texture: gid:df7a58c368c95502:textures/wolf3d/sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1044,7 +1044,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/table_chairs.png
+      texture: gid:df7a58c368c95502:textures/wolf3d/sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1068,7 +1068,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/table_chairs.png
+      texture: gid:df7a58c368c95502:textures/wolf3d/sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1092,7 +1092,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/table_chairs.png
+      texture: gid:df7a58c368c95502:textures/wolf3d/sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1116,7 +1116,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+      texture: gid:1bef1afa598d7f84:textures/wolf3d/sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1133,7 +1133,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/barrel_wood.png
+      texture: gid:2427cd0f25b6d89a:textures/wolf3d/sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1157,7 +1157,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/barrel_wood.png
+      texture: gid:2427cd0f25b6d89a:textures/wolf3d/sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1181,7 +1181,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/table_chairs.png
+      texture: gid:df7a58c368c95502:textures/wolf3d/sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1205,7 +1205,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/table_chairs.png
+      texture: gid:df7a58c368c95502:textures/wolf3d/sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1229,7 +1229,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
+      texture: gid:99dd0887b5978745:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1246,7 +1246,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
+      texture: gid:99dd0887b5978745:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1263,7 +1263,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/barrel_wood.png
+      texture: gid:2427cd0f25b6d89a:textures/wolf3d/sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1287,7 +1287,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/barrel_wood.png
+      texture: gid:2427cd0f25b6d89a:textures/wolf3d/sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1311,7 +1311,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/green_barrel.png
+      texture: gid:7b1408f50ff4cde6:textures/wolf3d/sprites/green_barrel.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1335,7 +1335,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/green_barrel.png
+      texture: gid:7b1408f50ff4cde6:textures/wolf3d/sprites/green_barrel.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1359,7 +1359,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
+      texture: gid:99dd0887b5978745:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1376,7 +1376,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/bones_pile.png
+      texture: gid:e9f45db999a4a9b8:textures/wolf3d/sprites/bones_pile.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1393,7 +1393,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+      texture: gid:1bef1afa598d7f84:textures/wolf3d/sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1410,7 +1410,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/barrel_wood.png
+      texture: gid:2427cd0f25b6d89a:textures/wolf3d/sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1434,7 +1434,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/pilar.png
+      texture: gid:463b5e47ccfa390c:textures/wolf3d/sprites/pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1458,7 +1458,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/pilar.png
+      texture: gid:463b5e47ccfa390c:textures/wolf3d/sprites/pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1482,7 +1482,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/skeleton_floor.png
+      texture: gid:5c5aeb4b1298dab6:textures/wolf3d/sprites/skeleton_floor.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1499,7 +1499,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling.png
+      texture: gid:99dd0887b5978745:textures/wolf3d/sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1516,7 +1516,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/pilar.png
+      texture: gid:463b5e47ccfa390c:textures/wolf3d/sprites/pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1540,7 +1540,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/pilar.png
+      texture: gid:463b5e47ccfa390c:textures/wolf3d/sprites/pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1564,7 +1564,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/barrel_wood.png
+      texture: gid:2427cd0f25b6d89a:textures/wolf3d/sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1588,7 +1588,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/lamp_ceiling_candle.png
+      texture: gid:1bef1afa598d7f84:textures/wolf3d/sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1605,7 +1605,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/wolf3d/sprites/puddle.png
+      texture: gid:b3220a6d01988754:textures/wolf3d/sprites/puddle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1626,7 +1626,7 @@ Entities:
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/game/exit.lua
+      scriptPath: gid:52ca3a542daadd52:scripts/game/exit.lua
       properties:
         - name: next_scene
           type: string

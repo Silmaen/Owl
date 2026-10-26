@@ -1,6 +1,6 @@
 Tileset: minimap
 FormatVersion: 1
-texture: nam:textures/atlases/minimap.png
+texture: gid:8e5dc9427a2e05b5:textures/atlases/minimap.png
 tileWidth: 8
 tileHeight: 8
 columns: 2

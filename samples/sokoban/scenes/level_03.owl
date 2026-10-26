@@ -1,6 +1,6 @@
 Scene: level_03
 FormatVersion: 7
-Hud: huds/level.owlhud
+Hud: gid:d6a4c1550ebbf5bd:huds/level.owlhud
 Entities:
   - Entity: 7200000000003000001
     Tag:
@@ -49,7 +49,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     Tilemap:
-      tilemapPath: tilemaps/level_03.owltilemap
+      tilemapPath: gid:db4b77a5152a5357:tilemaps/level_03.owltilemap
   - Entity: 7200000000003000004
     Tag:
       tag: Player
@@ -62,7 +62,7 @@ Entities:
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 8
@@ -81,7 +81,7 @@ Entities:
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/sokoban_tiles.png
+      texture: gid:dd7360e7f3b77bfb:textures/sokoban_tiles.png
       columns: 8
       rows: 2
       firstFrame: 5
@@ -99,7 +99,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     SoundSource:
-      soundAsset: sounds/music/loop.wav
+      soundAsset: gid:f593a78076b8afd2:sounds/music/loop.wav
       category: Music
       volume: 0.3
       pitch: 1
@@ -119,7 +119,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: scripts/game/sokoban.lua
+      scriptPath: gid:5935eeb4bfce3cd0:scripts/game/sokoban.lua
       properties:
         - name: level
           type: int

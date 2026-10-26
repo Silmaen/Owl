@@ -23,7 +23,7 @@ Entities:
     Hierarchy:
       parentId: 7600000000000702001
     MeshRenderer:
-      mesh: models/td/tower-round-bottom-c.glb
+      mesh: gid:123f791c614d1cdf:models/td/tower-round-bottom-c.glb
       color: [0.75, 0.88, 1, 1]
       transparent: false
     RendererTag:
@@ -40,7 +40,7 @@ Entities:
     Hierarchy:
       parentId: 7600000000000702001
     MeshRenderer:
-      mesh: models/td/tower-round-top-c.glb
+      mesh: gid:5d4a413fb8236581:models/td/tower-round-top-c.glb
       color: [0.75, 0.88, 1, 1]
       transparent: false
     RendererTag:
@@ -57,7 +57,7 @@ Entities:
     Hierarchy:
       parentId: 7600000000000702001
     MeshRenderer:
-      mesh: models/td/tower-round-crystals.glb
+      mesh: gid:b336c9db329a5de1:models/td/tower-round-crystals.glb
       color: [0.75, 0.88, 1, 1]
       transparent: false
     RendererTag:

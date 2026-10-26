@@ -283,7 +283,7 @@ Entities:
     offset: [0, 0]
   UiImage:
     tint: [1, 1, 1, 1]
-    texture: nam:textures/items/machine_gun.png
+    texture: gid:6afbe4b5fca1dc0a:textures/items/machine_gun.png
 - Entity: 5300000000000000180
   Tag: {tag: InvSlot8}
   Transform:
@@ -348,7 +348,7 @@ Entities:
     offset: [0, 0]
   UiImage:
     tint: [1, 1, 1, 1]
-    texture: nam:textures/items/ammo.png
+    texture: gid:91e703d0135acc95:textures/items/ammo.png
 - Entity: 5300000000000000170
   Tag: {tag: InvSlot7}
   Transform:
@@ -413,7 +413,7 @@ Entities:
     offset: [0, 0]
   UiImage:
     tint: [1, 1, 1, 1]
-    texture: nam:textures/items/health.png
+    texture: gid:0c0f60bff99c5b2d:textures/items/health.png
 - Entity: 5300000000000000160
   Tag: {tag: InvSlot6}
   Transform:
@@ -478,7 +478,7 @@ Entities:
     offset: [0, 0]
   UiImage:
     tint: [1, 1, 1, 1]
-    texture: nam:textures/items/sausages.png
+    texture: gid:1ab2f41f704202f9:textures/items/sausages.png
 - Entity: 5300000000000000150
   Tag: {tag: InvSlot5}
   Transform:
@@ -543,7 +543,7 @@ Entities:
     offset: [0, 0]
   UiImage:
     tint: [1, 1, 1, 1]
-    texture: nam:textures/items/food.png
+    texture: gid:16d7c5d4a17a7f91:textures/items/food.png
 - Entity: 5300000000000000140
   Tag: {tag: InvSlot4}
   Transform:
@@ -608,7 +608,7 @@ Entities:
     offset: [0, 0]
   UiImage:
     tint: [1, 1, 1, 1]
-    texture: nam:textures/items/treasure_crown.png
+    texture: gid:96e1b88da443c4e3:textures/items/treasure_crown.png
 - Entity: 5300000000000000130
   Tag: {tag: InvSlot3}
   Transform:
@@ -673,7 +673,7 @@ Entities:
     offset: [0, 0]
   UiImage:
     tint: [1, 1, 1, 1]
-    texture: nam:textures/items/treasure.png
+    texture: gid:3e990f2a7bd42167:textures/items/treasure.png
 - Entity: 5300000000000000120
   Tag: {tag: InvSlot2}
   Transform:
@@ -738,7 +738,7 @@ Entities:
     offset: [0, 0]
   UiImage:
     tint: [1, 1, 1, 1]
-    texture: nam:textures/items/treasure_calice.png
+    texture: gid:3f19ead75d1ded5a:textures/items/treasure_calice.png
 - Entity: 5300000000000000110
   Tag: {tag: InvSlot1}
   Transform:
@@ -803,4 +803,4 @@ Entities:
     offset: [0, 0]
   UiImage:
     tint: [1, 1, 1, 1]
-    texture: nam:textures/items/treasure_cross.png
+    texture: gid:79b165d487c77883:textures/items/treasure_cross.png

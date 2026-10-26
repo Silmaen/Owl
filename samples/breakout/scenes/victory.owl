@@ -50,7 +50,7 @@ Entities:
     SpriteRenderer:
       color: [0.55, 0.4, 1, 0.45]
       tilingFactor: [12, 4]
-      texture: nam:textures/backdrop.png
+      texture: gid:31ae2e772cc602ba:textures/backdrop.png
   - Entity: 7230000000000000004
     Tag:
       tag: NeonWall
@@ -62,7 +62,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: scripts/ui/neon_bricks.lua
+      scriptPath: gid:f8c55a7c027a7f22:scripts/ui/neon_bricks.lua
   - Entity: 7230000000000000005
     Tag:
       tag: MenuBrick
@@ -77,7 +77,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000006
     Tag:
       tag: MenuBrick
@@ -92,7 +92,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000007
     Tag:
       tag: MenuBrick
@@ -107,7 +107,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000008
     Tag:
       tag: MenuBrick
@@ -122,7 +122,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000009
     Tag:
       tag: MenuBrick
@@ -137,7 +137,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000010
     Tag:
       tag: MenuBrick
@@ -152,7 +152,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000011
     Tag:
       tag: MenuBrick
@@ -167,7 +167,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000012
     Tag:
       tag: MenuBrick
@@ -182,7 +182,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000013
     Tag:
       tag: MenuBrick
@@ -197,7 +197,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000014
     Tag:
       tag: MenuBrick
@@ -212,7 +212,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000015
     Tag:
       tag: MenuBrick
@@ -227,7 +227,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000016
     Tag:
       tag: MenuBrick
@@ -242,7 +242,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000017
     Tag:
       tag: MenuBrick
@@ -257,7 +257,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000018
     Tag:
       tag: MenuBrick
@@ -272,7 +272,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000019
     Tag:
       tag: MenuBrick
@@ -287,7 +287,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000020
     Tag:
       tag: MenuBrick
@@ -302,7 +302,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000021
     Tag:
       tag: MenuBrick
@@ -317,7 +317,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000022
     Tag:
       tag: MenuBrick
@@ -332,7 +332,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000023
     Tag:
       tag: MenuBrick
@@ -347,7 +347,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000024
     Tag:
       tag: MenuBrick
@@ -362,7 +362,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000025
     Tag:
       tag: MenuBrick
@@ -377,7 +377,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000026
     Tag:
       tag: MenuBrick
@@ -392,7 +392,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000027
     Tag:
       tag: MenuBrick
@@ -407,7 +407,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000028
     Tag:
       tag: MenuBrick
@@ -422,7 +422,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.25, 0.6, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000029
     Tag:
       tag: MenuBrick
@@ -437,7 +437,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000030
     Tag:
       tag: MenuBrick
@@ -452,7 +452,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000031
     Tag:
       tag: MenuBrick
@@ -467,7 +467,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000032
     Tag:
       tag: MenuBrick
@@ -482,7 +482,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000033
     Tag:
       tag: MenuBrick
@@ -497,7 +497,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000034
     Tag:
       tag: MenuBrick
@@ -512,7 +512,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000035
     Tag:
       tag: MenuBrick
@@ -527,7 +527,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000036
     Tag:
       tag: MenuBrick
@@ -542,7 +542,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000037
     Tag:
       tag: MenuBrick
@@ -557,7 +557,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000038
     Tag:
       tag: MenuBrick
@@ -572,7 +572,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000039
     Tag:
       tag: MenuBrick
@@ -587,7 +587,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000040
     Tag:
       tag: MenuBrick
@@ -602,7 +602,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000041
     Tag:
       tag: MenuBrick
@@ -617,7 +617,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000042
     Tag:
       tag: MenuBrick
@@ -632,7 +632,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000043
     Tag:
       tag: MenuBrick
@@ -647,7 +647,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000044
     Tag:
       tag: MenuBrick
@@ -662,7 +662,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000045
     Tag:
       tag: MenuBrick
@@ -677,7 +677,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000046
     Tag:
       tag: MenuBrick
@@ -692,7 +692,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000047
     Tag:
       tag: MenuBrick
@@ -707,7 +707,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000048
     Tag:
       tag: MenuBrick
@@ -722,7 +722,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000049
     Tag:
       tag: MenuBrick
@@ -737,7 +737,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000050
     Tag:
       tag: MenuBrick
@@ -752,7 +752,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000051
     Tag:
       tag: MenuBrick
@@ -767,7 +767,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000052
     Tag:
       tag: MenuBrick
@@ -782,7 +782,7 @@ Entities:
     SpriteRenderer:
       color: [1, 0.55, 0.15, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000053
     Tag:
       tag: MenuBrick
@@ -797,7 +797,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000054
     Tag:
       tag: MenuBrick
@@ -812,7 +812,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000055
     Tag:
       tag: MenuBrick
@@ -827,7 +827,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000056
     Tag:
       tag: MenuBrick
@@ -842,7 +842,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000057
     Tag:
       tag: MenuBrick
@@ -857,7 +857,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000058
     Tag:
       tag: MenuBrick
@@ -872,7 +872,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000059
     Tag:
       tag: MenuBrick
@@ -887,7 +887,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000060
     Tag:
       tag: MenuBrick
@@ -902,7 +902,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000061
     Tag:
       tag: MenuBrick
@@ -917,7 +917,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000062
     Tag:
       tag: MenuBrick
@@ -932,7 +932,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000063
     Tag:
       tag: MenuBrick
@@ -947,7 +947,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000064
     Tag:
       tag: MenuBrick
@@ -962,7 +962,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000065
     Tag:
       tag: MenuBrick
@@ -977,7 +977,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000066
     Tag:
       tag: MenuBrick
@@ -992,7 +992,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000067
     Tag:
       tag: MenuBrick
@@ -1007,7 +1007,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000068
     Tag:
       tag: MenuBrick
@@ -1022,7 +1022,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000069
     Tag:
       tag: MenuBrick
@@ -1037,7 +1037,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000070
     Tag:
       tag: MenuBrick
@@ -1052,7 +1052,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000071
     Tag:
       tag: MenuBrick
@@ -1067,7 +1067,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000072
     Tag:
       tag: MenuBrick
@@ -1082,7 +1082,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000073
     Tag:
       tag: MenuBrick
@@ -1097,7 +1097,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000074
     Tag:
       tag: MenuBrick
@@ -1112,7 +1112,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000075
     Tag:
       tag: MenuBrick
@@ -1127,7 +1127,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000076
     Tag:
       tag: MenuBrick
@@ -1142,7 +1142,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.95, 0.5, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7230000000000000077
     Tag:
       tag: VictoryCanvas
@@ -1159,7 +1159,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: scripts/ui/victory.lua
+      scriptPath: gid:07cc642568a7bf9d:scripts/ui/victory.lua
   - Entity: 7230000000000000078
     Tag:
       tag: ResultGroup
@@ -1275,7 +1275,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/button_frame.png
+      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
   - Entity: 7230000000000000082
     Tag:
       tag: LevelsButton
@@ -1340,7 +1340,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/button_frame.png
+      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
   - Entity: 7230000000000000084
     Tag:
       tag: BestLabel

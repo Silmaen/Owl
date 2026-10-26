@@ -5,9 +5,9 @@ Material:
   baseColor: [0.3, 0.27, 0.25, 1]
   emissive: [1, 0.45, 0.16]
   emissiveLuminance: 3000
-  baseColorMap: nam:textures/pbr/burned_ground_01/burned_ground_01_diff.jpg
-  metallicMap: nam:textures/pbr/burned_ground_01/burned_ground_01_arm.jpg
-  roughnessMap: nam:textures/pbr/burned_ground_01/burned_ground_01_arm.jpg
-  normalMap: nam:textures/pbr/burned_ground_01/burned_ground_01_nor.jpg
-  occlusionMap: nam:textures/pbr/burned_ground_01/burned_ground_01_arm.jpg
-  emissiveMap: nam:textures/fire/embers.png
+  baseColorMap: gid:50522060a9dffd46:textures/pbr/burned_ground_01/burned_ground_01_diff.jpg
+  metallicMap: gid:6b74f17f7893d516:textures/pbr/burned_ground_01/burned_ground_01_arm.jpg
+  roughnessMap: gid:6b74f17f7893d516:textures/pbr/burned_ground_01/burned_ground_01_arm.jpg
+  normalMap: gid:a45c2e6374164dac:textures/pbr/burned_ground_01/burned_ground_01_nor.jpg
+  occlusionMap: gid:6b74f17f7893d516:textures/pbr/burned_ground_01/burned_ground_01_arm.jpg
+  emissiveMap: gid:bcf2f52f576ddb5a:textures/fire/embers.png

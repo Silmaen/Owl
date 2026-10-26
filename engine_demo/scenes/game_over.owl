@@ -55,7 +55,7 @@ Entities:
     Hierarchy:
       {}
     LuaScript:
-      scriptPath: scripts/ui/game_over.lua
+      scriptPath: gid:2987f4b5b9a4abe5:scripts/ui/game_over.lua
   - Entity: 300000000000000010
     Tag: {tag: ResultGroup}
     Transform:

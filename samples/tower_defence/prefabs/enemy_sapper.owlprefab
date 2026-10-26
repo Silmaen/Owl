@@ -13,7 +13,7 @@ Entities:
     Hierarchy: {}
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/enemies/sapper.png
+      texture: gid:487719d0fdafd3cb:textures/enemies/sapper.png
       columns: 8
       rows: 9
       firstFrame: 0

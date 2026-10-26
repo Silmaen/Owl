@@ -1,6 +1,6 @@
 Tileset: pixel_backdrop
 FormatVersion: 1
-texture: nam:textures/atlases/platformer_backdrop.png
+texture: gid:81f6a5a080d994bd:textures/atlases/platformer_backdrop.png
 tileWidth: 24
 tileHeight: 24
 columns: 8

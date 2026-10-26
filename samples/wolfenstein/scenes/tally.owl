@@ -53,7 +53,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: scripts/ui/tally.lua
+      scriptPath: gid:0b91b3229a08323b:scripts/ui/tally.lua
   - Entity: 3320000000000000004
     Tag:
       tag: TallyGroup
@@ -148,7 +148,7 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: nam:textures/ui/plate.png
+      texture: gid:0bcddcb325526f99:textures/ui/plate.png
   - Entity: 3320000000000000007
     Tag:
       tag: SkipHint

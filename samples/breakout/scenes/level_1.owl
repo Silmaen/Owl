@@ -1,6 +1,6 @@
 Scene: untitled
 FormatVersion: 7
-Hud: huds/play.owlhud
+Hud: gid:5bd57ee65cd6718f:huds/play.owlhud
 Entities:
   - Entity: 7100000000001000001
     Tag:
@@ -51,7 +51,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: [4, 3.5]
-      texture: nam:textures/backdrop.png
+      texture: gid:31ae2e772cc602ba:textures/backdrop.png
   - Entity: 7100000000001000004
     Tag:
       tag: Wall
@@ -65,7 +65,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: [1, 29]
-      texture: nam:textures/wall.png
+      texture: gid:33c7b783b960ea50:textures/wall.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -86,7 +86,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: [1, 29]
-      texture: nam:textures/wall.png
+      texture: gid:33c7b783b960ea50:textures/wall.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -107,7 +107,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: [34, 1]
-      texture: nam:textures/wall.png
+      texture: gid:33c7b783b960ea50:textures/wall.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -128,7 +128,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/paddle.png
+      texture: gid:a7746526d6cca35a:textures/paddle.png
     PhysicBody:
       type: Kinematic
       fixedRotation: true
@@ -137,7 +137,7 @@ Entities:
       restitution: 0
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/paddle.lua
+      scriptPath: gid:5bc3738c459f7aaa:scripts/game/paddle.lua
       properties:
         - name: speed
           type: float
@@ -161,7 +161,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/paddle_wide.png
+      texture: gid:362cf100240ef014:textures/paddle_wide.png
     PhysicBody:
       type: Kinematic
       fixedRotation: true
@@ -182,7 +182,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/ball.png
+      texture: gid:e29842660f453bf4:textures/ball.png
     PhysicBody:
       type: Dynamic
       fixedRotation: true
@@ -191,7 +191,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/ball.lua
+      scriptPath: gid:10869270915e57f6:scripts/game/ball.lua
       properties:
         - name: speed
           type: float
@@ -213,7 +213,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: scripts/game/game.lua
+      scriptPath: gid:916559639928363d:scripts/game/game.lua
       properties:
         - name: level
           type: int
@@ -232,7 +232,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     SoundSource:
-      soundAsset: sounds/music/loop.wav
+      soundAsset: gid:8b274161f8f04579:sounds/music/loop.wav
       category: Music
       volume: 0.35
       pitch: 1
@@ -254,7 +254,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/power_wide.png
+      texture: gid:c4446d3dc92ce61b:textures/power_wide.png
   - Entity: 7100000000001000013
     Tag:
       tag: PowerWide2
@@ -268,7 +268,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/power_wide.png
+      texture: gid:c4446d3dc92ce61b:textures/power_wide.png
   - Entity: 7100000000001000014
     Tag:
       tag: PowerSlow1
@@ -282,7 +282,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/power_slow.png
+      texture: gid:27a2b97c236ba1aa:textures/power_slow.png
   - Entity: 7100000000001000015
     Tag:
       tag: PowerSlow2
@@ -296,7 +296,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/power_slow.png
+      texture: gid:27a2b97c236ba1aa:textures/power_slow.png
   - Entity: 7100000000001000016
     Tag:
       tag: BreakFx1
@@ -310,7 +310,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7100000000001000017
     Tag:
       tag: BreakFx2
@@ -324,7 +324,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7100000000001000018
     Tag:
       tag: BreakFx3
@@ -338,7 +338,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7100000000001000019
     Tag:
       tag: BreakFx4
@@ -352,7 +352,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7100000000001000020
     Tag:
       tag: BreakFx5
@@ -366,7 +366,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7100000000001000021
     Tag:
       tag: BreakFx6
@@ -380,7 +380,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7100000000001000022
     Tag:
       tag: Brick
@@ -394,7 +394,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.58, 0.22, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -403,7 +403,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -424,7 +424,7 @@ Entities:
           type: float
           value: 0.22
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000022
@@ -445,7 +445,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.58, 0.22, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -454,7 +454,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -475,7 +475,7 @@ Entities:
           type: float
           value: 0.22
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000023
@@ -496,7 +496,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.58, 0.22, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -505,7 +505,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -526,7 +526,7 @@ Entities:
           type: float
           value: 0.22
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000024
@@ -547,7 +547,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.58, 0.22, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -556,7 +556,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -577,7 +577,7 @@ Entities:
           type: float
           value: 0.22
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000025
@@ -598,7 +598,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.58, 0.22, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -607,7 +607,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -628,7 +628,7 @@ Entities:
           type: float
           value: 0.22
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000026
@@ -649,7 +649,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.58, 0.22, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -658,7 +658,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -679,7 +679,7 @@ Entities:
           type: float
           value: 0.22
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000027
@@ -700,7 +700,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.58, 0.22, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -709,7 +709,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -730,7 +730,7 @@ Entities:
           type: float
           value: 0.22
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000028
@@ -751,7 +751,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.58, 0.22, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -760,7 +760,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -781,7 +781,7 @@ Entities:
           type: float
           value: 0.22
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000029
@@ -802,7 +802,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.58, 0.22, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -811,7 +811,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -832,7 +832,7 @@ Entities:
           type: float
           value: 0.22
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000030
@@ -853,7 +853,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.58, 0.22, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -862,7 +862,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -883,7 +883,7 @@ Entities:
           type: float
           value: 0.22
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000031
@@ -904,7 +904,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.85, 0.25, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -913,7 +913,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -934,7 +934,7 @@ Entities:
           type: float
           value: 0.25
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000032
@@ -955,7 +955,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.85, 0.25, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -964,7 +964,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -985,7 +985,7 @@ Entities:
           type: float
           value: 0.25
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000033
@@ -1006,7 +1006,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.85, 0.25, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1015,7 +1015,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1036,7 +1036,7 @@ Entities:
           type: float
           value: 0.25
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000034
@@ -1057,7 +1057,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.85, 0.25, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1066,7 +1066,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1087,7 +1087,7 @@ Entities:
           type: float
           value: 0.25
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000035
@@ -1108,7 +1108,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.85, 0.25, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1117,7 +1117,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1138,7 +1138,7 @@ Entities:
           type: float
           value: 0.25
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000036
@@ -1159,7 +1159,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.85, 0.25, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1168,7 +1168,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1189,7 +1189,7 @@ Entities:
           type: float
           value: 0.25
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000037
@@ -1210,7 +1210,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.85, 0.25, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1219,7 +1219,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1240,7 +1240,7 @@ Entities:
           type: float
           value: 0.25
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000038
@@ -1261,7 +1261,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.85, 0.25, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1270,7 +1270,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1291,7 +1291,7 @@ Entities:
           type: float
           value: 0.25
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000039
@@ -1312,7 +1312,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.85, 0.25, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1321,7 +1321,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1342,7 +1342,7 @@ Entities:
           type: float
           value: 0.25
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000040
@@ -1363,7 +1363,7 @@ Entities:
     SpriteRenderer:
       color: [0.95, 0.85, 0.25, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1372,7 +1372,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1393,7 +1393,7 @@ Entities:
           type: float
           value: 0.25
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000041
@@ -1414,7 +1414,7 @@ Entities:
     SpriteRenderer:
       color: [0.4, 0.85, 0.35, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1423,7 +1423,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1444,7 +1444,7 @@ Entities:
           type: float
           value: 0.35
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000042
@@ -1465,7 +1465,7 @@ Entities:
     SpriteRenderer:
       color: [0.4, 0.85, 0.35, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1474,7 +1474,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1495,7 +1495,7 @@ Entities:
           type: float
           value: 0.35
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000043
@@ -1516,7 +1516,7 @@ Entities:
     SpriteRenderer:
       color: [0.4, 0.85, 0.35, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1525,7 +1525,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1546,7 +1546,7 @@ Entities:
           type: float
           value: 0.35
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000044
@@ -1567,7 +1567,7 @@ Entities:
     SpriteRenderer:
       color: [0.4, 0.85, 0.35, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1576,7 +1576,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1597,7 +1597,7 @@ Entities:
           type: float
           value: 0.35
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000045
@@ -1618,7 +1618,7 @@ Entities:
     SpriteRenderer:
       color: [0.4, 0.85, 0.35, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1627,7 +1627,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1648,7 +1648,7 @@ Entities:
           type: float
           value: 0.35
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000046
@@ -1669,7 +1669,7 @@ Entities:
     SpriteRenderer:
       color: [0.4, 0.85, 0.35, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1678,7 +1678,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1699,7 +1699,7 @@ Entities:
           type: float
           value: 0.35
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000047
@@ -1720,7 +1720,7 @@ Entities:
     SpriteRenderer:
       color: [0.4, 0.85, 0.35, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1729,7 +1729,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1750,7 +1750,7 @@ Entities:
           type: float
           value: 0.35
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000048
@@ -1771,7 +1771,7 @@ Entities:
     SpriteRenderer:
       color: [0.4, 0.85, 0.35, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1780,7 +1780,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1801,7 +1801,7 @@ Entities:
           type: float
           value: 0.35
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000049
@@ -1822,7 +1822,7 @@ Entities:
     SpriteRenderer:
       color: [0.4, 0.85, 0.35, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1831,7 +1831,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1852,7 +1852,7 @@ Entities:
           type: float
           value: 0.35
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000050
@@ -1873,7 +1873,7 @@ Entities:
     SpriteRenderer:
       color: [0.4, 0.85, 0.35, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1882,7 +1882,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1903,7 +1903,7 @@ Entities:
           type: float
           value: 0.35
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000051
@@ -1924,7 +1924,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.75, 0.9, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1933,7 +1933,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -1954,7 +1954,7 @@ Entities:
           type: float
           value: 0.9
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000052
@@ -1975,7 +1975,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.75, 0.9, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1984,7 +1984,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -2005,7 +2005,7 @@ Entities:
           type: float
           value: 0.9
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000053
@@ -2026,7 +2026,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.75, 0.9, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -2035,7 +2035,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -2056,7 +2056,7 @@ Entities:
           type: float
           value: 0.9
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000054
@@ -2077,7 +2077,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.75, 0.9, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -2086,7 +2086,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -2107,7 +2107,7 @@ Entities:
           type: float
           value: 0.9
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000055
@@ -2128,7 +2128,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.75, 0.9, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -2137,7 +2137,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -2158,7 +2158,7 @@ Entities:
           type: float
           value: 0.9
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000056
@@ -2179,7 +2179,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.75, 0.9, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -2188,7 +2188,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -2209,7 +2209,7 @@ Entities:
           type: float
           value: 0.9
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000057
@@ -2230,7 +2230,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.75, 0.9, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -2239,7 +2239,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -2260,7 +2260,7 @@ Entities:
           type: float
           value: 0.9
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000058
@@ -2281,7 +2281,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.75, 0.9, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -2290,7 +2290,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -2311,7 +2311,7 @@ Entities:
           type: float
           value: 0.9
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000059
@@ -2332,7 +2332,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.75, 0.9, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -2341,7 +2341,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -2362,7 +2362,7 @@ Entities:
           type: float
           value: 0.9
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000060
@@ -2383,7 +2383,7 @@ Entities:
     SpriteRenderer:
       color: [0.3, 0.75, 0.9, 1]
       tilingFactor: 1
-      texture: nam:textures/brick.png
+      texture: gid:c0d75b630aa224df:textures/brick.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -2392,7 +2392,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
       properties:
         - name: hits
           type: int
@@ -2413,7 +2413,7 @@ Entities:
           type: float
           value: 0.9
     PrefabLink:
-      prefabAssetPath: prefabs/brick.owlprefab
+      prefabAssetPath: gid:bea909846fa2cbc7:prefabs/brick.owlprefab
       syncedVersion: 1
       uuidMapping:
         - inst: 7100000000001000061
