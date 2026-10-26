@@ -12,10 +12,12 @@
 #include <core/external/yaml.h>
 #include <data/assets/AssetMeta.h>
 #include <data/assets/AssetRegistry.h>
+#include <data/assets/AssetSearchPaths.h>
 #include <data/assets/pack/GameExporter.h>
 #include <data/assets/pack/PackReader.h>
 #include <renderer/TextureDecoder.h>
 #include <renderer/gpu/Texture.h>
+#include <renderer/utils/shaderFileUtils.h>
 
 #include <algorithm>
 #include <chrono>
@@ -31,6 +33,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 #include <vector>
 
 #ifdef OWL_PLATFORM_LINUX
@@ -152,9 +155,15 @@ protected:
 		writeFile(m_runner / g_runnerFile, "RUNNER");
 		writeFile(m_runner / "libfake.so", "NEW-LIB");
 		app::Application::get().addAssetDirectory({"Project: test", m_project});
+		// The engine shaders baked by the build, as Owl Nest finds them in its working directory.
+		std::error_code ec;
+		m_bakedAssets = std::filesystem::canonical("/proc/self/exe", ec).parent_path() / "assets";
+		if (!ec && exists(m_bakedAssets))
+			app::Application::get().addAssetDirectory({"Baked shaders", m_bakedAssets});
 	}
 
 	void TearDown() override {
+		app::Application::get().removeAssetDirectory(m_bakedAssets);
 		app::Application::get().removeAssetDirectory(m_project);
 		std::filesystem::remove_all(m_root);
 	}
@@ -183,6 +192,7 @@ protected:
 	std::filesystem::path m_root;
 	std::filesystem::path m_project;
 	std::filesystem::path m_runner;
+	std::filesystem::path m_bakedAssets;
 	inline static shared<app::Application> s_app;
 };
 OWL_DIAG_POP
@@ -336,6 +346,7 @@ TEST_F(GameExporterFixture, ExportPacksOnlyTheEngineFilesOfTheGame) {
 		GTEST_SKIP() << "No engine shaders in the asset directories of the test.";
 	EXPECT_TRUE(flat->renderers.empty());
 	EXPECT_GT(flat->engineFilesSkipped, 0u);
+	EXPECT_EQ(flat->shadersBaked, 0u) << "the engine shaders come baked by the build";
 	for (const auto* absent: {"shaders/renderer3D/", "shaders/raycast_dda/", "shaders/isometric/",
 							  "shaders/frustum_culling/", "icons/", "logo/", "fonts/Inter-Regular.ttf"})
 		EXPECT_FALSE(hasPrefix(flatEntries, absent)) << absent;
@@ -359,6 +370,35 @@ TEST_F(GameExporterFixture, ExportPacksOnlyTheEngineFilesOfTheGame) {
 	const auto meshConfig = YAML::LoadFile((meshes->gameDirectory / "runner.yml").string())["RunnerConfig"];
 	EXPECT_TRUE(meshConfig["ImGui"].as<bool>());
 	EXPECT_EQ(meshConfig["Renderers"].as<std::vector<std::string>>(), std::vector<std::string>{"Renderer3D"});
+}
+
+TEST_F(GameExporterFixture, ExportBakesTheShadersOfTheProject) {
+	const auto engineQuad = data::assets::readAssetText("shaders/renderer2D/quad.slang");
+	if (!engineQuad)
+		GTEST_SKIP() << "No engine shaders in the asset directories of the test.";
+	writeFile(m_project / "shaders" / "renderer2D" / "quad.slang", *engineQuad + "\n// Project variant.\n");
+	auto settings = makeSettings();
+	settings.cookCacheDirectory = m_root / "cook";
+	const auto exported = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(exported.has_value());
+	EXPECT_EQ(exported->shadersBaked, 1u);
+
+	const auto source = renderer::utils::readShaderSource("shaders/renderer2D/quad.slang");
+	ASSERT_NE(source.find("Project variant"), std::string::npos);
+	for (const auto& [api, forVulkan]: {std::pair{"vulkan", true}, std::pair{"opengl", false}}) {
+		const auto key = renderer::utils::getShaderCacheKey(source, "renderer2D/quad", forVulkan);
+		for (const auto* stage: {"vert", "frag"}) {
+			const auto entry = std::format("shaders/renderer2D/spirv/{}/quad.{}.spv", api, stage);
+			EXPECT_FALSE(readPackEntry(exported->packFile, entry).empty()) << entry;
+			EXPECT_EQ(readPackEntry(exported->packFile, entry + ".hash"), renderer::utils::computeShaderHash(key))
+					<< entry;
+		}
+	}
+
+	// A second export serves the baked shader from the cook cache.
+	const auto again = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(again.has_value());
+	EXPECT_EQ(again->shadersBaked, 1u);
 }
 
 TEST_F(GameExporterFixture, AnEnvironmentBringsRenderer3D) {

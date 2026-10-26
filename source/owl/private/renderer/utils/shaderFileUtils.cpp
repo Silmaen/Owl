@@ -34,6 +34,7 @@ OWL_DIAG_POP
 #include <mutex>
 #include <slang-tag-version.h>
 #include <sstream>
+#include <system_error>
 #include <vector>
 
 namespace owl::renderer::utils {
@@ -284,6 +285,19 @@ auto extractSpirv(slang::IBlob* iBlob) -> std::vector<uint32_t> {
 }// namespace
 
 namespace {
+// An include as the loaders find it: on disk, in the open pack, or relative to an asset folder.
+auto isReadableAsset(const std::filesystem::path& iPath) -> bool {
+	std::error_code error;
+	if (std::filesystem::is_regular_file(iPath, error) || data::assets::isPackedAsset(iPath))
+		return true;
+	if (iPath.is_absolute())
+		return false;
+	return std::ranges::any_of(data::assets::getAssetSearchPaths(), [&iPath](const auto& iFolder) -> bool {
+		std::error_code folderError;
+		return std::filesystem::is_regular_file(iFolder / iPath, folderError);
+	});
+}
+
 // NOLINTNEXTLINE(misc-no-recursion): each file is expanded at most once.
 void expandIncludes(const std::filesystem::path& iFile, std::vector<std::filesystem::path>& ioSeen, std::string& oOut) {
 	const auto text = data::assets::readAssetText(iFile);
@@ -309,7 +323,7 @@ void expandIncludes(const std::filesystem::path& iFile, std::vector<std::filesys
 		const std::string name = line.substr(open + 1, close - open - 1);
 		std::filesystem::path found;
 		for (const auto& candidate: {iFile.parent_path() / name, iFile.parent_path().parent_path() / "common" / name}) {
-			if (exists(candidate) || data::assets::isPackedAsset(candidate)) {
+			if (isReadableAsset(candidate)) {
 				found = candidate.lexically_normal();
 				break;
 			}
