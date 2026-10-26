@@ -256,4 +256,21 @@ auto RenderAPI::getPresentMode() const -> std::string {
 
 auto RenderAPI::getDeviceName() const -> std::string { return internal::VulkanCore::get().getDeviceName(); }
 
+auto RenderAPI::supportsFormat(const ImageFormat iFormat) const -> bool {
+	const auto& core = internal::VulkanCore::get();
+	switch (iFormat) {
+		case ImageFormat::Bc7:
+			return core.hasTextureCompressionBc();
+		case ImageFormat::Astc4x4:
+			return core.hasTextureCompressionAstc();
+		case ImageFormat::None:
+		case ImageFormat::R8:
+		case ImageFormat::Rgb8:
+		case ImageFormat::Rgba8:
+		case ImageFormat::Rgba32F:
+			return true;
+	}
+	return false;
+}
+
 }// namespace owl::renderer::gpu::vulkan

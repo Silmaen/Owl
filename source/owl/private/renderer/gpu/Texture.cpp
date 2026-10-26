@@ -26,6 +26,7 @@
 #include <cstdint>
 #include <format>
 #include <fstream>
+#include <optional>
 #include <span>
 #include <string>
 #include <sstream>
@@ -33,6 +34,19 @@
 namespace owl::renderer::gpu {
 
 namespace {
+
+// A cooked texture: its Basis Universal levels transcoded for the active API, uploaded whole.
+auto createFromKtx2(const std::span<const uint8_t> iBytes, const std::string& iName) -> shared<Texture2D> {
+	auto levels = transcodeKtx2(iBytes, pickKtx2Target());
+	if (!levels) {
+		OWL_CORE_WARN("Texture2D: Cannot read the cooked texture '{}'.", iName)
+		return nullptr;
+	}
+	auto texture = Texture2D::create(Texture::Specification{.size = levels->size, .format = ImageFormat::Rgba8});
+	if (texture == nullptr || !texture->setLevels(*levels))
+		return nullptr;
+	return texture;
+}
 
 void applyImportSettings(Texture2D& ioTexture, const std::string& iName) {
 	if (!app::Application::instanced())
@@ -90,6 +104,8 @@ void Texture::Specification::fromString(const std::string& iString) {
 }
 
 auto Texture::Specification::getMipLevelCount() const -> uint32_t {
+	if (levelCount > 0)
+		return levelCount;
 	if (!generateMips || filterMode == FilterMode::Nearest)
 		return 1;
 	return static_cast<uint32_t>(std::bit_width(std::max({size.x(), size.y(), 1u})));
@@ -105,6 +121,9 @@ auto Texture::Specification::getPixelSize() const -> uint8_t {
 			return 1;
 		case ImageFormat::Rgba32F:
 			return 16;
+		case ImageFormat::Bc7:
+		case ImageFormat::Astc4x4:
+			return 1;
 		case ImageFormat::None:
 			return 0;
 	}
@@ -239,6 +258,14 @@ auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) 
 		// Check pack first.
 		if (app::Application::instanced() && app::Application::get().hasOpenPack()) {
 			if (auto data = app::Application::get().loadFromPack(val); data) {
+				if (isKtx2(*data)) {
+					auto texture = createFromKtx2(*data, val);
+					if (texture != nullptr) {
+						texture->m_name = val;
+						applyImportSettings(*texture, val);
+					}
+					return texture;
+				}
 				const auto tempFile = std::filesystem::temp_directory_path() / "owl_pack_cache" /
 									  std::filesystem::path(val).filename();
 				if (data::assets::pack::writeEntryFile(tempFile, *data)) {
@@ -326,8 +353,24 @@ auto Texture2D::createFromSerializedAsync(const std::string& iTextureSerializedN
 
 	// Hand off decode work to a worker; termination callback uploads the real pixels on the main thread.
 	auto sharedBytes = mkShared<std::vector<uint8_t>>(std::move(source.bytes));
-	auto sharedDecoded = mkShared<DecodedImage>();
 	const weak<Texture2D> weakTex = texture;
+	if (isKtx2(*sharedBytes)) {
+		auto sharedLevels = mkShared<std::optional<TextureLevels>>();
+		ioScheduler.pushTask(core::task::Task{
+				[sharedBytes, sharedLevels, target = pickKtx2Target()]() -> void {
+					*sharedLevels = transcodeKtx2(std::span<const uint8_t>(*sharedBytes), target);
+				},
+				[weakTex, sharedLevels]() -> void {
+					const auto tex = weakTex.lock();
+					if (!tex)
+						return;
+					const bool uploaded = sharedLevels->has_value() && tex->setLevels(**sharedLevels);
+					tex->m_loadState = uploaded ? LoadState::Ready : LoadState::Failed;
+				},
+		});
+		return texture;
+	}
+	auto sharedDecoded = mkShared<DecodedImage>();
 
 	ioScheduler.pushTask(core::task::Task{
 			[sharedBytes, sharedDecoded]() -> void {

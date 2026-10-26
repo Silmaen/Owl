@@ -128,6 +128,15 @@ auto parseMeta(const std::string_view iText, const std::string_view iSourceName)
 		}
 		if (const auto settings = root["Settings"]; settings && meta.importer == Importer::Texture) {
 			get(settings, "Nearest", meta.texture.nearest);
+			get(settings, "Mips", meta.texture.mips);
+			if (const auto compression = settings["Compression"]; compression) {
+				const auto name = compression.as<std::string>();
+				if (const auto value = magic_enum::enum_cast<TextureCompression>(name); value)
+					meta.texture.compression = *value;
+				else
+					OWL_CORE_WARN("Assets: Sidecar '{}' names an unknown compression '{}', read as None.", iSourceName,
+								  name)
+			}
 		}
 	} catch (const YAML::Exception& exception) {
 		OWL_CORE_WARN("Assets: Cannot read sidecar '{}': {}.", iSourceName, exception.what())
@@ -145,6 +154,9 @@ auto serializeMeta(const AssetMeta& iMeta) -> std::string {
 	if (iMeta.importer == Importer::Texture) {
 		out << YAML::Key << "Settings" << YAML::Value << YAML::BeginMap;
 		out << YAML::Key << "Nearest" << YAML::Value << iMeta.texture.nearest;
+		out << YAML::Key << "Compression" << YAML::Value
+			<< std::string{magic_enum::enum_name(iMeta.texture.compression)};
+		out << YAML::Key << "Mips" << YAML::Value << iMeta.texture.mips;
 		out << YAML::EndMap;
 	}
 	out << YAML::EndMap;

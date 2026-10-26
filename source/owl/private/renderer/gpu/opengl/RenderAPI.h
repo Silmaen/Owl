@@ -124,6 +124,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Tell whether textures of a pixel format can be sampled: BPTC is core OpenGL 4.2, ASTC needs its extension.
+	 * @param[in] iFormat The pixel format.
+	 * @return True when the context samples it.
+	 */
+	[[nodiscard]] auto supportsFormat(ImageFormat iFormat) const -> bool override;
+
+	/**
+	 * @brief
 	 *  Bind the textures to units `0..N-1` (`glBindTextures`) and record them in the active renderer block.
 	 * @param[in] iTextures Textures in unit order.
 	 */

@@ -45,6 +45,32 @@ enum struct ImageFormat : uint8_t {
 	Rgb8,///< Three 8bits-channels.
 	Rgba8,///< Four 8bits-channels.
 	Rgba32F,///< Four float channels.
+	Bc7,///< BC7 blocks (4x4 texels in 16 bytes), RGBA unorm: desktop GPUs.
+	Astc4x4,///< ASTC 4x4 blocks (16 bytes), RGBA unorm LDR: mobile and ARM GPUs.
+};
+
+/**
+ * @brief
+ *  Tell whether a pixel format stores 4x4 compressed blocks.
+ * @param[in] iFormat The format.
+ * @return True for `Bc7` and `Astc4x4`.
+ */
+[[nodiscard]] constexpr auto isBlockCompressed(const ImageFormat iFormat) -> bool {
+	return iFormat == ImageFormat::Bc7 || iFormat == ImageFormat::Astc4x4;
+}
+
+/**
+ * @brief
+ *  The levels of a texture ready for upload, finest first: raw pixels or compressed blocks.
+ */
+struct OWL_API TextureLevels {
+	/// Size of the finest level in texels.
+	math::vec2ui size{0, 0};
+	/// Format of every level.
+	ImageFormat format{ImageFormat::Rgba8};
+	/// Data of each level, finest first; a level of `w x h` texels holds `ceil(w/4) * ceil(h/4)` blocks when
+	/// compressed, `w * h` pixels otherwise.
+	std::vector<std::vector<uint8_t>> levels;
 };
 
 /**
@@ -118,11 +144,14 @@ public:
 		bool generateMips = false;
 		/// Sampler filtering — `Nearest` disables mipmaps and snaps to texels.
 		FilterMode filterMode = FilterMode::Linear;
+		/// Number of levels given by the data (`setLevels`); 0 lets `generateMips` decide.
+		uint32_t levelCount = 0;
 
 		/**
 		 * @brief
 		 *  Number of mipmap levels the backends allocate for this specification.
-		 * @return The full chain (down to 1×1) when `generateMips` is set with `Linear` filtering, 1 otherwise.
+		 * @return `levelCount` when set, else the full chain (down to 1×1) when `generateMips` is set with `Linear`
+		 * filtering, 1 otherwise.
 		 */
 		[[nodiscard]] auto getMipLevelCount() const -> uint32_t;
 
@@ -213,6 +242,14 @@ public:
 	 * @param[in] iSize Size of the data.
 	 */
 	virtual void setData(void* iData, uint32_t iSize) = 0;
+
+	/**
+	 * @brief
+	 *  Replace the texture by levels given in full (mipmaps included, no mipmap generated): size and format follow.
+	 * @param[in] iLevels The levels, finest first, in a format the backend supports (`RenderAPI::supportsFormat`).
+	 * @return True when the levels were uploaded.
+	 */
+	virtual auto setLevels(const TextureLevels& iLevels) -> bool = 0;
 
 	/**
 	 * @brief

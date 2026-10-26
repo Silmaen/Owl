@@ -24,4 +24,15 @@ void Texture2D::bind(uint32_t) const {}
 
 void Texture2D::setData(void*, uint32_t) {}
 
+auto Texture2D::setLevels(const TextureLevels& iLevels) -> bool {
+	if (iLevels.levels.empty()) {
+		OWL_CORE_WARN("Null Texture: No level to set.")
+		return false;
+	}
+	m_specification.size = iLevels.size;
+	m_specification.format = iLevels.format;
+	m_specification.levelCount = static_cast<uint32_t>(iLevels.levels.size());
+	return true;
+}
+
 }// namespace owl::renderer::gpu::null

@@ -315,7 +315,9 @@ void VulkanCore::createLogicalDevice() {
 	features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 	m_drawIndirectCount = m_phyProps->features12.drawIndirectCount == VK_TRUE;
 	features12.drawIndirectCount = m_drawIndirectCount ? VK_TRUE : VK_FALSE;
-	constexpr VkPhysicalDeviceFeatures features = {.robustBufferAccess = VK_FALSE,
+	m_textureCompressionBc = m_phyProps->features.textureCompressionBC == VK_TRUE;
+	m_textureCompressionAstc = m_phyProps->features.textureCompressionASTC_LDR == VK_TRUE;
+	const VkPhysicalDeviceFeatures features = {.robustBufferAccess = VK_FALSE,
 												   .fullDrawIndexUint32 = VK_FALSE,
 												   .imageCubeArray = VK_FALSE,
 												   .independentBlend = VK_TRUE,
@@ -336,8 +338,8 @@ void VulkanCore::createLogicalDevice() {
 												   .multiViewport = VK_FALSE,
 												   .samplerAnisotropy = VK_TRUE,
 												   .textureCompressionETC2 = VK_FALSE,
-												   .textureCompressionASTC_LDR = VK_FALSE,
-												   .textureCompressionBC = VK_FALSE,
+												   .textureCompressionASTC_LDR = m_textureCompressionAstc ? VK_TRUE : VK_FALSE,
+												   .textureCompressionBC = m_textureCompressionBc ? VK_TRUE : VK_FALSE,
 												   .occlusionQueryPrecise = VK_FALSE,
 												   .pipelineStatisticsQuery = VK_FALSE,
 												   .vertexPipelineStoresAndAtomics = VK_FALSE,

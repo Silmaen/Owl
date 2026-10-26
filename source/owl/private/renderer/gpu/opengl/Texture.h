@@ -105,6 +105,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Replace the texture by levels given in full (mipmaps included, no mipmap generated): size and format follow.
+	 * @param[in] iLevels The levels, finest first, in a format the backend supports.
+	 * @return True when the levels were uploaded.
+	 */
+	auto setLevels(const TextureLevels& iLevels) -> bool override;
+
+	/**
+	 * @brief
 	 *  Re-apply the GL sampler parameters for the requested filter mode.
 	 * @param[in] iMode The new filter mode.
 	 */

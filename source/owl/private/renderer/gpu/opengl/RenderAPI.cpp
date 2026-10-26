@@ -167,6 +167,22 @@ void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture
 	BindingTable::bindTextures(names);
 }
 
+auto RenderAPI::supportsFormat(const ImageFormat iFormat) const -> bool {
+	switch (iFormat) {
+		case ImageFormat::Bc7:
+			return GLAD_GL_VERSION_4_2 != 0 || GLAD_GL_ARB_texture_compression_bptc != 0;
+		case ImageFormat::Astc4x4:
+			return GLAD_GL_KHR_texture_compression_astc_ldr != 0;
+		case ImageFormat::None:
+		case ImageFormat::R8:
+		case ImageFormat::Rgb8:
+		case ImageFormat::Rgba8:
+		case ImageFormat::Rgba32F:
+			return true;
+	}
+	return false;
+}
+
 auto RenderAPI::getMaxTextureSlots() const -> uint32_t {
 	int32_t textureUnits = 0;
 	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &textureUnits);

@@ -89,4 +89,29 @@ OWL_API auto writeImagePng(const std::filesystem::path& iPath, math::vec2ui iSiz
  */
 OWL_API auto encodeImagePng(math::vec2ui iSize, std::span<const uint8_t> iRgba) -> std::vector<uint8_t>;
 
+/**
+ * @brief
+ *  Tell whether bytes hold a KTX2 texture (the cooked form of a compressed texture).
+ * @param[in] iBytes The bytes.
+ * @return True when they start with the KTX2 identifier.
+ */
+[[nodiscard]] OWL_API auto isKtx2(std::span<const uint8_t> iBytes) -> bool;
+
+/**
+ * @brief
+ *  The format a KTX2 texture is transcoded to on the active render API: BC7, else ASTC 4x4, else RGBA8.
+ * @return The transcode target.
+ */
+[[nodiscard]] OWL_API auto pickKtx2Target() -> gpu::ImageFormat;
+
+/**
+ * @brief
+ *  Read a KTX2 texture and transcode its Basis Universal levels.
+ * @param[in] iBytes The KTX2 bytes.
+ * @param[in] iTarget `Bc7`, `Astc4x4` or `Rgba8`.
+ * @return Every level, finest first, or nullopt when the bytes are no transcodable KTX2.
+ */
+[[nodiscard]] OWL_API auto transcodeKtx2(std::span<const uint8_t> iBytes, gpu::ImageFormat iTarget)
+		-> std::optional<gpu::TextureLevels>;
+
 }// namespace owl::renderer

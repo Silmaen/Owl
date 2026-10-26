@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <app/Application.h>
+#include <data/assets/AssetReference.h>
 #include <data/assets/AssetSearchPaths.h>
 #include <renderer/Renderer.h>
 #include <renderer/TextureDecoder.h>
@@ -140,6 +141,48 @@ TEST(AssetLibrary, ProjectSwitchReadsTheNewTextureOfTheSameName) {
 	EXPECT_EQ(app->unloadAssetsFrom({}), 0);
 
 	app->removeAssetDirectory(second);
+	library.clear();
+	std::filesystem::remove_all(root);
+	Application::invalidate();
+	app.reset();
+	Log::invalidate();
+}
+
+TEST(AssetLibrary, GuidReferenceFollowsARenameAndAppliesImportSettings) {
+	Log::init(Log::Level::Off);
+	const AppParams params{.name = "guid reference",
+						   .renderer = gpu::RenderAPI::Type::Null,
+						   .hasGui = false,
+						   .isDummy = true};
+	auto app = owl::mkShared<Application>(params);
+	const auto root = std::filesystem::temp_directory_path() / "owl_guid_reference_test";
+	std::filesystem::remove_all(root);
+	writeImage(root / "textures" / "hero.png", 2);
+	app->addAssetDirectory({.title = "project", .assetsPath = root}, true);
+	auto& registry = app->getAssetRegistry();
+	const auto guid = registry.findGuid("textures/hero.png");
+	ASSERT_TRUE(guid);
+	auto meta = registry.find(*guid)->meta;
+	meta.texture.nearest = true;
+	ASSERT_TRUE(registry.setMeta(meta));
+
+	auto& library = Renderer::getTextureLibrary();
+	const auto texture = Texture2D::createFromSerializedForDeserialize("nam:textures/hero.png");
+	ASSERT_NE(texture, nullptr);
+	EXPECT_EQ(texture->getFilterMode(), FilterMode::Nearest);
+	const auto reference = texture->getSerializeString();
+	EXPECT_EQ(reference, owl::data::assets::formatReference(*guid, "textures/hero.png"));
+	EXPECT_EQ(Texture2D::createFromSerializedForDeserialize(reference), texture);
+
+	ASSERT_TRUE(registry.moveFile(root / "textures" / "hero.png", root / "sprites" / "player.png"));
+	library.clear();
+	const auto moved = Texture2D::createFromSerializedForDeserialize(reference);
+	ASSERT_NE(moved, nullptr);
+	EXPECT_TRUE(owl::data::assets::isInDirectory(moved->getPath(), root / "sprites"));
+	EXPECT_EQ(moved->getSerializeString(), owl::data::assets::formatReference(*guid, "sprites/player.png"));
+	EXPECT_EQ(owl::data::assets::toAssetPath(reference), "sprites/player.png");
+
+	app->removeAssetDirectory(root);
 	library.clear();
 	std::filesystem::remove_all(root);
 	Application::invalidate();

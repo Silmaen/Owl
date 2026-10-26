@@ -39,11 +39,25 @@ enum struct Importer : uint8_t {
 
 /**
  * @brief
- *  Import settings of a texture, applied when the texture is created from its file.
+ *  How the cook stores a texture in a pack.
+ */
+enum struct TextureCompression : uint8_t {
+	None,///< The source file as is (PNG, JPEG...): lossless, decoded at load.
+	Uastc,///< Basis Universal UASTC in KTX2: near-lossless, transcoded to BC7 / ASTC at load.
+	Etc1s,///< Basis Universal ETC1S in KTX2: smallest, lossy, transcoded to BC7 / ASTC at load.
+};
+
+/**
+ * @brief
+ *  Import settings of a texture: the filtering applies wherever the texture is loaded, the rest to the cook.
  */
 struct OWL_API TextureImportSettings {
 	/// Nearest-texel filtering (pixel art) instead of bilinear.
 	bool nearest{false};
+	/// Storage of the texture in a pack.
+	TextureCompression compression{TextureCompression::None};
+	/// Mipmap chain built by the cook (compressed textures only, ignored with nearest filtering).
+	bool mips{true};
 
 	/**
 	 * @brief

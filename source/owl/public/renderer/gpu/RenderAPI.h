@@ -9,6 +9,7 @@
 #pragma once
 
 #include "DrawData.h"
+#include "Texture.h"
 #include "math/vectors.h"
 
 #include <cstdint>
@@ -159,6 +160,16 @@ public:
 	 * @return Number of texture slots.
 	 */
 	[[nodiscard]] virtual auto getMaxTextureSlots() const -> uint32_t = 0;
+
+	/**
+	 * @brief
+	 *  Tell whether textures of a pixel format can be sampled.
+	 * @param[in] iFormat The pixel format.
+	 * @return True for the uncompressed formats, and for a compressed one the device supports.
+	 */
+	[[nodiscard]] virtual auto supportsFormat(const ImageFormat iFormat) const -> bool {
+		return !isBlockCompressed(iFormat);
+	}
 
 	/**
 	 * @brief

@@ -13,6 +13,8 @@
 #include "core/external/opengl46.h"
 #include "renderer/TextureDecoder.h"
 
+#include <algorithm>
+
 namespace owl::renderer::gpu::opengl {
 
 namespace {
@@ -26,6 +28,8 @@ auto glDataFormat(const ImageFormat& iFormat) -> GLenum {
 			return GL_RED;
 		case ImageFormat::Rgba32F:
 			return GL_RGBA;
+		case ImageFormat::Bc7:
+		case ImageFormat::Astc4x4:
 		case ImageFormat::None:
 			return GL_NONE;
 	}
@@ -46,6 +50,10 @@ auto glInternalDataFormat(const ImageFormat& iFormat) -> GLenum {
 			return GL_R8;
 		case ImageFormat::Rgba32F:
 			return GL_RGBA32F;
+		case ImageFormat::Bc7:
+			return GL_COMPRESSED_RGBA_BPTC_UNORM;
+		case ImageFormat::Astc4x4:
+			return GL_COMPRESSED_RGBA_ASTC_4x4_KHR;
 		case ImageFormat::None:
 			return GL_NONE;
 	}
@@ -156,6 +164,34 @@ void Texture2D::setData(void* iData, [[maybe_unused]] const uint32_t iSize) {
 						glDataType(m_specification.format), iData);
 	if (m_mipLevels > 1)
 		glGenerateTextureMipmap(m_textureId);
+}
+
+auto Texture2D::setLevels(const TextureLevels& iLevels) -> bool {
+	OWL_PROFILE_FUNCTION()
+
+	if (iLevels.levels.empty() || iLevels.size.surface() == 0) {
+		OWL_CORE_WARN("OpenGL Texture: No level to set on '{}'.", getName())
+		return false;
+	}
+	auto specs = m_specification;
+	specs.size = iLevels.size;
+	specs.format = iLevels.format;
+	specs.levelCount = static_cast<uint32_t>(iLevels.levels.size());
+	reallocate(specs);
+	const bool compressed = isBlockCompressed(iLevels.format);
+	for (uint32_t level = 0; level < specs.levelCount; ++level) {
+		const auto width = static_cast<GLsizei>(std::max(1u, iLevels.size.x() >> level));
+		const auto height = static_cast<GLsizei>(std::max(1u, iLevels.size.y() >> level));
+		const auto& data = iLevels.levels[level];
+		if (compressed)
+			glCompressedTextureSubImage2D(m_textureId, static_cast<GLint>(level), 0, 0, width, height,
+										  glInternalDataFormat(iLevels.format), static_cast<GLsizei>(data.size()),
+										  data.data());
+		else
+			glTextureSubImage2D(m_textureId, static_cast<GLint>(level), 0, 0, width, height,
+								glDataFormat(iLevels.format), glDataType(iLevels.format), data.data());
+	}
+	return true;
 }
 
 }// namespace owl::renderer::gpu::opengl

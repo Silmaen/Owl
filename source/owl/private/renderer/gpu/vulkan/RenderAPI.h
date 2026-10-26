@@ -122,6 +122,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Tell whether textures of a pixel format can be sampled: BC7 and ASTC follow the device features.
+	 * @param[in] iFormat The pixel format.
+	 * @return True when the device samples it.
+	 */
+	[[nodiscard]] auto supportsFormat(ImageFormat iFormat) const -> bool override;
+
+	/**
+	 * @brief
 	 *  Set the sampled textures of the active renderer block (slot `i` = `iTextures[i]`); the descriptor set of the
 	 *  next draw is rewritten only when the list changed.
 	 * @param[in] iTextures Textures in slot order.

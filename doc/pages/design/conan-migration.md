@@ -195,6 +195,7 @@ Checked on 2026-10-09 with `conan search -r conancenter` (Conan 2.33). "Owl (Con
 | imgui                 | 1.92.7-docking | 1.92.9b-docking | ConanCenter           | shared  | Backends compiled by Owl (see above)                                           |
 | imgui_color_text_edit | 1.92.7         | 1.92.9          | local recipe          | static  | Absent; upstream tag, `DocPos` cursor API                                      |
 | imguizmo              | 1.92.7         | 1.10            | local recipe          | static  | ConanCenter's cci.20231114 does not build with imgui 1.92                      |
+| ktx                   | —              | 4.4.2           | ConanCenter           | static  | KTX2 of the cook: Basis Universal, BC7 / ASTC transcode; tools off             |
 | libpng                | 1.6.50         | 1.6.58          | ConanCenter           | static  | Transitive (msdf-atlas-gen)                                                    |
 | libsndfile            | 1.2.2          | 1.2.2           | ConanCenter           | shared  | LGPL: kept shared; flac 1.5.0 and libalsa 1.2.16.1 forced (override)           |
 | lua                   | 5.5.0          | 5.5.0           | ConanCenter           | static  |                                                                                |
