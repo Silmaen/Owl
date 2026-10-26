@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <iterator>
 #include <sstream>
 
 namespace owl::data::assets::pack {
@@ -130,10 +131,10 @@ auto selectEngineFiles(const ExportSettings& iSettings, const renderer::Renderer
 	const auto folders = iRenderers.getShaderFolders();
 	const auto skipped = std::erase_if(ioAssets, [&folders](const AssetReference& iRef) -> bool {
 		const std::filesystem::path path{iRef.packPath};
-		auto part = path.begin();
-		if (part == path.end() || *part != "shaders" || ++part == path.end())
+		if (path.empty() || *path.begin() != "shaders")
 			return false;
-		return std::ranges::find(folders, part->string()) == folders.end();
+		const auto folder = std::next(path.begin());
+		return folder == path.end() || std::ranges::find(folders, folder->string()) == folders.end();
 	});
 	if (!iSettings.imGui)
 		return skipped;
