@@ -93,6 +93,7 @@ auto AssetRegistry::rootOf(const std::filesystem::path& iFile) const -> const Ro
 	return nullptr;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion): one level at most, the copy of a duplicated GUID is registered once.
 auto AssetRegistry::registerLocked(const Root& iRoot, const std::filesystem::path& iFile, ScanReport& ioReport)
 		-> std::optional<AssetGuid> {
 	const auto importer = importerOf(iFile);

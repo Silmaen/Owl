@@ -121,7 +121,7 @@ public:
 	 * @param[in] iArgs Command arguments (`path` added).
 	 * @return True when the command ran.
 	 */
-	auto run(const std::string& iName, commands::CommandArgs iArgs) const -> bool;
+	[[nodiscard]] auto run(const std::string& iName, commands::CommandArgs iArgs) const -> bool;
 
 private:
 	/**

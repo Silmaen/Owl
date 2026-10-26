@@ -168,7 +168,8 @@ auto cookTexture(const AssetMeta& iMeta, const std::span<const uint8_t> iSource,
 		return unexpected{CookError::EncodeFailed};
 	}
 	std::vector<uint8_t> cooked(bytes, bytes + size);
-	std::free(bytes);// NOLINT(cppcoreguidelines-no-malloc) libktx allocates the written file with malloc.
+	// NOLINTNEXTLINE(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory) libktx allocates the file with malloc.
+	std::free(bytes);
 	return cooked;
 }
 

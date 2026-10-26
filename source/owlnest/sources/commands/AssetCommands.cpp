@@ -50,7 +50,7 @@ auto resolvePath(const std::string& iPath) -> std::optional<std::filesystem::pat
 	auto roots = getRegistry().getEditableDirectories();
 	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) roots.push_back(assetsPath);
 	for (const auto& root: roots)
-		if (const auto full = (root / path).lexically_normal(); std::filesystem::exists(full, error))
+		if (auto full = (root / path).lexically_normal(); std::filesystem::exists(full, error))
 			return full;
 	return std::nullopt;
 }

@@ -455,7 +455,7 @@ void YamlDocument::loadBinary(const std::string_view iBytes, const std::string_v
 	const auto text = [&reader, &ranges, &arena](const uint32_t iIndex) -> ryml::csubstr {
 		if (iIndex >= ranges.size())
 			reader.fail("inconsistent");
-		return arena.sub(ranges[iIndex].first, ranges[iIndex].second);
+		return {arena.str + ranges[iIndex].first, ranges[iIndex].second};
 	};
 
 	// Containers being filled, with the number of children still to read.
