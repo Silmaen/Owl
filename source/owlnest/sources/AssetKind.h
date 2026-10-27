@@ -22,7 +22,7 @@ namespace owl::nest {
  */
 enum struct AssetKind : uint8_t {
 	Scene,///< `.owl`: opened in a scene document.
-	NodeGraph,///< `.owlflow`: opened in a node graph document.
+	NodeGraph,///< `.owlflow`, `.owlvs`: opened in a node graph or visual script document.
 	Animation,///< `.owlanim`: opened in an animation document.
 	Tilemap,///< `.owltilemap`: opened in a tilemap document.
 	Tileset,///< `.owltileset`: opened in a tileset document.

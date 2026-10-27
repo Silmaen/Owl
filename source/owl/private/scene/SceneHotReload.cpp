@@ -21,6 +21,7 @@
 #include "scene/component/Tag.h"
 #include "scene/component/Tilemap.h"
 #include "scene/component/VoxelWorld.h"
+#include "script/visual/VisualScript.h"
 
 #include <cstdint>
 #include <string>
@@ -108,7 +109,7 @@ auto Scene::onAssetFileChanged(const std::filesystem::path& iFile) -> bool {
 				used = true;
 			}
 		}
-	} else if (extension == ".lua") {
+	} else if (extension == ".lua" || extension == script::visual::g_VisualScriptExtension) {
 		if (auto& sceneScript = m_sceneScript; sceneScript.instance && isAssetFile(sceneScript.scriptPath, iFile)) {
 			used = true;
 			if (auto fresh = loadScriptInstance(*this, sceneScript, 0, "scene"); fresh) {
@@ -141,7 +142,7 @@ auto Scene::onAssetFileChanged(const std::filesystem::path& iFile) -> bool {
 			OWL_CORE_INFO("Scene: Script '{}' reloaded.", luaScript.scriptPath)
 		}
 	}
-	if (used && extension != ".lua")
+	if (used && extension != ".lua" && extension != script::visual::g_VisualScriptExtension)
 		invalidateTilemapAssets();
 	return used;
 }

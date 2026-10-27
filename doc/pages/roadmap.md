@@ -154,7 +154,7 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Planned][planned] Area lights (rectangle, disc, sphere) lighting through LTC, with soft shadows sharing the PCSS of the sun ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Planned][planned] Point and spot light shadows (cube and perspective shadow maps) ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Planned][planned] Local reflection probes: baked cube maps blended by volume, parallax-corrected, so metals reflect the room ([3D core](design/3d-core.md#reflection-probes))
-- ![Planned][planned] Visual scripting MVP, event graphs compiled to Lua, node editing of assets ([details](design/visual-scripting.md))
+- ![In Progress][progress] Visual scripting MVP, event graphs compiled to Lua, node editing of assets ([details](design/visual-scripting.md))
 - ![Planned][planned] Node-graph link waypoints
 - ![Planned][planned] Script debugging aids (breakpoint markers, live watch)
 - ![Planned][planned] Lua editor scripts and interactive Lua console ([Editor scripting](design/editor-scripting.md))

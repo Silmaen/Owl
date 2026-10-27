@@ -341,6 +341,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Mouse position in canvas space, as of the last `onRender()` call.
+	 * @return The position, in the coordinates of `Node::position`.
+	 */
+	[[nodiscard]] auto getMouseCanvasPosition() const -> math::vec2f;
+
+	/**
+	 * @brief
 	 *  Request that the next `onRender()` call zoom + pan the view so every node fits.
 	 *
 	 * Single-shot — the canvas resets the request automatically once handled, matching the

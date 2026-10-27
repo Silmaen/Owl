@@ -23,6 +23,17 @@ Design page for the Blueprints-style visual scripting, summarised in the [Roadma
 - Node editing of other assets (scripts first) folds in here, on the same palette and compiler (decided at the v0.4.0
   kickoff)
 
+### Status {#visual-scripting-status}
+
+| Part                                                                                     | Status  |
+|------------------------------------------------------------------------------------------|---------|
+| `.owlvs` graph, palette from the binding registry, compiler to Lua, `LuaScript` and pack | Done    |
+| Owl Nest editor: palette, typed links, values, variables, errors, copy / paste, undo     | Done    |
+| Debugging: live values on the wires, breakpoints on nodes                                | Planned |
+| Node editing of other assets                                                             | Planned |
+
+User guide: [Visual scripts](../visual-scripts.md).
+
 ## Node-graph link waypoints (v0.6.0)
 
 - Right-click on a coloured link in `NodeCanvas` (Scene Flow today, future graphs too) to insert an intermediate point

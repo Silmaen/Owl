@@ -28,7 +28,7 @@ enum struct AssetKind : uint8_t {
 	Texture,///< Image files (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`, `.hdr`).
 	Font,///< Font files (`.ttf`, `.otf`).
 	Sound,///< Audio files (`.wav`, `.mp3`, `.ogg`, `.flac`).
-	LuaScript,///< Lua source (`.lua`).
+	LuaScript,///< Lua source (`.lua`) or visual script (`.owlvs`).
 	AnyScript,///< Any source/script file (`.lua`, `.py`, `.c`, `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`).
 	Scene,///< Scene file (`.owl`).
 	Prefab,///< Prefab file (`.owlprefab`).

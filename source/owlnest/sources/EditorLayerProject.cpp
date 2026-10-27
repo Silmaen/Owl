@@ -19,6 +19,7 @@
 #include "document/SceneFlowDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
+#include "document/VisualScriptDocument.h"
 
 #include <app/EngineContext.h>
 #include <gui/FontPreviewCache.h>
@@ -258,7 +259,11 @@ void EditorLayer::openNodeGraphFile(const std::filesystem::path& iPath) {
 			return;
 		}
 	}
-	auto doc = mkUniq<NodeGraphDocument>();
+	uniq<NodeGraphDocument> doc;
+	if (script::visual::isVisualScriptPath(iPath.string()))
+		doc = mkUniq<VisualScriptDocument>();
+	else
+		doc = mkUniq<NodeGraphDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
 		OWL_CORE_WARN("Failed to open node-graph file: {}.", iPath.string())

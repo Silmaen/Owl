@@ -768,6 +768,11 @@ void NodeCanvas::setOnContextMenu(std::function<void(std::optional<core::UUID>)>
 
 void NodeCanvas::setEnabled(bool iEnabled) { mp_impl->m_enabled = iEnabled; }
 
+auto NodeCanvas::getMouseCanvasPosition() const -> math::vec2f {
+	const auto mouse = mp_impl->mouseInCanvasSpace();
+	return {mouse.x, mouse.y};
+}
+
 void NodeCanvas::requestFitToContent() { mp_impl->m_pendingFit = GraphEditor::Fit_AllNodes; }
 
 void NodeCanvas::onRender() {

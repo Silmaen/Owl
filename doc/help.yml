@@ -35,6 +35,7 @@ Groups:
   - title: Scripting
     pages:
       - doc/pages/scripting.md
+      - doc/pages/visual-scripts.md
       - doc/pages/lua-api.md
       - doc/pages/lua-api-entities.md
       - doc/pages/lua-api-scene.md

@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest moves the world origin with an undoable `scene.set_world_origin` (viewport Camera menu, Scene Settings field), the view following it.
 - Lua `transform.get_world_position` / `set_world_position` in double and `scene.get_world_origin`.
 - Engine Demo far orbit (`far_orbit.owl`, **K** from the menu): a station one astronomical unit away, sharp to the centimetre.
+- Visual scripts (`.owlvs`): event graphs compiled to Lua at load, usable wherever a `.lua` script is, their variables as script properties.
+- Owl Nest visual script editor: palette of every Lua binding, typed links, side panel for values, variables and compile errors, copy / paste, undo.
+- Engine Demo: the tavern cellar ladder is a visual script.
 
 ### Changed
 

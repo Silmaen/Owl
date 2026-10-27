@@ -31,6 +31,7 @@
 #include <scene/PrefabSerializer.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
+#include <script/visual/VisualScript.h>
 
 #include <yaml-cpp/yaml.h>
 
@@ -461,8 +462,10 @@ auto setSceneScript(const shared<scene::Scene>& ioScene, const CommandArgs& iArg
 		const auto script = scene::component::LuaScript::fromYaml(text);
 		if (!script || script->scriptPath.empty())
 			return fail(CommandError::InvalidArgument, "`script` is not a YAML map with a `scriptPath`");
-		if (std::filesystem::path{script->scriptPath}.extension() != ".lua")
-			return fail(CommandError::InvalidArgument, std::format("`{}` is not a `.lua` file", script->scriptPath));
+		if (const auto extension = std::filesystem::path{script->scriptPath}.extension();
+			extension != ".lua" && extension != script::visual::g_VisualScriptExtension)
+			return fail(CommandError::InvalidArgument,
+						std::format("`{}` is not a `.lua` file nor a visual script", script->scriptPath));
 	}
 	const auto& current = ioScene->getSceneScript();
 	const auto before = current.scriptPath.empty() ? std::string{} : current.toYaml();

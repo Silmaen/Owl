@@ -203,7 +203,7 @@ Entities:
       Name: mesh_world
     Trigger: {Type: Interaction, CallbackName: on_ladder_interact}
     LuaScript:
-      scriptPath: gid:3265aace829e7a8c:scripts/tavern/cellar_ladder.lua
+      scriptPath: gid:3265aace829e7a8c:scripts/tavern/cellar_ladder.owlvs
     Visibility:
       gameVisible: true
   - Entity: 3950000000000000030
