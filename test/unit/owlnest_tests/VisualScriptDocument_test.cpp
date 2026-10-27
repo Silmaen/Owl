@@ -135,3 +135,35 @@ TEST_F(VisualScriptDocumentTest, SaveWritesTheGraph) {
 	EXPECT_TRUE(reloaded.restoreRecoverySnapshot(*snapshot));
 	EXPECT_FALSE(reloaded.restoreRecoverySnapshot("not: [yaml"));
 }
+
+TEST_F(VisualScriptDocumentTest, AddNodeLinksTheDroppedPin) {
+	const auto event = m_document.getScript().nodes.front().id;
+	const VisualScriptPinRef from{.node = event, .pin = "Then", .output = true, .type = vs::PinType::Exec};
+	const auto branch = m_document.addNode("flow.branch", {200.f, 0.f}, from);
+	ASSERT_EQ(m_document.getScript().links.size(), 1u);
+	EXPECT_EQ(m_document.getScript().links.front().toNode, branch);
+	EXPECT_EQ(m_document.getScript().links.front().toPin, "Exec");
+	EXPECT_EQ(m_document.getSelection(), std::vector{branch});
+	const auto get = m_document.addNode("var.get|speed", {0.f, 0.f});
+	EXPECT_EQ(m_document.getScript().findNode(get)->values.at("variable"), "speed");
+}
+
+TEST_F(VisualScriptDocumentTest, SplitPinKeepsTheValueAndDropsItsLinks) {
+	OWL_REQUIRE_MODULE(SCRIPT);
+	const auto set = m_document.addNode("call.transform.set_position", {0.f, 0.f});
+	const auto get = m_document.addNode("call.transform.get_position", {0.f, 200.f});
+	auto script = m_document.getScript();
+	script.findNode(set)->values["xyz"] = "1, 2, 3";
+	script.links.push_back({.fromNode = get, .fromPin = "xyz", .toNode = set, .toPin = "xyz"});
+	ASSERT_TRUE(m_document.commit(script, "Setup"));
+	m_document.setPinSplit(set, "xyz", true);
+	const auto* node = m_document.getScript().findNode(set);
+	EXPECT_EQ(node->values.at("y"), "2");
+	EXPECT_FALSE(node->values.contains("xyz"));
+	EXPECT_TRUE(m_document.getScript().links.empty());
+	m_document.setPinSplit(set, "xyz", false);
+	EXPECT_EQ(m_document.getScript().findNode(set)->values.at("xyz"), "1, 2, 3");
+	m_document.performUndo();
+	m_document.performUndo();
+	EXPECT_EQ(m_document.getScript().links.size(), 1u);
+}

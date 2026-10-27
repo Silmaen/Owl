@@ -9,6 +9,7 @@
 #pragma once
 
 #include "NodeGraphDocument.h"
+#include "VisualScriptCanvas.h"
 
 #include <script/visual/VisualScript.h>
 
@@ -18,8 +19,10 @@
 #include <optional>
 #include <span>
 #include <string>
-#include <unordered_map>
+#include <utility>
 #include <vector>
+
+class TextEditor;
 
 namespace owl::nest {
 
@@ -33,9 +36,10 @@ using VisualScriptUndoManager = UndoManager<script::visual::VisualScript>;
  * @brief
  *  Visual script document (`.owlvs`): an event graph on the node canvas, compiled to Lua as it is edited.
  *
- * The `script::visual::VisualScript` is the document; the canvas is rebuilt from it after each edit. A right click
- * on the canvas opens the node palette, the side panel edits the variables, the values of the selected node and
- * shows the compilation errors and the generated Lua.
+ * The `script::visual::VisualScript` is the document, drawn by a `VisualScriptCanvas` and compiled after each edit.
+ * A right click on the canvas opens the node palette; the Hierarchy panel lists every node to drag onto the canvas,
+ * the Properties panel (also shown on the left of the canvas on demand) edits the variables and the selected node,
+ * or shows the generated Lua.
  */
 class VisualScriptDocument final : public NodeGraphDocument {
 public:
@@ -75,9 +79,49 @@ public:
 
 	/**
 	 * @brief
-	 *  Render the canvas and the side panel.
+	 *  Render the toolbar, the canvas and the details panel when shown.
 	 */
 	void onImGuiRender() override;
+
+	/**
+	 * @brief
+	 *  Attach to the editor.
+	 * @param[in] iEditor The editor layer.
+	 */
+	void onAttach(EditorLayer* iEditor) override;
+
+	/**
+	 * @brief
+	 *  The graph replaces the scene panels: node library in the Hierarchy, details in the Properties.
+	 * @return Always true.
+	 */
+	[[nodiscard]] auto overridesGlobalPanels() const -> bool override { return true; }
+
+	/**
+	 * @brief
+	 *  Node library: every node, by group, to click or drag onto the canvas.
+	 */
+	void renderHierarchyPanel() override;
+
+	/**
+	 * @brief
+	 *  Variables and selected node tabs.
+	 */
+	void renderPropertiesPanel() override;
+
+	/**
+	 * @brief
+	 *  Title of the Hierarchy panel.
+	 * @return `Nodes`.
+	 */
+	[[nodiscard]] auto hierarchyPanelTitle() const -> std::string override { return "Nodes"; }
+
+	/**
+	 * @brief
+	 *  Title of the Properties panel.
+	 * @return `Graph`.
+	 */
+	[[nodiscard]] auto propertiesPanelTitle() const -> std::string override { return "Graph"; }
 
 	/**
 	 * @brief
@@ -162,12 +206,38 @@ public:
 
 	/**
 	 * @brief
-	 *  Add a node of a palette type.
-	 * @param[in] iType Node type identifier.
+	 *  Add a node of a palette type, linked to a pin when one is given.
+	 * @param[in] iType Node type identifier; `var.get|name` and `var.set|name` name the variable.
 	 * @param[in] iPosition Top-left corner on the canvas.
+	 * @param[in] iLinkFrom Pin to link to the first compatible pin of the new node.
 	 * @return The new node, or 0 when the type is unknown.
 	 */
-	auto addNode(const std::string& iType, std::array<float, 2> iPosition) -> core::UUID;
+	auto addNode(const std::string& iType, std::array<float, 2> iPosition,
+				 const std::optional<VisualScriptPinRef>& iLinkFrom = std::nullopt) -> core::UUID;
+
+	/**
+	 * @brief
+	 *  Show a grouped pin (`rgba`, `xyz`) as its components or as one pin, as one edit; its links are removed and
+	 *  its value is carried over.
+	 * @param[in] iNode The node.
+	 * @param[in] iGroup Group name.
+	 * @param[in] iSplit True to show the components.
+	 */
+	void setPinSplit(core::UUID iNode, const std::string& iGroup, bool iSplit);
+
+	/**
+	 * @brief
+	 *  Selected nodes.
+	 * @return Their identifiers.
+	 */
+	[[nodiscard]] auto getSelection() const -> const std::vector<core::UUID>& { return m_view.getSelection(); }
+
+	/**
+	 * @brief
+	 *  Replace the selected nodes.
+	 * @param[in] iNodes The nodes.
+	 */
+	void setSelection(std::vector<core::UUID> iNodes) { m_view.setSelection(std::move(iNodes)); }
 
 	/**
 	 * @brief
@@ -216,111 +286,98 @@ public:
 	 */
 	[[nodiscard]] static auto starterScript() -> script::visual::VisualScript;
 
-protected:
-	/**
-	 * @brief
-	 *  Install the canvas callbacks.
-	 */
-	void onCanvasReady() override;
-
 private:
-	/// A pin of the canvas, by node and name.
-	struct PinRef {
-		/// Owning node.
-		core::UUID node;
-		/// Pin name.
-		std::string name;
-		/// Whether it is an output.
-		bool output{false};
-		/// Carried type.
-		script::visual::PinType type{script::visual::PinType::Any};
-	};
-
 	/**
 	 * @brief
-	 *  Rebuild the canvas from the graph, keeping the selection, and compile.
+	 *  Compile the graph when it changed.
 	 */
-	void rebuildCanvas();
+	void compileIfStale();
 
 	/**
 	 * @brief
-	 *  Whether a link may join two canvas pins.
-	 * @param[in] iFrom Output pin.
-	 * @param[in] iTo Input pin.
-	 * @return True when allowed.
+	 *  Edit shortcuts of the canvas: Delete, Home, Ctrl+A / C / X / V / D.
+	 * @param[in] iDeleteUsed Whether the canvas used Delete on a link this frame.
 	 */
-	[[nodiscard]] auto isLinkAllowed(core::UUID iFrom, core::UUID iTo) const -> bool;
+	void handleShortcuts(bool iDeleteUsed);
 
 	/**
 	 * @brief
-	 *  Edit shortcuts of the canvas: Delete, Ctrl+A / C / X / V / D.
+	 *  Toolbar above the canvas: details panel, framing, compilation status.
 	 */
-	void handleShortcuts();
+	void renderToolbar();
 
 	/**
 	 * @brief
-	 *  Context menu: the node palette on the background, node actions on a node.
+	 *  Context menu: the palette on the background, node actions on a node, split and links on a pin.
 	 */
 	void renderContextMenu();
 
 	/**
 	 * @brief
-	 *  Node palette with its search field.
+	 *  Nodes by group, with the search field.
+	 * @param[in] iPopup Whether it is the right-click palette (click adds at the cursor) or the library panel
+	 * (click adds in the view, drag drops).
 	 */
-	void renderPalette();
+	void renderNodeList(bool iPopup);
 
 	/**
 	 * @brief
-	 *  Side panel: variables, selected node, compilation.
+	 *  Variables and node tabs, in the Properties panel or the details panel.
 	 */
-	void renderSidePanel();
+	void renderDetails();
 
 	/**
 	 * @brief
-	 *  Variable list of the side panel.
+	 *  Variable list.
 	 */
 	void renderVariables();
 
 	/**
 	 * @brief
-	 *  Settings and unlinked input values of the selected node.
+	 *  Settings, grouped pins and unlinked input values of the selected node.
 	 */
 	void renderSelectedNode();
 
 	/**
 	 * @brief
-	 *  Compilation status and generated Lua.
+	 *  The generated Lua, read-only and coloured.
 	 */
-	void renderCompilation();
+	void renderLua();
 
 	/// The graph.
 	script::visual::VisualScript m_script;
 	/// Undo history.
 	VisualScriptUndoManager m_undo;
-	/// Canvas pins by pin identifier.
-	std::unordered_map<uint64_t, PinRef> m_pins;
-	/// Graph links by canvas link identifier.
-	std::unordered_map<uint64_t, script::visual::GraphLink> m_links;
+	/// Graph view.
+	VisualScriptCanvas m_view;
 	/// Errors of the last compilation.
 	std::vector<script::visual::CompileDiagnostic> m_diagnostics;
 	/// Lua of the last successful compilation.
 	std::string m_compiledLua;
 	/// Graph text at the last save.
 	std::string m_savedText;
-	/// Search text of the palette.
+	/// Search text of the palette and of the library.
 	std::string m_paletteFilter;
 	/// Canvas position where the palette adds a node.
 	std::array<float, 2> m_paletteTarget{0.f, 0.f};
 	/// Node under the cursor at the last right click.
 	std::optional<core::UUID> m_contextNode;
+	/// Pin under the cursor at the last right click.
+	std::optional<VisualScriptPinRef> m_contextPin;
+	/// Pin whose link was dropped on the background: the palette links the new node to it.
+	std::optional<VisualScriptPinRef> m_pendingLink;
 	/// Open the context menu on the next frame.
 	bool m_openContextMenu{false};
-	/// The canvas no longer matches the graph.
-	bool m_canvasStale{true};
-	/// Show the generated Lua in the side panel.
+	/// The graph changed since the last compilation.
+	bool m_compileStale{true};
+	/// Show the details panel on the left of the canvas.
+	bool m_showDetails{false};
+	/// Show the generated Lua in place of the node tab.
 	bool m_showLua{false};
-	/// Selection to apply at the next canvas rebuild (nodes just added or pasted).
-	std::optional<std::vector<core::UUID>> m_pendingSelection;
+	/// Read-only Lua view.
+	uniq<TextEditor> mp_luaView;
+	/// Text shown by the Lua view.
+	std::string m_luaViewText;
 	/// Counts the pastes, to shift each one a little more.
 	uint32_t m_pasteCount{0};
 };

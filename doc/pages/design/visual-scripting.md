@@ -15,7 +15,7 @@ Design page for the Blueprints-style visual scripting, summarised in the [Roadma
 
 ## v0.6.0 — visual scripting MVP
 
-- Event graphs (`on_create`, `on_update`, triggers, collisions, UI callbacks) edited on `NodeCanvas`
+- Event graphs (`on_create`, `on_update`, triggers, collisions, UI callbacks) edited on a canvas of their own
 - Graphs compile to Lua, so they run on the existing `ScriptInstance` path and pack like any script
 - Node palette generated from the typed binding registry, so every engine API is a node
 - Debugging: live values shown on the wires during Play, breakpoints on nodes
@@ -28,7 +28,8 @@ Design page for the Blueprints-style visual scripting, summarised in the [Roadma
 | Part                                                                                     | Status  |
 |------------------------------------------------------------------------------------------|---------|
 | `.owlvs` graph, palette from the binding registry, compiler to Lua, `LuaScript` and pack | Done    |
-| Owl Nest editor: palette, typed links, values, variables, errors, copy / paste, undo     | Done    |
+| Colour and vector values, grouped pins split into components                             | Done    |
+| Owl Nest editor: canvas, node library, inline values, variables, errors, Lua, undo       | Done    |
 | Debugging: live values on the wires, breakpoints on nodes                                | Planned |
 | Node editing of other assets                                                             | Planned |
 

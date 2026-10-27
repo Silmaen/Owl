@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <iterator>
 #include <map>
 #include <optional>
@@ -104,13 +105,65 @@ auto toPropertyType(const ScriptPropertyType iType) -> PinType {
 		case ScriptPropertyType::Entity:
 			return PinType::Entity;
 		case ScriptPropertyType::Color:
+			return PinType::Color;
 		case ScriptPropertyType::Vec2:
+			return PinType::Vector2;
 		case ScriptPropertyType::Vec3:
+			return PinType::Vector3;
 		case ScriptPropertyType::Numbers:
 		case ScriptPropertyType::Strings:
 			return PinType::Table;
 	}
 	return PinType::Any;
+}
+
+// Components of a grouped value typed as `1, 0.5, 0`: one number per component, all present.
+auto parseComponents(const std::string& iText, const size_t iCount) -> std::optional<std::vector<double>> {
+	std::vector<double> values;
+	values.reserve(iCount);
+	size_t start = 0;
+	while (start <= iText.size()) {
+		const auto end = std::min(iText.find(',', start), iText.size());
+		auto part = iText.substr(start, end - start);
+		std::erase_if(part, [](const char iChar) -> bool { return iChar == ' '; });
+		const auto value = parseNumber(part);
+		if (!value.has_value())
+			return std::nullopt;
+		values.push_back(*value);
+		start = end + 1;
+	}
+	if (values.size() != iCount)
+		return std::nullopt;
+	return values;
+}
+
+// A grouped value when the text is empty: opaque white for a colour, the origin for a vector.
+auto defaultComponents(const PinType iType, const size_t iCount) -> std::vector<double> {
+	return std::vector<double>(iCount, iType == PinType::Color ? 1.0 : 0.0);
+}
+
+// Lua table of a grouped value, keyed by component; a colour without alpha is opaque.
+auto componentTable(const PinType iType, const std::vector<std::string>& iValues) -> std::string {
+	const auto keys = getPinComponents(iType);
+	std::string out = "{ ";
+	for (size_t i = 0; i < keys.size(); ++i) {
+		if (i > 0)
+			out += ", ";
+		out += std::format("{} = {}", keys[i], i < iValues.size() ? iValues[i] : std::string{"1"});
+	}
+	return out + " }";
+}
+
+auto isGroup(const PinType iType) -> bool { return !getPinComponents(iType).empty(); }
+
+// Component names of a grouped pin, spelled by its name (`rgb`) or else given by its type.
+auto componentsOf(const PinSpec& iPin) -> std::vector<std::string> {
+	if (iPin.group != iPin.name)
+		return getPinComponents(iPin.type);
+	std::vector<std::string> out;
+	out.reserve(iPin.name.size());
+	for (const char letter: iPin.name) out.emplace_back(1, letter);
+	return out;
 }
 
 // NOLINTBEGIN(misc-no-recursion) walks the graph; m_pureStack and m_execStack stop at every cycle
@@ -199,6 +252,12 @@ private:
 			case PinType::Exec:
 			case PinType::Table:
 				return "nil";
+			case PinType::Vector2:
+			case PinType::Vector3:
+			case PinType::Color:
+				if (const auto values = groupLiteral(iNode, iPin, iValue); values.has_value())
+					return componentTable(iPin.type, *values);
+				return "nil";
 			case PinType::Boolean:
 				if (text == "true" || text == "false")
 					return text;
@@ -238,6 +297,66 @@ private:
 		return "nil";
 	}
 
+	// Literal components of a grouped input: its value, or the defaults (nil when optional) when empty.
+	auto groupLiteral(const core::UUID iNode, const PinSpec& iPin, const std::string& iValue)
+			-> std::optional<std::vector<std::string>> {
+		const auto count = componentsOf(iPin).size();
+		if (iValue.empty() && iPin.optional)
+			return std::vector<std::string>(count, "nil");
+		const auto values =
+				iValue.empty() ? std::optional{defaultComponents(iPin.type, count)} : parseComponents(iValue, count);
+		if (!values.has_value()) {
+			error(iNode, std::format("Input '{}' holds '{}', which is not {} numbers.", iPin.name, iValue, count));
+			return std::nullopt;
+		}
+		std::vector<std::string> out;
+		out.reserve(values->size());
+		for (const auto value: *values) out.push_back(numberLiteral(value));
+		return out;
+	}
+
+	// The arguments a grouped input of a call passes: one per component.
+	auto groupArguments(const GraphNode& iNode, const PinSpec& iPin) -> std::vector<std::string> {
+		const auto components = componentsOf(iPin);
+		if (!m_inputLinks.contains({iNode.id, iPin.name})) {
+			const auto value = iNode.values.find(iPin.name);
+			return groupLiteral(iNode.id, iPin, value == iNode.values.end() ? std::string{} : value->second)
+					.value_or(std::vector<std::string>(components.size(), "nil"));
+		}
+		const auto table = inputExpression(iNode, iPin);
+		std::vector<std::string> out;
+		out.reserve(components.size());
+		for (const auto& component: components) out.push_back(std::format("{}.{}", table, component));
+		return out;
+	}
+
+	// Lua names receiving the results of a call: one per component of a grouped output.
+	auto resultNames(const NodePins& iPins, const std::function<std::string(const std::string&)>& iName) const
+			-> std::vector<std::string> {
+		std::vector<std::string> out;
+		for (const auto& pin: iPins.outputs) {
+			if (pin.type == PinType::Exec)
+				continue;
+			if (pin.group == pin.name)
+				for (const auto& component: componentsOf(pin)) out.push_back(iName(pin.name + "." + component));
+			else
+				out.push_back(iName(pin.name));
+		}
+		return out;
+	}
+
+	// Builds the table of each grouped output from its component results.
+	void assembleGroups(const NodePins& iPins, const std::function<std::string(const std::string&)>& iName,
+						const std::function<std::string(const std::string&)>& iTarget) {
+		for (const auto& pin: iPins.outputs) {
+			if (pin.group != pin.name || pin.type == PinType::Exec)
+				continue;
+			std::vector<std::string> values;
+			for (const auto& component: componentsOf(pin)) values.push_back(iName(pin.name + "." + component));
+			line(std::format("{} = {}", iTarget(pin.name), componentTable(pin.type, values)));
+		}
+	}
+
 	auto inputExpression(const GraphNode& iNode, const PinSpec& iPin) -> std::string {
 		const auto link = m_inputLinks.find({iNode.id, iPin.name});
 		if (link == m_inputLinks.end()) {
@@ -269,9 +388,15 @@ private:
 
 	auto arguments(const GraphNode& iNode, const NodePins& iPins) -> std::vector<std::string> {
 		std::vector<std::string> args;
-		for (const auto& pin: iPins.inputs)
-			if (pin.type != PinType::Exec)
+		for (const auto& pin: iPins.inputs) {
+			if (pin.type == PinType::Exec)
+				continue;
+			if (pin.group == pin.name && isGroup(pin.type)) {
+				for (auto& arg: groupArguments(iNode, pin)) args.push_back(std::move(arg));
+			} else {
 				args.push_back(inputExpression(iNode, pin));
+			}
+		}
 		return args;
 	}
 
@@ -301,7 +426,26 @@ private:
 		const auto names = joined(temps);
 		switch (iType.kind) {
 			case NodeKind::Call:
-				line(std::format("local {} = {}({})", names, iType.lua, callArguments(args)));
+				{
+					std::map<std::string, std::string> parts;
+					const auto part = [&](const std::string& iKey) -> std::string {
+						const auto [it, inserted] = parts.try_emplace(iKey, std::format("__t{}", m_tempCount + 1));
+						if (inserted)
+							++m_tempCount;
+						return it->second;
+					};
+					const auto results = resultNames(iPins, part);
+					line(std::format("local {} = {}({})", joined(results), iType.lua, callArguments(args)));
+					std::map<std::string, std::string> groupTemps;
+					for (size_t i = 0; i < iPins.outputs.size(); ++i) {
+						if (iPins.outputs[i].group == iPins.outputs[i].name)
+							groupTemps[iPins.outputs[i].name] = temps[i];
+						else
+							temps[i] = part(iPins.outputs[i].name);
+					}
+					assembleGroups(iPins, part,
+								   [&](const std::string& iPin) -> std::string { return "local " + groupTemps[iPin]; });
+				}
 				break;
 			case NodeKind::Operator:
 				line(std::format("local {} = {}", names, substitute(iType.lua, args)));
@@ -352,6 +496,14 @@ private:
 		return out;
 	}
 
+	// A property default is read by index: `{ 1, 1, 1, 1 }`.
+	auto arrayLiteral(const PinSpec& iPin, const std::string& iValue) -> std::string {
+		const auto values = groupLiteral(0, iPin, iValue);
+		if (!values.has_value())
+			return "nil";
+		return std::format("{{ {} }}", joined(*values));
+	}
+
 	void emitProperties() {
 		std::set<std::string> names;
 		if (m_script.variables.empty())
@@ -368,10 +520,12 @@ private:
 				error(0, std::format("Variable '{}' has a type graphs do not support.", variable.name));
 				continue;
 			}
-			const PinSpec pin{.name = variable.name, .type = type, .defaultValue = {}, .optional = false};
+			const PinSpec pin{.name = variable.name, .type = type, .defaultValue = {}, .optional = false, .group = {}};
 			auto value = literal(0, pin, variable.defaultValue);
 			if (type == PinType::Entity && value == "entity_id")
 				value = "0";
+			if (isGroup(type))
+				value = arrayLiteral(pin, variable.defaultValue);
 			line(std::format("{{ name = {}, type = {}, default = {} }},", quote(variable.name),
 							 quote(ScriptEngine::propertyTypeName(variable.type)), value));
 		}
@@ -477,14 +631,13 @@ private:
 
 	void emitCall(const GraphNode& iNode, const NodeType& iType, const NodePins& iPins) {
 		const auto call = std::format("{}({})", iType.lua, callArguments(arguments(iNode, iPins)));
-		std::vector<std::string> results;
-		for (const auto& pin: iPins.outputs)
-			if (pin.type != PinType::Exec)
-				results.push_back(slot(iNode.id, pin.name));
+		const auto slotOf = [&](const std::string& iPin) -> std::string { return slot(iNode.id, iPin); };
+		const auto results = resultNames(iPins, slotOf);
 		if (results.empty())
 			line(call);
 		else
 			line(std::format("{} = {}", joined(results), call));
+		assembleGroups(iPins, slotOf, slotOf);
 	}
 
 	void emitLoop(const GraphNode& iNode, const NodePins& iPins) {

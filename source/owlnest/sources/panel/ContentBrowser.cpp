@@ -89,7 +89,7 @@ auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> 
 																	{".otf", {rgb(0x9a7ae0), "Font"}},
 																	{".owlanim", {rgb(0xef6c8f), "Animation"}},
 																	{".owlflow", {rgb(0x5aa2f0), "Node graph"}},
-																	{".owlvs", {rgb(0x2fb5a0), "Visual script"}},
+																	{".owlvs", {rgb(0xe8c547), "Visual script"}},
 																	{".obj", {rgb(0x7fb83e), "3D model"}},
 																	{".fbx", {rgb(0x7fb83e), "3D model"}},
 																	{".gltf", {rgb(0x7fb83e), "3D model"}},
@@ -135,8 +135,10 @@ auto getFileIcon(const std::filesystem::path& iPath) -> std::optional<gui::IconB
 		return iconBank.getIcon("ttf_icon");
 	if (iPath.extension() == ".yml" || iPath.extension() == ".yaml")
 		return iconBank.getIcon("yml_icon");
-	if (iPath.extension() == ".lua" || iPath.extension() == ".owlvs")
+	if (iPath.extension() == ".lua")
 		return iconBank.getIcon("lua_icon");
+	if (iPath.extension() == ".owlvs")
+		return iconBank.getIcon("owlvs_icon");
 	if (iPath.extension() == ".wav")
 		return iconBank.getIcon("wav_icon");
 	if (iPath.extension() == ".mp3")

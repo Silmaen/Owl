@@ -42,8 +42,14 @@ enum struct PinType : uint8_t {
 	String,///< Lua string.
 	Table,///< Lua table.
 	Entity,///< Entity UUID (integer), the script's own entity when left empty.
+	Vector2,///< Table `{x, y}`.
+	Vector3,///< Table `{x, y, z}`.
+	Color,///< Table `{r, g, b, a}`.
 	Any///< Any value.
 };
+
+/// Prefix of the node value that splits a grouped pin into its components (`split.rgba` = `true`).
+inline constexpr std::string_view g_SplitPrefix = "split.";
 
 /**
  * @brief
@@ -74,6 +80,12 @@ struct PinSpec {
 	std::string defaultValue;
 	/// Whether an unlinked, empty input passes `nil`.
 	bool optional{false};
+	/**
+	 * @brief
+	 *  Grouped pin it belongs to: its own name for a grouped pin (`rgba`), the group name for a component of a
+	 *  split one (`r`), empty otherwise.
+	 */
+	std::string group;
 };
 
 /**
@@ -270,6 +282,9 @@ struct CompileDiagnostic {
 /**
  * @brief
  *  Pins of a node.
+ *
+ * The number parameters `x, y [, z]` and `r, g, b [, a]` of a binding form one grouped pin (`xyz` of type `Vector3`,
+ * `rgba` of type `Color`), shown as its components when the node value `split.<group>` is `true`.
  * @param[in] iScript The graph holding the node.
  * @param[in] iNode The node.
  * @return Its pins, empty when its type is unknown.
@@ -284,6 +299,14 @@ struct CompileDiagnostic {
  * @return True when the link is allowed.
  */
 [[nodiscard]] OWL_API auto canConnect(PinType iFrom, PinType iTo) -> bool;
+
+/**
+ * @brief
+ *  Component names of a grouped pin type.
+ * @param[in] iType Pin type.
+ * @return `x, y`, `x, y, z` or `r, g, b, a`; empty for a type that is not a group.
+ */
+[[nodiscard]] OWL_API auto getPinComponents(PinType iType) -> std::vector<std::string>;
 
 /**
  * @brief

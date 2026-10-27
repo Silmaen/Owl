@@ -11,37 +11,37 @@ VisualScript:
         function: on_ladder_interact
     - id: 7310000000000000002
       type: var.get
-      position: [0, 140]
+      position: [40, 160]
       values:
         variable: climbing
     - id: 7310000000000000003
       type: flow.branch
-      position: [240, 0]
+      position: [264, 0]
     - id: 7310000000000000004
       type: var.set
-      position: [480, 40]
+      position: [528, 0]
       values:
         Value: "true"
         variable: climbing
     - id: 7310000000000000005
       type: call.gamestate.set
-      position: [720, 40]
+      position: [784, 0]
       values:
         key: tavern_from_cellar
         value: "1"
     - id: 7310000000000000006
       type: call.sound.play
-      position: [960, 40]
+      position: [1064, 0]
       values:
         asset_path: sounds/raycast/door.wav
     - id: 7310000000000000007
       type: var.get
-      position: [960, 200]
+      position: [1200, 200]
       values:
         variable: tavern_scene
     - id: 7310000000000000008
       type: call.scene.transition_to
-      position: [1200, 40]
+      position: [1448, 0]
       values:
         duration: "0.5"
         kind: fade

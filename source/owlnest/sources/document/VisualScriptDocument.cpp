@@ -9,11 +9,15 @@
 #include "VisualScriptDocument.h"
 
 #include "EditorLayer.h"
+#include "codeEditor/LanguageDefinitions.h"
+#include "external/imgui_text_edit.h"
 
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
+#include <gui/widgets/EmptyState.h>
 #include <gui/widgets/Menu.h>
+#include <gui/widgets/SearchField.h>
 #include <platform/AtomicFile.h>
 #include <platform/FileUtils.h>
 
@@ -29,14 +33,16 @@ OWL_DIAG_POP
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <format>
-#include <functional>
+#include <iterator>
 #include <limits>
 #include <optional>
 #include <set>
 #include <string>
 #include <string_view>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -78,98 +84,9 @@ private:
 	bool m_merge;
 };
 
-auto pinId(const core::UUID iNode, const bool iOutput, const std::string& iName) -> core::UUID {
-	const auto hash = std::hash<std::string>{}(std::format("{}:{}:{}", static_cast<uint64_t>(iNode), iOutput, iName));
-	return core::UUID{hash == 0 ? 1 : static_cast<uint64_t>(hash)};
-}
-
-auto pinTypeName(const vs::PinType iType) -> std::string_view {
-	switch (iType) {
-		case vs::PinType::Exec:
-			return "exec";
-		case vs::PinType::Boolean:
-			return "boolean";
-		case vs::PinType::Integer:
-			return "integer";
-		case vs::PinType::Number:
-			return "number";
-		case vs::PinType::String:
-			return "string";
-		case vs::PinType::Table:
-			return "table";
-		case vs::PinType::Entity:
-			return "entity";
-		case vs::PinType::Any:
-			return "any";
-	}
-	return "any";
-}
-
-auto pinColor(const vs::PinType iType) -> math::vec4 {
-	const auto& theme = gui::UiLayer::getTheme();
-	switch (iType) {
-		case vs::PinType::Exec:
-			return theme.text;
-		case vs::PinType::Boolean:
-			return theme.error;
-		case vs::PinType::Integer:
-			return theme.info;
-		case vs::PinType::Number:
-			return theme.success;
-		case vs::PinType::String:
-			return theme.accent;
-		case vs::PinType::Entity:
-			return theme.play;
-		case vs::PinType::Table:
-		case vs::PinType::Any:
-			return gui::Theme::withAlpha(theme.text, 0.6f);
-	}
-	return theme.text;
-}
-
-auto titleColor(const vs::NodeType& iType) -> math::vec4 {
-	const auto& theme = gui::UiLayer::getTheme();
-	switch (iType.kind) {
-		case vs::NodeKind::Event:
-		case vs::NodeKind::CustomEvent:
-			return theme.warning;
-		case vs::NodeKind::Call:
-			return iType.pure ? theme.success : theme.info;
-		case vs::NodeKind::GetVariable:
-		case vs::NodeKind::SetVariable:
-			return theme.accent;
-		case vs::NodeKind::Operator:
-			return theme.success;
-		case vs::NodeKind::Branch:
-		case vs::NodeKind::Sequence:
-		case vs::NodeKind::ForLoop:
-			return theme.text;
-	}
-	return theme.text;
-}
-
 auto valueOf(const vs::GraphNode& iNode, const std::string& iKey) -> std::string {
 	const auto it = iNode.values.find(iKey);
 	return it == iNode.values.end() ? std::string{} : it->second;
-}
-
-auto nodeTitle(const vs::GraphNode& iNode, const vs::NodeType& iType) -> std::string {
-	switch (iType.kind) {
-		case vs::NodeKind::GetVariable:
-			return std::format("Get {}", valueOf(iNode, "variable"));
-		case vs::NodeKind::SetVariable:
-			return std::format("Set {}", valueOf(iNode, "variable"));
-		case vs::NodeKind::CustomEvent:
-			return std::format("Event {}", valueOf(iNode, "function"));
-		case vs::NodeKind::Event:
-		case vs::NodeKind::Call:
-		case vs::NodeKind::Operator:
-		case vs::NodeKind::Branch:
-		case vs::NodeKind::Sequence:
-		case vs::NodeKind::ForLoop:
-			break;
-	}
-	return iType.title;
 }
 
 auto containsNoCase(const std::string_view iText, const std::string_view iNeedle) -> bool {
@@ -183,11 +100,109 @@ auto isSelected(const std::vector<core::UUID>& iSelection, const core::UUID iNod
 	return std::ranges::find(iSelection, iNode) != iSelection.end();
 }
 
-constexpr std::array<script::ScriptPropertyType, 5> g_variableTypes{
-		script::ScriptPropertyType::Float, script::ScriptPropertyType::Int, script::ScriptPropertyType::String,
-		script::ScriptPropertyType::Bool, script::ScriptPropertyType::Entity};
+constexpr std::array<script::ScriptPropertyType, 8> g_variableTypes{
+		script::ScriptPropertyType::Float, script::ScriptPropertyType::Int,    script::ScriptPropertyType::String,
+		script::ScriptPropertyType::Bool,  script::ScriptPropertyType::Entity, script::ScriptPropertyType::Vec2,
+		script::ScriptPropertyType::Vec3,  script::ScriptPropertyType::Color};
+
+// Palette groups in reading order; the binding tables follow.
+constexpr std::array<std::string_view, 10> g_categoryOrder{"Events", "Flow",  "Variables", "Values", "Math",
+														   "Vector", "Color", "Compare",   "Logic",  "Text"};
+
+auto categoryRank(const std::string& iCategory) -> size_t {
+	const auto* const it = std::ranges::find(g_categoryOrder, iCategory);
+	return static_cast<size_t>(std::distance(g_categoryOrder.begin(), it));
+}
+
+auto isLinked(const vs::VisualScript& iScript, const core::UUID iNode, const std::string& iPin, const bool iOutput)
+		-> bool {
+	return std::ranges::any_of(iScript.links, [&](const vs::GraphLink& iLink) -> bool {
+		return iOutput ? iLink.fromNode == iNode && iLink.fromPin == iPin
+					   : iLink.toNode == iNode && iLink.toPin == iPin;
+	});
+}
+
+// The pin of iPins that takes a link from iFrom (or gives one to it), the same type first.
+auto findCompatiblePin(const std::vector<vs::PinSpec>& iPins, const VisualScriptPinRef& iFrom) -> const vs::PinSpec* {
+	const vs::PinSpec* found = nullptr;
+	for (const auto& pin: iPins) {
+		if (iFrom.output ? !vs::canConnect(iFrom.type, pin.type) : !vs::canConnect(pin.type, iFrom.type))
+			continue;
+		if (pin.type == iFrom.type)
+			return &pin;
+		if (found == nullptr)
+			found = &pin;
+	}
+	return found;
+}
+
+auto componentNames(const std::string& iGroup) -> std::vector<std::string> {
+	std::vector<std::string> out;
+	out.reserve(iGroup.size());
+	for (const char letter: iGroup) out.emplace_back(1, letter);
+	return out;
+}
+
+// Edits a value typed as `a, b, c` with a colour or vector field; returns the new text when it changed.
+auto componentField(const char* iId, const vs::PinType iType, const size_t iCount, const std::string& iValue)
+		-> std::optional<std::string> {
+	std::array<float, 4> values{};
+	values.fill(iType == vs::PinType::Color ? 1.f : 0.f);
+	size_t start = 0;
+	for (size_t i = 0; i < iCount && start <= iValue.size(); ++i) {
+		const auto end = std::min(iValue.find(',', start), iValue.size());
+		try {
+			values[i] = std::stof(iValue.substr(start, end - start));
+		} catch (const std::exception&) { break; }
+		start = end + 1;
+	}
+	bool changed = false;
+	if (iType == vs::PinType::Color)
+		changed = iCount < 4 ? ImGui::ColorEdit3(iId, values.data()) : ImGui::ColorEdit4(iId, values.data());
+	else
+		changed = ImGui::DragScalarN(iId, ImGuiDataType_Float, values.data(), static_cast<int>(iCount), 0.05f, nullptr,
+									 nullptr, "%.2f");
+	if (!changed)
+		return std::nullopt;
+	std::string out;
+	for (size_t i = 0; i < iCount; ++i) out += std::format("{}{:.3g}", i == 0 ? "" : ", ", values[i]);
+	return out;
+}
+
+// Value field of a typed input; returns the new text when it changed.
+auto valueField(const char* iId, const vs::PinType iType, const size_t iCount, const std::string& iValue,
+				const std::string& iDefault) -> std::optional<std::string> {
+	switch (iType) {
+		case vs::PinType::Boolean:
+			{
+				bool checked = (iValue.empty() ? iDefault : iValue) == "true";
+				if (ImGui::Checkbox(iId, &checked))
+					return checked ? "true" : "false";
+				return std::nullopt;
+			}
+		case vs::PinType::Color:
+		case vs::PinType::Vector2:
+		case vs::PinType::Vector3:
+			return componentField(iId, iType, iCount, iValue);
+		case vs::PinType::Exec:
+		case vs::PinType::Table:
+			return std::nullopt;
+		case vs::PinType::Integer:
+		case vs::PinType::Number:
+		case vs::PinType::String:
+		case vs::PinType::Entity:
+		case vs::PinType::Any:
+			break;
+	}
+	auto text = iValue;
+	const auto hint = iType == vs::PinType::Entity ? std::string{"self"} : iDefault;
+	if (ImGui::InputTextWithHint(iId, hint.c_str(), &text))
+		return text;
+	return std::nullopt;
+}
 
 }// namespace
+
 
 VisualScriptDocument::VisualScriptDocument() { m_savedText = vs::serialize(m_script); }
 
@@ -216,7 +231,8 @@ auto VisualScriptDocument::restoreRecoverySnapshot(const std::string& iSnapshot)
 	}
 	m_script = std::move(*script);
 	m_undo.clear();
-	m_canvasStale = true;
+	m_compileStale = true;
+	m_view.requestFrameAll();
 	return true;
 }
 
@@ -243,22 +259,25 @@ auto VisualScriptDocument::loadFromFile(const std::filesystem::path& iPath) -> b
 	m_savedText = vs::serialize(m_script);
 	m_undo.clear();
 	m_undo.markSaved();
-	m_canvasStale = true;
+	m_compileStale = true;
+	m_view.requestFrameAll();
 	return true;
 }
+
+void VisualScriptDocument::onAttach(EditorLayer* iEditor) { NodeGraphDocument::onAttach(iEditor); }
 
 void VisualScriptDocument::performUndo() {
 	if (!m_undo.canUndo())
 		return;
 	m_undo.undo(m_script);
-	m_canvasStale = true;
+	m_compileStale = true;
 }
 
 void VisualScriptDocument::performRedo() {
 	if (!m_undo.canRedo())
 		return;
 	m_undo.redo(m_script);
-	m_canvasStale = true;
+	m_compileStale = true;
 }
 
 auto VisualScriptDocument::commit(vs::VisualScript iNext, const std::string& iDescription, const bool iMerge) -> bool {
@@ -267,36 +286,114 @@ auto VisualScriptDocument::commit(vs::VisualScript iNext, const std::string& iDe
 	auto before = std::move(m_script);
 	m_script = iNext;
 	m_undo.push(mkUniq<ModifyVisualScriptCommand>(std::move(before), std::move(iNext), iDescription, iMerge));
+	m_compileStale = true;
 	return true;
 }
 
-auto VisualScriptDocument::addNode(const std::string& iType, const std::array<float, 2> iPosition) -> core::UUID {
-	if (vs::findNodeType(iType) == nullptr) {
+void VisualScriptDocument::compileIfStale() {
+	if (!m_compileStale)
+		return;
+	m_compileStale = false;
+	auto compiled = vs::compile(m_script);
+	m_diagnostics = compiled ? std::vector<vs::CompileDiagnostic>{} : compiled.error();
+	if (compiled)
+		m_compiledLua = std::move(*compiled);
+}
+
+auto VisualScriptDocument::addNode(const std::string& iType, const std::array<float, 2> iPosition,
+								   const std::optional<VisualScriptPinRef>& iLinkFrom) -> core::UUID {
+	const auto separator = iType.find('|');
+	const auto typeId = iType.substr(0, separator);
+	const auto* type = vs::findNodeType(typeId);
+	if (type == nullptr) {
 		OWL_WARN("VisualScriptDocument: Unknown node type '{}'.", iType)
 		return core::UUID{0};
 	}
 	auto next = m_script;
-	vs::GraphNode node{.id = core::UUID{}, .type = iType, .position = iPosition, .values = {}};
-	if (const auto* type = vs::findNodeType(iType);
-		type->kind == vs::NodeKind::GetVariable || type->kind == vs::NodeKind::SetVariable) {
-		if (!m_script.variables.empty())
+	vs::GraphNode node{.id = core::UUID{}, .type = typeId, .position = iPosition, .values = {}};
+	if (type->kind == vs::NodeKind::GetVariable || type->kind == vs::NodeKind::SetVariable) {
+		if (separator != std::string::npos)
+			node.values["variable"] = iType.substr(separator + 1);
+		else if (!m_script.variables.empty())
 			node.values["variable"] = m_script.variables.front().name;
 	} else if (type->kind == vs::NodeKind::CustomEvent) {
 		node.values["function"] = "my_event";
 	}
 	const auto id = node.id;
+	if (iLinkFrom.has_value()) {
+		const auto pins = vs::getNodePins(next, node);
+		if (const auto* pin = findCompatiblePin(iLinkFrom->output ? pins.inputs : pins.outputs, *iLinkFrom);
+			pin != nullptr) {
+			const VisualScriptPinRef created{.node = id,
+											 .pin = pin->name,
+											 .output = !iLinkFrom->output,
+											 .type = pin->type};
+			const auto& from = iLinkFrom->output ? *iLinkFrom : created;
+			const auto& to = iLinkFrom->output ? created : *iLinkFrom;
+			std::erase_if(next.links, [&](const vs::GraphLink& iLink) -> bool {
+				if (from.type == vs::PinType::Exec)
+					return iLink.fromNode == from.node && iLink.fromPin == from.pin;
+				return iLink.toNode == to.node && iLink.toPin == to.pin;
+			});
+			next.links.push_back({.fromNode = from.node, .fromPin = from.pin, .toNode = to.node, .toPin = to.pin});
+		}
+	}
 	next.nodes.push_back(std::move(node));
 	commit(std::move(next), "Add Node");
-	m_canvasStale = true;
-	m_pendingSelection = std::vector{id};
+	m_view.setSelection({id});
 	return id;
 }
 
 void VisualScriptDocument::deleteNodes(const std::span<const core::UUID> iNodes) {
 	auto next = m_script;
 	for (const auto id: iNodes) next.removeNode(id);
-	if (commit(std::move(next), iNodes.size() > 1 ? "Delete Nodes" : "Delete Node"))
-		m_canvasStale = true;
+	commit(std::move(next), iNodes.size() > 1 ? "Delete Nodes" : "Delete Node");
+}
+
+void VisualScriptDocument::setPinSplit(const core::UUID iNode, const std::string& iGroup, const bool iSplit) {
+	auto next = m_script;
+	auto* node = next.findNode(iNode);
+	if (node == nullptr)
+		return;
+	const auto key = std::string{vs::g_SplitPrefix} + iGroup;
+	const auto components = componentNames(iGroup);
+	if (iSplit) {
+		node->values[key] = "true";
+		if (const auto it = node->values.find(iGroup); it != node->values.end()) {
+			size_t start = 0;
+			for (const auto& component: components) {
+				const auto end = std::min(it->second.find(',', start), it->second.size());
+				if (start < it->second.size()) {
+					auto part = it->second.substr(start, end - start);
+					std::erase(part, ' ');
+					node->values[component] = part;
+				}
+				start = end + 1;
+			}
+			node->values.erase(iGroup);
+		}
+	} else {
+		node->values.erase(key);
+		std::string joined;
+		bool complete = true;
+		for (const auto& component: components) {
+			const auto it = node->values.find(component);
+			complete = complete && it != node->values.end();
+			if (it != node->values.end()) {
+				joined += (joined.empty() ? "" : ", ") + it->second;
+				node->values.erase(it);
+			}
+		}
+		if (complete)
+			node->values[iGroup] = joined;
+	}
+	std::erase_if(next.links, [&](const vs::GraphLink& iLink) -> bool {
+		const auto touches = [&](const std::string& iPin) -> bool {
+			return iSplit ? iPin == iGroup : std::ranges::find(components, iPin) != components.end();
+		};
+		return (iLink.fromNode == iNode && touches(iLink.fromPin)) || (iLink.toNode == iNode && touches(iLink.toPin));
+	});
+	commit(std::move(next), iSplit ? "Split Pin" : "Recombine Pin");
 }
 
 auto VisualScriptDocument::copyNodes(const std::span<const core::UUID> iNodes) const -> std::string {
@@ -342,120 +439,14 @@ auto VisualScriptDocument::pasteNodes(const std::string& iText, const std::array
 		if (next.findVariable(variable.name) == nullptr)
 			next.variables.push_back(variable);
 	commit(std::move(next), "Paste Nodes");
-	m_canvasStale = true;
-	m_pendingSelection = pasted;
+	m_view.setSelection(pasted);
 	return pasted;
 }
 
-void VisualScriptDocument::onCanvasReady() {
-	m_canvas.setLinkValidator(
-			[this](const core::UUID iFrom, const core::UUID iTo) -> bool { return isLinkAllowed(iFrom, iTo); });
-	m_canvas.setOnLinkCreated([this](core::UUID, const core::UUID iFrom, const core::UUID iTo) -> void {
-		const auto& from = m_pins.at(iFrom);
-		const auto& to = m_pins.at(iTo);
-		auto next = m_script;
-		next.links.push_back({.fromNode = from.node, .fromPin = from.name, .toNode = to.node, .toPin = to.name});
-		commit(std::move(next), "Add Link");
-		m_canvasStale = true;
-	});
-	m_canvas.setOnLinkDeleted([this](const core::UUID iLink) -> void {
-		const auto it = m_links.find(iLink);
-		if (it == m_links.end())
-			return;
-		auto next = m_script;
-		std::erase(next.links, it->second);
-		commit(std::move(next), "Remove Link");
-		m_canvasStale = true;
-	});
-	m_canvas.setOnNodeMoved([this](const core::UUID iNode, const math::vec2f iPosition) -> void {
-		auto next = m_script;
-		if (auto* node = next.findNode(iNode); node != nullptr)
-			node->position = {iPosition.x(), iPosition.y()};
-		commit(std::move(next), "Move Nodes", true);
-	});
-	m_canvas.setOnContextMenu([this](const std::optional<core::UUID> iNode) -> void {
-		m_contextNode = iNode;
-		const auto mouse = m_canvas.getMouseCanvasPosition();
-		m_paletteTarget = {mouse.x(), mouse.y()};
-		m_paletteFilter.clear();
-		m_openContextMenu = true;
-	});
-}
-
-auto VisualScriptDocument::isLinkAllowed(const core::UUID iFrom, const core::UUID iTo) const -> bool {
-	const auto from = m_pins.find(iFrom);
-	const auto to = m_pins.find(iTo);
-	if (from == m_pins.end() || to == m_pins.end() || !from->second.output || to->second.output ||
-		from->second.node == to->second.node || !vs::canConnect(from->second.type, to->second.type))
-		return false;
-	const bool exec = from->second.type == vs::PinType::Exec;
-	return std::ranges::none_of(m_script.links, [&](const vs::GraphLink& iLink) -> bool {
-		if (exec)
-			return iLink.fromNode == from->second.node && iLink.fromPin == from->second.name;
-		return iLink.toNode == to->second.node && iLink.toPin == to->second.name;
-	});
-}
-
-void VisualScriptDocument::rebuildCanvas() {
-	const auto selection = m_canvas.selection();
-	const auto compiled = vs::compile(m_script);
-	m_diagnostics = compiled ? std::vector<vs::CompileDiagnostic>{} : compiled.error();
-	if (compiled)
-		m_compiledLua = *compiled;
-	std::set<uint64_t> faulty;
-	for (const auto& diagnostic: m_diagnostics) faulty.insert(diagnostic.node);
-	m_canvas.clear();
-	m_pins.clear();
-	m_links.clear();
-	const auto& theme = gui::UiLayer::getTheme();
-	for (const auto& node: m_script.nodes) {
-		const auto* type = vs::findNodeType(node.type);
-		const auto pins = vs::getNodePins(m_script, node);
-		gui::widgets::Node canvasNode{
-				.id = node.id,
-				.title = type == nullptr ? std::format("Unknown {}", node.type) : nodeTitle(node, *type),
-				.position = {node.position[0], node.position[1]},
-				.inputs = {},
-				.outputs = {},
-				.customData = {},
-				.titleColor = type == nullptr || faulty.contains(node.id) ? theme.error : titleColor(*type)};
-		const auto addPins = [&](const std::vector<vs::PinSpec>& iSpecs, const bool iOutput) -> void {
-			for (const auto& spec: iSpecs) {
-				const auto id = pinId(node.id, iOutput, spec.name);
-				m_pins[id] = {.node = node.id, .name = spec.name, .output = iOutput, .type = spec.type};
-				auto label = spec.name;
-				if (const auto value = valueOf(node, spec.name); !iOutput && !value.empty())
-					label = std::format("{} = {}", spec.name, value.size() > 12 ? value.substr(0, 12) + "..." : value);
-				gui::widgets::NodePin pin{.id = id,
-										  .label = label,
-										  .typeTag = std::string{pinTypeName(spec.type)},
-										  .kind = iOutput ? gui::widgets::PinKind::Output
-														  : gui::widgets::PinKind::Input,
-										  .labelColor = pinColor(spec.type)};
-				(iOutput ? canvasNode.outputs : canvasNode.inputs).push_back(std::move(pin));
-			}
-		};
-		addPins(pins.inputs, false);
-		addPins(pins.outputs, true);
-		m_canvas.addNode(std::move(canvasNode));
-	}
-	for (const auto& link: m_script.links) {
-		const auto from = pinId(link.fromNode, true, link.fromPin);
-		const auto to = pinId(link.toNode, false, link.toPin);
-		if (!m_pins.contains(from) || !m_pins.contains(to))
-			continue;
-		m_links[m_canvas.addLink(from, to)] = link;
-	}
-	m_canvas.setSelection(m_pendingSelection.value_or(selection));
-	m_pendingSelection.reset();
-	m_canvasStale = false;
-}
-
 void VisualScriptDocument::onImGuiRender() {
-	if (m_canvasStale)
-		rebuildCanvas();
+	compileIfStale();
 	const auto winTitle = documentWindowTitle(DocumentType::NodeGraph, title(), static_cast<uint64_t>(id()));
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
 	if (isDirty())
 		flags |= ImGuiWindowFlags_UnsavedDocument;
 	if (const auto dockspaceId = ImGui::GetID("OwlDockSpace");
@@ -473,39 +464,99 @@ void VisualScriptDocument::onImGuiRender() {
 		const bool focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 		if (focused && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false))
 			std::ignore = save();
-		const float canvasWidth = std::max(ImGui::GetContentRegionAvail().x - g_sidePanelWidth, 120.f);
-		if (ImGui::BeginChild("##vsCanvas", {canvasWidth, 0.f}, ImGuiChildFlags_None,
-							  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-			m_canvas.onRender();
-			if (focused && !ImGui::GetIO().WantTextInput)
-				handleShortcuts();
-			renderContextMenu();
+		renderToolbar();
+		if (m_showDetails) {
+			if (ImGui::BeginChild("##vsDetails", {g_sidePanelWidth, 0.f},
+								  ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX))
+				renderDetails();
+			ImGui::EndChild();
+			ImGui::SameLine();
 		}
-		ImGui::EndChild();
-		ImGui::SameLine();
-		if (ImGui::BeginChild("##vsSide", {0.f, 0.f}, ImGuiChildFlags_Borders))
-			renderSidePanel();
-		ImGui::EndChild();
+		const auto result = m_view.render(m_script, m_diagnostics);
+		if (result.edit.has_value())
+			commit(result.edit->script, result.edit->description, result.edit->merge);
+		if (result.droppedType.has_value())
+			std::ignore = addNode(*result.droppedType, result.mouse);
+		if (result.contextMenu || result.linkDropped.has_value()) {
+			m_contextNode = result.contextNode;
+			m_contextPin = result.contextPin;
+			m_pendingLink = result.linkDropped;
+			m_paletteTarget = result.mouse;
+			m_paletteFilter.clear();
+			m_openContextMenu = true;
+		}
+		if (focused && !ImGui::GetIO().WantTextInput)
+			handleShortcuts(result.deleteUsed);
+		renderContextMenu();
 	}
 	ImGui::End();
-	if (m_canvasStale)
-		rebuildCanvas();
 }
 
-void VisualScriptDocument::handleShortcuts() {
-	const auto selection = m_canvas.selection();
+void VisualScriptDocument::renderToolbar() {
+	const auto& theme = gui::UiLayer::getTheme();
+	const auto toggle = [](const char* iLabel, const bool iOn) -> bool {
+		if (iOn)
+			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+		const bool clicked = ImGui::Button(iLabel);
+		if (iOn)
+			ImGui::PopStyleColor();
+		return clicked;
+	};
+	if (toggle(std::format("{} Details", gui::icon::panelLeft).c_str(), m_showDetails))
+		m_showDetails = !m_showDetails;
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Variables and selected node on the left of the graph (also in the Graph panel).");
+	ImGui::SameLine();
+	if (ImGui::Button(std::format("{} Frame All", gui::icon::focus).c_str()))
+		m_view.requestFrameAll();
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Show every node (Home).");
+	ImGui::SameLine();
+	if (m_diagnostics.empty()) {
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextColored(gui::vec(theme.success), "%s Compiles to Lua", gui::icon::circleCheck);
+	} else {
+		ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(theme.error));
+		if (ImGui::Button(std::format("{} {} error{}", gui::icon::triangleAlert, m_diagnostics.size(),
+									  m_diagnostics.size() > 1 ? "s" : "")
+								  .c_str()))
+			ImGui::OpenPopup("##vsErrors");
+		ImGui::PopStyleColor();
+	}
+	ImGui::SameLine();
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextDisabled("Right-click: add a node  |  Alt+click a pin: break its links  |  Right-drag: pan");
+	if (ImGui::BeginPopup("##vsErrors")) {
+		for (size_t i = 0; i < m_diagnostics.size(); ++i) {
+			const auto& diagnostic = m_diagnostics[i];
+			ImGui::PushID(static_cast<int>(i));
+			const auto label = std::format("{} {}", gui::icon::triangleAlert, diagnostic.message);
+			if (ImGui::Selectable(label.c_str()) && diagnostic.node != 0) {
+				m_view.setSelection({diagnostic.node});
+				m_view.requestFocus(diagnostic.node);
+			}
+			ImGui::PopID();
+		}
+		ImGui::EndPopup();
+	}
+}
+
+void VisualScriptDocument::handleShortcuts(const bool iDeleteUsed) {
+	const auto selection = m_view.getSelection();
 	const bool ctrl = ImGui::GetIO().KeyCtrl;
-	if (ImGui::IsKeyPressed(ImGuiKey_Delete, false) && !selection.empty()) {
+	if (!iDeleteUsed && ImGui::IsKeyPressed(ImGuiKey_Delete, false) && !selection.empty()) {
 		deleteNodes(selection);
 		return;
 	}
+	if (ImGui::IsKeyPressed(ImGuiKey_Home, false))
+		m_view.requestFrameAll();
 	if (!ctrl)
 		return;
 	if (ImGui::IsKeyPressed(ImGuiKey_A, false)) {
 		std::vector<core::UUID> all;
 		all.reserve(m_script.nodes.size());
 		for (const auto& node: m_script.nodes) all.push_back(node.id);
-		m_canvas.setSelection(all);
+		m_view.setSelection(std::move(all));
 	} else if (ImGui::IsKeyPressed(ImGuiKey_C, false) && !selection.empty()) {
 		ImGui::SetClipboardText(copyNodes(selection).c_str());
 	} else if (ImGui::IsKeyPressed(ImGuiKey_X, false) && !selection.empty()) {
@@ -526,19 +577,49 @@ void VisualScriptDocument::renderContextMenu() {
 		ImGui::OpenPopup("##visualScriptMenu");
 		m_openContextMenu = false;
 	}
-	if (!ImGui::BeginPopup("##visualScriptMenu"))
+	if (!ImGui::BeginPopup("##visualScriptMenu")) {
+		m_pendingLink.reset();
 		return;
-	const auto* node = m_contextNode.has_value() ? m_script.findNode(*m_contextNode) : nullptr;
-	if (node == nullptr) {
-		renderPalette();
+	}
+	if (m_contextPin.has_value()) {
+		const auto& pin = *m_contextPin;
+		const auto* node = m_script.findNode(pin.node);
+		const auto pins = node == nullptr ? vs::NodePins{} : vs::getNodePins(m_script, *node);
+		const auto& side = pin.output ? pins.outputs : pins.inputs;
+		const auto spec = std::ranges::find(side, pin.pin, &vs::PinSpec::name);
+		gui::widgets::menuHeader(pin.pin.c_str(), "Pin");
+		if (spec != side.end() && !spec->group.empty()) {
+			if (spec->group == spec->name) {
+				if (gui::widgets::menuItem({.glyph = gui::icon::split, .label = "Split Pin"}))
+					setPinSplit(pin.node, spec->group, true);
+			} else if (gui::widgets::menuItem({.glyph = gui::icon::merge,
+											   .label = std::format("Recombine as {}", spec->group).c_str()})) {
+				setPinSplit(pin.node, spec->group, false);
+			}
+		}
+		if (isLinked(m_script, pin.node, pin.pin, pin.output) &&
+			gui::widgets::menuItem({.glyph = gui::icon::unlink, .label = "Break Links", .shortcut = "Alt+Click"})) {
+			auto next = m_script;
+			std::erase_if(next.links, [&](const vs::GraphLink& iLink) -> bool {
+				return pin.output ? iLink.fromNode == pin.node && iLink.fromPin == pin.pin
+								  : iLink.toNode == pin.node && iLink.toPin == pin.pin;
+			});
+			commit(std::move(next), "Break Links");
+		}
 		ImGui::EndPopup();
 		return;
 	}
-	auto selection = m_canvas.selection();
+	const auto* node = m_contextNode.has_value() ? m_script.findNode(*m_contextNode) : nullptr;
+	if (node == nullptr) {
+		renderNodeList(true);
+		ImGui::EndPopup();
+		return;
+	}
+	auto selection = m_view.getSelection();
 	if (!isSelected(selection, node->id))
 		selection = {node->id};
 	const auto* type = vs::findNodeType(node->type);
-	gui::widgets::menuHeader(type == nullptr ? node->type.c_str() : type->title.c_str(), "Node");
+	gui::widgets::menuHeader(type == nullptr ? node->type.c_str() : getNodeTitle(*node, *type).c_str(), "Node");
 	if (gui::widgets::menuItem({.glyph = gui::icon::copy, .label = "Duplicate", .shortcut = "Ctrl+D"}))
 		std::ignore = pasteNodes(copyNodes(selection), {30.f, 30.f});
 	if (gui::widgets::menuItem({.glyph = gui::icon::clipboardCopy, .label = "Copy", .shortcut = "Ctrl+C"}))
@@ -548,80 +629,156 @@ void VisualScriptDocument::renderContextMenu() {
 	ImGui::EndPopup();
 }
 
-void VisualScriptDocument::renderPalette() {
-	gui::widgets::menuHeader("Add Node", "Palette");
-	if (ImGui::IsWindowAppearing())
-		ImGui::SetKeyboardFocusHere();
-	ImGui::SetNextItemWidth(300.f);
-	ImGui::InputTextWithHint("##paletteFilter", "Search nodes", &m_paletteFilter);
-	if (const char* text = ImGui::GetClipboardText();
-		text != nullptr && std::string_view{text}.contains("VisualScript:") &&
-		gui::widgets::menuItem({.glyph = gui::icon::clipboardPaste, .label = "Paste Here", .shortcut = "Ctrl+V"})) {
-		if (const auto part = vs::deserialize(text, "clipboard"); part && !part->nodes.empty()) {
-			const auto& first = part->nodes.front().position;
-			std::ignore = pasteNodes(text, {m_paletteTarget[0] - first[0], m_paletteTarget[1] - first[1]});
+void VisualScriptDocument::renderNodeList(const bool iPopup) {
+	if (iPopup) {
+		gui::widgets::menuHeader(m_pendingLink.has_value() ? "Add Linked Node" : "Add Node", "Palette");
+		if (ImGui::IsWindowAppearing())
+			ImGui::SetKeyboardFocusHere();
+		ImGui::SetNextItemWidth(320.f);
+		ImGui::InputTextWithHint("##paletteFilter", "Search nodes", &m_paletteFilter);
+		if (const char* text = ImGui::GetClipboardText();
+			!m_pendingLink.has_value() && text != nullptr && std::string_view{text}.contains("VisualScript:") &&
+			gui::widgets::menuItem({.glyph = gui::icon::clipboardPaste, .label = "Paste Here", .shortcut = "Ctrl+V"})) {
+			if (const auto part = vs::deserialize(text, "clipboard"); part && !part->nodes.empty()) {
+				const auto& first = part->nodes.front().position;
+				std::ignore = pasteNodes(text, {m_paletteTarget[0] - first[0], m_paletteTarget[1] - first[1]});
+			}
+			ImGui::CloseCurrentPopup();
+			return;
 		}
-		ImGui::CloseCurrentPopup();
-		return;
+	} else {
+		std::ignore = gui::widgets::searchField("##librarySearch", m_paletteFilter, "Search nodes");
 	}
-	if (!ImGui::BeginChild("##paletteList", {300.f, 360.f})) {
+	const bool child = iPopup ? ImGui::BeginChild("##paletteList", {320.f, 380.f})
+							  : ImGui::BeginChild("##libraryList", {0.f, 0.f});
+	if (!child) {
 		ImGui::EndChild();
 		return;
 	}
-	const auto pick = [this](const vs::NodeType& iType) -> void {
-		if (ImGui::Selectable(iType.title.c_str())) {
-			std::ignore = addNode(iType.id, m_paletteTarget);
-			ImGui::CloseCurrentPopup();
+	const auto accepts = [this](const vs::NodeType& iType) -> bool {
+		if (!m_pendingLink.has_value())
+			return true;
+		const vs::GraphNode probe{.id = core::UUID{0}, .type = iType.id, .position = {0.f, 0.f}, .values = {}};
+		const auto pins = vs::getNodePins(m_script, probe);
+		return findCompatiblePin(m_pendingLink->output ? pins.inputs : pins.outputs, *m_pendingLink) != nullptr;
+	};
+	const auto item = [&](const vs::NodeType& iType) -> void {
+		ImGui::PushID(iType.id.c_str());
+		const vs::GraphNode probe{.id = core::UUID{0}, .type = iType.id, .position = {0.f, 0.f}, .values = {}};
+		const auto color = getNodeColor(m_script, probe, iType);
+		ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(gui::Theme::mix(color, {1.f, 1.f, 1.f, 1.f}, 0.45f)));
+		ImGui::TextUnformatted(getNodeGlyph(iType));
+		ImGui::PopStyleColor();
+		ImGui::SameLine();
+		const auto label = iType.kind == vs::NodeKind::Call ? getNodeTitle(probe, iType) : iType.title;
+		if (ImGui::Selectable(label.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
+			if (iPopup) {
+				std::ignore = addNode(iType.id, m_paletteTarget, m_pendingLink);
+				m_pendingLink.reset();
+				ImGui::CloseCurrentPopup();
+			} else {
+				const auto center = m_view.getViewCenter();
+				std::ignore = addNode(iType.id, {center[0] - 60.f, center[1] - 30.f});
+			}
+		}
+		if (!iPopup && ImGui::BeginDragDropSource()) {
+			ImGui::SetDragDropPayload(g_VisualScriptNodePayload, iType.id.data(), iType.id.size());
+			ImGui::Text("%s %s", getNodeGlyph(iType), label.c_str());
+			ImGui::EndDragDropSource();
 		}
 		if (ImGui::IsItemHovered() && !iType.description.empty())
-			ImGui::SetTooltip("%s", iType.description.c_str());
+			ImGui::SetTooltip("%s\n%s", iType.title.c_str(), iType.description.c_str());
+		ImGui::PopID();
 	};
 	const auto& types = vs::getNodeTypes();
 	if (!m_paletteFilter.empty()) {
 		for (const auto& type: types)
-			if (containsNoCase(type.title, m_paletteFilter) || containsNoCase(type.description, m_paletteFilter)) {
-				ImGui::PushID(type.id.c_str());
-				pick(type);
-				ImGui::PopID();
-			}
+			if (accepts(type) &&
+				(containsNoCase(type.title, m_paletteFilter) || containsNoCase(type.description, m_paletteFilter)))
+				item(type);
 		ImGui::EndChild();
 		return;
 	}
-	std::vector<std::string> categories;
+	std::vector<const vs::NodeType*> heads;
 	for (const auto& type: types)
-		if (std::ranges::find(categories, type.category) == categories.end())
-			categories.push_back(type.category);
-	for (const auto& category: categories) {
-		if (!ImGui::TreeNodeEx(category.c_str(), ImGuiTreeNodeFlags_SpanAvailWidth))
+		if (std::ranges::none_of(heads,
+								 [&](const vs::NodeType* iHead) -> bool { return iHead->category == type.category; }))
+			heads.push_back(&type);
+	std::ranges::stable_sort(heads, {},
+							 [](const vs::NodeType* iHead) -> size_t { return categoryRank(iHead->category); });
+	for (const auto* head: heads) {
+		if (m_pendingLink.has_value() && std::ranges::none_of(types, [&](const vs::NodeType& iType) -> bool {
+				return iType.category == head->category && accepts(iType);
+			}))
+			continue;
+		const auto label = std::format(
+				"{}  {}", head->kind == vs::NodeKind::Call ? gui::icon::squareFunction : getNodeGlyph(*head),
+				head->category);
+		const auto flags = ImGuiTreeNodeFlags_SpanAvailWidth |
+						   (m_pendingLink.has_value() ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
+		if (!ImGui::TreeNodeEx(head->category.c_str(), flags, "%s", label.c_str()))
 			continue;
 		for (const auto& type: types)
-			if (type.category == category) {
-				ImGui::PushID(type.id.c_str());
-				pick(type);
-				ImGui::PopID();
-			}
+			if (type.category == head->category && accepts(type))
+				item(type);
 		ImGui::TreePop();
 	}
 	ImGui::EndChild();
 }
 
-void VisualScriptDocument::renderSidePanel() {
-	renderVariables();
-	ImGui::Spacing();
-	renderSelectedNode();
-	ImGui::Spacing();
-	renderCompilation();
+void VisualScriptDocument::renderHierarchyPanel() { renderNodeList(false); }
+
+void VisualScriptDocument::renderPropertiesPanel() {
+	compileIfStale();
+	renderDetails();
+}
+
+void VisualScriptDocument::renderDetails() {
+	if (!ImGui::BeginTabBar("##vsTabs"))
+		return;
+	if (ImGui::BeginTabItem(std::format("{} Variables", gui::icon::variable).c_str())) {
+		renderVariables();
+		ImGui::EndTabItem();
+	}
+	if (ImGui::BeginTabItem(std::format("{} Node", gui::icon::squareFunction).c_str())) {
+		std::ignore = ImGui::Checkbox(std::format("{} Show generated Lua", gui::icon::code).c_str(), &m_showLua);
+		ImGui::Separator();
+		if (m_showLua)
+			renderLua();
+		else
+			renderSelectedNode();
+		ImGui::EndTabItem();
+	}
+	ImGui::EndTabBar();
 }
 
 void VisualScriptDocument::renderVariables() {
-	ImGui::SeparatorText("Variables");
-	ImGui::TextDisabled("Script properties, shown in the inspector.");
+	ImGui::TextDisabled("Script properties, set per entity in the inspector. Drag one onto the graph to read it.");
 	std::optional<size_t> removed;
+	const float rowWidth = ImGui::GetContentRegionAvail().x;
 	for (size_t i = 0; i < m_script.variables.size(); ++i) {
 		ImGui::PushID(static_cast<int>(i));
 		const auto& variable = m_script.variables[i];
+		const auto pinType = vs::getNodePins(m_script, {.id = core::UUID{0},
+														.type = "var.get",
+														.position = {},
+														.values = {{"variable", variable.name}}})
+									 .outputs.front()
+									 .type;
+		ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(getPinColor(pinType)));
+		ImGui::Selectable(gui::icon::variable, false, ImGuiSelectableFlags_None, {ImGui::GetFontSize(), 0.f});
+		ImGui::PopStyleColor();
+		if (ImGui::BeginDragDropSource()) {
+			const auto payload = std::format("var.get|{}", variable.name);
+			ImGui::SetDragDropPayload(g_VisualScriptNodePayload, payload.data(), payload.size());
+			ImGui::Text("%s Get %s", gui::icon::variable, variable.name.c_str());
+			ImGui::EndDragDropSource();
+		}
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("Drag onto the graph to read %s.", variable.name.c_str());
+		ImGui::SameLine();
 		auto name = variable.name;
-		ImGui::SetNextItemWidth(110.f);
+		ImGui::SetNextItemWidth(std::max(80.f, rowWidth * 0.4f));
 		if (ImGui::InputText("##name", &name)) {
 			auto next = m_script;
 			for (auto& node: next.nodes)
@@ -630,42 +787,42 @@ void VisualScriptDocument::renderVariables() {
 					it->second = name;
 			next.variables[i].name = name;
 			commit(std::move(next), "Rename Variable", true);
-			m_canvasStale = true;
 		}
 		if (!vs::isValidName(name) && ImGui::IsItemHovered())
 			ImGui::SetTooltip("Not a usable Lua name.");
 		ImGui::SameLine();
-		ImGui::SetNextItemWidth(70.f);
+		ImGui::SetNextItemWidth(std::max(60.f, ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight() - 8.f));
 		if (ImGui::BeginCombo("##type", std::string{script::ScriptEngine::propertyTypeName(variable.type)}.c_str())) {
 			for (const auto type: g_variableTypes)
 				if (ImGui::Selectable(std::string{script::ScriptEngine::propertyTypeName(type)}.c_str(),
 									  type == variable.type)) {
 					auto next = m_script;
 					next.variables[i].type = type;
+					next.variables[i].defaultValue.clear();
 					commit(std::move(next), "Change Variable Type");
-					m_canvasStale = true;
 				}
 			ImGui::EndCombo();
 		}
 		ImGui::SameLine();
-		auto value = variable.defaultValue;
-		ImGui::SetNextItemWidth(70.f);
-		if (ImGui::InputTextWithHint("##default", "default", &value)) {
-			auto next = m_script;
-			next.variables[i].defaultValue = value;
-			commit(std::move(next), "Edit Variable Default", true);
-			m_canvasStale = true;
-		}
-		ImGui::SameLine();
 		if (ImGui::SmallButton(gui::icon::trash2))
 			removed = i;
+		ImGui::Indent(ImGui::GetFontSize() + ImGui::GetStyle().ItemSpacing.x);
+		ImGui::SetNextItemWidth(-1.f);
+		if (const auto value =
+					valueField("##default", pinType, vs::getPinComponents(pinType).size(), variable.defaultValue, {});
+			value.has_value()) {
+			auto next = m_script;
+			next.variables[i].defaultValue = *value;
+			commit(std::move(next), "Edit Variable Default", true);
+		}
+		ImGui::Unindent(ImGui::GetFontSize() + ImGui::GetStyle().ItemSpacing.x);
+		ImGui::Spacing();
 		ImGui::PopID();
 	}
 	if (removed.has_value()) {
 		auto next = m_script;
 		next.variables.erase(next.variables.begin() + static_cast<std::ptrdiff_t>(*removed));
 		commit(std::move(next), "Remove Variable");
-		m_canvasStale = true;
 	}
 	if (ImGui::Button(std::format("{} Add Variable", gui::icon::plus).c_str())) {
 		auto next = m_script;
@@ -674,15 +831,14 @@ void VisualScriptDocument::renderVariables() {
 			name = std::format("variable_{}", counter);
 		next.variables.push_back({.name = name, .type = script::ScriptPropertyType::Float, .defaultValue = "0"});
 		commit(std::move(next), "Add Variable");
-		m_canvasStale = true;
 	}
 }
 
 void VisualScriptDocument::renderSelectedNode() {
-	ImGui::SeparatorText("Node");
-	const auto selection = m_canvas.selection();
+	const auto& selection = m_view.getSelection();
 	if (selection.empty()) {
-		ImGui::TextDisabled("Select a node to edit its values.");
+		std::ignore = gui::widgets::emptyState(gui::icon::mousePointer2, "No node selected",
+											   "Click a node in the graph to edit its values here.");
 		return;
 	}
 	if (selection.size() > 1) {
@@ -695,11 +851,25 @@ void VisualScriptDocument::renderSelectedNode() {
 		ImGui::TextDisabled("Unknown node type.");
 		return;
 	}
-	ImGui::TextUnformatted(nodeTitle(*node, *type).c_str());
+	const auto id = node->id;
+	ImGui::PushStyleColor(ImGuiCol_Text,
+						  gui::vec(gui::Theme::mix(getNodeColor(m_script, *node, *type), {1.f, 1.f, 1.f, 1.f}, 0.45f)));
+	ImGui::TextUnformatted(getNodeGlyph(*type));
+	ImGui::PopStyleColor();
+	ImGui::SameLine();
+	gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
+	ImGui::TextUnformatted(getNodeTitle(*node, *type).c_str());
+	gui::UiLayer::popTextStyle();
+	ImGui::TextDisabled("%s", type->title.c_str());
 	ImGui::PushTextWrapPos();
-	ImGui::TextDisabled("%s", type->description.c_str());
+	ImGui::TextUnformatted(type->description.c_str());
+	for (const auto& diagnostic: m_diagnostics)
+		if (diagnostic.node == id)
+			ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().error), "%s %s", gui::icon::triangleAlert,
+							   diagnostic.message.c_str());
 	ImGui::PopTextWrapPos();
-	const auto setValue = [this, id = node->id](const std::string& iKey, const std::string& iValue) -> void {
+	ImGui::Spacing();
+	const auto setValue = [this, id](const std::string& iKey, const std::string& iValue) -> void {
 		auto next = m_script;
 		if (auto* edited = next.findNode(id); edited != nullptr) {
 			if (iValue.empty())
@@ -708,7 +878,6 @@ void VisualScriptDocument::renderSelectedNode() {
 				edited->values[iKey] = iValue;
 		}
 		commit(std::move(next), "Edit Node Value", true);
-		m_canvasStale = true;
 	};
 	if (type->kind == vs::NodeKind::GetVariable || type->kind == vs::NodeKind::SetVariable) {
 		const auto current = valueOf(*node, "variable");
@@ -725,55 +894,69 @@ void VisualScriptDocument::renderSelectedNode() {
 			setValue("function", function);
 	}
 	const auto pins = vs::getNodePins(m_script, *node);
+	std::set<std::string> groups;
+	for (const auto& pin: pins.inputs)
+		if (!pin.group.empty())
+			groups.insert(pin.group);
+	for (const auto& pin: pins.outputs)
+		if (!pin.group.empty())
+			groups.insert(pin.group);
+	for (const auto& group: groups) {
+		const bool split = valueOf(*node, std::string{vs::g_SplitPrefix} + group) == "true";
+		ImGui::PushID(group.c_str());
+		if (ImGui::Button(std::format("{} {} {}", split ? gui::icon::merge : gui::icon::split,
+									  split ? "Recombine" : "Split", group)
+								  .c_str()))
+			setPinSplit(id, group, !split);
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip(split ? "Show the components as one pin." : "Show one pin per component.");
+		ImGui::PopID();
+		ImGui::SameLine();
+	}
+	if (!groups.empty())
+		ImGui::NewLine();
+	if (std::ranges::none_of(pins.inputs,
+							 [](const vs::PinSpec& iPin) -> bool { return iPin.type != vs::PinType::Exec; }))
+		return;
+	ImGui::SeparatorText("Inputs");
 	for (const auto& pin: pins.inputs) {
 		if (pin.type == vs::PinType::Exec)
 			continue;
 		ImGui::PushID(pin.name.c_str());
-		const bool linked = std::ranges::any_of(m_script.links, [&](const vs::GraphLink& iLink) -> bool {
-			return iLink.toNode == node->id && iLink.toPin == pin.name;
-		});
-		auto value = valueOf(*node, pin.name);
-		if (linked) {
-			ImGui::TextDisabled("%s: linked", pin.name.c_str());
-		} else if (pin.type == vs::PinType::Boolean) {
-			bool checked = (value.empty() ? pin.defaultValue : value) == "true";
-			if (ImGui::Checkbox(pin.name.c_str(), &checked))
-				setValue(pin.name, checked ? "true" : "false");
+		if (isLinked(m_script, id, pin.name, false)) {
+			ImGui::TextDisabled("%s %s: linked", gui::icon::link, pin.name.c_str());
 		} else {
-			const auto hint = pin.type == vs::PinType::Entity ? std::string{"self"} : pin.defaultValue;
-			if (ImGui::InputTextWithHint(pin.name.c_str(), hint.c_str(), &value))
-				setValue(pin.name, value);
+			const auto count = pin.group == pin.name ? pin.name.size() : vs::getPinComponents(pin.type).size();
+			if (const auto value =
+						valueField(pin.name.c_str(), pin.type, count, valueOf(*node, pin.name), pin.defaultValue);
+				value.has_value())
+				setValue(pin.name, *value);
 		}
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("%s%s", std::string{pinTypeName(pin.type)}.c_str(), pin.optional ? ", optional" : "");
+			ImGui::SetTooltip("%s%s", std::string{getPinTypeName(pin.type)}.c_str(), pin.optional ? ", optional" : "");
 		ImGui::PopID();
 	}
 }
 
-void VisualScriptDocument::renderCompilation() {
-	ImGui::SeparatorText("Lua");
-	const auto& theme = gui::UiLayer::getTheme();
-	if (m_diagnostics.empty()) {
-		ImGui::TextColored(gui::vec(theme.success), "%s Compiles to Lua", gui::icon::circleCheck);
-	} else {
-		for (size_t i = 0; i < m_diagnostics.size(); ++i) {
-			const auto& diagnostic = m_diagnostics[i];
-			ImGui::PushID(static_cast<int>(i));
-			ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(theme.error));
-			ImGui::PushTextWrapPos();
-			const auto label = std::format("{} {}", gui::icon::triangleAlert, diagnostic.message);
-			if (ImGui::Selectable(label.c_str()) && diagnostic.node != 0) {
-				const std::array selection{diagnostic.node};
-				m_canvas.setSelection(selection);
-			}
-			ImGui::PopTextWrapPos();
-			ImGui::PopStyleColor();
-			ImGui::PopID();
-		}
+void VisualScriptDocument::renderLua() {
+	if (!m_diagnostics.empty())
+		ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().error), "%s The graph does not compile: last valid Lua.",
+						   gui::icon::triangleAlert);
+	if (!mp_luaView) {
+		mp_luaView = mkUniq<TextEditor>();
+		mp_luaView->SetReadOnlyEnabled(true);
+		mp_luaView->SetShowWhitespacesEnabled(false);
+		mp_luaView->SetShowLineNumbersEnabled(true);
+		codeEditor::applyLanguage(*mp_luaView, codeEditor::Language::Lua);
+		m_luaViewText.clear();
 	}
-	ImGui::Checkbox("Show generated Lua", &m_showLua);
-	if (m_showLua)
-		ImGui::InputTextMultiline("##lua", &m_compiledLua, {-1.f, -1.f}, ImGuiInputTextFlags_ReadOnly);
+	if (m_luaViewText != m_compiledLua) {
+		m_luaViewText = m_compiledLua;
+		mp_luaView->SetText(m_luaViewText);
+	}
+	gui::UiLayer::pushTextStyle(gui::TextStyle::Code);
+	mp_luaView->Render("##vsLua", ImGui::GetContentRegionAvail());
+	gui::UiLayer::popTextStyle();
 }
 
 }// namespace owl::nest

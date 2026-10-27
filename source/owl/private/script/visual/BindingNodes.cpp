@@ -24,7 +24,11 @@ namespace owl::script::visual {
 namespace {
 
 auto pin(std::string iName, const PinType iType, std::string iDefault = {}, const bool iOptional = false) -> PinSpec {
-	return {.name = std::move(iName), .type = iType, .defaultValue = std::move(iDefault), .optional = iOptional};
+	return {.name = std::move(iName),
+			.type = iType,
+			.defaultValue = std::move(iDefault),
+			.optional = iOptional,
+			.group = {}};
 }
 
 auto toPinType(const LuaType iType) -> PinType {

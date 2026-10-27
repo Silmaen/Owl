@@ -216,6 +216,78 @@ TEST(VisualScript, UnsetOptionalArgumentsAreLeftOut) {
 	EXPECT_TRUE(lua->contains("scene.transition_to(\"a.owl\", \"fade\")\n"));
 }
 
+TEST(VisualScript, NumberComponentsFormOneGroupedPin) {
+	VisualScript script;
+	const auto set = addNode(script, "call.transform.set_position");
+	const auto get = addNode(script, "call.transform.get_position");
+	const auto pins = getNodePins(script, *script.findNode(set));
+	ASSERT_EQ(pins.inputs.size(), 3u);
+	EXPECT_EQ(pins.inputs[2].name, "xyz");
+	EXPECT_EQ(pins.inputs[2].type, PinType::Vector3);
+	EXPECT_EQ(pins.inputs[2].group, "xyz");
+	EXPECT_EQ(getNodePins(script, *script.findNode(get)).outputs.front().type, PinType::Vector3);
+	script.findNode(set)->values[std::string{g_SplitPrefix} + "xyz"] = "true";
+	const auto split = getNodePins(script, *script.findNode(set));
+	ASSERT_EQ(split.inputs.size(), 5u);
+	EXPECT_EQ(split.inputs[4].name, "z");
+	EXPECT_EQ(split.inputs[4].type, PinType::Number);
+	EXPECT_EQ(split.inputs[4].group, "xyz");
+	EXPECT_EQ(getPinComponents(PinType::Color).size(), 4u);
+	EXPECT_TRUE(getPinComponents(PinType::Number).empty());
+	EXPECT_FALSE(canConnect(PinType::Vector3, PinType::Number));
+}
+
+TEST(VisualScript, GroupedPinsPassOneArgumentPerComponent) {
+	VisualScript script;
+	const auto create = addNode(script, "event.on_create");
+	const auto get = addNode(script, "call.transform.get_position");
+	const auto first = addNode(script, "call.transform.set_position");
+	const auto second = addNode(script, "call.transform.set_position", {{"xyz", "1, -2, 3.5"}});
+	link(script, create, "Then", first, "Exec");
+	link(script, first, "Then", second, "Exec");
+	link(script, get, "xyz", first, "xyz");
+	const auto lua = compile(script);
+	ASSERT_TRUE(lua.has_value()) << lua.error().front().message;
+	EXPECT_TRUE(lua->contains("= { x = ")) << *lua;
+	EXPECT_TRUE(lua->contains(".x, ")) << *lua;
+	EXPECT_TRUE(lua->contains("transform.set_position(entity_id, 1, (-2), 3.5)")) << *lua;
+	script.findNode(second)->values["xyz"] = "1, 2";
+	EXPECT_FALSE(compile(script).has_value());
+}
+
+TEST(VisualScript, ColorVariablesAndCompoundNodesRun) {
+	core::Log::init(core::Log::Level::Off);
+	VisualScript script;
+	script.variables.push_back({.name = "tint", .type = ScriptPropertyType::Color, .defaultValue = "0.25, 0.5, 1, 1"});
+	script.variables.push_back({.name = "green", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	script.variables.push_back({.name = "depth", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	const auto create = addNode(script, "event.on_create");
+	const auto setGreen = addNode(script, "var.set", {{"variable", "green"}});
+	const auto setDepth = addNode(script, "var.set", {{"variable", "depth"}});
+	const auto tint = addNode(script, "var.get", {{"variable", "tint"}});
+	const auto split = addNode(script, "math.break_color");
+	const auto make = addNode(script, "math.make_vector3", {{"Z", "7"}});
+	const auto parts = addNode(script, "math.break_vector3");
+	link(script, create, "Then", setGreen, "Exec");
+	link(script, setGreen, "Then", setDepth, "Exec");
+	link(script, tint, "Value", split, "Value");
+	link(script, split, "G", setGreen, "Value");
+	link(script, make, "Result", parts, "Value");
+	link(script, parts, "Z", setDepth, "Value");
+	const auto bytes = toBytes(serialize(script));
+	const auto properties = ScriptEngine::extractPropertiesFromBuffer(bytes, "tint.owlvs");
+	ASSERT_EQ(properties.size(), 3u);
+	EXPECT_EQ(properties.front().type, ScriptPropertyType::Color);
+	auto scn = mkShared<scene::Scene>();
+	ScriptInstance instance;
+	instance.setScene(scn.get());
+	ASSERT_TRUE(load(instance, script, "tint.owlvs"));
+	instance.onCreate();
+	EXPECT_NEAR(instance.getPropertyFloat("green").value_or(0.f), 0.5f, 1e-5f);
+	EXPECT_NEAR(instance.getPropertyFloat("depth").value_or(0.f), 7.f, 1e-5f);
+	core::Log::invalidate();
+}
+
 TEST(VisualScript, ErrorsPointAtTheFaultyNode) {
 	VisualScript unknown;
 	const auto bad = addNode(unknown, "no.such.node");
