@@ -12,6 +12,7 @@
 #include "codeEditor/LanguageDefinitions.h"
 #include "external/imgui_text_edit.h"
 
+#include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
@@ -23,6 +24,7 @@
 #include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/SearchField.h>
 #include <gui/widgets/SectionHeader.h>
+#include <gui/widgets/Toggle.h>
 #include <platform/AtomicFile.h>
 #include <platform/FileUtils.h>
 
@@ -44,6 +46,7 @@ OWL_DIAG_POP
 #include <limits>
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -166,11 +169,15 @@ struct TypedItem {
 };
 
 void typedLabel(const TypedItem& iItem) {
+	const float size = ImGui::GetFontSize();
+	if (const auto icon = gui::IconBank::instance().getIcon(getPinTypeIcon(iItem.type), size); icon.has_value())
+		ImGui::Image(static_cast<ImTextureID>(icon->textureId), {size, size}, gui::vec(icon->uv0), gui::vec(icon->uv1));
+	else
+		ImGui::Dummy({size, size});
+	ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
 	ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(getPinColor(iItem.type)));
-	ImGui::TextUnformatted(getPinGlyph(iItem.type));
-	ImGui::PopStyleColor();
-	ImGui::SameLine();
 	ImGui::TextUnformatted(iItem.label.c_str());
+	ImGui::PopStyleColor();
 }
 
 // Combo of the inspector style whose entries show the glyph and colour of their type; returns the entry picked.
@@ -221,8 +228,7 @@ auto componentField(const char* iId, const vs::PinType iType, const size_t iCoun
 	if (iType == vs::PinType::Color)
 		changed = iCount < 4 ? ImGui::ColorEdit3(iId, values.data()) : ImGui::ColorEdit4(iId, values.data());
 	else
-		changed = ImGui::DragScalarN(iId, ImGuiDataType_Float, values.data(), static_cast<int>(iCount), 0.05f, nullptr,
-									 nullptr, "%.2f");
+		changed = gui::widgets::vectorField(iId, std::span{values}.first(std::min<size_t>(iCount, 3)), 0.05f);
 	if (!changed)
 		return std::nullopt;
 	std::string out;
@@ -237,7 +243,7 @@ auto valueField(const char* iId, const vs::PinType iType, const size_t iCount, c
 		case vs::PinType::Boolean:
 			{
 				bool checked = (iValue.empty() ? iDefault : iValue) == "true";
-				if (ImGui::Checkbox(iId, &checked))
+				if (gui::widgets::toggle(iId, &checked))
 					return checked ? "true" : "false";
 				return std::nullopt;
 			}
@@ -722,16 +728,20 @@ void VisualScriptDocument::renderContextMenu() {
 void VisualScriptDocument::renderNodeList(const bool iPopup) {
 	if (iPopup) {
 		gui::widgets::menuHeader(m_pendingLink.has_value() ? "Add Linked Node" : "Add Node", "Palette");
-		if (ImGui::IsWindowAppearing())
+		if (ImGui::IsWindowAppearing()) {
 			ImGui::SetKeyboardFocusHere();
+			// Read once per opening: the system clipboard is slow to query and Wayland reports every empty read.
+			const char* text = ImGui::GetClipboardText();
+			m_paletteClipboard = text != nullptr && std::string_view{text}.contains("VisualScript:") ? text : "";
+		}
 		ImGui::SetNextItemWidth(320.f);
 		ImGui::InputTextWithHint("##paletteFilter", "Search nodes", &m_paletteFilter);
-		if (const char* text = ImGui::GetClipboardText();
-			!m_pendingLink.has_value() && text != nullptr && std::string_view{text}.contains("VisualScript:") &&
+		if (!m_pendingLink.has_value() && !m_paletteClipboard.empty() &&
 			gui::widgets::menuItem({.glyph = gui::icon::clipboardPaste, .label = "Paste Here", .shortcut = "Ctrl+V"})) {
-			if (const auto part = vs::deserialize(text, "clipboard"); part && !part->nodes.empty()) {
+			if (const auto part = vs::deserialize(m_paletteClipboard, "clipboard"); part && !part->nodes.empty()) {
 				const auto& first = part->nodes.front().position;
-				std::ignore = pasteNodes(text, {m_paletteTarget[0] - first[0], m_paletteTarget[1] - first[1]});
+				std::ignore =
+						pasteNodes(m_paletteClipboard, {m_paletteTarget[0] - first[0], m_paletteTarget[1] - first[1]});
 			}
 			ImGui::CloseCurrentPopup();
 			return;
@@ -843,7 +853,7 @@ void VisualScriptDocument::renderVariables() {
 		ImGui::PushID(static_cast<int>(i));
 		const auto& variable = m_script.variables[i];
 		const auto pinType = vs::getVariablePinType(variable.type);
-		const auto section = gui::widgets::sectionHeader(variable.name.c_str(), gui::icon::variable, true, false);
+		const auto section = gui::widgets::sectionHeader(variable.name.c_str(), getPinTypeIcon(pinType), true, false);
 		if (ImGui::BeginDragDropSource()) {
 			const auto payload = std::format("var.get|{}", variable.name);
 			ImGui::SetDragDropPayload(g_VisualScriptNodePayload, payload.data(), payload.size());
@@ -971,7 +981,7 @@ void VisualScriptDocument::renderNodeHeader(const vs::GraphNode& iNode, const vs
 	const auto setValue = [this, id](const std::string& iKey, const std::string& iValue) -> void {
 		setNodeValue(id, iKey, iValue);
 	};
-	if (gui::widgets::sectionHeader(getNodeTitle(*node, *type).c_str(), getNodeGlyph(*type), false).open) {
+	if (gui::widgets::sectionHeader(getNodeTitle(*node, *type).c_str(), getNodeIcon(*type), false).open) {
 		ImGui::PushTextWrapPos();
 		ImGui::TextDisabled("%s", type->title.c_str());
 		ImGui::TextUnformatted(type->description.c_str());
@@ -1018,7 +1028,7 @@ void VisualScriptDocument::renderGroupedPins(const vs::GraphNode& iNode) {
 	for (const auto& pin: pins.outputs)
 		if (!pin.group.empty())
 			groups.insert(pin.group);
-	if (groups.empty() || !gui::widgets::sectionHeader("Grouped Pins", gui::icon::split, false).open)
+	if (groups.empty() || !gui::widgets::sectionHeader("Grouped Pins", "vs_node_pins", false).open)
 		return;
 	{
 		if (gui::widgets::beginProperties("##groups")) {
@@ -1044,7 +1054,7 @@ void VisualScriptDocument::renderNodeInputs(const vs::GraphNode& iNode) {
 	if (std::ranges::none_of(pins.inputs,
 							 [](const vs::PinSpec& iPin) -> bool { return iPin.type != vs::PinType::Exec; }))
 		return;
-	if (!gui::widgets::sectionHeader("Inputs", gui::icon::arrowRight, false).open)
+	if (!gui::widgets::sectionHeader("Inputs", "vs_node_inputs", false).open)
 		return;
 	if (gui::widgets::beginProperties("##inputs")) {
 		for (const auto& pin: pins.inputs) {

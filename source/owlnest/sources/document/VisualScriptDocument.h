@@ -413,6 +413,8 @@ private:
 	std::string m_savedText;
 	/// Search text of the palette and of the library.
 	std::string m_paletteFilter;
+	/// Copied nodes in the clipboard when the palette opened, empty when there are none.
+	std::string m_paletteClipboard;
 	/// Canvas position where the palette adds a node.
 	std::array<float, 2> m_paletteTarget{0.f, 0.f};
 	/// Node under the cursor at the last right click.

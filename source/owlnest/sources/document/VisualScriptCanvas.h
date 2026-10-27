@@ -119,6 +119,22 @@ using TextMeasure = std::function<float(std::string_view)>;
 
 /**
  * @brief
+ *  Two-tone icon of a pin type, from the icon bank: section headers and combo entries of the Graph panel.
+ * @param[in] iType The pin type.
+ * @return The icon name (`vs_type_float`).
+ */
+[[nodiscard]] auto getPinTypeIcon(script::visual::PinType iType) -> const char*;
+
+/**
+ * @brief
+ *  Two-tone icon of the family of a node type, from the icon bank.
+ * @param[in] iType The node type.
+ * @return The icon name (`vs_node_call`).
+ */
+[[nodiscard]] auto getNodeIcon(const script::visual::NodeType& iType) -> const char*;
+
+/**
+ * @brief
  *  Name of a pin type, for the tooltips.
  * @param[in] iType The pin type.
  * @return The name (`number`, `color`).

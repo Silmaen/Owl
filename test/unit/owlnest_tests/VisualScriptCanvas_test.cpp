@@ -77,7 +77,12 @@ TEST(VisualScriptCanvas, TitlesAndStyle) {
 	EXPECT_EQ(getNodeTitle(node(set->id, {{"variable", "speed"}}), *set), "Set speed");
 	EXPECT_EQ(getPinTypeName(vs::PinType::Color), "color");
 	EXPECT_NE(getPinColor(vs::PinType::Exec), getPinColor(vs::PinType::Number));
-	for (const auto& type: vs::getNodeTypes()) EXPECT_NE(getNodeGlyph(type), nullptr) << type.id;
+	for (const auto& type: vs::getNodeTypes()) {
+		EXPECT_NE(getNodeGlyph(type), nullptr) << type.id;
+		EXPECT_TRUE(std::string_view{getNodeIcon(type)}.starts_with("vs_node_")) << type.id;
+	}
+	EXPECT_EQ(std::string_view{getPinTypeIcon(vs::PinType::Vector3)}, "vs_type_vec3");
+	EXPECT_NE(std::string_view{getPinGlyph(vs::PinType::Boolean)}, std::string_view{getPinGlyph(vs::PinType::Number)});
 }
 
 TEST(VisualScriptCanvas, EngineDemoGraphsDoNotOverlap) {

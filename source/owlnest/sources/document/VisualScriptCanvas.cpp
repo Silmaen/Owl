@@ -297,6 +297,52 @@ auto getPinGlyph(const vs::PinType iType) -> const char* {
 	return gui::icon::circle;
 }
 
+auto getPinTypeIcon(const vs::PinType iType) -> const char* {
+	switch (iType) {
+		case vs::PinType::Boolean:
+			return "vs_type_bool";
+		case vs::PinType::Integer:
+			return "vs_type_int";
+		case vs::PinType::Number:
+			return "vs_type_float";
+		case vs::PinType::String:
+			return "vs_type_string";
+		case vs::PinType::Entity:
+			return "vs_type_entity";
+		case vs::PinType::Vector2:
+			return "vs_type_vec2";
+		case vs::PinType::Vector3:
+			return "vs_type_vec3";
+		case vs::PinType::Color:
+			return "vs_type_color";
+		case vs::PinType::Exec:
+		case vs::PinType::Table:
+		case vs::PinType::Any:
+			break;
+	}
+	return "vs_node_constant";
+}
+
+auto getNodeIcon(const vs::NodeType& iType) -> const char* {
+	switch (iType.kind) {
+		case vs::NodeKind::Event:
+		case vs::NodeKind::CustomEvent:
+			return "vs_node_event";
+		case vs::NodeKind::Branch:
+		case vs::NodeKind::Sequence:
+		case vs::NodeKind::ForLoop:
+			return "vs_node_flow";
+		case vs::NodeKind::GetVariable:
+		case vs::NodeKind::SetVariable:
+			return "vs_node_variable";
+		case vs::NodeKind::Call:
+			return "vs_node_call";
+		case vs::NodeKind::Operator:
+			break;
+	}
+	return iType.category == "Constant" ? "vs_node_constant" : "vs_node_math";
+}
+
 auto getPinColor(const vs::PinType iType) -> math::vec4 {
 	switch (iType) {
 		case vs::PinType::Exec:

@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `transform.get_world_position` / `set_world_position` in double and `scene.get_world_origin`.
 - Engine Demo far orbit (`far_orbit.owl`, **K** from the menu): a station one astronomical unit away, sharp to the centimetre.
 - Visual scripts (`.owlvs`): event graphs compiled to Lua at load, usable wherever a `.lua` script is, their variables as script properties.
-- Owl Nest visual script editor: Blueprint-style canvas with inline values, node library to drag from, variables and node details in the Graph panel, graph / split / coloured Lua views, copy / paste, undo.
+- Owl Nest visual script editor: Blueprint-style canvas with inline values, node library to drag from, variables and node details in the Graph panel, graph / split / coloured Lua views, two-tone icons of the value types and node families, copy / paste, undo.
 - Visual scripts: colour and vector values (`Color`, `Vector 2`, `Vector 3`), as variables, make / break nodes, and the `r g b a` / `x y z` parameters of a binding (also prefixed, `vx vy`, `cell_x cell_y`) as one pin that splits into its components; constants have only an output.
 - Content Browser: visual scripts have an icon and a colour of their own.
 - Engine Demo: the tavern cellar ladder is a visual script.
