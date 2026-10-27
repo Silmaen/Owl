@@ -92,31 +92,6 @@ auto numberLiteral(const double iValue) -> std::string {
 	return iValue < 0 ? std::format("({})", iValue) : std::format("{}", iValue);
 }
 
-auto toPropertyType(const ScriptPropertyType iType) -> PinType {
-	switch (iType) {
-		case ScriptPropertyType::Float:
-			return PinType::Number;
-		case ScriptPropertyType::Int:
-			return PinType::Integer;
-		case ScriptPropertyType::String:
-			return PinType::String;
-		case ScriptPropertyType::Bool:
-			return PinType::Boolean;
-		case ScriptPropertyType::Entity:
-			return PinType::Entity;
-		case ScriptPropertyType::Color:
-			return PinType::Color;
-		case ScriptPropertyType::Vec2:
-			return PinType::Vector2;
-		case ScriptPropertyType::Vec3:
-			return PinType::Vector3;
-		case ScriptPropertyType::Numbers:
-		case ScriptPropertyType::Strings:
-			return PinType::Table;
-	}
-	return PinType::Any;
-}
-
 // Components of a grouped value typed as `1, 0.5, 0`: one number per component, all present.
 auto parseComponents(const std::string& iText, const size_t iCount) -> std::optional<std::vector<double>> {
 	std::vector<double> values;
@@ -156,14 +131,12 @@ auto componentTable(const PinType iType, const std::vector<std::string>& iValues
 
 auto isGroup(const PinType iType) -> bool { return !getPinComponents(iType).empty(); }
 
-// Component names of a grouped pin, spelled by its name (`rgb`) or else given by its type.
+// Table keys of a grouped pin: one per pin it stands for (`x, y` for `vx, vy`), all of its type otherwise.
 auto componentsOf(const PinSpec& iPin) -> std::vector<std::string> {
-	if (iPin.group != iPin.name)
-		return getPinComponents(iPin.type);
-	std::vector<std::string> out;
-	out.reserve(iPin.name.size());
-	for (const char letter: iPin.name) out.emplace_back(1, letter);
-	return out;
+	auto keys = getPinComponents(iPin.type);
+	if (iPin.group == iPin.name && !iPin.components.empty() && iPin.components.size() < keys.size())
+		keys.resize(iPin.components.size());
+	return keys;
 }
 
 // NOLINTBEGIN(misc-no-recursion) walks the graph; m_pureStack and m_execStack stop at every cycle
@@ -359,7 +332,7 @@ private:
 
 	auto inputExpression(const GraphNode& iNode, const PinSpec& iPin) -> std::string {
 		const auto link = m_inputLinks.find({iNode.id, iPin.name});
-		if (link == m_inputLinks.end()) {
+		if (link == m_inputLinks.end() || iPin.field) {
 			const auto value = iNode.values.find(iPin.name);
 			return literal(iNode.id, iPin, value == iNode.values.end() ? std::string{} : value->second);
 		}
@@ -515,12 +488,18 @@ private:
 				error(0, std::format("Variable '{}' needs a unique Lua name.", variable.name));
 				continue;
 			}
-			const auto type = toPropertyType(variable.type);
+			const auto type = getVariablePinType(variable.type);
 			if (type == PinType::Table) {
 				error(0, std::format("Variable '{}' has a type graphs do not support.", variable.name));
 				continue;
 			}
-			const PinSpec pin{.name = variable.name, .type = type, .defaultValue = {}, .optional = false, .group = {}};
+			const PinSpec pin{.name = variable.name,
+							  .type = type,
+							  .defaultValue = {},
+							  .optional = false,
+							  .group = {},
+							  .components = {},
+							  .field = false};
 			auto value = literal(0, pin, variable.defaultValue);
 			if (type == PinType::Entity && value == "entity_id")
 				value = "0";

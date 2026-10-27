@@ -159,7 +159,8 @@ auto joinFloats(const std::span<const float> iValues) -> std::string {
 }
 
 auto componentCount(const vs::PinSpec& iPin) -> size_t {
-	return iPin.group == iPin.name ? iPin.name.size() : vs::getPinComponents(iPin.type).size();
+	const auto all = vs::getPinComponents(iPin.type).size();
+	return iPin.group == iPin.name && !iPin.components.empty() ? std::min(iPin.components.size(), all) : all;
 }
 
 // Inline value field of an unlinked input, at the cursor; returns the new text when it changed.
@@ -261,11 +262,39 @@ auto getNodeGlyph(const vs::NodeType& iType) -> const char* {
 		return gui::icon::palette;
 	if (iType.id == "value.vector3")
 		return gui::icon::axis3d;
-	if (iType.category == "Values")
+	if (iType.category == "Constant")
 		return gui::icon::braces;
 	if (const auto it = tables.find(iType.category); it != tables.end())
 		return it->second;
 	return gui::icon::squareFunction;
+}
+
+auto getPinGlyph(const vs::PinType iType) -> const char* {
+	switch (iType) {
+		case vs::PinType::Exec:
+			return gui::icon::play;
+		case vs::PinType::Boolean:
+			return gui::icon::toggleLeft;
+		case vs::PinType::Integer:
+			return gui::icon::hash;
+		case vs::PinType::Number:
+			return gui::icon::sigma;
+		case vs::PinType::String:
+			return gui::icon::type;
+		case vs::PinType::Entity:
+			return gui::icon::box;
+		case vs::PinType::Vector2:
+			return gui::icon::move;
+		case vs::PinType::Vector3:
+			return gui::icon::axis3d;
+		case vs::PinType::Color:
+			return gui::icon::palette;
+		case vs::PinType::Table:
+			return gui::icon::braces;
+		case vs::PinType::Any:
+			break;
+	}
+	return gui::icon::circle;
 }
 
 auto getPinColor(const vs::PinType iType) -> math::vec4 {
@@ -341,7 +370,7 @@ auto getNodeColor(const vs::VisualScript& iScript, const vs::GraphNode& iNode, c
 				return scaled(getPinColor(value == pins.outputs.end() ? vs::PinType::Any : value->type), 0.5f);
 			}
 		case vs::NodeKind::Operator:
-			if (iType.category == "Values" && !iType.outputs.empty())
+			if (iType.category == "Constant" && !iType.outputs.empty())
 				return scaled(getPinColor(iType.outputs.front().type), 0.5f);
 			return rgb(0.16f, 0.42f, 0.4f);
 		case vs::NodeKind::Branch:
@@ -410,8 +439,8 @@ auto layoutNode(const vs::VisualScript& iScript, const vs::GraphNode& iNode, con
 			linked.insert(link.toPin);
 	float inputWidth = 0.f;
 	for (const auto& pin: pins.inputs) {
-		float width = g_pinSpace;
-		if (!isDefaultExec(pin))
+		float width = pin.field ? -g_fieldGap : g_pinSpace;
+		if (!isDefaultExec(pin) && !pin.field)
 			width += iMeasure(pin.name);
 		float field = 0.f;
 		if (pin.type != vs::PinType::Exec && !linked.contains(pin.name))
@@ -544,6 +573,8 @@ auto VisualScriptCanvas::render(const vs::VisualScript& iScript,
 		const auto place = [&](const std::vector<vs::PinSpec>& iSpecs, const std::vector<std::array<float, 2>>& iAt,
 							   const bool iOutput) -> void {
 			for (size_t i = 0; i < iSpecs.size() && i < iAt.size(); ++i) {
+				if (iSpecs[i].field)
+					continue;
 				const ImVec2 at{view.min.x + iAt[i][0] * m_zoom, view.min.y + iAt[i][1] * m_zoom};
 				frame.pins[{node.id, iSpecs[i].name, iOutput}] = {at, iSpecs[i].type};
 				const float dx = frame.mouse.x - at.x;
@@ -739,6 +770,8 @@ void VisualScriptCanvas::drawNodePins(Frame& ioFrame, const size_t iIndex) const
 	const bool labels = zoom > g_labelZoom;
 	const bool fields = zoom >= g_fieldZoom;
 	const auto drawPin = [&](const vs::PinSpec& iPin, const ImVec2& iAt, const bool iOutput) -> void {
+		if (iPin.field)
+			return;
 		const bool linked = ioFrame.linked.contains({node.id, iPin.name, iOutput});
 		const bool isHovered = ioFrame.hoveredPin.has_value() && ioFrame.hoveredPin->node == node.id &&
 							   ioFrame.hoveredPin->pin == iPin.name && ioFrame.hoveredPin->output == iOutput;

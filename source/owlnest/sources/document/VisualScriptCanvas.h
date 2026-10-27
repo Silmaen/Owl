@@ -111,6 +111,14 @@ using TextMeasure = std::function<float(std::string_view)>;
 
 /**
  * @brief
+ *  Glyph of a pin type, beside a variable type or a pin name.
+ * @param[in] iType The pin type.
+ * @return A Lucide glyph.
+ */
+[[nodiscard]] auto getPinGlyph(script::visual::PinType iType) -> const char*;
+
+/**
+ * @brief
  *  Name of a pin type, for the tooltips.
  * @param[in] iType The pin type.
  * @return The name (`number`, `color`).

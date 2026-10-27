@@ -82,10 +82,14 @@ struct PinSpec {
 	bool optional{false};
 	/**
 	 * @brief
-	 *  Grouped pin it belongs to: its own name for a grouped pin (`rgba`), the group name for a component of a
-	 *  split one (`r`), empty otherwise.
+	 *  Grouped pin it belongs to: its own name for a grouped pin (`rgba`, `velocity`), the group name for a
+	 *  component of a split one (`r`, `vx`), empty otherwise.
 	 */
 	std::string group;
+	/// Pins a grouped pin stands for, in order (`vx`, `vy`); empty for any other pin.
+	std::vector<std::string> components;
+	/// Whether the input is a value typed on the node that takes no link (the value of a constant).
+	bool field{false};
 };
 
 /**
@@ -283,8 +287,9 @@ struct CompileDiagnostic {
  * @brief
  *  Pins of a node.
  *
- * The number parameters `x, y [, z]` and `r, g, b [, a]` of a binding form one grouped pin (`xyz` of type `Vector3`,
- * `rgba` of type `Color`), shown as its components when the node value `split.<group>` is `true`.
+ * The number parameters `x, y [, z]` and `r, g, b [, a]` of a binding, also with a prefix (`vx, vy`, `cell_x, cell_y`),
+ * form one grouped pin (`xyz` or `velocity` of type `Vector3` / `Vector2`, `rgba` of type `Color`), shown as its
+ * components when the node value `split.<group>` is `true`.
  * @param[in] iScript The graph holding the node.
  * @param[in] iNode The node.
  * @return Its pins, empty when its type is unknown.
@@ -299,6 +304,14 @@ struct CompileDiagnostic {
  * @return True when the link is allowed.
  */
 [[nodiscard]] OWL_API auto canConnect(PinType iFrom, PinType iTo) -> bool;
+
+/**
+ * @brief
+ *  Pin type of a graph variable.
+ * @param[in] iType Property type of the variable.
+ * @return Its pin type, `Table` for the list types graphs do not handle.
+ */
+[[nodiscard]] OWL_API auto getVariablePinType(ScriptPropertyType iType) -> PinType;
 
 /**
  * @brief

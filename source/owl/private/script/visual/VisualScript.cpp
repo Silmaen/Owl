@@ -34,7 +34,9 @@ auto pin(std::string iName, const PinType iType, std::string iDefault = {}, cons
 			.type = iType,
 			.defaultValue = std::move(iDefault),
 			.optional = iOptional,
-			.group = {}};
+			.group = {},
+			.components = {},
+			.field = false};
 }
 
 constexpr std::array<core::MigrationStep, 0> g_visualScriptMigrations{};
@@ -138,17 +140,24 @@ void addFlow(std::vector<NodeType>& ioTypes) {
 					   .pure = false});
 }
 
+// A constant: its value typed on the node, its only pin an output.
+auto constant(const std::string& iId, const std::string& iTitle, const std::string& iDescription, const PinType iType,
+			  std::string iDefault = {}) -> NodeType {
+	auto value = pin("Value", iType, std::move(iDefault));
+	value.field = true;
+	return pureOp(iId, iTitle, "Constant", iDescription, "{0}", {std::move(value)}, iType);
+}
+
 void addValues(std::vector<NodeType>& ioTypes) {
-	ioTypes.push_back(
-			pureOp("value.self", "Self", "Values", "The entity running the script.", "entity_id", {}, PinType::Entity));
-	ioTypes.push_back(pureOp("value.number", "Number", "Values", "A number.", "{0}",
-							 {pin("Value", PinType::Number, "0")}, PinType::Number));
-	ioTypes.push_back(pureOp("value.integer", "Integer", "Values", "An integer.", "{0}",
-							 {pin("Value", PinType::Integer, "0")}, PinType::Integer));
-	ioTypes.push_back(pureOp("value.boolean", "Boolean", "Values", "A boolean.", "{0}",
-							 {pin("Value", PinType::Boolean, "false")}, PinType::Boolean));
-	ioTypes.push_back(pureOp("value.string", "String", "Values", "A string.", "{0}", {pin("Value", PinType::String)},
-							 PinType::String));
+	ioTypes.push_back(pureOp("value.self", "Self", "Constant", "The entity running the script.", "entity_id", {},
+							 PinType::Entity));
+	ioTypes.push_back(constant("value.number", "Number", "A number.", PinType::Number, "0"));
+	ioTypes.push_back(constant("value.integer", "Integer", "An integer.", PinType::Integer, "0"));
+	ioTypes.push_back(constant("value.boolean", "Boolean", "A boolean.", PinType::Boolean, "false"));
+	ioTypes.push_back(constant("value.string", "String", "A string.", PinType::String));
+	ioTypes.push_back(constant("value.vector2", "Vector 2", "A 2D vector.", PinType::Vector2));
+	ioTypes.push_back(constant("value.vector3", "Vector 3", "A 3D vector.", PinType::Vector3));
+	ioTypes.push_back(constant("value.color", "Color", "A colour.", PinType::Color));
 	ioTypes.push_back({.id = "var.get",
 					   .title = "Get Variable",
 					   .category = "Variables",
@@ -233,31 +242,59 @@ void addCompounds(std::vector<NodeType>& ioTypes) {
 	ioTypes.push_back(breakNode("math.break_vector2", "Break Vector 2", "Vector", PinType::Vector2));
 	ioTypes.push_back(breakNode("math.break_vector3", "Break Vector 3", "Vector", PinType::Vector3));
 	ioTypes.push_back(breakNode("math.break_color", "Break Color", "Color", PinType::Color));
-	ioTypes.push_back(pureOp("value.vector3", "Vector 3", "Values", "A 3D vector.", "{0}",
-							 {pin("Value", PinType::Vector3)}, PinType::Vector3));
-	ioTypes.push_back(pureOp("value.color", "Color", "Values", "A colour.", "{0}", {pin("Value", PinType::Color)},
-							 PinType::Color));
 }
 
-// The run of number pins from iFirst that spells a group (`x y z`, `r g b a`), and its type.
-auto findGroup(const std::vector<PinSpec>& iPins, const size_t iFirst) -> std::optional<std::pair<size_t, PinType>> {
+// A run of pins read as one vector or colour.
+struct PinGroup {
+	// Number of pins in the run.
+	size_t count{0};
+	// Type of the grouped pin.
+	PinType type{PinType::Vector2};
+	// Name of the grouped pin.
+	std::string name;
+};
+
+// Name of the grouped pin of a prefix: `vx, vy` is the velocity, `cell_x, cell_y` the cell.
+auto groupName(const std::string_view iPrefix, const std::string_view iLetters) -> std::string {
+	static constexpr std::array<std::pair<std::string_view, std::string_view>, 5> named{
+			{{"v", "velocity"}, {"s", "scale"}, {"r", "rotation"}, {"f", "force"}, {"d", "delta"}}};
+	if (iPrefix.empty())
+		return std::string{iLetters};
+	for (const auto& [prefix, name]: named)
+		if (prefix == iPrefix)
+			return std::string{name};
+	return std::string{iPrefix.ends_with('_') ? iPrefix.substr(0, iPrefix.size() - 1) : iPrefix};
+}
+
+// The run of number (or integer) pins from iFirst named `<prefix>x, <prefix>y [, <prefix>z]` or `r, g, b [, a]`.
+auto findGroup(const std::vector<PinSpec>& iPins, const size_t iFirst) -> std::optional<PinGroup> {
+	const auto& first = iPins[iFirst];
+	if ((first.type != PinType::Number && first.type != PinType::Integer) || first.name.empty())
+		return std::nullopt;
+	const std::string_view prefix = std::string_view{first.name}.substr(0, first.name.size() - 1);
+	if (!prefix.empty() && !prefix.ends_with('_') && prefix.size() > 1)
+		return std::nullopt;
 	const auto spells = [&](const std::string_view iLetters) -> bool {
 		if (iFirst + iLetters.size() > iPins.size())
 			return false;
-		for (size_t i = 0; i < iLetters.size(); ++i)
-			if (iPins[iFirst + i].type != PinType::Number ||
-				iPins[iFirst + i].name != std::string_view{&iLetters[i], 1})
+		for (size_t i = 0; i < iLetters.size(); ++i) {
+			const auto& pin = iPins[iFirst + i];
+			if (pin.type != first.type || pin.name.size() != prefix.size() + 1 || !pin.name.starts_with(prefix) ||
+				pin.name.back() != iLetters[i])
 				return false;
+		}
 		return true;
 	};
-	if (spells("rgba"))
-		return std::pair{size_t{4}, PinType::Color};
-	if (spells("rgb"))
-		return std::pair{size_t{3}, PinType::Color};
+	if (prefix.empty() && first.type == PinType::Number) {
+		if (spells("rgba"))
+			return PinGroup{.count = 4, .type = PinType::Color, .name = "rgba"};
+		if (spells("rgb"))
+			return PinGroup{.count = 3, .type = PinType::Color, .name = "rgb"};
+	}
 	if (spells("xyz"))
-		return std::pair{size_t{3}, PinType::Vector3};
+		return PinGroup{.count = 3, .type = PinType::Vector3, .name = groupName(prefix, "xyz")};
 	if (spells("xy"))
-		return std::pair{size_t{2}, PinType::Vector2};
+		return PinGroup{.count = 2, .type = PinType::Vector2, .name = groupName(prefix, "xy")};
 	return std::nullopt;
 }
 
@@ -271,22 +308,28 @@ auto groupPins(const std::vector<PinSpec>& iPins, const GraphNode& iNode) -> std
 			out.push_back(iPins[i++]);
 			continue;
 		}
-		const auto [count, type] = *group;
-		std::string name;
-		for (size_t c = 0; c < count; ++c) name += iPins[i + c].name;
-		const auto split = iNode.values.find(std::string{g_SplitPrefix} + name);
+		const auto first = iPins.begin() + static_cast<std::ptrdiff_t>(i);
+		const auto last = first + static_cast<std::ptrdiff_t>(group->count);
+		const auto split = iNode.values.find(std::string{g_SplitPrefix} + group->name);
 		if (split != iNode.values.end() && split->second == "true") {
-			for (size_t c = 0; c < count; ++c) {
-				out.push_back(iPins[i + c]);
-				out.back().group = name;
+			for (auto it = first; it != last; ++it) {
+				out.push_back(*it);
+				out.back().group = group->name;
 			}
 		} else {
-			const bool optional =
-					std::ranges::all_of(iPins.begin() + static_cast<std::ptrdiff_t>(i),
-										iPins.begin() + static_cast<std::ptrdiff_t>(i + count), &PinSpec::optional);
-			out.push_back({.name = name, .type = type, .defaultValue = {}, .optional = optional, .group = name});
+			std::vector<std::string> components;
+			components.reserve(group->count);
+			for (auto it = first; it != last; ++it) components.push_back(it->name);
+			out.push_back(
+					{.name = group->name,
+					 .type = group->type,
+					 .defaultValue = {},
+					 .optional = std::all_of(first, last, [](const PinSpec& iPin) -> bool { return iPin.optional; }),
+					 .group = group->name,
+					 .components = std::move(components),
+					 .field = false});
 		}
-		i += count;
+		i += group->count;
 	}
 	return out;
 }
@@ -302,30 +345,6 @@ auto buildNodeTypes() -> std::vector<NodeType> {
 	return types;
 }
 
-auto variablePinType(const ScriptPropertyType iType) -> PinType {
-	switch (iType) {
-		case ScriptPropertyType::Float:
-			return PinType::Number;
-		case ScriptPropertyType::Int:
-			return PinType::Integer;
-		case ScriptPropertyType::String:
-			return PinType::String;
-		case ScriptPropertyType::Bool:
-			return PinType::Boolean;
-		case ScriptPropertyType::Entity:
-			return PinType::Entity;
-		case ScriptPropertyType::Color:
-			return PinType::Color;
-		case ScriptPropertyType::Vec2:
-			return PinType::Vector2;
-		case ScriptPropertyType::Vec3:
-			return PinType::Vector3;
-		case ScriptPropertyType::Numbers:
-		case ScriptPropertyType::Strings:
-			return PinType::Table;
-	}
-	return PinType::Any;
-}
 
 auto isNumeric(const PinType iType) -> bool { return iType == PinType::Integer || iType == PinType::Number; }
 
@@ -460,7 +479,7 @@ auto getNodePins(const VisualScript& iScript, const GraphNode& iNode) -> NodePin
 	if (type->kind == NodeKind::GetVariable || type->kind == NodeKind::SetVariable) {
 		const auto name = iNode.values.find("variable");
 		const auto* variable = name == iNode.values.end() ? nullptr : iScript.findVariable(name->second);
-		const auto pinType = variable == nullptr ? PinType::Any : variablePinType(variable->type);
+		const auto pinType = variable == nullptr ? PinType::Any : getVariablePinType(variable->type);
 		for (auto& pin: pins.inputs)
 			if (pin.type != PinType::Exec)
 				pin.type = pinType;
@@ -481,6 +500,31 @@ auto canConnect(const PinType iFrom, const PinType iTo) -> bool {
 	if (iFrom == PinType::Entity && isNumeric(iTo))
 		return true;
 	return iFrom == PinType::Integer && iTo == PinType::Entity;
+}
+
+auto getVariablePinType(const ScriptPropertyType iType) -> PinType {
+	switch (iType) {
+		case ScriptPropertyType::Float:
+			return PinType::Number;
+		case ScriptPropertyType::Int:
+			return PinType::Integer;
+		case ScriptPropertyType::String:
+			return PinType::String;
+		case ScriptPropertyType::Bool:
+			return PinType::Boolean;
+		case ScriptPropertyType::Entity:
+			return PinType::Entity;
+		case ScriptPropertyType::Color:
+			return PinType::Color;
+		case ScriptPropertyType::Vec2:
+			return PinType::Vector2;
+		case ScriptPropertyType::Vec3:
+			return PinType::Vector3;
+		case ScriptPropertyType::Numbers:
+		case ScriptPropertyType::Strings:
+			return PinType::Table;
+	}
+	return PinType::Any;
 }
 
 auto getPinComponents(const PinType iType) -> std::vector<std::string> {

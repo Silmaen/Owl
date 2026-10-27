@@ -28,7 +28,9 @@ auto pin(std::string iName, const PinType iType, std::string iDefault = {}, cons
 			.type = iType,
 			.defaultValue = std::move(iDefault),
 			.optional = iOptional,
-			.group = {}};
+			.group = {},
+			.components = {},
+			.field = false};
 }
 
 auto toPinType(const LuaType iType) -> PinType {

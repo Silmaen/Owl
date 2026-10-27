@@ -237,6 +237,46 @@ TEST(VisualScript, NumberComponentsFormOneGroupedPin) {
 	EXPECT_FALSE(canConnect(PinType::Vector3, PinType::Number));
 }
 
+TEST(VisualScript, PrefixedComponentsFormANamedGroup) {
+	VisualScript script;
+	const auto set = addNode(script, "call.physics.set_velocity", {{"velocity", "1.5, -2"}});
+	const auto pins = getNodePins(script, *script.findNode(set));
+	const auto velocity = std::ranges::find(pins.inputs, std::string{"velocity"}, &PinSpec::name);
+	ASSERT_NE(velocity, pins.inputs.end());
+	EXPECT_EQ(velocity->type, PinType::Vector2);
+	EXPECT_EQ(velocity->components, (std::vector<std::string>{"vx", "vy"}));
+	const auto create = addNode(script, "event.on_create");
+	link(script, create, "Then", set, "Exec");
+	const auto lua = compile(script);
+	ASSERT_TRUE(lua.has_value()) << lua.error().front().message;
+	EXPECT_TRUE(lua->contains("physics.set_velocity(entity_id, 1.5, (-2))")) << *lua;
+	const auto cell = addNode(script, "call.isometric.pick_cell");
+	const auto outputs = getNodePins(script, *script.findNode(cell)).outputs;
+	EXPECT_TRUE(std::ranges::any_of(
+			outputs, [](const PinSpec& iPin) -> bool { return iPin.name == "cell" && iPin.type == PinType::Vector2; }));
+}
+
+TEST(VisualScript, ConstantsHaveOnlyAnOutput) {
+	const auto* number = findNodeType("value.number");
+	ASSERT_NE(number, nullptr);
+	EXPECT_EQ(number->category, "Constant");
+	ASSERT_EQ(number->inputs.size(), 1u);
+	EXPECT_TRUE(number->inputs.front().field);
+	VisualScript script;
+	script.variables.push_back({.name = "speed", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	const auto constant = addNode(script, "value.number", {{"Value", "4"}});
+	const auto other = addNode(script, "value.number", {{"Value", "9"}});
+	const auto create = addNode(script, "event.on_create");
+	const auto set = addNode(script, "var.set", {{"variable", "speed"}});
+	link(script, create, "Then", set, "Exec");
+	link(script, other, "Result", constant, "Value");
+	link(script, constant, "Result", set, "Value");
+	const auto lua = compile(script);
+	ASSERT_TRUE(lua.has_value()) << lua.error().front().message;
+	EXPECT_TRUE(lua->contains("= 4\n")) << *lua;
+	EXPECT_FALSE(lua->contains("= 9\n")) << *lua;
+}
+
 TEST(VisualScript, GroupedPinsPassOneArgumentPerComponent) {
 	VisualScript script;
 	const auto create = addNode(script, "event.on_create");

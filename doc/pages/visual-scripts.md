@@ -51,7 +51,8 @@ flowchart LR
 
 ## Colours and vectors
 
-The `x, y, z` and `r, g, b, a` parameters of an engine call are one pin, a vector or a colour. Right-click the pin and
+The `x, y, z` and `r, g, b, a` parameters and results of an engine call are one pin, a vector or a colour, also with a
+prefix: `vx, vy` is a `velocity` pin, `cell_x, cell_y` a `cell` pin. Right-click the pin and
 choose **Split Pin** to show one number pin per component, **Recombine** to join them back; the links of the pin are
 removed and its value is kept. **Make Color**, **Break Color**, **Make Vector 2 / 3** and **Break Vector 2 / 3**
 convert between a value and its components. Variables can be of type `color`, `vec2` and `vec3`.
@@ -64,8 +65,8 @@ convert between a value and its components. Variables can be of type `color`, `v
 | **Graph** (Properties)    | **Variables** tab and **Node** tab                                                            |
 | **Details** (toolbar)     | The same tabs on the left of the graph, shown or hidden by the toolbar button                 |
 
-- **Variables**: add, rename, retype or remove a variable and set its default; renaming one updates its nodes. Drag a
-  variable onto the graph to read it.
+- **Variables**: one section per variable with its name, type and default; its menu removes it. Renaming a variable
+  updates its nodes. Drag the header of a variable onto the graph to read it.
 - **Node**: the selected node, its description, its errors, its settings (variable, function name), the split of its
   grouped pins and the values of its unlinked inputs.
 - The toolbar switches the document between **Graph** (the nodes), **Split** (the nodes and the generated Lua side by
@@ -83,7 +84,8 @@ Dropping a link on the background opens it too, with only the nodes that take th
 | Events                             | `On Create`, `On Update`, `On Tick`, `On Destroy`, `On Collision`, the trigger events, `Custom Event` (a function of a chosen name, e.g. a trigger `CallbackName`) |
 | Flow                               | `Branch`, `Sequence`, `For Loop`                                                                                                                                   |
 | Variables                          | `Get Variable`, `Set Variable`                                                                                                                                     |
-| Values, Math, Compare, Logic, Text | Constants, `Self`, arithmetic, `Floor`, `Min`, `Max`, comparisons, `And`, `Or`, `Not`, `Concatenate`                                                               |
+| Constant                           | `Self`, and a number, integer, boolean, text, vector or colour typed on the node, its only pin an output                                                         |
+| Math, Compare, Logic, Text         | Arithmetic, `Floor`, `Min`, `Max`, comparisons, `And`, `Or`, `Not`, `Concatenate`                                                                                  |
 | Vector, Color                      | `Make` and `Break` nodes of vectors and colours                                                                                                                    |
 | `transform`, `physics`, `scene`…   | One node per function of the [Lua API](lua-api.md), with its parameters and results                                                                                |
 

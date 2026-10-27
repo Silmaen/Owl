@@ -16,6 +16,7 @@
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
 #include <gui/widgets/Badge.h>
+#include <gui/widgets/Combo.h>
 #include <gui/widgets/EmptyState.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/Menu.h>
@@ -110,8 +111,8 @@ constexpr std::array<script::ScriptPropertyType, 8> g_variableTypes{
 		script::ScriptPropertyType::Vec3,  script::ScriptPropertyType::Color};
 
 // Palette groups in reading order; the binding tables follow.
-constexpr std::array<std::string_view, 10> g_categoryOrder{"Events", "Flow",  "Variables", "Values", "Math",
-														   "Vector", "Color", "Compare",   "Logic",  "Text"};
+constexpr std::array<std::string_view, 10> g_categoryOrder{"Events", "Flow",  "Variables", "Constant", "Math",
+														   "Vector", "Color", "Compare",   "Logic",    "Text"};
 
 auto categoryRank(const std::string& iCategory) -> size_t {
 	const auto* const it = std::ranges::find(g_categoryOrder, iCategory);
@@ -140,11 +141,67 @@ auto findCompatiblePin(const std::vector<vs::PinSpec>& iPins, const VisualScript
 	return found;
 }
 
-auto componentNames(const std::string& iGroup) -> std::vector<std::string> {
+// Pins a grouped pin of the node stands for, whether it is split or not.
+auto componentNames(const vs::VisualScript& iScript, const vs::GraphNode& iNode, const std::string& iGroup)
+		-> std::vector<std::string> {
 	std::vector<std::string> out;
-	out.reserve(iGroup.size());
-	for (const char letter: iGroup) out.emplace_back(1, letter);
+	const auto pins = vs::getNodePins(iScript, iNode);
+	for (const auto* side: {&pins.inputs, &pins.outputs})
+		for (const auto& pin: *side) {
+			if (pin.group != iGroup)
+				continue;
+			if (pin.name == iGroup)
+				return pin.components;
+			out.push_back(pin.name);
+		}
 	return out;
+}
+
+// An entry of a typed combo: its text and the type giving its glyph and colour.
+struct TypedItem {
+	// Text of the entry.
+	std::string label;
+	// Type of the entry.
+	vs::PinType type{vs::PinType::Any};
+};
+
+void typedLabel(const TypedItem& iItem) {
+	ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(getPinColor(iItem.type)));
+	ImGui::TextUnformatted(getPinGlyph(iItem.type));
+	ImGui::PopStyleColor();
+	ImGui::SameLine();
+	ImGui::TextUnformatted(iItem.label.c_str());
+}
+
+// Combo of the inspector style whose entries show the glyph and colour of their type; returns the entry picked.
+auto typedCombo(const char* iId, const std::vector<TypedItem>& iItems, const std::optional<size_t> iCurrent)
+		-> std::optional<size_t> {
+	std::optional<size_t> picked;
+	if (gui::widgets::beginCombo(iId, "", ImGuiComboFlags_CustomPreview)) {
+		for (size_t i = 0; i < iItems.size(); ++i) {
+			ImGui::PushID(static_cast<int>(i));
+			const bool selected = iCurrent == i;
+			const ImVec2 start = ImGui::GetCursorScreenPos();
+			if (ImGui::Selectable("##entry", selected, ImGuiSelectableFlags_None, {0.f, ImGui::GetFrameHeight()}))
+				picked = i;
+			if (selected)
+				ImGui::SetItemDefaultFocus();
+			const ImVec2 end = ImGui::GetCursorScreenPos();
+			ImGui::SetCursorScreenPos({start.x + ImGui::GetStyle().FramePadding.x,
+									   start.y + (ImGui::GetFrameHeight() - ImGui::GetTextLineHeight()) * 0.5f});
+			typedLabel(iItems[i]);
+			ImGui::SetCursorScreenPos(end);
+			ImGui::Dummy({0.f, 0.f});
+			ImGui::PopID();
+		}
+		ImGui::EndCombo();
+	}
+	if (ImGui::BeginComboPreview()) {
+		if (iCurrent.has_value() && *iCurrent < iItems.size())
+			typedLabel(iItems[*iCurrent]);
+		ImGui::EndComboPreview();
+	}
+	return picked;
 }
 
 // Edits a value typed as `a, b, c` with a colour or vector field; returns the new text when it changed.
@@ -360,7 +417,7 @@ void VisualScriptDocument::setPinSplit(const core::UUID iNode, const std::string
 	if (node == nullptr)
 		return;
 	const auto key = std::string{vs::g_SplitPrefix} + iGroup;
-	const auto components = componentNames(iGroup);
+	const auto components = componentNames(m_script, *m_script.findNode(iNode), iGroup);
 	if (iSplit) {
 		node->values[key] = "true";
 		if (const auto it = node->values.find(iGroup); it != node->values.end()) {
@@ -785,12 +842,7 @@ void VisualScriptDocument::renderVariables() {
 	for (size_t i = 0; i < m_script.variables.size(); ++i) {
 		ImGui::PushID(static_cast<int>(i));
 		const auto& variable = m_script.variables[i];
-		const auto pinType = vs::getNodePins(m_script, {.id = core::UUID{0},
-														.type = "var.get",
-														.position = {},
-														.values = {{"variable", variable.name}}})
-									 .outputs.front()
-									 .type;
+		const auto pinType = vs::getVariablePinType(variable.type);
 		const auto section = gui::widgets::sectionHeader(variable.name.c_str(), gui::icon::variable, true, false);
 		if (ImGui::BeginDragDropSource()) {
 			const auto payload = std::format("var.get|{}", variable.name);
@@ -823,20 +875,20 @@ void VisualScriptDocument::renderVariables() {
 					ImGui::SetTooltip("Not a usable Lua name.");
 				std::ignore = gui::widgets::propertyReset(false);
 				gui::widgets::propertyLabel("Type");
-				ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(getPinColor(pinType)));
-				const bool typeOpen = ImGui::BeginCombo(
-						"##type", std::string{script::ScriptEngine::propertyTypeName(variable.type)}.c_str());
-				ImGui::PopStyleColor();
-				if (typeOpen) {
-					for (const auto type: g_variableTypes)
-						if (ImGui::Selectable(std::string{script::ScriptEngine::propertyTypeName(type)}.c_str(),
-											  type == variable.type)) {
-							auto next = m_script;
-							next.variables[i].type = type;
-							next.variables[i].defaultValue.clear();
-							commit(std::move(next), "Change Variable Type");
-						}
-					ImGui::EndCombo();
+				std::vector<TypedItem> types;
+				std::optional<size_t> currentType;
+				for (const auto type: g_variableTypes) {
+					if (type == variable.type)
+						currentType = types.size();
+					types.push_back({.label = std::string{script::ScriptEngine::propertyTypeName(type)},
+									 .type = vs::getVariablePinType(type)});
+				}
+				if (const auto picked = typedCombo("##type", types, currentType);
+					picked.has_value() && g_variableTypes[*picked] != variable.type) {
+					auto next = m_script;
+					next.variables[i].type = g_variableTypes[*picked];
+					next.variables[i].defaultValue.clear();
+					commit(std::move(next), "Change Variable Type");
 				}
 				std::ignore = gui::widgets::propertyReset(false);
 				gui::widgets::propertyLabel("Default", "Value of the property until the inspector sets another.");
@@ -932,12 +984,15 @@ void VisualScriptDocument::renderNodeHeader(const vs::GraphNode& iNode, const vs
 			if (variableNode) {
 				const auto current = valueOf(*node, "variable");
 				gui::widgets::propertyLabel("Variable");
-				if (ImGui::BeginCombo("##variable", current.c_str())) {
-					for (const auto& variable: m_script.variables)
-						if (ImGui::Selectable(variable.name.c_str(), variable.name == current))
-							setValue("variable", variable.name);
-					ImGui::EndCombo();
+				std::vector<TypedItem> variables;
+				std::optional<size_t> currentVariable;
+				for (const auto& variable: m_script.variables) {
+					if (variable.name == current)
+						currentVariable = variables.size();
+					variables.push_back({.label = variable.name, .type = vs::getVariablePinType(variable.type)});
 				}
+				if (const auto picked = typedCombo("##variable", variables, currentVariable); picked.has_value())
+					setValue("variable", m_script.variables[*picked].name);
 				std::ignore = gui::widgets::propertyReset(false);
 			} else {
 				auto function = valueOf(*node, "function");
@@ -1004,7 +1059,9 @@ void VisualScriptDocument::renderNodeInputs(const vs::GraphNode& iNode) {
 				std::ignore = gui::widgets::propertyReset(false);
 				continue;
 			}
-			const auto count = pin.group == pin.name ? pin.name.size() : vs::getPinComponents(pin.type).size();
+			const auto all = vs::getPinComponents(pin.type).size();
+			const auto count =
+					pin.group == pin.name && !pin.components.empty() ? std::min(pin.components.size(), all) : all;
 			const auto value = valueField("##value", pin.type, count, current, pin.defaultValue);
 			if (gui::widgets::propertyReset(!current.empty()))
 				setNodeValue(id, pin.name, {});
