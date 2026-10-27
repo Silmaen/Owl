@@ -222,6 +222,11 @@ void CameraEditor::resetView() {
 	updateProjection();
 }
 
+void CameraEditor::moveBy(const math::vec3& iOffset) {
+	m_focalPoint = m_focalPoint + iOffset;
+	updateView();
+}
+
 void CameraEditor::lookFrom(const math::vec3& iEye, const math::vec3& iForward) {
 	if (const float length = iForward.norm(); length > 1e-6f) {
 		// Inverse of `getForwardDirection()`: forward = (cos p sin y, -sin p, -cos p cos y).

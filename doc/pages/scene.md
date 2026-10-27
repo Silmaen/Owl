@@ -1134,9 +1134,20 @@ one the renderer and the physics see ([Large worlds](design/large-worlds.md)).
 `Scene::syncWorldPositions()` applies the first rows: in the editor every frame, in Play at start and in the
 `owl.floating_origin` system. When the scene's floating origin is enabled (`FloatingOrigin:` key, Scene Settings),
 that system moves the origin onto the primary camera once the camera is farther than `shiftRadius` (2000 by default)
-from it; the origin itself is saved with the scene. A child keeps its local transform and follows its parent. Physics
-bodies, sound sources and particles are not shifted with the origin yet
-([Large worlds](design/large-worlds.md#large-worlds-delivery)).
+from it; the origin itself is saved with the scene. A child keeps its local transform and follows its parent.
+
+A shift keeps the running simulation going where it was:
+
+| What                                            | How it follows the shift                                                   |
+|-------------------------------------------------|----------------------------------------------------------------------------|
+| Physics bodies (`PhysicCommand::shiftOrigin`)   | Moved back with their two interpolated poses; velocities and contacts kept |
+| `Oscillator`, `Patrol`, `LightFlicker`, `Drift` | Rest positions and waypoints moved back; a drift keeps its camera parallax |
+| Sound listener and sources                      | Placed each frame from the transforms, after the shift                     |
+| Navigation grids                                | Relative to their tilemap entity                                           |
+
+Scripts read and place an entity in the world in double with `transform.get_world_position` and
+`transform.set_world_position`, and read the origin with `scene.get_world_origin` ([Lua API](lua-api.md)). The
+Engine Demo far orbit (`far_orbit.owl`) shows a station one astronomical unit away, sharp to the centimetre.
 
 ### Physics and Hierarchy
 

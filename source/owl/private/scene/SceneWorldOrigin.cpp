@@ -9,8 +9,13 @@
 
 #include "scene/Scene.h"
 
+#include "physics/PhysicCommand.h"
 #include "scene/Entity.h"
+#include "scene/component/Drift.h"
 #include "scene/component/Hierarchy.h"
+#include "scene/component/LightFlicker.h"
+#include "scene/component/Oscillator.h"
+#include "scene/component/Patrol.h"
 #include "scene/component/Transform.h"
 #include "scene/component/WorldPosition.h"
 
@@ -35,6 +40,25 @@ void markSynced(component::WorldPosition& ioWorld, const math::vec3& iLocal) {
 	ioWorld.m_synced = true;
 	ioWorld.m_syncedLocal = iLocal;
 	ioWorld.m_syncedPosition = ioWorld.position;
+}
+
+// The rest positions the behaviour systems move an entity around are in the space of its Transform: they move with it.
+void shiftBehaviourAnchors(entt::registry& ioRegistry, const entt::entity iHandle, const math::vec3& iShift) {
+	if (auto* oscillator = ioRegistry.try_get<component::Oscillator>(iHandle); oscillator != nullptr)
+		oscillator->m_basePosition = oscillator->m_basePosition - iShift;
+	if (auto* flicker = ioRegistry.try_get<component::LightFlicker>(iHandle); flicker != nullptr)
+		flicker->m_basePosition = flicker->m_basePosition - iShift;
+	if (auto* patrol = ioRegistry.try_get<component::Patrol>(iHandle); patrol != nullptr) {
+		patrol->m_basePosition = patrol->m_basePosition - iShift;
+		patrol->m_position = patrol->m_position - iShift;
+		patrol->m_target = patrol->m_target - iShift;
+		for (auto& waypoint: patrol->waypoints) waypoint = waypoint - iShift;
+	}
+	if (auto* drift = ioRegistry.try_get<component::Drift>(iHandle); drift != nullptr) {
+		// The camera moves back by the same shift, which already carries the share of it the drift follows.
+		const float kept = 1.f - drift->cameraFollow;
+		drift->m_basePosition = drift->m_basePosition - math::vec3{iShift.x() * kept, iShift.y() * kept, iShift.z()};
+	}
 }
 
 }// namespace
@@ -73,7 +97,9 @@ void Scene::shiftWorldOrigin(const math::vec3d& iOrigin) {
 		} else {
 			local = local - shift;
 		}
+		shiftBehaviourAnchors(registry, handle, shift);
 	}
+	physics::PhysicCommand::shiftOrigin(*this, {shift.x(), shift.y()});
 }
 
 template<>

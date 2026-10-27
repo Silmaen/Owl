@@ -320,3 +320,15 @@ TEST(CameraEditor, WheelWhileFlyingSetsTheSpeed) {
 	EXPECT_FLOAT_EQ(cam.getFlySpeed(), 100.f);
 	owl::input::Input::invalidate();
 }
+
+TEST(CameraEditor, MoveByKeepsTheView) {
+	CameraEditor cam(45.f, 1.f, 0.1f, 1000.f);
+	cam.lookFrom({1.f, 2.f, 8.f}, {0.2f, -0.1f, -1.f});
+	const auto forward = cam.getForwardDirection();
+	const auto position = cam.getPosition();
+	const auto focal = cam.getFocalPoint();
+	cam.moveBy({-300.f, 40.f, 0.f});
+	EXPECT_TRUE(near(cam.getPosition(), {position.x() - 300.f, position.y() + 40.f, position.z()}));
+	EXPECT_TRUE(near(cam.getFocalPoint(), {focal.x() - 300.f, focal.y() + 40.f, focal.z()}));
+	EXPECT_TRUE(near(cam.getForwardDirection(), forward));
+}

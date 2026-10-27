@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cfloat>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -497,13 +498,22 @@ void SceneSettings::renderWorldOriginSection() const {
 		gui::widgets::endProperties();
 	}
 	const auto& origin = m_scene->getWorldOrigin();
-	ImGui::TextDisabled("Origin: %.3f, %.3f, %.3f. Entities with a World Position keep it in double.", origin.x(),
-						origin.y(), origin.z());
+	std::array<double, 3> edited{origin.x(), origin.y(), origin.z()};
+	ImGui::TextUnformatted("Origin");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	const bool originEdited = ImGui::InputScalarN("##worldOrigin", ImGuiDataType_Double, edited.data(), 3, nullptr,
+												  nullptr, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue);
+	gui::widgets::itemTooltip("World Origin", nullptr,
+							  "World position of the scene origin: the roots keep their place in the world when it "
+							  "moves. The viewport Camera menu moves it to the view or the selection.");
+	ImGui::TextDisabled("Entities with a World Position keep it in double.");
 	gui::widgets::endSection();
-	if (args.getValues().empty())
-		return;
 	const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
-	std::ignore = target.execute("scene.set_floating_origin", args);
+	if (originEdited)
+		std::ignore = target.execute("scene.set_world_origin", {{"x", edited[0]}, {"y", edited[1]}, {"z", edited[2]}});
+	if (!args.getValues().empty())
+		std::ignore = target.execute("scene.set_floating_origin", args);
 }
 
 void SceneSettings::renderScriptSection() {

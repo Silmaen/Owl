@@ -1,0 +1,256 @@
+Scene: Far Orbit
+FormatVersion: 7
+Hud: gid:29106b3a56cbf4e0:huds/far_orbit.owlhud
+SceneScript:
+  scriptPath: gid:fb7012e70a69f22f:scripts/orbit/far_orbit.lua
+EnabledRenderers:
+  - Name: world
+    Enabled: false
+  - Name: mesh_world
+    Enabled: true
+  - Name: ui
+    Enabled: false
+FloatingOrigin:
+  enabled: true
+  shiftRadius: 1000
+  origin: [149600000000, 0, 0]
+Entities:
+  - Entity: 4100000000000000001
+    Tag:
+      tag: OrbitCamera
+    Transform:
+      translation: [0, 2, 40]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149600000000, 2, 40]}
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.8
+        perspectiveNear: 0.002
+        perspectiveFar: 5000
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+        toneMapping: Aces
+      primary: true
+      fixedAspectRatio: false
+    FlyCamera: {MoveSpeed: 40, LookSpeed: 1.2}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000002
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.6, 0.8, 0]
+      scale: [1, 1, 1]
+    Light: {type: Directional, enabled: true, color: [1, 0.97, 0.92], intensity: 100000, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000003
+    Tag:
+      tag: Ambient
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Environment: {hdri: "", ambient: [0.3, 0.32, 0.4], intensity: 1, rotation: 0, showSky: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000004
+    Tag:
+      tag: Station
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149600000000, 0, 0]}
+    MeshRenderer:
+      mesh: gid:e8ce29d275a76fba:meshes/orbit/station.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000005
+    Tag:
+      tag: Moon
+    Transform:
+      translation: [220, -60, -420]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149600000220, -60, -420]}
+    MeshRenderer:
+      mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000010
+    Tag:
+      tag: GaugeBead0
+    Transform:
+      translation: [-0.045, 1.93, 39.7]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149599999999.955, 1.93, 39.7]}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000011
+    Tag:
+      tag: GaugeBead1
+    Transform:
+      translation: [-0.035, 1.93, 39.7]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149599999999.965, 1.93, 39.7]}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000012
+    Tag:
+      tag: GaugeBead2
+    Transform:
+      translation: [-0.025, 1.93, 39.7]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149599999999.975, 1.93, 39.7]}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000013
+    Tag:
+      tag: GaugeBead3
+    Transform:
+      translation: [-0.015, 1.93, 39.7]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149599999999.985, 1.93, 39.7]}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000014
+    Tag:
+      tag: GaugeBead4
+    Transform:
+      translation: [-0.005, 1.93, 39.7]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149599999999.995, 1.93, 39.7]}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000015
+    Tag:
+      tag: GaugeBead5
+    Transform:
+      translation: [0.005, 1.93, 39.7]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149600000000.005, 1.93, 39.7]}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000016
+    Tag:
+      tag: GaugeBead6
+    Transform:
+      translation: [0.015, 1.93, 39.7]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149600000000.015, 1.93, 39.7]}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000017
+    Tag:
+      tag: GaugeBead7
+    Transform:
+      translation: [0.025, 1.93, 39.7]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149600000000.025, 1.93, 39.7]}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000018
+    Tag:
+      tag: GaugeBead8
+    Transform:
+      translation: [0.035, 1.93, 39.7]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149600000000.035, 1.93, 39.7]}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000019
+    Tag:
+      tag: GaugeBead9
+    Transform:
+      translation: [0.045, 1.93, 39.7]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149600000000.045, 1.93, 39.7]}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000030
+    Tag:
+      tag: Relay
+    Transform:
+      translation: [400000000, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [150000000000, 0, 0]}
+    MeshRenderer:
+      mesh: gid:0f32cf58bd96b825:meshes/orbit/relay.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000031
+    Tag:
+      tag: RelayMoon
+    Transform:
+      translation: [400000180, -40, -300]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [150000000180, -40, -300]}
+    MeshRenderer:
+      mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true

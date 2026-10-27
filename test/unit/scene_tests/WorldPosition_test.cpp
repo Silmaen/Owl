@@ -16,8 +16,10 @@
 #include <scene/component/components.h>
 
 #include <chrono>
+#include <cstddef>
 #include <filesystem>
 #include <limits>
+#include <vector>
 
 using namespace owl;
 using namespace owl::scene;
@@ -174,4 +176,55 @@ TEST_F(WorldPositionTest, CopyKeepsTheOriginAndItsSettings) {
 	const auto copy = Scene::copy(scene);
 	EXPECT_TRUE(copy->getFloatingOriginSettings().enabled);
 	EXPECT_DOUBLE_EQ(copy->getWorldOrigin().z(), 7.0);
+}
+
+namespace {
+
+// Runs an oscillator, a patrol and a parallax drift, optionally moving the origin half way, and returns where they end.
+auto runBehaviours(const math::vec3d& iShift) -> std::vector<math::vec3> {
+	auto scene = mkShared<Scene>();
+	auto camera = scene->createEntity("Camera");
+	camera.addComponent<component::Camera>().primary = true;
+	auto bobber = scene->createEntity("Bobber");
+	bobber.getComponent<component::Transform>().transform.translation() = {10.f, 0.f, 0.f};
+	bobber.addComponent<component::Oscillator>();
+	auto guard = scene->createEntity("Guard");
+	auto& patrol = guard.addComponent<component::Patrol>();
+	patrol.waypoints = {{0.f, 5.f, 0.f}, {6.f, 5.f, 0.f}};
+	patrol.speed = 2.f;
+	patrol.waitTime = 0.f;
+	auto cloud = scene->createEntity("Cloud");
+	cloud.getComponent<component::Transform>().transform.translation() = {0.f, -3.f, 0.f};
+	cloud.addComponent<component::Drift>().cameraFollow = 0.5f;
+	scene->onStartRuntime();
+	core::Timestep step;
+	const auto run = [&scene, &step](const int iFrames) -> void {
+		for (int frame = 0; frame < iFrames; ++frame) {
+			step.forceUpdate(std::chrono::milliseconds(20));
+			scene->onUpdateRuntime(step, false);
+		}
+	};
+	run(25);
+	scene->shiftWorldOrigin(iShift);
+	run(40);
+	std::vector<math::vec3> ends;
+	for (const auto& entity: {bobber, guard, cloud}) {
+		const auto& translation = entity.getComponent<component::Transform>().transform.translation();
+		ends.emplace_back(translation.x() + static_cast<float>(iShift.x()),
+						  translation.y() + static_cast<float>(iShift.y()), translation.z());
+	}
+	scene->onEndRuntime();
+	return ends;
+}
+
+}// namespace
+
+TEST_F(WorldPositionTest, BehavioursCarryOnAcrossAShift) {
+	const auto reference = runBehaviours({0.0, 0.0, 0.0});
+	const auto shifted = runBehaviours({300.0, -40.0, 0.0});
+	ASSERT_EQ(reference.size(), shifted.size());
+	for (std::size_t i = 0; i < reference.size(); ++i) {
+		EXPECT_NEAR(shifted[i].x(), reference[i].x(), 1e-3f) << i;
+		EXPECT_NEAR(shifted[i].y(), reference[i].y(), 1e-3f) << i;
+	}
 }

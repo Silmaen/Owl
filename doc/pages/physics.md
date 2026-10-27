@@ -215,25 +215,26 @@ Measured on the 5 000-box pile of `test/bench/` (`physics/step_settled*`, i9-139
 
 `PhysicCommand` exposes the following static methods for gameplay code:
 
-| Method                                     | Description                                   |
-|--------------------------------------------|-----------------------------------------------|
-| `init(scene)`                              | Create Box2D world and bodies from scene      |
-| `destroy()`                                | Destroy Box2D world and clear all bodies      |
-| `isInitialized()`                          | Check if the physics world is active          |
-| `step()`                                   | Run one fixed step of the scene's clock       |
-| `writeFrameTransforms()`                   | Write the drawn (blended) poses               |
-| `frame(timestep)`                          | Advance the clock, step and sync transforms   |
-| `getSettings()`                            | Settings of the running world                 |
-| `getLastFrameStepCount()`                  | Steps run before the last transform write     |
-| `getWorkerCount()`                         | Solver threads in use (1 = single-threaded)   |
-| `getInterpolationAlpha()`                  | Blend factor of the last transform write      |
-| `syncSimulatedTransforms()`                | Write the last step's poses, not blended ones |
-| `takeCollisionEvents()`                    | Hand over and clear the collisions begun      |
-| `destroyBody(entity)`                      | Remove the entity's Box2D bodies              |
-| `impulse(entity, vec2f)`                   | Apply a linear impulse to the entity's centre |
-| `getVelocity(entity) -> vec2f`             | Read the entity's current linear velocity     |
-| `setVelocity(entity, vec2f)`               | Override the entity's linear velocity         |
-| `setTransform(entity, position, rotation)` | Teleport the body to a new position and angle |
+| Method                                     | Description                                                                                       |
+|--------------------------------------------|---------------------------------------------------------------------------------------------------|
+| `init(scene)`                              | Create Box2D world and bodies from scene                                                          |
+| `destroy()`                                | Destroy Box2D world and clear all bodies                                                          |
+| `isInitialized()`                          | Check if the physics world is active                                                              |
+| `step()`                                   | Run one fixed step of the scene's clock                                                           |
+| `writeFrameTransforms()`                   | Write the drawn (blended) poses                                                                   |
+| `frame(timestep)`                          | Advance the clock, step and sync transforms                                                       |
+| `getSettings()`                            | Settings of the running world                                                                     |
+| `getLastFrameStepCount()`                  | Steps run before the last transform write                                                         |
+| `getWorkerCount()`                         | Solver threads in use (1 = single-threaded)                                                       |
+| `getInterpolationAlpha()`                  | Blend factor of the last transform write                                                          |
+| `syncSimulatedTransforms()`                | Write the last step's poses, not blended ones                                                     |
+| `shiftOrigin(scene, shift)`                | Move every body back by a shift of the world origin ([World positions](scene.md#world-positions)) |
+| `takeCollisionEvents()`                    | Hand over and clear the collisions begun                                                          |
+| `destroyBody(entity)`                      | Remove the entity's Box2D bodies                                                                  |
+| `impulse(entity, vec2f)`                   | Apply a linear impulse to the entity's centre                                                     |
+| `getVelocity(entity) -> vec2f`             | Read the entity's current linear velocity                                                         |
+| `setVelocity(entity, vec2f)`               | Override the entity's linear velocity                                                             |
+| `setTransform(entity, position, rotation)` | Teleport the body to a new position and angle                                                     |
 
 Every method returns silently without a world or a `PhysicBody`; `impulse`, `getVelocity` and `setVelocity` skip
 static bodies.
