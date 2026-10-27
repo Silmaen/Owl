@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docs: screenshots of the tower defence (title, world map, briefing, two levels) in Getting Started and the sample games page.
 - Scene Flow and every `NodeCanvas` share the node style of visual scripts (`gui/widgets/NodeStyle.h`): one row per pin, title bar, coloured curves.
 - Docs: the engine developer guide lists every renderer: the 2D, tilemap, isometric, 3D and post-process sections join the voxel and raycaster pages.
+- Bench: the Linux baseline takes the binary scene load and far-orbit cases, and the 1000-box octree brute-force cull at 15.3 µs, a code layout drift of `main` the confirmation rounds reproduce.
 
 ### Removed
 
