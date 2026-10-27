@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <map>
 #include <optional>
+#include <ranges>
 #include <span>
 #include <utility>
 
@@ -150,6 +151,19 @@ public:
 
 	void capturePrevious() {
 		for (auto& tracked: synced) tracked.previous = tracked.current;
+	}
+
+	void shiftOrigin(const b2Vec2 iShift) {
+		for (const auto& body: bodies | std::views::values) {
+			if (!b2Body_IsValid(body))
+				continue;
+			const b2Transform pose = b2Body_GetTransform(body);
+			b2Body_SetTransform(body, b2Sub(pose.p, iShift), pose.q);
+		}
+		for (auto& tracked: synced) {
+			tracked.previous.p = b2Sub(tracked.previous.p, iShift);
+			tracked.current.p = b2Sub(tracked.current.p, iShift);
+		}
 	}
 
 	// Below this many bodies the per-frame copies stay on the calling thread (dispatch costs more than it saves).
@@ -634,6 +648,13 @@ auto PhysicCommand::getInterpolationAlpha(const scene::Scene& iScene) -> float {
 void PhysicCommand::syncSimulatedTransforms(scene::Scene& ioScene) {
 	if (auto* const world = ioScene.getPhysicsWorld(); world != nullptr)
 		world->writeTransforms(ioScene, 1.f);
+}
+
+void PhysicCommand::shiftOrigin(scene::Scene& ioScene, const math::vec2f& iShift) {
+	OWL_PROFILE_FUNCTION()
+
+	if (auto* const world = ioScene.getPhysicsWorld(); world != nullptr)
+		world->shiftOrigin({iShift.x(), iShift.y()});
 }
 
 auto PhysicCommand::takeCollisionEvents(scene::Scene& ioScene) -> std::vector<CollisionEvent> {

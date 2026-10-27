@@ -146,6 +146,17 @@ public:
 
 	/**
 	 * @brief
+	 *  Move every body of the scene's world back by a shift of the world origin.
+	 *
+	 * Velocities, contacts and sleep are kept, and the two poses the interpolation blends move too, so the next frame
+	 * draws the bodies where they were. `Scene::shiftWorldOrigin()` calls it.
+	 * @param[in,out] ioScene The scene whose bodies move.
+	 * @param[in] iShift Displacement of the world origin, in world units.
+	 */
+	static void shiftOrigin(scene::Scene& ioScene, const math::vec2f& iShift);
+
+	/**
+	 * @brief
 	 *  Two entities whose bodies started touching during a physics step.
 	 */
 	struct CollisionEvent {

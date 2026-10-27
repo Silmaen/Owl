@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `readAssetBytes`, `findPackedAsset` and `isPackedAsset`: one lookup, the open pack first, for every loader.
 - The export compiles the project shaders and bakes the font atlases into the pack (`ExportReport::shadersBaked`).
 - `WorldPosition` component in double and a scene floating origin (`FloatingOrigin:`, `scene.set_floating_origin`) for worlds far from zero.
+- A shift of the world origin carries the physics bodies, their interpolation and the behaviour rest positions along: a running scene goes on unbroken.
 
 ### Changed
 
