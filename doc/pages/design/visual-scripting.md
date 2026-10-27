@@ -35,6 +35,12 @@ Design page for the Blueprints-style visual scripting, summarised in the [Roadma
 
 User guide: [Visual scripts](../visual-scripts.md).
 
+### Lua to graph {#visual-scripting-lua-to-graph}
+
+To evaluate after v0.6.0: build a graph from a Lua script, the reverse of the compiler. The subset to support (hooks,
+binding calls, `if`, numeric `for`, property reads and writes) and what to do with the rest (one Lua node holding the
+code, or a refusal) are the open questions.
+
 ## Node-graph link waypoints (v0.6.0)
 
 - Right-click on a coloured link in `NodeCanvas` (Scene Flow today, future graphs too) to insert an intermediate point

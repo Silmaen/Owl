@@ -472,7 +472,24 @@ void VisualScriptDocument::onImGuiRender() {
 			ImGui::EndChild();
 			ImGui::SameLine();
 		}
+		if (m_viewMode == VisualScriptViewMode::Code) {
+			renderLua();
+			renderContextMenu();
+			ImGui::End();
+			return;
+		}
+		if (m_viewMode == VisualScriptViewMode::Split) {
+			const float width = std::max(ImGui::GetContentRegionAvail().x * 0.55f, 200.f);
+			ImGui::BeginChild("##vsGraphPane", {width, 0.f}, ImGuiChildFlags_ResizeX);
+		}
 		const auto result = m_view.render(m_script, m_diagnostics);
+		if (m_viewMode == VisualScriptViewMode::Split) {
+			ImGui::EndChild();
+			ImGui::SameLine();
+			if (ImGui::BeginChild("##vsCodePane"))
+				renderLua();
+			ImGui::EndChild();
+		}
 		if (result.edit.has_value())
 			commit(result.edit->script, result.edit->description, result.edit->merge);
 		if (result.droppedType.has_value())
@@ -507,10 +524,28 @@ void VisualScriptDocument::renderToolbar() {
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Variables and selected node on the left of the graph (also in the Graph panel).");
 	ImGui::SameLine();
+	ImGui::BeginDisabled(m_viewMode == VisualScriptViewMode::Code);
 	if (ImGui::Button(std::format("{} Frame All", gui::icon::focus).c_str()))
 		m_view.requestFrameAll();
+	ImGui::EndDisabled();
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Show every node (Home).");
+	ImGui::SameLine();
+	ImGui::TextDisabled("|");
+	ImGui::SameLine();
+	constexpr std::array modes{
+			std::tuple{VisualScriptViewMode::Graph, gui::icon::workflow, "Graph", "Nodes only."},
+			std::tuple{VisualScriptViewMode::Split, gui::icon::columns3, "Split",
+					   "Nodes and the generated Lua side by side."},
+			std::tuple{VisualScriptViewMode::Code, gui::icon::code, "Lua", "The generated Lua only, read-only."}};
+	for (const auto& [mode, glyph, label, tip]: modes) {
+		if (toggle(std::format("{} {}", glyph, label).c_str(), m_viewMode == mode))
+			m_viewMode = mode;
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("%s", tip);
+		ImGui::SameLine(0.f, mode == VisualScriptViewMode::Code ? -1.f : 2.f);
+	}
+	ImGui::TextDisabled("|");
 	ImGui::SameLine();
 	if (m_diagnostics.empty()) {
 		ImGui::AlignTextToFramePadding();
@@ -741,12 +776,7 @@ void VisualScriptDocument::renderDetails() {
 		ImGui::EndTabItem();
 	}
 	if (ImGui::BeginTabItem(std::format("{} Node", gui::icon::squareFunction).c_str())) {
-		std::ignore = ImGui::Checkbox(std::format("{} Show generated Lua", gui::icon::code).c_str(), &m_showLua);
-		ImGui::Separator();
-		if (m_showLua)
-			renderLua();
-		else
-			renderSelectedNode();
+		renderSelectedNode();
 		ImGui::EndTabItem();
 	}
 	ImGui::EndTabBar();

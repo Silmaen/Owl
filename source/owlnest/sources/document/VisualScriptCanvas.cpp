@@ -11,6 +11,7 @@
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
+#include <gui/widgets/NodeStyle.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -55,7 +56,6 @@ constexpr float g_pinSpace = 20.f;
 constexpr float g_columnGap = 28.f;
 constexpr float g_fieldGap = 6.f;
 constexpr float g_minWidth = 140.f;
-constexpr float g_rounding = 8.f;
 constexpr float g_glyphWidth = 22.f;
 constexpr float g_minZoom = 0.25f;
 constexpr float g_maxZoom = 2.f;
@@ -63,8 +63,6 @@ constexpr float g_fieldZoom = 0.55f;
 constexpr float g_labelZoom = 0.4f;
 constexpr float g_snap = 8.f;
 constexpr float g_dragThreshold = 4.f;
-constexpr float g_gridStep = 16.f;
-constexpr int g_gridMajor = 8;
 
 using PinKey = std::tuple<uint64_t, std::string, bool>;
 
@@ -164,35 +162,6 @@ auto componentCount(const vs::PinSpec& iPin) -> size_t {
 	return iPin.group == iPin.name ? iPin.name.size() : vs::getPinComponents(iPin.type).size();
 }
 
-auto bezierControl(const ImVec2& iFrom, const ImVec2& iTo, const float iZoom) -> float {
-	const float dx = iTo.x - iFrom.x;
-	return std::max(std::abs(dx) * 0.5f, (dx < 0.f ? 90.f : 40.f) * iZoom);
-}
-
-void drawExecPin(ImDrawList* ioDraw, const ImVec2& iCenter, const float iSize, const ImU32 iColor, const bool iFilled) {
-	const std::array<ImVec2, 5> points{
-			ImVec2{iCenter.x - iSize, iCenter.y - iSize}, ImVec2{iCenter.x + 0.15f * iSize, iCenter.y - iSize},
-			ImVec2{iCenter.x + iSize, iCenter.y}, ImVec2{iCenter.x + 0.15f * iSize, iCenter.y + iSize},
-			ImVec2{iCenter.x - iSize, iCenter.y + iSize}};
-	if (iFilled)
-		ioDraw->AddConvexPolyFilled(points.data(), static_cast<int>(points.size()), iColor);
-	else
-		ioDraw->AddPolyline(points.data(), static_cast<int>(points.size()), iColor, ImDrawFlags_Closed,
-							std::max(1.f, iSize * 0.3f));
-}
-
-void drawDataPin(ImDrawList* ioDraw, const ImVec2& iCenter, const float iRadius, const ImU32 iColor,
-				 const bool iFilled) {
-	if (iFilled)
-		ioDraw->AddCircleFilled(iCenter, iRadius, iColor);
-	else
-		ioDraw->AddCircle(iCenter, iRadius, iColor, 0, std::max(1.f, iRadius * 0.32f));
-	const float tip = iRadius * 0.55f;
-	ioDraw->AddTriangleFilled({iCenter.x + iRadius + tip * 0.5f, iCenter.y - tip},
-							  {iCenter.x + iRadius + tip * 1.6f, iCenter.y},
-							  {iCenter.x + iRadius + tip * 0.5f, iCenter.y + tip}, iColor);
-}
-
 // Inline value field of an unlinked input, at the cursor; returns the new text when it changed.
 auto editField(const vs::PinSpec& iPin, const std::string& iValue) -> std::optional<std::string> {
 	std::optional<std::string> edited;
@@ -251,6 +220,8 @@ auto editField(const vs::PinSpec& iPin, const std::string& iValue) -> std::optio
 						  iPin.optional ? ", optional" : "");
 	return edited;
 }
+
+auto toVec(const ImVec2& iPoint) -> math::vec2f { return {iPoint.x, iPoint.y}; }
 
 auto measureWithImGui(const std::string_view iText) -> float {
 	return ImGui::CalcTextSize(iText.data(), iText.data() + iText.size()).x;
@@ -513,7 +484,7 @@ auto VisualScriptCanvas::getViewCenter() const -> std::array<float, 2> {
 
 auto VisualScriptCanvas::render(const vs::VisualScript& iScript,
 								const std::span<const vs::CompileDiagnostic> iDiagnostics) -> Result {
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(26, 28, 32, 255));
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, gui::vec(gui::widgets::getNodeCanvasBackground()));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.f, 0.f});
 	const bool visible = ImGui::BeginChild("##vsView", {0.f, 0.f}, ImGuiChildFlags_None,
 										   ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
@@ -661,27 +632,7 @@ void VisualScriptCanvas::applyViewRequests(const Frame& iFrame) {
 }
 
 void VisualScriptCanvas::drawGrid(const Frame& iFrame) const {
-	auto* draw = iFrame.draw;
-	const ImVec2 max{iFrame.origin.x + iFrame.size.x, iFrame.origin.y + iFrame.size.y};
-	const float step = g_gridStep * m_zoom;
-	if (step < 6.f)
-		return;
-	const auto lines = [&](const float iStart, const float iEnd, const float iOffset, const bool iVertical) -> void {
-		const float first = iStart + std::fmod(iOffset * m_zoom, step) - step;
-		const auto base = static_cast<int>(std::floor(-iOffset * m_zoom / step));
-		const auto count = static_cast<int>((iEnd - first) / step) + 1;
-		for (int line = 0; line < count; ++line) {
-			const float at = first + static_cast<float>(line) * step;
-			const bool major = (base + line) % g_gridMajor == 0;
-			const ImU32 color = major ? IM_COL32(255, 255, 255, 22) : IM_COL32(255, 255, 255, 9);
-			if (iVertical)
-				draw->AddLine({at, iFrame.origin.y}, {at, max.y}, color);
-			else
-				draw->AddLine({iFrame.origin.x, at}, {max.x, at}, color);
-		}
-	};
-	lines(iFrame.origin.x, max.x, m_offset[0], true);
-	lines(iFrame.origin.y, max.y, m_offset[1], false);
+	gui::widgets::drawNodeGrid(iFrame.draw, toVec(iFrame.origin), toVec(iFrame.size), m_offset, m_zoom);
 }
 
 void VisualScriptCanvas::drawLinks(Frame& ioFrame) const {
@@ -693,17 +644,10 @@ void VisualScriptCanvas::drawLinks(Frame& ioFrame) const {
 		const auto to = ioFrame.pins.find({link.toNode, link.toPin, false});
 		if (from == ioFrame.pins.end() || to == ioFrame.pins.end())
 			continue;
-		const auto p0 = from->second.first;
-		const auto p3 = to->second.first;
-		const float control = bezierControl(p0, p3, m_zoom);
-		const ImVec2 p1{p0.x + control, p0.y};
-		const ImVec2 p2{p3.x - control, p3.y};
 		if (ioFrame.hovered && !ioFrame.hoveredPin.has_value() && !ioFrame.hoveredNode.has_value()) {
-			const auto closest = ImBezierCubicClosestPointCasteljau(p0, p1, p2, p3, ioFrame.mouse,
-																	ImGui::GetStyle().CurveTessellationTol);
-			const float dx = closest.x - ioFrame.mouse.x;
-			const float dy = closest.y - ioFrame.mouse.y;
-			if (const float distance = std::sqrt(dx * dx + dy * dy); distance < best) {
+			if (const float distance = gui::widgets::getNodeLinkDistance(
+						toVec(from->second.first), toVec(to->second.first), toVec(ioFrame.mouse), m_zoom);
+				distance < best) {
 				best = distance;
 				ioFrame.hoveredLink = i;
 			}
@@ -715,9 +659,6 @@ void VisualScriptCanvas::drawLinks(Frame& ioFrame) const {
 		const auto to = ioFrame.pins.find({link.toNode, link.toPin, false});
 		if (from == ioFrame.pins.end() || to == ioFrame.pins.end())
 			continue;
-		const auto p0 = from->second.first;
-		const auto p3 = to->second.first;
-		const float control = bezierControl(p0, p3, m_zoom);
 		const bool exec = from->second.second == vs::PinType::Exec;
 		const bool highlighted =
 				ioFrame.hoveredLink == i || std::ranges::any_of(m_selection, [&](const core::UUID iId) -> bool {
@@ -727,9 +668,8 @@ void VisualScriptCanvas::drawLinks(Frame& ioFrame) const {
 		auto color = getPinColor(from->second.second);
 		if (highlighted)
 			color = lighter(color, 0.35f);
-		ioFrame.draw->AddBezierCubic(p0, {p0.x + control, p0.y}, {p3.x - control, p3.y}, p3, IM_COL32(0, 0, 0, 90),
-									 thickness + 2.f * m_zoom);
-		ioFrame.draw->AddBezierCubic(p0, {p0.x + control, p0.y}, {p3.x - control, p3.y}, p3, toU32(color), thickness);
+		gui::widgets::drawNodeLink(ioFrame.draw, toVec(from->second.first), toVec(to->second.first), color, thickness,
+								   m_zoom);
 	}
 }
 
@@ -754,40 +694,20 @@ void VisualScriptCanvas::drawNodeFrame(const Frame& iFrame, const size_t iIndex)
 	const auto& node = *view.node;
 	const ImVec2 min = view.min;
 	const ImVec2 max = view.max;
-	const float rounding = g_rounding * zoom;
 	gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
 	ImFont* strong = ImGui::GetFont();
 	gui::UiLayer::popTextStyle();
 	const auto& theme = gui::UiLayer::getTheme();
-	const float shadow = 6.f * zoom;
-	draw->AddRectFilled({min.x + shadow * 0.3f, min.y + shadow * 0.6f}, {max.x + shadow, max.y + shadow},
-						IM_COL32(0, 0, 0, 70), rounding + shadow * 0.5f);
-	draw->AddRectFilled(min, max, IM_COL32(20, 22, 26, 238), rounding);
 	const float header = view.layout.headerHeight * zoom;
-	const auto color = view.type == nullptr ? rgb(0.4f, 0.1f, 0.1f) : getNodeColor(iFrame.script, node, *view.type);
-	const int vertexStart = draw->VtxBuffer.Size;
-	draw->AddRectFilled(min, {max.x, min.y + header}, toU32(color), rounding, ImDrawFlags_RoundCornersTop);
-	ImGui::ShadeVertsLinearColorGradientKeepAlpha(draw, vertexStart, draw->VtxBuffer.Size, min, {max.x, min.y},
-												  toU32(lighter(color, 0.12f)), toU32(scaled(color, 0.45f)));
-	draw->AddLine({min.x + 1.f, min.y + header}, {max.x - 1.f, min.y + header}, toU32(lighter(color, 0.3f), 0.6f),
-				  std::max(1.f, zoom));
-	const bool hovered = iFrame.hoveredNode == iIndex;
 	const bool faulty = !view.error.empty() || view.type == nullptr;
-	ImU32 border = IM_COL32(0, 0, 0, 160);
-	float borderWidth = std::max(1.f, zoom);
-	if (faulty) {
-		border = toU32(theme.error);
-		borderWidth = 2.f * zoom;
-	}
-	if (view.selected) {
-		draw->AddRect({min.x - 3.f * zoom, min.y - 3.f * zoom}, {max.x + 3.f * zoom, max.y + 3.f * zoom},
-					  toU32(theme.accent, 0.35f), rounding + 3.f * zoom, 0, 4.f * zoom);
-		border = toU32(theme.accent);
-		borderWidth = 2.f * zoom;
-	} else if (hovered && !faulty) {
-		border = IM_COL32(255, 255, 255, 70);
-	}
-	draw->AddRect(min, max, border, rounding, 0, borderWidth);
+	gui::widgets::drawNodeFrame(
+			draw, toVec(min), toVec(max),
+			{.header = view.type == nullptr ? rgb(0.4f, 0.1f, 0.1f) : getNodeColor(iFrame.script, node, *view.type),
+			 .headerHeight = view.layout.headerHeight,
+			 .selected = view.selected,
+			 .hovered = iFrame.hoveredNode == iIndex,
+			 .faulty = faulty},
+			zoom);
 
 	const auto title = view.type == nullptr ? std::format("Unknown {}", node.type) : getNodeTitle(node, *view.type);
 	const auto subtitle = view.type == nullptr ? std::string{} : getNodeSubtitle(*view.type);
@@ -828,9 +748,9 @@ void VisualScriptCanvas::drawNodePins(Frame& ioFrame, const size_t iIndex) const
 			pinColor = lighter(pinColor, 0.3f);
 		}
 		if (iPin.type == vs::PinType::Exec)
-			drawExecPin(draw, iAt, g_pinRadius * 1.15f * zoom, toU32(pinColor), linked);
+			gui::widgets::drawExecPin(draw, toVec(iAt), g_pinRadius * 1.15f * zoom, pinColor, linked);
 		else
-			drawDataPin(draw, iAt, g_pinRadius * zoom, toU32(pinColor), linked);
+			gui::widgets::drawDataPin(draw, toVec(iAt), g_pinRadius * zoom, pinColor, linked);
 		if (!labels || isDefaultExec(iPin))
 			return;
 		const auto size = font->CalcTextSizeA(fontSize, FLT_MAX, 0.f, iPin.name.c_str());
@@ -896,10 +816,8 @@ void VisualScriptCanvas::drawOverlays(const Frame& iFrame) const {
 			auto to = iFrame.mouse;
 			if (!m_linkStart->output)
 				std::swap(from, to);
-			const float control = bezierControl(from, to, zoom);
-			draw->AddBezierCubic(from, {from.x + control, from.y}, {to.x - control, to.y}, to,
-								 toU32(getPinColor(m_linkStart->type)),
-								 (m_linkStart->type == vs::PinType::Exec ? 3.f : 2.4f) * zoom);
+			gui::widgets::drawNodeLink(draw, toVec(from), toVec(to), getPinColor(m_linkStart->type),
+									   (m_linkStart->type == vs::PinType::Exec ? 3.f : 2.4f) * zoom, zoom);
 		}
 	}
 	if (m_gesture == Gesture::Select) {

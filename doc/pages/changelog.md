@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `transform.get_world_position` / `set_world_position` in double and `scene.get_world_origin`.
 - Engine Demo far orbit (`far_orbit.owl`, **K** from the menu): a station one astronomical unit away, sharp to the centimetre.
 - Visual scripts (`.owlvs`): event graphs compiled to Lua at load, usable wherever a `.lua` script is, their variables as script properties.
-- Owl Nest visual script editor: Blueprint-style canvas with inline values, node library to drag from, variables and node details in the Graph panel, coloured generated Lua, copy / paste, undo.
+- Owl Nest visual script editor: Blueprint-style canvas with inline values, node library to drag from, variables and node details in the Graph panel, graph / split / coloured Lua views, copy / paste, undo.
 - Visual scripts: colour and vector values (`Color`, `Vector 2`, `Vector 3`), as variables, make / break nodes, and the `r g b a` / `x y z` parameters of a binding as one pin that splits into its components.
 - Content Browser: visual scripts have an icon and a colour of their own.
 - Engine Demo: the tavern cellar ladder is a visual script.
@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: the `slow` tests run in a nightly Slow Suite on the Linux x64 release tree; arm64 and Clang Debug leave them out.
 - `/check --quick`: the fast loop for agents (touched tests and CodeStyle), with `--fix` to apply the formatters first.
 - Docs: screenshots of the tower defence (title, world map, briefing, two levels) in Getting Started and the sample games page.
+- Scene Flow and every `NodeCanvas` share the node style of visual scripts (`gui/widgets/NodeStyle.h`): one row per pin, title bar, coloured curves.
 - Docs: the engine developer guide lists every renderer: the 2D, tilemap, isometric, 3D and post-process sections join the voxel and raycaster pages.
 
 ### Removed
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `NodeCanvas` (Scene Flow): the mouse wheel no longer zooms the graph while a menu over it scrolls, and links meet their pins.
 - The ktx recipe probes the CPU type with the cross `--target`: the arm64 build no longer compiles the x86 AVX2 ASTC encoder.
 - ThreadSanitizer ignores the lock-free hand-off inside OpenAL Soft: the exported Tower Defence, which plays a sound at start, passes again.
 - GLFW on X11 keeps Xlib and its extensions loaded after `glfwTerminate`: LeakSanitizer no longer reports their caches as leaks when a game window closes.

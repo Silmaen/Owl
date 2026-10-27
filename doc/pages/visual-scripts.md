@@ -61,13 +61,15 @@ convert between a value and its components. Variables can be of type `color`, `v
 | Panel                     | Content                                                                                       |
 |---------------------------|-----------------------------------------------------------------------------------------------|
 | **Nodes** (Hierarchy)     | Every node by group, with a search field: click one to add it in the view, or drag it in      |
-| **Graph** (Properties)    | **Variables** tab and **Node** tab; **Show generated Lua** replaces the node by its Lua code   |
+| **Graph** (Properties)    | **Variables** tab and **Node** tab                                                            |
 | **Details** (toolbar)     | The same tabs on the left of the graph, shown or hidden by the toolbar button                 |
 
 - **Variables**: add, rename, retype or remove a variable and set its default; renaming one updates its nodes. Drag a
   variable onto the graph to read it.
 - **Node**: the selected node, its description, its errors, its settings (variable, function name), the split of its
   grouped pins and the values of its unlinked inputs.
+- The toolbar switches the document between **Graph** (the nodes), **Split** (the nodes and the generated Lua side by
+  side, the divider drags) and **Lua** (the generated Lua alone). The Lua is coloured and read-only.
 - The toolbar shows **Compiles to Lua** or the number of errors: click it to list them, then click one to centre its
   node. A node with an error has a red frame and a warning icon.
 

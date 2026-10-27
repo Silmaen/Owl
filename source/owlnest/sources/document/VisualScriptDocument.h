@@ -34,12 +34,22 @@ using VisualScriptUndoManager = UndoManager<script::visual::VisualScript>;
 
 /**
  * @brief
+ *  What the visual script document shows.
+ */
+enum struct VisualScriptViewMode : uint8_t {
+	Graph,///< The nodes.
+	Split,///< The nodes and the generated Lua side by side.
+	Code///< The generated Lua.
+};
+
+/**
+ * @brief
  *  Visual script document (`.owlvs`): an event graph on the node canvas, compiled to Lua as it is edited.
  *
  * The `script::visual::VisualScript` is the document, drawn by a `VisualScriptCanvas` and compiled after each edit.
  * A right click on the canvas opens the node palette; the Hierarchy panel lists every node to drag onto the canvas,
- * the Properties panel (also shown on the left of the canvas on demand) edits the variables and the selected node,
- * or shows the generated Lua.
+ * the Properties panel (also shown on the left of the canvas on demand) edits the variables and the selected node.
+ * The toolbar shows the graph, the generated Lua (coloured, read-only) or both side by side.
  */
 class VisualScriptDocument final : public NodeGraphDocument {
 public:
@@ -227,6 +237,20 @@ public:
 
 	/**
 	 * @brief
+	 *  What the document shows.
+	 * @return The view mode.
+	 */
+	[[nodiscard]] auto getViewMode() const -> VisualScriptViewMode { return m_viewMode; }
+
+	/**
+	 * @brief
+	 *  Show the graph, the generated Lua or both.
+	 * @param[in] iMode The view mode.
+	 */
+	void setViewMode(const VisualScriptViewMode iMode) { m_viewMode = iMode; }
+
+	/**
+	 * @brief
 	 *  Selected nodes.
 	 * @return Their identifiers.
 	 */
@@ -302,7 +326,7 @@ private:
 
 	/**
 	 * @brief
-	 *  Toolbar above the canvas: details panel, framing, compilation status.
+	 *  Toolbar above the canvas: details panel, framing, view mode, compilation status.
 	 */
 	void renderToolbar();
 
@@ -372,8 +396,8 @@ private:
 	bool m_compileStale{true};
 	/// Show the details panel on the left of the canvas.
 	bool m_showDetails{false};
-	/// Show the generated Lua in place of the node tab.
-	bool m_showLua{false};
+	/// What the document shows.
+	VisualScriptViewMode m_viewMode{VisualScriptViewMode::Graph};
 	/// Read-only Lua view.
 	uniq<TextEditor> mp_luaView;
 	/// Text shown by the Lua view.

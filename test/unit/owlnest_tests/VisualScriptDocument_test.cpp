@@ -167,3 +167,9 @@ TEST_F(VisualScriptDocumentTest, SplitPinKeepsTheValueAndDropsItsLinks) {
 	m_document.performUndo();
 	EXPECT_EQ(m_document.getScript().links.size(), 1u);
 }
+
+TEST_F(VisualScriptDocumentTest, ViewModeStartsOnTheGraph) {
+	EXPECT_EQ(m_document.getViewMode(), VisualScriptViewMode::Graph);
+	m_document.setViewMode(VisualScriptViewMode::Split);
+	EXPECT_EQ(m_document.getViewMode(), VisualScriptViewMode::Split);
+}
