@@ -111,6 +111,12 @@ auto DragFloat3(const char* iLabel, float* ioValues, const float iSpeed = 1.f, c
 	});
 }
 
+auto InputDouble3(const char* iLabel, double* ioValues, const char* iFormat = "%.4f") -> bool {
+	return row(iLabel, [&](const char* iId) -> bool {
+		return ImGui::InputScalarN(iId, ImGuiDataType_Double, ioValues, 3, nullptr, nullptr, iFormat);
+	});
+}
+
 auto DragInt(const char* iLabel, int* ioValue, const float iSpeed = 1.f, const int iMin = 0, const int iMax = 0,
 			 const char* iFormat = "%d", const ImGuiSliderFlags iFlags = 0) -> bool {
 	return row(iLabel, [&](const char* iId) -> bool {
@@ -681,6 +687,12 @@ void renderProps(Transform& ioComponent) {
 	drawVec3Control("Rotation", rotation);
 	ioComponent.transform.rotation() = radians(rotation);
 	drawVec3Control("Scale", ioComponent.transform.scale(), 1.0f);
+}
+
+void renderProps(WorldPosition& ioComponent) {
+	prop::InputDouble3("Position", &ioComponent.position.x());
+	fieldTooltip("Position in the world, in double precision. The Transform translation is this position minus the "
+				 "world origin of the scene; only a root entity uses it.");
 }
 
 namespace {

@@ -141,6 +141,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Render the world origin section (floating origin, shift radius, current origin); runs
+	 *  `scene.set_floating_origin` on change.
+	 */
+	void renderWorldOriginSection() const;
+
+	/**
+	 * @brief
 	 *  Render the HUD section: the `.owlhud` the scene draws (project default, none or a file), chosen through the
 	 *  undoable `scene.set_hud` command.
 	 */

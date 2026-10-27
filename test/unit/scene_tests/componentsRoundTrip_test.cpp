@@ -679,6 +679,22 @@ TEST(ComponentRoundTrip, Patrol) {
 			});
 }
 
+TEST(ComponentRoundTrip, WorldPosition) {
+	roundTrip(
+			"WorldPosition",
+			[](scene::Entity& iEnt) -> void {
+				iEnt.addComponent<scene::component::WorldPosition>().position = {1.5e11 + 0.25, -7.0e8, 3.0};
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::WorldPosition>());
+				const auto& world = iEnt.getComponent<scene::component::WorldPosition>();
+				EXPECT_DOUBLE_EQ(world.position.x(), 1.5e11 + 0.25);
+				EXPECT_DOUBLE_EQ(world.position.y(), -7.0e8);
+				EXPECT_DOUBLE_EQ(world.position.z(), 3.0);
+				EXPECT_FALSE(world.m_synced);
+			});
+}
+
 TEST(ComponentRoundTrip, Drift) {
 	roundTrip(
 			"Drift",

@@ -198,6 +198,15 @@ void updateEntityLinks(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Synchronise the world positions, then move the world origin onto the primary camera when it is farther than the
+ *  shift radius (`owl.floating_origin`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateFloatingOrigin(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Run the timer triggers and the overlap triggers against the primary player (`owl.triggers`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

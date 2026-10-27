@@ -116,7 +116,7 @@ flowchart LR
 | `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)                                           | May move, create or destroy entities      |
 | `PrePhysics`  | `owl.oscillators`, `owl.patrols`, `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input` | Gameplay controllers before the step      |
 | `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                                                        | Owns the physics step                     |
-| `PostPhysics` | `owl.drift`, `owl.light_flicker`, `owl.entity_links`, `owl.triggers`                                              | Last phase allowed to change the world    |
+| `PostPhysics` | `owl.drift`, `owl.light_flicker`, `owl.entity_links`, `owl.triggers`, `owl.floating_origin`                       | Last phase allowed to change the world    |
 | `Late`        | `owl.navigation`, `owl.sound`, `owl.sprite_animation`                                                             | Reads the settled world (caches armed)    |
 | `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                                                               | Replaces every other phase once game over |
 
@@ -1117,6 +1117,27 @@ the cache is bypassed and the state is always fresh.
 | **Duplicate entity**     | Duplicate is a root entity with no children                                      |
 | **Duplicate subtree**    | Recursive duplicate with new UUIDs and correct parent references                 |
 
+### World positions and floating origin {#world-positions}
+
+A float translation steps by 8 mm at 100 km and by 1 m at 10 000 km. For far worlds, a root entity carries a
+`WorldPosition` (YAML key `WorldPosition`, `position: [x, y, z]` in double): its position in the world. Its
+`Transform` translation is then its position relative to the scene's world origin (`Scene::getWorldOrigin()`), the
+one the renderer and the physics see ([Large worlds](design/large-worlds.md)).
+
+| Change                                   | Effect                                                                 |
+|------------------------------------------|------------------------------------------------------------------------|
+| `WorldPosition` added                    | Takes the entity's place: origin + translation                         |
+| `Transform` moved (gameplay, gizmo)      | `position` = origin + translation                                      |
+| `position` edited (inspector, file)      | Translation = `position` − origin                                      |
+| `Scene::shiftWorldOrigin(origin)`        | Roots with a `WorldPosition` placed again from it, other roots shifted |
+
+`Scene::syncWorldPositions()` applies the first rows: in the editor every frame, in Play at start and in the
+`owl.floating_origin` system. When the scene's floating origin is enabled (`FloatingOrigin:` key, Scene Settings),
+that system moves the origin onto the primary camera once the camera is farther than `shiftRadius` (2000 by default)
+from it; the origin itself is saved with the scene. A child keeps its local transform and follows its parent. Physics
+bodies, sound sources and particles are not shifted with the origin yet
+([Large worlds](design/large-worlds.md#large-worlds-delivery)).
+
 ### Physics and Hierarchy
 
 Physics bodies (Box2D) operate in **world space** independently of the scene hierarchy.
@@ -1200,6 +1221,15 @@ Entities:
       friction: 0.5
     Hierarchy:
       parentId: 0
+```
+
+A scene with a floating origin adds, before `Entities:`:
+
+```yaml
+FloatingOrigin:
+  enabled: true
+  shiftRadius: 2000
+  origin: [149600000000, 0, 0]
 ```
 
 Components are written in the order of `SerializableComponents`. `Hierarchy` stores only `parentId`; children are
