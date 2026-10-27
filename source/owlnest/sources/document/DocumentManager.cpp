@@ -9,6 +9,7 @@
 #include "DocumentManager.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <format>
 
 namespace owl::nest {
@@ -66,6 +67,13 @@ void DocumentManager::setActive(Document* iDocument) {
 			return;
 		}
 	}
+}
+
+auto DocumentManager::findByWindowName(const std::string_view iWindowName) const -> Document* {
+	const auto it = std::ranges::find_if(m_documents, [iWindowName](const uniq<Document>& iDoc) -> bool {
+		return iDoc && iWindowName.ends_with(documentWindowId(iDoc->type(), static_cast<uint64_t>(iDoc->id())));
+	});
+	return it == m_documents.end() ? nullptr : it->get();
 }
 
 auto DocumentManager::find(const core::UUID iId) const -> Document* {

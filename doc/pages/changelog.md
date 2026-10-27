@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Owl Nest: the Hierarchy and Properties panels follow the active document whatever its type (code, node graph, animation), with an empty state when it has nothing to show.
 - `NodeCanvas` (Scene Flow): the mouse wheel no longer zooms the graph while a menu over it scrolls, and links meet their pins.
 - The ktx recipe probes the CPU type with the cross `--target`: the arm64 build no longer compiles the x86 AVX2 ASTC encoder.
 - ThreadSanitizer ignores the lock-free hand-off inside OpenAL Soft: the exported Tower Defence, which plays a sound at start, passes again.

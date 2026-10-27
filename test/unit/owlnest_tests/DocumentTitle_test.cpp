@@ -8,6 +8,7 @@
 
 #include "document/CodeEditorDocument.h"
 #include "document/Document.h"
+#include "document/DocumentManager.h"
 #include "testHelper.h"
 
 #include <gui/IconFont.h>
@@ -39,4 +40,15 @@ TEST(DocumentTitle, FocusRequestLastsAFewFrames) {
 	EXPECT_FALSE(document.consumeFocusRequest());
 	document.requestFocus();
 	EXPECT_TRUE(document.consumeFocusRequest());
+}
+
+TEST(DocumentTitle, WindowNameFindsItsDocument) {
+	DocumentManager documents;
+	auto* code = documents.add(mkUniq<CodeEditorDocument>());
+	const auto id = static_cast<uint64_t>(code->id());
+	EXPECT_TRUE(
+			documentWindowTitle(DocumentType::Code, "a.lua*", id).ends_with(documentWindowId(DocumentType::Code, id)));
+	EXPECT_EQ(documents.findByWindowName(documentWindowTitle(DocumentType::Code, "a.lua", id)), code);
+	EXPECT_EQ(documents.findByWindowName(documentWindowTitle(DocumentType::Scene, "a.lua", id)), nullptr);
+	EXPECT_EQ(documents.findByWindowName("Properties###properties"), nullptr);
 }

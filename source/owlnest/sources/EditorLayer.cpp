@@ -41,6 +41,11 @@
 #include <imgui_stdlib.h>
 #include <magic_enum/magic_enum.hpp>
 
+OWL_DIAG_PUSH
+OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
+#include <imgui_internal.h>
+OWL_DIAG_POP
+
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -138,6 +143,14 @@ auto EditorLayer::findPlayingSceneDocument() const -> SceneDocument* {
 		}
 	}
 	return nullptr;
+}
+
+void EditorLayer::followFocusedDocument() {
+	const auto* focus = ImGui::GetCurrentContext()->NavWindow;
+	if (focus == nullptr || focus->RootWindow == nullptr)
+		return;
+	if (auto* focused = m_documents.findByWindowName(focus->RootWindow->Name); focused != nullptr)
+		m_documents.setActive(focused);
 }
 
 void EditorLayer::syncActiveDocumentPanels() {
@@ -932,8 +945,8 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 			}
 		}
 	}
+	followFocusedDocument();
 	if (m_documents.getActive() != activeBefore)
-
 		syncActiveDocumentPanels();
 	for (const auto id: toClose) requestCloseDocument(id);
 

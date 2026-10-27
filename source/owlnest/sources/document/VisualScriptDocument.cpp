@@ -15,9 +15,13 @@
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
+#include <gui/widgets/Badge.h>
 #include <gui/widgets/EmptyState.h>
+#include <gui/widgets/IconButton.h>
 #include <gui/widgets/Menu.h>
+#include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/SearchField.h>
+#include <gui/widgets/SectionHeader.h>
 #include <platform/AtomicFile.h>
 #include <platform/FileUtils.h>
 
@@ -510,63 +514,57 @@ void VisualScriptDocument::onImGuiRender() {
 }
 
 void VisualScriptDocument::renderToolbar() {
-	const auto& theme = gui::UiLayer::getTheme();
-	const auto toggle = [](const char* iLabel, const bool iOn) -> bool {
-		if (iOn)
-			ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-		const bool clicked = ImGui::Button(iLabel);
-		if (iOn)
-			ImGui::PopStyleColor();
-		return clicked;
+	const auto separator = []() -> void {
+		ImGui::SameLine();
+		ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+		ImGui::SameLine();
 	};
-	if (toggle(std::format("{} Details", gui::icon::panelLeft).c_str(), m_showDetails))
+	if (gui::widgets::iconButton("##vsDetails", {.glyph = gui::icon::panelLeft,
+												 .tooltip = "Details",
+												 .description = "Variables and selected node on the left of the graph.",
+												 .selected = m_showDetails}))
 		m_showDetails = !m_showDetails;
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Variables and selected node on the left of the graph (also in the Graph panel).");
 	ImGui::SameLine();
-	ImGui::BeginDisabled(m_viewMode == VisualScriptViewMode::Code);
-	if (ImGui::Button(std::format("{} Frame All", gui::icon::focus).c_str()))
+	if (gui::widgets::iconButton("##vsFrame", {.glyph = gui::icon::focus,
+											   .tooltip = "Frame All",
+											   .shortcut = "Home",
+											   .description = "Show every node.",
+											   .disabled = m_viewMode == VisualScriptViewMode::Code}))
 		m_view.requestFrameAll();
-	ImGui::EndDisabled();
-	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Show every node (Home).");
-	ImGui::SameLine();
-	ImGui::TextDisabled("|");
-	ImGui::SameLine();
+	separator();
 	constexpr std::array modes{
-			std::tuple{VisualScriptViewMode::Graph, gui::icon::workflow, "Graph", "Nodes only."},
+			std::tuple{VisualScriptViewMode::Graph, gui::icon::workflow, "Graph", "The nodes only."},
 			std::tuple{VisualScriptViewMode::Split, gui::icon::columns3, "Split",
-					   "Nodes and the generated Lua side by side."},
+					   "The nodes and the generated Lua side by side."},
 			std::tuple{VisualScriptViewMode::Code, gui::icon::code, "Lua", "The generated Lua only, read-only."}};
 	for (const auto& [mode, glyph, label, tip]: modes) {
-		if (toggle(std::format("{} {}", glyph, label).c_str(), m_viewMode == mode))
+		ImGui::PushID(label);
+		if (gui::widgets::iconButton(
+					"##mode", {.glyph = glyph, .tooltip = label, .description = tip, .selected = m_viewMode == mode}))
 			m_viewMode = mode;
-		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("%s", tip);
-		ImGui::SameLine(0.f, mode == VisualScriptViewMode::Code ? -1.f : 2.f);
+		ImGui::PopID();
+		ImGui::SameLine(0.f, 2.f);
 	}
-	ImGui::TextDisabled("|");
-	ImGui::SameLine();
+	separator();
 	if (m_diagnostics.empty()) {
-		ImGui::AlignTextToFramePadding();
-		ImGui::TextColored(gui::vec(theme.success), "%s Compiles to Lua", gui::icon::circleCheck);
-	} else {
-		ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(theme.error));
-		if (ImGui::Button(std::format("{} {} error{}", gui::icon::triangleAlert, m_diagnostics.size(),
-									  m_diagnostics.size() > 1 ? "s" : "")
-								  .c_str()))
-			ImGui::OpenPopup("##vsErrors");
-		ImGui::PopStyleColor();
+		gui::widgets::badge(std::format("{} Compiles to Lua", gui::icon::circleCheck).c_str(),
+							gui::widgets::BadgeKind::Success);
+	} else if (gui::widgets::button(
+					   "##vsErrors",
+					   {.glyph = gui::icon::triangleAlert,
+						.label = std::format("{} error{}", m_diagnostics.size(), m_diagnostics.size() > 1 ? "s" : "")
+										 .c_str(),
+						.tooltip = "Compilation errors",
+						.description = "Click to list them; click one to centre its node."})) {
+		ImGui::OpenPopup("##vsErrorList");
 	}
-	ImGui::SameLine();
-	ImGui::AlignTextToFramePadding();
-	ImGui::TextDisabled("Right-click: add a node  |  Alt+click a pin: break its links  |  Right-drag: pan");
-	if (ImGui::BeginPopup("##vsErrors")) {
+	if (ImGui::BeginPopup("##vsErrorList")) {
+		gui::widgets::menuHeader("Compilation errors");
 		for (size_t i = 0; i < m_diagnostics.size(); ++i) {
 			const auto& diagnostic = m_diagnostics[i];
 			ImGui::PushID(static_cast<int>(i));
-			const auto label = std::format("{} {}", gui::icon::triangleAlert, diagnostic.message);
-			if (ImGui::Selectable(label.c_str()) && diagnostic.node != 0) {
+			if (gui::widgets::menuItem({.glyph = gui::icon::triangleAlert, .label = diagnostic.message.c_str()}) &&
+				diagnostic.node != 0) {
 				m_view.setSelection({diagnostic.node});
 				m_view.requestFocus(diagnostic.node);
 			}
@@ -783,9 +781,7 @@ void VisualScriptDocument::renderDetails() {
 }
 
 void VisualScriptDocument::renderVariables() {
-	ImGui::TextDisabled("Script properties, set per entity in the inspector. Drag one onto the graph to read it.");
 	std::optional<size_t> removed;
-	const float rowWidth = ImGui::GetContentRegionAvail().x;
 	for (size_t i = 0; i < m_script.variables.size(); ++i) {
 		ImGui::PushID(static_cast<int>(i));
 		const auto& variable = m_script.variables[i];
@@ -795,58 +791,66 @@ void VisualScriptDocument::renderVariables() {
 														.values = {{"variable", variable.name}}})
 									 .outputs.front()
 									 .type;
-		ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(getPinColor(pinType)));
-		ImGui::Selectable(gui::icon::variable, false, ImGuiSelectableFlags_None, {ImGui::GetFontSize(), 0.f});
-		ImGui::PopStyleColor();
+		const auto section = gui::widgets::sectionHeader(variable.name.c_str(), gui::icon::variable, true, false);
 		if (ImGui::BeginDragDropSource()) {
 			const auto payload = std::format("var.get|{}", variable.name);
 			ImGui::SetDragDropPayload(g_VisualScriptNodePayload, payload.data(), payload.size());
 			ImGui::Text("%s Get %s", gui::icon::variable, variable.name.c_str());
 			ImGui::EndDragDropSource();
 		}
-		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Drag onto the graph to read %s.", variable.name.c_str());
-		ImGui::SameLine();
-		auto name = variable.name;
-		ImGui::SetNextItemWidth(std::max(80.f, rowWidth * 0.4f));
-		if (ImGui::InputText("##name", &name)) {
-			auto next = m_script;
-			for (auto& node: next.nodes)
-				if (const auto it = node.values.find("variable");
-					it != node.values.end() && it->second == variable.name)
-					it->second = name;
-			next.variables[i].name = name;
-			commit(std::move(next), "Rename Variable", true);
+		if (section.menuClicked)
+			ImGui::OpenPopup("##variableMenu");
+		if (ImGui::BeginPopup("##variableMenu")) {
+			gui::widgets::menuHeader(variable.name.c_str(), "Variable");
+			if (gui::widgets::menuItem({.glyph = gui::icon::trash2, .label = "Remove", .danger = true}))
+				removed = i;
+			ImGui::EndPopup();
 		}
-		if (!vs::isValidName(name) && ImGui::IsItemHovered())
-			ImGui::SetTooltip("Not a usable Lua name.");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(std::max(60.f, ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight() - 8.f));
-		if (ImGui::BeginCombo("##type", std::string{script::ScriptEngine::propertyTypeName(variable.type)}.c_str())) {
-			for (const auto type: g_variableTypes)
-				if (ImGui::Selectable(std::string{script::ScriptEngine::propertyTypeName(type)}.c_str(),
-									  type == variable.type)) {
+		if (section.open) {
+			if (gui::widgets::beginProperties("##variable")) {
+				auto name = variable.name;
+				gui::widgets::propertyLabel("Name", "Lua name of the property; renaming updates its nodes.");
+				if (ImGui::InputText("##name", &name)) {
 					auto next = m_script;
-					next.variables[i].type = type;
-					next.variables[i].defaultValue.clear();
-					commit(std::move(next), "Change Variable Type");
+					for (auto& node: next.nodes)
+						if (const auto it = node.values.find("variable");
+							it != node.values.end() && it->second == variable.name)
+							it->second = name;
+					next.variables[i].name = name;
+					commit(std::move(next), "Rename Variable", true);
 				}
-			ImGui::EndCombo();
+				if (!vs::isValidName(name) && ImGui::IsItemHovered())
+					ImGui::SetTooltip("Not a usable Lua name.");
+				std::ignore = gui::widgets::propertyReset(false);
+				gui::widgets::propertyLabel("Type");
+				ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(getPinColor(pinType)));
+				const bool typeOpen = ImGui::BeginCombo(
+						"##type", std::string{script::ScriptEngine::propertyTypeName(variable.type)}.c_str());
+				ImGui::PopStyleColor();
+				if (typeOpen) {
+					for (const auto type: g_variableTypes)
+						if (ImGui::Selectable(std::string{script::ScriptEngine::propertyTypeName(type)}.c_str(),
+											  type == variable.type)) {
+							auto next = m_script;
+							next.variables[i].type = type;
+							next.variables[i].defaultValue.clear();
+							commit(std::move(next), "Change Variable Type");
+						}
+					ImGui::EndCombo();
+				}
+				std::ignore = gui::widgets::propertyReset(false);
+				gui::widgets::propertyLabel("Default", "Value of the property until the inspector sets another.");
+				const auto value = valueField("##default", pinType, vs::getPinComponents(pinType).size(),
+											  variable.defaultValue, {});
+				if (gui::widgets::propertyReset(!variable.defaultValue.empty()) || value.has_value()) {
+					auto next = m_script;
+					next.variables[i].defaultValue = value.value_or(std::string{});
+					commit(std::move(next), "Edit Variable Default", true);
+				}
+				gui::widgets::endProperties();
+			}
+			gui::widgets::endSection();
 		}
-		ImGui::SameLine();
-		if (ImGui::SmallButton(gui::icon::trash2))
-			removed = i;
-		ImGui::Indent(ImGui::GetFontSize() + ImGui::GetStyle().ItemSpacing.x);
-		ImGui::SetNextItemWidth(-1.f);
-		if (const auto value =
-					valueField("##default", pinType, vs::getPinComponents(pinType).size(), variable.defaultValue, {});
-			value.has_value()) {
-			auto next = m_script;
-			next.variables[i].defaultValue = *value;
-			commit(std::move(next), "Edit Variable Default", true);
-		}
-		ImGui::Unindent(ImGui::GetFontSize() + ImGui::GetStyle().ItemSpacing.x);
-		ImGui::Spacing();
 		ImGui::PopID();
 	}
 	if (removed.has_value()) {
@@ -854,7 +858,16 @@ void VisualScriptDocument::renderVariables() {
 		next.variables.erase(next.variables.begin() + static_cast<std::ptrdiff_t>(*removed));
 		commit(std::move(next), "Remove Variable");
 	}
-	if (ImGui::Button(std::format("{} Add Variable", gui::icon::plus).c_str())) {
+	if (m_script.variables.empty())
+		std::ignore = gui::widgets::emptyState(gui::icon::variable, "No variable",
+											   "Variables are script properties, set per entity in the inspector.");
+	ImGui::Spacing();
+	if (gui::widgets::button("##addVariable",
+							 {.glyph = gui::icon::plus,
+							  .label = "Add Variable",
+							  .tooltip = "Add Variable",
+							  .description = "A script property; drag its header onto the graph to read it.",
+							  .width = -1.f})) {
 		auto next = m_script;
 		std::string name = "variable";
 		for (uint32_t counter = 2; next.findVariable(name) != nullptr; ++counter)
@@ -872,57 +885,76 @@ void VisualScriptDocument::renderSelectedNode() {
 		return;
 	}
 	if (selection.size() > 1) {
-		ImGui::TextDisabled("%zu nodes selected.", selection.size());
+		std::ignore =
+				gui::widgets::emptyState(gui::icon::boxes, std::format("{} nodes selected", selection.size()).c_str(),
+										 "Select one node to edit its values.");
 		return;
 	}
 	const auto* node = m_script.findNode(selection.front());
 	const auto* type = node == nullptr ? nullptr : vs::findNodeType(node->type);
 	if (type == nullptr) {
-		ImGui::TextDisabled("Unknown node type.");
+		std::ignore = gui::widgets::emptyState(gui::icon::triangleAlert, "Unknown node type");
 		return;
 	}
-	const auto id = node->id;
-	ImGui::PushStyleColor(ImGuiCol_Text,
-						  gui::vec(gui::Theme::mix(getNodeColor(m_script, *node, *type), {1.f, 1.f, 1.f, 1.f}, 0.45f)));
-	ImGui::TextUnformatted(getNodeGlyph(*type));
-	ImGui::PopStyleColor();
-	ImGui::SameLine();
-	gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
-	ImGui::TextUnformatted(getNodeTitle(*node, *type).c_str());
-	gui::UiLayer::popTextStyle();
-	ImGui::TextDisabled("%s", type->title.c_str());
-	ImGui::PushTextWrapPos();
-	ImGui::TextUnformatted(type->description.c_str());
-	for (const auto& diagnostic: m_diagnostics)
-		if (diagnostic.node == id)
-			ImGui::TextColored(gui::vec(gui::UiLayer::getTheme().error), "%s %s", gui::icon::triangleAlert,
-							   diagnostic.message.c_str());
-	ImGui::PopTextWrapPos();
-	ImGui::Spacing();
+	renderNodeHeader(*node, *type);
+	renderGroupedPins(*node);
+	renderNodeInputs(*node);
+}
+
+void VisualScriptDocument::setNodeValue(const core::UUID iNode, const std::string& iKey, const std::string& iValue) {
+	auto next = m_script;
+	if (auto* edited = next.findNode(iNode); edited != nullptr) {
+		if (iValue.empty())
+			edited->values.erase(iKey);
+		else
+			edited->values[iKey] = iValue;
+	}
+	commit(std::move(next), "Edit Node Value", true);
+}
+
+void VisualScriptDocument::renderNodeHeader(const vs::GraphNode& iNode, const vs::NodeType& iType) {
+	const auto* node = &iNode;
+	const auto* type = &iType;
+	const auto id = iNode.id;
 	const auto setValue = [this, id](const std::string& iKey, const std::string& iValue) -> void {
-		auto next = m_script;
-		if (auto* edited = next.findNode(id); edited != nullptr) {
-			if (iValue.empty())
-				edited->values.erase(iKey);
-			else
-				edited->values[iKey] = iValue;
-		}
-		commit(std::move(next), "Edit Node Value", true);
+		setNodeValue(id, iKey, iValue);
 	};
-	if (type->kind == vs::NodeKind::GetVariable || type->kind == vs::NodeKind::SetVariable) {
-		const auto current = valueOf(*node, "variable");
-		if (ImGui::BeginCombo("Variable", current.c_str())) {
-			for (const auto& variable: m_script.variables)
-				if (ImGui::Selectable(variable.name.c_str(), variable.name == current))
-					setValue("variable", variable.name);
-			ImGui::EndCombo();
+	if (gui::widgets::sectionHeader(getNodeTitle(*node, *type).c_str(), getNodeGlyph(*type), false).open) {
+		ImGui::PushTextWrapPos();
+		ImGui::TextDisabled("%s", type->title.c_str());
+		ImGui::TextUnformatted(type->description.c_str());
+		ImGui::PopTextWrapPos();
+		for (const auto& diagnostic: m_diagnostics)
+			if (diagnostic.node == id)
+				gui::widgets::notice(diagnostic.message.c_str(), gui::widgets::BadgeKind::Error);
+		const bool variableNode = type->kind == vs::NodeKind::GetVariable || type->kind == vs::NodeKind::SetVariable;
+		if ((variableNode || type->kind == vs::NodeKind::CustomEvent) && gui::widgets::beginProperties("##settings")) {
+			if (variableNode) {
+				const auto current = valueOf(*node, "variable");
+				gui::widgets::propertyLabel("Variable");
+				if (ImGui::BeginCombo("##variable", current.c_str())) {
+					for (const auto& variable: m_script.variables)
+						if (ImGui::Selectable(variable.name.c_str(), variable.name == current))
+							setValue("variable", variable.name);
+					ImGui::EndCombo();
+				}
+				std::ignore = gui::widgets::propertyReset(false);
+			} else {
+				auto function = valueOf(*node, "function");
+				gui::widgets::propertyLabel("Function", "Lua name the engine calls, e.g. a trigger CallbackName.");
+				if (ImGui::InputText("##function", &function))
+					setValue("function", function);
+				std::ignore = gui::widgets::propertyReset(false);
+			}
+			gui::widgets::endProperties();
 		}
+		gui::widgets::endSection();
 	}
-	if (type->kind == vs::NodeKind::CustomEvent) {
-		auto function = valueOf(*node, "function");
-		if (ImGui::InputText("Function", &function))
-			setValue("function", function);
-	}
+}
+
+void VisualScriptDocument::renderGroupedPins(const vs::GraphNode& iNode) {
+	const auto* node = &iNode;
+	const auto id = iNode.id;
 	const auto pins = vs::getNodePins(m_script, *node);
 	std::set<std::string> groups;
 	for (const auto& pin: pins.inputs)
@@ -931,41 +963,57 @@ void VisualScriptDocument::renderSelectedNode() {
 	for (const auto& pin: pins.outputs)
 		if (!pin.group.empty())
 			groups.insert(pin.group);
-	for (const auto& group: groups) {
-		const bool split = valueOf(*node, std::string{vs::g_SplitPrefix} + group) == "true";
-		ImGui::PushID(group.c_str());
-		if (ImGui::Button(std::format("{} {} {}", split ? gui::icon::merge : gui::icon::split,
-									  split ? "Recombine" : "Split", group)
-								  .c_str()))
-			setPinSplit(id, group, !split);
-		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip(split ? "Show the components as one pin." : "Show one pin per component.");
-		ImGui::PopID();
-		ImGui::SameLine();
+	if (groups.empty() || !gui::widgets::sectionHeader("Grouped Pins", gui::icon::split, false).open)
+		return;
+	{
+		if (gui::widgets::beginProperties("##groups")) {
+			for (const auto& group: groups) {
+				const bool split = valueOf(*node, std::string{vs::g_SplitPrefix} + group) == "true";
+				gui::widgets::propertyLabel(group.c_str(), "A vector or a colour, or its components as numbers.");
+				if (gui::widgets::button("##split", {.glyph = split ? gui::icon::merge : gui::icon::split,
+													 .label = split ? "Recombine" : "Split",
+													 .width = -1.f}))
+					setPinSplit(id, group, !split);
+				std::ignore = gui::widgets::propertyReset(false);
+			}
+			gui::widgets::endProperties();
+		}
+		gui::widgets::endSection();
 	}
-	if (!groups.empty())
-		ImGui::NewLine();
+}
+
+void VisualScriptDocument::renderNodeInputs(const vs::GraphNode& iNode) {
+	const auto* node = &iNode;
+	const auto id = iNode.id;
+	const auto pins = vs::getNodePins(m_script, iNode);
 	if (std::ranges::none_of(pins.inputs,
 							 [](const vs::PinSpec& iPin) -> bool { return iPin.type != vs::PinType::Exec; }))
 		return;
-	ImGui::SeparatorText("Inputs");
-	for (const auto& pin: pins.inputs) {
-		if (pin.type == vs::PinType::Exec)
-			continue;
-		ImGui::PushID(pin.name.c_str());
-		if (isLinked(m_script, id, pin.name, false)) {
-			ImGui::TextDisabled("%s %s: linked", gui::icon::link, pin.name.c_str());
-		} else {
+	if (!gui::widgets::sectionHeader("Inputs", gui::icon::arrowRight, false).open)
+		return;
+	if (gui::widgets::beginProperties("##inputs")) {
+		for (const auto& pin: pins.inputs) {
+			if (pin.type == vs::PinType::Exec)
+				continue;
+			const auto tip = std::format("{}{}", getPinTypeName(pin.type), pin.optional ? ", optional" : "");
+			gui::widgets::propertyLabel(pin.name.c_str(), tip.c_str());
+			const auto current = valueOf(*node, pin.name);
+			if (isLinked(m_script, id, pin.name, false)) {
+				ImGui::AlignTextToFramePadding();
+				ImGui::TextDisabled("%s linked", gui::icon::link);
+				std::ignore = gui::widgets::propertyReset(false);
+				continue;
+			}
 			const auto count = pin.group == pin.name ? pin.name.size() : vs::getPinComponents(pin.type).size();
-			if (const auto value =
-						valueField(pin.name.c_str(), pin.type, count, valueOf(*node, pin.name), pin.defaultValue);
-				value.has_value())
-				setValue(pin.name, *value);
+			const auto value = valueField("##value", pin.type, count, current, pin.defaultValue);
+			if (gui::widgets::propertyReset(!current.empty()))
+				setNodeValue(id, pin.name, {});
+			else if (value.has_value())
+				setNodeValue(id, pin.name, *value);
 		}
-		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("%s%s", std::string{getPinTypeName(pin.type)}.c_str(), pin.optional ? ", optional" : "");
-		ImGui::PopID();
+		gui::widgets::endProperties();
 	}
+	gui::widgets::endSection();
 }
 
 void VisualScriptDocument::renderLua() {

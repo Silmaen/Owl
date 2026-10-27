@@ -53,6 +53,15 @@ enum struct DocumentType : uint8_t {
 
 /**
  * @brief
+ *  Part of the window title of a document that names it whatever its name: `###<kind>_<id>`.
+ * @param[in] iType The type of the document.
+ * @param[in] iId Unique number of the document.
+ * @return The end of every title `documentWindowTitle` gives the document.
+ */
+[[nodiscard]] auto documentWindowId(DocumentType iType, uint64_t iId) -> std::string;
+
+/**
+ * @brief
  *  Abstract base class for an editable document (scene, script, graph...).
  *
  * Each `Document` owns the state bound to one editable artefact: its file path,

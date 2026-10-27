@@ -364,6 +364,37 @@ private:
 
 	/**
 	 * @brief
+	 *  Set or clear a value of a node, as one edit merged with the next of the same kind.
+	 * @param[in] iNode The node.
+	 * @param[in] iKey Pin name or setting.
+	 * @param[in] iValue The value; empty clears it.
+	 */
+	void setNodeValue(core::UUID iNode, const std::string& iKey, const std::string& iValue);
+
+	/**
+	 * @brief
+	 *  Title section of the selected node: description, errors, variable or function name.
+	 * @param[in] iNode The node.
+	 * @param[in] iType Its type.
+	 */
+	void renderNodeHeader(const script::visual::GraphNode& iNode, const script::visual::NodeType& iType);
+
+	/**
+	 * @brief
+	 *  Split / recombine buttons of the grouped pins of the selected node.
+	 * @param[in] iNode The node.
+	 */
+	void renderGroupedPins(const script::visual::GraphNode& iNode);
+
+	/**
+	 * @brief
+	 *  Values of the unlinked inputs of the selected node.
+	 * @param[in] iNode The node.
+	 */
+	void renderNodeInputs(const script::visual::GraphNode& iNode);
+
+	/**
+	 * @brief
 	 *  The generated Lua, read-only and coloured.
 	 */
 	void renderLua();
