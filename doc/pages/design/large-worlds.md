@@ -104,6 +104,6 @@ World positions in double ship in three steps:
 |---------------------------------------------------------------------------------------|-------------|
 | `WorldPosition`, world origin and its shift, `FloatingOrigin:` scene settings, editor | Done        |
 | Physics bodies, behaviours and sound follow a shift of the origin                     | Done        |
-| Owl Nest gizmos, picking, snapping and camera in world coordinates                    | Planned     |
+| Owl Nest gizmos, picking, snapping and camera in world coordinates                    | Done        |
 
 Sample games that exercise these bricks are listed in [Sample games](sample-games.md).

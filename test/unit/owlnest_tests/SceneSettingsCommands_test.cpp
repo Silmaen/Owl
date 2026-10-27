@@ -120,6 +120,30 @@ TEST_F(SceneSettingsCommandsTest, SetFloatingOriginCommandUndoesAndRefusesBadInp
 	EXPECT_TRUE(scene->getFloatingOriginSettings().enabled);
 }
 
+TEST_F(SceneSettingsCommandsTest, SetWorldOriginKeepsTheRootsInPlaceAndUndoes) {
+	const CommandRegistry registry;
+	auto scene = mkShared<scene::Scene>();
+	SceneUndoManager undo;
+	auto ship = scene->createEntity("Ship");
+	ship.getComponent<scene::component::Transform>().transform.translation() = {120.f, -4.f, 0.f};
+	auto station = scene->createEntity("Station");
+	station.addComponent<scene::component::WorldPosition>().position = {1.0e9, 3.0, 0.0};
+	scene->syncWorldPositions();
+	ASSERT_TRUE(registry.execute("scene.set_world_origin", {{"x", 1.0e9}, {"y", 0.0}}, scene, undo));
+	EXPECT_DOUBLE_EQ(scene->getWorldOrigin().x(), 1.0e9);
+	EXPECT_FLOAT_EQ(station.getComponent<scene::component::Transform>().transform.translation().x(), 0.f);
+	EXPECT_FLOAT_EQ(station.getComponent<scene::component::Transform>().transform.translation().y(), 3.f);
+	const auto same = registry.execute("scene.set_world_origin", {{"x", 1.0e9}}, scene, undo);
+	ASSERT_FALSE(same);
+	EXPECT_EQ(same.error().error, CommandError::NotApplicable);
+	undo.undo(*scene);
+	EXPECT_DOUBLE_EQ(scene->getWorldOrigin().x(), 0.0);
+	EXPECT_FLOAT_EQ(ship.getComponent<scene::component::Transform>().transform.translation().x(), 120.f);
+	EXPECT_DOUBLE_EQ(station.getComponent<scene::component::WorldPosition>().position.x(), 1.0e9);
+	undo.redo(*scene);
+	EXPECT_DOUBLE_EQ(scene->getWorldOrigin().x(), 1.0e9);
+}
+
 TEST_F(SceneSettingsCommandsTest, PatrolWaypointsAreEditedThroughComponentSetAndUndo) {
 	const CommandRegistry registry;
 	auto scene = mkShared<scene::Scene>();

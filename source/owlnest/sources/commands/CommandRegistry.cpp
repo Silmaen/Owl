@@ -444,6 +444,17 @@ auto setFloatingOrigin(const shared<scene::Scene>& ioScene, const CommandArgs& i
 	return PreparedCommand{.command = mkUniq<SetFloatingOriginCommand>(before, after), .applied = false};
 }
 
+auto setWorldOrigin(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto before = ioScene->getWorldOrigin();
+	const math::vec3d after{iArgs.get<double>("x").value_or(before.x()), iArgs.get<double>("y").value_or(before.y()),
+							iArgs.get<double>("z").value_or(before.z())};
+	if (!std::isfinite(after.x()) || !std::isfinite(after.y()) || !std::isfinite(after.z()))
+		return fail(CommandError::InvalidArgument, "the world origin must be finite");
+	if (after == before)
+		return fail(CommandError::NotApplicable, "the world origin is already there");
+	return PreparedCommand{.command = mkUniq<SetWorldOriginCommand>(before, after), .applied = false};
+}
+
 auto setSceneScript(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
 	const auto text = iArgs.getText("script");
 	if (!text.empty()) {
@@ -1077,6 +1088,13 @@ CommandRegistry::CommandRegistry() {
 				   .type = ArgType::Number,
 				   .description = "Distance from the origin, in world units, beyond which the origin moves."}},
 		 .factory = setFloatingOrigin});
+	add({.name = "scene.set_world_origin",
+		 .description = "Move the world origin of the scene; every root entity keeps its place in the world and its "
+						"transform is written again around the new origin.",
+		 .args = {{.name = "x", .type = ArgType::Number, .description = "World x of the new origin."},
+				  {.name = "y", .type = ArgType::Number, .description = "World y of the new origin."},
+				  {.name = "z", .type = ArgType::Number, .description = "World z of the new origin."}},
+		 .factory = setWorldOrigin});
 	add({.name = "scene.set_script",
 		 .description = "Choose the script the scene owns (`SceneScript`), with its property values; empty removes "
 						"it. It runs before the entity scripts and has no entity.",

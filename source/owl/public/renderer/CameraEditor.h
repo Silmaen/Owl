@@ -135,6 +135,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Move the camera and its reference point by an offset, keeping its orientation and distance.
+	 * @param[in] iOffset Displacement, in world units.
+	 */
+	void moveBy(const math::vec3& iOffset);
+
+	/**
+	 * @brief
 	 *  How mouse drags and the wheel move the camera.
 	 */
 	struct Navigation {

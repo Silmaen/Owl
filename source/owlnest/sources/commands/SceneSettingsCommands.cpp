@@ -8,6 +8,12 @@
 
 #include "SceneSettingsCommands.h"
 
+#include <scene/Entity.h>
+#include <scene/component/Hierarchy.h>
+#include <scene/component/Transform.h>
+#include <scene/component/WorldPosition.h>
+
+#include <format>
 #include <optional>
 #include <utility>
 
@@ -117,6 +123,35 @@ auto SetFloatingOriginCommand::mergeWith(const SceneUndoCommand& iOther) -> bool
 auto SetFloatingOriginCommand::typeId() const -> size_t {
 	constexpr size_t kTypeHash = 0x536574466c4fULL;// "SetFlO"
 	return kTypeHash;
+}
+
+SetWorldOriginCommand::SetWorldOriginCommand(const math::vec3d& iBefore, const math::vec3d& iAfter)
+	: m_before{iBefore}, m_after{iAfter} {}
+
+SetWorldOriginCommand::~SetWorldOriginCommand() = default;
+
+void SetWorldOriginCommand::undo(scene::Scene& ioScene) {
+	ioScene.shiftWorldOrigin(m_before);
+	for (const auto& [uuid, translation]: m_roots)
+		if (const auto entity = ioScene.findEntityByUUID(uuid); entity)
+			entity.getComponent<scene::component::Transform>().transform.translation() = translation;
+}
+
+void SetWorldOriginCommand::redo(scene::Scene& ioScene) {
+	m_roots.clear();
+	for (const auto view = ioScene.registry.view<scene::component::Transform, scene::component::Hierarchy>(
+				 entt::exclude<scene::component::WorldPosition>);
+		 const auto handle: view) {
+		if (view.get<scene::component::Hierarchy>(handle).parentId != core::UUID{0})
+			continue;
+		const scene::Entity entity{handle, &ioScene};
+		m_roots.emplace_back(entity.getUUID(), view.get<scene::component::Transform>(handle).transform.translation());
+	}
+	ioScene.shiftWorldOrigin(m_after);
+}
+
+auto SetWorldOriginCommand::description() const -> std::string {
+	return std::format("Move the world origin to {:.3f}, {:.3f}, {:.3f}", m_after.x(), m_after.y(), m_after.z());
 }
 
 SetSceneScriptCommand::SetSceneScriptCommand(std::string iBefore, std::string iAfter)

@@ -10,6 +10,9 @@
 
 #include "../UndoCommand.h"
 
+#include <core/UUID.h>
+#include <math/vectors.h>
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wshadow")
 #include <yaml-cpp/yaml.h>
@@ -18,6 +21,8 @@ OWL_DIAG_POP
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace owl::nest::commands {
 
@@ -260,6 +265,68 @@ private:
 	scene::FloatingOriginSettings m_before;
 	/// Settings after the edit.
 	scene::FloatingOriginSettings m_after;
+};
+
+/**
+ * @brief
+ *  Undoable move of the scene's world origin (`Scene::shiftWorldOrigin()`).
+ *
+ * Every root entity keeps its place in the world: the float transforms are written again around the new origin. Undo
+ * moves the origin back and restores the translations of the roots without a `WorldPosition`, which a far move rounds,
+ * so the commands recorded before it find the transforms exactly as they were made.
+ */
+class SetWorldOriginCommand final : public SceneUndoCommand {
+public:
+	SetWorldOriginCommand(const SetWorldOriginCommand&) = delete;
+
+	SetWorldOriginCommand(SetWorldOriginCommand&&) = default;
+
+	auto operator=(const SetWorldOriginCommand&) -> SetWorldOriginCommand& = delete;
+
+	auto operator=(SetWorldOriginCommand&&) -> SetWorldOriginCommand& = default;
+
+	/**
+	 * @brief
+	 *  Construct from the origin before and after the move.
+	 * @param[in] iBefore Origin prior to the move.
+	 * @param[in] iAfter Origin after the move.
+	 */
+	SetWorldOriginCommand(const math::vec3d& iBefore, const math::vec3d& iAfter);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~SetWorldOriginCommand() override;
+
+	/**
+	 * @brief
+	 *  Move the origin back.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void undo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Move the origin again.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void redo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Description.
+	 * @return Human-readable description for menus and tooltips.
+	 */
+	[[nodiscard]] auto description() const -> std::string override;
+
+private:
+	/// Origin before the move.
+	math::vec3d m_before;
+	/// Origin after the move.
+	math::vec3d m_after;
+	/// Translations of the roots without a `WorldPosition` before the move, by entity UUID.
+	std::vector<std::pair<core::UUID, math::vec3>> m_roots;
 };
 
 /**

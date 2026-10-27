@@ -317,6 +317,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 					activeScene->setEditorAmbient({ambient, ambient, ambient});
 					activeScene->setEditorHudVisible(m_parent->getSettings().showHud);
 				}
+				followWorldOrigin(*activeScene);
 				updateSelectionOutline(activeScene);
 				activeScene->onUpdateEditor(iTimeStep, getActiveCamera());
 				break;
@@ -648,6 +649,13 @@ void Viewport::renderCameraMenu() {
 		frameSelection();
 	if (gui::widgets::menuItem({.glyph = gui::icon::scan, .label = "Frame Scene"}))
 		frameScene();
+	if (gui::widgets::menuItem({.glyph = gui::icon::globe, .label = "Move World Origin Here"}))
+		moveWorldOriginTo(m_isometric ? m_isoCamera.getTarget() : m_editorCamera.getFocalPoint());
+	if (gui::widgets::menuItem(
+				{.glyph = gui::icon::globe, .label = "Move World Origin to Selection", .enabled = hasSelection}) &&
+		mp_document->getActiveScene())
+		moveWorldOriginTo(
+				mp_document->getActiveScene()->getWorldTransform(m_parent->getSelectedEntity()).translation());
 	if (gui::widgets::menuItem(
 				{.glyph = gui::icon::video, .label = "Selected Camera Viewpoint", .enabled = canGoToCameraViewpoint()}))
 		goToCameraViewpoint();
@@ -1168,6 +1176,34 @@ void Viewport::frameSelection() {
 	const float radius =
 			0.5f * std::sqrt(world.scale().x() * world.scale().x() + world.scale().y() * world.scale().y());
 	m_editorCamera.frame(world.translation(), radius);
+}
+
+void Viewport::moveWorldOriginTo(const math::vec3& iPoint) {
+	if (mp_document == nullptr || m_parent == nullptr || !mp_document->getActiveScene())
+		return;
+	const auto& scene = mp_document->getActiveScene();
+	// On a snap step the float grid of the scene stays the grid of the world.
+	const auto step = static_cast<double>(resolveTranslationSnapStep(m_parent->getSettings(), std::nullopt));
+	const auto& origin = scene->getWorldOrigin();
+	const auto onStep = [step](const double iValue) -> double { return std::round(iValue / step) * step; };
+	const commands::CommandTarget target{.registry = &m_parent->getRegistry(), .scene = scene, .undo = mp_undoManager};
+	std::ignore =
+			target.execute("scene.set_world_origin", {{"x", onStep(origin.x() + static_cast<double>(iPoint.x()))},
+													  {"y", onStep(origin.y() + static_cast<double>(iPoint.y()))},
+													  {"z", onStep(origin.z() + static_cast<double>(iPoint.z()))}});
+}
+
+void Viewport::followWorldOrigin(const scene::Scene& iScene) {
+	const auto& origin = iScene.getWorldOrigin();
+	if (mp_originScene == &iScene && origin != m_lastWorldOrigin) {
+		const math::vec3d delta = origin - m_lastWorldOrigin;
+		const math::vec3 shift{static_cast<float>(delta.x()), static_cast<float>(delta.y()),
+							   static_cast<float>(delta.z())};
+		m_editorCamera.moveBy(-shift);
+		m_isoCamera.setTarget(m_isoCamera.getTarget() - shift);
+	}
+	mp_originScene = &iScene;
+	m_lastWorldOrigin = origin;
 }
 
 void Viewport::renderOverlayToolbar() {

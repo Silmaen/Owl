@@ -208,6 +208,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Move the world origin of the edited scene onto a point, rounded to the snap step (`scene.set_world_origin`).
+	 * @param[in] iPoint Point in the scene's float space, relative to the current origin.
+	 */
+	void moveWorldOriginTo(const math::vec3& iPoint);
+
+	/**
+	 * @brief
 	 *  Turn the editor camera to look along an axis, around the same reference point.
 	 * @param[in] iAxis The side to look from.
 	 */
@@ -414,6 +421,13 @@ private:
 	 * @param[in] iGeometry Geometry of the mesh (its object-space bounds).
 	 */
 	static void renderSelectionBox(const math::mat4& iWorld, const renderer::MeshGeometry& iGeometry);
+
+	/**
+	 * @brief
+	 *  Move the editor cameras back by the move of the scene's world origin since the last frame, so the view stays put.
+	 * @param[in] iScene The edited scene.
+	 */
+	void followWorldOrigin(const scene::Scene& iScene);
 
 	/**
 	 * @brief
@@ -731,6 +745,10 @@ private:
 	gui::Guizmo::Type m_gizmoType = gui::Guizmo::Type::None;
 	/// The editor camera
 	renderer::CameraEditor m_editorCamera;
+	/// Edited scene the editor cameras last followed the world origin of.
+	const scene::Scene* mp_originScene = nullptr;
+	/// World origin of that scene at the last frame: a move of it moves the editor cameras the same way.
+	math::vec3d m_lastWorldOrigin{0.0, 0.0, 0.0};
 	/// Pilot of a scene camera.
 	CameraPilot m_pilot;
 	/// Copy of the piloted camera, sized to the viewport and placed at the entity: the camera the view renders with.

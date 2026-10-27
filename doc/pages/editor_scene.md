@@ -89,8 +89,9 @@ undo step.
 
 - **Physics**: sub-steps, solver threads (`auto` = 0) and interpolation of the 2D physics ([Physics](physics.md)),
   read when Play starts.
-- **World Origin**: the floating origin (on / off) and its shift radius, with the current world origin; entities with
-  a **World Position** component keep their position in double ([World positions](scene.md#world-positions)).
+- **World Origin**: the floating origin (on / off), its shift radius and the **Origin** itself, moved with
+  `scene.set_world_origin` (undoable; the roots keep their place in the world); entities with a **World Position**
+  component keep their position in double ([World positions](scene.md#world-positions)).
 - **HUD**: the HUD drawn over the scene: the project default, none, a project file or a dropped one.
 - **Script**: the script of the scene itself ([Scene script](scripting.md#scene-script)): its file, **Open**, the
   hooks and the properties, as for a Lua Script component.

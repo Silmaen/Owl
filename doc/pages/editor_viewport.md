@@ -52,14 +52,20 @@ the 3D grid on the XY plane too).
 
 **Camera presets** (the **Camera** overlay menu, **View > Camera**, the command palette):
 
-| Preset                    | Shortcut  | Effect                                                               |
-|---------------------------|-----------|----------------------------------------------------------------------|
-| Reset View                | `Home`    | The XY plane from +Z, ten units away                                 |
-| Frame Selection           | `F`       | Centre and fit the selection                                         |
-| Frame Scene               | `Shift+F` | Fit the whole scene                                                  |
-| Selected Camera Viewpoint |           | Look through the selected camera (not a raycast camera)              |
-| Pilot Selected Camera     |           | Render through the selected camera and move it with the view (below) |
-| Axis views                |           | **Front**, **Back**, **Top**, **Bottom**, **Right**, **Left**        |
+| Preset                         | Shortcut  | Effect                                                                     |
+|--------------------------------|-----------|----------------------------------------------------------------------------|
+| Reset View                     | `Home`    | The XY plane from +Z, ten units away                                       |
+| Frame Selection                | `F`       | Centre and fit the selection                                               |
+| Frame Scene                    | `Shift+F` | Fit the whole scene                                                        |
+| Move World Origin Here         |           | Move the world origin to the point the view turns around, on the snap step |
+| Move World Origin to Selection |           | Move the world origin to the selection, on the snap step                   |
+| Selected Camera Viewpoint      |           | Look through the selected camera (not a raycast camera)                    |
+| Pilot Selected Camera          |           | Render through the selected camera and move it with the view (below)       |
+| Axis views                     |           | **Front**, **Back**, **Top**, **Bottom**, **Right**, **Left**              |
+
+A move of the world origin (these presets, the **Origin** field of [Scene Settings](editor_scene.md), an undo) moves
+the view with it, so nothing jumps on screen; the entities keep their place in the world
+([World positions](scene.md#world-positions)). On a snap step, the grid and the snapping stay aligned with the world.
 
 The view-cube does the same: a click on an axis end looks from it, on the centre resets.
 
