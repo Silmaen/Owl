@@ -63,7 +63,6 @@ convert between a value and its components. Variables can be of type `color`, `v
 |---------------------------|-----------------------------------------------------------------------------------------------|
 | **Nodes** (Hierarchy)     | Every node by group, with a search field: click one to add it in the view, or drag it in      |
 | **Graph** (Properties)    | **Variables** tab and **Node** tab                                                            |
-| **Details** (toolbar)     | The same tabs on the left of the graph, shown or hidden by the toolbar button                 |
 
 - **Variables**: one section per variable with its name, type and default; its menu removes it. Renaming a variable
   updates its nodes. Drag the header of a variable onto the graph to read it.

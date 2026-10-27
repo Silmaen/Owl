@@ -48,7 +48,7 @@ enum struct VisualScriptViewMode : uint8_t {
  *
  * The `script::visual::VisualScript` is the document, drawn by a `VisualScriptCanvas` and compiled after each edit.
  * A right click on the canvas opens the node palette; the Hierarchy panel lists every node to drag onto the canvas,
- * the Properties panel (also shown on the left of the canvas on demand) edits the variables and the selected node.
+ * the Properties panel edits the variables and the selected node.
  * The toolbar shows the graph, the generated Lua (coloured, read-only) or both side by side.
  */
 class VisualScriptDocument final : public NodeGraphDocument {
@@ -89,7 +89,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Render the toolbar, the canvas and the details panel when shown.
+	 *  Render the toolbar, then the graph, the generated Lua or both.
 	 */
 	void onImGuiRender() override;
 
@@ -326,7 +326,7 @@ private:
 
 	/**
 	 * @brief
-	 *  Toolbar above the canvas: details panel, framing, view mode, compilation status.
+	 *  Toolbar above the canvas: framing, view mode, compilation status.
 	 */
 	void renderToolbar();
 
@@ -343,12 +343,6 @@ private:
 	 * (click adds in the view, drag drops).
 	 */
 	void renderNodeList(bool iPopup);
-
-	/**
-	 * @brief
-	 *  Variables and node tabs, in the Properties panel or the details panel.
-	 */
-	void renderDetails();
 
 	/**
 	 * @brief
@@ -427,8 +421,6 @@ private:
 	bool m_openContextMenu{false};
 	/// The graph changed since the last compilation.
 	bool m_compileStale{true};
-	/// Show the details panel on the left of the canvas.
-	bool m_showDetails{false};
 	/// What the document shows.
 	VisualScriptViewMode m_viewMode{VisualScriptViewMode::Graph};
 	/// Read-only Lua view.

@@ -43,8 +43,8 @@ constexpr unsigned char g_glyphLeadByte = 0xee;
 
 }// namespace
 
-auto sectionHeader(const char* iTitle, const char* iIconName, const bool iWithMenu, const bool iDefaultOpen)
-		-> SectionHeaderResult {
+auto sectionHeader(const char* iTitle, const char* iIconName, const bool iWithMenu, const bool iDefaultOpen,
+				   const std::optional<math::vec4>& iIconColor) -> SectionHeaderResult {
 	const auto& theme = UiLayer::getTheme();
 	ImGui::PushStyleColor(ImGuiCol_Header, vec(theme.surface2));
 	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, vec(theme.surface3));
@@ -86,8 +86,8 @@ auto sectionHeader(const char* iTitle, const char* iIconName, const bool iWithMe
 	const float iconSize = ImGui::GetFontSize();
 	if (iIconName != nullptr && static_cast<unsigned char>(iIconName[0]) >= g_glyphLeadByte) {
 		const ImVec2 glyphSize = ImGui::CalcTextSize(iIconName);
-		draw->AddText({x, std::floor(min.y + (height - glyphSize.y) * 0.5f)}, ImGui::GetColorU32(vec(theme.accent)),
-					  iIconName);
+		draw->AddText({x, std::floor(min.y + (height - glyphSize.y) * 0.5f)},
+					  ImGui::GetColorU32(vec(iIconColor.value_or(theme.accent))), iIconName);
 		x += iconSize + ImGui::GetStyle().ItemInnerSpacing.x;
 	} else if (iIconName != nullptr) {
 		if (const auto icon = IconBank::instance().getIcon(iIconName, iconSize); icon.has_value()) {

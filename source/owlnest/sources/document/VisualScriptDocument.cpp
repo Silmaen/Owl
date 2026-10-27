@@ -12,7 +12,6 @@
 #include "codeEditor/LanguageDefinitions.h"
 #include "external/imgui_text_edit.h"
 
-#include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
@@ -59,8 +58,6 @@ namespace owl::nest {
 namespace {
 
 namespace vs = script::visual;
-
-constexpr float g_sidePanelWidth = 320.f;
 
 class ModifyVisualScriptCommand final : public UndoCommand<vs::VisualScript> {
 public:
@@ -169,13 +166,9 @@ struct TypedItem {
 };
 
 void typedLabel(const TypedItem& iItem) {
-	const float size = ImGui::GetFontSize();
-	if (const auto icon = gui::IconBank::instance().getIcon(getPinTypeIcon(iItem.type), size); icon.has_value())
-		ImGui::Image(static_cast<ImTextureID>(icon->textureId), {size, size}, gui::vec(icon->uv0), gui::vec(icon->uv1));
-	else
-		ImGui::Dummy({size, size});
-	ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
 	ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(getPinColor(iItem.type)));
+	ImGui::TextUnformatted(getPinGlyph(iItem.type));
+	ImGui::SameLine(0.f, ImGui::GetStyle().ItemInnerSpacing.x);
 	ImGui::TextUnformatted(iItem.label.c_str());
 	ImGui::PopStyleColor();
 }
@@ -532,13 +525,6 @@ void VisualScriptDocument::onImGuiRender() {
 		if (focused && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false))
 			std::ignore = save();
 		renderToolbar();
-		if (m_showDetails) {
-			if (ImGui::BeginChild("##vsDetails", {g_sidePanelWidth, 0.f},
-								  ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX))
-				renderDetails();
-			ImGui::EndChild();
-			ImGui::SameLine();
-		}
 		if (m_viewMode == VisualScriptViewMode::Code) {
 			renderLua();
 			renderContextMenu();
@@ -582,12 +568,6 @@ void VisualScriptDocument::renderToolbar() {
 		ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 		ImGui::SameLine();
 	};
-	if (gui::widgets::iconButton("##vsDetails", {.glyph = gui::icon::panelLeft,
-												 .tooltip = "Details",
-												 .description = "Variables and selected node on the left of the graph.",
-												 .selected = m_showDetails}))
-		m_showDetails = !m_showDetails;
-	ImGui::SameLine();
 	if (gui::widgets::iconButton("##vsFrame", {.glyph = gui::icon::focus,
 											   .tooltip = "Frame All",
 											   .shortcut = "Home",
@@ -830,10 +810,6 @@ void VisualScriptDocument::renderHierarchyPanel() { renderNodeList(false); }
 
 void VisualScriptDocument::renderPropertiesPanel() {
 	compileIfStale();
-	renderDetails();
-}
-
-void VisualScriptDocument::renderDetails() {
 	if (!ImGui::BeginTabBar("##vsTabs"))
 		return;
 	if (ImGui::BeginTabItem(std::format("{} Variables", gui::icon::variable).c_str())) {
@@ -853,7 +829,8 @@ void VisualScriptDocument::renderVariables() {
 		ImGui::PushID(static_cast<int>(i));
 		const auto& variable = m_script.variables[i];
 		const auto pinType = vs::getVariablePinType(variable.type);
-		const auto section = gui::widgets::sectionHeader(variable.name.c_str(), getPinTypeIcon(pinType), true, false);
+		const auto section = gui::widgets::sectionHeader(variable.name.c_str(), getPinGlyph(pinType), true, false,
+														 getPinColor(pinType));
 		if (ImGui::BeginDragDropSource()) {
 			const auto payload = std::format("var.get|{}", variable.name);
 			ImGui::SetDragDropPayload(g_VisualScriptNodePayload, payload.data(), payload.size());
