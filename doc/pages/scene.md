@@ -1145,6 +1145,10 @@ A shift keeps the running simulation going where it was:
 | Sound listener and sources                      | Placed each frame from the transforms, after the shift                     |
 | Navigation grids                                | Relative to their tilemap entity                                           |
 
+Scripts read and place an entity in the world in double with `transform.get_world_position` and
+`transform.set_world_position`, and read the origin with `scene.get_world_origin` ([Lua API](lua-api.md)). The
+Engine Demo far orbit (`far_orbit.owl`) shows a station one astronomical unit away, sharp to the centimetre.
+
 ### Physics and Hierarchy
 
 Physics bodies (Box2D) operate in **world space** independently of the scene hierarchy.

@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `WorldPosition` component in double and a scene floating origin (`FloatingOrigin:`, `scene.set_floating_origin`) for worlds far from zero.
 - A shift of the world origin carries the physics bodies, their interpolation and the behaviour rest positions along: a running scene goes on unbroken.
 - Owl Nest moves the world origin with an undoable `scene.set_world_origin` (viewport Camera menu, Scene Settings field), the view following it.
+- Lua `transform.get_world_position` / `set_world_position` in double and `scene.get_world_origin`.
+- Engine Demo far orbit (`far_orbit.owl`, **K** from the menu): a station one astronomical unit away, sharp to the centimetre.
 
 ### Changed
 

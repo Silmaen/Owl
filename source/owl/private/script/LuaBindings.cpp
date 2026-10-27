@@ -156,6 +156,51 @@ auto luaTransformSetPosition(lua_State* iState) -> int {
 	return 0;
 }
 
+auto pushVector(lua_State* iState, const math::vec3d& iVector) -> int {
+	lua_pushnumber(iState, static_cast<lua_Number>(iVector.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(iVector.y()));
+	lua_pushnumber(iState, static_cast<lua_Number>(iVector.z()));
+	return 3;
+}
+
+auto luaTransformGetWorldPosition(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Transform>())
+		return pushVector(iState, {0.0, 0.0, 0.0});
+	auto& activeScene = *entity->getScene();
+	if (entity->hasComponent<scene::component::WorldPosition>()) {
+		activeScene.syncWorldPositions();
+		return pushVector(iState, entity->getComponent<scene::component::WorldPosition>().position);
+	}
+	const auto local = activeScene.getWorldTransform(*entity).translation();
+	return pushVector(iState, activeScene.getWorldOrigin() + math::vec3d{static_cast<double>(local.x()),
+																		 static_cast<double>(local.y()),
+																		 static_cast<double>(local.z())});
+}
+
+auto luaTransformSetWorldPosition(lua_State* iState) -> int {
+	const math::vec3d position{luaL_checknumber(iState, 2), luaL_checknumber(iState, 3), luaL_checknumber(iState, 4)};
+	auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Transform>())
+		return 0;
+	if (entity->hasComponent<scene::component::Hierarchy>() &&
+		entity->getComponent<scene::component::Hierarchy>().parentId != core::UUID{0}) {
+		OWL_CORE_WARN("Script: transform.set_world_position ignores the child entity {}; a child follows its parent.",
+					  static_cast<uint64_t>(entity->getUUID()))
+		return 0;
+	}
+	if (!entity->hasComponent<scene::component::WorldPosition>())
+		entity->addComponent<scene::component::WorldPosition>();
+	entity->getComponent<scene::component::WorldPosition>().position = position;
+	entity->getScene()->syncWorldPositions();
+	return 0;
+}
+
+auto luaSceneGetWorldOrigin(lua_State* iState) -> int {
+	const auto* activeScene = getBoundScene(iState);
+	return pushVector(iState, activeScene != nullptr ? activeScene->getWorldOrigin() : math::vec3d{0.0, 0.0, 0.0});
+}
+
 auto luaTransformGetRotation(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Transform>()) {
 		const auto& t = entity->getComponent<scene::component::Transform>().transform;
@@ -2138,6 +2183,14 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "transform", .name = "set_position", .function = guarded<luaTransformSetPosition>,
 		 .description = "Set the local position.",
 		 .params = {entityId, {"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "transform", .name = "get_world_position", .function = guarded<luaTransformGetWorldPosition>,
+		 .description = "Position of the entity in the world, in double precision: its `WorldPosition`, else the world "
+						"origin plus its world transform.",
+		 .params = {entityId}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "transform", .name = "set_world_position", .function = guarded<luaTransformSetWorldPosition>,
+		 .description = "Place a root entity in the world, in double precision (adds a `WorldPosition` when it has "
+						"none); its local position is written around the world origin. Ignored on a child.",
+		 .params = {entityId, {"x", Number}, {"y", Number}, {"z", Number}}},
 		{.table = "transform", .name = "get_rotation", .function = guarded<luaTransformGetRotation>,
 		 .description = "Local rotation, in radians.",
 		 .params = {entityId}, .returns = {{"rx", Number}, {"ry", Number}, {"rz", Number}}},
@@ -2251,6 +2304,9 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "sound", .name = "set_volume", .function = guarded<luaSoundSetVolume>,
 		 .description = "Set the volume of a sound (0.0 to 2.0).",
 		 .params = {{"handle", Integer}, {"volume", Number}}},
+		{.table = "scene", .name = "get_world_origin", .function = guarded<luaSceneGetWorldOrigin>,
+		 .description = "World position of the scene origin, which local positions are relative to.",
+		 .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
 		{.table = "scene", .name = "find_entity", .function = guarded<luaSceneFindEntity>,
 		 .description = "First entity with this tag (0 when none), in the scene then in its HUD; scans every entity, "
 						"cache the result.",

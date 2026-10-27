@@ -117,6 +117,13 @@ function on_update(dt)
         return
     end
 
+    -- The `open_orbit` action (K) opens the far orbit: a station one astronomical unit away, kept sharp by the floating origin.
+    if not shortcut_requested and input.is_action_pressed("open_orbit") then
+        shortcut_requested = true
+        scene.transition_to("scenes/far_orbit.owl", "fade", 0.3)
+        return
+    end
+
     -- Display mouse position and button state (demonstrates input.get_mouse_x/y and the `primary` action)
     if mouse_label_id ~= 0 then
         local mx = input.get_mouse_x()

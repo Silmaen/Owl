@@ -1158,3 +1158,30 @@ TEST(LuaBindings, doorPushwallApisHandleMissingEntity) {
 	EXPECT_EQ(inst.getPropertyString("push_state").value_or(""), "idle");
 	core::Log::invalidate();
 }
+
+TEST(LuaBindings, transformWorldPositionKeepsDoublePrecision) {
+	core::Log::init(core::Log::Level::Off);
+	const auto scn = mkShared<scene::Scene>();
+	scn->shiftWorldOrigin({1.5e11, 0.0, 0.0});
+	const auto entity = scn->createEntity("Station");
+	const auto uuid = static_cast<uint64_t>(entity.getUUID());
+	const std::string script = "fine = 0\nheight = 0\norigin = 0\n"
+							   "function on_create()\n"
+							   "  transform.set_world_position(entity_id, 150000000000.25, -2.0, 0.5)\n"
+							   "  local x, y = transform.get_world_position(entity_id)\n"
+							   "  fine = x - 150000000000.0\n"
+							   "  height = y\n"
+							   "  origin = scene.get_world_origin()\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "world_position_test", uuid));
+	inst.onCreate();
+	EXPECT_NEAR(inst.getPropertyFloat("fine").value_or(0), 0.25f, 1e-4f);
+	EXPECT_NEAR(inst.getPropertyFloat("height").value_or(0), -2.f, 1e-6f);
+	EXPECT_NEAR(inst.getPropertyFloat("origin").value_or(0), 1.5e11f, 1e5f);
+	ASSERT_TRUE(entity.hasComponent<scene::component::WorldPosition>());
+	EXPECT_NEAR(entity.getComponent<scene::component::Transform>().transform.translation().x(), 0.25f, 1e-4f);
+	core::Log::invalidate();
+}

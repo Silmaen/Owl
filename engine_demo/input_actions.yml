@@ -17,6 +17,14 @@ actions:
     bindings:
       - {key: G}
       - {gamepad_button: RightBumper}
+  - name: open_orbit
+    type: button
+    bindings:
+      - {key: K}
+  - name: orbit_jump
+    type: button
+    bindings:
+      - {key: J}
   - name: inventory
     type: button
     bindings:
