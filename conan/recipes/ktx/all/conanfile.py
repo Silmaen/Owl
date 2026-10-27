@@ -83,6 +83,11 @@ class KtxConan(ConanFile):
         save(self, os.path.join(self.source_folder, "tests", "CMakeLists.txt"), "")
         replace_in_file(self, os.path.join(self.source_folder, "external", "astc-encoder", "CMakeLists.txt"),
                         "set(CMAKE_CXX_STANDARD", "#")
+        # The CPU type probe preprocesses with the bare compiler: pass the C flags so a cross --target is seen.
+        replace_in_file(self, os.path.join(self.source_folder, "cmake", "cputypetest.cmake"),
+                        "set(C_PREPROCESS ${CMAKE_C_COMPILER} -E -P)",
+                        "separate_arguments(C_FLAGS_LIST NATIVE_COMMAND \"${CMAKE_C_FLAGS}\")\n"
+                        "                set(C_PREPROCESS ${CMAKE_C_COMPILER} ${C_FLAGS_LIST} -E -P)")
         apply_conandata_patches(self)
 
     def generate(self):
