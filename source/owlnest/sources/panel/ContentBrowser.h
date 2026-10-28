@@ -401,6 +401,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Create a starter procedural generation graph in the current folder and open it.
+	 */
+	void createPcgGraph();
+
+	/**
+	 * @brief
 	 *  Open a file dialog and import a file into the current directory.
 	 */
 	void importFiles();

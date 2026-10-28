@@ -10,6 +10,7 @@
 
 #include "../AssetKind.h"
 #include "../DockLayout.h"
+#include "../document/PcgGraphDocument.h"
 #include "../document/VisualScriptDocument.h"
 
 #include <data/assets/AssetMeta.h>
@@ -29,6 +30,7 @@
 #include <input/ActionMap.h>
 #include <platform/AtomicFile.h>
 #include <platform/FileDialog.h>
+#include <scene/pcg/PcgGraph.h>
 #include <script/visual/VisualScript.h>
 
 #include <algorithm>
@@ -90,6 +92,7 @@ auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> 
 																	{".owlanim", {rgb(0xef6c8f), "Animation"}},
 																	{".owlflow", {rgb(0x5aa2f0), "Node graph"}},
 																	{".owlvs", {rgb(0xe8c547), "Visual script"}},
+																	{".owlpcg", {rgb(0x7fd18b), "PCG graph"}},
 																	{".obj", {rgb(0x7fb83e), "3D model"}},
 																	{".fbx", {rgb(0x7fb83e), "3D model"}},
 																	{".gltf", {rgb(0x7fb83e), "3D model"}},
@@ -584,7 +587,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 	} else if ((path.extension() == ".owl" || path.extension() == ".owlhud" || path.extension() == ".owlprefab") &&
 			   m_sceneOpenCallback) {
 		m_sceneOpenCallback(path);
-	} else if ((path.extension() == ".owlflow" || path.extension() == ".owlvs") && m_nodeGraphOpenCallback) {
+	} else if ((path.extension() == ".owlflow" || path.extension() == ".owlvs" || path.extension() == ".owlpcg") &&
+			   m_nodeGraphOpenCallback) {
 		m_nodeGraphOpenCallback(path);
 	} else if (path.extension() == ".owlanim" && m_animationOpenCallback) {
 		m_animationOpenCallback(path);
@@ -721,6 +725,8 @@ void ContentBrowser::renderContextMenu() {
 			createMaterial();
 		if (gui::widgets::menuItem({.glyph = gui::icon::workflow, .label = "New Visual Script"}))
 			createVisualScript();
+		if (gui::widgets::menuItem({.glyph = gui::icon::sparkles, .label = "New PCG Graph"}))
+			createPcgGraph();
 		ImGui::Separator();
 		if (gui::widgets::menuItem({.glyph = gui::icon::download, .label = "Import File..."}))
 			importFiles();
@@ -898,6 +904,19 @@ void ContentBrowser::createVisualScript() {
 	m_rescanRequested = true;
 	if (m_nodeGraphOpenCallback)
 		m_nodeGraphOpenCallback(scriptPath);
+}
+
+void ContentBrowser::createPcgGraph() {
+	auto graphPath = m_currentPath / "New PCG Graph.owlpcg";
+	for (uint32_t counter = 1; exists(graphPath); ++counter)
+		graphPath = m_currentPath / std::format("New PCG Graph {}.owlpcg", counter);
+	if (!scene::pcg::saveToFile(PcgGraphDocument::starterGraph(), graphPath)) {
+		OWL_ERROR("ContentBrowser: Cannot create the PCG graph '{}'.", graphPath.string())
+		return;
+	}
+	m_rescanRequested = true;
+	if (m_nodeGraphOpenCallback)
+		m_nodeGraphOpenCallback(graphPath);
 }
 
 void ContentBrowser::importFiles() {

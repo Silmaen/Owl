@@ -16,6 +16,7 @@
 
 #include <scene/TilemapAsset.h>
 #include <scene/TilemapTerrain.h>
+#include <scene/pcg/PcgGraph.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -298,6 +299,28 @@ public:
 
 	/**
 	 * @brief
+	 *  Change the procedural generation settings (one undo entry).
+	 * @param[in] iGenerator The settings, none to paint by hand only.
+	 */
+	void setGenerator(const std::optional<scene::TilemapGenerator>& iGenerator);
+
+	/**
+	 * @brief
+	 *  Write the tiles of the generator graph on its layer and region (one undo entry).
+	 * @param[in] iSeed A new seed kept in the settings, none to keep the seed.
+	 * @return True when cells changed.
+	 */
+	auto generate(std::optional<uint64_t> iSeed = std::nullopt) -> bool;
+
+	/**
+	 * @brief
+	 *  Result of the generator on the tilemap, evaluated again when the settings or the graph file changed.
+	 * @return The result, none without generator or when its graph cannot be read or evaluated.
+	 */
+	auto getGeneratorPreview() -> const std::optional<scene::pcg::Result>&;
+
+	/**
+	 * @brief
 	 *  True while the user hasn't clicked the tab's close X.
 	 * @return True until ImGui flips the close flag.
 	 */
@@ -545,6 +568,28 @@ private:
 	 */
 	void endStroke(const std::string& iDescription);
 
+	/**
+	 * @brief
+	 *  Procedural section of the hierarchy panel: graph, seed, layer, region, preview and Generate.
+	 */
+	void renderGeneratorSection();
+
+	/**
+	 * @brief
+	 *  Read the graph of the generator, its path resolved in the asset directories.
+	 * @return The graph, none when it cannot be read.
+	 */
+	[[nodiscard]] auto loadGeneratorGraph() const -> std::optional<scene::pcg::Graph>;
+
+	/**
+	 * @brief
+	 *  Draw the preview of the generator over the canvas, with its region outlined.
+	 * @param[in] iDrawList Destination draw list.
+	 * @param[in] iGridTopLeft Top-left of the grid on screen.
+	 * @param[in] iCellPx Size of a cell on screen.
+	 */
+	void drawGeneratorPreview(ImDrawList* iDrawList, const ImVec2& iGridTopLeft, float iCellPx);
+
 	/// Disk path for the asset backing this document.
 	std::filesystem::path m_path;
 	/// Asset currently being edited.
@@ -585,6 +630,12 @@ private:
 	bool m_isoCentred = false;
 	/// Editor layer back-pointer for menus/dialogs that need editor-wide context.
 	EditorLayer* mp_editorLayer{nullptr};
+	/// Whether the canvas shows the tiles the generator would write.
+	bool m_showGeneratorPreview{false};
+	/// Result of the generator on the tilemap.
+	std::optional<scene::pcg::Result> m_generatorPreview;
+	/// Settings, graph file date and grid the preview was evaluated for.
+	std::string m_generatorPreviewKey;
 	/// Tile palette state (selected layer + brush).
 	panel::TilePalette m_palette;
 

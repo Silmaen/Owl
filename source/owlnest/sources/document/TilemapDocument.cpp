@@ -26,6 +26,7 @@
 #include <renderer/RendererIsometric.h>
 #include <scene/TilemapTerrain.h>
 #include <scene/Tileset.h>
+#include <scene/pcg/PcgTilemap.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -38,6 +39,8 @@ OWL_DIAG_POP
 #include <cmath>
 #include <cstddef>
 #include <format>
+#include <random>
+#include <system_error>
 #include <tuple>
 #include <utility>
 
@@ -181,6 +184,199 @@ void TilemapDocument::renderHierarchyPanel() {
 		renderLayerSection();
 		gui::widgets::endSection();
 	}
+	if (gui::widgets::sectionHeader("Procedural", gui::icon::sparkles, false).open) {
+		renderGeneratorSection();
+		gui::widgets::endSection();
+	}
+}
+
+void TilemapDocument::setGenerator(const std::optional<scene::TilemapGenerator>& iGenerator) {
+	if (m_asset.generator == iGenerator)
+		return;
+	pushTilemapEdit(m_asset, m_undoManager, iGenerator ? "Change the generator" : "Remove the generator",
+					[this, &iGenerator]() -> void { m_asset.generator = iGenerator; });
+}
+
+auto TilemapDocument::loadGeneratorGraph() const -> std::optional<scene::pcg::Graph> {
+	if (!m_asset.generator || m_asset.generator->graphPath.empty())
+		return std::nullopt;
+	auto path = m_asset.generator->graphPath;
+	if (app::Application::instanced()) {
+		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+			if (const auto candidate = assetsPath / path; exists(candidate)) {
+				path = candidate;
+				break;
+			}
+		}
+	}
+	auto graph = scene::pcg::loadFromFile(path);
+	if (!graph)
+		return std::nullopt;
+	return std::move(*graph);
+}
+
+auto TilemapDocument::generate(const std::optional<uint64_t> iSeed) -> bool {
+	if (!m_asset.generator) {
+		OWL_WARN("TilemapDocument: The tilemap has no generator.")
+		return false;
+	}
+	const auto graph = loadGeneratorGraph();
+	if (!graph) {
+		OWL_WARN("TilemapDocument: Cannot read the graph '{}'.", m_asset.generator->graphPath.string())
+		return false;
+	}
+	bool changed = false;
+	pushTilemapEdit(m_asset, m_undoManager, "Generate from the graph", [this, &graph, &iSeed, &changed]() -> void {
+		if (iSeed)
+			m_asset.generator->seed = *iSeed;
+		const auto written = scene::pcg::generateTilemap(*graph, m_asset, *m_asset.generator);
+		changed = written.has_value() && *written > 0;
+	});
+	return changed;
+}
+
+auto TilemapDocument::getGeneratorPreview() -> const std::optional<scene::pcg::Result>& {
+	if (!m_asset.generator) {
+		m_generatorPreview.reset();
+		m_generatorPreviewKey.clear();
+		return m_generatorPreview;
+	}
+	const auto& generator = *m_asset.generator;
+	// The date of the graph file stands for its content: the preview follows the saves of the graph document.
+	std::string stamp;
+	if (std::error_code error; app::Application::instanced()) {
+		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+			if (const auto candidate = assetsPath / generator.graphPath; exists(candidate, error)) {
+				stamp = std::format("{}", std::filesystem::last_write_time(candidate, error).time_since_epoch().count());
+				break;
+			}
+		}
+	}
+	auto key = std::format("{}|{}|{}|{}x{}|{}x{}|{}x{}|{}", generator.graphPath.generic_string(), generator.seed,
+						   generator.layer, generator.origin.x(), generator.origin.y(), generator.size.x(),
+						   generator.size.y(), m_asset.width, m_asset.height, stamp);
+	if (key == m_generatorPreviewKey)
+		return m_generatorPreview;
+	m_generatorPreviewKey = std::move(key);
+	m_generatorPreview.reset();
+	if (const auto graph = loadGeneratorGraph(); graph) {
+		if (auto result = scene::pcg::evaluate(*graph, scene::pcg::getRegion(m_asset, generator)); result)
+			m_generatorPreview = std::move(*result);
+	}
+	return m_generatorPreview;
+}
+
+void TilemapDocument::renderGeneratorSection() {
+	if (!m_asset.generator) {
+		ImGui::TextWrapped("Fill a region of a layer from a procedural generation graph (.owlpcg), again from its seed "
+						   "whenever the graph changes.");
+		if (gui::widgets::button("addGenerator", {.glyph = gui::icon::plus, .label = "Add Generator"}))
+			setGenerator(scene::TilemapGenerator{.graphPath = {},
+												 .seed = 1,
+												 .layer = m_palette.getSelectedLayer(),
+												 .origin = {0, 0},
+												 .size = {0, 0}});
+		return;
+	}
+	auto generator = *m_asset.generator;
+	if (gui::widgets::beginProperties("##tilemapGenerator")) {
+		gui::widgets::propertyLabel("Graph", "Drop a .owlpcg from the Content Browser.");
+		std::string shown = generator.graphPath.generic_string();
+		ImGui::SetNextItemWidth(-1.f);
+		ImGui::InputTextWithHint("##graph", "drop a .owlpcg", &shown, ImGuiInputTextFlags_ReadOnly);
+		if (ImGui::BeginDragDropTarget()) {
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+				const auto* data = static_cast<const char*>(payload->Data);
+				const std::filesystem::path candidate{
+						std::string(data, ::strnlen(data, static_cast<size_t>(payload->DataSize)))};
+				if (candidate.extension() == scene::pcg::g_PcgGraphExtension)
+					generator.graphPath = candidate;
+			}
+			ImGui::EndDragDropTarget();
+		}
+		std::ignore = gui::widgets::propertyReset(false);
+		auto seed = static_cast<int>(generator.seed);
+		if (gui::widgets::propertyInt("Seed", seed, 1, 0, 1000000, "%d", "The same seed gives the same tiles."))
+			generator.seed = static_cast<uint64_t>(seed);
+		auto layer = static_cast<int>(generator.layer);
+		const int lastLayer = std::max(0, static_cast<int>(m_asset.layers.size()) - 1);
+		if (gui::widgets::propertyInt("Layer", layer, 0, 0, lastLayer, "%d", "Layer the tiles are written on."))
+			generator.layer = static_cast<uint32_t>(layer);
+		std::array origin{static_cast<int>(generator.origin.x()), static_cast<int>(generator.origin.y())};
+		std::array size{static_cast<int>(generator.size.x()), static_cast<int>(generator.size.y())};
+		gui::widgets::propertyLabel("Origin", "Top-left cell of the generated region.");
+		ImGui::SetNextItemWidth(-1.f);
+		if (ImGui::DragInt2("##origin", origin.data(), 0.2f, 0, static_cast<int>(scene::TilemapAsset::maxGridSide)))
+			generator.origin = {static_cast<uint32_t>(origin[0]), static_cast<uint32_t>(origin[1])};
+		std::ignore = gui::widgets::propertyReset(false);
+		gui::widgets::propertyLabel("Size", "Size of the region in cells; 0 reaches the end of the grid.");
+		ImGui::SetNextItemWidth(-1.f);
+		if (ImGui::DragInt2("##size", size.data(), 0.2f, 0, static_cast<int>(scene::TilemapAsset::maxGridSide)))
+			generator.size = {static_cast<uint32_t>(size[0]), static_cast<uint32_t>(size[1])};
+		std::ignore = gui::widgets::propertyReset(false);
+		std::ignore = gui::widgets::propertyBool("Preview", m_showGeneratorPreview, false,
+												 "Show the tiles the graph would write over the canvas.");
+		gui::widgets::endProperties();
+	}
+	if (generator != *m_asset.generator)
+		setGenerator(generator);
+	const bool ready = !generator.graphPath.empty();
+	if (gui::widgets::button("generate", {.glyph = gui::icon::sparkles, .label = "Generate", .disabled = !ready}))
+		std::ignore = generate();
+	ImGui::SameLine();
+	if (gui::widgets::button("reseed", {.glyph = gui::icon::refreshCw, .label = "New Seed", .disabled = !ready})) {
+		std::random_device device;
+		std::ignore = generate(std::uniform_int_distribution<uint64_t>{1, 999999}(device));
+	}
+	ImGui::SameLine();
+	if (gui::widgets::button("openGraph", {.glyph = gui::icon::externalLink, .label = "Open", .disabled = !ready}) &&
+		mp_editorLayer != nullptr) {
+		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+			if (const auto candidate = assetsPath / generator.graphPath; exists(candidate)) {
+				mp_editorLayer->requestDeferredOpen(candidate);
+				break;
+			}
+		}
+	}
+	ImGui::SameLine();
+	if (gui::widgets::button("removeGenerator", {.glyph = gui::icon::trash2, .label = "Remove"}))
+		setGenerator(std::nullopt);
+	if (ready && m_showGeneratorPreview && !getGeneratorPreview())
+		ImGui::TextColored(ImVec4{1.f, 0.6f, 0.3f, 1.f}, "The graph cannot be read or evaluated.");
+}
+
+void TilemapDocument::drawGeneratorPreview(ImDrawList* iDrawList, const ImVec2& iGridTopLeft, const float iCellPx) {
+	if (!m_showGeneratorPreview || !m_asset.generator)
+		return;
+	const auto& preview = getGeneratorPreview();
+	if (!preview)
+		return;
+	const auto& origin = m_asset.generator->origin;
+	const auto* tex = m_asset.tileset && m_asset.tileset->texture ? m_asset.tileset->texture.get() : nullptr;
+	for (uint32_t y = 0; y < preview->size.y(); ++y) {
+		for (uint32_t x = 0; x < preview->size.x(); ++x) {
+			const auto tile = preview->tiles[static_cast<size_t>(y) * preview->size.x() + x];
+			if (tile == scene::pcg::g_UntouchedTile)
+				continue;
+			const ImVec2 cellMin{iGridTopLeft.x + static_cast<float>(origin.x() + x) * iCellPx,
+								 iGridTopLeft.y + static_cast<float>(origin.y() + y) * iCellPx};
+			const ImVec2 cellMax{cellMin.x + iCellPx, cellMin.y + iCellPx};
+			if (tile < 0 || tex == nullptr) {
+				iDrawList->AddRectFilled(cellMin, cellMax, tile < 0 ? IM_COL32(0, 0, 0, 150) : IM_COL32(120, 220, 140, 150));
+				continue;
+			}
+			const auto uvs = m_asset.tileset->getTileUv(static_cast<uint32_t>(tile));
+			iDrawList->AddImageQuad(static_cast<ImTextureID>(tex->getRendererId()), cellMin, ImVec2{cellMax.x, cellMin.y},
+									cellMax, ImVec2{cellMin.x, cellMax.y}, gui::vec(uvs[3]), gui::vec(uvs[2]),
+									gui::vec(uvs[1]), gui::vec(uvs[0]), IM_COL32(255, 255, 255, 170));
+		}
+	}
+	const ImVec2 regionMin{iGridTopLeft.x + static_cast<float>(origin.x()) * iCellPx,
+						   iGridTopLeft.y + static_cast<float>(origin.y()) * iCellPx};
+	iDrawList->AddRect(regionMin,
+					   {regionMin.x + static_cast<float>(preview->size.x()) * iCellPx,
+						regionMin.y + static_cast<float>(preview->size.y()) * iCellPx},
+					   IM_COL32(120, 220, 140, 255), 0.f, 0, 2.f);
 }
 
 void TilemapDocument::renderGridSection() {
@@ -533,6 +729,7 @@ void TilemapDocument::renderCanvas() {
 	drawList->AddRectFilled(gridTopLeft, gridBottomRight, IM_COL32(40, 40, 50, 255));
 
 	drawCanvasTiles(drawList, gridTopLeft, cellPx);
+	drawGeneratorPreview(drawList, gridTopLeft, cellPx);
 
 	// Grid overlay on top of the tiles.
 	const ImU32 gridColor = IM_COL32(120, 120, 140, 80);
