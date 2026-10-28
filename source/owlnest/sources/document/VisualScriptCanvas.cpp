@@ -248,6 +248,12 @@ auto getNodeGlyph(const vs::NodeType& iType) -> const char* {
 			return gui::icon::listOrdered;
 		case vs::NodeKind::ForLoop:
 			return gui::icon::repeat;
+		case vs::NodeKind::FunctionEntry:
+			return gui::icon::logOut;
+		case vs::NodeKind::FunctionReturn:
+			return gui::icon::undo2;
+		case vs::NodeKind::FunctionCall:
+			return gui::icon::component;
 		case vs::NodeKind::Event:
 		case vs::NodeKind::CustomEvent:
 		case vs::NodeKind::Call:
@@ -336,7 +342,11 @@ auto getNodeIcon(const vs::NodeType& iType) -> const char* {
 		case vs::NodeKind::SetVariable:
 			return "vs_node_variable";
 		case vs::NodeKind::Call:
+		case vs::NodeKind::FunctionCall:
 			return "vs_node_call";
+		case vs::NodeKind::FunctionEntry:
+		case vs::NodeKind::FunctionReturn:
+			return "vs_node_flow";
 		case vs::NodeKind::Operator:
 			break;
 	}
@@ -419,6 +429,10 @@ auto getNodeColor(const vs::VisualScript& iScript, const vs::GraphNode& iNode, c
 			if (iType.category == "Constant" && !iType.outputs.empty())
 				return scaled(getPinColor(iType.outputs.front().type), 0.5f);
 			return rgb(0.16f, 0.42f, 0.4f);
+		case vs::NodeKind::FunctionEntry:
+		case vs::NodeKind::FunctionReturn:
+		case vs::NodeKind::FunctionCall:
+			return rgb(0.42f, 0.24f, 0.62f);
 		case vs::NodeKind::Branch:
 		case vs::NodeKind::Sequence:
 		case vs::NodeKind::ForLoop:
@@ -434,7 +448,11 @@ auto getNodeTitle(const vs::GraphNode& iNode, const vs::NodeType& iType) -> std:
 		case vs::NodeKind::SetVariable:
 			return std::format("Set {}", valueOf(iNode, "variable"));
 		case vs::NodeKind::CustomEvent:
+		case vs::NodeKind::FunctionEntry:
+		case vs::NodeKind::FunctionCall:
 			return valueOf(iNode, "function");
+		case vs::NodeKind::FunctionReturn:
+			return iNode.values.contains("exit") ? std::format("Exit {}", valueOf(iNode, "exit")) : "Return";
 		case vs::NodeKind::Call:
 			{
 				const auto dot = iType.title.find('.');
@@ -459,6 +477,11 @@ auto getNodeSubtitle(const vs::NodeType& iType) -> std::string {
 		case vs::NodeKind::GetVariable:
 		case vs::NodeKind::SetVariable:
 			return "Variable";
+		case vs::NodeKind::FunctionEntry:
+			return "Function Entry";
+		case vs::NodeKind::FunctionCall:
+			return "Function";
+		case vs::NodeKind::FunctionReturn:
 		case vs::NodeKind::Event:
 		case vs::NodeKind::Operator:
 		case vs::NodeKind::Branch:
