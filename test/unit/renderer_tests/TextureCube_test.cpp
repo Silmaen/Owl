@@ -84,8 +84,8 @@ TEST(TextureCube, SetLevelsNeedsTheCubeSizeAndFormat) {
 	ASSERT_NE(cube, nullptr);
 	TextureLevels levels{.size = {4, 4}, .format = ImageFormat::Rgba8, .levels = {}};
 	EXPECT_FALSE(cube->setLevels(levels));
-	levels.levels.emplace_back(std::vector<uint8_t>(4 * 4 * 4 * TextureCube::g_faceCount, 0));
-	levels.levels.emplace_back(std::vector<uint8_t>(2 * 2 * 4 * TextureCube::g_faceCount, 0));
+	levels.levels.emplace_back(4 * 4 * 4 * TextureCube::g_faceCount, uint8_t{0});
+	levels.levels.emplace_back(2 * 2 * 4 * TextureCube::g_faceCount, uint8_t{0});
 	EXPECT_TRUE(cube->setLevels(levels));
 	EXPECT_EQ(cube->getLevelCount(), 2u);
 	levels.format = ImageFormat::Rgba16F;

@@ -92,7 +92,8 @@ void applySamplerFilter(const GLuint iTexture, const FilterMode iMode, const uin
 
 void applyCubeSampler(const GLuint iTexture, const FilterMode iMode, const uint32_t iMipLevels) {
 	const bool nearest = iMode == FilterMode::Nearest;
-	const GLint minFilter = nearest ? GL_NEAREST : (iMipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+	const GLint linear = iMipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR;
+	const GLint minFilter = nearest ? GL_NEAREST : linear;
 	glTextureParameteri(iTexture, GL_TEXTURE_MIN_FILTER, minFilter);
 	glTextureParameteri(iTexture, GL_TEXTURE_MAG_FILTER, nearest ? GL_NEAREST : GL_LINEAR);
 	glTextureParameteri(iTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

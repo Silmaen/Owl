@@ -21,6 +21,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <vector>
 
 namespace owl::renderer {
 
@@ -60,8 +61,12 @@ struct GpuLight {
 	math::vec4 directionType{0.f, -1.f, 0.f, 0.f};
 	/// rgb: linear colour times intensity; w unused.
 	math::vec4 color{1.f, 1.f, 1.f, 0.f};
-	/// x: cosine of the inner angle, y: cosine of the outer angle (spot); zw unused.
-	math::vec4 spotCosines{1.f, 0.f, 0.f, 0.f};
+	/**
+	 * @brief
+	 *  x: cosine of the inner angle, y: cosine of the outer angle (spot); z: local shadow entry (-1 none, set by the
+	 *  renderer from `setLocalShadows`); w unused.
+	 */
+	math::vec4 spotCosines{1.f, 0.f, -1.f, 0.f};
 };
 
 /**
@@ -93,6 +98,56 @@ struct ShadowSettings {
 	float bias = 1.5f;
 	/// Size of a cascade's shadow map, in texels.
 	uint32_t resolution = 1024;
+};
+
+/**
+ * @brief
+ *  The shadow of a spot light: a perspective map from the light covering its outer cone.
+ */
+struct SpotShadow {
+	/// Index in the lights of the spot light casting the shadow.
+	uint32_t lightIndex = 0;
+	/// Camera-relative view-projection of the light camera (`cameraRelativeView`).
+	math::mat4 relativeViewProjection = math::identity<float, 4>();
+	/// World position of the light camera, the origin of its relative view-projection.
+	math::vec3 origin{0.f, 0.f, 0.f};
+	/// Tangent of the half angle of the light camera (the world size of a texel grows with it).
+	float tanHalfAngle = 1.f;
+	/// Shadow map (`RedFloat`, normalized device depth).
+	shared<gpu::Texture2D> map;
+	/// Size of the map, in texels.
+	uint32_t resolution = 1024;
+	/// Normal-offset bias, in texels.
+	float bias = 1.5f;
+};
+
+/**
+ * @brief
+ *  The shadow of a point light: a cube of six 90 degree faces around the light (`computePointShadowFaces`).
+ */
+struct PointShadow {
+	/// Index in the lights of the point light casting the shadow.
+	uint32_t lightIndex = 0;
+	/// Depth of a face for a point at `d` along its axis: `depth.x() + depth.y() / d`.
+	math::vec2 depth{0.f, 0.f};
+	/// Shadow cube (`R32F`, normalized device depth of each face).
+	shared<gpu::TextureCube> cube;
+	/// Size of a face, in texels.
+	uint32_t resolution = 512;
+	/// Normal-offset bias, in texels.
+	float bias = 1.5f;
+};
+
+/**
+ * @brief
+ *  The shadows of the point and spot lights the 3D shaders sample, within the budget of the backend
+ *  (`getLocalShadowBudget`): the entries past it are ignored.
+ */
+struct LocalShadowSettings {
+	/// Shadows of spot lights.
+	std::vector<SpotShadow> spots;
+	/// Shadows of point lights.
+	std::vector<PointShadow> points;
 };
 
 /**
@@ -296,6 +351,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the shadows of the point and spot lights the meshes sample (empty for none).
+	 * @param[in] iShadows The shadows, the lights they belong to given by `setSceneLights`.
+	 */
+	static void setLocalShadows(const LocalShadowSettings& iShadows);
+
+	/**
+	 * @brief
+	 *  Get the local shadow a light samples, after `setLocalShadows`.
+	 * @param[in] iLightIndex Index of the light.
+	 * @return The entry of its shadow in the shader table, -1 without shadow.
+	 */
+	[[nodiscard]] static auto getLocalShadowEntry(uint32_t iLightIndex) -> int32_t;
+
+	/**
+	 * @brief
 	 *  Draw the next meshes into a shadow map: the shaders write the depth, the transparent meshes are skipped.
 	 * @param[in] iShadowPass True while a shadow cascade renders.
 	 */
@@ -333,8 +403,10 @@ public:
 	static constexpr uint32_t g_maxLights = 64;
 	/// EV100 used without a camera (previews): a sunny day.
 	static constexpr float g_defaultEv100 = 15.f;
-	/// First texture slot of the shadow maps (one per cascade, up to the last slot).
-	static constexpr uint32_t g_shadowMapSlot = 28;
+	/// First texture slot of the shadow maps (one per cascade).
+	static constexpr uint32_t g_shadowMapSlot = 16;
+	/// First texture slot of the spot shadow maps (as many as the spot budget of the backend).
+	static constexpr uint32_t g_spotShadowSlot = 20;
 
 	/**
 	 * @brief

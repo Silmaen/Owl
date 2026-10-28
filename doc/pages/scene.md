@@ -310,10 +310,10 @@ slot's material is shared through the `MaterialLibrary` ([Renderer > Materials](
 | `range`            | `float` | `10`             | Distance where a point or spot light reaches zero                                                         |
 | `innerAngle`       | `float` | 20 degrees       | Half angle of the full-intensity spot cone (radians in YAML)                                              |
 | `outerAngle`       | `float` | 30 degrees       | Half angle where the spot reaches zero (radians in YAML)                                                  |
-| `castShadows`      | `bool`  | `true`           | Directional only: the first such light casts cascaded shadows                                             |
-| `shadowDistance`   | `float` | `60`             | Distance from the camera the shadows cover                                                                |
-| `cascadeCount`     | `uint`  | `4`              | Number of shadow cascades, 1 to 4                                                                         |
-| `shadowResolution` | `uint`  | `1024`           | Texels of each cascade, 256 to 4096                                                                       |
+| `castShadows`      | `bool`  | `true`           | First directional light: cascades; point and spot lights: the nearest to the camera, within a budget      |
+| `shadowDistance`   | `float` | `60`             | Directional only: distance from the camera the shadows cover                                              |
+| `cascadeCount`     | `uint`  | `4`              | Directional only: number of shadow cascades, 1 to 4                                                       |
+| `shadowResolution` | `uint`  | `1024`           | Texels of each cascade, of a spot map or of each face of a point cube, 256 to 4096                        |
 | `shadowBias`       | `float` | `1.5`            | Normal-offset bias, in shadow-map texels                                                                  |
 
 YAML key: `Light`. `intensity` is in physical units (sun 100 000 lx, overcast 10 000, moon 0.25; candle 12 lm,

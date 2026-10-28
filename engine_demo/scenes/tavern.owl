@@ -286,6 +286,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -309,6 +310,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -332,6 +334,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -355,6 +358,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -378,6 +382,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -401,6 +406,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -424,6 +430,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -447,6 +454,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -470,6 +478,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -493,6 +502,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -516,6 +526,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -686,6 +697,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -977,6 +989,7 @@ Entities:
       color: [1, 0.85, 0.5]
       intensity: 18
       range: 1.2
+      castShadows: false
     LightFlicker:
       style: Pulse
       amplitude: 0.6

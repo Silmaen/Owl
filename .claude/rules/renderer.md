@@ -49,8 +49,10 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
 - **World colour shaders read `linearOutput`** (set from `gpu::Framebuffer::isLinearTargetBound()`) and keep their
   flag-0 path bit-identical to the display-space maths.
 - **Texture slots of the 3D shaders** (`mesh3d`, `voxel`, `common/pbr.slangh`): 0 white, 1 to 6 material maps (base
-  colour, metallic, normal, occlusion, emissive, roughness), 7 to 12 prefiltered environment, 13 DFG table, 28 to 31
-  shadow cascades. Change a slot in the shaders and in `Renderer3D` together.
+  colour, metallic, normal, occlusion, emissive, roughness), 7 to 12 prefiltered environment, 13 DFG table, 16 to 19
+  shadow cascades, 20 onward spot shadows; cubes `gCubes`: point shadows, then reflection probes. OpenGL fragment
+  shaders sample 32 textures at most: 24 2D slots + 8 cubes there (`g_openGlLocalShadowBudget`), larger arrays on
+  Vulkan (`BACKEND_VULKAN`). Change a slot in the shaders and in `Renderer3D` together.
 - **Voxel vertices carry the block surface in `textureIndex`** (`data::voxel::packSurface`, decoded by `voxel.slang`);
   the atlas is always the draw's slot 1. Change the packing on both sides together.
 - **A draw's vertex buffer is sized from its index count**: each submesh gets its own compact vertex buffer, never the

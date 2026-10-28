@@ -228,7 +228,7 @@ caller's framebuffer back.
 
 ```mermaid
 flowchart LR
-    C["scene clear"] --> S["shadow cascade passes<br/>(one per cascade, when a light casts)"]
+    C["scene clear"] --> S["shadow cascade, spot shadow and point shadow passes<br/>(one per cascade, spot and point light that casts)"]
     C --> K["environment sky<br/>(Environment with showSky)"]
     S -->|"shadow maps (Depth)"| L["one pass per layer with content<br/>(editor composite + voxel / mesh layers in the editor)"]
     K --> L
@@ -307,7 +307,18 @@ The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` component
   texel grid (no shimmering) and pulled back so off-screen casters still cast.
 - **Passes.** One `shadow cascade` pass per cascade renders the opaque meshes and voxel worlds (transparent ones cast
   no shadow) into a `Depth` target (`RedFloat`, `shadowResolution` squared). The 3D layer passes read the cascades
-  (texture slots 28 to 31) with 3x3 PCF and a normal-offset bias of `shadowBias` texels.
+  (texture slots 16 to 19) with 3x3 PCF and a normal-offset bias of `shadowBias` texels.
+- **Local shadows.** Point and spot lights with `castShadows` are ranked by distance from the camera to the sphere
+  they reach, then by strength (`renderer::rankShadowCandidates`); the first ones within `getLocalShadowBudget()` cast
+  (4 spot and 4 point lights on OpenGL, whose fragment shaders sample 32 textures at most; 16 of each on Vulkan), the
+  others light without shadow. A `spot shadow` pass draws the casters into a perspective map covering the outer cone
+  (`computeSpotShadowCamera`, texture slots 20 onward). A `point shadow` pass draws the six 90 degree faces of
+  `computePointShadowFaces` one after the other into one `Depth` target per face size and copies each into the
+  light's `TextureCube` (`R32F`, kept between frames); the face projections keep NDC Y up on both backends so the
+  rows match the cube sampling convention. The shaders rebuild the depth of a face from the axis distance
+  (`depth.x + depth.y / d`), take 3x3 taps around the direction and offset the point along its normal by `shadowBias`
+  texels of the map at its distance (`Renderer3D::setLocalShadows`, `LocalShadow` table of the lighting block, entry
+  in `GpuLight::spotCosines.z`).
 
 ### 2D lighting {#renderer-lighting2d}
 
@@ -641,8 +652,9 @@ Convention:
   models, the cascaded shadows, the image-based lighting). Outputs colour + the entity id of the draw to match the
   scene framebuffer.
 - **Texture slots** of the 3D shaders (`gTextures`, binding 1): 0 white, 1 to 6 the material maps (base colour,
-  metallic, normal, occlusion, emissive, roughness), 7 to 12 the prefiltered environment, 13 the DFG table, 28 to 31
-  the shadow cascades.
+  metallic, normal, occlusion, emissive, roughness), 7 to 12 the prefiltered environment, 13 the DFG table, 16 to 19
+  the shadow cascades, 20 onward the spot shadows (24 slots on OpenGL, 36 on Vulkan). Cubes (`gCubes`, binding 7 on
+  Vulkan, the units after the 2D slots on OpenGL): the point shadows, then as many reflection probe slots.
 - **Per-draw parameters** (`renderer::MeshDrawParams`): the tint and the entity id travel in the scene UBO with the
   model matrix (`vec4 tint`, `ivec4 ids`, 192 bytes in all), so picking needs nothing in the vertices; `voxel.slang`
   shares the block and writes the id of its voxel world. The material of the draw (`MeshDrawParams::material`, null

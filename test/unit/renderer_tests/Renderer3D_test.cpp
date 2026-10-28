@@ -8,6 +8,7 @@
 
 #include "testHelper.h"
 
+#include <renderer/LocalShadows.h>
 #include <renderer/Renderer3D.h>
 #if OWL_WITH_RENDER
 #include <renderer/utils/shaderFileUtils.h>
@@ -99,9 +100,40 @@ TEST(Renderer3D, Mesh3dShaderBindings) {
 	EXPECT_EQ(uniformBindings, (std::vector<uint32_t>{0u, 3u, 4u}));
 	ASSERT_EQ(resources.storage_buffers.size(), 1u);
 	EXPECT_EQ(compiler.get_decoration(resources.storage_buffers[0].id, spv::DecorationBinding), 2u);
-	// Texture array at binding 1 (Vulkan offset).
-	ASSERT_EQ(resources.sampled_images.size(), 1u);
-	EXPECT_EQ(compiler.get_decoration(resources.sampled_images[0].id, spv::DecorationBinding), 1u);
+	// Texture array at binding 1 (Vulkan offset), cube array at binding 7.
+	ASSERT_EQ(resources.sampled_images.size(), 2u);
+	std::vector<uint32_t> imageBindings;
+	for (const auto& image: resources.sampled_images)
+		imageBindings.push_back(compiler.get_decoration(image.id, spv::DecorationBinding));
+	std::ranges::sort(imageBindings);
+	EXPECT_EQ(imageBindings, (std::vector<uint32_t>{1u, 7u}));
+	core::Log::invalidate();
+}
+
+TEST(Renderer3D, Mesh3dOpenGlSamplesAtMost32Textures) {
+	core::Log::init(core::Log::Level::Off);
+	const auto source = loadMesh3d();
+	ASSERT_FALSE(source.empty());
+	const auto result = renderer::utils::compileSlangToSpirv(source, "mesh3d_gl_units", /*iForVulkan=*/false);
+	ASSERT_TRUE(result.success);
+	const auto it = result.spirvData.find(renderer::gpu::ShaderType::Fragment);
+	ASSERT_NE(it, result.spirvData.end());
+	const spirv_cross::Compiler compiler(it->second);
+	const auto resources = compiler.get_shader_resources();
+	// The 2D textures take the units from 0, the cubes the units right after them.
+	uint32_t units = 0;
+	uint32_t cubeBinding = 0;
+	for (const auto& image: resources.sampled_images) {
+		const auto& type = compiler.get_type(image.type_id);
+		const uint32_t count = type.array.empty() ? 1u : type.array[0];
+		units += count;
+		if (type.image.dim == spv::DimCube)
+			cubeBinding = compiler.get_decoration(image.id, spv::DecorationBinding);
+		else
+			EXPECT_EQ(compiler.get_decoration(image.id, spv::DecorationBinding), 0u);
+	}
+	EXPECT_LE(units, 32u);
+	EXPECT_EQ(cubeBinding, renderer::Renderer3D::g_spotShadowSlot + renderer::g_openGlLocalShadowBudget.spot);
 	core::Log::invalidate();
 }
 #endif

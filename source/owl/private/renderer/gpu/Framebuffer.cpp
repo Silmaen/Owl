@@ -17,6 +17,8 @@
 #include "renderer/gpu/RenderAPI.h"
 #include "renderer/gpu/Texture.h"
 
+#include <cstdint>
+
 namespace owl::renderer::gpu {
 
 auto Framebuffer::create(const FramebufferSpecification& iSpec) -> shared<Framebuffer> {

@@ -96,6 +96,16 @@ struct VoxelStreamState {
 
 namespace {
 
+// Clear a shadow target between two faces drawn into it: depth to the far plane, no entity.
+void clearShadowFace(renderer::gpu::Framebuffer& ioTarget) {
+	const math::vec4 clearColor = renderer::gpu::RenderCommand::getClearColor();
+	renderer::gpu::RenderCommand::setClearColor(
+			{renderer::g_farDepth, renderer::g_farDepth, renderer::g_farDepth, renderer::g_farDepth});
+	renderer::gpu::RenderCommand::clear();
+	renderer::gpu::RenderCommand::setClearColor(clearColor);
+	ioTarget.clearAttachment(1, -1);
+}
+
 // Entities of one chunk handed to a worker: below it the dispatch costs more than the work it spreads.
 constexpr size_t g_ParallelChunkEntities = 1024;
 
@@ -954,6 +964,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	renderer::Renderer3D::setEditorAmbient({});
 	renderer::Renderer3D::setExposure(renderer::Renderer3D::exposureOf(renderer::Renderer3D::g_defaultEv100));
 	renderer::Renderer3D::setShadow({});
+	renderer::Renderer3D::setLocalShadows({});
 	renderer::Renderer3D::setEnvironment({});
 	mp_renderCamera = nullptr;
 }
@@ -1019,6 +1030,10 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 	const bool editorMode = status == Status::Editing;
 	m_gpuLights.clear();
 	m_shadowSettings = {};
+	m_shadowCandidates.clear();
+	m_localCasters.clear();
+	const math::vec4 eye4 = inverse(mp_renderCamera->getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	const math::vec3 eye{eye4.x(), eye4.y(), eye4.z()};
 	renderer::Renderer3D::setExposure(renderer::Renderer3D::exposureOf(mp_renderCamera->getPostProcess().ev100));
 	m_shadowCascades.count = 0;
 	const component::Light* shadowLight = nullptr;
@@ -1049,6 +1064,20 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 				 .color = {color.x(), color.y(), color.z(), 0.f},
 				 .spotCosines = {std::cos(light.innerAngle), std::cos(std::max(light.outerAngle, light.innerAngle)),
 								 0.f, 0.f}});
+		if (light.castShadows && light.type != component::Light::Type::Directional) {
+			const auto lightIndex = static_cast<uint32_t>(m_gpuLights.size() - 1);
+			m_localCasters.resize(lightIndex + 1);
+			m_localCasters[lightIndex] = {.position = position,
+										  .direction = direction,
+										  .outerAngle = std::max(light.outerAngle, light.innerAngle),
+										  .range = std::max(light.range, 0.01f),
+										  .resolution = light.shadowResolution,
+										  .bias = light.shadowBias,
+										  .point = light.type == component::Light::Type::Point};
+			m_shadowCandidates.push_back({.lightIndex = lightIndex,
+										  .distance = renderer::distanceToLightRange(eye, position, light.range),
+										  .intensity = strength});
+		}
 		if (shadowLight == nullptr && light.type == component::Light::Type::Directional && light.castShadows) {
 			shadowLight = &light;
 			shadowDirection = direction;
@@ -1059,6 +1088,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 	// The layer sun stands in for a scene that has no light at all, never for lights switched off.
 	renderer::Renderer3D::setLayerSun(registry.view<component::Light>().empty());
 	renderer::Renderer3D::setEditorAmbient(editorMode ? m_editorAmbient : math::vec3{0.f, 0.f, 0.f});
+	recordLocalShadowPasses(ioGraph);
 	if (shadowLight == nullptr)
 		return;
 	m_shadowCascades = renderer::computeShadowCascades(*mp_renderCamera, {.lightDirection = shadowDirection,
@@ -1085,6 +1115,97 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 				[target = m_shadowTargets[index]](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(target); },
 				[this, index](const Graph::PassContext&) -> void {
 					renderShadowCasters(m_shadowCascades.cascades[index].camera);
+				});
+	}
+}
+
+void Scene::recordLocalShadowPasses(renderer::RenderGraph& ioGraph) {
+	using Graph = renderer::RenderGraph;
+	m_localShadows.spots.clear();
+	m_localShadows.points.clear();
+	m_spotShadowTargets.clear();
+	m_pointFaceTargets.clear();
+	m_spotShadowCameras.clear();
+	m_pointShadowFaces.clear();
+	if (m_shadowCandidates.empty())
+		return;
+	const auto budget = renderer::getLocalShadowBudget();
+	auto& spots = m_shadowCandidates;
+	const auto firstPoint =
+			std::ranges::stable_partition(spots, [this](const renderer::ShadowCandidate& iCandidate) -> bool {
+				return !m_localCasters[iCandidate.lightIndex].point;
+			});
+	std::vector<renderer::ShadowCandidate> points{firstPoint.begin(), firstPoint.end()};
+	spots.erase(firstPoint.begin(), firstPoint.end());
+	renderer::rankShadowCandidates(spots, budget.spot);
+	renderer::rankShadowCandidates(points, budget.point);
+
+	for (const auto& candidate: spots) {
+		const auto& caster = m_localCasters[candidate.lightIndex];
+		const auto camera =
+				renderer::computeSpotShadowCamera(caster.position, caster.direction, caster.outerAngle, caster.range);
+		m_localShadows.spots.push_back(
+				{.lightIndex = candidate.lightIndex,
+				 .relativeViewProjection = camera.getProjection() * renderer::cameraRelativeView(camera.getView()),
+				 .origin = caster.position,
+				 .tanHalfAngle = std::tan(std::clamp(caster.outerAngle, 0.0175f, 1.48f)),
+				 .map = nullptr,
+				 .resolution = caster.resolution,
+				 .bias = caster.bias});
+		m_spotShadowCameras.push_back(camera);
+		const auto target =
+				ioGraph.createTarget("spot shadow", Graph::TargetFormat::Depth, {caster.resolution, caster.resolution});
+		m_spotShadowTargets.push_back(target);
+		ioGraph.addPass(
+				"spot shadow", [target](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(target); },
+				[this, index = m_spotShadowCameras.size() - 1](const Graph::PassContext&) -> void {
+					renderShadowCasters(m_spotShadowCameras[index]);
+				});
+	}
+
+	if (m_pointShadowCubes.size() < points.size())
+		m_pointShadowCubes.resize(points.size());
+	for (size_t index = 0; index < points.size(); ++index) {
+		const auto& caster = m_localCasters[points[index].lightIndex];
+		auto& cube = m_pointShadowCubes[index];
+		if (!cube || cube->getFaceSize(0) != caster.resolution)
+			cube = renderer::gpu::TextureCube::create({.size = {caster.resolution, caster.resolution},
+													   .format = renderer::gpu::ImageFormat::R32F,
+													   .filterMode = renderer::gpu::FilterMode::Nearest});
+		if (!cube)
+			continue;
+		m_pointShadowFaces.push_back(renderer::computePointShadowFaces(caster.position, caster.range));
+		m_localShadows.points.push_back({.lightIndex = points[index].lightIndex,
+										 .depth = m_pointShadowFaces.back().depth,
+										 .cube = cube,
+										 .resolution = caster.resolution,
+										 .bias = caster.bias});
+	}
+	// The faces of every cube of one size are drawn one after the other in a single target.
+	std::vector<uint32_t> faceSizes;
+	for (size_t index = 0; index < m_localShadows.points.size(); ++index) {
+		const uint32_t size = m_localShadows.points[index].resolution;
+		const auto known = std::ranges::find(faceSizes, size);
+		const bool created = known == faceSizes.end();
+		if (created) {
+			faceSizes.push_back(size);
+			m_pointFaceTargets.push_back(
+					ioGraph.createTarget("point shadow face", Graph::TargetFormat::Depth, {size, size}));
+		}
+		const auto target =
+				m_pointFaceTargets[created ? faceSizes.size() - 1 : static_cast<size_t>(known - faceSizes.begin())];
+		ioGraph.addPass(
+				"point shadow", [target](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(target); },
+				[this, index, target](const Graph::PassContext& iContext) -> void {
+					auto* const face = iContext.getFramebuffer(target);
+					const auto& shadow = m_localShadows.points[index];
+					if (face == nullptr || !shadow.cube)
+						return;
+					for (uint32_t side = 0; side < renderer::gpu::TextureCube::g_faceCount; ++side) {
+						clearShadowFace(*face);
+						renderShadowCasters(m_pointShadowFaces[index].cameras[side]);
+						static_cast<void>(face->copyAttachmentToCube(0, *shadow.cube, side, 0));
+					}
 				});
 	}
 }
@@ -1270,6 +1391,11 @@ void Scene::requestProceduralSky(const component::ProceduralSky& iSky) {
 }
 
 void Scene::useShadowMaps(const renderer::RenderGraph::PassContext& iContext) {
+	if (!m_localShadows.spots.empty() || !m_localShadows.points.empty()) {
+		for (size_t index = 0; index < m_localShadows.spots.size(); ++index)
+			m_localShadows.spots[index].map = iContext.getTexture(m_spotShadowTargets[index]);
+		renderer::Renderer3D::setLocalShadows(m_localShadows);
+	}
 	if (m_shadowSettings.cascadeCount == 0)
 		return;
 	for (uint32_t index = 0; index < m_shadowSettings.cascadeCount; ++index)
@@ -1363,6 +1489,8 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 	const auto writeSceneReadShadows = [this, iSceneColor](Graph::PassBuilder& ioBuilder) -> void {
 		ioBuilder.write(iSceneColor);
 		for (uint32_t index = 0; index < m_shadowSettings.cascadeCount; ++index) ioBuilder.read(m_shadowTargets[index]);
+		for (const auto& target: m_spotShadowTargets) ioBuilder.read(target);
+		for (const auto& target: m_pointFaceTargets) ioBuilder.read(target);
 		if (m_occlusionToken.isValid())
 			ioBuilder.read(m_occlusionToken);
 	};

@@ -152,7 +152,7 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Planned][planned] Advanced post-processing (chromatic aberration, film grain, motion blur, depth of field)
 - ![Planned][planned] Angular radius of a directional light: soft shadows (PCSS), wider highlight, sun disc in the sky ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Planned][planned] Area lights (rectangle, disc, sphere) lighting through LTC, with soft shadows sharing the PCSS of the sun ([3D core](design/3d-core.md#emissive-and-area-lights))
-- ![Planned][planned] Point and spot light shadows (cube and perspective shadow maps) ([3D core](design/3d-core.md#emissive-and-area-lights))
+- ![Done][done] Point and spot light shadows (cube and perspective shadow maps) ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Planned][planned] Local reflection probes: baked cube maps blended by volume, parallax-corrected, so metals reflect the room ([3D core](design/3d-core.md#reflection-probes))
 - ![Done][done] Visual scripting MVP, event graphs compiled to Lua, node editing of assets ([details](design/visual-scripting.md))
 - ![Planned][planned] Node-graph link waypoints

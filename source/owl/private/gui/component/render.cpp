@@ -1238,8 +1238,8 @@ void renderProps(Light& ioComponent) {
 	fieldTooltip("A light switched off keeps its settings and stops shining.");
 	const auto previousType = ioComponent.type;
 	resettable("Type", ioComponent.type, defaults.type, drawEnum<Light::Type>);
-	fieldTooltip("Directional: parallel rays like the sun, the only kind casting shadows. Point: radiates from its "
-				 "position. Spot: a point light restricted to a cone. It shines along -Z of the entity.");
+	fieldTooltip("Directional: parallel rays like the sun. Point: radiates from its position. Spot: a point light "
+				 "restricted to a cone. It shines along -Z of the entity.");
 	const bool directional = ioComponent.type == Light::Type::Directional;
 	const float defaultIntensity = directional ? g_defaultSunIlluminance : g_defaultBulbPower;
 	// Switching between lux and lumens keeps a default value a default value of the new unit.
@@ -1272,23 +1272,25 @@ void renderProps(Light& ioComponent) {
 			ioComponent.innerAngle = std::min(ioComponent.innerAngle, ioComponent.outerAngle);
 		fieldTooltip("Half angle of the cone where the light reaches zero, in degrees.");
 	}
-	if (!directional)
-		return;
 	resetCheckbox("Cast Shadows", ioComponent.castShadows, defaults.castShadows);
-	fieldTooltip("The first shadow-casting directional light of the scene shadows the 3D layers.");
+	fieldTooltip(directional ? "The first shadow-casting directional light of the scene shadows the 3D layers."
+							 : "Point and spot lights nearest to the camera cast shadows, within a budget per frame "
+							   "(4 of each on OpenGL, 16 on Vulkan); the others light without shadow.");
 	if (!ioComponent.castShadows)
 		return;
-	resetFloat("Shadow Distance", ioComponent.shadowDistance, defaults.shadowDistance, 0.5f, 1.0f, 100000.0f);
-	fieldTooltip("Distance from the camera the shadows cover, in world units.");
-	resettable("Cascades", ioComponent.cascadeCount, defaults.cascadeCount,
-			   [](const char* iId, uint32_t& ioField) -> bool {
-				   int cascades = static_cast<int>(ioField);
-				   if (!prop::DragInt(iId, &cascades, 0.1f, 1, 4))
-					   return false;
-				   ioField = static_cast<uint32_t>(std::clamp(cascades, 1, 4));
-				   return true;
-			   });
-	fieldTooltip("Number of shadow cascades, from 1 to 4: more give sharper shadows near the camera.");
+	if (directional) {
+		resetFloat("Shadow Distance", ioComponent.shadowDistance, defaults.shadowDistance, 0.5f, 1.0f, 100000.0f);
+		fieldTooltip("Distance from the camera the shadows cover, in world units.");
+		resettable("Cascades", ioComponent.cascadeCount, defaults.cascadeCount,
+				   [](const char* iId, uint32_t& ioField) -> bool {
+					   int cascades = static_cast<int>(ioField);
+					   if (!prop::DragInt(iId, &cascades, 0.1f, 1, 4))
+						   return false;
+					   ioField = static_cast<uint32_t>(std::clamp(cascades, 1, 4));
+					   return true;
+				   });
+		fieldTooltip("Number of shadow cascades, from 1 to 4: more give sharper shadows near the camera.");
+	}
 	resettable("Resolution", ioComponent.shadowResolution, defaults.shadowResolution,
 			   [](const char* iId, uint32_t& ioField) -> bool {
 				   bool changed = false;
@@ -1306,7 +1308,8 @@ void renderProps(Light& ioComponent) {
 				   }
 				   return changed;
 			   });
-	fieldTooltip("Size of each cascade's shadow map, in texels.");
+	fieldTooltip(directional ? "Size of each cascade's shadow map, in texels."
+							 : "Size of the shadow map (spot) or of each face of the shadow cube (point), in texels.");
 	resetFloat("Bias", ioComponent.shadowBias, defaults.shadowBias, 0.05f, 0.0f, 20.0f);
 	fieldTooltip("Depth bias against self-shadowing, in shadow-map texels along the surface normal.");
 }

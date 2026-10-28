@@ -46,10 +46,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tileset editor: compose the atlas from source images by dropping files or folders, clear, move and grow slots, undoable.
 - Tileset opacity map (`opacityTexture`): its red channel multiplies the atlas alpha in the tilemap, isometric, raycast and voxel shaders.
 - Mipmapped pixel-art atlases: `FilterMode::PixelArt` builds mipmaps cell by cell, sampled inside the cell by the voxel, raycast and tilemap shaders.
+- `gpu::TextureCube` on OpenGL, Vulkan and Null, filled from memory or a render target (`Framebuffer::copyAttachmentToCube`).
+- Point and spot light shadows: a cube per point light, a perspective map per spot light, the nearest to the camera within 4 of each on OpenGL and 16 on Vulkan.
 
 ### Changed
 
 - Sample games are picked from the pool once the features of a release are done, none planned per release; hot reload of a C++ game module moves after 1.0.
+- `Light.castShadows`, `shadowResolution` and `shadowBias` apply to point and spot lights too; the 3D shadow cascades move to texture slots 16 to 19.
 - Shipped projects carry sidecars and GUID references; the Engine Demo PBR textures are cooked to ETC1S and UASTC.
 - An exported game packs only its engine files and initialises only its renderer families (`RendererSet`): packs about 3.3 MiB smaller.
 - An exported game reads its textures, sounds, fonts and shaders from the pack in memory: no `assets/` extraction, no cache written next to it.

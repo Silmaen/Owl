@@ -27,12 +27,33 @@ struct LightData {
 	float4 positionRange;// xyz: camera-relative position (point, spot); w: range.
 	float4 directionType;// xyz: direction the light travels; w: 0 directional, 1 point, 2 spot.
 	float4 color;        // rgb: linear colour times intensity.
-	float4 spotCosines;  // x: cosine of the inner angle, y: of the outer angle.
+	float4 spotCosines;  // x: cosine of the inner angle, y: of the outer angle, z: local shadow entry (-1 none).
 };
 
 // A matrix array ignores `column_major`: each cascade matrix sits in a struct of its own.
 struct CascadeMatrix {
 	column_major float4x4 viewProjection;
+};
+
+// Shadows of local lights: OpenGL samples 32 textures at most, 2D slots and cubes together.
+#ifdef BACKEND_VULKAN
+static const int MAX_SPOT_SHADOWS = 16;
+static const int MAX_POINT_SHADOWS = 16;
+#else
+static const int MAX_SPOT_SHADOWS = 4;
+static const int MAX_POINT_SHADOWS = 4;
+#endif
+static const int MAX_LOCAL_SHADOWS = MAX_SPOT_SHADOWS + MAX_POINT_SHADOWS;
+static const int SPOT_SHADOW_SLOT = 20;
+static const int TEXTURE_SLOT_COUNT = SPOT_SHADOW_SLOT + MAX_SPOT_SHADOWS;
+// Point shadow cubes, then as many reflection probes.
+static const int CUBE_SLOT_COUNT = 2 * MAX_POINT_SHADOWS;
+
+// The shadow of a spot or point light.
+struct LocalShadow {
+	column_major float4x4 viewProjection;// spot: camera-relative view-projection of the light camera.
+	float4 params;                       // x: 2D slot (spot) or cube index (point), y: resolution, z: bias in texels, w: 1 point, 2 spot.
+	float4 depth;                        // xy: depth of a point face (x + y / d), z: tangent of the half angle of the light camera.
 };
 
 struct Lighting {
@@ -46,6 +67,7 @@ struct Lighting {
 	CascadeMatrix cascades[4];
 	float4 skySun;        // xyz: direction towards the sun, w: angular radius of the sun and moon discs (0 none).
 	float4 skyBodies;     // pre-exposed radiance: x sun disc, y moon disc, z brightest stars.
+	LocalShadow localShadows[MAX_LOCAL_SHADOWS];
 };
 
 [[vk::binding(0)]]
@@ -56,7 +78,15 @@ ConstantBuffer<Scene3D> gScene;
 #else
 [[vk::binding(0)]]
 #endif
-Sampler2D gTextures[32];
+Sampler2D gTextures[TEXTURE_SLOT_COUNT];
+
+// OpenGL binds the cubes to the units that follow the 2D textures.
+#ifdef BACKEND_VULKAN
+[[vk::binding(7)]]
+#else
+[[vk::binding(24)]]
+#endif
+SamplerCube gCubes[CUBE_SLOT_COUNT];
 
 [[vk::binding(2)]]
 StructuredBuffer<LightData> gLights;
@@ -74,7 +104,8 @@ float3 relativePosition(float4x4 model, float3 position) {
 	return mul((float3x3) model, position) + translation;
 }
 
-// Texture slots: 0 white, 1-5 material maps, 6 split-sum table, 7-12 prefiltered environment, 28-31 shadow cascades.
+// Texture slots: 0 white, 1-6 material maps, 7-12 prefiltered environment, 13 split-sum table, 16-19 shadow cascades,
+// 20 onward spot shadows; cubes: point shadows, then reflection probes.
 static const int MAP_BASE_COLOR = 1;
 static const int MAP_METALLIC = 2;
 static const int MAP_NORMAL = 3;
@@ -84,7 +115,7 @@ static const int MAP_ROUGHNESS = 6;
 static const int DFG_SLOT = 13;
 static const int ENVIRONMENT_SLOT = 7;
 static const int MAX_ENVIRONMENT_LEVELS = 6;
-static const int SHADOW_MAP_SLOT = 28;
+static const int SHADOW_MAP_SLOT = 16;
 
 static const float PI = 3.14159265359f;
 static const float MIN_ROUGHNESS = 0.045f;
@@ -119,8 +150,8 @@ float sampleChannel(int slot, float2 uv, int channel) {
 
 // Depth stored in a texel of a cascade's shadow map, sampled at its centre (nearest sampler): a texel fetch from
 // the texture array crashes lavapipe.
-float loadShadowDepth(int cascade, int2 texel, float size) {
-	return gTextures[NonUniformResourceIndex(SHADOW_MAP_SLOT + cascade)].SampleLevel((float2(texel) + 0.5f) / size, 0.0f).r;
+float loadShadowDepth(int slot, int2 texel, float size) {
+	return gTextures[NonUniformResourceIndex(slot)].SampleLevel((float2(texel) + 0.5f) / size, 0.0f).r;
 }
 
 // 1 when lit, 0 in shadow: 3x3 comparisons in the cascade covering the point (reversed-Z: larger is nearer).
@@ -143,10 +174,69 @@ float shadowFactor(float3 position, float3 normal) {
 	for (int dy = -1; dy <= 1; ++dy) {
 		for (int dx = -1; dx <= 1; ++dx) {
 			int2 tap = clamp(texel + int2(dx, dy), int2(0), int2(size - 1));
-			lit += ndc.z >= loadShadowDepth(cascade, tap, float(size)) - 0.0005f ? 1.0f : 0.0f;
+			lit += ndc.z >= loadShadowDepth(SHADOW_MAP_SLOT + cascade, tap, float(size)) - 0.0005f ? 1.0f : 0.0f;
 		}
 	}
 	return lit / 9.0f;
+}
+
+// Reversed-Z perspective depth is not linear: the comparison tolerance is a fraction of the stored depth.
+static const float LOCAL_SHADOW_TOLERANCE = 0.998f;
+
+// 1 when lit, 0 in shadow: 3x3 comparisons in the 2D map of a spot light.
+float spotShadowFactor(LocalShadow shadow, float3 position) {
+	float4 clip = mul(shadow.viewProjection, float4(position, 1.0f));
+	if (clip.w <= 0.0f)
+		return 1.0f;
+	float3 ndc = clip.xyz / clip.w;
+	float2 uv = ndc.xy * 0.5f + 0.5f;
+	if (any(uv < 0.0f) || any(uv > 1.0f) || ndc.z < 0.0f)
+		return 1.0f;
+	int size = int(shadow.params.y);
+	int slot = int(shadow.params.x);
+	int2 texel = int2(uv * float(size));
+	float lit = 0.0f;
+	for (int dy = -1; dy <= 1; ++dy) {
+		for (int dx = -1; dx <= 1; ++dx) {
+			int2 tap = clamp(texel + int2(dx, dy), int2(0), int2(size - 1));
+			lit += ndc.z >= loadShadowDepth(slot, tap, float(size)) * LOCAL_SHADOW_TOLERANCE ? 1.0f : 0.0f;
+		}
+	}
+	return lit / 9.0f;
+}
+
+// 1 when lit, 0 in shadow: 3x3 comparisons around the direction from a point light, in its cube.
+float pointShadowFactor(LocalShadow shadow, float3 fromLight) {
+	float3 axis = abs(fromLight);
+	float major = max(axis.x, max(axis.y, axis.z));
+	if (major <= 0.0f)
+		return 1.0f;
+	float reference = shadow.depth.x + shadow.depth.y / major;
+	// Two directions across the face holding the ray, one texel of the face apart.
+	float3 across = axis.x >= axis.y && axis.x >= axis.z ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 0.0f);
+	float3 u = normalize(cross(fromLight, across));
+	float3 v = cross(normalize(fromLight), u);
+	float step = 2.0f * major / shadow.params.y;
+	int cube = int(shadow.params.x);
+	float lit = 0.0f;
+	for (int dy = -1; dy <= 1; ++dy) {
+		for (int dx = -1; dx <= 1; ++dx) {
+			float3 tap = fromLight + (u * float(dx) + v * float(dy)) * step;
+			float stored = gCubes[NonUniformResourceIndex(cube)].SampleLevel(tap, 0.0f).r;
+			lit += reference >= stored * LOCAL_SHADOW_TOLERANCE ? 1.0f : 0.0f;
+		}
+	}
+	return lit / 9.0f;
+}
+
+// Shadow of a point or spot light on a surface point, offset along the normal by the world size of a shadow texel.
+float localShadowFactor(int entry, float3 position, float3 normal, float3 lightPosition) {
+	LocalShadow shadow = gLighting.localShadows[entry];
+	float texel = 2.0f * length(position - lightPosition) * shadow.depth.z / shadow.params.y;
+	float3 offsetPos = position + normal * (texel * shadow.params.z);
+	if (int(shadow.params.w) == 2)
+		return spotShadowFactor(shadow, offsetPos);
+	return pointShadowFactor(shadow, offsetPos - lightPosition);
 }
 
 // ------------------------------------------------------------------ surface
@@ -401,6 +491,9 @@ void lightIncidence(int index, float3 position, float3 normal, out float3 toLigh
 		attenuation = window * window / max(dist * dist, 1e-4f);
 		if (type == 2)
 			attenuation *= smoothstep(light.spotCosines.y, light.spotCosines.x, dot(-toLight, light.directionType.xyz));
+		int entry = int(light.spotCosines.z);
+		if (entry >= 0 && entry < MAX_LOCAL_SHADOWS && attenuation > 0.0f)
+			attenuation *= localShadowFactor(entry, position, normal, light.positionRange.xyz);
 	}
 	illuminance = light.color.rgb * attenuation;
 }

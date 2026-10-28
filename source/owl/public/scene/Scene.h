@@ -19,6 +19,7 @@
 #include "math/vectors.h"
 #include "renderer/Camera.h"
 #include "renderer/Lighting2D.h"
+#include "renderer/LocalShadows.h"
 #include "renderer/RenderGraph.h"
 #include "renderer/RenderStack.h"
 #include "renderer/Renderer3D.h"
@@ -1786,10 +1787,19 @@ private:
 	/**
 	 * @brief
 	 *  Hand the visible `Light` entities to `Renderer3D` and, when a directional light casts shadows, add one
-	 *  frame-graph pass per cascade drawing the opaque meshes and voxel worlds into its shadow map.
+	 *  frame-graph pass per cascade drawing the opaque meshes and voxel worlds into its shadow map; the point and
+	 *  spot lights casting shadows get theirs from `recordLocalShadowPasses`.
 	 * @param[in,out] ioGraph The frame graph.
 	 */
 	void recordLightPasses(renderer::RenderGraph& ioGraph);
+
+	/**
+	 * @brief
+	 *  Add the shadow passes of the point and spot lights nearest to the camera, within the budget of the backend:
+	 *  one map per spot light, six faces copied into a cube per point light.
+	 * @param[in,out] ioGraph The frame graph.
+	 */
+	void recordLocalShadowPasses(renderer::RenderGraph& ioGraph);
 
 	/**
 	 * @brief
@@ -2019,6 +2029,39 @@ private:
 	renderer::ShadowCascades m_shadowCascades;
 	/// Shadow of the frame, its maps filled when the 3D layers run.
 	renderer::ShadowSettings m_shadowSettings;
+	/// A point or spot light of the frame that casts a shadow, by its index in `m_gpuLights`.
+	struct LocalCaster {
+		/// World position of the light.
+		math::vec3 position{0.f, 0.f, 0.f};
+		/// Direction the light shines (spot).
+		math::vec3 direction{0.f, 0.f, -1.f};
+		/// Half angle of the outer cone (spot), in radians.
+		float outerAngle = 0.f;
+		/// Range of the light.
+		float range = 10.f;
+		/// Size of the shadow map, or of a cube face, in texels.
+		uint32_t resolution = 1024;
+		/// Normal-offset bias, in texels.
+		float bias = 1.5f;
+		/// Whether the light is a point light (a spot light otherwise).
+		bool point = false;
+	};
+	/// Local casters of the frame, by light index (meaningful for the shadow candidates only).
+	std::vector<LocalCaster> m_localCasters;
+	/// Point and spot lights that may get a shadow this frame.
+	std::vector<renderer::ShadowCandidate> m_shadowCandidates;
+	/// Shadows of the local lights of the frame, their spot maps filled when the 3D layers run.
+	renderer::LocalShadowSettings m_localShadows;
+	/// Shadow-map targets of the spot shadows of the frame.
+	std::vector<renderer::RenderGraph::Resource> m_spotShadowTargets;
+	/// Face targets of the point shadows of the frame, one per face size.
+	std::vector<renderer::RenderGraph::Resource> m_pointFaceTargets;
+	/// Light cameras of the spot shadows of the frame.
+	std::vector<renderer::Camera> m_spotShadowCameras;
+	/// Face cameras of the point shadows of the frame.
+	std::vector<renderer::PointShadowFaces> m_pointShadowFaces;
+	/// Cubes of the point shadows, kept from frame to frame.
+	std::vector<shared<renderer::gpu::TextureCube>> m_pointShadowCubes;
 	/// The environment image of the scene: its loading on a worker, then its GPU textures.
 	struct EnvironmentState {
 		/// Asset path of the loaded (or loading) image; empty for a procedural sky.

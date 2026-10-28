@@ -12,6 +12,7 @@
 #include "math/linAlgebra.h"
 #include "math/matrixCreation.h"
 #include "renderer/ClipSpace.h"
+#include "renderer/LocalShadows.h"
 #include "renderer/Material.h"
 
 #include "renderer/gpu/Framebuffer.h"
@@ -34,7 +35,11 @@ namespace owl::renderer {
 namespace {
 constexpr const char* k_RendererKey = "Renderer3D";
 constexpr const char* k_ShaderFolder = "renderer3D";
-constexpr uint32_t k_MaxTextureSlots = 32;
+// Largest 2D slot count (Vulkan): the fixed slots, then the spot shadow maps of the largest budget.
+constexpr uint32_t k_MaxTextureSlots = Renderer3D::g_spotShadowSlot + g_vulkanLocalShadowBudget.spot;
+// Largest cube count (Vulkan): the point shadow cubes, then as many reflection probes.
+constexpr uint32_t k_MaxCubeSlots = 2 * g_vulkanLocalShadowBudget.point;
+constexpr uint32_t k_CubeBinding = 7;
 
 // Identifier of this renderer's descriptor block, resolved once.
 auto blockId() -> gpu::RendererId {
@@ -56,6 +61,15 @@ struct SceneUbo {
 	math::vec4 origin{0.f, 0.f, 0.f, 1.f};
 };
 
+// One local shadow as the shaders read it (LocalShadow in pbr.slangh).
+struct LocalShadowUbo {
+	math::mat4 viewProjection = math::identity<float, 4>();
+	// x: texture slot (2D slot of a spot, cube index of a point), y: resolution, z: bias in texels, w: 1 point, 2 spot.
+	math::vec4 params{0.f, 0.f, 0.f, 0.f};
+	// xy: depth of a point-light face (depth.x + depth.y / d), z: tangent of the half angle of the light camera.
+	math::vec4 depth{0.f, 0.f, 1.f, 0.f};
+};
+
 static_assert(sizeof(SceneUbo) == 208, "SceneUbo must match the std140 layout of Scene3D in the renderer3D shaders.");
 
 struct LightingUbo {
@@ -74,9 +88,11 @@ struct LightingUbo {
 	math::vec4 skySun{0.f, 1.f, 0.f, 0.f};
 	// Pre-exposed radiances: x sun disc, y moon disc, z brightest stars.
 	math::vec4 skyBodies{0.f, 0.f, 0.f, 0.f};
+	// Shadows of local lights; the OpenGL shaders declare the first entries of the table only.
+	std::array<LocalShadowUbo, g_maxLocalShadows> localShadows{};
 };
 
-static_assert(sizeof(LightingUbo) == 528,
+static_assert(sizeof(LightingUbo) == 528 + g_maxLocalShadows * 96,
 			  "LightingUbo must match the std140 layout of Lighting in the renderer3D shaders.");
 
 struct MaterialUbo {
@@ -137,7 +153,14 @@ struct InternalData {
 	// Display-referred light added in Edit mode.
 	math::vec3 editorAmbient{0.f, 0.f, 0.f};
 	std::array<shared<gpu::Texture2D>, 4> shadowMaps{};
+	// Local shadows as the scene gives them, within the budget, and the shadow entry of each light (-1 none).
+	LocalShadowSettings localShadows;
+	std::array<float, Renderer3D::g_maxLights> lightShadowEntries{};
 	std::array<shared<gpu::Texture2D>, k_MaxTextureSlots> textureSlots;
+	std::array<shared<gpu::TextureCube>, k_MaxCubeSlots> cubeSlots;
+	// Slots the shaders of the active backend declare (`getLocalShadowBudget`).
+	uint32_t textureSlotCount = k_MaxTextureSlots;
+	uint32_t cubeSlotCount = k_MaxCubeSlots;
 	bool shadowPass = false;
 };
 
@@ -182,7 +205,7 @@ void refreshLighting() {
 	}
 }
 
-// Slots: 0 white, 1-6 material maps (or the draw's textures), 7-12 environment, 13 DFG, 28-31 shadows.
+// Slots: 0 white, 1-6 material maps, 7-12 environment, 13 DFG, 16-19 cascades, spot shadows; cubes: point shadows.
 void bindMeshTextures(const std::span<const shared<gpu::Texture2D>> iTextures, const Material* iMaterial) {
 	auto& slots = g_Data->textureSlots;
 	std::ranges::fill(slots, g_Data->whiteTexture);
@@ -199,7 +222,8 @@ void bindMeshTextures(const std::span<const shared<gpu::Texture2D>> iTextures, c
 		}
 	}
 	if (g_Data->shadowPass) {
-		gpu::RenderCommand::bindTextures(std::span{slots}.first(g_materialSlotEnd));
+		gpu::RenderCommand::bindTextures(std::span{slots}.first(g_materialSlotEnd),
+										 std::span<const shared<gpu::TextureCube>>{});
 		return;
 	}
 	if (g_Data->dfgTexture)
@@ -212,7 +236,14 @@ void bindMeshTextures(const std::span<const shared<gpu::Texture2D>> iTextures, c
 		if (const auto& map = g_Data->shadowMaps[index]; map)
 			slots[Renderer3D::g_shadowMapSlot + index] = map;
 	}
-	gpu::RenderCommand::bindTextures(slots);
+	auto& cubes = g_Data->cubeSlots;
+	std::ranges::fill(cubes, nullptr);
+	const auto& local = g_Data->localShadows;
+	for (size_t index = 0; index < local.spots.size(); ++index)
+		slots[Renderer3D::g_spotShadowSlot + index] = local.spots[index].map;
+	for (size_t index = 0; index < local.points.size(); ++index) cubes[index] = local.points[index].cube;
+	gpu::RenderCommand::bindTextures(std::span{slots}.first(g_Data->textureSlotCount),
+									 std::span{cubes}.first(g_Data->cubeSlotCount));
 }
 
 void setMaterial(const Material* iMaterial, const bool iHasBaseTexture, const bool iBlended) {
@@ -268,16 +299,20 @@ void Renderer3D::init() {
 		g_Data.reset();
 	}
 	g_Data = mkShared<InternalData>();
+	const auto budget = getLocalShadowBudget();
+	g_Data->textureSlotCount = g_spotShadowSlot + budget.spot;
+	g_Data->cubeSlotCount = 2 * budget.point;
+	g_Data->lightShadowEntries.fill(-1.f);
 	refreshLighting();
 
-	const std::array<gpu::BindingDecl, 7> bindings{
+	const std::array<gpu::BindingDecl, 8> bindings{
 			gpu::BindingDecl{.binding = 0,
 							 .type = gpu::BindingType::UniformBuffer,
 							 .count = 1,
 							 .stages = gpu::ShaderStage::VertexFragment},
 			gpu::BindingDecl{.binding = 1,
 							 .type = gpu::BindingType::CombinedImageSampler,
-							 .count = k_MaxTextureSlots,
+							 .count = g_Data->textureSlotCount,
 							 .stages = gpu::ShaderStage::Fragment},
 			gpu::BindingDecl{.binding = 2,
 							 .type = gpu::BindingType::StorageBuffer,
@@ -299,6 +334,10 @@ void Renderer3D::init() {
 							 .type = gpu::BindingType::StorageBuffer,
 							 .count = 1,
 							 .stages = gpu::ShaderStage::Vertex},
+			gpu::BindingDecl{.binding = k_CubeBinding,
+							 .type = gpu::BindingType::CombinedImageSamplerCube,
+							 .count = g_Data->cubeSlotCount,
+							 .stages = gpu::ShaderStage::Fragment},
 	};
 	gpu::RendererDescriptors::declare(k_RendererKey, bindings);
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
@@ -352,7 +391,9 @@ void Renderer3D::shutdown() {
 	g_Data->environment = {};
 	g_Data->lightBuffer.reset();
 	g_Data->shadowMaps = {};
+	g_Data->localShadows = {};
 	g_Data->textureSlots = {};
+	g_Data->cubeSlots = {};
 	g_Data->whiteTexture.reset();
 	g_Data.reset();
 	gpu::RendererDescriptors::release(k_RendererKey);
@@ -379,11 +420,17 @@ void Renderer3D::beginScene(const Camera& iCamera) {
 	const auto& row = data.worldViewDepthRow;
 	data.lighting.viewDepthRow = math::vec4{
 			row.x(), row.y(), row.z(), row.w() + row.x() * origin.x() + row.y() * origin.y() + row.z() * origin.z()};
+	for (size_t index = 0; index < data.localShadows.spots.size(); ++index) {
+		const auto& spot = data.localShadows.spots[index];
+		data.lighting.localShadows[index].viewProjection =
+				spot.relativeViewProjection * math::translate(math::identity<float, 4>(), origin - spot.origin);
+	}
 	const auto lightCount = static_cast<size_t>(std::max(data.lighting.counts[0], 0));
 	for (size_t index = 0; index < lightCount; ++index) {
 		const auto& world = data.sceneLights[index].positionRange;
 		data.lights[index].positionRange =
 				math::vec4{world.x() - origin.x(), world.y() - origin.y(), world.z() - origin.z(), world.w()};
+		data.lights[index].spotCosines.z() = data.lightShadowEntries[index];
 	}
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	data.lightingUniformBuffer->setData(&data.lighting, sizeof(LightingUbo), 0);
@@ -496,6 +543,48 @@ void Renderer3D::setShadow(const ShadowSettings& iShadow) {
 	g_Data->cascades = iShadow.relativeViewProjections;
 	g_Data->cascadeOrigins = iShadow.origins;
 	g_Data->shadowMaps = iShadow.maps;
+}
+
+void Renderer3D::setLocalShadows(const LocalShadowSettings& iShadows) {
+	if (!g_Data)
+		return;
+	auto& data = *g_Data;
+	if (iShadows.spots.empty() && iShadows.points.empty() && data.localShadows.spots.empty() &&
+		data.localShadows.points.empty())
+		return;
+	const auto budget = getLocalShadowBudget();
+	auto& local = data.localShadows;
+	local.spots.assign(iShadows.spots.begin(), iShadows.spots.begin() + static_cast<std::ptrdiff_t>(std::min<size_t>(
+																				iShadows.spots.size(), budget.spot)));
+	local.points.assign(iShadows.points.begin(),
+						iShadows.points.begin() +
+								static_cast<std::ptrdiff_t>(std::min<size_t>(iShadows.points.size(), budget.point)));
+	data.lightShadowEntries.fill(-1.f);
+	data.lighting.localShadows = {};
+	uint32_t entry = 0;
+	for (size_t index = 0; index < local.spots.size(); ++index, ++entry) {
+		const auto& spot = local.spots[index];
+		auto& shadow = data.lighting.localShadows[entry];
+		shadow.params = math::vec4{static_cast<float>(g_spotShadowSlot + index), static_cast<float>(spot.resolution),
+								   spot.bias, 2.f};
+		shadow.depth = math::vec4{0.f, 0.f, spot.tanHalfAngle, 0.f};
+		if (spot.lightIndex < g_maxLights)
+			data.lightShadowEntries[spot.lightIndex] = static_cast<float>(entry);
+	}
+	for (size_t index = 0; index < local.points.size(); ++index, ++entry) {
+		const auto& point = local.points[index];
+		auto& shadow = data.lighting.localShadows[entry];
+		shadow.params = math::vec4{static_cast<float>(index), static_cast<float>(point.resolution), point.bias, 1.f};
+		shadow.depth = math::vec4{point.depth.x(), point.depth.y(), 1.f, 0.f};
+		if (point.lightIndex < g_maxLights)
+			data.lightShadowEntries[point.lightIndex] = static_cast<float>(entry);
+	}
+}
+
+auto Renderer3D::getLocalShadowEntry(const uint32_t iLightIndex) -> int32_t {
+	if (!g_Data || iLightIndex >= g_maxLights)
+		return -1;
+	return static_cast<int32_t>(g_Data->lightShadowEntries[iLightIndex]);
 }
 
 void Renderer3D::setShadowPass(const bool iShadowPass) {

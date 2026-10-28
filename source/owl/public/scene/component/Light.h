@@ -33,7 +33,7 @@ struct OWL_API Light {
 	 *  Kind of light.
 	 */
 	enum struct Type : uint8_t {
-		Directional,///< Parallel rays from infinitely far (the sun); the only kind casting shadows.
+		Directional,///< Parallel rays from infinitely far (the sun).
 		Point,///< Rays from a point in every direction, fading to zero at `range`.
 		Spot,///< A point light restricted to a cone, softened between `innerAngle` and `outerAngle`.
 	};
@@ -52,13 +52,17 @@ struct OWL_API Light {
 	float innerAngle = 20.f * std::numbers::pi_v<float> / 180.f;
 	/// Half angle where a spot light reaches zero, in radians.
 	float outerAngle = 30.f * std::numbers::pi_v<float> / 180.f;
-	/// Whether a directional light casts shadows (the first one of the scene does).
+	/**
+	 * @brief
+	 *  Whether the light casts shadows: the first directional light that does shadows the scene through cascades,
+	 *  the point and spot lights nearest to the camera within the budget of the backend (`getLocalShadowBudget`).
+	 */
 	bool castShadows = true;
-	/// Distance from the camera the shadows cover, in world units.
+	/// Distance from the camera the shadows of a directional light cover, in world units.
 	float shadowDistance = 60.f;
-	/// Number of shadow cascades, from 1 to 4.
+	/// Number of shadow cascades of a directional light, from 1 to 4.
 	uint32_t cascadeCount = 4;
-	/// Size of each cascade's shadow map, in texels.
+	/// Size of each cascade's shadow map, of a spot shadow map or of each face of a point shadow cube, in texels.
 	uint32_t shadowResolution = 1024;
 	/// Depth bias against self-shadowing, in shadow-map texels along the surface normal.
 	float shadowBias = 1.5f;

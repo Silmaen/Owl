@@ -228,7 +228,7 @@ private:
 	 * @param[in] iLevels Data of each level from level 0, six faces each.
 	 * @return True when the upload is recorded.
 	 */
-	auto upload(std::span<const std::span<const uint8_t>> iLevels) const -> bool;
+	[[nodiscard]] auto upload(std::span<const std::span<const uint8_t>> iLevels) const -> bool;
 
 	/// Id of the texture in the descriptor registry.
 	uint32_t m_textureId = 0;
