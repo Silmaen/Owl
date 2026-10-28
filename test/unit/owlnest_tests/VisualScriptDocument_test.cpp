@@ -17,6 +17,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <optional>
@@ -203,4 +204,38 @@ TEST_F(VisualScriptDocumentTest, NodeBreakpointsBecomeLuaLineBreakpoints) {
 	EXPECT_TRUE(m_document.getBreakpoints().empty());
 	EXPECT_TRUE(script::ScriptDebugger::getBreakpoints(m_file.string()).empty());
 	script::ScriptDebugger::clear();
+}
+
+TEST_F(VisualScriptDocumentTest, FunctionsAreAddedRenamedAndRemovedWithTheirNodes) {
+	const auto name = m_document.addFunction(false);
+	EXPECT_EQ(name, "function");
+	ASSERT_NE(m_document.getScript().findFunction(name), nullptr);
+	EXPECT_EQ(m_document.getScript().nodes.size(), 4u);
+	EXPECT_EQ(m_document.addFunction(true), "macro");
+	EXPECT_EQ(m_document.getScript().findFunction("macro")->exits.size(), 2u);
+
+	auto signature = *m_document.getScript().findFunction(name);
+	signature.inputs.push_back({.name = "speed", .type = vs::PinType::Number});
+	m_document.setFunction(name, signature);
+	const auto call = m_document.addNode("func.call|function", {0.f, 0.f});
+	const auto get = m_document.addNode("value.number", {0.f, 100.f});
+	auto script = m_document.getScript();
+	script.links.push_back({.fromNode = get, .fromPin = "Result", .toNode = call, .toPin = "speed"});
+	ASSERT_TRUE(m_document.commit(script, "Link"));
+	signature.inputs.front().name = "pace";
+	m_document.setFunction(name, signature);
+	EXPECT_TRUE(std::ranges::any_of(m_document.getScript().links,
+									[&](const vs::GraphLink& iLink) -> bool { return iLink.toPin == "pace"; }));
+	signature.inputs.clear();
+	m_document.setFunction(name, signature);
+	EXPECT_TRUE(std::ranges::none_of(m_document.getScript().links,
+									 [&](const vs::GraphLink& iLink) -> bool { return iLink.toNode == call; }));
+
+	m_document.renameFunction(name, "move");
+	EXPECT_EQ(m_document.getScript().findNode(call)->values.at("function"), "move");
+	m_document.removeFunction("move");
+	EXPECT_EQ(m_document.getScript().findFunction("move"), nullptr);
+	EXPECT_EQ(m_document.getScript().findNode(call), nullptr);
+	m_document.performUndo();
+	EXPECT_NE(m_document.getScript().findFunction("move"), nullptr);
 }

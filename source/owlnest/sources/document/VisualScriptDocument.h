@@ -17,6 +17,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <optional>
 #include <set>
@@ -283,6 +284,56 @@ public:
 
 	/**
 	 * @brief
+	 *  Add a function or a macro, with its entry and return nodes linked at the centre of the view.
+	 * @param[in] iMacro True for a macro with two exits.
+	 * @return Its name.
+	 */
+	auto addFunction(bool iMacro) -> std::string;
+
+	/**
+	 * @brief
+	 *  Remove a function with its entry, return and call nodes.
+	 * @param[in] iName Function name.
+	 */
+	void removeFunction(const std::string& iName);
+
+	/**
+	 * @brief
+	 *  Rename a function and the nodes that name it.
+	 * @param[in] iName Current name.
+	 * @param[in] iNewName New name.
+	 */
+	void renameFunction(const std::string& iName, const std::string& iNewName);
+
+	/**
+	 * @brief
+	 *  Replace the signature of a function, dropping the links of the pins it loses.
+	 * @param[in] iName Function name.
+	 * @param[in] iFunction The new definition (its name is kept).
+	 * @param[in] iMerge Merge with the previous edit of the same kind (typing in a field).
+	 */
+	void setFunction(const std::string& iName, script::visual::GraphFunction iFunction, bool iMerge = false);
+
+	/**
+	 * @brief
+	 *  A library graph of the project and the functions it offers.
+	 */
+	struct LibraryEntry {
+		/// Asset path of the `.owlvs`, as the call nodes name it.
+		std::string path;
+		/// Its functions and macros.
+		std::vector<script::visual::GraphFunction> functions;
+	};
+
+	/**
+	 * @brief
+	 *  Replace the library graphs the palette offers (Owl Nest lists the project ones).
+	 * @param[in] iLibraries The libraries.
+	 */
+	void setLibraries(std::vector<LibraryEntry> iLibraries) { m_libraries = std::move(iLibraries); }
+
+	/**
+	 * @brief
 	 *  Paste copied nodes with fresh identifiers, as one edit; they become the selection.
 	 * @param[in] iText Text from `copyNodes`.
 	 * @param[in] iOffset Offset added to every pasted position.
@@ -399,6 +450,34 @@ private:
 
 	/**
 	 * @brief
+	 *  Function and macro list.
+	 */
+	void renderFunctions();
+
+	/**
+	 * @brief
+	 *  Editors of the parameters, results or exits of a function.
+	 * @param[in] iFunction The function.
+	 */
+	void renderSignature(const script::visual::GraphFunction& iFunction);
+
+	/**
+	 * @brief
+	 *  Palette entries of the functions of the graph and of the libraries.
+	 * @param[in] iItem Draws one entry from its node key, label and type.
+	 */
+	void renderFunctionEntries(
+			const std::function<void(const std::string&, const std::string&, const script::visual::NodeType&)>& iItem)
+			const;
+
+	/**
+	 * @brief
+	 *  List the library graphs of the project, at most every few seconds.
+	 */
+	void refreshLibraries();
+
+	/**
+	 * @brief
 	 *  Settings, grouped pins and unlinked input values of the selected node.
 	 */
 	void renderSelectedNode();
@@ -454,6 +533,10 @@ private:
 	std::map<core::UUID, std::vector<int>> m_nodeLines;
 	/// Nodes holding a breakpoint.
 	std::set<core::UUID> m_breakpoints;
+	/// Library graphs offered by the palette.
+	std::vector<LibraryEntry> m_libraries;
+	/// Frame count of the last library scan.
+	int m_libraryScanFrame{-1000};
 
 	/**
 	 * @brief
