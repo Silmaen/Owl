@@ -29,6 +29,7 @@ strict CI, hence the cadence below.
 - ![To evaluate][evaluate] Linux AppImage and Flatpak next to the portable archive ([Game export](design/game-export.md#game-export-targets))
 - ![To evaluate][evaluate] Networking on the Web: a WebSocket or WebRTC transport ([Networking](design/simulation-networking.md))
 - ![To evaluate][evaluate] Owl Nest in several languages, on the string tables of the games ([Localisation](design/localisation.md))
+- ![To evaluate][evaluate] Hot reload of a C++ game module ([Content pipeline](design/content-pipeline.md#hot-reload))
 - ![To evaluate][evaluate] macOS (Metal) ([Modding and platforms](design/modding-platforms.md))
 
 ## v1.0.0 -- Expected 2026-12-31
@@ -59,7 +60,7 @@ replication, the freezes, the SDK.
 - ![Planned][planned] Lobby and session management
 - ![Planned][planned] Network debugging tools (latency / loss simulation, stats overlay)
 - ![Planned][planned] Interest management: relevance areas and priorities, a client receives only what is near it ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Sample game: a networked Bomberman ([Sample games](design/sample-games.md))
+- ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a networked Bomberman ([Pool](design/sample-games.md#sample-games-pool))
 - ![Planned][planned] Public API freeze, semantic versioning and deprecation policy, ABI check in CI — release candidate
 - ![Planned][planned] Versioned scene and save formats with tested migrations
 - ![Planned][planned] Project upgrade assistant: a project of an earlier version migrated after a backup ([Stable release](design/stable-release.md#stable-release-upgrade))
@@ -127,9 +128,7 @@ planets for worlds of any scale ([details](design/gameplay-systems.md), [simulat
 - ![Planned][planned] Dialogue system with a visual editor (`.owldlg`)
 - ![Planned][planned] HUD markers anchored to world entities, with off-screen indicators ([HUD system](design/hud-system.md))
 - ![Planned][planned] Engine Demo: enemies demo on the AI modules
-- ![Planned][planned] Sample games: a one-room Zelda-like and a 3D marble or kart game ([Sample games](design/sample-games.md))
-- ![Planned][planned] Sample games: a 3D lunar lander and a dogfight in an asteroid field ([Sample games](design/sample-games.md))
-- ![To evaluate][evaluate] Sample games from the pool: a rail shooter, an orbital golf, a bridge builder ([Pool](design/sample-games.md#sample-games-pool))
+- ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a Zelda-like, a marble or kart game, a lunar lander, an asteroid dogfight, a rail shooter, an orbital golf, a bridge builder ([Pool](design/sample-games.md#sample-games-pool))
 
 ## v0.6.0 -- Expected 2026-11-08
 
@@ -164,9 +163,7 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Planned][planned] Tileset editor: compose the atlas from source images ([2D](design/2d-complete.md))
 - ![Planned][planned] Mipmapped pixel-art atlases: sharp texels up close, filtered mips far away, no bleeding between tiles, for the voxel, raycast and tilemap atlases ([2D](design/2d-complete.md#mipmapped-pixel-art-atlases-v060))
 - ![Planned][planned] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
-- ![Planned][planned] Hot reload of a C++ game module
-- ![Planned][planned] Sample games: a Mini Minecraft, and combat (guards, weapons) in the Wolfenstein mini ([Sample games](design/sample-games.md))
-- ![To evaluate][evaluate] Sample game from the pool: a station trader ([Pool](design/sample-games.md#sample-games-pool))
+- ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a Mini Minecraft, combat in the Wolfenstein mini, a station trader ([Pool](design/sample-games.md#sample-games-pool))
 
 ## v0.5.0 -- 2026-10-25
 

@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Sample games are picked from the pool once the features of a release are done, none planned per release; hot reload of a C++ game module moves after 1.0.
 - Shipped projects carry sidecars and GUID references; the Engine Demo PBR textures are cooked to ETC1S and UASTC.
 - An exported game packs only its engine files and initialises only its renderer families (`RendererSet`): packs about 3.3 MiB smaller.
 - An exported game reads its textures, sounds, fonts and shaders from the pack in memory: no `assets/` extraction, no cache written next to it.
