@@ -69,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `linux-clang-minimal` builds and passes again: shader baking and shader reload are tied to the render module, and the tests that need physics or the renderer skip without it.
 - The export tests play each game on lavapipe only when `OWL_RENDER_TESTS` is on: the emulated arm64 build no longer times out on the Tower Defence.
 - Owl Nest: the Hierarchy and Properties panels follow the active document whatever its type (code, node graph, animation), with an empty state when it has nothing to show.
 - `NodeCanvas` (Scene Flow): the mouse wheel no longer zooms the graph while a menu over it scrolls, and links meet their pins.
