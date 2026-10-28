@@ -14,6 +14,7 @@
 #include "data/assets/AssetReference.h"
 #include "data/assets/AssetSearchPaths.h"
 #include "null/Texture.h"
+#include "renderer/AtlasMips.h"
 #include "renderer/Renderer.h"
 #include "renderer/TextureDecoder.h"
 #if OWL_WITH_RENDER
@@ -121,7 +122,7 @@ void Texture::Specification::fromString(const std::string& iString) {
 auto Texture::Specification::getMipLevelCount() const -> uint32_t {
 	if (levelCount > 0)
 		return levelCount;
-	if (!generateMips || filterMode == FilterMode::Nearest)
+	if (!generateMips || filterMode != FilterMode::Linear)
 		return 1;
 	return static_cast<uint32_t>(std::bit_width(std::max({size.x(), size.y(), 1u})));
 }
@@ -384,7 +385,7 @@ auto Texture2D::createFromSerializedAsync(const std::string& iTextureSerializedN
 					const auto tex = weakTex.lock();
 					if (!tex)
 						return;
-					const bool uploaded = sharedLevels->has_value() && tex->setLevels(**sharedLevels);
+					const bool uploaded = sharedLevels->has_value() && tex->uploadLevels(std::move(**sharedLevels));
 					tex->m_loadState = uploaded ? LoadState::Ready : LoadState::Failed;
 				},
 		});
@@ -405,8 +406,8 @@ auto Texture2D::createFromSerializedAsync(const std::string& iTextureSerializedN
 					tex->m_loadState = LoadState::Failed;
 					return;
 				}
-				tex->setData(sharedDecoded->pixels.data(), static_cast<uint32_t>(sharedDecoded->pixels.size()));
-				tex->m_loadState = LoadState::Ready;
+				tex->m_loadState = tex->uploadPixels(sharedDecoded->pixels, sharedDecoded->size) ? LoadState::Ready
+																								 : LoadState::Failed;
 			},
 	});
 
@@ -444,14 +445,80 @@ auto Texture2D::reloadFromFile() -> bool {
 					   m_path.string())
 		return false;
 	}
-	auto specs = m_specification;
-	specs.size = decoded.size;
-	specs.format = decoded.format;
-	reallocate(specs);
-	setData(const_cast<uint8_t*>(decoded.pixels.data()), static_cast<uint32_t>(decoded.pixels.size()));
+	if (m_specification.atlasCell.surface() > 0 && decoded.format == ImageFormat::Rgba8) {
+		if (!uploadPixels(decoded.pixels, decoded.size))
+			return false;
+	} else {
+		auto specs = m_specification;
+		specs.size = decoded.size;
+		specs.format = decoded.format;
+		reallocate(specs);
+		setData(const_cast<uint8_t*>(decoded.pixels.data()), static_cast<uint32_t>(decoded.pixels.size()));
+	}
 	m_loadState = LoadState::Ready;
-	OWL_CORE_INFO("Texture: '{}' reloaded ({}x{}).", m_path.string(), specs.size.x(), specs.size.y())
+	OWL_CORE_INFO("Texture: '{}' reloaded ({}x{}).", m_path.string(), m_specification.size.x(),
+				  m_specification.size.y())
 	return true;
+}
+
+auto Texture2D::setPixelArtCells(const math::vec2ui& iCell) -> bool {
+	OWL_PROFILE_FUNCTION()
+
+	if (iCell.surface() == 0) {
+		OWL_CORE_WARN("Texture: Empty atlas cell given to '{}'.", getName())
+		return false;
+	}
+	m_specification.atlasCell = iCell;
+	setFilterMode(FilterMode::PixelArt);
+	if (m_loadState == LoadState::Pending)
+		return true;
+	ResolvedSource source;
+	if (!m_path.empty()) {
+		source.path = m_path;
+		source.bytes = readFileBytes(m_path);
+	} else if (!getName().empty()) {
+		source = resolveTextureSource("nam:", getName());
+	}
+	if (source.bytes.empty()) {
+		OWL_CORE_WARN("Texture: No source to build the atlas mipmaps of '{}'.", getName())
+		return false;
+	}
+	if (isKtx2(source.bytes)) {
+		auto levels = transcodeKtx2(source.bytes, pickKtx2Target());
+		if (!levels) {
+			OWL_CORE_WARN("Texture: Cannot read the cooked atlas '{}'.", getName())
+			return false;
+		}
+		return uploadLevels(std::move(*levels));
+	}
+	const auto decoded = decodeImageBytes(source.bytes, 4);
+	if (!decoded.valid) {
+		OWL_CORE_WARN("Texture: Cannot decode the atlas '{}'.", getName())
+		return false;
+	}
+	return uploadPixels(decoded.pixels, decoded.size);
+}
+
+auto Texture2D::uploadPixels(const std::span<const uint8_t> iPixels, const math::vec2ui& iSize) -> bool {
+	if (m_specification.atlasCell.surface() == 0) {
+		if (iSize != m_specification.size) {
+			auto specs = m_specification;
+			specs.size = iSize;
+			reallocate(specs);
+		}
+		setData(const_cast<uint8_t*>(iPixels.data()), static_cast<uint32_t>(iPixels.size()));
+		return true;
+	}
+	return setLevels(buildCellMips(iPixels, iSize, m_specification.atlasCell));
+}
+
+auto Texture2D::uploadLevels(TextureLevels iLevels) -> bool {
+	if (m_specification.atlasCell.surface() > 0) {
+		if (iLevels.format == ImageFormat::Rgba8 && !iLevels.levels.empty())
+			return setLevels(buildCellMips(iLevels.levels.front(), iLevels.size, m_specification.atlasCell));
+		iLevels.levels.resize(std::min<size_t>(iLevels.levels.size(), cellMipLevelCount(m_specification.atlasCell)));
+	}
+	return setLevels(iLevels);
 }
 
 Texture::~Texture() = default;

@@ -402,7 +402,8 @@ void RendererVoxel::prepareWorld(VoxelMeshCache& ioCache, scene::component::Voxe
 	// No atlas yet (unconfigured, or not resolved before runtime starts): skip silently rather than warn per frame.
 	if (!ioComponent.tileset || !ioComponent.tileset->texture)
 		return;
-	ioComponent.tileset->texture->setFilterMode(gpu::FilterMode::Nearest);
+	if (ioComponent.tileset->filterMode != gpu::FilterMode::PixelArt)
+		ioComponent.tileset->texture->setFilterMode(gpu::FilterMode::Nearest);
 
 	auto& data = *ioCache.mp_data;
 	drainSink(data);
@@ -434,15 +435,17 @@ void RendererVoxel::drawVoxelWorld(VoxelMeshCache& ioCache, scene::component::Vo
 	if (!ioComponent.tileset || !ioComponent.tileset->texture)
 		return;
 	const std::array<shared<gpu::Texture2D>, 1> textures{ioComponent.tileset->texture};
-	// The relief and roughness maps of the tileset ride on a material, whose map mask tells the shader they exist.
+	// Tileset maps ride on a material (its mask tells the shader they exist), opacity in the unread metallic slot.
 	const auto& tileset = *ioComponent.tileset;
 	std::optional<Material> maps;
-	if (tileset.normalTexture || tileset.roughnessTexture) {
+	if (tileset.normalTexture || tileset.roughnessTexture || tileset.opacityTexture) {
 		maps = Material{}.withTexture(MaterialMap::BaseColor, tileset.texture);
 		if (tileset.normalTexture)
 			maps = maps->withTexture(MaterialMap::Normal, tileset.normalTexture);
 		if (tileset.roughnessTexture)
 			maps = maps->withTexture(MaterialMap::Roughness, tileset.roughnessTexture);
+		if (tileset.opacityTexture)
+			maps = maps->withTexture(MaterialMap::Metallic, tileset.opacityTexture);
 	}
 
 	auto& cache = cacheIt->second;

@@ -35,13 +35,41 @@ Neighbouring corners follow, so every cell keeps one of the 19 slopes; a click, 
 step. The cell properties show the slope and edit the four corner heights with the same rule. A flat tilemap has no
 heights and no Node tool.
 
+### Procedural generation
+
+A tilemap can carry a **generator**: a [PCG graph](pcg_graphs.md), a seed, a layer and a region. The **Procedural**
+section of the Scene Hierarchy column sets it, previews it on the canvas and writes its tiles into the layer.
+
 ## Tileset editor
 
 - **Atlas**: the texture, the grid, the tile size, the filter and the **Kind**: `Orthogonal` square tiles or
-  `Isometric` 2:1 diamonds. A voxel tileset also takes its normal and roughness maps here.
-- Click a tile to edit it in Properties: its flags and, for a road network, its **Navigation** (the sides it joins,
-  four arrows as on screen; see [Pathfinding](pathfinding.md)).
-- An isometric tileset adds **Slopes**: per terrain or overlay, the tile of each of the 19 slopes and its foundation
-  (`-1` uses the flat tile).
+  `Isometric` 2:1 diamonds. Each map (texture, normal map, roughness map, opacity map) is a row showing its
+  thumbnail, file and size; drop an image on the thumbnail. A voxel tileset takes its normal and roughness maps here;
+  the **Opacity Map** cuts any tileset out (its red channel multiplies the texture alpha). The filter is `Linear`,
+  `Nearest` or `Pixel Art` (`filterMode: PixelArt`: sharp up close, mipmaps built per tile far away, see
+  [Renderer](renderer.md)).
+- Click a tile to edit it in Properties: its flags and, for a road network, its **Navigation** (**Road**, then the
+  **Joined Sides**: four arrows as on screen; see [Pathfinding](pathfinding.md)).
+- An isometric tileset adds **Slopes**: one folded row per terrain or overlay (with the name of its flat tile); open
+  it for the tile of each of the 19 slopes (`-1` uses the flat tile) and, under **Foundations**, its foundations.
+  **Delete Terrain** sits in the row and in its context menu.
+
+### Composing the atlas
+
+The atlas is built in the editor from source images; each gesture below is one undo step.
+
+| Gesture                                                 | Effect                                                                                      |
+|---------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| Drop an image from the Content Browser                  | The image, scaled to the cell, replaces the slot under the cursor                           |
+| Drop a folder                                           | Its images sorted by name fill the slot, then the next empty ones; rows are added when full |
+| Right-click: **Insert Image...** / **Insert Folder...** | The same, from a file dialog                                                                |
+| Right-click: **Clear Image**, or **Delete**             | The pixels become transparent and the tile metadata is reset; the index stays               |
+| **Select All** (Ctrl + A), Ctrl / Shift click           | Select several slots                                                                        |
+| Drag the selection onto another slot                    | The pixels and the metadata move; an occupied slot swaps                                    |
+| Grid **+** / **-** buttons                              | Resize the atlas; each cell keeps its column and row                                        |
+
+Growing the atlas only adds rows, so the indices of the existing tiles, and the tilemaps that use them, do not move.
+The atlas PNG is written when the tileset is saved; a tileset without a texture creates `<name>.png` beside its file
+(save it first). While composed pixels are unsaved the texture and the tile size are locked.
 
 Every edit is one undo step. A saved tileset or tilemap reloads in the scenes that use it, even while they play.

@@ -21,10 +21,11 @@
 namespace owl::nest {
 
 namespace {
-constexpr std::array<std::pair<std::string_view, AssetKind>, 39> g_kinds{{
+constexpr std::array<std::pair<std::string_view, AssetKind>, 40> g_kinds{{
 		{".owl", AssetKind::Scene},
 		{".owlflow", AssetKind::NodeGraph},
 		{".owlvs", AssetKind::NodeGraph},
+		{".owlpcg", AssetKind::NodeGraph},
 		{".owlanim", AssetKind::Animation},
 		{".owltilemap", AssetKind::Tilemap},
 		{".owltileset", AssetKind::Tileset},

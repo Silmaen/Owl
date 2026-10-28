@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -41,6 +42,31 @@ struct OWL_API CornerHeightChange {
 	 * @return True when both changes are the same.
 	 */
 	auto operator==(const CornerHeightChange& iOther) const -> bool = default;
+};
+
+/**
+ * @brief
+ *  Procedural generation settings of a tilemap: the graph, its seed and where it writes (`generator` key).
+ */
+struct OWL_API TilemapGenerator {
+	/// Procedural generation graph (`.owlpcg`), relative to the project assets.
+	std::filesystem::path graphPath;
+	/// Seed of the generation: the same seed gives the same tiles.
+	uint64_t seed{0};
+	/// Layer the tiles are written on.
+	uint32_t layer{0};
+	/// Top-left cell of the generated region.
+	math::vec2ui origin{0, 0};
+	/// Size of the region in cells; a zero side reaches the end of the grid.
+	math::vec2ui size{0, 0};
+
+	/**
+	 * @brief
+	 *  Comparison operator.
+	 * @param[in] iOther The other settings.
+	 * @return True when both settings are the same.
+	 */
+	auto operator==(const TilemapGenerator& iOther) const -> bool = default;
 };
 
 /**
@@ -73,7 +99,8 @@ struct OWL_API CornerHeightChange {
  * ```.
  *
  * Version 1 files (pure YAML, one comma-separated `tiles` string per layer) and version 2 files (no heights) load
- * through the migration chain and are written back as version 3.
+ * through the migration chain and are written back as version 3. An optional `generator` map holds the procedural
+ * generation settings (`TilemapGenerator`).
  *
  * The isometric terrain is a `(width + 1) x (height + 1)` grid of corner heights (steps of
  * `terrain::heightStep`), empty while the map is flat. Corners next to each other never differ by more than one
@@ -145,6 +172,8 @@ public:
 	float cellSize = 1.f;
 	/// Ordered list of layers (back-to-front).
 	std::vector<scene::component::TilemapLayer> layers;
+	/// Procedural generation settings, absent when the tilemap is painted by hand only.
+	std::optional<TilemapGenerator> generator;
 
 	/**
 	 * @brief

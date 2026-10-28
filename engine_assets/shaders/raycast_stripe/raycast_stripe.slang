@@ -5,7 +5,7 @@
 // Layout contract (must match `renderer::RendererRaycast`'s descriptor
 // block):
 //   binding 0 : UBO  — StripeParams (viewProjection + counts + horizon + ids)
-//   binding 1 : Sampler2D — tileset atlas (single texture, no array)
+//   binding 1 : Sampler2D[2] — tileset atlas, then its opacity map (the atlas again without one)
 //   binding 2 : SSBO — hitCount[col]            (uint per column)
 //   binding 3 : SSBO — columnHits[col*maxHits + k] (ColumnHit per slot)
 //   binding 4 : SSBO — tileUvRects[tileIndex]   (float4: uvLeft, uvBottom, uvRight, uvTop)
@@ -24,6 +24,8 @@ struct StripeParams {
 	int entityId;
 	// 1 when the target stores linear colour (the fragment colour is decoded from sRGB).
 	int linearOutput;
+	// x: 1 when gTileset[1] holds the opacity map of the tileset; yzw unused.
+	int4 maps;
 };
 
 [[vk::binding(0)]]
@@ -34,7 +36,9 @@ ConstantBuffer<StripeParams> gParams;
 #else
 [[vk::binding(0)]]
 #endif
-Sampler2D gTileset;
+Sampler2D gTileset[2];
+
+#include "atlas.slangh"
 
 struct ColumnHit {
 	int tileIndex;
@@ -64,6 +68,8 @@ struct FragmentInput {
 	[[vk::location(0)]] float4 color : COLOR;
 	[[vk::location(1)]] float2 texCoord : TEXCOORD0;
 	[[vk::location(2)]] nointerpolation int entityID : TEXCOORD1;
+	// Atlas cell of the wall tile: min u, v, max u, v.
+	[[vk::location(3)]] nointerpolation float4 cellRect : TEXCOORD2;
 };
 
 struct FragmentOutput {
@@ -105,6 +111,7 @@ VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 		output.frag.color = float4(0.0f, 0.0f, 0.0f, 0.0f);
 		output.frag.texCoord = float2(0.0f, 0.0f);
 		output.frag.entityID = 0;
+		output.frag.cellRect = float4(0.0f, 0.0f, 1.0f, 1.0f);
 		return output;
 	}
 
@@ -134,13 +141,20 @@ VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	const float darken = (hit.side == 1u) ? yDarken : 1.0f;
 	output.frag.color = float4(darken, darken, darken, 1.0f);
 	output.frag.entityID = gParams.entityId;
+	output.frag.cellRect = float4(min(uvRect.xy, uvRect.zw), max(uvRect.xy, uvRect.zw));
 	return output;
 }
 
 [shader("fragment")]
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
-	float4 texColor = input.color * gTileset.Sample(input.texCoord);
+	const float2 uvDdx = ddx(input.texCoord);
+	const float2 uvDdy = ddy(input.texCoord);
+	const float2 uv =
+			clampToAtlasCell(gTileset[0], input.texCoord, input.cellRect.xy, input.cellRect.zw, uvDdx, uvDdy);
+	float4 texColor = input.color * gTileset[0].SampleGrad(uv, uvDdx, uvDdy);
+	if (gParams.maps.x != 0)
+		texColor.a *= gTileset[1].SampleGrad(uv, uvDdx, uvDdy).r;
 	if (texColor.a < 0.001f)
 		discard;
 	if (gParams.linearOutput != 0)

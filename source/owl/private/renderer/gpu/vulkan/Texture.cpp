@@ -120,7 +120,7 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 		else
 			texData.debugName = "anon";
 		texData.mipLevels = m_specification.getMipLevelCount();
-		texData.nearest = m_specification.filterMode == FilterMode::Nearest;
+		texData.filter = m_specification.filterMode;
 		texData.format = floating ? VK_FORMAT_R32G32B32A32_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM;
 		createImage(m_textureId, m_specification.size);
 	}
@@ -189,7 +189,7 @@ auto Texture2D::setLevels(const TextureLevels& iLevels) -> bool {
 	auto& data = vkd.getTextureData(m_textureId);
 	data.debugName = !getName().empty() ? getName() : getPath().filename().string();
 	data.mipLevels = specs.levelCount;
-	data.nearest = specs.filterMode == FilterMode::Nearest;
+	data.filter = specs.filterMode;
 	data.format = format;
 	createImage(m_textureId, specs.size);
 	internal::VulkanHandler::get().recordTransfer([&data, &staging, &offsets, &specs](VkCommandBuffer iCmd) -> void {
@@ -222,9 +222,9 @@ void Texture2D::setFilterMode(const FilterMode iMode) {
 	if (!vkd.isTextureRegistered(m_textureId))
 		return;
 	auto& data = vkd.getTextureData(m_textureId);
-	if (data.nearest == (iMode == FilterMode::Nearest))
+	if (data.filter == iMode)
 		return;
-	data.nearest = iMode == FilterMode::Nearest;
+	data.filter = iMode;
 	if (data.textureSampler == nullptr)
 		return;
 	data.createSampler();

@@ -41,6 +41,7 @@ TEST(Renderer, fakeScene) {
 	const CameraOrtho cam(0, 0, 800, 600);
 	EXPECT_NO_THROW(Renderer::beginScene(cam));
 	EXPECT_NO_THROW(Renderer::endScene());
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	owl::core::Log::invalidate();
 }

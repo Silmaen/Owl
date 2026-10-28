@@ -87,8 +87,10 @@ struct StripeParamsUbo {
 	int32_t entityId;
 	// 1 when the bound framebuffer stores linear colour.
 	int32_t linearOutput;
+	// x: 1 when the opacity map of the tileset is bound in the second texture slot; yzw: padding to a std140 vec4.
+	std::array<int32_t, 4> maps{};
 };
-static_assert(sizeof(StripeParamsUbo) == 96, "StripeParamsUbo must match shader UBO layout");
+static_assert(sizeof(StripeParamsUbo) == 112, "StripeParamsUbo must match shader UBO layout");
 
 // Per-pass state shared between `beginScene`, the `drawTilemap*` calls, and `endScene`.
 struct State {
@@ -168,6 +170,7 @@ struct WallStripeContext {
 	const scene::TilemapAsset& tilemap;
 	const scene::Tileset& tileset;
 	const shared<gpu::Texture>& atlas;
+	const shared<gpu::Texture2D>& opacity;
 	uint32_t numRays;
 	int maxSteps;
 	int entityId;
@@ -317,6 +320,7 @@ auto emitWallStripesGpu(const WallStripeContext& iCtx) -> bool {
 	ubo.maxHits = utils::RaycastDDAPass::kMaxHitsPerColumn;
 	ubo.entityId = iCtx.entityId;
 	ubo.linearOutput = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
+	ubo.maps[0] = iCtx.opacity ? 1 : 0;
 
 	// Column depths (occlusion) and stats from a CPU walk: a read-back of the GPU pass drains the frame.
 	thread_local std::vector<CpuColumnHit> hits;
@@ -344,8 +348,9 @@ auto emitWallStripesGpu(const WallStripeContext& iCtx) -> bool {
 	g_state->tileUvRectsSsbo->bind(/*iBinding=*/4u);
 
 	gpu::RenderCommand::beginBatch();
-	const std::array atlas{std::dynamic_pointer_cast<gpu::Texture2D>(iCtx.atlas)};
-	gpu::RenderCommand::bindTextures(atlas);
+	const auto atlas = std::dynamic_pointer_cast<gpu::Texture2D>(iCtx.atlas);
+	const std::array textures{atlas, iCtx.opacity ? iCtx.opacity : atlas};
+	gpu::RenderCommand::bindTextures(textures);
 
 	const uint32_t instanceCount = iCtx.numRays * utils::RaycastDDAPass::kMaxHitsPerColumn;
 	gpu::RenderCommand::drawDataInstanced(g_state->stripeDrawData, /*iIndexCount=*/6u, instanceCount);
@@ -416,7 +421,7 @@ void RendererRaycast::init() {
 								 .stages = gpu::ShaderStage::VertexFragment},
 				gpu::BindingDecl{.binding = 1,
 								 .type = gpu::BindingType::CombinedImageSampler,
-								 .count = 1,
+								 .count = 2,
 								 .stages = gpu::ShaderStage::Fragment},
 				gpu::BindingDecl{.binding = 2,
 								 .type = gpu::BindingType::StorageBuffer,
@@ -773,6 +778,7 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 	const WallStripeContext ctx{.tilemap = iTilemap,
 								.tileset = tileset,
 								.atlas = atlasTex,
+								.opacity = tileset.opacityTexture,
 								.numRays = numRays,
 								.maxSteps = maxSteps,
 								.entityId = iEntityId,

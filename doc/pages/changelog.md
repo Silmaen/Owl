@@ -42,9 +42,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `editor` module, one function per registry command, errors and Play refusals as Lua errors, journal source `script`.
 - Editor scripts: `.lua` files under `editor/` run from the Console menu or the Content Browser as one undo step, and `.owlmacro` files export to Lua.
 - `ScriptConsole`: a Lua state for tools with a REPL and host functions, apart from the game sandbox.
+- Procedural generation graphs: `.owlpcg` node graphs edited in Owl Nest generate a tilemap region from a seed (`TilemapAsset::generator`).
+- Tileset editor: compose the atlas from source images by dropping files or folders, clear, move and grow slots, undoable.
+- Tileset opacity map (`opacityTexture`): its red channel multiplies the atlas alpha in the tilemap, isometric, raycast and voxel shaders.
+- Mipmapped pixel-art atlases: `FilterMode::PixelArt` builds mipmaps cell by cell, sampled inside the cell by the voxel, raycast and tilemap shaders.
 
 ### Changed
 
+- Sample games are picked from the pool once the features of a release are done, none planned per release; hot reload of a C++ game module moves after 1.0.
 - Shipped projects carry sidecars and GUID references; the Engine Demo PBR textures are cooked to ETC1S and UASTC.
 - An exported game packs only its engine files and initialises only its renderer families (`RendererSet`): packs about 3.3 MiB smaller.
 - An exported game reads its textures, sounds, fonts and shaders from the pack in memory: no `assets/` extraction, no cache written next to it.

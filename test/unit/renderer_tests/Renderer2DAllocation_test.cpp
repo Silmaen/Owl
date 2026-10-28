@@ -116,7 +116,7 @@ TEST(Renderer2D, transientFrameDoesNotAllocate) {
 	EXPECT_GE(stats.drawCalls, 4u);
 	EXPECT_EQ(stats.lineCount, 800u);
 
-	Renderer2D::shutdown();
+	Renderer::shutdown();
 	gpu::RenderCommand::invalidate();
 	app::Application::invalidate();
 	app.reset();

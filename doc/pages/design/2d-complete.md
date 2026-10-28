@@ -78,44 +78,44 @@ not a navigation mesh.
 - Incremental update when a tile changes; queries spread over ticks on the task system
 - Lua API and an editor overlay drawing the graph and a test path
 
-## Mipmapped pixel-art atlases (v0.6.0)
+## Mipmapped pixel-art atlases (v0.6.0, done) {#pixel-art-atlases}
 
-A tile atlas is sampled with `FilterMode::Nearest` and no mipmaps, so that a cell never bleeds into its neighbours.
-Close up the texels stay sharp; far away a pixel covers many texels and the tiles shimmer, more so with the 128 px
-voxel blocks. `voxel.slang` averages four taps over the footprint of a detailed atlas (one with relief or roughness
-maps) as a stopgap.
+A tile atlas keeps its texels sharp up close and is filtered far away, without a cell bleeding into its neighbours.
+User guide: [Renderer](../renderer.md), [Voxel Engine](../voxel.md).
 
-| Part        | Plan                                                                                                          |
-|-------------|---------------------------------------------------------------------------------------------------------------|
-| Filter mode | A third `FilterMode`, pixel art: nearest magnification, trilinear minification, on OpenGL and Vulkan          |
-| Mipmaps     | Built cell by cell from the tile grid, each cell padded with its own edge texels, so no level mixes two tiles |
-| Loading     | A tileset asks for the mode; its atlas, normal and roughness maps load with their mip chain                   |
-| Shaders     | Voxel, raycast and tilemap shaders sample with the continuous UV derivatives; the four-tap average goes       |
-| Tests       | Image tests of a far voxel slope and a raycast corridor; a cell-isolation test on the generated mips          |
+| Part        | Decision                                                                                                                                                                                                            |
+|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Filter mode | `FilterMode::PixelArt`: nearest magnification, trilinear minification, on OpenGL and Vulkan                                                                                                                         |
+| Mipmaps     | `renderer::buildCellMips` builds them cell by cell, alpha-weighted box filter; the chain stops when a cell side is odd                                                                                              |
+| Cook        | The cook keeps its own mips; the runtime keeps only the levels that hold whole cells                                                                                                                                |
+| Loading     | A tileset with `filterMode: PixelArt` calls `Tileset::applyFilterMode()`, `Texture2D::setPixelArtCells(cell)`                                                                                                       |
+| Shaders     | `voxel`, `tilemap_instanced` and `raycast_stripe` sample through `clampToAtlasCell` (`common/atlas.slangh`): the UV stays half a texel of the coarsest level read inside the cell; a one-level texture is unchanged |
+| Demo        | The `voxel_blocks` and `raycast_w3d_walls` tilesets use `PixelArt`                                                                                                                                                  |
+| Tests       | `AtlasMips_test.cpp` (cell isolation of the generated levels), the voxel and raycast render references                                                                                                              |
 
-## Tileset editor (v0.6.0) — compose atlas by inserting / removing source images
+## Tileset editor (v0.6.0, done)
 
-- Today `TilesetDocument` only edits per-tile metadata (name, collidable, wallHeight, transparent). The atlas itself is
-  authored offline — drop a PNG, edit metadata. There's no way to **build** or **mutate** an atlas from inside the
-  editor.
-- Add tile-slot mutation in the document: drop an image onto an empty (or existing) slot to insert/replace it;
-  right-click a slot to clear it. The underlying atlas PNG is rebuilt on disk (or kept in memory until the asset is
-  saved).
-- Bulk insert: select multiple PNGs from the Content Browser and drop them onto the tileset grid — fill consecutive
-  empty slots, growing the grid if needed (configurable: extend columns vs add rows).
-- "Remove" doesn't delete the slot index (would shift every downstream tilemap's tile indices); it just clears the
-  pixels to fully transparent and clears the meta, so existing tilemaps that referenced that index render an empty
-  cell instead of mis-pointing at the next tile.
-- Asset-pipeline hook: when the atlas changes the tilemap previews, door/pushwall thumbnails, and any open
-  `TilemapDocument` reload automatically (the tileset is shared via the per-scene cache, so a single invalidation
-  propagates).
-- Undo/redo: every insert / replace / remove pushes a single `ModifyTilesetCommand` (mirrors `ModifyEntityCommand`
-  semantics) with the standard 1 s merge-coalescing for rapid drag chains.
+`TilesetDocument` composes the atlas from source images in Owl Nest; user guide in
+[Tilemaps and Tilesets](../editor_tilemaps.md#composing-the-atlas).
 
-## First procedural brick for tilemaps (v0.6.0)
+- The atlas pixels live in `scene::TilesetAtlas`; the PNG is written on Save, and a tileset without texture creates
+  `<name>.png` beside its file (it must be saved first). The texture and the tile size are locked while composed pixels
+  are unsaved.
+- An image dropped from the Content Browser fills a slot, scaled to the cell; a folder fills the slot and the next empty
+  ones with its images sorted by name, adding rows at the bottom when full. **Insert Image...**, **Insert Folder...**,
+  **Clear Image** and **Select All** are in the right-click menu.
+- Clearing keeps the tile index: the pixels become transparent and the metadata is reset, so a tilemap that used the
+  index shows an empty cell instead of pointing at the next tile.
+- Ctrl / Shift click select several slots; dragging the selection onto another slot moves the pixels and the metadata
+  (occupied slots swap).
+- The grid **+** / **-** buttons resize the atlas, each cell keeping its column and row. Growth adds rows only, so the
+  indices stay stable; extending the columns is not offered.
+- Every gesture is one undo step.
 
-A seeded noise / rule fill of a tilemap region, undoable — the first consumer and the seed of the v0.6.0
-[PCG graphs](pcg-graphs.md).
+## First procedural brick for tilemaps (v0.6.0, done)
+
+The seeded generation of a tilemap region is the first consumer of the [PCG graphs](pcg-graphs.md): the generator of a
+tilemap runs a graph from a seed, undoable, from the **Procedural** section of the tilemap editor.
 
 ## Engine Demo demos (moved out of the engine)
 

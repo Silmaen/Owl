@@ -1,0 +1,17 @@
+// Sampling of a tile atlas cell. A pixel-art atlas (FilterMode::PixelArt) holds mipmaps built cell by cell: its UV is
+// kept half a texel of the coarsest level the footprint reads inside the cell, so trilinear filtering never reaches a
+// neighbour tile. A texture without mipmaps gets its UV back unchanged.
+
+float2 clampToAtlasCell(Sampler2D iAtlas, float2 iUv, float2 iCellMin, float2 iCellMax, float2 iDdx, float2 iDdy) {
+	uint width;
+	uint height;
+	uint levels;
+	iAtlas.GetDimensions(0, width, height, levels);
+	if (levels <= 1u)
+		return iUv;
+	const float2 size = float2(float(width), float(height));
+	const float footprint = max(length(iDdx * size), length(iDdy * size));
+	const float level = clamp(ceil(log2(max(footprint, 1.0f))), 0.0f, float(levels - 1u));
+	const float2 inset = 0.5f * exp2(level) / size;
+	return clamp(iUv, iCellMin + inset, iCellMax - inset);
+}

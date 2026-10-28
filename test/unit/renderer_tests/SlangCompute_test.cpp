@@ -23,10 +23,7 @@ OWL_DIAG_POP
 #include <algorithm>
 #include <cstdint>
 #include <filesystem>
-#include <fstream>
-#include <ios>
 #include <ranges>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -135,13 +132,11 @@ auto findRoot() -> std::filesystem::path {
 }
 
 auto loadShipped(const std::string& iRenderer, const std::string& iShaderName) -> std::string {
+	// The engine reads a shader with its includes expanded (`common/*.slangh`).
 	const auto path = findRoot() / "engine_assets" / "shaders" / iRenderer / (iShaderName + ".slang");
-	std::ifstream in(path, std::ios::binary);
-	if (!in.is_open())
+	if (!std::filesystem::exists(path))
 		return {};
-	std::stringstream ss;
-	ss << in.rdbuf();
-	return ss.str();
+	return owl::renderer::utils::readShaderSource(path);
 }
 
 }// namespace

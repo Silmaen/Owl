@@ -7,6 +7,7 @@ tileWidth: 128
 tileHeight: 128
 columns: 4
 rows: 4
+filterMode: PixelArt
 tiles:
   - { index: 0, name: "grass_top" }
   - { index: 1, name: "grass_side" }

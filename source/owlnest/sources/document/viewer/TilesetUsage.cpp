@@ -70,7 +70,7 @@ auto parseTilesetGrid(const std::string_view iYaml, const std::string& iTilesetN
 		grid.tileHeight = std::max(1u, root["tileHeight"].as<uint32_t>(32));
 		grid.columns = std::max(1u, root["columns"].as<uint32_t>(1));
 		grid.rows = std::max(1u, root["rows"].as<uint32_t>(1));
-		grid.nearest = root["filterMode"].as<std::string>("Linear") == "Nearest";
+		grid.nearest = root["filterMode"].as<std::string>("Linear") != "Linear";
 		return grid;
 	} catch (const YAML::Exception& error) {
 		OWL_CORE_WARN("TilesetUsage: '{}' has a bad value: {}.", iTilesetName, error.what())

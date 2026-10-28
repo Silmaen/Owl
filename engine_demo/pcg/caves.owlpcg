@@ -1,0 +1,42 @@
+FormatVersion: 1
+PcgGraph:
+  nodes:
+    - id: 1001
+      type: source.random
+      position: [0, 0]
+      values:
+        seed: 0
+    - id: 1002
+      type: field.threshold
+      position: [220, 0]
+      values:
+        min: 0.55
+        max: 1
+    - id: 1003
+      type: field.cellular
+      position: [440, 0]
+      values:
+        iterations: 5
+        birth: 5
+        survival: 4
+        edges: solid
+    - id: 1004
+      type: source.constant
+      position: [440, -160]
+      values:
+        value: 1
+    - id: 1005
+      type: output.tiles
+      position: [700, -160]
+      values:
+        tile: 0
+    - id: 1006
+      type: output.tiles
+      position: [700, 0]
+      values:
+        tile: 1
+  links:
+    - {from: 1001, fromPin: Field, to: 1002, toPin: Field}
+    - {from: 1002, fromPin: Mask, to: 1003, toPin: Mask}
+    - {from: 1004, fromPin: Field, to: 1005, toPin: Mask}
+    - {from: 1003, fromPin: Mask, to: 1006, toPin: Mask}

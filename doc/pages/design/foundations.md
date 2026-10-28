@@ -147,7 +147,7 @@ imported-configuration fallback.
     - Assets: textures, scenes, tilesets reloaded when the file changes on disk
     - Slang shaders recompiled and swapped live
     - Lua scripts reloaded, with properties preserved
-    - Hot reload of a C++ game module is a separate v0.6.0 evaluation, see [Content pipeline](content-pipeline.md)
+    - Hot reload of a C++ game module is evaluated after 1.0, see [Content pipeline](content-pipeline.md)
     - Shipped: a background poller (`platform::FileWatcher`, one atomic read per frame, no measurable cost in the
       frame bench), never active with an asset pack open; a failed reload keeps the previous version. A shader
       reload changes code, not bindings: a new binding needs a restart. See [Editor](../editor_assets.md#editor-hot-reload)

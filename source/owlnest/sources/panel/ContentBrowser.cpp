@@ -10,6 +10,7 @@
 
 #include "../AssetKind.h"
 #include "../DockLayout.h"
+#include "../document/PcgGraphDocument.h"
 #include "../document/VisualScriptDocument.h"
 
 #include <data/assets/AssetMeta.h>
@@ -29,6 +30,7 @@
 #include <input/ActionMap.h>
 #include <platform/AtomicFile.h>
 #include <platform/FileDialog.h>
+#include <scene/pcg/PcgGraph.h>
 #include <script/visual/VisualScript.h>
 
 #include <algorithm>
@@ -64,42 +66,26 @@ auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> 
 		return {rgb(0xc09a55), "Folder"};
 	if (iPath.filename() == input::ActionMap::fileName)
 		return {rgb(0x3fa8d8), "Input actions"};
-	static const std::unordered_map<std::string, KindInfo> kinds = {{".owl", {rgb(0xd8a520), "Scene"}},
-																	{".owlprefab", {rgb(0x4f8fe0), "Prefab"}},
-																	{".owlhud", {rgb(0x2fa8b8), "HUD"}},
-																	{".png", {rgb(0xe0534a), "Texture"}},
-																	{".jpg", {rgb(0xe0534a), "Texture"}},
-																	{".jpeg", {rgb(0xe0534a), "Texture"}},
-																	{".svg", {rgb(0xe0534a), "Vector image"}},
-																	{".owltileset", {rgb(0xe48a3a), "Tileset"}},
-																	{".owltilemap", {rgb(0xd65fb8), "Tilemap"}},
-																	{".wav", {rgb(0x3faa72), "Sound"}},
-																	{".ogg", {rgb(0x3faa72), "Sound"}},
-																	{".flac", {rgb(0x3faa72), "Sound"}},
-																	{".mp3", {rgb(0x3faa72), "Sound"}},
-																	{".lua", {rgb(0x2fb5a0), "Lua script"}},
-																	{".py", {rgb(0x2fb5a0), "Python"}},
-																	{".c", {rgb(0x5b8fd6), "C source"}},
-																	{".cpp", {rgb(0x5b8fd6), "C++ source"}},
-																	{".h", {rgb(0x5b8fd6), "Header"}},
-																	{".hpp", {rgb(0x5b8fd6), "Header"}},
-																	{".glsl", {rgb(0xa274e8), "Shader"}},
-																	{".slang", {rgb(0xa274e8), "Shader"}},
-																	{".ttf", {rgb(0x9a7ae0), "Font"}},
-																	{".otf", {rgb(0x9a7ae0), "Font"}},
-																	{".owlanim", {rgb(0xef6c8f), "Animation"}},
-																	{".owlflow", {rgb(0x5aa2f0), "Node graph"}},
-																	{".owlvs", {rgb(0xe8c547), "Visual script"}},
-																	{".obj", {rgb(0x7fb83e), "3D model"}},
-																	{".fbx", {rgb(0x7fb83e), "3D model"}},
-																	{".gltf", {rgb(0x7fb83e), "3D model"}},
-																	{".glb", {rgb(0x7fb83e), "3D model"}},
-																	{".yml", {rgb(0x8a929e), "Settings"}},
-																	{".yaml", {rgb(0x8a929e), "Settings"}},
-																	{".json", {rgb(0x8a929e), "Data"}},
-																	{".md", {rgb(0x8a929e), "Document"}},
-																	{".owlfont", {rgb(0x9a7ae0), "Font settings"}},
-																	{".owlmat", {rgb(0xc77dff), "Material"}}};
+	static const std::unordered_map<std::string, KindInfo> kinds = {
+			{".owl", {rgb(0xd8a520), "Scene"}},          {".owlprefab", {rgb(0x4f8fe0), "Prefab"}},
+			{".owlhud", {rgb(0x2fa8b8), "HUD"}},         {".png", {rgb(0xe0534a), "Texture"}},
+			{".jpg", {rgb(0xe0534a), "Texture"}},        {".jpeg", {rgb(0xe0534a), "Texture"}},
+			{".svg", {rgb(0xe0534a), "Vector image"}},   {".owltileset", {rgb(0xe48a3a), "Tileset"}},
+			{".owltilemap", {rgb(0xd65fb8), "Tilemap"}}, {".wav", {rgb(0x3faa72), "Sound"}},
+			{".ogg", {rgb(0x3faa72), "Sound"}},          {".flac", {rgb(0x3faa72), "Sound"}},
+			{".mp3", {rgb(0x3faa72), "Sound"}},          {".lua", {rgb(0x2fb5a0), "Lua script"}},
+			{".py", {rgb(0x2fb5a0), "Python"}},          {".c", {rgb(0x5b8fd6), "C source"}},
+			{".cpp", {rgb(0x5b8fd6), "C++ source"}},     {".h", {rgb(0x5b8fd6), "Header"}},
+			{".hpp", {rgb(0x5b8fd6), "Header"}},         {".glsl", {rgb(0xa274e8), "Shader"}},
+			{".slang", {rgb(0xa274e8), "Shader"}},       {".ttf", {rgb(0x9a7ae0), "Font"}},
+			{".otf", {rgb(0x9a7ae0), "Font"}},           {".owlanim", {rgb(0xef6c8f), "Animation"}},
+			{".owlflow", {rgb(0x5aa2f0), "Node graph"}}, {".owlvs", {rgb(0xe8c547), "Visual script"}},
+			{".owlpcg", {rgb(0x7fd18b), "PCG graph"}},   {".obj", {rgb(0x7fb83e), "3D model"}},
+			{".fbx", {rgb(0x7fb83e), "3D model"}},       {".gltf", {rgb(0x7fb83e), "3D model"}},
+			{".glb", {rgb(0x7fb83e), "3D model"}},       {".yml", {rgb(0x8a929e), "Settings"}},
+			{".yaml", {rgb(0x8a929e), "Settings"}},      {".json", {rgb(0x8a929e), "Data"}},
+			{".md", {rgb(0x8a929e), "Document"}},        {".owlfont", {rgb(0x9a7ae0), "Font settings"}},
+			{".owlmat", {rgb(0xc77dff), "Material"}}};
 	if (const auto it = kinds.find(iPath.extension().string()); it != kinds.end())
 		return it->second;
 	return {rgb(0x8a929e), "File"};
@@ -584,7 +570,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 	} else if ((path.extension() == ".owl" || path.extension() == ".owlhud" || path.extension() == ".owlprefab") &&
 			   m_sceneOpenCallback) {
 		m_sceneOpenCallback(path);
-	} else if ((path.extension() == ".owlflow" || path.extension() == ".owlvs") && m_nodeGraphOpenCallback) {
+	} else if ((path.extension() == ".owlflow" || path.extension() == ".owlvs" || path.extension() == ".owlpcg") &&
+			   m_nodeGraphOpenCallback) {
 		m_nodeGraphOpenCallback(path);
 	} else if (path.extension() == ".owlanim" && m_animationOpenCallback) {
 		m_animationOpenCallback(path);
@@ -710,26 +697,28 @@ void ContentBrowser::renderContent() {
 	}
 }
 
+void ContentBrowser::renderCreateItems() {
+	if (gui::widgets::menuItem({.glyph = gui::icon::folderPlus, .label = "Create Folder"}))
+		createFolder();
+	if (m_materialCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::paintbrush, .label = "New Material"}))
+		createMaterial();
+	if (gui::widgets::menuItem({.glyph = gui::icon::workflow, .label = "New Visual Script"}))
+		createVisualScript();
+	if (gui::widgets::menuItem({.glyph = gui::icon::sparkles, .label = "New PCG Graph"}))
+		createPcgGraph();
+	ImGui::Separator();
+	if (gui::widgets::menuItem({.glyph = gui::icon::download, .label = "Import File..."}))
+		importFiles();
+	if (gui::widgets::menuItem({.glyph = gui::icon::folderOpen, .label = "Import Folder..."}))
+		importFolder();
+}
+
 void ContentBrowser::renderContextMenu() {
 	if (!ImGui::BeginPopup("ContentBrowserContextMenu"))
 		return;
-	const auto importItems = [this]() -> void {
-		if (gui::widgets::menuItem({.glyph = gui::icon::folderPlus, .label = "Create Folder"}))
-			createFolder();
-		if (m_materialCreateCallback &&
-			gui::widgets::menuItem({.glyph = gui::icon::paintbrush, .label = "New Material"}))
-			createMaterial();
-		if (gui::widgets::menuItem({.glyph = gui::icon::workflow, .label = "New Visual Script"}))
-			createVisualScript();
-		ImGui::Separator();
-		if (gui::widgets::menuItem({.glyph = gui::icon::download, .label = "Import File..."}))
-			importFiles();
-		if (gui::widgets::menuItem({.glyph = gui::icon::folderOpen, .label = "Import Folder..."}))
-			importFolder();
-	};
 	if (m_selectedPath.empty()) {
 		gui::widgets::menuHeader(m_currentPath.filename().string().c_str(), "Folder");
-		importItems();
+		renderCreateItems();
 	} else {
 		const bool isDir = is_directory(m_selectedPath);
 		const std::string itemName = m_selectedPath.filename().string();
@@ -771,7 +760,7 @@ void ContentBrowser::renderContextMenu() {
 					{.glyph = gui::icon::trash2, .label = isDir ? "Delete Folder" : "Delete", .danger = true}))
 			m_pendingDelete = true;
 		ImGui::Separator();
-		importItems();
+		renderCreateItems();
 	}
 
 	ImGui::EndPopup();
@@ -898,6 +887,19 @@ void ContentBrowser::createVisualScript() {
 	m_rescanRequested = true;
 	if (m_nodeGraphOpenCallback)
 		m_nodeGraphOpenCallback(scriptPath);
+}
+
+void ContentBrowser::createPcgGraph() {
+	auto graphPath = m_currentPath / "New PCG Graph.owlpcg";
+	for (uint32_t counter = 1; exists(graphPath); ++counter)
+		graphPath = m_currentPath / std::format("New PCG Graph {}.owlpcg", counter);
+	if (!scene::pcg::saveToFile(PcgGraphDocument::starterGraph(), graphPath)) {
+		OWL_ERROR("ContentBrowser: Cannot create the PCG graph '{}'.", graphPath.string())
+		return;
+	}
+	m_rescanRequested = true;
+	if (m_nodeGraphOpenCallback)
+		m_nodeGraphOpenCallback(graphPath);
 }
 
 void ContentBrowser::importFiles() {

@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -84,10 +85,13 @@ struct OWL_API TextureLevels {
  * or stretched — appropriate for most sprite / UI / world rendering.
  * `Nearest` snaps to the closest texel and disables mipmaps; pick it when
  * pixel-perfect output matters (raycaster wall stripes, pixel art tilemaps).
+ * `PixelArt` keeps the texels sharp up close and filters the mipmaps far away, for tile atlases whose mipmaps are
+ * built cell by cell (`Texture2D::setPixelArtCells`).
  */
 enum struct FilterMode : uint8_t {
 	Linear,///< Smooth bilinear filtering, mipmaps generated when requested.
 	Nearest,///< Hard nearest-texel filtering, no mipmaps. Pixel-art friendly.
+	PixelArt,///< Nearest magnification, trilinear minification over the mipmaps the texture holds.
 };
 
 /**
@@ -149,6 +153,8 @@ public:
 		FilterMode filterMode = FilterMode::Linear;
 		/// Number of levels given by the data (`setLevels`); 0 lets `generateMips` decide.
 		uint32_t levelCount = 0;
+		/// Cell size of a pixel-art atlas whose mipmaps are built cell by cell (`{0, 0}`: not an atlas).
+		math::vec2ui atlasCell{0, 0};
 
 		/**
 		 * @brief
@@ -404,6 +410,16 @@ public:
 	 */
 	auto reloadFromFile() -> bool;
 
+	/**
+	 * @brief
+	 *  Turn the texture into a pixel-art atlas: `FilterMode::PixelArt` and mipmaps built cell by cell
+	 *  (`buildCellMips`), so no level mixes two tiles. A texture still loading gets them when its pixels arrive; a
+	 *  compressed texture keeps the levels of its cook that hold whole cells.
+	 * @param[in] iCell Size of one atlas cell in texels.
+	 * @return True when the mipmaps are in use or will be at the end of the load.
+	 */
+	auto setPixelArtCells(const math::vec2ui& iCell) -> bool;
+
 protected:
 	/**
 	 * @brief
@@ -412,6 +428,24 @@ protected:
 	 * @param[in] iSpecs Specification of the new storage.
 	 */
 	virtual void reallocate(const Specification& iSpecs) { m_specification = iSpecs; }
+
+private:
+	/**
+	 * @brief
+	 *  Upload decoded RGBA8 pixels, as cell mipmaps when the texture is a pixel-art atlas.
+	 * @param[in] iPixels The pixels.
+	 * @param[in] iSize Their size.
+	 * @return True when the pixels are in use.
+	 */
+	auto uploadPixels(std::span<const uint8_t> iPixels, const math::vec2ui& iSize) -> bool;
+
+	/**
+	 * @brief
+	 *  Upload transcoded levels, cut to those holding whole cells when the texture is a pixel-art atlas.
+	 * @param[in] iLevels The levels.
+	 * @return True when the levels are in use.
+	 */
+	auto uploadLevels(TextureLevels iLevels) -> bool;
 };
 OWL_DIAG_POP
 }// namespace owl::renderer::gpu

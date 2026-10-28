@@ -17,7 +17,7 @@ struct TilemapDraw {
 	// Atlas columns, rows; entity id; slot inside `gTextures[32]`.
 	int4 atlas;
 	// x: 1 when the target stores linear colour (the fragment colour is decoded from sRGB); y: 2D light count;
-	// zw unused.
+	// z: slot of the opacity map + 1, 0 without one; w unused.
 	int4 flags;
 	float4 ambient;// rgb: linear ambient of the 2D lights; w: 1 when the 2D lighting is on.
 };
@@ -36,6 +36,7 @@ Sampler2D gTextures[32];
 #define LIGHT2D_LIGHT_BINDING 5
 #define LIGHT2D_SHADOW_BINDING 6
 #include "light2d.slangh"
+#include "atlas.slangh"
 
 struct VertexInput {
 	// Per-vertex attribute (binding 0): `cornerIndex` ∈ {0..3} picks the corner of the unit quad.
@@ -50,6 +51,8 @@ struct FragmentInput {
 	[[vk::location(1)]] nointerpolation int entityID : TEXCOORD1;
 	[[vk::location(2)]] nointerpolation int textureSlot : TEXCOORD2;
 	[[vk::location(3)]] float2 worldPos : TEXCOORD3;
+	// Atlas cell of the tile: min u, v, max u, v.
+	[[vk::location(4)]] nointerpolation float4 cellRect : TEXCOORD4;
 };
 
 struct FragmentOutput {
@@ -113,6 +116,7 @@ VertexOutput vertexMain(VertexInput input) {
 	output.frag.texCoord =
 			atlasMin + cornerUv * atlasStep - (cornerUv * 2.0f - 1.0f) * gDraw.texel.xy;
 
+	output.frag.cellRect = float4(atlasMin, atlasMin + atlasStep);
 	output.frag.entityID = gDraw.atlas.z;
 	output.frag.textureSlot = gDraw.atlas.w;
 	return output;
@@ -121,7 +125,13 @@ VertexOutput vertexMain(VertexInput input) {
 [shader("fragment")]
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
-	float4 texColor = gTextures[NonUniformResourceIndex(input.textureSlot)].Sample(input.texCoord);
+	const float2 uvDdx = ddx(input.texCoord);
+	const float2 uvDdy = ddy(input.texCoord);
+	const float2 uv = clampToAtlasCell(gTextures[NonUniformResourceIndex(input.textureSlot)], input.texCoord,
+									   input.cellRect.xy, input.cellRect.zw, uvDdx, uvDdy);
+	float4 texColor = gTextures[NonUniformResourceIndex(input.textureSlot)].SampleGrad(uv, uvDdx, uvDdy);
+	if (gDraw.flags.z > 0)
+		texColor.a *= gTextures[gDraw.flags.z - 1].SampleGrad(uv, uvDdx, uvDdy).r;
 	if (texColor.a < 0.001f)
 		discard;
 	if (gDraw.flags.x != 0)

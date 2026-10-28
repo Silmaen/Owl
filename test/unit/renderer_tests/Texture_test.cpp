@@ -83,6 +83,8 @@ TEST(TextureSpecifications, MipLevelCountCoversTheFullChain) {
 	spec.size = {256, 64};
 	spec.filterMode = FilterMode::Nearest;
 	EXPECT_EQ(spec.getMipLevelCount(), 1u);
+	spec.filterMode = FilterMode::PixelArt;
+	EXPECT_EQ(spec.getMipLevelCount(), 1u);
 }
 
 // Texture2D::createFromSerialized with no API initialised still handles the

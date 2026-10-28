@@ -49,7 +49,7 @@ struct DrawUbo {
 	math::vec4 texel;
 	// Atlas columns, rows; entity id; texture slot.
 	std::array<int32_t, 4> atlas{};
-	// x: 1 when the bound framebuffer stores linear colour; y: 2D light count; zw: padding to a std140 vec4.
+	// x: 1 when the target stores linear colour; y: 2D light count; z: opacity map slot + 1 (0: none); w: padding.
 	std::array<int32_t, 4> flags{};
 	// rgb: linear ambient of the 2D lights; w: 1 when the 2D lighting is on.
 	math::vec4 ambient{1.f, 1.f, 1.f, 0.f};
@@ -95,8 +95,8 @@ struct InternalState {
 	math::vec2 cameraPosition{0.f, 0.f};
 	std::vector<uint32_t> quadIndices{0, 1, 2, 2, 3, 0};
 	std::vector<CellInstance> instanceScratch;
-	std::vector<shared<gpu::Texture2D>> textureScratch;
-	std::vector<const scene::Tileset*> tilesetSlots;
+	// Textures bound for the batch: the atlas and opacity map of each tileset, one slot each.
+	std::vector<shared<gpu::Texture2D>> textureSlots;
 	std::vector<PendingTilemap> pending;
 	std::unordered_map<const scene::TilemapAsset*, AssetGpu> cache;
 	uint64_t prepareIndex = 0;
@@ -211,14 +211,21 @@ auto syncAsset(const scene::TilemapAsset& iAsset, const bool iLate) -> AssetGpu&
 	return entry;
 }
 
-auto slotFor(const scene::Tileset* iTileset) -> int {
-	auto& slots = g_state->tilesetSlots;
-	if (const auto it = std::ranges::find(slots, iTileset); it != slots.end())
+auto slotFor(const shared<gpu::Texture2D>& iTexture) -> int {
+	auto& slots = g_state->textureSlots;
+	if (const auto it = std::ranges::find(slots, iTexture); it != slots.end())
 		return static_cast<int>(it - slots.begin());
 	if (slots.size() >= g_maxTextureSlots)
 		return -1;
-	slots.push_back(iTileset);
+	slots.push_back(iTexture);
 	return static_cast<int>(slots.size() - 1);
+}
+
+// Slots of the atlas and of the opacity map of a tileset (-1: none), taken in the batch on the first call.
+auto slotsFor(const scene::Tileset& iTileset) -> std::pair<int, int> {
+	const int atlas = slotFor(iTileset.texture);
+	const int opacity = iTileset.opacityTexture ? slotFor(iTileset.opacityTexture) : -1;
+	return {atlas, opacity};
 }
 
 // True when the four clip-space corners all lie beyond one side of the view volume (x or y).
@@ -275,7 +282,8 @@ void drawLayer(const LayerDraw& iDraw, const LayerGpu& iLayer) {
 	}
 }
 
-void drawPending(const PendingTilemap& iPending, const AssetGpu& iEntry, const int iTextureSlot) {
+void drawPending(const PendingTilemap& iPending, const AssetGpu& iEntry, const int iTextureSlot,
+				 const int iOpacitySlot) {
 	const auto& asset = *iPending.asset;
 	const auto& tileset = *asset.tileset;
 	const float cellSize = asset.cellSize;
@@ -289,6 +297,7 @@ void drawPending(const PendingTilemap& iPending, const AssetGpu& iEntry, const i
 	ubo.flags[0] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 	const auto& lighting = utils::getLighting2DState();
 	ubo.flags[1] = lighting.lightCount;
+	ubo.flags[2] = iOpacitySlot + 1;
 	ubo.ambient = lighting.ambient;
 	ubo.atlas = {static_cast<int32_t>(std::max(1u, tileset.columns)), static_cast<int32_t>(std::max(1u, tileset.rows)),
 				 iPending.entityId, iTextureSlot};
@@ -415,14 +424,13 @@ void RendererTilemap::flushPending() {
 
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 
-	g_state->tilesetSlots.clear();
+	g_state->textureSlots.clear();
 	for (const auto& pending: g_state->pending) {
-		if (slotFor(pending.asset->tileset.get()) < 0)
+		if (const auto [atlas, opacity] = slotsFor(*pending.asset->tileset);
+			atlas < 0 || (opacity < 0 && pending.asset->tileset->opacityTexture))
 			OWL_CORE_FRAME_TRACE("RendererTilemap: more than {} distinct tilesets in one batch.", g_maxTextureSlots)
 	}
-	g_state->textureScratch.clear();
-	for (const auto* tileset: g_state->tilesetSlots) g_state->textureScratch.push_back(tileset->texture);
-	gpu::RenderCommand::bindTextures(g_state->textureScratch);
+	gpu::RenderCommand::bindTextures(g_state->textureSlots);
 	if (const auto& lighting = utils::getLighting2DState();
 		lighting.ambient.w() != 0.f && lighting.lights && lighting.shadows) {
 		lighting.lights->bind(/*iBinding=*/5u);
@@ -430,11 +438,11 @@ void RendererTilemap::flushPending() {
 	}
 
 	for (const auto& pending: g_state->pending) {
-		const int textureSlot = slotFor(pending.asset->tileset.get());
+		const auto [textureSlot, opacitySlot] = slotsFor(*pending.asset->tileset);
 		if (textureSlot < 0)
 			continue;
 		const auto& entry = syncAsset(*pending.asset, true);
-		drawPending(pending, entry, textureSlot);
+		drawPending(pending, entry, textureSlot, opacitySlot);
 	}
 	g_state->pending.clear();
 }

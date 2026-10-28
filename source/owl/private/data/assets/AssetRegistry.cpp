@@ -441,12 +441,12 @@ auto AssetRegistry::toAssetReference(const std::string_view iPath) const -> std:
 }
 
 auto AssetRegistry::rewriteReferences(const std::string_view iText) const -> std::string {
-	static constexpr std::array<std::string_view, 22> referenceKeys{
-			"texture",      "normalTexture",   "roughnessTexture", "baseColorMap", "metallicMap",
-			"roughnessMap", "normalMap",       "occlusionMap",     "emissiveMap",  "mesh",
-			"material",     "parent",          "scriptPath",       "hdri",         "tilesetPath",
-			"tilemapPath",  "prefabAssetPath", "atlasPath",        "soundAsset",   "LevelName",
-			"Hud",          "Tileset"};
+	static constexpr std::array<std::string_view, 23> referenceKeys{
+			"texture",     "normalTexture", "roughnessTexture", "opacityTexture", "baseColorMap",
+			"metallicMap", "roughnessMap",  "normalMap",        "occlusionMap",   "emissiveMap",
+			"mesh",        "material",      "parent",           "scriptPath",     "hdri",
+			"tilesetPath", "tilemapPath",   "prefabAssetPath",  "atlasPath",      "soundAsset",
+			"LevelName",   "Hud",           "Tileset"};
 	const auto headerEnd = std::min(iText.size(), iText.find("\n...\n"));
 	std::string out;
 	out.reserve(iText.size());

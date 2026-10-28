@@ -16,6 +16,7 @@
 #include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
+#include "document/PcgGraphDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
 #include "document/VisualScriptDocument.h"
@@ -240,6 +241,8 @@ void EditorLayer::openNodeGraphFile(const std::filesystem::path& iPath) {
 	uniq<NodeGraphDocument> doc;
 	if (script::visual::isVisualScriptPath(iPath.string()))
 		doc = mkUniq<VisualScriptDocument>();
+	else if (iPath.extension() == scene::pcg::g_PcgGraphExtension)
+		doc = mkUniq<PcgGraphDocument>();
 	else
 		doc = mkUniq<NodeGraphDocument>();
 	doc->onAttach(this);

@@ -451,7 +451,9 @@ The **`Tileset`** asset (`.owltileset`, `scene::Tileset`, authored in the Tile P
 `Orthogonal` (default, omitted) or `Isometric` for the 2:1 diamond tiles of the isometric layer
 ([Isometric layer](renderer.md)). A tileset drawn by a voxel world may add `normalTexture` and `roughnessTexture`,
 images on the same grid as the atlas (tangent-space normals; roughness, where 50 % grey keeps the roughness of the block):
-`voxel.slang` reads them and averages the far texels of such atlases, and export packs them.
+`voxel.slang` reads them and averages the far texels of such atlases, and export packs them. Any tileset may add an
+`opacityTexture` on the same grid: its red channel multiplies the alpha of the atlas (black cuts the texel out, grey
+blends it), read by the tilemap, isometric, raycast wall and voxel shaders.
 
 ##### Tilemap storage and the `.owltilemap` file {#tilemap-storage}
 
@@ -479,6 +481,9 @@ payloadBytes: 10280
 ...
 <binary payload>
 ```
+
+An optional `generator` map in the header holds the procedural generation of the tilemap ([PCG graphs](pcg_graphs.md)):
+`graph` (a `.owlpcg` path), `seed`, `layer`, `origin` and `size` (`[0, 0]` reaches the end of the grid).
 
 The payload holds only the non-empty chunks, **little-endian whatever the host**:
 

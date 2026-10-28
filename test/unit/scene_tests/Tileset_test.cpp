@@ -283,3 +283,30 @@ TEST_F(TilesetFixture, KindRoundTripsAndDefaultsToOrthogonal) {
 	ASSERT_TRUE(restored.deserializeFromString(isometric));
 	EXPECT_EQ(restored.kind, Tileset::Kind::Isometric);
 }
+
+TEST_F(TilesetFixture, FilterModeRoundTripsPixelArt) {
+	Tileset ts;
+	ts.filterMode = renderer::gpu::FilterMode::PixelArt;
+	const auto yaml = ts.serializeToString("pixel");
+	EXPECT_NE(yaml.find("filterMode: PixelArt"), std::string::npos);
+	Tileset loaded;
+	ASSERT_TRUE(loaded.deserializeFromString(yaml));
+	EXPECT_EQ(loaded.filterMode, renderer::gpu::FilterMode::PixelArt);
+	ts.filterMode = renderer::gpu::FilterMode::Linear;
+	EXPECT_EQ(ts.serializeToString("linear").find("filterMode"), std::string::npos);
+	ts.filterMode = renderer::gpu::FilterMode::Nearest;
+	ASSERT_TRUE(loaded.deserializeFromString(ts.serializeToString("nearest")));
+	EXPECT_EQ(loaded.filterMode, renderer::gpu::FilterMode::Nearest);
+}
+
+TEST_F(TilesetFixture, OpacityTextureKeyIsOptional) {
+	const Tileset ts;
+	EXPECT_EQ(ts.serializeToString("plain").find("opacityTexture"), std::string::npos);
+	Tileset loaded;
+	ASSERT_TRUE(loaded.deserializeFromString("Tileset: masked\nFormatVersion: 1\nopacityTexture: textures/mask.png\n"
+											 "tileWidth: 16\ntileHeight: 16\ncolumns: 2\nrows: 2\n"));
+	// Without a renderer the map cannot load: the tileset keeps its grid and writes no dangling key.
+	EXPECT_EQ(loaded.columns, 2u);
+	EXPECT_EQ(loaded.opacityTexture == nullptr,
+			  loaded.serializeToString("masked").find("opacityTexture") == std::string::npos);
+}

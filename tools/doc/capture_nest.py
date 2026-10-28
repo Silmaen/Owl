@@ -101,6 +101,14 @@ SHOTS: list[Shot] = [
         crop=(0, 0, 1140, 460),
     ),
     Shot("tilemap_editor", documents=["tilemaps/iso_town.owltilemap"]),
+    Shot("pcg_graph", documents=["pcg/caves.owlpcg"], steps=[("click", 230, 530), ("wait", 2)], proof=True),
+    Shot("pcg_tilemap", documents=["tilemaps/pcg_caves.owltilemap"], proof=True),
+    Shot(
+        "tileset_editor",
+        documents=["tilesets/iso_ground.owltileset"],
+        steps=[("click", 40, 190), ("wait", 2)],
+        proof=True,
+    ),
     Shot("hud_editor", documents=["huds/gameplay.owlhud"], steps=[("click", 1240, 274), ("wait", 2)]),
     Shot("action_map", documents=["input_actions.yml"], crop=(0, 125, 1460, 760)),
     Shot(

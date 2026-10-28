@@ -385,6 +385,10 @@ That gives U=1 at the maximum-axis side (N/E) for positive openings and U=1 at t
 openings, regardless of which side the player views the plate from. Both passes (and the static tilemap pass) inset by
 half a texel to avoid bilinear-filter wrap with the engine's default `REPEAT` wrap mode.
 
+A tileset with `filterMode: PixelArt` (the Engine Demo's `raycast_w3d_walls`) gives the stripes the cell-by-cell
+mipmaps of the atlas: `raycast_stripe` keeps the sampled column inside the tile cell (`clampToAtlasCell`), so far
+walls are filtered without mixing neighbouring tiles ([Renderer](renderer.md)).
+
 Because `cameraDir` is unit length and `cameraPlane` is perpendicular to it, `tNear` is already a
 perpendicular-to-camera-plane distance — no extra projection required.
 
