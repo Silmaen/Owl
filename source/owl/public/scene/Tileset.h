@@ -196,8 +196,8 @@ public:
 	 * @brief
 	 *  Sampler filter applied to the atlas texture after load.
 	 *
-	 * `Nearest` for pixel-art / raycaster atlases (no filtering, no mipmaps); `Linear`
-	 * (the default) for everything else.
+	 * `Nearest` for pixel-art / raycaster atlases (no filtering, no mipmaps); `PixelArt` for the same atlases seen
+	 * from afar (sharp up close, mipmaps built cell by cell); `Linear` (the default) for everything else.
 	 */
 	renderer::gpu::FilterMode filterMode = renderer::gpu::FilterMode::Linear;
 	/**
@@ -316,6 +316,13 @@ public:
 	 * @return True if the slot exists and is collidable.
 	 */
 	[[nodiscard]] auto isCollidable(uint32_t iIndex) const -> bool;
+
+	/**
+	 * @brief
+	 *  Apply `filterMode` to the atlas, normal and roughness textures; `PixelArt` builds their mipmaps cell by cell
+	 *  on the `tileWidth x tileHeight` grid. Call it after changing the mode or the tile size.
+	 */
+	void applyFilterMode() const;
 
 	/**
 	 * @brief

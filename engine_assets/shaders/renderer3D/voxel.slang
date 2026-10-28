@@ -2,15 +2,15 @@
 // a tile sub-rect (uMin, vMin, uSize, vSize) and a UV in tile-units (0..w / 0..h
 // across a greedy-merged quad). The fragment maps tileRect.xy + frac(uv)*tileRect.zw
 // so the tile repeats across the merged quad instead of stretching, while still
-// selecting the correct cell of the atlas. The engine sampler is clamp-only, so
-// the repeat is done here. Pairs with Nearest filtering on the atlas (pixel-art),
-// which keeps tile cells pixel-exact and avoids seam/derivative issues at the
-// frac() wrap. Shares the Renderer3D descriptor layout (scene UBO at binding 0,
+// selecting the correct cell of the atlas. The repeat is done here. Pairs with Nearest filtering on the atlas
+// (pixel-art), which keeps tile cells pixel-exact and avoids seam/derivative issues at the frac() wrap, or with
+// PixelArt filtering, whose mipmaps are read inside the cell (atlas.slangh). Shares the Renderer3D descriptor layout (scene UBO at binding 0,
 // texture array at binding 1); the atlas is the draw's first texture (slot 1) and
 // texIndex carries the block surface packed by data::voxel::packSurface. A tileset with relief and roughness maps
 // gives them as the normal (slot 3) and roughness (slot 6) maps of the draw's material, on the grid of the atlas.
 
 #include "pbr.slangh"
+#include "atlas.slangh"
 
 static const int VOXEL_ATLAS_SLOT = 1;
 static const float VOXEL_MAX_LUMINANCE = 100000.0f;// data::voxel::g_MaxBlockLuminance.
@@ -62,25 +62,11 @@ VertexOutput vertexMain(VertexInput input) {
 [shader("fragment")]
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
-	float2 atlasUv = input.tileRect.xy + frac(input.uv) * input.tileRect.zw;
 	float2 uvDdx = ddx(input.uv) * input.tileRect.zw;
 	float2 uvDdy = ddy(input.uv) * input.tileRect.zw;
+	float2 atlasUv = clampToAtlasCell(gTextures[VOXEL_ATLAS_SLOT], input.tileRect.xy + frac(input.uv) * input.tileRect.zw,
+									  input.tileRect.xy, input.tileRect.xy + input.tileRect.zw, uvDdx, uvDdy);
 	float4 texColor = gTextures[VOXEL_ATLAS_SLOT].SampleGrad(atlasUv, uvDdx, uvDdy);
-	// Far away a pixel covers several texels of the nearest-filtered atlas (no mipmaps): with a detailed tileset (one
-	// with relief or roughness maps), four taps spread over the footprint, each wrapped inside the tile, average the
-	// texels the pixel covers instead of picking one.
-	float2 atlasSize;
-	gTextures[VOXEL_ATLAS_SLOT].GetDimensions(atlasSize.x, atlasSize.y);
-	float footprint = max(length(uvDdx * atlasSize), length(uvDdy * atlasSize));
-	if ((hasMap(2) || hasMap(5)) && footprint > 1.5f) {
-		float2 du = ddx(input.uv);
-		float2 dv = ddy(input.uv);
-		float4 sum = texColor;
-		sum += gTextures[VOXEL_ATLAS_SLOT].SampleGrad(input.tileRect.xy + frac(input.uv + 0.35f * (du + dv)) * input.tileRect.zw, uvDdx, uvDdy);
-		sum += gTextures[VOXEL_ATLAS_SLOT].SampleGrad(input.tileRect.xy + frac(input.uv + 0.35f * (du - dv)) * input.tileRect.zw, uvDdx, uvDdy);
-		sum += gTextures[VOXEL_ATLAS_SLOT].SampleGrad(input.tileRect.xy + frac(input.uv - 0.35f * du) * input.tileRect.zw, uvDdx, uvDdy);
-		texColor = lerp(texColor, sum * 0.25f, saturate(footprint - 1.5f));
-	}
 	texColor.rgb = authoredColor(texColor.rgb);
 	if (texColor.a < 0.001f)
 		discard;

@@ -204,21 +204,18 @@ void TilesetDocument::renderHierarchyPanel() {
 	if (!gui::widgets::sectionHeader("Atlas", gui::icon::image, false).open)
 		return;
 	const auto textureBefore = snapshotTileset(m_tileset);
-	if (gui::widgets::textureField("##texture", m_tileset.texture, ImVec2{96.f, 96.f})) {
-		if (m_tileset.texture)
-			m_tileset.texture->setFilterMode(m_tileset.filterMode);
-	}
+	if (gui::widgets::textureField("##texture", m_tileset.texture, ImVec2{96.f, 96.f}))
+		m_tileset.applyFilterMode();
 	gui::widgets::itemTooltip("Texture", nullptr, "Drop a texture from the Content Browser.");
 	ImGui::SameLine();
-	if (gui::widgets::textureField("##normal", m_tileset.normalTexture, ImVec2{64.f, 64.f}) && m_tileset.normalTexture)
-		m_tileset.normalTexture->setFilterMode(m_tileset.filterMode);
+	if (gui::widgets::textureField("##normal", m_tileset.normalTexture, ImVec2{64.f, 64.f}))
+		m_tileset.applyFilterMode();
 	gui::widgets::itemTooltip("Normal map", nullptr,
 							  "Tangent-space normals on the grid of the atlas (OpenGL, green up): the relief of the "
 							  "tiles in a voxel world. Drop a texture from the Content Browser.");
 	ImGui::SameLine();
-	if (gui::widgets::textureField("##roughness", m_tileset.roughnessTexture, ImVec2{64.f, 64.f}) &&
-		m_tileset.roughnessTexture)
-		m_tileset.roughnessTexture->setFilterMode(m_tileset.filterMode);
+	if (gui::widgets::textureField("##roughness", m_tileset.roughnessTexture, ImVec2{64.f, 64.f}))
+		m_tileset.applyFilterMode();
 	gui::widgets::itemTooltip("Roughness map", nullptr,
 							  "Roughness on the grid of the atlas: 50 % grey keeps the roughness of a voxel block, "
 							  "darker is smoother. Drop a texture from the Content Browser.");
@@ -255,30 +252,39 @@ void TilesetDocument::renderHierarchyPanel() {
 			[this]() -> void { m_tileset.removeRow(); });
 	auto tileWidth = static_cast<int>(m_tileset.tileWidth);
 	auto tileHeight = static_cast<int>(m_tileset.tileHeight);
-	if (gui::widgets::propertyInt("Tile Width", tileWidth, tileWidth, 1, 1024, "%d px"))
+	if (gui::widgets::propertyInt("Tile Width", tileWidth, tileWidth, 1, 1024, "%d px")) {
 		m_tileset.tileWidth = static_cast<uint32_t>(tileWidth);
-	if (gui::widgets::propertyInt("Tile Height", tileHeight, tileHeight, 1, 1024, "%d px"))
+		m_tileset.applyFilterMode();
+	}
+	if (gui::widgets::propertyInt("Tile Height", tileHeight, tileHeight, 1, 1024, "%d px")) {
 		m_tileset.tileHeight = static_cast<uint32_t>(tileHeight);
+		m_tileset.applyFilterMode();
+	}
 
-	const auto& current = m_tileset.filterMode;
-	const char* currentLabel = (current == renderer::gpu::FilterMode::Nearest) ? "Nearest" : "Linear";
-	gui::widgets::propertyLabel("Filter", "Nearest keeps the pixels sharp, Linear smooths them.");
-	if (gui::widgets::beginCombo("##filter", currentLabel)) {
-		if (ImGui::Selectable("Linear", current == renderer::gpu::FilterMode::Linear))
-			pushTilesetEdit(m_tileset, m_undoManager, "Set filter to Linear", [this]() -> void {
-				m_tileset.filterMode = renderer::gpu::FilterMode::Linear;
-				if (m_tileset.texture)
-					m_tileset.texture->setFilterMode(m_tileset.filterMode);
-			});
-		if (ImGui::Selectable("Nearest", current == renderer::gpu::FilterMode::Nearest))
-			pushTilesetEdit(m_tileset, m_undoManager, "Set filter to Nearest", [this]() -> void {
-				m_tileset.filterMode = renderer::gpu::FilterMode::Nearest;
-				if (m_tileset.texture)
-					m_tileset.texture->setFilterMode(m_tileset.filterMode);
-			});
+	using renderer::gpu::FilterMode;
+	const auto current = m_tileset.filterMode;
+	gui::widgets::propertyLabel("Filter", "Nearest keeps the pixels sharp, Linear smooths them. Pixel Art keeps them "
+										  "sharp up close and filters them far away, each tile on its own (mipmaps "
+										  "built tile by tile, best with power-of-two tile sizes).");
+	constexpr std::array filters{std::pair{FilterMode::Linear, "Linear"}, std::pair{FilterMode::Nearest, "Nearest"},
+								 std::pair{FilterMode::PixelArt, "Pixel Art"}};
+	const auto* currentFilter = std::ranges::find(filters, current, &std::pair<FilterMode, const char*>::first);
+	if (gui::widgets::beginCombo("##filter", currentFilter != filters.end() ? currentFilter->second : "Linear")) {
+		for (const auto& [mode, label]: filters) {
+			if (ImGui::Selectable(label, current == mode) && current != mode)
+				pushTilesetEdit(m_tileset, m_undoManager, std::format("Set filter to {}", label),
+								[this, mode]() -> void {
+									m_tileset.filterMode = mode;
+									m_tileset.applyFilterMode();
+								});
+		}
 		ImGui::EndCombo();
 	}
-	std::ignore = gui::widgets::propertyReset(false);
+	if (gui::widgets::propertyReset(current != FilterMode::Linear))
+		pushTilesetEdit(m_tileset, m_undoManager, "Set filter to Linear", [this]() -> void {
+			m_tileset.filterMode = FilterMode::Linear;
+			m_tileset.applyFilterMode();
+		});
 
 	using Kind = scene::Tileset::Kind;
 	const bool isometric = m_tileset.kind == Kind::Isometric;

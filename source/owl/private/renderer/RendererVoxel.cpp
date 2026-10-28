@@ -402,7 +402,8 @@ void RendererVoxel::prepareWorld(VoxelMeshCache& ioCache, scene::component::Voxe
 	// No atlas yet (unconfigured, or not resolved before runtime starts): skip silently rather than warn per frame.
 	if (!ioComponent.tileset || !ioComponent.tileset->texture)
 		return;
-	ioComponent.tileset->texture->setFilterMode(gpu::FilterMode::Nearest);
+	if (ioComponent.tileset->filterMode != gpu::FilterMode::PixelArt)
+		ioComponent.tileset->texture->setFilterMode(gpu::FilterMode::Nearest);
 
 	auto& data = *ioCache.mp_data;
 	drainSink(data);

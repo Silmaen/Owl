@@ -10,6 +10,7 @@
 
 #include "MemoryAllocator.h"
 #include "math/vectors.h"
+#include "renderer/gpu/Texture.h"
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -32,8 +33,8 @@ struct TextureData {
 	VkDescriptorSetLayout textureDescriptorSetLayout = nullptr;
 	/// Mipmap levels of the image, set before `createImage` (1 without mipmaps).
 	uint32_t mipLevels = 1;
-	/// Nearest sampling (pixel art) instead of linear and trilinear.
-	bool nearest = false;
+	/// Sampler filtering: nearest (no mipmap), pixel art (nearest up close, trilinear far away) or linear.
+	gpu::FilterMode filter = gpu::FilterMode::Linear;
 	/// Format of the image (8-bit RGBA, or 32-bit float RGBA for HDR images and tables).
 	VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 	/// View and sampler owned elsewhere (a framebuffer attachment): `freeTexture` forgets them without destroying.

@@ -283,3 +283,18 @@ TEST_F(TilesetFixture, KindRoundTripsAndDefaultsToOrthogonal) {
 	ASSERT_TRUE(restored.deserializeFromString(isometric));
 	EXPECT_EQ(restored.kind, Tileset::Kind::Isometric);
 }
+
+TEST_F(TilesetFixture, FilterModeRoundTripsPixelArt) {
+	Tileset ts;
+	ts.filterMode = renderer::gpu::FilterMode::PixelArt;
+	const auto yaml = ts.serializeToString("pixel");
+	EXPECT_NE(yaml.find("filterMode: PixelArt"), std::string::npos);
+	Tileset loaded;
+	ASSERT_TRUE(loaded.deserializeFromString(yaml));
+	EXPECT_EQ(loaded.filterMode, renderer::gpu::FilterMode::PixelArt);
+	ts.filterMode = renderer::gpu::FilterMode::Linear;
+	EXPECT_EQ(ts.serializeToString("linear").find("filterMode"), std::string::npos);
+	ts.filterMode = renderer::gpu::FilterMode::Nearest;
+	ASSERT_TRUE(loaded.deserializeFromString(ts.serializeToString("nearest")));
+	EXPECT_EQ(loaded.filterMode, renderer::gpu::FilterMode::Nearest);
+}

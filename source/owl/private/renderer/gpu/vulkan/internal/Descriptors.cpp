@@ -125,10 +125,11 @@ void TextureData::createView() {
 
 void TextureData::createSampler() {
 	const auto& vkc = VulkanCore::get();
+	const bool nearest = filter == gpu::FilterMode::Nearest || (filter == gpu::FilterMode::PixelArt && mipLevels <= 1);
 	const VkSamplerCreateInfo samplerInfo{.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
 										  .pNext = nullptr,
 										  .flags = {},
-										  .magFilter = nearest ? VK_FILTER_NEAREST : VK_FILTER_LINEAR,
+										  .magFilter = filter == gpu::FilterMode::Linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST,
 										  .minFilter = nearest ? VK_FILTER_NEAREST : VK_FILTER_LINEAR,
 										  .mipmapMode = nearest ? VK_SAMPLER_MIPMAP_MODE_NEAREST
 																: VK_SAMPLER_MIPMAP_MODE_LINEAR,

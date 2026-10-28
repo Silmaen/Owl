@@ -12,12 +12,16 @@
 #include "platform/AtomicFile.h"
 #include "scene/Tileset.h"
 
+#include <magic_enum/magic_enum.hpp>
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <fstream>
 #include <initializer_list>
 #include <sstream>
+#include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -179,6 +183,17 @@ auto Tileset::resolveTile(const int32_t iId, const uint8_t iSlope, const bool iF
 	return iId;
 }
 
+void Tileset::applyFilterMode() const {
+	for (const auto& map: {texture, normalTexture, roughnessTexture}) {
+		if (!map)
+			continue;
+		if (filterMode != renderer::gpu::FilterMode::PixelArt)
+			map->setFilterMode(filterMode);
+		else if (map->getSpecification().atlasCell != math::vec2ui{tileWidth, tileHeight})
+			std::ignore = map->setPixelArtCells({tileWidth, tileHeight});
+	}
+}
+
 auto Tileset::serializeToString(const std::string_view iName) const -> std::string {
 	YAML::Emitter emitter;
 	emitter << YAML::BeginMap;
@@ -194,8 +209,8 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 	emitter << YAML::Key << "tileHeight" << YAML::Value << tileHeight;
 	emitter << YAML::Key << "columns" << YAML::Value << columns;
 	emitter << YAML::Key << "rows" << YAML::Value << rows;
-	if (filterMode == renderer::gpu::FilterMode::Nearest)
-		emitter << YAML::Key << "filterMode" << YAML::Value << "Nearest";
+	if (filterMode != renderer::gpu::FilterMode::Linear)
+		emitter << YAML::Key << "filterMode" << YAML::Value << std::string{magic_enum::enum_name(filterMode)};
 	if (kind == Kind::Isometric)
 		emitter << YAML::Key << "kind" << YAML::Value << "Isometric";
 	emitSlopeSets(emitter, slopeSets);
@@ -256,27 +271,15 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 		return false;
 	}
 	Tileset parsed;
-	if (const auto fm = root["filterMode"]; fm && fm.IsScalar()) {
-		if (const auto v = fm.as<std::string>(); v == "Nearest")
-			parsed.filterMode = renderer::gpu::FilterMode::Nearest;
-		else
-			parsed.filterMode = renderer::gpu::FilterMode::Linear;
-	}
+	if (const auto fm = root["filterMode"]; fm && fm.IsScalar())
+		parsed.filterMode = magic_enum::enum_cast<renderer::gpu::FilterMode>(fm.as<std::string>())
+									.value_or(renderer::gpu::FilterMode::Linear);
 	if (const auto kindNode = root["kind"]; kindNode && kindNode.IsScalar())
 		parsed.kind = kindNode.as<std::string>() == "Isometric" ? Kind::Isometric : Kind::Orthogonal;
-	if (root["texture"]) {
-		parsed.texture =
-				renderer::gpu::Texture2D::createFromSerializedForDeserialize(root["texture"].as<std::string>());
-		if (parsed.texture)
-			parsed.texture->setFilterMode(parsed.filterMode);
-	}
-	for (auto [key, map]:
-		 {std::pair{"normalTexture", &parsed.normalTexture}, std::pair{"roughnessTexture", &parsed.roughnessTexture}}) {
-		if (!root[key])
-			continue;
-		*map = renderer::gpu::Texture2D::createFromSerializedForDeserialize(root[key].as<std::string>());
-		if (*map)
-			(*map)->setFilterMode(parsed.filterMode);
+	for (auto [key, map]: {std::pair{"texture", &parsed.texture}, std::pair{"normalTexture", &parsed.normalTexture},
+						   std::pair{"roughnessTexture", &parsed.roughnessTexture}}) {
+		if (root[key])
+			*map = renderer::gpu::Texture2D::createFromSerializedForDeserialize(root[key].as<std::string>());
 	}
 	if (root["tileWidth"])
 		parsed.tileWidth = std::max(1u, root["tileWidth"].as<uint32_t>());
@@ -286,6 +289,7 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 		parsed.columns = std::max(1u, root["columns"].as<uint32_t>());
 	if (root["rows"])
 		parsed.rows = std::max(1u, root["rows"].as<uint32_t>());
+	parsed.applyFilterMode();
 	parsed.tiles.assign(static_cast<size_t>(parsed.columns) * parsed.rows, TileMeta{});
 	if (const auto tilesNode = root["tiles"]; tilesNode && tilesNode.IsSequence()) {
 		for (const auto& entry: tilesNode) {

@@ -61,13 +61,21 @@ auto glInternalDataFormat(const ImageFormat& iFormat) -> GLenum {
 }
 
 void applySamplerFilter(const GLuint iTexture, const FilterMode iMode, const uint32_t iMipLevels) {
-	if (iMode == FilterMode::Nearest) {
-		glTextureParameteri(iTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(iTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	} else {
-		glTextureParameteri(iTexture, GL_TEXTURE_MIN_FILTER, iMipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-		glTextureParameteri(iTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	switch (iMode) {
+		case FilterMode::Nearest:
+			glTextureParameteri(iTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTextureParameteri(iTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			break;
+		case FilterMode::PixelArt:
+			glTextureParameteri(iTexture, GL_TEXTURE_MIN_FILTER, iMipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
+			glTextureParameteri(iTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			break;
+		case FilterMode::Linear:
+			glTextureParameteri(iTexture, GL_TEXTURE_MIN_FILTER, iMipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+			glTextureParameteri(iTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			break;
 	}
+	glTextureParameteri(iTexture, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(std::max(iMipLevels, 1u) - 1));
 	glTextureParameteri(iTexture, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTextureParameteri(iTexture, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }

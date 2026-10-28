@@ -5,7 +5,7 @@ tileWidth: 128
 tileHeight: 128
 columns: 16
 rows: 7
-filterMode: Nearest
+filterMode: PixelArt
 tiles:
   - index: 0
     collidable: true

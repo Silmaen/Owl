@@ -36,6 +36,8 @@ ConstantBuffer<StripeParams> gParams;
 #endif
 Sampler2D gTileset;
 
+#include "atlas.slangh"
+
 struct ColumnHit {
 	int tileIndex;
 	float perpDist;
@@ -64,6 +66,8 @@ struct FragmentInput {
 	[[vk::location(0)]] float4 color : COLOR;
 	[[vk::location(1)]] float2 texCoord : TEXCOORD0;
 	[[vk::location(2)]] nointerpolation int entityID : TEXCOORD1;
+	// Atlas cell of the wall tile: min u, v, max u, v.
+	[[vk::location(3)]] nointerpolation float4 cellRect : TEXCOORD2;
 };
 
 struct FragmentOutput {
@@ -105,6 +109,7 @@ VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 		output.frag.color = float4(0.0f, 0.0f, 0.0f, 0.0f);
 		output.frag.texCoord = float2(0.0f, 0.0f);
 		output.frag.entityID = 0;
+		output.frag.cellRect = float4(0.0f, 0.0f, 1.0f, 1.0f);
 		return output;
 	}
 
@@ -134,13 +139,17 @@ VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	const float darken = (hit.side == 1u) ? yDarken : 1.0f;
 	output.frag.color = float4(darken, darken, darken, 1.0f);
 	output.frag.entityID = gParams.entityId;
+	output.frag.cellRect = float4(min(uvRect.xy, uvRect.zw), max(uvRect.xy, uvRect.zw));
 	return output;
 }
 
 [shader("fragment")]
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
-	float4 texColor = input.color * gTileset.Sample(input.texCoord);
+	const float2 uvDdx = ddx(input.texCoord);
+	const float2 uvDdy = ddy(input.texCoord);
+	const float2 uv = clampToAtlasCell(gTileset, input.texCoord, input.cellRect.xy, input.cellRect.zw, uvDdx, uvDdy);
+	float4 texColor = input.color * gTileset.SampleGrad(uv, uvDdx, uvDdy);
 	if (texColor.a < 0.001f)
 		discard;
 	if (gParams.linearOutput != 0)
