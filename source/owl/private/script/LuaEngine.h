@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "script/ScriptDebugger.h"
 #include "script/ScriptEngine.h"
 
 #include <cstddef>
@@ -361,6 +362,30 @@ public:
 	 * @param[in] iValues The strings.
 	 */
 	void setGlobalStrings(const std::string& iName, std::span<const std::string> iValues) const;
+
+	/**
+	 * @brief
+	 *  Every global of the state that is not a function, read raw.
+	 * @return The globals with a text key, sorted by name.
+	 */
+	[[nodiscard]] auto readGlobals() const -> std::vector<WatchValue>;
+
+	/**
+	 * @brief
+	 *  The entries of a global table with text keys, read raw.
+	 * @param[in] iName Name of the global table.
+	 * @return The entries, sorted by key; empty when the global is not a table.
+	 */
+	[[nodiscard]] auto readGlobalTable(const std::string& iName) const -> std::vector<WatchValue>;
+
+	/**
+	 * @brief
+	 *  Describe the value at a stack index without calling any metamethod.
+	 * @param[in] iState The Lua state.
+	 * @param[in] iIndex Stack index of the value.
+	 * @return Its type and text; the name is left empty.
+	 */
+	[[nodiscard]] static auto describeValue(lua_State* iState, int iIndex) -> WatchValue;
 
 	/**
 	 * @brief

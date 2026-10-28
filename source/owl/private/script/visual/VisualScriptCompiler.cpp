@@ -19,6 +19,7 @@
 #include <iterator>
 #include <map>
 #include <optional>
+#include <ranges>
 #include <set>
 #include <string>
 #include <string_view>
@@ -142,7 +143,7 @@ auto componentsOf(const PinSpec& iPin) -> std::vector<std::string> {
 // NOLINTBEGIN(misc-no-recursion) walks the graph; m_pureStack and m_execStack stop at every cycle
 class Compiler final {
 public:
-	explicit Compiler(const VisualScript& iScript) : m_script{iScript} {
+	Compiler(const VisualScript& iScript, const CompileMode iMode) : m_script{iScript}, m_debug{iMode == CompileMode::Debug} {
 		for (const auto& link: iScript.links) {
 			const auto* from = iScript.findNode(link.fromNode);
 			const auto* fromType = from == nullptr ? nullptr : findNodeType(from->type);
@@ -157,6 +158,7 @@ public:
 		emitProperties();
 		std::string body;
 		std::swap(body, m_out);
+		m_lineCount = 0;
 		std::set<std::string> functions;
 		for (const auto& node: m_script.nodes) {
 			const auto* type = findNodeType(node.type);
@@ -171,6 +173,11 @@ public:
 		std::swap(events, m_out);
 		m_out = std::move(body);
 		line("local __vs = {}");
+		if (m_debug)
+			line("__owl_probes = __vs");
+		const auto offset = static_cast<int>(std::ranges::count(m_out, '\n'));
+		for (auto& lines: m_nodeLines | std::views::values)
+			for (auto& number: lines) number += offset;
 		m_out += events;
 		if (m_out.size() > g_maxSourceSize)
 			error(0, "The graph expands into too much Lua: merge fewer execution paths into the same nodes.");
@@ -179,8 +186,13 @@ public:
 		return std::move(m_out);
 	}
 
+	[[nodiscard]] auto getNodeLines() -> std::map<core::UUID, std::vector<int>>& { return m_nodeLines; }
+
 private:
 	const VisualScript& m_script;
+	bool m_debug;
+	std::map<core::UUID, std::vector<int>> m_nodeLines;
+	int m_lineCount{0};
 	std::map<PinKey, const GraphLink*> m_execLinks;
 	std::map<PinKey, const GraphLink*> m_inputLinks;
 	std::map<PinKey, size_t> m_slots;
@@ -210,9 +222,24 @@ private:
 		m_out.append(m_indent, '\t');
 		m_out += iText;
 		m_out += '\n';
+		++m_lineCount;
+	}
+
+	void markNode(const core::UUID iNode) {
+		if (m_debug)
+			m_nodeLines[iNode].push_back(m_lineCount + 1);
+	}
+
+	void probe(const core::UUID iNode, const NodePins& iPins, const std::vector<std::string>& iValues) {
+		if (!m_debug)
+			return;
+		for (size_t i = 0; i < iPins.outputs.size() && i < iValues.size(); ++i)
+			line(std::format("__vs[{}] = {}", quote(getProbeKey(iNode, iPins.outputs[i].name)), iValues[i]));
 	}
 
 	auto slot(const core::UUID iNode, const std::string& iPin) -> std::string {
+		if (m_debug)
+			return std::format("__vs[{}]", quote(getProbeKey(iNode, iPin)));
 		const auto [it, inserted] = m_slots.try_emplace({iNode, iPin}, m_slots.size() + 1);
 		return std::format("__vs[{}]", it->second);
 	}
@@ -397,6 +424,7 @@ private:
 		temps.reserve(iPins.outputs.size());
 		for (size_t i = 0; i < iPins.outputs.size(); ++i) temps.push_back(std::format("__t{}", ++m_tempCount));
 		const auto names = joined(temps);
+		markNode(iNode.id);
 		switch (iType.kind) {
 			case NodeKind::Call:
 				{
@@ -435,6 +463,7 @@ private:
 				error(iNode.id, "The node cannot be evaluated as a value.");
 				break;
 		}
+		probe(iNode.id, iPins, temps);
 		return m_temps[iNode.id] = std::move(temps);
 	}
 
@@ -561,6 +590,10 @@ private:
 		const auto pins = getNodePins(m_script, iNode);
 		line("do");
 		++m_indent;
+		if (m_debug) {
+			markNode(iNode.id);
+			line(std::format("__vs.at = {}", static_cast<uint64_t>(iNode.id)));
+		}
 		std::string next = "Then";
 		switch (iType.kind) {
 			case NodeKind::Call:
@@ -634,15 +667,29 @@ private:
 
 }// namespace
 
-auto compile(const VisualScript& iScript) -> expected<std::string, std::vector<CompileDiagnostic>> {
-	return Compiler{iScript}.run();
+auto getProbeKey(const core::UUID iNode, const std::string_view iPin) -> std::string {
+	return std::format("{}:{}", static_cast<uint64_t>(iNode), iPin);
 }
 
-auto compileText(const std::string_view iText, const std::string_view iSourceName) -> std::optional<std::string> {
+auto compile(const VisualScript& iScript, const CompileMode iMode)
+		-> expected<std::string, std::vector<CompileDiagnostic>> {
+	return Compiler{iScript, iMode}.run();
+}
+
+auto compileForDebug(const VisualScript& iScript) -> expected<DebugBuild, std::vector<CompileDiagnostic>> {
+	Compiler compiler{iScript, CompileMode::Debug};
+	auto lua = compiler.run();
+	if (!lua)
+		return unexpected{std::move(lua.error())};
+	return DebugBuild{.lua = std::move(*lua), .nodeLines = std::move(compiler.getNodeLines())};
+}
+
+auto compileText(const std::string_view iText, const std::string_view iSourceName, const CompileMode iMode)
+		-> std::optional<std::string> {
 	const auto script = deserialize(iText, iSourceName);
 	if (!script)
 		return std::nullopt;
-	auto lua = compile(*script);
+	auto lua = compile(*script, iMode);
 	if (!lua) {
 		for (const auto& diagnostic: lua.error()) {
 			std::string_view message = diagnostic.message;

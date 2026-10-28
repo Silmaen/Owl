@@ -10,6 +10,7 @@
 #include "script/ScriptInstance.h"
 
 #include <cstdint>
+#include <vector>
 
 // Built instead of the Lua implementation when OWL_MODULE_SCRIPT is OFF: an instance never loads, every call is a no-op.
 
@@ -111,5 +112,9 @@ auto ScriptInstance::getPropertyString([[maybe_unused]] const std::string& iName
 auto ScriptInstance::getPropertyBool([[maybe_unused]] const std::string& iName) const -> std::optional<bool> {
 	return std::nullopt;
 }
+
+auto ScriptInstance::getWatchValues() const -> std::vector<WatchValue> { return {}; }
+
+auto ScriptInstance::getProbeValues() const -> std::vector<WatchValue> { return {}; }
 
 }// namespace owl::script

@@ -358,21 +358,61 @@ struct CompileDiagnostic {
 
 /**
  * @brief
+ *  What a compilation is for.
+ */
+enum struct CompileMode : uint8_t {
+	Game,///< Plain Lua, as a game runs it.
+	Debug///< With value probes: every wire keeps its last value in the global table `__owl_probes`.
+};
+
+/**
+ * @brief
+ *  A visual script compiled with its value probes.
+ */
+struct DebugBuild {
+	/// The Lua source.
+	std::string lua;
+	/// Lines of the Lua source each node runs, from 1: a breakpoint on a node is one on these lines.
+	std::map<core::UUID, std::vector<int>> nodeLines;
+};
+
+/**
+ * @brief
+ *  Key of a wire in the probe table: the output pin the wire leaves.
+ * @param[in] iNode Node of the output.
+ * @param[in] iPin Name of the output pin.
+ * @return The key, `<node>:<pin>`.
+ */
+[[nodiscard]] OWL_API auto getProbeKey(core::UUID iNode, std::string_view iPin) -> std::string;
+
+/**
+ * @brief
  *  Compile a visual script to Lua.
  * @param[in] iScript The script.
+ * @param[in] iMode Game or debug output.
  * @return The Lua source, or every error found.
  */
-[[nodiscard]] OWL_API auto compile(const VisualScript& iScript)
+[[nodiscard]] OWL_API auto compile(const VisualScript& iScript, CompileMode iMode = CompileMode::Game)
 		-> expected<std::string, std::vector<CompileDiagnostic>>;
+
+/**
+ * @brief
+ *  Compile a visual script with its value probes and the Lua lines of every node.
+ * @param[in] iScript The script.
+ * @return The build, or every error found.
+ */
+[[nodiscard]] OWL_API auto compileForDebug(const VisualScript& iScript)
+		-> expected<DebugBuild, std::vector<CompileDiagnostic>>;
 
 /**
  * @brief
  *  Read and compile the text of a `.owlvs` file, logging every error.
  * @param[in] iText The YAML text.
  * @param[in] iSourceName File name for the log messages.
+ * @param[in] iMode Game or debug output.
  * @return The Lua source, or an empty optional on failure.
  */
-[[nodiscard]] OWL_API auto compileText(std::string_view iText, std::string_view iSourceName)
-		-> std::optional<std::string>;
+[[nodiscard]] OWL_API auto compileText(std::string_view iText, std::string_view iSourceName,
+									   CompileMode iMode = CompileMode::Game) -> std::optional<std::string>;
 
 }// namespace owl::script::visual

@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "ScriptDebugger.h"
 #include "ScriptEngine.h"
 
 #include <cstdint>
@@ -276,6 +277,22 @@ public:
 	 * @return The value, or `std::nullopt` when missing or of the wrong type.
 	 */
 	[[nodiscard]] auto getPropertyBool(const std::string& iName) const -> std::optional<bool>;
+
+	/**
+	 * @brief
+	 *  The variables of the script: its globals that are neither functions nor engine or standard tables.
+	 * @return The variables, sorted by name; empty when the instance is invalid.
+	 */
+	[[nodiscard]] auto getWatchValues() const -> std::vector<WatchValue>;
+
+	/**
+	 * @brief
+	 *  The last value of every wire of a visual script loaded while the ScriptDebugger was enabled.
+	 *
+	 * Each entry is named by `visual::getProbeKey`; the entry `at` holds the id of the last node run.
+	 * @return The values, sorted by key; empty for a Lua script or a game build.
+	 */
+	[[nodiscard]] auto getProbeValues() const -> std::vector<WatchValue>;
 
 private:
 	/// Forward-declared implementation.

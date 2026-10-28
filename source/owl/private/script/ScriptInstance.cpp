@@ -13,6 +13,7 @@
 #include "script/LuaBindings.h"
 #include "script/LuaEngine.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <format>
@@ -29,6 +30,14 @@ constexpr std::string_view g_OnUpdate = "on_update";
 constexpr std::string_view g_OnTick = "on_tick";
 constexpr std::string_view g_OnDestroy = "on_destroy";
 constexpr std::string_view g_OnCollision = "on_collision";
+constexpr std::array<std::string_view, 9> g_hiddenGlobals{"_G",		 "_VERSION", "coroutine", "math",	   "string",
+														  "table",	 "utf8",	 "properties", "__owl_probes"};
+
+auto isScriptVariable(const std::string_view iName) -> bool {
+	if (iName.starts_with("__") || std::ranges::contains(g_hiddenGlobals, iName))
+		return false;
+	return std::ranges::none_of(getLuaTables(), [iName](const LuaTable& iTable) -> bool { return iTable.name == iName; });
+}
 }// namespace
 
 struct ScriptInstance::Impl {
@@ -293,6 +302,20 @@ auto ScriptInstance::getPropertyBool(const std::string& iName) const -> std::opt
 	if (!isValid())
 		return std::nullopt;
 	return mp_impl->engine.getGlobalBool(iName);
+}
+
+auto ScriptInstance::getWatchValues() const -> std::vector<WatchValue> {
+	if (!isValid())
+		return {};
+	auto values = mp_impl->engine.readGlobals();
+	std::erase_if(values, [](const WatchValue& iValue) -> bool { return !isScriptVariable(iValue.name); });
+	return values;
+}
+
+auto ScriptInstance::getProbeValues() const -> std::vector<WatchValue> {
+	if (!isValid())
+		return {};
+	return mp_impl->engine.readGlobalTable("__owl_probes");
 }
 
 }// namespace owl::script
