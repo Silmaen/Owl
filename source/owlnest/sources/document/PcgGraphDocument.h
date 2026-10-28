@@ -41,8 +41,8 @@ using PcgGraphUndoManager = UndoManager<scene::pcg::Graph>;
  */
 enum struct PcgViewMode : uint8_t {
 	Graph,///< The nodes.
-	Split,///< The nodes and the output of the selected node side by side.
-	Output///< The tiles the whole graph writes.
+	Split,///< The nodes and the tiles the whole graph writes side by side.
+	Output///< The tiles the whole graph writes, alone.
 };
 
 /**
@@ -69,10 +69,10 @@ enum struct PcgViewMode : uint8_t {
  *  Document editing a procedural generation graph (`.owlpcg`) on the node canvas.
  *
  * The graph (`scene::pcg::Graph`) is the truth, the canvas a view rebuilt from it after each edit; every edit is one
- * undo entry holding the graph before and after. The tab shows the nodes, the nodes beside the output of the selected
- * node (a field in grey, the points in white), or the tiles the whole graph writes (one colour per tile), regenerated
- * from the preview seed after every change. The Nodes panel holds the preview settings and the node library (click
- * to add); the Graph panel edits the parameters of the selected node.
+ * undo entry holding the graph before and after. The tab shows the nodes, the nodes beside the tiles the whole graph
+ * writes (one colour per tile), or the tiles alone, regenerated from the preview seed after every change. The Nodes
+ * panel holds the preview settings and the node library (click to add); the Graph panel edits the parameters of the
+ * selected node and previews its output (a field in grey, the points in white).
  */
 class PcgGraphDocument final : public NodeGraphDocument {
 public:
@@ -354,8 +354,22 @@ private:
 
 	/**
 	 * @brief
-	 *  Draw a preview filling the region left: the output of the selected node, or the tiles of the graph.
-	 * @param[in] iTiles Whether the tiles of the graph are shown whatever the selection.
+	 *  Description and parameters of the selected node, inside its open section (closed by this call).
+	 */
+	void renderNodeParameters();
+
+	/// A preview image on the GPU and what it shows.
+	struct PreviewImage {
+		/// The image.
+		shared<renderer::gpu::Texture2D> texture;
+		/// Evaluation generation and node it shows (none for the tiles of the graph).
+		std::pair<uint64_t, std::optional<core::UUID>> key{0, std::nullopt};
+	};
+
+	/**
+	 * @brief
+	 *  Draw a preview filling the region left: the tiles of the graph, or the output of the selected node.
+	 * @param[in] iTiles Whether the tiles of the graph are shown, else the output of the selected node.
 	 */
 	void renderPreview(bool iTiles);
 
@@ -391,10 +405,10 @@ private:
 	bool m_previewStale{true};
 	/// Evaluations of the preview so far, the key of the preview image with the node shown.
 	uint64_t m_previewGeneration{0};
-	/// Preview image on the GPU.
-	shared<renderer::gpu::Texture2D> m_previewTexture;
-	/// Generation and node the preview image shows.
-	std::pair<uint64_t, std::optional<core::UUID>> m_previewTextureKey{0, std::nullopt};
+	/// Image of the tiles of the graph, in the tab.
+	PreviewImage m_tilesImage;
+	/// Image of the output of the selected node, in the Graph panel.
+	PreviewImage m_nodeImage;
 	/// What the tab shows.
 	PcgViewMode m_viewMode{PcgViewMode::Split};
 	/// Filter of the node library.

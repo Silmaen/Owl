@@ -31,6 +31,7 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_POP
 
 #include <algorithm>
+#include <cctype>
 #include <charconv>
 #include <cstddef>
 #include <format>
@@ -117,6 +118,14 @@ auto categoryIcon(const std::string& iCategory) -> const char* {
 	if (iCategory == "Outputs")
 		return "vs_node_flow";
 	return "vs_node_math";
+}
+
+// Inspector label of a parameter: its name in Title Case (`spacing` -> `Spacing`).
+auto toLabel(const std::string& iName) -> std::string {
+	auto label = iName;
+	if (!label.empty())
+		label.front() = static_cast<char>(std::toupper(static_cast<unsigned char>(label.front())));
+	return label;
 }
 
 auto parseFloat(const std::string& iText) -> float {
@@ -506,7 +515,7 @@ void PcgGraphDocument::onImGuiRender() {
 			ImGui::EndChild();
 			ImGui::SameLine();
 			if (ImGui::BeginChild("##pcgPreviewPane"))
-				renderPreview(false);
+				renderPreview(true);
 			ImGui::EndChild();
 		}
 	}
@@ -529,8 +538,8 @@ void PcgGraphDocument::renderToolbar() {
 	constexpr std::array modes{
 			std::tuple{PcgViewMode::Graph, gui::icon::workflow, "Graph", "The nodes only."},
 			std::tuple{PcgViewMode::Split, gui::icon::columns3, "Split",
-					   "The nodes and the output of the selected node side by side."},
-			std::tuple{PcgViewMode::Output, gui::icon::image, "Output", "The tiles the whole graph writes."}};
+					   "The nodes and the tiles the whole graph writes side by side."},
+			std::tuple{PcgViewMode::Output, gui::icon::image, "Output", "The tiles the whole graph writes, alone."}};
 	for (const auto& [mode, glyph, label, tip]: modes) {
 		ImGui::PushID(label);
 		if (gui::widgets::iconButton(
@@ -682,10 +691,17 @@ void PcgGraphDocument::renderPropertiesPanel() {
 											   "Click a node of the graph to edit its parameters.");
 		return;
 	}
-	if (!gui::widgets::sectionHeader(std::format("{}  {}", getPcgNodeGlyph(type->id), type->title).c_str(),
-									 categoryIcon(type->category), false)
-				 .open)
-		return;
+	if (gui::widgets::sectionHeader(type->title.c_str(), categoryIcon(type->category), false).open)
+		renderNodeParameters();
+	if (gui::widgets::sectionHeader("Output", "preview", false).open) {
+		renderPreview(false);
+		gui::widgets::endSection();
+	}
+}
+
+void PcgGraphDocument::renderNodeParameters() {
+	const auto* node = m_graph.findNode(*m_selectedNode);
+	const auto* type = scene::pcg::findNodeType(node->type);
 	ImGui::TextWrapped("%s", type->description.c_str());
 	if (type->params.empty())
 		ImGui::TextDisabled("This node has no parameter.");
@@ -696,8 +712,9 @@ void PcgGraphDocument::renderPropertiesPanel() {
 				case scene::pcg::ParamType::Float:
 					{
 						float number = parseFloat(value);
-						if (gui::widgets::propertyFloat(param.name.c_str(), number, parseFloat(param.defaultValue),
-														0.01f, "%.3f", param.description.c_str()))
+						if (gui::widgets::propertyFloat(toLabel(param.name).c_str(), number,
+														parseFloat(param.defaultValue), 0.01f, "%.3f",
+														param.description.c_str()))
 							setNodeValue(node->id, param.name,
 										 std::format("{}", std::clamp(number, param.min, param.max)), true);
 						break;
@@ -705,7 +722,7 @@ void PcgGraphDocument::renderPropertiesPanel() {
 				case scene::pcg::ParamType::Int:
 					{
 						int number = static_cast<int>(parseFloat(value));
-						if (gui::widgets::propertyInt(param.name.c_str(), number,
+						if (gui::widgets::propertyInt(toLabel(param.name).c_str(), number,
 													  static_cast<int>(parseFloat(param.defaultValue)),
 													  static_cast<int>(param.min), static_cast<int>(param.max), "%d",
 													  param.description.c_str()))
@@ -714,7 +731,7 @@ void PcgGraphDocument::renderPropertiesPanel() {
 					}
 				case scene::pcg::ParamType::Choice:
 					{
-						gui::widgets::propertyLabel(param.name.c_str(), param.description.c_str());
+						gui::widgets::propertyLabel(toLabel(param.name).c_str(), param.description.c_str());
 						if (gui::widgets::beginCombo(std::format("##{}", param.name).c_str(), value.c_str())) {
 							for (const auto& choice: param.choices) {
 								if (ImGui::Selectable(choice.c_str(), choice == value))
@@ -745,21 +762,22 @@ void PcgGraphDocument::renderPreview(const bool iTiles) {
 		return;
 	}
 	const auto shown = iTiles ? std::nullopt : m_selectedNode;
+	auto& image = iTiles ? m_tilesImage : m_nodeImage;
 	const std::pair key{m_previewGeneration, shown};
-	if (!m_previewTexture || key != m_previewTextureKey) {
+	if (!image.texture || key != image.key) {
 		auto pixels = buildPcgPreviewImage(*result, shown);
-		if (!m_previewTexture || m_previewTexture->getSpecification().size != result->size) {
-			if (m_previewTexture)
-				gui::UiLayer::deferTextureRelease(m_previewTexture);
-			m_previewTexture = renderer::gpu::Texture2D::create(
+		if (!image.texture || image.texture->getSpecification().size != result->size) {
+			if (image.texture)
+				gui::UiLayer::deferTextureRelease(image.texture);
+			image.texture = renderer::gpu::Texture2D::create(
 					renderer::gpu::Texture::Specification{.size = result->size,
 														  .format = renderer::gpu::ImageFormat::Rgba8});
-			if (m_previewTexture)
-				m_previewTexture->setFilterMode(renderer::gpu::FilterMode::Nearest);
+			if (image.texture)
+				image.texture->setFilterMode(renderer::gpu::FilterMode::Nearest);
 		}
-		if (m_previewTexture)
-			m_previewTexture->setData(pixels.data(), static_cast<uint32_t>(pixels.size()));
-		m_previewTextureKey = key;
+		if (image.texture)
+			image.texture->setData(pixels.data(), static_cast<uint32_t>(pixels.size()));
+		image.key = key;
 	}
 	const auto* node = shown ? m_graph.findNode(*shown) : nullptr;
 	const auto* type = node != nullptr ? scene::pcg::findNodeType(node->type) : nullptr;
@@ -774,14 +792,14 @@ void PcgGraphDocument::renderPreview(const bool iTiles) {
 			ImGui::TextDisabled(type->outputs.front().type == scene::pcg::PinType::Points ? "(points in white)"
 																						  : "(black 0, white 1)");
 	}
-	if (!m_previewTexture)
+	if (!image.texture)
 		return;
 	const auto available = ImGui::GetContentRegionAvail();
 	const float scale = std::max(0.1f, std::min(available.x / static_cast<float>(result->size.x()),
 												available.y / static_cast<float>(result->size.y())));
 	const ImVec2 extent{scale * static_cast<float>(result->size.x()), scale * static_cast<float>(result->size.y())};
 	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.f, (available.x - extent.x) * 0.5f));
-	ImGui::Image(static_cast<ImTextureID>(m_previewTexture->getRendererId()), extent);
+	ImGui::Image(static_cast<ImTextureID>(image.texture->getRendererId()), extent);
 }
 
 }// namespace owl::nest
