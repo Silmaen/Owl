@@ -171,6 +171,25 @@ auto openAssetHandler() -> std::function<void(const std::filesystem::path&)>& {
 	return handler;
 }
 
+auto editInGraphHandler() -> std::function<void(const std::string&)>& {
+	static std::function<void(const std::string&)> handler;
+	return handler;
+}
+
+// The handler is edited in the visual script of the scene: a graph, or no script yet.
+void editInGraphButton(const Scene& iScene, const std::string& iName) {
+	const auto& script = iScene.getSceneScript().scriptPath;
+	if (!editInGraphHandler() || (!script.empty() && !script::visual::isVisualScriptPath(script)))
+		return;
+	ImGui::SameLine();
+	if (widgets::iconButton("##editInGraph",
+							{.glyph = icon::workflow,
+							 .tooltip = "Edit in Graph",
+							 .description = script.empty() ? "Create the visual script of this scene with this event."
+														   : "Open the visual script of this scene on this event."}))
+		editInGraphHandler()(iName);
+}
+
 auto openAssetAtLineHandler() -> std::function<void(const std::filesystem::path&, uint32_t)>& {
 	static std::function<void(const std::filesystem::path&, uint32_t)> handler;
 	return handler;
@@ -348,12 +367,17 @@ void handlerRow(const char* iLabel, std::string& ioName, const char* iDefaultNam
 			ImGui::TextDisabled("%s: %s, line %u", name.c_str(), definedIn.c_str(), line);
 		ImGui::SameLine();
 		openFunctionButton("##open", definedIn, line);
+		if (definedIn == scene->getSceneScript().scriptPath)
+			editInGraphButton(*scene, name);
 	} else if (scene->getDocumentKind() == DocumentKind::Hud) {
-		ImGui::TextDisabled("%s: defined by a script of the scene that draws this HUD.", name.c_str());
+		ImGui::TextDisabled("%s: in the HUD script, or a script of the scene that draws this HUD.", name.c_str());
+		editInGraphButton(*scene, name);
 	} else if (!anyScript) {
 		widgets::notice(std::format("No script in this scene defines {}.", name).c_str());
+		editInGraphButton(*scene, name);
 	} else {
 		widgets::notice(std::format("No script of this scene defines {}.", name).c_str());
+		editInGraphButton(*scene, name);
 	}
 	ImGui::PopID();
 }
@@ -2976,6 +3000,10 @@ void renderProps(DayNightCycle& ioComponent) {
 
 void setOpenAssetHandler(std::function<void(const std::filesystem::path&)> iHandler) {
 	openAssetHandler() = std::move(iHandler);
+}
+
+void setEditInGraphHandler(std::function<void(const std::string&)> iHandler) {
+	editInGraphHandler() = std::move(iHandler);
 }
 
 void setOpenAssetAtLineHandler(std::function<void(const std::filesystem::path&, uint32_t)> iHandler) {

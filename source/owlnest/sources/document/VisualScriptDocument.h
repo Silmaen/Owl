@@ -396,6 +396,25 @@ public:
 
 	/**
 	 * @brief
+	 *  Select the custom event of a Lua function, adding it at the centre of the view when the graph has none.
+	 * @param[in] iFunction Lua name of the event (a HUD widget callback).
+	 * @return The event node.
+	 */
+	auto ensureCustomEvent(const std::string& iFunction) -> core::UUID;
+
+	/**
+	 * @brief
+	 *  The visual script a scene or a HUD gets when one of its handlers is first edited in a graph:
+	 *  `scripts/<file>.owlvs` (`<file>_hud` for a HUD) in the asset folder of the file, written from the starter graph
+	 *  when missing.
+	 * @param[in] iSceneFile Path of the `.owl` or `.owlhud` on disk.
+	 * @return The path on disk and the asset path, or nothing when the file is in no asset folder or cannot be written.
+	 */
+	[[nodiscard]] static auto prepareSceneGraph(const std::filesystem::path& iSceneFile)
+			-> std::optional<std::pair<std::filesystem::path, std::string>>;
+
+	/**
+	 * @brief
 	 *  What the graph shows of the debugger.
 	 * @return Breakpoints, stopped node and wire values.
 	 */

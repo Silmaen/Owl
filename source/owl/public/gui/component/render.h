@@ -52,6 +52,14 @@ OWL_API auto openAssetAtLine(const std::filesystem::path& iPath, uint32_t iLine)
 
 /**
  * @brief
+ *  Set the function the "Edit in Graph" button of a handler row calls: it opens the visual script of the inspected
+ *  scene or HUD on the event of that handler, creating both when missing (the editor sets it, a game leaves it empty).
+ * @param[in] iHandler Called with the name of the Lua function.
+ */
+OWL_API void setEditInGraphHandler(std::function<void(const std::string&)> iHandler);
+
+/**
+ * @brief
  *  Set the scene the inspector reads when it checks that a named Lua function exists (HUD, trigger and timer
  *  handlers); null when no scene is inspected.
  * @param[in] iScene The scene whose scripts define the handlers.

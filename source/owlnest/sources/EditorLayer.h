@@ -973,6 +973,14 @@ private:
 
 	/**
 	 * @brief
+	 *  Open the visual script of the active scene or HUD on the custom event of a handler, creating the script and the
+	 *  event when missing (the "Edit in Graph" button of the inspector).
+	 * @param[in] iFunction Lua name of the handler.
+	 */
+	void editHandlerInGraph(const std::string& iFunction);
+
+	/**
+	 * @brief
 	 *  Handle the scene stop event.
 	 */
 	void onSceneStop();
@@ -1050,6 +1058,8 @@ private:
 	std::vector<std::filesystem::path> m_deferredOpenPaths;
 	/// Line to reveal once the deferred file is open, by absolute path.
 	std::map<std::filesystem::path, uint32_t> m_deferredOpenLines;
+	/// Visual scripts being opened for a handler, by asset path: the custom event to select once open.
+	std::map<std::string, std::string> m_deferredGraphEvents;
 	/// Project to switch to at the start of the next frame (empty path: close only), set by `requestProjectSwitch`.
 	std::optional<std::filesystem::path> m_pendingProjectSwitch;
 	/// The currently loaded project (or empty when no project is open).

@@ -1169,6 +1169,44 @@ void VisualScriptDocument::renderNodeInputs(const vs::GraphNode& iNode) {
 	gui::widgets::endSection();
 }
 
+auto VisualScriptDocument::ensureCustomEvent(const std::string& iFunction) -> core::UUID {
+	for (const auto& node: m_script.nodes) {
+		if (node.type == "event.custom" && valueOf(node, "function") == iFunction) {
+			m_view.setSelection({node.id});
+			m_view.requestFocus(node.id);
+			return node.id;
+		}
+	}
+	const auto center = m_view.getViewCenter();
+	const auto id = addNode("event.custom", {center[0] - 80.f, center[1] - 30.f});
+	setNodeValue(id, "function", iFunction);
+	m_view.requestFocus(id);
+	return id;
+}
+
+auto VisualScriptDocument::prepareSceneGraph(const std::filesystem::path& iSceneFile)
+		-> std::optional<std::pair<std::filesystem::path, std::string>> {
+	if (!app::Application::instanced())
+		return std::nullopt;
+	for (const auto& [title, directory]: app::Application::get().getAssetDirectories()) {
+		const auto relative = iSceneFile.lexically_relative(directory);
+		if (relative.empty() || *relative.begin() == "..")
+			continue;
+		const auto suffix = iSceneFile.extension() == ".owlhud" ? "_hud" : "";
+		const auto asset = std::format("scripts/{}{}{}", iSceneFile.stem().string(), suffix, vs::g_VisualScriptExtension);
+		const auto file = directory / asset;
+		std::error_code error;
+		std::filesystem::create_directories(file.parent_path(), error);
+		if (!exists(file) && !platform::writeFileAtomic(file, vs::serialize(starterScript()))) {
+			OWL_WARN("VisualScriptDocument: Cannot write '{}'.", file.string())
+			return std::nullopt;
+		}
+		return std::pair{file, asset};
+	}
+	OWL_WARN("VisualScriptDocument: '{}' is in no asset folder: save it in the project first.", iSceneFile.string())
+	return std::nullopt;
+}
+
 auto VisualScriptDocument::addFunction(const bool iMacro) -> std::string {
 	auto next = m_script;
 	std::string name = iMacro ? "macro" : "function";

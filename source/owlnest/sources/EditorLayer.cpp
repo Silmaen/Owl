@@ -634,6 +634,8 @@ void EditorLayer::onAttach() {
 	m_contentBrowser.attach();
 	gui::component::setOpenAssetHandler(
 			[this](const std::filesystem::path& iPath) -> void { openAssetFromInspector(iPath); });
+	gui::component::setEditInGraphHandler(
+			[this](const std::string& iFunction) -> void { editHandlerInGraph(iFunction); });
 	gui::component::setOpenAssetAtLineHandler([this](const std::filesystem::path& iPath, const uint32_t iLine) -> void {
 		openAssetFromInspector(iPath, iLine);
 	});
@@ -717,6 +719,7 @@ void EditorLayer::onDetach() {
 	gui::IconBank::instance().clear();
 	gui::component::setOpenAssetHandler({});
 	gui::component::setOpenAssetAtLineHandler({});
+	gui::component::setEditInGraphHandler({});
 }
 
 void EditorLayer::revealCodeLine(const std::filesystem::path& iPath, const uint32_t iLine) {
@@ -866,6 +869,17 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 			if (const auto line = m_deferredOpenLines.find(path); line != m_deferredOpenLines.end()) {
 				revealCodeLine(path, line->second);
 				m_deferredOpenLines.erase(line);
+			}
+			for (auto event = m_deferredGraphEvents.begin(); event != m_deferredGraphEvents.end();) {
+				if (!script::ScriptDebugger::isSameScript(path.string(), event->first)) {
+					++event;
+					continue;
+				}
+				for (const auto& docPtr: m_documents.list())
+					if (auto* graph = dynamic_cast<VisualScriptDocument*>(docPtr.get());
+						graph != nullptr && graph->filePath() == path)
+						std::ignore = graph->ensureCustomEvent(event->second);
+				event = m_deferredGraphEvents.erase(event);
 			}
 		}
 	}
@@ -1402,6 +1416,26 @@ void EditorLayer::renderScriptDebug() {
 		case panel::ScriptDebugPanel::Request::None:
 			break;
 	}
+}
+
+void EditorLayer::editHandlerInGraph(const std::string& iFunction) {
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr || doc->state() != SceneDocument::State::Edit) {
+		OWL_WARN("EditorLayer: Stop the game to edit a handler in a graph.")
+		return;
+	}
+	const auto scene = doc->getActiveScene();
+	auto script = scene->getSceneScript().scriptPath;
+	if (script.empty()) {
+		const auto graph = VisualScriptDocument::prepareSceneGraph(doc->filePath());
+		if (!graph.has_value())
+			return;
+		const commands::CommandTarget target{.registry = &m_commands, .scene = scene, .undo = &doc->undoManager()};
+		std::ignore = target.execute("scene.set_script", {{"script", std::format("scriptPath: {}", graph->second)}});
+		script = graph->second;
+	}
+	m_deferredGraphEvents[script] = iFunction;
+	openAssetFromInspector(script);
 }
 
 void EditorLayer::onSceneStop() {

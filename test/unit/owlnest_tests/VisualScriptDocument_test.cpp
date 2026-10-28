@@ -239,3 +239,12 @@ TEST_F(VisualScriptDocumentTest, FunctionsAreAddedRenamedAndRemovedWithTheirNode
 	m_document.performUndo();
 	EXPECT_NE(m_document.getScript().findFunction("move"), nullptr);
 }
+
+TEST_F(VisualScriptDocumentTest, EnsureCustomEventAddsTheHandlerOnce) {
+	const auto first = m_document.ensureCustomEvent("on_pause");
+	ASSERT_NE(m_document.getScript().findNode(first), nullptr);
+	EXPECT_EQ(m_document.getScript().findNode(first)->values.at("function"), "on_pause");
+	EXPECT_EQ(m_document.ensureCustomEvent("on_pause"), first);
+	EXPECT_EQ(m_document.getSelection(), std::vector{first});
+	EXPECT_EQ(m_document.getScript().nodes.size(), 3u);
+}
