@@ -12,11 +12,15 @@
 #include "UndoManager.h"
 
 #include <scene/Tileset.h>
+#include <scene/TilesetAtlas.h>
 
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
+#include <tuple>
+#include <vector>
 
 namespace owl::nest {
 /**
@@ -40,6 +44,11 @@ using TilesetUndoManager = UndoManager<scene::Tileset>;
  * - The document tab itself shows the atlas preview canvas: the texture
  *   tiled with a grid overlay, click-to-select each slot, the selected
  *   slot highlighted in the editor accent colour.
+ *
+ * The atlas image is composed in the document: an image dropped on a slot fills it (scaled to the cell), a folder
+ * fills the slot and the next empty ones (rows added at the bottom when the grid is full), a cleared slot keeps its
+ * index, selected slots move together by drag. The pixels live in a `scene::TilesetAtlas`, shown at once through the
+ * shared atlas texture and written to the atlas PNG on save.
  *
  * Saves the tileset in the engine's `.owltileset` YAML format. The undo
  * stack is typed over the tileset itself so future graph editors can share
@@ -289,7 +298,121 @@ public:
 	 */
 	void setOpen(const bool iOpen) { m_pOpen = iOpen; }
 
+	// --- Atlas composition ---------------------------------------------------
+	/**
+	 * @brief
+	 *  Fill one slot with an image file, scaled to the cell (one undo entry).
+	 * @param[in] iIndex The slot.
+	 * @param[in] iImage The image file (`.png`, `.jpg`).
+	 * @return True when the slot changed.
+	 */
+	auto setTileImage(uint32_t iIndex, const std::filesystem::path& iImage) -> bool;
+
+	/**
+	 * @brief
+	 *  Fill a slot and the next empty ones with images, rows added at the bottom when the grid is full (one undo
+	 *  entry).
+	 * @param[in] iFrom The slot the first image goes to.
+	 * @param[in] iImages The image files, in order; a folder stands for its images sorted by name.
+	 * @return True when the atlas changed.
+	 */
+	auto insertTileImages(uint32_t iFrom, const std::vector<std::filesystem::path>& iImages) -> bool;
+
+	/**
+	 * @brief
+	 *  Make slots transparent and reset their metadata, their indices kept (one undo entry).
+	 * @param[in] iTiles The slots.
+	 * @return True when the atlas changed.
+	 */
+	auto clearTiles(const std::vector<uint32_t>& iTiles) -> bool;
+
+	/**
+	 * @brief
+	 *  Move slots by an index offset, pixels and metadata, each exchanged with the slot it lands on (one undo
+	 *  entry).
+	 * @param[in] iTiles The slots.
+	 * @param[in] iOffset The index offset.
+	 * @return False when a slot would leave the grid (nothing moves).
+	 */
+	auto moveTiles(const std::vector<uint32_t>& iTiles, int32_t iOffset) -> bool;
+
+	/**
+	 * @brief
+	 *  Change the grid, the pixels and the metadata of each slot kept at its column and row (one undo entry).
+	 * @param[in] iColumns New column count.
+	 * @param[in] iRows New row count.
+	 */
+	void resizeGrid(uint32_t iColumns, uint32_t iRows);
+
+	/**
+	 * @brief
+	 *  Select slots in the atlas canvas.
+	 * @param[in] iIndex The slot clicked.
+	 * @param[in] iToggle Add it to the selection or remove it (Ctrl).
+	 * @param[in] iRange Select from the inspected slot to it (Shift).
+	 */
+	void selectTile(uint32_t iIndex, bool iToggle = false, bool iRange = false);
+
+	/**
+	 * @brief
+	 *  Selected slots, ascending.
+	 * @return The slots.
+	 */
+	[[nodiscard]] auto getSelectedTiles() const -> const std::vector<uint32_t>& { return m_selectedTiles; }
+
+	/**
+	 * @brief
+	 *  Pixels of the atlas, read from its image at the first composition.
+	 * @return The atlas, none before the first composition.
+	 */
+	[[nodiscard]] auto getAtlas() const -> const std::optional<scene::TilesetAtlas>& { return m_atlas; }
+
+	/**
+	 * @brief
+	 *  Image file the atlas is written to on save.
+	 * @return The file, empty before the first composition.
+	 */
+	[[nodiscard]] auto getAtlasFile() const -> const std::filesystem::path& { return m_atlasFile; }
+
+	/**
+	 * @brief
+	 *  Put the atlas back to a grid and cell pixels (undo and redo of a composition).
+	 * @param[in] iColumns Column count.
+	 * @param[in] iRows Row count.
+	 * @param[in] iCells Cells to write: column, row, pixels.
+	 */
+	void restoreAtlas(uint32_t iColumns, uint32_t iRows,
+					  const std::vector<std::tuple<uint32_t, uint32_t, std::vector<uint8_t>>>& iCells);
+
 private:
+	/**
+	 * @brief
+	 *  Read the atlas pixels from the atlas image, or start a transparent one next to the tileset.
+	 * @return True when the atlas can be composed.
+	 */
+	auto ensureAtlas() -> bool;
+
+	/**
+	 * @brief
+	 *  Run a composition: metadata and pixel changes recorded as one undo entry, the texture updated.
+	 * @param[in] iDescription The undo entry.
+	 * @param[in] iMutator The change, returning false when nothing happened.
+	 * @return The result of the mutator.
+	 */
+	auto composeAtlas(const std::string& iDescription, const std::function<bool()>& iMutator) -> bool;
+
+	/**
+	 * @brief
+	 *  Upload the atlas pixels to the tileset texture (mipmaps built per tile for a pixel-art tileset).
+	 */
+	void uploadAtlas();
+
+	/**
+	 * @brief
+	 *  Context menu of the atlas canvas: insert, clear, select.
+	 */
+	void renderCanvasMenu();
+
 	/**
 	 * @brief
 	 *  Render the slope table of an isometric tileset: the tile of each terrain id on the 19 slopes.
@@ -337,6 +460,18 @@ private:
 	EditorLayer* mp_editorLayer{nullptr};
 	/// Currently inspected tile (the slot whose metadata is shown in the Properties panel). `-1` = none.
 	int32_t m_inspectedTile = -1;
+	/// Selected slots, ascending (the inspected slot among them).
+	std::vector<uint32_t> m_selectedTiles;
+	/// Slot a selection drag started on.
+	std::optional<uint32_t> m_dragFrom;
+	/// Pixels of the atlas being composed.
+	std::optional<scene::TilesetAtlas> m_atlas;
+	/// Image file the atlas is written to.
+	std::filesystem::path m_atlasFile;
+	/// Hash of the atlas pixels, and the one at the last save: the atlas half of `isDirty()`.
+	uint64_t m_atlasHash{0};
+	/// Hash of the atlas pixels written by the last save.
+	uint64_t m_savedAtlasHash{0};
 
 	/// Canvas zoom factor — 1.0 = atlas rendered at native pixel size.
 	float m_zoom = 1.f;

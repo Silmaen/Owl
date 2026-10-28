@@ -23,7 +23,10 @@
 #include <gui/widgets/SectionHeader.h>
 #include <gui/widgets/Tooltip.h>
 #include <imgui_stdlib.h>
+#include <platform/FileDialog.h>
+#include <renderer/AtlasMips.h>
 #include <renderer/Renderer.h>
+#include <renderer/TextureDecoder.h>
 #include <renderer/gpu/Texture.h>
 #include <scene/TilemapTerrain.h>
 
@@ -37,9 +40,13 @@ OWL_DIAG_POP
 #include <array>
 #include <cstddef>
 #include <format>
+#include <functional>
 #include <optional>
+#include <ranges>
+#include <set>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 namespace owl::nest {
 
@@ -78,6 +85,123 @@ private:
 
 auto snapshotTileset(const scene::Tileset& iTileset) -> std::string { return iTileset.serializeToString("undo"); }
 
+using AtlasCells = std::vector<std::tuple<uint32_t, uint32_t, std::vector<uint8_t>>>;
+
+// One composition of the atlas: the metadata as YAML and the cells whose pixels changed, at their column and row.
+class ModifyTileAtlasCommand final : public UndoCommand<scene::Tileset> {
+public:
+	/// Grid and changed cells of one side of the edit.
+	struct Side {
+		std::string yaml;
+		uint32_t columns = 1;
+		uint32_t rows = 1;
+		AtlasCells cells;
+	};
+
+	ModifyTileAtlasCommand(TilesetDocument& ioDocument, Side iBefore, Side iAfter, std::string iDescription)
+		: m_document{ioDocument}, m_before{std::move(iBefore)}, m_after{std::move(iAfter)},
+		  m_description{std::move(iDescription)} {}
+
+	void undo(scene::Tileset& ioTarget) override { apply(ioTarget, m_before); }
+
+	void redo(scene::Tileset& ioTarget) override { apply(ioTarget, m_after); }
+
+	[[nodiscard]] auto description() const -> std::string override { return m_description; }
+
+private:
+	void apply(scene::Tileset& ioTarget, const Side& iSide) const {
+		const auto texture = ioTarget.texture;
+		const auto normal = ioTarget.normalTexture;
+		const auto roughness = ioTarget.roughnessTexture;
+		std::ignore = ioTarget.deserializeFromString(iSide.yaml);
+		ioTarget.texture = texture;
+		ioTarget.normalTexture = normal;
+		ioTarget.roughnessTexture = roughness;
+		m_document.restoreAtlas(iSide.columns, iSide.rows, iSide.cells);
+	}
+
+	TilesetDocument& m_document;
+	Side m_before;
+	Side m_after;
+	std::string m_description;
+};
+
+auto hashPixels(const std::vector<uint8_t>& iPixels) -> uint64_t {
+	uint64_t hash = 14695981039346656037ull;
+	for (const auto byte: iPixels) {
+		hash ^= byte;
+		hash *= 1099511628211ull;
+	}
+	return hash;
+}
+
+auto isImageFile(const std::filesystem::path& iPath) -> bool {
+	const auto extension = iPath.extension().string();
+	return std::ranges::contains(renderer::gpu::Texture2D::extension(), extension);
+}
+
+// The image files of a list, a folder standing for its images sorted by name.
+auto expandImages(const std::vector<std::filesystem::path>& iPaths) -> std::vector<std::filesystem::path> {
+	std::vector<std::filesystem::path> result;
+	for (const auto& path: iPaths) {
+		if (std::error_code error; std::filesystem::is_directory(path, error)) {
+			std::set<std::filesystem::path> images;
+			for (const auto& entry: std::filesystem::directory_iterator(path, error)) {
+				if (entry.is_regular_file() && isImageFile(entry.path()))
+					images.insert(entry.path());
+			}
+			result.insert(result.end(), images.begin(), images.end());
+		} else if (isImageFile(path)) {
+			result.push_back(path);
+		}
+	}
+	return result;
+}
+
+// An image file as RGBA8 pixels, top row first.
+auto readImage(const std::filesystem::path& iPath) -> std::optional<std::pair<std::vector<uint8_t>, math::vec2ui>> {
+	const auto decoded = renderer::decodeImageFile(iPath, 4);
+	if (!decoded.valid) {
+		OWL_WARN("TilesetDocument: Cannot read the image '{}'.", iPath.string())
+		return std::nullopt;
+	}
+	return std::pair{scene::TilesetAtlas::flipRows(decoded.pixels, decoded.size), decoded.size};
+}
+
+// A path given relative to an asset directory (Content Browser payload, texture name), resolved on disk.
+auto resolveAssetPath(const std::filesystem::path& iPath) -> std::filesystem::path {
+	if (iPath.is_absolute() || !app::Application::instanced())
+		return iPath;
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		if (const auto candidate = assetsPath / iPath; exists(candidate))
+			return candidate;
+	}
+	return iPath;
+}
+
+// The cells whose pixels differ between two atlases, by column and row.
+auto diffAtlases(const scene::TilesetAtlas& iBefore, const scene::TilesetAtlas& iAfter)
+		-> std::pair<AtlasCells, AtlasCells> {
+	std::pair<AtlasCells, AtlasCells> result;
+	const auto cellOf = [](const scene::TilesetAtlas& iAtlas, const uint32_t iColumn,
+						   const uint32_t iRow) -> std::vector<uint8_t> {
+		if (iColumn >= iAtlas.getColumns() || iRow >= iAtlas.getRows())
+			return std::vector<uint8_t>(static_cast<size_t>(iAtlas.getTileSize().surface()) * 4, 0);
+		return iAtlas.getTile(iRow * iAtlas.getColumns() + iColumn);
+	};
+	for (uint32_t row = 0; row < std::max(iBefore.getRows(), iAfter.getRows()); ++row) {
+		for (uint32_t column = 0; column < std::max(iBefore.getColumns(), iAfter.getColumns()); ++column) {
+			auto before = cellOf(iBefore, column, row);
+			auto after = cellOf(iAfter, column, row);
+			if (before == after)
+				continue;
+			result.first.emplace_back(column, row, std::move(before));
+			result.second.emplace_back(column, row, std::move(after));
+		}
+	}
+	return result;
+}
+
 template<typename Fn>
 void pushTilesetEdit(scene::Tileset& ioTileset, TilesetUndoManager& ioUndo, const std::string& iDescription,
 					 Fn&& iMutator) {
@@ -104,7 +228,7 @@ auto TilesetDocument::title() const -> std::string {
 
 auto TilesetDocument::isDirty() const -> bool {
 	const auto displayName = m_path.empty() ? std::string{"untitled"} : m_path.stem().string();
-	return m_tileset.serializeToString(displayName) != m_savedSnapshot;
+	return m_tileset.serializeToString(displayName) != m_savedSnapshot || m_atlasHash != m_savedAtlasHash;
 }
 
 auto TilesetDocument::recoverySnapshot() const -> std::optional<std::string> {
@@ -141,6 +265,13 @@ auto TilesetDocument::save() -> bool {
 }
 
 auto TilesetDocument::saveAs(const std::filesystem::path& iPath) -> bool {
+	if (m_atlas && m_atlasHash != m_savedAtlasHash) {
+		if (!renderer::writeImagePng(m_atlasFile, m_atlas->getSize(), m_atlas->getPixels())) {
+			OWL_CORE_ERROR("TilesetDocument: failed to write the atlas '{}'.", m_atlasFile.string())
+			return false;
+		}
+		m_savedAtlasHash = m_atlasHash;
+	}
 	const auto displayName = iPath.stem().string();
 	if (!m_tileset.saveToFile(iPath, displayName)) {
 		OWL_CORE_ERROR("TilesetDocument: failed to write '{}'.", iPath.string())
@@ -159,9 +290,220 @@ auto TilesetDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 		return false;
 	}
 	m_path = iPath;
+	m_atlas.reset();
+	m_atlasHash = m_savedAtlasHash = 0;
 	resolveTexture();
 	refreshSavedSnapshot();
 	return true;
+}
+
+auto TilesetDocument::ensureAtlas() -> bool {
+	if (m_atlas)
+		return true;
+	const math::vec2ui tile{m_tileset.tileWidth, m_tileset.tileHeight};
+	if (!m_tileset.texture) {
+		if (m_path.empty()) {
+			OWL_WARN("TilesetDocument: Save the tileset before composing its atlas.")
+			return false;
+		}
+		m_atlasFile = m_path.parent_path() / (m_path.stem().string() + ".png");
+		if (exists(m_atlasFile)) {
+			OWL_WARN("TilesetDocument: '{}' exists, drop it as the atlas texture to compose it.", m_atlasFile.string())
+			return false;
+		}
+		m_atlas.emplace(tile, m_tileset.columns, m_tileset.rows);
+		if (!renderer::writeImagePng(m_atlasFile, m_atlas->getSize(), m_atlas->getPixels())) {
+			OWL_WARN("TilesetDocument: Cannot create the atlas '{}'.", m_atlasFile.string())
+			m_atlas.reset();
+			return false;
+		}
+		m_tileset.texture = renderer::gpu::Texture2D::create(m_atlasFile);
+		m_tileset.applyFilterMode();
+		m_atlasHash = m_savedAtlasHash = hashPixels(m_atlas->getPixels());
+		return true;
+	}
+	m_atlasFile = m_tileset.texture->getPath();
+	if (m_atlasFile.empty())
+		m_atlasFile = resolveAssetPath(m_tileset.texture->getName());
+	const auto image = readImage(m_atlasFile);
+	if (!image) {
+		OWL_WARN("TilesetDocument: The atlas texture has no image file to compose.")
+		return false;
+	}
+	const math::vec2ui grid{tile.x() * m_tileset.columns, tile.y() * m_tileset.rows};
+	if (image->second.x() > grid.x() || image->second.y() > grid.y()) {
+		OWL_WARN("TilesetDocument: The atlas image is {}x{}, larger than the {}x{} of the grid: set the columns, rows "
+				 "and tile size first.",
+				 image->second.x(), image->second.y(), grid.x(), grid.y())
+		return false;
+	}
+	m_atlas = scene::TilesetAtlas::fromImage(image->first, image->second, tile, m_tileset.columns, m_tileset.rows);
+	m_atlasHash = hashPixels(m_atlas->getPixels());
+	m_savedAtlasHash = image->second == grid ? m_atlasHash : 0;
+	return true;
+}
+
+auto TilesetDocument::composeAtlas(const std::string& iDescription, const std::function<bool()>& iMutator) -> bool {
+	if (!ensureAtlas())
+		return false;
+	ModifyTileAtlasCommand::Side before{.yaml = snapshotTileset(m_tileset),
+										.columns = m_atlas->getColumns(),
+										.rows = m_atlas->getRows(),
+										.cells = {}};
+	const auto previous = *m_atlas;
+	if (!iMutator())
+		return false;
+	ModifyTileAtlasCommand::Side after{.yaml = snapshotTileset(m_tileset),
+									   .columns = m_atlas->getColumns(),
+									   .rows = m_atlas->getRows(),
+									   .cells = {}};
+	std::tie(before.cells, after.cells) = diffAtlases(previous, *m_atlas);
+	if (before.cells.empty() && before.yaml == after.yaml && before.columns == after.columns &&
+		before.rows == after.rows)
+		return false;
+	m_undoManager.push(mkUniq<ModifyTileAtlasCommand>(*this, std::move(before), std::move(after), iDescription));
+	m_atlasHash = hashPixels(m_atlas->getPixels());
+	uploadAtlas();
+	return true;
+}
+
+void TilesetDocument::restoreAtlas(const uint32_t iColumns, const uint32_t iRows, const AtlasCells& iCells) {
+	if (!m_atlas)
+		return;
+	m_atlas->resize(iColumns, iRows);
+	for (const auto& [column, row, pixels]: iCells) {
+		if (column < iColumns && row < iRows)
+			std::ignore = m_atlas->setTile(row * iColumns + column, pixels, m_atlas->getTileSize());
+	}
+	m_atlasHash = hashPixels(m_atlas->getPixels());
+	uploadAtlas();
+}
+
+void TilesetDocument::uploadAtlas() {
+	if (!m_atlas || !m_tileset.texture)
+		return;
+	const auto size = m_atlas->getSize();
+	auto pixels = scene::TilesetAtlas::flipRows(m_atlas->getPixels(), size);
+	if (m_tileset.filterMode == renderer::gpu::FilterMode::PixelArt) {
+		std::ignore = m_tileset.texture->setLevels(renderer::buildCellMips(pixels, size, m_atlas->getTileSize()));
+		return;
+	}
+	std::ignore = m_tileset.texture->setLevels(
+			{.size = size, .format = renderer::gpu::ImageFormat::Rgba8, .levels = {std::move(pixels)}});
+}
+
+auto TilesetDocument::setTileImage(const uint32_t iIndex, const std::filesystem::path& iImage) -> bool {
+	return insertTileImages(iIndex, {iImage});
+}
+
+auto TilesetDocument::insertTileImages(const uint32_t iFrom, const std::vector<std::filesystem::path>& iImages)
+		-> bool {
+	std::vector<std::pair<std::vector<uint8_t>, math::vec2ui>> images;
+	for (const auto& path: expandImages(iImages)) {
+		if (auto image = readImage(path); image)
+			images.push_back(std::move(*image));
+	}
+	if (images.empty()) {
+		OWL_WARN("TilesetDocument: No image to put in the atlas.")
+		return false;
+	}
+	const auto description = images.size() == 1 ? std::format("Set the image of tile {}", iFrom)
+												 : std::format("Insert {} tile images", images.size());
+	return composeAtlas(description, [this, iFrom, &images]() -> bool {
+		const auto [slots, rows] = m_atlas->planInsertion(iFrom, static_cast<uint32_t>(images.size()));
+		if (rows > m_atlas->getRows()) {
+			m_atlas->resize(m_atlas->getColumns(), rows);
+			while (m_tileset.rows < rows) m_tileset.addRow();
+		}
+		bool changed = false;
+		for (size_t i = 0; i < slots.size(); ++i)
+			changed = m_atlas->setTile(slots[i], images[i].first, images[i].second) || changed;
+		return changed;
+	});
+}
+
+auto TilesetDocument::clearTiles(const std::vector<uint32_t>& iTiles) -> bool {
+	return composeAtlas(iTiles.size() == 1 ? "Clear a tile" : std::format("Clear {} tiles", iTiles.size()),
+						[this, &iTiles]() -> bool {
+							for (const auto index: iTiles) {
+								m_atlas->clearTile(index);
+								if (index < m_tileset.tiles.size())
+									m_tileset.tiles[index] = scene::TileMeta{};
+							}
+							return !iTiles.empty();
+						});
+}
+
+auto TilesetDocument::moveTiles(const std::vector<uint32_t>& iTiles, const int32_t iOffset) -> bool {
+	if (iTiles.empty() || iOffset == 0)
+		return false;
+	const auto count = static_cast<int64_t>(m_tileset.tileCount());
+	for (const auto index: iTiles) {
+		if (const auto target = static_cast<int64_t>(index) + iOffset; target < 0 || target >= count) {
+			OWL_WARN("TilesetDocument: Tile {} would leave the grid, nothing moves.", index)
+			return false;
+		}
+	}
+	auto order = iTiles;
+	std::ranges::sort(order);
+	if (iOffset > 0)
+		std::ranges::reverse(order);
+	const bool moved = composeAtlas(std::format("Move {} tiles", iTiles.size()), [this, &order, iOffset]() -> bool {
+		for (const auto index: order) {
+			const auto target = static_cast<uint32_t>(static_cast<int64_t>(index) + iOffset);
+			m_atlas->swapTiles(index, target);
+			m_tileset.swapTiles(index, target);
+		}
+		return true;
+	});
+	if (moved) {
+		for (auto& index: m_selectedTiles) index = static_cast<uint32_t>(static_cast<int64_t>(index) + iOffset);
+		std::ranges::sort(m_selectedTiles);
+		if (m_inspectedTile >= 0)
+			m_inspectedTile += iOffset;
+	}
+	return moved;
+}
+
+void TilesetDocument::resizeGrid(const uint32_t iColumns, const uint32_t iRows) {
+	const auto columns = std::max(1u, iColumns);
+	const auto rows = std::max(1u, iRows);
+	const auto mutate = [this, columns, rows]() -> bool {
+		while (m_tileset.columns < columns) m_tileset.addColumn();
+		while (m_tileset.columns > columns) m_tileset.removeColumn();
+		while (m_tileset.rows < rows) m_tileset.addRow();
+		while (m_tileset.rows > rows) m_tileset.removeRow();
+		if (m_atlas)
+			m_atlas->resize(columns, rows);
+		return true;
+	};
+	const auto description = std::format("Resize the grid to {}x{}", columns, rows);
+	if (m_atlas) {
+		std::ignore = composeAtlas(description, mutate);
+		return;
+	}
+	pushTilesetEdit(m_tileset, m_undoManager, description, mutate);
+}
+
+void TilesetDocument::selectTile(const uint32_t iIndex, const bool iToggle, const bool iRange) {
+	if (iRange && m_inspectedTile >= 0) {
+		const auto [low, high] = std::minmax(static_cast<uint32_t>(m_inspectedTile), iIndex);
+		m_selectedTiles.clear();
+		for (uint32_t index = low; index <= high; ++index) m_selectedTiles.push_back(index);
+		return;
+	}
+	if (iToggle) {
+		if (const auto found = std::ranges::find(m_selectedTiles, iIndex); found != m_selectedTiles.end()) {
+			m_selectedTiles.erase(found);
+			if (m_inspectedTile == static_cast<int32_t>(iIndex))
+				m_inspectedTile = m_selectedTiles.empty() ? -1 : static_cast<int32_t>(m_selectedTiles.back());
+			return;
+		}
+		m_selectedTiles.insert(std::ranges::upper_bound(m_selectedTiles, iIndex), iIndex);
+	} else {
+		m_selectedTiles = {iIndex};
+	}
+	m_inspectedTile = static_cast<int32_t>(iIndex);
 }
 
 void TilesetDocument::onImGuiRender() {
@@ -203,9 +545,14 @@ void TilesetDocument::onImGuiRender() {
 void TilesetDocument::renderHierarchyPanel() {
 	if (!gui::widgets::sectionHeader("Atlas", gui::icon::image, false).open)
 		return;
+	// Unsaved composed pixels belong to the current atlas image: its texture and tile size wait for the save.
+	const bool composing = m_atlas && m_atlasHash != m_savedAtlasHash;
+	ImGui::BeginDisabled(composing);
 	const auto textureBefore = snapshotTileset(m_tileset);
-	if (gui::widgets::textureField("##texture", m_tileset.texture, ImVec2{96.f, 96.f}))
+	if (gui::widgets::textureField("##texture", m_tileset.texture, ImVec2{96.f, 96.f})) {
+		m_atlas.reset();
 		m_tileset.applyFilterMode();
+	}
 	gui::widgets::itemTooltip("Texture", nullptr, "Drop a texture from the Content Browser.");
 	ImGui::SameLine();
 	if (gui::widgets::textureField("##normal", m_tileset.normalTexture, ImVec2{64.f, 64.f}))
@@ -219,6 +566,9 @@ void TilesetDocument::renderHierarchyPanel() {
 	gui::widgets::itemTooltip("Roughness map", nullptr,
 							  "Roughness on the grid of the atlas: 50 % grey keeps the roughness of a voxel block, "
 							  "darker is smoother. Drop a texture from the Content Browser.");
+	ImGui::EndDisabled();
+	if (composing)
+		gui::widgets::itemTooltip("Atlas", nullptr, "Save the tileset first: its composed atlas is not written yet.");
 	if (const auto textureAfter = snapshotTileset(m_tileset); textureAfter != textureBefore) {
 		auto cmd = mkUniq<ModifyTilesetCommand>(textureBefore, textureAfter, "Set texture");
 		m_undoManager.push(std::move(cmd));
@@ -228,8 +578,8 @@ void TilesetDocument::renderHierarchyPanel() {
 		return;
 	}
 	// A count with the buttons that add or remove a column or a row.
-	const auto countRow = [this](const char* iLabel, const uint32_t iCount, const char* iWhat, auto&& iAdd,
-								 auto&& iRemove) -> void {
+	const auto countRow = [](const char* iLabel, const uint32_t iCount, const char* iWhat, auto&& iAdd,
+							 auto&& iRemove) -> void {
 		gui::widgets::propertyLabel(iLabel);
 		ImGui::AlignTextToFramePadding();
 		ImGui::Text("%u", iCount);
@@ -237,29 +587,34 @@ void TilesetDocument::renderHierarchyPanel() {
 		const auto add = std::format("Add a {}", iWhat);
 		const auto remove = std::format("Remove a {}", iWhat);
 		if (gui::widgets::iconButton("##add", {.glyph = gui::icon::plus, .tooltip = add.c_str()}))
-			pushTilesetEdit(m_tileset, m_undoManager, add, iAdd);
+			iAdd();
 		ImGui::SameLine();
 		if (gui::widgets::iconButton("##remove",
 									 {.glyph = gui::icon::minus, .tooltip = remove.c_str(), .disabled = iCount <= 1}))
-			pushTilesetEdit(m_tileset, m_undoManager, remove, iRemove);
+			iRemove();
 		std::ignore = gui::widgets::propertyReset(false);
 	};
 	countRow(
-			"Columns", m_tileset.columns, "column", [this]() -> void { m_tileset.addColumn(); },
-			[this]() -> void { m_tileset.removeColumn(); });
+			"Columns", m_tileset.columns, "column",
+			[this]() -> void { resizeGrid(m_tileset.columns + 1, m_tileset.rows); },
+			[this]() -> void { resizeGrid(m_tileset.columns - 1, m_tileset.rows); });
 	countRow(
-			"Rows", m_tileset.rows, "row", [this]() -> void { m_tileset.addRow(); },
-			[this]() -> void { m_tileset.removeRow(); });
+			"Rows", m_tileset.rows, "row", [this]() -> void { resizeGrid(m_tileset.columns, m_tileset.rows + 1); },
+			[this]() -> void { resizeGrid(m_tileset.columns, m_tileset.rows - 1); });
+	ImGui::BeginDisabled(composing);
 	auto tileWidth = static_cast<int>(m_tileset.tileWidth);
 	auto tileHeight = static_cast<int>(m_tileset.tileHeight);
 	if (gui::widgets::propertyInt("Tile Width", tileWidth, tileWidth, 1, 1024, "%d px")) {
 		m_tileset.tileWidth = static_cast<uint32_t>(tileWidth);
+		m_atlas.reset();
 		m_tileset.applyFilterMode();
 	}
 	if (gui::widgets::propertyInt("Tile Height", tileHeight, tileHeight, 1, 1024, "%d px")) {
 		m_tileset.tileHeight = static_cast<uint32_t>(tileHeight);
+		m_atlas.reset();
 		m_tileset.applyFilterMode();
 	}
+	ImGui::EndDisabled();
 
 	using renderer::gpu::FilterMode;
 	const auto current = m_tileset.filterMode;
@@ -276,6 +631,7 @@ void TilesetDocument::renderHierarchyPanel() {
 								[this, mode]() -> void {
 									m_tileset.filterMode = mode;
 									m_tileset.applyFilterMode();
+									uploadAtlas();
 								});
 		}
 		ImGui::EndCombo();
@@ -491,42 +847,51 @@ void TilesetDocument::renderConnectionsSection() {
 }
 
 void TilesetDocument::renderCanvas() {
-	if (!m_tileset.texture || !m_tileset.texture->isLoaded()) {
-		ImGui::TextDisabled("Drop a texture in the Scene Hierarchy panel to populate the atlas.");
-		return;
-	}
 	const auto availSize = ImGui::GetContentRegionAvail();
 	if (availSize.x <= 0.f || availSize.y <= 0.f)
 		return;
+	const bool hasTexture = m_tileset.texture && m_tileset.texture->isLoaded();
+	if (!hasTexture)
+		ImGui::TextDisabled("Drop images on the slots to compose the atlas, or a texture in the Tileset panel.");
 
 	const auto canvasOrigin = ImGui::GetCursorScreenPos();
-	const ImVec2 canvasSize{availSize.x, availSize.y};
+	const auto canvasAvail = ImGui::GetContentRegionAvail();
+	const ImVec2 canvasSize{std::max(1.f, canvasAvail.x), std::max(1.f, canvasAvail.y)};
 	auto* drawList = ImGui::GetWindowDrawList();
+	const float texW = static_cast<float>(m_tileset.columns * std::max(1u, m_tileset.tileWidth));
+	const float texH = static_cast<float>(m_tileset.rows * std::max(1u, m_tileset.tileHeight));
+	const ImVec2 atlasTopLeft{canvasOrigin.x + m_panOffset.x(), canvasOrigin.y + m_panOffset.y()};
+	const ImVec2 atlasBottomRight{atlasTopLeft.x + texW * m_zoom, atlasTopLeft.y + texH * m_zoom};
+	const float cellW = static_cast<float>(m_tileset.tileWidth) * m_zoom;
+	const float cellH = static_cast<float>(m_tileset.tileHeight) * m_zoom;
+	const auto& io = ImGui::GetIO();
+	const auto cellAt = [&](const ImVec2& iPos) -> std::optional<uint32_t> {
+		const float relX = iPos.x - atlasTopLeft.x;
+		const float relY = iPos.y - atlasTopLeft.y;
+		if (relX < 0.f || relY < 0.f || relX >= texW * m_zoom || relY >= texH * m_zoom)
+			return std::nullopt;
+		return static_cast<uint32_t>(relY / cellH) * m_tileset.columns + static_cast<uint32_t>(relX / cellW);
+	};
 
 	ImGui::InvisibleButton("##atlas_canvas", canvasSize,
-						   ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle);
-	// Canvas-wide drop target: dropping a Content Browser asset opens it as a new document tab.
+						   ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle |
+								   ImGuiButtonFlags_MouseButtonRight);
+	// An image or a folder dropped on a slot composes the atlas; any other asset opens as a document tab.
 	if (ImGui::BeginDragDropTarget()) {
 		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
 			const auto* data = static_cast<const char*>(payload->Data);
 			const auto length = ::strnlen(data, static_cast<size_t>(payload->DataSize));
-			const std::filesystem::path candidate{std::string(data, length)};
-			if (mp_editorLayer != nullptr && app::Application::instanced()) {
-				std::filesystem::path resolved;
-				for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-					if (const auto p = assetsPath / candidate; exists(p)) {
-						resolved = p;
-						break;
-					}
-				}
-				if (!resolved.empty())
-					mp_editorLayer->requestDeferredOpen(resolved);
-			}
+			const auto resolved = resolveAssetPath(std::filesystem::path{std::string(data, length)});
+			const auto slot = cellAt(io.MousePos);
+			if (std::error_code error; slot && (isImageFile(resolved) || std::filesystem::is_directory(resolved, error)))
+				std::ignore = insertTileImages(*slot, {resolved});
+			else if (mp_editorLayer != nullptr && exists(resolved))
+				mp_editorLayer->requestDeferredOpen(resolved);
 		}
 		ImGui::EndDragDropTarget();
 	}
 	const bool hovered = ImGui::IsItemHovered();
-	const auto& io = ImGui::GetIO();
+	const bool focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 	if (hovered && io.MouseWheel != 0.f) {
 		const float factor = io.MouseWheel > 0.f ? g_zoomWheelStep : 1.f / g_zoomWheelStep;
 		const float oldZoom = m_zoom;
@@ -541,22 +906,38 @@ void TilesetDocument::renderCanvas() {
 		m_panOffset.x() += io.MouseDelta.x;
 		m_panOffset.y() += io.MouseDelta.y;
 	}
-
-	const float texW = static_cast<float>(m_tileset.columns * std::max(1u, m_tileset.tileWidth));
-	const float texH = static_cast<float>(m_tileset.rows * std::max(1u, m_tileset.tileHeight));
-	const ImVec2 atlasTopLeft{canvasOrigin.x + m_panOffset.x(), canvasOrigin.y + m_panOffset.y()};
-	const ImVec2 atlasBottomRight{atlasTopLeft.x + texW * m_zoom, atlasTopLeft.y + texH * m_zoom};
+	const auto hoveredCell = hovered ? cellAt(io.MousePos) : std::nullopt;
+	if (hoveredCell && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+		const bool selected = std::ranges::contains(m_selectedTiles, *hoveredCell);
+		if (io.KeyCtrl || io.KeyShift || !selected)
+			selectTile(*hoveredCell, io.KeyCtrl, io.KeyShift);
+		m_dragFrom = io.KeyCtrl || io.KeyShift ? std::nullopt : hoveredCell;
+	}
+	if (m_dragFrom && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+		if (const auto target = cellAt(io.MousePos); target && *target != *m_dragFrom)
+			std::ignore = moveTiles(m_selectedTiles, static_cast<int32_t>(*target) - static_cast<int32_t>(*m_dragFrom));
+		else if (target)
+			selectTile(*target);
+		m_dragFrom.reset();
+	}
+	if (hoveredCell && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+		if (!std::ranges::contains(m_selectedTiles, *hoveredCell))
+			selectTile(*hoveredCell);
+		ImGui::OpenPopup("##atlasMenu");
+	}
+	if (focused && !m_selectedTiles.empty() && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+		std::ignore = clearTiles(m_selectedTiles);
+	if (focused && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_A, false)) {
+		m_inspectedTile = 0;
+		selectTile(m_tileset.tileCount() - 1, false, true);
+	}
+	renderCanvasMenu();
 
 	drawList->PushClipRect(canvasOrigin, ImVec2{canvasOrigin.x + canvasSize.x, canvasOrigin.y + canvasSize.y}, true);
 	drawList->AddRectFilled(atlasTopLeft, atlasBottomRight, IM_COL32(40, 40, 50, 255));
-
-	if (m_tileset.texture && m_tileset.texture->isLoaded()) {
+	if (hasTexture)
 		drawList->AddImage(static_cast<ImTextureID>(m_tileset.texture->getRendererId()), atlasTopLeft, atlasBottomRight,
 						   {0.f, 1.f}, {1.f, 0.f});
-	}
-
-	const float cellW = static_cast<float>(m_tileset.tileWidth) * m_zoom;
-	const float cellH = static_cast<float>(m_tileset.tileHeight) * m_zoom;
 	const ImU32 gridColor = IM_COL32(120, 120, 140, 160);
 	for (uint32_t c = 0; c <= m_tileset.columns; ++c) {
 		const float x = atlasTopLeft.x + static_cast<float>(c) * cellW;
@@ -566,40 +947,53 @@ void TilesetDocument::renderCanvas() {
 		const float y = atlasTopLeft.y + static_cast<float>(r) * cellH;
 		drawList->AddLine({atlasTopLeft.x, y}, {atlasBottomRight.x, y}, gridColor);
 	}
-
-	// Highlight collidable tiles + the selected tile.
-	for (uint32_t r = 0; r < m_tileset.rows; ++r) {
-		for (uint32_t c = 0; c < m_tileset.columns; ++c) {
-			const auto idx = r * m_tileset.columns + c;
-			if (idx >= m_tileset.tiles.size())
-				continue;
-			const ImVec2 cellMin{atlasTopLeft.x + static_cast<float>(c) * cellW,
-								 atlasTopLeft.y + static_cast<float>(r) * cellH};
-			const ImVec2 cellMax{cellMin.x + cellW, cellMin.y + cellH};
-			if (m_tileset.tiles[idx].collidable)
-				drawList->AddRectFilled(cellMin, cellMax, IM_COL32(255, 90, 90, 60));
-			if (static_cast<int32_t>(idx) == m_inspectedTile)
-				drawList->AddRect(cellMin, cellMax, IM_COL32(255, 195, 38, 255), 0.f, 3.f);
+	const auto cellRect = [&](const uint32_t iIndex) -> std::pair<ImVec2, ImVec2> {
+		const ImVec2 min{atlasTopLeft.x + static_cast<float>(iIndex % m_tileset.columns) * cellW,
+						 atlasTopLeft.y + static_cast<float>(iIndex / m_tileset.columns) * cellH};
+		return {min, ImVec2{min.x + cellW, min.y + cellH}};
+	};
+	for (uint32_t idx = 0; idx < std::min<uint32_t>(m_tileset.tileCount(), static_cast<uint32_t>(m_tileset.tiles.size()));
+		 ++idx) {
+		if (m_tileset.tiles[idx].collidable) {
+			const auto [min, max] = cellRect(idx);
+			drawList->AddRectFilled(min, max, IM_COL32(255, 90, 90, 60));
 		}
 	}
-
-	if (hovered) {
-		const float relX = io.MousePos.x - atlasTopLeft.x;
-		const float relY = io.MousePos.y - atlasTopLeft.y;
-		if (relX >= 0.f && relY >= 0.f && relX < texW * m_zoom && relY < texH * m_zoom) {
-			const auto col = static_cast<uint32_t>(relX / cellW);
-			const auto row = static_cast<uint32_t>(relY / cellH);
-			const ImVec2 hoverMin{atlasTopLeft.x + static_cast<float>(col) * cellW,
-								  atlasTopLeft.y + static_cast<float>(row) * cellH};
-			const ImVec2 hoverMax{hoverMin.x + cellW, hoverMin.y + cellH};
-			drawList->AddRect(hoverMin, hoverMax, IM_COL32(150, 220, 255, 200), 0.f, 1.5f);
-			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-				m_inspectedTile = static_cast<int32_t>(row * m_tileset.columns + col);
-			}
-		}
+	for (const auto idx: m_selectedTiles) {
+		const auto [min, max] = cellRect(idx);
+		drawList->AddRectFilled(min, max, IM_COL32(255, 195, 38, 40));
+		drawList->AddRect(min, max, IM_COL32(255, 195, 38, 255), 0.f,
+						  static_cast<int32_t>(idx) == m_inspectedTile ? 3.f : 1.5f);
 	}
-
+	if (hoveredCell) {
+		const auto [min, max] = cellRect(*hoveredCell);
+		drawList->AddRect(min, max, IM_COL32(150, 220, 255, 200), 0.f, 1.5f);
+		if (m_dragFrom && ImGui::IsMouseDragging(ImGuiMouseButton_Left) && *hoveredCell != *m_dragFrom)
+			drawList->AddRectFilled(min, max, IM_COL32(150, 220, 255, 60));
+	}
 	drawList->PopClipRect();
+}
+
+void TilesetDocument::renderCanvasMenu() {
+	if (!ImGui::BeginPopup("##atlasMenu"))
+		return;
+	const auto first = m_selectedTiles.empty() ? 0u : m_selectedTiles.front();
+	if (ImGui::MenuItem("Insert Image...")) {
+		if (const auto file = platform::FileDialog::openFile("Image (*.png *.jpg)|png,jpg\n"); !file.empty())
+			std::ignore = insertTileImages(first, {file});
+	}
+	if (ImGui::MenuItem("Insert Folder...")) {
+		if (const auto folder = platform::FileDialog::pickFolder(); !folder.empty())
+			std::ignore = insertTileImages(first, {folder});
+	}
+	ImGui::Separator();
+	if (ImGui::MenuItem("Clear Image", "Del", false, !m_selectedTiles.empty()))
+		std::ignore = clearTiles(m_selectedTiles);
+	if (ImGui::MenuItem("Select All", "Ctrl+A")) {
+		m_inspectedTile = 0;
+		selectTile(m_tileset.tileCount() - 1, false, true);
+	}
+	ImGui::EndPopup();
 }
 
 void TilesetDocument::refreshSavedSnapshot() {
