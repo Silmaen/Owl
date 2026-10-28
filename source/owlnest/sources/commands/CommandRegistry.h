@@ -42,7 +42,8 @@ enum struct CommandSource : uint8_t {
 	Palette,///< The command palette and its argument form.
 	Mcp,///< An external tool (the MCP server).
 	Replay,///< A line of a replayed macro.
-	Scenario///< A step of a headless scenario.
+	Scenario,///< A step of a headless scenario.
+	Script///< A Lua editor script or a Lua line of the console.
 };
 
 /**

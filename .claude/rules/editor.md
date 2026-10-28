@@ -23,7 +23,7 @@ same PR (see `ongoing-quality.md`, *Editor Coverage*).
 - `EntitySnapshot` captures/restores an entity through `SceneSerializer::serializeEntityToString()`.
 - Commands: `EntityCommands` (create, delete, duplicate ± subtree), `ComponentCommands` (add, remove,
   modify with merge), `HierarchyCommands` (reparent, unparent), `PrefabCommands` (instantiate, apply /
-  revert), `VoxelCommands`, `NodeGraphCommands`, `SceneFlowCommands`, `SceneSettingsCommands`. Scene
+  revert), `VoxelCommands`, `NodeGraphCommands`, `SceneSettingsCommands`. Scene
   commands derive from `SceneUndoCommand`.
 - Property edits: `drawComponent<T>` wraps `renderProps()` in `panel::InspectorEditTracker`. A session opens
   on interaction with the body (click / release over it, active widget, key with the nav focus inside),
@@ -69,3 +69,11 @@ same PR (see `ongoing-quality.md`, *Editor Coverage*).
 New panels follow the `SceneSettings` wiring pattern. `EditorLayer` only routes: the ribbon is `RibbonBuilder`,
 packaging `GamePackager`, project and asset opening `EditorLayerProject.cpp` (extension table `classifyAsset`). Put
 new logic in a panel, document or command, not in `EditorLayer`.
+
+## Script debugging and Lua console
+
+- `panel::ScriptDebugPanel` (**Script Debug**, docked with the Console): the `BreakpointHit` with Continue / Open and the
+  variables of the scene, HUD and entity scripts; `EditorLayer::renderScriptDebug` pauses the game on a hit and feeds
+  the open graphs their probes.
+- `session/LuaConsole.h`: the Lua mode of the Console over `script::ScriptConsole`, with the `editor` module built from
+  the `CommandRegistry`; editor scripts (`.lua` under `editor/`) run as one `UndoManager` group.

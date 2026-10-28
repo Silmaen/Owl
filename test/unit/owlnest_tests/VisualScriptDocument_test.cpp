@@ -12,12 +12,16 @@
 
 #include <core/Log.h>
 #include <platform/AtomicFile.h>
+#include <script/ScriptDebugger.h>
 #include <script/visual/VisualScript.h>
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <filesystem>
+#include <optional>
+#include <tuple>
 #include <vector>
 
 using namespace owl;
@@ -172,4 +176,75 @@ TEST_F(VisualScriptDocumentTest, ViewModeStartsOnTheGraph) {
 	EXPECT_EQ(m_document.getViewMode(), VisualScriptViewMode::Graph);
 	m_document.setViewMode(VisualScriptViewMode::Split);
 	EXPECT_EQ(m_document.getViewMode(), VisualScriptViewMode::Split);
+}
+
+TEST_F(VisualScriptDocumentTest, NodeBreakpointsBecomeLuaLineBreakpoints) {
+	const auto event = m_document.getScript().nodes.front().id;
+	const VisualScriptPinRef from{.node = event, .pin = "Then", .output = true, .type = vs::PinType::Exec};
+	const auto branch = m_document.addNode("flow.branch", {200.f, 0.f}, from);
+	m_document.toggleBreakpoint(branch);
+	EXPECT_TRUE(m_document.getBreakpoints().contains(branch));
+	EXPECT_TRUE(m_document.getDebugView().breakpoints.contains(branch));
+	const auto lines = script::ScriptDebugger::getBreakpoints(m_file.string());
+	ASSERT_FALSE(lines.empty());
+	EXPECT_EQ(m_document.findNodeAtLine(lines.front()), branch);
+	EXPECT_FALSE(m_document.findNodeAtLine(100000).has_value());
+
+	m_document.setDebugState({{.name = vs::getProbeKey(event, "Then"), .type = "number", .value = "1"}}, lines.front());
+	EXPECT_EQ(m_document.getDebugView().stopped, branch);
+	EXPECT_EQ(m_document.getDebugView().values.size(), 1u);
+	m_document.setDebugState({}, std::nullopt);
+	EXPECT_FALSE(m_document.getDebugView().stopped.has_value());
+
+	m_document.toggleBreakpoint(branch);
+	EXPECT_TRUE(script::ScriptDebugger::getBreakpoints(m_file.string()).empty());
+	m_document.toggleBreakpoint(branch);
+	m_document.deleteNodes(std::vector{branch});
+	std::ignore = m_document.findNodeAtLine(1);
+	EXPECT_TRUE(m_document.getBreakpoints().empty());
+	EXPECT_TRUE(script::ScriptDebugger::getBreakpoints(m_file.string()).empty());
+	script::ScriptDebugger::clear();
+}
+
+TEST_F(VisualScriptDocumentTest, FunctionsAreAddedRenamedAndRemovedWithTheirNodes) {
+	const auto name = m_document.addFunction(false);
+	EXPECT_EQ(name, "function");
+	ASSERT_NE(m_document.getScript().findFunction(name), nullptr);
+	EXPECT_EQ(m_document.getScript().nodes.size(), 4u);
+	EXPECT_EQ(m_document.addFunction(true), "macro");
+	EXPECT_EQ(m_document.getScript().findFunction("macro")->exits.size(), 2u);
+
+	auto signature = *m_document.getScript().findFunction(name);
+	signature.inputs.push_back({.name = "speed", .type = vs::PinType::Number});
+	m_document.setFunction(name, signature);
+	const auto call = m_document.addNode("func.call|function", {0.f, 0.f});
+	const auto get = m_document.addNode("value.number", {0.f, 100.f});
+	auto script = m_document.getScript();
+	script.links.push_back({.fromNode = get, .fromPin = "Result", .toNode = call, .toPin = "speed"});
+	ASSERT_TRUE(m_document.commit(script, "Link"));
+	signature.inputs.front().name = "pace";
+	m_document.setFunction(name, signature);
+	EXPECT_TRUE(std::ranges::any_of(m_document.getScript().links,
+									[&](const vs::GraphLink& iLink) -> bool { return iLink.toPin == "pace"; }));
+	signature.inputs.clear();
+	m_document.setFunction(name, signature);
+	EXPECT_TRUE(std::ranges::none_of(m_document.getScript().links,
+									 [&](const vs::GraphLink& iLink) -> bool { return iLink.toNode == call; }));
+
+	m_document.renameFunction(name, "move");
+	EXPECT_EQ(m_document.getScript().findNode(call)->values.at("function"), "move");
+	m_document.removeFunction("move");
+	EXPECT_EQ(m_document.getScript().findFunction("move"), nullptr);
+	EXPECT_EQ(m_document.getScript().findNode(call), nullptr);
+	m_document.performUndo();
+	EXPECT_NE(m_document.getScript().findFunction("move"), nullptr);
+}
+
+TEST_F(VisualScriptDocumentTest, EnsureCustomEventAddsTheHandlerOnce) {
+	const auto first = m_document.ensureCustomEvent("on_pause");
+	ASSERT_NE(m_document.getScript().findNode(first), nullptr);
+	EXPECT_EQ(m_document.getScript().findNode(first)->values.at("function"), "on_pause");
+	EXPECT_EQ(m_document.ensureCustomEvent("on_pause"), first);
+	EXPECT_EQ(m_document.getSelection(), std::vector{first});
+	EXPECT_EQ(m_document.getScript().nodes.size(), 3u);
 }

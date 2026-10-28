@@ -20,8 +20,8 @@ file(GLOB_RECURSE SRCS_COMMANDS CONFIGURE_DEPENDS
         sources/EntitySnapshot.cpp
         sources/Undo*.cpp
 )
-# The node-graph and Scene Flow commands edit documents of the editor UI: they stay in OwlNestCore.
-list(FILTER SRCS_COMMANDS EXCLUDE REGEX "(NodeGraph|SceneFlow)Commands\\.cpp$")
+# The node-graph commands edit documents of the editor UI: they stay in OwlNestCore.
+list(FILTER SRCS_COMMANDS EXCLUDE REGEX "NodeGraphCommands\\.cpp$")
 add_library(${OWL_NEST_COMMANDS} STATIC ${SRCS_COMMANDS})
 set_target_properties(${OWL_NEST_COMMANDS} PROPERTIES FOLDER "App")
 target_include_directories(${OWL_NEST_COMMANDS} PUBLIC sources)

@@ -63,7 +63,7 @@ Every fix lands with its regression test.
 - ![Done][done] Unbounded hierarchy depth, CPU world transforms sent to the GPU; `setParent` keeps the world
   position at any depth (PR-04: P-01, C-18, P-03, P-04, B-12)
 - ![Done][done] Runtime scene robustness — Play isolated from the editor voxel world, no segfault on a dangling
-  `EntityLink`, SceneFlow double `addComponent`, hierarchy cycles and duplicate UUIDs rejected at load, failed
+  `EntityLink`, hierarchy cycles and duplicate UUIDs rejected at load, failed
   teleport recovers (PR-05: C-03, C-04, E-08, C-06, C-17, E-12)
 - ![Done][done] Voxel meshed in the scene render pipeline, so voxel scenes show in the exported game
   (PR-06: D-03)

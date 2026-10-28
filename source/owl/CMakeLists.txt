@@ -34,7 +34,7 @@ endif ()
 if (${PROJECT_PREFIX}_MODULE_SCRIPT)
     list(APPEND _owl_excluded "/private/script/disabled/")
 else ()
-    list(APPEND _owl_excluded "/private/script/(LuaBindings|LuaEngine|ScriptEngine|ScriptInstance|visual/BindingNodes)\\.cpp$"
+    list(APPEND _owl_excluded "/private/script/(LuaBindings|LuaEngine|ScriptConsole|ScriptEngine|ScriptInstance|visual/BindingNodes)\\.cpp$"
             "/private/script/(LuaBindings|LuaEngine)\\.h$"
             "/private/core/external/lua\\.h$")
 endif ()

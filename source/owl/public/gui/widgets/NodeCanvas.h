@@ -34,7 +34,7 @@ enum struct PinKind : uint8_t {
  *  A single connector on a node.
  *
  * `typeTag` is an opaque string owned by the canvas client — use it to
- * categorise pins (e.g. `"scene_entry"`/`"scene_exit"` for the Scene Flow,
+ * categorise pins (e.g. `"scene_entry"`/`"scene_exit"` for a scene graph,
  * `"anim_float"` for an animation graph). The canvas uses it only to veto
  * illegal connections through `setLinkValidator`.
  */
@@ -51,7 +51,7 @@ struct NodePin {
  *  A node inside a `NodeCanvas`.
  *
  * `customData` is an opaque payload the caller associates with the node
- * (e.g. the relative scene path for a Scene Flow entry). It travels through
+ * (e.g. the relative scene path for a scene entry). It travels through
  * copy/paste and YAML serialization unchanged.
  */
 struct Node {

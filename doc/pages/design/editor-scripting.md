@@ -40,7 +40,7 @@ without UI in `session/Console.h` and its panel in `panel/ConsolePanel.h`; user 
 (`entity.set_transform`) and the inspector rename (`entity.rename`) are registry commands. Gestures still pushing an
 undo command directly: the scene settings panel (physics, layers), "Revert to Prefab" and "Apply to Prefab", "Route to
 layer" in the hierarchy, the voxel brush and tile painting, and the edits of the asset documents (tilemap, tileset,
-font, node graph, Scene Flow), which have undo histories of their own.
+font, node graph), which have undo histories of their own.
 
 - **Command line syntax**: `entity.create name="Tree" parent=$1`, one command per line; values in the argument types
   of the registry (text, number, bool, Vec2 / Vec4 as `(1, 2)`, colour as `#rrggbb`, enum by name, entity by UUID or
@@ -63,6 +63,10 @@ in the headless session too.
 
 ## v0.6.0 — Lua editor scripts
 
+**Status: done**, except the menu entry or tool button a script adds (planned). Engine side `script::ScriptConsole`
+(`script/ScriptConsole.h`), editor side `session/LuaConsole.h` and the Console panel; user documentation in
+[Editor](../editor_console.md#editor-lua).
+
 - **Interactive Lua console**: the v0.4.0 console gains a Lua mode, a REPL like Python's — variables kept between
   lines, the value of an expression printed, multi-line input while a block is open, `help(editor.entity)`. Lines in
   command syntax are still accepted.
@@ -70,11 +74,12 @@ in the headless session too.
   same names, arguments and refusals as the MCP tools.
 - **Separate Lua state** from the game: editor scripts never run inside Play and cannot reach the game state directly.
   The game sandbox rules apply (no `io`, `os`, `debug`, `package`).
-- **Editor scripts as assets** (`.lua` under `editor/` in the project): run from a menu, a shortcut or the console;
-  a script may add a menu entry or a tool button.
+- **Editor scripts as assets** (`.lua` under `editor/` in the project): run from the Console menu **Editor Scripts** or
+  the Content Browser (**Run as Editor Script**);
+  a script adding a menu entry or a tool button is planned.
 - **Export a macro to Lua**: a `.owlmacro` converted into the equivalent script, the first step from recording to
   editing.
-- A whole script is one undo group.
+- A whole script is one undo group, and an error undoes it.
 
 ## Decisions
 

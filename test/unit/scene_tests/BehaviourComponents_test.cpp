@@ -86,6 +86,7 @@ TEST_F(BehaviourTest, ADisabledOscillatorStaysAtRest) {
 }
 
 TEST_F(BehaviourTest, AKinematicBodyIsMovedThroughThePhysicsStep) {
+	OWL_REQUIRE_MODULE(PHYSICS);
 	auto scene = mkShared<Scene>();
 	auto entity = scene->createEntity("Platform");
 	auto& body = entity.addComponent<component::PhysicBody>();

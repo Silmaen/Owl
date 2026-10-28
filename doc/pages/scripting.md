@@ -223,6 +223,13 @@ same frame, but it belongs to no entity: `entity_id` is `nil`, so it drives the 
 `gamestate.*` and the other tables, and finds the entities it moves by name or tag. Put there what used to be parked on
 the camera; a script that moves its own entity stays a `LuaScript` of that entity.
 
+### HUD script
+
+A `.owlhud` file can own a scene script too (the `SceneScript` key, set in the Scene Settings of the HUD). It runs in
+Play with every scene that draws the HUD, with the hooks and the `properties` of a scene script (`Scene::getHudScript`).
+A widget callback (button `onClickCallback`, slider, list...) is looked up in the scripts of the widget, then in the HUD
+script and the scene script, then in the entity scripts.
+
 ## Engine API Reference
 
 Every script sees the tables below. The full list of functions, with their typed parameters and returned values,
@@ -714,6 +721,23 @@ In Play (editor) and in the development runner, saving a `.lua` file replaces ev
 
 Other globals start from the new file: keep the state that must survive in properties. See
 [Editor](editor_assets.md#editor-hot-reload).
+
+## Debugging {#scripting-debugging}
+
+Breakpoints stop a script in Play, in a `.lua` file and in a [visual script](visual-scripts.md#visual-scripts-debugging).
+
+- In the code editor of a `.lua` file, click the gutter of a line or press **F9** on it to set or clear a breakpoint.
+- A breakpoint does not stop the script in the middle of its call: the call finishes, the game pauses, and the
+  **Script Debug** panel (docked with the Console) shows the hit: the script, the line, the entity and the locals at that
+  line. **Continue** resumes the game, **Open** shows the script at the line.
+- The panel also lists the variables of the scene script, of the HUD script and of every entity script, with a filter,
+  the selected entity first.
+
+## Editor scripts
+
+Lua also scripts Owl Nest itself: a `.lua` file under an `editor/` folder of the project runs in a separate Lua state
+that calls the editor commands (`editor.entity.create{name = "Tree"}`), never inside Play. See
+[Console](editor_console.md#editor-lua).
 
 ## Asset Packing
 

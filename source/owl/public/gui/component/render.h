@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <string>
 #include <tuple>
 
 namespace owl::scene {
@@ -49,6 +50,14 @@ OWL_API void setOpenAssetAtLineHandler(std::function<void(const std::filesystem:
  * @return True when a handler took the request.
  */
 OWL_API auto openAssetAtLine(const std::filesystem::path& iPath, uint32_t iLine) -> bool;
+
+/**
+ * @brief
+ *  Set the function the "Edit in Graph" button of a handler row calls: it opens the visual script of the inspected
+ *  scene or HUD on the event of that handler, creating both when missing (the editor sets it, a game leaves it empty).
+ * @param[in] iHandler Called with the name of the Lua function.
+ */
+OWL_API void setEditInGraphHandler(std::function<void(const std::string&)> iHandler);
 
 /**
  * @brief

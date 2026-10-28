@@ -12,6 +12,7 @@
 #include "codeEditor/LanguageDefinitions.h"
 #include "external/imgui_text_edit.h"
 
+#include <app/Application.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
@@ -40,14 +41,18 @@ OWL_DIAG_POP
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <filesystem>
 #include <format>
+#include <functional>
 #include <iterator>
 #include <limits>
+#include <map>
 #include <optional>
 #include <set>
 #include <span>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -305,6 +310,7 @@ auto VisualScriptDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 	m_path = iPath;
 	m_savedText = text;
 	m_undo.markSaved();
+	vs::clearLibraryCache();
 	return true;
 }
 
@@ -356,8 +362,60 @@ void VisualScriptDocument::compileIfStale() {
 	m_compileStale = false;
 	auto compiled = vs::compile(m_script);
 	m_diagnostics = compiled ? std::vector<vs::CompileDiagnostic>{} : compiled.error();
-	if (compiled)
-		m_compiledLua = std::move(*compiled);
+	if (!compiled)
+		return;
+	m_compiledLua = std::move(*compiled);
+	if (auto debug = vs::compileForDebug(m_script); debug)
+		m_nodeLines = std::move(debug->nodeLines);
+	std::erase_if(m_breakpoints,
+				  [this](const core::UUID iNode) -> bool { return m_script.findNode(iNode) == nullptr; });
+	syncBreakpoints();
+}
+
+void VisualScriptDocument::syncBreakpoints() const {
+	if (m_path.empty())
+		return;
+	std::vector<int> lines;
+	for (const auto node: m_breakpoints)
+		if (const auto found = m_nodeLines.find(node); found != m_nodeLines.end())
+			lines.insert(lines.end(), found->second.begin(), found->second.end());
+	script::ScriptDebugger::setBreakpoints(m_path.string(), lines);
+}
+
+void VisualScriptDocument::toggleBreakpoint(const core::UUID iNode) {
+	if (m_script.findNode(iNode) == nullptr)
+		return;
+	if (m_breakpoints.erase(iNode) == 0)
+		m_breakpoints.insert(iNode);
+	compileIfStale();
+	syncBreakpoints();
+	auto view = m_view.getDebugView();
+	view.breakpoints = m_breakpoints;
+	m_view.setDebugView(std::move(view));
+}
+
+auto VisualScriptDocument::findNodeAtLine(const int iLine) -> std::optional<core::UUID> {
+	compileIfStale();
+	for (const auto& [node, lines]: m_nodeLines)
+		if (std::ranges::contains(lines, iLine))
+			return node;
+	return std::nullopt;
+}
+
+void VisualScriptDocument::revealLine(const int iLine) {
+	if (const auto node = findNodeAtLine(iLine); node.has_value()) {
+		m_view.setSelection({*node});
+		m_view.requestFocus(*node);
+	}
+}
+
+void VisualScriptDocument::setDebugState(const std::vector<script::WatchValue>& iValues,
+										 const std::optional<int> iStoppedLine) {
+	VisualScriptDebugView view{.breakpoints = m_breakpoints, .stopped = std::nullopt, .values = {}};
+	for (const auto& value: iValues) view.values.emplace(value.name, value.value);
+	if (iStoppedLine.has_value())
+		view.stopped = findNodeAtLine(*iStoppedLine);
+	m_view.setDebugView(std::move(view));
 }
 
 auto VisualScriptDocument::addNode(const std::string& iType, const std::array<float, 2> iPosition,
@@ -378,6 +436,16 @@ auto VisualScriptDocument::addNode(const std::string& iType, const std::array<fl
 			node.values["variable"] = m_script.variables.front().name;
 	} else if (type->kind == vs::NodeKind::CustomEvent) {
 		node.values["function"] = "my_event";
+	} else if (type->kind == vs::NodeKind::FunctionEntry || type->kind == vs::NodeKind::FunctionReturn ||
+			   type->kind == vs::NodeKind::FunctionCall) {
+		const auto rest = separator == std::string::npos ? std::string{} : iType.substr(separator + 1);
+		const auto split = rest.find('|');
+		node.values["function"] = rest.substr(0, split);
+		if (split != std::string::npos)
+			node.values["library"] = rest.substr(split + 1);
+		if (const auto* function = vs::findNodeFunction(next, node);
+			function != nullptr && function->exits.size() > 1 && type->kind == vs::NodeKind::FunctionReturn)
+			node.values["exit"] = function->exits.front();
 	}
 	const auto id = node.id;
 	if (iLinkFrom.has_value()) {
@@ -626,6 +694,8 @@ void VisualScriptDocument::handleShortcuts(const bool iDeleteUsed) {
 	}
 	if (ImGui::IsKeyPressed(ImGuiKey_Home, false))
 		m_view.requestFrameAll();
+	if (ImGui::IsKeyPressed(ImGuiKey_F9, false))
+		for (const auto node: selection) toggleBreakpoint(node);
 	if (!ctrl)
 		return;
 	if (ImGui::IsKeyPressed(ImGuiKey_A, false)) {
@@ -700,6 +770,10 @@ void VisualScriptDocument::renderContextMenu() {
 		std::ignore = pasteNodes(copyNodes(selection), {30.f, 30.f});
 	if (gui::widgets::menuItem({.glyph = gui::icon::clipboardCopy, .label = "Copy", .shortcut = "Ctrl+C"}))
 		ImGui::SetClipboardText(copyNodes(selection).c_str());
+	if (gui::widgets::menuItem({.glyph = gui::icon::circleDot,
+								.label = m_breakpoints.contains(node->id) ? "Remove Breakpoint" : "Add Breakpoint",
+								.shortcut = "F9"}))
+		for (const auto id: selection) toggleBreakpoint(id);
 	if (gui::widgets::menuItem({.glyph = gui::icon::trash2, .label = "Delete", .shortcut = "Delete", .danger = true}))
 		deleteNodes(selection);
 	ImGui::EndPopup();
@@ -742,48 +816,64 @@ void VisualScriptDocument::renderNodeList(const bool iPopup) {
 		const auto pins = vs::getNodePins(m_script, probe);
 		return findCompatiblePin(m_pendingLink->output ? pins.inputs : pins.outputs, *m_pendingLink) != nullptr;
 	};
-	const auto item = [&](const vs::NodeType& iType) -> void {
-		ImGui::PushID(iType.id.c_str());
+	const auto keyedItem = [&](const std::string& iKey, const std::string& iLabel, const vs::NodeType& iType) -> void {
+		ImGui::PushID(iKey.c_str());
 		const vs::GraphNode probe{.id = core::UUID{0}, .type = iType.id, .position = {0.f, 0.f}, .values = {}};
 		const auto color = getNodeColor(m_script, probe, iType);
 		ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(gui::Theme::mix(color, {1.f, 1.f, 1.f, 1.f}, 0.45f)));
 		ImGui::TextUnformatted(getNodeGlyph(iType));
 		ImGui::PopStyleColor();
 		ImGui::SameLine();
-		const auto label = iType.kind == vs::NodeKind::Call ? getNodeTitle(probe, iType) : iType.title;
-		if (ImGui::Selectable(label.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
+		if (ImGui::Selectable(iLabel.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
 			if (iPopup) {
-				std::ignore = addNode(iType.id, m_paletteTarget, m_pendingLink);
+				std::ignore = addNode(iKey, m_paletteTarget, m_pendingLink);
 				m_pendingLink.reset();
 				ImGui::CloseCurrentPopup();
 			} else {
 				const auto center = m_view.getViewCenter();
-				std::ignore = addNode(iType.id, {center[0] - 60.f, center[1] - 30.f});
+				std::ignore = addNode(iKey, {center[0] - 60.f, center[1] - 30.f});
 			}
 		}
 		if (!iPopup && ImGui::BeginDragDropSource()) {
-			ImGui::SetDragDropPayload(g_VisualScriptNodePayload, iType.id.data(), iType.id.size());
-			ImGui::Text("%s %s", getNodeGlyph(iType), label.c_str());
+			ImGui::SetDragDropPayload(g_VisualScriptNodePayload, iKey.data(), iKey.size());
+			ImGui::Text("%s %s", getNodeGlyph(iType), iLabel.c_str());
 			ImGui::EndDragDropSource();
 		}
 		if (ImGui::IsItemHovered() && !iType.description.empty())
 			ImGui::SetTooltip("%s\n%s", iType.title.c_str(), iType.description.c_str());
 		ImGui::PopID();
 	};
+	const auto item = [&](const vs::NodeType& iType) -> void {
+		const vs::GraphNode probe{.id = core::UUID{0}, .type = iType.id, .position = {0.f, 0.f}, .values = {}};
+		keyedItem(iType.id, iType.kind == vs::NodeKind::Call ? getNodeTitle(probe, iType) : iType.title, iType);
+	};
+	const auto isFunctionNode = [](const vs::NodeType& iType) -> bool { return iType.category == "Functions"; };
+	refreshLibraries();
 	const auto& types = vs::getNodeTypes();
 	if (!m_paletteFilter.empty()) {
 		for (const auto& type: types)
-			if (accepts(type) &&
+			if (!isFunctionNode(type) && accepts(type) &&
 				(containsNoCase(type.title, m_paletteFilter) || containsNoCase(type.description, m_paletteFilter)))
 				item(type);
+		renderFunctionEntries(
+				[&](const std::string& iKey, const std::string& iLabel, const vs::NodeType& iType) -> void {
+					if (containsNoCase(iLabel, m_paletteFilter))
+						keyedItem(iKey, iLabel, iType);
+				});
 		ImGui::EndChild();
 		return;
 	}
 	std::vector<const vs::NodeType*> heads;
 	for (const auto& type: types)
-		if (std::ranges::none_of(heads,
-								 [&](const vs::NodeType* iHead) -> bool { return iHead->category == type.category; }))
+		if (!isFunctionNode(type) && std::ranges::none_of(heads, [&](const vs::NodeType* iHead) -> bool {
+				return iHead->category == type.category;
+			}))
 			heads.push_back(&type);
+	if (!m_pendingLink.has_value() && (!m_script.functions.empty() || !m_libraries.empty()) &&
+		ImGui::TreeNodeEx("Functions", ImGuiTreeNodeFlags_SpanAvailWidth, "%s  Functions", gui::icon::component)) {
+		renderFunctionEntries(keyedItem);
+		ImGui::TreePop();
+	}
 	std::ranges::stable_sort(heads, {},
 							 [](const vs::NodeType* iHead) -> size_t { return categoryRank(iHead->category); });
 	for (const auto* head: heads) {
@@ -814,6 +904,10 @@ void VisualScriptDocument::renderPropertiesPanel() {
 		return;
 	if (ImGui::BeginTabItem(std::format("{} Variables", gui::icon::variable).c_str())) {
 		renderVariables();
+		ImGui::EndTabItem();
+	}
+	if (ImGui::BeginTabItem(std::format("{} Functions", gui::icon::component).c_str())) {
+		renderFunctions();
 		ImGui::EndTabItem();
 	}
 	if (ImGui::BeginTabItem(std::format("{} Node", gui::icon::squareFunction).c_str())) {
@@ -966,6 +1060,24 @@ void VisualScriptDocument::renderNodeHeader(const vs::GraphNode& iNode, const vs
 		for (const auto& diagnostic: m_diagnostics)
 			if (diagnostic.node == id)
 				gui::widgets::notice(diagnostic.message.c_str(), gui::widgets::BadgeKind::Error);
+		if (type->kind == vs::NodeKind::FunctionReturn) {
+			const auto* function = vs::findNodeFunction(m_script, *node);
+			if (function != nullptr && function->exits.size() > 1 && gui::widgets::beginProperties("##exit")) {
+				gui::widgets::propertyLabel("Exit", "Execution output of the macro call this return continues by.");
+				const auto current = valueOf(*node, "exit");
+				if (gui::widgets::beginCombo("##exitCombo", current.c_str())) {
+					for (const auto& exit: function->exits)
+						if (ImGui::Selectable(exit.c_str(), exit == current))
+							setValue("exit", exit);
+					ImGui::EndCombo();
+				}
+				std::ignore = gui::widgets::propertyReset(false);
+				gui::widgets::endProperties();
+			}
+		}
+		if (const auto library = node->values.find("library");
+			library != node->values.end() && !library->second.empty())
+			ImGui::TextDisabled("%s Library %s", gui::icon::bookOpen, library->second.c_str());
 		const bool variableNode = type->kind == vs::NodeKind::GetVariable || type->kind == vs::NodeKind::SetVariable;
 		if ((variableNode || type->kind == vs::NodeKind::CustomEvent) && gui::widgets::beginProperties("##settings")) {
 			if (variableNode) {
@@ -1058,6 +1170,355 @@ void VisualScriptDocument::renderNodeInputs(const vs::GraphNode& iNode) {
 		gui::widgets::endProperties();
 	}
 	gui::widgets::endSection();
+}
+
+auto VisualScriptDocument::ensureCustomEvent(const std::string& iFunction) -> core::UUID {
+	for (const auto& node: m_script.nodes) {
+		if (node.type == "event.custom" && valueOf(node, "function") == iFunction) {
+			m_view.setSelection({node.id});
+			m_view.requestFocus(node.id);
+			return node.id;
+		}
+	}
+	const auto center = m_view.getViewCenter();
+	const auto id = addNode("event.custom", {center[0] - 80.f, center[1] - 30.f});
+	setNodeValue(id, "function", iFunction);
+	m_view.requestFocus(id);
+	return id;
+}
+
+auto VisualScriptDocument::prepareSceneGraph(const std::filesystem::path& iSceneFile)
+		-> std::optional<std::pair<std::filesystem::path, std::string>> {
+	if (!app::Application::instanced())
+		return std::nullopt;
+	for (const auto& [title, directory]: app::Application::get().getAssetDirectories()) {
+		const auto relative = iSceneFile.lexically_relative(directory);
+		if (relative.empty() || *relative.begin() == "..")
+			continue;
+		const std::string_view suffix = iSceneFile.extension() == ".owlhud" ? "_hud" : "";
+		const auto asset =
+				std::format("scripts/{}{}{}", iSceneFile.stem().string(), suffix, vs::g_VisualScriptExtension);
+		const auto file = directory / asset;
+		std::error_code error;
+		std::filesystem::create_directories(file.parent_path(), error);
+		if (!exists(file) && !platform::writeFileAtomic(file, vs::serialize(starterScript()))) {
+			OWL_WARN("VisualScriptDocument: Cannot write '{}'.", file.string())
+			return std::nullopt;
+		}
+		return std::pair{file, asset};
+	}
+	OWL_WARN("VisualScriptDocument: '{}' is in no asset folder: save it in the project first.", iSceneFile.string())
+	return std::nullopt;
+}
+
+auto VisualScriptDocument::addFunction(const bool iMacro) -> std::string {
+	auto next = m_script;
+	std::string name = iMacro ? "macro" : "function";
+	const std::string base = name;
+	for (uint32_t counter = 2; next.findFunction(name) != nullptr; ++counter)
+		name = std::format("{}_{}", base, counter);
+	next.functions.push_back(
+			{.name = name,
+			 .inputs = {},
+			 .outputs = {},
+			 .macro = iMacro,
+			 .exits = iMacro ? std::vector<std::string>{"Then", "Else"} : std::vector<std::string>{"Then"}});
+	const auto center = m_view.getViewCenter();
+	const vs::GraphNode entry{.id = core::UUID{},
+							  .type = "func.entry",
+							  .position = {center[0] - 220.f, center[1]},
+							  .values = {{"function", name}}};
+	vs::GraphNode ret{.id = core::UUID{},
+					  .type = "func.return",
+					  .position = {center[0] + 80.f, center[1]},
+					  .values = {{"function", name}}};
+	if (iMacro)
+		ret.values["exit"] = "Then";
+	next.links.push_back({.fromNode = entry.id, .fromPin = "Then", .toNode = ret.id, .toPin = "Exec"});
+	next.nodes.push_back(entry);
+	next.nodes.push_back(std::move(ret));
+	commit(std::move(next), iMacro ? "Add Macro" : "Add Function");
+	m_view.setSelection({entry.id});
+	return name;
+}
+
+void VisualScriptDocument::removeFunction(const std::string& iName) {
+	auto next = m_script;
+	std::erase_if(next.functions, [&](const vs::GraphFunction& iFunction) -> bool { return iFunction.name == iName; });
+	std::vector<core::UUID> doomed;
+	for (const auto& node: next.nodes)
+		if (node.type.starts_with("func.") && valueOf(node, "function") == iName && valueOf(node, "library").empty())
+			doomed.push_back(node.id);
+	for (const auto id: doomed) next.removeNode(id);
+	commit(std::move(next), "Remove Function");
+}
+
+void VisualScriptDocument::renameFunction(const std::string& iName, const std::string& iNewName) {
+	if (iName == iNewName || m_script.findFunction(iNewName) != nullptr)
+		return;
+	auto next = m_script;
+	for (auto& function: next.functions)
+		if (function.name == iName)
+			function.name = iNewName;
+	for (auto& node: next.nodes)
+		if (node.type.starts_with("func.") && valueOf(node, "function") == iName && valueOf(node, "library").empty())
+			node.values["function"] = iNewName;
+	commit(std::move(next), "Rename Function", true);
+}
+
+void VisualScriptDocument::setFunction(const std::string& iName, vs::GraphFunction iFunction, const bool iMerge) {
+	auto next = m_script;
+	const auto found = std::ranges::find(next.functions, iName, &vs::GraphFunction::name);
+	if (found == next.functions.end())
+		return;
+	iFunction.name = iName;
+	if (iFunction.exits.empty())
+		iFunction.exits = {"Then"};
+	// A pin renamed in place keeps its links and the returns their exit.
+	std::map<std::string, std::string> inputs;
+	std::map<std::string, std::string> outputs;
+	const auto renames = [](const auto& iBefore, const auto& iAfter, auto&& iKey,
+							std::map<std::string, std::string>& oMap) -> void {
+		if (iBefore.size() != iAfter.size())
+			return;
+		for (size_t i = 0; i < iBefore.size(); ++i)
+			if (iKey(iBefore[i]) != iKey(iAfter[i]))
+				oMap[iKey(iBefore[i])] = iKey(iAfter[i]);
+	};
+	const auto parameterName = [](const vs::GraphParameter& iParameter) -> std::string { return iParameter.name; };
+	const auto exitName = [](const std::string& iExit) -> std::string { return iExit; };
+	renames(found->inputs, iFunction.inputs, parameterName, inputs);
+	renames(found->outputs, iFunction.outputs, parameterName, outputs);
+	renames(found->exits, iFunction.exits, exitName, outputs);
+	for (auto& link: next.links) {
+		const auto* from = next.findNode(link.fromNode);
+		const auto* to = next.findNode(link.toNode);
+		const auto named = [&iName](const vs::GraphNode* iNode, const char* iType) -> bool {
+			return iNode != nullptr && iNode->type == iType && valueOf(*iNode, "function") == iName &&
+				   valueOf(*iNode, "library").empty();
+		};
+		if ((named(from, "func.call") && outputs.contains(link.fromPin)))
+			link.fromPin = outputs.at(link.fromPin);
+		if ((named(from, "func.entry") && inputs.contains(link.fromPin)))
+			link.fromPin = inputs.at(link.fromPin);
+		if ((named(to, "func.call") && inputs.contains(link.toPin)))
+			link.toPin = inputs.at(link.toPin);
+		if ((named(to, "func.return") && outputs.contains(link.toPin)))
+			link.toPin = outputs.at(link.toPin);
+	}
+	for (auto& node: next.nodes)
+		if (node.type == "func.return" && valueOf(node, "function") == iName && outputs.contains(valueOf(node, "exit")))
+			node.values["exit"] = outputs.at(valueOf(node, "exit"));
+	*found = std::move(iFunction);
+	std::erase_if(next.links, [&next](const vs::GraphLink& iLink) -> bool {
+		for (const auto& [nodeId, pinName, output]:
+			 {std::tuple{iLink.fromNode, iLink.fromPin, true}, std::tuple{iLink.toNode, iLink.toPin, false}}) {
+			const auto* node = next.findNode(nodeId);
+			if (node == nullptr || !node->type.starts_with("func."))
+				continue;
+			const auto pins = vs::getNodePins(next, *node);
+			const auto& side = output ? pins.outputs : pins.inputs;
+			if (std::ranges::find(side, pinName, &vs::PinSpec::name) == side.end())
+				return true;
+		}
+		return false;
+	});
+	for (auto& node: next.nodes)
+		if (node.type == "func.return" && valueOf(node, "function") == iName && found->exits.size() > 1 &&
+			!std::ranges::contains(found->exits, valueOf(node, "exit")))
+			node.values["exit"] = found->exits.front();
+	commit(std::move(next), "Edit Function", iMerge);
+}
+
+void VisualScriptDocument::renderFunctionEntries(
+		const std::function<void(const std::string&, const std::string&, const vs::NodeType&)>& iItem) const {
+	const auto* call = vs::findNodeType("func.call");
+	const auto* ret = vs::findNodeType("func.return");
+	if (call == nullptr || ret == nullptr)
+		return;
+	for (const auto& function: m_script.functions) {
+		iItem(std::format("func.call|{}", function.name), std::format("Call {}", function.name), *call);
+		iItem(std::format("func.return|{}", function.name), std::format("Return from {}", function.name), *ret);
+	}
+	for (const auto& library: m_libraries) {
+		const auto file = std::filesystem::path{library.path}.stem().string();
+		for (const auto& function: library.functions)
+			iItem(std::format("func.call|{}|{}", function.name, library.path),
+				  std::format("{} / {}", file, function.name), *call);
+	}
+}
+
+void VisualScriptDocument::refreshLibraries() {
+	if (!app::Application::instanced() || ImGui::GetFrameCount() - m_libraryScanFrame < 180)
+		return;
+	m_libraryScanFrame = ImGui::GetFrameCount();
+	std::vector<LibraryEntry> libraries;
+	std::error_code error;
+	for (const auto& [title, directory]: app::Application::get().getAssetDirectories()) {
+		for (const auto& entry: std::filesystem::recursive_directory_iterator(directory, error)) {
+			if (!entry.is_regular_file() || entry.path().extension() != vs::g_VisualScriptExtension ||
+				std::filesystem::equivalent(entry.path(), m_path, error))
+				continue;
+			const auto text = platform::fileToString(entry.path());
+			const auto graph = vs::deserialize(text, entry.path().string());
+			if (!graph || graph->functions.empty())
+				continue;
+			libraries.push_back({.path = entry.path().lexically_relative(directory).generic_string(),
+								 .functions = graph->functions});
+		}
+	}
+	m_libraries = std::move(libraries);
+}
+
+void VisualScriptDocument::renderFunctions() {
+	std::optional<std::string> removed;
+	for (size_t i = 0; i < m_script.functions.size(); ++i) {
+		ImGui::PushID(static_cast<int>(i));
+		const auto function = m_script.functions[i];
+		const auto section = gui::widgets::sectionHeader(function.name.c_str(),
+														 function.macro ? "vs_node_flow" : "vs_node_call", true, false);
+		if (ImGui::BeginDragDropSource()) {
+			const auto payload = std::format("func.call|{}", function.name);
+			ImGui::SetDragDropPayload(g_VisualScriptNodePayload, payload.data(), payload.size());
+			ImGui::Text("%s Call %s", gui::icon::component, function.name.c_str());
+			ImGui::EndDragDropSource();
+		}
+		if (section.menuClicked)
+			ImGui::OpenPopup("##functionMenu");
+		if (ImGui::BeginPopup("##functionMenu")) {
+			gui::widgets::menuHeader(function.name.c_str(), function.macro ? "Macro" : "Function");
+			if (gui::widgets::menuItem({.glyph = gui::icon::focus, .label = "Go to Entry"}))
+				for (const auto& node: m_script.nodes)
+					if (node.type == "func.entry" && valueOf(node, "function") == function.name) {
+						m_view.setSelection({node.id});
+						m_view.requestFocus(node.id);
+					}
+			if (gui::widgets::menuItem({.glyph = gui::icon::trash2, .label = "Remove", .danger = true}))
+				removed = function.name;
+			ImGui::EndPopup();
+		}
+		if (section.open) {
+			if (gui::widgets::beginProperties("##function")) {
+				auto name = function.name;
+				gui::widgets::propertyLabel("Name", "Name of the function; renaming updates its nodes.");
+				if (ImGui::InputText("##name", &name, ImGuiInputTextFlags_EnterReturnsTrue) && vs::isValidName(name))
+					renameFunction(function.name, name);
+				std::ignore = gui::widgets::propertyReset(false);
+				gui::widgets::endProperties();
+			}
+			renderSignature(function);
+			gui::widgets::endSection();
+		}
+		ImGui::PopID();
+	}
+	if (removed.has_value())
+		removeFunction(*removed);
+	if (m_script.functions.empty())
+		std::ignore =
+				gui::widgets::emptyState(gui::icon::component, "No function",
+										 "A function or a macro groups nodes reused by several events or graphs.");
+	ImGui::Spacing();
+	const float half = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+	if (gui::widgets::button("##addFunction", {.glyph = gui::icon::plus,
+											   .label = "Add Function",
+											   .tooltip = "Add Function",
+											   .description = "Parameters in, results out, one execution output.",
+											   .width = half}))
+		std::ignore = addFunction(false);
+	ImGui::SameLine();
+	if (gui::widgets::button("##addMacro", {.glyph = gui::icon::plus,
+											.label = "Add Macro",
+											.tooltip = "Add Macro",
+											.description = "Like a function, with several execution outputs.",
+											.width = half}))
+		std::ignore = addFunction(true);
+}
+
+void VisualScriptDocument::renderSignature(const vs::GraphFunction& iFunction) {
+	static constexpr std::array g_parameterTypes{
+			vs::PinType::Number,  vs::PinType::Integer, vs::PinType::Boolean, vs::PinType::String, vs::PinType::Entity,
+			vs::PinType::Vector2, vs::PinType::Vector3, vs::PinType::Color,   vs::PinType::Table,  vs::PinType::Any};
+	const auto list = [&](const char* iTitle, const bool iOutputs) -> void {
+		if (!gui::widgets::subHeader(iTitle, true))
+			return;
+		const auto& parameters = iOutputs ? iFunction.outputs : iFunction.inputs;
+		std::optional<size_t> erased;
+		for (size_t i = 0; i < parameters.size(); ++i) {
+			ImGui::PushID(static_cast<int>(i));
+			auto edited = iFunction;
+			auto& parameter = (iOutputs ? edited.outputs : edited.inputs)[i];
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.45f);
+			if (ImGui::InputText("##name", &parameter.name, ImGuiInputTextFlags_EnterReturnsTrue) &&
+				vs::isValidName(parameter.name))
+				setFunction(iFunction.name, edited);
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight() - 4.f);
+			std::vector<TypedItem> types;
+			std::optional<size_t> current;
+			for (const auto type: g_parameterTypes) {
+				if (type == parameters[i].type)
+					current = types.size();
+				types.push_back({.label = std::string{getPinTypeName(type)}, .type = type});
+			}
+			if (const auto picked = typedCombo("##type", types, current); picked.has_value()) {
+				parameter.type = g_parameterTypes[*picked];
+				setFunction(iFunction.name, edited);
+			}
+			ImGui::SameLine();
+			if (gui::widgets::iconButton("##remove", {.glyph = gui::icon::x, .tooltip = "Remove"}))
+				erased = i;
+			ImGui::PopID();
+		}
+		if (erased.has_value()) {
+			auto edited = iFunction;
+			auto& side = iOutputs ? edited.outputs : edited.inputs;
+			side.erase(side.begin() + static_cast<std::ptrdiff_t>(*erased));
+			setFunction(iFunction.name, edited);
+		}
+		if (gui::widgets::button(iOutputs ? "##addOutput" : "##addInput",
+								 {.glyph = gui::icon::plus, .label = iOutputs ? "Add Result" : "Add Parameter"})) {
+			auto edited = iFunction;
+			auto& side = iOutputs ? edited.outputs : edited.inputs;
+			std::string name = iOutputs ? "result" : "value";
+			const std::string base = name;
+			for (uint32_t counter = 2; std::ranges::contains(side, name, &vs::GraphParameter::name); ++counter)
+				name = std::format("{}_{}", base, counter);
+			side.push_back({.name = name, .type = vs::PinType::Number});
+			setFunction(iFunction.name, edited);
+		}
+	};
+	ImGui::PushID("inputs");
+	list("Parameters", false);
+	ImGui::PopID();
+	ImGui::PushID("outputs");
+	list("Results", true);
+	ImGui::PopID();
+	if (!iFunction.macro || !gui::widgets::subHeader("Exits", true))
+		return;
+	std::optional<size_t> erased;
+	for (size_t i = 0; i < iFunction.exits.size(); ++i) {
+		ImGui::PushID(static_cast<int>(i));
+		auto edited = iFunction;
+		ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight() - 4.f);
+		if (ImGui::InputText("##exit", &edited.exits[i], ImGuiInputTextFlags_EnterReturnsTrue) &&
+			!edited.exits[i].empty())
+			setFunction(iFunction.name, edited);
+		ImGui::SameLine();
+		if (iFunction.exits.size() > 1 &&
+			gui::widgets::iconButton("##remove", {.glyph = gui::icon::x, .tooltip = "Remove"}))
+			erased = i;
+		ImGui::PopID();
+	}
+	if (erased.has_value()) {
+		auto edited = iFunction;
+		edited.exits.erase(edited.exits.begin() + static_cast<std::ptrdiff_t>(*erased));
+		setFunction(iFunction.name, edited);
+	}
+	if (gui::widgets::button("##addExit", {.glyph = gui::icon::plus, .label = "Add Exit"})) {
+		auto edited = iFunction;
+		edited.exits.push_back(std::format("Exit{}", edited.exits.size() + 1));
+		setFunction(iFunction.name, edited);
+	}
 }
 
 void VisualScriptDocument::renderLua() {

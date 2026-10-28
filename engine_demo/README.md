@@ -92,6 +92,7 @@ engine_demo/
   owl_project.yml  game_settings.yml  input_actions.yml  input/
   scenes/  huds/  prefabs/  tilesets/  tilemaps/
   scripts/{hub,platformer,raycast,iso,voxel,mesh,orbit,ui}/
+  editor/
   textures/{tilemaps,atlases,sprites,items,iso,wolf3d,ui,hdri,pbr,fire}/
   sounds/{hub,raycast,platformer,town,ui}/
   meshes/{tavern,orbit}/  materials/
@@ -106,7 +107,8 @@ of the procedural meshes. `meshes/orbit/` holds the station, moon, relay and gau
 written by `tools/demo/generate_orbit_meshes.py`. `textures/hdri/` and `textures/pbr/` are Poly Haven CC0 HDRIs and 1k texture sets (base
 colour, OpenGL normal, packed AO / roughness / metallic); the models, HDRIs and texture sets are fetched by `tools/demo/fetch_polyhaven.py`. The scripts that draw the textures, the
 sounds, the hub and the minimap are in `tools/demo/`, outside the project, so that they are neither exported nor
-installed.
+installed. `editor/` holds the editor scripts, Lua files run from the Console of Owl Nest (`plant_row.lua` plants a row
+of markers as one undo step).
 
 ## Art
 

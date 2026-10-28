@@ -20,7 +20,8 @@ Design page for the Blueprints-style visual scripting, summarised in the [Roadma
 - Node palette generated from the typed binding registry, so every engine API is a node
 - Debugging: live values shown on the wires during Play, breakpoints on nodes
 - Full editor coverage: select-many, move-group, delete-group, copy / paste, undo
-- Node editing of other assets (scripts first) folds in here, on the same palette and compiler (decided at the v0.4.0
+- Functions, macros and library graphs (`GraphFunction`, `GraphParameter`; nodes `func.entry`, `func.return`,
+  `func.call`) and graphs for the script of a HUD fold in here, on the same palette and compiler (decided at the v0.4.0
   kickoff)
 
 ### Status {#visual-scripting-status}
@@ -30,8 +31,9 @@ Design page for the Blueprints-style visual scripting, summarised in the [Roadma
 | `.owlvs` graph, palette from the binding registry, compiler to Lua, `LuaScript` and pack | Done    |
 | Colour and vector values, grouped pins split into components                             | Done    |
 | Owl Nest editor: canvas, node library, inline values, variables, errors, Lua, undo       | Done    |
-| Debugging: live values on the wires, breakpoints on nodes                                | Planned |
-| Node editing of other assets                                                             | Planned |
+| Debugging: live values on the wires, breakpoints on nodes                                | Done    |
+| Functions, macros and library graphs                                                     | Done    |
+| HUD graphs                                                                               | Done    |
 
 User guide: [Visual scripts](../visual-scripts.md).
 
@@ -43,7 +45,7 @@ code, or a refusal) are the open questions.
 
 ## Node-graph link waypoints (v0.6.0)
 
-- Right-click on a coloured link in `NodeCanvas` (Scene Flow today, future graphs too) to insert an intermediate point
+- Right-click on a coloured link in `NodeCanvas` (visual scripts and any other graph) to insert an intermediate point
   at the cursor position
 - Drag to relocate, Delete to remove — waypoints persist in the `.owlflow` YAML
 - The Bezier routing splits at each waypoint into a series of cubic segments so the user can manually steer links
@@ -51,7 +53,12 @@ code, or a refusal) are the open questions.
 
 ## Script debugging aids (v0.6.0)
 
-- Breakpoint markers (visual only — log-based, not a step debugger); the underlying `TextEditor::AddMarker` API is
-  already exposed by the `imgui_color_text_edit` package
-- Live variable watch panel (read globals from running `ScriptInstance` via `lua_pushglobaltable` + `lua_next`); it
-  shares the value-inspection UI of the visual-scripting debugger
+Shipped, for Lua scripts and visual scripts:
+
+- Breakpoints on Lua lines (gutter, F9) and on nodes (F9, context menu), held by `script::ScriptDebugger`; a hit does
+  not stop the script mid-call: the call finishes, the game pauses and the **Script Debug** panel shows the script, the
+  line, the entity and the locals, with Continue and Open
+- Variable watch (`ScriptInstance::getWatchValues`) of the scene script, the HUD script and every entity script,
+  filterable, selected entity first
+- Wire values (`ScriptInstance::getProbeValues`, `visual::CompileMode::Debug`, `compileForDebug`, `getProbeKey`) drawn
+  on the wires during Play; the node of the hit is outlined

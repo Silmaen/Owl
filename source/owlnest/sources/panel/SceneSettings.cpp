@@ -517,7 +517,8 @@ void SceneSettings::renderWorldOriginSection() const {
 }
 
 void SceneSettings::renderScriptSection() {
-	if (m_scene->getDocumentKind() != scene::DocumentKind::Scene)
+	const bool hud = m_scene->getDocumentKind() == scene::DocumentKind::Hud;
+	if (!hud && m_scene->getDocumentKind() != scene::DocumentKind::Scene)
 		return;
 	if (!gui::widgets::sectionHeader("Script", gui::icon::fileCode2, false).open)
 		return;
@@ -530,7 +531,10 @@ void SceneSettings::renderScriptSection() {
 		const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
 		std::ignore = target.execute("scene.set_script", {{"script", after}});
 	}
-	ImGui::TextDisabled("Runs before the entity scripts, with the same hooks and no entity (no entity_id).");
+	if (hud)
+		ImGui::TextDisabled("Runs in every scene that draws this HUD and defines the callbacks of its widgets.");
+	else
+		ImGui::TextDisabled("Runs before the entity scripts, with the same hooks and no entity (no entity_id).");
 	gui::widgets::endSection();
 }
 

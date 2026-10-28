@@ -11,12 +11,16 @@
 #include "NodeGraphDocument.h"
 #include "VisualScriptCanvas.h"
 
+#include <script/ScriptDebugger.h>
 #include <script/visual/VisualScript.h>
 
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
+#include <map>
 #include <optional>
+#include <set>
 #include <span>
 #include <string>
 #include <utility>
@@ -280,6 +284,56 @@ public:
 
 	/**
 	 * @brief
+	 *  Add a function or a macro, with its entry and return nodes linked at the centre of the view.
+	 * @param[in] iMacro True for a macro with two exits.
+	 * @return Its name.
+	 */
+	auto addFunction(bool iMacro) -> std::string;
+
+	/**
+	 * @brief
+	 *  Remove a function with its entry, return and call nodes.
+	 * @param[in] iName Function name.
+	 */
+	void removeFunction(const std::string& iName);
+
+	/**
+	 * @brief
+	 *  Rename a function and the nodes that name it.
+	 * @param[in] iName Current name.
+	 * @param[in] iNewName New name.
+	 */
+	void renameFunction(const std::string& iName, const std::string& iNewName);
+
+	/**
+	 * @brief
+	 *  Replace the signature of a function, dropping the links of the pins it loses.
+	 * @param[in] iName Function name.
+	 * @param[in] iFunction The new definition (its name is kept).
+	 * @param[in] iMerge Merge with the previous edit of the same kind (typing in a field).
+	 */
+	void setFunction(const std::string& iName, script::visual::GraphFunction iFunction, bool iMerge = false);
+
+	/**
+	 * @brief
+	 *  A library graph of the project and the functions it offers.
+	 */
+	struct LibraryEntry {
+		/// Asset path of the `.owlvs`, as the call nodes name it.
+		std::string path;
+		/// Its functions and macros.
+		std::vector<script::visual::GraphFunction> functions;
+	};
+
+	/**
+	 * @brief
+	 *  Replace the library graphs the palette offers (Owl Nest lists the project ones).
+	 * @param[in] iLibraries The libraries.
+	 */
+	void setLibraries(std::vector<LibraryEntry> iLibraries) { m_libraries = std::move(iLibraries); }
+
+	/**
+	 * @brief
 	 *  Paste copied nodes with fresh identifiers, as one edit; they become the selection.
 	 * @param[in] iText Text from `copyNodes`.
 	 * @param[in] iOffset Offset added to every pasted position.
@@ -302,6 +356,69 @@ public:
 	 * @return The Lua source.
 	 */
 	[[nodiscard]] auto getCompiledLua() const -> const std::string& { return m_compiledLua; }
+
+	/**
+	 * @brief
+	 *  Set or remove the breakpoint of a node: the game pauses when the node runs (F9, or the node menu).
+	 * @param[in] iNode The node.
+	 */
+	void toggleBreakpoint(core::UUID iNode);
+
+	/**
+	 * @brief
+	 *  Nodes holding a breakpoint.
+	 * @return Their identifiers.
+	 */
+	[[nodiscard]] auto getBreakpoints() const -> const std::set<core::UUID>& { return m_breakpoints; }
+
+	/**
+	 * @brief
+	 *  Node a line of the compiled Lua belongs to.
+	 * @param[in] iLine Line, from 1.
+	 * @return The node, or nothing for a line of no node.
+	 */
+	[[nodiscard]] auto findNodeAtLine(int iLine) -> std::optional<core::UUID>;
+
+	/**
+	 * @brief
+	 *  Select and centre the node of a line of the compiled Lua.
+	 * @param[in] iLine Line, from 1.
+	 */
+	void revealLine(int iLine);
+
+	/**
+	 * @brief
+	 *  What the running game shows on the graph, given by the editor every frame of Play.
+	 * @param[in] iValues Probe values of an instance of the script, empty when none runs.
+	 * @param[in] iStoppedLine Line the game stopped on in this script, or nothing.
+	 */
+	void setDebugState(const std::vector<script::WatchValue>& iValues, std::optional<int> iStoppedLine);
+
+	/**
+	 * @brief
+	 *  Select the custom event of a Lua function, adding it at the centre of the view when the graph has none.
+	 * @param[in] iFunction Lua name of the event (a HUD widget callback).
+	 * @return The event node.
+	 */
+	auto ensureCustomEvent(const std::string& iFunction) -> core::UUID;
+
+	/**
+	 * @brief
+	 *  The visual script a scene or a HUD gets when one of its handlers is first edited in a graph:
+	 *  `scripts/<file>.owlvs` (`<file>_hud` for a HUD) in the asset folder of the file, written from the starter graph
+	 *  when missing.
+	 * @param[in] iSceneFile Path of the `.owl` or `.owlhud` on disk.
+	 * @return The path on disk and the asset path, or nothing when the file is in no asset folder or cannot be written.
+	 */
+	[[nodiscard]] static auto prepareSceneGraph(const std::filesystem::path& iSceneFile)
+			-> std::optional<std::pair<std::filesystem::path, std::string>>;
+
+	/**
+	 * @brief
+	 *  What the graph shows of the debugger.
+	 * @return Breakpoints, stopped node and wire values.
+	 */
+	[[nodiscard]] auto getDebugView() const -> const VisualScriptDebugView& { return m_view.getDebugView(); }
 
 	/**
 	 * @brief
@@ -349,6 +466,33 @@ private:
 	 *  Variable list.
 	 */
 	void renderVariables();
+
+	/**
+	 * @brief
+	 *  Function and macro list.
+	 */
+	void renderFunctions();
+
+	/**
+	 * @brief
+	 *  Editors of the parameters, results or exits of a function.
+	 * @param[in] iFunction The function.
+	 */
+	void renderSignature(const script::visual::GraphFunction& iFunction);
+
+	/**
+	 * @brief
+	 *  Palette entries of the functions of the graph and of the libraries.
+	 * @param[in] iItem Draws one entry from its node key, label and type.
+	 */
+	void renderFunctionEntries(const std::function<void(const std::string&, const std::string&,
+														const script::visual::NodeType&)>& iItem) const;
+
+	/**
+	 * @brief
+	 *  List the library graphs of the project, at most every few seconds.
+	 */
+	void refreshLibraries();
 
 	/**
 	 * @brief
@@ -403,6 +547,20 @@ private:
 	std::vector<script::visual::CompileDiagnostic> m_diagnostics;
 	/// Lua of the last successful compilation.
 	std::string m_compiledLua;
+	/// Lines of the debug build each node runs, from the last successful compilation.
+	std::map<core::UUID, std::vector<int>> m_nodeLines;
+	/// Nodes holding a breakpoint.
+	std::set<core::UUID> m_breakpoints;
+	/// Library graphs offered by the palette.
+	std::vector<LibraryEntry> m_libraries;
+	/// Frame count of the last library scan.
+	int m_libraryScanFrame{-1000};
+
+	/**
+	 * @brief
+	 *  Give the ScriptDebugger the Lua lines of the nodes holding a breakpoint.
+	 */
+	void syncBreakpoints() const;
 	/// Graph text at the last save.
 	std::string m_savedText;
 	/// Search text of the palette and of the library.

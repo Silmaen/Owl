@@ -13,7 +13,7 @@ scene, its own Play state. The ribbon's last tab holds the commands of the activ
 | Tilemap       | `.owltilemap`                               | [Tilemaps and tilesets](editor_tilemaps.md)                                |
 | Tileset       | `.owltileset`                               | [Tilemaps and tilesets](editor_tilemaps.md)                                |
 | Code          | `.lua`, `.slang`, `.py`, `.json`, `.yml`... | [Code and text](#code-and-text)                                            |
-| Node graph    | `.owlflow`, the Scene Flow                  | [Scene Flow and node graphs](#scene-flow-and-node-graphs)                  |
+| Node graph    | `.owlflow`                                  | [Node graphs](#node-graphs)                                                |
 | Visual script | `.owlvs`                                    | [Visual scripts](visual-scripts.md)                                        |
 | Animation     | `.owlanim`                                  | [Animation clips](#animation-clips)                                        |
 | Material      | `.owlmat`                                   | [Materials](#materials)                                                    |
@@ -40,12 +40,7 @@ Markdown and SVG documents split into the source and a live preview, with a drag
 hides the preview. The Markdown preview is the renderer of this help: headings, tables, lists, code, images and
 links (web links open in your browser).
 
-## Scene Flow and node graphs
-
-**Home > Project > Scene Flow** shows every scene of the project as a node, each Teleport trigger wired to the scene
-it leads to; a scene the first scene cannot reach has a red title. A double-click opens the scene.
-
-![The Scene Flow of the Engine Demo](../images/nest/scene_flow.png)
+## Node graphs
 
 A node graph pans with the middle button, zooms with the wheel, moves nodes by drag; its context menu deletes the
 node or fits the view. More in [Node graph](node_graph.md).

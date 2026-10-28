@@ -70,7 +70,16 @@ void invokeCallback(const Scene* iSurface, const Scene* iActive, const Entity& i
 			return;
 		}
 	}
-	if (iActive == nullptr || iActive == iSurface)
+	if (iActive == nullptr)
+		return;
+	for (const auto* script: {&iActive->getHudScript(), &iActive->getSceneScript()}) {
+		if (!script->instance || !script->instance->isValid() || !script->instance->hasFunction(iCallbackName))
+			continue;
+		iPrepare(*script->instance);
+		std::ignore = script->instance->callFunction(iCallbackName);
+		return;
+	}
+	if (iActive == iSurface)
 		return;
 	for (const auto view = iActive->registry.view<component::LuaScript>(); const auto entity: view) {
 		const auto& luaScript = view.get<component::LuaScript>(entity);

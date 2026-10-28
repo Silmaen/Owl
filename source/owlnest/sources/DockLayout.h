@@ -41,6 +41,8 @@ constexpr auto log = "###Log";
 constexpr auto console = "###Console";
 /// Frame statistics.
 constexpr auto stats = "###Stats";
+/// Breakpoint hit and variables of the running scripts.
+constexpr auto scriptDebug = "###ScriptDebug";
 /// Voxel brush palette, shown with a voxel world.
 constexpr auto voxelPalette = "###VoxelPalette";
 /// Tile brush palette, shown with a tilemap document.
@@ -73,7 +75,7 @@ constexpr auto help = "###Help";
 class DockLayout final {
 public:
 	/// Layout generation; raising it rebuilds every saved layout once.
-	static constexpr int version = 4;
+	static constexpr int version = 5;
 
 	/**
 	 * @brief

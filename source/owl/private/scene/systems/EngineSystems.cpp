@@ -26,6 +26,7 @@
 #include <cmath>
 #include <cstdint>
 #include <string>
+#include <utility>
 
 namespace owl::scene::systems {
 
@@ -181,8 +182,9 @@ void restorePhysicsPoses(Scene& ioScene, [[maybe_unused]] const SystemContext& i
 void updateScripts(Scene& ioScene, const SystemContext& iContext) {
 	OWL_PROFILE_FUNCTION()
 
-	if (const auto& sceneScript = ioScene.getSceneScript(); sceneScript.instance && sceneScript.instance->isValid())
-		sceneScript.instance->onUpdate(iContext.timeStep.getSeconds());
+	for (const auto* script: {&std::as_const(ioScene).getSceneScript(), &ioScene.getHudScript()})
+		if (script->instance && script->instance->isValid())
+			script->instance->onUpdate(iContext.timeStep.getSeconds());
 	ioScene.registry.view<component::NativeScript>().each(
 			[&ioScene, &iContext](const entt::entity iEntity, component::NativeScript& ioNsc) -> void {
 				if (!ioScene.isEffectivelyVisible(Entity{iEntity, &ioScene}, /*iEditorMode=*/false))
@@ -206,8 +208,9 @@ void updateScripts(Scene& ioScene, const SystemContext& iContext) {
 void tickScripts(Scene& ioScene, const SystemContext& iContext) {
 	OWL_PROFILE_FUNCTION()
 
-	if (const auto& sceneScript = ioScene.getSceneScript(); sceneScript.instance && sceneScript.instance->isValid())
-		sceneScript.instance->onTick(iContext.timeStep.getSeconds());
+	for (const auto* script: {&std::as_const(ioScene).getSceneScript(), &ioScene.getHudScript()})
+		if (script->instance && script->instance->isValid())
+			script->instance->onTick(iContext.timeStep.getSeconds());
 	for (const auto view = ioScene.registry.view<component::NativeScript>(); const auto entity: view) {
 		if (const auto& nsc = view.get<component::NativeScript>(entity);
 			nsc.instance != nullptr && ioScene.isEffectivelyVisible(Entity{entity, &ioScene}, /*iEditorMode=*/false))

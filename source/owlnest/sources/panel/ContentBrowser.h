@@ -213,6 +213,24 @@ public:
 
 	/**
 	 * @brief
+	 *  Set a callback invoked to turn a macro (`.owlmacro`) into an editor script, from its context menu.
+	 * @param[in] iCallback Function taking the macro file path.
+	 */
+	void setMacroExportCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_macroExportCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
+	 *  Set a callback invoked to run an editor script (a `.lua` under an `editor/` folder) from its context menu.
+	 * @param[in] iCallback Function taking the script path.
+	 */
+	void setEditorScriptRunCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_editorScriptRunCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when a mesh (`.gltf`, `.glb`, `.obj`) is double-clicked or placed from its context menu.
 	 * @param[in] iCallback Function taking the mesh file path.
 	 */
@@ -429,6 +447,10 @@ private:
 	std::function<void(const std::filesystem::path&)> m_materialCreateCallback;
 	/// Called when a macro (`.owlmacro`) is double-clicked or run from its context menu.
 	std::function<void(const std::filesystem::path&)> m_macroRunCallback;
+	/// Called to export a macro to an editor script.
+	std::function<void(const std::filesystem::path&)> m_macroExportCallback;
+	/// Called to run an editor script.
+	std::function<void(const std::filesystem::path&)> m_editorScriptRunCallback;
 	/// Called when a mesh is double-clicked or placed from its context menu.
 	std::function<void(const std::filesystem::path&)> m_meshPlaceCallback;
 	/// Called when a mesh is opened from its context menu.

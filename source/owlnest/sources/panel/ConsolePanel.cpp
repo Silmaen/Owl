@@ -11,9 +11,11 @@
 #include "../DockLayout.h"
 #include "../commands/Macro.h"
 
+#include <app/Application.h>
 #include <gui/IconFont.h>
 #include <gui/widgets/Badge.h>
 #include <gui/widgets/IconButton.h>
+#include <gui/widgets/Menu.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <platform/FileDialog.h>
@@ -33,7 +35,8 @@ namespace {
 
 constexpr std::array g_sources{commands::CommandSource::Gesture, commands::CommandSource::Console,
 							   commands::CommandSource::Palette, commands::CommandSource::Mcp,
-							   commands::CommandSource::Replay,  commands::CommandSource::Scenario};
+							   commands::CommandSource::Replay,  commands::CommandSource::Scenario,
+							   commands::CommandSource::Script};
 
 constexpr ImVec4 g_errorColor{0.92f, 0.38f, 0.38f, 1.f};
 constexpr ImVec4 g_refusedColor{0.95f, 0.65f, 0.25f, 1.f};
@@ -126,6 +129,18 @@ void ConsolePanel::renderToolbar() {
 	if (m_sourceMask == 0)
 		m_sourceMask = 0xff;
 	ImGui::SameLine();
+	if (gui::widgets::iconButton("luaMode", {.glyph = gui::icon::code,
+											 .tooltip = "Lua",
+											 .description = "Type Lua: variables kept between lines, the value of an "
+															"expression printed, editor.* runs the commands.",
+											 .selected = m_luaMode})) {
+		m_luaMode = !m_luaMode;
+		m_lua.cancelPending();
+		m_refocus = true;
+	}
+	ImGui::SameLine();
+	renderScriptsMenu();
+	ImGui::SameLine();
 	if (gui::widgets::iconButton(
 				"saveMacro",
 				{.glyph = gui::icon::save,
@@ -185,16 +200,47 @@ void ConsolePanel::renderInput() {
 	ImGui::SetNextItemWidth(-1.f);
 	constexpr ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory |
 										  ImGuiInputTextFlags_CallbackCompletion;
-	if (!ImGui::InputTextWithHint("##consoleInput", "Command (Tab completes, help lists the commands)", &m_input, flags,
-								  inputCallback, &m_console))
+	const char* hint = "Command (Tab completes, help lists the commands)";
+	if (m_luaMode)
+		hint = m_lua.hasPending() ? ">> the block goes on (Esc cancels it)" : "Lua (help(editor) lists the commands)";
+	if (m_luaMode && m_lua.hasPending() && ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+		m_lua.cancelPending();
+	if (!ImGui::InputTextWithHint("##consoleInput", hint, &m_input, flags, inputCallback, &m_console))
 		return;
-	for (auto& output: m_console.submit(m_input)) {
+	for (auto& output: m_luaMode ? m_lua.submit(m_input) : m_console.submit(m_input)) {
 		if (output.journalIndex == 0)
 			addItem({.journalIndex = 0, .output = std::move(output)});
 	}
 	collectJournal();
 	m_input.clear();
 	m_refocus = true;
+}
+
+void ConsolePanel::renderScriptsMenu() {
+	if (gui::widgets::iconButton("editorScripts", {.glyph = gui::icon::scrollText,
+												   .tooltip = "Editor Scripts",
+												   .description = "Run a .lua of the editor/ folder of the project, as "
+																  "one undo step."}))
+		ImGui::OpenPopup("##editorScripts");
+	if (!ImGui::BeginPopup("##editorScripts"))
+		return;
+	gui::widgets::menuHeader("Editor Scripts", "editor/*.lua");
+	std::vector<std::filesystem::path> directories;
+	if (app::Application::instanced())
+		for (const auto& [title, directory]: app::Application::get().getAssetDirectories())
+			directories.push_back(directory);
+	const auto scripts = session::LuaConsole::listEditorScripts(directories);
+	if (scripts.empty())
+		ImGui::TextDisabled("No .lua under editor/ in the asset folders.");
+	for (const auto& script: scripts)
+		if (gui::widgets::menuItem({.glyph = gui::icon::play, .label = script.filename().string().c_str()}))
+			runEditorScript(script);
+	ImGui::EndPopup();
+}
+
+void ConsolePanel::runEditorScript(const std::filesystem::path& iPath) {
+	for (auto& output: m_lua.runScript(iPath)) addItem({.journalIndex = 0, .output = std::move(output)});
+	collectJournal();
 }
 
 void ConsolePanel::saveSelection() {

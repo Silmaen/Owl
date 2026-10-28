@@ -15,6 +15,7 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <optional>
 #include <string>
@@ -64,7 +65,10 @@ enum struct NodeKind : uint8_t {
 	Sequence,///< Runs its outputs one after the other.
 	ForLoop,///< Numeric `for` loop.
 	GetVariable,///< Reads a graph variable.
-	SetVariable///< Writes a graph variable.
+	SetVariable,///< Writes a graph variable.
+	FunctionEntry,///< Start of a graph function: its parameters as outputs.
+	FunctionReturn,///< End of a graph function: its results as inputs, and the execution output a macro leaves by.
+	FunctionCall///< Call of a graph function, of this graph or of a library graph.
 };
 
 /**
@@ -186,11 +190,60 @@ struct GraphVariable {
 
 /**
  * @brief
- *  A visual script: variables, nodes and links.
+ *  A typed parameter or result of a graph function.
+ */
+struct GraphParameter {
+	/// Name, shown on the pin.
+	std::string name;
+	/// Carried type.
+	PinType type{PinType::Number};
+
+	/**
+	 * @brief
+	 *  Equality operator.
+	 * @param[in] iOther Parameter to compare to.
+	 * @return True when both parameters are identical.
+	 */
+	auto operator==(const GraphParameter& iOther) const -> bool = default;
+};
+
+/**
+ * @brief
+ *  A function of a graph, callable from this graph and, through a library, from any other one.
+ *
+ * Its body starts at its `func.entry` node and ends at `func.return` nodes. A macro is a function with several
+ * execution outputs: each return node names the one the call continues by.
+ */
+struct GraphFunction {
+	/// Lua name, unique in the graph.
+	std::string name;
+	/// Parameters, outputs of the entry node and inputs of the calls.
+	std::vector<GraphParameter> inputs;
+	/// Results, inputs of the return nodes and outputs of the calls.
+	std::vector<GraphParameter> outputs;
+	/// Shown in the Macros category of the palette, with its exits.
+	bool macro{false};
+	/// Execution outputs of the calls: `Then` for a function, one per exit for a macro.
+	std::vector<std::string> exits{"Then"};
+
+	/**
+	 * @brief
+	 *  Equality operator.
+	 * @param[in] iOther Function to compare to.
+	 * @return True when both functions are identical.
+	 */
+	auto operator==(const GraphFunction& iOther) const -> bool = default;
+};
+
+/**
+ * @brief
+ *  A visual script: variables, functions, nodes and links.
  */
 struct VisualScript {
 	/// Variables, in declaration order.
 	std::vector<GraphVariable> variables;
+	/// Functions and macros, in declaration order.
+	std::vector<GraphFunction> functions;
 	/// Nodes.
 	std::vector<GraphNode> nodes;
 	/// Links.
@@ -219,6 +272,14 @@ struct VisualScript {
 	 * @return The variable, or nullptr.
 	 */
 	[[nodiscard]] OWL_API auto findVariable(std::string_view iName) const -> const GraphVariable*;
+
+	/**
+	 * @brief
+	 *  Find a function or a macro.
+	 * @param[in] iName Function name.
+	 * @return The function, or nullptr.
+	 */
+	[[nodiscard]] OWL_API auto findFunction(std::string_view iName) const -> const GraphFunction*;
 
 	/**
 	 * @brief
@@ -332,6 +393,59 @@ struct CompileDiagnostic {
 
 /**
  * @brief
+ *  Reads the text of a library graph from its asset path (`scripts/lib/maths.owlvs`).
+ */
+using LibraryReader = std::function<std::optional<std::string>(std::string_view)>;
+
+/**
+ * @brief
+ *  Replace how the library graphs are read; by default from the open pack, then the asset folders.
+ * @param[in] iReader The reader, or empty for the default one.
+ */
+OWL_API void setLibraryReader(LibraryReader iReader);
+
+/**
+ * @brief
+ *  Forget the library graphs read so far, so that the next use reads them again (after a library is saved).
+ */
+OWL_API void clearLibraryCache();
+
+/**
+ * @brief
+ *  A library graph, read once and kept.
+ * @param[in] iPath Asset path of the `.owlvs`.
+ * @return The graph, or nullptr when it cannot be read.
+ */
+[[nodiscard]] OWL_API auto findLibrary(std::string_view iPath) -> const VisualScript*;
+
+/**
+ * @brief
+ *  Function a `func.*` node stands for: of its graph, or of the library its `library` value names.
+ * @param[in] iScript The graph holding the node.
+ * @param[in] iNode The node.
+ * @return The function, or nullptr when unknown.
+ */
+[[nodiscard]] OWL_API auto findNodeFunction(const VisualScript& iScript, const GraphNode& iNode)
+		-> const GraphFunction*;
+
+/**
+ * @brief
+ *  Name of a pin type, as the graph files write it (`number`, `vector3`).
+ * @param[in] iType The type.
+ * @return Its name.
+ */
+[[nodiscard]] OWL_API auto getPinTypeKey(PinType iType) -> std::string_view;
+
+/**
+ * @brief
+ *  Pin type of a name written by `getPinTypeKey`.
+ * @param[in] iName The name.
+ * @return The type, or nothing when unknown.
+ */
+[[nodiscard]] OWL_API auto parsePinTypeKey(std::string_view iName) -> std::optional<PinType>;
+
+/**
+ * @brief
  *  Whether a path names a visual script.
  * @param[in] iPath File path or chunk name.
  * @return True for a `.owlvs` file.
@@ -358,21 +472,61 @@ struct CompileDiagnostic {
 
 /**
  * @brief
+ *  What a compilation is for.
+ */
+enum struct CompileMode : uint8_t {
+	Game,///< Plain Lua, as a game runs it.
+	Debug///< With value probes: every wire keeps its last value in the global table `__owl_probes`.
+};
+
+/**
+ * @brief
+ *  A visual script compiled with its value probes.
+ */
+struct DebugBuild {
+	/// The Lua source.
+	std::string lua;
+	/// Lines of the Lua source each node runs, from 1: a breakpoint on a node is one on these lines.
+	std::map<core::UUID, std::vector<int>> nodeLines;
+};
+
+/**
+ * @brief
+ *  Key of a wire in the probe table: the output pin the wire leaves.
+ * @param[in] iNode Node of the output.
+ * @param[in] iPin Name of the output pin.
+ * @return The key, `<node>:<pin>`.
+ */
+[[nodiscard]] OWL_API auto getProbeKey(core::UUID iNode, std::string_view iPin) -> std::string;
+
+/**
+ * @brief
  *  Compile a visual script to Lua.
  * @param[in] iScript The script.
+ * @param[in] iMode Game or debug output.
  * @return The Lua source, or every error found.
  */
-[[nodiscard]] OWL_API auto compile(const VisualScript& iScript)
+[[nodiscard]] OWL_API auto compile(const VisualScript& iScript, CompileMode iMode = CompileMode::Game)
 		-> expected<std::string, std::vector<CompileDiagnostic>>;
+
+/**
+ * @brief
+ *  Compile a visual script with its value probes and the Lua lines of every node.
+ * @param[in] iScript The script.
+ * @return The build, or every error found.
+ */
+[[nodiscard]] OWL_API auto compileForDebug(const VisualScript& iScript)
+		-> expected<DebugBuild, std::vector<CompileDiagnostic>>;
 
 /**
  * @brief
  *  Read and compile the text of a `.owlvs` file, logging every error.
  * @param[in] iText The YAML text.
  * @param[in] iSourceName File name for the log messages.
+ * @param[in] iMode Game or debug output.
  * @return The Lua source, or an empty optional on failure.
  */
-[[nodiscard]] OWL_API auto compileText(std::string_view iText, std::string_view iSourceName)
-		-> std::optional<std::string>;
+[[nodiscard]] OWL_API auto compileText(std::string_view iText, std::string_view iSourceName,
+									   CompileMode iMode = CompileMode::Game) -> std::optional<std::string>;
 
 }// namespace owl::script::visual

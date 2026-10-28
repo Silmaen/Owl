@@ -1235,6 +1235,14 @@ public:
 
 	/**
 	 * @brief
+	 *  The script of the HUD the scene draws, run in Play as a second scene script: the scene script of the
+	 *  `.owlhud`, where the callbacks of its widgets are defined. Runtime only.
+	 * @return The script; empty when the HUD has none or the scene is not playing.
+	 */
+	[[nodiscard]] auto getHudScript() const -> const component::LuaScript& { return m_hudScript; }
+
+	/**
+	 * @brief
 	 *  Path of the HUD asset the scene draws: its own `Hud:` key, else the project's `DefaultHud`.
 	 * @return The asset path, empty when the scene has no HUD.
 	 */
@@ -1367,6 +1375,8 @@ private:
 	std::vector<core::UUID> m_pendingSpawns;
 	/// Script the scene owns (runs before the entity scripts).
 	component::LuaScript m_sceneScript;
+	/// The script of the HUD, copied from the `.owlhud` and run in Play.
+	component::LuaScript m_hudScript;
 	/// Systems run every runtime frame, phase by phase.
 	SystemSchedule m_systems;
 	/// Engine state used by the scene (not owned).

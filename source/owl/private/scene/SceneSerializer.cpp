@@ -379,9 +379,10 @@ auto SceneSerializer::serializeToString() const -> std::string {
 		}
 		serializePhysicsSettings(sOut.getImpl()->emitter, mp_scene->getPhysicsSettings());
 		serializeFloatingOrigin(sOut.getImpl()->emitter, *mp_scene);
+	}
+	if (m_kind != DocumentKind::Prefab)
 		if (const auto& sceneScript = mp_scene->getSceneScript(); !sceneScript.scriptPath.empty())
 			sceneScript.serializeAs(sOut, "SceneScript");
-	}
 	sOut.getImpl()->emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 	for (const auto& entity: mp_scene->getAllEntities()) {
 		if (!entity)
@@ -525,12 +526,12 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 				mp_scene->getEnabledRenderers() = renderer::enabledFromYaml(enabled);
 			mp_scene->getPhysicsSettings() = deserializePhysicsSettings(root["Physics"]);
 			deserializeFloatingOrigin(*mp_scene, root["FloatingOrigin"]);
-			mp_scene->getSceneScript() = component::LuaScript{};
-			if (const auto script = root["SceneScript"]; script.isMap()) {
-				const core::Serializer scriptNode;
-				scriptNode.getImpl()->node = script;
-				mp_scene->getSceneScript().deserialize(scriptNode);
-			}
+		}
+		mp_scene->getSceneScript() = component::LuaScript{};
+		if (const auto script = root["SceneScript"]; iParsed.kind != DocumentKind::Prefab && script.isMap()) {
+			const core::Serializer scriptNode;
+			scriptNode.getImpl()->node = script;
+			mp_scene->getSceneScript().deserialize(scriptNode);
 		}
 		SeenUuids seen;
 		if (const auto entities = root["Entities"]; entities.isSequence()) {

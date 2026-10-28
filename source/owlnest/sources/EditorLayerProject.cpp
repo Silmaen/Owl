@@ -16,7 +16,6 @@
 #include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
-#include "document/SceneFlowDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
 #include "document/VisualScriptDocument.h"
@@ -221,27 +220,6 @@ void EditorLayer::openCodeFile(const std::filesystem::path& iPath) {
 		doc->onDetach();
 		return;
 	}
-	auto* raw = m_documents.add(std::move(doc));
-	m_documents.setActive(raw);
-	syncActiveDocumentPanels();
-}
-
-void EditorLayer::openSceneFlowView() {
-	if (!m_project.isLoaded())
-		return;
-	// Reuse an already-open Scene Flow document if present.
-	for (const auto& docPtr: m_documents.list()) {
-		if (auto* graph = dynamic_cast<SceneFlowDocument*>(docPtr.get())) {
-			graph->refreshFromProject(m_project);
-			m_documents.setActive(graph);
-			graph->requestFocus();
-			syncActiveDocumentPanels();
-			return;
-		}
-	}
-	auto doc = mkUniq<SceneFlowDocument>();
-	doc->onAttach(this);
-	doc->refreshFromProject(m_project);
 	auto* raw = m_documents.add(std::move(doc));
 	m_documents.setActive(raw);
 	syncActiveDocumentPanels();

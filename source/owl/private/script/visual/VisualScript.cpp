@@ -12,6 +12,7 @@
 #include "BindingNodes.h"
 #include "core/FormatVersionYaml.h"
 #include "core/external/yaml.h"
+#include "data/assets/AssetSearchPaths.h"
 
 #include <algorithm>
 #include <array>
@@ -19,6 +20,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <filesystem>
+#include <map>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -334,10 +338,41 @@ auto groupPins(const std::vector<PinSpec>& iPins, const GraphNode& iNode) -> std
 	return out;
 }
 
+void addFunctions(std::vector<NodeType>& ioTypes) {
+	ioTypes.push_back({.id = "func.entry",
+					   .title = "Function Entry",
+					   .category = "Functions",
+					   .description = "Start of a function: its parameters.",
+					   .kind = NodeKind::FunctionEntry,
+					   .lua = {},
+					   .inputs = {},
+					   .outputs = {execOut()},
+					   .pure = false});
+	ioTypes.push_back({.id = "func.return",
+					   .title = "Return",
+					   .category = "Functions",
+					   .description = "End of a function: its results, and for a macro the exit the call continues by.",
+					   .kind = NodeKind::FunctionReturn,
+					   .lua = {},
+					   .inputs = {execIn()},
+					   .outputs = {},
+					   .pure = false});
+	ioTypes.push_back({.id = "func.call",
+					   .title = "Call Function",
+					   .category = "Functions",
+					   .description = "Run a function of this graph or of a library graph.",
+					   .kind = NodeKind::FunctionCall,
+					   .lua = {},
+					   .inputs = {execIn()},
+					   .outputs = {},
+					   .pure = false});
+}
+
 auto buildNodeTypes() -> std::vector<NodeType> {
 	std::vector<NodeType> types;
 	addEvents(types);
 	addFlow(types);
+	addFunctions(types);
 	addValues(types);
 	addOperators(types);
 	addCompounds(types);
@@ -358,6 +393,28 @@ void emitScript(YAML::Emitter& ioOut, const VisualScript& iScript) {
 		ioOut << YAML::EndMap;
 	}
 	ioOut << YAML::EndSeq;
+	if (!iScript.functions.empty()) {
+		const auto emitParameters = [&ioOut](const char* iKey, const std::vector<GraphParameter>& iParameters) -> void {
+			ioOut << YAML::Key << iKey << YAML::Value << YAML::Flow << YAML::BeginSeq;
+			for (const auto& parameter: iParameters)
+				ioOut << YAML::BeginMap << YAML::Key << "name" << YAML::Value << parameter.name << YAML::Key << "type"
+					  << YAML::Value << std::string{getPinTypeKey(parameter.type)} << YAML::EndMap;
+			ioOut << YAML::EndSeq;
+		};
+		ioOut << YAML::Key << "functions" << YAML::Value << YAML::BeginSeq;
+		for (const auto& function: iScript.functions) {
+			ioOut << YAML::BeginMap;
+			ioOut << YAML::Key << "name" << YAML::Value << function.name;
+			emitParameters("inputs", function.inputs);
+			emitParameters("outputs", function.outputs);
+			if (function.macro) {
+				ioOut << YAML::Key << "macro" << YAML::Value << true;
+				ioOut << YAML::Key << "exits" << YAML::Value << YAML::Flow << function.exits;
+			}
+			ioOut << YAML::EndMap;
+		}
+		ioOut << YAML::EndSeq;
+	}
 	ioOut << YAML::Key << "nodes" << YAML::Value << YAML::BeginSeq;
 	for (const auto& node: iScript.nodes) {
 		ioOut << YAML::BeginMap;
@@ -396,6 +453,32 @@ auto parseVariable(const YAML::Node& iNode) -> std::optional<GraphVariable> {
 	return variable;
 }
 
+auto parseParameters(const YAML::Node& iNode) -> std::vector<GraphParameter> {
+	std::vector<GraphParameter> parameters;
+	if (!iNode || !iNode.IsSequence())
+		return parameters;
+	for (const auto& entry: iNode) {
+		if (!entry.IsMap() || !entry["name"])
+			continue;
+		parameters.push_back({.name = entry["name"].as<std::string>(),
+							  .type = parsePinTypeKey(entry["type"].as<std::string>("number")).value_or(PinType::Any)});
+	}
+	return parameters;
+}
+
+auto parseFunction(const YAML::Node& iNode) -> std::optional<GraphFunction> {
+	if (!iNode.IsMap() || !iNode["name"])
+		return std::nullopt;
+	GraphFunction function{.name = iNode["name"].as<std::string>(),
+						   .inputs = parseParameters(iNode["inputs"]),
+						   .outputs = parseParameters(iNode["outputs"]),
+						   .macro = iNode["macro"].as<bool>(false),
+						   .exits = {"Then"}};
+	if (const auto exits = iNode["exits"]; function.macro && exits && exits.IsSequence() && exits.size() > 0)
+		function.exits = exits.as<std::vector<std::string>>();
+	return function;
+}
+
 auto parseNode(const YAML::Node& iNode) -> std::optional<GraphNode> {
 	if (!iNode.IsMap() || !iNode["id"] || !iNode["type"])
 		return std::nullopt;
@@ -424,6 +507,9 @@ auto parseScript(const YAML::Node& iRoot) -> VisualScript {
 	for (const auto& entry: iRoot["variables"])
 		if (auto variable = parseVariable(entry); variable.has_value())
 			script.variables.push_back(std::move(*variable));
+	for (const auto& entry: iRoot["functions"])
+		if (auto function = parseFunction(entry); function.has_value())
+			script.functions.push_back(std::move(*function));
 	for (const auto& entry: iRoot["nodes"])
 		if (auto node = parseNode(entry); node.has_value())
 			script.nodes.push_back(std::move(*node));
@@ -434,6 +520,101 @@ auto parseScript(const YAML::Node& iRoot) -> VisualScript {
 }
 
 }// namespace
+
+namespace {
+
+struct LibraryCache {
+	std::mutex mutex;
+	LibraryReader reader;
+	std::map<std::string, std::optional<VisualScript>, std::less<>> graphs;
+};
+
+auto libraryCache() -> LibraryCache& {
+	static LibraryCache s_cache;
+	return s_cache;
+}
+
+auto readLibraryText(const std::string_view iPath) -> std::optional<std::string> {
+	const auto bytes = data::assets::readAssetBytes(std::filesystem::path{std::string{iPath}});
+	if (!bytes.has_value())
+		return std::nullopt;
+	return std::string{bytes->begin(), bytes->end()};
+}
+
+constexpr std::array<std::pair<PinType, std::string_view>, 11> g_pinTypeKeys{{{PinType::Exec, "exec"},
+																			  {PinType::Boolean, "boolean"},
+																			  {PinType::Integer, "integer"},
+																			  {PinType::Number, "number"},
+																			  {PinType::String, "string"},
+																			  {PinType::Table, "table"},
+																			  {PinType::Entity, "entity"},
+																			  {PinType::Vector2, "vector2"},
+																			  {PinType::Vector3, "vector3"},
+																			  {PinType::Color, "color"},
+																			  {PinType::Any, "any"}}};
+
+}// namespace
+
+void setLibraryReader(LibraryReader iReader) {
+	auto& cache = libraryCache();
+	const std::scoped_lock<std::mutex> lock{cache.mutex};
+	cache.reader = std::move(iReader);
+	cache.graphs.clear();
+}
+
+void clearLibraryCache() {
+	auto& cache = libraryCache();
+	const std::scoped_lock<std::mutex> lock{cache.mutex};
+	cache.graphs.clear();
+}
+
+auto findLibrary(const std::string_view iPath) -> const VisualScript* {
+	if (iPath.empty())
+		return nullptr;
+	auto& cache = libraryCache();
+	const std::scoped_lock<std::mutex> lock{cache.mutex};
+	if (const auto found = cache.graphs.find(iPath); found != cache.graphs.end())
+		return found->second.has_value() ? &*found->second : nullptr;
+	std::optional<VisualScript> graph;
+	if (const auto text = cache.reader ? cache.reader(iPath) : readLibraryText(iPath); text.has_value()) {
+		if (auto parsed = deserialize(*text, iPath); parsed)
+			graph = std::move(*parsed);
+		else
+			OWL_CORE_WARN("VisualScript: Cannot read the library '{}'.", iPath)
+	} else {
+		OWL_CORE_WARN("VisualScript: The library '{}' is in no asset folder.", iPath)
+	}
+	const auto [it, inserted] = cache.graphs.emplace(std::string{iPath}, std::move(graph));
+	return it->second.has_value() ? &*it->second : nullptr;
+}
+
+auto findNodeFunction(const VisualScript& iScript, const GraphNode& iNode) -> const GraphFunction* {
+	const auto name = iNode.values.find("function");
+	if (name == iNode.values.end())
+		return nullptr;
+	if (const auto library = iNode.values.find("library"); library != iNode.values.end() && !library->second.empty()) {
+		const auto* graph = findLibrary(library->second);
+		return graph == nullptr ? nullptr : graph->findFunction(name->second);
+	}
+	return iScript.findFunction(name->second);
+}
+
+auto getPinTypeKey(const PinType iType) -> std::string_view {
+	const auto* const found = std::ranges::find(g_pinTypeKeys, iType, &std::pair<PinType, std::string_view>::first);
+	return found == g_pinTypeKeys.end() ? "any" : found->second;
+}
+
+auto parsePinTypeKey(const std::string_view iName) -> std::optional<PinType> {
+	const auto* const found = std::ranges::find(g_pinTypeKeys, iName, &std::pair<PinType, std::string_view>::second);
+	if (found == g_pinTypeKeys.end())
+		return std::nullopt;
+	return found->first;
+}
+
+auto VisualScript::findFunction(const std::string_view iName) const -> const GraphFunction* {
+	const auto it = std::ranges::find(functions, iName, &GraphFunction::name);
+	return it == functions.end() ? nullptr : &*it;
+}
 
 auto VisualScript::findNode(const core::UUID iId) const -> const GraphNode* {
 	const auto it = std::ranges::find(nodes, iId, &GraphNode::id);
@@ -475,6 +656,28 @@ auto getNodePins(const VisualScript& iScript, const GraphNode& iNode) -> NodePin
 	if (type->kind == NodeKind::Call) {
 		pins.inputs = groupPins(pins.inputs, iNode);
 		pins.outputs = groupPins(pins.outputs, iNode);
+	}
+	if (type->kind == NodeKind::FunctionEntry || type->kind == NodeKind::FunctionReturn ||
+		type->kind == NodeKind::FunctionCall) {
+		const auto* function = findNodeFunction(iScript, iNode);
+		if (function == nullptr)
+			return pins;
+		const auto toPins = [](const std::vector<GraphParameter>& iParameters) -> std::vector<PinSpec> {
+			std::vector<PinSpec> out;
+			out.reserve(iParameters.size());
+			for (const auto& parameter: iParameters) out.push_back(pin(parameter.name, parameter.type));
+			return out;
+		};
+		if (type->kind == NodeKind::FunctionEntry) {
+			for (auto& spec: toPins(function->inputs)) pins.outputs.push_back(std::move(spec));
+		} else if (type->kind == NodeKind::FunctionReturn) {
+			for (auto& spec: toPins(function->outputs)) pins.inputs.push_back(std::move(spec));
+		} else {
+			for (auto& spec: toPins(function->inputs)) pins.inputs.push_back(std::move(spec));
+			for (const auto& exit: function->exits) pins.outputs.push_back(execOut(exit));
+			for (auto& spec: toPins(function->outputs)) pins.outputs.push_back(std::move(spec));
+		}
+		return pins;
 	}
 	if (type->kind == NodeKind::GetVariable || type->kind == NodeKind::SetVariable) {
 		const auto name = iNode.values.find("variable");

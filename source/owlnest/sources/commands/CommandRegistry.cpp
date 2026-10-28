@@ -840,6 +840,8 @@ auto getSourceName(const CommandSource iSource) -> std::string_view {
 			return "replay";
 		case CommandSource::Scenario:
 			return "scenario";
+		case CommandSource::Script:
+			return "script";
 	}
 	return "";
 }

@@ -12,6 +12,7 @@
 
 #include "core/external/lua.h"
 #include "platform/FileUtils.h"
+#include "script/ScriptDebugger.h"
 #include "script/visual/VisualScript.h"
 
 #include <algorithm>
@@ -142,6 +143,68 @@ void overdueHook(lua_State* iState, [[maybe_unused]] lua_Debug* iDebug) {
 	quota->timeExceeded = true;
 	// The hook stays armed on every instruction, so a script catching the error with pcall cannot loop on.
 	luaL_error(iState, "time budget exceeded (%d ms per call)", static_cast<int>(quota->timeBudgetMs));
+}
+
+constexpr int g_maxLocals = 64;
+constexpr int g_maxTableItems = 4;
+constexpr size_t g_maxValueText = 120;
+
+// NOLINTNEXTLINE(misc-no-recursion) An entry is described once: a nested table is shown as {…}, never entered.
+auto shortTable(lua_State* iState, const int iIndex) -> std::string {
+	const int table = lua_absindex(iState, iIndex);
+	std::string text = "{";
+	int count = 0;
+	lua_pushnil(iState);
+	while (lua_next(iState, table) != 0) {
+		if (count < g_maxTableItems) {
+			if (count > 0)
+				text += ", ";
+			if (lua_type(iState, -2) == LUA_TSTRING)
+				text += std::format("{}=", lua_tostring(iState, -2));
+			text += lua_type(iState, -1) == LUA_TTABLE ? "{…}" : LuaEngine::describeValue(iState, -1).value;
+		}
+		++count;
+		lua_pop(iState, 1);
+	}
+	if (count > g_maxTableItems)
+		return std::format("table ({} entries)", count);
+	return text + "}";
+}
+
+void breakpointHook(lua_State* iState, lua_Debug* iDebug) {
+	if (iDebug->event != LUA_HOOKLINE || lua_getinfo(iState, "S", iDebug) == 0)
+		return;
+	if (!ScriptDebugger::isBreakpoint(iDebug->source, iDebug->currentline))
+		return;
+	auto* quota = quotaOf(iState);
+	const bool enforced = quota->enforced;
+	quota->enforced = false;
+	BreakpointHit hit{.script = iDebug->source, .line = iDebug->currentline, .context = {}, .locals = {}};
+	if (!hit.script.empty() && (hit.script.front() == '@' || hit.script.front() == '='))
+		hit.script.erase(0, 1);
+	if (quota->errorContext)
+		hit.context = quota->errorContext();
+	for (int index = 1; index <= g_maxLocals; ++index) {
+		const char* name = lua_getlocal(iState, iDebug, index);
+		if (name == nullptr)
+			break;
+		if (name[0] != '(' && !std::string_view{name}.starts_with("__")) {
+			auto value = LuaEngine::describeValue(iState, -1);
+			value.name = name;
+			hit.locals.push_back(std::move(value));
+		}
+		lua_pop(iState, 1);
+	}
+	quota->enforced = enforced;
+	ScriptDebugger::reportHit(std::move(hit));
+}
+
+// The breakpoint hook stays armed for the whole call; the watchdog replaces it when the call overruns its budget.
+void armDebugHook(lua_State* iState) {
+	if (ScriptDebugger::hasBreakpoints())
+		lua_sethook(iState, breakpointHook, LUA_MASKLINE, 0);
+	else if (lua_gethook(iState) != nullptr)
+		lua_sethook(iState, nullptr, 0, 0);
 }
 
 struct CallSlot {
@@ -632,7 +695,7 @@ void LuaEngine::restartCallClock(lua_State* iState) {
 	slot.sequence.store(slot.sequence.load(std::memory_order_relaxed) + 1, std::memory_order_release);
 	for (lua_State* state: {iState, slot.running.load(std::memory_order_relaxed)})
 		if (state != nullptr && lua_gethook(state) == overdueHook)
-			lua_sethook(state, nullptr, 0, 0);
+			armDebugHook(state);
 }
 
 auto LuaEngine::callGuarded(lua_State* iState, int (*iFunction)(lua_State*)) -> int {
@@ -670,11 +733,11 @@ void LuaEngine::setDeltaTime(const double iDeltaTime) const { mp_quota->deltaTim
 
 auto LuaEngine::getDeltaTime(lua_State* iState) -> double { return quotaOf(iState)->deltaTime; }
 
-auto LuaEngine::protectedCall(const int iHandler, const int iArgCount, const std::string_view iWhat) const -> bool {
+auto LuaEngine::protectedCall(const int iHandler, const int iArgCount, const std::string_view iWhat,
+							  ChunkResult* oResult) const -> bool {
 	mp_quota->memoryExceeded = false;
 	mp_quota->timeExceeded = false;
-	if (lua_gethook(mp_state) != nullptr)
-		lua_sethook(mp_state, nullptr, 0, 0);
+	armDebugHook(mp_state);
 	auto& slot = currentSlot();
 	lua_State* const outerState = slot.state.load(std::memory_order_relaxed);
 	lua_State* const outerRunning = slot.running.load(std::memory_order_relaxed);
@@ -685,12 +748,19 @@ auto LuaEngine::protectedCall(const int iHandler, const int iArgCount, const std
 	slot.sequence.store(slot.sequence.load(std::memory_order_relaxed) + 1, std::memory_order_release);
 	const bool outerEnforced = mp_quota->enforced;
 	mp_quota->enforced = true;
-	const int result = lua_pcall(mp_state, iArgCount, 0, iHandler);
+	const int result = lua_pcall(mp_state, iArgCount, oResult == nullptr ? 0 : LUA_MULTRET, iHandler);
 	mp_quota->enforced = outerEnforced;
 	slot.state.store(outerState, std::memory_order_relaxed);
 	slot.running.store(outerRunning, std::memory_order_relaxed);
 	slot.budgetMs.store(outerBudget, std::memory_order_relaxed);
 	if (result == LUA_OK) {
+		if (oResult != nullptr)
+			for (int index = iHandler + 1; index <= lua_gettop(mp_state); ++index) {
+				size_t size = 0;
+				const char* text = luaL_tolstring(mp_state, index, &size);
+				oResult->values.emplace_back(text, size);
+				lua_pop(mp_state, 1);
+			}
 		lua_settop(mp_state, iHandler - 1);
 		mp_quota->lastStatus = LuaStatus::Ok;
 		return true;
@@ -702,9 +772,34 @@ auto LuaEngine::protectedCall(const int iHandler, const int iArgCount, const std
 	else
 		mp_quota->lastStatus = LuaStatus::RuntimeError;
 	const char* message = lua_tostring(mp_state, -1);
-	reportError(iWhat, message != nullptr ? message : "(no message)");
+	if (oResult != nullptr)
+		oResult->message = message != nullptr ? message : "(no message)";
+	else
+		reportError(iWhat, message != nullptr ? message : "(no message)");
 	lua_settop(mp_state, iHandler - 1);
 	return false;
+}
+
+auto LuaEngine::runChunk(const std::string_view iSource, const std::string& iName) const -> ChunkResult {
+	ChunkResult result;
+	if (mp_state == nullptr) {
+		result.message = "the Lua state is invalid";
+		return result;
+	}
+	mp_quota->enforced = true;
+	const int loaded = luaL_loadbufferx(mp_state, iSource.data(), iSource.size(), iName.c_str(), "t");
+	mp_quota->enforced = false;
+	if (loaded != LUA_OK) {
+		const char* message = lua_tostring(mp_state, -1);
+		result.message = message != nullptr ? message : "(no message)";
+		lua_pop(mp_state, 1);
+		return result;
+	}
+	result.compiled = true;
+	lua_pushcfunction(mp_state, messageHandler);
+	lua_insert(mp_state, -2);
+	result.ok = protectedCall(lua_gettop(mp_state) - 1, 0, iName, &result);
+	return result;
 }
 
 void LuaEngine::reportError(const std::string_view iWhat, const std::string_view iMessage) const {
@@ -774,7 +869,9 @@ auto LuaEngine::loadBuffer(const std::vector<uint8_t>& iData, const std::string&
 		return false;
 	}
 	if (visual::isVisualScriptPath(iName)) {
-		const auto lua = visual::compileText({reinterpret_cast<const char*>(iData.data()), iData.size()}, iName);
+		const auto lua = visual::compileText({reinterpret_cast<const char*>(iData.data()), iData.size()}, iName,
+											 ScriptDebugger::isEnabled() ? visual::CompileMode::Debug
+																		 : visual::CompileMode::Game);
 		if (!lua.has_value()) {
 			OWL_CORE_ERROR("LuaEngine: Cannot compile the visual script '{}'.", iName)
 			return false;
@@ -871,6 +968,79 @@ auto LuaEngine::callFunction(const std::string_view iName, const uint64_t iArg) 
 		return false;
 	lua_pushinteger(mp_state, static_cast<lua_Integer>(iArg));
 	return protectedCall(handler, 1, iName);
+}
+
+// NOLINTNEXTLINE(misc-no-recursion) A table describes its entries once, without entering a nested table.
+auto LuaEngine::describeValue(lua_State* iState, const int iIndex) -> WatchValue {
+	WatchValue value{.name = {}, .type = luaL_typename(iState, iIndex), .value = {}};
+	switch (lua_type(iState, iIndex)) {
+		case LUA_TNIL:
+			value.value = "nil";
+			break;
+		case LUA_TBOOLEAN:
+			value.value = lua_toboolean(iState, iIndex) != 0 ? "true" : "false";
+			break;
+		case LUA_TNUMBER:
+			if (lua_isinteger(iState, iIndex) != 0)
+				value.value = std::format("{}", lua_tointeger(iState, iIndex));
+			else
+				value.value = std::format("{:.6g}", lua_tonumber(iState, iIndex));
+			break;
+		case LUA_TSTRING:
+			{
+				size_t size = 0;
+				const char* text = lua_tolstring(iState, iIndex, &size);
+				value.value = std::format("\"{}\"", std::string_view{text, std::min(size, g_maxValueText)});
+			}
+			break;
+		case LUA_TTABLE:
+			value.value = shortTable(iState, iIndex);
+			break;
+		default:
+			value.value = value.type;
+			break;
+	}
+	return value;
+}
+
+auto LuaEngine::readGlobals() const -> std::vector<WatchValue> {
+	std::vector<WatchValue> values;
+	if (mp_state == nullptr)
+		return values;
+	lua_pushglobaltable(mp_state);
+	lua_pushnil(mp_state);
+	while (lua_next(mp_state, -2) != 0) {
+		if (lua_type(mp_state, -2) == LUA_TSTRING && lua_type(mp_state, -1) != LUA_TFUNCTION) {
+			auto value = describeValue(mp_state, -1);
+			value.name = lua_tostring(mp_state, -2);
+			values.push_back(std::move(value));
+		}
+		lua_pop(mp_state, 1);
+	}
+	lua_pop(mp_state, 1);
+	std::ranges::sort(values, {}, &WatchValue::name);
+	return values;
+}
+
+auto LuaEngine::readGlobalTable(const std::string& iName) const -> std::vector<WatchValue> {
+	std::vector<WatchValue> values;
+	if (mp_state == nullptr)
+		return values;
+	pushRawGlobal(iName);
+	if (lua_istable(mp_state, -1)) {
+		lua_pushnil(mp_state);
+		while (lua_next(mp_state, -2) != 0) {
+			if (lua_type(mp_state, -2) == LUA_TSTRING) {
+				auto value = describeValue(mp_state, -1);
+				value.name = lua_tostring(mp_state, -2);
+				values.push_back(std::move(value));
+			}
+			lua_pop(mp_state, 1);
+		}
+	}
+	lua_pop(mp_state, 1);
+	std::ranges::sort(values, {}, &WatchValue::name);
+	return values;
 }
 
 // ---- Global variable getters ----

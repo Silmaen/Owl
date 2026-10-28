@@ -128,6 +128,13 @@ public:
 	 */
 	void setHistory(std::vector<std::string> iHistory);
 
+	/**
+	 * @brief
+	 *  Add a line to the history.
+	 * @param[in] iLine The line.
+	 */
+	void remember(const std::string& iLine);
+
 private:
 	/**
 	 * @brief
@@ -137,12 +144,6 @@ private:
 	 */
 	void help(std::string_view iTopic, std::vector<ConsoleOutput>& ioOutput) const;
 
-	/**
-	 * @brief
-	 *  Add a line to the history.
-	 * @param[in] iLine The line.
-	 */
-	void remember(const std::string& iLine);
 
 	/// The session the commands run on.
 	EditorSession& m_session;

@@ -10,7 +10,6 @@
 
 #include "AssetKind.h"
 
-#include "document/SceneFlowDocument.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -134,7 +133,7 @@ void EditorLayer::saveProjectSession() {
 	ProjectSession session;
 	const auto& dir = m_project.projectDirectory;
 	for (const auto& doc: m_documents.list()) {
-		if (!doc || doc->filePath().empty() || dynamic_cast<const SceneFlowDocument*>(doc.get()) != nullptr)
+		if (!doc || doc->filePath().empty())
 			continue;
 		session.documents.push_back(ProjectSession::toStored(dir, doc->filePath()));
 	}

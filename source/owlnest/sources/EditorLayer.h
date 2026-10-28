@@ -41,6 +41,7 @@
 #include "panel/RecoveryPrompt.h"
 #include "panel/SceneHierarchy.h"
 #include "panel/SceneSettings.h"
+#include "panel/ScriptDebugPanel.h"
 #include "panel/SettingsPanel.h"
 #include "panel/StatusBar.h"
 #include "panel/VoxelPalette.h"
@@ -132,7 +133,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Read access to the loaded project (used by side panels / Scene Flow document).
+	 *  Read access to the loaded project (used by side panels).
 	 * @return The project.
 	 */
 	[[nodiscard]] auto getProject() const -> const Project& { return m_project; }
@@ -343,17 +344,11 @@ public:
 	 * @return Pointer to the live `SceneDocument`, or `nullptr` on missing/invalid file.
 	 *
 	 * Unlike `openScene`, this does **not** route through the async progress modal and does
-	 * **not** switch the active document — it is meant for editor-side actions (Scene Flow link
-	 * edits, future cross-scene tooling) that need to mutate a scene's entities without yanking
+	 * **not** switch the active document — it is meant for editor-side actions (cross-scene
+	 * tooling) that need to mutate a scene's entities without yanking
 	 * the user's focus. The file is read and deserialized synchronously on the main thread.
 	 */
 	auto loadOrOpenSceneDocument(const std::filesystem::path& iScenePath) -> SceneDocument*;
-
-	/**
-	 * @brief
-	 *  Open (or refresh) the Scene Flow view — a `NodeGraphDocument` subclass populated from the current project.
-	 */
-	void openSceneFlowView();
 
 	/**
 	 * @brief
@@ -972,6 +967,33 @@ private:
 
 	/**
 	 * @brief
+	 *  Pause the game on a breakpoint reached by a script, then draw the Script Debug panel and run its request.
+	 */
+	void renderScriptDebug();
+
+	/**
+	 * @brief
+	 *  Open the visual script of the active scene or HUD on the custom event of a handler, creating the script and the
+	 *  event when missing (the "Edit in Graph" button of the inspector).
+	 * @param[in] iFunction Lua name of the handler.
+	 */
+	void editHandlerInGraph(const std::string& iFunction);
+
+	/**
+	 * @brief
+	 *  Give the Content Browser the editor-script actions: run a script, export a macro to Lua.
+	 */
+	void bindScriptCallbacks();
+
+	/**
+	 * @brief
+	 *  Select the custom event a just-opened visual script was opened for.
+	 * @param[in] iPath Path of the opened document.
+	 */
+	void selectDeferredGraphEvent(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
 	 *  Handle the scene stop event.
 	 */
 	void onSceneStop();
@@ -1049,6 +1071,8 @@ private:
 	std::vector<std::filesystem::path> m_deferredOpenPaths;
 	/// Line to reveal once the deferred file is open, by absolute path.
 	std::map<std::filesystem::path, uint32_t> m_deferredOpenLines;
+	/// Visual scripts being opened for a handler, by asset path: the custom event to select once open.
+	std::map<std::string, std::string> m_deferredGraphEvents;
 	/// Project to switch to at the start of the next frame (empty path: close only), set by `requestProjectSwitch`.
 	std::optional<std::filesystem::path> m_pendingProjectSwitch;
 	/// The currently loaded project (or empty when no project is open).
@@ -1186,6 +1210,8 @@ private:
 	panel::LogPanel m_logPanel;
 	/// Command console and journal of the session.
 	panel::ConsolePanel m_consolePanel{*this};
+	/// Breakpoint hit and variables of the running scripts.
+	panel::ScriptDebugPanel m_scriptDebugPanel;
 	/// Editor preferences panel (theme, key bindings).
 	panel::SettingsPanel m_settingsPanel;
 	/// Modal that surfaces progress for long-running async work (packaging, asset scans).

@@ -69,7 +69,7 @@ TEST(WindowPlatform, nullWindow) {
 	owl::core::Log::invalidate();
 }
 
-#ifdef OWL_PLATFORM_LINUX
+#if defined(OWL_PLATFORM_LINUX) && OWL_WITH_RENDER
 TEST(WindowPlatform, noCompositorNoServerDecorations) {
 	const char* previous = std::getenv("WAYLAND_DISPLAY");
 	const std::string saved = previous != nullptr ? previous : "";

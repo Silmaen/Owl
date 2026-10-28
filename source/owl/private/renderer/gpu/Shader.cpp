@@ -119,7 +119,12 @@ auto Shader::reload() -> bool {
 		OWL_CORE_ERROR("Shader: Cannot reload {}, source file '{}' not found.", getFullName(), m_sourcePath.string())
 		return false;
 	}
-	if (!recompile(renderer::utils::readShaderSource(m_sourcePath))) {
+#if OWL_WITH_RENDER
+	const auto source = renderer::utils::readShaderSource(m_sourcePath);
+#else
+	const auto source = platform::fileToString(m_sourcePath);
+#endif
+	if (!recompile(source)) {
 		OWL_CORE_ERROR("Shader: Reload of {} failed ({}), the previous version stays in use.", getFullName(),
 					   m_sourcePath.string())
 		return false;

@@ -316,8 +316,21 @@ void scanLuaScript(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-re
 		return;
 	std::ifstream scriptFile(iScriptPath);
 	std::string scriptContent((std::istreambuf_iterator<char>(scriptFile)), std::istreambuf_iterator<char>());
-	if (script::visual::isVisualScriptPath(iScriptPath.string()))
+	if (script::visual::isVisualScriptPath(iScriptPath.string())) {
+		// The game compiles the graph at load: the libraries it calls go in the pack; their Lua is in the caller's.
+		if (const auto graph = script::visual::deserialize(scriptContent, iScriptPath.string()); graph) {
+			for (const auto& node: graph->nodes) {
+				const auto library = node.values.find("library");
+				if (library == node.values.end() || library->second.empty() || hasAsset(ioAssets, library->second))
+					continue;
+				if (auto ref = resolveScript(library->second); ref)
+					ioAssets.push_back(*ref);
+				else
+					pushWarning(ioWarnings, "Visual script library", library->second, iScriptPath.filename().string());
+			}
+		}
 		scriptContent = script::visual::compileText(scriptContent, iScriptPath.string()).value_or(std::string{});
+	}
 	const auto source = iScriptPath.filename().string();
 	// Any quoted scene path, the argument of `sound.play` or any quoted sound file, any quoted serialized texture.
 	static const std::regex scenePattern(R"(["']((?:scenes/)?[^"']+\.owl)["'])");
@@ -694,6 +707,11 @@ void scanHud(const std::string& iHudPath, const std::string& iSource, std::set<s
 	if (!data["Hud"] || !entities)
 		return;
 	const auto hudName = hudRef->diskPath.filename().string();
+	if (const auto hudScript = data["SceneScript"]; hudScript && hudScript.IsMap()) {
+		YAML::Node holder;
+		holder["LuaScript"] = hudScript;
+		scanEntity(holder, hudName, ioVisitedScenes, ioAssets, ioWarnings);
+	}
 	for (auto entity: entities) scanEntity(entity, hudName, ioVisitedScenes, ioAssets, ioWarnings);
 }
 

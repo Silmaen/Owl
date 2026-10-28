@@ -23,7 +23,7 @@ namespace owl::gui::widgets {
  *  YAML serialization helpers for `NodeCanvas`.
  *
  * The format is domain-agnostic — it stores nodes (with their `customData`
- * blob treated as opaque text) and links. The Scene Flow view, animation
+ * blob treated as opaque text) and links. Visual scripts, animation
  * graphs, behaviour trees and dialogue trees all share the same format, each
  * putting its own schema into `customData`.
  *

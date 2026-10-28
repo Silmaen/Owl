@@ -21,7 +21,9 @@
 #include <fstream>
 #include <iterator>
 #include <map>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 using namespace owl;
@@ -394,4 +396,146 @@ TEST(VisualScript, EngineDemoGraphsCompile) {
 	}
 	EXPECT_GT(graphs, 0u);
 	core::Log::invalidate();
+}
+
+namespace {
+
+// double(x) -> y = x * 2, called from on_create into `result`.
+auto doubler() -> VisualScript {
+	VisualScript script;
+	script.variables.push_back({.name = "result", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	script.functions.push_back({.name = "double",
+								.inputs = {{.name = "x", .type = PinType::Number}},
+								.outputs = {{.name = "y", .type = PinType::Number}},
+								.macro = false,
+								.exits = {"Then"}});
+	const auto entry = addNode(script, "func.entry", {{"function", "double"}});
+	const auto times = addNode(script, "math.multiply", {{"B", "2"}});
+	const auto ret = addNode(script, "func.return", {{"function", "double"}});
+	link(script, entry, "Then", ret, "Exec");
+	link(script, entry, "x", times, "A");
+	link(script, times, "Result", ret, "y");
+	const auto create = addNode(script, "event.on_create");
+	const auto call = addNode(script, "func.call", {{"function", "double"}, {"x", "21"}});
+	const auto set = addNode(script, "var.set", {{"variable", "result"}});
+	link(script, create, "Then", call, "Exec");
+	link(script, call, "Then", set, "Exec");
+	link(script, call, "y", set, "Value");
+	return script;
+}
+
+}// namespace
+
+TEST(VisualScript, FunctionsTakeParametersAndReturnResults) {
+	core::Log::init(core::Log::Level::Off);
+	const auto script = doubler();
+	const auto pins = getNodePins(script, script.nodes[4]);
+	ASSERT_EQ(pins.inputs.size(), 2u);
+	EXPECT_EQ(pins.inputs[1].name, "x");
+	ASSERT_EQ(pins.outputs.size(), 2u);
+	EXPECT_EQ(pins.outputs[0].type, PinType::Exec);
+	EXPECT_EQ(pins.outputs[1].name, "y");
+	ASSERT_TRUE(errorsOf(script).empty()) << errorsOf(script).front().message;
+	auto scn = mkShared<scene::Scene>();
+	ScriptInstance instance;
+	instance.setScene(scn.get());
+	ASSERT_TRUE(load(instance, script, "double.owlvs"));
+	instance.onCreate();
+	EXPECT_NEAR(instance.getPropertyFloat("result").value_or(0.f), 42.f, 1e-5f);
+	const auto back = deserialize(serialize(script), "double.owlvs");
+	ASSERT_TRUE(back.has_value());
+	EXPECT_EQ(*back, script);
+	core::Log::invalidate();
+}
+
+TEST(VisualScript, MacrosContinueByTheExitTheirReturnNames) {
+	core::Log::init(core::Log::Level::Off);
+	VisualScript script;
+	script.variables.push_back({.name = "label", .type = ScriptPropertyType::String, .defaultValue = ""});
+	script.functions.push_back({.name = "classify",
+								.inputs = {{.name = "x", .type = PinType::Number}},
+								.outputs = {},
+								.macro = true,
+								.exits = {"Big", "Small"}});
+	const auto entry = addNode(script, "func.entry", {{"function", "classify"}});
+	const auto less = addNode(script, "compare.less", {{"B", "10"}});
+	const auto branch = addNode(script, "flow.branch");
+	const auto small = addNode(script, "func.return", {{"function", "classify"}, {"exit", "Small"}});
+	const auto big = addNode(script, "func.return", {{"function", "classify"}, {"exit", "Big"}});
+	link(script, entry, "Then", branch, "Exec");
+	link(script, entry, "x", less, "A");
+	link(script, less, "Result", branch, "Condition");
+	link(script, branch, "True", small, "Exec");
+	link(script, branch, "False", big, "Exec");
+	const auto create = addNode(script, "event.on_create");
+	const auto call = addNode(script, "func.call", {{"function", "classify"}, {"x", "5"}});
+	const auto setBig = addNode(script, "var.set", {{"variable", "label"}, {"Value", "big"}});
+	const auto setSmall = addNode(script, "var.set", {{"variable", "label"}, {"Value", "small"}});
+	link(script, create, "Then", call, "Exec");
+	link(script, call, "Big", setBig, "Exec");
+	link(script, call, "Small", setSmall, "Exec");
+	ASSERT_TRUE(errorsOf(script).empty()) << errorsOf(script).front().message;
+	auto scn = mkShared<scene::Scene>();
+	ScriptInstance instance;
+	instance.setScene(scn.get());
+	ASSERT_TRUE(load(instance, script, "classify.owlvs"));
+	instance.onCreate();
+	EXPECT_EQ(instance.getPropertyString("label").value_or(""), "small");
+	core::Log::invalidate();
+}
+
+TEST(VisualScript, LibraryFunctionsCompileIntoTheCaller) {
+	core::Log::init(core::Log::Level::Off);
+	auto library = doubler();
+	std::erase_if(library.nodes, [](const GraphNode& iNode) -> bool { return static_cast<uint64_t>(iNode.id) > 3; });
+	std::erase_if(library.links,
+				  [](const GraphLink& iLink) -> bool { return static_cast<uint64_t>(iLink.toNode) > 3; });
+	library.variables.clear();
+	const auto libraryText = serialize(library);
+	setLibraryReader([&libraryText](const std::string_view iPath) -> std::optional<std::string> {
+		if (iPath == "scripts/lib/maths.owlvs")
+			return libraryText;
+		return std::nullopt;
+	});
+	VisualScript script;
+	script.variables.push_back({.name = "result", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	const auto create = addNode(script, "event.on_create");
+	const auto call =
+			addNode(script, "func.call", {{"function", "double"}, {"library", "scripts/lib/maths.owlvs"}, {"x", "4"}});
+	const auto set = addNode(script, "var.set", {{"variable", "result"}});
+	link(script, create, "Then", call, "Exec");
+	link(script, call, "Then", set, "Exec");
+	link(script, call, "y", set, "Value");
+	ASSERT_NE(findNodeFunction(script, *script.findNode(call)), nullptr);
+	ASSERT_TRUE(errorsOf(script).empty()) << errorsOf(script).front().message;
+	auto scn = mkShared<scene::Scene>();
+	ScriptInstance instance;
+	instance.setScene(scn.get());
+	ASSERT_TRUE(load(instance, script, "caller.owlvs"));
+	instance.onCreate();
+	EXPECT_NEAR(instance.getPropertyFloat("result").value_or(0.f), 8.f, 1e-5f);
+
+	auto missing = script;
+	missing.findNode(call)->values["library"] = "scripts/lib/none.owlvs";
+	EXPECT_EQ(errorsOf(missing).size(), 1u);
+	setLibraryReader({});
+	core::Log::invalidate();
+}
+
+TEST(VisualScript, FunctionNodesReportTheirMisuse) {
+	auto script = doubler();
+	auto outside = script;
+	link(outside, outside.nodes[3].id, "Then", outside.nodes[2].id, "Exec");
+	std::erase_if(outside.links, [&](const GraphLink& iLink) -> bool {
+		return iLink.fromNode == outside.nodes[3].id && iLink.toNode == outside.nodes[4].id;
+	});
+	EXPECT_FALSE(errorsOf(outside).empty());
+	auto unknown = script;
+	unknown.nodes[4].values["function"] = "nope";
+	EXPECT_FALSE(errorsOf(unknown).empty());
+	auto noEntry = script;
+	noEntry.removeNode(noEntry.nodes[0].id);
+	EXPECT_FALSE(errorsOf(noEntry).empty());
+	EXPECT_EQ(parsePinTypeKey(getPinTypeKey(PinType::Vector3)), PinType::Vector3);
+	EXPECT_FALSE(parsePinTypeKey("matrix").has_value());
 }

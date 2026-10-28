@@ -19,6 +19,7 @@
 #include <iterator>
 #include <map>
 #include <optional>
+#include <ranges>
 #include <set>
 #include <string>
 #include <string_view>
@@ -142,7 +143,10 @@ auto componentsOf(const PinSpec& iPin) -> std::vector<std::string> {
 // NOLINTBEGIN(misc-no-recursion) walks the graph; m_pureStack and m_execStack stop at every cycle
 class Compiler final {
 public:
-	explicit Compiler(const VisualScript& iScript) : m_script{iScript} {
+	Compiler(const VisualScript& iScript, const CompileMode iMode, std::string iPrefix = "__f_",
+			 std::string iSlotTable = "__vs")
+		: m_script{iScript}, m_debug{iMode == CompileMode::Debug}, m_prefix{std::move(iPrefix)},
+		  m_slotTable{std::move(iSlotTable)}, m_library{m_prefix != "__f_"} {
 		for (const auto& link: iScript.links) {
 			const auto* from = iScript.findNode(link.fromNode);
 			const auto* fromType = from == nullptr ? nullptr : findNodeType(from->type);
@@ -155,8 +159,11 @@ public:
 
 	auto run() -> expected<std::string, std::vector<CompileDiagnostic>> {
 		emitProperties();
+		emitLibraries();
 		std::string body;
 		std::swap(body, m_out);
+		m_lineCount = 0;
+		emitFunctions();
 		std::set<std::string> functions;
 		for (const auto& node: m_script.nodes) {
 			const auto* type = findNodeType(node.type);
@@ -171,6 +178,11 @@ public:
 		std::swap(events, m_out);
 		m_out = std::move(body);
 		line("local __vs = {}");
+		if (m_debug)
+			line("__owl_probes = __vs");
+		const auto offset = static_cast<int>(std::ranges::count(m_out, '\n'));
+		for (auto& lines: m_nodeLines | std::views::values)
+			for (auto& number: lines) number += offset;
 		m_out += events;
 		if (m_out.size() > g_maxSourceSize)
 			error(0, "The graph expands into too much Lua: merge fewer execution paths into the same nodes.");
@@ -179,8 +191,28 @@ public:
 		return std::move(m_out);
 	}
 
+	[[nodiscard]] auto getNodeLines() -> std::map<core::UUID, std::vector<int>>& { return m_nodeLines; }
+
+	// A library graph: its functions only, as locals named with the prefix, and the slot table they share.
+	auto runLibrary() -> expected<std::string, std::vector<CompileDiagnostic>> {
+		line(std::format("local {} = {{}}", m_slotTable));
+		emitFunctions();
+		if (!m_errors.empty())
+			return unexpected{std::move(m_errors)};
+		return std::move(m_out);
+	}
+
 private:
 	const VisualScript& m_script;
+	bool m_debug;
+	std::string m_prefix;
+	std::string m_slotTable;
+	bool m_library;
+	const GraphFunction* m_function{nullptr};
+	std::map<PinKey, std::string> m_localPins;
+	std::map<std::string, std::string, std::less<>> m_libraryPrefixes;
+	std::map<core::UUID, std::vector<int>> m_nodeLines;
+	int m_lineCount{0};
 	std::map<PinKey, const GraphLink*> m_execLinks;
 	std::map<PinKey, const GraphLink*> m_inputLinks;
 	std::map<PinKey, size_t> m_slots;
@@ -210,11 +242,28 @@ private:
 		m_out.append(m_indent, '\t');
 		m_out += iText;
 		m_out += '\n';
+		++m_lineCount;
+	}
+
+	void markNode(const core::UUID iNode) {
+		if (m_debug)
+			m_nodeLines[iNode].push_back(m_lineCount + 1);
+	}
+
+	void probe(const core::UUID iNode, const NodePins& iPins, const std::vector<std::string>& iValues) {
+		if (!m_debug)
+			return;
+		for (size_t i = 0; i < iPins.outputs.size() && i < iValues.size(); ++i)
+			line(std::format("__vs[{}] = {}", quote(getProbeKey(iNode, iPins.outputs[i].name)), iValues[i]));
 	}
 
 	auto slot(const core::UUID iNode, const std::string& iPin) -> std::string {
+		if (const auto local = m_localPins.find({iNode, iPin}); local != m_localPins.end())
+			return local->second;
+		if (m_debug && !m_library)
+			return std::format("__vs[{}]", quote(getProbeKey(iNode, iPin)));
 		const auto [it, inserted] = m_slots.try_emplace({iNode, iPin}, m_slots.size() + 1);
-		return std::format("__vs[{}]", it->second);
+		return std::format("{}[{}]", m_slotTable, it->second);
 	}
 
 	auto literal(const core::UUID iNode, const PinSpec& iPin, const std::string& iValue) -> std::string {
@@ -397,6 +446,7 @@ private:
 		temps.reserve(iPins.outputs.size());
 		for (size_t i = 0; i < iPins.outputs.size(); ++i) temps.push_back(std::format("__t{}", ++m_tempCount));
 		const auto names = joined(temps);
+		markNode(iNode.id);
 		switch (iType.kind) {
 			case NodeKind::Call:
 				{
@@ -424,6 +474,8 @@ private:
 				line(std::format("local {} = {}", names, substitute(iType.lua, args)));
 				break;
 			case NodeKind::GetVariable:
+				if (m_library)
+					error(iNode.id, "A library function cannot read the variables of its graph.");
 				line(std::format("local {} = {}", names, variableName(iNode).value_or("nil")));
 				break;
 			case NodeKind::Event:
@@ -432,9 +484,13 @@ private:
 			case NodeKind::Sequence:
 			case NodeKind::ForLoop:
 			case NodeKind::SetVariable:
+			case NodeKind::FunctionEntry:
+			case NodeKind::FunctionReturn:
+			case NodeKind::FunctionCall:
 				error(iNode.id, "The node cannot be evaluated as a value.");
 				break;
 		}
+		probe(iNode.id, iPins, temps);
 		return m_temps[iNode.id] = std::move(temps);
 	}
 
@@ -561,12 +617,26 @@ private:
 		const auto pins = getNodePins(m_script, iNode);
 		line("do");
 		++m_indent;
+		if (m_debug) {
+			markNode(iNode.id);
+			line(std::format("__vs.at = {}", static_cast<uint64_t>(iNode.id)));
+		}
 		std::string next = "Then";
 		switch (iType.kind) {
 			case NodeKind::Call:
 				emitCall(iNode, iType, pins);
 				break;
+			case NodeKind::FunctionReturn:
+				emitReturn(iNode, pins);
+				next.clear();
+				break;
+			case NodeKind::FunctionCall:
+				if (emitFunctionCall(iNode, pins))
+					next.clear();
+				break;
 			case NodeKind::SetVariable:
+				if (m_library)
+					error(iNode.id, "A library function cannot change the variables of its graph.");
 				if (const auto name = variableName(iNode); name.has_value()) {
 					const auto value = arguments(iNode, pins);
 					line(std::format("{} = {}", *name, value.empty() ? "nil" : value.front()));
@@ -597,6 +667,7 @@ private:
 			case NodeKind::CustomEvent:
 			case NodeKind::Operator:
 			case NodeKind::GetVariable:
+			case NodeKind::FunctionEntry:
 				error(iNode.id, "The node has no execution input.");
 				next.clear();
 				break;
@@ -606,6 +677,141 @@ private:
 		m_temps = std::move(savedTemps);
 		if (!next.empty())
 			emitChain(iNode, next);
+	}
+
+	// One library graph per path, compiled ahead of the events with the prefix of its functions.
+	void emitLibraries() {
+		for (const auto& node: m_script.nodes) {
+			const auto library = node.values.find("library");
+			if (node.type != "func.call" || library == node.values.end() || library->second.empty() ||
+				m_libraryPrefixes.contains(library->second))
+				continue;
+			if (m_library) {
+				error(node.id, "A library function calls only the functions of its own library.");
+				continue;
+			}
+			const auto index = m_libraryPrefixes.size() + 1;
+			m_libraryPrefixes.emplace(library->second, std::format("__l{}_", index));
+			const auto* graph = findLibrary(library->second);
+			if (graph == nullptr) {
+				error(node.id, std::format("The library '{}' cannot be read.", library->second));
+				continue;
+			}
+			Compiler compiler{*graph, CompileMode::Game, std::format("__l{}_", index), std::format("__vsl{}", index)};
+			auto code = compiler.runLibrary();
+			if (!code) {
+				error(node.id, std::format("The library '{}' does not compile: {}", library->second,
+										   code.error().front().message));
+				continue;
+			}
+			m_out += *code;
+			m_lineCount += static_cast<int>(std::ranges::count(*code, '\n'));
+		}
+	}
+
+	// The functions of the graph, as locals declared first so that they may call each other.
+	void emitFunctions() {
+		std::map<std::string, const GraphNode*, std::less<>> entries;
+		for (const auto& node: m_script.nodes) {
+			if (node.type != "func.entry")
+				continue;
+			const auto* function = findNodeFunction(m_script, node);
+			if (function == nullptr) {
+				error(node.id, "The entry names no function of the graph.");
+				continue;
+			}
+			if (!entries.emplace(function->name, &node).second)
+				error(node.id, std::format("The function '{}' has two entries.", function->name));
+		}
+		std::vector<std::string> names;
+		for (const auto& function: m_script.functions) {
+			if (!isValidName(function.name))
+				error(0, std::format("'{}' is not a usable function name.", function.name));
+			names.push_back(m_prefix + function.name);
+		}
+		if (names.empty())
+			return;
+		line(std::format("local {}", joined(names)));
+		for (const auto& function: m_script.functions) {
+			const auto entry = entries.find(function.name);
+			std::vector<std::string> params;
+			params.reserve(function.inputs.size());
+			for (size_t i = 0; i < function.inputs.size(); ++i) params.push_back(std::format("__a{}", i + 1));
+			line(std::format("function {}{}({})", m_prefix, function.name, joined(params)));
+			++m_indent;
+			if (entry != entries.end()) {
+				m_function = &function;
+				for (size_t i = 0; i < function.inputs.size(); ++i)
+					m_localPins[{entry->second->id, function.inputs[i].name}] = params[i];
+				emitChain(*entry->second, "Then");
+				m_function = nullptr;
+			}
+			--m_indent;
+			line("end");
+		}
+	}
+
+	void emitReturn(const GraphNode& iNode, const NodePins& iPins) {
+		const auto* function = findNodeFunction(m_script, iNode);
+		if (function == nullptr || function != m_function) {
+			error(iNode.id, "The Return node runs outside its function.");
+			return;
+		}
+		auto values = arguments(iNode, iPins);
+		if (function->exits.size() > 1) {
+			const auto exit = iNode.values.find("exit");
+			const auto name = exit == iNode.values.end() ? function->exits.front() : exit->second;
+			const auto found = std::ranges::find(function->exits, name);
+			if (found == function->exits.end()) {
+				error(iNode.id, std::format("The macro has no exit '{}'.", name));
+				return;
+			}
+			values.insert(values.begin(), std::format("{}", std::distance(function->exits.begin(), found) + 1));
+		}
+		line(values.empty() ? std::string{"do return end"} : std::format("do return {} end", joined(values)));
+	}
+
+	// True when the call continues by its exits itself (a macro).
+	auto emitFunctionCall(const GraphNode& iNode, const NodePins& iPins) -> bool {
+		const auto* function = findNodeFunction(m_script, iNode);
+		if (function == nullptr) {
+			error(iNode.id, "The node calls an unknown function.");
+			return true;
+		}
+		std::string prefix = m_prefix;
+		if (const auto library = iNode.values.find("library");
+			library != iNode.values.end() && !library->second.empty()) {
+			const auto found = m_libraryPrefixes.find(library->second);
+			if (found == m_libraryPrefixes.end())
+				return true;
+			prefix = found->second;
+		} else if (std::ranges::none_of(m_script.nodes, [&](const GraphNode& iEntry) -> bool {
+					   return iEntry.type == "func.entry" && iEntry.values.contains("function") &&
+							  iEntry.values.at("function") == function->name;
+				   })) {
+			error(iNode.id, std::format("The function '{}' has no entry node.", function->name));
+			return true;
+		}
+		const auto call = std::format("{}{}({})", prefix, function->name, joined(arguments(iNode, iPins)));
+		std::vector<std::string> results;
+		results.reserve(function->outputs.size() + 1);
+		for (const auto& output: function->outputs) results.push_back(slot(iNode.id, output.name));
+		if (function->exits.size() <= 1) {
+			line(results.empty() ? call : std::format("{} = {}", joined(results), call));
+			return false;
+		}
+		const auto exit = std::format("__e{}", ++m_tempCount);
+		line(std::format("local {}", exit));
+		results.insert(results.begin(), exit);
+		line(std::format("{} = {}", joined(results), call));
+		for (size_t i = 0; i < function->exits.size(); ++i) {
+			line(std::format("{} {} == {} then", i == 0 ? "if" : "elseif", exit, i + 1));
+			++m_indent;
+			emitChain(iNode, function->exits[i]);
+			--m_indent;
+		}
+		line("end");
+		return true;
 	}
 
 	void emitCall(const GraphNode& iNode, const NodeType& iType, const NodePins& iPins) {
@@ -634,15 +840,29 @@ private:
 
 }// namespace
 
-auto compile(const VisualScript& iScript) -> expected<std::string, std::vector<CompileDiagnostic>> {
-	return Compiler{iScript}.run();
+auto getProbeKey(const core::UUID iNode, const std::string_view iPin) -> std::string {
+	return std::format("{}:{}", static_cast<uint64_t>(iNode), iPin);
 }
 
-auto compileText(const std::string_view iText, const std::string_view iSourceName) -> std::optional<std::string> {
+auto compile(const VisualScript& iScript, const CompileMode iMode)
+		-> expected<std::string, std::vector<CompileDiagnostic>> {
+	return Compiler{iScript, iMode}.run();
+}
+
+auto compileForDebug(const VisualScript& iScript) -> expected<DebugBuild, std::vector<CompileDiagnostic>> {
+	Compiler compiler{iScript, CompileMode::Debug};
+	auto lua = compiler.run();
+	if (!lua)
+		return unexpected{std::move(lua.error())};
+	return DebugBuild{.lua = std::move(*lua), .nodeLines = std::move(compiler.getNodeLines())};
+}
+
+auto compileText(const std::string_view iText, const std::string_view iSourceName, const CompileMode iMode)
+		-> std::optional<std::string> {
 	const auto script = deserialize(iText, iSourceName);
 	if (!script)
 		return std::nullopt;
-	auto lua = compile(*script);
+	auto lua = compile(*script, iMode);
 	if (!lua) {
 		for (const auto& diagnostic: lua.error()) {
 			std::string_view message = diagnostic.message;

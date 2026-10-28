@@ -15,6 +15,7 @@
 
 #include <app/Application.h>
 #include <gui/UiLayer.h>
+#include <script/ScriptDebugger.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -66,6 +67,7 @@ void CodeEditorDocument::onAttach(EditorLayer* iEditor) {
 	mp_editor->SetShowWhitespacesEnabled(false);
 	mp_editor->SetShowLineNumbersEnabled(true);
 	codeEditor::applyLanguage(*mp_editor, m_language);
+	updateBreakpointGutter();
 }
 
 void CodeEditorDocument::onDetach() {
@@ -130,6 +132,11 @@ void CodeEditorDocument::onImGuiRender() {
 		const float editorW = showPreview ? std::max(60.f, avail.x * m_splitRatio) : avail.x;
 		const float previewW = showPreview ? std::max(60.f, avail.x - editorW - 6.f) : 0.f;
 
+		if (m_language == codeEditor::Language::Lua) {
+			m_breakpoints = script::ScriptDebugger::getBreakpoints(m_path.string());
+			if (windowFocused && ImGui::IsKeyPressed(ImGuiKey_F9, false))
+				toggleBreakpoint(static_cast<int>(mp_editor->GetMainCursorPosition().line) + 1);
+		}
 		mp_editor->Render("##text_editor", ImVec2{editorW, bodyH});
 		// Accept Content Browser drag-drops on the editor area (same dispatch as the Viewport).
 		if (mp_editorLayer != nullptr && ImGui::BeginDragDropTarget()) {
@@ -163,6 +170,40 @@ void CodeEditorDocument::onImGuiRender() {
 	ImGui::End();
 	if (codeFont != nullptr)
 		ImGui::PopFont();
+}
+
+void CodeEditorDocument::toggleBreakpoint(const int iLine) const {
+	const auto path = m_path.string();
+	const auto lines = script::ScriptDebugger::getBreakpoints(path);
+	script::ScriptDebugger::setBreakpoint(path, iLine, !std::ranges::contains(lines, iLine));
+}
+
+void CodeEditorDocument::updateBreakpointGutter() {
+	if (m_language != codeEditor::Language::Lua) {
+		mp_editor->ClearLineDecorator();
+		return;
+	}
+	mp_editor->SetLineDecorator(2, [this](const TextEditor::Decorator& iDecorator) -> void {
+		drawBreakpoint(static_cast<int>(iDecorator.line) + 1, iDecorator.width, iDecorator.height);
+	});
+}
+
+void CodeEditorDocument::drawBreakpoint(const int iLine, const float iWidth, const float iHeight) const {
+	const auto origin = ImGui::GetCursorScreenPos();
+	ImGui::InvisibleButton("##breakpoint", ImVec2{iWidth, iHeight});
+	const bool hovered = ImGui::IsItemHovered();
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+		toggleBreakpoint(iLine);
+	const bool active = std::ranges::contains(m_breakpoints, iLine);
+	if (!active && !hovered)
+		return;
+	const float radius = std::min(iWidth, iHeight) * 0.32f;
+	const ImVec2 center{origin.x + iWidth * 0.5f, origin.y + iHeight * 0.5f};
+	const ImU32 color = active ? IM_COL32(229, 72, 77, 255) : IM_COL32(229, 72, 77, 90);
+	ImGui::GetWindowDrawList()->AddCircleFilled(center, radius, color);
+	if (hovered)
+		ImGui::SetTooltip(active ? "Remove the breakpoint (F9)"
+								 : "Set a breakpoint (F9): the game pauses at this line");
 }
 
 void CodeEditorDocument::revealLine(const size_t iLine) const {
@@ -201,6 +242,7 @@ auto CodeEditorDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 	m_savedText = txt;
 	m_language = codeEditor::detectLanguage(m_path);
 	codeEditor::applyLanguage(*mp_editor, m_language);
+	updateBreakpointGutter();
 	if (canShowPreview())
 		m_previewVisible = true;
 	return true;
@@ -222,6 +264,7 @@ auto CodeEditorDocument::loadFromFile(const std::filesystem::path& iPath) -> boo
 	m_path = iPath;
 	m_language = codeEditor::detectLanguage(m_path);
 	codeEditor::applyLanguage(*mp_editor, m_language);
+	updateBreakpointGutter();
 	if (canShowPreview())
 		m_previewVisible = true;
 	return true;
