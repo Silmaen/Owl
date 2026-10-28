@@ -29,6 +29,7 @@
 #include "panel/CommandFormWindow.h"
 #include "panel/CommandPalette.h"
 #include "panel/ConsolePanel.h"
+#include "panel/ScriptDebugPanel.h"
 #include "panel/ContentBrowser.h"
 #include "panel/FrameMeter.h"
 #include "panel/FullLoadProbe.h"
@@ -972,6 +973,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Pause the game on a breakpoint reached by a script, then draw the Script Debug panel and run its request.
+	 */
+	void renderScriptDebug();
+
+	/**
+	 * @brief
 	 *  Handle the scene stop event.
 	 */
 	void onSceneStop();
@@ -1186,6 +1193,8 @@ private:
 	panel::LogPanel m_logPanel;
 	/// Command console and journal of the session.
 	panel::ConsolePanel m_consolePanel{*this};
+	/// Breakpoint hit and variables of the running scripts.
+	panel::ScriptDebugPanel m_scriptDebugPanel;
 	/// Editor preferences panel (theme, key bindings).
 	panel::SettingsPanel m_settingsPanel;
 	/// Modal that surfaces progress for long-running async work (packaging, asset scans).

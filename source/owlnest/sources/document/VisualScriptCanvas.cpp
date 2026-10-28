@@ -747,7 +747,31 @@ void VisualScriptCanvas::drawLinks(Frame& ioFrame) const {
 			color = lighter(color, 0.35f);
 		gui::widgets::drawNodeLink(ioFrame.draw, toVec(from->second.first), toVec(to->second.first), color, thickness,
 								   m_zoom);
+		if (exec || m_debug.values.empty())
+			continue;
+		if (const auto value = m_debug.values.find(vs::getProbeKey(link.fromNode, link.fromPin));
+			value != m_debug.values.end())
+			drawWireValue(ioFrame, toVec(from->second.first), toVec(to->second.first), value->second);
 	}
+}
+
+void VisualScriptCanvas::drawWireValue(const Frame& iFrame, const math::vec2f& iFrom, const math::vec2f& iTo,
+									   const std::string& iValue) const {
+	if (m_zoom < 0.4f)
+		return;
+	const auto curve = gui::widgets::getNodeLinkCurve(iFrom, iTo, m_zoom);
+	const ImVec2 middle{(curve[0].x() + 3.f * curve[1].x() + 3.f * curve[2].x() + curve[3].x()) / 8.f,
+						(curve[0].y() + 3.f * curve[1].y() + 3.f * curve[2].y() + curve[3].y()) / 8.f};
+	const std::string text = iValue.size() > 18 ? iValue.substr(0, 17) + "…" : iValue;
+	const float fontSize = ImGui::GetFontSize() * std::min(m_zoom, 1.2f) * 0.85f;
+	const ImVec2 size = ImGui::GetFont()->CalcTextSizeA(fontSize, FLT_MAX, 0.f, text.c_str());
+	const ImVec2 pad{5.f * m_zoom, 2.f * m_zoom};
+	const ImVec2 min{middle.x - size.x * 0.5f - pad.x, middle.y - size.y * 0.5f - pad.y};
+	const ImVec2 max{middle.x + size.x * 0.5f + pad.x, middle.y + size.y * 0.5f + pad.y};
+	iFrame.draw->AddRectFilled(min, max, IM_COL32(24, 26, 31, 230), size.y);
+	iFrame.draw->AddRect(min, max, IM_COL32(240, 190, 70, 200), size.y, 0, 1.f);
+	iFrame.draw->AddText(ImGui::GetFont(), fontSize, {min.x + pad.x, min.y + pad.y}, IM_COL32(240, 220, 160, 255),
+						 text.c_str());
 }
 
 void VisualScriptCanvas::drawNodes(Frame& ioFrame) const {
@@ -785,6 +809,17 @@ void VisualScriptCanvas::drawNodeFrame(const Frame& iFrame, const size_t iIndex)
 			 .hovered = iFrame.hoveredNode == iIndex,
 			 .faulty = faulty},
 			zoom);
+	if (m_debug.stopped == node.id) {
+		const float grow = 4.f * zoom;
+		draw->AddRect({min.x - grow, min.y - grow}, {max.x + grow, max.y + grow}, IM_COL32(240, 190, 70, 255),
+					  10.f * zoom, 0, 3.f * zoom);
+	}
+	if (m_debug.breakpoints.contains(node.id)) {
+		const float radius = 6.f * zoom;
+		const ImVec2 center{min.x + radius * 0.4f, min.y + radius * 0.4f};
+		draw->AddCircleFilled(center, radius, IM_COL32(229, 72, 77, 255));
+		draw->AddCircle(center, radius, IM_COL32(255, 255, 255, 200), 0, 1.5f * zoom);
+	}
 
 	const auto title = view.type == nullptr ? std::format("Unknown {}", node.type) : getNodeTitle(node, *view.type);
 	const auto subtitle = view.type == nullptr ? std::string{} : getNodeSubtitle(*view.type);

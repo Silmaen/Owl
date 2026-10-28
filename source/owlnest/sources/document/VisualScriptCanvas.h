@@ -16,7 +16,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <optional>
+#include <set>
 #include <span>
 #include <string>
 #include <string_view>
@@ -172,6 +174,19 @@ using TextMeasure = std::function<float(std::string_view)>;
 
 /**
  * @brief
+ *  What the debugger shows on the graph: breakpoints, the node the game stopped on, the values on the wires.
+ */
+struct VisualScriptDebugView {
+	/// Nodes holding a breakpoint.
+	std::set<core::UUID> breakpoints;
+	/// Node the game stopped on.
+	std::optional<core::UUID> stopped;
+	/// Last value of each wire, by the `visual::getProbeKey` of the output it leaves.
+	std::map<std::string, std::string> values;
+};
+
+/**
+ * @brief
  *  Graph view of a visual script: nodes with their title bar and pins, links, inline values of the unlinked inputs.
  *
  * The canvas reads the graph and never changes it: each gesture comes back as a `VisualScriptEdit` (link, move,
@@ -252,6 +267,20 @@ public:
 	 *  Frame every node at the next render.
 	 */
 	void requestFrameAll() { m_frameAll = true; }
+
+	/**
+	 * @brief
+	 *  Replace what the debugger shows on the graph.
+	 * @param[in] iView Breakpoints, stopped node and wire values.
+	 */
+	void setDebugView(VisualScriptDebugView iView) { m_debug = std::move(iView); }
+
+	/**
+	 * @brief
+	 *  What the debugger shows on the graph.
+	 * @return The debug view.
+	 */
+	[[nodiscard]] auto getDebugView() const -> const VisualScriptDebugView& { return m_debug; }
 
 	/**
 	 * @brief
@@ -390,6 +419,19 @@ private:
 	bool m_frameAll{true};
 	/// Node to centre at the next render.
 	std::optional<core::UUID> m_focus;
+	/// Breakpoints, stopped node and wire values.
+	VisualScriptDebugView m_debug;
+
+	/**
+	 * @brief
+	 *  Draw the value a wire carries, in a pill at the middle of its curve.
+	 * @param[in] iFrame The frame.
+	 * @param[in] iFrom Output pin on the screen.
+	 * @param[in] iTo Input pin on the screen.
+	 * @param[in] iValue The value as text.
+	 */
+	void drawWireValue(const Frame& iFrame, const math::vec2f& iFrom, const math::vec2f& iTo,
+					   const std::string& iValue) const;
 };
 
 }// namespace owl::nest

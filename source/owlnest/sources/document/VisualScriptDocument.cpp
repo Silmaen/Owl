@@ -356,8 +356,59 @@ void VisualScriptDocument::compileIfStale() {
 	m_compileStale = false;
 	auto compiled = vs::compile(m_script);
 	m_diagnostics = compiled ? std::vector<vs::CompileDiagnostic>{} : compiled.error();
-	if (compiled)
-		m_compiledLua = std::move(*compiled);
+	if (!compiled)
+		return;
+	m_compiledLua = std::move(*compiled);
+	if (auto debug = vs::compileForDebug(m_script); debug)
+		m_nodeLines = std::move(debug->nodeLines);
+	std::erase_if(m_breakpoints, [this](const core::UUID iNode) -> bool { return m_script.findNode(iNode) == nullptr; });
+	syncBreakpoints();
+}
+
+void VisualScriptDocument::syncBreakpoints() const {
+	if (m_path.empty())
+		return;
+	std::vector<int> lines;
+	for (const auto node: m_breakpoints)
+		if (const auto found = m_nodeLines.find(node); found != m_nodeLines.end())
+			lines.insert(lines.end(), found->second.begin(), found->second.end());
+	script::ScriptDebugger::setBreakpoints(m_path.string(), lines);
+}
+
+void VisualScriptDocument::toggleBreakpoint(const core::UUID iNode) {
+	if (m_script.findNode(iNode) == nullptr)
+		return;
+	if (!m_breakpoints.erase(iNode))
+		m_breakpoints.insert(iNode);
+	compileIfStale();
+	syncBreakpoints();
+	auto view = m_view.getDebugView();
+	view.breakpoints = m_breakpoints;
+	m_view.setDebugView(std::move(view));
+}
+
+auto VisualScriptDocument::findNodeAtLine(const int iLine) -> std::optional<core::UUID> {
+	compileIfStale();
+	for (const auto& [node, lines]: m_nodeLines)
+		if (std::ranges::contains(lines, iLine))
+			return node;
+	return std::nullopt;
+}
+
+void VisualScriptDocument::revealLine(const int iLine) {
+	if (const auto node = findNodeAtLine(iLine); node.has_value()) {
+		m_view.setSelection({*node});
+		m_view.requestFocus(*node);
+	}
+}
+
+void VisualScriptDocument::setDebugState(const std::vector<script::WatchValue>& iValues,
+										 const std::optional<int> iStoppedLine) {
+	VisualScriptDebugView view{.breakpoints = m_breakpoints, .stopped = std::nullopt, .values = {}};
+	for (const auto& value: iValues) view.values.emplace(value.name, value.value);
+	if (iStoppedLine.has_value())
+		view.stopped = findNodeAtLine(*iStoppedLine);
+	m_view.setDebugView(std::move(view));
 }
 
 auto VisualScriptDocument::addNode(const std::string& iType, const std::array<float, 2> iPosition,
@@ -626,6 +677,8 @@ void VisualScriptDocument::handleShortcuts(const bool iDeleteUsed) {
 	}
 	if (ImGui::IsKeyPressed(ImGuiKey_Home, false))
 		m_view.requestFrameAll();
+	if (ImGui::IsKeyPressed(ImGuiKey_F9, false))
+		for (const auto node: selection) toggleBreakpoint(node);
 	if (!ctrl)
 		return;
 	if (ImGui::IsKeyPressed(ImGuiKey_A, false)) {
@@ -700,6 +753,10 @@ void VisualScriptDocument::renderContextMenu() {
 		std::ignore = pasteNodes(copyNodes(selection), {30.f, 30.f});
 	if (gui::widgets::menuItem({.glyph = gui::icon::clipboardCopy, .label = "Copy", .shortcut = "Ctrl+C"}))
 		ImGui::SetClipboardText(copyNodes(selection).c_str());
+	if (gui::widgets::menuItem({.glyph = gui::icon::circleDot,
+								.label = m_breakpoints.contains(node->id) ? "Remove Breakpoint" : "Add Breakpoint",
+								.shortcut = "F9"}))
+		for (const auto id: selection) toggleBreakpoint(id);
 	if (gui::widgets::menuItem({.glyph = gui::icon::trash2, .label = "Delete", .shortcut = "Delete", .danger = true}))
 		deleteNodes(selection);
 	ImGui::EndPopup();

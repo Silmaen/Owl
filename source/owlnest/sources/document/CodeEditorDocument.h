@@ -18,6 +18,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
 
 class TextEditor;
 
@@ -198,6 +199,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Set or remove the breakpoint of a line of a Lua script (the gutter click and F9 do it).
+	 * @param[in] iLine Line, from 1.
+	 */
+	void toggleBreakpoint(int iLine) const;
+
+	/**
+	 * @brief
 	 *  The embedded text-editor widget (editing, selection, search, undo), null before `onAttach`.
 	 * @return The widget, or nullptr when the document is not attached.
 	 */
@@ -272,6 +280,23 @@ private:
 	codeEditor::MarkdownPreview m_mdPreview;
 	/// SVG renderer (used when language == Xml).
 	codeEditor::SvgPreview m_svgPreview;
+	/// Breakpoint lines of the script, read from the ScriptDebugger once a frame for the gutter.
+	std::vector<int> m_breakpoints;
+
+	/**
+	 * @brief
+	 *  Show the breakpoint gutter for a Lua script, hide it for any other language.
+	 */
+	void updateBreakpointGutter();
+
+	/**
+	 * @brief
+	 *  Draw the breakpoint of one line in the gutter and toggle it on a click.
+	 * @param[in] iLine Line, from 1.
+	 * @param[in] iWidth Width of the gutter, in pixels.
+	 * @param[in] iHeight Height of the line, in pixels.
+	 */
+	void drawBreakpoint(int iLine, float iWidth, float iHeight) const;
 };
 
 }// namespace owl::nest

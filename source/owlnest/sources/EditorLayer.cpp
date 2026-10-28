@@ -21,6 +21,7 @@
 #include "document/SceneFlowDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
+#include "document/VisualScriptDocument.h"
 
 #include <debug/LogSink.h>
 #include <gui/FontPreviewCache.h>
@@ -730,6 +731,10 @@ void EditorLayer::revealCodeLine(const std::filesystem::path& iPath, const uint3
 		code->revealLine(iLine);
 		return;
 	}
+	for (const auto& docPtr: m_documents.list()) {
+		if (auto* graph = dynamic_cast<VisualScriptDocument*>(docPtr.get()); graph != nullptr && graph->filePath() == iPath)
+			graph->revealLine(static_cast<int>(iLine));
+	}
 }
 
 void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
@@ -960,6 +965,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	// The last window to appear takes the focus, which picks the tab shown in its group.
 	m_logPanel.onImGuiRender();
 	m_consolePanel.onImGuiRender();
+	renderScriptDebug();
 	renderStats(iTimeStep);
 	m_contentBrowser.onImGuiRender();
 	m_parameters.onImGuiRender();
@@ -1350,6 +1356,53 @@ void EditorLayer::onScenePause() {
 void EditorLayer::onSceneResume() {
 	if (auto* doc = activeSceneDocument(); doc != nullptr)
 		doc->onSceneResume();
+}
+
+void EditorLayer::renderScriptDebug() {
+	auto* doc = activeSceneDocument();
+	const bool running =
+			doc != nullptr && (doc->state() == SceneDocument::State::Play || doc->state() == SceneDocument::State::Pause);
+	if (running) {
+		if (auto hit = script::ScriptDebugger::takeHit(); hit.has_value()) {
+			if (doc->state() == SceneDocument::State::Play)
+				onScenePause();
+			OWL_INFO("Script: Breakpoint reached in {} at line {}.", hit->script, hit->line)
+			m_scriptDebugPanel.setHit(std::move(*hit));
+		}
+	} else if (m_scriptDebugPanel.getHit().has_value()) {
+		m_scriptDebugPanel.clearHit();
+	}
+	const auto& hit = m_scriptDebugPanel.getHit();
+	for (const auto& docPtr: m_documents.list()) {
+		auto* graph = dynamic_cast<VisualScriptDocument*>(docPtr.get());
+		if (graph == nullptr)
+			continue;
+		const auto* instance =
+				running ? panel::findScriptInstance(*doc->getActiveScene(), m_sceneHierarchy.getSelectedEntity(),
+													graph->filePath())
+						: nullptr;
+		std::optional<int> stopped;
+		if (hit.has_value() && script::ScriptDebugger::isSameScript(hit->script, graph->filePath().string()))
+			stopped = hit->line;
+		graph->setDebugState(instance == nullptr ? std::vector<script::WatchValue>{} : instance->getProbeValues(),
+							 stopped);
+	}
+	const panel::ScriptDebugPanel::Context context{
+			.scene = running ? doc->getActiveScene().get() : nullptr,
+			.selected = running ? m_sceneHierarchy.getSelectedEntity() : scene::Entity{},
+			.paused = running && doc->state() == SceneDocument::State::Pause};
+	switch (m_scriptDebugPanel.onImGuiRender(context)) {
+		case panel::ScriptDebugPanel::Request::Continue:
+			m_scriptDebugPanel.clearHit();
+			onSceneResume();
+			break;
+		case panel::ScriptDebugPanel::Request::OpenHit:
+			if (hit.has_value())
+				openAssetFromInspector(hit->script, static_cast<uint32_t>(hit->line));
+			break;
+		case panel::ScriptDebugPanel::Request::None:
+			break;
+	}
 }
 
 void EditorLayer::onSceneStop() {

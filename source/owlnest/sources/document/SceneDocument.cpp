@@ -17,6 +17,7 @@
 #include <scene/SaveManager.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
+#include <script/ScriptDebugger.h>
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
 
@@ -177,11 +178,14 @@ void SceneDocument::onScenePlay() {
 	m_state = State::Play;
 	resetHudValues();
 	m_activeScene = scene::Scene::copy(m_editorScene);
+	script::ScriptDebugger::setEnabled(true);
 	m_activeScene->onStartRuntime();
 }
 
 void SceneDocument::onSceneStop() {
 	m_state = State::Edit;
+	script::ScriptDebugger::setEnabled(false);
+	std::ignore = script::ScriptDebugger::takeHit();
 	m_pendingTeleportVelocity = false;
 	if (m_activeScene)
 		m_activeScene->onEndRuntime();

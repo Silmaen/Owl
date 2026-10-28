@@ -11,12 +11,15 @@
 #include "NodeGraphDocument.h"
 #include "VisualScriptCanvas.h"
 
+#include <script/ScriptDebugger.h>
 #include <script/visual/VisualScript.h>
 
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <optional>
+#include <set>
 #include <span>
 #include <string>
 #include <utility>
@@ -305,6 +308,50 @@ public:
 
 	/**
 	 * @brief
+	 *  Set or remove the breakpoint of a node: the game pauses when the node runs (F9, or the node menu).
+	 * @param[in] iNode The node.
+	 */
+	void toggleBreakpoint(core::UUID iNode);
+
+	/**
+	 * @brief
+	 *  Nodes holding a breakpoint.
+	 * @return Their identifiers.
+	 */
+	[[nodiscard]] auto getBreakpoints() const -> const std::set<core::UUID>& { return m_breakpoints; }
+
+	/**
+	 * @brief
+	 *  Node a line of the compiled Lua belongs to.
+	 * @param[in] iLine Line, from 1.
+	 * @return The node, or nothing for a line of no node.
+	 */
+	[[nodiscard]] auto findNodeAtLine(int iLine) -> std::optional<core::UUID>;
+
+	/**
+	 * @brief
+	 *  Select and centre the node of a line of the compiled Lua.
+	 * @param[in] iLine Line, from 1.
+	 */
+	void revealLine(int iLine);
+
+	/**
+	 * @brief
+	 *  What the running game shows on the graph, given by the editor every frame of Play.
+	 * @param[in] iValues Probe values of an instance of the script, empty when none runs.
+	 * @param[in] iStoppedLine Line the game stopped on in this script, or nothing.
+	 */
+	void setDebugState(const std::vector<script::WatchValue>& iValues, std::optional<int> iStoppedLine);
+
+	/**
+	 * @brief
+	 *  What the graph shows of the debugger.
+	 * @return Breakpoints, stopped node and wire values.
+	 */
+	[[nodiscard]] auto getDebugView() const -> const VisualScriptDebugView& { return m_view.getDebugView(); }
+
+	/**
+	 * @brief
 	 *  A new graph: an `On Create` and an `On Update` event.
 	 * @return The starter graph.
 	 */
@@ -403,6 +450,16 @@ private:
 	std::vector<script::visual::CompileDiagnostic> m_diagnostics;
 	/// Lua of the last successful compilation.
 	std::string m_compiledLua;
+	/// Lines of the debug build each node runs, from the last successful compilation.
+	std::map<core::UUID, std::vector<int>> m_nodeLines;
+	/// Nodes holding a breakpoint.
+	std::set<core::UUID> m_breakpoints;
+
+	/**
+	 * @brief
+	 *  Give the ScriptDebugger the Lua lines of the nodes holding a breakpoint.
+	 */
+	void syncBreakpoints() const;
 	/// Graph text at the last save.
 	std::string m_savedText;
 	/// Search text of the palette and of the library.
