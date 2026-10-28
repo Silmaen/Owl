@@ -46,6 +46,13 @@ void RenderAPI::drawDataInstanced(const shared<renderer::gpu::DrawData>& iData, 
 
 void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture2D>> iTextures) {
 	m_boundTextureCount = iTextures.size();
+	m_boundCubeCount = 0;
+}
+
+void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture2D>> iTextures,
+							 const std::span<const shared<renderer::gpu::TextureCube>> iCubes) {
+	m_boundTextureCount = iTextures.size();
+	m_boundCubeCount = iCubes.size();
 }
 
 void RenderAPI::recordDraw(const shared<renderer::gpu::DrawData>& iData) {

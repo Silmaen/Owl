@@ -14,6 +14,7 @@
 #include "renderer/TextureDecoder.h"
 
 #include <algorithm>
+#include <span>
 
 namespace owl::renderer::gpu::opengl {
 
@@ -27,7 +28,10 @@ auto glDataFormat(const ImageFormat& iFormat) -> GLenum {
 		case ImageFormat::R8:
 			return GL_RED;
 		case ImageFormat::Rgba32F:
+		case ImageFormat::Rgba16F:
 			return GL_RGBA;
+		case ImageFormat::R32F:
+			return GL_RED;
 		case ImageFormat::Bc7:
 		case ImageFormat::Astc4x4:
 		case ImageFormat::None:
@@ -37,7 +41,9 @@ auto glDataFormat(const ImageFormat& iFormat) -> GLenum {
 }
 
 auto glDataType(const ImageFormat& iFormat) -> GLenum {
-	return iFormat == ImageFormat::Rgba32F ? GL_FLOAT : GL_UNSIGNED_BYTE;
+	if (iFormat == ImageFormat::Rgba32F || iFormat == ImageFormat::R32F)
+		return GL_FLOAT;
+	return iFormat == ImageFormat::Rgba16F ? GL_HALF_FLOAT : GL_UNSIGNED_BYTE;
 }
 
 auto glInternalDataFormat(const ImageFormat& iFormat) -> GLenum {
@@ -50,6 +56,10 @@ auto glInternalDataFormat(const ImageFormat& iFormat) -> GLenum {
 			return GL_R8;
 		case ImageFormat::Rgba32F:
 			return GL_RGBA32F;
+		case ImageFormat::R32F:
+			return GL_R32F;
+		case ImageFormat::Rgba16F:
+			return GL_RGBA16F;
 		case ImageFormat::Bc7:
 			return GL_COMPRESSED_RGBA_BPTC_UNORM;
 		case ImageFormat::Astc4x4:
@@ -78,6 +88,17 @@ void applySamplerFilter(const GLuint iTexture, const FilterMode iMode, const uin
 	glTextureParameteri(iTexture, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(std::max(iMipLevels, 1u) - 1));
 	glTextureParameteri(iTexture, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTextureParameteri(iTexture, GL_TEXTURE_WRAP_T, GL_REPEAT);
+}
+
+void applyCubeSampler(const GLuint iTexture, const FilterMode iMode, const uint32_t iMipLevels) {
+	const bool nearest = iMode == FilterMode::Nearest;
+	const GLint minFilter = nearest ? GL_NEAREST : (iMipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+	glTextureParameteri(iTexture, GL_TEXTURE_MIN_FILTER, minFilter);
+	glTextureParameteri(iTexture, GL_TEXTURE_MAG_FILTER, nearest ? GL_NEAREST : GL_LINEAR);
+	glTextureParameteri(iTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(iTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(iTexture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(iTexture, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(iMipLevels) - 1);
 }
 
 }// namespace
@@ -198,6 +219,66 @@ auto Texture2D::setLevels(const TextureLevels& iLevels) -> bool {
 		else
 			glTextureSubImage2D(m_textureId, static_cast<GLint>(level), 0, 0, width, height,
 								glDataFormat(iLevels.format), glDataType(iLevels.format), data.data());
+	}
+	return true;
+}
+
+TextureCube::TextureCube(const Specification& iSpecs) : renderer::gpu::TextureCube{iSpecs} {
+	OWL_PROFILE_FUNCTION()
+
+	glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_textureId);
+	const auto face = static_cast<GLsizei>(m_specification.size.x());
+	glTextureStorage2D(m_textureId, static_cast<GLsizei>(getLevelCount()), glInternalDataFormat(m_specification.format),
+					   face, face);
+	applyCubeSampler(m_textureId, m_specification.filterMode, getLevelCount());
+}
+
+TextureCube::~TextureCube() {
+	OWL_PROFILE_FUNCTION()
+
+	BindingTable::forgetTexture(m_textureId);
+	glDeleteTextures(1, &m_textureId);
+}
+
+void TextureCube::bind(const uint32_t iSlot) const {
+	OWL_PROFILE_FUNCTION()
+
+	glBindTextureUnit(iSlot, m_textureId);
+	BindingTable::recordTexture(iSlot, m_textureId);
+}
+
+void TextureCube::uploadLevel(const uint32_t iLevel, const std::span<const uint8_t> iFaces) const {
+	const auto face = static_cast<GLsizei>(getFaceSize(iLevel));
+	glTextureSubImage3D(m_textureId, static_cast<GLint>(iLevel), 0, 0, 0, face, face, static_cast<GLsizei>(g_faceCount),
+						glDataFormat(m_specification.format), glDataType(m_specification.format), iFaces.data());
+}
+
+void TextureCube::setData(void* iData, const uint32_t iSize) {
+	OWL_PROFILE_FUNCTION()
+
+	if (iSize != m_specification.size.surface() * m_specification.getPixelSize() * g_faceCount) {
+		OWL_CORE_WARN("OpenGL TextureCube: Data of {} bytes does not hold the six faces.", iSize)
+		return;
+	}
+	uploadLevel(0, {static_cast<const uint8_t*>(iData), iSize});
+}
+
+auto TextureCube::setLevels(const TextureLevels& iLevels) -> bool {
+	OWL_PROFILE_FUNCTION()
+
+	if (iLevels.size != m_specification.size || iLevels.format != m_specification.format ||
+		iLevels.levels.size() != getLevelCount()) {
+		OWL_CORE_WARN("OpenGL TextureCube: Levels do not match the cube.")
+		return false;
+	}
+	for (uint32_t level = 0; level < getLevelCount(); ++level) {
+		const uint32_t face = getFaceSize(level);
+		if (iLevels.levels[level].size() !=
+			static_cast<size_t>(face) * face * m_specification.getPixelSize() * g_faceCount) {
+			OWL_CORE_WARN("OpenGL TextureCube: Level {} does not hold the six faces.", level)
+			return false;
+		}
+		uploadLevel(level, iLevels.levels[level]);
 	}
 	return true;
 }

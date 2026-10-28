@@ -253,6 +253,18 @@ public:
 
 	/**
 	 * @brief
+	 *  Copy a colour attachment into a face of a cube (see the base class).
+	 * @param[in] iIndex Index of the colour attachment.
+	 * @param[in,out] ioTarget The cube.
+	 * @param[in] iFace The face.
+	 * @param[in] iLevel The mipmap level.
+	 * @return True when the copy is recorded.
+	 */
+	auto copyAttachmentToCube(uint32_t iIndex, renderer::gpu::TextureCube& ioTarget, uint32_t iFace, uint32_t iLevel)
+			-> bool override;
+
+	/**
+	 * @brief
 	 *  Key of the render-pass compatibility class: framebuffers with the same attachment formats share pipelines.
 	 * @return The key.
 	 */

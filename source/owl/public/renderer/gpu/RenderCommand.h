@@ -133,6 +133,18 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the sampled 2D and cube textures of the active renderer block for its next draws.
+	 * @param[in] iTextures 2D textures in slot order.
+	 * @param[in] iCubes Cube textures in slot order of the cube array.
+	 */
+	static void bindTextures(const std::span<const shared<Texture2D>> iTextures,
+							 const std::span<const shared<TextureCube>> iCubes) {
+		if (m_renderAPI)
+			m_renderAPI->bindTextures(iTextures, iCubes);
+	}
+
+	/**
+	 * @brief
 	 *  Create or replace the API base on it type.
 	 * @param[in] iType The type of the new render API.
 	 */

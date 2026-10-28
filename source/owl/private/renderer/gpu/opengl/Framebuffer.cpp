@@ -10,6 +10,7 @@
 
 #include "Framebuffer.h"
 #include "core/external/opengl46.h"
+#include "renderer/gpu/Texture.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -259,6 +260,22 @@ void Framebuffer::copyAttachment(const uint32_t iIndex, renderer::gpu::Framebuff
 		return;
 	glCopyImageSubData(source, GL_TEXTURE_2D, 0, 0, 0, 0, destination, GL_TEXTURE_2D, 0, 0, 0, 0,
 					   static_cast<GLsizei>(m_specs.size.x()), static_cast<GLsizei>(m_specs.size.y()), 1);
+}
+
+auto Framebuffer::copyAttachmentToCube(const uint32_t iIndex, renderer::gpu::TextureCube& ioTarget,
+									   const uint32_t iFace, const uint32_t iLevel) -> bool {
+	if (!renderer::gpu::Framebuffer::copyAttachmentToCube(iIndex, ioTarget, iFace, iLevel))
+		return false;
+	const uint32_t source = getAttachmentName(iIndex);
+	const auto destination = static_cast<uint32_t>(ioTarget.getRendererId());
+	if (source == 0 || destination == 0) {
+		OWL_CORE_WARN("OpenGL Framebuffer ({}): No texture to copy into the cube.", m_specs.debugName)
+		return false;
+	}
+	const auto face = static_cast<GLsizei>(m_specs.size.x());
+	glCopyImageSubData(source, GL_TEXTURE_2D, 0, 0, 0, 0, destination, GL_TEXTURE_CUBE_MAP, static_cast<GLint>(iLevel),
+					   0, 0, static_cast<GLint>(iFace), face, face, 1);
+	return true;
 }
 
 void Framebuffer::bind() {

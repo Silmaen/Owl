@@ -138,6 +138,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the sampled 2D textures and cubes of the active renderer block (its `CombinedImageSamplerCube` array).
+	 * @param[in] iTextures 2D textures in slot order.
+	 * @param[in] iCubes Cubes in slot order.
+	 */
+	void bindTextures(std::span<const shared<Texture2D>> iTextures,
+					  std::span<const shared<TextureCube>> iCubes) override;
+
+	/**
+	 * @brief
 	 *  Reset value for the frame to render.
 	 */
 	void beginFrame() override;

@@ -114,6 +114,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Record the number of 2D and cube textures bound (no GPU work).
+	 * @param[in] iTextures 2D textures in slot order.
+	 * @param[in] iCubes Cubes in slot order.
+	 */
+	void bindTextures(std::span<const shared<renderer::gpu::Texture2D>> iTextures,
+					  std::span<const shared<renderer::gpu::TextureCube>> iCubes) override;
+
+	/**
+	 * @brief
 	 *  Start a frame: forget the draws recorded so far.
 	 */
 	void beginFrame() override { m_drawnStates.clear(); }
@@ -132,6 +141,13 @@ public:
 	 */
 	[[nodiscard]] auto getBoundTextureCount() const -> size_t { return m_boundTextureCount; }
 
+	/**
+	 * @brief
+	 *  Get the number of cubes given to the last `bindTextures` (0 after a 2D-only bind).
+	 * @return The cube count.
+	 */
+	[[nodiscard]] auto getBoundCubeCount() const -> size_t { return m_boundCubeCount; }
+
 private:
 	/**
 	 * @brief
@@ -144,5 +160,7 @@ private:
 	std::vector<PipelineState> m_drawnStates;
 	/// Texture count of the last `bindTextures`.
 	size_t m_boundTextureCount = 0;
+	/// Cube count of the last `bindTextures`.
+	size_t m_boundCubeCount = 0;
 };
 }// namespace owl::renderer::gpu::null

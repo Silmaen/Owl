@@ -139,6 +139,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Bind the 2D textures to units `0..N-1` and the cubes to the units that follow, recorded in the active block.
+	 * @param[in] iTextures 2D textures in unit order.
+	 * @param[in] iCubes Cubes in unit order, after the 2D textures.
+	 */
+	void bindTextures(std::span<const shared<Texture2D>> iTextures,
+					  std::span<const shared<TextureCube>> iCubes) override;
+
+	/**
+	 * @brief
 	 *  Begin a frame: opens the frame GPU zone when profiling with Tracy and, when GPU timestamps are
 	 *  enabled, reads back the timestamp slot it reuses and writes the begin timestamp.
 	 */

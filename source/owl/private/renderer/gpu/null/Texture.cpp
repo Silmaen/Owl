@@ -35,4 +35,24 @@ auto Texture2D::setLevels(const TextureLevels& iLevels) -> bool {
 	return true;
 }
 
+TextureCube::TextureCube(const Specification& iSpecs) : renderer::gpu::TextureCube{iSpecs} {}
+
+TextureCube::~TextureCube() = default;
+
+void TextureCube::bind(uint32_t) const {}
+
+void TextureCube::setData(void*, [[maybe_unused]] const uint32_t iSize) {
+	OWL_CORE_ASSERT(iSize == m_specification.size.surface() * m_specification.getPixelSize() * g_faceCount,
+					"Data size mismatch cube size!")
+}
+
+auto TextureCube::setLevels(const TextureLevels& iLevels) -> bool {
+	if (iLevels.levels.empty() || iLevels.size != m_specification.size || iLevels.format != m_specification.format) {
+		OWL_CORE_WARN("Null TextureCube: Levels do not match the cube.")
+		return false;
+	}
+	m_specification.levelCount = static_cast<uint32_t>(iLevels.levels.size());
+	return true;
+}
+
 }// namespace owl::renderer::gpu::null

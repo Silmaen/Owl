@@ -151,6 +151,18 @@ public:
 	 */
 	void copyAttachment(uint32_t iIndex, renderer::gpu::Framebuffer& ioTarget) override;
 
+	/**
+	 * @brief
+	 *  Copy a colour attachment into a face of a cube (see the base class).
+	 * @param[in] iIndex Index of the colour attachment.
+	 * @param[in,out] ioTarget The cube.
+	 * @param[in] iFace The face.
+	 * @param[in] iLevel The mipmap level.
+	 * @return True when the copy is made.
+	 */
+	auto copyAttachmentToCube(uint32_t iIndex, renderer::gpu::TextureCube& ioTarget, uint32_t iFace, uint32_t iLevel)
+			-> bool override;
+
 private:
 	/**
 	 * @brief

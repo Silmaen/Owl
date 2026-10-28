@@ -179,6 +179,17 @@ public:
 	 */
 	virtual void bindTextures(std::span<const shared<Texture2D>> iTextures) = 0;
 
+	/**
+	 * @brief
+	 *  Set the sampled 2D and cube textures of the active renderer block: the 2D textures as `bindTextures`, the
+	 *  cubes in the cube array of the block (Vulkan: its `CombinedImageSamplerCube` binding; OpenGL: the units that
+	 *  follow the 2D textures). A null cube samples a default black cube.
+	 * @param[in] iTextures 2D textures in slot order.
+	 * @param[in] iCubes Cube textures in slot order.
+	 */
+	virtual void bindTextures(std::span<const shared<Texture2D>> iTextures,
+							  std::span<const shared<TextureCube>> iCubes) = 0;
+
 	/// Render API states.
 	enum struct State : uint8_t {
 		Created,///< Just created.

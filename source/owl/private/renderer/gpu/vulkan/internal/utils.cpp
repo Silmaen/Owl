@@ -171,7 +171,7 @@ constexpr auto layoutToStgFlag(const VkImageLayout& iLayout) -> VkPipelineStageF
 void imageBarrier(VkCommandBuffer iCmd, VkImage iImage, const VkImageAspectFlags iAspect,
 				  const VkImageLayout iOldLayout, const VkImageLayout iNewLayout, const VkPipelineStageFlags iSrcStage,
 				  const VkAccessFlags iSrcAccess, const VkPipelineStageFlags iDstStage, const VkAccessFlags iDstAccess,
-				  const uint32_t iLevelCount) {
+				  const uint32_t iLevelCount, const uint32_t iLayerCount) {
 	const VkImageMemoryBarrier barrier{.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 									   .pNext = nullptr,
 									   .srcAccessMask = iSrcAccess,
@@ -185,14 +185,15 @@ void imageBarrier(VkCommandBuffer iCmd, VkImage iImage, const VkImageAspectFlags
 															.baseMipLevel = 0,
 															.levelCount = iLevelCount,
 															.baseArrayLayer = 0,
-															.layerCount = 1}};
+															.layerCount = iLayerCount}};
 	vkCmdPipelineBarrier(iCmd, iSrcStage, iDstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
 void transitionImageLayout(VkCommandBuffer iCmd, VkImage iImage, const VkImageLayout iOldLayout,
-						   const VkImageLayout iNewLayout, const uint32_t iLevelCount) {
+						   const VkImageLayout iNewLayout, const uint32_t iLevelCount, const uint32_t iLayerCount) {
 	imageBarrier(iCmd, iImage, VK_IMAGE_ASPECT_COLOR_BIT, iOldLayout, iNewLayout, layoutToStgFlag(iOldLayout),
-				 layoutToAccFlag(iOldLayout), layoutToStgFlag(iNewLayout), layoutToAccFlag(iNewLayout), iLevelCount);
+				 layoutToAccFlag(iOldLayout), layoutToStgFlag(iNewLayout), layoutToAccFlag(iNewLayout), iLevelCount,
+				 iLayerCount);
 }
 
 void generateMipmaps(VkCommandBuffer iCmd, VkImage iImage, const math::vec2ui& iSize, const uint32_t iLevelCount) {

@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <span>
 
 namespace owl::renderer::gpu::opengl {
 /**
@@ -133,5 +134,100 @@ private:
 	uint32_t m_mipLevels = 1;
 	/// Whether the texture is owned elsewhere (never deleted here).
 	bool m_borrowed = false;
+};
+
+/**
+ * @brief
+ *  OpenGL cube texture (`GL_TEXTURE_CUBE_MAP`), sampled seamlessly across its faces.
+ */
+class TextureCube final : public renderer::gpu::TextureCube {
+public:
+	TextureCube(const TextureCube&) = delete;
+
+	TextureCube(TextureCube&&) = delete;
+
+	auto operator=(const TextureCube&) -> TextureCube& = delete;
+
+	auto operator=(TextureCube&&) -> TextureCube& = delete;
+
+	/**
+	 * @brief
+	 *  Allocate the six faces and their levels.
+	 * @param[in] iSpecs The cube's specification.
+	 */
+	explicit TextureCube(const Specification& iSpecs);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~TextureCube() override;
+
+	/**
+	 * @brief
+	 *  Comparison operator.
+	 * @param[in] iOther Other texture to compare.
+	 * @return True if same GL texture.
+	 */
+	auto operator==(const Texture& iOther) const -> bool override {
+		const auto* other = dynamic_cast<const TextureCube*>(&iOther);
+		return other != nullptr && m_textureId == other->m_textureId;
+	}
+
+	/**
+	 * @brief
+	 *  Get renderer id.
+	 * @return The GL texture name.
+	 */
+	[[nodiscard]] auto getRendererId() const -> uint64_t override { return m_textureId; }
+
+	/**
+	 * @brief
+	 *  Identity of the GPU texture in its backend.
+	 * @return The GL texture name.
+	 */
+	[[nodiscard]] auto getBackendId() const -> uint64_t override { return m_textureId; }
+
+	/**
+	 * @brief
+	 *  Get the GL texture name.
+	 * @return The texture name.
+	 */
+	[[nodiscard]] auto getTextureId() const -> uint32_t { return m_textureId; }
+
+	/**
+	 * @brief
+	 *  Bind the cube to a texture unit.
+	 * @param[in] iSlot The unit.
+	 */
+	void bind(uint32_t iSlot) const override;
+
+	/**
+	 * @brief
+	 *  Upload the six faces of level 0.
+	 * @param[in] iData The faces, one after the other.
+	 * @param[in] iSize Size of the data in bytes.
+	 */
+	void setData(void* iData, uint32_t iSize) override;
+
+	/**
+	 * @brief
+	 *  Upload every level of the cube.
+	 * @param[in] iLevels The levels, six faces each, as many as the cube has.
+	 * @return True when the levels fit the cube.
+	 */
+	auto setLevels(const TextureLevels& iLevels) -> bool override;
+
+private:
+	/**
+	 * @brief
+	 *  Upload the six faces of one level.
+	 * @param[in] iLevel The level.
+	 * @param[in] iFaces The faces, one after the other.
+	 */
+	void uploadLevel(uint32_t iLevel, std::span<const uint8_t> iFaces) const;
+
+	/// OpenGL texture name.
+	uint32_t m_textureId = 0;
 };
 }// namespace owl::renderer::gpu::opengl

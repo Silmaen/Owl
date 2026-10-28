@@ -16,9 +16,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <span>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace owl::renderer::gpu::vulkan {
@@ -60,6 +62,8 @@ public:
 		uint32_t count = 1;
 		/// Shader stages the binding is visible to.
 		VkShaderStageFlags stages = VK_SHADER_STAGE_VERTEX_BIT;
+		/// True for the array of cube samplers (filled by `setCubeTextures`, padded with a black cube).
+		bool cube = false;
 	};
 
 	RendererDescriptors(const RendererDescriptors&) = delete;
@@ -161,6 +165,13 @@ public:
 	 * @param[in] iTextureId Registry id of the texture.
 	 */
 	void textureBind(uint32_t iSlot, uint32_t iTextureId);
+
+	/**
+	 * @brief
+	 *  Replace the sampled cubes of the block: cube slot `i` samples `iTextureIds[i]`, the other slots a black cube.
+	 * @param[in] iTextureIds Registry ids (`TextureCube::getTextureId`) in slot order; 0 is the black cube.
+	 */
+	void setCubeTextures(std::span<const uint32_t> iTextureIds);
 
 	/**
 	 * @brief
@@ -271,6 +282,8 @@ private:
 	uint32_t m_textureArrayBinding = std::numeric_limits<uint32_t>::max();
 	/// Slot count of the texture array.
 	uint32_t m_textureArrayCount = 0;
+	/// Binding of the cube array (if any) — set from m_bindings.
+	uint32_t m_cubeArrayBinding = std::numeric_limits<uint32_t>::max();
 	/// Descriptor set layout for this renderer.
 	VkDescriptorSetLayout m_layout{nullptr};
 	/// Per-frame ring handing a distinct descriptor set to every draw.
@@ -283,6 +296,8 @@ private:
 	std::vector<VkDescriptorImageInfo> m_imageInfos;
 	/// Scratch writes of a set write.
 	std::vector<VkWriteDescriptorSet> m_writes;
+	/// Scratch (write index, first image info) of the texture arrays of a set write.
+	std::vector<std::pair<size_t, size_t>> m_imageRanges;
 	/// Registered UBO bindings keyed by binding slot.
 	std::unordered_map<uint32_t, UboBinding> m_uniformBindings;
 	/// Registered SSBO bindings keyed by binding slot.
@@ -295,6 +310,8 @@ private:
 	 *  texture array) is per-renderer.
 	 */
 	std::vector<uint32_t> m_textureBind;
+	/// Cube-bind list, ids in the global texture table, in slot order of the cube array.
+	std::vector<uint32_t> m_cubeBind;
 	/// True when the bind state or a uniform block changed since the current set was written.
 	bool m_dirty = true;
 
@@ -323,12 +340,15 @@ private:
 
 	/**
 	 * @brief
-	 *  Image infos for the texture array: the bound textures in order, padded up to the array size
-	 *  with the default white texture (also used for any unloaded texture).
+	 *  Image infos for a texture array: the bound textures in order, padded up to the array size
+	 *  with the default texture (also used for any unloaded texture), appended to `m_imageInfos`.
+	 * @param[in] iBind The bound texture ids.
+	 * @param[in] iFallback The default texture.
 	 * @param[in] iCount Number of slots of the texture array.
-	 * @return False when the default texture is missing (nothing collected into `m_imageInfos`).
+	 * @return Index in `m_imageInfos` of the first info, or no value when the default texture is missing.
 	 */
-	auto collectImageInfos(uint32_t iCount) -> bool;
+	auto collectImageInfos(std::span<const uint32_t> iBind, const TextureData& iFallback, uint32_t iCount)
+			-> std::optional<size_t>;
 };
 
 }// namespace owl::renderer::gpu::vulkan::internal
