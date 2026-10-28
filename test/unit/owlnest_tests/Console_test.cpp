@@ -11,8 +11,10 @@
 #include "nestTestHelper.h"
 #include "session/Console.h"
 #include "session/HeadlessSession.h"
+#include "session/LuaConsole.h"
 
 #include <app/Application.h>
+#include <platform/AtomicFile.h>
 #include <scene/Entity.h>
 #include <scene/component/CircleRenderer.h>
 
@@ -193,4 +195,65 @@ TEST_F(ConsoleTest, HeadlessReplayOfAMacroFile) {
 	EXPECT_EQ(session.getJournal().getEntries().back().source, commands::CommandSource::Mcp);
 	ASSERT_TRUE(session.replay(macro, "Macro again").has_value());
 	EXPECT_EQ(scene.getAllEntities().size(), before + 1);
+}
+
+TEST_F(ConsoleTest, LuaLinesRunTheCommandsThroughTheEditorModule) {
+	OWL_REQUIRE_MODULE(SCRIPT);
+	HeadlessSession session;
+	session.newScene();
+	Console commands{session};
+	LuaConsole lua{session, commands};
+	const auto created = lua.submit(R"(tree = editor.entity.create{name = "Tree"})");
+	ASSERT_FALSE(created.empty());
+	EXPECT_EQ(created.front().kind, ConsoleLineKind::Input);
+	EXPECT_EQ(last(lua.submit("tree.entity ~= nil")).text, "true");
+	EXPECT_EQ(session.getJournal().filter(commands::CommandSource::Script).size(), 1u);
+	const auto refused = last(lua.submit(R"(editor.entity.rename{entity = "Nobody", name = "X"})"));
+	EXPECT_EQ(refused.kind, ConsoleLineKind::Error);
+	EXPECT_EQ(last(lua.submit(R"(editor.entity.create{nope = 1})")).kind, ConsoleLineKind::Error);
+	EXPECT_EQ(last(lua.submit("for i = 1, 2 do")).kind, ConsoleLineKind::Input);
+	EXPECT_TRUE(lua.hasPending());
+	std::ignore = lua.submit(R"(editor.entity.create{name = "Rock" .. i})");
+	std::ignore = lua.submit("end");
+	EXPECT_FALSE(lua.hasPending());
+	EXPECT_EQ(session.getSessionScene()->getAllEntities().size(), 3u);
+	const auto command = lua.submit(R"(entity.create name="Bush")");
+	EXPECT_EQ(command.back().kind, ConsoleLineKind::Result) << command.back().text;
+	EXPECT_FALSE(last(lua.submit("help(editor.entity)")).text.empty());
+}
+
+TEST_F(ConsoleTest, AnEditorScriptIsOneUndoStep) {
+	OWL_REQUIRE_MODULE(SCRIPT);
+	HeadlessSession session;
+	session.newScene();
+	Console commands{session};
+	LuaConsole lua{session, commands};
+	const auto dir = std::filesystem::temp_directory_path() / "owl_editor_scripts";
+	std::filesystem::create_directories(dir / "editor");
+	const auto script = dir / "editor" / "forest.lua";
+	ASSERT_TRUE(platform::writeFileAtomic(
+			script, "for i = 1, 3 do editor.entity.create{name = 'Tree' .. i} end\nprint('planted')\n"));
+	const auto output = lua.runScript(script);
+	EXPECT_EQ(output.back().text, "planted");
+	EXPECT_EQ(session.getSessionScene()->getAllEntities().size(), 3u);
+	ASSERT_EQ(last(commands.submit("edit.undo")).kind, ConsoleLineKind::Result);
+	EXPECT_TRUE(session.getSessionScene()->getAllEntities().empty());
+
+	const auto broken = dir / "editor" / "broken.lua";
+	ASSERT_TRUE(platform::writeFileAtomic(broken, "editor.entity.create{name = 'A'}\nerror('stop')\n"));
+	EXPECT_EQ(lua.runScript(broken).back().kind, ConsoleLineKind::Error);
+	EXPECT_TRUE(session.getSessionScene()->getAllEntities().empty());
+	EXPECT_EQ(LuaConsole::listEditorScripts({dir}), (std::vector{broken, script}));
+	std::filesystem::remove_all(dir);
+}
+
+TEST_F(ConsoleTest, AMacroBecomesAnEditorScript) {
+	HeadlessSession session;
+	const auto lua = LuaConsole::macroToLua(
+			{"# plant", R"(entity.create name="Tree")", "entity.create name=Leaf parent=$1", "", "no.such"},
+			session.getRegistry());
+	EXPECT_TRUE(lua.contains("-- plant"));
+	EXPECT_TRUE(lua.contains(R"(editor.entity.create{name = "Tree"})")) << lua;
+	EXPECT_TRUE(lua.contains("-- not translated: entity.create name=Leaf parent=$1"));
+	EXPECT_TRUE(lua.contains("-- not translated: no.such"));
 }

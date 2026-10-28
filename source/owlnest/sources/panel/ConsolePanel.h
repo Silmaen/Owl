@@ -9,11 +9,14 @@
 #pragma once
 
 #include "../session/Console.h"
+#include "../session/LuaConsole.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace owl::nest::panel {
@@ -67,6 +70,20 @@ public:
 	 */
 	[[nodiscard]] auto getConsole() const -> const session::Console& { return m_console; }
 
+	/**
+	 * @brief
+	 *  Run an editor script and print its output in the console.
+	 * @param[in] iPath Path of the `.lua` on disk.
+	 */
+	void runEditorScript(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  Print a line in the console.
+	 * @param[in] iOutput The line.
+	 */
+	void print(session::ConsoleOutput iOutput) { addItem({.journalIndex = 0, .output = std::move(iOutput)}); }
+
 private:
 	/**
 	 * @brief
@@ -107,6 +124,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the menu of the editor scripts of the project.
+	 */
+	void renderScriptsMenu();
+
+	/**
+	 * @brief
 	 *  Draw the input line.
 	 */
 	void renderInput();
@@ -121,6 +144,10 @@ private:
 	session::EditorSession& m_session;
 	/// Parser, history and completion.
 	session::Console m_console;
+	/// Lua evaluator and editor scripts.
+	session::LuaConsole m_lua{m_session, m_console};
+	/// Whether the input line is Lua.
+	bool m_luaMode{false};
 	/// Lines of the view.
 	std::vector<Item> m_items;
 	/// Last journal entry appended to the view.

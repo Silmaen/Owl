@@ -10,6 +10,7 @@
 
 #include "AssetKind.h"
 #include "EditorResources.h"
+#include "commands/Macro.h"
 #include "document/ActionMapDocument.h"
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
@@ -663,6 +664,24 @@ void EditorLayer::onAttach() {
 	});
 	m_contentBrowser.setMacroRunCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
+	});
+	m_contentBrowser.setEditorScriptRunCallback(
+			[this](const std::filesystem::path& iPath) -> void { m_consolePanel.runEditorScript(iPath); });
+	m_contentBrowser.setMacroExportCallback([this](const std::filesystem::path& iPath) -> void {
+		const auto macro = commands::Macro::load(iPath);
+		if (!macro) {
+			m_toasts.push(gui::widgets::ToastKind::Error, "Export to Lua failed", macro.error().message);
+			return;
+		}
+		auto target = iPath;
+		target.replace_extension(".lua");
+		for (uint32_t counter = 2; exists(target); ++counter)
+			target = iPath.parent_path() / std::format("{}_{}.lua", iPath.stem().string(), counter);
+		if (!platform::writeFileAtomic(target, session::LuaConsole::macroToLua(macro->getLines(), m_commands))) {
+			m_toasts.push(gui::widgets::ToastKind::Error, "Export to Lua failed", target.string());
+			return;
+		}
+		openAssetFile(target);
 	});
 	m_contentBrowser.setCommandCallback([this](const std::string& iName, const commands::CommandArgs& iArgs) -> bool {
 		const auto result = execute(iName, iArgs, commands::CommandSource::Gesture);

@@ -748,6 +748,13 @@ void ContentBrowser::renderContextMenu() {
 		if (m_selectedPath.extension() == ".owlmacro" && m_codeOpenCallback &&
 			gui::widgets::menuItem({.glyph = gui::icon::fileCode2, .label = "Edit as Text"}))
 			m_codeOpenCallback(m_selectedPath);
+		if (m_selectedPath.extension() == ".owlmacro" && m_macroExportCallback &&
+			gui::widgets::menuItem({.glyph = gui::icon::code, .label = "Export to Lua"}))
+			m_macroExportCallback(m_selectedPath);
+		if (m_selectedPath.extension() == ".lua" && m_editorScriptRunCallback &&
+			std::ranges::contains(m_selectedPath.parent_path(), std::filesystem::path{"editor"}) &&
+			gui::widgets::menuItem({.glyph = gui::icon::play, .label = "Run as Editor Script"}))
+			m_editorScriptRunCallback(m_selectedPath);
 		if (!isDir && data::assets::importerOf(m_selectedPath) == data::assets::Importer::Texture &&
 			m_importSettingsCallback &&
 			gui::widgets::menuItem({.glyph = gui::icon::slidersHorizontal, .label = "Import Settings"}))
