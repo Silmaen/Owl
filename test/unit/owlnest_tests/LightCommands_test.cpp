@@ -57,7 +57,9 @@ TEST_F(LightCommandTest, EachTypeCreatesALightEntityAndUndoes) {
 	using Type = scene::component::Light::Type;
 	for (const auto& [kind, wanted]:
 		 {std::pair<std::string, Type>{"Directional", Type::Directional},
-		  std::pair<std::string, Type>{"Point", Type::Point}, std::pair<std::string, Type>{"Spot", Type::Spot}}) {
+		  std::pair<std::string, Type>{"Point", Type::Point}, std::pair<std::string, Type>{"Spot", Type::Spot},
+		  std::pair<std::string, Type>{"Rectangle", Type::Rectangle}, std::pair<std::string, Type>{"Disc", Type::Disc},
+		  std::pair<std::string, Type>{"Sphere", Type::Sphere}}) {
 		const auto result = run("entity.create_light", {{"type", kind}});
 		ASSERT_TRUE(result) << result.error().message;
 		auto entity = m_scene->findEntityByUUID(result->entity);
@@ -83,6 +85,17 @@ TEST_F(LightCommandTest, ADirectionalLightPointsDown) {
 	// -Z of the world transform, the direction the light shines along, goes down.
 	const auto world = m_scene->getWorldTransform(entity)();
 	EXPECT_LT((world * math::vec4{0.f, 0.f, -1.f, 0.f}).y(), -0.5f);
+}
+
+TEST_F(LightCommandTest, RectangleAndDiscLightsFaceDown) {
+	for (const auto* kind: {"Rectangle", "Disc"}) {
+		const auto result = run("entity.create_light", {{"type", std::string{kind}}});
+		ASSERT_TRUE(result) << result.error().message;
+		const auto entity = m_scene->findEntityByUUID(result->entity);
+		ASSERT_TRUE(entity);
+		const auto world = m_scene->getWorldTransform(entity)();
+		EXPECT_LT((world * math::vec4{0.f, 0.f, -1.f, 0.f}).y(), -0.99f) << kind;
+	}
 }
 
 TEST_F(LightCommandTest, NameAndParentAreHonoured) {

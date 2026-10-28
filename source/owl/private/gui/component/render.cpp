@@ -1239,7 +1239,8 @@ void renderProps(Light& ioComponent) {
 	const auto previousType = ioComponent.type;
 	resettable("Type", ioComponent.type, defaults.type, drawEnum<Light::Type>);
 	fieldTooltip("Directional: parallel rays like the sun. Point: radiates from its position. Spot: a point light "
-				 "restricted to a cone. It shines along -Z of the entity.");
+				 "restricted to a cone. Rectangle and Disc: a panel emitting from its -Z face, soft highlights and "
+				 "shadows. Sphere: a bulb of a given radius. It shines along -Z of the entity.");
 	const bool directional = ioComponent.type == Light::Type::Directional;
 	const float defaultIntensity = directional ? g_defaultSunIlluminance : g_defaultBulbPower;
 	// Switching between lux and lumens keeps a default value a default value of the new unit.
@@ -1262,6 +1263,22 @@ void renderProps(Light& ioComponent) {
 					 "with the square of the distance.");
 		resetFloat("Range", ioComponent.range, defaults.range, 0.1f, 0.01f, 100000.0f);
 		fieldTooltip("Distance where the light is cut off smoothly, in world units (metres).");
+	}
+	if (ioComponent.type == Light::Type::Rectangle) {
+		resettable("Size", ioComponent.size, defaults.size, [](const char* iId, math::vec2& ioField) -> bool {
+			if (!prop::DragFloat2(iId, &ioField.x(), 0.01f, g_minAreaSize, 1000.f))
+				return false;
+			ioField = {std::max(ioField.x(), g_minAreaSize), std::max(ioField.y(), g_minAreaSize)};
+			return true;
+		});
+		fieldTooltip(
+				"Width (along X) and height (along Y) of the emitting rectangle, in world units: the power spreads "
+				"over it, a larger panel gives softer highlights and shadows.");
+	}
+	if (ioComponent.type == Light::Type::Disc || ioComponent.type == Light::Type::Sphere) {
+		resetFloat("Radius", ioComponent.radius, defaults.radius, 0.005f, g_minAreaSize, 1000.f);
+		fieldTooltip("Radius of the emitting disc or sphere, in world units: larger gives softer highlights and "
+					 "shadows.");
 	}
 	if (ioComponent.type == Light::Type::Spot) {
 		constexpr float maxAngle = 89.f;
@@ -1287,8 +1304,9 @@ void renderProps(Light& ioComponent) {
 	}
 	resetCheckbox("Cast Shadows", ioComponent.castShadows, defaults.castShadows);
 	fieldTooltip(directional ? "The first shadow-casting directional light of the scene shadows the 3D layers."
-							 : "Point and spot lights nearest to the camera cast shadows, within a budget per frame "
-							   "(4 of each on OpenGL, 16 on Vulkan); the others light without shadow.");
+							 : "Point, spot and area lights nearest to the camera cast shadows, within a budget per "
+							   "frame (4 spots and 4 cubes on OpenGL, 16 of each on Vulkan); the others light without "
+							   "shadow. An area light casts through a cube, softened by its size.");
 	if (!ioComponent.castShadows)
 		return;
 	if (directional) {
@@ -1322,7 +1340,8 @@ void renderProps(Light& ioComponent) {
 				   return changed;
 			   });
 	fieldTooltip(directional ? "Size of each cascade's shadow map, in texels."
-							 : "Size of the shadow map (spot) or of each face of the shadow cube (point), in texels.");
+							 : "Size of the shadow map (spot) or of each face of the shadow cube (point and area "
+							   "lights), in texels.");
 	resetFloat("Bias", ioComponent.shadowBias, defaults.shadowBias, 0.05f, 0.0f, 20.0f);
 	fieldTooltip("Depth bias against self-shadowing, in shadow-map texels along the surface normal.");
 }

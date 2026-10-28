@@ -171,6 +171,12 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 				return {gui::icon::lightbulb, colour};
 			case Light::Type::Spot:
 				return {gui::icon::flashlight, colour};
+			case Light::Type::Rectangle:
+				return {gui::icon::square, colour};
+			case Light::Type::Disc:
+				return {gui::icon::circleDot, colour};
+			case Light::Type::Sphere:
+				return {gui::icon::globe, colour};
 		}
 	}
 	if (iEntity.hasComponent<Light2D>()) {
@@ -242,8 +248,10 @@ auto kindColor(const uint32_t iHex) -> math::vec4 {
 void drawCreateLightMenu(const auto& iTarget, const std::optional<commands::ArgValue>& iParent) {
 	if (!ImGui::BeginMenu("Light"))
 		return;
-	for (const auto& [kind, glyph]: {std::pair{"Directional", gui::icon::sun}, std::pair{"Point", gui::icon::lightbulb},
-									 std::pair{"Spot", gui::icon::flashlight}}) {
+	for (const auto& [kind, glyph]:
+		 {std::pair{"Directional", gui::icon::sun}, std::pair{"Point", gui::icon::lightbulb},
+		  std::pair{"Spot", gui::icon::flashlight}, std::pair{"Rectangle", gui::icon::square},
+		  std::pair{"Disc", gui::icon::circleDot}, std::pair{"Sphere", gui::icon::globe}}) {
 		if (!gui::widgets::menuItem({.glyph = glyph, .label = kind}))
 			continue;
 		const commands::CommandArgs args =

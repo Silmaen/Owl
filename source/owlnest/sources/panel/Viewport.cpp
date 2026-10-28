@@ -2434,6 +2434,20 @@ void drawLightCircle(const math::vec3& iCenter, const math::vec3& iU, const math
 	}
 }
 
+// Draw a sphere as its three great circles in the world axis planes.
+void drawLightRange(const math::vec3& iCenter, const float iRadius, const math::vec4& iColor, const int iEntityId) {
+	drawLightCircle(iCenter, {1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, iRadius, iColor, iEntityId);
+	drawLightCircle(iCenter, {1.f, 0.f, 0.f}, {0.f, 0.f, 1.f}, iRadius, iColor, iEntityId);
+	drawLightCircle(iCenter, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, iRadius, iColor, iEntityId);
+}
+
+// Unit X axis of the world transform of a light entity (the width of a rectangle light).
+auto lightAxis(const shared<scene::Scene>& iScene, const scene::Entity& iEntity) -> math::vec3 {
+	const math::vec4 axis = iScene->getWorldTransform(iEntity)() * math::vec4{1.f, 0.f, 0.f, 0.f};
+	const math::vec3 result{axis.x(), axis.y(), axis.z()};
+	return result.normSq() > 1e-12f ? result.normalized() : math::vec3{1.f, 0.f, 0.f};
+}
+
 // Draw an arrow from a point along a unit direction, its head a cone of four lines.
 void drawLightArrow(const math::vec3& iStart, const math::vec3& iDirection, const float iLength, const math::vec3& iU,
 					const math::vec3& iV, const float iHead, const math::vec4& iColor, const int iEntityId) {
@@ -2494,9 +2508,7 @@ void Viewport::renderLightMarkers(const shared<scene::Scene>& iScene) const {
 					// A bulb sprite facing the camera, lit or switched off; selected, the range sphere.
 					drawLightBulb(position, radius * 2.4f, light.enabled, id);
 					if (isSelected) {
-						drawLightCircle(position, {1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, light.range, color, id);
-						drawLightCircle(position, {1.f, 0.f, 0.f}, {0.f, 0.f, 1.f}, light.range, color, id);
-						drawLightCircle(position, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}, light.range, color, id);
+						drawLightRange(position, light.range, color, id);
 					}
 					break;
 				}
@@ -2518,6 +2530,40 @@ void Viewport::renderLightMarkers(const shared<scene::Scene>& iScene) const {
 															.color = coneColor,
 															.entityId = id});
 					}
+					break;
+				}
+			case LightType::Rectangle:
+				{
+					// The emitting rectangle in the XY plane of the entity and the arrow of its face; selected, the range.
+					const math::vec3 width = lightAxis(iScene, ent) * (0.5f * light.size.x());
+					const math::vec3 height = (width.normalized() ^ direction) * (0.5f * light.size.y());
+					const std::array corners{position + width + height, position - width + height,
+											 position - width - height, position + width - height};
+					for (size_t corner = 0; corner < corners.size(); ++corner)
+						renderer::Renderer2D::drawLine({.point1 = corners[corner],
+														.point2 = corners[(corner + 1) % corners.size()],
+														.color = color,
+														.entityId = id});
+					drawLightArrow(position, direction, radius * 4.f, u, v, radius * 0.4f, color, id);
+					if (isSelected)
+						drawLightRange(position, light.range, dim, id);
+					break;
+				}
+			case LightType::Disc:
+				{
+					// The emitting disc and the arrow of its face; selected, the range.
+					drawLightCircle(position, u, v, light.radius, color, id);
+					drawLightArrow(position, direction, radius * 4.f, u, v, radius * 0.4f, color, id);
+					if (isSelected)
+						drawLightRange(position, light.range, dim, id);
+					break;
+				}
+			case LightType::Sphere:
+				{
+					// The emitting sphere; selected, the range.
+					drawLightRange(position, light.radius, color, id);
+					if (isSelected)
+						drawLightRange(position, light.range, dim, id);
 					break;
 				}
 		}

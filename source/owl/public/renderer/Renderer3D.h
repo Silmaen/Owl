@@ -55,11 +55,19 @@ struct Mesh3DVertex {
  *  A light as the 3D shaders read it (one element of the light storage buffer, std430).
  */
 struct GpuLight {
-	/// xyz: world position (point, spot); w: range.
+	/// xyz: world position (point, spot, centre of an area light); w: range.
 	math::vec4 positionRange{0.f, 0.f, 0.f, 10.f};
-	/// xyz: direction the light travels, normalized (directional, spot); w: type (0 directional, 1 point, 2 spot).
+	/**
+	 * @brief
+	 *  xyz: direction the light travels, normalized (directional, spot, rectangle, disc); w: type (0 directional,
+	 *  1 point, 2 spot, 3 rectangle, 4 disc, 5 sphere).
+	 */
 	math::vec4 directionType{0.f, -1.f, 0.f, 0.f};
-	/// rgb: linear colour times intensity; w unused.
+	/**
+	 * @brief
+	 *  rgb: linear colour times the strength: illuminance (directional), luminous intensity (point, spot, sphere) or
+	 *  luminance (rectangle, disc); w unused.
+	 */
 	math::vec4 color{1.f, 1.f, 1.f, 0.f};
 	/**
 	 * @brief
@@ -67,6 +75,12 @@ struct GpuLight {
 	 *  renderer from `setLocalShadows`); w: angular radius of a directional light, in radians.
 	 */
 	math::vec4 spotCosines{1.f, 0.f, -1.f, 0.f};
+	/**
+	 * @brief
+	 *  xyz: half width axis of a rectangle, first half axis of a disc, in world units; w: half height of a rectangle,
+	 *  radius of a disc or a sphere (the second half axis is perpendicular to the first and to the direction).
+	 */
+	math::vec4 area{0.f, 0.f, 0.f, 0.f};
 };
 
 /**
@@ -140,6 +154,8 @@ struct PointShadow {
 	uint32_t resolution = 512;
 	/// Normal-offset bias, in texels.
 	float bias = 1.5f;
+	/// Radius of the emitting surface of an area light, in world units: its shadow softens with it (0 hard).
+	float lightSize = 0.f;
 };
 
 /**

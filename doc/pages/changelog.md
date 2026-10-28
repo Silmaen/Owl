@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `gpu::TextureCube` on OpenGL, Vulkan and Null, filled from memory or a render target (`Framebuffer::copyAttachmentToCube`).
 - `Light.angularRadius`: a directional light of apparent size casts soft shadows (PCSS), widens its highlight and sizes the sun disc of a `DayNightCycle` sky.
 - Point and spot light shadows: a cube per point light, a perspective map per spot light, the nearest to the camera within 4 of each on OpenGL and 16 on Vulkan.
+- Area lights: `Light` types `Rectangle` and `Disc` shaded through linearly transformed cosines, `Sphere` through a representative point, with soft cube shadows (PCSS) and their Owl Nest markers.
 
 ### Changed
 

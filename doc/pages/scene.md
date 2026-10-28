@@ -301,26 +301,30 @@ slot's material is shared through the `MaterialLibrary` ([Renderer > Materials](
 
 #### Light {#light-component}
 
-| Field              | Type    | Default          | Description                                                                                               |
-|--------------------|---------|------------------|-----------------------------------------------------------------------------------------------------------|
-| `type`             | `Type`  | `Directional`    | `Directional`, `Point` or `Spot`                                                                          |
-| `enabled`          | `bool`  | `true`           | Whether the light shines; switched off it keeps its settings                                              |
-| `color`            | `vec3`  | `{1, 1, 1}`      | Colour, sRGB as authored                                                                                  |
-| `intensity`        | `float` | `100000` / `800` | Directional: illuminance in lux (default 100 000). Point and spot: luminous power in lumens (default 800) |
-| `range`            | `float` | `10`             | Distance where a point or spot light reaches zero                                                         |
-| `innerAngle`       | `float` | 20 degrees       | Half angle of the full-intensity spot cone (radians in YAML)                                              |
-| `outerAngle`       | `float` | 30 degrees       | Half angle where the spot reaches zero (radians in YAML)                                                  |
-| `castShadows`      | `bool`  | `true`           | First directional light: cascades; point and spot lights: the nearest to the camera, within a budget      |
-| `shadowDistance`   | `float` | `60`             | Directional only: distance from the camera the shadows cover                                              |
-| `cascadeCount`     | `uint`  | `4`              | Directional only: number of shadow cascades, 1 to 4                                                       |
-| `shadowResolution` | `uint`  | `1024`           | Texels of each cascade, of a spot map or of each face of a point cube, 256 to 4096                        |
-| `shadowBias`       | `float` | `1.5`            | Normal-offset bias, in shadow-map texels                                                                  |
-| `angularRadius`    | `float` | `0`              | Directional only: apparent radius in radians (sun 0.0047), soft shadows (PCSS) and a wider highlight      |
+| Field              | Type    | Default          | Description                                                                                            |
+|--------------------|---------|------------------|--------------------------------------------------------------------------------------------------------|
+| `type`             | `Type`  | `Directional`    | `Directional`, `Point`, `Spot`, `Rectangle`, `Disc` or `Sphere`                                        |
+| `enabled`          | `bool`  | `true`           | Whether the light shines; switched off it keeps its settings                                           |
+| `color`            | `vec3`  | `{1, 1, 1}`      | Colour, sRGB as authored                                                                               |
+| `intensity`        | `float` | `100000` / `800` | Directional: illuminance in lux (default 100 000). Other types: luminous power in lumens (default 800) |
+| `range`            | `float` | `10`             | Distance where a point, spot or area light reaches zero                                                |
+| `size`             | `vec2`  | `{1, 1}`         | Rectangle: width (along X) and height (along Y), at least 0.001                                        |
+| `radius`           | `float` | `0.1`            | Disc and sphere: radius, at least 0.001                                                                |
+| `innerAngle`       | `float` | 20 degrees       | Half angle of the full-intensity spot cone (radians in YAML)                                           |
+| `outerAngle`       | `float` | 30 degrees       | Half angle where the spot reaches zero (radians in YAML)                                               |
+| `castShadows`      | `bool`  | `true`           | First directional light: cascades; the other lights: the nearest to the camera, within a budget        |
+| `shadowDistance`   | `float` | `60`             | Directional only: distance from the camera the shadows cover                                           |
+| `cascadeCount`     | `uint`  | `4`              | Directional only: number of shadow cascades, 1 to 4                                                    |
+| `shadowResolution` | `uint`  | `1024`           | Texels of each cascade, of a spot map or of each face of a point or area cube, 256 to 4096             |
+| `shadowBias`       | `float` | `1.5`            | Normal-offset bias, in shadow-map texels                                                               |
+| `angularRadius`    | `float` | `0`              | Directional only: apparent radius in radians (sun 0.0047), soft shadows (PCSS) and a wider highlight   |
 
 YAML key: `Light`. `intensity` is in physical units (sun 100 000 lx, overcast 10 000, moon 0.25; candle 12 lm,
-60 W bulb 800, fireplace 2 000); point and spot lights fall off with 1/d² and are cut off smoothly at `range`, and the
-camera `ev100` brings the values back to the displayable range. Shines along -Z of the entity's world transform; a point light ignores the rotation and a
-directional light the position. Lights the 3D layers only (`MeshRenderer` meshes, voxel worlds), up to 64 per frame;
+60 W bulb 800, fireplace 2 000); point, spot and sphere lights fall off with 1/d², every local light is cut off
+smoothly at `range`, and the camera `ev100` brings the values back to the displayable range. Shines along -Z of the
+entity's world transform; a point or sphere light ignores the rotation and a directional light the position. A
+rectangle spans the X and Y axes of the entity and a disc lies in its XY plane, both emitting from their -Z face only
+and spreading the power over their area. Lights the 3D layers only (`MeshRenderer` meshes, voxel worlds), up to 64 per frame;
 the sun of the layer config lights only a scene without any `Light` component (none once the scene has one, even switched off), the ambient comes from the `Environment` or the layer config. See
 [Renderer > Lights and shadows](renderer.md#renderer-lights). Lua: `entity.set_light_color` / `get_light_color`,
 `entity.set_light_intensity` / `get_light_intensity`, `entity.set_light_enabled` / `is_light_enabled`,

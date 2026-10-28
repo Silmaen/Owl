@@ -348,6 +348,12 @@ auto createLight(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) 
 		type = LightType::Point;
 	else if (kind == "Spot")
 		type = LightType::Spot;
+	else if (kind == "Rectangle")
+		type = LightType::Rectangle;
+	else if (kind == "Disc")
+		type = LightType::Disc;
+	else if (kind == "Sphere")
+		type = LightType::Sphere;
 	if (!type)
 		return fail(CommandError::InvalidArgument, std::format("`{}` is not a light type", kind));
 	constexpr float degree = std::numbers::pi_v<float> / 180.f;
@@ -367,7 +373,7 @@ auto createLight(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) 
 	// A sun starts tilted down, so that it lights a default scene.
 	if (*type == LightType::Directional)
 		transform.rotation() = {-50.f * degree, 30.f * degree, 0.f};
-	else if (*type == LightType::Spot)
+	else if (*type == LightType::Spot || *type == LightType::Rectangle || *type == LightType::Disc)
 		transform.rotation() = {-90.f * degree, 0.f, 0.f};
 	entity.addComponent<scene::component::Light>().type = *type;
 	if (parent)
@@ -1020,13 +1026,13 @@ CommandRegistry::CommandRegistry() {
 		 .run = createMaterial,
 		 .allowedInPlay = true});
 	add({.name = "entity.create_light",
-		 .description = "Create an entity with a `Light`: a directional light (sun) tilted down, or a point or spot "
-						"light above the origin.",
+		 .description = "Create an entity with a `Light`: a directional light (sun) tilted down, or a point, spot, "
+						"rectangle, disc or sphere light above the origin (spot, rectangle and disc facing down).",
 		 .args = {{.name = "type",
 				   .type = ArgType::Enum,
 				   .required = true,
 				   .description = "Kind of light.",
-				   .choices = {"Directional", "Point", "Spot"}},
+				   .choices = {"Directional", "Point", "Spot", "Rectangle", "Disc", "Sphere"}},
 				  {.name = "name",
 				   .type = ArgType::Text,
 				   .description = "Tag of the entity (`<Type> Light` when absent)."},

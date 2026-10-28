@@ -290,7 +290,8 @@ The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` component
   (`Ambient` colour times `AmbientLuminance`), as a constant sky.
 - **Physical units.** `Light.intensity` is an illuminance in lux for a directional light (`g_defaultSunIlluminance`,
   100 000) and a luminous power in lumens for a point or spot light (`g_defaultBulbPower`, 800); the shader turns the
-  power into an intensity in candela, lm / 4π for a point light and lm / π for a spot. Reference values: sun
+  power into an intensity in candela, lm / 4π for a point or sphere light and lm / π for a spot, and into a
+  luminance for a rectangle or disc ([Area lights](#renderer-lights)). Reference values: sun
   100 000 lx, overcast sky 10 000 lx, moon 0.25 lx; candle 12 lm, 60 W bulb 800 lm, fireplace 2 000 lm. The
   `Environment` and the emissive surfaces are luminances in cd/m² (nits), see [Image-based lighting](#renderer-ibl) and
   [Materials](#renderer-materials).
@@ -314,7 +315,7 @@ The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` component
   taps filter it; the disc turns with the shadow-map texel, so the noise stays still in the world. The same radius
   widens the GGX distribution of that light and renormalises it (Karis), so a rough sun highlight grows without
   gaining energy. At 0, the 3x3 path and the point-like highlight are unchanged.
-- **Local shadows.** Point and spot lights with `castShadows` are ranked by distance from the camera to the sphere
+- **Local shadows.** Point, spot and area lights with `castShadows` are ranked by distance from the camera to the sphere
   they reach, then by strength (`renderer::rankShadowCandidates`); the first ones within `getLocalShadowBudget()` cast
   (4 spot and 4 point lights on OpenGL, whose fragment shaders sample 32 textures at most; 16 of each on Vulkan), the
   others light without shadow. A `spot shadow` pass draws the casters into a perspective map covering the outer cone
@@ -325,6 +326,17 @@ The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` component
   (`depth.x + depth.y / d`), take 3x3 taps around the direction and offset the point along its normal by `shadowBias`
   texels of the map at its distance (`Renderer3D::setLocalShadows`, `LocalShadow` table of the lighting block, entry
   in `GpuLight::spotCosines.z`).
+- **Area lights.** A `Rectangle` or `Disc` light is a luminance (`getRectangleLuminance`, `getDiscLuminance`: the
+  power over π times the area) integrated over its face by linearly transformed cosines: the shader turns the GGX lobe
+  into a clamped cosine through the inverse matrix of `getLtcTable()` (texture slot 14, fitted once by
+  `computeLtcTable` and stored in the engine), sums the edge integrals of the polygon (a disc is a 12-sided polygon of
+  the same area) into a vector form factor and clips it by the horizon through `computeClippedSphereTable` (slot 15);
+  the diffuse lobe takes the same path with the identity matrix, the base layer only (no sheen, clearcoat nor
+  anisotropy). Both emit from their -Z face (`GpuLight::area` holds the half axes). A `Sphere` light is a point light
+  whose highlight comes from the point of the sphere nearest to the reflected ray, its distribution widened by its
+  apparent radius (Karis). Area lights cast through a cube like point lights, with PCSS: 16 taps towards the emitting
+  surface find the blockers, the penumbra `lightSize (receiver - blocker) / blocker` (half diagonal or radius, at
+  most 16 texels) sets the width of the 16 filtering taps.
 
 ### 2D lighting {#renderer-lighting2d}
 

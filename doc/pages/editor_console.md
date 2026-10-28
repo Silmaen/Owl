@@ -86,7 +86,7 @@ A refused command changes nothing and logs why (a bad argument, an edit during P
 | `entity.reparent`          | `entity`, `parent` (root when absent); the world position is kept                                      |
 | `entity.rename`            | `entity`, `name`                                                                                       |
 | `entity.set_transform`     | `entity`, `translation` / `rotation` (radians) / `scale`                                               |
-| `entity.create_light`      | `type` (`Directional`, `Point`, `Spot`), `name`, `translation`, `parent`                               |
+| `entity.create_light`      | `type` (`Directional`, `Point`, `Spot`, `Rectangle`, `Disc`, `Sphere`), `name`, `translation`, `parent` |
 | `entity.create_light2d`    | `type` (`Ambient`, `Point`, `Spot`), `name`, `translation`, `parent`                                   |
 | `component.add`            | `entity`, `component` (display name `Circle Renderer` or file key)                                     |
 | `component.remove`         | `entity`, `component`                                                                                  |

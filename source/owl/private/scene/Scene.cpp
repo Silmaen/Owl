@@ -12,6 +12,7 @@
 #include "data/voxel/TerrainGenerator.h"
 #include "math/Frustum.h"
 #include "platform/FileUtils.h"
+#include "renderer/AreaLights.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/ClipSpace.h"
@@ -1025,6 +1026,43 @@ auto Scene::getRenderTarget(const std::string& iName) const -> shared<renderer::
 	return nullptr;
 }
 
+namespace {
+
+// Strength the shaders read for a light (lux, candela or nits) and the shape of an area light (`GpuLight::area`).
+auto lightEmission(const component::Light& iLight, const math::Transform& iWorld) -> std::pair<float, math::vec4> {
+	using Type = component::Light::Type;
+	const float power = std::max(iLight.intensity, 0.f);
+	const math::vec4 axis4 = iWorld() * math::vec4{1.f, 0.f, 0.f, 0.f};
+	math::vec3 axis{axis4.x(), axis4.y(), axis4.z()};
+	axis = axis.normSq() > 1e-12f ? axis.normalized() : math::vec3{1.f, 0.f, 0.f};
+	const float radius = std::max(iLight.radius, component::g_minAreaSize);
+	const math::vec2 size{std::max(iLight.size.x(), component::g_minAreaSize),
+						  std::max(iLight.size.y(), component::g_minAreaSize)};
+	switch (iLight.type) {
+		case Type::Directional:
+			return {power, {}};
+		case Type::Point:
+			return {power / (4.f * std::numbers::pi_v<float>), {}};
+		case Type::Spot:
+			return {power / std::numbers::pi_v<float>, {}};
+		case Type::Rectangle:
+			{
+				const math::vec3 half = axis * (0.5f * size.x());
+				return {renderer::getRectangleLuminance(power, size), {half.x(), half.y(), half.z(), 0.5f * size.y()}};
+			}
+		case Type::Disc:
+			{
+				const math::vec3 half = axis * radius;
+				return {renderer::getDiscLuminance(power, radius), {half.x(), half.y(), half.z(), radius}};
+			}
+		case Type::Sphere:
+			return {power / (4.f * std::numbers::pi_v<float>), {0.f, 0.f, 0.f, radius}};
+	}
+	return {power, {}};
+}
+
+}// namespace
+
 void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 	using Graph = renderer::RenderGraph;
 	const bool editorMode = status == Status::Editing;
@@ -1048,12 +1086,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 		const math::vec4 forward = world() * math::vec4{0.f, 0.f, -1.f, 0.f};
 		const math::vec3 direction = math::vec3{forward.x(), forward.y(), forward.z()}.normalized();
 		const math::vec3& position = world.translation();
-		// Lux for a directional light; the luminous intensity (cd) of the lumens of a point or spot light.
-		float strength = std::max(light.intensity, 0.f);
-		if (light.type == component::Light::Type::Point)
-			strength /= 4.f * std::numbers::pi_v<float>;
-		else if (light.type == component::Light::Type::Spot)
-			strength /= std::numbers::pi_v<float>;
+		const auto [strength, area] = lightEmission(light, world);
 		const math::vec3 color = math::vec3{renderer::ColorEncoder::srgbToLinear(light.color.x()),
 											renderer::ColorEncoder::srgbToLinear(light.color.y()),
 											renderer::ColorEncoder::srgbToLinear(light.color.z())} *
@@ -1066,7 +1099,8 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 								 -1.f,
 								 light.type == component::Light::Type::Directional
 										 ? std::clamp(light.angularRadius, 0.f, component::g_maxAngularRadius)
-										 : 0.f}});
+										 : 0.f},
+				 .area = area});
 		if (light.castShadows && light.type != component::Light::Type::Directional) {
 			const auto lightIndex = static_cast<uint32_t>(m_gpuLights.size() - 1);
 			m_localCasters.resize(lightIndex + 1);
@@ -1076,7 +1110,8 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 										  .range = std::max(light.range, 0.01f),
 										  .resolution = light.shadowResolution,
 										  .bias = light.shadowBias,
-										  .point = light.type == component::Light::Type::Point};
+										  .lightSize = area.w(),
+										  .point = light.type != component::Light::Type::Spot};
 			m_shadowCandidates.push_back({.lightIndex = lightIndex,
 										  .distance = renderer::distanceToLightRange(eye, position, light.range),
 										  .intensity = strength});
@@ -1185,7 +1220,8 @@ void Scene::recordLocalShadowPasses(renderer::RenderGraph& ioGraph) {
 										 .depth = m_pointShadowFaces.back().depth,
 										 .cube = cube,
 										 .resolution = caster.resolution,
-										 .bias = caster.bias});
+										 .bias = caster.bias,
+										 .lightSize = caster.lightSize});
 	}
 	// The faces of every cube of one size are drawn one after the other in a single target.
 	std::vector<uint32_t> faceSizes;

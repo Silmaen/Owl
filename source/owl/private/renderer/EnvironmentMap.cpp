@@ -10,12 +10,12 @@
 #include "renderer/EnvironmentMap.h"
 
 #include "app/Application.h"
+#include "renderer/utils/ParallelRows.h"
 
 #include <stb_image.h>
 
 #include <algorithm>
 #include <array>
-#include <atomic>
 #include <cctype>
 #include <charconv>
 #include <cmath>
@@ -28,7 +28,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <thread>
 #include <vector>
 
 namespace owl::renderer {
@@ -39,30 +38,6 @@ constexpr float g_pi = std::numbers::pi_v<float>;
 constexpr uint32_t g_minLevelWidth = 8;
 constexpr uint32_t g_minLevelHeight = 4;
 constexpr uint32_t g_maxLutSize = 256;
-
-template<typename Fn>
-void parallelRows(const uint32_t iCount, Fn&& iFunction) {
-	const auto workers = std::min<uint32_t>(std::max(1u, std::thread::hardware_concurrency()), iCount);
-	if (workers <= 1) {
-		for (uint32_t row = 0; row < iCount; ++row) { iFunction(row); }
-		return;
-	}
-	std::atomic<uint32_t> next{0};
-	auto work = [&]() -> void {
-		for (;;) {
-			const uint32_t row = next.fetch_add(1);
-			if (row >= iCount) {
-				return;
-			}
-			iFunction(row);
-		}
-	};
-	std::vector<std::thread> threads;
-	threads.reserve(workers - 1);
-	for (uint32_t i = 1; i < workers; ++i) { threads.emplace_back(work); }
-	work();
-	for (auto& thread: threads) { thread.join(); }
-}
 
 auto radicalInverse(uint32_t iBits) -> float {
 	iBits = (iBits << 16u) | (iBits >> 16u);
@@ -173,7 +148,7 @@ auto filterLevel(const std::vector<FloatImage>& iMips, const math::vec2ui& iSize
 	const auto samples = makeFilterSamples(alpha, std::max(1u, iSampleCount), texelSolidAngle);
 	const uint32_t w = iSize.x();
 	const uint32_t h = iSize.y();
-	parallelRows(h, [&](const uint32_t iRow) -> void {
+	utils::parallelRows(h, [&](const uint32_t iRow) -> void {
 		for (uint32_t x = 0; x < w; ++x) {
 			const auto n = Equirectangular::toDirection({(static_cast<float>(x) + 0.5f) / static_cast<float>(w),
 														 (static_cast<float>(iRow) + 0.5f) / static_cast<float>(h)});
@@ -218,7 +193,7 @@ auto projectIrradiance(const FloatImage& iImage) -> SphericalHarmonics {
 	const uint32_t h = iImage.size.y();
 	std::vector<std::array<math::vec3, 9>> rowSums(h);
 	std::vector<float> rowWeights(h, 0.f);
-	parallelRows(h, [&](const uint32_t iRow) -> void {
+	utils::parallelRows(h, [&](const uint32_t iRow) -> void {
 		const float theta = (static_cast<float>(iRow) + 0.5f) / static_cast<float>(h) * g_pi;
 		const float solidAngle =
 				(2.f * g_pi / static_cast<float>(w)) * (g_pi / static_cast<float>(h)) * std::sin(theta);
@@ -440,7 +415,7 @@ auto computeDfgTable(const uint32_t iSize, const uint32_t iSampleCount) -> std::
 	const uint32_t size = std::max(1u, iSize);
 	const uint32_t count = std::max(1u, iSampleCount);
 	std::vector<math::vec3> table(static_cast<size_t>(size) * size);
-	parallelRows(size, [&](const uint32_t iRow) -> void {
+	utils::parallelRows(size, [&](const uint32_t iRow) -> void {
 		const float roughness = (static_cast<float>(iRow) + 0.5f) / static_cast<float>(size);
 		const float alpha = std::max(roughness, 0.045f) * std::max(roughness, 0.045f);
 		const float sheenAlpha = std::max(roughness * roughness, 0.0078f);

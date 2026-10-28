@@ -11,6 +11,7 @@
 
 #include "math/linAlgebra.h"
 #include "math/matrixCreation.h"
+#include "renderer/AreaLights.h"
 #include "renderer/ClipSpace.h"
 #include "renderer/LocalShadows.h"
 #include "renderer/Material.h"
@@ -121,6 +122,8 @@ constexpr uint32_t g_materialSlotEnd = 1 + g_materialMapCount;
 constexpr uint32_t g_environmentSlot = 7;
 constexpr uint32_t g_dfgSlot = 13;
 constexpr uint32_t g_dfgSize = 64;
+constexpr uint32_t g_ltcSlot = 14;
+constexpr uint32_t g_clippedSphereSlot = 15;
 constexpr uint32_t g_instanceBinding = 5;
 constexpr uint32_t g_visibleBinding = 6;
 
@@ -128,6 +131,8 @@ struct InternalData {
 	shared<gpu::UniformBuffer> sceneUniformBuffer;
 	shared<gpu::UniformBuffer> materialUniformBuffer;
 	shared<gpu::Texture2D> dfgTexture;
+	shared<gpu::Texture2D> ltcTexture;
+	shared<gpu::Texture2D> clippedSphereTexture;
 	Renderer3D::MeshHandle skyMesh;
 	EnvironmentLighting environment;
 	MaterialUbo material;
@@ -207,7 +212,7 @@ void refreshLighting() {
 	}
 }
 
-// Slots: 0 white, 1-6 material maps, 7-12 environment, 13 DFG, 16-19 cascades, spot shadows; cubes: point shadows.
+// Slots: 0 white, 1-6 maps, 7-12 environment, 13 DFG, 14-15 area, 16-19 cascades, spot shadows; cubes: point shadows.
 void bindMeshTextures(const std::span<const shared<gpu::Texture2D>> iTextures, const Material* iMaterial) {
 	auto& slots = g_Data->textureSlots;
 	std::ranges::fill(slots, g_Data->whiteTexture);
@@ -230,6 +235,10 @@ void bindMeshTextures(const std::span<const shared<gpu::Texture2D>> iTextures, c
 	}
 	if (g_Data->dfgTexture)
 		slots[g_dfgSlot] = g_Data->dfgTexture;
+	if (g_Data->ltcTexture)
+		slots[g_ltcSlot] = g_Data->ltcTexture;
+	if (g_Data->clippedSphereTexture)
+		slots[g_clippedSphereSlot] = g_Data->clippedSphereTexture;
 	for (uint32_t level = 0; level < g_Data->environment.levelCount; ++level) {
 		if (const auto& texture = g_Data->environment.levels[level]; texture)
 			slots[g_environmentSlot + level] = texture;
@@ -364,6 +373,21 @@ void Renderer3D::init() {
 				gpu::Texture2D::Specification{.size = {g_dfgSize, g_dfgSize}, .format = gpu::ImageFormat::Rgba32F});
 		g_Data->dfgTexture->setData(pixels.data(), static_cast<uint32_t>(pixels.size() * sizeof(float)));
 	}
+	{
+		const auto ltc = getLtcTable();
+		std::vector<float> pixels;
+		pixels.reserve(ltc.size() * 4);
+		for (const auto& texel: ltc) pixels.insert(pixels.end(), {texel.x(), texel.y(), texel.z(), texel.w()});
+		const gpu::Texture2D::Specification spec{.size = {g_ltcTableSize, g_ltcTableSize},
+												 .format = gpu::ImageFormat::Rgba32F};
+		g_Data->ltcTexture = gpu::Texture2D::create(spec);
+		g_Data->ltcTexture->setData(pixels.data(), static_cast<uint32_t>(pixels.size() * sizeof(float)));
+		pixels.clear();
+		for (const float value: computeClippedSphereTable(g_ltcTableSize))
+			pixels.insert(pixels.end(), {value, 0.f, 0.f, 1.f});
+		g_Data->clippedSphereTexture = gpu::Texture2D::create(spec);
+		g_Data->clippedSphereTexture->setData(pixels.data(), static_cast<uint32_t>(pixels.size() * sizeof(float)));
+	}
 	setIrradiance(SphericalHarmonics::constant(
 			{g_Data->scene.ambient.x(), g_Data->scene.ambient.y(), g_Data->scene.ambient.z()}));
 	{
@@ -389,6 +413,8 @@ void Renderer3D::shutdown() {
 	g_Data->lightingUniformBuffer.reset();
 	g_Data->materialUniformBuffer.reset();
 	g_Data->dfgTexture.reset();
+	g_Data->ltcTexture.reset();
+	g_Data->clippedSphereTexture.reset();
 	g_Data->skyMesh.reset();
 	g_Data->environment = {};
 	g_Data->lightBuffer.reset();
@@ -578,7 +604,7 @@ void Renderer3D::setLocalShadows(const LocalShadowSettings& iShadows) {
 		const auto& point = local.points[index];
 		auto& shadow = data.lighting.localShadows[entry];
 		shadow.params = math::vec4{static_cast<float>(index), static_cast<float>(point.resolution), point.bias, 1.f};
-		shadow.depth = math::vec4{point.depth.x(), point.depth.y(), 1.f, 0.f};
+		shadow.depth = math::vec4{point.depth.x(), point.depth.y(), 1.f, std::max(point.lightSize, 0.f)};
 		if (point.lightIndex < g_maxLights)
 			data.lightShadowEntries[point.lightIndex] = static_cast<float>(entry);
 	}

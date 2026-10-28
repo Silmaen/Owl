@@ -2043,7 +2043,9 @@ private:
 		uint32_t resolution = 1024;
 		/// Normal-offset bias, in texels.
 		float bias = 1.5f;
-		/// Whether the light is a point light (a spot light otherwise).
+		/// Radius of the emitting surface of an area light (0 for a point or spot light).
+		float lightSize = 0.f;
+		/// Whether the light casts through a cube (a point or area light; a spot light otherwise).
 		bool point = false;
 	};
 	/// Local casters of the frame, by light index (meaningful for the shadow candidates only).

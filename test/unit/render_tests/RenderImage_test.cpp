@@ -394,6 +394,14 @@ INSTANTIATE_TEST_SUITE_P(Lights, RenderImage,
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
+// Area lights of the mesh layer on a glossy floor: a warm rectangle and a cool disc, both casting soft cube shadows,
+// and a small green sphere light without shadow.
+INSTANTIATE_TEST_SUITE_P(AreaLights, RenderImage,
+						 testing::Values(RenderCase{"area_lights", "vulkan"}, RenderCase{"area_lights", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
 // The lights scene moved 2^20 m away on x and z: camera-relative rendering keeps the meshes, lights and shadows as
 // precise as at the origin (the uploaded matrices never hold the far-away translation).
 INSTANTIATE_TEST_SUITE_P(FarOrigin, RenderImage,

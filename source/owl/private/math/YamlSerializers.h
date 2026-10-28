@@ -18,6 +18,38 @@
 namespace YAML {
 
 template<>
+struct convert<owl::math::vec2> {
+	/**
+	 * @brief
+	 *  Encode a 2D vector to a YAML flow-sequence node.
+	 * @param[in] iRhs The vector to encode.
+	 * @return The resulting YAML node.
+	 */
+	static auto encode(const owl::math::vec2& iRhs) -> Node {
+		Node node;
+		node.push_back(iRhs.x());
+		node.push_back(iRhs.y());
+		node.SetStyle(EmitterStyle::Flow);
+		return node;
+	}
+
+	/**
+	 * @brief
+	 *  Decode a YAML node into a 2D vector.
+	 * @param[in] iNode YAML node expected to be a 2-element sequence.
+	 * @param[out] iRhs Vector to populate on success.
+	 * @return True on success; false when the node is not a 2-element sequence.
+	 */
+	static auto decode(const Node& iNode, owl::math::vec2& iRhs) -> bool {
+		if (!iNode.IsSequence() || iNode.size() != 2)
+			return false;
+		iRhs.x() = iNode[0].as<float>();
+		iRhs.y() = iNode[1].as<float>();
+		return true;
+	}
+};
+
+template<>
 struct convert<owl::math::vec3> {
 	/**
 	 * @brief
@@ -86,6 +118,19 @@ struct convert<owl::math::vec4> {
 		return true;
 	}
 };
+
+/**
+ * @brief
+ *  Stream a 2D vector into a YAML emitter as an inline flow sequence.
+ * @param[in,out] ioOut Target emitter.
+ * @param[in] iVect Vector to emit.
+ * @return The emitter (for chaining).
+ */
+[[maybe_unused]] static auto operator<<(Emitter& ioOut, const owl::math::vec2& iVect) -> Emitter& {
+	ioOut << Flow;
+	ioOut << BeginSeq << iVect.x() << iVect.y() << EndSeq;
+	return ioOut;
+}
 
 /**
  * @brief

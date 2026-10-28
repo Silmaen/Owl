@@ -24,10 +24,11 @@ struct MaterialData {
 };
 
 struct LightData {
-	float4 positionRange;// xyz: camera-relative position (point, spot); w: range.
-	float4 directionType;// xyz: direction the light travels; w: 0 directional, 1 point, 2 spot.
-	float4 color;        // rgb: linear colour times intensity.
-	float4 spotCosines;  // x: cosine of the inner angle, y: of the outer angle, z: local shadow entry (-1 none).
+	float4 positionRange;// xyz: camera-relative position (point, spot, centre of an area light); w: range.
+	float4 directionType;// xyz: direction the light travels; w: 0 directional, 1 point, 2 spot, 3 rectangle, 4 disc, 5 sphere.
+	float4 color;        // rgb: linear colour times illuminance, intensity or luminance (rectangle, disc).
+	float4 spotCosines;  // x: cosine of the inner angle, y: of the outer angle, z: local shadow entry (-1 none), w: angular radius.
+	float4 area;         // xyz: half width axis (rectangle) or half axis (disc); w: half height (rectangle) or radius.
 };
 
 // A matrix array ignores `column_major`: each cascade matrix sits in a struct of its own.
@@ -53,7 +54,7 @@ static const int CUBE_SLOT_COUNT = 2 * MAX_POINT_SHADOWS;
 struct LocalShadow {
 	column_major float4x4 viewProjection;// spot: camera-relative view-projection of the light camera.
 	float4 params;                       // x: 2D slot (spot) or cube index (point), y: resolution, z: bias in texels, w: 1 point, 2 spot.
-	float4 depth;                        // xy: depth of a point face (x + y / d), z: tangent of the half angle of the light camera.
+	float4 depth;                        // xy: depth of a point face (x + y / d), z: tangent of the half angle of the light camera, w: radius of the emitting surface (0 hard).
 };
 
 struct Lighting {
@@ -105,8 +106,8 @@ float3 relativePosition(float4x4 model, float3 position) {
 	return mul((float3x3) model, position) + translation;
 }
 
-// Texture slots: 0 white, 1-6 material maps, 7-12 prefiltered environment, 13 split-sum table, 16-19 shadow cascades,
-// 20 onward spot shadows; cubes: point shadows, then reflection probes.
+// Texture slots: 0 white, 1-6 material maps, 7-12 prefiltered environment, 13 split-sum table, 14 LTC matrices,
+// 15 clipped sphere, 16-19 shadow cascades, 20 onward spot shadows; cubes: point shadows, then reflection probes.
 static const int MAP_BASE_COLOR = 1;
 static const int MAP_METALLIC = 2;
 static const int MAP_NORMAL = 3;
@@ -114,6 +115,9 @@ static const int MAP_OCCLUSION = 4;
 static const int MAP_EMISSIVE = 5;
 static const int MAP_ROUGHNESS = 6;
 static const int DFG_SLOT = 13;
+static const int LTC_SLOT = 14;
+static const int CLIPPED_SPHERE_SLOT = 15;
+static const float LTC_SIZE = 64.0f;
 static const int ENVIRONMENT_SLOT = 7;
 static const int MAX_ENVIRONMENT_LEVELS = 6;
 static const int SHADOW_MAP_SLOT = 16;
@@ -251,6 +255,43 @@ float spotShadowFactor(LocalShadow shadow, float3 position) {
 	return lit / 9.0f;
 }
 
+// Soft shadow of an area light in its cube (PCSS): the blockers found towards the emitting surface set the width of
+// the filter, measured at the receiver, so the penumbra grows with the distance between a caster and its receiver.
+float softPointShadowFactor(LocalShadow shadow, float3 fromLight, float3 u, float3 v, float major, float reference) {
+	int cube = int(shadow.params.x);
+	float texel = 2.0f * major / shadow.params.y;
+	float lightSize = shadow.depth.w;
+	float searchWidth = clamp(lightSize, texel, MAX_PENUMBRA_TEXELS * texel);
+	float3 cell = floor(fromLight / texel);
+	float angle = 6.2831853f * frac(52.9829189f * frac(dot(cell, float3(0.06711056f, 0.00583715f, 0.0293f))));
+	float2x2 turn = float2x2(cos(angle), -sin(angle), sin(angle), cos(angle));
+	// A bound the compiler cannot fold keeps the cube taps rolled: unrolled, they cost llvmpipe seconds of compilation.
+	int taps = 16 + min(cube, 0);
+	float blockerSum = 0.0f;
+	float blockers = 0.0f;
+	for (int index = 0; index < taps; ++index) {
+		float2 offset = mul(turn, POISSON_DISC[index]) * searchWidth;
+		float stored = gCubes[NonUniformResourceIndex(cube)].SampleLevel(fromLight + u * offset.x + v * offset.y, 0.0f).r;
+		if (reference < stored * LOCAL_SHADOW_TOLERANCE) {
+			// Distance of the blocker along the axis of the face: depth = x + y / d.
+			blockerSum += shadow.depth.y / max(stored - shadow.depth.x, 1e-6f);
+			blockers += 1.0f;
+		}
+	}
+	if (blockers == 0.0f)
+		return 1.0f;
+	float blockerDistance = min(blockerSum / blockers, major);
+	float penumbra = lightSize * (major - blockerDistance) / max(blockerDistance, 1e-3f);
+	float filterWidth = clamp(penumbra, texel, MAX_PENUMBRA_TEXELS * texel);
+	float lit = 0.0f;
+	for (int index = 0; index < taps; ++index) {
+		float2 offset = mul(turn, POISSON_DISC[index]) * filterWidth;
+		float stored = gCubes[NonUniformResourceIndex(cube)].SampleLevel(fromLight + u * offset.x + v * offset.y, 0.0f).r;
+		lit += reference >= stored * LOCAL_SHADOW_TOLERANCE ? 1.0f : 0.0f;
+	}
+	return lit / float(taps);
+}
+
 // 1 when lit, 0 in shadow: 3x3 comparisons around the direction from a point light, in its cube.
 float pointShadowFactor(LocalShadow shadow, float3 fromLight) {
 	float3 axis = abs(fromLight);
@@ -262,6 +303,8 @@ float pointShadowFactor(LocalShadow shadow, float3 fromLight) {
 	float3 across = axis.x >= axis.y && axis.x >= axis.z ? float3(0.0f, 1.0f, 0.0f) : float3(1.0f, 0.0f, 0.0f);
 	float3 u = normalize(cross(fromLight, across));
 	float3 v = cross(normalize(fromLight), u);
+	if (shadow.depth.w > 0.0f)
+		return softPointShadowFactor(shadow, fromLight, u, v, major, reference);
 	float step = 2.0f * major / shadow.params.y;
 	int cube = int(shadow.params.x);
 	float lit = 0.0f;
@@ -389,15 +432,18 @@ float3 dfgTerms(float NoV, float roughness) {
 	return gTextures[DFG_SLOT].SampleLevel(uv, 0.0f).rgb;
 }
 
-// Light reflected towards the eye from one light direction, for the Standard model.
+// Light reflected towards the eye for the Standard model: the diffuse lobe from `diffuseLight`, the specular ones from
+// `specularLight` (the representative point of a sphere light, the light direction otherwise).
 // Lobe of a light of angular radius `sourceRadius` (radians, 0 for a point): its distribution widened and renormalised
 // so the highlight of a disc light grows without gaining energy (Karis, representative roughness); isotropic lobes only.
-float3 standardLobe(Surface s, float3 l, float3 f0, float3 dfg, float sourceRadius) {
+float3 standardLobeSplit(Surface s, float3 diffuseLight, float3 l, float3 f0, float3 dfg, float sourceRadius) {
 	float3 h = normalize(s.view + l);
 	float NoV = max(dot(s.normal, s.view), 1e-4f);
 	float NoL = saturate(dot(s.normal, l));
 	float NoH = saturate(dot(s.normal, h));
 	float LoH = saturate(dot(l, h));
+	float diffuseNoL = saturate(dot(s.normal, diffuseLight));
+	float diffuseLoH = saturate(dot(diffuseLight, normalize(s.view + diffuseLight)));
 	float a = s.roughness * s.roughness;
 	float D;
 	float V;
@@ -420,19 +466,23 @@ float3 standardLobe(Surface s, float3 l, float3 f0, float3 dfg, float sourceRadi
 	// Multiple-scattering compensation: the single-scattering lobe loses energy on rough surfaces.
 	float3 energy = 1.0f + f0 * (1.0f / max(dfg.x + dfg.y, 1e-4f) - 1.0f);
 	float3 Fr = D * V * F * energy;
-	float3 Fd = s.albedo * (1.0f - s.metallic) * Fd_Burley(NoV, NoL, LoH, s.roughness);
-	float3 color = Fd + Fr;
+	float3 Fd = s.albedo * (1.0f - s.metallic) * Fd_Burley(NoV, diffuseNoL, diffuseLoH, s.roughness);
+	float3 color = Fd * diffuseNoL + Fr * NoL;
 	if (any(s.sheenColor > 0.0f)) {
 		float sheenScaling = 1.0f - max(s.sheenColor.r, max(s.sheenColor.g, s.sheenColor.b)) * dfg.z;
-		color = color * sheenScaling + s.sheenColor * D_Charlie(s.sheenRoughness, NoH) * V_Neubelt(NoV, NoL);
+		color = color * sheenScaling + s.sheenColor * D_Charlie(s.sheenRoughness, NoH) * V_Neubelt(NoV, NoL) * NoL;
 	}
 	if (s.clearcoat > 0.0f) {
 		float ac = max(s.clearcoatRoughness, MIN_ROUGHNESS);
 		ac *= ac;
 		float Fc = F_Schlick90(iorToF0(gMaterial.toon.w), 1.0f, LoH) * s.clearcoat;
-		color = color * (1.0f - Fc) + D_GGX(NoH, ac) * V_Kelemen(LoH) * Fc;
+		color = color * (1.0f - Fc) + D_GGX(NoH, ac) * V_Kelemen(LoH) * Fc * NoL;
 	}
-	return color * NoL;
+	return color;
+}
+
+float3 standardLobe(Surface s, float3 l, float3 f0, float3 dfg, float sourceRadius) {
+	return standardLobeSplit(s, l, l, f0, dfg, sourceRadius);
 }
 
 // The Toon model: banded diffuse, a stepped highlight.
@@ -525,15 +575,24 @@ float3 standardAmbient(Surface s, float3 f0, float3 dfg) {
 
 // ------------------------------------------------------------------ lights
 
+// Shadow of a light on a surface point, 1 when it casts none: a single call site keeps the sampling inlined once.
+float lightShadow(int index, float3 position, float3 normal) {
+	LightData light = gLights[index];
+	if (int(light.directionType.w) == 0)
+		return index == gLighting.counts.z ? shadowFactor(position, normal) : 1.0f;
+	int entry = int(light.spotCosines.z);
+	if (entry < 0 || entry >= MAX_LOCAL_SHADOWS || length(light.positionRange.xyz - position) >= light.positionRange.w)
+		return 1.0f;
+	return localShadowFactor(entry, position, normal, light.positionRange.xyz);
+}
+
 // Pre-exposed illuminance a light gives a surface (lux for a directional light, intensity / d² otherwise).
-void lightIncidence(int index, float3 position, float3 normal, out float3 toLight, out float3 illuminance) {
+void lightIncidence(int index, float3 position, out float3 toLight, out float3 illuminance) {
 	LightData light = gLights[index];
 	int type = int(light.directionType.w);
 	float attenuation = 1.0f;
 	if (type == 0) {
 		toLight = -light.directionType.xyz;
-		if (index == gLighting.counts.z)
-			attenuation = shadowFactor(position, normal);
 	} else {
 		float3 delta = light.positionRange.xyz - position;
 		float dist = length(delta);
@@ -544,11 +603,118 @@ void lightIncidence(int index, float3 position, float3 normal, out float3 toLigh
 		attenuation = window * window / max(dist * dist, 1e-4f);
 		if (type == 2)
 			attenuation *= smoothstep(light.spotCosines.y, light.spotCosines.x, dot(-toLight, light.directionType.xyz));
-		int entry = int(light.spotCosines.z);
-		if (entry >= 0 && entry < MAX_LOCAL_SHADOWS && attenuation > 0.0f)
-			attenuation *= localShadowFactor(entry, position, normal, light.positionRange.xyz);
 	}
 	illuminance = light.color.rgb * attenuation;
+}
+
+// ------------------------------------------------------------------ area lights (linearly transformed cosines)
+
+// Texel centres of the area tables: coordinate i / (size - 1) of texel i.
+float2 ltcUv(float2 coordinates) {
+	return coordinates * ((LTC_SIZE - 1.0f) / LTC_SIZE) + 0.5f / LTC_SIZE;
+}
+
+// Inverse matrix of the cosine standing for the GGX lobe, in the frame of the view (X towards it, Z the normal).
+float3x3 ltcInverse(float roughness, float NoV) {
+	float4 t = gTextures[LTC_SLOT].SampleLevel(ltcUv(float2(roughness, sqrt(1.0f - NoV))), 0.0f);
+	return float3x3(float3(t.x, 0.0f, t.z), float3(0.0f, 1.0f, 0.0f), float3(t.y, 0.0f, t.w));
+}
+
+// Form factor above the horizon of a light given its vector form factor, through the table of the clipped sphere.
+float clippedFormFactor(float3 formFactor) {
+	float len = length(formFactor);
+	if (len <= 1e-6f)
+		return 0.0f;
+	float2 uv = ltcUv(float2(formFactor.z / len * 0.5f + 0.5f, saturate(len)));
+	return len * gTextures[CLIPPED_SPHERE_SLOT].SampleLevel(uv, 0.0f).r;
+}
+
+// Part of the vector form factor of a polygon of unit directions brought by one of its edges.
+float3 edgeFormFactor(float3 a, float3 b) {
+	float x = clamp(dot(a, b), -0.9999f, 0.9999f);
+	return cross(a, b) * (acos(x) / sqrt(1.0f - x * x));
+}
+
+// Form factor of a rectangle (corners relative to the shaded point, counter-clockwise seen from the lit side) through
+// a cosine.
+float rectangleFormFactor(float3x3 inverseCosine, float3 corners[4]) {
+	float3 l0 = normalize(mul(inverseCosine, corners[0]));
+	float3 l1 = normalize(mul(inverseCosine, corners[1]));
+	float3 l2 = normalize(mul(inverseCosine, corners[2]));
+	float3 l3 = normalize(mul(inverseCosine, corners[3]));
+	float3 formFactor = edgeFormFactor(l0, l1) + edgeFormFactor(l1, l2) + edgeFormFactor(l2, l3) + edgeFormFactor(l3, l0);
+	return clippedFormFactor(formFactor / (2.0f * PI));
+}
+
+// Sides of the polygon standing for a disc, and the scale of its vertices that keeps the area of the disc.
+static const int DISC_SIDES = 12;
+static const float DISC_SCALE = 1.0233267f;
+
+// Form factor of a disc (centre and two perpendicular half axes relative to the shaded point, the second one a
+// quarter turn counter-clockwise from the first seen from the lit side) through a cosine: a polygon of the same area,
+// integrated edge by edge like a rectangle.
+float discFormFactor(float3x3 inverseCosine, float3 centre, float3 axisU, float3 axisV) {
+	float3 first = normalize(mul(inverseCosine, centre + axisU * DISC_SCALE));
+	float3 previous = first;
+	float3 formFactor = float3(0.0f);
+	for (int side = 1; side < DISC_SIDES; ++side) {
+		float angle = 6.2831853f * float(side) / float(DISC_SIDES);
+		float3 corner = centre + (axisU * cos(angle) + axisV * sin(angle)) * DISC_SCALE;
+		float3 current = normalize(mul(inverseCosine, corner));
+		formFactor += edgeFormFactor(previous, current);
+		previous = current;
+	}
+	formFactor += edgeFormFactor(previous, first);
+	return clippedFormFactor(formFactor / (2.0f * PI));
+}
+
+// Light of a rectangle or a disc on a surface: its diffuse and specular lobes integrated over its face. The base layer
+// only (no sheen, clearcoat nor anisotropy), the Toon model takes the diffuse part.
+float3 areaLightColor(Surface s, int index, float3 f0, float3 dfg, int shadingModel, float shadow) {
+	LightData light = gLights[index];
+	float3 centre = light.positionRange.xyz - s.position;
+	float3 forward = light.directionType.xyz;
+	// One-sided: nothing reaches a point behind the emitting face.
+	if (dot(centre, forward) >= 0.0f)
+		return float3(0.0f);
+	float ratio = length(centre) / max(light.positionRange.w, 1e-4f);
+	float window = saturate(1.0f - ratio * ratio * ratio * ratio);
+	float attenuation = window * window * shadow;
+	if (attenuation <= 0.0f)
+		return float3(0.0f);
+	float NoV = max(dot(s.normal, s.view), 1e-4f);
+	float3 t1 = s.view - s.normal * dot(s.view, s.normal);
+	if (dot(t1, t1) < 1e-8f)
+		t1 = cross(s.normal, abs(s.normal.x) < 0.9f ? float3(1.0f, 0.0f, 0.0f) : float3(0.0f, 1.0f, 0.0f));
+	t1 = normalize(t1);
+	float3x3 frame = float3x3(t1, cross(s.normal, t1), s.normal);
+	float3x3 cosine = float3x3(float3(1.0f, 0.0f, 0.0f), float3(0.0f, 1.0f, 0.0f), float3(0.0f, 0.0f, 1.0f));
+	float3x3 specularCosine = ltcInverse(s.roughness, NoV);
+	float3 c = mul(frame, centre);
+	float3 u = mul(frame, light.area.xyz);
+	float3 v = mul(frame, normalize(cross(light.area.xyz, forward)) * light.area.w);
+	float diffuse;
+	float specular;
+	if (int(light.directionType.w) == 3) {
+		float3 corners[4] = {c + u + v, c - u + v, c - u - v, c + u - v};
+		diffuse = rectangleFormFactor(cosine, corners);
+		specular = rectangleFormFactor(specularCosine, corners);
+	} else {
+		diffuse = discFormFactor(cosine, c, u, v);
+		specular = discFormFactor(specularCosine, c, u, v);
+	}
+	float3 radiance = light.color.rgb * attenuation;
+	if (shadingModel == 2)
+		return radiance * s.albedo * diffuse;
+	float3 energy = 1.0f + f0 * (1.0f / max(dfg.x + dfg.y, 1e-4f) - 1.0f);
+	return radiance * (s.albedo * (1.0f - s.metallic) * diffuse + (f0 * dfg.x + dfg.y) * energy * specular);
+}
+
+// Direction towards the point of a sphere light nearest to the reflected ray (Karis, representative point).
+float3 sphereSpecularDirection(Surface s, float3 toCentre, float radius) {
+	float3 r = reflect(-s.view, s.normal);
+	float3 centreToRay = dot(toCentre, r) * r - toCentre;
+	return normalize(toCentre + centreToRay * saturate(radius / max(length(centreToRay), 1e-6f)));
 }
 
 // Shaded colour of a surface (emissive included) under the lights of the scene, its environment and its shadows.
@@ -566,11 +732,29 @@ float3 shadeSurface(Surface s) {
 		color += gScene.sunDirection.w * (shadingModel == 2 ? toonLobe(s, l) / PI : standardLobe(s, l, f0, dfg, 0.0f));
 	}
 	for (int index = 0; index < gLighting.counts.x; ++index) {
+		int type = int(gLights[index].directionType.w);
+		float shadow = lightShadow(index, s.position, s.normal);
+		if (type == 3 || type == 4) {
+			color += areaLightColor(s, index, f0, dfg, shadingModel, shadow);
+			continue;
+		}
 		float3 l;
 		float3 illuminance;
-		lightIncidence(index, s.position, s.normal, l, illuminance);
-		float sourceRadius = int(gLights[index].directionType.w) == 0 ? gLights[index].spotCosines.w : 0.0f;
-		color += illuminance * (shadingModel == 2 ? toonLobe(s, l) / PI : standardLobe(s, l, f0, dfg, sourceRadius));
+		lightIncidence(index, s.position, l, illuminance);
+		illuminance *= shadow;
+		if (shadingModel == 2) {
+			color += illuminance * toonLobe(s, l) / PI;
+			continue;
+		}
+		float3 specularLight = l;
+		float sourceRadius = type == 0 ? gLights[index].spotCosines.w : 0.0f;
+		if (type == 5) {
+			float3 toCentre = gLights[index].positionRange.xyz - s.position;
+			float radius = gLights[index].area.w;
+			specularLight = sphereSpecularDirection(s, toCentre, radius);
+			sourceRadius = asin(saturate(radius / max(length(toCentre), 1e-4f)));
+		}
+		color += illuminance * standardLobeSplit(s, l, specularLight, f0, dfg, sourceRadius);
 	}
 	if (shadingModel == 2) {
 		float rim = pow(1.0f - NoV, 4.0f) * gMaterial.toon.x;

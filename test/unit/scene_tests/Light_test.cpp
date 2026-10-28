@@ -71,6 +71,8 @@ TEST_F(LightTest, serializationRoundTripsEveryField) {
 	light.shadowResolution = 2048;
 	light.shadowBias = 3.f;
 	light.angularRadius = 0.01f;
+	light.size = {2.f, 0.5f};
+	light.radius = 0.3f;
 	const auto yaml = scene::SceneSerializer::serializeEntityToString(lamp);
 	EXPECT_NE(yaml.find("Light"), std::string::npos);
 
@@ -93,6 +95,30 @@ TEST_F(LightTest, serializationRoundTripsEveryField) {
 	EXPECT_EQ(read.shadowResolution, 2048u);
 	EXPECT_FLOAT_EQ(read.shadowBias, 3.f);
 	EXPECT_FLOAT_EQ(read.angularRadius, 0.01f);
+	EXPECT_EQ(read.size, (math::vec2{2.f, 0.5f}));
+	EXPECT_FLOAT_EQ(read.radius, 0.3f);
+}
+
+TEST_F(LightTest, areaLightTypesRoundTripAndKeepAPositiveSize) {
+	using Type = scene::component::Light::Type;
+	for (const auto type: {Type::Rectangle, Type::Disc, Type::Sphere}) {
+		const auto sc = mkShared<scene::Scene>();
+		auto lamp = sc->createEntity("Panel");
+		auto& light = lamp.addComponent<scene::component::Light>();
+		light.type = type;
+		light.size = {-1.f, 0.f};
+		light.radius = -2.f;
+		const auto yaml = scene::SceneSerializer::serializeEntityToString(lamp);
+		const auto copy = mkShared<scene::Scene>();
+		ASSERT_TRUE(scene::SceneSerializer::deserializeEntityFromString(copy, yaml));
+		const auto restored = copy->findEntityByUUID(lamp.getUUID());
+		ASSERT_TRUE(restored);
+		const auto& read = restored.getComponent<scene::component::Light>();
+		EXPECT_EQ(read.type, type);
+		EXPECT_FLOAT_EQ(read.size.x(), scene::component::g_minAreaSize);
+		EXPECT_FLOAT_EQ(read.size.y(), scene::component::g_minAreaSize);
+		EXPECT_FLOAT_EQ(read.radius, scene::component::g_minAreaSize);
+	}
 }
 
 TEST_F(LightTest, angularRadiusIsClampedWhenRead) {
@@ -135,6 +161,8 @@ TEST_F(LightTest, aBlockMissingEveryOptionalKeyLoadsTheDefaults) {
 	EXPECT_EQ(read.cascadeCount, defaults.cascadeCount);
 	EXPECT_EQ(read.shadowResolution, defaults.shadowResolution);
 	EXPECT_FLOAT_EQ(read.shadowBias, defaults.shadowBias);
+	EXPECT_EQ(read.size, defaults.size);
+	EXPECT_FLOAT_EQ(read.radius, defaults.radius);
 }
 
 TEST_F(LightTest, isAnOptionalComponentOfTheRegistry) {

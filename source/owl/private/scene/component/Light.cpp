@@ -26,6 +26,8 @@ void Light::serialize(const core::Serializer& iOut) const {
 	out << YAML::Key << "color" << YAML::Value << color;
 	out << YAML::Key << "intensity" << YAML::Value << intensity;
 	out << YAML::Key << "range" << YAML::Value << range;
+	out << YAML::Key << "size" << YAML::Value << size;
+	out << YAML::Key << "radius" << YAML::Value << radius;
 	out << YAML::Key << "innerAngle" << YAML::Value << innerAngle;
 	out << YAML::Key << "outerAngle" << YAML::Value << outerAngle;
 	out << YAML::Key << "castShadows" << YAML::Value << castShadows;
@@ -51,6 +53,12 @@ void Light::deserialize(const core::Serializer& iNode) {
 		intensity = node["intensity"].as<float>();
 	if (node["range"])
 		range = node["range"].as<float>();
+	if (node["size"]) {
+		const auto read = node["size"].as<math::vec2>();
+		size = {std::max(read.x(), g_minAreaSize), std::max(read.y(), g_minAreaSize)};
+	}
+	if (node["radius"])
+		radius = std::max(node["radius"].as<float>(), g_minAreaSize);
 	if (node["innerAngle"])
 		innerAngle = node["innerAngle"].as<float>();
 	if (node["outerAngle"])
