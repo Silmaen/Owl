@@ -11,6 +11,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <span>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -36,8 +38,9 @@ auto TilesetAtlas::fromImage(const std::span<const uint8_t> iRgba, const math::v
 	const auto size = atlas.getSize();
 	const size_t rowBytes = static_cast<size_t>(std::min(size.x(), iSize.x())) * g_pixelSize;
 	for (uint32_t y = 0; y < std::min(size.y(), iSize.y()); ++y)
-		std::copy_n(iRgba.begin() + static_cast<std::ptrdiff_t>(static_cast<size_t>(y) * iSize.x() * g_pixelSize),
-					rowBytes, atlas.m_pixels.begin() + static_cast<std::ptrdiff_t>(y * size.x() * g_pixelSize));
+		std::copy_n(
+				iRgba.begin() + static_cast<std::ptrdiff_t>(static_cast<size_t>(y) * iSize.x() * g_pixelSize), rowBytes,
+				atlas.m_pixels.begin() + static_cast<std::ptrdiff_t>(static_cast<size_t>(y) * size.x() * g_pixelSize));
 	return atlas;
 }
 
@@ -70,8 +73,7 @@ auto TilesetAtlas::getTile(const uint32_t iIndex) const -> std::vector<uint8_t> 
 	const size_t tileRow = static_cast<size_t>(m_tile.x()) * g_pixelSize;
 	std::vector<uint8_t> result(tileRow * m_tile.y());
 	for (uint32_t y = 0; y < m_tile.y(); ++y)
-		std::copy_n(m_pixels.begin() +
-							static_cast<std::ptrdiff_t>((originY + y) * atlasRow + originX * g_pixelSize),
+		std::copy_n(m_pixels.begin() + static_cast<std::ptrdiff_t>((originY + y) * atlasRow + originX * g_pixelSize),
 					tileRow, result.begin() + static_cast<std::ptrdiff_t>(y * tileRow));
 	return result;
 }

@@ -108,7 +108,7 @@ TEST_F(PcgGraphDocumentTest, ParameterDragsMergeIntoOneEntry) {
 	EXPECT_FALSE(m_document.getGraph().findNode(*noise)->values.contains("scale"));
 	m_document.selectNode(core::UUID{12345});
 	EXPECT_FALSE(m_document.getSelectedNode().has_value());
-	m_document.selectNode(*noise);
+	m_document.selectNode(noise);
 	EXPECT_EQ(m_document.getSelectedNode(), noise);
 }
 
@@ -158,8 +158,8 @@ TEST_F(PcgGraphDocumentTest, TheTilemapGeneratorWritesItsLayerAndUndoes) {
 	tilemap.asset().resize(6, 4);
 	tilemap.asset().addLayer("ground");
 	EXPECT_FALSE(tilemap.generate());
-	tilemap.setGenerator(scene::TilemapGenerator{
-			.graphPath = graphFile, .seed = 3, .layer = 0, .origin = {1, 1}, .size = {2, 2}});
+	tilemap.setGenerator(
+			scene::TilemapGenerator{.graphPath = graphFile, .seed = 3, .layer = 0, .origin = {1, 1}, .size = {2, 2}});
 	ASSERT_TRUE(tilemap.asset().generator.has_value());
 	EXPECT_TRUE(tilemap.generate(9));
 	EXPECT_EQ(tilemap.asset().generator->seed, 9u);

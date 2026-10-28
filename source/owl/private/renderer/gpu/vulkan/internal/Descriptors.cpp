@@ -126,25 +126,25 @@ void TextureData::createView() {
 void TextureData::createSampler() {
 	const auto& vkc = VulkanCore::get();
 	const bool nearest = filter == gpu::FilterMode::Nearest || (filter == gpu::FilterMode::PixelArt && mipLevels <= 1);
-	const VkSamplerCreateInfo samplerInfo{.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-										  .pNext = nullptr,
-										  .flags = {},
-										  .magFilter = filter == gpu::FilterMode::Linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST,
-										  .minFilter = nearest ? VK_FILTER_NEAREST : VK_FILTER_LINEAR,
-										  .mipmapMode = nearest ? VK_SAMPLER_MIPMAP_MODE_NEAREST
-																: VK_SAMPLER_MIPMAP_MODE_LINEAR,
-										  .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-										  .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-										  .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-										  .mipLodBias = {},
-										  .anisotropyEnable = nearest ? VK_FALSE : VK_TRUE,
-										  .maxAnisotropy = nearest ? 1.f : vkc.getMaxSamplerAnisotropy(),
-										  .compareEnable = VK_FALSE,
-										  .compareOp = VK_COMPARE_OP_ALWAYS,
-										  .minLod = 0.f,
-										  .maxLod = static_cast<float>(mipLevels),
-										  .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
-										  .unnormalizedCoordinates = VK_FALSE};
+	const VkSamplerCreateInfo samplerInfo{
+			.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = {},
+			.magFilter = filter == gpu::FilterMode::Linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST,
+			.minFilter = nearest ? VK_FILTER_NEAREST : VK_FILTER_LINEAR,
+			.mipmapMode = nearest ? VK_SAMPLER_MIPMAP_MODE_NEAREST : VK_SAMPLER_MIPMAP_MODE_LINEAR,
+			.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+			.mipLodBias = {},
+			.anisotropyEnable = nearest ? VK_FALSE : VK_TRUE,
+			.maxAnisotropy = nearest ? 1.f : vkc.getMaxSamplerAnisotropy(),
+			.compareEnable = VK_FALSE,
+			.compareOp = VK_COMPARE_OP_ALWAYS,
+			.minLod = 0.f,
+			.maxLod = static_cast<float>(mipLevels),
+			.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+			.unnormalizedCoordinates = VK_FALSE};
 	if (textureSampler != nullptr)
 		VulkanHandler::get().deferRelease([device = vkc.getLogicalDevice(), sampler = textureSampler]() -> void {
 			vkDestroySampler(device, sampler, nullptr);

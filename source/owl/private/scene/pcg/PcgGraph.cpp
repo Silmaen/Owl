@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <exception>
 #include <string>
 #include <system_error>
@@ -67,22 +68,23 @@ auto field(std::string iName) -> PinSpec { return {.name = std::move(iName), .ty
 auto points(std::string iName) -> PinSpec { return {.name = std::move(iName), .type = PinType::Points}; }
 
 auto seedParam() -> ParamSpec {
-	return intParam("seed", "0", 0.f, 1000000.f, "Added to the seed of the generation: two nodes of the same seed and "
-												 "settings still differ, the node identifier is part of the stream.");
+	return intParam("seed", "0", 0.f, 1000000.f,
+					"Added to the seed of the generation: two nodes of the same seed and "
+					"settings still differ, the node identifier is part of the stream.");
 }
 
 auto buildNodeTypes() -> std::vector<NodeType> {
 	std::vector<NodeType> types;
-	types.push_back({.id = "source.noise",
-					 .title = "Noise",
-					 .category = "Sources",
-					 .description = "Smooth value noise in [0, 1], summed over octaves (hills, biomes, caves).",
-					 .inputs = {},
-					 .outputs = {field("Field")},
-					 .params = {floatParam("scale", "8", 1.f, 256.f, "Size of the features in cells."),
-								intParam("octaves", "3", 1.f, 8.f, "Layers of finer noise added."),
-								floatParam("persistence", "0.5", 0.f, 1.f, "Weight of each finer layer."),
-								seedParam()}});
+	types.push_back(
+			{.id = "source.noise",
+			 .title = "Noise",
+			 .category = "Sources",
+			 .description = "Smooth value noise in [0, 1], summed over octaves (hills, biomes, caves).",
+			 .inputs = {},
+			 .outputs = {field("Field")},
+			 .params = {floatParam("scale", "8", 1.f, 256.f, "Size of the features in cells."),
+						intParam("octaves", "3", 1.f, 8.f, "Layers of finer noise added."),
+						floatParam("persistence", "0.5", 0.f, 1.f, "Weight of each finer layer."), seedParam()}});
 	types.push_back({.id = "source.random",
 					 .title = "Random",
 					 .category = "Sources",
@@ -136,18 +138,18 @@ auto buildNodeTypes() -> std::vector<NodeType> {
 					 .inputs = {field("Field")},
 					 .outputs = {field("Field")},
 					 .params = {intParam("radius", "1", 1.f, 16.f, "Half side of the square in cells.")}});
-	types.push_back({.id = "field.cellular",
-					 .title = "Cellular Automaton",
-					 .category = "Fields",
-					 .description = "Cave rule on a mask: a cell becomes solid with at least `birth` solid "
-									"neighbours, stays solid with at least `survival`, repeated.",
-					 .inputs = {field("Mask")},
-					 .outputs = {field("Mask")},
-					 .params = {intParam("iterations", "4", 0.f, 16.f, "Steps of the rule."),
-								intParam("birth", "5", 0.f, 8.f, "Solid neighbours that fill an empty cell."),
-								intParam("survival", "4", 0.f, 8.f, "Solid neighbours that keep a solid cell."),
-								choiceParam("edges", {"solid", "open"},
-											"Whether the cells past the region count as solid.")}});
+	types.push_back(
+			{.id = "field.cellular",
+			 .title = "Cellular Automaton",
+			 .category = "Fields",
+			 .description = "Cave rule on a mask: a cell becomes solid with at least `birth` solid "
+							"neighbours, stays solid with at least `survival`, repeated.",
+			 .inputs = {field("Mask")},
+			 .outputs = {field("Mask")},
+			 .params = {intParam("iterations", "4", 0.f, 16.f, "Steps of the rule."),
+						intParam("birth", "5", 0.f, 8.f, "Solid neighbours that fill an empty cell."),
+						intParam("survival", "4", 0.f, 8.f, "Solid neighbours that keep a solid cell."),
+						choiceParam("edges", {"solid", "open"}, "Whether the cells past the region count as solid.")}});
 	types.push_back({.id = "field.edge",
 					 .title = "Edge",
 					 .category = "Fields",
@@ -242,7 +244,8 @@ auto parseGraph(const YAML::Node& iRoot) -> Graph {
 			if (const auto pos = entry["position"]; pos && pos.IsSequence() && pos.size() >= 2)
 				node.position = {pos[0].as<float>(), pos[1].as<float>()};
 			if (const auto values = entry["values"]; values && values.IsMap()) {
-				for (const auto& item: values) node.values[item.first.as<std::string>()] = item.second.as<std::string>();
+				for (const auto& item: values)
+					node.values[item.first.as<std::string>()] = item.second.as<std::string>();
 			}
 			graph.nodes.push_back(std::move(node));
 		}

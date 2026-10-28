@@ -30,10 +30,8 @@ protected:
 	static void SetUpTestSuite() { core::Log::init(core::Log::Level::Off); }
 };
 
-constexpr std::array<std::array<uint8_t, 4>, 4> g_cellColours{{{255, 0, 0, 255},
-																 {0, 255, 0, 255},
-																 {0, 0, 255, 255},
-																 {255, 255, 0, 255}}};
+constexpr std::array<std::array<uint8_t, 4>, 4> g_cellColours{
+		{{255, 0, 0, 255}, {0, 255, 0, 255}, {0, 0, 255, 255}, {255, 255, 0, 255}}};
 
 // An atlas of 2x2 cells of the given size, each cell filled with its own colour.
 auto makeAtlas(const math::vec2ui& iCell) -> std::vector<uint8_t> {

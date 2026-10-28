@@ -90,7 +90,7 @@ using AtlasCells = std::vector<std::tuple<uint32_t, uint32_t, std::vector<uint8_
 // One composition of the atlas: the metadata as YAML and the cells whose pixels changed, at their column and row.
 class ModifyTileAtlasCommand final : public UndoCommand<scene::Tileset> {
 public:
-	/// Grid and changed cells of one side of the edit.
+	// Grid and changed cells of one side of the edit.
 	struct Side {
 		std::string yaml;
 		uint32_t columns = 1;
@@ -332,8 +332,7 @@ auto TilesetDocument::ensureAtlas() -> bool {
 	}
 	const math::vec2ui grid{tile.x() * m_tileset.columns, tile.y() * m_tileset.rows};
 	if (image->second.x() > grid.x() || image->second.y() > grid.y()) {
-		OWL_WARN("TilesetDocument: The atlas image is {}x{}, larger than the {}x{} of the grid: set the columns, rows "
-				 "and tile size first.",
+		OWL_WARN("TilesetDocument: The {}x{} atlas image exceeds the {}x{} grid, fix the grid first.",
 				 image->second.x(), image->second.y(), grid.x(), grid.y())
 		return false;
 	}
@@ -408,7 +407,7 @@ auto TilesetDocument::insertTileImages(const uint32_t iFrom, const std::vector<s
 		return false;
 	}
 	const auto description = images.size() == 1 ? std::format("Set the image of tile {}", iFrom)
-												 : std::format("Insert {} tile images", images.size());
+												: std::format("Insert {} tile images", images.size());
 	return composeAtlas(description, [this, iFrom, &images]() -> bool {
 		const auto [slots, rows] = m_atlas->planInsertion(iFrom, static_cast<uint32_t>(images.size()));
 		if (rows > m_atlas->getRows()) {
@@ -883,7 +882,8 @@ void TilesetDocument::renderCanvas() {
 			const auto length = ::strnlen(data, static_cast<size_t>(payload->DataSize));
 			const auto resolved = resolveAssetPath(std::filesystem::path{std::string(data, length)});
 			const auto slot = cellAt(io.MousePos);
-			if (std::error_code error; slot && (isImageFile(resolved) || std::filesystem::is_directory(resolved, error)))
+			if (std::error_code error;
+				slot && (isImageFile(resolved) || std::filesystem::is_directory(resolved, error)))
 				std::ignore = insertTileImages(*slot, {resolved});
 			else if (mp_editorLayer != nullptr && exists(resolved))
 				mp_editorLayer->requestDeferredOpen(resolved);
@@ -948,12 +948,14 @@ void TilesetDocument::renderCanvas() {
 		drawList->AddLine({atlasTopLeft.x, y}, {atlasBottomRight.x, y}, gridColor);
 	}
 	const auto cellRect = [&](const uint32_t iIndex) -> std::pair<ImVec2, ImVec2> {
-		const ImVec2 min{atlasTopLeft.x + static_cast<float>(iIndex % m_tileset.columns) * cellW,
-						 atlasTopLeft.y + static_cast<float>(iIndex / m_tileset.columns) * cellH};
+		const uint32_t column = iIndex % m_tileset.columns;
+		const uint32_t row = iIndex / m_tileset.columns;
+		const ImVec2 min{atlasTopLeft.x + static_cast<float>(column) * cellW,
+						 atlasTopLeft.y + static_cast<float>(row) * cellH};
 		return {min, ImVec2{min.x + cellW, min.y + cellH}};
 	};
-	for (uint32_t idx = 0; idx < std::min<uint32_t>(m_tileset.tileCount(), static_cast<uint32_t>(m_tileset.tiles.size()));
-		 ++idx) {
+	for (uint32_t idx = 0;
+		 idx < std::min<uint32_t>(m_tileset.tileCount(), static_cast<uint32_t>(m_tileset.tiles.size())); ++idx) {
 		if (m_tileset.tiles[idx].collidable) {
 			const auto [min, max] = cellRect(idx);
 			drawList->AddRectFilled(min, max, IM_COL32(255, 90, 90, 60));

@@ -17,7 +17,6 @@
 #include <format>
 #include <map>
 #include <optional>
-#include <set>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -80,8 +79,7 @@ auto toInt(const std::string& iText, const int64_t iFallback) -> int64_t {
 }
 
 auto isSolid(const Field& iField, const int64_t iX, const int64_t iY, const bool iOutside) -> bool {
-	if (iX < 0 || iY < 0 || iX >= static_cast<int64_t>(iField.size.x()) ||
-		iY >= static_cast<int64_t>(iField.size.y()))
+	if (iX < 0 || iY < 0 || iX >= static_cast<int64_t>(iField.size.x()) || iY >= static_cast<int64_t>(iField.size.y()))
 		return iOutside;
 	return iField.get(static_cast<uint32_t>(iX), static_cast<uint32_t>(iY)) >= g_maskThreshold;
 }
@@ -92,10 +90,10 @@ public:
 		: m_graph{iGraph}, m_region{iRegion}, m_result{ioResult} {}
 
 	auto run() -> bool {
-		for (const auto& node: m_graph.nodes) {
-			if (evaluateNode(node) == nullptr && m_cycle)
-				return false;
-		}
+		const auto order = sortNodes();
+		if (!order)
+			return false;
+		for (const auto* node: *order) m_result.values[node->id] = compute(*node);
 		std::vector<const GraphNode*> outputs;
 		for (const auto& node: m_graph.nodes) {
 			if (node.type.starts_with("output."))
@@ -132,16 +130,13 @@ private:
 			return iLink.toNode == iNode.id && iLink.toPin == iPin;
 		});
 		if (link != m_graph.links.end()) {
-			if (const auto* source = m_graph.findNode(link->fromNode); source != nullptr) {
-				if (const auto* values = evaluateNode(*source); values != nullptr) {
-					if (const auto found = values->find(link->fromPin); found != values->end())
-						return found->second;
-				}
+			if (const auto values = m_result.values.find(link->fromNode); values != m_result.values.end()) {
+				if (const auto found = values->second.find(link->fromPin); found != values->second.end())
+					return found->second;
 			}
 		}
-		if (!m_cycle)
-			m_result.warnings.push_back(std::format("Input '{}' of node {} ({}) is not linked.", iPin,
-													static_cast<uint64_t>(iNode.id), iNode.type));
+		m_result.warnings.push_back(std::format("Input '{}' of node {} ({}) is not linked.", iPin,
+												static_cast<uint64_t>(iNode.id), iNode.type));
 		return std::nullopt;
 	}
 
@@ -157,21 +152,33 @@ private:
 		return {};
 	}
 
-	auto evaluateNode(const GraphNode& iNode) -> const std::map<std::string, PinValue>* {
-		if (const auto found = m_result.values.find(iNode.id); found != m_result.values.end())
-			return &found->second;
-		if (m_cycle)
-			return nullptr;
-		if (!m_visiting.insert(iNode.id).second) {
-			OWL_CORE_WARN("PcgGraph: Node {} ({}) depends on itself.", static_cast<uint64_t>(iNode.id), iNode.type)
-			m_cycle = true;
-			return nullptr;
+	// Kahn's order: every node after the nodes its inputs read, none when a node depends on itself.
+	[[nodiscard]] auto sortNodes() const -> std::optional<std::vector<const GraphNode*>> {
+		std::map<core::UUID, size_t> pending;
+		for (const auto& node: m_graph.nodes) pending[node.id] = 0;
+		for (const auto& link: m_graph.links) {
+			if (pending.contains(link.fromNode) && pending.contains(link.toNode))
+				++pending[link.toNode];
 		}
-		auto values = compute(iNode);
-		m_visiting.erase(iNode.id);
-		if (m_cycle)
-			return nullptr;
-		return &(m_result.values[iNode.id] = std::move(values));
+		std::vector<const GraphNode*> order;
+		order.reserve(m_graph.nodes.size());
+		for (const auto& node: m_graph.nodes) {
+			if (pending[node.id] == 0)
+				order.push_back(&node);
+		}
+		for (size_t next = 0; next < order.size(); ++next) {
+			for (const auto& link: m_graph.links) {
+				if (link.fromNode != order[next]->id || !pending.contains(link.toNode))
+					continue;
+				if (--pending[link.toNode] == 0)
+					order.push_back(m_graph.findNode(link.toNode));
+			}
+		}
+		if (order.size() != m_graph.nodes.size()) {
+			OWL_CORE_WARN("PcgGraph: {} nodes depend on themselves.", m_graph.nodes.size() - order.size())
+			return std::nullopt;
+		}
+		return order;
 	}
 
 	auto compute(const GraphNode& iNode) -> std::map<std::string, PinValue> {
@@ -233,11 +240,12 @@ private:
 			return {{"Mask", fieldInput(iNode, "Mask")}};
 		if (type == "output.points")
 			return {{"Points", pointsInput(iNode, "Points")}};
-		m_result.warnings.push_back(std::format("Node {} has the unknown type '{}'.", static_cast<uint64_t>(iNode.id), type));
+		m_result.warnings.push_back(
+				std::format("Node {} has the unknown type '{}'.", static_cast<uint64_t>(iNode.id), type));
 		return {};
 	}
 
-	auto noise(const GraphNode& iNode) const -> Field {
+	[[nodiscard]] auto noise(const GraphNode& iNode) const -> Field {
 		auto result = emptyField();
 		const float scale = std::max(1.f, number(iNode, "scale"));
 		const auto octaves = std::clamp<int64_t>(integer(iNode, "octaves"), 1, 8);
@@ -250,8 +258,8 @@ private:
 				float amplitude = 1.f;
 				float frequency = 1.f / scale;
 				for (int64_t octave = 0; octave < octaves; ++octave) {
-					sum += amplitude * valueNoise(mix(seed + static_cast<uint64_t>(octave)), static_cast<float>(x) * frequency,
-												  static_cast<float>(y) * frequency);
+					sum += amplitude * valueNoise(mix(seed + static_cast<uint64_t>(octave)),
+												  static_cast<float>(x) * frequency, static_cast<float>(y) * frequency);
 					weight += amplitude;
 					amplitude *= persistence;
 					frequency *= 2.f;
@@ -262,7 +270,7 @@ private:
 		return result;
 	}
 
-	auto gradient(const GraphNode& iNode) const -> Field {
+	[[nodiscard]] auto gradient(const GraphNode& iNode) const -> Field {
 		auto result = emptyField();
 		const auto direction = Graph::getValue(iNode, "direction");
 		const float width = static_cast<float>(std::max(1u, m_region.size.x() - 1));
@@ -305,7 +313,7 @@ private:
 		return result;
 	}
 
-	auto blur(const Field& iField, const int64_t iRadius) const -> Field {
+	[[nodiscard]] auto blur(const Field& iField, const int64_t iRadius) const -> Field {
 		auto result = emptyField();
 		const auto radius = std::clamp<int64_t>(iRadius, 1, 16);
 		const auto width = static_cast<int64_t>(m_region.size.x());
@@ -346,9 +354,8 @@ private:
 								++count;
 						}
 					}
-					const bool solid = isSolid(current, x, y, solidEdges);
-					next.values[static_cast<size_t>(y) * m_region.size.x() + x] =
-							(solid ? count >= survival : count >= birth) ? 1.f : 0.f;
+					const bool alive = isSolid(current, x, y, solidEdges) ? count >= survival : count >= birth;
+					next.values[static_cast<size_t>(y) * m_region.size.x() + x] = alive ? 1.f : 0.f;
 				}
 			}
 			current = std::move(next);
@@ -439,7 +446,8 @@ private:
 		if (values == m_result.values.end())
 			return;
 		const bool erase = iNode.type == "output.erase";
-		const auto tile = erase ? int32_t{-1} : static_cast<int32_t>(std::clamp<int64_t>(integer(iNode, "tile"), 0, 65535));
+		const auto tile =
+				erase ? int32_t{-1} : static_cast<int32_t>(std::clamp<int64_t>(integer(iNode, "tile"), 0, 65535));
 		for (const auto& [pin, value]: values->second) {
 			if (const auto* mask = std::get_if<Field>(&value); mask != nullptr) {
 				for (size_t i = 0; i < mask->values.size() && i < m_result.tiles.size(); ++i) {
@@ -456,8 +464,6 @@ private:
 	const Graph& m_graph;
 	Region m_region;
 	Result& m_result;
-	std::set<core::UUID> m_visiting;
-	bool m_cycle{false};
 };
 
 }// namespace

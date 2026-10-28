@@ -35,7 +35,8 @@ protected:
 
 auto addNode(Graph& ioGraph, const uint64_t iId, const std::string& iType, const float iY = 0.f,
 			 std::map<std::string, std::string> iValues = {}) -> core::UUID {
-	ioGraph.nodes.push_back({.id = core::UUID{iId}, .type = iType, .position = {0.f, iY}, .values = std::move(iValues)});
+	ioGraph.nodes.push_back(
+			{.id = core::UUID{iId}, .type = iType, .position = {0.f, iY}, .values = std::move(iValues)});
 	return core::UUID{iId};
 }
 
@@ -117,10 +118,10 @@ TEST_F(PcgGraphTest, TheSameSeedGivesTheSameTiles) {
 	EXPECT_EQ(first->tiles, second->tiles);
 	EXPECT_NE(first->tiles, other->tiles);
 	const auto& noise = fieldOf(*first, 1, "Field");
-	EXPECT_TRUE(std::ranges::all_of(noise.values, [](const float iValue) -> bool { return iValue >= 0.f && iValue <= 1.f; }));
-	EXPECT_TRUE(std::ranges::all_of(first->tiles, [](const int32_t iTile) -> bool {
-		return iTile == 3 || iTile == g_UntouchedTile;
-	}));
+	EXPECT_TRUE(std::ranges::all_of(noise.values,
+									[](const float iValue) -> bool { return iValue >= 0.f && iValue <= 1.f; }));
+	EXPECT_TRUE(std::ranges::all_of(
+			first->tiles, [](const int32_t iTile) -> bool { return iTile == 3 || iTile == g_UntouchedTile; }));
 	EXPECT_TRUE(std::ranges::contains(first->tiles, 3));
 	EXPECT_TRUE(std::ranges::contains(first->tiles, g_UntouchedTile));
 }
@@ -142,7 +143,8 @@ TEST_F(PcgGraphTest, UnlinkedInputsAndUnknownNodesWarn) {
 	const auto result = evaluate(graph, {.size = {2, 2}, .seed = 0});
 	ASSERT_TRUE(result.has_value());
 	EXPECT_EQ(result->warnings.size(), 2u);
-	EXPECT_TRUE(std::ranges::all_of(result->tiles, [](const int32_t iTile) -> bool { return iTile == g_UntouchedTile; }));
+	EXPECT_TRUE(
+			std::ranges::all_of(result->tiles, [](const int32_t iTile) -> bool { return iTile == g_UntouchedTile; }));
 }
 
 TEST_F(PcgGraphTest, TheLowestOutputWins) {
@@ -203,7 +205,8 @@ TEST_F(PcgGraphTest, CellularAutomatonAndEdges) {
 	const auto result = evaluate(graph, {.size = {24, 16}, .seed = 3});
 	ASSERT_TRUE(result.has_value());
 	const auto& cave = fieldOf(*result, 3, "Mask");
-	EXPECT_TRUE(std::ranges::all_of(cave.values, [](const float iValue) -> bool { return iValue == 0.f || iValue == 1.f; }));
+	EXPECT_TRUE(std::ranges::all_of(cave.values,
+									[](const float iValue) -> bool { return iValue == 0.f || iValue == 1.f; }));
 	const auto& edge = fieldOf(*result, 5, "Mask");
 	EXPECT_FLOAT_EQ(edge.get(0, 0), 1.f);
 	EXPECT_FLOAT_EQ(edge.get(5, 0), 1.f);

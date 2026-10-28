@@ -407,6 +407,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Items of the context menu that create or import assets in the current folder.
+	 */
+	void renderCreateItems();
+
+	/**
+	 * @brief
 	 *  Open a file dialog and import a file into the current directory.
 	 */
 	void importFiles();

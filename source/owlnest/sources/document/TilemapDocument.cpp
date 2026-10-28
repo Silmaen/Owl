@@ -247,7 +247,8 @@ auto TilemapDocument::getGeneratorPreview() -> const std::optional<scene::pcg::R
 	if (std::error_code error; app::Application::instanced()) {
 		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 			if (const auto candidate = assetsPath / generator.graphPath; exists(candidate, error)) {
-				stamp = std::format("{}", std::filesystem::last_write_time(candidate, error).time_since_epoch().count());
+				stamp = std::format("{}",
+									std::filesystem::last_write_time(candidate, error).time_since_epoch().count());
 				break;
 			}
 		}
@@ -362,13 +363,15 @@ void TilemapDocument::drawGeneratorPreview(ImDrawList* iDrawList, const ImVec2& 
 								 iGridTopLeft.y + static_cast<float>(origin.y() + y) * iCellPx};
 			const ImVec2 cellMax{cellMin.x + iCellPx, cellMin.y + iCellPx};
 			if (tile < 0 || tex == nullptr) {
-				iDrawList->AddRectFilled(cellMin, cellMax, tile < 0 ? IM_COL32(0, 0, 0, 150) : IM_COL32(120, 220, 140, 150));
+				iDrawList->AddRectFilled(cellMin, cellMax,
+										 tile < 0 ? IM_COL32(0, 0, 0, 150) : IM_COL32(120, 220, 140, 150));
 				continue;
 			}
 			const auto uvs = m_asset.tileset->getTileUv(static_cast<uint32_t>(tile));
-			iDrawList->AddImageQuad(static_cast<ImTextureID>(tex->getRendererId()), cellMin, ImVec2{cellMax.x, cellMin.y},
-									cellMax, ImVec2{cellMin.x, cellMax.y}, gui::vec(uvs[3]), gui::vec(uvs[2]),
-									gui::vec(uvs[1]), gui::vec(uvs[0]), IM_COL32(255, 255, 255, 170));
+			iDrawList->AddImageQuad(static_cast<ImTextureID>(tex->getRendererId()), cellMin,
+									ImVec2{cellMax.x, cellMin.y}, cellMax, ImVec2{cellMin.x, cellMax.y},
+									gui::vec(uvs[3]), gui::vec(uvs[2]), gui::vec(uvs[1]), gui::vec(uvs[0]),
+									IM_COL32(255, 255, 255, 170));
 		}
 	}
 	const ImVec2 regionMin{iGridTopLeft.x + static_cast<float>(origin.x()) * iCellPx,

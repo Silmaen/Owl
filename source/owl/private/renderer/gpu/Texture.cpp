@@ -456,7 +456,8 @@ auto Texture2D::reloadFromFile() -> bool {
 		setData(const_cast<uint8_t*>(decoded.pixels.data()), static_cast<uint32_t>(decoded.pixels.size()));
 	}
 	m_loadState = LoadState::Ready;
-	OWL_CORE_INFO("Texture: '{}' reloaded ({}x{}).", m_path.string(), m_specification.size.x(), m_specification.size.y())
+	OWL_CORE_INFO("Texture: '{}' reloaded ({}x{}).", m_path.string(), m_specification.size.x(),
+				  m_specification.size.y())
 	return true;
 }
 

@@ -290,7 +290,8 @@ void PcgGraphDocument::setNodeValue(const core::UUID iNode, const std::string& i
 void PcgGraphDocument::deleteNodes(const std::span<const core::UUID> iNodes) {
 	auto next = m_graph;
 	for (const auto id: iNodes) next.removeNode(id);
-	std::ignore = commit(std::move(next), iNodes.size() == 1 ? "Delete node" : std::format("Delete {} nodes", iNodes.size()));
+	std::ignore =
+			commit(std::move(next), iNodes.size() == 1 ? "Delete node" : std::format("Delete {} nodes", iNodes.size()));
 }
 
 void PcgGraphDocument::selectNode(const std::optional<core::UUID> iNode) {
@@ -469,8 +470,8 @@ void PcgGraphDocument::renderPropertiesPanel() {
 					case scene::pcg::ParamType::Float:
 						{
 							float number = parseFloat(value);
-							if (gui::widgets::propertyFloat(param.name.c_str(), number, parseFloat(param.defaultValue), 0.01f,
-															"%.3f", param.description.c_str()))
+							if (gui::widgets::propertyFloat(param.name.c_str(), number, parseFloat(param.defaultValue),
+															0.01f, "%.3f", param.description.c_str()))
 								setNodeValue(node->id, param.name,
 											 std::format("{}", std::clamp(number, param.min, param.max)), true);
 							break;
@@ -480,8 +481,8 @@ void PcgGraphDocument::renderPropertiesPanel() {
 							int number = static_cast<int>(parseFloat(value));
 							if (gui::widgets::propertyInt(param.name.c_str(), number,
 														  static_cast<int>(parseFloat(param.defaultValue)),
-														  static_cast<int>(param.min), static_cast<int>(param.max), "%d",
-														  param.description.c_str()))
+														  static_cast<int>(param.min), static_cast<int>(param.max),
+														  "%d", param.description.c_str()))
 								setNodeValue(node->id, param.name, std::format("{}", number), true);
 							break;
 						}
@@ -522,7 +523,8 @@ void PcgGraphDocument::renderPreview() {
 											   "A node of the graph depends on itself: remove a link of the loop.");
 		return;
 	}
-	for (const auto& warning: result->warnings) ImGui::TextColored(ImVec4{1.f, 0.75f, 0.3f, 1.f}, "%s", warning.c_str());
+	for (const auto& warning: result->warnings)
+		ImGui::TextColored(ImVec4{1.f, 0.75f, 0.3f, 1.f}, "%s", warning.c_str());
 	const float available = std::max(32.f, ImGui::GetContentRegionAvail().x);
 	const float cell = std::clamp(available / static_cast<float>(result->size.x()), 1.f, 8.f);
 	const ImVec2 origin = ImGui::GetCursorScreenPos();
@@ -536,8 +538,8 @@ void PcgGraphDocument::renderPreview() {
 	};
 	const scene::pcg::PinValue* shown = nullptr;
 	if (m_selectedNode) {
-		if (const auto values = result->values.find(*m_selectedNode); values != result->values.end() &&
-																		 !values->second.empty())
+		if (const auto values = result->values.find(*m_selectedNode);
+			values != result->values.end() && !values->second.empty())
 			shown = &values->second.begin()->second;
 	}
 	if (const auto* field = shown != nullptr ? std::get_if<scene::pcg::Field>(shown) : nullptr; field != nullptr) {

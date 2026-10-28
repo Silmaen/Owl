@@ -196,7 +196,8 @@ public:
 	 * @param[in] iCount Number of images.
 	 * @return The cells, one per image, and the row count the grid needs.
 	 */
-	[[nodiscard]] auto planInsertion(uint32_t iFrom, uint32_t iCount) const -> std::pair<std::vector<uint32_t>, uint32_t>;
+	[[nodiscard]] auto planInsertion(uint32_t iFrom, uint32_t iCount) const
+			-> std::pair<std::vector<uint32_t>, uint32_t>;
 
 private:
 	/// Size of a cell in pixels.

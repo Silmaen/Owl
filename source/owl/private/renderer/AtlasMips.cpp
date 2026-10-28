@@ -13,6 +13,8 @@
 #include <array>
 #include <bit>
 #include <cstddef>
+#include <cstdint>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -30,7 +32,9 @@ auto halve(const std::vector<uint8_t>& iPixels, const math::vec2ui& iSize) -> st
 			std::array<uint32_t, 3> plain{};
 			for (uint32_t dy = 0; dy < 2; ++dy) {
 				for (uint32_t dx = 0; dx < 2; ++dx) {
-					const auto* texel = &iPixels[((static_cast<size_t>(y) * 2 + dy) * iSize.x() + x * 2 + dx) * 4];
+					const auto* texel =
+							&iPixels[((static_cast<size_t>(y) * 2 + dy) * iSize.x() + static_cast<size_t>(x) * 2 + dx) *
+									 4];
 					for (size_t channel = 0; channel < 3; ++channel) {
 						weighted[channel] += static_cast<uint32_t>(texel[channel]) * texel[3];
 						plain[channel] += texel[channel];
