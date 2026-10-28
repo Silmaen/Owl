@@ -377,6 +377,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Create a starter visual script in the current folder and open it.
+	 */
+	void createVisualScript();
+
+	/**
+	 * @brief
 	 *  Open a file dialog and import a file into the current directory.
 	 */
 	void importFiles();

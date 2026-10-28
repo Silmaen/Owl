@@ -60,7 +60,7 @@ auto isPathOfKind(const std::filesystem::path& iPath, const AssetKind iKind) -> 
 		case AssetKind::Sound:
 			return matches(ext, {".wav", ".mp3", ".ogg", ".flac"});
 		case AssetKind::LuaScript:
-			return ext == ".lua";
+			return matches(ext, {".lua", ".owlvs"});
 		case AssetKind::AnyScript:
 			return matches(ext, {".lua", ".py", ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp"});
 		case AssetKind::Scene:

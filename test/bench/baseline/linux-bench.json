@@ -2133,13 +2133,13 @@
     {
       "name": "culling/octree/brute_force/1000",
       "items": 1000,
-      "batch": 821,
+      "batch": 717,
       "samples": 15,
-      "median_ns": 12539.3,
-      "p25_ns": 12513.5,
-      "p75_ns": 12555.7,
-      "min_ns": 12491.8,
-      "max_ns": 12656.7
+      "median_ns": 15281.6,
+      "p25_ns": 15236.9,
+      "p75_ns": 15566.4,
+      "min_ns": 15138.2,
+      "max_ns": 15674.9
     },
     {
       "name": "culling/octree/move_tenth/1000",
@@ -2448,6 +2448,50 @@
       "p75_ns": 10503000.0,
       "min_ns": 10466542.0,
       "max_ns": 12722054.0
+    },
+    {
+      "name": "serialize/scene_from_binary/1000",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 3562626.0,
+      "p25_ns": 3558226.0,
+      "p75_ns": 3565105.0,
+      "min_ns": 3552079.0,
+      "max_ns": 3573242.0
+    },
+    {
+      "name": "serialize/scene_from_binary/10000",
+      "items": 10000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 59301945.0,
+      "p25_ns": 59235839.0,
+      "p75_ns": 59322409.5,
+      "min_ns": 59078936.0,
+      "max_ns": 59567140.0
+    },
+    {
+      "name": "sample/load/far_orbit",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 178729.0,
+      "p25_ns": 177960.5,
+      "p75_ns": 182918.5,
+      "min_ns": 176284.0,
+      "max_ns": 193326.0
+    },
+    {
+      "name": "sample/editor_update/far_orbit",
+      "items": 1,
+      "batch": 1000,
+      "samples": 15,
+      "median_ns": 10643.5,
+      "p25_ns": 10616.4,
+      "p75_ns": 10669.4,
+      "min_ns": 10583.7,
+      "max_ns": 12725.3
     }
   ],
   "metrics": [

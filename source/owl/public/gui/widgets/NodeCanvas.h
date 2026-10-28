@@ -77,7 +77,7 @@ struct Link {
 /**
  * @brief
  *  Should the canvas draw pin labels at the given zoom level?
- * @param[in] iZoomFactor Current `GraphEditor` view zoom (1.0 = native).
+ * @param[in] iZoomFactor Current view zoom (1.0 = native).
  * @return True while the zoom is high enough to make labels readable.
  */
 [[nodiscard]] OWL_API auto shouldDrawPinLabels(float iZoomFactor) -> bool;
@@ -85,7 +85,7 @@ struct Link {
 /**
  * @brief
  *  Should the canvas draw a node's title text at the given zoom level?
- * @param[in] iZoomFactor Current `GraphEditor` view zoom (1.0 = native).
+ * @param[in] iZoomFactor Current view zoom (1.0 = native).
  * @return True while the zoom is high enough to make the title readable.
  *
  * The node silhouette and connectors are always drawn regardless.
@@ -96,11 +96,9 @@ struct Link {
  * @brief
  *  A generic node-graph canvas widget.
  *
- * Backed by a pimpl over `GraphEditor` from the ImGuizmo bundle, so the
- * underlying third-party header stays private. The API exposes owl types
- * (`core::UUID`, `math::vec2f`, `math::vec4`) and standard containers; the
- * widget maintains a bidirectional mapping between UUIDs and the integer
- * indices consumed by `GraphEditor`.
+ * Drawn with the node style of `NodeStyle.h`: one row per pin, inputs and outputs aligned, title bar, pan with the
+ * right or middle button, zoom with the wheel while the canvas is under the mouse and no popup is open. The API
+ * exposes owl types (`core::UUID`, `math::vec2f`, `math::vec4`) and standard containers.
  *
  * The canvas is **data only**: it never mutates the scene or any business
  * domain. All domain side effects (e.g. creating a teleport trigger when a
@@ -310,9 +308,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Set the callback fired when the user double-clicks a node.
-	 *
-	 * Detected in the wrapper, not native in `GraphEditor`.
+	 *  Set the callback fired when the user double-clicks a node (two clicks within 300 ms).
 	 * @param[in] iCb Callback `(iNodeId) -> void`.
 	 */
 	void setOnNodeDoubleClicked(std::function<void(core::UUID iNodeId)> iCb);
@@ -341,10 +337,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Mouse position in canvas space, as of the last `onRender()` call.
+	 * @return The position, in the coordinates of `Node::position`.
+	 */
+	[[nodiscard]] auto getMouseCanvasPosition() const -> math::vec2f;
+
+	/**
+	 * @brief
 	 *  Request that the next `onRender()` call zoom + pan the view so every node fits.
 	 *
-	 * Single-shot — the canvas resets the request automatically once handled, matching the
-	 * `GraphEditor::Fit_AllNodes` parameter convention.
+	 * Single-shot: the canvas resets the request once handled.
 	 */
 	void requestFitToContent();
 

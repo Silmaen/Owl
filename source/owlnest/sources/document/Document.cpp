@@ -54,8 +54,12 @@ auto documentLabel(const DocumentType iType) -> DocumentLabel {
 }// namespace
 
 auto documentWindowTitle(const DocumentType iType, const std::string_view iName, const uint64_t iId) -> std::string {
-	const auto [glyph, kind] = documentLabel(iType);
-	return std::format("{}  {}###{}_{:x}", glyph, iName.empty() ? std::string_view{"Untitled"} : iName, kind, iId);
+	return std::format("{}  {}{}", documentLabel(iType).glyph, iName.empty() ? std::string_view{"Untitled"} : iName,
+					   documentWindowId(iType, iId));
+}
+
+auto documentWindowId(const DocumentType iType, const uint64_t iId) -> std::string {
+	return std::format("###{}_{:x}", documentLabel(iType).kind, iId);
 }
 
 }// namespace owl::nest

@@ -13,6 +13,7 @@
 #include "data/fonts/FontLibrary.h"
 #include "data/fonts/FontSettings.h"
 #include "data/geometry/MeshLoader.h"
+#include "script/visual/VisualScript.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -314,7 +315,9 @@ void scanLuaScript(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-re
 	if (!exists(iScriptPath))
 		return;
 	std::ifstream scriptFile(iScriptPath);
-	const std::string scriptContent((std::istreambuf_iterator<char>(scriptFile)), std::istreambuf_iterator<char>());
+	std::string scriptContent((std::istreambuf_iterator<char>(scriptFile)), std::istreambuf_iterator<char>());
+	if (script::visual::isVisualScriptPath(iScriptPath.string()))
+		scriptContent = script::visual::compileText(scriptContent, iScriptPath.string()).value_or(std::string{});
 	const auto source = iScriptPath.filename().string();
 	// Any quoted scene path, the argument of `sound.play` or any quoted sound file, any quoted serialized texture.
 	static const std::regex scenePattern(R"(["']((?:scenes/)?[^"']+\.owl)["'])");

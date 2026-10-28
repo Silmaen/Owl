@@ -11,6 +11,8 @@
 #include "core/Core.h"
 #include "math/vectors.h"
 
+#include <optional>
+
 namespace owl::gui::widgets {
 
 /**
@@ -39,10 +41,12 @@ struct SectionHeaderResult {
  *  null.
  * @param[in] iWithMenu Whether to draw the menu button.
  * @param[in] iDefaultOpen Expanded the first time it is shown.
+ * @param[in] iIconColor Colour of a glyph icon in place of the accent (a value type colour).
  * @return The open state and the clicks of this frame.
  */
 OWL_API auto sectionHeader(const char* iTitle, const char* iIconName = nullptr, bool iWithMenu = true,
-						   bool iDefaultOpen = true) -> SectionHeaderResult;
+						   bool iDefaultOpen = true, const std::optional<math::vec4>& iIconColor = std::nullopt)
+		-> SectionHeaderResult;
 
 /**
  * @brief

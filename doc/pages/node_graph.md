@@ -28,7 +28,7 @@ classDiagram
         +addLink(fromPin, toPin) UUID
         +removeLink(UUID)
         +onRender()
-        -Impl (GraphEditor Delegate)
+        -Impl (drawing and gestures)
     }
     class NodeCanvasSerializer {
         +serializeToString(canvas, name) string
@@ -88,20 +88,20 @@ Every callback is optional. Install them with `setOn*` methods before the first 
 | `setOnNodeDoubleClicked` | Double click on the same node within 300 ms (detected in wrapper)   |
 | `setOnContextMenu`       | Right click; `std::optional<UUID>` set when a specific node was hit |
 
-### Backend
+### Drawing and gestures
 
-The pimpl wraps **`GraphEditor`** from the `imguizmo` package (1.10, local Conan recipe). Since ImGuizmo is distributed
-as a bundle, the same package also ships `ImSequencer`, `ImCurveEdit`, `ImGradient`,
-`ImZoomSlider` and `ImLightRig` — available for future asset editors without any new dependency.
+The canvas draws itself with the node style of `gui/widgets/NodeStyle.h`, shared with the visual script editor: grid,
+title bar, round pins on one row each (inputs and outputs aligned), links as curves coloured by their source pin.
 
-GraphEditor exposes an index-based `Delegate` interface. The wrapper maintains the UUID↔index mapping so the public API
-stays UUID-based and any future swap to a different node-graph library only touches the `.cpp`.
-
-### Double-click detection
-
-`GraphEditor` has no native double-click signal — only
-`SelectNode(index, selected)`. The wrapper tracks the last clicked node UUID and timestamp; if the same node is
-re-selected within 300 ms the double-click callback fires instead of the single-click one.
+| Gesture                        | Action                                                         |
+|--------------------------------|----------------------------------------------------------------|
+| Click a node                   | Select it (**Ctrl** toggles, **Shift** adds); double-click     |
+| Drag a node                    | Move the selection (`setOnNodeMoved` for each moved node)      |
+| Drag on the background         | Select the nodes in the rectangle                              |
+| Drag from a pin to a pin       | Link, through `setLinkValidator`                               |
+| Hover a link, **Delete**       | Remove the link                                                |
+| Right-drag, middle-drag, wheel | Pan and zoom; the wheel zooms only with no popup open          |
+| Right click                    | `setOnContextMenu`                                             |
 
 ## `gui::widgets::NodeCanvasSerializer`
 
@@ -200,8 +200,7 @@ Behaviour in this first slice:
 - **Auto-size** — every node's bounding box is computed from its title and pin labels (`NodeCanvas::measureNode`), so
   long entity / scene names stay readable. Titles drop the implicit `.owl` extension. The grid layout uses the actual
   per-column max width and per-row max height so wide nodes never overlap their neighbours.
-- **Pin styling** — labels are rendered inside the node frame (`NodeCanvas::CustomDraw`); GraphEditor receives `nullptr`
-  for slot names so nothing leaks outside the rect. Each pin can carry its own
+- **Pin styling** — labels are drawn inside the node frame, on the row of their pin. Each pin can carry its own
   `NodePin::labelColor`. Pin labels are compact — just the source identifier with a single-glyph kind hint. Teleport
   pins are white with the bare scene name (e.g. `world_map`); Death pins are red and prefix the entity name with
   `[X]`; Victory pins are green with a `[*]` prefix; Lua transitions are blue with a `[l]` prefix followed by the script

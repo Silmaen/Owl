@@ -1153,6 +1153,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Make the document whose window holds the keyboard focus the active one, whatever its type.
+	 */
+	void followFocusedDocument();
+
+	/**
+	 * @brief
 	 *  Keep panels synced with the currently active document.
 	 */
 	void syncActiveDocumentPanels();

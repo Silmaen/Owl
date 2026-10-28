@@ -56,3 +56,8 @@ User-facing reference: `doc/pages/scripting.md` (guide), `doc/pages/lua-api.md` 
 - Scripts load from the open `.owlpack` first, then the filesystem.
 - A script must never trigger a scene load directly: set a request flag (see `save.load_game`) handled
   after `onUpdateRuntime()`.
+- Visual scripts (`.owlvs`, `script::visual`): the graph model, the node palette (built-ins + one node per binding,
+  `visual/BindingNodes.cpp`, empty without the script module) and the compiler to Lua. `LuaEngine::loadScript` /
+  `loadBuffer` compile a `.owlvs` before loading it, so every script path accepts one; a new binding is a new node
+  with no other edit. Owl Nest edits them in `VisualScriptDocument` (own `UndoManager<VisualScript>`), drawn by
+  `VisualScriptCanvas`, which returns each gesture as an edit and never writes the graph.

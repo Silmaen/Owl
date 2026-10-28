@@ -15,13 +15,31 @@ Design page for the Blueprints-style visual scripting, summarised in the [Roadma
 
 ## v0.6.0 — visual scripting MVP
 
-- Event graphs (`on_create`, `on_update`, triggers, collisions, UI callbacks) edited on `NodeCanvas`
+- Event graphs (`on_create`, `on_update`, triggers, collisions, UI callbacks) edited on a canvas of their own
 - Graphs compile to Lua, so they run on the existing `ScriptInstance` path and pack like any script
 - Node palette generated from the typed binding registry, so every engine API is a node
 - Debugging: live values shown on the wires during Play, breakpoints on nodes
 - Full editor coverage: select-many, move-group, delete-group, copy / paste, undo
 - Node editing of other assets (scripts first) folds in here, on the same palette and compiler (decided at the v0.4.0
   kickoff)
+
+### Status {#visual-scripting-status}
+
+| Part                                                                                     | Status  |
+|------------------------------------------------------------------------------------------|---------|
+| `.owlvs` graph, palette from the binding registry, compiler to Lua, `LuaScript` and pack | Done    |
+| Colour and vector values, grouped pins split into components                             | Done    |
+| Owl Nest editor: canvas, node library, inline values, variables, errors, Lua, undo       | Done    |
+| Debugging: live values on the wires, breakpoints on nodes                                | Planned |
+| Node editing of other assets                                                             | Planned |
+
+User guide: [Visual scripts](../visual-scripts.md).
+
+### Lua to graph {#visual-scripting-lua-to-graph}
+
+To evaluate after v0.6.0: build a graph from a Lua script, the reverse of the compiler. The subset to support (hooks,
+binding calls, `if`, numeric `for`, property reads and writes) and what to do with the rest (one Lua node holding the
+code, or a refusal) are the open questions.
 
 ## Node-graph link waypoints (v0.6.0)
 

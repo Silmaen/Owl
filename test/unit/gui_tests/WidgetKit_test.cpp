@@ -190,6 +190,8 @@ TEST_F(WidgetKitTest, EveryWidgetDrawsWithoutInput) {
 			EXPECT_FALSE(chip("Textures##chip", true));
 			if (sectionHeader("Physics", icon::gauge, false).open)
 				endSection();
+			if (sectionHeader("Speed", icon::gauge, false, false, math::vec4{0.6f, 0.9f, 0.25f, 1.f}).open)
+				endSection();
 			const auto header = sectionHeader("Transform", nullptr);
 			EXPECT_FALSE(header.menuClicked);
 			EXPECT_GT(header.max.y(), header.min.y());

@@ -199,7 +199,7 @@ public:
 	 *  Load a node graph from disk. Returns false on I/O or parse error.
 	 * @return True on success, false otherwise.
 	 */
-	auto loadFromFile(const std::filesystem::path& iPath) -> bool;
+	virtual auto loadFromFile(const std::filesystem::path& iPath) -> bool;
 
 	/**
 	 * @brief

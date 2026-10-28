@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace owl::nest {
@@ -82,6 +83,14 @@ public:
 	 * @return The matching find, or empty when nothing was found.
 	 */
 	[[nodiscard]] auto find(core::UUID iId) const -> Document*;
+
+	/**
+	 * @brief
+	 *  The document a window belongs to, from the window title (`documentWindowId` at its end).
+	 * @param[in] iWindowName Full name of the window, as given to `ImGui::Begin`.
+	 * @return The document, or nullptr when the window is no document (a panel, a popup).
+	 */
+	[[nodiscard]] auto findByWindowName(std::string_view iWindowName) const -> Document*;
 
 	/**
 	 * @brief

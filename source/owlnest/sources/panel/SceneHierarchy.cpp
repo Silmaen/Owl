@@ -363,6 +363,9 @@ void SceneHierarchy::renderHierarchy() {
 			gui::widgets::endTreeRow();
 		}
 		ImGui::PopStyleColor();
+	} else {
+		std::ignore = gui::widgets::emptyState(gui::icon::listTree, "No scene",
+											   "The active document has no entities. Open a scene to see them here.");
 	}
 	ImGui::End();
 }
@@ -749,10 +752,14 @@ void SceneHierarchy::renderProperties() {
 			gui::UiLayer::pushTextStyle(gui::TextStyle::Label);
 			drawComponents(m_selection);
 			gui::UiLayer::popTextStyle();
-		} else if (m_context)
+		} else if (m_context) {
 			std::ignore = gui::widgets::emptyState(gui::icon::mousePointer2, "No entity selected",
 												   "Click an entity in the viewport or in the Hierarchy to edit its "
 												   "components here.");
+		} else {
+			std::ignore = gui::widgets::emptyState(gui::icon::slidersHorizontal, "Nothing to inspect",
+												   "The active document has no properties here.");
+		}
 		m_inspector.endFrame(getCommandTarget());
 	}
 	ImGui::End();

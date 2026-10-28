@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest moves the world origin with an undoable `scene.set_world_origin` (viewport Camera menu, Scene Settings field), the view following it.
 - Lua `transform.get_world_position` / `set_world_position` in double and `scene.get_world_origin`.
 - Engine Demo far orbit (`far_orbit.owl`, **K** from the menu): a station one astronomical unit away, sharp to the centimetre.
+- Visual scripts (`.owlvs`): event graphs compiled to Lua at load, usable wherever a `.lua` script is, their variables as script properties.
+- Owl Nest visual script editor: Blueprint-style canvas with inline values, node library to drag from, variables and node details in the Graph panel, graph / split / coloured Lua views, two-tone icons of the value types and node families, copy / paste, undo.
+- Visual scripts: colour and vector values (`Color`, `Vector 2`, `Vector 3`), as variables, make / break nodes, and the `r g b a` / `x y z` parameters of a binding (also prefixed, `vx vy`, `cell_x cell_y`) as one pin that splits into its components; constants have only an output.
+- Content Browser: visual scripts have an icon and a colour of their own.
+- Engine Demo: the tavern cellar ladder is a visual script.
 
 ### Changed
 
@@ -41,7 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: the `slow` tests run in a nightly Slow Suite on the Linux x64 release tree; arm64 and Clang Debug leave them out.
 - `/check --quick`: the fast loop for agents (touched tests and CodeStyle), with `--fix` to apply the formatters first.
 - Docs: screenshots of the tower defence (title, world map, briefing, two levels) in Getting Started and the sample games page.
+- Scene Flow and every `NodeCanvas` share the node style of visual scripts (`gui/widgets/NodeStyle.h`): one row per pin, title bar, coloured curves.
 - Docs: the engine developer guide lists every renderer: the 2D, tilemap, isometric, 3D and post-process sections join the voxel and raycaster pages.
+- Bench: the Linux baseline takes the binary scene load and far-orbit cases, and the 1000-box octree brute-force cull at 15.3 µs, a code layout drift of `main` the confirmation rounds reproduce.
 
 ### Removed
 
@@ -49,6 +56,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The export tests play each game on lavapipe only when `OWL_RENDER_TESTS` is on: the emulated arm64 build no longer times out on the Tower Defence.
+- Owl Nest: the Hierarchy and Properties panels follow the active document whatever its type (code, node graph, animation), with an empty state when it has nothing to show.
+- `NodeCanvas` (Scene Flow): the mouse wheel no longer zooms the graph while a menu over it scrolls, and links meet their pins.
 - The ktx recipe probes the CPU type with the cross `--target`: the arm64 build no longer compiles the x86 AVX2 ASTC encoder.
 - ThreadSanitizer ignores the lock-free hand-off inside OpenAL Soft: the exported Tower Defence, which plays a sound at start, passes again.
 - GLFW on X11 keeps Xlib and its extensions loaded after `glfwTerminate`: LeakSanitizer no longer reports their caches as leaks when a game window closes.

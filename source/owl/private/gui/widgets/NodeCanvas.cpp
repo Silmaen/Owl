@@ -11,53 +11,82 @@
 
 #include "gui/UiLayer.h"
 #include "gui/utils.h"
+#include "gui/widgets/NodeStyle.h"
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
-OWL_DIAG_DISABLE_CLANG("-Wshadow")
-OWL_DIAG_DISABLE_CLANG("-Wunused-parameter")
-#include <GraphEditor.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 OWL_DIAG_POP
 
+#include <algorithm>
+#include <array>
 #include <chrono>
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
+#include <limits>
+#include <optional>
 #include <span>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace owl::gui::widgets {
 
 namespace {
-// Floor for an empty node — keeps the title bar legible even on very short titles.
-constexpr auto g_minNodeSize = ImVec2{160.0f, 40.0f};
-constexpr float g_horizontalPadding = 44.0f;
-constexpr float g_graphEditorSlotYOffset = 8.0f;
-// Vertical pixels per pin row in GraphEditor's layout.
-constexpr float g_pinRowHeight = 22.0f;
-// Vertical pixels reserved for the title bar.
-constexpr float g_titleBarHeight = 28.0f;
-// Bottom padding under the last pin row.
-constexpr float g_bottomPadding = 12.0f;
-constexpr auto g_doubleClickIntervalMs = std::chrono::milliseconds{300};
+
+constexpr float g_headerHeight = 30.f;
+constexpr float g_rowHeight = 26.f;
+constexpr float g_bodyTop = 6.f;
+constexpr float g_bodyBottom = 8.f;
+constexpr float g_padding = 12.f;
+constexpr float g_pinRadius = 5.f;
+constexpr float g_pinSpace = 20.f;
+constexpr float g_columnGap = 28.f;
+constexpr float g_minWidth = 160.f;
+constexpr float g_minZoom = 0.25f;
+constexpr float g_maxZoom = 2.f;
+constexpr float g_dragThreshold = 4.f;
 constexpr float g_pinLabelLodZoom = 0.6f;
 constexpr float g_titleLodZoom = 0.3f;
+constexpr auto g_doubleClickInterval = std::chrono::milliseconds{300};
+constexpr math::vec4 g_headerColor{0.16f, 0.33f, 0.55f, 1.f};
 
-auto toImVec2(const math::vec2f& iV) -> ImVec2 { return {iV.x(), iV.y()}; }
-
-auto toImU32(const math::vec4& iColor) -> ImU32 {
-	return IM_COL32(static_cast<uint8_t>(iColor.x() * 255.0f), static_cast<uint8_t>(iColor.y() * 255.0f),
-					static_cast<uint8_t>(iColor.z() * 255.0f), static_cast<uint8_t>(iColor.w() * 255.0f));
+// Text width at the base size; a fixed width per character without an ImGui context (tests, batch layout).
+auto measure(const std::string_view iText) -> float {
+	if (ImGui::GetCurrentContext() == nullptr)
+		return 7.f * static_cast<float>(iText.size());
+	return ImGui::CalcTextSize(iText.data(), iText.data() + iText.size()).x;
 }
 
-auto computeNodeSize(const Node& iNode) -> ImVec2 {
-	float maxWidth = ImGui::CalcTextSize(iNode.title.c_str()).x;
-	for (const auto& pin: iNode.inputs) maxWidth = std::max(maxWidth, ImGui::CalcTextSize(pin.label.c_str()).x);
-	for (const auto& pin: iNode.outputs) maxWidth = std::max(maxWidth, ImGui::CalcTextSize(pin.label.c_str()).x);
+auto rowCenter(const size_t iRow) -> float {
+	return g_headerHeight + g_bodyTop + (static_cast<float>(iRow) + 0.5f) * g_rowHeight;
+}
+
+auto computeNodeSize(const Node& iNode) -> math::vec2f {
+	float inputs = 0.f;
+	for (const auto& pin: iNode.inputs) inputs = std::max(inputs, g_pinSpace + measure(pin.label));
+	float outputs = 0.f;
+	for (const auto& pin: iNode.outputs) outputs = std::max(outputs, g_pinSpace + measure(pin.label));
+	const float body = inputs + outputs + (inputs > 0.f && outputs > 0.f ? g_columnGap : 0.f);
+	const float width = std::max({g_minWidth, body + 2.f * g_padding, measure(iNode.title) + 2.f * g_padding});
 	const auto rows = std::max(iNode.inputs.size(), iNode.outputs.size());
-	const ImVec2 size{
-			std::max(g_minNodeSize.x, maxWidth + 2.0f * g_horizontalPadding),
-			std::max(g_minNodeSize.y, g_titleBarHeight + static_cast<float>(rows) * g_pinRowHeight + g_bottomPadding)};
-	return size;
+	return {width, g_headerHeight + g_bodyTop + static_cast<float>(rows) * g_rowHeight + g_bodyBottom};
+}
+
+auto toIm(const math::vec2f& iPoint) -> ImVec2 { return {iPoint.x(), iPoint.y()}; }
+
+auto toVec(const ImVec2& iPoint) -> math::vec2f { return {iPoint.x, iPoint.y}; }
+
+auto lighter(const math::vec4& iColor, const float iAmount) -> math::vec4 {
+	return {iColor.x() + (1.f - iColor.x()) * iAmount, iColor.y() + (1.f - iColor.y()) * iAmount,
+			iColor.z() + (1.f - iColor.z()) * iAmount, iColor.w()};
+}
+
+auto toU32(const math::vec4& iColor) -> ImU32 {
+	return ImGui::ColorConvertFloat4ToU32({iColor.x(), iColor.y(), iColor.z(), iColor.w()});
 }
 
 }// namespace
@@ -66,36 +95,34 @@ auto shouldDrawPinLabels(const float iZoomFactor) -> bool { return iZoomFactor >
 
 auto shouldDrawNodeTitles(const float iZoomFactor) -> bool { return iZoomFactor > g_titleLodZoom; }
 
-struct NodeCanvas::Impl final : public GraphEditor::Delegate {
+struct NodeCanvas::Impl final {
+	enum struct Gesture : uint8_t { None, Pan, Select, Move, Link };
+
+	struct PinView {
+		math::vec2f position;
+		math::vec4 color;
+		bool output{false};
+		size_t node{0};
+	};
+
 	explicit Impl(NodeCanvas& ioOwner) : m_owner{ioOwner} {}
 
-	Impl(const Impl&) = delete;
-
-	Impl(Impl&&) = delete;
-
-	auto operator=(const Impl&) -> Impl& = delete;
-
-	auto operator=(Impl&&) -> Impl& = delete;
-
-	~Impl() override;
-
-	// Runtime state kept in the wrapper (GraphEditor is stateless w.r.t. node IDs).
-	std::vector<bool> m_selected;///< Selection flag per node index.
-	std::vector<GraphEditor::Template> m_templates;///< One template per node — each node uses its own slot definitions.
-	struct TemplateBuf {
-		std::vector<ImU32> inputColors;
-		std::vector<ImU32> outputColors;
-	};
-	std::vector<TemplateBuf> m_templateBufs;
-	GraphEditor::Options m_options{};
-	GraphEditor::ViewState m_viewState{};
-	bool m_enabled = true;
-	// Single-shot fit-to-content request; consumed by the next `onRender`.
-	GraphEditor::FitOnScreen m_pendingFit = GraphEditor::Fit_None;
-	// Double-click tracking.
-	core::UUID m_lastClickedNodeId{0};
+	NodeCanvas& m_owner;
+	std::vector<core::UUID> m_selection;
+	std::array<float, 2> m_offset{40.f, 40.f};
+	float m_zoom{1.f};
+	bool m_enabled{true};
+	bool m_fitPending{false};
+	Gesture m_gesture{Gesture::None};
+	std::array<float, 2> m_gestureStart{0.f, 0.f};
+	std::array<float, 2> m_lastMouse{0.f, 0.f};
+	std::optional<core::UUID> m_pressedNode;
+	bool m_moved{false};
+	core::UUID m_linkStart{0};
+	core::UUID m_lastClickedNode{0};
 	std::chrono::steady_clock::time_point m_lastClickTime;
-	// Callbacks.
+	ImVec2 m_origin{0.f, 0.f};
+	ImVec2 m_size{0.f, 0.f};
 	std::function<bool(core::UUID, core::UUID)> m_linkValidator{[](auto, auto) -> bool { return true; }};
 	std::function<void(core::UUID, core::UUID, core::UUID)> m_onLinkCreated;
 	std::function<void(core::UUID)> m_onLinkDeleted;
@@ -103,511 +130,334 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	std::function<void(core::UUID)> m_onNodeSelected;
 	std::function<void(core::UUID)> m_onNodeDoubleClicked;
 	std::function<void(std::optional<core::UUID>)> m_onContextMenu;
-	ImVec2 m_canvasOriginScreen{0.0f, 0.0f};
-	std::unordered_map<core::UUID, ImRect> m_nodeScreenRects;
-	ImDrawList* mp_canvasDrawList = nullptr;
+	// Per frame.
+	std::unordered_map<uint64_t, PinView> m_pins;
+	std::vector<std::pair<ImVec2, ImVec2>> m_rects;
+	core::UUID m_hoveredPin{0};
+	std::optional<size_t> m_hoveredNode;
+	std::optional<size_t> m_hoveredLink;
+	bool m_hovered{false};
 
-	[[nodiscard]] auto findNodeIndex(core::UUID iId) const -> std::optional<size_t> {
-		for (size_t i = 0; i < m_owner.m_nodes.size(); ++i) {
+	[[nodiscard]] auto toCanvas(const ImVec2& iScreen) const -> std::array<float, 2> {
+		return {(iScreen.x - m_origin.x) / m_zoom - m_offset[0], (iScreen.y - m_origin.y) / m_zoom - m_offset[1]};
+	}
+
+	[[nodiscard]] auto toScreen(const math::vec2f& iCanvas) const -> ImVec2 {
+		return {m_origin.x + (iCanvas.x() + m_offset[0]) * m_zoom, m_origin.y + (iCanvas.y() + m_offset[1]) * m_zoom};
+	}
+
+	[[nodiscard]] auto findNodeIndex(const core::UUID iId) const -> std::optional<size_t> {
+		for (size_t i = 0; i < m_owner.m_nodes.size(); ++i)
 			if (m_owner.m_nodes[i].id == iId)
 				return i;
-		}
 		return std::nullopt;
 	}
 
-	[[nodiscard]] auto findLinkIndex(core::UUID iId) const -> std::optional<size_t> {
-		for (size_t i = 0; i < m_owner.m_links.size(); ++i) {
-			if (m_owner.m_links[i].id == iId)
-				return i;
-		}
-		return std::nullopt;
+	[[nodiscard]] auto isSelected(const core::UUID iId) const -> bool {
+		return std::ranges::find(m_selection, iId) != m_selection.end();
 	}
 
-	void rebuildTemplates() {
-		m_templates.clear();
-		m_templates.reserve(m_owner.m_nodes.size());
-		m_templateBufs.clear();
-		m_templateBufs.reserve(m_owner.m_nodes.size());
-
+	void fitToContent() {
+		m_fitPending = false;
+		if (m_owner.m_nodes.empty() || m_size.x < 1.f || m_size.y < 1.f)
+			return;
+		std::array bounds{std::numeric_limits<float>::max(), std::numeric_limits<float>::max(),
+						  std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
 		for (const auto& node: m_owner.m_nodes) {
-			auto& buf = m_templateBufs.emplace_back();
-			buf.inputColors.reserve(node.inputs.size());
-			buf.outputColors.reserve(node.outputs.size());
-			for (const auto& pin: node.inputs) buf.inputColors.push_back(toImU32(pin.labelColor));
-			for (const auto& pin: node.outputs) buf.outputColors.push_back(toImU32(pin.labelColor));
-
-			GraphEditor::Template tpl{};
-			tpl.mHeaderColor = IM_COL32(45, 60, 90, 255);
-			tpl.mBackgroundColor = IM_COL32(60, 60, 60, 255);
-			tpl.mBackgroundColorOver = IM_COL32(80, 80, 80, 255);
-			tpl.mInputCount = static_cast<ImU8>(node.inputs.size());
-			tpl.mInputNames = nullptr;
-			tpl.mInputColors = buf.inputColors.empty() ? nullptr : buf.inputColors.data();
-			tpl.mOutputCount = static_cast<ImU8>(node.outputs.size());
-			tpl.mOutputNames = nullptr;
-			tpl.mOutputColors = buf.outputColors.empty() ? nullptr : buf.outputColors.data();
-			m_templates.push_back(tpl);
+			const auto size = computeNodeSize(node);
+			bounds = {std::min(bounds[0], node.position.x()), std::min(bounds[1], node.position.y()),
+					  std::max(bounds[2], node.position.x() + size.x()),
+					  std::max(bounds[3], node.position.y() + size.y())};
 		}
-
-		m_selected.assign(m_owner.m_nodes.size(), false);
+		constexpr float margin = 60.f;
+		m_zoom = std::clamp(std::min(m_size.x / (bounds[2] - bounds[0] + 2.f * margin),
+									 m_size.y / (bounds[3] - bounds[1] + 2.f * margin)),
+							0.4f, 1.f);
+		m_offset = {m_size.x * 0.5f / m_zoom - (bounds[0] + bounds[2]) * 0.5f,
+					m_size.y * 0.5f / m_zoom - (bounds[1] + bounds[3]) * 0.5f};
 	}
 
-	// --- GraphEditor::Delegate implementation --------------------------------
-	auto AllowedLink(GraphEditor::NodeIndex iFrom, GraphEditor::NodeIndex iTo) -> bool override {
-		if (iFrom >= m_owner.m_nodes.size() || iTo >= m_owner.m_nodes.size())
-			return false;
-		return iFrom != iTo;// forbid self-loops
-	}
-
-	void SelectNode(GraphEditor::NodeIndex iNodeIndex, bool iSelected) override {
-		if (iNodeIndex >= m_selected.size())
-			return;
-		m_selected[iNodeIndex] = iSelected;
-		if (!iSelected)
-			return;
-
-		const auto nodeId = m_owner.m_nodes[iNodeIndex].id;
-		const auto now = std::chrono::steady_clock::now();
-		const bool isDouble = (nodeId == m_lastClickedNodeId) && (now - m_lastClickTime) <= g_doubleClickIntervalMs;
-		m_lastClickedNodeId = nodeId;
-		m_lastClickTime = now;
-
-		if (isDouble) {
-			if (m_onNodeDoubleClicked)
-				m_onNodeDoubleClicked(nodeId);
-		} else if (m_onNodeSelected) {
-			m_onNodeSelected(nodeId);
+	void placeNodes() {
+		m_pins.clear();
+		m_rects.clear();
+		m_hoveredPin = core::UUID{0};
+		m_hoveredNode.reset();
+		const ImVec2 mouse = ImGui::GetMousePos();
+		const float pick = std::max(8.f, g_pinRadius * m_zoom * 1.8f);
+		float best = pick * pick;
+		for (size_t index = 0; index < m_owner.m_nodes.size(); ++index) {
+			const auto& node = m_owner.m_nodes[index];
+			const auto size = computeNodeSize(node);
+			const ImVec2 min = toScreen(node.position);
+			const ImVec2 max{min.x + size.x() * m_zoom, min.y + size.y() * m_zoom};
+			m_rects.emplace_back(min, max);
+			if (mouse.x >= min.x && mouse.x <= max.x && mouse.y >= min.y && mouse.y <= max.y)
+				m_hoveredNode = index;
+			const auto place = [&](const std::vector<NodePin>& iPins, const bool iOutput) -> void {
+				for (size_t i = 0; i < iPins.size(); ++i) {
+					const float x = iOutput ? size.x() - g_padding - g_pinRadius * 1.6f : g_padding + g_pinRadius;
+					const math::vec2f at{min.x + x * m_zoom, min.y + rowCenter(i) * m_zoom};
+					m_pins[static_cast<uint64_t>(iPins[i].id)] = {.position = at,
+																  .color = iPins[i].labelColor,
+																  .output = iOutput,
+																  .node = index};
+					const float dx = mouse.x - at.x();
+					const float dy = mouse.y - at.y();
+					if (const float distance = dx * dx + dy * dy; distance < best) {
+						best = distance;
+						m_hoveredPin = iPins[i].id;
+					}
+				}
+			};
+			place(node.inputs, false);
+			place(node.outputs, true);
 		}
 	}
 
-	void MoveSelectedNodes(const ImVec2 iDelta) override {
-		for (size_t i = 0; i < m_selected.size() && i < m_owner.m_nodes.size(); ++i) {
-			if (!m_selected[i])
+	void drawLinks(ImDrawList* ioDraw) {
+		m_hoveredLink.reset();
+		float best = 6.f;
+		const ImVec2 mouse = ImGui::GetMousePos();
+		for (size_t i = 0; i < m_owner.m_links.size(); ++i) {
+			const auto& link = m_owner.m_links[i];
+			const auto from = m_pins.find(static_cast<uint64_t>(link.fromPin));
+			const auto to = m_pins.find(static_cast<uint64_t>(link.toPin));
+			if (from == m_pins.end() || to == m_pins.end())
 				continue;
-			m_owner.m_nodes[i].position += math::vec2f{iDelta.x, iDelta.y};
-			if (m_onNodeMoved)
-				m_onNodeMoved(m_owner.m_nodes[i].id, m_owner.m_nodes[i].position);
+			if (m_hovered && m_hoveredPin == 0 && !m_hoveredNode.has_value())
+				if (const float distance =
+							getNodeLinkDistance(from->second.position, to->second.position, toVec(mouse), m_zoom);
+					distance < best) {
+					best = distance;
+					m_hoveredLink = i;
+				}
+		}
+		for (size_t i = 0; i < m_owner.m_links.size(); ++i) {
+			const auto& link = m_owner.m_links[i];
+			const auto from = m_pins.find(static_cast<uint64_t>(link.fromPin));
+			const auto to = m_pins.find(static_cast<uint64_t>(link.toPin));
+			if (from == m_pins.end() || to == m_pins.end())
+				continue;
+			const bool highlighted = m_hoveredLink == i || link.fromPin == m_hoveredPin || link.toPin == m_hoveredPin ||
+									 isSelected(m_owner.m_nodes[from->second.node].id) ||
+									 isSelected(m_owner.m_nodes[to->second.node].id);
+			drawNodeLink(ioDraw, from->second.position, to->second.position,
+						 highlighted ? lighter(from->second.color, 0.35f) : from->second.color,
+						 2.4f * m_zoom * (highlighted ? 1.5f : 1.f), m_zoom);
 		}
 	}
 
-	void AddLink(GraphEditor::NodeIndex iInputNode, GraphEditor::SlotIndex iInputSlot,
-				 GraphEditor::NodeIndex iOutputNode, GraphEditor::SlotIndex iOutputSlot) override {
-		if (iInputNode >= m_owner.m_nodes.size() || iOutputNode >= m_owner.m_nodes.size())
-			return;
-		const auto& srcNode = m_owner.m_nodes[iInputNode];
-		const auto& dstNode = m_owner.m_nodes[iOutputNode];
-		if (iInputSlot >= srcNode.outputs.size() || iOutputSlot >= dstNode.inputs.size()) {
-			return;
+	void drawNodes(ImDrawList* ioDraw) const {
+		ImFont* font = ImGui::GetFont();
+		const float fontSize = ImGui::GetFontSize() * m_zoom;
+		UiLayer::pushTextStyle(TextStyle::Strong);
+		ImFont* strong = ImGui::GetFont();
+		UiLayer::popTextStyle();
+		for (size_t index = 0; index < m_owner.m_nodes.size(); ++index) {
+			const auto& node = m_owner.m_nodes[index];
+			const auto& [min, max] = m_rects[index];
+			drawNodeFrame(ioDraw, toVec(min), toVec(max),
+						  {.header = g_headerColor,
+						   .headerHeight = g_headerHeight,
+						   .selected = isSelected(node.id),
+						   .hovered = m_hoveredNode == index,
+						   .faulty = false},
+						  m_zoom);
+			if (shouldDrawNodeTitles(m_zoom) && !node.title.empty())
+				ioDraw->AddText(strong, fontSize,
+								{min.x + g_padding * m_zoom, min.y + (g_headerHeight * m_zoom - fontSize) * 0.5f},
+								toU32(node.titleColor), node.title.c_str());
+			const auto drawPins = [&](const std::vector<NodePin>& iPins) -> void {
+				for (const auto& pin: iPins) {
+					const auto& view = m_pins.at(static_cast<uint64_t>(pin.id));
+					const bool linked = std::ranges::any_of(m_owner.m_links, [&](const Link& iLink) -> bool {
+						return iLink.fromPin == pin.id || iLink.toPin == pin.id;
+					});
+					auto color = pin.labelColor;
+					if (pin.id == m_hoveredPin) {
+						ioDraw->AddCircleFilled(toIm(view.position), g_pinRadius * 2.2f * m_zoom,
+												toU32({color.x(), color.y(), color.z(), 0.25f}));
+						color = lighter(color, 0.3f);
+					}
+					drawDataPin(ioDraw, view.position, g_pinRadius * m_zoom, color, linked);
+					if (!shouldDrawPinLabels(m_zoom) || pin.label.empty())
+						continue;
+					const auto size = font->CalcTextSizeA(fontSize, FLT_MAX, 0.f, pin.label.c_str());
+					const float offset = (g_pinRadius + 8.f) * m_zoom;
+					const float x = view.output ? view.position.x() - offset - size.x : view.position.x() + offset;
+					ioDraw->AddText(font, fontSize, {x, view.position.y() - size.y * 0.5f},
+									IM_COL32(225, 228, 232, 255), pin.label.c_str());
+				}
+			};
+			drawPins(node.inputs);
+			drawPins(node.outputs);
 		}
-		const auto fromPin = srcNode.outputs[iInputSlot].id;
-		const auto toPin = dstNode.inputs[iOutputSlot].id;
+	}
 
+	void clickNode(const size_t iIndex) {
+		const auto id = m_owner.m_nodes[iIndex].id;
+		const auto& io = ImGui::GetIO();
+		const bool selected = isSelected(id);
+		if (io.KeyCtrl && selected)
+			std::erase(m_selection, id);
+		else if (io.KeyCtrl || io.KeyShift)
+			m_selection.push_back(id);
+		else if (!selected)
+			m_selection = {id};
+		else
+			m_pressedNode = id;
+		const auto now = std::chrono::steady_clock::now();
+		const bool isDouble = id == m_lastClickedNode && now - m_lastClickTime <= g_doubleClickInterval;
+		m_lastClickedNode = id;
+		m_lastClickTime = now;
+		if (isDouble && m_onNodeDoubleClicked)
+			m_onNodeDoubleClicked(id);
+		else if (!isDouble && m_onNodeSelected)
+			m_onNodeSelected(id);
+		m_gesture = Gesture::Move;
+	}
+
+	void finishLink() {
+		const auto start = m_pins.find(static_cast<uint64_t>(m_linkStart));
+		const auto target = m_pins.find(static_cast<uint64_t>(m_hoveredPin));
+		if (start == m_pins.end() || target == m_pins.end() || start->second.output == target->second.output ||
+			start->second.node == target->second.node)
+			return;
+		const auto fromPin = start->second.output ? m_linkStart : m_hoveredPin;
+		const auto toPin = start->second.output ? m_hoveredPin : m_linkStart;
 		if (m_linkValidator && !m_linkValidator(fromPin, toPin))
 			return;
-
 		const Link link{.id = core::UUID{}, .fromPin = fromPin, .toPin = toPin};
 		m_owner.m_links.push_back(link);
 		if (m_onLinkCreated)
 			m_onLinkCreated(link.id, fromPin, toPin);
 	}
 
-	void DelLink(GraphEditor::LinkIndex iLinkIndex) override {
-		if (iLinkIndex >= m_owner.m_links.size())
-			return;
-		const auto linkId = m_owner.m_links[iLinkIndex].id;
-		m_owner.m_links.erase(m_owner.m_links.begin() + static_cast<ptrdiff_t>(iLinkIndex));
-		if (m_onLinkDeleted)
-			m_onLinkDeleted(linkId);
-	}
-
-	void CustomDraw(ImDrawList* iDrawList, ImRect iRectangle, GraphEditor::NodeIndex iNodeIndex) override {
-		if (iNodeIndex >= m_owner.m_nodes.size())
-			return;
-		m_nodeScreenRects[m_owner.m_nodes[iNodeIndex].id] = iRectangle;
-		mp_canvasDrawList = iDrawList;
-		const auto& node = m_owner.m_nodes[iNodeIndex];
-
-		// Font setup is shared between title (always rendered) and pin labels (LOD-skipped).
-		ImFont* const font = ImGui::GetFont();
-		const float fontSize = ImGui::GetFontSize() * m_viewState.mFactor;
-
-		if (!node.title.empty()) {
-			constexpr float kTopGap = 3.0f;
-			const float zoom = m_viewState.mFactor;
-			// Readable whatever the zoom: never below three quarters of the UI font.
-			const float titleFontSize = std::max(ImGui::GetFontSize() * 0.75f, ImGui::GetFontSize() * zoom);
-			const auto titleSize = font->CalcTextSizeA(titleFontSize, FLT_MAX, 0.0f, node.title.c_str());
-			const float nodeTopScreen = iRectangle.Max.y - computeNodeSize(node).y * zoom;
-			const float idealTopY = nodeTopScreen + kTopGap;
-			const float maxTopY = iRectangle.Min.y - titleSize.y;
-			const float titlePosY = std::min(idealTopY, maxTopY);
-			const float titlePosX = (iRectangle.Min.x + iRectangle.Max.x) * 0.5f - titleSize.x * 0.5f;
-			iDrawList->AddText(font, titleFontSize, ImVec2{titlePosX, titlePosY}, toImU32(node.titleColor),
-							   node.title.c_str());
-		}
-
-		if (!shouldDrawPinLabels(m_viewState.mFactor))
-			return;
-		const float nodeHeightScreen = computeNodeSize(node).y * m_viewState.mFactor;
-		const float nodeTopScreen = iRectangle.Max.y - nodeHeightScreen;
-		const auto inCount = static_cast<float>(node.inputs.size());
-		const auto outCount = static_cast<float>(node.outputs.size());
-		const float xPad = 14.0f * m_viewState.mFactor;
-		const auto measure = [&](const char* iText) -> ImVec2 {
-			return font->CalcTextSizeA(fontSize, FLT_MAX, 0.0f, iText);
-		};
-
-		for (size_t i = 0; i < node.inputs.size(); ++i) {
-			const auto& pin = node.inputs[i];
-			if (pin.label.empty())
-				continue;
-			const auto textSize = measure(pin.label.c_str());
-			const float y = nodeTopScreen + nodeHeightScreen * (static_cast<float>(i) + 1.0f) / (inCount + 1.0f) +
-							g_graphEditorSlotYOffset;
-			const ImVec2 pos{iRectangle.Min.x + xPad, y - textSize.y * 0.5f};
-			iDrawList->AddText(font, fontSize, pos, toImU32(pin.labelColor), pin.label.c_str());
-		}
-		for (size_t i = 0; i < node.outputs.size(); ++i) {
-			const auto& pin = node.outputs[i];
-			if (pin.label.empty())
-				continue;
-			const auto textSize = measure(pin.label.c_str());
-			const float y = nodeTopScreen + nodeHeightScreen * (static_cast<float>(i) + 1.0f) / (outCount + 1.0f) +
-							g_graphEditorSlotYOffset;
-			const ImVec2 pos{iRectangle.Max.x - xPad - textSize.x, y - textSize.y * 0.5f};
-			iDrawList->AddText(font, fontSize, pos, toImU32(pin.labelColor), pin.label.c_str());
-		}
-	}
-
-	[[nodiscard]] auto mouseInCanvasSpace() const -> ImVec2 {
-		const auto m = ImGui::GetMousePos();
-		return ImVec2{(m.x - m_canvasOriginScreen.x - m_viewState.mPosition.x) / m_viewState.mFactor,
-					  (m.y - m_canvasOriginScreen.y - m_viewState.mPosition.y) / m_viewState.mFactor};
-	}
-
-	[[nodiscard]] auto pinScreenInfo(core::UUID iPinId) const -> std::optional<std::pair<ImVec2, ImU32>> {
-		const float zoom = m_viewState.mFactor;
-		std::optional<std::pair<core::UUID, ImRect>> reference;
-		if (!m_nodeScreenRects.empty())
-			reference = std::make_pair(m_nodeScreenRects.begin()->first, m_nodeScreenRects.begin()->second);
-
-		const auto rectFor = [&](const Node& iNode) -> std::optional<ImRect> {
-			if (const auto it = m_nodeScreenRects.find(iNode.id); it != m_nodeScreenRects.end())
-				return it->second;
-			if (!reference)
-				return std::nullopt;
-			const Node* refNode = nullptr;
-			for (const auto& cand: m_owner.m_nodes) {
-				if (cand.id == reference->first) {
-					refNode = &cand;
-					break;
-				}
-			}
-			if (refNode == nullptr)
-				return std::nullopt;
-			const auto sz = computeNodeSize(iNode);
-			const float dx = (iNode.position.x() - refNode->position.x()) * zoom;
-			const float dy = (iNode.position.y() - refNode->position.y()) * zoom;
-			const ImVec2 minPt{reference->second.Min.x + dx, reference->second.Min.y + dy};
-			return ImRect{minPt, ImVec2{minPt.x + sz.x * zoom, minPt.y + sz.y * zoom}};
-		};
-
-		for (const auto& node: m_owner.m_nodes) {
-			const auto rectOpt = rectFor(node);
-			if (!rectOpt)
-				continue;
-			const auto& rect = *rectOpt;
-			const float nodeHeightScreen = computeNodeSize(node).y * zoom;
-			const float nodeTopScreen = rect.Max.y - nodeHeightScreen;
-			const auto inCount = static_cast<float>(node.inputs.size());
-			const auto outCount = static_cast<float>(node.outputs.size());
-			for (size_t i = 0; i < node.inputs.size(); ++i) {
-				if (node.inputs[i].id == iPinId) {
-					const float y = nodeTopScreen +
-									nodeHeightScreen * (static_cast<float>(i) + 1.0f) / (inCount + 1.0f) +
-									g_graphEditorSlotYOffset;
-					return std::make_pair(ImVec2{rect.Min.x, y}, toImU32(node.inputs[i].labelColor));
-				}
-			}
-			for (size_t i = 0; i < node.outputs.size(); ++i) {
-				if (node.outputs[i].id == iPinId) {
-					const float y = nodeTopScreen +
-									nodeHeightScreen * (static_cast<float>(i) + 1.0f) / (outCount + 1.0f) +
-									g_graphEditorSlotYOffset;
-					return std::make_pair(ImVec2{rect.Max.x, y}, toImU32(node.outputs[i].labelColor));
-				}
-			}
-		}
-		return std::nullopt;
-	}
-
-	[[nodiscard]] auto findHoveredPin() const -> core::UUID {
-		const ImVec2 mouse = ImGui::GetMousePos();
-		const float zoom = m_viewState.mFactor;
-		const float radius = m_options.mNodeSlotRadius * zoom * 1.5f;
-		const float radius2 = radius * radius;
-		float bestDist2 = radius2;
-		core::UUID bestPin{0};
-		for (const auto& node: m_owner.m_nodes) {
-			const auto rectIt = m_nodeScreenRects.find(node.id);
-			if (rectIt == m_nodeScreenRects.end())
-				continue;
-			const auto& rect = rectIt->second;
-			const float nodeHeightScreen = computeNodeSize(node).y * zoom;
-			const float nodeTopScreen = rect.Max.y - nodeHeightScreen;
-			const auto inCount = static_cast<float>(node.inputs.size());
-			const auto outCount = static_cast<float>(node.outputs.size());
-			for (size_t i = 0; i < node.inputs.size(); ++i) {
-				const float y = nodeTopScreen + nodeHeightScreen * (static_cast<float>(i) + 1.0f) / (inCount + 1.0f) +
-								g_graphEditorSlotYOffset;
-				const float dx = mouse.x - rect.Min.x;
-				const float dy = mouse.y - y;
-				const float d2 = dx * dx + dy * dy;
-				if (d2 < bestDist2) {
-					bestDist2 = d2;
-					bestPin = node.inputs[i].id;
-				}
-			}
-			for (size_t i = 0; i < node.outputs.size(); ++i) {
-				const float y = nodeTopScreen + nodeHeightScreen * (static_cast<float>(i) + 1.0f) / (outCount + 1.0f) +
-								g_graphEditorSlotYOffset;
-				const float dx = mouse.x - rect.Max.x;
-				const float dy = mouse.y - y;
-				const float d2 = dx * dx + dy * dy;
-				if (d2 < bestDist2) {
-					bestDist2 = d2;
-					bestPin = node.outputs[i].id;
-				}
-			}
-		}
-		return bestPin;
-	}
-
-	[[nodiscard]] auto findHoveredLink() const -> core::UUID {
-		const ImVec2 mouse = ImGui::GetMousePos();
-		const float zoom = m_viewState.mFactor;
-		const float threshold = m_options.mLineThickness * zoom * 2.0f;
-		const float threshold2 = threshold * threshold;
-		float bestDist2 = threshold2;
-		core::UUID bestLink{0};
-		constexpr int kSegments = 24;
-		for (const auto& link: m_owner.m_links) {
-			const auto from = pinScreenInfo(link.fromPin);
-			const auto to = pinScreenInfo(link.toPin);
-			if (!from || !to)
-				continue;
-			const auto& [p0, _0] = *from;
-			const auto& [p3, _1] = *to;
-			const float dx = p3.x - p0.x;
-			const float ctrl = std::max(std::abs(dx) * 0.5f, 60.0f * zoom);
-			const ImVec2 p1{p0.x + ctrl, p0.y};
-			const ImVec2 p2{p3.x - ctrl, p3.y};
-			ImVec2 prev = p0;
-			for (int s = 1; s <= kSegments; ++s) {
-				const float t = static_cast<float>(s) / static_cast<float>(kSegments);
-				const float u = 1.0f - t;
-				const float b0 = u * u * u;
-				const float b1 = 3.0f * u * u * t;
-				const float b2 = 3.0f * u * t * t;
-				const float b3 = t * t * t;
-				const ImVec2 cur{b0 * p0.x + b1 * p1.x + b2 * p2.x + b3 * p3.x,
-								 b0 * p0.y + b1 * p1.y + b2 * p2.y + b3 * p3.y};
-				const float sx = cur.x - prev.x;
-				const float sy = cur.y - prev.y;
-				const float seg2 = sx * sx + sy * sy;
-				if (seg2 > 0.0f) {
-					const float tProj =
-							std::clamp(((mouse.x - prev.x) * sx + (mouse.y - prev.y) * sy) / seg2, 0.0f, 1.0f);
-					const float qx = prev.x + tProj * sx;
-					const float qy = prev.y + tProj * sy;
-					const float ddx = mouse.x - qx;
-					const float ddy = mouse.y - qy;
-					const float d2 = ddx * ddx + ddy * ddy;
-					if (d2 < bestDist2) {
-						bestDist2 = d2;
-						bestLink = link.id;
+	void releaseLeft(const std::array<float, 2>& iMouse) {
+		switch (m_gesture) {
+			case Gesture::Move:
+				if (!m_moved && m_pressedNode.has_value())
+					m_selection = {*m_pressedNode};
+				break;
+			case Gesture::Select:
+				{
+					const std::array lo{std::min(m_gestureStart[0], iMouse[0]), std::min(m_gestureStart[1], iMouse[1])};
+					const std::array hi{std::max(m_gestureStart[0], iMouse[0]), std::max(m_gestureStart[1], iMouse[1])};
+					for (const auto& node: m_owner.m_nodes) {
+						const auto size = computeNodeSize(node);
+						if (node.position.x() < hi[0] && node.position.x() + size.x() > lo[0] &&
+							node.position.y() < hi[1] && node.position.y() + size.y() > lo[1] && !isSelected(node.id))
+							m_selection.push_back(node.id);
 					}
 				}
-				prev = cur;
-			}
+				break;
+			case Gesture::Link:
+				finishLink();
+				m_linkStart = core::UUID{0};
+				break;
+			case Gesture::Pan:
+			case Gesture::None:
+				break;
 		}
-		return bestLink;
+		m_gesture = Gesture::None;
 	}
 
-	void renderColouredLinks() {
-		if (m_owner.m_links.empty() || mp_canvasDrawList == nullptr)
-			return;
-		auto* drawList = mp_canvasDrawList;
-		const float zoom = m_viewState.mFactor;
-		const float baseThickness = m_options.mLineThickness * zoom;
-		const auto hoveredPin = findHoveredPin();
-		const auto hoveredLink = (static_cast<uint64_t>(hoveredPin) == 0) ? findHoveredLink() : core::UUID{0};
-		// Cubic Bezier point evaluator — used for both rendering and collision detection.
-		const auto bezierAt = [](const ImVec2& iP0, const ImVec2& iP1, const ImVec2& iP2, const ImVec2& iP3,
-								 float iT) -> ImVec2 {
-			const float u = 1.0f - iT;
-			const float b0 = u * u * u;
-			const float b1 = 3.0f * u * u * iT;
-			const float b2 = 3.0f * u * iT * iT;
-			const float b3 = iT * iT * iT;
-			return {b0 * iP0.x + b1 * iP1.x + b2 * iP2.x + b3 * iP3.x,
-					b0 * iP0.y + b1 * iP1.y + b2 * iP2.y + b3 * iP3.y};
-		};
-		for (const auto& link: m_owner.m_links) {
-			const auto from = pinScreenInfo(link.fromPin);
-			const auto to = pinScreenInfo(link.toPin);
-			if (!from || !to)
-				continue;
-			const auto& [p0, srcColor] = *from;
-			const auto& [p3, _] = *to;
-			const auto* srcNode = m_owner.findNodeByPin(link.fromPin);
-			const auto* dstNode = m_owner.findNodeByPin(link.toPin);
-			const core::UUID srcId = (srcNode != nullptr) ? srcNode->id : core::UUID{0};
-			const core::UUID dstId = (dstNode != nullptr) ? dstNode->id : core::UUID{0};
-			const bool isHighlighted =
-					(link.fromPin == hoveredPin) || (link.toPin == hoveredPin) || (link.id == hoveredLink);
-			const float dx = p3.x - p0.x;
-			const float ctrl = std::max(std::abs(dx) * 0.6f, 90.0f * zoom);
-			ImVec2 p1{p0.x + ctrl, p0.y};
-			ImVec2 p2{p3.x - ctrl, p3.y};
-			constexpr int kSamples = 24;
-			constexpr int kMaxDeflectIterations = 3;
-			for (int iter = 0; iter < kMaxDeflectIterations; ++iter) {
-				float maxDeflect = 0.0f;
-				for (const auto& [otherId, otherRect]: m_nodeScreenRects) {
-					if (otherId == srcId || otherId == dstId)
-						continue;
-					for (int s = 1; s < kSamples; ++s) {
-						const float t = static_cast<float>(s) / static_cast<float>(kSamples);
-						const ImVec2 pt = bezierAt(p0, p1, p2, p3, t);
-						if (pt.x < otherRect.Min.x || pt.x > otherRect.Max.x || pt.y < otherRect.Min.y ||
-							pt.y > otherRect.Max.y)
-							continue;
-						const float margin = 16.0f * zoom;
-						const float upDist = pt.y - otherRect.Min.y + margin;
-						const float downDist = otherRect.Max.y - pt.y + margin;
-						const float deflect = (upDist < downDist) ? -upDist : downDist;
-						if (std::abs(deflect) > std::abs(maxDeflect))
-							maxDeflect = deflect;
-						break;
-					}
-				}
-				if (std::abs(maxDeflect) < 1e-3f)
-					break;
-				p1.y += maxDeflect;
-				p2.y += maxDeflect;
-			}
-			ImU32 color = srcColor;
-			float thickness = baseThickness;
-			if (isHighlighted) {
-				thickness *= 2.0f;
-				// Brighten by OR-ing white channels — same trick GraphEditor uses for selection.
-				color |= IM_COL32(0xa0, 0xa0, 0xa0, 0);
-			}
-			drawList->AddBezierCubic(p0, p1, p2, p3, color, thickness);
+	void handleMouse() {
+		const auto& io = ImGui::GetIO();
+		const auto mouse = toCanvas(ImGui::GetMousePos());
+		if (m_hovered && io.MouseWheel != 0.f) {
+			m_zoom = std::clamp(m_zoom * std::pow(1.15f, io.MouseWheel), g_minZoom, g_maxZoom);
+			m_offset = {(ImGui::GetMousePos().x - m_origin.x) / m_zoom - mouse[0],
+						(ImGui::GetMousePos().y - m_origin.y) / m_zoom - mouse[1]};
 		}
-		if (static_cast<uint64_t>(hoveredLink) != 0 && ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
-			m_owner.removeLink(hoveredLink);
+		if (ImGui::IsMouseDragging(ImGuiMouseButton_Right, g_dragThreshold) ||
+			ImGui::IsMouseDragging(ImGuiMouseButton_Middle, 0.f)) {
+			if (m_gesture == Gesture::None && m_hovered)
+				m_gesture = Gesture::Pan;
+			if (m_gesture == Gesture::Pan) {
+				m_offset[0] += io.MouseDelta.x / m_zoom;
+				m_offset[1] += io.MouseDelta.y / m_zoom;
+			}
+		}
+		if (m_gesture == Gesture::Pan && !ImGui::IsMouseDown(ImGuiMouseButton_Right) &&
+			!ImGui::IsMouseDown(ImGuiMouseButton_Middle))
+			m_gesture = Gesture::None;
+		else if (m_gesture == Gesture::None && m_hovered && ImGui::IsMouseReleased(ImGuiMouseButton_Right) &&
+				 m_onContextMenu)
+			m_onContextMenu(m_hoveredNode.has_value() ? std::optional{m_owner.m_nodes[*m_hoveredNode].id}
+													  : std::nullopt);
+		if (m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+			m_gestureStart = mouse;
+			m_lastMouse = mouse;
+			m_pressedNode.reset();
+			m_moved = false;
+			if (m_hoveredPin != 0) {
+				m_gesture = Gesture::Link;
+				m_linkStart = m_hoveredPin;
+			} else if (m_hoveredNode.has_value()) {
+				clickNode(*m_hoveredNode);
+			} else {
+				if (!io.KeyCtrl && !io.KeyShift)
+					m_selection.clear();
+				m_gesture = Gesture::Select;
+			}
+		}
+		if (m_gesture == Gesture::Move && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+			const math::vec2f delta{mouse[0] - m_lastMouse[0], mouse[1] - m_lastMouse[1]};
+			m_lastMouse = mouse;
+			if (std::abs(mouse[0] - m_gestureStart[0]) + std::abs(mouse[1] - m_gestureStart[1]) >
+				g_dragThreshold / m_zoom)
+				m_moved = true;
+			if (delta.x() != 0.f || delta.y() != 0.f)
+				for (auto& node: m_owner.m_nodes)
+					if (isSelected(node.id)) {
+						node.position += delta;
+						if (m_onNodeMoved)
+							m_onNodeMoved(node.id, node.position);
+					}
+		}
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+			releaseLeft(mouse);
+		if (m_hovered && m_hoveredLink.has_value() && m_hoveredPin == 0 &&
+			ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+			const auto id = m_owner.m_links[*m_hoveredLink].id;
+			m_owner.removeLink(id);
 			if (m_onLinkDeleted)
-
-				m_onLinkDeleted(hoveredLink);
+				m_onLinkDeleted(id);
 		}
 	}
 
-	void RightClick(GraphEditor::NodeIndex iNodeIndex, [[maybe_unused]] GraphEditor::SlotIndex iSlotInput,
-					[[maybe_unused]] GraphEditor::SlotIndex iSlotOutput) override {
-		if (!m_onContextMenu)
-			return;
-		auto resolved = iNodeIndex;
-		if (resolved >= m_owner.m_nodes.size()) {
-			const auto canvasMouse = mouseInCanvasSpace();
-			for (size_t i = 0; i < m_owner.m_nodes.size(); ++i) {
-				const auto size = computeNodeSize(m_owner.m_nodes[i]);
-				const auto& pos = m_owner.m_nodes[i].position;
-				if (canvasMouse.x >= pos.x() && canvasMouse.x <= pos.x() + size.x && canvasMouse.y >= pos.y() &&
-					canvasMouse.y <= pos.y() + size.y) {
-					resolved = i;
-					break;
-				}
+	void drawOverlays(ImDrawList* ioDraw) const {
+		const auto& theme = UiLayer::getTheme();
+		const ImVec2 mouse = ImGui::GetMousePos();
+		if (m_gesture == Gesture::Link)
+			if (const auto start = m_pins.find(static_cast<uint64_t>(m_linkStart)); start != m_pins.end()) {
+				auto from = start->second.position;
+				auto to = toVec(mouse);
+				if (!start->second.output)
+					std::swap(from, to);
+				drawNodeLink(ioDraw, from, to, start->second.color, 2.4f * m_zoom, m_zoom);
 			}
+		if (m_gesture == Gesture::Select) {
+			const auto corner = toScreen({m_gestureStart[0], m_gestureStart[1]});
+			const ImVec2 lo{std::min(corner.x, mouse.x), std::min(corner.y, mouse.y)};
+			const ImVec2 hi{std::max(corner.x, mouse.x), std::max(corner.y, mouse.y)};
+			ioDraw->AddRectFilled(lo, hi, ImGui::GetColorU32(vec(Theme::withAlpha(theme.accent, 0.1f))));
+			ioDraw->AddRect(lo, hi, ImGui::GetColorU32(vec(Theme::withAlpha(theme.accent, 0.8f))));
 		}
-		if (resolved < m_owner.m_nodes.size())
-			m_onContextMenu(m_owner.m_nodes[resolved].id);
-		else
-			m_onContextMenu(std::nullopt);
 	}
-
-
-	OWL_DIAG_PUSH
-	OWL_DIAG_DISABLE_CLANG("-Wignored-qualifiers")
-	OWL_DIAG_DISABLE_GCC("-Wignored-qualifiers")
-	auto GetTemplateCount() -> const size_t override { return m_templates.size(); }
-
-	auto GetTemplate(GraphEditor::TemplateIndex iIndex) -> const GraphEditor::Template override {
-		return m_templates[iIndex];
-	}
-
-	auto GetNodeCount() -> const size_t override { return m_owner.m_nodes.size(); }
-
-	auto GetNode(GraphEditor::NodeIndex iIndex) -> const GraphEditor::Node override {
-		const auto& node = m_owner.m_nodes[iIndex];
-		const auto topLeft = toImVec2(node.position);
-		const auto size = computeNodeSize(node);
-		GraphEditor::Node out{};
-		out.mName = "";
-		out.mTemplateIndex = iIndex;
-		out.mRect = ImRect{topLeft, {topLeft.x + size.x, topLeft.y + size.y}};
-		out.mSelected = iIndex < m_selected.size() && m_selected[iIndex];
-		return out;
-	}
-
-	auto GetLinkCount() -> const size_t override { return 0; }
-
-	auto GetLink(GraphEditor::LinkIndex iIndex) -> const GraphEditor::Link override {
-		const auto& link = m_owner.m_links[iIndex];
-		GraphEditor::Link out{};
-		for (size_t n = 0; n < m_owner.m_nodes.size(); ++n) {
-			const auto& node = m_owner.m_nodes[n];
-			for (size_t p = 0; p < node.outputs.size(); ++p) {
-				if (node.outputs[p].id == link.fromPin) {
-					out.mInputNodeIndex = n;
-					out.mInputSlotIndex = p;
-				}
-			}
-			for (size_t p = 0; p < node.inputs.size(); ++p) {
-				if (node.inputs[p].id == link.toPin) {
-					out.mOutputNodeIndex = n;
-					out.mOutputSlotIndex = p;
-				}
-			}
-		}
-		return out;
-	}
-	OWL_DIAG_POP
-
-	NodeCanvas& m_owner;
 };
 
-NodeCanvas::Impl::~Impl() = default;
-
-NodeCanvas::NodeCanvas() : mp_impl{mkUniq<Impl>(*this)} {
-	mp_impl->m_options.mDrawIONameOnHover = false;
-	// The GraphEditor minimap draws its view frame as huge white triangles with ImGui 1.92: it stays off.
-	mp_impl->m_options.mMinimap = ImRect{ImVec2{0.f, 0.f}, ImVec2{0.f, 0.f}};
-}
+NodeCanvas::NodeCanvas() : mp_impl{mkUniq<Impl>(*this)} {}
 
 NodeCanvas::~NodeCanvas() = default;
 
-auto NodeCanvas::measureNode(const Node& iNode) -> math::vec2f {
-	const auto size = computeNodeSize(iNode);
-	return {size.x, size.y};
-}
+auto NodeCanvas::measureNode(const Node& iNode) -> math::vec2f { return computeNodeSize(iNode); }
 
 auto NodeCanvas::addNode(Node iNode) -> core::UUID {
 	if (static_cast<uint64_t>(iNode.id) == 0)
 		iNode.id = core::UUID{};
 	m_nodes.push_back(std::move(iNode));
-	mp_impl->rebuildTemplates();
 	return m_nodes.back().id;
 }
 
@@ -626,7 +476,6 @@ void NodeCanvas::removeNode(core::UUID iId) {
 			   std::ranges::find(pinIds, iLink.toPin) != pinIds.end();
 	});
 	m_nodes.erase(m_nodes.begin() + static_cast<ptrdiff_t>(*idx));
-	mp_impl->rebuildTemplates();
 }
 
 auto NodeCanvas::addOutputPin(core::UUID iNodeId, NodePin iPin) -> core::UUID {
@@ -638,7 +487,6 @@ auto NodeCanvas::addOutputPin(core::UUID iNodeId, NodePin iPin) -> core::UUID {
 	iPin.kind = PinKind::Output;
 	const auto pinId = iPin.id;
 	m_nodes[*idx].outputs.push_back(std::move(iPin));
-	mp_impl->rebuildTemplates();
 	return pinId;
 }
 
@@ -651,7 +499,6 @@ auto NodeCanvas::addInputPin(core::UUID iNodeId, NodePin iPin) -> core::UUID {
 	iPin.kind = PinKind::Input;
 	const auto pinId = iPin.id;
 	m_nodes[*idx].inputs.push_back(std::move(iPin));
-	mp_impl->rebuildTemplates();
 	return pinId;
 }
 
@@ -663,7 +510,6 @@ void NodeCanvas::removeOutputPin(core::UUID iNodeId, core::UUID iPinId) {
 	std::erase_if(outputs, [iPinId](const NodePin& iPin) -> bool { return iPin.id == iPinId; });
 	std::erase_if(m_links,
 				  [iPinId](const Link& iLink) -> bool { return iLink.fromPin == iPinId || iLink.toPin == iPinId; });
-	mp_impl->rebuildTemplates();
 }
 
 void NodeCanvas::removeInputPin(core::UUID iNodeId, core::UUID iPinId) {
@@ -674,7 +520,6 @@ void NodeCanvas::removeInputPin(core::UUID iNodeId, core::UUID iPinId) {
 	std::erase_if(inputs, [iPinId](const NodePin& iPin) -> bool { return iPin.id == iPinId; });
 	std::erase_if(m_links,
 				  [iPinId](const Link& iLink) -> bool { return iLink.fromPin == iPinId || iLink.toPin == iPinId; });
-	mp_impl->rebuildTemplates();
 }
 
 auto NodeCanvas::addLink(core::UUID iFromPin, core::UUID iToPin) -> core::UUID {
@@ -690,7 +535,6 @@ void NodeCanvas::removeLink(core::UUID iId) {
 void NodeCanvas::clear() {
 	m_nodes.clear();
 	m_links.clear();
-	mp_impl->rebuildTemplates();
 }
 
 auto NodeCanvas::findNode(core::UUID iId) -> Node* {
@@ -727,18 +571,17 @@ auto NodeCanvas::findNodeByPin(core::UUID iPinId) const -> const Node* {
 }
 
 void NodeCanvas::setSelection(std::span<const core::UUID> iNodeIds) {
-	mp_impl->m_selected.assign(m_nodes.size(), false);
-	for (const auto id: iNodeIds) {
-		if (const auto idx = mp_impl->findNodeIndex(id); idx)
-			mp_impl->m_selected[*idx] = true;
-	}
+	mp_impl->m_selection.clear();
+	for (const auto id: iNodeIds)
+		if (findNode(id) != nullptr)
+			mp_impl->m_selection.push_back(id);
 }
 
 auto NodeCanvas::selection() const -> std::vector<core::UUID> {
 	std::vector<core::UUID> out;
-	for (size_t i = 0; i < mp_impl->m_selected.size() && i < m_nodes.size(); ++i)
-		if (mp_impl->m_selected[i])
-			out.push_back(m_nodes[i].id);
+	for (const auto id: mp_impl->m_selection)
+		if (findNode(id) != nullptr)
+			out.push_back(id);
 	return out;
 }
 
@@ -768,31 +611,41 @@ void NodeCanvas::setOnContextMenu(std::function<void(std::optional<core::UUID>)>
 
 void NodeCanvas::setEnabled(bool iEnabled) { mp_impl->m_enabled = iEnabled; }
 
-void NodeCanvas::requestFitToContent() { mp_impl->m_pendingFit = GraphEditor::Fit_AllNodes; }
+auto NodeCanvas::getMouseCanvasPosition() const -> math::vec2f {
+	const auto mouse = mp_impl->toCanvas(ImGui::GetMousePos());
+	return {mouse[0], mouse[1]};
+}
+
+void NodeCanvas::requestFitToContent() { mp_impl->m_fitPending = true; }
 
 void NodeCanvas::onRender() {
-	if (mp_impl->m_templates.size() != m_nodes.size())
-		mp_impl->rebuildTemplates();
-
-	mp_impl->m_canvasOriginScreen = ImGui::GetCursorScreenPos();
-	mp_impl->m_nodeScreenRects.clear();
-	{
-		const auto& theme = UiLayer::getTheme();
-		const auto color = [](const math::vec4& iColor) -> ImU32 { return ImGui::GetColorU32(vec(iColor)); };
-		auto& options = mp_impl->m_options;
-		options.mBackgroundColor = color(Theme::mix(theme.surface0, theme.surface1, 0.5f));
-		options.mGridColor = color(Theme::withAlpha(theme.line, 0.45f));
-		options.mGridColor2 = color(theme.line);
-		options.mSelectedNodeBorderColor = color(theme.accent);
-		options.mQuadSelection = color(Theme::withAlpha(theme.accent, 0.12f));
-		options.mQuadSelectionBorder = color(theme.accent);
-		options.mFrameFocus = color(Theme::withAlpha(theme.accent, 0.5f));
+	auto& impl = *mp_impl;
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, vec(getNodeCanvasBackground()));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.f, 0.f});
+	const bool visible = ImGui::BeginChild("##nodeCanvas", {0.f, 0.f}, ImGuiChildFlags_None,
+										   ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
+												   ImGuiWindowFlags_NoMove);
+	ImGui::PopStyleVar();
+	ImGui::PopStyleColor();
+	if (!visible) {
+		ImGui::EndChild();
+		return;
 	}
-	mp_impl->mp_canvasDrawList = nullptr;
-	GraphEditor::FitOnScreen* fitPtr =
-			(mp_impl->m_pendingFit != GraphEditor::Fit_None) ? &mp_impl->m_pendingFit : nullptr;
-	GraphEditor::Show(*mp_impl, mp_impl->m_options, mp_impl->m_viewState, mp_impl->m_enabled, fitPtr);
-	mp_impl->renderColouredLinks();
+	impl.m_origin = ImGui::GetWindowPos();
+	impl.m_size = ImGui::GetWindowSize();
+	std::erase_if(impl.m_selection, [this](const core::UUID iId) -> bool { return findNode(iId) == nullptr; });
+	if (impl.m_fitPending)
+		impl.fitToContent();
+	impl.m_hovered = impl.m_enabled && ImGui::IsWindowHovered() && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId);
+	auto* draw = ImGui::GetWindowDrawList();
+	drawNodeGrid(draw, toVec(impl.m_origin), toVec(impl.m_size), impl.m_offset, impl.m_zoom);
+	impl.placeNodes();
+	impl.drawLinks(draw);
+	impl.drawNodes(draw);
+	if (impl.m_enabled)
+		impl.handleMouse();
+	impl.drawOverlays(draw);
+	ImGui::EndChild();
 }
 
 }// namespace owl::gui::widgets

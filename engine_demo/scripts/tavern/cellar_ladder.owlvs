@@ -1,0 +1,55 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: tavern_scene, type: string, default: scenes/tavern.owl}
+    - {name: climbing, type: bool, default: "false"}
+  nodes:
+    - id: 7310000000000000001
+      type: event.custom
+      position: [0, 0]
+      values:
+        function: on_ladder_interact
+    - id: 7310000000000000002
+      type: var.get
+      position: [40, 160]
+      values:
+        variable: climbing
+    - id: 7310000000000000003
+      type: flow.branch
+      position: [264, 0]
+    - id: 7310000000000000004
+      type: var.set
+      position: [528, 0]
+      values:
+        Value: "true"
+        variable: climbing
+    - id: 7310000000000000005
+      type: call.gamestate.set
+      position: [784, 0]
+      values:
+        key: tavern_from_cellar
+        value: "1"
+    - id: 7310000000000000006
+      type: call.sound.play
+      position: [1064, 0]
+      values:
+        asset_path: sounds/raycast/door.wav
+    - id: 7310000000000000007
+      type: var.get
+      position: [1200, 200]
+      values:
+        variable: tavern_scene
+    - id: 7310000000000000008
+      type: call.scene.transition_to
+      position: [1448, 0]
+      values:
+        duration: "0.5"
+        kind: fade
+  links:
+    - {from: 7310000000000000001, fromPin: Then, to: 7310000000000000003, toPin: Exec}
+    - {from: 7310000000000000002, fromPin: Value, to: 7310000000000000003, toPin: Condition}
+    - {from: 7310000000000000003, fromPin: "False", to: 7310000000000000004, toPin: Exec}
+    - {from: 7310000000000000004, fromPin: Then, to: 7310000000000000005, toPin: Exec}
+    - {from: 7310000000000000005, fromPin: Then, to: 7310000000000000006, toPin: Exec}
+    - {from: 7310000000000000006, fromPin: Then, to: 7310000000000000008, toPin: Exec}
+    - {from: 7310000000000000007, fromPin: Value, to: 7310000000000000008, toPin: scene_path}

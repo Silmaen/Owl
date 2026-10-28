@@ -11,6 +11,8 @@
 #include "LuaEngine.h"
 
 #include "core/external/lua.h"
+#include "platform/FileUtils.h"
+#include "script/visual/VisualScript.h"
 
 #include <algorithm>
 #include <atomic>
@@ -754,6 +756,10 @@ auto LuaEngine::loadScript(const std::filesystem::path& iPath) const -> bool {
 		OWL_CORE_ERROR("LuaEngine: Cannot load script, Lua state is invalid.")
 		return false;
 	}
+	if (visual::isVisualScriptPath(iPath.string())) {
+		const auto text = platform::fileToString(iPath);
+		return loadBuffer({text.begin(), text.end()}, iPath.string());
+	}
 	mp_quota->enforced = true;
 	const int result = luaL_loadfilex(mp_state, iPath.string().c_str(), "t");
 	mp_quota->enforced = false;
@@ -766,6 +772,17 @@ auto LuaEngine::loadBuffer(const std::vector<uint8_t>& iData, const std::string&
 	if (mp_state == nullptr) {
 		OWL_CORE_ERROR("LuaEngine: Cannot load buffer, Lua state is invalid.")
 		return false;
+	}
+	if (visual::isVisualScriptPath(iName)) {
+		const auto lua = visual::compileText({reinterpret_cast<const char*>(iData.data()), iData.size()}, iName);
+		if (!lua.has_value()) {
+			OWL_CORE_ERROR("LuaEngine: Cannot compile the visual script '{}'.", iName)
+			return false;
+		}
+		mp_quota->enforced = true;
+		const int result = luaL_loadbufferx(mp_state, lua->data(), lua->size(), iName.c_str(), "t");
+		mp_quota->enforced = false;
+		return runLoadedChunk(result, iName);
 	}
 	const auto* data = reinterpret_cast<const char*>(iData.data());
 	mp_quota->enforced = true;

@@ -33,6 +33,7 @@
 #include "scene/Tileset.h"
 #include "scene/ui/HudLayout.h"
 #include "script/ScriptEngine.h"
+#include "script/visual/VisualScript.h"
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
 
@@ -341,7 +342,10 @@ void handlerRow(const char* iLabel, std::string& ioName, const char* iDefaultNam
 		}
 	}
 	if (!definedIn.empty()) {
-		ImGui::TextDisabled("%s: %s, line %u", name.c_str(), definedIn.c_str(), line);
+		if (script::visual::isVisualScriptPath(definedIn))
+			ImGui::TextDisabled("%s: %s", name.c_str(), definedIn.c_str());
+		else
+			ImGui::TextDisabled("%s: %s, line %u", name.c_str(), definedIn.c_str(), line);
 		ImGui::SameLine();
 		openFunctionButton("##open", definedIn, line);
 	} else if (scene->getDocumentKind() == DocumentKind::Hud) {
@@ -366,7 +370,10 @@ void renderHooks(const LuaScript& iComponent) {
 		if (function != nullptr) {
 			ImGui::TextUnformatted(hook.c_str());
 			ImGui::SameLine();
-			ImGui::TextDisabled("line %u", function->line);
+			if (script::visual::isVisualScriptPath(iComponent.scriptPath))
+				ImGui::TextDisabled("in the graph");
+			else
+				ImGui::TextDisabled("line %u", function->line);
 			ImGui::SameLine();
 			openFunctionButton("##open", iComponent.scriptPath, function->line);
 		} else {
@@ -1812,12 +1819,13 @@ void drawScriptProperty(script::ScriptProperty& ioProperty) {
 }// namespace
 
 void renderProps(LuaScript& ioComponent) {
-	if (assetPathRow("Script", ioComponent.scriptPath, "drop a .lua file", "Open the script in the code editor.")) {
+	if (assetPathRow("Script", ioComponent.scriptPath, "drop a .lua or .owlvs file",
+					 "Open the script in its editor.")) {
 		ioComponent.scriptPath.clear();
 		ioComponent.properties.clear();
 	}
 	if (ioComponent.scriptPath.empty())
-		widgets::notice("No script: drop a .lua file from the Content Browser on the field.");
+		widgets::notice("No script: drop a .lua file or a visual script from the Content Browser on the field.");
 	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::LuaScript, dropped))
 		ioComponent.scriptPath = dropped.string();
 	syncScriptProperties(ioComponent);
@@ -2977,6 +2985,8 @@ void setOpenAssetAtLineHandler(std::function<void(const std::filesystem::path&, 
 auto openAssetAtLine(const std::filesystem::path& iPath, const uint32_t iLine) -> bool {
 	if (iPath.empty())
 		return false;
+	if (script::visual::isVisualScriptPath(iPath.string()))
+		return openAsset(iPath);
 	if (openAssetAtLineHandler()) {
 		openAssetAtLineHandler()(iPath, iLine);
 		return true;
