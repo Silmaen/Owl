@@ -102,12 +102,6 @@ SHOTS: list[Shot] = [
     ),
     Shot("tilemap_editor", documents=["tilemaps/iso_town.owltilemap"]),
     Shot("hud_editor", documents=["huds/gameplay.owlhud"], steps=[("click", 1240, 274), ("wait", 2)]),
-    Shot(
-        "scene_flow",
-        documents=["scenes/iso_town.owl"],
-        steps=[("click", 98, 18), ("click", 192, 70), ("wait", 4)],
-        crop=(0, 125, 1920, 760),
-    ),
     Shot("action_map", documents=["input_actions.yml"], crop=(0, 125, 1460, 760)),
     Shot(
         "console",

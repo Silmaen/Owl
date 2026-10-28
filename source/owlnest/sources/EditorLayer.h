@@ -133,7 +133,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Read access to the loaded project (used by side panels / Scene Flow document).
+	 *  Read access to the loaded project (used by side panels).
 	 * @return The project.
 	 */
 	[[nodiscard]] auto getProject() const -> const Project& { return m_project; }
@@ -344,17 +344,11 @@ public:
 	 * @return Pointer to the live `SceneDocument`, or `nullptr` on missing/invalid file.
 	 *
 	 * Unlike `openScene`, this does **not** route through the async progress modal and does
-	 * **not** switch the active document — it is meant for editor-side actions (Scene Flow link
-	 * edits, future cross-scene tooling) that need to mutate a scene's entities without yanking
+	 * **not** switch the active document — it is meant for editor-side actions (cross-scene
+	 * tooling) that need to mutate a scene's entities without yanking
 	 * the user's focus. The file is read and deserialized synchronously on the main thread.
 	 */
 	auto loadOrOpenSceneDocument(const std::filesystem::path& iScenePath) -> SceneDocument*;
-
-	/**
-	 * @brief
-	 *  Open (or refresh) the Scene Flow view — a `NodeGraphDocument` subclass populated from the current project.
-	 */
-	void openSceneFlowView();
 
 	/**
 	 * @brief

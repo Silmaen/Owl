@@ -17,7 +17,7 @@ follows are in the [Owl Nest style guide](design/nest-style-guide.md).
 `UiLayer::setTopBarCallback`), the File screen `panel::Backstage`, packaging `GamePackager`, project and asset
 opening `EditorLayerProject.cpp` (extension table `classifyAsset`), the dock layout `DockLayout` (presets, a
 `layoutVersion` that rebuilds the default layout once after it changes). A `DocumentManager` holds the documents
-(`document/`: `SceneDocument`, `CodeEditorDocument`, `NodeGraphDocument`, `SceneFlowDocument`, `AnimationDocument`,
+(`document/`: `SceneDocument`, `CodeEditorDocument`, `NodeGraphDocument`, `AnimationDocument`,
 `TilemapDocument`, `TilesetDocument`, `FontDocument`, `ImageDocument`, `MeshDocument`, `MaterialDocument`,
 `ActionMapDocument`, `HudDocument`); each scene document owns its viewport window, undo stack and play state.
 

@@ -34,7 +34,7 @@ greyed when it does not apply.
 | Tab          | Groups and buttons                                                                                                                                                                             |
 |--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **File**     | Opens the File screen (below)                                                                                                                                                                  |
-| **Home**     | Edit (Undo, Redo, Duplicate), Create (**New** scene, HUD, animation, tilemap, tileset), Project (Scene Flow, Settings, Input Actions, Pack Game)                                               |
+| **Home**     | Edit (Undo, Redo, Duplicate), Create (**New** scene, HUD, animation, tilemap, tileset), Project (Settings, Input Actions, Pack Game)                                                           |
 | **View**     | Layout (Hierarchy Left, Reset Layout), Camera (Reset View, Axis Views, Frame Scene, Camera Viewpoint), Panels (Frame Stats, Help), Appearance (Owl Dark, Owl Light), Settings (Editor, Engine) |
 | Document tab | The last tab, in the accent colour: the commands of the active document (below)                                                                                                                |
 

@@ -29,7 +29,7 @@ using NodeGraphUndoManager = UndoManager<gui::widgets::NodeCanvas>;
  *  Node-graph document (`.owlflow`), the third kind of document alongside Scene and Code.
  *
  * Owns a `gui::widgets::NodeCanvas` and a `NodeGraphUndoManager` typed over it. Subclasses
- * (e.g. `SceneFlowDocument`, future animation graph / behaviour tree) specialize the canvas
+ * (e.g. a future animation graph / behaviour tree) specialize the canvas
  * contents and the callbacks wired at attach time; this base class handles save/load, dirty
  * tracking and the ImGui window boilerplate.
  *

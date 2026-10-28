@@ -157,7 +157,7 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Planned][planned] Local reflection probes: baked cube maps blended by volume, parallax-corrected, so metals reflect the room ([3D core](design/3d-core.md#reflection-probes))
 - ![In Progress][progress] Visual scripting MVP, event graphs compiled to Lua, node editing of assets ([details](design/visual-scripting.md))
 - ![Planned][planned] Node-graph link waypoints
-- ![To evaluate][evaluate] Scene Flow view: keep, rework or remove it before the v0.6.0 release, as it shows little of a real project
+- ![Done][done] Scene Flow view removed: it showed few of the scene links of a real project
 - ![Planned][planned] Script debugging aids (breakpoint markers, live watch)
 - ![Planned][planned] Lua editor scripts and interactive Lua console ([Editor scripting](design/editor-scripting.md))
 - ![Planned][planned] Procedural generation graphs on `NodeCanvas`, first brick on tilemaps ([PCG graphs](design/pcg-graphs.md))

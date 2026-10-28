@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - CI: Windows GCC configuration, the `package-linux` and `package-linux-cross-arm64` presets (`cmake/CMakePresetsPackage.json`), the `release_preset` mechanism and the Windows-only coverage step.
+- Owl Nest: the Scene Flow view; the sample games chain their scenes from Lua, which it did not show.
 
 ### Fixed
 

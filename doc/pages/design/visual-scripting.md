@@ -43,7 +43,7 @@ code, or a refusal) are the open questions.
 
 ## Node-graph link waypoints (v0.6.0)
 
-- Right-click on a coloured link in `NodeCanvas` (Scene Flow today, future graphs too) to insert an intermediate point
+- Right-click on a coloured link in `NodeCanvas` (visual scripts and any other graph) to insert an intermediate point
   at the cursor position
 - Drag to relocate, Delete to remove — waypoints persist in the `.owlflow` YAML
 - The Bezier routing splits at each waypoint into a series of cubic segments so the user can manually steer links

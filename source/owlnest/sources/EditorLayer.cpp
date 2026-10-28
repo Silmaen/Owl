@@ -18,7 +18,6 @@
 #include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
-#include "document/SceneFlowDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
 #include "document/VisualScriptDocument.h"

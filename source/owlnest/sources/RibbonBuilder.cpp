@@ -125,13 +125,6 @@ void RibbonBuilder::build() {
 									  mp_editor->newTilesetAsset();
 							  }});
 	const auto gProject = m_ribbon.addGroup(home, "Project");
-	m_ribbon.addButton(home, gProject,
-					   Button{.iconName = "ribbon_flow",
-							  .label = "Scene Flow",
-							  .tooltip = "Show the scenes of the project as a graph of their teleport links.",
-							  .isEnabled = projectLoaded,
-							  .onClick = [this]() -> void { mp_editor->openSceneFlowView(); },
-							  .size = Size::Large});
 	m_ribbon.addButton(
 			home, gProject,
 			Button{.iconName = "ribbon_settings",

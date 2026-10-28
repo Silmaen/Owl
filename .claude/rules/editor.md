@@ -23,7 +23,7 @@ same PR (see `ongoing-quality.md`, *Editor Coverage*).
 - `EntitySnapshot` captures/restores an entity through `SceneSerializer::serializeEntityToString()`.
 - Commands: `EntityCommands` (create, delete, duplicate ± subtree), `ComponentCommands` (add, remove,
   modify with merge), `HierarchyCommands` (reparent, unparent), `PrefabCommands` (instantiate, apply /
-  revert), `VoxelCommands`, `NodeGraphCommands`, `SceneFlowCommands`, `SceneSettingsCommands`. Scene
+  revert), `VoxelCommands`, `NodeGraphCommands`, `SceneSettingsCommands`. Scene
   commands derive from `SceneUndoCommand`.
 - Property edits: `drawComponent<T>` wraps `renderProps()` in `panel::InspectorEditTracker`. A session opens
   on interaction with the body (click / release over it, active widget, key with the nav focus inside),

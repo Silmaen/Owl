@@ -55,7 +55,7 @@ auto NodeGraphDocument::restoreRecoverySnapshot(const std::string& iSnapshot) ->
 
 void NodeGraphDocument::onAttach(EditorLayer* iEditor) {
 	mp_editorLayer = iEditor;
-	// A derived graph (Scene Flow) replaces this menu with its own in `onCanvasReady`.
+	// A derived graph replaces this menu with its own in `onCanvasReady`.
 	m_canvas.setOnContextMenu([this](const std::optional<core::UUID> iNode) -> void {
 		m_contextNode = iNode;
 		m_openContextMenu = true;
