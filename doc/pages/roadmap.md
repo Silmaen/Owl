@@ -161,7 +161,7 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Done][done] Lua editor scripts and interactive Lua console ([Editor scripting](design/editor-scripting.md))
 - ![Done][done] Procedural generation graphs on `NodeCanvas`, first brick on tilemaps ([PCG graphs](design/pcg-graphs.md))
 - ![Done][done] Tileset editor: compose the atlas from source images ([2D](design/2d-complete.md))
-- ![Done][done] Mipmapped pixel-art atlases: sharp texels up close, filtered mips far away, no bleeding between tiles, for the voxel, raycast and tilemap atlases ([2D](design/2d-complete.md#mipmapped-pixel-art-atlases-v060))
+- ![Done][done] Mipmapped pixel-art atlases: sharp texels up close, filtered mips far away, no bleeding between tiles, for the voxel, raycast and tilemap atlases ([2D](design/2d-complete.md#pixel-art-atlases))
 - ![Planned][planned] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
 - ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a Mini Minecraft, combat in the Wolfenstein mini, a station trader ([Pool](design/sample-games.md#sample-games-pool))
 

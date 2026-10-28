@@ -78,7 +78,7 @@ not a navigation mesh.
 - Incremental update when a tile changes; queries spread over ticks on the task system
 - Lua API and an editor overlay drawing the graph and a test path
 
-## Mipmapped pixel-art atlases (v0.6.0, done)
+## Mipmapped pixel-art atlases (v0.6.0, done) {#pixel-art-atlases}
 
 A tile atlas keeps its texels sharp up close and is filtered far away, without a cell bleeding into its neighbours.
 User guide: [Renderer](../renderer.md), [Voxel Engine](../voxel.md).
