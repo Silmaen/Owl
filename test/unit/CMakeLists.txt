@@ -98,10 +98,12 @@ foreach (child ${children})
                             OWL_RUNNER_EXECUTABLE="$<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner>")
                 endif ()
             endif ()
-            # export_tests find the engine shaders baked by OwlShaderBake, as Owl Nest does from its working directory.
+            # export_tests find the engine shaders baked by OwlShaderBake, as Owl Nest does from its working directory; they play
+            # each game on lavapipe only when the image tests are on (off under emulation, where lavapipe takes hours).
             if (${child} STREQUAL "export_tests")
                 target_compile_definitions(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
-                        OWL_BAKED_ASSETS_DIR="${CMAKE_BINARY_DIR}/bin/assets")
+                        OWL_BAKED_ASSETS_DIR="${CMAKE_BINARY_DIR}/bin/assets"
+                        OWL_RENDER_TESTS=$<BOOL:${${PROJECT_PREFIX}_RENDER_TESTS}>)
             endif ()
             # render_tests run OwlRunner on lavapipe / llvmpipe and compare its captures to reference images; they need
             # a display, so ctest starts them under xvfb-run when it exists. Label `render` to run or skip them alone.

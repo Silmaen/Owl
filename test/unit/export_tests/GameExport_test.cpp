@@ -96,6 +96,8 @@ constexpr auto g_lavapipeEnvironment = "GALLIUM_OVERRIDE_CPU_CAPS=sse4.1 MESA_SH
 									   "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json ALSOFT_DRIVERS=null";
 
 auto canRunOnLavapipe() -> bool {
+	if (OWL_RENDER_TESTS == 0)
+		return false;
 	const auto* display = std::getenv("DISPLAY");
 	return display != nullptr && *display != '\0' &&
 		   exists(std::filesystem::path{"/usr/share/vulkan/icd.d/lvp_icd.json"});
