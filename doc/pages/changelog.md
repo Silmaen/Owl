@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ScriptConsole`: a Lua state for tools with a REPL and host functions, apart from the game sandbox.
 - Procedural generation graphs: `.owlpcg` node graphs edited in Owl Nest generate a tilemap region from a seed (`TilemapAsset::generator`).
 - Tileset editor: compose the atlas from source images by dropping files or folders, clear, move and grow slots, undoable.
+- Tileset opacity map (`opacityTexture`): its red channel multiplies the atlas alpha in the tilemap, isometric, raycast and voxel shaders.
 - Mipmapped pixel-art atlases: `FilterMode::PixelArt` builds mipmaps cell by cell, sampled inside the cell by the voxel, raycast and tilemap shaders.
 
 ### Changed

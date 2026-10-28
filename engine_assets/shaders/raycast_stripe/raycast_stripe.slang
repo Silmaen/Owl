@@ -5,7 +5,7 @@
 // Layout contract (must match `renderer::RendererRaycast`'s descriptor
 // block):
 //   binding 0 : UBO  — StripeParams (viewProjection + counts + horizon + ids)
-//   binding 1 : Sampler2D — tileset atlas (single texture, no array)
+//   binding 1 : Sampler2D[2] — tileset atlas, then its opacity map (the atlas again without one)
 //   binding 2 : SSBO — hitCount[col]            (uint per column)
 //   binding 3 : SSBO — columnHits[col*maxHits + k] (ColumnHit per slot)
 //   binding 4 : SSBO — tileUvRects[tileIndex]   (float4: uvLeft, uvBottom, uvRight, uvTop)
@@ -24,6 +24,8 @@ struct StripeParams {
 	int entityId;
 	// 1 when the target stores linear colour (the fragment colour is decoded from sRGB).
 	int linearOutput;
+	// x: 1 when gTileset[1] holds the opacity map of the tileset; yzw unused.
+	int4 maps;
 };
 
 [[vk::binding(0)]]
@@ -34,7 +36,7 @@ ConstantBuffer<StripeParams> gParams;
 #else
 [[vk::binding(0)]]
 #endif
-Sampler2D gTileset;
+Sampler2D gTileset[2];
 
 #include "atlas.slangh"
 
@@ -148,8 +150,11 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
 	const float2 uvDdx = ddx(input.texCoord);
 	const float2 uvDdy = ddy(input.texCoord);
-	const float2 uv = clampToAtlasCell(gTileset, input.texCoord, input.cellRect.xy, input.cellRect.zw, uvDdx, uvDdy);
-	float4 texColor = input.color * gTileset.SampleGrad(uv, uvDdx, uvDdy);
+	const float2 uv =
+			clampToAtlasCell(gTileset[0], input.texCoord, input.cellRect.xy, input.cellRect.zw, uvDdx, uvDdy);
+	float4 texColor = input.color * gTileset[0].SampleGrad(uv, uvDdx, uvDdy);
+	if (gParams.maps.x != 0)
+		texColor.a *= gTileset[1].SampleGrad(uv, uvDdx, uvDdy).r;
 	if (texColor.a < 0.001f)
 		discard;
 	if (gParams.linearOutput != 0)

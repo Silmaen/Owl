@@ -184,7 +184,7 @@ auto Tileset::resolveTile(const int32_t iId, const uint8_t iSlope, const bool iF
 }
 
 void Tileset::applyFilterMode() const {
-	for (const auto& map: {texture, normalTexture, roughnessTexture}) {
+	for (const auto& map: {texture, normalTexture, roughnessTexture, opacityTexture}) {
 		if (!map)
 			continue;
 		if (filterMode != renderer::gpu::FilterMode::PixelArt)
@@ -205,6 +205,8 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 		emitter << YAML::Key << "normalTexture" << YAML::Value << normalTexture->getSerializeString();
 	if (roughnessTexture)
 		emitter << YAML::Key << "roughnessTexture" << YAML::Value << roughnessTexture->getSerializeString();
+	if (opacityTexture)
+		emitter << YAML::Key << "opacityTexture" << YAML::Value << opacityTexture->getSerializeString();
 	emitter << YAML::Key << "tileWidth" << YAML::Value << tileWidth;
 	emitter << YAML::Key << "tileHeight" << YAML::Value << tileHeight;
 	emitter << YAML::Key << "columns" << YAML::Value << columns;
@@ -277,7 +279,8 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 	if (const auto kindNode = root["kind"]; kindNode && kindNode.IsScalar())
 		parsed.kind = kindNode.as<std::string>() == "Isometric" ? Kind::Isometric : Kind::Orthogonal;
 	for (auto [key, map]: {std::pair{"texture", &parsed.texture}, std::pair{"normalTexture", &parsed.normalTexture},
-						   std::pair{"roughnessTexture", &parsed.roughnessTexture}}) {
+						   std::pair{"roughnessTexture", &parsed.roughnessTexture},
+						   std::pair{"opacityTexture", &parsed.opacityTexture}}) {
 		if (root[key])
 			*map = renderer::gpu::Texture2D::createFromSerializedForDeserialize(root[key].as<std::string>());
 	}

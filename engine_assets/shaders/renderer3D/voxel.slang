@@ -7,12 +7,15 @@
 // PixelArt filtering, whose mipmaps are read inside the cell (atlas.slangh). Shares the Renderer3D descriptor layout (scene UBO at binding 0,
 // texture array at binding 1); the atlas is the draw's first texture (slot 1) and
 // texIndex carries the block surface packed by data::voxel::packSurface. A tileset with relief and roughness maps
-// gives them as the normal (slot 3) and roughness (slot 6) maps of the draw's material, on the grid of the atlas.
+// gives them as the normal (slot 3) and roughness (slot 6) maps of the draw's material, on the grid of the atlas; its
+// opacity map rides in the metallic slot (2), which a voxel block never reads as metalness.
 
 #include "pbr.slangh"
 #include "atlas.slangh"
 
 static const int VOXEL_ATLAS_SLOT = 1;
+static const int VOXEL_OPACITY_SLOT = MAP_METALLIC;
+static const int VOXEL_OPACITY_BIT = 1;// MaterialMap::Metallic in the map mask.
 static const float VOXEL_MAX_LUMINANCE = 100000.0f;// data::voxel::g_MaxBlockLuminance.
 
 struct VertexInput {
@@ -68,6 +71,8 @@ FragmentOutput fragmentMain(FragmentInput input) {
 									  input.tileRect.xy, input.tileRect.xy + input.tileRect.zw, uvDdx, uvDdy);
 	float4 texColor = gTextures[VOXEL_ATLAS_SLOT].SampleGrad(atlasUv, uvDdx, uvDdy);
 	texColor.rgb = authoredColor(texColor.rgb);
+	if (hasMap(VOXEL_OPACITY_BIT))
+		texColor.a *= gTextures[VOXEL_OPACITY_SLOT].SampleGrad(atlasUv, uvDdx, uvDdy).r;
 	if (texColor.a < 0.001f)
 		discard;
 	if (gScene.ids.z != 0) {

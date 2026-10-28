@@ -118,10 +118,12 @@ private:
 		const auto texture = ioTarget.texture;
 		const auto normal = ioTarget.normalTexture;
 		const auto roughness = ioTarget.roughnessTexture;
+		const auto opacity = ioTarget.opacityTexture;
 		std::ignore = ioTarget.deserializeFromString(iSide.yaml);
 		ioTarget.texture = texture;
 		ioTarget.normalTexture = normal;
 		ioTarget.roughnessTexture = roughness;
+		ioTarget.opacityTexture = opacity;
 		m_document.restoreAtlas(iSide.columns, iSide.rows, iSide.cells);
 	}
 
@@ -603,6 +605,11 @@ void TilesetDocument::renderHierarchyPanel() {
 	if (textureRow("Roughness Map", "##roughness", m_tileset.roughnessTexture,
 				   "Roughness on the grid of the atlas: 50 % grey keeps the roughness of a voxel block, darker is "
 				   "smoother. Drop a texture from the Content Browser."))
+		m_tileset.applyFilterMode();
+	if (textureRow(
+				"Opacity Map", "##opacity", m_tileset.opacityTexture,
+				"Opacity on the grid of the atlas: its red channel multiplies the alpha of the texture, black is cut "
+				"out. Drop a texture from the Content Browser."))
 		m_tileset.applyFilterMode();
 	if (const auto textureAfter = snapshotTileset(m_tileset); textureAfter != textureBefore) {
 		auto cmd = mkUniq<ModifyTilesetCommand>(textureBefore, textureAfter, "Set texture");

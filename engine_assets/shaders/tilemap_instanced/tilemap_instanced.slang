@@ -17,7 +17,7 @@ struct TilemapDraw {
 	// Atlas columns, rows; entity id; slot inside `gTextures[32]`.
 	int4 atlas;
 	// x: 1 when the target stores linear colour (the fragment colour is decoded from sRGB); y: 2D light count;
-	// zw unused.
+	// z: slot of the opacity map + 1, 0 without one; w unused.
 	int4 flags;
 	float4 ambient;// rgb: linear ambient of the 2D lights; w: 1 when the 2D lighting is on.
 };
@@ -130,6 +130,8 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	const float2 uv = clampToAtlasCell(gTextures[NonUniformResourceIndex(input.textureSlot)], input.texCoord,
 									   input.cellRect.xy, input.cellRect.zw, uvDdx, uvDdy);
 	float4 texColor = gTextures[NonUniformResourceIndex(input.textureSlot)].SampleGrad(uv, uvDdx, uvDdy);
+	if (gDraw.flags.z > 0)
+		texColor.a *= gTextures[gDraw.flags.z - 1].SampleGrad(uv, uvDdx, uvDdy).r;
 	if (texColor.a < 0.001f)
 		discard;
 	if (gDraw.flags.x != 0)

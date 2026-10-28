@@ -230,6 +230,8 @@ constexpr float g_translucentDiscardAlpha = 0.001f;
 constexpr uint16_t g_whiteTexture = 0xFFFF;
 // Lit draws: albedo slots 0 to 9, their normal companions at +10 and depth companions at +20 (isometric_light.slangh).
 constexpr uint32_t g_litAlbedoSlots = 10;
+// Slot of the opacity map of a tileset, after the lit albedo, normal and depth slots.
+constexpr size_t g_opacitySlot = 30;
 // World height of a full texel of a depth atlas (`Z_RANGE` of `tools/iso_atlas`).
 constexpr float g_depthAtlasRange = 8.f;
 
@@ -255,7 +257,7 @@ struct SceneUbo {
 	math::vec4 origin{0.f, 0.f, 0.f, 0.f};
 	// Tilemap draws only: sprite size in pixels, depth slope.
 	math::vec4 tile{0.f, 0.f, 0.f, 0.f};
-	// x: entity id (tilemap draws only); y: 1 when the bound framebuffer stores linear colour; zw: padding.
+	// x: entity id, z: 1 with the tileset opacity map bound (tilemap draws); y: 1 for a linear target; w: padding.
 	std::array<int32_t, 4> ids{-1, 0, 0, 0};
 	// x: 2D light count; y: 1 when the 2D lighting is on; z: world height of a full depth-atlas texel.
 	math::vec4 light{0.f, 0.f, 0.f, 0.f};
@@ -499,14 +501,22 @@ void applyLighting() {
 }
 
 // Bind the albedo slots, followed by their companions when the draw is lit.
-void bindSlots(const std::span<const shared<gpu::Texture2D>> iAlbedos) {
+void bindSlots(const std::span<const shared<gpu::Texture2D>> iAlbedos,
+			   const shared<gpu::Texture2D>& iOpacity = nullptr) {
 	auto& state = *g_state;
-	if (!state.lit) {
+	if (!state.lit && !iOpacity) {
 		gpu::RenderCommand::bindTextures(iAlbedos);
 		return;
 	}
 	auto& slots = state.litSlots;
-	slots.assign(size_t{3} * g_litAlbedoSlots, nullptr);
+	if (!state.lit) {
+		slots.assign(iAlbedos.begin(), iAlbedos.end());
+		slots.resize(g_opacitySlot + 1, state.whiteTexture);
+		slots[g_opacitySlot] = iOpacity;
+		gpu::RenderCommand::bindTextures(slots);
+		return;
+	}
+	slots.assign(iOpacity ? g_opacitySlot + 1 : size_t{3} * g_litAlbedoSlots, nullptr);
 	for (size_t index = 0; index < g_litAlbedoSlots; ++index) {
 		const auto& albedo = index < iAlbedos.size() ? iAlbedos[index] : state.whiteTexture;
 		const auto& companions = companionsOf(albedo);
@@ -514,6 +524,8 @@ void bindSlots(const std::span<const shared<gpu::Texture2D>> iAlbedos) {
 		slots[g_litAlbedoSlots + index] = companions.normal ? companions.normal : state.noNormal;
 		slots[size_t{2} * g_litAlbedoSlots + index] = companions.depth ? companions.depth : state.noDepth;
 	}
+	if (iOpacity)
+		slots[g_opacitySlot] = iOpacity;
 	gpu::RenderCommand::bindTextures(slots);
 }
 
@@ -532,6 +544,7 @@ void flushBatch(const shared<gpu::DrawData>& iDraw) {
 		return;
 	const auto count = static_cast<uint32_t>(state.batch.size());
 	state.scene.ids[1] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
+	state.scene.ids[2] = 0;
 	state.sceneUbo->setData(&state.scene, sizeof(SceneUbo), 0);
 	bindSlots(state.slots);
 	state.instances->setData(state.batch.data(), static_cast<uint32_t>(count * sizeof(GpuInstance)), 0);
@@ -547,6 +560,7 @@ void flushSpriteBatch() {
 		return;
 	const auto count = static_cast<uint32_t>(state.spriteBatch.size());
 	state.scene.ids[1] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
+	state.scene.ids[2] = 0;
 	state.sceneUbo->setData(&state.scene, sizeof(SceneUbo), 0);
 	bindSlots(state.slots);
 	state.spriteInstances->setData(state.spriteBatch.data(), static_cast<uint32_t>(count * sizeof(GpuSprite)), 0);
@@ -806,9 +820,10 @@ void drawTilemapChunks(const PendingTilemap& iPending, const AssetGpu& iEntry) {
 			static_cast<float>(asset.getMaxCornerHeight()) * scene::terrain::heightStep * camera.getConfig().zStep;
 	state.scene.origin = math::vec4{iPending.origin.x(), iPending.origin.y(), iPending.origin.z(), 0.f};
 	state.scene.tile = math::vec4{tileWidth, spriteHeight, state.flatSlope, 0.f};
-	state.scene.ids = {iPending.entityId, gpu::Framebuffer::isLinearTargetBound() ? 1 : 0, 0, 0};
+	state.scene.ids = {iPending.entityId, gpu::Framebuffer::isLinearTargetBound() ? 1 : 0,
+					   tileset.opacityTexture ? 1 : 0, 0};
 	state.sceneUbo->setData(&state.scene, sizeof(SceneUbo), 0);
-	bindSlots(std::span{&tileset.texture, 1});
+	bindSlots(std::span{&tileset.texture, 1}, tileset.opacityTexture);
 	for (size_t index = 0; index < asset.layers.size(); ++index) {
 		if (!asset.layers[index].visible)
 			continue;

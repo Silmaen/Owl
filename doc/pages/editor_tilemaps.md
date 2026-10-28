@@ -43,8 +43,9 @@ section of the Scene Hierarchy column sets it, previews it on the canvas and wri
 ## Tileset editor
 
 - **Atlas**: the texture, the grid, the tile size, the filter and the **Kind**: `Orthogonal` square tiles or
-  `Isometric` 2:1 diamonds. Each map (texture, normal map, roughness map) is a row showing its thumbnail, file and
-  size; drop an image on the thumbnail. A voxel tileset takes its normal and roughness maps here. The filter is `Linear`,
+  `Isometric` 2:1 diamonds. Each map (texture, normal map, roughness map, opacity map) is a row showing its
+  thumbnail, file and size; drop an image on the thumbnail. A voxel tileset takes its normal and roughness maps here;
+  the **Opacity Map** cuts any tileset out (its red channel multiplies the texture alpha). The filter is `Linear`,
   `Nearest` or `Pixel Art` (`filterMode: PixelArt`: sharp up close, mipmaps built per tile far away, see
   [Renderer](renderer.md)).
 - Click a tile to edit it in Properties: its flags and, for a road network, its **Navigation** (**Road**, then the

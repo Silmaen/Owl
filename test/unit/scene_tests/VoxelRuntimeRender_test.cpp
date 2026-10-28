@@ -164,7 +164,7 @@ TEST_F(VoxelRuntimeRenderTest, SynchronousModeMeshesInTheFrame) {
 	renderer::RendererVoxel::setMeshingConfig(previous);
 }
 
-TEST_F(VoxelRuntimeRenderTest, ATilesetWithReliefAndRoughnessMapsStillDraws) {
+TEST_F(VoxelRuntimeRenderTest, ATilesetWithReliefRoughnessAndOpacityMapsStillDraws) {
 	const auto sc = makeVoxelScene();
 	for (const auto [handle, world]: sc->registry.view<scene::component::VoxelWorld>().each()) {
 		std::ignore = handle;
@@ -175,6 +175,7 @@ TEST_F(VoxelRuntimeRenderTest, ATilesetWithReliefAndRoughnessMapsStillDraws) {
 		};
 		world.tileset->normalTexture = map();
 		world.tileset->roughnessTexture = map();
+		world.tileset->opacityTexture = map();
 	}
 	sc->onStartRuntime();
 	frameThenUpload([&]() -> void { sc->onUpdateRuntime(makeStep(16)); });

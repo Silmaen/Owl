@@ -1,0 +1,9 @@
+Tilemap: opacity_bricks
+FormatVersion: 1
+tilesetPath: tilesets/opacity_bricks.owltileset
+width: 6
+height: 4
+cellSize: 1
+layers:
+  - name: ground
+    tiles: "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"

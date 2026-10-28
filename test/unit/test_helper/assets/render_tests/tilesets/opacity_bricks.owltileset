@@ -1,0 +1,9 @@
+Tileset: opacity_bricks
+FormatVersion: 1
+texture: 'nam:textures/bricks.png'
+opacityTexture: 'nam:textures/opacity_disc.png'
+tileWidth: 64
+tileHeight: 64
+columns: 1
+rows: 1
+filterMode: Nearest

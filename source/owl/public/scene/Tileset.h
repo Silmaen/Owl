@@ -117,7 +117,8 @@ struct OWL_API SlopeSet {
  * FormatVersion: 1
  * texture: <texture serialized name>     # optional
  * normalTexture: <texture serialized name>      # optional, tangent-space normals on the same grid (voxel worlds)
- * roughnessTexture: <texture serialized name>   # optional, roughness on the same grid, 50 % grey keeps a block's
+ * roughnessTexture: <texture serialized name>   # optional, roughness on the same grid, 50 % grey keeps a block
+ * opacityTexture: <texture serialized name>     # optional, opacity on the same grid: red multiplies the atlas alpha
  * tileWidth: 32
  * tileHeight: 32
  * columns: 8
@@ -184,6 +185,8 @@ public:
 	shared<renderer::gpu::Texture2D> normalTexture;
 	/// Roughness map on the grid of the atlas: 50 % grey keeps the roughness of a voxel block, darker is smoother.
 	shared<renderer::gpu::Texture2D> roughnessTexture;
+	/// Opacity map on the grid of the atlas: its red channel multiplies the alpha of the atlas (black is cut out).
+	shared<renderer::gpu::Texture2D> opacityTexture;
 	/// Tile width in atlas pixels (>= 1).
 	uint32_t tileWidth = 32;
 	/// Tile height in atlas pixels (>= 1).
@@ -319,7 +322,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Apply `filterMode` to the atlas, normal and roughness textures; `PixelArt` builds their mipmaps cell by cell
+	 *  Apply `filterMode` to the atlas, normal, roughness and opacity textures; `PixelArt` builds their mipmaps cell by cell
 	 *  on the `tileWidth x tileHeight` grid. Call it after changing the mode or the tile size.
 	 */
 	void applyFilterMode() const;

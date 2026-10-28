@@ -477,7 +477,7 @@ void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName,
 	if (!hasAsset(ioAssets, tilesetRef->packPath))
 		ioAssets.push_back(*tilesetRef);
 
-	for (const char* key: {"texture", "normalTexture", "roughnessTexture"}) {
+	for (const char* key: {"texture", "normalTexture", "roughnessTexture", "opacityTexture"}) {
 		const auto textureSerialized = readYamlScalar(tilesetRef->diskPath, key);
 		if (textureSerialized.empty())
 			continue;

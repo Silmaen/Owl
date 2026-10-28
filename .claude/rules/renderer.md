@@ -24,7 +24,7 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   textures when another block drew in between; a bind made outside any block is not tracked.
 - **2D lights: SSBO bindings 5 (lights) and 6 (shadow rows) in every 2D-family block.** `Renderer2D` owns the buffers and the
   quad, tilemap and isometric blocks declare the same two bindings, because OpenGL storage binding points are global: a
-  block must never bind its own SSBO at 5 or 6. Isometric lit texture slots: albedo 0-9, normal +10, depth +20.
+  block must never bind its own SSBO at 5 or 6. Isometric lit texture slots: albedo 0-9, normal +10, depth +20, tileset opacity map 30.
 - **Vulkan: one command buffer per frame, two frames in flight.** Batches share a render pass in it (kept
   open across batches on one framebuffer, closed by a framebuffer change, a transfer, a compute dispatch or the frame
   end), never a submission; the frame is submitted once at `endFrame`. Never wait on a queue or the device in a frame:
@@ -82,6 +82,9 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
 - **Pixel-art atlases (`FilterMode::PixelArt`) hold mipmaps built cell by cell** (`renderer/AtlasMips.h`, never a
   GPU-generated chain): a shader samples them through `common/atlas.slangh` `clampToAtlasCell` with the cell rect, which
   returns the UV unchanged for a one-level texture so the Nearest / Linear paths stay bit-identical.
+- **Tileset opacity maps are sampled only behind a flag** (tilemap `flags.z` slot + 1, isometric `ids.z` with slot 30,
+  raycast stripe `maps.x` with `gTileset[1]`, voxel material bit Metallic in slot 2): a tileset without one samples
+  nothing more, so the existing paths stay bit-identical.
 
 - **Vulkan descriptors are written at draw time** (`RendererDescriptors::getDescriptorSet`, from
   `bindPipeline`), after the draw's SSBO binds; every declared binding is written, unbound ones with a default

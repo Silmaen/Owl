@@ -16,7 +16,8 @@ struct IsometricScene {
 	float4 origin;
 	// xy: tile sprite size in pixels; z: view depth per pixel up the sprite (negative: flat on the ground).
 	float4 tile;
-	// x: entity id written to the picking attachment; y: 1 when the target stores linear colour (decoded from sRGB).
+	// x: entity id written to the picking attachment; y: 1 when the target stores linear colour (decoded from sRGB);
+	// z: 1 when the opacity map of the tileset is bound at OPACITY_SLOT.
 	int4 ids;
 	// x: 2D light count; y: 1 when the 2D lighting is on; z: world height of a full depth-atlas texel.
 	float4 light;
@@ -34,6 +35,9 @@ ConstantBuffer<IsometricScene> gScene;
 Sampler2D gTextures[32];
 
 #include "isometric_light.slangh"
+
+// Slot of the opacity map of the tileset, after the lit albedo (0-9), normal (10-19) and depth (20-29) slots.
+static const int OPACITY_SLOT = 30;
 
 struct VertexInput {
 	// Per-vertex attribute (binding 0): the corner of the sprite, 0 = BL, 1 = BR, 2 = TR, 3 = TL.
@@ -99,6 +103,8 @@ VertexOutput vertexMain(VertexInput input) {
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
 	float4 texColor = gTextures[0].Sample(input.texCoord);
+	if (gScene.ids.z != 0)
+		texColor.a *= gTextures[OPACITY_SLOT].Sample(input.texCoord).r;
 	if (texColor.a < gScene.params.x)
 		discard;
 	if (gScene.ids.y != 0)

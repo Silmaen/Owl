@@ -206,18 +206,18 @@ TEST_P(RenderImage, matchesReference) {
 #endif
 }
 
-INSTANTIATE_TEST_SUITE_P(Scenes, RenderImage,
-						 testing::Values(RenderCase{"sprites", "vulkan"}, RenderCase{"sprites", "opengl"},
-										 RenderCase{"text", "vulkan"}, RenderCase{"text", "opengl"},
-										 RenderCase{"tilemap", "vulkan"}, RenderCase{"tilemap", "opengl"},
-										 RenderCase{"raycast", "vulkan"}, RenderCase{"raycast", "opengl"},
-										 RenderCase{"voxel", "vulkan"}, RenderCase{"voxel", "opengl"},
-										 RenderCase{"mixed", "vulkan"}, RenderCase{"mixed", "opengl"},
-										 RenderCase{"stylemix", "vulkan"}, RenderCase{"stylemix", "opengl"},
-										 RenderCase{"isometric", "vulkan"}, RenderCase{"isometric", "opengl"}),
-						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
-							 return iInfo.param.scene + "_" + iInfo.param.backend;
-						 });
+INSTANTIATE_TEST_SUITE_P(
+		Scenes, RenderImage,
+		testing::Values(RenderCase{"sprites", "vulkan"}, RenderCase{"sprites", "opengl"}, RenderCase{"text", "vulkan"},
+						RenderCase{"text", "opengl"}, RenderCase{"tilemap", "vulkan"}, RenderCase{"tilemap", "opengl"},
+						RenderCase{"tilemap_opacity", "vulkan"}, RenderCase{"tilemap_opacity", "opengl"},
+						RenderCase{"raycast", "vulkan"}, RenderCase{"raycast", "opengl"}, RenderCase{"voxel", "vulkan"},
+						RenderCase{"voxel", "opengl"}, RenderCase{"mixed", "vulkan"}, RenderCase{"mixed", "opengl"},
+						RenderCase{"stylemix", "vulkan"}, RenderCase{"stylemix", "opengl"},
+						RenderCase{"isometric", "vulkan"}, RenderCase{"isometric", "opengl"}),
+		[](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+			return iInfo.param.scene + "_" + iInfo.param.backend;
+		});
 
 // Isometric buildings sliced per tile and vehicles at an integer zoom (pixel snapping), on a larger capture.
 INSTANTIATE_TEST_SUITE_P(IsometricObjects, RenderImage,

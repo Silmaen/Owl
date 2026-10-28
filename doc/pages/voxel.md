@@ -210,7 +210,8 @@ A voxel tileset may add a `normalTexture` and a `roughnessTexture` on the grid o
 normal with the first, the second modulates the roughness of the block (50 % grey keeps it). The atlas of the demo
 blocks is `filterMode: PixelArt`: the shader samples through the mipmaps built cell by cell, so far blocks do not
 shimmer and never bleed into a neighbour face ([Renderer](renderer.md)). The demo blocks are 128 px with both maps
-([Scene](scene.md)).
+([Scene](scene.md)). An `opacityTexture` on the same grid cuts the blocks out (leaves, grates): the shader multiplies the
+atlas alpha by its red channel.
 
 Two camera components drive a voxel world in Play (both saved and editable in the inspector):
 
