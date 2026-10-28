@@ -191,9 +191,9 @@ A voxel world reaches the screen through two pieces:
   `.owl` scene (block list + run-length-encoded chunks). It is fully inspectable/editable in Owl Nest.
 - **`RendererVoxel`** — a render-stack layer (factory key `"RendererVoxel"`) built on [Renderer3D](renderer.md). It
   greedy-meshes each chunk into an opaque and a transparent mesh on the task workers (see *Asynchronous Meshing*
-  below), caches both per entity (rebuilt when the chunk revision changes), resolves the per-block textures (Nearest
-  filtering), and draws them with the frac-tiled `voxel` shader so
-  greedy-merged faces tile rather than stretch. It draws the **opaque pass first** (depth writes on), then the
+  below), caches both per entity (rebuilt when the chunk revision changes), resolves the per-block textures (the tileset
+  filter: `Nearest`, or `PixelArt` with mipmaps built per block face), and draws them with the frac-tiled `voxel`
+  shader so greedy-merged faces tile rather than stretch. It draws the **opaque pass first** (depth writes on), then the
   **transparent pass** (water / glass) sorted **back-to-front** by chunk distance to the camera with depth writes
   disabled, so the blend composites correctly. The entity must carry a `RendererTag` routing it to the voxel layer;
   `Scene::render` only draws voxel worlds when the active layer is voxel-capable (mirroring the raycast path).
@@ -207,8 +207,10 @@ The Engine Demo's `voxel_terrain.owl` (see [Procedural Terrain](#procedural-terr
 viewport** (the world streams around the editor camera too).
 
 A voxel tileset may add a `normalTexture` and a `roughnessTexture` on the grid of its atlas: `voxel.slang` perturbs the
-normal with the first, the second modulates the roughness of the block (50 % grey keeps it), and the far texels of
-such detailed atlases are averaged. The demo blocks are 128 px with both maps ([Scene](scene.md)).
+normal with the first, the second modulates the roughness of the block (50 % grey keeps it). The atlas of the demo
+blocks is `filterMode: PixelArt`: the shader samples through the mipmaps built cell by cell, so far blocks do not
+shimmer and never bleed into a neighbour face ([Renderer](renderer.md)). The demo blocks are 128 px with both maps
+([Scene](scene.md)).
 
 Two camera components drive a voxel world in Play (both saved and editable in the inspector):
 

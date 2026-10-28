@@ -2,17 +2,29 @@
 
 [TOC]
 
-Design page for the procedural content generation (PCG) graphs, summarised in the [Roadmap](../roadmap.md).
+Design page for the procedural content generation (PCG) graphs, summarised in the [Roadmap](../roadmap.md). The user
+guide is [PCG graphs](../pcg_graphs.md).
 
-## v0.6.0 — first brick
+## v0.6.0 — what exists
 
-A seeded noise / rule fill of a tilemap region, undoable, if it serves the tilemap workflow (see
-[2D complete](2d-complete.md)).
+A `.owlpcg` graph, edited on the `NodeCanvas` of Owl Nest, fills a region of a tilemap from a seed.
 
-## v0.6.0 — PCG graphs
+| Part        | Content                                                                                                                  |
+|-------------|--------------------------------------------------------------------------------------------------------------------------|
+| Engine      | `scene::pcg` (`PcgGraph.h`, `PcgTilemap.h`): versioned YAML, 16 node types, `evaluate`, `generateTilemap`                |
+| Pin types   | `Field` (a number per cell, a mask is 0 or 1) and `Points` (cells); a link joins the same type only                      |
+| Determinism | Every random stream (SplitMix64) comes from the seed and the node identifier: same seed, same tiles                      |
+| Outputs     | Applied from the top one on the canvas down, so a lower one wins; `g_UntouchedTile` keeps a cell, `-1` erases            |
+| Diagnostics | Errors `Cycle` and `EmptyRegion`; warnings for unlinked inputs and unknown node types                                    |
+| Tilemap     | `TilemapAsset::generator` (graph, seed, layer, origin, size, a zero side reaches the grid end), YAML `generator`         |
+| Editor      | `PcgGraphDocument`: Nodes panel, Graph panel with the preview of the selected node, undo; tilemap **Procedural** section |
+| Engine Demo | `engine_demo/pcg/caves.owlpcg` and `engine_demo/tilemaps/pcg_caves.owltilemap` (a cave automaton)                        |
 
-- Non-destructive graph on `NodeCanvas`: noise → thresholds → point scattering → filters → placement of prefabs, tiles
-  or voxels
-- Live preview in the viewport, regeneration from a seed
-- Consumers: voxel biomes and caves, tilemap dungeons, isometric terrain heights, set dressing
-- Output is regular scene content (entities, tiles, voxels), so the generated result can be baked and edited by hand
+The graph is non-destructive and the output is regular tile content, so a generated tilemap can be edited by hand
+afterwards. The preview is drawn on the canvas of the tilemap document.
+
+## Later
+
+- Prefab and voxel outputs: placement of prefabs from points, voxel biomes and caves
+- Isometric terrain heights as an output
+- Live preview of the generation in the scene viewport

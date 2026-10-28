@@ -79,6 +79,9 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
 - **Tiling an atlas cell with `frac(uv)`** needs all three: half-texel inset of the cell, self-tileable
   textures, and `SampleGrad` with the continuous (non-fract) UV derivatives. `Texture2D::setFilterMode`
   works on both backends (the old sampler is released once the frames using it are done).
+- **Pixel-art atlases (`FilterMode::PixelArt`) hold mipmaps built cell by cell** (`renderer/AtlasMips.h`, never a
+  GPU-generated chain): a shader samples them through `common/atlas.slangh` `clampToAtlasCell` with the cell rect, which
+  returns the UV unchanged for a one-level texture so the Nearest / Linear paths stay bit-identical.
 
 - **Vulkan descriptors are written at draw time** (`RendererDescriptors::getDescriptorSet`, from
   `bindPipeline`), after the draw's SSBO binds; every declared binding is written, unbound ones with a default

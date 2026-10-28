@@ -3,8 +3,8 @@
 [TOC]
 
 This page documents Owl Engine's generic node-graph widget and the editor subsystems built on top of it. The framework is
-designed to be **reusable**: visual scripts are the first consumer; future releases reuse the same canvas for
-animation graphs, behaviour trees and dialogue trees.
+designed to be **reusable**: visual scripts and [PCG graphs](pcg_graphs.md) are consumers; future releases reuse the
+same canvas for animation graphs, behaviour trees and dialogue trees.
 
 ## Current status
 
@@ -169,12 +169,17 @@ Integration surface:
 - `ContentBrowser` — double-clicking a `.owlflow` file routes to the handler above; drag-drop targets also call it.
 - Ribbon — the contextual "Graph" tab exposes Save / Close for the active node-graph document.
 
+## Consumers
+
+| Document type | Target type                                                     | Extension |
+|---------------|-----------------------------------------------------------------|-----------|
+| Visual script | Event graphs compiled to Lua                                    | `.owlvs`  |
+| PCG graph     | Procedural generation of tilemaps ([PCG graphs](pcg_graphs.md)) | `.owlpcg` |
+
 ## Planned consumers
 
 | Document type          | Target type                  | Extension  |
 |------------------------|------------------------------|------------|
-| Visual script          | Event graphs compiled to Lua | —          |
-| PCG graph              | Procedural generation        | —          |
 | Animation graph        | Anim state machine           | `.owlanim` |
 | Behaviour tree         | AI behaviour trees           | `.owlbt`   |
 | Dialogue tree          | Branching conversations      | `.owldlg`  |

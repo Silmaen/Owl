@@ -32,6 +32,7 @@ Groups:
       - doc/pages/physics.md
       - doc/pages/sound.md
       - doc/pages/pathfinding.md
+      - doc/pages/pcg_graphs.md
   - title: Scripting
     pages:
       - doc/pages/scripting.md

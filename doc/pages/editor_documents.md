@@ -15,6 +15,7 @@ scene, its own Play state. The ribbon's last tab holds the commands of the activ
 | Code          | `.lua`, `.slang`, `.py`, `.json`, `.yml`... | [Code and text](#code-and-text)                                            |
 | Node graph    | `.owlflow`                                  | [Node graphs](#node-graphs)                                                |
 | Visual script | `.owlvs`                                    | [Visual scripts](visual-scripts.md)                                        |
+| PCG graph     | `.owlpcg`                                   | [PCG graphs](pcg_graphs.md)                                                |
 | Animation     | `.owlanim`                                  | [Animation clips](#animation-clips)                                        |
 | Material      | `.owlmat`                                   | [Materials](#materials)                                                    |
 | Image         | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | [Image viewer](#image-viewer)                                              |

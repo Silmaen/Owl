@@ -480,6 +480,9 @@ payloadBytes: 10280
 <binary payload>
 ```
 
+An optional `generator` map in the header holds the procedural generation of the tilemap ([PCG graphs](pcg_graphs.md)):
+`graph` (a `.owlpcg` path), `seed`, `layer`, `origin` and `size` (`[0, 0]` reaches the end of the grid).
+
 The payload holds only the non-empty chunks, **little-endian whatever the host**:
 
 | Field            | Type                             | Content                                                         |

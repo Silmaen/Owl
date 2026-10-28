@@ -1346,18 +1346,29 @@ the same render pass (needed by Vulkan's `DONT_CARE` load op).
 
 ### Specification
 
-| Field          | Type           | Default  | Description                                                     |
-|----------------|----------------|----------|-----------------------------------------------------------------|
-| `size`         | `math::vec2ui` | `{0, 0}` | Texture dimensions                                              |
-| `format`       | `ImageFormat`  | `Rgba8`  | Pixel format                                                    |
-| `generateMips` | `bool`         | `false`  | Generate the full mipmap chain on upload (`Linear` filter only) |
-| `filterMode`   | `FilterMode`   | `Linear` | `Linear` (bilinear, trilinear with mips) or `Nearest`           |
+| Field          | Type           | Default  | Description                                                       |
+|----------------|----------------|----------|-------------------------------------------------------------------|
+| `size`         | `math::vec2ui` | `{0, 0}` | Texture dimensions                                                |
+| `format`       | `ImageFormat`  | `Rgba8`  | Pixel format                                                      |
+| `generateMips` | `bool`         | `false`  | Generate the full mipmap chain on upload (`Linear` filter only)   |
+| `filterMode`   | `FilterMode`   | `Linear` | `Linear` (bilinear, trilinear with mips), `Nearest` or `PixelArt` |
+| `atlasCell`    | `math::vec2ui` | `{0, 0}` | Size of one atlas cell in texels, for a `PixelArt` texture        |
 
 Both backends sample the same way: `Linear` magnifies and minifies linearly (Vulkan adds anisotropy), trilinearly when
 the texture has mipmaps; `Nearest` snaps to texels and ignores mipmaps. Mipmaps are off by default, so an atlas never
 bleeds between cells when minified; ask for them where a texture is drawn smaller than its size (Owl Nest's icon
 atlas). `setFilterMode()` switches the sampler at run time (on Vulkan after a device wait: load time and editor actions
 only); the mipmap levels stay those allocated at creation.
+
+`PixelArt` is the mode of tile atlases: nearest magnification keeps the texels sharp up close, trilinear minification
+over the mipmaps filters them far away. `Texture2D::setPixelArtCells(cell)` builds the mipmaps cell by cell
+(`renderer::buildCellMips`, `renderer/AtlasMips.h`): each texel averages the 2x2 texels below it inside one cell, the
+colours weighted by their alpha, and the chain stops at the level where a cell side becomes odd
+(`cellMipLevelCount`), so no level mixes two tiles. A compressed texture keeps the levels of its cook that hold whole
+cells. The voxel, tilemap (`tilemap_instanced`) and raycast (`raycast_stripe`) shaders sample an atlas cell through
+`clampToAtlasCell` (`engine_assets/shaders/common/atlas.slangh`): the UV stays half a texel of the coarsest level it
+reads inside the cell; a texture with one level is sampled unchanged. A tileset asks for the mode with
+`filterMode: PixelArt` ([Tilemaps and Tilesets](editor_tilemaps.md)).
 
 ### ImageFormat
 
