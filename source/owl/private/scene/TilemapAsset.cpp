@@ -22,9 +22,11 @@
 #include <bit>
 #include <cstdint>
 #include <fstream>
+#include <optional>
 #include <span>
 #include <sstream>
 #include <string>
+#include <utility>
 
 namespace owl::scene {
 
@@ -135,7 +137,32 @@ auto parseHeader(const YAML::Node& iRoot, TilemapAsset& oParsed) -> bool {
 		const math::vec2ui gridSize{oParsed.width, oParsed.height};
 		for (const auto& layerNode: layerNodes) oParsed.layers.push_back(readLayerHeader(layerNode, gridSize));
 	}
+	if (const auto node = iRoot["generator"]; node && node.IsMap()) {
+		TilemapGenerator generator;
+		if (node["graph"])
+			generator.graphPath = data::assets::toAssetPath(node["graph"].as<std::string>());
+		generator.seed = node["seed"].as<uint64_t>(0);
+		generator.layer = node["layer"].as<uint32_t>(0);
+		if (const auto origin = node["origin"]; origin && origin.IsSequence() && origin.size() == 2)
+			generator.origin = {origin[0].as<uint32_t>(), origin[1].as<uint32_t>()};
+		if (const auto size = node["size"]; size && size.IsSequence() && size.size() == 2)
+			generator.size = {size[0].as<uint32_t>(), size[1].as<uint32_t>()};
+		oParsed.generator = std::move(generator);
+	}
 	return true;
+}
+
+void emitGenerator(YAML::Emitter& ioEmitter, const TilemapGenerator& iGenerator) {
+	ioEmitter << YAML::Key << "generator" << YAML::Value << YAML::BeginMap;
+	ioEmitter << YAML::Key << "graph" << YAML::Value
+			  << data::assets::toAssetReference(iGenerator.graphPath.generic_string());
+	ioEmitter << YAML::Key << "seed" << YAML::Value << iGenerator.seed;
+	ioEmitter << YAML::Key << "layer" << YAML::Value << iGenerator.layer;
+	ioEmitter << YAML::Key << "origin" << YAML::Value << YAML::Flow << YAML::BeginSeq << iGenerator.origin.x()
+			  << iGenerator.origin.y() << YAML::EndSeq;
+	ioEmitter << YAML::Key << "size" << YAML::Value << YAML::Flow << YAML::BeginSeq << iGenerator.size.x()
+			  << iGenerator.size.y() << YAML::EndSeq;
+	ioEmitter << YAML::EndMap;
 }
 
 }// namespace
@@ -416,7 +443,7 @@ auto TilemapAsset::getStorageBytes() const -> size_t {
 auto TilemapAsset::hasSameContent(const TilemapAsset& iOther) const -> bool {
 	if (tilesetPath != iOther.tilesetPath || width != iOther.width || height != iOther.height ||
 		std::bit_cast<uint32_t>(cellSize) != std::bit_cast<uint32_t>(iOther.cellSize) ||
-		layers.size() != iOther.layers.size())
+		layers.size() != iOther.layers.size() || generator != iOther.generator)
 		return false;
 	if (m_cornerHeights != iOther.m_cornerHeights)
 		return false;
@@ -442,6 +469,8 @@ auto TilemapAsset::serializeToString(const std::string_view iName) const -> std:
 	emitter << YAML::Key << "layers" << YAML::Value << YAML::BeginSeq;
 	for (const auto& layer: layers) emitLayerHeader(emitter, layer);
 	emitter << YAML::EndSeq;
+	if (generator)
+		emitGenerator(emitter, *generator);
 	emitter << YAML::Key << g_payloadBytesKey << YAML::Value << static_cast<uint64_t>(payload.size());
 	emitter << YAML::EndMap;
 	std::string out{emitter.c_str()};
