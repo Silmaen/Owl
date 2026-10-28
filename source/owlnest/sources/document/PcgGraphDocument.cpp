@@ -763,14 +763,17 @@ void PcgGraphDocument::renderPreview(const bool iTiles) {
 	}
 	const auto* node = shown ? m_graph.findNode(*shown) : nullptr;
 	const auto* type = node != nullptr ? scene::pcg::findNodeType(node->type) : nullptr;
-	if (type != nullptr)
-		ImGui::Text("%s  %s", getPcgNodeGlyph(type->id), type->title.c_str());
-	else
+	if (type == nullptr) {
 		ImGui::Text("%s  Tiles of the graph", gui::icon::image);
-	ImGui::TextDisabled(type == nullptr         ? "(one colour per tile, black erased)"
-						: type->outputs.empty() ? "(the mask it writes)"
-						: type->outputs.front().type == scene::pcg::PinType::Points ? "(points in white)"
-																					: "(black 0, white 1)");
+		ImGui::TextDisabled("(one colour per tile, black erased)");
+	} else {
+		ImGui::Text("%s  %s", getPcgNodeGlyph(type->id), type->title.c_str());
+		if (type->outputs.empty())
+			ImGui::TextDisabled("(the mask it writes)");
+		else
+			ImGui::TextDisabled(type->outputs.front().type == scene::pcg::PinType::Points ? "(points in white)"
+																						  : "(black 0, white 1)");
+	}
 	if (!m_previewTexture)
 		return;
 	const auto available = ImGui::GetContentRegionAvail();
