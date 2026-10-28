@@ -12,6 +12,7 @@
 #include "UndoManager.h"
 
 #include <core/UUID.h>
+#include <renderer/gpu/Texture.h>
 #include <scene/pcg/PcgGraph.h>
 
 #include <array>
@@ -21,7 +22,9 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace owl::nest {
@@ -34,12 +37,42 @@ using PcgGraphUndoManager = UndoManager<scene::pcg::Graph>;
 
 /**
  * @brief
+ *  What the PCG graph document shows in its tab.
+ */
+enum struct PcgViewMode : uint8_t {
+	Graph,///< The nodes.
+	Split,///< The nodes and the output of the selected node side by side.
+	Output///< The tiles the whole graph writes.
+};
+
+/**
+ * @brief
+ *  Lucide glyph of a PCG node type, on its canvas title and in the node palette.
+ * @param[in] iType The node type identifier.
+ * @return The glyph, a generic one for an unknown type.
+ */
+[[nodiscard]] auto getPcgNodeGlyph(std::string_view iType) -> const char*;
+
+/**
+ * @brief
+ *  RGBA8 image of a preview, top row first: the first output of a node (a field in grey, the points in white) or,
+ *  without node, the tiles of the graph in one colour per tile.
+ * @param[in] iResult The evaluation.
+ * @param[in] iNode The node shown, none for the tiles.
+ * @return The pixels, one per cell.
+ */
+[[nodiscard]] auto buildPcgPreviewImage(const scene::pcg::Result& iResult, std::optional<core::UUID> iNode)
+		-> std::vector<uint8_t>;
+
+/**
+ * @brief
  *  Document editing a procedural generation graph (`.owlpcg`) on the node canvas.
  *
  * The graph (`scene::pcg::Graph`) is the truth, the canvas a view rebuilt from it after each edit; every edit is one
- * undo entry holding the graph before and after. The Nodes panel lists the node types (click to add) and the preview
- * settings; the Graph panel edits the parameters of the selected node and previews its output (a field in grey, the
- * points in white, the tiles of the whole graph in colours), regenerated from the preview seed after every change.
+ * undo entry holding the graph before and after. The tab shows the nodes, the nodes beside the output of the selected
+ * node (a field in grey, the points in white), or the tiles the whole graph writes (one colour per tile), regenerated
+ * from the preview seed after every change. The Nodes panel holds the preview settings and the node library (click
+ * to add); the Graph panel edits the parameters of the selected node.
  */
 class PcgGraphDocument final : public NodeGraphDocument {
 public:
@@ -251,6 +284,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Change what the tab shows.
+	 * @param[in] iMode The view.
+	 */
+	void setViewMode(const PcgViewMode iMode) { m_viewMode = iMode; }
+
+	/**
+	 * @brief
+	 *  What the tab shows.
+	 * @return The view.
+	 */
+	[[nodiscard]] auto getViewMode() const -> PcgViewMode { return m_viewMode; }
+
+	/**
+	 * @brief
 	 *  Size and seed of the preview.
 	 * @param[in] iSize Size in cells (each side clamped to [1, 256]).
 	 * @param[in] iSeed Seed.
@@ -287,10 +334,17 @@ private:
 
 	/**
 	 * @brief
-	 *  Palette of node types, by category.
+	 *  Library of node types: a search field and one tree per category, each type with its glyph.
 	 * @param[in] iPosition Where a clicked type is added.
+	 * @param[in] iPopup Whether it is the canvas menu (the menu closes on a click).
 	 */
-	void renderPalette(std::array<float, 2> iPosition);
+	void renderPalette(std::array<float, 2> iPosition, bool iPopup);
+
+	/**
+	 * @brief
+	 *  Toolbar of the tab: frame, view modes, state of the evaluation.
+	 */
+	void renderToolbar();
 
 	/**
 	 * @brief
@@ -300,9 +354,10 @@ private:
 
 	/**
 	 * @brief
-	 *  Draw a pin value or the tiles of the graph as a grid of cells.
+	 *  Draw a preview filling the region left: the output of the selected node, or the tiles of the graph.
+	 * @param[in] iTiles Whether the tiles of the graph are shown whatever the selection.
 	 */
-	void renderPreview();
+	void renderPreview(bool iTiles);
 
 	/// The edited graph.
 	scene::pcg::Graph m_graph;
@@ -334,6 +389,18 @@ private:
 	std::optional<scene::pcg::Result> m_preview;
 	/// Whether the preview must be evaluated again.
 	bool m_previewStale{true};
+	/// Evaluations of the preview so far, the key of the preview image with the node shown.
+	uint64_t m_previewGeneration{0};
+	/// Preview image on the GPU.
+	shared<renderer::gpu::Texture2D> m_previewTexture;
+	/// Generation and node the preview image shows.
+	std::pair<uint64_t, std::optional<core::UUID>> m_previewTextureKey{0, std::nullopt};
+	/// What the tab shows.
+	PcgViewMode m_viewMode{PcgViewMode::Split};
+	/// Filter of the node library.
+	std::string m_paletteFilter;
+	/// Frames left during which the canvas frames every node (after a load, while the dock settles).
+	uint32_t m_fitFrames{3};
 };
 
 }// namespace owl::nest

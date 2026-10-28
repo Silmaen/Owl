@@ -23,6 +23,8 @@
 #include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <set>
+#include <string_view>
 #include <tuple>
 
 using namespace owl;
@@ -176,4 +178,37 @@ TEST_F(PcgGraphDocumentTest, TheTilemapGeneratorWritesItsLayerAndUndoes) {
 	EXPECT_FALSE(tilemap.asset().generator.has_value());
 	EXPECT_FALSE(tilemap.getGeneratorPreview().has_value());
 	tilemap.onDetach();
+}
+
+TEST_F(PcgGraphDocumentTest, EveryNodeTypeHasItsGlyph) {
+	std::set<std::string_view> glyphs;
+	for (const auto& type: scene::pcg::getNodeTypes()) {
+		const std::string_view glyph = getPcgNodeGlyph(type.id);
+		EXPECT_NE(glyph, std::string_view{getPcgNodeGlyph("source.unknown")}) << type.id;
+		glyphs.insert(glyph);
+	}
+	EXPECT_EQ(glyphs.size(), scene::pcg::getNodeTypes().size());
+}
+
+TEST_F(PcgGraphDocumentTest, ThePreviewImageShowsANodeOrTheTiles) {
+	scene::pcg::Graph graph;
+	graph.nodes.push_back({.id = core::UUID{1}, .type = "source.gradient", .position = {0.f, 0.f}, .values = {}});
+	graph.nodes.push_back(
+			{.id = core::UUID{2}, .type = "field.threshold", .position = {0.f, 0.f}, .values = {{"min", "0.5"}}});
+	graph.nodes.push_back(
+			{.id = core::UUID{3}, .type = "output.tiles", .position = {0.f, 0.f}, .values = {{"tile", "2"}}});
+	graph.links.push_back({.fromNode = core::UUID{1}, .fromPin = "Field", .toNode = core::UUID{2}, .toPin = "Field"});
+	graph.links.push_back({.fromNode = core::UUID{2}, .fromPin = "Mask", .toNode = core::UUID{3}, .toPin = "Mask"});
+	const auto result = scene::pcg::evaluate(graph, {.size = {5, 1}, .seed = 0});
+	ASSERT_TRUE(result.has_value());
+	const auto field = buildPcgPreviewImage(*result, core::UUID{1});
+	ASSERT_EQ(field.size(), 20u);
+	EXPECT_EQ(field[0], 0);
+	EXPECT_EQ(field[16], 255);
+	const auto tiles = buildPcgPreviewImage(*result, std::nullopt);
+	EXPECT_EQ(tiles[0], tiles[4]);
+	EXPECT_NE(tiles[0], tiles[16]);
+	EXPECT_EQ(tiles[16], tiles[12]);
+	m_document.setViewMode(PcgViewMode::Output);
+	EXPECT_EQ(m_document.getViewMode(), PcgViewMode::Output);
 }

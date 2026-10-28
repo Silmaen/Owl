@@ -56,11 +56,14 @@ Sources and `Combine` (`Field`) give fields; `Threshold` turns a field into a ma
 Create one with **New PCG Graph** in the Content Browser context menu (a starter graph: noise, threshold, tiles), then
 open it.
 
-- The **Nodes** panel sets the preview (width, height, seed of the preview) and lists the node palette; the canvas
-  context menu adds a node too.
+- The toolbar of the tab frames every node (**Home**) and switches the view: **Graph** (the nodes), **Split** (the
+  nodes beside the output of the selected node: a field in grey, points in white, the tiles of the graph when no node
+  is selected) or **Output** (the tiles the whole graph writes, one colour per tile, black for an erased cell). Its
+  badge reports the evaluation: the size generated, the warnings (an unlinked input) or a node depending on itself.
+- The **Nodes** panel sets the preview (width, height and seed) and holds the node library, by category, each node
+  with its glyph and a search field; the canvas context menu adds a node too.
 - Drag from a pin to link; incompatible pins refuse the link. **Delete** removes the selected nodes and their links.
-- The **Graph** panel shows the parameters of the selected node and a preview of its output: a field in grey, points
-  in white, tiles in colour.
+- The **Graph** panel edits the parameters of the selected node.
 - Every edit is one undo step.
 
 ## Generating a tilemap

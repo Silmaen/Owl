@@ -11,13 +11,18 @@
 #include "EditorLayer.h"
 
 #include <gui/IconFont.h>
+#include <gui/Theme.h>
 #include <gui/UiLayer.h>
+#include <gui/utils.h>
+#include <gui/widgets/Badge.h>
 #include <gui/widgets/Combo.h>
 #include <gui/widgets/EmptyState.h>
+#include <gui/widgets/IconButton.h>
 #include <gui/widgets/Menu.h>
 #include <gui/widgets/PropertyGrid.h>
+#include <gui/widgets/SearchField.h>
 #include <gui/widgets/SectionHeader.h>
-#include <gui/widgets/Tooltip.h>
+#include <gui/widgets/TreeRow.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -29,8 +34,10 @@ OWL_DIAG_POP
 #include <charconv>
 #include <cstddef>
 #include <format>
+#include <map>
 #include <ranges>
 #include <set>
+#include <string_view>
 #include <typeinfo>
 #include <utility>
 #include <variant>
@@ -38,6 +45,8 @@ OWL_DIAG_POP
 namespace owl::nest {
 
 namespace {
+
+constexpr uint32_t g_fitFrames = 3;
 
 class PcgGraphCommand final : public UndoCommand<scene::pcg::Graph> {
 public:
@@ -82,13 +91,32 @@ auto categoryColor(const std::string& iCategory) -> math::vec4 {
 	return {0.65f, 0.8f, 1.f, 1.f};
 }
 
-// A colour per tile index, stable between frames.
-auto tileColor(const int32_t iTile) -> ImU32 {
+constexpr std::array<uint8_t, 4> g_emptyCell{30, 30, 36, 255};
+constexpr std::array<uint8_t, 4> g_erasedCell{0, 0, 0, 255};
+
+// A colour per tile index, stable between frames; black for an erased cell.
+auto tileColor(const int32_t iTile) -> std::array<uint8_t, 4> {
+	if (iTile < 0)
+		return g_erasedCell;
 	const auto hash = static_cast<uint32_t>(iTile) * 2654435761u;
 	const float hue = static_cast<float>(hash % 360u) / 360.f;
-	ImVec4 rgb{0.f, 0.f, 0.f, 1.f};
-	ImGui::ColorConvertHSVtoRGB(hue, 0.55f, 0.85f, rgb.x, rgb.y, rgb.z);
-	return ImGui::ColorConvertFloat4ToU32(rgb);
+	float red = 0.f;
+	float green = 0.f;
+	float blue = 0.f;
+	ImGui::ColorConvertHSVtoRGB(hue, 0.55f, 0.85f, red, green, blue);
+	return {static_cast<uint8_t>(red * 255.f), static_cast<uint8_t>(green * 255.f), static_cast<uint8_t>(blue * 255.f),
+			255};
+}
+
+// Duotone IconBank icon of the section of a node category.
+auto categoryIcon(const std::string& iCategory) -> const char* {
+	if (iCategory == "Sources")
+		return "vs_node_constant";
+	if (iCategory == "Points")
+		return "vs_node_pins";
+	if (iCategory == "Outputs")
+		return "vs_node_flow";
+	return "vs_node_math";
 }
 
 auto parseFloat(const std::string& iText) -> float {
@@ -98,6 +126,66 @@ auto parseFloat(const std::string& iText) -> float {
 }
 
 }// namespace
+
+auto getPcgNodeGlyph(const std::string_view iType) -> const char* {
+	static const std::map<std::string_view, const char*> glyphs{{"source.noise", gui::icon::audioLines},
+																{"source.random", gui::icon::binary},
+																{"source.constant", gui::icon::hash},
+																{"source.gradient", gui::icon::sun},
+																{"field.threshold", gui::icon::slidersVertical},
+																{"field.combine", gui::icon::merge},
+																{"field.invert", gui::icon::split},
+																{"field.blur", gui::icon::focus},
+																{"field.cellular", gui::icon::grid3x3},
+																{"field.edge", gui::icon::squareDashed},
+																{"points.scatter", gui::icon::sparkles},
+																{"points.filter", gui::icon::listFilter},
+																{"points.to_mask", gui::icon::scan},
+																{"output.tiles", gui::icon::paintbrush},
+																{"output.points", gui::icon::flag},
+																{"output.erase", gui::icon::eraser}};
+	const auto found = glyphs.find(iType);
+	return found == glyphs.end() ? gui::icon::circleHelp : found->second;
+}
+
+auto buildPcgPreviewImage(const scene::pcg::Result& iResult, const std::optional<core::UUID> iNode)
+		-> std::vector<uint8_t> {
+	std::vector<uint8_t> pixels;
+	pixels.reserve(static_cast<size_t>(iResult.size.surface()) * 4);
+	for (uint32_t cell = 0; cell < iResult.size.surface(); ++cell)
+		pixels.insert(pixels.end(), g_emptyCell.begin(), g_emptyCell.end());
+	const auto paint = [&](const uint32_t iX, const uint32_t iY, const std::array<uint8_t, 4>& iColor) -> void {
+		if (iX < iResult.size.x() && iY < iResult.size.y())
+			std::ranges::copy(iColor, pixels.begin() + static_cast<std::ptrdiff_t>(
+															   (static_cast<size_t>(iY) * iResult.size.x() + iX) * 4));
+	};
+	const scene::pcg::PinValue* shown = nullptr;
+	if (iNode) {
+		if (const auto values = iResult.values.find(*iNode); values != iResult.values.end() && !values->second.empty())
+			shown = &values->second.begin()->second;
+	}
+	if (const auto* field = shown != nullptr ? std::get_if<scene::pcg::Field>(shown) : nullptr; field != nullptr) {
+		for (uint32_t y = 0; y < field->size.y(); ++y) {
+			for (uint32_t x = 0; x < field->size.x(); ++x) {
+				const auto grey = static_cast<uint8_t>(std::clamp(field->get(x, y), 0.f, 1.f) * 255.f);
+				paint(x, y, {grey, grey, grey, 255});
+			}
+		}
+		return pixels;
+	}
+	if (const auto* points = shown != nullptr ? std::get_if<scene::pcg::Points>(shown) : nullptr; points != nullptr) {
+		for (const auto& point: points->cells) paint(point.x(), point.y(), {255, 255, 255, 255});
+		return pixels;
+	}
+	for (uint32_t y = 0; y < iResult.size.y(); ++y) {
+		for (uint32_t x = 0; x < iResult.size.x(); ++x) {
+			if (const auto tile = iResult.tiles[static_cast<size_t>(y) * iResult.size.x() + x];
+				tile != scene::pcg::g_UntouchedTile)
+				paint(x, y, tileColor(tile));
+		}
+	}
+	return pixels;
+}
 
 PcgGraphDocument::PcgGraphDocument() = default;
 
@@ -166,14 +254,15 @@ void PcgGraphDocument::rebuildCanvas() {
 	m_pinIds.clear();
 	for (const auto& node: m_graph.nodes) {
 		const auto* type = scene::pcg::findNodeType(node.type);
-		gui::widgets::Node canvasNode{.id = node.id,
-									  .title = type != nullptr ? type->title : std::format("? {}", node.type),
-									  .position = {node.position[0], node.position[1]},
-									  .inputs = {},
-									  .outputs = {},
-									  .customData = {},
-									  .titleColor = type != nullptr ? categoryColor(type->category)
-																	: math::vec4{1.f, 0.3f, 0.3f, 1.f}};
+		gui::widgets::Node canvasNode{
+				.id = node.id,
+				.title = type != nullptr ? std::format("{}  {}", getPcgNodeGlyph(node.type), type->title)
+										 : std::format("{}  {}", gui::icon::circleHelp, node.type),
+				.position = {node.position[0], node.position[1]},
+				.inputs = {},
+				.outputs = {},
+				.customData = {},
+				.titleColor = type != nullptr ? categoryColor(type->category) : math::vec4{1.f, 0.3f, 0.3f, 1.f}};
 		if (type != nullptr) {
 			for (const auto& [pins, output, kind]: {std::tuple{&type->inputs, false, gui::widgets::PinKind::Input},
 													std::tuple{&type->outputs, true, gui::widgets::PinKind::Output}}) {
@@ -313,6 +402,7 @@ auto PcgGraphDocument::getPreview() -> const std::optional<scene::pcg::Result>& 
 		auto result = scene::pcg::evaluate(m_graph, {.size = m_previewSize, .seed = m_previewSeed});
 		m_preview = result ? std::optional{std::move(*result)} : std::nullopt;
 		m_previewStale = false;
+		++m_previewGeneration;
 	}
 	return m_preview;
 }
@@ -336,7 +426,7 @@ auto PcgGraphDocument::loadFromFile(const std::filesystem::path& iPath) -> bool 
 	m_savedText = scene::pcg::serialize(m_graph);
 	m_previewStale = true;
 	rebuildCanvas();
-	m_canvas.requestFitToContent();
+	m_fitFrames = g_fitFrames;
 	return true;
 }
 
@@ -356,7 +446,7 @@ auto PcgGraphDocument::restoreRecoverySnapshot(const std::string& iSnapshot) -> 
 
 void PcgGraphDocument::onImGuiRender() {
 	const auto winTitle = documentWindowTitle(DocumentType::NodeGraph, title(), static_cast<uint64_t>(id()));
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
+	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
 	if (isDirty())
 		flags |= ImGuiWindowFlags_UnsavedDocument;
 	if (const auto dockspaceId = ImGui::GetID("OwlDockSpace");
@@ -379,7 +469,22 @@ void PcgGraphDocument::onImGuiRender() {
 			mp_editorLayer->getDocumentManager().setActive(this);
 		if (focused && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false))
 			std::ignore = save();
+		renderToolbar();
+		if (m_viewMode == PcgViewMode::Output) {
+			renderPreview(true);
+			ImGui::End();
+			return;
+		}
+		if (m_viewMode == PcgViewMode::Split) {
+			const float width = std::max(ImGui::GetContentRegionAvail().x * 0.6f, 200.f);
+			ImGui::BeginChild("##pcgGraphPane", {width, 0.f}, ImGuiChildFlags_ResizeX);
+		}
 		m_linkDeleted = false;
+		// The dock gives the canvas its final size over the first frames: the framing is asked again on each of them.
+		if (m_fitFrames > 0) {
+			m_canvas.requestFitToContent();
+			--m_fitFrames;
+		}
 		m_canvas.onRender();
 		if (m_moving && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 			m_moving = false;
@@ -390,57 +495,169 @@ void PcgGraphDocument::onImGuiRender() {
 			}
 			std::ignore = commit(std::move(next), "Move nodes");
 		}
-		if (const auto selection = m_canvas.selection();
-			focused && !m_linkDeleted && !selection.empty() && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+		if (const auto selection = m_canvas.selection(); focused && !m_linkDeleted && !selection.empty() &&
+														 !ImGui::GetIO().WantTextInput &&
+														 ImGui::IsKeyPressed(ImGuiKey_Delete, false))
 			deleteNodes(selection);
+		if (focused && ImGui::IsKeyPressed(ImGuiKey_Home, false))
+			m_canvas.requestFitToContent();
 		renderGraphMenu();
+		if (m_viewMode == PcgViewMode::Split) {
+			ImGui::EndChild();
+			ImGui::SameLine();
+			if (ImGui::BeginChild("##pcgPreviewPane"))
+				renderPreview(false);
+			ImGui::EndChild();
+		}
 	}
 	ImGui::End();
+}
+
+void PcgGraphDocument::renderToolbar() {
+	const auto separator = []() -> void {
+		ImGui::SameLine();
+		ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+		ImGui::SameLine();
+	};
+	if (gui::widgets::iconButton("##pcgFrame", {.glyph = gui::icon::focus,
+												.tooltip = "Frame All",
+												.shortcut = "Home",
+												.description = "Show every node.",
+												.disabled = m_viewMode == PcgViewMode::Output}))
+		m_canvas.requestFitToContent();
+	separator();
+	constexpr std::array modes{
+			std::tuple{PcgViewMode::Graph, gui::icon::workflow, "Graph", "The nodes only."},
+			std::tuple{PcgViewMode::Split, gui::icon::columns3, "Split",
+					   "The nodes and the output of the selected node side by side."},
+			std::tuple{PcgViewMode::Output, gui::icon::image, "Output", "The tiles the whole graph writes."}};
+	for (const auto& [mode, glyph, label, tip]: modes) {
+		ImGui::PushID(label);
+		if (gui::widgets::iconButton(
+					"##mode", {.glyph = glyph, .tooltip = label, .description = tip, .selected = m_viewMode == mode}))
+			m_viewMode = mode;
+		ImGui::PopID();
+		ImGui::SameLine(0.f, 2.f);
+	}
+	separator();
+	const auto& preview = getPreview();
+	if (!preview) {
+		gui::widgets::badge(std::format("{} A node depends on itself", gui::icon::triangleAlert).c_str(),
+							gui::widgets::BadgeKind::Error);
+		return;
+	}
+	if (preview->warnings.empty()) {
+		gui::widgets::badge(
+				std::format("{} Generates {}x{}", gui::icon::circleCheck, preview->size.x(), preview->size.y()).c_str(),
+				gui::widgets::BadgeKind::Success);
+		return;
+	}
+	if (gui::widgets::button("##pcgWarnings", {.glyph = gui::icon::triangleAlert,
+											   .label = std::format("{} warning{}", preview->warnings.size(),
+																	preview->warnings.size() > 1 ? "s" : "")
+																.c_str(),
+											   .tooltip = "Evaluation warnings",
+											   .description = "Click to list them."}))
+		ImGui::OpenPopup("##pcgWarningList");
+	if (ImGui::BeginPopup("##pcgWarningList")) {
+		gui::widgets::menuHeader("Evaluation warnings");
+		for (const auto& warning: preview->warnings)
+			std::ignore = gui::widgets::menuItem({.glyph = gui::icon::triangleAlert, .label = warning.c_str()});
+		ImGui::EndPopup();
+	}
 }
 
 void PcgGraphDocument::renderGraphMenu() {
 	if (m_openMenu) {
 		ImGui::OpenPopup("##pcgGraphMenu");
+		m_paletteFilter.clear();
 		m_openMenu = false;
 	}
 	if (!ImGui::BeginPopup("##pcgGraphMenu"))
 		return;
 	if (m_menuNode) {
-		if (gui::widgets::menuItem({.glyph = gui::icon::trash2, .label = "Delete Node", .danger = true})) {
+		const auto* node = m_graph.findNode(*m_menuNode);
+		const auto* type = node != nullptr ? scene::pcg::findNodeType(node->type) : nullptr;
+		gui::widgets::menuHeader(type != nullptr ? type->title.c_str() : "Node", "Node");
+		if (gui::widgets::menuItem(
+					{.glyph = gui::icon::trash2, .label = "Delete Node", .shortcut = "Del", .danger = true})) {
 			const std::array nodes{*m_menuNode};
 			deleteNodes(nodes);
 		}
 	} else {
-		gui::widgets::menuHeader("Add Node", "Graph");
-		renderPalette(m_menuPosition);
+		gui::widgets::menuHeader("Add Node", "Palette");
+		renderPalette(m_menuPosition, true);
 		ImGui::Separator();
-		if (gui::widgets::menuItem({.glyph = gui::icon::maximize2, .label = "Fit to Content"}))
+		if (gui::widgets::menuItem({.glyph = gui::icon::focus, .label = "Frame All", .shortcut = "Home"}))
 			m_canvas.requestFitToContent();
 	}
 	ImGui::EndPopup();
 }
 
-void PcgGraphDocument::renderPalette(const std::array<float, 2> iPosition) {
-	std::string category;
-	for (const auto& type: scene::pcg::getNodeTypes()) {
-		if (type.category != category) {
-			category = type.category;
-			ImGui::SeparatorText(category.c_str());
+void PcgGraphDocument::renderPalette(const std::array<float, 2> iPosition, const bool iPopup) {
+	if (iPopup && ImGui::IsWindowAppearing())
+		ImGui::SetKeyboardFocusHere();
+	std::ignore = gui::widgets::searchField(iPopup ? "##pcgPaletteSearch" : "##pcgLibrarySearch", m_paletteFilter,
+											"Search nodes");
+	const auto item = [&](const scene::pcg::NodeType& iType) -> void {
+		ImGui::PushID(iType.id.c_str());
+		const auto row = gui::widgets::treeRow(
+				"##type", {.label = iType.title.c_str(),
+						   .glyph = getPcgNodeGlyph(iType.id),
+						   .glyphColor = gui::Theme::mix(categoryColor(iType.category), {1.f, 1.f, 1.f, 1.f}, 0.45f)});
+		if (row.clicked) {
+			std::ignore = addNode(iType.id, iPosition);
+			if (iPopup)
+				ImGui::CloseCurrentPopup();
 		}
-		if (ImGui::Selectable(type.title.c_str()))
-			std::ignore = addNode(type.id, iPosition);
-		gui::widgets::itemTooltip(type.title.c_str(), nullptr, type.description.c_str());
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("%s\n%s", iType.title.c_str(), iType.description.c_str());
+		if (row.open)
+			gui::widgets::endTreeRow();
+		ImGui::PopID();
+	};
+	const auto& types = scene::pcg::getNodeTypes();
+	if (!m_paletteFilter.empty()) {
+		for (const auto& type: types) {
+			if (gui::widgets::matchesFilter(type.title, m_paletteFilter) ||
+				gui::widgets::matchesFilter(type.description, m_paletteFilter))
+				item(type);
+		}
+		return;
+	}
+	std::vector<std::string> categories;
+	for (const auto& type: types) {
+		if (!std::ranges::contains(categories, type.category))
+			categories.push_back(type.category);
+	}
+	for (const auto& category: categories) {
+		ImGui::PushID(category.c_str());
+		const auto row = gui::widgets::treeRow("##category", {.label = category.c_str(),
+															  .iconName = categoryIcon(category),
+															  .hasChildren = true,
+															  .defaultOpen = true});
+		if (row.open) {
+			for (const auto& type: types) {
+				if (type.category == category)
+					item(type);
+			}
+			gui::widgets::endTreeRow();
+		}
+		ImGui::PopID();
 	}
 }
 
 void PcgGraphDocument::renderHierarchyPanel() {
-	if (gui::widgets::sectionHeader("Preview", gui::icon::eye, false).open) {
+	if (gui::widgets::sectionHeader("Preview", "preview", false).open) {
 		if (gui::widgets::beginProperties("##pcgPreview")) {
 			auto width = static_cast<int>(m_previewSize.x());
 			auto height = static_cast<int>(m_previewSize.y());
 			auto seed = static_cast<int>(m_previewSeed);
-			bool changed = gui::widgets::propertyInt("Width", width, 48, 1, 256, "%d cells");
-			changed = gui::widgets::propertyInt("Height", height, 32, 1, 256, "%d cells") || changed;
+			bool changed =
+					gui::widgets::propertyInt("Width", width, 48, 1, 256, "%d cells", "Width of the preview region.");
+			changed = gui::widgets::propertyInt("Height", height, 32, 1, 256, "%d cells",
+												"Height of the preview region.") ||
+					  changed;
 			changed = gui::widgets::propertyInt("Seed", seed, 1, 0, 1000000, "%d",
 												"Seed of the preview; a tilemap keeps its own seed.") ||
 					  changed;
@@ -450,9 +667,9 @@ void PcgGraphDocument::renderHierarchyPanel() {
 		}
 		gui::widgets::endSection();
 	}
-	if (gui::widgets::sectionHeader("Add Node", gui::icon::plus, false).open) {
+	if (gui::widgets::sectionHeader("Node Library", "vs_node_inputs", false).open) {
 		const auto centre = m_canvas.getMouseCanvasPosition();
-		renderPalette({centre.x(), centre.y()});
+		renderPalette({centre.x(), centre.y()}, false);
 		gui::widgets::endSection();
 	}
 }
@@ -460,121 +677,108 @@ void PcgGraphDocument::renderHierarchyPanel() {
 void PcgGraphDocument::renderPropertiesPanel() {
 	const auto* node = m_selectedNode ? m_graph.findNode(*m_selectedNode) : nullptr;
 	const auto* type = node != nullptr ? scene::pcg::findNodeType(node->type) : nullptr;
-	if (node != nullptr && type != nullptr &&
-		gui::widgets::sectionHeader(type->title.c_str(), gui::icon::slidersHorizontal, false).open) {
-		ImGui::TextWrapped("%s", type->description.c_str());
-		if (gui::widgets::beginProperties("##pcgNode")) {
-			for (const auto& param: type->params) {
-				const auto value = scene::pcg::Graph::getValue(*node, param.name);
-				switch (param.type) {
-					case scene::pcg::ParamType::Float:
-						{
-							float number = parseFloat(value);
-							if (gui::widgets::propertyFloat(param.name.c_str(), number, parseFloat(param.defaultValue),
-															0.01f, "%.3f", param.description.c_str()))
-								setNodeValue(node->id, param.name,
-											 std::format("{}", std::clamp(number, param.min, param.max)), true);
-							break;
-						}
-					case scene::pcg::ParamType::Int:
-						{
-							int number = static_cast<int>(parseFloat(value));
-							if (gui::widgets::propertyInt(param.name.c_str(), number,
-														  static_cast<int>(parseFloat(param.defaultValue)),
-														  static_cast<int>(param.min), static_cast<int>(param.max),
-														  "%d", param.description.c_str()))
-								setNodeValue(node->id, param.name, std::format("{}", number), true);
-							break;
-						}
-					case scene::pcg::ParamType::Choice:
-						{
-							gui::widgets::propertyLabel(param.name.c_str(), param.description.c_str());
-							if (gui::widgets::beginCombo(std::format("##{}", param.name).c_str(), value.c_str())) {
-								for (const auto& choice: param.choices) {
-									if (ImGui::Selectable(choice.c_str(), choice == value))
-										setNodeValue(node->id, param.name, choice);
-								}
-								ImGui::EndCombo();
+	if (node == nullptr || type == nullptr) {
+		std::ignore = gui::widgets::emptyState(gui::icon::workflow, "No node selected",
+											   "Click a node of the graph to edit its parameters.");
+		return;
+	}
+	if (!gui::widgets::sectionHeader(std::format("{}  {}", getPcgNodeGlyph(type->id), type->title).c_str(),
+									 categoryIcon(type->category), false)
+				 .open)
+		return;
+	ImGui::TextWrapped("%s", type->description.c_str());
+	if (type->params.empty())
+		ImGui::TextDisabled("This node has no parameter.");
+	else if (gui::widgets::beginProperties("##pcgNode")) {
+		for (const auto& param: type->params) {
+			const auto value = scene::pcg::Graph::getValue(*node, param.name);
+			switch (param.type) {
+				case scene::pcg::ParamType::Float:
+					{
+						float number = parseFloat(value);
+						if (gui::widgets::propertyFloat(param.name.c_str(), number, parseFloat(param.defaultValue),
+														0.01f, "%.3f", param.description.c_str()))
+							setNodeValue(node->id, param.name,
+										 std::format("{}", std::clamp(number, param.min, param.max)), true);
+						break;
+					}
+				case scene::pcg::ParamType::Int:
+					{
+						int number = static_cast<int>(parseFloat(value));
+						if (gui::widgets::propertyInt(param.name.c_str(), number,
+													  static_cast<int>(parseFloat(param.defaultValue)),
+													  static_cast<int>(param.min), static_cast<int>(param.max), "%d",
+													  param.description.c_str()))
+							setNodeValue(node->id, param.name, std::format("{}", number), true);
+						break;
+					}
+				case scene::pcg::ParamType::Choice:
+					{
+						gui::widgets::propertyLabel(param.name.c_str(), param.description.c_str());
+						if (gui::widgets::beginCombo(std::format("##{}", param.name).c_str(), value.c_str())) {
+							for (const auto& choice: param.choices) {
+								if (ImGui::Selectable(choice.c_str(), choice == value))
+									setNodeValue(node->id, param.name, choice);
 							}
-							if (gui::widgets::propertyReset(value != param.defaultValue))
-								setNodeValue(node->id, param.name, param.defaultValue);
-							break;
+							ImGui::EndCombo();
 						}
-				}
-				// An edit replaces the graph: the node is looked up again before the next parameter.
-				node = m_graph.findNode(*m_selectedNode);
-				if (node == nullptr)
-					break;
+						if (gui::widgets::propertyReset(value != param.defaultValue))
+							setNodeValue(node->id, param.name, param.defaultValue);
+						break;
+					}
 			}
-			gui::widgets::endProperties();
+			// An edit replaces the graph: the node is looked up again before the next parameter.
+			node = m_graph.findNode(*m_selectedNode);
+			if (node == nullptr)
+				break;
 		}
-		gui::widgets::endSection();
+		gui::widgets::endProperties();
 	}
-	if (gui::widgets::sectionHeader("Output", gui::icon::image, false).open) {
-		renderPreview();
-		gui::widgets::endSection();
-	}
+	gui::widgets::endSection();
 }
 
-void PcgGraphDocument::renderPreview() {
+void PcgGraphDocument::renderPreview(const bool iTiles) {
 	const auto& result = getPreview();
 	if (!result) {
 		std::ignore = gui::widgets::emptyState(gui::icon::triangleAlert, "No preview",
 											   "A node of the graph depends on itself: remove a link of the loop.");
 		return;
 	}
-	for (const auto& warning: result->warnings)
-		ImGui::TextColored(ImVec4{1.f, 0.75f, 0.3f, 1.f}, "%s", warning.c_str());
-	const float available = std::max(32.f, ImGui::GetContentRegionAvail().x);
-	const float cell = std::clamp(available / static_cast<float>(result->size.x()), 1.f, 8.f);
-	const ImVec2 origin = ImGui::GetCursorScreenPos();
-	const ImVec2 extent{cell * static_cast<float>(result->size.x()), cell * static_cast<float>(result->size.y())};
-	ImGui::Dummy(extent);
-	auto* draw = ImGui::GetWindowDrawList();
-	draw->AddRectFilled(origin, {origin.x + extent.x, origin.y + extent.y}, IM_COL32(30, 30, 36, 255));
-	const auto rect = [&](const uint32_t iX, const uint32_t iY, const ImU32 iColor) -> void {
-		const ImVec2 min{origin.x + static_cast<float>(iX) * cell, origin.y + static_cast<float>(iY) * cell};
-		draw->AddRectFilled(min, {min.x + cell, min.y + cell}, iColor);
-	};
-	const scene::pcg::PinValue* shown = nullptr;
-	if (m_selectedNode) {
-		if (const auto values = result->values.find(*m_selectedNode);
-			values != result->values.end() && !values->second.empty())
-			shown = &values->second.begin()->second;
-	}
-	if (const auto* field = shown != nullptr ? std::get_if<scene::pcg::Field>(shown) : nullptr; field != nullptr) {
-		for (uint32_t y = 0; y < field->size.y(); ++y) {
-			for (uint32_t x = 0; x < field->size.x(); ++x) {
-				const auto grey = static_cast<uint8_t>(std::clamp(field->get(x, y), 0.f, 1.f) * 255.f);
-				rect(x, y, IM_COL32(grey, grey, grey, 255));
-			}
+	const auto shown = iTiles ? std::nullopt : m_selectedNode;
+	const std::pair key{m_previewGeneration, shown};
+	if (!m_previewTexture || key != m_previewTextureKey) {
+		auto pixels = buildPcgPreviewImage(*result, shown);
+		if (!m_previewTexture || m_previewTexture->getSpecification().size != result->size) {
+			if (m_previewTexture)
+				gui::UiLayer::deferTextureRelease(m_previewTexture);
+			m_previewTexture = renderer::gpu::Texture2D::create(
+					renderer::gpu::Texture::Specification{.size = result->size,
+														  .format = renderer::gpu::ImageFormat::Rgba8});
+			if (m_previewTexture)
+				m_previewTexture->setFilterMode(renderer::gpu::FilterMode::Nearest);
 		}
-		ImGui::TextDisabled("Field of the selected node: black 0, white 1.");
+		if (m_previewTexture)
+			m_previewTexture->setData(pixels.data(), static_cast<uint32_t>(pixels.size()));
+		m_previewTextureKey = key;
+	}
+	const auto* node = shown ? m_graph.findNode(*shown) : nullptr;
+	const auto* type = node != nullptr ? scene::pcg::findNodeType(node->type) : nullptr;
+	if (type != nullptr)
+		ImGui::Text("%s  %s", getPcgNodeGlyph(type->id), type->title.c_str());
+	else
+		ImGui::Text("%s  Tiles of the graph", gui::icon::image);
+	ImGui::TextDisabled(type == nullptr         ? "(one colour per tile, black erased)"
+						: type->outputs.empty() ? "(the mask it writes)"
+						: type->outputs.front().type == scene::pcg::PinType::Points ? "(points in white)"
+																					: "(black 0, white 1)");
+	if (!m_previewTexture)
 		return;
-	}
-	if (const auto* points = shown != nullptr ? std::get_if<scene::pcg::Points>(shown) : nullptr; points != nullptr) {
-		for (const auto& point: points->cells) rect(point.x(), point.y(), IM_COL32(255, 255, 255, 255));
-		ImGui::TextDisabled("%zu points of the selected node.", points->cells.size());
-		return;
-	}
-	std::set<int32_t> tiles;
-	for (uint32_t y = 0; y < result->size.y(); ++y) {
-		for (uint32_t x = 0; x < result->size.x(); ++x) {
-			const auto tile = result->tiles[static_cast<size_t>(y) * result->size.x() + x];
-			if (tile == scene::pcg::g_UntouchedTile)
-				continue;
-			rect(x, y, tile < 0 ? IM_COL32(0, 0, 0, 255) : tileColor(tile));
-			tiles.insert(tile);
-		}
-	}
-	ImGui::TextDisabled("Tiles written by the graph (%zu kinds); select a node to see its output.", tiles.size());
-	for (const auto tile: tiles) {
-		ImGui::ColorButton(std::format("##tile{}", tile).c_str(),
-						   ImGui::ColorConvertU32ToFloat4(tile < 0 ? IM_COL32(0, 0, 0, 255) : tileColor(tile)),
-						   ImGuiColorEditFlags_NoTooltip, {ImGui::GetFrameHeight(), ImGui::GetFrameHeight()});
-		ImGui::SameLine();
-		ImGui::Text(tile < 0 ? "erased" : "tile %d", tile);
-	}
+	const auto available = ImGui::GetContentRegionAvail();
+	const float scale = std::max(0.1f, std::min(available.x / static_cast<float>(result->size.x()),
+												available.y / static_cast<float>(result->size.y())));
+	const ImVec2 extent{scale * static_cast<float>(result->size.x()), scale * static_cast<float>(result->size.y())};
+	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.f, (available.x - extent.x) * 0.5f));
+	ImGui::Image(static_cast<ImTextureID>(m_previewTexture->getRendererId()), extent);
 }
 
 }// namespace owl::nest
