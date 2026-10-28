@@ -19,9 +19,11 @@
 #include <gui/widgets/EmptyState.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/ImageTile.h>
+#include <gui/widgets/Menu.h>
 #include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/SectionHeader.h>
 #include <gui/widgets/Tooltip.h>
+#include <gui/widgets/TreeRow.h>
 #include <imgui_stdlib.h>
 #include <platform/FileDialog.h>
 #include <renderer/AtlasMips.h>
@@ -38,12 +40,15 @@ OWL_DIAG_POP
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cstddef>
 #include <format>
 #include <functional>
 #include <optional>
 #include <ranges>
 #include <set>
+#include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -212,6 +217,18 @@ void pushTilesetEdit(scene::Tileset& ioTileset, TilesetUndoManager& ioUndo, cons
 		auto cmd = mkUniq<ModifyTilesetCommand>(before, after, iDescription);
 		ioUndo.push(std::move(cmd));
 	}
+}
+
+// A slope name as a property label: every word capitalised ("Edge Back-Right").
+auto toTitleCase(const std::string_view iName) -> std::string {
+	std::string label{iName};
+	bool wordStart = true;
+	for (auto& character: label) {
+		if (wordStart)
+			character = static_cast<char>(std::toupper(static_cast<unsigned char>(character)));
+		wordStart = character == ' ' || character == '-';
+	}
+	return label;
 }
 
 }// namespace
@@ -542,39 +559,54 @@ void TilesetDocument::onImGuiRender() {
 }
 
 void TilesetDocument::renderHierarchyPanel() {
-	if (!gui::widgets::sectionHeader("Atlas", gui::icon::image, false).open)
+	if (!gui::widgets::sectionHeader("Atlas", "owltileset_icon", false).open)
 		return;
-	// Unsaved composed pixels belong to the current atlas image: its texture and tile size wait for the save.
-	const bool composing = m_atlas && m_atlasHash != m_savedAtlasHash;
-	ImGui::BeginDisabled(composing);
-	const auto textureBefore = snapshotTileset(m_tileset);
-	if (gui::widgets::textureField("##texture", m_tileset.texture, ImVec2{96.f, 96.f})) {
-		m_atlas.reset();
-		m_tileset.applyFilterMode();
-	}
-	gui::widgets::itemTooltip("Texture", nullptr, "Drop a texture from the Content Browser.");
-	ImGui::SameLine();
-	if (gui::widgets::textureField("##normal", m_tileset.normalTexture, ImVec2{64.f, 64.f}))
-		m_tileset.applyFilterMode();
-	gui::widgets::itemTooltip("Normal map", nullptr,
-							  "Tangent-space normals on the grid of the atlas (OpenGL, green up): the relief of the "
-							  "tiles in a voxel world. Drop a texture from the Content Browser.");
-	ImGui::SameLine();
-	if (gui::widgets::textureField("##roughness", m_tileset.roughnessTexture, ImVec2{64.f, 64.f}))
-		m_tileset.applyFilterMode();
-	gui::widgets::itemTooltip("Roughness map", nullptr,
-							  "Roughness on the grid of the atlas: 50 % grey keeps the roughness of a voxel block, "
-							  "darker is smoother. Drop a texture from the Content Browser.");
-	ImGui::EndDisabled();
-	if (composing)
-		gui::widgets::itemTooltip("Atlas", nullptr, "Save the tileset first: its composed atlas is not written yet.");
-	if (const auto textureAfter = snapshotTileset(m_tileset); textureAfter != textureBefore) {
-		auto cmd = mkUniq<ModifyTilesetCommand>(textureBefore, textureAfter, "Set texture");
-		m_undoManager.push(std::move(cmd));
-	}
 	if (!gui::widgets::beginProperties("##atlas")) {
 		gui::widgets::endSection();
 		return;
+	}
+	// Unsaved composed pixels belong to the current atlas image: its texture and tile size wait for the save.
+	const bool composing = m_atlas && m_atlasHash != m_savedAtlasHash;
+	const auto textureBefore = snapshotTileset(m_tileset);
+	const float thumbnail = ImGui::GetFrameHeight() * 1.6f;
+	const auto textureRow = [&](const char* iLabel, const char* iId, shared<renderer::gpu::Texture2D>& ioMap,
+								const char* iTooltip) -> bool {
+		gui::widgets::propertyLabel(iLabel, iTooltip);
+		ImGui::BeginDisabled(composing);
+		const bool changed = gui::widgets::textureField(iId, ioMap, ImVec2{thumbnail, thumbnail});
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		ImGui::BeginGroup();
+		if (ioMap) {
+			ImGui::TextUnformatted(ioMap->getName().c_str());
+			ImGui::TextDisabled("%u x %u px", ioMap->getSize().x(), ioMap->getSize().y());
+		} else {
+			ImGui::TextDisabled("None");
+			ImGui::TextDisabled("Drop an image");
+		}
+		ImGui::EndGroup();
+		if (composing)
+			gui::widgets::itemTooltip(iLabel, nullptr,
+									  "Save the tileset first: its composed atlas is not written yet.");
+		std::ignore = gui::widgets::propertyReset(false);
+		return changed;
+	};
+	if (textureRow("Texture", "##texture", m_tileset.texture,
+				   "Colours of the tiles, alpha included. Drop a texture from the Content Browser.")) {
+		m_atlas.reset();
+		m_tileset.applyFilterMode();
+	}
+	if (textureRow("Normal Map", "##normal", m_tileset.normalTexture,
+				   "Tangent-space normals on the grid of the atlas (OpenGL, green up): the relief of the tiles in a "
+				   "voxel world. Drop a texture from the Content Browser."))
+		m_tileset.applyFilterMode();
+	if (textureRow("Roughness Map", "##roughness", m_tileset.roughnessTexture,
+				   "Roughness on the grid of the atlas: 50 % grey keeps the roughness of a voxel block, darker is "
+				   "smoother. Drop a texture from the Content Browser."))
+		m_tileset.applyFilterMode();
+	if (const auto textureAfter = snapshotTileset(m_tileset); textureAfter != textureBefore) {
+		auto cmd = mkUniq<ModifyTilesetCommand>(textureBefore, textureAfter, "Set texture");
+		m_undoManager.push(std::move(cmd));
 	}
 	// A count with the buttons that add or remove a column or a row.
 	const auto countRow = [](const char* iLabel, const uint32_t iCount, const char* iWhat, auto&& iAdd,
@@ -664,11 +696,14 @@ void TilesetDocument::renderHierarchyPanel() {
 }
 
 void TilesetDocument::renderSlopeSection() {
-	if (!gui::widgets::sectionHeader("Slopes", gui::icon::layers, false).open)
+	if (!gui::widgets::sectionHeader("Slopes", "comp_voxel_world", false).open)
 		return;
-	ImGui::TextWrapped("Tile drawn for a terrain or overlay id on each slope; -1 falls back on the flat tile. A "
-					   "foundation replaces the terrain tile of a cell whose flag bit 0 is set.");
-	if (gui::widgets::button("addSlopeSet", {.glyph = gui::icon::plus, .label = "Add Terrain"})) {
+	if (gui::widgets::button("addSlopeSet", {.glyph = gui::icon::plus,
+											 .label = "Add Terrain",
+											 .tooltip = "Add Terrain",
+											 .description = "Tile drawn for a terrain or overlay id on each slope; a "
+															"foundation replaces the terrain tile of a cell whose "
+															"flag bit 0 is set."})) {
 		pushTilesetEdit(m_tileset, m_undoManager, "Add slope table", [this]() -> void {
 			scene::SlopeSet set;
 			set.id = std::max(0, m_inspectedTile);
@@ -676,28 +711,39 @@ void TilesetDocument::renderSlopeSection() {
 			m_tileset.slopeSets.push_back(set);
 		});
 	}
+	const int lastTile = static_cast<int>(m_tileset.tileCount()) - 1;
 	std::optional<size_t> eraseIndex;
 	for (size_t i = 0; i < m_tileset.slopeSets.size(); ++i) {
 		ImGui::PushID(static_cast<int>(i));
-		const auto label = std::format("Terrain {}", m_tileset.slopeSets[i].id);
-		const bool open = ImGui::TreeNodeEx("##set", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap,
-											"%s", label.c_str());
-		ImGui::SameLine(ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX() - ImGui::GetFrameHeight());
-		if (gui::widgets::iconButton("##delete", {.glyph = gui::icon::trash2, .tooltip = "Delete the table"}))
-			eraseIndex = i;
-		if (open) {
+		const auto& set = m_tileset.slopeSets[i];
+		const auto label = std::format("Terrain {}", set.id);
+		const auto* flat = set.id >= 0 && std::cmp_less(set.id, m_tileset.tiles.size())
+								   ? &m_tileset.tiles[static_cast<size_t>(set.id)].name
+								   : nullptr;
+		const auto row = gui::widgets::treeRow("##set", {.label = label.c_str(),
+														 .iconName = "comp_voxel_world",
+														 .trailing = flat != nullptr ? flat->c_str() : nullptr,
+														 .hasChildren = true});
+		if (ImGui::BeginPopupContextItem("##setMenu")) {
+			gui::widgets::menuHeader(label.c_str(), "Terrain");
+			if (gui::widgets::menuItem({.glyph = gui::icon::trash2, .label = "Delete Terrain", .danger = true}))
+				eraseIndex = i;
+			ImGui::EndPopup();
+		}
+		if (row.open) {
 			if (gui::widgets::beginProperties("##slopeSet")) {
-				const auto& set = m_tileset.slopeSets[i];
 				int id = set.id;
 				if (gui::widgets::propertyInt("Id", id, 0, 0, scene::component::g_MaxTileIndex, "%d",
 											  "Terrain or overlay id stored in the cells."))
 					pushTilesetEdit(m_tileset, m_undoManager, "Set slope table id",
 									[this, i, id]() -> void { m_tileset.slopeSets[i].id = id; });
+				gui::widgets::endProperties();
+			}
+			if (gui::widgets::subHeader("Slope Tiles", true) && gui::widgets::beginProperties("##slopeTiles")) {
 				for (uint8_t slope = 0; slope < scene::terrain::slopeCount; ++slope) {
-					const auto name = std::string{scene::terrain::getSlopeName(slope)};
+					const auto name = toTitleCase(scene::terrain::getSlopeName(slope));
 					int tile = set.tiles[slope];
-					if (gui::widgets::propertyInt(name.c_str(), tile, -1, -1,
-												  static_cast<int>(m_tileset.tileCount()) - 1, "%d",
+					if (gui::widgets::propertyInt(name.c_str(), tile, -1, -1, lastTile, "%d",
 												  "Tile index on this slope (-1: the flat tile)."))
 						pushTilesetEdit(m_tileset, m_undoManager, "Set slope tile", [this, i, slope, tile]() -> void {
 							m_tileset.slopeSets[i].tiles[slope] = tile;
@@ -705,13 +751,11 @@ void TilesetDocument::renderSlopeSection() {
 				}
 				gui::widgets::endProperties();
 			}
-			if (gui::widgets::beginProperties("##foundations")) {
-				const auto& set = m_tileset.slopeSets[i];
+			if (gui::widgets::subHeader("Foundations") && gui::widgets::beginProperties("##foundations")) {
 				for (uint8_t slope = 0; slope < scene::terrain::slopeCount; ++slope) {
-					const auto name = std::format("{} foundation", scene::terrain::getSlopeName(slope));
+					const auto name = toTitleCase(scene::terrain::getSlopeName(slope));
 					int tile = set.foundations[slope];
-					if (gui::widgets::propertyInt(name.c_str(), tile, -1, -1,
-												  static_cast<int>(m_tileset.tileCount()) - 1, "%d",
+					if (gui::widgets::propertyInt(name.c_str(), tile, -1, -1, lastTile, "%d",
 												  "Foundation tile on this slope (-1: none)."))
 						pushTilesetEdit(
 								m_tileset, m_undoManager, "Set foundation tile",
@@ -719,7 +763,9 @@ void TilesetDocument::renderSlopeSection() {
 				}
 				gui::widgets::endProperties();
 			}
-			ImGui::TreePop();
+			if (gui::widgets::button("##deleteSet", {.glyph = gui::icon::trash2, .label = "Delete Terrain"}))
+				eraseIndex = i;
+			gui::widgets::endTreeRow();
 		}
 		ImGui::PopID();
 	}
@@ -757,7 +803,7 @@ void TilesetDocument::renderPropertiesPanel() {
 		ImGui::Text("Tile #%d", m_inspectedTile);
 		gui::UiLayer::popTextStyle();
 	}
-	if (gui::widgets::sectionHeader("Tile", gui::icon::tag, false).open) {
+	if (gui::widgets::sectionHeader("Tile", "properties", false).open) {
 		if (gui::widgets::beginProperties("##tileMeta")) {
 			std::ignore = gui::widgets::propertyText("Name", meta.name, "grass",
 													 "Optional name shown in the Tile Palette tooltip.");
@@ -767,11 +813,11 @@ void TilesetDocument::renderPropertiesPanel() {
 		}
 		gui::widgets::endSection();
 	}
-	if (gui::widgets::sectionHeader("Navigation", gui::icon::route, false).open) {
+	if (gui::widgets::sectionHeader("Navigation", "ribbon_flow", false).open) {
 		renderConnectionsSection();
 		gui::widgets::endSection();
 	}
-	if (gui::widgets::sectionHeader("Raycast", gui::icon::scan, false).open) {
+	if (gui::widgets::sectionHeader("Raycast", "ribbon_viewpoint", false).open) {
 		if (gui::widgets::beginProperties("##tileRaycast")) {
 			if (gui::widgets::propertyFloat(
 						"Wall Height", meta.wallHeight, 1.f, 0.05f, "%.2f",
@@ -791,51 +837,56 @@ void TilesetDocument::renderPropertiesPanel() {
 void TilesetDocument::renderConnectionsSection() {
 	const auto index = static_cast<size_t>(m_inspectedTile);
 	const auto connections = m_tileset.tiles[index].connections;
+	if (!gui::widgets::beginProperties("##tileNavigation"))
+		return;
 	bool road = connections.has_value();
-	if (ImGui::Checkbox("Part of a road graph", &road)) {
+	if (gui::widgets::propertyBool(
+				"Road", road, false,
+				"Vehicles and walkers travel on a cell holding this tile (as overlay) and leave it by "
+				"the joined sides."))
 		pushTilesetEdit(m_tileset, m_undoManager, road ? "Make tile a road" : "Make tile no road",
 						[this, index, road]() -> void {
 							m_tileset.tiles[index].connections =
 									road ? std::optional<uint8_t>{0} : std::optional<uint8_t>{};
 						});
-	}
-	ImGui::SetItemTooltip("%s", "Vehicles and walkers can travel on a cell holding this tile (as overlay) and leave it "
-								"by the sides lit below. Unchecked: the tile is not a road.");
 	if (!road) {
-		ImGui::TextDisabled("Not part of a road graph.");
+		gui::widgets::endProperties();
 		return;
 	}
 	// The four sides as they look on the screen of the isometric view: north up-right, east down-right.
 	struct Side {
 		scene::nav::Direction direction;
 		const char* glyph;
-		const char* label;
+		const char* id;
+		const char* name;
 	};
 	constexpr std::array<std::array<Side, 2>, 2> layout{{
-			{{{scene::nav::Direction::West, gui::icon::arrowUpLeft, "##west"},
-			  {scene::nav::Direction::North, gui::icon::arrowUpRight, "##north"}}},
-			{{{scene::nav::Direction::South, gui::icon::arrowDownLeft, "##south"},
-			  {scene::nav::Direction::East, gui::icon::arrowDownRight, "##east"}}},
+			{{{scene::nav::Direction::West, gui::icon::arrowUpLeft, "##west", "West"},
+			  {scene::nav::Direction::North, gui::icon::arrowUpRight, "##north", "North"}}},
+			{{{scene::nav::Direction::South, gui::icon::arrowDownLeft, "##south", "South"},
+			  {scene::nav::Direction::East, gui::icon::arrowDownRight, "##east", "East"}}},
 	}};
-	const float side = ImGui::GetFrameHeight() * 1.6f;
 	const uint8_t mask = connections.value_or(0);
 	std::optional<scene::nav::Direction> toggled;
+	gui::widgets::propertyLabel("Joined Sides", "Sides a road leaves the cell by, as they look on the screen of the "
+												"isometric view. Click a side to join or cut it.");
+	ImGui::BeginGroup();
 	for (const auto& row: layout) {
 		for (size_t column = 0; column < row.size(); ++column) {
 			const auto& entry = row[column];
 			if (column != 0)
 				ImGui::SameLine();
 			const bool on = (mask & scene::nav::directionBit(entry.direction)) != 0;
-			ImGui::PushStyleColor(ImGuiCol_Button, on ? ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive)
-													  : ImGui::GetStyleColorVec4(ImGuiCol_FrameBg));
-			if (ImGui::Button(std::format("{}{}", entry.glyph, entry.label).c_str(), {side, side}))
+			const auto tooltip = std::format("{}: {}", entry.name, on ? "joined" : "cut");
+			if (gui::widgets::iconButton(entry.id, {.glyph = entry.glyph, .tooltip = tooltip.c_str(), .selected = on}))
 				toggled = entry.direction;
-			ImGui::PopStyleColor();
-			ImGui::SetItemTooltip("%s",
-								  on ? "Joined: click to cut this side." : "Not joined: click to join this side.");
 		}
 	}
-	ImGui::TextDisabled("Arrows follow the screen of the isometric view.");
+	ImGui::EndGroup();
+	if (gui::widgets::propertyReset(mask != 0))
+		pushTilesetEdit(m_tileset, m_undoManager, "Change tile connections",
+						[this, index]() -> void { m_tileset.tiles[index].connections = 0; });
+	gui::widgets::endProperties();
 	if (toggled.has_value()) {
 		const uint8_t bit = scene::nav::directionBit(*toggled);
 		pushTilesetEdit(m_tileset, m_undoManager, "Change tile connections", [this, index, bit]() -> void {

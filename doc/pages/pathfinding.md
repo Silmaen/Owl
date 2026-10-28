@@ -150,7 +150,7 @@ it and `iso_town_traffic.lua` gives each vehicle its own colour and gives the ov
 The **Navigation** section of the `Tilemap` inspector holds the global options only, in plain words: the layer the
 graph is read from (by its name), the tile read, the read mode (tileset connections or any non-empty cell), the maximum
 slope rise, the climb cost, allow steep slopes and a **Show graph** button (undoable like any component edit). Roads are
-described by the tileset: tick **Part of a road graph** and light the arrows of the sides a tile joins in the **Navigation**
+described by the tileset: turn on **Road** and light the **Joined Sides** arrows of the sides a tile joins in the **Navigation**
 section of its properties in the Tileset Editor (the arrows are oriented as on the screen of the isometric view).
 
 In the isometric viewport, **Show > Navigation graph and routes** (or **Show graph**) draws the graph over the map: two-way
