@@ -117,7 +117,7 @@ TEST_F(PcgGraphTest, TheSameSeedGivesTheSameTiles) {
 	ASSERT_TRUE(first && second && other);
 	EXPECT_EQ(first->tiles, second->tiles);
 	EXPECT_NE(first->tiles, other->tiles);
-	const auto& noise = fieldOf(*first, 1, "Field");
+	const auto noise = fieldOf(*first, 1, "Field");
 	EXPECT_TRUE(std::ranges::all_of(noise.values,
 									[](const float iValue) -> bool { return iValue >= 0.f && iValue <= 1.f; }));
 	EXPECT_TRUE(std::ranges::all_of(
@@ -204,14 +204,14 @@ TEST_F(PcgGraphTest, CellularAutomatonAndEdges) {
 	link(graph, 4, "Field", 6, "Mask");
 	const auto result = evaluate(graph, {.size = {24, 16}, .seed = 3});
 	ASSERT_TRUE(result.has_value());
-	const auto& cave = fieldOf(*result, 3, "Mask");
+	const auto cave = fieldOf(*result, 3, "Mask");
 	EXPECT_TRUE(std::ranges::all_of(cave.values,
 									[](const float iValue) -> bool { return iValue == 0.f || iValue == 1.f; }));
-	const auto& edge = fieldOf(*result, 5, "Mask");
+	const auto edge = fieldOf(*result, 5, "Mask");
 	EXPECT_FLOAT_EQ(edge.get(0, 0), 1.f);
 	EXPECT_FLOAT_EQ(edge.get(5, 0), 1.f);
 	EXPECT_FLOAT_EQ(edge.get(5, 5), 0.f);
-	const auto& open = fieldOf(*result, 6, "Mask");
+	const auto open = fieldOf(*result, 6, "Mask");
 	EXPECT_FLOAT_EQ(open.get(0, 0), 0.f);
 	EXPECT_FLOAT_EQ(open.get(5, 5), 1.f);
 }
@@ -243,7 +243,7 @@ TEST_F(PcgGraphTest, ScatterKeepsPointsApart) {
 	const auto& kept = std::get<Points>(result->values.at(core::UUID{4}).at("Points")).cells;
 	EXPECT_LT(kept.size(), scattered.size());
 	EXPECT_TRUE(std::ranges::all_of(kept, [](const math::vec2ui& iCell) -> bool { return iCell.x() >= 10; }));
-	const auto& mask = fieldOf(*result, 5, "Mask");
+	const auto mask = fieldOf(*result, 5, "Mask");
 	EXPECT_FLOAT_EQ(mask.get(kept.front().x(), kept.front().y()), 1.f);
 	EXPECT_EQ(std::ranges::count(result->tiles, 9), static_cast<std::ptrdiff_t>(kept.size()));
 }

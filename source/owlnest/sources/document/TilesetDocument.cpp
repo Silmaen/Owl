@@ -505,7 +505,9 @@ void TilesetDocument::resizeGrid(const uint32_t iColumns, const uint32_t iRows) 
 
 void TilesetDocument::selectTile(const uint32_t iIndex, const bool iToggle, const bool iRange) {
 	if (iRange && m_inspectedTile >= 0) {
-		const auto [low, high] = std::minmax(static_cast<uint32_t>(m_inspectedTile), iIndex);
+		const auto inspected = static_cast<uint32_t>(m_inspectedTile);
+		const uint32_t low = std::min(inspected, iIndex);
+		const uint32_t high = std::max(inspected, iIndex);
 		m_selectedTiles.clear();
 		for (uint32_t index = low; index <= high; ++index) m_selectedTiles.push_back(index);
 		return;
