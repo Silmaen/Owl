@@ -48,6 +48,8 @@ namespace owl::nest {
 namespace {
 
 constexpr uint32_t g_fitFrames = 3;
+// Drag-and-drop payload of a node type dragged from the library onto the canvas.
+constexpr auto g_PcgNodePayload = "OWL_PCG_NODE";
 
 class PcgGraphCommand final : public UndoCommand<scene::pcg::Graph> {
 public:
@@ -495,6 +497,17 @@ void PcgGraphDocument::onImGuiRender() {
 			--m_fitFrames;
 		}
 		m_canvas.onRender();
+		if (ImGui::BeginDragDropTargetCustom({ImGui::GetItemRectMin(), ImGui::GetItemRectMax()},
+											 ImGui::GetID("##pcgDrop"))) {
+			if (const auto* payload = ImGui::AcceptDragDropPayload(g_PcgNodePayload);
+				payload != nullptr && payload->DataSize > 0) {
+				const auto mouse = m_canvas.getMouseCanvasPosition();
+				std::ignore = addNode(
+						std::string{static_cast<const char*>(payload->Data), static_cast<size_t>(payload->DataSize)},
+						{mouse.x(), mouse.y()});
+			}
+			ImGui::EndDragDropTarget();
+		}
 		if (m_moving && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 			m_moving = false;
 			auto next = m_graph;
@@ -619,6 +632,11 @@ void PcgGraphDocument::renderPalette(const std::array<float, 2> iPosition, const
 			if (iPopup)
 				ImGui::CloseCurrentPopup();
 		}
+		if (!iPopup && ImGui::BeginDragDropSource()) {
+			ImGui::SetDragDropPayload(g_PcgNodePayload, iType.id.data(), iType.id.size());
+			ImGui::Text("%s %s", getPcgNodeGlyph(iType.id), iType.title.c_str());
+			ImGui::EndDragDropSource();
+		}
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("%s\n%s", iType.title.c_str(), iType.description.c_str());
 		if (row.open)
@@ -641,10 +659,8 @@ void PcgGraphDocument::renderPalette(const std::array<float, 2> iPosition, const
 	}
 	for (const auto& category: categories) {
 		ImGui::PushID(category.c_str());
-		const auto row = gui::widgets::treeRow("##category", {.label = category.c_str(),
-															  .iconName = categoryIcon(category),
-															  .hasChildren = true,
-															  .defaultOpen = true});
+		const auto row = gui::widgets::treeRow(
+				"##category", {.label = category.c_str(), .iconName = categoryIcon(category), .hasChildren = true});
 		if (row.open) {
 			for (const auto& type: types) {
 				if (type.category == category)
