@@ -292,3 +292,33 @@ TEST_F(HudLibraryTest, saveKeepsTheHudWidgetValues) {
 	scene::SaveManager::deleteSave(1);
 	std::filesystem::remove_all(scene::SaveManager::getSaveDirectory().parent_path());
 }
+
+TEST_F(HudLibraryTest, theHudScriptRunsWithTheSceneAndTakesTheClicks) {
+	OWL_REQUIRE_MODULE(SCRIPT);
+	const auto script = m_dir / "hud.lua";
+	ASSERT_TRUE(platform::writeFileAtomic(script, "clicks = 0\nfunction on_pause() clicks = clicks + 1 end\n"));
+	const auto hud = mkShared<scene::Scene>();
+	hud->getSceneScript().scriptPath = script.string();
+	auto canvas = hud->createEntity("Canvas");
+	canvas.addComponent<scene::component::Canvas>().scaleMode = scene::component::Canvas::ScaleMode::ConstantPixels;
+	auto button = hud->createEntity("Pause");
+	button.addComponent<UiRect>().size = {80.f, 30.f};
+	button.addComponent<scene::component::UiButton>().onClickCallback = "on_pause";
+	hud->setParent(button, canvas);
+	const auto hudPath = m_dir / "scripted.owlhud";
+	ASSERT_TRUE(scene::SceneSerializer(hud, DocumentKind::Hud).serialize(hudPath));
+
+	app::EngineContext context;
+	context.setDefaultHud(hudPath.string());
+	const auto sc = mkShared<scene::Scene>();
+	sc->setEngineContext(&context);
+	sc->onStartRuntime();
+	const auto& hudScript = sc->getHudScript();
+	ASSERT_TRUE(hudScript.instance && hudScript.instance->isValid());
+	EXPECT_TRUE(hudScript.instance->hasFunction("on_pause"));
+	scene::UiInputSystem::update(sc.get(), {400u, 300u}, {200.f, 150.f}, true);
+	scene::UiInputSystem::update(sc.get(), {400u, 300u}, {200.f, 150.f}, false);
+	EXPECT_EQ(hudScript.instance->getPropertyInt("clicks").value_or(-1), 1);
+	sc->onEndRuntime();
+	EXPECT_FALSE(sc->getHudScript().instance);
+}

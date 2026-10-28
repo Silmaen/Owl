@@ -707,6 +707,11 @@ void scanHud(const std::string& iHudPath, const std::string& iSource, std::set<s
 	if (!data["Hud"] || !entities)
 		return;
 	const auto hudName = hudRef->diskPath.filename().string();
+	if (const auto hudScript = data["SceneScript"]; hudScript && hudScript.IsMap()) {
+		YAML::Node holder;
+		holder["LuaScript"] = hudScript;
+		scanEntity(holder, hudName, ioVisitedScenes, ioAssets, ioWarnings);
+	}
 	for (auto entity: entities) scanEntity(entity, hudName, ioVisitedScenes, ioAssets, ioWarnings);
 }
 

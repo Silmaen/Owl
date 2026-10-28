@@ -312,6 +312,10 @@ auto ScriptInstance::getWatchValues() const -> std::vector<WatchValue> {
 	return values;
 }
 
+auto ScriptInstance::hasFunction(const std::string& iName) const -> bool {
+	return isValid() && mp_impl->engine.hasFunction(iName);
+}
+
 auto ScriptInstance::getProbeValues() const -> std::vector<WatchValue> {
 	if (!isValid())
 		return {};

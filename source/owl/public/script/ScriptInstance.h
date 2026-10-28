@@ -287,6 +287,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Whether the script defines a global function.
+	 * @param[in] iName Function name.
+	 * @return True when the global is a function.
+	 */
+	[[nodiscard]] auto hasFunction(const std::string& iName) const -> bool;
+
+	/**
+	 * @brief
 	 *  The last value of every wire of a visual script loaded while the ScriptDebugger was enabled.
 	 *
 	 * Each entry is named by `visual::getProbeKey`; the entry `at` holds the id of the last node run.

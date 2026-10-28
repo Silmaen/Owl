@@ -115,6 +115,8 @@ auto ScriptInstance::getPropertyBool([[maybe_unused]] const std::string& iName) 
 
 auto ScriptInstance::getWatchValues() const -> std::vector<WatchValue> { return {}; }
 
+auto ScriptInstance::hasFunction([[maybe_unused]] const std::string& iName) const -> bool { return false; }
+
 auto ScriptInstance::getProbeValues() const -> std::vector<WatchValue> { return {}; }
 
 }// namespace owl::script

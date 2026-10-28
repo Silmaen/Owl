@@ -418,7 +418,8 @@ void Scene::onStartRuntime() {
 
 	const auto hudStart = clk::now();
 	// Loaded before the scripts: its fonts would otherwise count against the time quota of the first one reaching it.
-	if (const auto hud = getHud(); hud)
+	const auto hud = getHud();
+	if (hud)
 		OWL_CORE_INFO("Scene::onStartRuntime: hud load {:.1f} ms.", ms(clk::now() - hudStart))
 
 	const auto luaStart = clk::now();
@@ -427,6 +428,13 @@ void Scene::onStartRuntime() {
 		m_sceneScript.instance = loadScriptInstance(*this, m_sceneScript, 0, "scene");
 		if (m_sceneScript.instance)
 			m_sceneScript.instance->onCreate();
+		++luaCount;
+	}
+	m_hudScript = hud ? hud->getSceneScript() : component::LuaScript{};
+	if (!m_hudScript.scriptPath.empty()) {
+		m_hudScript.instance = loadScriptInstance(*this, m_hudScript, 0, "hud");
+		if (m_hudScript.instance)
+			m_hudScript.instance->onCreate();
 		++luaCount;
 	}
 	// Initialize Lua scripting
@@ -480,6 +488,9 @@ void Scene::onEndRuntime() {
 	if (m_sceneScript.instance && m_sceneScript.instance->isValid())
 		m_sceneScript.instance->onDestroy();
 	m_sceneScript.instance.reset();
+	if (m_hudScript.instance && m_hudScript.instance->isValid())
+		m_hudScript.instance->onDestroy();
+	m_hudScript = component::LuaScript{};
 	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
 		auto& luaScript = view.get<component::LuaScript>(entity);
 		if (luaScript.instance && luaScript.instance->isValid())
