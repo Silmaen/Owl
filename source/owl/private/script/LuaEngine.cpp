@@ -732,7 +732,8 @@ void LuaEngine::setDeltaTime(const double iDeltaTime) const { mp_quota->deltaTim
 
 auto LuaEngine::getDeltaTime(lua_State* iState) -> double { return quotaOf(iState)->deltaTime; }
 
-auto LuaEngine::protectedCall(const int iHandler, const int iArgCount, const std::string_view iWhat) const -> bool {
+auto LuaEngine::protectedCall(const int iHandler, const int iArgCount, const std::string_view iWhat,
+							  ChunkResult* oResult) const -> bool {
 	mp_quota->memoryExceeded = false;
 	mp_quota->timeExceeded = false;
 	armDebugHook(mp_state);
@@ -746,12 +747,19 @@ auto LuaEngine::protectedCall(const int iHandler, const int iArgCount, const std
 	slot.sequence.store(slot.sequence.load(std::memory_order_relaxed) + 1, std::memory_order_release);
 	const bool outerEnforced = mp_quota->enforced;
 	mp_quota->enforced = true;
-	const int result = lua_pcall(mp_state, iArgCount, 0, iHandler);
+	const int result = lua_pcall(mp_state, iArgCount, oResult == nullptr ? 0 : LUA_MULTRET, iHandler);
 	mp_quota->enforced = outerEnforced;
 	slot.state.store(outerState, std::memory_order_relaxed);
 	slot.running.store(outerRunning, std::memory_order_relaxed);
 	slot.budgetMs.store(outerBudget, std::memory_order_relaxed);
 	if (result == LUA_OK) {
+		if (oResult != nullptr)
+			for (int index = iHandler + 1; index <= lua_gettop(mp_state); ++index) {
+				size_t size = 0;
+				const char* text = luaL_tolstring(mp_state, index, &size);
+				oResult->values.emplace_back(text, size);
+				lua_pop(mp_state, 1);
+			}
 		lua_settop(mp_state, iHandler - 1);
 		mp_quota->lastStatus = LuaStatus::Ok;
 		return true;
@@ -763,9 +771,34 @@ auto LuaEngine::protectedCall(const int iHandler, const int iArgCount, const std
 	else
 		mp_quota->lastStatus = LuaStatus::RuntimeError;
 	const char* message = lua_tostring(mp_state, -1);
-	reportError(iWhat, message != nullptr ? message : "(no message)");
+	if (oResult != nullptr)
+		oResult->message = message != nullptr ? message : "(no message)";
+	else
+		reportError(iWhat, message != nullptr ? message : "(no message)");
 	lua_settop(mp_state, iHandler - 1);
 	return false;
+}
+
+auto LuaEngine::runChunk(const std::string_view iSource, const std::string& iName) const -> ChunkResult {
+	ChunkResult result;
+	if (mp_state == nullptr) {
+		result.message = "the Lua state is invalid";
+		return result;
+	}
+	mp_quota->enforced = true;
+	const int loaded = luaL_loadbufferx(mp_state, iSource.data(), iSource.size(), iName.c_str(), "t");
+	mp_quota->enforced = false;
+	if (loaded != LUA_OK) {
+		const char* message = lua_tostring(mp_state, -1);
+		result.message = message != nullptr ? message : "(no message)";
+		lua_pop(mp_state, 1);
+		return result;
+	}
+	result.compiled = true;
+	lua_pushcfunction(mp_state, messageHandler);
+	lua_insert(mp_state, -2);
+	result.ok = protectedCall(lua_gettop(mp_state) - 1, 0, iName, &result);
+	return result;
 }
 
 void LuaEngine::reportError(const std::string_view iWhat, const std::string_view iMessage) const {
