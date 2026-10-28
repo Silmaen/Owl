@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <initializer_list>
@@ -104,7 +105,7 @@ auto toArgValue(const commands::ArgSpec& iSpec, const script::HostValue& iValue)
 				return math::vec4{static_cast<float>((*list)[0]), static_cast<float>((*list)[1]),
 								  static_cast<float>((*list)[2]),
 								  list->size() == 4 ? static_cast<float>((*list)[3]) : 1.f};
-			if (const auto* value = std::get_if<std::string>(&iValue); value && iSpec.type == commands::ArgType::Color)
+			if (const auto* value = std::get_if<std::string>(&iValue); value != nullptr && iSpec.type == commands::ArgType::Color)
 				return *value;
 			return wrong("{r, g, b[, a]}");
 	}
@@ -160,12 +161,14 @@ auto luaLiteral(const commands::ArgValue& iValue) -> std::string {
 
 auto toOutput(const script::ScriptConsole::Result& iResult) -> std::vector<ConsoleOutput> {
 	std::vector<ConsoleOutput> output;
+	output.reserve(iResult.output.size());
 	for (const auto& line: iResult.output)
-		output.push_back({.kind = iResult.status == script::ScriptConsole::Status::Error && &line == &iResult.output.back()
-										  ? ConsoleLineKind::Error
-										  : ConsoleLineKind::Result,
-						  .text = line,
-						  .journalIndex = 0});
+		output.push_back(
+				{.kind = iResult.status == script::ScriptConsole::Status::Error && &line == &iResult.output.back()
+								 ? ConsoleLineKind::Error
+								 : ConsoleLineKind::Result,
+				 .text = line,
+				 .journalIndex = 0});
 	return output;
 }
 
@@ -197,7 +200,9 @@ void LuaConsole::registerCommands() {
 					}
 					const auto result = m_session.execute(name, args, commands::CommandSource::Script);
 					if (!result)
-						return {.ok = false, .error = std::format("{}: {}", name, result.error().message), .fields = {}};
+						return {.ok = false,
+								.error = std::format("{}: {}", name, result.error().message),
+								.fields = {}};
 					script::HostResult out;
 					for (const auto& [key, value]: result->data) out.fields.emplace(key, toHostValue(value));
 					out.fields.emplace("description", result->description);
@@ -216,10 +221,9 @@ auto LuaConsole::submit(const std::string_view iLine) -> std::vector<ConsoleOutp
 		(firstSpace == std::string_view::npos || iLine.substr(firstSpace).find('=') != std::string_view::npos ||
 		 iLine.substr(firstSpace).find_first_not_of(" \t") == std::string_view::npos))
 		return m_commands.submit(iLine);
-	std::vector<ConsoleOutput> output{
-			{.kind = ConsoleLineKind::Input,
-			 .text = std::format("{} {}", m_lua.hasPending() ? ">>" : ">", iLine),
-			 .journalIndex = 0}};
+	std::vector<ConsoleOutput> output{{.kind = ConsoleLineKind::Input,
+									   .text = std::format("{} {}", m_lua.hasPending() ? ">>" : ">", iLine),
+									   .journalIndex = 0}};
 	if (!iLine.empty())
 		m_commands.remember(std::string{iLine});
 	const auto result = m_lua.evaluate(iLine);
@@ -229,8 +233,9 @@ auto LuaConsole::submit(const std::string_view iLine) -> std::vector<ConsoleOutp
 
 auto LuaConsole::runScript(const std::filesystem::path& iPath) -> std::vector<ConsoleOutput> {
 	registerCommands();
-	std::vector<ConsoleOutput> output{
-			{.kind = ConsoleLineKind::Input, .text = std::format("> run {}", iPath.filename().string()), .journalIndex = 0}};
+	std::vector<ConsoleOutput> output{{.kind = ConsoleLineKind::Input,
+									   .text = std::format("> run {}", iPath.filename().string()),
+									   .journalIndex = 0}};
 	if (m_session.isScenePlaying()) {
 		output.push_back({.kind = ConsoleLineKind::Refused,
 						  .text = "refused during Play: editor scripts edit the scene, stop it first",

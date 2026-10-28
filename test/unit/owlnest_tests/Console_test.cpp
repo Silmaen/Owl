@@ -248,7 +248,7 @@ TEST_F(ConsoleTest, AnEditorScriptIsOneUndoStep) {
 }
 
 TEST_F(ConsoleTest, AMacroBecomesAnEditorScript) {
-	HeadlessSession session;
+	const HeadlessSession session;
 	const auto lua = LuaConsole::macroToLua(
 			{"# plant", R"(entity.create name="Tree")", "entity.create name=Leaf parent=$1", "", "no.such"},
 			session.getRegistry());

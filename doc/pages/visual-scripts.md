@@ -62,10 +62,11 @@ convert between a value and its components. Variables can be of type `color`, `v
 | Panel                     | Content                                                                                       |
 |---------------------------|-----------------------------------------------------------------------------------------------|
 | **Nodes** (Hierarchy)     | Every node by group, with a search field: click one to add it in the view, or drag it in      |
-| **Graph** (Properties)    | **Variables** tab and **Node** tab                                                            |
+| **Graph** (Properties)    | **Variables**, **Functions** and **Node** tabs                                                |
 
 - **Variables**: one section per variable with its name, type and default; its menu removes it. Renaming a variable
   updates its nodes. Drag the header of a variable onto the graph to read it.
+- **Functions**: the functions and macros of the graph, see [Functions and macros](#visual-scripts-functions).
 - **Node**: the selected node, its description, its errors, its settings (variable, function name), the split of its
   grouped pins and the values of its unlinked inputs.
 - The toolbar switches the document between **Graph** (the nodes), **Split** (the nodes and the generated Lua side by
@@ -86,6 +87,7 @@ Dropping a link on the background opens it too, with only the nodes that take th
 | Constant                           | `Self`, and a number, integer, boolean, text, vector or colour typed on the node, its only pin an output                                                         |
 | Math, Compare, Logic, Text         | Arithmetic, `Floor`, `Min`, `Max`, comparisons, `And`, `Or`, `Not`, `Concatenate`                                                                                  |
 | Vector, Color                      | `Make` and `Break` nodes of vectors and colours                                                                                                                    |
+| Functions                          | `Call` of each function and macro of the graph, and of the library graphs (`file / name`)                                                                          |
 | `transform`, `physics`, `scene`…   | One node per function of the [Lua API](lua-api.md), with its parameters and results                                                                                |
 
 An event appears at most once in a graph.
@@ -108,6 +110,49 @@ An event appears at most once in a graph.
 | Right-click a node or a pin        | Duplicate, Copy, Delete; Split / Recombine, Break Links             |
 
 Every edit is undoable (**Ctrl+Z**, **Ctrl+Y**); consecutive value edits merge into one step.
+
+## Functions and macros {#visual-scripts-functions}
+
+A function is a named part of a graph, called from several places. It has typed parameters and typed results. A macro
+is a function with several execution exits.
+
+- The **Functions** tab of the **Graph** panel lists them: **Add Function** and **Add Macro** create one, each section
+  edits its name, its parameters, its results and, for a macro, its exits.
+- A function is drawn as its own graph: a `func.entry` node holds the parameters, a `func.return` node takes the
+  results. In a macro, each `func.return` node picks the exit it leaves by.
+- Drag the header of a function onto the graph to call it (`func.call`), or pick it in the palette (**Functions**).
+- A function compiles to a Lua function of the script.
+
+### Library graphs
+
+Any other `.owlvs` of the project that defines functions is a library: its functions show in the palette, in the
+**Functions** group, as `file / name`. The call node stores the asset path of the library in its `library` field.
+
+- The functions of the library are compiled into the Lua of the caller.
+- A function of a library has no variables and calls no function of another library.
+- The export packs the library files with the scripts that call them.
+
+## HUD graphs
+
+A `.owlhud` has a scene script of its own: the **Script** section of Scene Settings while the HUD is open, saved as the
+`SceneScript` key of the file. It runs in Play with every scene that draws the HUD and has the hooks of a scene script.
+
+A widget callback (the handler of a button, a slider or a list) is looked up in the scripts of the widget, then in the
+HUD script and the scene script, then in the entity scripts.
+
+The handler rows of the inspector have an **Edit in Graph** button. When the scene or the HUD has no script, it creates
+`scripts/<file>_hud.owlvs` (or `scripts/<scene>.owlvs`) and sets it as its script. It then opens the graph, adds the
+`Custom Event` of the handler when missing and selects it.
+
+## Debugging {#visual-scripts-debugging}
+
+- **Wire values**: during Play, each wire of the open graph shows the last value that crossed it. A graph is compiled
+  with probes for that purpose, which the exported game never contains.
+- **Breakpoints**: select a node and press **F9**, or right-click it and choose **Add Breakpoint**; the node shows a
+  red dot, **F9** or **Remove Breakpoint** clears it. A breakpoint does not stop the script in the middle of its
+  call: the call finishes, then the game pauses.
+- When the game stops, the node it stopped on is outlined and the **Script Debug** panel gives the hit, see
+  [Debugging scripts](scripting.md#scripting-debugging).
 
 ## Example
 

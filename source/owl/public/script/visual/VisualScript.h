@@ -14,8 +14,8 @@
 #include "script/ScriptEngine.h"
 
 #include <array>
-#include <functional>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <optional>
 #include <string>

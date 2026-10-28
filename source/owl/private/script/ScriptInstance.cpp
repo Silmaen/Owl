@@ -30,13 +30,14 @@ constexpr std::string_view g_OnUpdate = "on_update";
 constexpr std::string_view g_OnTick = "on_tick";
 constexpr std::string_view g_OnDestroy = "on_destroy";
 constexpr std::string_view g_OnCollision = "on_collision";
-constexpr std::array<std::string_view, 9> g_hiddenGlobals{"_G",		 "_VERSION", "coroutine", "math",	   "string",
-														  "table",	 "utf8",	 "properties", "__owl_probes"};
+constexpr std::array<std::string_view, 9> g_hiddenGlobals{"_G",    "_VERSION", "coroutine",  "math",        "string",
+														  "table", "utf8",     "properties", "__owl_probes"};
 
 auto isScriptVariable(const std::string_view iName) -> bool {
 	if (iName.starts_with("__") || std::ranges::contains(g_hiddenGlobals, iName))
 		return false;
-	return std::ranges::none_of(getLuaTables(), [iName](const LuaTable& iTable) -> bool { return iTable.name == iName; });
+	return std::ranges::none_of(getLuaTables(),
+								[iName](const LuaTable& iTable) -> bool { return iTable.name == iName; });
 }
 }// namespace
 

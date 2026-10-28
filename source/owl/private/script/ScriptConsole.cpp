@@ -82,7 +82,7 @@ void pushValue(lua_State* iState, const HostValue& iValue) {
 					lua_createtable(iState, static_cast<int>(iItem.size()), 0);
 					for (size_t i = 0; i < iItem.size(); ++i) {
 						lua_pushnumber(iState, static_cast<lua_Number>(iItem[i]));
-						lua_rawseti(iState, -2, static_cast<lua_Integer>(i + 1));
+						lua_rawseti(iState, -2, static_cast<lua_Integer>(i) + 1);
 					}
 				}
 			},
@@ -105,9 +105,7 @@ auto callHost(lua_State* iState) -> bool {
 	HostResult result;
 	try {
 		result = impl->functions[index](args);
-	} catch (const std::exception& exception) {
-		result = {.ok = false, .error = exception.what(), .fields = {}};
-	}
+	} catch (const std::exception& exception) { result = {.ok = false, .error = exception.what(), .fields = {}}; }
 	if (!result.ok) {
 		lua_pushstring(iState, result.error.c_str());
 		return false;

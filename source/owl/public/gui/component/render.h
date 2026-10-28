@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <string>
 #include <tuple>
 
 namespace owl::scene {

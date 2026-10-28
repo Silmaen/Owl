@@ -76,7 +76,7 @@ TEST_F(ScriptDebuggerTest, BreakpointsAreSetAndRemovedPerScript) {
 TEST_F(ScriptDebuggerTest, AHitKeepsTheLineAndTheLocals) {
 	ScriptDebugger::setEnabled(true);
 	ScriptDebugger::setBreakpoint("counter.lua", 5, true);
-	ScriptInstance instance;
+	const ScriptInstance instance;
 	ASSERT_TRUE(instance.createFromBuffer(toBytes(g_counter), "counter.lua", 7));
 	instance.onUpdate(0.5f);
 	EXPECT_EQ(instance.getPropertyInt("count").value_or(-1), 2);
@@ -93,14 +93,14 @@ TEST_F(ScriptDebuggerTest, AHitKeepsTheLineAndTheLocals) {
 
 TEST_F(ScriptDebuggerTest, ADisabledDebuggerNeverStops) {
 	ScriptDebugger::setBreakpoint("counter.lua", 5, true);
-	ScriptInstance instance;
+	const ScriptInstance instance;
 	ASSERT_TRUE(instance.createFromBuffer(toBytes(g_counter), "counter.lua", 7));
 	instance.onUpdate(0.5f);
 	EXPECT_FALSE(ScriptDebugger::takeHit().has_value());
 }
 
 TEST_F(ScriptDebuggerTest, WatchValuesListTheScriptVariablesOnly) {
-	ScriptInstance instance;
+	const ScriptInstance instance;
 	ASSERT_TRUE(instance.createFromBuffer(toBytes(g_counter), "counter.lua", 7));
 	instance.onUpdate(0.5f);
 	const auto values = instance.getWatchValues();
@@ -138,7 +138,7 @@ TEST_F(ScriptDebuggerTest, VisualScriptsProbeTheirWiresAndMapTheirNodes) {
 
 	ScriptDebugger::setEnabled(true);
 	ScriptDebugger::setBreakpoint("sum.owlvs", build->nodeLines.at(set).front(), true);
-	ScriptInstance instance;
+	const ScriptInstance instance;
 	const auto text = serialize(script);
 	ASSERT_TRUE(instance.createFromBuffer(toBytes(text), "sum.owlvs", 0));
 	instance.onUpdate(0.5f);

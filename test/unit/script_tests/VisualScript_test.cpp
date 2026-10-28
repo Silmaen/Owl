@@ -488,7 +488,8 @@ TEST(VisualScript, LibraryFunctionsCompileIntoTheCaller) {
 	core::Log::init(core::Log::Level::Off);
 	auto library = doubler();
 	std::erase_if(library.nodes, [](const GraphNode& iNode) -> bool { return static_cast<uint64_t>(iNode.id) > 3; });
-	std::erase_if(library.links, [](const GraphLink& iLink) -> bool { return static_cast<uint64_t>(iLink.toNode) > 3; });
+	std::erase_if(library.links,
+				  [](const GraphLink& iLink) -> bool { return static_cast<uint64_t>(iLink.toNode) > 3; });
 	library.variables.clear();
 	const auto libraryText = serialize(library);
 	setLibraryReader([&libraryText](const std::string_view iPath) -> std::optional<std::string> {
@@ -499,8 +500,8 @@ TEST(VisualScript, LibraryFunctionsCompileIntoTheCaller) {
 	VisualScript script;
 	script.variables.push_back({.name = "result", .type = ScriptPropertyType::Float, .defaultValue = "0"});
 	const auto create = addNode(script, "event.on_create");
-	const auto call = addNode(script, "func.call",
-							  {{"function", "double"}, {"library", "scripts/lib/maths.owlvs"}, {"x", "4"}});
+	const auto call =
+			addNode(script, "func.call", {{"function", "double"}, {"library", "scripts/lib/maths.owlvs"}, {"x", "4"}});
 	const auto set = addNode(script, "var.set", {{"variable", "result"}});
 	link(script, create, "Then", call, "Exec");
 	link(script, call, "Then", set, "Exec");

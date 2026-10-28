@@ -200,9 +200,9 @@ void ConsolePanel::renderInput() {
 	ImGui::SetNextItemWidth(-1.f);
 	constexpr ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory |
 										  ImGuiInputTextFlags_CallbackCompletion;
-	const char* hint = !m_luaMode			? "Command (Tab completes, help lists the commands)"
-					   : m_lua.hasPending() ? ">> the block goes on (Esc cancels it)"
-											: "Lua (help(editor) lists the commands)";
+	const char* hint = "Command (Tab completes, help lists the commands)";
+	if (m_luaMode)
+		hint = m_lua.hasPending() ? ">> the block goes on (Esc cancels it)" : "Lua (help(editor) lists the commands)";
 	if (m_luaMode && m_lua.hasPending() && ImGui::IsKeyPressed(ImGuiKey_Escape, false))
 		m_lua.cancelPending();
 	if (!ImGui::InputTextWithHint("##consoleInput", hint, &m_input, flags, inputCallback, &m_console))
@@ -227,7 +227,8 @@ void ConsolePanel::renderScriptsMenu() {
 	gui::widgets::menuHeader("Editor Scripts", "editor/*.lua");
 	std::vector<std::filesystem::path> directories;
 	if (app::Application::instanced())
-		for (const auto& [title, directory]: app::Application::get().getAssetDirectories()) directories.push_back(directory);
+		for (const auto& [title, directory]: app::Application::get().getAssetDirectories())
+			directories.push_back(directory);
 	const auto scripts = session::LuaConsole::listEditorScripts(directories);
 	if (scripts.empty())
 		ImGui::TextDisabled("No .lua under editor/ in the asset folders.");

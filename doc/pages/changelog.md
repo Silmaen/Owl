@@ -31,6 +31,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Visual scripts: colour and vector values (`Color`, `Vector 2`, `Vector 3`), as variables, make / break nodes, and the `r g b a` / `x y z` parameters of a binding (also prefixed, `vx vy`, `cell_x cell_y`) as one pin that splits into its components; constants have only an output.
 - Content Browser: visual scripts have an icon and a colour of their own.
 - Engine Demo: the tavern cellar ladder is a visual script.
+- Script debugging: breakpoints on Lua lines (gutter, F9) and on visual-script nodes (F9, context menu), the game pausing once the script call ends (`ScriptDebugger`).
+- Owl Nest **Script Debug** panel: the hit (script, line, entity, locals) with Continue and Open, and the variables of the scene, HUD and entity scripts (`ScriptInstance::getWatchValues`).
+- Visual scripts show the last value of each wire during Play (`CompileMode::Debug`, `compileForDebug`) and outline the node the game stopped on.
+- Visual-script functions and macros with typed parameters, results and execution exits (`GraphFunction`, `func.entry`, `func.return`, `func.call`), edited in the Functions tab of the Graph panel.
+- Visual-script library graphs: the functions of another `.owlvs` of the project are palette nodes compiled into the caller, and the export packs the library files.
+- HUD scripts: a `.owlhud` has a scene script (`SceneScript`, `Scene::getHudScript`) run with every scene that draws it.
+- Inspector handler rows have an **Edit in Graph** button that creates the script of the scene or HUD when missing and opens the custom event of the handler.
+- Console Lua mode: globals kept between lines, expression values printed, multi-line blocks, `help(editor)`, commands still accepted.
+- Lua `editor` module, one function per registry command, errors and Play refusals as Lua errors, journal source `script`.
+- Editor scripts: `.lua` files under `editor/` run from the Console menu or the Content Browser as one undo step, and `.owlmacro` files export to Lua.
+- `ScriptConsole`: a Lua state for tools with a REPL and host functions, apart from the game sandbox.
 
 ### Changed
 
@@ -38,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An exported game packs only its engine files and initialises only its renderer families (`RendererSet`): packs about 3.3 MiB smaller.
 - An exported game reads its textures, sounds, fonts and shaders from the pack in memory: no `assets/` extraction, no cache written next to it.
 - `GameExportEndToEnd` also plays every exported project on lavapipe and fails on a shader compiled at start or a file written beside the game.
+- Widget callbacks (button, slider, list...) also reach the HUD script and the scene script, after the widget's own scripts and before the entity scripts.
 - CI: one tree per configuration; the tested release tree is the one packaged, so no configuration builds a second preset.
 - CI: Linux x64 Clang Release is the fast verdict (drafts, ready pull requests, doc-only pull requests, `main`); drafts run Code Style and it only.
 - CI: coverage is measured on Linux x64 GCC (every ready pull request and `main`) and by Clang Debug nightly, each with its coverage-drop gate; Windows measures none.

@@ -149,6 +149,7 @@ constexpr int g_maxLocals = 64;
 constexpr int g_maxTableItems = 4;
 constexpr size_t g_maxValueText = 120;
 
+// NOLINTNEXTLINE(misc-no-recursion) An entry is described once: a nested table is shown as {…}, never entered.
 auto shortTable(lua_State* iState, const int iIndex) -> std::string {
 	const int table = lua_absindex(iState, iIndex);
 	std::string text = "{";
@@ -869,8 +870,8 @@ auto LuaEngine::loadBuffer(const std::vector<uint8_t>& iData, const std::string&
 	}
 	if (visual::isVisualScriptPath(iName)) {
 		const auto lua = visual::compileText({reinterpret_cast<const char*>(iData.data()), iData.size()}, iName,
-											ScriptDebugger::isEnabled() ? visual::CompileMode::Debug
-																		: visual::CompileMode::Game);
+											 ScriptDebugger::isEnabled() ? visual::CompileMode::Debug
+																		 : visual::CompileMode::Game);
 		if (!lua.has_value()) {
 			OWL_CORE_ERROR("LuaEngine: Cannot compile the visual script '{}'.", iName)
 			return false;
@@ -970,6 +971,7 @@ auto LuaEngine::callFunction(const std::string_view iName, const uint64_t iArg) 
 }
 
 // ---- Global variable getters ----
+// NOLINTNEXTLINE(misc-no-recursion) A table describes its entries once, without entering a nested table.
 auto LuaEngine::describeValue(lua_State* iState, const int iIndex) -> WatchValue {
 	WatchValue value{.name = {}, .type = luaL_typename(iState, iIndex), .value = {}};
 	switch (lua_type(iState, iIndex)) {

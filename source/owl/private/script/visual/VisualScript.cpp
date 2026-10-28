@@ -541,18 +541,17 @@ auto readLibraryText(const std::string_view iPath) -> std::optional<std::string>
 	return std::string{bytes->begin(), bytes->end()};
 }
 
-constexpr std::array<std::pair<PinType, std::string_view>, 11> g_pinTypeKeys{
-		{{PinType::Exec, "exec"},
-		 {PinType::Boolean, "boolean"},
-		 {PinType::Integer, "integer"},
-		 {PinType::Number, "number"},
-		 {PinType::String, "string"},
-		 {PinType::Table, "table"},
-		 {PinType::Entity, "entity"},
-		 {PinType::Vector2, "vector2"},
-		 {PinType::Vector3, "vector3"},
-		 {PinType::Color, "color"},
-		 {PinType::Any, "any"}}};
+constexpr std::array<std::pair<PinType, std::string_view>, 11> g_pinTypeKeys{{{PinType::Exec, "exec"},
+																			  {PinType::Boolean, "boolean"},
+																			  {PinType::Integer, "integer"},
+																			  {PinType::Number, "number"},
+																			  {PinType::String, "string"},
+																			  {PinType::Table, "table"},
+																			  {PinType::Entity, "entity"},
+																			  {PinType::Vector2, "vector2"},
+																			  {PinType::Vector3, "vector3"},
+																			  {PinType::Color, "color"},
+																			  {PinType::Any, "any"}}};
 
 }// namespace
 
@@ -601,12 +600,12 @@ auto findNodeFunction(const VisualScript& iScript, const GraphNode& iNode) -> co
 }
 
 auto getPinTypeKey(const PinType iType) -> std::string_view {
-	const auto found = std::ranges::find(g_pinTypeKeys, iType, &std::pair<PinType, std::string_view>::first);
+	const auto* const found = std::ranges::find(g_pinTypeKeys, iType, &std::pair<PinType, std::string_view>::first);
 	return found == g_pinTypeKeys.end() ? "any" : found->second;
 }
 
 auto parsePinTypeKey(const std::string_view iName) -> std::optional<PinType> {
-	const auto found = std::ranges::find(g_pinTypeKeys, iName, &std::pair<PinType, std::string_view>::second);
+	const auto* const found = std::ranges::find(g_pinTypeKeys, iName, &std::pair<PinType, std::string_view>::second);
 	if (found == g_pinTypeKeys.end())
 		return std::nullopt;
 	return found->first;
@@ -665,6 +664,7 @@ auto getNodePins(const VisualScript& iScript, const GraphNode& iNode) -> NodePin
 			return pins;
 		const auto toPins = [](const std::vector<GraphParameter>& iParameters) -> std::vector<PinSpec> {
 			std::vector<PinSpec> out;
+			out.reserve(iParameters.size());
 			for (const auto& parameter: iParameters) out.push_back(pin(parameter.name, parameter.type));
 			return out;
 		};

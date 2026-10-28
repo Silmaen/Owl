@@ -735,6 +735,7 @@ private:
 		for (const auto& function: m_script.functions) {
 			const auto entry = entries.find(function.name);
 			std::vector<std::string> params;
+			params.reserve(function.inputs.size());
 			for (size_t i = 0; i < function.inputs.size(); ++i) params.push_back(std::format("__a{}", i + 1));
 			line(std::format("function {}{}({})", m_prefix, function.name, joined(params)));
 			++m_indent;
@@ -793,6 +794,7 @@ private:
 		}
 		const auto call = std::format("{}{}({})", prefix, function->name, joined(arguments(iNode, iPins)));
 		std::vector<std::string> results;
+		results.reserve(function->outputs.size() + 1);
 		for (const auto& output: function->outputs) results.push_back(slot(iNode.id, output.name));
 		if (function->exits.size() <= 1) {
 			line(results.empty() ? call : std::format("{} = {}", joined(results), call));

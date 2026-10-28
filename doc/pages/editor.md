@@ -15,7 +15,7 @@ between runs.
 | Centre        | The documents as tabs (scenes, scripts, graphs, tilemaps...) and the Help; a scene tab is a viewport |
 | Right, top    | **Scene Hierarchy**: the entities of the active scene                                                |
 | Right, bottom | **Properties**, with **Tile Palette**, **Voxel Palette** and **Scene Settings** as tabs              |
-| Bottom        | **Content Browser**, **Log**, **Console** and **Stats**                                              |
+| Bottom        | **Content Browser**, **Log**, **Console**, **Script Debug** and **Stats**                            |
 | Status bar    | Mode, active document, autosave, backend, warnings, previews, notifications, MCP                     |
 
 - The Hierarchy, Properties and viewport always show the **active** document: the tab in front.

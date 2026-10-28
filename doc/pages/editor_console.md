@@ -34,6 +34,28 @@ The **Console** (Ctrl+&#96;) is a command line over the editor commands and the 
 - **Journal**: one line per command run, whatever its source (gesture, console, palette, MCP, macro, scenario), with
   its number `$n`, its source and its result. The source chips filter it; **Clear** empties the view.
 
+### Lua mode {#editor-lua}
+
+The code button of the Console switches the command line to **Lua**.
+
+- The globals are kept from one line to the next; an expression prints its value.
+- A line that leaves a block open continues on the next line; **Esc** cancels the input.
+- `help(editor)` lists the functions of the module, `help(editor.entity)` those of one group.
+- A line in command syntax still runs as a command.
+- The module `editor` has one function per command of the registry: `editor.entity.create{name = "Tree"}` returns a
+  table with `entity`, `description` and the fields of the result. A refused or failing command, and a command refused
+  during Play, raises a Lua error. The journal records them with the source `script`.
+- The Lua state is separate from the game: it has the sandbox rules of the game scripts, no engine binding (`transform`,
+  `physics`...), and never runs inside Play.
+
+### Editor scripts
+
+An editor script is a `.lua` file under an `editor/` folder of an asset folder of the project, for instance
+`engine_demo/editor/plant_row.lua`. Run it from the **Editor Scripts** menu of the Console, or from the context menu of
+the file in the Content Browser (**Run as Editor Script**). A whole script is one undo step; an error undoes what it did.
+
+A `.owlmacro` file has **Export to Lua** in the Content Browser: it writes the equivalent `.lua` file.
+
 ### Macros
 
 Select lines of the journal and **Save as Macro**: a `.owlmacro` file replays them, the entities they created written

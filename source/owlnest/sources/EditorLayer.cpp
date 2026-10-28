@@ -665,24 +665,7 @@ void EditorLayer::onAttach() {
 	m_contentBrowser.setMacroRunCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 	});
-	m_contentBrowser.setEditorScriptRunCallback(
-			[this](const std::filesystem::path& iPath) -> void { m_consolePanel.runEditorScript(iPath); });
-	m_contentBrowser.setMacroExportCallback([this](const std::filesystem::path& iPath) -> void {
-		const auto macro = commands::Macro::load(iPath);
-		if (!macro) {
-			m_toasts.push(gui::widgets::ToastKind::Error, "Export to Lua failed", macro.error().message);
-			return;
-		}
-		auto target = iPath;
-		target.replace_extension(".lua");
-		for (uint32_t counter = 2; exists(target); ++counter)
-			target = iPath.parent_path() / std::format("{}_{}.lua", iPath.stem().string(), counter);
-		if (!platform::writeFileAtomic(target, session::LuaConsole::macroToLua(macro->getLines(), m_commands))) {
-			m_toasts.push(gui::widgets::ToastKind::Error, "Export to Lua failed", target.string());
-			return;
-		}
-		openAssetFile(target);
-	});
+	bindScriptCallbacks();
 	m_contentBrowser.setCommandCallback([this](const std::string& iName, const commands::CommandArgs& iArgs) -> bool {
 		const auto result = execute(iName, iArgs, commands::CommandSource::Gesture);
 		if (!result)
@@ -753,7 +736,8 @@ void EditorLayer::revealCodeLine(const std::filesystem::path& iPath, const uint3
 		return;
 	}
 	for (const auto& docPtr: m_documents.list()) {
-		if (auto* graph = dynamic_cast<VisualScriptDocument*>(docPtr.get()); graph != nullptr && graph->filePath() == iPath)
+		if (auto* graph = dynamic_cast<VisualScriptDocument*>(docPtr.get());
+			graph != nullptr && graph->filePath() == iPath)
 			graph->revealLine(static_cast<int>(iLine));
 	}
 }
@@ -889,17 +873,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 				revealCodeLine(path, line->second);
 				m_deferredOpenLines.erase(line);
 			}
-			for (auto event = m_deferredGraphEvents.begin(); event != m_deferredGraphEvents.end();) {
-				if (!script::ScriptDebugger::isSameScript(path.string(), event->first)) {
-					++event;
-					continue;
-				}
-				for (const auto& docPtr: m_documents.list())
-					if (auto* graph = dynamic_cast<VisualScriptDocument*>(docPtr.get());
-						graph != nullptr && graph->filePath() == path)
-						std::ignore = graph->ensureCustomEvent(event->second);
-				event = m_deferredGraphEvents.erase(event);
-			}
+			selectDeferredGraphEvent(path);
 		}
 	}
 
@@ -1392,8 +1366,8 @@ void EditorLayer::onSceneResume() {
 
 void EditorLayer::renderScriptDebug() {
 	auto* doc = activeSceneDocument();
-	const bool running =
-			doc != nullptr && (doc->state() == SceneDocument::State::Play || doc->state() == SceneDocument::State::Pause);
+	const bool running = doc != nullptr &&
+						 (doc->state() == SceneDocument::State::Play || doc->state() == SceneDocument::State::Pause);
 	if (running) {
 		if (auto hit = script::ScriptDebugger::takeHit(); hit.has_value()) {
 			if (doc->state() == SceneDocument::State::Play)
@@ -1419,10 +1393,10 @@ void EditorLayer::renderScriptDebug() {
 		graph->setDebugState(instance == nullptr ? std::vector<script::WatchValue>{} : instance->getProbeValues(),
 							 stopped);
 	}
-	const panel::ScriptDebugPanel::Context context{
-			.scene = running ? doc->getActiveScene().get() : nullptr,
-			.selected = running ? m_sceneHierarchy.getSelectedEntity() : scene::Entity{},
-			.paused = running && doc->state() == SceneDocument::State::Pause};
+	const panel::ScriptDebugPanel::Context context{.scene = running ? doc->getActiveScene().get() : nullptr,
+												   .selected = running ? m_sceneHierarchy.getSelectedEntity()
+																	   : scene::Entity{},
+												   .paused = running && doc->state() == SceneDocument::State::Pause};
 	switch (m_scriptDebugPanel.onImGuiRender(context)) {
 		case panel::ScriptDebugPanel::Request::Continue:
 			m_scriptDebugPanel.clearHit();
@@ -1434,6 +1408,41 @@ void EditorLayer::renderScriptDebug() {
 			break;
 		case panel::ScriptDebugPanel::Request::None:
 			break;
+	}
+}
+
+void EditorLayer::bindScriptCallbacks() {
+	m_contentBrowser.setEditorScriptRunCallback(
+			[this](const std::filesystem::path& iPath) -> void { m_consolePanel.runEditorScript(iPath); });
+	m_contentBrowser.setMacroExportCallback([this](const std::filesystem::path& iPath) -> void {
+		const auto macro = commands::Macro::load(iPath);
+		if (!macro) {
+			m_toasts.push(gui::widgets::ToastKind::Error, "Export to Lua failed", macro.error().message);
+			return;
+		}
+		auto target = iPath;
+		target.replace_extension(".lua");
+		for (uint32_t counter = 2; exists(target); ++counter)
+			target = iPath.parent_path() / std::format("{}_{}.lua", iPath.stem().string(), counter);
+		if (!platform::writeFileAtomic(target, session::LuaConsole::macroToLua(macro->getLines(), m_commands))) {
+			m_toasts.push(gui::widgets::ToastKind::Error, "Export to Lua failed", target.string());
+			return;
+		}
+		openAssetFile(target);
+	});
+}
+
+void EditorLayer::selectDeferredGraphEvent(const std::filesystem::path& iPath) {
+	for (auto event = m_deferredGraphEvents.begin(); event != m_deferredGraphEvents.end();) {
+		if (!script::ScriptDebugger::isSameScript(iPath.string(), event->first)) {
+			++event;
+			continue;
+		}
+		for (const auto& docPtr: m_documents.list())
+			if (auto* graph = dynamic_cast<VisualScriptDocument*>(docPtr.get());
+				graph != nullptr && graph->filePath() == iPath)
+				std::ignore = graph->ensureCustomEvent(event->second);
+		event = m_deferredGraphEvents.erase(event);
 	}
 }
 

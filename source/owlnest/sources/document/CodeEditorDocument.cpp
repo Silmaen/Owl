@@ -202,7 +202,8 @@ void CodeEditorDocument::drawBreakpoint(const int iLine, const float iWidth, con
 	const ImU32 color = active ? IM_COL32(229, 72, 77, 255) : IM_COL32(229, 72, 77, 90);
 	ImGui::GetWindowDrawList()->AddCircleFilled(center, radius, color);
 	if (hovered)
-		ImGui::SetTooltip(active ? "Remove the breakpoint (F9)" : "Set a breakpoint (F9): the game pauses at this line");
+		ImGui::SetTooltip(active ? "Remove the breakpoint (F9)"
+								 : "Set a breakpoint (F9): the game pauses at this line");
 }
 
 void CodeEditorDocument::revealLine(const size_t iLine) const {

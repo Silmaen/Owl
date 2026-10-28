@@ -61,3 +61,14 @@ User-facing reference: `doc/pages/scripting.md` (guide), `doc/pages/lua-api.md` 
   `loadBuffer` compile a `.owlvs` before loading it, so every script path accepts one; a new binding is a new node
   with no other edit. Owl Nest edits them in `VisualScriptDocument` (own `UndoManager<VisualScript>`), drawn by
   `VisualScriptCanvas`, which returns each gesture as an edit and never writes the graph.
+- Debugging: `ScriptDebugger` (static: breakpoints per script and line, the pending `BreakpointHit`) is read by the LuaEngine
+  line hook; a hit never stops mid-call, the game pauses after it. `ScriptInstance::getWatchValues` / `getProbeValues` /
+  `hasFunction` feed the Script Debug panel; `visual::compileForDebug` (`CompileMode::Debug`) adds the wire probes
+  (`getProbeKey`), never used by the game.
+- Visual functions and macros: `GraphFunction` / `GraphParameter`, nodes `func.entry`, `func.return`, `func.call`. A call
+  with `library` set reads another `.owlvs`, whose functions are compiled into the caller's Lua (no variables, no call
+  to another library); `AssetScanner` packs those files.
+- HUD script: `.owlhud` key `SceneScript`, `Scene::getHudScript`; a widget callback is looked up in the widget's
+  scripts, the HUD script and the scene script, then the entity scripts.
+- `ScriptConsole` (`script/ScriptConsole.h`): a Lua state apart from the game's (sandbox rules, no engine binding) for
+  the editor REPL and editor scripts; the host registers the functions.

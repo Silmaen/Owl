@@ -29,7 +29,6 @@
 #include "panel/CommandFormWindow.h"
 #include "panel/CommandPalette.h"
 #include "panel/ConsolePanel.h"
-#include "panel/ScriptDebugPanel.h"
 #include "panel/ContentBrowser.h"
 #include "panel/FrameMeter.h"
 #include "panel/FullLoadProbe.h"
@@ -42,6 +41,7 @@
 #include "panel/RecoveryPrompt.h"
 #include "panel/SceneHierarchy.h"
 #include "panel/SceneSettings.h"
+#include "panel/ScriptDebugPanel.h"
 #include "panel/SettingsPanel.h"
 #include "panel/StatusBar.h"
 #include "panel/VoxelPalette.h"
@@ -978,6 +978,19 @@ private:
 	 * @param[in] iFunction Lua name of the handler.
 	 */
 	void editHandlerInGraph(const std::string& iFunction);
+
+	/**
+	 * @brief
+	 *  Give the Content Browser the editor-script actions: run a script, export a macro to Lua.
+	 */
+	void bindScriptCallbacks();
+
+	/**
+	 * @brief
+	 *  Select the custom event a just-opened visual script was opened for.
+	 * @param[in] iPath Path of the opened document.
+	 */
+	void selectDeferredGraphEvent(const std::filesystem::path& iPath);
 
 	/**
 	 * @brief

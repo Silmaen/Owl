@@ -36,9 +36,8 @@ namespace {
 
 auto lowered(std::string_view iText) -> std::string {
 	std::string out{iText};
-	std::ranges::transform(out, out.begin(), [](const unsigned char iChar) -> char {
-		return static_cast<char>(std::tolower(iChar));
-	});
+	std::ranges::transform(out, out.begin(),
+						   [](const unsigned char iChar) -> char { return static_cast<char>(std::tolower(iChar)); });
 	return out;
 }
 
@@ -76,7 +75,8 @@ void renderScript(const std::string& iTitle, const scene::component::LuaScript& 
 
 auto runningInstance(const scene::component::LuaScript& iScript, const std::string& iPath)
 		-> const script::ScriptInstance* {
-	if (!iScript.instance || !iScript.instance->isValid() || !script::ScriptDebugger::isSameScript(iScript.scriptPath, iPath))
+	if (!iScript.instance || !iScript.instance->isValid() ||
+		!script::ScriptDebugger::isSameScript(iScript.scriptPath, iPath))
 		return nullptr;
 	return iScript.instance.get();
 }

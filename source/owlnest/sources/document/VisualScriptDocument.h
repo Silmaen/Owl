@@ -485,9 +485,8 @@ private:
 	 *  Palette entries of the functions of the graph and of the libraries.
 	 * @param[in] iItem Draws one entry from its node key, label and type.
 	 */
-	void renderFunctionEntries(
-			const std::function<void(const std::string&, const std::string&, const script::visual::NodeType&)>& iItem)
-			const;
+	void renderFunctionEntries(const std::function<void(const std::string&, const std::string&,
+														const script::visual::NodeType&)>& iItem) const;
 
 	/**
 	 * @brief
