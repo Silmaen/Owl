@@ -288,3 +288,22 @@ TEST_F(PcgGraphTest, TilemapsKeepTheirGenerator) {
 	ASSERT_TRUE(read.deserializeFromString(asset.serializeToString("map")));
 	EXPECT_FALSE(read.generator.has_value());
 }
+
+TEST_F(PcgGraphTest, TheEngineDemoCavesGenerate) {
+	const auto demo = test::getRootPath() / "engine_demo";
+	const auto graph = loadFromFile(demo / "pcg" / "caves.owlpcg");
+	ASSERT_TRUE(graph.has_value());
+	TilemapAsset caves;
+	ASSERT_TRUE(caves.loadFromFile(demo / "tilemaps" / "pcg_caves.owltilemap"));
+	ASSERT_TRUE(caves.generator.has_value());
+	EXPECT_EQ(caves.generator->graphPath, std::filesystem::path{"pcg/caves.owlpcg"});
+	const auto written = generateTilemap(*graph, caves, *caves.generator);
+	ASSERT_TRUE(written.has_value());
+	EXPECT_EQ(*written, caves.width * caves.height);
+	uint32_t walls = 0;
+	for (uint32_t y = 0; y < caves.height; ++y) {
+		for (uint32_t x = 0; x < caves.width; ++x) walls += caves.getTile(0, x, y) == 1 ? 1u : 0u;
+	}
+	EXPECT_GT(walls, 0u);
+	EXPECT_LT(walls, caves.width * caves.height);
+}
