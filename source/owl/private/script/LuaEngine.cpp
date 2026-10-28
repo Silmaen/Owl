@@ -970,7 +970,6 @@ auto LuaEngine::callFunction(const std::string_view iName, const uint64_t iArg) 
 	return protectedCall(handler, 1, iName);
 }
 
-// ---- Global variable getters ----
 // NOLINTNEXTLINE(misc-no-recursion) A table describes its entries once, without entering a nested table.
 auto LuaEngine::describeValue(lua_State* iState, const int iIndex) -> WatchValue {
 	WatchValue value{.name = {}, .type = luaL_typename(iState, iIndex), .value = {}};
@@ -1044,6 +1043,7 @@ auto LuaEngine::readGlobalTable(const std::string& iName) const -> std::vector<W
 	return values;
 }
 
+// ---- Global variable getters ----
 auto LuaEngine::getGlobalFloat(const std::string& iName) const -> std::optional<float> {
 	if (mp_state == nullptr)
 		return std::nullopt;

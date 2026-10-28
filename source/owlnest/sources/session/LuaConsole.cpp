@@ -105,7 +105,8 @@ auto toArgValue(const commands::ArgSpec& iSpec, const script::HostValue& iValue)
 				return math::vec4{static_cast<float>((*list)[0]), static_cast<float>((*list)[1]),
 								  static_cast<float>((*list)[2]),
 								  list->size() == 4 ? static_cast<float>((*list)[3]) : 1.f};
-			if (const auto* value = std::get_if<std::string>(&iValue); value != nullptr && iSpec.type == commands::ArgType::Color)
+			if (const auto* value = std::get_if<std::string>(&iValue);
+				value != nullptr && iSpec.type == commands::ArgType::Color)
 				return *value;
 			return wrong("{r, g, b[, a]}");
 	}

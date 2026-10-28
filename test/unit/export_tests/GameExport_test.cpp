@@ -380,6 +380,8 @@ TEST_F(GameExporterFixture, ExportPacksOnlyTheEngineFilesOfTheGame) {
 	EXPECT_EQ(meshConfig["Renderers"].as<std::vector<std::string>>(), std::vector<std::string>{"Renderer3D"});
 }
 
+// The shader compiler is part of the render module.
+#if OWL_WITH_RENDER
 TEST_F(GameExporterFixture, ExportBakesTheShadersOfTheProject) {
 	const auto engineQuad = data::assets::readAssetText("shaders/renderer2D/quad.slang");
 	if (!engineQuad || m_bakedAssets.empty())
@@ -408,6 +410,7 @@ TEST_F(GameExporterFixture, ExportBakesTheShadersOfTheProject) {
 	ASSERT_TRUE(again.has_value());
 	EXPECT_EQ(again->shadersBaked, 1u);
 }
+#endif
 
 TEST_F(GameExporterFixture, AnEnvironmentBringsRenderer3D) {
 	writeFile(m_project / "scenes" / "level.owl",

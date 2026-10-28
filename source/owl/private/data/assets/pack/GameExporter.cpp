@@ -22,7 +22,9 @@
 #include "renderer/RenderStack.h"
 #include "renderer/RendererSet.h"
 #include "renderer/gpu/Shader.h"
+#if OWL_WITH_RENDER
 #include "renderer/utils/shaderFileUtils.h"
+#endif
 
 #include <algorithm>
 #include <array>
@@ -157,6 +159,7 @@ auto selectEngineFiles(const ExportSettings& iSettings, const renderer::Renderer
 	return skipped;
 }
 
+#if OWL_WITH_RENDER
 constexpr std::array g_shaderStages{renderer::gpu::ShaderType::Vertex, renderer::gpu::ShaderType::Fragment,
 									renderer::gpu::ShaderType::Compute};
 
@@ -254,6 +257,13 @@ auto bakeShaders(std::vector<AssetReference>& ioAssets, const std::filesystem::p
 	}
 	return baked;
 }
+#else
+// Without the render module no shader compiler is built: the shaders are packed as they are.
+auto bakeShaders([[maybe_unused]] std::vector<AssetReference>& ioAssets,
+				 [[maybe_unused]] const std::filesystem::path& iCacheDir) -> expected<size_t, ExportError> {
+	return size_t{0};
+}
+#endif
 
 // Bakes the MSDF atlas of the scene and HUD fonts into the pack, so that the game does not build it at start.
 auto bakeFontAtlases(const std::vector<AssetReference>& iTextFonts, PackWriter& ioWriter) -> size_t {
