@@ -44,7 +44,7 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 0
-    Light: {type: Directional, enabled: true, color: [1, 0.96, 0.9], intensity: 100000, castShadows: true, shadowDistance: 80, cascadeCount: 4, shadowResolution: 2048, shadowBias: 1.5}
+    Light: {type: Directional, enabled: true, color: [1, 0.96, 0.9], intensity: 100000, castShadows: true, shadowDistance: 80, cascadeCount: 4, shadowResolution: 2048, shadowBias: 1.5, angularRadius: 0.0218}
   - Entity: 3400000000000000001
     Tag:
       tag: TerrainPlayer

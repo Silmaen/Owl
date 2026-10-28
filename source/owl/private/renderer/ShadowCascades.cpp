@@ -118,6 +118,7 @@ auto computeShadowCascades(const Camera& iCamera, const ShadowCascadeSettings& i
 		cascade.camera.setTransform(lightWorld);
 		cascade.splitDepth = sliceEnd;
 		cascade.texelWorldSize = texel;
+		cascade.depthRange = 2.f * radius + pullBack;
 		sliceStart = sliceEnd;
 	}
 	result.count = count;

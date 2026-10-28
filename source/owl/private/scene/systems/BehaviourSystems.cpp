@@ -250,7 +250,8 @@ void applyDayNightCycles(Scene& ioScene, const bool iRuntime) {
 			}
 			cycle.m_appliedExposure = wanted;
 		}
-		if (auto* sky = ioScene.registry.try_get<component::ProceduralSky>(handle); sky != nullptr)
+		auto* sky = ioScene.registry.try_get<component::ProceduralSky>(handle);
+		if (sky != nullptr)
 			sky->sunDirection = sun;
 		if (cycle.sun == core::UUID{0})
 			continue;
@@ -258,6 +259,9 @@ void applyDayNightCycles(Scene& ioScene, const bool iRuntime) {
 		if (!lightEntity || !lightEntity.hasComponent<component::Light>())
 			continue;
 		auto& light = lightEntity.getComponent<component::Light>();
+		// A light of real apparent size shows a disc of that size in the sky (angular diameter, in degrees).
+		if (sky != nullptr && light.angularRadius > 0.f)
+			sky->discSize = 2.f * light.angularRadius * 180.f / std::numbers::pi_v<float>;
 		const float noonHeight =
 				std::sin(std::clamp(cycle.maxElevation, 1.f, 90.f) * std::numbers::pi_v<float> / 180.f);
 		const bool byDay = sun.y() >= 0.f;

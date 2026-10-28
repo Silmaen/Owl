@@ -78,7 +78,7 @@ struct LightingUbo {
 	math::vec4 splitDepths{0.f, 0.f, 0.f, 0.f};
 	math::vec4 texelWorldSizes{0.f, 0.f, 0.f, 0.f};
 	math::vec4 viewDepthRow{0.f, 0.f, 0.f, 0.f};
-	// x: normal-offset bias in texels, y: shadow-map size in texels.
+	// x: normal-offset bias in texels, y: shadow-map size in texels, z: tangent of the angular radius of the light.
 	math::vec4 shadowParams{1.5f, 1024.f, 0.f, 0.f};
 	// x: intensity, y / z: cosine / sine of the rotation about Y, w: number of prefiltered levels (0 none).
 	math::vec4 environment{1.f, 1.f, 0.f, 0.f};
@@ -88,11 +88,13 @@ struct LightingUbo {
 	math::vec4 skySun{0.f, 1.f, 0.f, 0.f};
 	// Pre-exposed radiances: x sun disc, y moon disc, z brightest stars.
 	math::vec4 skyBodies{0.f, 0.f, 0.f, 0.f};
+	// Depth each cascade's light camera covers, in world units.
+	math::vec4 cascadeDepths{0.f, 0.f, 0.f, 0.f};
 	// Shadows of local lights; the OpenGL shaders declare the first entries of the table only.
 	std::array<LocalShadowUbo, g_maxLocalShadows> localShadows{};
 };
 
-static_assert(sizeof(LightingUbo) == 528 + g_maxLocalShadows * 96,
+static_assert(sizeof(LightingUbo) == 544 + g_maxLocalShadows * 96,
 			  "LightingUbo must match the std140 layout of Lighting in the renderer3D shaders.");
 
 struct MaterialUbo {
@@ -539,7 +541,8 @@ void Renderer3D::setShadow(const ShadowSettings& iShadow) {
 	lighting.splitDepths = iShadow.splitDepths;
 	lighting.texelWorldSizes = iShadow.texelWorldSizes;
 	g_Data->worldViewDepthRow = iShadow.viewDepthRow;
-	lighting.shadowParams = {iShadow.bias, static_cast<float>(iShadow.resolution), 0.f, 0.f};
+	lighting.shadowParams = {iShadow.bias, static_cast<float>(iShadow.resolution), iShadow.tanAngularRadius, 0.f};
+	lighting.cascadeDepths = iShadow.depthRanges;
 	g_Data->cascades = iShadow.relativeViewProjections;
 	g_Data->cascadeOrigins = iShadow.origins;
 	g_Data->shadowMaps = iShadow.maps;

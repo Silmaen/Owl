@@ -76,6 +76,20 @@ TEST_F(ShadowCascadesTest, aVisiblePointFallsInsideItsCascade) {
 	EXPECT_GT(caster.z(), ndc.z());
 }
 
+TEST_F(ShadowCascadesTest, theDepthRangeTurnsAStoredDepthIntoADistance) {
+	const math::vec3 direction = math::vec3{0.3f, -1.f, -0.2f}.normalized();
+	const auto cascades = computeShadowCascades(
+			viewCamera(), {.lightDirection = direction, .shadowDistance = 40.f, .cascadeCount = 2});
+	ASSERT_EQ(cascades.count, 2u);
+	const auto& cascade = cascades.cascades[1];
+	ASSERT_GT(cascade.depthRange, 0.f);
+	const math::vec3 point{0.5f, 0.f, -12.f};
+	const math::vec3 casterAbove = point - direction * 2.f;
+	const float receiver = (1.f - project(cascade.camera, point).z()) * cascade.depthRange;
+	const float caster = (1.f - project(cascade.camera, casterAbove).z()) * cascade.depthRange;
+	EXPECT_NEAR(receiver - caster, 2.f, 1e-3f);
+}
+
 TEST_F(ShadowCascadesTest, aNullDirectionGivesNoCascade) {
 	EXPECT_EQ(computeShadowCascades(viewCamera(), {.lightDirection = {0.f, 0.f, 0.f}}).count, 0u);
 }

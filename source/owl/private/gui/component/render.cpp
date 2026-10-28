@@ -1272,6 +1272,19 @@ void renderProps(Light& ioComponent) {
 			ioComponent.innerAngle = std::min(ioComponent.innerAngle, ioComponent.outerAngle);
 		fieldTooltip("Half angle of the cone where the light reaches zero, in degrees.");
 	}
+	if (directional) {
+		resettable("Angular Radius", ioComponent.angularRadius, defaults.angularRadius,
+				   [](const char* iId, float& ioField) -> bool {
+					   const float maxDegrees = math::degrees(g_maxAngularRadius);
+					   float degrees = math::degrees(ioField);
+					   if (!prop::DragFloat(iId, &degrees, 0.01f, 0.f, maxDegrees, "%.2f deg"))
+						   return false;
+					   ioField = math::radians(std::clamp(degrees, 0.f, maxDegrees));
+					   return true;
+				   });
+		fieldTooltip("Apparent radius of the light, in degrees: the sun about 0.27. Softens the shadows with the "
+					 "distance to their caster and widens the highlight; 0 for hard shadows.");
+	}
 	resetCheckbox("Cast Shadows", ioComponent.castShadows, defaults.castShadows);
 	fieldTooltip(directional ? "The first shadow-casting directional light of the scene shadows the 3D layers."
 							 : "Point and spot lights nearest to the camera cast shadows, within a budget per frame "

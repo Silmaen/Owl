@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tileset opacity map (`opacityTexture`): its red channel multiplies the atlas alpha in the tilemap, isometric, raycast and voxel shaders.
 - Mipmapped pixel-art atlases: `FilterMode::PixelArt` builds mipmaps cell by cell, sampled inside the cell by the voxel, raycast and tilemap shaders.
 - `gpu::TextureCube` on OpenGL, Vulkan and Null, filled from memory or a render target (`Framebuffer::copyAttachmentToCube`).
+- `Light.angularRadius`: a directional light of apparent size casts soft shadows (PCSS), widens its highlight and sizes the sun disc of a `DayNightCycle` sky.
 - Point and spot light shadows: a cube per point light, a perspective map per spot light, the nearest to the camera within 4 of each on OpenGL and 16 on Vulkan.
 
 ### Changed

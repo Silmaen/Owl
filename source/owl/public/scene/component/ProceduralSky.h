@@ -40,7 +40,11 @@ struct OWL_API ProceduralSky {
 	float nightBrightness = 0.015f;
 	/// Brightness of the stars, 0 for none.
 	float stars = 1.f;
-	/// Angular diameter of the sun and moon discs, in degrees; 0 for none.
+	/**
+	 * @brief
+	 *  Angular diameter of the sun and moon discs, in degrees; 0 for none. A `DayNightCycle` writes it from the
+	 *  `angularRadius` of its sun light when that is not 0.
+	 */
 	float discSize = 2.5f;
 	/// Width of the sky image, in pixels (its height is half).
 	uint32_t resolution = 512;

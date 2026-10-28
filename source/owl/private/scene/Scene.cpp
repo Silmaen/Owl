@@ -1063,7 +1063,10 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 				 .directionType = {direction.x(), direction.y(), direction.z(), static_cast<float>(light.type)},
 				 .color = {color.x(), color.y(), color.z(), 0.f},
 				 .spotCosines = {std::cos(light.innerAngle), std::cos(std::max(light.outerAngle, light.innerAngle)),
-								 0.f, 0.f}});
+								 -1.f,
+								 light.type == component::Light::Type::Directional
+										 ? std::clamp(light.angularRadius, 0.f, component::g_maxAngularRadius)
+										 : 0.f}});
 		if (light.castShadows && light.type != component::Light::Type::Directional) {
 			const auto lightIndex = static_cast<uint32_t>(m_gpuLights.size() - 1);
 			m_localCasters.resize(lightIndex + 1);
@@ -1097,6 +1100,8 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 																		  .resolution = shadowLight->shadowResolution});
 	m_shadowSettings.cascadeCount = m_shadowCascades.count;
 	m_shadowSettings.bias = shadowLight->shadowBias;
+	m_shadowSettings.tanAngularRadius =
+			std::tan(std::clamp(shadowLight->angularRadius, 0.f, component::g_maxAngularRadius));
 	m_shadowSettings.resolution = shadowLight->shadowResolution;
 	m_shadowSettings.viewDepthRow = mp_renderCamera->getView().row(2);
 	const math::vec2ui mapSize{shadowLight->shadowResolution, shadowLight->shadowResolution};
@@ -1109,6 +1114,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 		m_shadowSettings.origins[index] = math::vec3{lightEye.x(), lightEye.y(), lightEye.z()};
 		m_shadowSettings.splitDepths[index] = cascade.splitDepth;
 		m_shadowSettings.texelWorldSizes[index] = cascade.texelWorldSize;
+		m_shadowSettings.depthRanges[index] = cascade.depthRange;
 		m_shadowTargets[index] = ioGraph.createTarget("shadow map", Graph::TargetFormat::Depth, mapSize);
 		ioGraph.addPass(
 				"shadow cascade",

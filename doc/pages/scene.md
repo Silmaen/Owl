@@ -315,6 +315,7 @@ slot's material is shared through the `MaterialLibrary` ([Renderer > Materials](
 | `cascadeCount`     | `uint`  | `4`              | Directional only: number of shadow cascades, 1 to 4                                                       |
 | `shadowResolution` | `uint`  | `1024`           | Texels of each cascade, of a spot map or of each face of a point cube, 256 to 4096                        |
 | `shadowBias`       | `float` | `1.5`            | Normal-offset bias, in shadow-map texels                                                                  |
+| `angularRadius`    | `float` | `0`              | Directional only: apparent radius in radians (sun 0.0047), soft shadows (PCSS) and a wider highlight      |
 
 YAML key: `Light`. `intensity` is in physical units (sun 100 000 lx, overcast 10 000, moon 0.25; candle 12 lm,
 60 W bulb 800, fireplace 2 000); point and spot lights fall off with 1/d² and are cut off smoothly at `range`, and the
@@ -396,7 +397,7 @@ resolution of the screen (`renderer::skyBodiesOf`), so the sun moves smoothly an
 
 YAML key: `DayNightCycle`, system `owl.day_night` (`PostPhysics`). The hours advance with the scene time; each frame the system turns the `sun` light (shadows
 included) along the path of the sun by day and of the moon by night, sets its colour and illuminance, writes the
-direction into the `ProceduralSky` of the scene and, in Play, adds `nightExposure` to the exposure of the cameras as
+direction into the `ProceduralSky` of the scene (and the disc size, twice the `angularRadius` of the light when it is set) and, in Play, adds `nightExposure` to the exposure of the cameras as
 the eye adapts to the dark. Lua: `entity.get_time_of_day(id)`, `entity.set_time_of_day(id, hours)`,
 `entity.set_day_night_enabled(id, bool)`.
 

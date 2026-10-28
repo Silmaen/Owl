@@ -150,7 +150,7 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Planned][planned] Skeletal animation (skinning, blending, state machine) and mesh LODs
 - ![Planned][planned] GPU particle system with editor preview and trails, emissive materials and lens flares
 - ![Planned][planned] Advanced post-processing (chromatic aberration, film grain, motion blur, depth of field)
-- ![Planned][planned] Angular radius of a directional light: soft shadows (PCSS), wider highlight, sun disc in the sky ([3D core](design/3d-core.md#emissive-and-area-lights))
+- ![Done][done] Angular radius of a directional light: soft shadows (PCSS), wider highlight, sun disc in the sky ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Planned][planned] Area lights (rectangle, disc, sphere) lighting through LTC, with soft shadows sharing the PCSS of the sun ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Done][done] Point and spot light shadows (cube and perspective shadow maps) ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Planned][planned] Local reflection probes: baked cube maps blended by volume, parallax-corrected, so metals reflect the room ([3D core](design/3d-core.md#reflection-probes))

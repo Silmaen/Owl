@@ -61,12 +61,13 @@ struct Lighting {
 	float4 splitDepths;   // view depth where each cascade ends.
 	float4 texelSizes;    // world size of a shadow texel, per cascade.
 	float4 viewDepthRow;  // view depth of a camera-relative point p: -(dot(xyz, p) + w).
-	float4 shadowParams;  // x: normal-offset bias in texels, y: shadow-map size in texels.
+	float4 shadowParams;  // x: normal-offset bias in texels, y: shadow-map size in texels, z: tangent of the angular radius (0 hard).
 	float4 environment;   // x intensity, y cos and z sin of the rotation about Y, w number of prefiltered levels (0 none).
 	float4 irradiance[9]; // order-2 spherical harmonics of the diffuse irradiance / pi (rgb).
 	CascadeMatrix cascades[4];
 	float4 skySun;        // xyz: direction towards the sun, w: angular radius of the sun and moon discs (0 none).
 	float4 skyBodies;     // pre-exposed radiance: x sun disc, y moon disc, z brightest stars.
+	float4 cascadeDepths; // depth each cascade's light camera covers, in world units.
 	LocalShadow localShadows[MAX_LOCAL_SHADOWS];
 };
 
@@ -154,6 +155,48 @@ float loadShadowDepth(int slot, int2 texel, float size) {
 	return gTextures[NonUniformResourceIndex(slot)].SampleLevel((float2(texel) + 0.5f) / size, 0.0f).r;
 }
 
+// Poisson disc of the soft shadows, in a unit circle.
+static const float2 POISSON_DISC[16] = {
+	float2(-0.9420f, -0.3991f), float2(0.9456f, -0.7689f), float2(-0.0942f, -0.9294f), float2(0.3450f, 0.2939f),
+	float2(-0.9159f, 0.4577f),  float2(-0.8154f, -0.8791f), float2(-0.3828f, 0.2768f), float2(0.9748f, 0.7565f),
+	float2(0.4432f, -0.9751f),  float2(0.5374f, -0.4737f), float2(-0.2650f, -0.4189f), float2(0.7920f, 0.1909f),
+	float2(-0.2419f, 0.9971f),  float2(-0.8141f, 0.9144f), float2(0.1998f, 0.7864f),  float2(0.1438f, -0.1410f)
+};
+// Widest penumbra of a soft shadow, in shadow-map texels.
+static const float MAX_PENUMBRA_TEXELS = 16.0f;
+
+// Soft shadow of an orthographic map (PCSS): the blockers found within the cone of the light set the width of the
+// filter, so the penumbra grows with the distance between a caster and its receiver. 1 when lit, 0 in shadow.
+float softShadowFactor(int slot, float2 uv, float depth, int size, float texelWorld, float depthRange, float tanRadius) {
+	float receiverDistance = (1.0f - depth) * depthRange;
+	float searchTexels = clamp(2.0f * tanRadius * receiverDistance / texelWorld, 1.0f, MAX_PENUMBRA_TEXELS);
+	float2 centre = uv * float(size);
+	// The disc turns with the shadow-map texel (interleaved gradient noise): no banding, and still in the world.
+	float angle = 6.2831853f * frac(52.9829189f * frac(dot(floor(centre), float2(0.06711056f, 0.00583715f))));
+	float2x2 turn = float2x2(cos(angle), -sin(angle), sin(angle), cos(angle));
+	float blockerSum = 0.0f;
+	float blockers = 0.0f;
+	for (int index = 0; index < 16; ++index) {
+		int2 tap = clamp(int2(centre + mul(turn, POISSON_DISC[index]) * searchTexels), int2(0), int2(size - 1));
+		float stored = loadShadowDepth(slot, tap, float(size));
+		if (stored > depth + 0.0005f) {
+			blockerSum += stored;
+			blockers += 1.0f;
+		}
+	}
+	if (blockers == 0.0f)
+		return 1.0f;
+	float blockerDepth = blockerSum / blockers;
+	float penumbra = 2.0f * tanRadius * (blockerDepth - depth) * depthRange / texelWorld;
+	float filterTexels = clamp(penumbra, 1.0f, MAX_PENUMBRA_TEXELS);
+	float lit = 0.0f;
+	for (int index = 0; index < 16; ++index) {
+		int2 tap = clamp(int2(centre + mul(turn, POISSON_DISC[index]) * filterTexels), int2(0), int2(size - 1));
+		lit += depth >= loadShadowDepth(slot, tap, float(size)) - 0.0005f ? 1.0f : 0.0f;
+	}
+	return lit / 16.0f;
+}
+
 // 1 when lit, 0 in shadow: 3x3 comparisons in the cascade covering the point (reversed-Z: larger is nearer).
 float shadowFactor(float3 position, float3 normal) {
 	float depth = -(dot(gLighting.viewDepthRow.xyz, position) + gLighting.viewDepthRow.w);
@@ -169,6 +212,9 @@ float shadowFactor(float3 position, float3 normal) {
 	if (any(uv < 0.0f) || any(uv > 1.0f) || ndc.z < 0.0f)
 		return 1.0f;
 	int size = int(gLighting.shadowParams.y);
+	if (gLighting.shadowParams.z > 0.0f)
+		return softShadowFactor(SHADOW_MAP_SLOT + cascade, uv, ndc.z, size, gLighting.texelSizes[cascade],
+								gLighting.cascadeDepths[cascade], gLighting.shadowParams.z);
 	int2 texel = int2(uv * float(size));
 	float lit = 0.0f;
 	for (int dy = -1; dy <= 1; ++dy) {
@@ -344,7 +390,9 @@ float3 dfgTerms(float NoV, float roughness) {
 }
 
 // Light reflected towards the eye from one light direction, for the Standard model.
-float3 standardLobe(Surface s, float3 l, float3 f0, float3 dfg) {
+// Lobe of a light of angular radius `sourceRadius` (radians, 0 for a point): its distribution widened and renormalised
+// so the highlight of a disc light grows without gaining energy (Karis, representative roughness); isotropic lobes only.
+float3 standardLobe(Surface s, float3 l, float3 f0, float3 dfg, float sourceRadius) {
 	float3 h = normalize(s.view + l);
 	float NoV = max(dot(s.normal, s.view), 1e-4f);
 	float NoL = saturate(dot(s.normal, l));
@@ -362,6 +410,11 @@ float3 standardLobe(Surface s, float3 l, float3 f0, float3 dfg) {
 	} else {
 		D = D_GGX(NoH, a);
 		V = V_SmithGGXCorrelated(NoV, NoL, a);
+	}
+	if (sourceRadius > 0.0f && abs(s.anisotropy) <= 1e-3f) {
+		float wide = saturate(a + 0.5f * sin(sourceRadius));
+		float normalisation = a / wide;
+		D = D_GGX(NoH, wide) * normalisation * normalisation;
 	}
 	float3 F = F_Schlick(f0, LoH);
 	// Multiple-scattering compensation: the single-scattering lobe loses energy on rough surfaces.
@@ -510,13 +563,14 @@ float3 shadeSurface(Surface s) {
 	if (gLighting.counts.x == 0 && gScene.sunDirection.w > 0.0f) {
 		// No scene light: the sun of the layer, white, unshadowed.
 		float3 l = normalize(-gScene.sunDirection.xyz);
-		color += gScene.sunDirection.w * (shadingModel == 2 ? toonLobe(s, l) / PI : standardLobe(s, l, f0, dfg));
+		color += gScene.sunDirection.w * (shadingModel == 2 ? toonLobe(s, l) / PI : standardLobe(s, l, f0, dfg, 0.0f));
 	}
 	for (int index = 0; index < gLighting.counts.x; ++index) {
 		float3 l;
 		float3 illuminance;
 		lightIncidence(index, s.position, s.normal, l, illuminance);
-		color += illuminance * (shadingModel == 2 ? toonLobe(s, l) / PI : standardLobe(s, l, f0, dfg));
+		float sourceRadius = int(gLights[index].directionType.w) == 0 ? gLights[index].spotCosines.w : 0.0f;
+		color += illuminance * (shadingModel == 2 ? toonLobe(s, l) / PI : standardLobe(s, l, f0, dfg, sourceRadius));
 	}
 	if (shadingModel == 2) {
 		float rim = pow(1.0f - NoV, 4.0f) * gMaterial.toon.x;

@@ -70,6 +70,7 @@ TEST_F(LightTest, serializationRoundTripsEveryField) {
 	light.cascadeCount = 2;
 	light.shadowResolution = 2048;
 	light.shadowBias = 3.f;
+	light.angularRadius = 0.01f;
 	const auto yaml = scene::SceneSerializer::serializeEntityToString(lamp);
 	EXPECT_NE(yaml.find("Light"), std::string::npos);
 
@@ -91,6 +92,21 @@ TEST_F(LightTest, serializationRoundTripsEveryField) {
 	EXPECT_EQ(read.cascadeCount, 2u);
 	EXPECT_EQ(read.shadowResolution, 2048u);
 	EXPECT_FLOAT_EQ(read.shadowBias, 3.f);
+	EXPECT_FLOAT_EQ(read.angularRadius, 0.01f);
+}
+
+TEST_F(LightTest, angularRadiusIsClampedWhenRead) {
+	const auto sc = mkShared<scene::Scene>();
+	auto lamp = sc->createEntity("Sun");
+	lamp.addComponent<scene::component::Light>().angularRadius = 3.f;
+	const auto yaml = scene::SceneSerializer::serializeEntityToString(lamp);
+	const auto copy = mkShared<scene::Scene>();
+	ASSERT_TRUE(scene::SceneSerializer::deserializeEntityFromString(copy, yaml));
+	const auto restored = copy->findEntityByUUID(lamp.getUUID());
+	ASSERT_TRUE(restored);
+	EXPECT_FLOAT_EQ(restored.getComponent<scene::component::Light>().angularRadius,
+					scene::component::g_maxAngularRadius);
+	EXPECT_FLOAT_EQ(scene::component::Light{}.angularRadius, 0.f);
 }
 
 TEST_F(LightTest, aBlockMissingEveryOptionalKeyLoadsTheDefaults) {

@@ -308,6 +308,12 @@ The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` component
 - **Passes.** One `shadow cascade` pass per cascade renders the opaque meshes and voxel worlds (transparent ones cast
   no shadow) into a `Depth` target (`RedFloat`, `shadowResolution` squared). The 3D layer passes read the cascades
   (texture slots 16 to 19) with 3x3 PCF and a normal-offset bias of `shadowBias` texels.
+- **Soft sun shadows.** A light with an `angularRadius` above 0 switches the cascades to PCSS: 16 Poisson taps
+  within the cone of the light from the receiver find the blockers, their mean depth sets the penumbra
+  `2 tan(angularRadius) (receiver - blocker)` converted to texels (`ShadowCascade::depthRange`, at most 16), and 16
+  taps filter it; the disc turns with the shadow-map texel, so the noise stays still in the world. The same radius
+  widens the GGX distribution of that light and renormalises it (Karis), so a rough sun highlight grows without
+  gaining energy. At 0, the 3x3 path and the point-like highlight are unchanged.
 - **Local shadows.** Point and spot lights with `castShadows` are ranked by distance from the camera to the sphere
   they reach, then by strength (`renderer::rankShadowCandidates`); the first ones within `getLocalShadowBudget()` cast
   (4 spot and 4 point lights on OpenGL, whose fragment shaders sample 32 textures at most; 16 of each on Vulkan), the

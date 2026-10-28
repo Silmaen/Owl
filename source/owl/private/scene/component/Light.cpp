@@ -33,6 +33,7 @@ void Light::serialize(const core::Serializer& iOut) const {
 	out << YAML::Key << "cascadeCount" << YAML::Value << cascadeCount;
 	out << YAML::Key << "shadowResolution" << YAML::Value << shadowResolution;
 	out << YAML::Key << "shadowBias" << YAML::Value << shadowBias;
+	out << YAML::Key << "angularRadius" << YAML::Value << angularRadius;
 	out << YAML::EndMap;// Light
 }
 
@@ -64,6 +65,8 @@ void Light::deserialize(const core::Serializer& iNode) {
 		shadowResolution = std::clamp(node["shadowResolution"].as<uint32_t>(), 256u, 4096u);
 	if (node["shadowBias"])
 		shadowBias = node["shadowBias"].as<float>();
+	if (node["angularRadius"])
+		angularRadius = std::clamp(node["angularRadius"].as<float>(), 0.f, g_maxAngularRadius);
 }
 
 }// namespace owl::scene::component

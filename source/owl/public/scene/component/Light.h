@@ -22,6 +22,9 @@ constexpr float g_defaultSunIlluminance = 100000.f;
 /// Luminous power of a 60 W incandescent bulb, in lumens: the default of a point or spot light.
 constexpr float g_defaultBulbPower = 800.f;
 
+/// Largest apparent radius of a directional light, in radians (10 degrees).
+constexpr float g_maxAngularRadius = 10.f * std::numbers::pi_v<float> / 180.f;
+
 /**
  * @brief
  *  A light of the 3D layers (meshes and voxel worlds). It shines along the -Z axis of its entity's world transform;
@@ -66,6 +69,12 @@ struct OWL_API Light {
 	uint32_t shadowResolution = 1024;
 	/// Depth bias against self-shadowing, in shadow-map texels along the surface normal.
 	float shadowBias = 1.5f;
+	/**
+	 * @brief
+	 *  Apparent radius of a directional light, in radians (the sun: about 0.0047): soft shadows growing with the
+	 *  distance to their caster (PCSS) and a wider highlight; 0 keeps hard shadows and a point-like highlight.
+	 */
+	float angularRadius = 0.f;
 
 	/**
 	 * @brief

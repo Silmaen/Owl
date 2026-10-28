@@ -64,7 +64,7 @@ struct GpuLight {
 	/**
 	 * @brief
 	 *  x: cosine of the inner angle, y: cosine of the outer angle (spot); z: local shadow entry (-1 none, set by the
-	 *  renderer from `setLocalShadows`); w unused.
+	 *  renderer from `setLocalShadows`); w: angular radius of a directional light, in radians.
 	 */
 	math::vec4 spotCosines{1.f, 0.f, -1.f, 0.f};
 };
@@ -86,6 +86,10 @@ struct ShadowSettings {
 	math::vec4 splitDepths{0.f, 0.f, 0.f, 0.f};
 	/// World size of a shadow-map texel, per cascade.
 	math::vec4 texelWorldSizes{0.f, 0.f, 0.f, 0.f};
+	/// Depth each cascade's light camera covers, in world units (`ShadowCascade::depthRange`).
+	math::vec4 depthRanges{0.f, 0.f, 0.f, 0.f};
+	/// Tangent of the angular radius of the light: 0 for hard shadows, soft ones (PCSS) above.
+	float tanAngularRadius = 0.f;
 	/// Third row of the view matrix of the camera: view depth = -(row . position).
 	math::vec4 viewDepthRow{0.f, 0.f, 0.f, 0.f};
 	/// Shadow map of each cascade (`RedFloat`, normalized device depth).
