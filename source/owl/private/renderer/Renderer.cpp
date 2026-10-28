@@ -106,7 +106,8 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress, const Render
 auto Renderer::getRendererSet() -> const RendererSet& { return m_rendererSet; }
 
 void Renderer::shutdown() {
-	if (m_rendererSet.renderer3D) {
+	// A 3D family started by an earlier set is stopped too: the current set may not hold it.
+	if (m_rendererSet.renderer3D || Renderer3D::isReady()) {
 		RendererMesh::shutdown();
 		Renderer3D::shutdown();
 	}

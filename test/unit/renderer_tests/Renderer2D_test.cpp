@@ -43,6 +43,7 @@ TEST(Renderer2D, fakeEmptyScene) {
 	EXPECT_EQ(st.getTotalIndexCount(), 0);
 	EXPECT_EQ(st.getTotalVertexCount(), 0);
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -73,6 +74,7 @@ TEST(Renderer2D, fakeLineScene) {
 
 	Renderer2D::shutdown();
 	Renderer2D::shutdown();
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -95,6 +97,7 @@ TEST(Renderer2D, fakeCircleRectScene) {
 	EXPECT_EQ(st.getTotalIndexCount(), 14u);
 	EXPECT_EQ(st.getTotalVertexCount(), 12u);
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -128,6 +131,7 @@ TEST(Renderer2D, fakeQuadSpriteScene) {
 	EXPECT_EQ(st.getTotalIndexCount(), 18);
 	EXPECT_EQ(st.getTotalVertexCount(), 12);
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -152,6 +156,7 @@ TEST(Renderer2D, equalDepthsDrawOneRangePerType) {
 	EXPECT_EQ(st.quadCount, 4u);
 	EXPECT_EQ(st.lineCount, 1u);
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -188,6 +193,7 @@ TEST(Renderer2D, depthSplitsAndMergesDraws) {
 	Renderer2D::endScene();
 	EXPECT_EQ(Renderer2D::getStats().drawCalls, 2u);
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -208,6 +214,7 @@ TEST(Renderer2D, sceneWorldsUploadedAndGrownAtFlush) {
 		EXPECT_EQ(Renderer2D::getStats().quadCount, 1u);
 	}
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -227,6 +234,7 @@ TEST(Renderer2D, instancedQuadBatchRollover) {
 	EXPECT_EQ(st.quadCount, kQuadCount);
 	EXPECT_GE(st.drawCalls, 2u);
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -245,6 +253,7 @@ TEST(Renderer2D, instancedLineBatch) {
 	EXPECT_EQ(st.quadCount, 0u);
 	EXPECT_EQ(st.drawCalls, 1u);
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -270,6 +279,7 @@ TEST(Renderer2D, fakeTextScene) {
 	EXPECT_EQ(st.getTotalIndexCount(), 18);
 	EXPECT_EQ(st.getTotalVertexCount(), 12);
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Application::invalidate();
 	app.reset();
@@ -298,6 +308,7 @@ TEST(Renderer2D, utf8TextBeyondLatin1StaysOneDrawCall) {
 	EXPECT_EQ(st.quadCount, 9000u);
 	EXPECT_EQ(st.drawCalls, 1u);
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Application::invalidate();
 	app.reset();
@@ -331,6 +342,7 @@ TEST(Renderer2D, laidOutTextStaysOneDrawCall) {
 	EXPECT_EQ(st.quadCount, 9000u);
 	EXPECT_EQ(st.drawCalls, 1u);
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Application::invalidate();
 	app.reset();
@@ -368,6 +380,7 @@ TEST(Renderer2D, cachedTextFollowsItsTextAndLayout) {
 	EXPECT_EQ(quadsOf("abcd", free), 4u);
 	EXPECT_EQ(quadsOf("", free), 0u);
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Application::invalidate();
 	app.reset();
@@ -389,7 +402,7 @@ TEST(Renderer2D, transientQuadsFlushEveryShapeTransientBatch) {
 		EXPECT_EQ(Renderer2D::getStats().drawCalls, expectedCalls);
 	}
 
-	Renderer2D::shutdown();
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -415,7 +428,7 @@ TEST(Renderer2D, texturesKeepTheirSlotAcrossBatches) {
 	EXPECT_EQ(st.lineCount, 4u);
 	EXPECT_EQ(st.drawCalls, 3u);
 
-	Renderer2D::shutdown();
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -449,7 +462,7 @@ TEST(Renderer2D, aScissorSplitsTheBatchAndIsLiftedByTheScene) {
 	Renderer2D::endScene();
 	EXPECT_EQ(Renderer2D::getStats().quadCount, 2u);
 
-	Renderer2D::shutdown();
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -477,6 +490,7 @@ TEST(Renderer2D, depthTestDrawsWhatWasQueuedFirstAndEndsWithTheScene) {
 	EXPECT_FALSE(Renderer2D::isDepthTestEnabled());
 	Renderer2D::endScene();
 
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
@@ -506,6 +520,7 @@ TEST(Renderer3D, surfaceLightSumsTheSkyTheSunsAndTheExposure) {
 	Renderer3D::setSceneLights({});
 	Renderer3D::setEnvironment({});
 	Renderer3D::setLayerSun(true);
+	Renderer::shutdown();
 	RenderCommand::invalidate();
 	Log::invalidate();
 }
