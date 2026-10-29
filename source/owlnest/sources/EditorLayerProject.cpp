@@ -429,22 +429,12 @@ void EditorLayer::openMeshFile(const std::filesystem::path& iPath) {
 void EditorLayer::openSoundFile(const std::filesystem::path& iPath) {
 	if (iPath.empty() || !exists(iPath))
 		return;
-	if (classifyAsset(iPath) == AssetKind::Audio) {
-		if (const auto cue = std::filesystem::path{iPath}.replace_extension(sound::SoundCue::fileExtension());
-			exists(cue)) {
-			openSoundFile(cue);
-			return;
-		}
-		auto doc = mkUniq<SoundDocument>();
-		doc->onAttach(this);
-		doc->startFromAudio(iPath);
-		auto* raw = m_documents.add(std::move(doc));
-		m_documents.setActive(raw);
-		syncActiveDocumentPanels();
-		return;
-	}
+	// An audio file opens the cue of the same name beside it, or starts that cue.
+	const bool audio = classifyAsset(iPath) == AssetKind::Audio;
+	const auto cuePath =
+			audio ? std::filesystem::path{iPath}.replace_extension(sound::SoundCue::fileExtension()) : iPath;
 	for (const auto& docPtr: m_documents.list()) {
-		if (docPtr && docPtr->type() == DocumentType::Sound && docPtr->filePath() == iPath) {
+		if (docPtr && docPtr->type() == DocumentType::Sound && docPtr->filePath() == cuePath) {
 			m_documents.setActive(docPtr.get());
 			docPtr->requestFocus();
 			syncActiveDocumentPanels();
@@ -453,8 +443,10 @@ void EditorLayer::openSoundFile(const std::filesystem::path& iPath) {
 	}
 	auto doc = mkUniq<SoundDocument>();
 	doc->onAttach(this);
-	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open sound file: {}.", iPath.string())
+	if (audio && !exists(cuePath)) {
+		doc->startFromAudio(iPath);
+	} else if (!doc->loadFromFile(cuePath)) {
+		OWL_CORE_WARN("Failed to open sound file: {}.", cuePath.string())
 		doc->onDetach();
 		return;
 	}
