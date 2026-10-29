@@ -9,12 +9,15 @@
 #pragma once
 
 #include "core/Core.h"
+#include "data/localisation/Localisation.h"
 #include "input/ActionMap.h"
 #include "scene/SimulationClock.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 namespace owl::renderer {
 class MaterialLibrary;
@@ -166,6 +169,64 @@ public:
 	 */
 	void setDefaultHud(const std::string& iPath) { m_defaultHud = iPath; }
 
+	/**
+	 * @brief
+	 *  Localisation of the game: its languages and string tables.
+	 * @return The localisation, empty when the project has none.
+	 */
+	[[nodiscard]] auto getLocalisation() const -> const data::localisation::Localisation& { return m_localisation; }
+
+	/**
+	 * @brief
+	 *  Replace the localisation; the current language is resolved again against it.
+	 * @param[in] iLocalisation The localisation.
+	 */
+	void setLocalisation(data::localisation::Localisation iLocalisation);
+
+	/**
+	 * @brief
+	 *  Read the project's `localisation.yml`, from the project folder, else from the open pack.
+	 * @param[in] iProjectDirectory Project root, empty to read the pack only.
+	 * @return False when no localisation was found (the localisation is then empty).
+	 */
+	auto loadLocalisation(const std::filesystem::path& iProjectDirectory) -> bool;
+
+	/**
+	 * @brief
+	 *  Language the texts are shown in.
+	 * @return Its code, empty when the game has no language.
+	 */
+	[[nodiscard]] auto getLanguage() const -> const std::string& { return m_language; }
+
+	/**
+	 * @brief
+	 *  Choose the language of the texts; an unknown one falls back (`Localisation::resolveLanguage`).
+	 * @param[in] iCode The language code.
+	 */
+	void setLanguage(std::string_view iCode);
+
+	/**
+	 * @brief
+	 *  Text of a key in the current language (`Localisation::translate`).
+	 * @param[in] iKey The key.
+	 * @return The text, or the key when it has none: a view valid until the localisation or `iKey` changes.
+	 */
+	[[nodiscard]] auto translate(std::string_view iKey) const -> std::string_view;
+
+	/**
+	 * @brief
+	 *  Font of the HUD texts in the current language.
+	 * @return Its asset path, empty when the language keeps the font of each text.
+	 */
+	[[nodiscard]] auto getLanguageFont() const -> const std::string&;
+
+	/**
+	 * @brief
+	 *  Counter increased by every change of the localisation or the language, so that a text shown knows to update.
+	 * @return The counter.
+	 */
+	[[nodiscard]] auto getLocalisationGeneration() const -> uint64_t { return m_localisationGeneration; }
+
 private:
 	/// Screen transition state.
 	uniq<scene::ScreenTransition> mp_screenTransition;
@@ -183,6 +244,16 @@ private:
 	shared<const input::ActionMap> m_actionMap = input::ActionMap::getDefault();
 	/// HUD asset of the scenes that name none.
 	std::string m_defaultHud;
+	/// Languages and string tables of the game.
+	data::localisation::Localisation m_localisation;
+	/// Code of the current language.
+	std::string m_language;
+	/// Strings of the localisation by key.
+	std::unordered_map<std::string_view, const data::localisation::LocalisedString*> m_stringIndex;
+	/// Language asked for, kept to resolve it again when the localisation changes.
+	std::string m_requestedLanguage;
+	/// Counter of the localisation changes.
+	uint64_t m_localisationGeneration{0};
 	/// Loaded HUD scenes (declared last: they hold GPU resources and are destroyed first).
 	uniq<scene::HudLibrary> mp_hudLibrary;
 };

@@ -14,6 +14,7 @@
 #include "../document/VisualScriptDocument.h"
 
 #include <data/assets/AssetMeta.h>
+#include <data/localisation/Localisation.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
@@ -590,6 +591,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 		m_materialOpenCallback(path);
 	} else if ((path.extension() == ".owlsound" || classifyAsset(path) == AssetKind::Audio) && m_soundOpenCallback) {
 		m_soundOpenCallback(path);
+	} else if (path.filename() == data::localisation::Localisation::fileName && m_localisationOpenCallback) {
+		m_localisationOpenCallback(path);
 	} else if (path.extension() == ".owlmacro" && m_macroRunCallback) {
 		m_macroRunCallback(path);
 	} else if (classifyAsset(path) == AssetKind::Mesh && m_meshPlaceCallback) {

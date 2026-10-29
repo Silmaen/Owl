@@ -2050,7 +2050,32 @@ void renderProps(UiRect& ioComponent, const Entity& iOwner) {
 	fieldTooltip("Offset of the pivot from its anchor, downwards. Pixels or a ratio, as the size.");
 }
 
+namespace {
+
+void textKeyPicker(std::string& ioKey) {
+	const auto* context = app::Application::instanced() ? &app::Application::get().getEngineContext() : nullptr;
+	if (prop::BeginCombo("Text Key", ioKey.empty() ? "(none)" : ioKey.c_str())) {
+		if (ImGui::Selectable("(none)", ioKey.empty()))
+			ioKey.clear();
+		if (context != nullptr)
+			for (const auto& entry: context->getLocalisation().strings) {
+				const auto label = entry.table.empty() ? entry.key : std::format("{}  ({})", entry.key, entry.table);
+				if (ImGui::Selectable(label.c_str(), entry.key == ioKey))
+					ioKey = entry.key;
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("%s", std::string{context->translate(entry.key)}.c_str());
+			}
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Localised text shown in place of Text, in the language of the game (strings of localisation.yml).");
+	if (!ioKey.empty() && context != nullptr)
+		ImGui::TextDisabled("%s: %s", context->getLanguage().c_str(), std::string{context->translate(ioKey)}.c_str());
+}
+
+}// namespace
+
 void renderProps(UiText& ioComponent) {
+	textKeyPicker(ioComponent.textKey);
 	prop::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
 	prop::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));
 	fontPicker(ioComponent.font);

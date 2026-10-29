@@ -109,6 +109,8 @@ auto typeShortName(const DocumentType iType) -> const char* {
 			return "Material";
 		case DocumentType::Sound:
 			return "Sound";
+		case DocumentType::Localisation:
+			return "Texts";
 	}
 	return "Doc";
 }

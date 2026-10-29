@@ -95,6 +95,7 @@ What a game plugs in without patching the engine:
 | Renderer-stack layers | `renderer::RenderLayerFactory::registerType()`: a layer type by name, created from the stack                                                                                               |
 | Application layers    | `app::Application::pushLayer()` / `pushOverlay()`: per-frame update, events, ImGui render                                                                                                  |
 | Extra data            | `data::extradata::ExtraDataRegistry`: typed extra data per mesh vertex, face or mesh                                                                                                       |
+| Localisation          | `data::localisation::Localisation`: languages, fallback and string tables of `localisation.yml`                                                                                            |
 | Components            | `scene::ComponentRegistry::registerComponent<T>()`: saved, loaded, copied, added and inspected in the editor like an engine component (see [Game components](scene.md#component-registry)) |
 | Systems               | `scene::SystemSchedule`: named systems in fixed phases, added, replaced or removed per game or per scene (see [Systems and phases](scene.md#systems))                                      |
 
@@ -365,7 +366,8 @@ key-value store for game configuration:
   on Linux, `%APPDATA%/<game>/` on Windows)
 
 Built-in keys (`resolution_width`, `resolution_height`, `fullscreen`, `resizable`,
-`volume_master`) are auto-applied to the Window and SoundCommand via `SettingsManager::applyBuiltins()`;
+`volume_master`, `language`) are auto-applied to the Window, SoundCommand and the engine context's language via
+`SettingsManager::applyBuiltins()`;
 `volume_music` and `volume_sfx` are stored for scripts only (no per-category mixing yet). Custom keys (e.g., `player_speed`)
 are stored and accessible from Lua but not automatically applied.
 

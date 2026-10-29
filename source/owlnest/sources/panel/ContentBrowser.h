@@ -223,6 +223,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Set a callback invoked when the project's `localisation.yml` is double-clicked.
+	 * @param[in] iCallback Function taking the file path.
+	 */
+	void setLocalisationOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_localisationOpenCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when a macro (`.owlmacro`) is double-clicked or run from its context menu.
 	 * @param[in] iCallback Function taking the macro file path.
 	 */
@@ -486,6 +495,8 @@ private:
 	std::function<void(const std::filesystem::path&)> m_soundOpenCallback;
 	/// Creates a sound cue ("New Sound Cue").
 	std::function<void(const std::filesystem::path&)> m_soundCreateCallback;
+	/// Called on double-click of `localisation.yml`.
+	std::function<void(const std::filesystem::path&)> m_localisationOpenCallback;
 	/// Called when a macro (`.owlmacro`) is double-clicked or run from its context menu.
 	std::function<void(const std::filesystem::path&)> m_macroRunCallback;
 	/// Called to export a macro to an editor script.

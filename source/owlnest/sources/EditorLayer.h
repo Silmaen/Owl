@@ -266,6 +266,19 @@ public:
 
 	/**
 	 * @brief
+	 *  Open a `localisation.yml` in a `LocalisationDocument` (or switch to it); a missing file starts with English.
+	 * @param[in] iPath The file.
+	 */
+	void openLocalisationFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  Open the localisation of the loaded project.
+	 */
+	void openLocalisationEditor();
+
+	/**
+	 * @brief
 	 *  Open an `input_actions.yml` in an `ActionMapDocument` (or switch to it); a missing file starts from the built-in
 	 *  actions and is created by the first save.
 	 * @param[in] iPath Absolute path to the file.

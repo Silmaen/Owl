@@ -30,6 +30,11 @@ TEST(AssetKind, ClassifiesSoundCues) {
 		EXPECT_EQ(classifyAsset(name), AssetKind::Audio) << name;
 }
 
+TEST(AssetKind, ClassifiesTheLocalisation) {
+	EXPECT_EQ(classifyAsset("game/localisation.yml"), AssetKind::Localisation);
+	EXPECT_EQ(classifyAsset("game/other.yml"), AssetKind::Code);
+}
+
 TEST(AssetKind, ClassifiesTheMeshFormats) {
 	for (const auto* name: {"meshes/crate.glb", "crate.gltf", "crate.obj"})
 		EXPECT_EQ(classifyAsset(name), AssetKind::Mesh) << name;

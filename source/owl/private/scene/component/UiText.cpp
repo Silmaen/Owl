@@ -49,6 +49,8 @@ void UiText::serialize(const core::Serializer& iOut) const {
 	emitter << YAML::Key << key();
 	emitter << YAML::BeginMap;
 	emitter << YAML::Key << "text" << YAML::Value << text;
+	if (!textKey.empty())
+		emitter << YAML::Key << "textKey" << YAML::Value << textKey;
 	emitter << YAML::Key << "color" << YAML::Value << color;
 	emitter << YAML::Key << "fontSize" << YAML::Value << fontSize;
 	emitter << YAML::Key << "horizontalAlignment" << YAML::Value
@@ -75,6 +77,7 @@ void UiText::serialize(const core::Serializer& iOut) const {
 void UiText::deserialize(const core::Serializer& iNode) {
 	const auto& node = iNode.getImpl()->node;
 	readValue(node, "text", text);
+	readValue(node, "textKey", textKey);
 	readValue(node, "color", color);
 	readValue(node, "fontSize", fontSize);
 	// A text with the unapplied `alignment` key and no `horizontalAlignment` is centred, as the scene migration does.

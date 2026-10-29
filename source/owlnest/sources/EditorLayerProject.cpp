@@ -13,6 +13,7 @@
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
 #include "document/ImageDocument.h"
+#include "document/LocalisationDocument.h"
 #include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
@@ -83,6 +84,9 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 		case AssetKind::SoundCue:
 		case AssetKind::Audio:
 			openSoundFile(iPath);
+			return;
+		case AssetKind::Localisation:
+			openLocalisationFile(iPath);
 			return;
 		case AssetKind::Macro:
 			runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
@@ -509,6 +513,39 @@ void EditorLayer::openActionMapFile(const std::filesystem::path& iPath) {
 	syncActiveDocumentPanels();
 }
 
+void EditorLayer::openLocalisationFile(const std::filesystem::path& iPath) {
+	if (iPath.empty())
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Localisation && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<LocalisationDocument>();
+	doc->onAttach(this);
+	if (exists(iPath)) {
+		if (!doc->loadFromFile(iPath)) {
+			OWL_CORE_WARN("Failed to open localisation: {}.", iPath.string())
+			doc->onDetach();
+			return;
+		}
+	} else {
+		doc->startEmpty(iPath);
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openLocalisationEditor() {
+	if (!m_project.isLoaded())
+		return;
+	openLocalisationFile(m_project.projectDirectory / std::string{data::localisation::Localisation::fileName});
+}
+
 void EditorLayer::openActionMapEditor() {
 	if (!m_project.isLoaded())
 		return;
@@ -772,6 +809,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 											  true);
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app::Application::get().getEngineContext().loadActionMap(m_project.projectDirectory);
+	std::ignore = app::Application::get().getEngineContext().loadLocalisation(m_project.projectDirectory);
 	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
 	loadGameSettings(m_project.name, m_project.projectDirectory);
 	std::ignore = m_project.loadGamepadMappings();
@@ -854,6 +892,7 @@ void EditorLayer::closeProject() {
 	m_project = {};
 	app.getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app.getEngineContext().loadActionMap({});
+	app.getEngineContext().setLocalisation({});
 	app.getEngineContext().setDefaultHud(m_project.defaultHud);
 	loadGameSettings(m_project.name, m_project.projectDirectory);
 	newScene();

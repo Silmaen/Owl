@@ -16,6 +16,7 @@
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
 #include "document/ImageDocument.h"
+#include "document/LocalisationDocument.h"
 #include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
@@ -663,6 +664,8 @@ void EditorLayer::onAttach() {
 		runCommandFromUi("material.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 		openMaterialFile(iPath);
 	});
+	m_contentBrowser.setLocalisationOpenCallback(
+			[this](const std::filesystem::path& iPath) -> void { openLocalisationFile(iPath); });
 	m_contentBrowser.setSoundOpenCallback([this](const std::filesystem::path& iPath) -> void { openSoundFile(iPath); });
 	m_contentBrowser.setSoundCreateCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("sound.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
@@ -850,6 +853,58 @@ void EditorLayer::onEvent(event::Event& ioEvent) {
 	});
 }
 
+namespace {
+
+// A click on the tab's close X: each document type exposes its own `isOpen`, reset since the close may be cancelled.
+template<typename DocumentT>
+auto consumeClose(Document* ioDocument) -> bool {
+	auto* typed = static_cast<DocumentT*>(ioDocument);
+	if (typed->isOpen())
+		return false;
+	typed->setOpen(true);
+	return true;
+}
+
+auto consumeTabClose(Document* ioDocument) -> bool {
+	switch (ioDocument->type()) {
+		case DocumentType::Scene:
+			{
+				auto& viewport = static_cast<SceneDocument*>(ioDocument)->getViewport();
+				if (viewport.isOpen())
+					return false;
+				viewport.setOpen(true);
+				return true;
+			}
+		case DocumentType::Code:
+			return consumeClose<CodeEditorDocument>(ioDocument);
+		case DocumentType::NodeGraph:
+			return consumeClose<NodeGraphDocument>(ioDocument);
+		case DocumentType::Animation:
+			return consumeClose<AnimationDocument>(ioDocument);
+		case DocumentType::Tilemap:
+			return consumeClose<TilemapDocument>(ioDocument);
+		case DocumentType::Tileset:
+			return consumeClose<TilesetDocument>(ioDocument);
+		case DocumentType::Font:
+			return consumeClose<FontDocument>(ioDocument);
+		case DocumentType::ActionMap:
+			return consumeClose<ActionMapDocument>(ioDocument);
+		case DocumentType::Image:
+			return consumeClose<ImageDocument>(ioDocument);
+		case DocumentType::Mesh:
+			return consumeClose<MeshDocument>(ioDocument);
+		case DocumentType::Material:
+			return consumeClose<MaterialDocument>(ioDocument);
+		case DocumentType::Sound:
+			return consumeClose<SoundDocument>(ioDocument);
+		case DocumentType::Localisation:
+			return consumeClose<LocalisationDocument>(ioDocument);
+	}
+	return false;
+}
+
+}// namespace
+
 void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
@@ -893,80 +948,8 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	std::vector<core::UUID> toClose;
 	for (auto* doc: renderList) {
 		doc->onImGuiRender();
-		// Detect a click on the tab's close X — each document type exposes its own `isOpen`.
-		if (doc->type() == DocumentType::Scene) {
-			auto* scene = static_cast<SceneDocument*>(doc);
-			if (!scene->getViewport().isOpen()) {
-				toClose.push_back(scene->id());
-				scene->getViewport().setOpen(true);// reset — the actual close may be cancelled
-			}
-		} else if (doc->type() == DocumentType::Code) {
-			auto* code = static_cast<CodeEditorDocument*>(doc);
-			if (!code->isOpen()) {
-				toClose.push_back(code->id());
-				code->setOpen(true);
-			}
-		} else if (doc->type() == DocumentType::NodeGraph) {
-			auto* graph = static_cast<NodeGraphDocument*>(doc);
-			if (!graph->isOpen()) {
-				toClose.push_back(graph->id());
-				graph->setOpen(true);
-			}
-		} else if (doc->type() == DocumentType::Animation) {
-			auto* anim = static_cast<AnimationDocument*>(doc);
-			if (!anim->isOpen()) {
-				toClose.push_back(anim->id());
-				anim->setOpen(true);
-			}
-		} else if (doc->type() == DocumentType::Tilemap) {
-			auto* tilemap = static_cast<TilemapDocument*>(doc);
-			if (!tilemap->isOpen()) {
-				toClose.push_back(tilemap->id());
-				tilemap->setOpen(true);
-			}
-		} else if (doc->type() == DocumentType::Tileset) {
-			auto* tileset = static_cast<TilesetDocument*>(doc);
-			if (!tileset->isOpen()) {
-				toClose.push_back(tileset->id());
-				tileset->setOpen(true);
-			}
-		} else if (doc->type() == DocumentType::Font) {
-			auto* font = static_cast<FontDocument*>(doc);
-			if (!font->isOpen()) {
-				toClose.push_back(font->id());
-				font->setOpen(true);
-			}
-		} else if (doc->type() == DocumentType::Image) {
-			auto* image = static_cast<ImageDocument*>(doc);
-			if (!image->isOpen()) {
-				toClose.push_back(image->id());
-				image->setOpen(true);
-			}
-		} else if (doc->type() == DocumentType::Mesh) {
-			auto* mesh = static_cast<MeshDocument*>(doc);
-			if (!mesh->isOpen()) {
-				toClose.push_back(mesh->id());
-				mesh->setOpen(true);
-			}
-		} else if (doc->type() == DocumentType::Material) {
-			auto* material = static_cast<MaterialDocument*>(doc);
-			if (!material->isOpen()) {
-				toClose.push_back(material->id());
-				material->setOpen(true);
-			}
-		} else if (doc->type() == DocumentType::Sound) {
-			auto* sound = static_cast<SoundDocument*>(doc);
-			if (!sound->isOpen()) {
-				toClose.push_back(sound->id());
-				sound->setOpen(true);
-			}
-		} else if (doc->type() == DocumentType::ActionMap) {
-			auto* actions = static_cast<ActionMapDocument*>(doc);
-			if (!actions->isOpen()) {
-				toClose.push_back(actions->id());
-				actions->setOpen(true);
-			}
-		}
+		if (consumeTabClose(doc))
+			toClose.push_back(doc->id());
 	}
 	followFocusedDocument();
 	if (m_documents.getActive() != activeBefore)

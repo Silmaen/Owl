@@ -142,7 +142,7 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Done][done] A game packs only what it uses: shaders of its renderer stack, its fonts, no Owl Nest asset ([Game export](design/game-export.md#game-export-content))
 - ![Done][done] Games read their assets from the pack in memory, with a parallel `readEntry`; nothing extracted to disk ([Game export](design/game-export.md#game-export-in-memory))
 - ![Done][done] Project shaders baked by the cook, no shader compiled at the first run of a game ([Game export](design/game-export.md#game-export-project-shaders))
-- ![Planned][planned] Localisation of games: string tables edited in Owl Nest, `tr()` in Lua, fonts per language ([Localisation](design/localisation.md))
+- ![Done][done] Localisation of games: string tables edited in Owl Nest, `tr()` in Lua, fonts per language ([Localisation](design/localisation.md))
 - ![Done][done] World positions in double with a floating origin, through scene, physics, audio and Owl Nest ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Spline component and its editor: paths, lanes, rails ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Data tables: typed records edited in a grid in Owl Nest, read from Lua ([Large worlds](design/large-worlds.md))

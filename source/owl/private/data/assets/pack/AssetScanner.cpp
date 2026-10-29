@@ -13,6 +13,7 @@
 #include "data/fonts/FontLibrary.h"
 #include "data/fonts/FontSettings.h"
 #include "data/geometry/MeshLoader.h"
+#include "data/localisation/Localisation.h"
 #include "script/visual/VisualScript.h"
 
 #include <algorithm>
@@ -624,6 +625,28 @@ void scanFontsAndSounds(const YAML::Node& iEntity, const std::string& iSceneName
 			followSound(asset.as<std::string>(), iSceneName, ioAssets, ioWarnings);
 }
 
+// The fonts of the exported languages: the localised texts are drawn with them.
+void scanLocalisationFonts(const std::filesystem::path& iProjectDir, std::vector<AssetReference>& ioAssets,
+						   std::vector<std::string>* ioWarnings) {
+	const auto file = iProjectDir / localisation::Localisation::fileName;
+	if (!exists(file))
+		return;
+	const auto localised = localisation::Localisation::loadFile(file);
+	if (!localised)
+		return;
+	for (const auto& language: localised->withExportedLanguages().languages) {
+		if (language.font.empty())
+			continue;
+		if (auto ref = resolveFont(language.font); ref) {
+			if (!hasAsset(ioAssets, ref->packPath))
+				ioAssets.push_back(*ref);
+			addFontSidecar(ioAssets, *ref);
+		} else {
+			pushWarning(ioWarnings, "Font", language.font, std::format("the language {}", language.code));
+		}
+	}
+}
+
 void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 				const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
 				std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
@@ -795,6 +818,7 @@ auto AssetScanner::scanProject(const std::filesystem::path& iProjectDir, const s
 	auto assets = scanScene(firstScenePath, oWarnings);
 	std::set<std::string> visited;
 	scanHud(iDefaultHud, "the project's DefaultHud", visited, assets, oWarnings);
+	scanLocalisationFonts(iProjectDir, assets, oWarnings);
 	return assets;
 }
 

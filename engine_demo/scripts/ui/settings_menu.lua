@@ -1,5 +1,5 @@
 -- Settings menu controller.
--- Demonstrates: settings.get/set/save/load/apply/reset/reset_all,
+-- Demonstrates: settings.get/set/save/load/apply/reset/reset_all, tr / locale.set_language (localisation.yml),
 --               ui.set_text, ui.set_slider_value, ui.get_slider_value,
 --               ui.get_focus, UiFocus callback, input.is_action_just_pressed("ui_cancel"),
 --               scene.transition_to (engine-driven scene-load orchestration).
@@ -53,13 +53,13 @@ function update_labels()
     local speed = settings.get("player_speed", 8.0)
 
     if vol_label_id ~= 0 then
-        ui.set_text(vol_label_id, string.format("Master Volume: %d%%", math.floor(vol * 100)))
+        ui.set_text(vol_label_id, string.format(tr("settings.volume"), math.floor(vol * 100)))
     end
     if speed_label_id ~= 0 then
-        ui.set_text(speed_label_id, string.format("Player Speed: %.1f", speed))
+        ui.set_text(speed_label_id, string.format(tr("settings.speed"), speed))
     end
     if ui_scale_label_id ~= 0 then
-        ui.set_text(ui_scale_label_id, string.format("Interface Size: %d%%", math.floor(settings.get("ui_scale", 1.0) * 100 + 0.5)))
+        ui.set_text(ui_scale_label_id, string.format(tr("settings.ui_scale"), math.floor(settings.get("ui_scale", 1.0) * 100 + 0.5)))
     end
 end
 
@@ -89,7 +89,7 @@ function on_master_vol_changed()
     settings.set("volume_master", value)
     settings.apply()
     if vol_label_id ~= 0 then
-        ui.set_text(vol_label_id, string.format("Master Volume: %d%%", math.floor(value * 100)))
+        ui.set_text(vol_label_id, string.format(tr("settings.volume"), math.floor(value * 100)))
     end
 end
 
@@ -99,7 +99,7 @@ function on_speed_changed()
     local speed = 2.0 + value * 18.0
     settings.set("player_speed", speed)
     if speed_label_id ~= 0 then
-        ui.set_text(speed_label_id, string.format("Player Speed: %.1f", speed))
+        ui.set_text(speed_label_id, string.format(tr("settings.speed"), speed))
     end
 end
 
@@ -109,8 +109,21 @@ function on_ui_scale_changed()
     local scale = ui_scale_min + value * (ui_scale_max - ui_scale_min)
     settings.set("ui_scale", scale)
     if ui_scale_label_id ~= 0 then
-        ui.set_text(ui_scale_label_id, string.format("Interface Size: %d%%", math.floor(scale * 100 + 0.5)))
+        ui.set_text(ui_scale_label_id, string.format(tr("settings.ui_scale"), math.floor(scale * 100 + 0.5)))
     end
+end
+
+-- Language button: the next language of localisation.yml; the texts with a text key follow at once.
+function on_language_clicked()
+    local languages = locale.get_languages()
+    local current = locale.get_language()
+    for index, language in ipairs(languages) do
+        if language.code == current then
+            locale.set_language(languages[index % #languages + 1].code)
+            break
+        end
+    end
+    update_labels()
 end
 
 -- Reset button: restore all settings to game_settings.yml defaults.

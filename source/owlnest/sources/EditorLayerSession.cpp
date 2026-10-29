@@ -124,6 +124,9 @@ auto EditorLayer::openDocumentForRecovery(const RecoveryEntry& iEntry) -> Docume
 		case DocumentType::Sound:
 			openSoundFile(path);
 			break;
+		case DocumentType::Localisation:
+			openLocalisationFile(path);
+			break;
 		case DocumentType::Scene:
 			break;
 	}

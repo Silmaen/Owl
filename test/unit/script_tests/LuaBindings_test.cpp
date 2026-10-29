@@ -1185,3 +1185,46 @@ TEST(LuaBindings, transformWorldPositionKeepsDoublePrecision) {
 	EXPECT_NEAR(entity.getComponent<scene::component::Transform>().transform.translation().x(), 0.25f, 1e-4f);
 	core::Log::invalidate();
 }
+
+TEST(LuaBindings, localeTranslatesAndSwitchesLanguage) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	app::EngineContext context;
+	scn->setEngineContext(&context);
+	context.getSettings().resetAllToDefaults();
+	context.setLocalisation(
+			{.languages = {{.code = "en", .name = "English", .font = {}, .exported = true},
+						   {.code = "fr", .name = "Français", .font = {}, .exported = true}},
+			 .fallback = "en",
+			 .strings = {{.key = "menu.start", .table = "menu", .values = {{"en", "Start"}, {"fr", "Démarrer"}}},
+						 {.key = "menu.quit", .table = "menu", .values = {{"en", "Quit"}}}}});
+	const std::string script = "first = nil\n"
+							   "french = nil\n"
+							   "fallback = nil\n"
+							   "unknown = nil\n"
+							   "code = nil\n"
+							   "count = 0\n"
+							   "function on_create()\n"
+							   "  first = tr('menu.start')\n"
+							   "  locale.set_language('fr')\n"
+							   "  french = locale.tr('menu.start')\n"
+							   "  fallback = tr('menu.quit')\n"
+							   "  unknown = tr('menu.nothing')\n"
+							   "  code = locale.get_language()\n"
+							   "  count = #locale.get_languages()\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "locale_test", 1));
+	inst.onCreate();
+	EXPECT_EQ(inst.getPropertyString("first").value_or(""), "Start");
+	EXPECT_EQ(inst.getPropertyString("french").value_or(""), "Démarrer");
+	EXPECT_EQ(inst.getPropertyString("fallback").value_or(""), "Quit");
+	EXPECT_EQ(inst.getPropertyString("unknown").value_or(""), "menu.nothing");
+	EXPECT_EQ(inst.getPropertyString("code").value_or(""), "fr");
+	EXPECT_EQ(inst.getPropertyInt("count").value_or(0), 2);
+	EXPECT_EQ(context.getSettings().getAs<std::string>(scene::SettingsManager::KeyLanguage).value_or(""), "fr");
+	scn->setEngineContext(nullptr);
+	core::Log::invalidate();
+}

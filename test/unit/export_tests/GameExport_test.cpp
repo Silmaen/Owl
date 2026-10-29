@@ -528,7 +528,7 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 		EXPECT_EQ(std::string(data->begin(), data->end()).find("pat:/"), std::string::npos) << packPath;
 	}
 	for (const auto& script: packPathsUnder(iProject, "scripts")) EXPECT_TRUE(reader.contains(script)) << script;
-	for (const auto* entry: {"game_settings.yml", "input_actions.yml"}) {
+	for (const auto* entry: {"game_settings.yml", "input_actions.yml", "localisation.yml"}) {
 		if (exists(iProject / entry)) {
 			EXPECT_TRUE(reader.contains(entry)) << entry;
 		}

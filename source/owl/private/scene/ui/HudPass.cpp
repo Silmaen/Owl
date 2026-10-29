@@ -10,6 +10,7 @@
 #include "HudPass.h"
 
 #include "app/Application.h"
+#include "app/EngineContext.h"
 #include "data/fonts/TextLayout.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/Renderer2D.h"
@@ -26,6 +27,7 @@
 #include <format>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace owl::scene::ui {
@@ -134,6 +136,14 @@ void drawText(const Entity& iEntity, const HudNode& iNode, const math::Transform
 			  const float iRank) {
 	const auto& uiText = iEntity.getComponent<component::UiText>();
 	shared<data::fonts::Font> font = uiText.font;
+	std::string_view shown = uiText.text;
+	if (const auto* context = iEntity.getScene() != nullptr ? iEntity.getScene()->getEngineContext() : nullptr;
+		context != nullptr && !uiText.textKey.empty()) {
+		shown = context->translate(uiText.textKey);
+		if (const auto& languageFont = context->getLanguageFont();
+			!languageFont.empty() && app::Application::instanced())
+			font = app::Application::get().getFontLibrary().getFont(languageFont);
+	}
 	if (!font && app::Application::instanced())
 		font = app::Application::get().getFontLibrary().getDefaultFont();
 	math::Transform textTransform;
@@ -142,7 +152,7 @@ void drawText(const Entity& iEntity, const HudNode& iNode, const math::Transform
 	textTransform.scale() = {scale, scale, 1.f};
 
 	renderer::Renderer2D::drawString({.transform = textTransform,
-									  .text = uiText.text,
+									  .text = std::string{shown},
 									  .font = font,
 									  .color = uiText.color,
 									  .layout = uiText.getLayout(iNode.bounds.size / scale),

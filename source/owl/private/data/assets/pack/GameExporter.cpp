@@ -18,6 +18,7 @@
 #include "data/fonts/Font.h"
 #include "data/fonts/FontLibrary.h"
 #include "data/fonts/FontSettings.h"
+#include "data/localisation/Localisation.h"
 #include "input/ActionMap.h"
 #include "renderer/RenderStack.h"
 #include "renderer/RendererSet.h"
@@ -29,9 +30,12 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cstdint>
 #include <fstream>
 #include <iterator>
 #include <sstream>
+#include <string>
+#include <vector>
 
 namespace owl::data::assets::pack {
 
@@ -593,6 +597,16 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		writer.addFile(settingsPath, "game_settings.yml", AssetType::Other);
 	if (const auto actionsPath = iSettings.projectDirectory / input::ActionMap::fileName; exists(actionsPath))
 		writer.addFile(actionsPath, std::string{input::ActionMap::fileName}, AssetType::Other);
+	if (const auto localisationPath = iSettings.projectDirectory / localisation::Localisation::fileName;
+		exists(localisationPath)) {
+		if (const auto localised = localisation::Localisation::loadFile(localisationPath); localised.has_value()) {
+			const auto exported = localised->withExportedLanguages().serializeToString();
+			writer.addData(std::vector<uint8_t>(exported.begin(), exported.end()),
+						   std::string{localisation::Localisation::fileName}, AssetType::Other);
+		} else {
+			OWL_CORE_WARN("GameExporter: {} cannot be read, not packed.", localisationPath.string())
+		}
+	}
 	std::string mappingsEntry;
 	if (!iSettings.gamepadMappings.empty()) {
 		if (const auto mappingsPath = iSettings.projectDirectory / iSettings.gamepadMappings; exists(mappingsPath)) {

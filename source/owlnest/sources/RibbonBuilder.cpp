@@ -14,6 +14,7 @@
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
+#include "document/LocalisationDocument.h"
 #include "document/MaterialDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/SoundDocument.h"
@@ -139,6 +140,12 @@ void RibbonBuilder::build() {
 							  .tooltip = "Edit the actions of the project and their key, mouse and gamepad bindings.",
 							  .isEnabled = projectLoaded,
 							  .onClick = [this]() -> void { mp_editor->openActionMapEditor(); }});
+	m_ribbon.addButton(home, gProject,
+					   Button{.iconName = "ribbon_book",
+							  .label = "Localisation",
+							  .tooltip = "Edit the languages of the game and its texts in each of them.",
+							  .isEnabled = projectLoaded,
+							  .onClick = [this]() -> void { mp_editor->openLocalisationEditor(); }});
 	m_ribbon.addButton(home, gProject,
 					   Button{.iconName = "ribbon_pack",
 							  .label = "Pack Game",
@@ -294,6 +301,9 @@ void RibbonBuilder::build() {
 			break;
 		case DocumentType::Sound:
 			buildSoundTab();
+			break;
+		case DocumentType::Localisation:
+			buildLocalisationTab();
 			break;
 		case DocumentType::Scene:
 			buildSceneTab();
@@ -795,6 +805,35 @@ void RibbonBuilder::buildMaterialTab() {
 							  .onClick = [activeMaterial]() -> void {
 								  if (auto* m = activeMaterial())
 									  std::ignore = m->save();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_close",
+							  .label = "Close",
+							  .tooltip = "Close the active document",
+							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
+							  .size = Size::Small});
+}
+
+void RibbonBuilder::buildLocalisationTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto activeTexts = [this]() -> LocalisationDocument* {
+		auto* d = mp_editor->m_documents.getActive();
+		if (d != nullptr && d->type() == DocumentType::Localisation)
+			return static_cast<LocalisationDocument*>(d);
+		return nullptr;
+	};
+	const auto tab = m_ribbon.addTab("Localisation");
+	const auto gFile = m_ribbon.addGroup(tab, "File");
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_save",
+							  .label = "Save",
+							  .tooltip = "Save localisation.yml; the texts of the editor follow it (Ctrl+S)",
+							  .isEnabled = [activeTexts]() -> bool { return activeTexts() != nullptr; },
+							  .onClick = [activeTexts]() -> void {
+								  if (auto* t = activeTexts())
+									  std::ignore = t->save();
 							  },
 							  .size = Size::Large});
 	m_ribbon.addButton(tab, gFile,

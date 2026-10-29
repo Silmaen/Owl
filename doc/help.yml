@@ -31,6 +31,7 @@ Groups:
       - doc/pages/event_input.md
       - doc/pages/physics.md
       - doc/pages/sound.md
+      - doc/pages/languages.md
       - doc/pages/pathfinding.md
       - doc/pages/pcg_graphs.md
   - title: Scripting
@@ -46,6 +47,7 @@ Groups:
       - doc/pages/lua-api-time.md
       - doc/pages/lua-api-ui.md
       - doc/pages/lua-api-saves.md
+      - doc/pages/lua-api-locale.md
       - doc/pages/lua-api-raycast.md
       - doc/pages/lua-api-isometric.md
   - title: Engine for C++ developers

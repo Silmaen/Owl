@@ -19,6 +19,7 @@ scene, its own Play state. The ribbon's last tab holds the commands of the activ
 | Animation     | `.owlanim`                                  | [Animation clips](#animation-clips)                                        |
 | Material      | `.owlmat`                                   | [Materials](#materials)                                                    |
 | Sound cue     | `.owlsound`                                 | [Sound cues](#sound-cues)                                                  |
+| Localisation  | `localisation.yml`                          | [Localisation](languages.md)                                               |
 | Image         | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | [Image viewer](#image-viewer)                                              |
 | Mesh          | `.gltf`, `.glb`, `.obj`                     | [Mesh viewer](#mesh-viewer)                                                |
 | Font          | `.ttf`, `.otf`, `.owlfont`                  | [Fonts](#fonts)                                                            |

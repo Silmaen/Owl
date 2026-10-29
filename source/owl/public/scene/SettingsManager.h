@@ -28,7 +28,7 @@ namespace owl::scene {
  * overlaid with user overrides (settings.yml in user directory). Settings
  * persist across scene transitions and game launches.
  *
- * Built-in keys (resolution, fullscreen, volumes) can be auto-applied to
+ * Built-in keys (resolution, fullscreen, volumes, language) can be auto-applied to
  * engine subsystems via applyBuiltins().
  */
 class OWL_API SettingsManager final {
@@ -187,7 +187,7 @@ public:
 	 *  Apply built-in settings to engine subsystems (window, sound).
 	 *
 	 * Applies resolution, fullscreen, resizable to the window, and
-	 * master volume to the sound listener.
+	 * master volume to the sound listener, and the language to the engine context.
 	 */
 	void applyBuiltins() const;
 
@@ -211,6 +211,8 @@ public:
 	static constexpr auto KeyVolumeMusic = "volume_music";
 	/// Built-in key for SFX volume.
 	static constexpr auto KeyVolumeSfx = "volume_sfx";
+	/// Built-in key: code of the language of the texts (`Localisation`), applied to the engine context.
+	static constexpr auto KeyLanguage = "language";
 
 private:
 	/// Game name for directory path.

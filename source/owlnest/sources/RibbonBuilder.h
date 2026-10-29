@@ -142,6 +142,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Build the Localisation tab: save and close the active localisation document.
+	 */
+	void buildLocalisationTab();
+
+	/**
+	 * @brief
 	 *  Build the contextual tab of an action map document (Save / Save As / Reset / Close).
 	 */
 	void buildActionMapTab();
