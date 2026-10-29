@@ -42,6 +42,7 @@ OWL_DIAG_POP
 #include <typeinfo>
 #include <utility>
 #include <variant>
+#include <vector>
 
 namespace owl::nest {
 
@@ -210,8 +211,10 @@ auto PcgGraphDocument::starterGraph() -> scene::pcg::Graph {
 	graph.nodes.push_back({.id = noise, .type = "source.noise", .position = {0.f, 0.f}, .values = {}});
 	graph.nodes.push_back({.id = threshold, .type = "field.threshold", .position = {220.f, 0.f}, .values = {}});
 	graph.nodes.push_back({.id = output, .type = "output.tiles", .position = {440.f, 0.f}, .values = {}});
-	graph.links.push_back({.fromNode = noise, .fromPin = "Field", .toNode = threshold, .toPin = "Field"});
-	graph.links.push_back({.fromNode = threshold, .fromPin = "Mask", .toNode = output, .toPin = "Mask"});
+	graph.links.push_back(
+			{.fromNode = noise, .fromPin = "Field", .toNode = threshold, .toPin = "Field", .waypoints = {}});
+	graph.links.push_back(
+			{.fromNode = threshold, .fromPin = "Mask", .toNode = output, .toPin = "Mask", .waypoints = {}});
 	return graph;
 }
 
@@ -249,6 +252,11 @@ void PcgGraphDocument::onCanvasReady() {
 		std::ignore = commit(std::move(next), "Delete link");
 	});
 	m_canvas.setOnNodeMoved([this](core::UUID, math::vec2f) -> void { m_moving = true; });
+	m_canvas.setOnLinkWaypointsChanged([this](core::UUID, const std::vector<math::vec2f>&) -> void {
+		m_linkDeleted = true;
+		if (!m_moving)
+			std::ignore = commit(getCanvasLayout(), "Edit link waypoints");
+	});
 	m_canvas.setOnNodeSelected([this](const core::UUID iNode) -> void { m_selectedNode = iNode; });
 	m_canvas.setOnContextMenu([this](const std::optional<core::UUID> iNode) -> void {
 		m_menuNode = iNode;
@@ -295,8 +303,12 @@ void PcgGraphDocument::rebuildCanvas() {
 	for (const auto& link: m_graph.links) {
 		const auto from = m_pinIds.find({link.fromNode, true, link.fromPin});
 		const auto to = m_pinIds.find({link.toNode, false, link.toPin});
-		if (from != m_pinIds.end() && to != m_pinIds.end())
-			std::ignore = m_canvas.addLink(from->second, to->second);
+		if (from == m_pinIds.end() || to == m_pinIds.end())
+			continue;
+		std::vector<math::vec2f> waypoints;
+		waypoints.reserve(link.waypoints.size());
+		for (const auto& [x, y]: link.waypoints) waypoints.emplace_back(x, y);
+		std::ignore = m_canvas.addLink(from->second, to->second, std::move(waypoints));
 	}
 	std::vector<core::UUID> kept;
 	for (const auto id: selection) {
@@ -306,6 +318,25 @@ void PcgGraphDocument::rebuildCanvas() {
 	m_canvas.setSelection(kept);
 	if (m_selectedNode && m_graph.findNode(*m_selectedNode) == nullptr)
 		m_selectedNode.reset();
+}
+
+auto PcgGraphDocument::getCanvasLayout() const -> scene::pcg::Graph {
+	auto next = m_graph;
+	for (const auto& canvasNode: m_canvas.nodes())
+		if (auto* node = next.findNode(canvasNode.id); node != nullptr)
+			node->position = {canvasNode.position.x(), canvasNode.position.y()};
+	for (auto& link: next.links) {
+		const auto from = m_pinIds.find({link.fromNode, true, link.fromPin});
+		const auto to = m_pinIds.find({link.toNode, false, link.toPin});
+		if (from == m_pinIds.end() || to == m_pinIds.end())
+			continue;
+		for (const auto& canvasLink: m_canvas.links())
+			if (canvasLink.fromPin == from->second && canvasLink.toPin == to->second) {
+				link.waypoints.clear();
+				for (const auto& point: canvasLink.waypoints) link.waypoints.push_back({point.x(), point.y()});
+			}
+	}
+	return next;
 }
 
 auto PcgGraphDocument::commit(scene::pcg::Graph iNext, const std::string& iDescription, const bool iMerge) -> bool {
@@ -368,7 +399,8 @@ auto PcgGraphDocument::connect(const core::UUID iFromNode, const std::string& iF
 	std::erase_if(next.links, [&](const scene::pcg::GraphLink& iLink) -> bool {
 		return iLink.toNode == iToNode && iLink.toPin == iToPin;
 	});
-	next.links.push_back({.fromNode = iFromNode, .fromPin = iFromPin, .toNode = iToNode, .toPin = iToPin});
+	next.links.push_back(
+			{.fromNode = iFromNode, .fromPin = iFromPin, .toNode = iToNode, .toPin = iToPin, .waypoints = {}});
 	if (scene::pcg::evaluate(next, {.size = {1, 1}, .seed = 0}).error_or(scene::pcg::PcgError::EmptyRegion) ==
 		scene::pcg::PcgError::Cycle) {
 		OWL_WARN("PcgGraphDocument: The link would make a node depend on itself.")
@@ -510,12 +542,7 @@ void PcgGraphDocument::onImGuiRender() {
 		}
 		if (m_moving && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 			m_moving = false;
-			auto next = m_graph;
-			for (const auto& canvasNode: m_canvas.nodes()) {
-				if (auto* node = next.findNode(canvasNode.id); node != nullptr)
-					node->position = {canvasNode.position.x(), canvasNode.position.y()};
-			}
-			std::ignore = commit(std::move(next), "Move nodes");
+			std::ignore = commit(getCanvasLayout(), "Move nodes");
 		}
 		if (const auto selection = m_canvas.selection(); focused && !m_linkDeleted && !selection.empty() &&
 														 !ImGui::GetIO().WantTextInput &&

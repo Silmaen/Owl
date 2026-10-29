@@ -35,7 +35,7 @@
 #include "script/ScriptEngine.h"
 #include "script/visual/VisualScript.h"
 #include "sound/SoundCommand.h"
-#include "sound/SoundSystem.h"
+#include "sound/SoundHelper.h"
 
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
@@ -1611,7 +1611,7 @@ void renderProps(Visibility& ioComponent) {
 
 void renderProps(SoundSource& ioComponent) {
 	prop::InputText("Sound Asset", &ioComponent.sound.soundAsset);
-	fieldTooltip("Path to the audio file relative to the project (e.g. sounds/explosion.wav).");
+	fieldTooltip("Audio file or sound cue relative to the project (e.g. sounds/explosion.wav, sounds/steps.owlsound).");
 	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Sound, dropped))
 		ioComponent.sound.soundAsset = dropped.string();
 	// Inspector preview: play the asset to verify it.
@@ -1626,15 +1626,10 @@ void renderProps(SoundSource& ioComponent) {
 			sound::SoundCommand::stop(s_previewHandle);
 			s_previewHandle = sound::invalidSoundHandle;
 		} else {
-			auto& library = sound::SoundSystem::getSoundLibrary();
-			const auto data = library.exists(ioComponent.sound.soundAsset) ? library.get(ioComponent.sound.soundAsset)
-																		   : library.load(ioComponent.sound.soundAsset);
-			if (data) {
-				sound::PlayParams params;
-				params.volume = ioComponent.sound.volume;
-				params.pitch = ioComponent.sound.pitch;
-				s_previewHandle = sound::SoundCommand::play(data, params);
-			}
+			sound::PlayParams params;
+			params.volume = ioComponent.sound.volume;
+			params.pitch = ioComponent.sound.pitch;
+			s_previewHandle = sound::SoundHelper::playAsset(ioComponent.sound.soundAsset, params);
 		}
 	}
 	ImGui::EndDisabled();
@@ -2055,7 +2050,32 @@ void renderProps(UiRect& ioComponent, const Entity& iOwner) {
 	fieldTooltip("Offset of the pivot from its anchor, downwards. Pixels or a ratio, as the size.");
 }
 
+namespace {
+
+void textKeyPicker(std::string& ioKey) {
+	const auto* context = app::Application::instanced() ? &app::Application::get().getEngineContext() : nullptr;
+	if (prop::BeginCombo("Text Key", ioKey.empty() ? "(none)" : ioKey.c_str())) {
+		if (ImGui::Selectable("(none)", ioKey.empty()))
+			ioKey.clear();
+		if (context != nullptr)
+			for (const auto& entry: context->getLocalisation().strings) {
+				const auto label = entry.table.empty() ? entry.key : std::format("{}  ({})", entry.key, entry.table);
+				if (ImGui::Selectable(label.c_str(), entry.key == ioKey))
+					ioKey = entry.key;
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("%s", std::string{context->translate(entry.key)}.c_str());
+			}
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Localised text shown in place of Text, in the language of the game (strings of localisation.yml).");
+	if (!ioKey.empty() && context != nullptr)
+		ImGui::TextDisabled("%s: %s", context->getLanguage().c_str(), std::string{context->translate(ioKey)}.c_str());
+}
+
+}// namespace
+
 void renderProps(UiText& ioComponent) {
+	textKeyPicker(ioComponent.textKey);
 	prop::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
 	prop::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));
 	fontPicker(ioComponent.font);

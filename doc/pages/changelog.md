@@ -54,6 +54,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Area lights: `Light` types `Rectangle` and `Disc` shaded through linearly transformed cosines, `Sphere` through a representative point, with soft cube shadows (PCSS) and their Owl Nest markers.
 - Reflection probes: a `ReflectionProbe` component captures the scene into a prefiltered cube that replaces the environment reflections inside its box or sphere, with parallax, blending, realtime updates and its Owl Nest markers, inspector and commands.
 - Post-process: chromatic aberration, film grain, depth of field and camera motion blur in `PostProcessSettings`, edited in the camera inspector.
+- Node-graph link waypoints: right-click a link to add one, drag or delete it, **Alt**+click to cut the link, in visual scripts, PCG graphs and `NodeCanvas` graphs.
+- Sound cues (`.owlsound`, `sound::SoundCue`): random weighted takes of one sound, trimmed and looped, with a volume and pitch varied at each play.
+- `sound.*` and `locale.*` editor commands: every edit of a sound cue or of the localisation is journaled and reachable from the Console, macros and MCP.
+- Owl Nest sound editor: takes on their waveform with draggable trim and loop markers, cue and take preview, `sound.create`, **New Sound Cue**, a double-click on an audio file.
+- `SoundHelper::playAsset` plays an audio file or a cue for the scene sources, `sound.play` and the inspector; `readSoundDuration` gives a file's length.
+- Localisation (`localisation.yml`, `data::localisation::Localisation`): languages with a font each, a fallback language and string tables, the export packing the exported languages only.
+- Owl Nest localisation editor: languages, and a grid of keys by language with table filter, search, missing texts, bulk duplicate, move and delete.
+- `UiText::textKey` shows a translated text in the HUD; Lua `tr` and the `locale` table; the built-in `language` setting.
+- Engine Demo settings menu in English and French, with a language button.
 
 ### Changed
 
@@ -83,6 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The Owl Nest **Log** follows the new messages again, and its lines can be copied (right click) or selected as text.
 - `linux-clang-minimal` builds and passes again: shader baking and shader reload are tied to the render module, and the tests that need physics or the renderer skip without it.
 - The export tests play each game on lavapipe only when `OWL_RENDER_TESTS` is on: the emulated arm64 build no longer times out on the Tower Defence.
 - Owl Nest: the Hierarchy and Properties panels follow the active document whatever its type (code, node graph, animation), with an empty state when it has nothing to show.

@@ -8,6 +8,7 @@
 
 #include "AssetKind.h"
 
+#include <data/localisation/Localisation.h>
 #include <input/ActionMap.h>
 
 #include <algorithm>
@@ -21,7 +22,7 @@
 namespace owl::nest {
 
 namespace {
-constexpr std::array<std::pair<std::string_view, AssetKind>, 40> g_kinds{{
+constexpr std::array<std::pair<std::string_view, AssetKind>, 45> g_kinds{{
 		{".owl", AssetKind::Scene},
 		{".owlflow", AssetKind::NodeGraph},
 		{".owlvs", AssetKind::NodeGraph},
@@ -33,6 +34,11 @@ constexpr std::array<std::pair<std::string_view, AssetKind>, 40> g_kinds{{
 		{".owlhud", AssetKind::Hud},
 		{".owlmacro", AssetKind::Macro},
 		{".owlmat", AssetKind::Material},
+		{".owlsound", AssetKind::SoundCue},
+		{".wav", AssetKind::Audio},
+		{".ogg", AssetKind::Audio},
+		{".flac", AssetKind::Audio},
+		{".mp3", AssetKind::Audio},
 		{".gltf", AssetKind::Mesh},
 		{".glb", AssetKind::Mesh},
 		{".obj", AssetKind::Mesh},
@@ -68,6 +74,8 @@ constexpr std::array<std::pair<std::string_view, AssetKind>, 40> g_kinds{{
 auto classifyAsset(const std::filesystem::path& iPath) -> AssetKind {
 	if (iPath.filename() == input::ActionMap::fileName)
 		return AssetKind::ActionMap;
+	if (iPath.filename() == data::localisation::Localisation::fileName)
+		return AssetKind::Localisation;
 	const auto ext = iPath.extension().string();
 	const auto* const found =
 			std::ranges::find_if(g_kinds, [&ext](const auto& iEntry) -> bool { return iEntry.first == ext; });

@@ -14,6 +14,7 @@
 #include "../document/VisualScriptDocument.h"
 
 #include <data/assets/AssetMeta.h>
+#include <data/localisation/Localisation.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
@@ -85,7 +86,7 @@ auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> 
 			{".glb", {rgb(0x7fb83e), "3D model"}},       {".yml", {rgb(0x8a929e), "Settings"}},
 			{".yaml", {rgb(0x8a929e), "Settings"}},      {".json", {rgb(0x8a929e), "Data"}},
 			{".md", {rgb(0x8a929e), "Document"}},        {".owlfont", {rgb(0x9a7ae0), "Font settings"}},
-			{".owlmat", {rgb(0xc77dff), "Material"}}};
+			{".owlmat", {rgb(0xc77dff), "Material"}},    {".owlsound", {rgb(0x3faa72), "Sound cue"}}};
 	if (const auto it = kinds.find(iPath.extension().string()); it != kinds.end())
 		return it->second;
 	return {rgb(0x8a929e), "File"};
@@ -588,6 +589,10 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 		m_actionMapOpenCallback(path);
 	} else if (path.extension() == ".owlmat" && m_materialOpenCallback) {
 		m_materialOpenCallback(path);
+	} else if ((path.extension() == ".owlsound" || classifyAsset(path) == AssetKind::Audio) && m_soundOpenCallback) {
+		m_soundOpenCallback(path);
+	} else if (path.filename() == data::localisation::Localisation::fileName && m_localisationOpenCallback) {
+		m_localisationOpenCallback(path);
 	} else if (path.extension() == ".owlmacro" && m_macroRunCallback) {
 		m_macroRunCallback(path);
 	} else if (classifyAsset(path) == AssetKind::Mesh && m_meshPlaceCallback) {
@@ -702,6 +707,8 @@ void ContentBrowser::renderCreateItems() {
 		createFolder();
 	if (m_materialCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::paintbrush, .label = "New Material"}))
 		createMaterial();
+	if (m_soundCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::volume2, .label = "New Sound Cue"}))
+		createSoundCue();
 	if (gui::widgets::menuItem({.glyph = gui::icon::workflow, .label = "New Visual Script"}))
 		createVisualScript();
 	if (gui::widgets::menuItem({.glyph = gui::icon::sparkles, .label = "New PCG Graph"}))
@@ -873,6 +880,14 @@ void ContentBrowser::createMaterial() {
 	for (uint32_t counter = 1; exists(materialPath); ++counter)
 		materialPath = m_currentPath / std::format("New Material {}.owlmat", counter);
 	m_materialCreateCallback(materialPath);
+	m_rescanRequested = true;
+}
+
+void ContentBrowser::createSoundCue() {
+	auto cuePath = m_currentPath / "New Sound Cue.owlsound";
+	for (uint32_t counter = 1; exists(cuePath); ++counter)
+		cuePath = m_currentPath / std::format("New Sound Cue {}.owlsound", counter);
+	m_soundCreateCallback(cuePath);
 	m_rescanRequested = true;
 }
 

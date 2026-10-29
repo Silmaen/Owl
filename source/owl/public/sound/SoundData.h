@@ -28,6 +28,14 @@ public:
 	struct Specification {
 		/// Sound's name, used to find the file in the assets.
 		std::filesystem::path file;
+		/// First loaded second of the file.
+		float trimStart{0.f};
+		/// Last loaded second of the file, 0 for its end.
+		float trimEnd{0.f};
+		/// Start of the looped part, in seconds from the start of the file, 0 with `loopEnd` 0 to loop it all.
+		float loopStart{0.f};
+		/// End of the looped part, in seconds from the start of the file, 0 for the end of the loaded part.
+		float loopEnd{0.f};
 	};
 
 	/**

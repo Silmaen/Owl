@@ -42,8 +42,11 @@ auto addNode(Graph& ioGraph, const uint64_t iId, const std::string& iType, const
 
 void link(Graph& ioGraph, const uint64_t iFrom, const std::string& iFromPin, const uint64_t iTo,
 		  const std::string& iToPin) {
-	ioGraph.links.push_back(
-			{.fromNode = core::UUID{iFrom}, .fromPin = iFromPin, .toNode = core::UUID{iTo}, .toPin = iToPin});
+	ioGraph.links.push_back({.fromNode = core::UUID{iFrom},
+							 .fromPin = iFromPin,
+							 .toNode = core::UUID{iTo},
+							 .toPin = iToPin,
+							 .waypoints = {}});
 }
 
 auto fieldOf(const Result& iResult, const uint64_t iNode, const std::string& iPin) -> const Field& {
@@ -77,7 +80,8 @@ TEST_F(PcgGraphTest, NodeTypesAreUniqueAndConnectByType) {
 }
 
 TEST_F(PcgGraphTest, SerializationRoundTrips) {
-	const auto graph = makeNoiseGraph();
+	auto graph = makeNoiseGraph();
+	graph.links.front().waypoints = {{30.f, 60.f}};
 	const auto text = serialize(graph);
 	EXPECT_NE(text.find("FormatVersion: 1"), std::string::npos);
 	const auto read = deserialize(text, "test");

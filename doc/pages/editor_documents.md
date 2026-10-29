@@ -18,6 +18,8 @@ scene, its own Play state. The ribbon's last tab holds the commands of the activ
 | PCG graph     | `.owlpcg`                                   | [PCG graphs](pcg_graphs.md)                                                |
 | Animation     | `.owlanim`                                  | [Animation clips](#animation-clips)                                        |
 | Material      | `.owlmat`                                   | [Materials](#materials)                                                    |
+| Sound cue     | `.owlsound`                                 | [Sound cues](#sound-cues)                                                  |
+| Localisation  | `localisation.yml`                          | [Localisation](languages.md)                                               |
 | Image         | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | [Image viewer](#image-viewer)                                              |
 | Mesh          | `.gltf`, `.glb`, `.obj`                     | [Mesh viewer](#mesh-viewer)                                                |
 | Font          | `.ttf`, `.otf`, `.owlfont`                  | [Fonts](#fonts)                                                            |
@@ -69,6 +71,27 @@ open button of a mesh slot.
   overrides it, the others follow the parent.
 - **Preview**: a sphere or a cube drawn with the material; drag to orbit, wheel to zoom, double-click to reset.
 - **Save** updates every entity using the material, in every open scene.
+
+## Sound cues
+
+An `.owlsound` is a sound made of takes, one picked at random at each play, wherever an audio file is accepted (a
+`SoundSource`, `sound.play` in Lua). Open one with a double-click, or create it with **New Sound Cue** in the Content
+Browser. A double-click on an audio file opens the cue of the same name beside it, or a new cue of that one take,
+written next to the file by its first **Save**.
+
+The cue takes over the side panels while it is the active tab: **Takes** in place of the Scene Hierarchy, **Sound
+Cue** in place of the Properties; the tab itself shows the selected take.
+
+- **Sound Cue**: volume and pitch of every take, with the random change of each at every play, and **Loop**.
+  **Play** (or **Space**) plays the cue as a game does.
+- **Takes**: drop audio files from the Content Browser on the panel. Click selects, **Ctrl** and **Shift** select
+  many; the arrows move the selection, **Ctrl+D** duplicates it, **Delete** removes it; double-click plays a take, the
+  right click opens its menu.
+- **Take** (the tab): its waveform with the trim markers (white, the part that plays) and the loop markers (green, the part a
+  looping cue repeats): drag them, double-click one to reset it. The fields below set the same points to the
+  millisecond and the **Weight**, the chance of the take against the others. Drop another file on its name to
+  replace it.
+- Every edit is one undo step; **Save** makes the next play of the cue in the editor or the game read it again.
 
 ## Image viewer
 

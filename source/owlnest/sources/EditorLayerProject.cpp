@@ -13,10 +13,12 @@
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
 #include "document/ImageDocument.h"
+#include "document/LocalisationDocument.h"
 #include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/PcgGraphDocument.h"
+#include "document/SoundDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
 #include "document/VisualScriptDocument.h"
@@ -28,6 +30,7 @@
 #include <scene/SceneSerializer.h>
 #include <scene/ScreenTransition.h>
 #include <scene/SettingsManager.h>
+#include <sound/SoundCue.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -77,6 +80,13 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 			return;
 		case AssetKind::Material:
 			openMaterialFile(iPath);
+			return;
+		case AssetKind::SoundCue:
+		case AssetKind::Audio:
+			openSoundFile(iPath);
+			return;
+		case AssetKind::Localisation:
+			openLocalisationFile(iPath);
 			return;
 		case AssetKind::Macro:
 			runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
@@ -416,6 +426,35 @@ void EditorLayer::openMeshFile(const std::filesystem::path& iPath) {
 	syncActiveDocumentPanels();
 }
 
+void EditorLayer::openSoundFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	// An audio file opens the cue of the same name beside it, or starts that cue.
+	const bool audio = classifyAsset(iPath) == AssetKind::Audio;
+	const auto cuePath =
+			audio ? std::filesystem::path{iPath}.replace_extension(sound::SoundCue::fileExtension()) : iPath;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Sound && docPtr->filePath() == cuePath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<SoundDocument>();
+	doc->onAttach(this);
+	if (audio && !exists(cuePath)) {
+		doc->startFromAudio(iPath);
+	} else if (!doc->loadFromFile(cuePath)) {
+		OWL_CORE_WARN("Failed to open sound file: {}.", cuePath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
 void EditorLayer::openMaterialFile(const std::filesystem::path& iPath) {
 	if (iPath.empty() || !exists(iPath))
 		return;
@@ -464,6 +503,75 @@ void EditorLayer::openActionMapFile(const std::filesystem::path& iPath) {
 	auto* raw = m_documents.add(std::move(doc));
 	m_documents.setActive(raw);
 	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openLocalisationFile(const std::filesystem::path& iPath) {
+	if (iPath.empty())
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Localisation && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<LocalisationDocument>();
+	doc->onAttach(this);
+	if (exists(iPath)) {
+		if (!doc->loadFromFile(iPath)) {
+			OWL_CORE_WARN("Failed to open localisation: {}.", iPath.string())
+			doc->onDetach();
+			return;
+		}
+	} else {
+		doc->startEmpty(iPath);
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+namespace {
+
+template<typename T>
+auto findOpenDocument(DocumentManager& iDocuments, const DocumentType iType, const std::filesystem::path& iPath) -> T* {
+	for (const auto& docPtr: iDocuments.list()) {
+		if (docPtr && docPtr->type() == iType && docPtr->filePath() == iPath)
+			return static_cast<T*>(docPtr.get());
+	}
+	return nullptr;
+}
+
+auto normalised(const std::filesystem::path& iPath) -> std::filesystem::path {
+	std::error_code error;
+	auto path = std::filesystem::absolute(iPath, error);
+	return error ? iPath : path.lexically_normal();
+}
+
+}// namespace
+
+auto EditorLayer::openSoundCue(const std::filesystem::path& iPath) -> commands::SoundCueEditor* {
+	const auto path = normalised(iPath);
+	if (auto* doc = findOpenDocument<SoundDocument>(m_documents, DocumentType::Sound, path); doc != nullptr)
+		return doc;
+	openSoundFile(path);
+	return findOpenDocument<SoundDocument>(m_documents, DocumentType::Sound, path);
+}
+
+auto EditorLayer::openLocalisation(const std::filesystem::path& iPath) -> commands::LocalisationEditor* {
+	const auto path = normalised(iPath);
+	if (auto* doc = findOpenDocument<LocalisationDocument>(m_documents, DocumentType::Localisation, path);
+		doc != nullptr)
+		return doc;
+	openLocalisationFile(path);
+	return findOpenDocument<LocalisationDocument>(m_documents, DocumentType::Localisation, path);
+}
+
+void EditorLayer::openLocalisationEditor() {
+	if (!m_project.isLoaded())
+		return;
+	openLocalisationFile(m_project.projectDirectory / std::string{data::localisation::Localisation::fileName});
 }
 
 void EditorLayer::openActionMapEditor() {
@@ -729,6 +837,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 											  true);
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app::Application::get().getEngineContext().loadActionMap(m_project.projectDirectory);
+	std::ignore = app::Application::get().getEngineContext().loadLocalisation(m_project.projectDirectory);
 	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
 	loadGameSettings(m_project.name, m_project.projectDirectory);
 	std::ignore = m_project.loadGamepadMappings();
@@ -811,6 +920,7 @@ void EditorLayer::closeProject() {
 	m_project = {};
 	app.getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app.getEngineContext().loadActionMap({});
+	app.getEngineContext().setLocalisation({});
 	app.getEngineContext().setDefaultHud(m_project.defaultHud);
 	loadGameSettings(m_project.name, m_project.projectDirectory);
 	newScene();

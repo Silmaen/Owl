@@ -10,6 +10,7 @@
 #include "scene/SettingsManager.h"
 
 #include "app/Application.h"
+#include "app/EngineContext.h"
 #include "core/FormatVersionYaml.h"
 #include "platform/AtomicFile.h"
 #include "sound/SoundCommand.h"
@@ -22,6 +23,7 @@ OWL_DIAG_POP
 
 #include <cstdint>
 #include <fstream>
+#include <string>
 #include <type_traits>
 #include <variant>
 namespace owl::scene {
@@ -215,6 +217,9 @@ void SettingsManager::applyBuiltins() const {
 	// Sound settings — master volume via listener gain.
 	if (const auto vol = getAs<float>(KeyVolumeMaster); vol.has_value())
 		sound::SoundCommand::setListenerGain(vol.value());
+
+	if (const auto language = getAs<std::string>(KeyLanguage); language.has_value())
+		app::Application::get().getEngineContext().setLanguage(language.value());
 }
 
 void SettingsManager::clear() {

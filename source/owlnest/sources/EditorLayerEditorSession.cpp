@@ -97,7 +97,8 @@ auto EditorLayer::makeCommandContext() -> commands::CommandContext {
 				if (!m_project.saveToFile(m_project.projectDirectory / "owl_project.yml"))
 					OWL_ERROR("Render stack: Cannot write the project file.")
 				syncActiveDocumentPanels();
-			}};
+			},
+			.documents = this};
 }
 
 auto EditorLayer::startPlay(const session::PlayRequest& iRequest) -> expected<void, session::SessionFailure> {

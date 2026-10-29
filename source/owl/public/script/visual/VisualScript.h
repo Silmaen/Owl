@@ -157,6 +157,8 @@ struct GraphLink {
 	core::UUID toNode{0};
 	/// Input pin name on the destination node.
 	std::string toPin;
+	/// Points the link passes through in the editor, canvas units, from the output to the input.
+	std::vector<std::array<float, 2>> waypoints;
 
 	/**
 	 * @brief

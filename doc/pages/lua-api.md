@@ -24,6 +24,7 @@ An `entity` is the integer UUID of an entity (`entity_id` in its own script, `sc
 | [Game state, saves and settings](lua-api-saves.md)  | `gamestate` | Values kept across levels and stored in saves.                                                                       |
 |                                                     | `save`      | Save slots (applied after the frame).                                                                                |
 |                                                     | `settings`  | Game settings: defaults from `game_settings.yml`, user overrides.                                                    |
+| [Localisation](lua-api-locale.md)                   | `locale`    | Texts of the game in its languages (`localisation.yml`).                                                             |
 | [Raycast doors and push-walls](lua-api-raycast.md)  | `door`      | Raycast doors.                                                                                                       |
 |                                                     | `pushwall`  | Raycast push-walls.                                                                                                  |
 | [Isometric terrain and paths](lua-api-isometric.md) | `isometric` | Terrain picking and tile editing of an isometric tilemap.                                                            |

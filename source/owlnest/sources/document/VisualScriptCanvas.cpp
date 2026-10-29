@@ -564,6 +564,7 @@ struct VisualScriptCanvas::Frame {
 	std::optional<VisualScriptPinRef> hoveredPin;
 	std::optional<size_t> hoveredNode;
 	std::optional<size_t> hoveredLink;
+	std::optional<std::array<size_t, 2>> hoveredWaypoint;
 	bool hovered{false};
 	Result result;
 
@@ -601,6 +602,7 @@ auto VisualScriptCanvas::render(const vs::VisualScript& iScript,
 				.hoveredPin = {},
 				.hoveredNode = {},
 				.hoveredLink = {},
+				.hoveredWaypoint = {},
 				.hovered = false,
 				.result = {}};
 	if (!visible) {
@@ -673,11 +675,20 @@ auto VisualScriptCanvas::render(const vs::VisualScript& iScript,
 	drawNodes(frame);
 	handleMouse(frame);
 
-	if (frame.hovered && frame.hoveredLink.has_value() && !frame.hoveredPin.has_value() &&
+	if (frame.hovered && frame.hoveredLink.has_value() && !frame.hoveredPin.has_value() && m_gesture == Gesture::None &&
 		ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
 		auto next = iScript;
-		next.links.erase(next.links.begin() + static_cast<std::ptrdiff_t>(*frame.hoveredLink));
-		frame.result.edit = VisualScriptEdit{.script = std::move(next), .description = "Remove Link", .merge = false};
+		if (frame.hoveredWaypoint.has_value()) {
+			const auto& [link, point] = *frame.hoveredWaypoint;
+			auto& points = next.links[link].waypoints;
+			points.erase(points.begin() + static_cast<std::ptrdiff_t>(point));
+			frame.result.edit =
+					VisualScriptEdit{.script = std::move(next), .description = "Remove Link Waypoint", .merge = false};
+		} else {
+			next.links.erase(next.links.begin() + static_cast<std::ptrdiff_t>(*frame.hoveredLink));
+			frame.result.edit =
+					VisualScriptEdit{.script = std::move(next), .description = "Remove Link", .merge = false};
+		}
 		frame.result.deleteUsed = true;
 	}
 	if (ImGui::BeginDragDropTargetCustom(
@@ -735,24 +746,56 @@ void VisualScriptCanvas::drawGrid(const Frame& iFrame) const {
 	gui::widgets::drawNodeGrid(iFrame.draw, toVec(iFrame.origin), toVec(iFrame.size), m_offset, m_zoom);
 }
 
+auto VisualScriptCanvas::getScreenWaypoints(const Frame& iFrame, const size_t iLink) const -> std::vector<math::vec2f> {
+	const auto& link = iFrame.script.links[iLink];
+	const auto isSelected = [&](const core::UUID iId) -> bool {
+		return std::ranges::find(m_selection, iId) != m_selection.end();
+	};
+	const bool inner = m_gesture == Gesture::Move && isSelected(link.fromNode) && isSelected(link.toNode);
+	std::vector<math::vec2f> points;
+	points.reserve(link.waypoints.size());
+	for (size_t i = 0; i < link.waypoints.size(); ++i) {
+		const bool moved = inner || (m_gesture == Gesture::Waypoint && m_waypoint[0] == iLink && m_waypoint[1] == i);
+		const std::array offset{m_offset[0] + (moved ? m_moveOffset[0] : 0.f),
+								m_offset[1] + (moved ? m_moveOffset[1] : 0.f)};
+		points.push_back(toVec(iFrame.toScreen(link.waypoints[i][0], link.waypoints[i][1], offset)));
+	}
+	return points;
+}
+
 void VisualScriptCanvas::drawLinks(Frame& ioFrame) const {
 	const float tolerance = 6.f;
 	float best = tolerance;
+	const float handle = std::max(4.f, g_pinRadius * 0.9f * m_zoom);
+	float bestWaypoint = std::max(8.f, handle * 1.8f) * std::max(8.f, handle * 1.8f);
+	std::vector<std::vector<math::vec2f>> waypoints(ioFrame.script.links.size());
+	const bool free = ioFrame.hovered && !ioFrame.hoveredPin.has_value() && !ioFrame.hoveredNode.has_value();
 	for (size_t i = 0; i < ioFrame.script.links.size(); ++i) {
 		const auto& link = ioFrame.script.links[i];
 		const auto from = ioFrame.pins.find({link.fromNode, link.fromPin, true});
 		const auto to = ioFrame.pins.find({link.toNode, link.toPin, false});
 		if (from == ioFrame.pins.end() || to == ioFrame.pins.end())
 			continue;
-		if (ioFrame.hovered && !ioFrame.hoveredPin.has_value() && !ioFrame.hoveredNode.has_value()) {
-			if (const float distance = gui::widgets::getNodeLinkDistance(
-						toVec(from->second.first), toVec(to->second.first), toVec(ioFrame.mouse), m_zoom);
-				distance < best) {
-				best = distance;
-				ioFrame.hoveredLink = i;
+		waypoints[i] = getScreenWaypoints(ioFrame, i);
+		if (!free)
+			continue;
+		for (size_t w = 0; w < waypoints[i].size(); ++w) {
+			const float dx = ioFrame.mouse.x - waypoints[i][w].x();
+			const float dy = ioFrame.mouse.y - waypoints[i][w].y();
+			if (const float distance = dx * dx + dy * dy; distance < bestWaypoint) {
+				bestWaypoint = distance;
+				ioFrame.hoveredWaypoint = std::array{i, w};
 			}
 		}
+		if (const float distance = gui::widgets::getNodeLinkDistance(toVec(from->second.first), toVec(to->second.first),
+																	 waypoints[i], toVec(ioFrame.mouse), m_zoom);
+			distance < best) {
+			best = distance;
+			ioFrame.hoveredLink = i;
+		}
 	}
+	if (ioFrame.hoveredWaypoint.has_value())
+		ioFrame.hoveredLink = (*ioFrame.hoveredWaypoint)[0];
 	for (size_t i = 0; i < ioFrame.script.links.size(); ++i) {
 		const auto& link = ioFrame.script.links[i];
 		const auto from = ioFrame.pins.find({link.fromNode, link.fromPin, true});
@@ -768,14 +811,40 @@ void VisualScriptCanvas::drawLinks(Frame& ioFrame) const {
 		auto color = getPinColor(from->second.second);
 		if (highlighted)
 			color = lighter(color, 0.35f);
-		gui::widgets::drawNodeLink(ioFrame.draw, toVec(from->second.first), toVec(to->second.first), color, thickness,
-								   m_zoom);
+		const auto start = toVec(from->second.first);
+		const auto end = toVec(to->second.first);
+		gui::widgets::drawNodeLink(ioFrame.draw, start, end, waypoints[i], color, thickness, m_zoom);
+		for (size_t w = 0; w < waypoints[i].size(); ++w)
+			gui::widgets::drawNodeLinkWaypoint(ioFrame.draw, waypoints[i][w], handle, color,
+											   ioFrame.hoveredWaypoint == std::array{i, w});
 		if (exec || m_debug.values.empty())
 			continue;
 		if (const auto value = m_debug.values.find(vs::getProbeKey(link.fromNode, link.fromPin));
-			value != m_debug.values.end())
-			drawWireValue(ioFrame, toVec(from->second.first), toVec(to->second.first), value->second);
+			value != m_debug.values.end()) {
+			const auto segments = gui::widgets::getNodeLinkSegments(start, end, waypoints[i], m_zoom);
+			const auto& middle = segments[segments.size() / 2];
+			drawWireValue(ioFrame, middle[0], middle[3], value->second);
+		}
 	}
+}
+
+void VisualScriptCanvas::insertWaypoint(Frame& ioFrame) const {
+	const auto index = *ioFrame.hoveredLink;
+	const auto& link = ioFrame.script.links[index];
+	const auto from = ioFrame.pins.find({link.fromNode, link.fromPin, true});
+	const auto to = ioFrame.pins.find({link.toNode, link.toPin, false});
+	if (from == ioFrame.pins.end() || to == ioFrame.pins.end())
+		return;
+	const auto at =
+			gui::widgets::getNodeLinkInsertIndex(toVec(from->second.first), toVec(to->second.first),
+												 getScreenWaypoints(ioFrame, index), toVec(ioFrame.mouse), m_zoom);
+	auto next = ioFrame.script;
+	auto& points = next.links[index].waypoints;
+	points.insert(points.begin() + static_cast<std::ptrdiff_t>(at),
+				  {(ioFrame.mouse.x - ioFrame.origin.x) / m_zoom - m_offset[0],
+				   (ioFrame.mouse.y - ioFrame.origin.y) / m_zoom - m_offset[1]});
+	ioFrame.result.edit =
+			VisualScriptEdit{.script = std::move(next), .description = "Add Link Waypoint", .merge = false};
 }
 
 void VisualScriptCanvas::drawWireValue(const Frame& iFrame, const math::vec2f& iFrom, const math::vec2f& iTo,
@@ -998,7 +1067,8 @@ void VisualScriptCanvas::dropLink(Frame& ioFrame, const VisualScriptPinRef& iTar
 			return iLink.fromNode == from.node && iLink.fromPin == from.pin;
 		return iLink.toNode == to.node && iLink.toPin == to.pin;
 	});
-	next.links.push_back({.fromNode = from.node, .fromPin = from.pin, .toNode = to.node, .toPin = to.pin});
+	next.links.push_back(
+			{.fromNode = from.node, .fromPin = from.pin, .toNode = to.node, .toPin = to.pin, .waypoints = {}});
 	ioFrame.result.edit = VisualScriptEdit{.script = std::move(next), .description = "Add Link", .merge = false};
 }
 
@@ -1028,6 +1098,9 @@ void VisualScriptCanvas::handleMouse(Frame& ioFrame) {
 	if (m_gesture == Gesture::Pan && !ImGui::IsMouseDown(ImGuiMouseButton_Right) &&
 		!ImGui::IsMouseDown(ImGuiMouseButton_Middle)) {
 		m_gesture = Gesture::None;
+	} else if (m_gesture == Gesture::None && ioFrame.hovered && ImGui::IsMouseReleased(ImGuiMouseButton_Right) &&
+			   ioFrame.hoveredLink.has_value() && !ioFrame.hoveredWaypoint.has_value()) {
+		insertWaypoint(ioFrame);
 	} else if (m_gesture == Gesture::None && ioFrame.hovered && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
 		ioFrame.result.contextMenu = true;
 		ioFrame.result.contextPin = ioFrame.hoveredPin;
@@ -1041,7 +1114,7 @@ void VisualScriptCanvas::handleMouse(Frame& ioFrame) {
 
 	if (ioFrame.hovered && !overWidget && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		pressLeft(ioFrame, mouse);
-	if (m_gesture == Gesture::Move && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+	if ((m_gesture == Gesture::Move || m_gesture == Gesture::Waypoint) && ImGui::IsMouseDown(ImGuiMouseButton_Left))
 		m_moveOffset = {mouse[0] - m_gestureStart[0], mouse[1] - m_gestureStart[1]};
 	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 		releaseLeft(ioFrame, mouse);
@@ -1066,6 +1139,13 @@ void VisualScriptCanvas::pressLeft(Frame& ioFrame, const std::array<float, 2>& i
 			m_gesture = Gesture::Link;
 			m_linkStart = pin;
 		}
+	} else if (io.KeyAlt && ioFrame.hoveredLink.has_value()) {
+		auto next = ioFrame.script;
+		next.links.erase(next.links.begin() + static_cast<std::ptrdiff_t>(*ioFrame.hoveredLink));
+		ioFrame.result.edit = VisualScriptEdit{.script = std::move(next), .description = "Cut Link", .merge = false};
+	} else if (ioFrame.hoveredWaypoint.has_value()) {
+		m_waypoint = *ioFrame.hoveredWaypoint;
+		m_gesture = Gesture::Waypoint;
 	} else if (ioFrame.hoveredNode.has_value()) {
 		const auto id = ioFrame.nodes[*ioFrame.hoveredNode].node->id;
 		const bool selected = std::ranges::find(m_selection, id) != m_selection.end();
@@ -1091,10 +1171,21 @@ void VisualScriptCanvas::releaseLeft(Frame& ioFrame, const std::array<float, 2>&
 		case Gesture::Move:
 			if (std::abs(m_moveOffset[0]) + std::abs(m_moveOffset[1]) > g_dragThreshold / m_zoom) {
 				auto next = ioFrame.script;
+				const auto isSelected = [&](const core::UUID iId) -> bool {
+					return std::ranges::find(m_selection, iId) != m_selection.end();
+				};
+				const std::array snapped{std::round(m_moveOffset[0] / g_snap) * g_snap,
+										 std::round(m_moveOffset[1] / g_snap) * g_snap};
 				for (auto& node: next.nodes)
-					if (std::ranges::find(m_selection, node.id) != m_selection.end())
+					if (isSelected(node.id))
 						node.position = {std::round((node.position[0] + m_moveOffset[0]) / g_snap) * g_snap,
 										 std::round((node.position[1] + m_moveOffset[1]) / g_snap) * g_snap};
+				for (auto& link: next.links)
+					if (isSelected(link.fromNode) && isSelected(link.toNode))
+						for (auto& [x, y]: link.waypoints) {
+							x += snapped[0];
+							y += snapped[1];
+						}
 				ioFrame.result.edit =
 						VisualScriptEdit{.script = std::move(next),
 										 .description = m_selection.size() > 1 ? "Move Nodes" : "Move Node",
@@ -1122,6 +1213,19 @@ void VisualScriptCanvas::releaseLeft(Frame& ioFrame, const std::array<float, 2>&
 			else if (!ioFrame.hoveredNode.has_value() && ioFrame.hovered)
 				ioFrame.result.linkDropped = m_linkStart;
 			m_linkStart.reset();
+			break;
+		case Gesture::Waypoint:
+			if (std::abs(m_moveOffset[0]) + std::abs(m_moveOffset[1]) > g_dragThreshold / m_zoom &&
+				m_waypoint[0] < ioFrame.script.links.size() &&
+				m_waypoint[1] < ioFrame.script.links[m_waypoint[0]].waypoints.size()) {
+				auto next = ioFrame.script;
+				auto& [x, y] = next.links[m_waypoint[0]].waypoints[m_waypoint[1]];
+				x += m_moveOffset[0];
+				y += m_moveOffset[1];
+				ioFrame.result.edit = VisualScriptEdit{.script = std::move(next),
+													   .description = "Move Link Waypoint",
+													   .merge = false};
+			}
 			break;
 		case Gesture::Pan:
 		case Gesture::None:

@@ -5,6 +5,8 @@
 Every change Owl Nest makes to a scene is a named **command**: a gizmo drag, an inspector edit, a hierarchy drop as
 well as a line typed in the Console, a macro or a request of an [MCP](mcp.md) client. They all go to the same undo
 history and to the session journal, which the Console shows.
+The edits of a sound cue (`sound.*`) and of the localisation (`locale.*`) are commands too: they open the file in its
+tab when it is not, and go to the undo history of that tab. A drag or a typed text runs one command when it ends.
 
 ## Log
 
@@ -95,6 +97,23 @@ A refused command changes nothing and logs why (a bad argument, an edit during P
 | `prefab.instantiate`              | `path` (prefab file), `asset_path`                                                                      |
 | `mesh.create`                     | `path` (mesh file), `asset_path`, `name`, `translation` (world), `parent`, `layer`                      |
 | `material.create`                 | `path` (new `.owlmat` file), `parent` (the parent material, a root material when absent)                |
+| `sound.create`                    | `path` (new `.owlsound` file), `file` (the audio file of a first take, none when absent)                |
+| `sound.set`                       | `path`, `volume`, `volume_change` (0 to 1), `pitch`, `pitch_change` (0 to 0.9), `loop`                  |
+| `sound.add_take`                  | `path`, `file` (an audio file)                                                                          |
+| `sound.set_take`                  | `path`, `take` (from 0), `file`, `trim_start`, `trim_end`, `loop_start`, `loop_end`, `weight`           |
+| `sound.remove_takes`              | `path`, `takes` (indices, `0,2`)                                                                        |
+| `sound.duplicate_takes`           | `path`, `takes`                                                                                         |
+| `sound.move_takes`                | `path`, `takes`, `down`                                                                                 |
+| `locale.add_language`             | `path` (a `localisation.yml`), `code`, `name`                                                           |
+| `locale.remove_language`          | `path`, `code`                                                                                          |
+| `locale.set_language`             | `path`, `code`, `name`, `font`, `exported`                                                              |
+| `locale.set_fallback`             | `path`, `code`                                                                                          |
+| `locale.add_string`               | `path`, `key` (made unique), `table`                                                                    |
+| `locale.rename_key`               | `path`, `key`, `new_key`                                                                                |
+| `locale.set_value`                | `path`, `key`, `language`, `value` (empty: the fallback shows)                                          |
+| `locale.set_table`                | `path`, `keys` (`a,b`), `table`                                                                         |
+| `locale.remove_strings`           | `path`, `keys`                                                                                          |
+| `locale.duplicate_strings`        | `path`, `keys`                                                                                          |
 | `material.assign`                 | `entity`, `slot` (from 0, -1 for every slot), `material` (empty for the file's own)                     |
 | `scene.save`                      | `path` (the scene file when absent)                                                                     |
 | `scene.capture_reflection_probes` | none: every probe is captured again (not an undo entry)                                                 |

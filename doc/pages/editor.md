@@ -25,6 +25,9 @@ between runs.
   puts the default layout back; **Reset Layout** returns every panel to its place in the current layout.
 - The palettes show only with their document: the Tile Palette with an open tilemap, the Voxel Palette with a scene
   holding a voxel world, in Edit.
+- The **Log** follows the new messages; scrolling up stops it, scrolling back to the bottom or the follow button
+  resumes it. Its right click copies a line or every shown message; **Select text** shows them as plain text to select
+  and copy with `Ctrl+C`.
 
 ## The ribbon
 
@@ -34,7 +37,7 @@ greyed when it does not apply.
 | Tab          | Groups and buttons                                                                                                                                                                             |
 |--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **File**     | Opens the File screen (below)                                                                                                                                                                  |
-| **Home**     | Edit (Undo, Redo, Duplicate), Create (**New** scene, HUD, animation, tilemap, tileset), Project (Settings, Input Actions, Pack Game)                                                           |
+| **Home**     | Edit (Undo, Redo, Duplicate), Create (**New** scene, HUD, animation, tilemap, tileset), Project (Settings, Input Actions, Localisation, Pack Game)                                             |
 | **View**     | Layout (Hierarchy Left, Reset Layout), Camera (Reset View, Axis Views, Frame Scene, Camera Viewpoint), Panels (Frame Stats, Help), Appearance (Owl Dark, Owl Light), Settings (Editor, Engine) |
 | Document tab | The last tab, in the accent colour: the commands of the active document (below)                                                                                                                |
 

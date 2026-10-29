@@ -11,6 +11,7 @@
 #include "testHelper.h"
 
 #include <string>
+#include <vector>
 
 using namespace owl;
 using namespace owl::nest;
@@ -120,4 +121,25 @@ TEST_F(NodeGraphCommandsTest, OutputPinUndoRedo) {
 	EXPECT_TRUE(m_canvas.findNode(node.id)->outputs.empty());
 	m_undo.undo(m_canvas);
 	EXPECT_EQ(m_canvas.findNode(node.id)->outputs.size(), 1u);
+}
+
+TEST_F(NodeGraphCommandsTest, SetLinkWaypointsUndoRedoSurvivesALinkRecreatedByUndo) {
+	const auto from = makeNode("From");
+	const auto to = makeNode("To");
+	m_canvas.addNode(from);
+	m_canvas.addNode(to);
+	const auto linkId = m_canvas.addLink(from.outputs[0].id, to.inputs[0].id);
+	const std::vector<math::vec2f> waypoints{{50.f, 60.f}};
+	ASSERT_TRUE(m_canvas.setLinkWaypoints(linkId, waypoints));
+	m_undo.push(mkUniq<SetLinkWaypointsCommand>(*m_canvas.findLink(linkId), std::vector<math::vec2f>{}));
+	m_undo.execute(mkUniq<RemoveLinkCommand>(*m_canvas.findLink(linkId)), m_canvas);
+	EXPECT_TRUE(m_canvas.links().empty());
+
+	m_undo.undo(m_canvas);
+	ASSERT_EQ(m_canvas.links().size(), 1u);
+	EXPECT_EQ(m_canvas.links()[0].waypoints, waypoints);
+	m_undo.undo(m_canvas);
+	EXPECT_TRUE(m_canvas.links()[0].waypoints.empty());
+	m_undo.redo(m_canvas);
+	EXPECT_EQ(m_canvas.links()[0].waypoints, waypoints);
 }

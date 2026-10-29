@@ -23,7 +23,8 @@ classDiagram
     class NodeCanvas {
         +addNode(Node) UUID
         +removeNode(UUID)
-        +addLink(fromPin, toPin) UUID
+        +addLink(fromPin, toPin, waypoints) UUID
+        +setLinkWaypoints(UUID, waypoints) bool
         +removeLink(UUID)
         +onRender()
         -Impl (drawing and gestures)
@@ -67,7 +68,7 @@ connects two scenes) belong to the callbacks the client installs.
 | `PinKind` | `Input` / `Output` — side of the node the pin sits on                  |
 | `NodePin` | UUID + label + `typeTag` (opaque string for client-side validation)    |
 | `Node`    | UUID + title + 2D position + input/output pins + `customData` + colour |
-| `Link`    | UUID + source output pin UUID + destination input pin UUID             |
+| `Link`    | UUID + source output pin UUID + destination input pin UUID + waypoints |
 
 `customData` is an opaque YAML blob owned by the client — it travels through copy/paste and serialization unchanged. The
 Scene Flow view stores the relative scene path there.
@@ -76,30 +77,36 @@ Scene Flow view stores the relative scene path there.
 
 Every callback is optional. Install them with `setOn*` methods before the first `onRender()` call.
 
-| Callback                 | Fires when                                                          |
-|--------------------------|---------------------------------------------------------------------|
-| `setLinkValidator`       | User attempts to draw a link — return false to veto                 |
-| `setOnLinkCreated`       | After a link was accepted and added to the canvas                   |
-| `setOnLinkDeleted`       | User deleted a link (keyboard / context menu)                       |
-| `setOnNodeMoved`         | User dragged a node — receives the new top-left position            |
-| `setOnNodeSelected`      | Single click on a node                                              |
-| `setOnNodeDoubleClicked` | Double click on the same node within 300 ms (detected in wrapper)   |
-| `setOnContextMenu`       | Right click; `std::optional<UUID>` set when a specific node was hit |
+| Callback                    | Fires when                                                          |
+|-----------------------------|---------------------------------------------------------------------|
+| `setLinkValidator`          | User attempts to draw a link — return false to veto                 |
+| `setOnLinkCreated`          | After a link was accepted and added to the canvas                   |
+| `setOnLinkDeleted`          | User deleted a link (keyboard / context menu)                       |
+| `setOnLinkWaypointsChanged` | Waypoints inserted, moved or deleted; receives the ones before      |
+| `setOnNodeMoved`            | User dragged a node — receives the new top-left position            |
+| `setOnNodeSelected`         | Single click on a node                                              |
+| `setOnNodeDoubleClicked`    | Double click on the same node within 300 ms (detected in wrapper)   |
+| `setOnContextMenu`          | Right click; `std::optional<UUID>` set when a specific node was hit |
 
 ### Drawing and gestures
 
 The canvas draws itself with the node style of `gui/widgets/NodeStyle.h`, shared with the visual script editor: grid,
-title bar, round pins on one row each (inputs and outputs aligned), links as curves coloured by their source pin.
+title bar, round pins on one row each (inputs and outputs aligned), links as curves coloured by their source pin. A link
+with waypoints is a chain of curves, one from each point to the next, to steer it around nodes.
 
-| Gesture                        | Action                                                         |
-|--------------------------------|----------------------------------------------------------------|
-| Click a node                   | Select it (**Ctrl** toggles, **Shift** adds); double-click     |
-| Drag a node                    | Move the selection (`setOnNodeMoved` for each moved node)      |
-| Drag on the background         | Select the nodes in the rectangle                              |
-| Drag from a pin to a pin       | Link, through `setLinkValidator`                               |
-| Hover a link, **Delete**       | Remove the link                                                |
-| Right-drag, middle-drag, wheel | Pan and zoom; the wheel zooms only with no popup open          |
-| Right click                    | `setOnContextMenu`                                             |
+| Gesture                        | Action                                                          |
+|--------------------------------|-----------------------------------------------------------------|
+| Click a node                   | Select it (**Ctrl** toggles, **Shift** adds); double-click      |
+| Drag a node                    | Move the selection (`setOnNodeMoved` for each moved node)       |
+| Drag on the background         | Select the nodes in the rectangle                               |
+| Drag from a pin to a pin       | Link, through `setLinkValidator`                                |
+| Hover a link, **Delete**       | Remove the link                                                 |
+| **Alt**+click a link           | Cut it (`setOnLinkDeleted`)                                     |
+| Right click a link             | Insert a waypoint at the cursor                                 |
+| Drag a waypoint                | Move it; the waypoints of links inside a moved selection follow |
+| Hover a waypoint, **Delete**   | Remove the waypoint                                             |
+| Right-drag, middle-drag, wheel | Pan and zoom; the wheel zooms only with no popup open           |
+| Right click off a link         | `setOnContextMenu`                                              |
 
 ## `gui::widgets::NodeCanvasSerializer`
 
@@ -122,7 +129,7 @@ Nodes:
     customData: |
       scenePath: scenes/level1.owl
 Links:
-  - { id: 10, from: 2, to: 11 }
+  - { id: 10, from: 2, to: 11, waypoints: [ [ 180, 90 ] ] }
 ```
 
 Copy/paste use `serializeSubset(canvas, selectedIds)` to emit a YAML document for just the selected nodes, then

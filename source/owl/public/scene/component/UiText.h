@@ -26,6 +26,8 @@ namespace owl::scene::component {
 struct OWL_API UiText {
 	/// The text content.
 	std::string text;
+	/// Key of a localised text (`Localisation`); when set, the HUD shows its translation instead of `text`.
+	std::string textKey;
 	/// The font (nullptr = default font).
 	shared<data::fonts::Font> font = nullptr;
 	/// Text colour.

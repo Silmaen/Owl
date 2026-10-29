@@ -24,6 +24,17 @@ TEST(AssetKind, ClassifiesTheEngineFormats) {
 
 TEST(AssetKind, ClassifiesMaterials) { EXPECT_EQ(classifyAsset("materials/gold.owlmat"), AssetKind::Material); }
 
+TEST(AssetKind, ClassifiesSoundCues) {
+	EXPECT_EQ(classifyAsset("sounds/steps.owlsound"), AssetKind::SoundCue);
+	for (const auto* name: {"a.wav", "a.ogg", "a.flac", "a.mp3"})
+		EXPECT_EQ(classifyAsset(name), AssetKind::Audio) << name;
+}
+
+TEST(AssetKind, ClassifiesTheLocalisation) {
+	EXPECT_EQ(classifyAsset("game/localisation.yml"), AssetKind::Localisation);
+	EXPECT_EQ(classifyAsset("game/other.yml"), AssetKind::Code);
+}
+
 TEST(AssetKind, ClassifiesTheMeshFormats) {
 	for (const auto* name: {"meshes/crate.glb", "crate.gltf", "crate.obj"})
 		EXPECT_EQ(classifyAsset(name), AssetKind::Mesh) << name;
@@ -43,7 +54,7 @@ TEST(AssetKind, ClassifiesImagesAndShaders) {
 }
 
 TEST(AssetKind, LeavesTheRestUnsupported) {
-	EXPECT_EQ(classifyAsset("sound.wav"), AssetKind::Unsupported);
+	EXPECT_EQ(classifyAsset("sound.aiff"), AssetKind::Unsupported);
 	EXPECT_EQ(classifyAsset("noextension"), AssetKind::Unsupported);
 	EXPECT_EQ(classifyAsset("LEVEL.OWL"), AssetKind::Unsupported);
 }

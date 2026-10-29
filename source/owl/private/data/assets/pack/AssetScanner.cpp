@@ -13,10 +13,12 @@
 #include "data/fonts/FontLibrary.h"
 #include "data/fonts/FontSettings.h"
 #include "data/geometry/MeshLoader.h"
+#include "data/localisation/Localisation.h"
 #include "script/visual/VisualScript.h"
 
 #include <algorithm>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <optional>
 #include <regex>
@@ -268,13 +270,26 @@ void followScene(const std::string& iName, const std::string& iSource,// NOLINT(
 		pushWarning(ioWarnings, "Scene", iName, iSource);
 }
 
-void followSound(const std::string& iName, const std::string& iSource, std::vector<AssetReference>& ioAssets,
-				 std::vector<std::string>* ioWarnings) {
-	if (auto ref = resolveSound(iName); ref) {
-		if (!hasAsset(ioAssets, ref->packPath))
-			ioAssets.push_back(*ref);
-	} else
+void followSound(const std::string& iName, const std::string& iSource,// NOLINT(misc-no-recursion)
+				 std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+	const auto ref = resolveSound(iName);
+	if (!ref) {
 		pushWarning(ioWarnings, "Sound", iName, iSource);
+		return;
+	}
+	if (hasAsset(ioAssets, ref->packPath))
+		return;
+	ioAssets.push_back(*ref);
+	if (ref->diskPath.extension() != ".owlsound")
+		return;
+	// A sound cue carries the audio files of its takes.
+	try {
+		for (const auto& variant: YAML::LoadFile(ref->diskPath.string())["variants"])
+			if (const auto file = variant["file"].as<std::string>(""); !file.empty() && !file.ends_with(".owlsound"))
+				followSound(file, std::format("the sound cue {}", iName), ioAssets, ioWarnings);
+	} catch (const YAML::Exception& e) {
+		pushWarning(ioWarnings, "Sound", std::format("{} ({})", iName, e.what()), iSource);
+	}
 }
 
 void followTexture(const std::string& iSerialized, const std::string& iSource, std::vector<AssetReference>& ioAssets,
@@ -288,7 +303,7 @@ void followTexture(const std::string& iSerialized, const std::string& iSource, s
 
 auto isSoundFile(const std::string& iName) -> bool {
 	const auto ext = std::filesystem::path(iName).extension();
-	return ext == ".wav" || ext == ".ogg" || ext == ".mp3" || ext == ".flac";
+	return ext == ".wav" || ext == ".ogg" || ext == ".mp3" || ext == ".flac" || ext == ".owlsound";
 }
 
 auto isSerializedTexture(const std::string& iValue) -> bool {
@@ -335,7 +350,7 @@ void scanLuaScript(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-re
 	// Any quoted scene path, the argument of `sound.play` or any quoted sound file, any quoted serialized texture.
 	static const std::regex scenePattern(R"(["']((?:scenes/)?[^"']+\.owl)["'])");
 	static const std::regex soundPattern(
-			R"((?:sound\.play\s*\(\s*["']([^"']+)["']\s*\))|["']([^"'\s]+\.(?:wav|ogg|mp3|flac))["'])");
+			R"((?:sound\.play\s*\(\s*["']([^"']+)["']\s*\))|["']([^"'\s]+\.(?:wav|ogg|mp3|flac|owlsound))["'])");
 	static const std::regex texturePattern(R"(["']((?:nam|pat):[^"']+)["'])");
 	const auto end = std::sregex_iterator();
 	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), scenePattern); it != end; ++it)
@@ -606,13 +621,30 @@ void scanFontsAndSounds(const YAML::Node& iEntity, const std::string& iSceneName
 				}
 			}
 	if (auto soundSrc = iEntity["SoundSource"]; soundSrc)
-		if (auto asset = soundSrc["soundAsset"]; asset) {
-			const auto name = asset.as<std::string>();
-			if (auto ref = resolveSound(name); ref && !hasAsset(ioAssets, ref->packPath))
+		if (auto asset = soundSrc["soundAsset"]; asset)
+			followSound(asset.as<std::string>(), iSceneName, ioAssets, ioWarnings);
+}
+
+// The fonts of the exported languages: the localised texts are drawn with them.
+void scanLocalisationFonts(const std::filesystem::path& iProjectDir, std::vector<AssetReference>& ioAssets,
+						   std::vector<std::string>* ioWarnings) {
+	const auto file = iProjectDir / localisation::Localisation::fileName;
+	if (!exists(file))
+		return;
+	const auto localised = localisation::Localisation::loadFile(file);
+	if (!localised)
+		return;
+	for (const auto& language: localised->withExportedLanguages().languages) {
+		if (language.font.empty())
+			continue;
+		if (auto ref = resolveFont(language.font); ref) {
+			if (!hasAsset(ioAssets, ref->packPath))
 				ioAssets.push_back(*ref);
-			else if (!ref)
-				pushWarning(ioWarnings, "Sound", name, iSceneName);
+			addFontSidecar(ioAssets, *ref);
+		} else {
+			pushWarning(ioWarnings, "Font", language.font, std::format("the language {}", language.code));
 		}
+	}
 }
 
 void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
@@ -786,6 +818,7 @@ auto AssetScanner::scanProject(const std::filesystem::path& iProjectDir, const s
 	auto assets = scanScene(firstScenePath, oWarnings);
 	std::set<std::string> visited;
 	scanHud(iDefaultHud, "the project's DefaultHud", visited, assets, oWarnings);
+	scanLocalisationFonts(iProjectDir, assets, oWarnings);
 	return assets;
 }
 

@@ -41,6 +41,7 @@
 #include "script/LuaEngine.h"
 #include "script/ScriptEngine.h"
 #include "sound/SoundCommand.h"
+#include "sound/SoundHelper.h"
 #include "sound/SoundSystem.h"
 
 #include <algorithm>
@@ -449,14 +450,7 @@ auto luaSoundPlay(lua_State* iState) -> int {
 		lua_pushinteger(iState, static_cast<lua_Integer>(sound::invalidSoundHandle));
 		return 1;
 	}
-	auto& library = sound::SoundSystem::getSoundLibrary();
-	// Auto-load the sound if not already in the library.
-	const auto data = library.exists(assetPath) ? library.get(assetPath) : library.load(assetPath);
-	if (!data) {
-		lua_pushinteger(iState, static_cast<lua_Integer>(sound::invalidSoundHandle));
-		return 1;
-	}
-	const auto handle = sound::SoundCommand::play(data, sound::PlayParams{});
+	const auto handle = sound::SoundHelper::playAsset(assetPath, sound::PlayParams{});
 	lua_pushinteger(iState, static_cast<lua_Integer>(handle));
 	return 1;
 }
@@ -1706,6 +1700,48 @@ auto luaSettingsSet(lua_State* iState) -> int {
 	return 0;
 }
 
+auto luaLocaleTr(lua_State* iState) -> int {
+	size_t length = 0;
+	const char* key = luaL_checklstring(iState, 1, &length);
+	const auto* context = contextOf(iState);
+	const auto text = context != nullptr ? context->translate({key, length}) : std::string_view{key, length};
+	lua_pushlstring(iState, text.data(), text.size());
+	return 1;
+}
+
+auto luaLocaleGetLanguage(lua_State* iState) -> int {
+	const auto* context = contextOf(iState);
+	lua_pushstring(iState, context != nullptr ? context->getLanguage().c_str() : "");
+	return 1;
+}
+
+auto luaLocaleSetLanguage(lua_State* iState) -> int {
+	const char* code = luaL_checkstring(iState, 1);
+	auto* context = contextOf(iState);
+	if (context == nullptr)
+		return 0;
+	context->setLanguage(code);
+	context->getSettings().set(scene::SettingsManager::KeyLanguage, context->getLanguage());
+	return 0;
+}
+
+auto luaLocaleGetLanguages(lua_State* iState) -> int {
+	const auto* context = contextOf(iState);
+	lua_newtable(iState);
+	if (context == nullptr)
+		return 1;
+	const auto& languages = context->getLocalisation().languages;
+	for (size_t i = 0; i < languages.size(); ++i) {
+		lua_newtable(iState);
+		lua_pushstring(iState, languages[i].code.c_str());
+		lua_setfield(iState, -2, "code");
+		lua_pushstring(iState, languages[i].name.c_str());
+		lua_setfield(iState, -2, "name");
+		lua_rawseti(iState, -2, static_cast<lua_Integer>(i) + 1);
+	}
+	return 1;
+}
+
 auto luaSettingsGet(lua_State* iState) -> int {
 	const char* key = luaL_checkstring(iState, 1);
 	const auto* settings = settingsOf(iState);
@@ -2652,6 +2688,18 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Delete the save of a slot.", .params = {{"slot", Integer}}},
 		{.table = "save", .name = "list_saves", .function = blocking<luaSaveListSaves>,
 		 .description = "Every save, as a list of `{slot, timestamp, scene}`.", .returns = {{"saves", Table}}},
+		{.table = "locale", .name = "tr", .function = guarded<luaLocaleTr>,
+		 .description = "Text of a key in the language of the game, else in the fallback language, else the key; "
+						"also the global `tr`.",
+		 .params = {{"key", String}}, .returns = {{"text", String}}},
+		{.table = "locale", .name = "get_language", .function = guarded<luaLocaleGetLanguage>,
+		 .description = "Code of the language of the texts (`en`), empty when the game has none.",
+		 .returns = {{"code", String}}},
+		{.table = "locale", .name = "set_language", .function = guarded<luaLocaleSetLanguage>,
+		 .description = "Show the texts in a language (an unknown one falls back) and keep it in the `language` setting.",
+		 .params = {{"code", String}}},
+		{.table = "locale", .name = "get_languages", .function = guarded<luaLocaleGetLanguages>,
+		 .description = "Languages of the game, as a list of `{code, name}`.", .returns = {{"languages", Table}}},
 		{.table = "settings", .name = "get", .function = guarded<luaSettingsGet>,
 		 .description = "Setting value: user override, else game default, else `default` (nil when absent).",
 		 .params = {{"key", String}, {"default", Any, true}}, .returns = {{"value", Any}}},
@@ -2850,6 +2898,7 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "gamestate", .description = "Values kept across levels and stored in saves."},
 			{.name = "save", .description = "Save slots (applied after the frame)."},
 			{.name = "settings", .description = "Game settings: defaults from `game_settings.yml`, user overrides."},
+			{.name = "locale", .description = "Texts of the game in its languages (`localisation.yml`)."},
 			{.name = "trigger", .description = "Timer triggers."},
 			{.name = "door", .description = "Raycast doors."},
 			{.name = "pushwall", .description = "Raycast push-walls."},
@@ -2873,6 +2922,7 @@ auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 			{.file = "lua-api-saves.md",
 			 .title = "Game state, saves and settings",
 			 .tables = {"gamestate", "save", "settings"}},
+			{.file = "lua-api-locale.md", .title = "Localisation", .tables = {"locale"}},
 			{.file = "lua-api-raycast.md", .title = "Raycast doors and push-walls", .tables = {"door", "pushwall"}},
 			{.file = "lua-api-isometric.md", .title = "Isometric terrain and paths", .tables = {"isometric", "path"}},
 	};
@@ -2960,6 +3010,9 @@ void registerBindings(lua_State* iState) {
 	for (const auto& registration: s_registrations)
 		LuaEngine::registerTable(iState, registration.table.c_str(), registration.functions.data(),
 								 static_cast<int>(registration.functions.size() - 1));
+	// `tr` is the one global binding: translated texts appear in most lines of a game's scripts.
+	lua_pushcfunction(iState, guarded<luaLocaleTr>);
+	lua_setglobal(iState, "tr");
 }
 
 }// namespace owl::script

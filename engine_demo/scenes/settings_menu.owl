@@ -99,6 +99,39 @@ Entities:
       offset: [0, 0]
     UiText:
       text: Back
+      textKey: settings.back
+      color: [1, 1, 1, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      fit: Shrink
+      minFontSize: 12
+  - Entity: 800000000000000002
+    Tag: {tag: LanguageButton}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    Hierarchy: {parentId: 800000000000000010}
+    UiButton:
+      normalColor: [0.449999988, 0.349999994, 0.100000001, 1]
+      hoverColor: [0.600000024, 0.449999988, 0.150000006, 1]
+      pressedColor: [0.349999994, 0.25, 0.0500000007, 1]
+      disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
+      onClickCallback: on_language_clicked
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.5, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      text: 'Language: English'
+      textKey: settings.language
       color: [1, 1, 1, 1]
       fontSize: 30
       horizontalAlignment: Center
@@ -130,6 +163,7 @@ Entities:
       offset: [0, 0]
     UiText:
       text: Reset Defaults
+      textKey: settings.reset
       color: [1, 1, 1, 1]
       fontSize: 30
       horizontalAlignment: Center
@@ -302,6 +336,7 @@ Entities:
       offset: [0, 12]
     UiText:
       text: Settings
+      textKey: settings.title
       color: [1, 0.850000024, 0.200000003, 1]
       fontSize: 64
       horizontalAlignment: Center

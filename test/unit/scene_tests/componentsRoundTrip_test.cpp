@@ -100,6 +100,7 @@ TEST(ComponentRoundTrip, UiText) {
 			[](scene::Entity& iEnt) -> void {
 				auto& uiText = iEnt.addComponent<scene::component::UiText>();
 				uiText.text = "hello";
+				uiText.textKey = "menu.hello";
 				uiText.color = {0.1f, 0.2f, 0.3f, 0.4f};
 				uiText.fontSize = 24.f;
 				uiText.horizontalAlignment = data::fonts::HorizontalAlignment::Right;
@@ -117,6 +118,7 @@ TEST(ComponentRoundTrip, UiText) {
 			[](const scene::Entity& iEnt) -> void {
 				const auto& t = iEnt.getComponent<scene::component::UiText>();
 				EXPECT_EQ(t.text, "hello");
+				EXPECT_EQ(t.textKey, "menu.hello");
 				EXPECT_NEAR(t.color.x(), 0.1f, 0.01f);
 				EXPECT_NEAR(t.fontSize, 24.f, 0.01f);
 				EXPECT_EQ(t.horizontalAlignment, data::fonts::HorizontalAlignment::Right);

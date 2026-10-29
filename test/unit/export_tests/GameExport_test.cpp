@@ -528,15 +528,16 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 		EXPECT_EQ(std::string(data->begin(), data->end()).find("pat:/"), std::string::npos) << packPath;
 	}
 	for (const auto& script: packPathsUnder(iProject, "scripts")) EXPECT_TRUE(reader.contains(script)) << script;
-	for (const auto* entry: {"game_settings.yml", "input_actions.yml"}) {
+	for (const auto* entry: {"game_settings.yml", "input_actions.yml", "localisation.yml"}) {
 		if (exists(iProject / entry)) {
 			EXPECT_TRUE(reader.contains(entry)) << entry;
 		}
 	}
 	if (iProject.filename() == "engine_demo") {
-		for (const auto* entry: {"tilesets/voxel_blocks.owltileset", "textures/atlases/voxel_blocks.png",
-								 "tilesets/raycast_w3d_walls.owltileset", "tilemaps/world_map.owltilemap",
-								 "sounds/hub/birds_4.wav", "sounds/hub/wind_3.wav", "sounds/hub/step_2.wav"})
+		for (const auto* entry:
+			 {"tilesets/voxel_blocks.owltileset", "textures/atlases/voxel_blocks.png",
+			  "tilesets/raycast_w3d_walls.owltileset", "tilemaps/world_map.owltilemap", "sounds/hub/birds_4.wav",
+			  "sounds/hub/wind_3.wav", "sounds/hub/steps.owlsound", "sounds/hub/step_2.wav", "sounds/hub/wade_4.wav"})
 			EXPECT_TRUE(reader.contains(entry)) << entry;
 	}
 	reader.close();

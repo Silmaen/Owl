@@ -18,6 +18,7 @@
 #include <span>
 #include <sstream>
 #include <unordered_map>
+#include <vector>
 
 namespace owl::gui::widgets {
 
@@ -57,7 +58,20 @@ void emitLink(YAML::Emitter& ioOut, const Link& iLink) {
 	ioOut << YAML::Key << "id" << YAML::Value << static_cast<uint64_t>(iLink.id);
 	ioOut << YAML::Key << "from" << YAML::Value << static_cast<uint64_t>(iLink.fromPin);
 	ioOut << YAML::Key << "to" << YAML::Value << static_cast<uint64_t>(iLink.toPin);
+	if (!iLink.waypoints.empty()) {
+		ioOut << YAML::Key << "waypoints" << YAML::Value << YAML::BeginSeq;
+		for (const auto& point: iLink.waypoints) ioOut << YAML::BeginSeq << point.x() << point.y() << YAML::EndSeq;
+		ioOut << YAML::EndSeq;
+	}
 	ioOut << YAML::EndMap;
+}
+
+auto parseWaypoints(const YAML::Node& iLink) -> std::vector<math::vec2f> {
+	std::vector<math::vec2f> waypoints;
+	for (const auto& point: iLink["waypoints"])
+		if (point.IsSequence() && point.size() == 2)
+			waypoints.emplace_back(point[0].as<float>(), point[1].as<float>());
+	return waypoints;
 }
 
 auto parsePin(const YAML::Node& iPin, PinKind iKind) -> std::optional<NodePin> {
@@ -149,7 +163,7 @@ auto NodeCanvasSerializer::deserializeFromString(NodeCanvas& ioCanvas, std::stri
 				continue;
 			const core::UUID fromPin{raw["from"].as<uint64_t>()};
 			const core::UUID toPin{raw["to"].as<uint64_t>()};
-			ioCanvas.addLink(fromPin, toPin);
+			ioCanvas.addLink(fromPin, toPin, parseWaypoints(raw));
 		}
 	}
 	return true;
@@ -195,7 +209,7 @@ auto NodeCanvasSerializer::serializeSubset(const NodeCanvas& iCanvas, std::span<
 	for (const auto& link: iCanvas.links()) {
 		if (pinsInSubset.contains(static_cast<uint64_t>(link.fromPin)) &&
 			pinsInSubset.contains(static_cast<uint64_t>(link.toPin))) {
-			subset.addLink(link.fromPin, link.toPin);
+			subset.addLink(link.fromPin, link.toPin, link.waypoints);
 		}
 	}
 	return serializeToString(subset);
@@ -244,7 +258,7 @@ auto NodeCanvasSerializer::pasteSubset(NodeCanvas& ioCanvas, std::string_view iY
 			const auto toIt = pinIdMap.find(oldTo);
 			if (fromIt == pinIdMap.end() || toIt == pinIdMap.end())
 				continue;
-			ioCanvas.addLink(fromIt->second, toIt->second);
+			ioCanvas.addLink(fromIt->second, toIt->second, parseWaypoints(raw));
 		}
 	}
 	return createdNodeIds;

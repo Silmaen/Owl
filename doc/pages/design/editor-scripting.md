@@ -40,7 +40,8 @@ without UI in `session/Console.h` and its panel in `panel/ConsolePanel.h`; user 
 (`entity.set_transform`) and the inspector rename (`entity.rename`) are registry commands. Gestures still pushing an
 undo command directly: the scene settings panel (physics, layers), "Revert to Prefab" and "Apply to Prefab", "Route to
 layer" in the hierarchy, the voxel brush and tile painting, and the edits of the asset documents (tilemap, tileset,
-font, node graph), which have undo histories of their own.
+font, node graph), which have undo histories of their own. The sound cue and localisation documents run `sound.*` /
+`locale.*` commands on their own history through `commands::DocumentHost`.
 
 - **Command line syntax**: `entity.create name="Tree" parent=$1`, one command per line; values in the argument types
   of the registry (text, number, bool, Vec2 / Vec4 as `(1, 2)`, colour as `#rrggbb`, enum by name, entity by UUID or

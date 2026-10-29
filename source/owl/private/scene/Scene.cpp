@@ -62,6 +62,7 @@
 #include "script/ScriptEngine.h"
 #include "script/ScriptInstance.h"
 #include "sound/SoundCommand.h"
+#include "sound/SoundHelper.h"
 #include "sound/SoundSystem.h"
 
 #include <algorithm>
@@ -428,28 +429,9 @@ void Scene::onStartRuntime() {
 	if (sound::SoundSystem::getState() == sound::SoundSystem::State::Running ||
 
 		sound::SoundSystem::getState() == sound::SoundSystem::State::Error) {
-		auto& soundLibrary = sound::SoundSystem::getSoundLibrary();
-		for (const auto view = registry.view<component::Transform, component::SoundSource>(); const auto entity: view) {
-			auto& [soundComp] = view.get<component::SoundSource>(entity);
-			if (!soundComp.playOnStart || soundComp.soundAsset.empty())
-				continue;
-			// A source starts its sound even when no script played it before: load it on first use.
-			const auto soundData = soundLibrary.exists(soundComp.soundAsset) ? soundLibrary.get(soundComp.soundAsset)
-																			 : soundLibrary.load(soundComp.soundAsset);
-			if (!soundData)
-				continue;
-			const Entity ent{entity, this};
-			const auto wt = getWorldTransform(ent);
-			const sound::PlayParams params{
-					.volume = soundComp.volume,
-					.pitch = soundComp.pitch,
-					.loop = soundComp.loop,
-					.spatial = soundComp.spatial,
-					.position = {wt.translation().x(), wt.translation().y(), wt.translation().z()},
-					.maxDistance = soundComp.maxDistance,
-					.rolloff = soundComp.rolloff};
-			soundComp.runtimeHandle = sound::SoundCommand::play(soundData, params);
-		}
+		for (const auto view = registry.view<component::Transform, component::SoundSource>(); const auto entity: view)
+			if (const auto& [soundComp] = view.get<component::SoundSource>(entity); soundComp.playOnStart)
+				std::ignore = sound::SoundHelper::playEntitySound(Entity{entity, this});
 	}
 
 	OWL_CORE_INFO("Scene::onStartRuntime: sound init {:.1f} ms.", ms(clk::now() - soundStart))

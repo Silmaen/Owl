@@ -142,7 +142,7 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Done][done] A game packs only what it uses: shaders of its renderer stack, its fonts, no Owl Nest asset ([Game export](design/game-export.md#game-export-content))
 - ![Done][done] Games read their assets from the pack in memory, with a parallel `readEntry`; nothing extracted to disk ([Game export](design/game-export.md#game-export-in-memory))
 - ![Done][done] Project shaders baked by the cook, no shader compiled at the first run of a game ([Game export](design/game-export.md#game-export-project-shaders))
-- ![Planned][planned] Localisation of games: string tables edited in Owl Nest, `tr()` in Lua, fonts per language ([Localisation](design/localisation.md))
+- ![Done][done] Localisation of games: string tables edited in Owl Nest, `tr()` in Lua, fonts per language ([Localisation](design/localisation.md))
 - ![Done][done] World positions in double with a floating origin, through scene, physics, audio and Owl Nest ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Spline component and its editor: paths, lanes, rails ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Data tables: typed records edited in a grid in Owl Nest, read from Lua ([Large worlds](design/large-worlds.md))
@@ -155,14 +155,14 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Done][done] Point and spot light shadows (cube and perspective shadow maps) ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Done][done] Local reflection probes: baked cube maps blended by volume, parallax-corrected, so metals reflect the room ([3D core](design/3d-core.md#reflection-probes))
 - ![Done][done] Visual scripting MVP, event graphs compiled to Lua, node editing of assets ([details](design/visual-scripting.md))
-- ![Planned][planned] Node-graph link waypoints
+- ![Done][done] Node-graph link waypoints, in visual scripts, PCG graphs and every node graph
 - ![Done][done] Scene Flow view removed: it showed few of the scene links of a real project
 - ![Done][done] Script debugging aids (breakpoint markers, live watch)
 - ![Done][done] Lua editor scripts and interactive Lua console ([Editor scripting](design/editor-scripting.md))
 - ![Done][done] Procedural generation graphs on `NodeCanvas`, first brick on tilemaps ([PCG graphs](design/pcg-graphs.md))
 - ![Done][done] Tileset editor: compose the atlas from source images ([2D](design/2d-complete.md))
 - ![Done][done] Mipmapped pixel-art atlases: sharp texels up close, filtered mips far away, no bleeding between tiles, for the voxel, raycast and tilemap atlases ([2D](design/2d-complete.md#pixel-art-atlases))
-- ![Planned][planned] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
+- ![Done][done] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
 - ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a Mini Minecraft, combat in the Wolfenstein mini, a station trader ([Pool](design/sample-games.md#sample-games-pool))
 
 ## v0.5.0 -- 2026-10-25

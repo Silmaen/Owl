@@ -10,6 +10,7 @@
 #include "ScenarioWatchdog.h"
 
 #include <app/EngineContext.h>
+#include <data/localisation/Localisation.h>
 #include <debug/LogSink.h>
 #include <input/ActionMap.h>
 #include <input/Input.h>
@@ -272,6 +273,7 @@ void RunnerLayer::onAttach() {
 
 	loadGamepadMappings();
 	loadActionMap();
+	loadLocalisation();
 
 	// Load user overrides.
 	app::Application::get().getEngineContext().getSettings().loadUserSettings();
@@ -329,6 +331,18 @@ void RunnerLayer::loadActionMap() const {
 		}
 	}
 	OWL_CORE_INFO("Runner: No {} found, the built-in actions are used.", input::ActionMap::fileName)
+}
+
+void RunnerLayer::loadLocalisation() const {
+	auto& app = app::Application::get();
+	for (const auto& [title, assetsPath]: app.getAssetDirectories())
+		if (exists(assetsPath / data::localisation::Localisation::fileName)) {
+			std::ignore = app.getEngineContext().loadLocalisation(assetsPath);
+			return;
+		}
+	if (!app.getEngineContext().loadLocalisation({}))
+		OWL_CORE_INFO("Runner: No {} found, the texts are shown as written.",
+					  data::localisation::Localisation::fileName)
 }
 
 auto RunnerLayer::loadScene(const std::string& iSceneName) -> bool {

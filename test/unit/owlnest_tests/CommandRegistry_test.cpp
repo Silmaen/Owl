@@ -33,6 +33,7 @@
 #include <scene/component/UiScrollView.h>
 #include <scene/component/UiText.h>
 #include <scene/nav/NavProfile.h>
+#include <sound/SoundCue.h>
 
 #include <gtest/gtest.h>
 
@@ -100,7 +101,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 45u);
+	EXPECT_EQ(m_registry.getCommands().size(), 62u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -243,7 +244,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 45u);
+	EXPECT_EQ(m_registry.getCommands().size(), 62u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -1065,6 +1066,24 @@ TEST_F(CommandRegistryTest, MaterialCreateWritesAReadableFile) {
 	ASSERT_TRUE(child.has_value());
 	EXPECT_EQ(child->parent.generic_string(), "materials/gold.owlmat");
 	EXPECT_EQ(child->overrides, 0u);
+	std::filesystem::remove_all(dir);
+}
+
+TEST_F(CommandRegistryTest, SoundCreateWritesACue) {
+	const auto dir = std::filesystem::temp_directory_path() / "owl_sound_create_test";
+	std::filesystem::remove_all(dir);
+	const auto file = dir / "sounds" / "steps.owlsound";
+	ASSERT_TRUE(run("sound.create", {{"path", file.string()}, {"file", std::string{"sounds/step.wav"}}}).has_value());
+	const auto cue = sound::SoundCue::load(file);
+	ASSERT_TRUE(cue.has_value());
+	ASSERT_EQ(cue->variants.size(), 1u);
+	EXPECT_EQ(cue->variants[0].file, "sounds/step.wav");
+	EXPECT_FALSE(run("sound.create", {{"path", file.string()}}).has_value());
+	EXPECT_FALSE(run("sound.create", {{"path", (dir / "steps.wav").string()}}).has_value());
+	EXPECT_FALSE(
+			run("sound.create", {{"path", (dir / "other.owlsound").string()}, {"file", file.string()}}).has_value());
+	ASSERT_TRUE(run("sound.create", {{"path", (dir / "empty.owlsound").string()}}).has_value());
+	EXPECT_TRUE(sound::SoundCue::load(dir / "empty.owlsound")->variants.empty());
 	std::filesystem::remove_all(dir);
 }
 

@@ -17,6 +17,7 @@
 #include <gui/utils.h>
 #include <gui/widgets/Badge.h>
 #include <gui/widgets/IconButton.h>
+#include <gui/widgets/Menu.h>
 #include <magic_enum/magic_enum.hpp>
 
 #include <algorithm>
@@ -25,8 +26,10 @@
 #include <cstddef>
 #include <ctime>
 #include <format>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace owl::nest::panel {
 
@@ -135,6 +138,20 @@ auto formatTimestamp(const std::chrono::system_clock::time_point& iTime) -> std:
 	return std::format("{:02}:{:02}:{:02}.{:03}", tm.tm_hour, tm.tm_min, tm.tm_sec, ms.count());
 }
 
+auto formatLine(const debug::LogEntry& iEntry) -> std::string {
+	return std::format("{} {} {}: {}", formatTimestamp(iEntry.timestamp), getLevelLabel(iEntry.level),
+					   iEntry.loggerName, iEntry.message);
+}
+
+auto joinLines(const std::vector<const debug::LogEntry*>& iShown) -> std::string {
+	std::string text;
+	for (const auto* entry: iShown) {
+		text += formatLine(*entry);
+		text += '\n';
+	}
+	return text;
+}
+
 }// namespace
 
 void LogPanel::onImGuiRender() {
@@ -155,6 +172,13 @@ void LogPanel::onImGuiRender() {
 											.description = "Keep the view scrolled to the latest message.",
 											.selected = m_autoScroll}))
 		m_autoScroll = !m_autoScroll;
+	ImGui::SameLine();
+	if (gui::widgets::iconButton("textMode", {.glyph = gui::icon::textCursorInput,
+											  .tooltip = "Select text",
+											  .description = "Show the messages as plain text to select and copy "
+															 "(Ctrl+C); the colours come back when it is off.",
+											  .selected = m_textMode}))
+		m_textMode = !m_textMode;
 	ImGui::SameLine();
 	const auto chipToggle = [](const char* iLabel, bool& ioFlag) -> void {
 		if (gui::widgets::chip(iLabel, ioFlag))
@@ -191,83 +215,101 @@ void LogPanel::onImGuiRender() {
 
 	ImGui::Separator();
 
-	// Log content with smaller font
-	ImGui::SetWindowFontScale(g_fontScale);
-
-	ImGui::BeginChild("LogScrollRegion", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
-
-	const std::string_view searchFilter(m_searchBuffer.data());
-
-	for (const auto& [level, loggerName, message, timestamp]: entries) {
-		// Level filter
-		switch (level) {
-			case core::Log::Level::Trace:
-				if (!m_showTrace)
-					continue;
-				break;
-			case core::Log::Level::Debug:
-				if (!m_showDebug)
-					continue;
-				break;
-			case core::Log::Level::Info:
-				if (!m_showInfo)
-					continue;
-				break;
-			case core::Log::Level::Warning:
-				if (!m_showWarning)
-					continue;
-				break;
-			case core::Log::Level::Error:
-				if (!m_showError)
-					continue;
-				break;
-			case core::Log::Level::Critical:
-				if (!m_showCritical)
-					continue;
-				break;
-			case core::Log::Level::Off:
-				continue;
-		}
-		// Logger filter
-		if (loggerName == "OWL" && !m_showCore)
-			continue;
-		if (loggerName == "APP" && !m_showApp)
-			continue;
-		// Text search filter
-		if (!searchFilter.empty() && message.find(searchFilter) == std::string::npos)
-			continue;
-		const ImVec4 levelColor = gui::vec(getLevelColor(level));
-		// Timestamp in grey
-		const auto f_timestamp = formatTimestamp(timestamp);
-
-		ImGui::PushStyleColor(ImGuiCol_Text, g_timestampColor);
-
-		ImGui::TextUnformatted(f_timestamp.c_str());
-
-		ImGui::PopStyleColor();
-
-		// Level label + logger name in level colour
-		ImGui::SameLine(0.0f, 0.0f);
-
-		ImGui::PushStyleColor(ImGuiCol_Text, levelColor);
-
-		ImGui::TextUnformatted(std::format(" {} {}: ", getLevelLabel(level), loggerName).c_str());
-
-		ImGui::PopStyleColor();
-
-		// Message with numbers in cyan
-		renderColoredText(message, levelColor);
-	}
-
-	if (m_autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
-
-		ImGui::SetScrollHereY(1.0f);
-
-	ImGui::EndChild();
-
-	ImGui::SetWindowFontScale(1.0f);
-
+	std::vector<const debug::LogEntry*> shown;
+	shown.reserve(entries.size());
+	for (const auto& entry: entries)
+		if (isShown(entry))
+			shown.push_back(&entry);
+	if (m_textMode)
+		renderSelectableText(shown);
+	else
+		renderColoredLog(shown);
 	ImGui::End();
+}
+
+auto LogPanel::isShown(const debug::LogEntry& iEntry) const -> bool {
+	bool levelShown = false;
+	switch (iEntry.level) {
+		case core::Log::Level::Trace:
+			levelShown = m_showTrace;
+			break;
+		case core::Log::Level::Debug:
+			levelShown = m_showDebug;
+			break;
+		case core::Log::Level::Info:
+			levelShown = m_showInfo;
+			break;
+		case core::Log::Level::Warning:
+			levelShown = m_showWarning;
+			break;
+		case core::Log::Level::Error:
+			levelShown = m_showError;
+			break;
+		case core::Log::Level::Critical:
+			levelShown = m_showCritical;
+			break;
+		case core::Log::Level::Off:
+			break;
+	}
+	if (!levelShown || (iEntry.loggerName == "OWL" && !m_showCore) || (iEntry.loggerName == "APP" && !m_showApp))
+		return false;
+	const std::string_view searchFilter(m_searchBuffer.data());
+	return searchFilter.empty() || iEntry.message.find(searchFilter) != std::string::npos;
+}
+
+void LogPanel::renderColoredLog(const std::vector<const debug::LogEntry*>& iShown) {
+	ImGui::SetWindowFontScale(g_fontScale);
+	ImGui::BeginChild("LogScrollRegion", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+	// The scroll of the previous frame: read before this frame's lines make the content taller.
+	const bool atBottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 1.f;
+	if (ImGui::IsWindowHovered() && ImGui::GetIO().MouseWheel > 0.f)
+		m_autoScroll = false;
+	else if (ImGui::IsWindowHovered() && ImGui::GetIO().MouseWheel < 0.f && atBottom)
+		m_autoScroll = true;
+	std::optional<size_t> hoveredLine;
+	for (size_t i = 0; i < iShown.size(); ++i) {
+		const auto& [level, loggerName, message, timestamp] = *iShown[i];
+		const ImVec4 levelColor = gui::vec(getLevelColor(level));
+		const float top = ImGui::GetCursorScreenPos().y;
+		ImGui::PushStyleColor(ImGuiCol_Text, g_timestampColor);
+		ImGui::TextUnformatted(formatTimestamp(timestamp).c_str());
+		ImGui::PopStyleColor();
+		ImGui::SameLine(0.0f, 0.0f);
+		ImGui::PushStyleColor(ImGuiCol_Text, levelColor);
+		ImGui::TextUnformatted(std::format(" {} {}: ", getLevelLabel(level), loggerName).c_str());
+		ImGui::PopStyleColor();
+		renderColoredText(message, levelColor);
+		if (const float mouseY = ImGui::GetIO().MousePos.y;
+			ImGui::IsWindowHovered() && mouseY >= top && mouseY < ImGui::GetCursorScreenPos().y)
+			hoveredLine = i;
+	}
+	if (hoveredLine.has_value() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+		m_menuLine = *hoveredLine;
+		ImGui::OpenPopup("##logMenu");
+	}
+	if (ImGui::BeginPopup("##logMenu")) {
+		ImGui::SetWindowFontScale(1.f);
+		if (gui::widgets::menuItem(
+					{.glyph = gui::icon::copy, .label = "Copy Line", .enabled = m_menuLine < iShown.size()}))
+			ImGui::SetClipboardText(formatLine(*iShown[m_menuLine]).c_str());
+		if (gui::widgets::menuItem({.glyph = gui::icon::clipboardCopy, .label = "Copy All Shown"}))
+			ImGui::SetClipboardText(joinLines(iShown).c_str());
+		if (gui::widgets::menuItem({.glyph = gui::icon::textCursorInput, .label = "Select Text"}))
+			m_textMode = true;
+		ImGui::EndPopup();
+	}
+	if (m_autoScroll)
+		ImGui::SetScrollHereY(1.0f);
+	ImGui::EndChild();
+	ImGui::SetWindowFontScale(1.0f);
+}
+
+void LogPanel::renderSelectableText(const std::vector<const debug::LogEntry*>& iShown) {
+	m_selectableText = joinLines(iShown);
+	ImGui::SetWindowFontScale(g_fontScale);
+	ImGui::InputTextMultiline("##logText", m_selectableText.data(), m_selectableText.size() + 1,
+							  ImGui::GetContentRegionAvail(), ImGuiInputTextFlags_ReadOnly);
+	ImGui::SetWindowFontScale(1.0f);
 }
 
 }// namespace owl::nest::panel

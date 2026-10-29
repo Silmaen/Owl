@@ -34,6 +34,9 @@ enum struct AssetKind : uint8_t {
 	Macro,///< `.owlmacro`: replayed on the active scene (one undo step).
 	ActionMap,///< `input_actions.yml`: opened in the action map document.
 	Material,///< `.owlmat`: opened in a material document.
+	SoundCue,///< `.owlsound`: opened in a sound document.
+	Audio,///< `.wav`, `.ogg`, `.flac`, `.mp3`: opened in a sound document, its cue beside it or a new one.
+	Localisation,///< `localisation.yml`: opened in the localisation document.
 	Code,///< Script, source, data or markup text: opened in the code editor.
 	Unsupported///< Anything else.
 };

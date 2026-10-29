@@ -1,0 +1,28 @@
+Localisation: ''
+FormatVersion: 1
+fallback: en
+languages:
+  - {code: en, name: English, export: true}
+  - {code: fr, name: Français, export: true}
+strings:
+  - key: settings.title
+    table: settings
+    values: {en: Settings, fr: Réglages}
+  - key: settings.back
+    table: settings
+    values: {en: Back, fr: Retour}
+  - key: settings.reset
+    table: settings
+    values: {en: Reset Defaults, fr: Réglages par défaut}
+  - key: settings.language
+    table: settings
+    values: {en: 'Language: English', fr: 'Langue : français'}
+  - key: settings.volume
+    table: settings
+    values: {en: 'Master Volume: %d%%', fr: 'Volume général : %d %%'}
+  - key: settings.speed
+    table: settings
+    values: {en: 'Player Speed: %.1f', fr: 'Vitesse du joueur : %.1f'}
+  - key: settings.ui_scale
+    table: settings
+    values: {en: 'Interface Size: %d%%', fr: "Taille de l'interface : %d %%"}

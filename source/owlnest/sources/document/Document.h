@@ -38,6 +38,8 @@ enum struct DocumentType : uint8_t {
 	Image,///< A `.png` / `.jpg` / ... image asset, shown read-only.
 	Mesh,///< A `.gltf` / `.glb` / `.obj` mesh asset, shown read-only.
 	Material,///< A `.owlmat` material asset, with its live preview.
+	Sound,///< A `.owlsound` sound cue: its takes, trim and loop points, volume and pitch.
+	Localisation,///< The `localisation.yml` of a project: its languages and string tables.
 };
 
 /**

@@ -136,6 +136,18 @@ private:
 
 	/**
 	 * @brief
+	 *  Build the Sound tab: save, close, play and stop the cue of the active sound document.
+	 */
+	void buildSoundTab();
+
+	/**
+	 * @brief
+	 *  Build the Localisation tab: save and close the active localisation document.
+	 */
+	void buildLocalisationTab();
+
+	/**
+	 * @brief
 	 *  Build the contextual tab of an action map document (Save / Save As / Reset / Close).
 	 */
 	void buildActionMapTab();

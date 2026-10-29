@@ -27,6 +27,7 @@ OWL_DIAG_POP
 #include <cstdint>
 #include <limits>
 #include <optional>
+#include <ranges>
 #include <span>
 #include <string_view>
 #include <unordered_map>
@@ -96,7 +97,12 @@ auto shouldDrawPinLabels(const float iZoomFactor) -> bool { return iZoomFactor >
 auto shouldDrawNodeTitles(const float iZoomFactor) -> bool { return iZoomFactor > g_titleLodZoom; }
 
 struct NodeCanvas::Impl final {
-	enum struct Gesture : uint8_t { None, Pan, Select, Move, Link };
+	enum struct Gesture : uint8_t { None, Pan, Select, Move, Link, Waypoint };
+
+	struct WaypointRef {
+		size_t link{0};
+		size_t index{0};
+	};
 
 	struct PinView {
 		math::vec2f position;
@@ -126,6 +132,11 @@ struct NodeCanvas::Impl final {
 	std::function<bool(core::UUID, core::UUID)> m_linkValidator{[](auto, auto) -> bool { return true; }};
 	std::function<void(core::UUID, core::UUID, core::UUID)> m_onLinkCreated;
 	std::function<void(core::UUID)> m_onLinkDeleted;
+	std::function<void(core::UUID, const std::vector<math::vec2f>&)> m_onLinkWaypointsChanged;
+	core::UUID m_draggedLink{0};
+	size_t m_draggedWaypoint{0};
+	std::vector<math::vec2f> m_waypointsBefore;
+	std::vector<std::pair<core::UUID, std::vector<math::vec2f>>> m_movedLinks;
 	std::function<void(core::UUID, math::vec2f)> m_onNodeMoved;
 	std::function<void(core::UUID)> m_onNodeSelected;
 	std::function<void(core::UUID)> m_onNodeDoubleClicked;
@@ -136,6 +147,7 @@ struct NodeCanvas::Impl final {
 	core::UUID m_hoveredPin{0};
 	std::optional<size_t> m_hoveredNode;
 	std::optional<size_t> m_hoveredLink;
+	std::optional<WaypointRef> m_hoveredWaypoint;
 	bool m_hovered{false};
 
 	[[nodiscard]] auto toCanvas(const ImVec2& iScreen) const -> std::array<float, 2> {
@@ -144,6 +156,19 @@ struct NodeCanvas::Impl final {
 
 	[[nodiscard]] auto toScreen(const math::vec2f& iCanvas) const -> ImVec2 {
 		return {m_origin.x + (iCanvas.x() + m_offset[0]) * m_zoom, m_origin.y + (iCanvas.y() + m_offset[1]) * m_zoom};
+	}
+
+	[[nodiscard]] auto toScreenPoints(const std::vector<math::vec2f>& iCanvas) const -> std::vector<math::vec2f> {
+		std::vector<math::vec2f> points;
+		points.reserve(iCanvas.size());
+		for (const auto& point: iCanvas) points.push_back(toVec(toScreen(point)));
+		return points;
+	}
+
+	[[nodiscard]] auto isInnerLink(const Link& iLink) const -> bool {
+		const auto* from = m_owner.findNodeByPin(iLink.fromPin);
+		const auto* to = m_owner.findNodeByPin(iLink.toPin);
+		return from != nullptr && to != nullptr && isSelected(from->id) && isSelected(to->id);
 	}
 
 	[[nodiscard]] auto findNodeIndex(const core::UUID iId) const -> std::optional<size_t> {
@@ -216,22 +241,40 @@ struct NodeCanvas::Impl final {
 
 	void drawLinks(ImDrawList* ioDraw) {
 		m_hoveredLink.reset();
-		float best = 6.f;
+		m_hoveredWaypoint.reset();
 		const ImVec2 mouse = ImGui::GetMousePos();
+		const bool free = m_hovered && m_hoveredPin == 0 && !m_hoveredNode.has_value();
+		const float handle = std::max(4.f, g_pinRadius * 0.9f * m_zoom);
+		const float pick = std::max(8.f, handle * 1.8f);
+		float best = 6.f;
+		float bestWaypoint = pick * pick;
+		std::vector<std::vector<math::vec2f>> screen(m_owner.m_links.size());
 		for (size_t i = 0; i < m_owner.m_links.size(); ++i) {
 			const auto& link = m_owner.m_links[i];
 			const auto from = m_pins.find(static_cast<uint64_t>(link.fromPin));
 			const auto to = m_pins.find(static_cast<uint64_t>(link.toPin));
 			if (from == m_pins.end() || to == m_pins.end())
 				continue;
-			if (m_hovered && m_hoveredPin == 0 && !m_hoveredNode.has_value())
-				if (const float distance =
-							getNodeLinkDistance(from->second.position, to->second.position, toVec(mouse), m_zoom);
-					distance < best) {
-					best = distance;
-					m_hoveredLink = i;
+			screen[i] = toScreenPoints(link.waypoints);
+			if (!free)
+				continue;
+			for (size_t w = 0; w < screen[i].size(); ++w) {
+				const float dx = mouse.x - screen[i][w].x();
+				const float dy = mouse.y - screen[i][w].y();
+				if (const float distance = dx * dx + dy * dy; distance < bestWaypoint) {
+					bestWaypoint = distance;
+					m_hoveredWaypoint = WaypointRef{.link = i, .index = w};
 				}
+			}
+			if (const float distance = getNodeLinkDistance(from->second.position, to->second.position, screen[i],
+														   toVec(mouse), m_zoom);
+				distance < best) {
+				best = distance;
+				m_hoveredLink = i;
+			}
 		}
+		if (m_hoveredWaypoint.has_value())
+			m_hoveredLink = m_hoveredWaypoint->link;
 		for (size_t i = 0; i < m_owner.m_links.size(); ++i) {
 			const auto& link = m_owner.m_links[i];
 			const auto from = m_pins.find(static_cast<uint64_t>(link.fromPin));
@@ -241,10 +284,44 @@ struct NodeCanvas::Impl final {
 			const bool highlighted = m_hoveredLink == i || link.fromPin == m_hoveredPin || link.toPin == m_hoveredPin ||
 									 isSelected(m_owner.m_nodes[from->second.node].id) ||
 									 isSelected(m_owner.m_nodes[to->second.node].id);
-			drawNodeLink(ioDraw, from->second.position, to->second.position,
-						 highlighted ? lighter(from->second.color, 0.35f) : from->second.color,
+			const auto color = highlighted ? lighter(from->second.color, 0.35f) : from->second.color;
+			drawNodeLink(ioDraw, from->second.position, to->second.position, screen[i], color,
 						 2.4f * m_zoom * (highlighted ? 1.5f : 1.f), m_zoom);
+			for (size_t w = 0; w < screen[i].size(); ++w)
+				drawNodeLinkWaypoint(ioDraw, screen[i][w], handle, color,
+									 m_hoveredWaypoint.has_value() && m_hoveredWaypoint->link == i &&
+											 m_hoveredWaypoint->index == w);
 		}
+	}
+
+	void insertWaypoint() {
+		auto& link = m_owner.m_links[*m_hoveredLink];
+		const auto from = m_pins.find(static_cast<uint64_t>(link.fromPin));
+		const auto to = m_pins.find(static_cast<uint64_t>(link.toPin));
+		if (from == m_pins.end() || to == m_pins.end())
+			return;
+		const auto before = link.waypoints;
+		const auto index = getNodeLinkInsertIndex(from->second.position, to->second.position,
+												  toScreenPoints(link.waypoints), toVec(ImGui::GetMousePos()), m_zoom);
+		const auto mouse = toCanvas(ImGui::GetMousePos());
+		link.waypoints.insert(link.waypoints.begin() + static_cast<ptrdiff_t>(index), math::vec2f{mouse[0], mouse[1]});
+		if (m_onLinkWaypointsChanged)
+			m_onLinkWaypointsChanged(link.id, before);
+	}
+
+	void deleteHovered() {
+		if (m_hoveredWaypoint.has_value()) {
+			auto& link = m_owner.m_links[m_hoveredWaypoint->link];
+			const auto before = link.waypoints;
+			link.waypoints.erase(link.waypoints.begin() + static_cast<ptrdiff_t>(m_hoveredWaypoint->index));
+			if (m_onLinkWaypointsChanged)
+				m_onLinkWaypointsChanged(link.id, before);
+			return;
+		}
+		const auto id = m_owner.m_links[*m_hoveredLink].id;
+		m_owner.removeLink(id);
+		if (m_onLinkDeleted)
+			m_onLinkDeleted(id);
 	}
 
 	void drawNodes(ImDrawList* ioDraw) const {
@@ -327,7 +404,7 @@ struct NodeCanvas::Impl final {
 		const auto toPin = start->second.output ? m_hoveredPin : m_linkStart;
 		if (m_linkValidator && !m_linkValidator(fromPin, toPin))
 			return;
-		const Link link{.id = core::UUID{}, .fromPin = fromPin, .toPin = toPin};
+		const Link link{.id = core::UUID{}, .fromPin = fromPin, .toPin = toPin, .waypoints = {}};
 		m_owner.m_links.push_back(link);
 		if (m_onLinkCreated)
 			m_onLinkCreated(link.id, fromPin, toPin);
@@ -338,6 +415,15 @@ struct NodeCanvas::Impl final {
 			case Gesture::Move:
 				if (!m_moved && m_pressedNode.has_value())
 					m_selection = {*m_pressedNode};
+				if (m_moved && m_onLinkWaypointsChanged)
+					for (const auto& [id, before]: m_movedLinks) m_onLinkWaypointsChanged(id, before);
+				m_movedLinks.clear();
+				break;
+			case Gesture::Waypoint:
+				if (const auto* link = m_owner.findLink(m_draggedLink);
+					link != nullptr && link->waypoints != m_waypointsBefore && m_onLinkWaypointsChanged)
+					m_onLinkWaypointsChanged(m_draggedLink, m_waypointsBefore);
+				m_draggedLink = core::UUID{0};
 				break;
 			case Gesture::Select:
 				{
@@ -362,6 +448,67 @@ struct NodeCanvas::Impl final {
 		m_gesture = Gesture::None;
 	}
 
+	void pressLeft(const std::array<float, 2>& iMouse) {
+		const auto& io = ImGui::GetIO();
+		m_gestureStart = iMouse;
+		m_lastMouse = iMouse;
+		m_pressedNode.reset();
+		m_moved = false;
+		if (io.KeyAlt && m_hoveredPin == 0 && m_hoveredLink.has_value()) {
+			const auto id = m_owner.m_links[*m_hoveredLink].id;
+			m_owner.removeLink(id);
+			if (m_onLinkDeleted)
+				m_onLinkDeleted(id);
+		} else if (m_hoveredPin != 0) {
+			m_gesture = Gesture::Link;
+			m_linkStart = m_hoveredPin;
+		} else if (m_hoveredWaypoint.has_value()) {
+			const auto& link = m_owner.m_links[m_hoveredWaypoint->link];
+			m_gesture = Gesture::Waypoint;
+			m_draggedLink = link.id;
+			m_draggedWaypoint = m_hoveredWaypoint->index;
+			m_waypointsBefore = link.waypoints;
+		} else if (m_hoveredNode.has_value()) {
+			clickNode(*m_hoveredNode);
+			m_movedLinks.clear();
+			for (const auto& link: m_owner.m_links)
+				if (!link.waypoints.empty() && isInnerLink(link))
+					m_movedLinks.emplace_back(link.id, link.waypoints);
+		} else {
+			if (!io.KeyCtrl && !io.KeyShift)
+				m_selection.clear();
+			m_gesture = Gesture::Select;
+		}
+	}
+
+	void dragLeft(const std::array<float, 2>& iMouse) {
+		if (m_gesture == Gesture::Waypoint) {
+			for (auto& link: m_owner.m_links)
+				if (link.id == m_draggedLink && m_draggedWaypoint < link.waypoints.size())
+					link.waypoints[m_draggedWaypoint] = {iMouse[0], iMouse[1]};
+			return;
+		}
+		if (m_gesture != Gesture::Move)
+			return;
+		const math::vec2f delta{iMouse[0] - m_lastMouse[0], iMouse[1] - m_lastMouse[1]};
+		m_lastMouse = iMouse;
+		if (std::abs(iMouse[0] - m_gestureStart[0]) + std::abs(iMouse[1] - m_gestureStart[1]) >
+			g_dragThreshold / m_zoom)
+			m_moved = true;
+		if (delta.x() == 0.f && delta.y() == 0.f)
+			return;
+		for (auto& node: m_owner.m_nodes)
+			if (isSelected(node.id)) {
+				node.position += delta;
+				if (m_onNodeMoved)
+					m_onNodeMoved(node.id, node.position);
+			}
+		for (const auto& moved: m_movedLinks | std::views::keys)
+			for (auto& link: m_owner.m_links)
+				if (link.id == moved)
+					for (auto& point: link.waypoints) point += delta;
+	}
+
 	void handleMouse() {
 		const auto& io = ImGui::GetIO();
 		const auto mouse = toCanvas(ImGui::GetMousePos());
@@ -382,49 +529,22 @@ struct NodeCanvas::Impl final {
 		if (m_gesture == Gesture::Pan && !ImGui::IsMouseDown(ImGuiMouseButton_Right) &&
 			!ImGui::IsMouseDown(ImGuiMouseButton_Middle))
 			m_gesture = Gesture::None;
-		else if (m_gesture == Gesture::None && m_hovered && ImGui::IsMouseReleased(ImGuiMouseButton_Right) &&
-				 m_onContextMenu)
-			m_onContextMenu(m_hoveredNode.has_value() ? std::optional{m_owner.m_nodes[*m_hoveredNode].id}
-													  : std::nullopt);
-		if (m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-			m_gestureStart = mouse;
-			m_lastMouse = mouse;
-			m_pressedNode.reset();
-			m_moved = false;
-			if (m_hoveredPin != 0) {
-				m_gesture = Gesture::Link;
-				m_linkStart = m_hoveredPin;
-			} else if (m_hoveredNode.has_value()) {
-				clickNode(*m_hoveredNode);
-			} else {
-				if (!io.KeyCtrl && !io.KeyShift)
-					m_selection.clear();
-				m_gesture = Gesture::Select;
-			}
+		else if (m_gesture == Gesture::None && m_hovered && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+			if (m_hoveredLink.has_value() && !m_hoveredWaypoint.has_value())
+				insertWaypoint();
+			else if (m_onContextMenu)
+				m_onContextMenu(m_hoveredNode.has_value() ? std::optional{m_owner.m_nodes[*m_hoveredNode].id}
+														  : std::nullopt);
 		}
-		if (m_gesture == Gesture::Move && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-			const math::vec2f delta{mouse[0] - m_lastMouse[0], mouse[1] - m_lastMouse[1]};
-			m_lastMouse = mouse;
-			if (std::abs(mouse[0] - m_gestureStart[0]) + std::abs(mouse[1] - m_gestureStart[1]) >
-				g_dragThreshold / m_zoom)
-				m_moved = true;
-			if (delta.x() != 0.f || delta.y() != 0.f)
-				for (auto& node: m_owner.m_nodes)
-					if (isSelected(node.id)) {
-						node.position += delta;
-						if (m_onNodeMoved)
-							m_onNodeMoved(node.id, node.position);
-					}
-		}
+		if (m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+			pressLeft(mouse);
+		if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+			dragLeft(mouse);
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 			releaseLeft(mouse);
-		if (m_hovered && m_hoveredLink.has_value() && m_hoveredPin == 0 &&
-			ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
-			const auto id = m_owner.m_links[*m_hoveredLink].id;
-			m_owner.removeLink(id);
-			if (m_onLinkDeleted)
-				m_onLinkDeleted(id);
-		}
+		if (m_hovered && m_hoveredLink.has_value() && m_hoveredPin == 0 && m_gesture == Gesture::None &&
+			ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+			deleteHovered();
 	}
 
 	void drawOverlays(ImDrawList* ioDraw) const {
@@ -522,10 +642,19 @@ void NodeCanvas::removeInputPin(core::UUID iNodeId, core::UUID iPinId) {
 				  [iPinId](const Link& iLink) -> bool { return iLink.fromPin == iPinId || iLink.toPin == iPinId; });
 }
 
-auto NodeCanvas::addLink(core::UUID iFromPin, core::UUID iToPin) -> core::UUID {
-	const Link link{.id = core::UUID{}, .fromPin = iFromPin, .toPin = iToPin};
-	m_links.push_back(link);
-	return link.id;
+auto NodeCanvas::addLink(core::UUID iFromPin, core::UUID iToPin, std::vector<math::vec2f> iWaypoints) -> core::UUID {
+	m_links.push_back({.id = core::UUID{}, .fromPin = iFromPin, .toPin = iToPin, .waypoints = std::move(iWaypoints)});
+	return m_links.back().id;
+}
+
+auto NodeCanvas::setLinkWaypoints(core::UUID iId, std::vector<math::vec2f> iWaypoints) -> bool {
+	for (auto& link: m_links)
+		if (link.id == iId) {
+			link.waypoints = std::move(iWaypoints);
+			return true;
+		}
+	OWL_CORE_WARN("NodeCanvas: Link {} not found, waypoints not set.", static_cast<uint64_t>(iId))
+	return false;
 }
 
 void NodeCanvas::removeLink(core::UUID iId) {
@@ -594,6 +723,10 @@ void NodeCanvas::setOnLinkCreated(std::function<void(core::UUID, core::UUID, cor
 }
 
 void NodeCanvas::setOnLinkDeleted(std::function<void(core::UUID)> iCb) { mp_impl->m_onLinkDeleted = std::move(iCb); }
+
+void NodeCanvas::setOnLinkWaypointsChanged(std::function<void(core::UUID, const std::vector<math::vec2f>&)> iCb) {
+	mp_impl->m_onLinkWaypointsChanged = std::move(iCb);
+}
 
 void NodeCanvas::setOnNodeMoved(std::function<void(core::UUID, math::vec2f)> iCb) {
 	mp_impl->m_onNodeMoved = std::move(iCb);

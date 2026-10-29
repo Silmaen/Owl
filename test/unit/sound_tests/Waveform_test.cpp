@@ -70,3 +70,16 @@ TEST(Waveform, PeaksFollowTheLoudness) {
 	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
 }
+
+TEST(Waveform, DurationIsTheFramesOverTheRate) {
+	OWL_REQUIRE_MODULE(AUDIO);
+	core::Log::init(core::Log::Level::Off);
+	const auto path = std::filesystem::temp_directory_path() / "owl_waveform_duration.wav";
+	writeTestWav(path, 4000);
+	const auto duration = sound::readSoundDuration(path);
+	ASSERT_TRUE(duration.has_value());
+	EXPECT_NEAR(*duration, 0.5f, 1e-4f);
+	EXPECT_FALSE(sound::readSoundDuration(path.parent_path() / "missing.wav").has_value());
+	std::filesystem::remove(path);
+	core::Log::invalidate();
+}

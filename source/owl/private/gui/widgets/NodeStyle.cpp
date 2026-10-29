@@ -19,6 +19,8 @@ OWL_DIAG_POP
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
+#include <span>
 
 namespace owl::gui::widgets {
 
@@ -149,12 +151,75 @@ void drawNodeLink(ImDrawList* ioDraw, const math::vec2f& iFrom, const math::vec2
 
 auto getNodeLinkDistance(const math::vec2f& iFrom, const math::vec2f& iTo, const math::vec2f& iPoint, const float iZoom)
 		-> float {
-	const auto curve = getNodeLinkCurve(iFrom, iTo, iZoom);
-	const auto closest = ImBezierCubicClosestPointCasteljau(toIm(curve[0]), toIm(curve[1]), toIm(curve[2]),
-															toIm(curve[3]), toIm(iPoint), 1.25f);
+	return getNodeLinkDistance(iFrom, iTo, {}, iPoint, iZoom);
+}
+
+void drawNodeLink(ImDrawList* ioDraw, const math::vec2f& iFrom, const math::vec2f& iTo,
+				  const std::span<const math::vec2f> iWaypoints, const math::vec4& iColor, const float iThickness,
+				  const float iZoom) {
+	for (const auto& curve: getNodeLinkSegments(iFrom, iTo, iWaypoints, iZoom)) {
+		ioDraw->AddBezierCubic(toIm(curve[0]), toIm(curve[1]), toIm(curve[2]), toIm(curve[3]), IM_COL32(0, 0, 0, 90),
+							   iThickness + 2.f * iZoom);
+		ioDraw->AddBezierCubic(toIm(curve[0]), toIm(curve[1]), toIm(curve[2]), toIm(curve[3]), toU32(iColor),
+							   iThickness);
+	}
+}
+
+auto getNodeLinkSegments(const math::vec2f& iFrom, const math::vec2f& iTo,
+						 const std::span<const math::vec2f> iWaypoints, const float iZoom)
+		-> std::vector<std::array<math::vec2f, 4>> {
+	std::vector<std::array<math::vec2f, 4>> segments;
+	segments.reserve(iWaypoints.size() + 1);
+	math::vec2f start = iFrom;
+	for (const auto& waypoint: iWaypoints) {
+		segments.push_back(getNodeLinkCurve(start, waypoint, iZoom));
+		start = waypoint;
+	}
+	segments.push_back(getNodeLinkCurve(start, iTo, iZoom));
+	return segments;
+}
+
+namespace {
+
+auto getSegmentDistance(const std::array<math::vec2f, 4>& iCurve, const math::vec2f& iPoint) -> float {
+	const auto closest = ImBezierCubicClosestPointCasteljau(toIm(iCurve[0]), toIm(iCurve[1]), toIm(iCurve[2]),
+															toIm(iCurve[3]), toIm(iPoint), 1.25f);
 	const float dx = closest.x - iPoint.x();
 	const float dy = closest.y - iPoint.y();
 	return std::sqrt(dx * dx + dy * dy);
+}
+
+}// namespace
+
+auto getNodeLinkDistance(const math::vec2f& iFrom, const math::vec2f& iTo,
+						 const std::span<const math::vec2f> iWaypoints, const math::vec2f& iPoint, const float iZoom)
+		-> float {
+	float best = std::numeric_limits<float>::max();
+	for (const auto& curve: getNodeLinkSegments(iFrom, iTo, iWaypoints, iZoom))
+		best = std::min(best, getSegmentDistance(curve, iPoint));
+	return best;
+}
+
+auto getNodeLinkInsertIndex(const math::vec2f& iFrom, const math::vec2f& iTo,
+							const std::span<const math::vec2f> iWaypoints, const math::vec2f& iPoint, const float iZoom)
+		-> size_t {
+	const auto segments = getNodeLinkSegments(iFrom, iTo, iWaypoints, iZoom);
+	size_t index = 0;
+	float best = std::numeric_limits<float>::max();
+	for (size_t i = 0; i < segments.size(); ++i)
+		if (const float distance = getSegmentDistance(segments[i], iPoint); distance < best) {
+			best = distance;
+			index = i;
+		}
+	return index;
+}
+
+void drawNodeLinkWaypoint(ImDrawList* ioDraw, const math::vec2f& iCenter, const float iRadius, const math::vec4& iColor,
+						  const bool iHovered) {
+	ioDraw->AddCircleFilled(toIm(iCenter), iRadius + 1.5f, IM_COL32(0, 0, 0, 140));
+	ioDraw->AddCircleFilled(toIm(iCenter), iRadius, toU32(iColor));
+	if (iHovered)
+		ioDraw->AddCircle(toIm(iCenter), iRadius + 3.f, toU32(UiLayer::getTheme().accent), 0, 2.f);
 }
 
 }// namespace owl::gui::widgets
