@@ -23,6 +23,10 @@ the lit 3D surfaces in Edit only, never in Play.
 A viewport hidden behind another tab or collapsed does not draw its scene (a running one still steps), unless the MCP
 server is on: its captures read the viewport back.
 
+A selected entity with a skinned mesh shows its bones, and its sockets as small crosses: a click on a socket selects it
+(larger, in yellow) and the gizmo moves the socket instead of the entity, relative to its bone; a click elsewhere gives
+the gizmo back to the entity ([Skinned meshes](skinned_meshes.md)).
+
 The gizmo and view overlays show in Edit only. In Play a frame in the play colour outlines the viewport (see
 [Play mode](editor_play.md)).
 

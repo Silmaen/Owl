@@ -33,7 +33,7 @@ flowchart LR
 | 6. Mesh LODs      | `data::geometry::buildMeshLods`, the mesh cook (`OWLM`), `MeshResource` LOD meshes, screen size   | Done   |
 | 7. Sockets        | `MeshSockets`, `SocketAttachment`, `Scene::attachToSocket`, the `owl.sockets` system              | Done   |
 | 8. Lua            | `animator.*` and `socket.*` tables                                                                | Done   |
-| 9. Owl Nest       | Skeleton view, clip timeline, LOD preview, Animator and socket inspectors, commands               | Done   |
+| 9. Owl Nest       | Skeleton view, clip timeline, LOD preview, inspectors, socket gizmo (`entity.set_socket`)         | Done   |
 | 10. Engine Demo   | `character_yard` scene: a walking mannequin holding a lantern on its hand socket                  | Done   |
 
 ## Decisions
@@ -58,7 +58,7 @@ flowchart LR
 | LODs off by default (`.owlmeta` `Lods: 0`)       | Existing scenes draw the same; a project turns them on per mesh                                    |
 | Uncooked meshes build their LODs at load         | Owl Nest previews what the game will draw, from the same settings                                  |
 | LOD picked from the main camera                  | Screen height fraction of the bounding sphere; shadow passes reuse the pick of the camera          |
-| Sockets: mesh `socket_*` nodes + component list  | Artists place them in the DCC tool; designers add or move them in Owl Nest                         |
+| Sockets: mesh `socket_*` nodes + component list  | Artists place them in the DCC tool; designers add them and move them with the viewport gizmo       |
 | Attachment = parent + local transform            | The hierarchy is the one of the scene: picking, visibility and saves work unchanged                |
 | Sockets follow bones in `PostPhysics`            | After the animation and before the triggers, the last phase allowed to move entities               |
 

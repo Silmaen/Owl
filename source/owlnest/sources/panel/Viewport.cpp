@@ -2078,7 +2078,7 @@ void Viewport::renderGizmo() {
 	if (!activeScene)
 		return;
 
-	if (renderWaypointGizmo())
+	if (renderWaypointGizmo() || renderSocketGizmo())
 		return;
 	if (const scene::Entity selectedEntity = m_parent->getSelectedEntity();
 		selectedEntity && m_gizmoType != gui::Guizmo::Type::None && !isPiloted(selectedEntity)) {
@@ -2351,6 +2351,12 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 	if (ioEvent.getMouseButton() == input::mouse::ButtonLeft) {
 		if (isHovered() && !gui::Guizmo::isOver() && !input::Input::isKeyPressed(input::key::LeftAlt) &&
 			m_parent != nullptr) {
+			if (const auto socket = pickSocket(); socket) {
+				gui::component::getSocketSelection() = {.entity = m_parent->getSelectedEntity().getUUID(),
+														.socket = *socket};
+				return false;
+			}
+			gui::component::getSocketSelection().clear();
 			if (const int handle = pickPatrolWaypoint(); handle >= 0) {
 				m_patrolHandle = handle;
 				return false;
@@ -2537,18 +2543,24 @@ void Viewport::renderSkeletonMarkers(const shared<scene::Scene>& iScene) const {
 		}
 	}
 	constexpr math::vec4 socketColor{0.47f, 1.f, 0.55f, 1.f};
+	constexpr math::vec4 selectedColor{1.f, 0.8f, 0.25f, 1.f};
+	const auto& selection = gui::component::getSocketSelection();
 	for (const auto& name: iScene->getSocketNames(selected)) {
 		const auto local = iScene->getSocketTransform(selected, name);
 		if (!local)
 			continue;
 		const math::vec3 centre = toWorld(*local);
-		const float size = getLightMarkerRadius(centre) * 0.5f;
+		const bool picked = selection.is(selected.getUUID(), name);
+		const float size = getLightMarkerRadius(centre) * (picked ? 0.8f : 0.5f);
+		const math::vec4& color = picked ? selectedColor : socketColor;
 		for (size_t axis = 0; axis < 3; ++axis) {
 			math::vec3 offset{0.f, 0.f, 0.f};
 			offset[axis] = size;
 			renderer::Renderer2D::drawLine(
-					{.point1 = centre - offset, .point2 = centre + offset, .color = socketColor, .entityId = id});
+					{.point1 = centre - offset, .point2 = centre + offset, .color = color, .entityId = id});
 		}
+		if (picked)
+			drawLightRange(centre, size * 0.6f, color, id);
 	}
 }
 
@@ -2901,6 +2913,97 @@ auto Viewport::renderWaypointGizmo() -> bool {
 		m_patrolBefore.clear();
 	}
 	m_patrolWasUsing = isUsing;
+	return true;
+}
+
+auto Viewport::pickSocket() const -> std::optional<std::string> {
+	if (m_parent == nullptr || mp_document == nullptr)
+		return std::nullopt;
+	const auto& scene = mp_document->getActiveScene();
+	const scene::Entity selected = m_parent->getSelectedEntity();
+	const auto ray = getCursorRay();
+	if (!scene || !selected || selected.getScene() != scene.get() || !ray)
+		return std::nullopt;
+	const auto& [origin, direction] = *ray;
+	const math::mat4 world = scene->getWorldTransform(selected)();
+	std::optional<std::string> nearest;
+	float nearestDistance = std::numeric_limits<float>::max();
+	for (const auto& name: scene->getSocketNames(selected)) {
+		const auto local = scene->getSocketTransform(selected, name);
+		if (!local)
+			continue;
+		const math::mat4 socket = world * *local;
+		const math::vec3 point{socket(0, 3), socket(1, 3), socket(2, 3)};
+		const math::vec3 toPoint = point - origin;
+		const float along = toPoint.x() * direction.x() + toPoint.y() * direction.y() + toPoint.z() * direction.z();
+		if (along <= 0.f)
+			continue;
+		const float offAxis = (toPoint - direction * along).norm();
+		if (offAxis <= getLightMarkerRadius(point) * 0.8f && along < nearestDistance) {
+			nearestDistance = along;
+			nearest = name;
+		}
+	}
+	return nearest;
+}
+
+auto Viewport::renderSocketGizmo() -> bool {
+	const auto& selection = gui::component::getSocketSelection();
+	if (m_parent == nullptr || mp_document == nullptr || selection.entity == core::UUID{0})
+		return false;
+	const auto& scene = mp_document->getActiveScene();
+	const scene::Entity selected = m_parent->getSelectedEntity();
+	if (!scene || !selected || selected.getUUID() != selection.entity ||
+		!selected.hasComponent<scene::component::MeshSockets>())
+		return false;
+	auto& sockets = selected.getComponent<scene::component::MeshSockets>().sockets;
+	const auto found = std::ranges::find(sockets, selection.socket, &scene::component::MeshSockets::Socket::name);
+	const auto local = scene->getSocketTransform(selected, selection.socket);
+	if (found == sockets.end() || !local)
+		return false;
+	// The frame of the socket: the entity, then the bone the offset is relative to.
+	const math::mat4 frame = scene->getWorldTransform(selected)() * *local * math::inverse(found->offset());
+	gui::Guizmo::initialize(m_lower, m_upper - m_lower,
+							m_isometric || m_editorCamera.getProjectionMode() ==
+												   renderer::CameraEditor::Projection::Orthographic);
+	const auto& camera = getActiveCamera();
+	math::mat4 cameraProjection = camera.getProjection();
+	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan)
+		cameraProjection(1, 1) *= -1.f;
+	math::mat4 handle = frame * found->offset();
+	const auto type = m_gizmoType == gui::Guizmo::Type::None ? gui::Guizmo::Type::Translation : m_gizmoType;
+	const bool snap = input::Input::isKeyPressed(input::key::LeftControl) || m_parent->getSettings().snapEnabled;
+	const float snapValue = gui::Guizmo::isRotate(type)
+									? m_parent->getSettings().snapRotationDegrees
+									: resolveTranslationSnapStep(m_parent->getSettings(), std::nullopt);
+	gui::Guizmo::manipulate(camera.getView(), cameraProjection, type, handle, snap ? snapValue : 0.f,
+							m_parent->getSettings().gizmoWorldSpace ? gui::Guizmo::Space::World
+																	: gui::Guizmo::Space::Local);
+	const bool isUsing = gui::Guizmo::isUsing();
+	if (isUsing && !m_socketWasUsing)
+		m_socketBefore = found->offset;
+	if (isUsing)
+		found->offset = math::Transform{math::inverse(frame) * handle};
+	if (!isUsing && m_socketWasUsing && m_socketBefore) {
+		const math::Transform after = found->offset;
+		found->offset = *m_socketBefore;
+		const bool changed = after.translation() != m_socketBefore->translation() ||
+							 after.rotation() != m_socketBefore->rotation() || after.scale() != m_socketBefore->scale();
+		if (changed) {
+			const commands::CommandTarget target{.registry = &m_parent->getRegistry(),
+												 .scene = scene,
+												 .undo = mp_undoManager};
+			if (!target.execute("entity.set_socket",
+								{{"entity", static_cast<int64_t>(static_cast<uint64_t>(selected.getUUID()))},
+								 {"socket", selection.socket},
+								 {"translation", after.translation()},
+								 {"rotation", after.rotation()},
+								 {"scale", after.scale()}}))
+				found->offset = after;
+		}
+		m_socketBefore.reset();
+	}
+	m_socketWasUsing = isUsing;
 	return true;
 }
 

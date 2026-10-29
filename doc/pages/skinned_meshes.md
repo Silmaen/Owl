@@ -47,7 +47,11 @@ viewport draws the bones of the selected entity and its sockets.
 ## Sockets
 
 A socket is a named point of a mesh or of an entity, optionally bound to a bone: the `socket_*` nodes of the file, and
-the **Mesh Sockets** component of the entity (name, bone, offset), which a designer edits in the inspector. An entity is
+the **Mesh Sockets** component of the entity (name, bone, offset), which a designer edits in the inspector or in the
+viewport: click the marker of a socket (or its **Move in the viewport** button in the inspector) to select it, drawn
+larger in yellow, and the transform gizmo moves, turns or scales it relative to its bone (the entity without bone);
+the drag is one undoable `entity.set_socket` on release. The sockets of the mesh file are selectable but read-only. An
+entity is
 snapped on a socket with **Attach to Socket** in the context menu of the hierarchy (the `entity.attach_socket`
 command), or from Lua:
 

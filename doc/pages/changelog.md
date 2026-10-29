@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mesh sockets: `MeshSockets` and `SocketAttachment` snap entities on a socket or a bone (`Scene::attachToSocket`, `socket.*`).
 - Owl Nest: skeleton, clip timeline and LOD views in the mesh document, Animator and socket inspectors, `entity.attach_socket` / `entity.detach_socket`.
 - `asset.set_import` and the Import panel set the levels of detail of a mesh.
+- Owl Nest socket gizmo: click a socket marker (or select it in the inspector) and move it with the transform gizmo, one `entity.set_socket` per drag.
 - Engine Demo `character_yard` scene: a skinned mannequin walking with a lantern on its hand socket (**C** from the menu).
 
 - Asset GUIDs: every asset of a project opened in Owl Nest gets a `.owlmeta` sidecar, and `AssetRegistry` maps GUID and path.

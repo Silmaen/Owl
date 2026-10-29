@@ -244,6 +244,35 @@ auto detachSocket(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs)
 
 template<typename Edit>
 auto modifyEntity(const shared<scene::Scene>& ioScene, scene::Entity iEntity, const std::string& iDescription,
+				  Edit&& iEdit) -> Prepared;
+
+auto setSocket(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto entity = entityArg(*ioScene, iArgs, "entity");
+	if (!entity)
+		return unexpected<CommandFailure>{entity.error()};
+	const auto name = iArgs.getText("socket");
+	if (!entity->hasComponent<scene::component::MeshSockets>() ||
+		entity->getComponent<scene::component::MeshSockets>().find(name) == nullptr)
+		return fail(CommandError::NotApplicable,
+					std::format("`{}` has no socket `{}` in its Mesh Sockets", entity->getName(), name));
+	return modifyEntity(ioScene, *entity, std::format("Move socket {} of '{}'", name, entity->getName()),
+						[&iArgs, &name](scene::Entity& ioEntity) -> void {
+							auto& sockets = ioEntity.getComponent<scene::component::MeshSockets>().sockets;
+							const auto found =
+									std::ranges::find(sockets, name, &scene::component::MeshSockets::Socket::name);
+							if (const auto translation = iArgs.getVec3("translation"); translation)
+								found->offset.translation() = *translation;
+							if (const auto rotation = iArgs.getVec3("rotation"); rotation)
+								found->offset.rotation() = *rotation;
+							if (const auto scale = iArgs.getVec3("scale"); scale)
+								found->offset.scale() = *scale;
+							if (iArgs.has("bone"))
+								found->bone = iArgs.getText("bone");
+						});
+}
+
+template<typename Edit>
+auto modifyEntity(const shared<scene::Scene>& ioScene, scene::Entity iEntity, const std::string& iDescription,
 				  Edit&& iEdit) -> Prepared {
 	auto before = EntitySnapshot::capture(iEntity);
 	const auto beforeYaml = before.yamlData;
@@ -1001,6 +1030,16 @@ CommandRegistry::CommandRegistry() {
 		 .description = "Release an entity from its socket: it keeps its parent and stays where it is.",
 		 .args = {entitySpec("Entity to release.")},
 		 .factory = detachSocket});
+	add({.name = "entity.set_socket",
+		 .description = "Move, turn or rebind a socket of the Mesh Sockets of an entity, relative to its bone (or to "
+						"the entity without bone).",
+		 .args = {entitySpec("Entity owning the socket."),
+				  {.name = "socket", .type = ArgType::Text, .required = true, .description = "Name of the socket."},
+				  {.name = "translation", .type = ArgType::Vec3, .description = "Offset from the bone."},
+				  {.name = "rotation", .type = ArgType::Vec3, .description = "Rotation from the bone, in radians."},
+				  {.name = "scale", .type = ArgType::Vec3, .description = "Scale."},
+				  {.name = "bone", .type = ArgType::Text, .description = "Bone followed, empty for the entity."}},
+		 .factory = setSocket});
 	add({.name = "entity.rename",
 		 .description = "Change the tag of an entity.",
 		 .args = {entitySpec("Entity to rename."),

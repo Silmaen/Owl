@@ -3361,6 +3361,11 @@ void renderProps(Animator& ioComponent, const scene::Entity& iOwner) {
 	renderAnimatorTransitions(ioComponent.machine);
 }
 
+auto getSocketSelection() -> SocketSelection& {
+	static SocketSelection s_selection;
+	return s_selection;
+}
+
 void renderProps(MeshSockets& ioComponent, const scene::Entity& iOwner) {
 	const auto mesh = meshOf(iOwner);
 	std::vector<std::string> bones;
@@ -3376,6 +3381,23 @@ void renderProps(MeshSockets& ioComponent, const scene::Entity& iOwner) {
 	for (size_t index = 0; index < ioComponent.sockets.size(); ++index) {
 		auto& socket = ioComponent.sockets[index];
 		ImGui::PushID(static_cast<int>(index));
+		auto& selection = getSocketSelection();
+		const bool selected = iOwner && selection.is(iOwner.getUUID(), socket.name);
+		if (widgets::iconButton("##moveSocket", {.glyph = icon::move,
+												 .tooltip = selected ? "Moved in the viewport" : "Move in the viewport",
+												 .description = "Select the socket: the viewport gizmo moves and "
+																"turns it, relative to its bone.",
+												 .selected = selected})) {
+			if (selected)
+				selection.clear();
+			else if (iOwner)
+				selection = {.entity = iOwner.getUUID(), .socket = socket.name};
+		}
+		ImGui::SameLine();
+		if (selected)
+			ImGui::TextColored({1.f, 0.8f, 0.25f, 1.f}, "%s (selected)", socket.name.c_str());
+		else
+			ImGui::TextUnformatted(socket.name.c_str());
 		prop::InputText("Name", &socket.name);
 		nameCombo("Bone", socket.bone, bones, "(entity origin)");
 		fieldTooltip("Bone the socket follows in the animation; none for the origin of the entity.");
@@ -3395,7 +3417,8 @@ void renderProps(MeshSockets& ioComponent, const scene::Entity& iOwner) {
 									   .bone = bones.empty() ? std::string{} : bones.front(),
 									   .offset = {}});
 	fieldTooltip("A named point where an entity is snapped (`socket.attach`, the Attach to Socket menu of the "
-				 "hierarchy); the viewport draws the sockets of the selected entity.");
+				 "hierarchy); the viewport draws the sockets of the selected entity, a click on one selects it for "
+				 "the gizmo.");
 }
 
 void renderProps(SocketAttachment& ioComponent, const scene::Entity& iOwner) {

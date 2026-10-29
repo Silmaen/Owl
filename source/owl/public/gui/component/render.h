@@ -10,6 +10,7 @@
 
 #include "scene/component/components.h"
 #include <core/Core.h>
+#include <core/UUID.h>
 
 #include <cstdint>
 #include <filesystem>
@@ -413,6 +414,44 @@ OWL_API void renderProps(scene::component::FlyCamera& ioComponent);
  * @param iOwner The entity holding it (its mesh gives the clips).
  */
 OWL_API void renderProps(scene::component::Animator& ioComponent, const scene::Entity& iOwner);
+
+/**
+ * @brief
+ *  The socket picked in the inspector or the viewport, moved by the viewport gizmo of Owl Nest.
+ */
+struct OWL_API SocketSelection {
+	/// Entity owning the socket, 0 for none.
+	core::UUID entity{0};
+	/// Name of the socket.
+	std::string socket;
+
+	/**
+	 * @brief
+	 *  Check if a socket of an entity is selected.
+	 * @param[in] iEntity The entity.
+	 * @param[in] iSocket Name of the socket.
+	 * @return True when it is the selected one.
+	 */
+	[[nodiscard]] auto is(core::UUID iEntity, const std::string& iSocket) const -> bool {
+		return entity == iEntity && entity != core::UUID{0} && socket == iSocket;
+	}
+
+	/**
+	 * @brief
+	 *  Forget the selection.
+	 */
+	void clear() {
+		entity = core::UUID{0};
+		socket.clear();
+	}
+};
+
+/**
+ * @brief
+ *  Get the socket selection shared by the socket inspector and the viewport.
+ * @return The selection.
+ */
+OWL_API auto getSocketSelection() -> SocketSelection&;
 
 /**
  * @brief

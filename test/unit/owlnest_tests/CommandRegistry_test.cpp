@@ -101,7 +101,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 64u);
+	EXPECT_EQ(m_registry.getCommands().size(), 65u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -173,6 +173,28 @@ TEST_F(CommandRegistryTest, AttachToASocketThenDetachAndUndo) {
 	EXPECT_EQ(item.getComponent<scene::component::Hierarchy>().parentId, owner.getUUID());
 	m_undo.undo(*m_scene);
 	EXPECT_EQ(item.getComponent<scene::component::SocketAttachment>().socket, "hand");
+}
+
+TEST_F(CommandRegistryTest, SetSocketMovesItAndUndoes) {
+	auto owner = m_scene->createEntity("Hero");
+	owner.addComponent<scene::component::MeshSockets>().sockets.push_back({.name = "hand", .bone = "", .offset = {}});
+	const auto socketOf = [&owner]() -> const scene::component::MeshSockets::Socket& {
+		return owner.getComponent<scene::component::MeshSockets>().sockets.front();
+	};
+	EXPECT_FALSE(run("entity.set_socket", {{"entity", idOf(owner)}, {"socket", std::string{"foot"}}}));
+	ASSERT_TRUE(run("entity.set_socket", {{"entity", idOf(owner)},
+										  {"socket", std::string{"hand"}},
+										  {"translation", math::vec3{0.f, 1.5f, 0.f}},
+										  {"rotation", math::vec3{0.f, 0.5f, 0.f}},
+										  {"bone", std::string{"hand_r"}}}));
+	EXPECT_FLOAT_EQ(socketOf().offset.translation().y(), 1.5f);
+	EXPECT_FLOAT_EQ(socketOf().offset.rotation().y(), 0.5f);
+	EXPECT_EQ(socketOf().bone, "hand_r");
+	m_undo.undo(*m_scene);
+	EXPECT_FLOAT_EQ(socketOf().offset.translation().y(), 0.f);
+	EXPECT_TRUE(socketOf().bone.empty());
+	m_undo.redo(*m_scene);
+	EXPECT_FLOAT_EQ(socketOf().offset.translation().y(), 1.5f);
 }
 
 TEST_F(CommandRegistryTest, SetTransformAndComponents) {
@@ -273,7 +295,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 64u);
+	EXPECT_EQ(m_registry.getCommands().size(), 65u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
