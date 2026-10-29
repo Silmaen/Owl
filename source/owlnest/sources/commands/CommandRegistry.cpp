@@ -27,6 +27,7 @@
 #include <renderer/MeshCache.h>
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/RenderStack.h>
+#include <renderer/Renderer.h>
 #include <scene/ComponentRegistry.h>
 #include <scene/HudLibrary.h>
 #include <scene/PrefabSerializer.h>
@@ -464,6 +465,79 @@ auto captureReflectionProbes(const CommandContext& iContext, const CommandArgs& 
 	const auto count = iContext.scene->registry.view<scene::component::ReflectionProbe>().size();
 	return CommandResult{.entity = core::UUID{0},
 						 .description = std::format("Capture {} reflection probes", count),
+						 .data = {{"count", std::to_string(count)}}};
+}
+
+auto createParticleEmitter(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto kind = iArgs.getText("type", "Fire");
+	using Preset = renderer::ParticlePreset;
+	constexpr std::array<std::pair<std::string_view, Preset>, 5> presets{{{"Fire", Preset::Fire},
+																		  {"Smoke", Preset::Smoke},
+																		  {"Sparks", Preset::Sparks},
+																		  {"Magic", Preset::Magic},
+																		  {"Snow", Preset::Snow}}};
+	const auto* const match =
+			std::ranges::find_if(presets, [&kind](const auto& iEntry) -> bool { return iEntry.first == kind; });
+	const auto preset = match == presets.end() ? std::nullopt : std::optional{match->second};
+	if (!preset)
+		return unexpected<CommandFailure>{
+				CommandFailure{.error = CommandError::InvalidArgument,
+							   .message = std::format("Unknown particle preset '{}'.", kind)}};
+	std::optional<scene::Entity> parent;
+	if (iArgs.has("parent")) {
+		auto found = entityArg(*ioScene, iArgs, "parent");
+		if (!found)
+			return unexpected<CommandFailure>{found.error()};
+		parent = *found;
+	}
+	auto entity = ioScene->createEntity(iArgs.getText("name", std::format("{} Particles", kind)));
+	entity.getComponent<scene::component::Transform>().transform.translation() =
+			iArgs.getVec3("translation").value_or(math::vec3{0.f, 0.f, 0.f});
+	entity.addComponent<scene::component::ParticleEmitter>().settings = renderer::makeParticlePreset(*preset);
+	// Tagged to the first particle layer of the stack: untagged entities go to the first layer only.
+	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
+	for (size_t index = 1; index < layers.size(); ++index) {
+		if (std::string_view{layers[index]->getTypeKey()} == "RendererParticles") {
+			entity.addComponent<scene::component::RendererTag>().rendererName = layers[index]->getName();
+			break;
+		}
+	}
+	if (parent)
+		ioScene->setParent(entity, *parent);
+	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(entity), .applied = true, .entity = entity.getUUID()};
+}
+
+auto previewParticles(const CommandContext& iContext, const CommandArgs& iArgs)
+		-> expected<CommandResult, CommandFailure> {
+	const auto action = iArgs.getText("action", "Restart");
+	std::optional<scene::Entity> only;
+	if (iArgs.has("entity")) {
+		auto found = entityArg(*iContext.scene, iArgs, "entity");
+		if (!found)
+			return unexpected<CommandFailure>{found.error()};
+		only = *found;
+	}
+	size_t count = 0;
+	for (const auto [handle, emitter]: iContext.scene->registry.view<scene::component::ParticleEmitter>().each()) {
+		if (only && only->operator entt::entity() != handle)
+			continue;
+		auto& system = emitter.m_slot.system;
+		if (!system)
+			continue;
+		if (action == "Play")
+			system->play();
+		else if (action == "Pause")
+			system->pause();
+		else if (action == "Stop")
+			system->stop();
+		else if (action == "Burst")
+			system->emit(std::max(emitter.settings.burst, 10u));
+		else
+			system->restart();
+		++count;
+	}
+	return CommandResult{.entity = only ? only->getUUID() : core::UUID{0},
+						 .description = std::format("{} {} particle emitters", action, count),
 						 .data = {{"count", std::to_string(count)}}};
 }
 
@@ -1200,6 +1274,31 @@ CommandRegistry::CommandRegistry() {
 		 .args = {},
 		 .factory = {},
 		 .run = captureReflectionProbes,
+		 .allowedInPlay = true});
+	add({.name = "entity.create_particle_emitter",
+		 .description = "Create an entity with a `ParticleEmitter` from a preset, on the first `RendererParticles` "
+						"layer of the render stack.",
+		 .args = {{.name = "type",
+				   .type = ArgType::Enum,
+				   .description = "Preset of the emitter (`Fire` when absent).",
+				   .choices = {"Fire", "Smoke", "Sparks", "Magic", "Snow"}},
+				  {.name = "name",
+				   .type = ArgType::Text,
+				   .description = "Tag of the entity (`<Type> Particles` when absent)."},
+				  {.name = "translation", .type = ArgType::Vec3, .description = "World position of the entity."},
+				  {.name = "parent", .type = ArgType::Entity, .description = "Parent entity (root when absent)."}},
+		 .factory = createParticleEmitter});
+	add({.name = "particles.preview",
+		 .description =
+				 "Play, pause, stop, restart or burst the particle emitters of the scene (one with `entity`), in "
+				 "the viewport preview or in Play (not an undo entry).",
+		 .args = {{.name = "action",
+				   .type = ArgType::Enum,
+				   .description = "What to do (`Restart` when absent).",
+				   .choices = {"Play", "Pause", "Stop", "Restart", "Burst"}},
+				  {.name = "entity", .type = ArgType::Entity, .description = "Only this emitter."}},
+		 .factory = {},
+		 .run = previewParticles,
 		 .allowedInPlay = true});
 	add({.name = "entity.create_light2d",
 		 .description = "Create an entity with a `Light2D`: an ambient light (dim, the night tint), or a point or spot "

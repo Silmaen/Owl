@@ -403,6 +403,57 @@ TEST(LuaBindings, entityLight) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, entityParticles) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	auto fire = scn->createEntity("Fire");
+	fire.addComponent<scene::component::ParticleEmitter>().playOnStart = false;
+	fire.addComponent<scene::component::Trail>();
+	auto bare = scn->createEntity("Bare");
+
+	const std::string script = std::format("function on_create()\n"
+										   "idle = entity.particles_is_emitting({0})\n"
+										   "played = entity.particles_play({0})\n"
+										   "emitting = entity.particles_is_emitting({0})\n"
+										   "burst = entity.particles_emit({0}, 12)\n"
+										   "stopped = entity.particles_stop({0})\n"
+										   "after_stop = entity.particles_is_emitting({0})\n"
+										   "restarted = entity.particles_restart({0})\n"
+										   "paused = entity.particles_pause({0})\n"
+										   "trail_off = entity.set_trail_enabled({0}, false)\n"
+										   "bare_play = entity.particles_play({1})\n"
+										   "bare_emit = entity.particles_emit({1}, 3)\n"
+										   "bare_emitting = entity.particles_is_emitting({1}) ~= nil\n"
+										   "end\n",
+										   static_cast<int64_t>(static_cast<uint64_t>(fire.getUUID())),
+										   static_cast<int64_t>(static_cast<uint64_t>(bare.getUUID())));
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "particles_test", static_cast<uint64_t>(bare.getUUID())));
+	inst.onCreate();
+
+	EXPECT_FALSE(inst.getPropertyBool("idle").value_or(true));
+	EXPECT_TRUE(inst.getPropertyBool("played").value_or(false));
+	EXPECT_TRUE(inst.getPropertyBool("emitting").value_or(false));
+	EXPECT_TRUE(inst.getPropertyBool("burst").value_or(false));
+	EXPECT_TRUE(inst.getPropertyBool("stopped").value_or(false));
+	EXPECT_FALSE(inst.getPropertyBool("after_stop").value_or(true));
+	EXPECT_TRUE(inst.getPropertyBool("restarted").value_or(false));
+	EXPECT_TRUE(inst.getPropertyBool("paused").value_or(false));
+	EXPECT_TRUE(inst.getPropertyBool("trail_off").value_or(false));
+	EXPECT_FALSE(inst.getPropertyBool("bare_play").value_or(true));
+	EXPECT_FALSE(inst.getPropertyBool("bare_emit").value_or(true));
+	EXPECT_FALSE(inst.getPropertyBool("bare_emitting").value_or(true));
+	const auto& system = fire.getComponent<scene::component::ParticleEmitter>().m_slot.system;
+	ASSERT_NE(system, nullptr);
+	EXPECT_FALSE(system->isPlaying());
+	EXPECT_TRUE(system->isEmitting());
+	EXPECT_FALSE(fire.getComponent<scene::component::Trail>().enabled);
+
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, entityLight2DSharesTheLightBindings) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();

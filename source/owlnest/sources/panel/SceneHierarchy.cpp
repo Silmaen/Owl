@@ -182,6 +182,8 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 	}
 	if (iEntity.hasComponent<ReflectionProbe>())
 		return {gui::icon::scan, 0x73d9ff};
+	if (iEntity.hasComponent<ParticleEmitter>())
+		return {gui::icon::sparkles, 0xffa94d};
 	if (iEntity.hasComponent<Light2D>()) {
 		const auto& light = iEntity.getComponent<Light2D>();
 		const uint32_t colour = light.enabled ? 0xffb347 : 0x7a7a7a;
@@ -281,6 +283,24 @@ void drawCreateLightMenu(const auto& iTarget, const std::optional<commands::ArgV
 	ImGui::EndMenu();
 }
 
+// "Effects" submenu: `entity.create_particle_emitter` per preset, optionally under a parent.
+void drawCreateEffectsMenu(const auto& iTarget, const std::optional<commands::ArgValue>& iParent) {
+	if (!ImGui::BeginMenu("Effects"))
+		return;
+	for (const auto& [kind, glyph]: {std::pair{"Fire", gui::icon::zap}, std::pair{"Smoke", gui::icon::eyeOff},
+									 std::pair{"Sparks", gui::icon::sparkles}, std::pair{"Magic", gui::icon::atom},
+									 std::pair{"Snow", gui::icon::circleDot}}) {
+		const std::string label = std::format("{} Particles", kind);
+		if (!gui::widgets::menuItem({.glyph = glyph, .label = label.c_str()}))
+			continue;
+		const commands::CommandArgs args =
+				iParent ? commands::CommandArgs{{"type", std::string{kind}}, {"parent", *iParent}}
+						: commands::CommandArgs{{"type", std::string{kind}}};
+		std::ignore = iTarget.execute("entity.create_particle_emitter", args);
+	}
+	ImGui::EndMenu();
+}
+
 auto componentIconName(const char* iCompName) -> const char* {
 	static const std::unordered_map<std::string_view, const char*> map = {
 			{"Transform", "comp_transform"},     {"Camera", "comp_camera"},
@@ -356,6 +376,7 @@ void SceneHierarchy::renderHierarchy() {
 				std::ignore = getCommandTarget().execute("entity.create", {});
 			}
 			drawCreateLightMenu(getCommandTarget(), std::nullopt);
+			drawCreateEffectsMenu(getCommandTarget(), std::nullopt);
 			ImGui::EndPopup();
 		}
 		ImGui::PopID();
@@ -401,6 +422,7 @@ void SceneHierarchy::renderHierarchyToolbar() {
 			std::ignore = getCommandTarget().execute(
 					"entity.create", {{"parent", static_cast<int64_t>(static_cast<uint64_t>(m_selection.getUUID()))}});
 		drawCreateLightMenu(getCommandTarget(), std::nullopt);
+		drawCreateEffectsMenu(getCommandTarget(), std::nullopt);
 		ImGui::EndPopup();
 	}
 	ImGui::SameLine();
@@ -638,6 +660,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 	if (gui::widgets::menuItem({.glyph = gui::icon::plus, .label = "Create Child Entity"}))
 		std::ignore = target.execute("entity.create", {{"name", std::string{"Child Entity"}}, {"parent", entityArg}});
 	drawCreateLightMenu(target, std::optional<commands::ArgValue>{entityArg});
+	drawCreateEffectsMenu(target, std::optional<commands::ArgValue>{entityArg});
 
 	ImGui::Separator();
 	// --- Duplicate ---

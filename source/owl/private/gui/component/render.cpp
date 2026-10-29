@@ -19,6 +19,7 @@
 #include "gui/widgets/Badge.h"
 #include "gui/widgets/Combo.h"
 #include "gui/widgets/CurveEditor.h"
+#include "gui/widgets/GradientEditor.h"
 #include "gui/widgets/IconButton.h"
 #include "gui/widgets/ImageTile.h"
 #include "gui/widgets/PropertyGrid.h"
@@ -29,6 +30,7 @@
 #include "renderer/MaterialLibrary.h"
 #include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
+#include "renderer/RendererParticles.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
 #include "scene/ui/HudLayout.h"
@@ -540,6 +542,18 @@ auto resetFloat(const char* iLabel, float& ioValue, const float iDefault, const 
 	});
 }
 
+// An unsigned integer field with its reset slot, clamped to a range.
+auto resetUint(const char* iLabel, uint32_t& ioValue, const uint32_t iDefault, const float iSpeed, const uint32_t iMin,
+			   const uint32_t iMax) -> bool {
+	return resettable(iLabel, ioValue, iDefault, [&](const char* iId, uint32_t& ioField) -> bool {
+		int value = static_cast<int>(ioField);
+		if (!prop::DragInt(iId, &value, iSpeed, static_cast<int>(iMin), static_cast<int>(iMax)))
+			return false;
+		ioField = static_cast<uint32_t>(std::clamp(value, static_cast<int>(iMin), static_cast<int>(iMax)));
+		return true;
+	});
+}
+
 // A boolean field with its reset slot.
 auto resetCheckbox(const char* iLabel, bool& ioValue, const bool iDefault) -> bool {
 	return resettable(iLabel, ioValue, iDefault,
@@ -822,6 +836,29 @@ void renderPostProcess(renderer::Camera& ioCamera) {
 	if (settings.motionBlur) {
 		changed |= resetFloat("Shutter", settings.motionBlurIntensity, defaults.motionBlurIntensity, 0.005f, 0.f, 1.f);
 		fieldTooltip("Fraction of the frame the shutter stays open: 1 blurs over the whole motion of a frame.");
+	}
+	changed |= resetCheckbox("Lens flares", settings.lensFlare, defaults.lensFlare);
+	fieldTooltip("The lights with a flare strength (Light inspector) flare in the lens: a glow, a halo and ghosts, "
+				 "hidden behind the meshes and voxels that cover them.");
+	if (settings.lensFlare) {
+		changed |= resetFloat("Flare intensity", settings.lensFlareIntensity, defaults.lensFlareIntensity, 0.01f, 0.f,
+							  100.f);
+		fieldTooltip("Strength of every flare.");
+		changed |= resettable("Flare ghosts", settings.lensFlareGhosts, defaults.lensFlareGhosts,
+							  [](const char* iId, uint32_t& ioField) -> bool {
+								  int ghosts = static_cast<int>(ioField);
+								  if (!prop::DragInt(iId, &ghosts, 0.05f, 0, 8))
+									  return false;
+								  ioField = static_cast<uint32_t>(std::clamp(ghosts, 0, 8));
+								  return true;
+							  });
+		fieldTooltip("Discs along the line from a light through the centre of the image.");
+		changed |= resetFloat("Ghost spacing", settings.lensFlareSpacing, defaults.lensFlareSpacing, 0.005f, 0.f, 2.f);
+		fieldTooltip("Distance between two ghosts, as a fraction of the line from the centre to the light.");
+		changed |= resetFloat("Halo radius", settings.lensFlareHalo, defaults.lensFlareHalo, 0.005f, 0.f, 2.f);
+		fieldTooltip("Radius of the ring around the centre of the image, as a fraction of its height.");
+		changed |= resetFloat("Glow size", settings.lensFlareSize, defaults.lensFlareSize, 0.002f, 0.f, 1.f);
+		fieldTooltip("Size of the glow and streaks at a light, as a fraction of the image height.");
 	}
 	ImGui::TreePop();
 	if (changed)
@@ -1336,6 +1373,9 @@ void renderProps(Light& ioComponent) {
 		fieldTooltip("Apparent radius of the light, in degrees: the sun about 0.27. Softens the shadows with the "
 					 "distance to their caster and widens the highlight; 0 for hard shadows.");
 	}
+	resetFloat("Lens Flare", ioComponent.flare, defaults.flare, 0.01f, 0.f, 1000.f);
+	fieldTooltip("Strength of the lens flare of the light for a camera with lens flares (post process); 0 never "
+				 "flares. A point light flares with the illuminance it gives at the camera.");
 	resetCheckbox("Cast Shadows", ioComponent.castShadows, defaults.castShadows);
 	fieldTooltip(directional ? "The first shadow-casting directional light of the scene shadows the 3D layers."
 							 : "Point, spot and area lights nearest to the camera cast shadows, within a budget per "
@@ -3070,6 +3110,186 @@ void renderProps(ReflectionProbe& ioComponent) {
 		return true;
 	});
 	fieldTooltip("Capture the probe again, after the geometry or the lighting around it changed.");
+}
+
+namespace {
+
+// A curve over a normalised time, in a collapsible row of its own.
+auto curveRow(const char* iLabel, math::Curve& ioCurve, const char* iTooltip) -> bool {
+	if (!ImGui::TreeNodeEx(iLabel, ImGuiTreeNodeFlags_SpanAvailWidth))
+		return false;
+	fieldTooltip(iTooltip);
+	const bool changed = widgets::curveEditor(iLabel, ioCurve, {0.f, 120.f});
+	ImGui::TreePop();
+	return changed;
+}
+
+// A colour gradient, in a collapsible row of its own.
+auto gradientRow(const char* iLabel, renderer::ColorGradient& ioGradient, const char* iTooltip) -> bool {
+	if (!ImGui::TreeNodeEx(iLabel, ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen))
+		return false;
+	fieldTooltip(iTooltip);
+	const bool changed = widgets::gradientEditor(iLabel, ioGradient);
+	ImGui::TreePop();
+	return changed;
+}
+
+void renderParticlePreview(const ParticleEmitter& iComponent) {
+	const auto& system = iComponent.m_slot.system;
+	prop::row("Preview", [&](const char* /*iId*/) -> bool {
+		const float third = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 3.f) / 4.f;
+		ImGui::BeginDisabled(!system);
+		if (system && system->isPlaying()) {
+			if (ImGui::Button("Pause", {third, 0.f}))
+				system->pause();
+		} else if (ImGui::Button("Play", {third, 0.f}) && system) {
+			system->play();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Restart", {third, 0.f}) && system)
+			system->restart();
+		ImGui::SameLine();
+		if (ImGui::Button("Stop", {third, 0.f}) && system)
+			system->stop();
+		ImGui::SameLine();
+		if (ImGui::Button("Burst", {third, 0.f}) && system)
+			system->emit(std::max(iComponent.settings.burst, 10u));
+		ImGui::EndDisabled();
+		return false;
+	});
+	fieldTooltip("Play, pause, restart or stop the emitter in the viewport, or spawn a burst; nothing of it is saved.");
+	if (system)
+		ImGui::TextDisabled("%llu spawned, %u slots, %s", static_cast<unsigned long long>(system->getSpawnedCount()),
+							system->getCapacity(), system->isEmitting() ? "emitting" : "not emitting");
+}
+
+void renderParticleEmission(renderer::ParticleEmitterSettings& ioSettings) {
+	const renderer::ParticleEmitterSettings defaults;
+	resetUint("Max Particles", ioSettings.maxParticles, defaults.maxParticles, 1.f, 1, renderer::g_maxParticles);
+	fieldTooltip("Largest number of living particles: past it, the oldest is replaced (1024 at most when blended with "
+				 "Alpha, the GPU sort).");
+	resetFloat("Rate", ioSettings.rate, defaults.rate, 0.1f, 0.f, 100000.f, "%.1f /s");
+	fieldTooltip("Particles spawned per second while emitting.");
+	resetUint("Burst", ioSettings.burst, defaults.burst, 0.5f, 0, renderer::g_maxParticles);
+	fieldTooltip("Particles spawned at once each time the emission starts or loops.");
+	resetFloat("Duration", ioSettings.duration, defaults.duration, 0.01f, 0.f, 3600.f, "%.2f s");
+	fieldTooltip("Seconds the emission lasts; 0 emits forever.");
+	resetCheckbox("Loop", ioSettings.loop, defaults.loop);
+	fieldTooltip("Start the emission again at the end of its duration.");
+	resetFloat("Lifetime Min", ioSettings.lifetimeMin, defaults.lifetimeMin, 0.01f, 0.001f, 600.f, "%.2f s");
+	resetFloat("Lifetime Max", ioSettings.lifetimeMax, defaults.lifetimeMax, 0.01f, 0.001f, 600.f, "%.2f s");
+	fieldTooltip("Each particle lives a random time between the two.");
+	resettable("Shape", ioSettings.shape, defaults.shape, drawEnum<renderer::ParticleShape>);
+	fieldTooltip("Where particles spawn: a point, a sphere, a box, a cone (along +Y) or a circle (2D, the XY plane).");
+	resettable("Shape Size", ioSettings.shapeSize, defaults.shapeSize,
+			   [](const char* iId, math::vec3& ioField) -> bool {
+				   return prop::DragFloat3(iId, &ioField.x(), 0.01f, 0.f, 10000.f);
+			   });
+	fieldTooltip("Radius in X (sphere, cone, circle) or half extents (box), in the space of the entity.");
+	if (ioSettings.shape == renderer::ParticleShape::Cone) {
+		resetDegrees("Cone Angle", ioSettings.coneAngle, defaults.coneAngle, 0.f, 180.f);
+		fieldTooltip("Half angle of the cone the particles leave in.");
+	}
+	resetUint("Seed", ioSettings.seed, defaults.seed, 1.f, 0, 1000000);
+	fieldTooltip("Seed of the random draws: two emitters with different seeds never look the same.");
+}
+
+void renderParticleMotion(renderer::ParticleEmitterSettings& ioSettings) {
+	const renderer::ParticleEmitterSettings defaults;
+	resetFloat("Speed Min", ioSettings.speedMin, defaults.speedMin, 0.01f, 0.f, 10000.f);
+	resetFloat("Speed Max", ioSettings.speedMax, defaults.speedMax, 0.01f, 0.f, 10000.f);
+	fieldTooltip("Start speed along the direction of the shape, in units per second.");
+	resettable("Velocity", ioSettings.velocity, defaults.velocity, [](const char* iId, math::vec3& ioField) -> bool {
+		return prop::DragFloat3(iId, &ioField.x(), 0.01f, -10000.f, 10000.f);
+	});
+	fieldTooltip("Velocity added to every particle at spawn, in the space of the entity.");
+	resettable("Gravity", ioSettings.gravity, defaults.gravity, [](const char* iId, math::vec3& ioField) -> bool {
+		return prop::DragFloat3(iId, &ioField.x(), 0.01f, -10000.f, 10000.f);
+	});
+	fieldTooltip("Acceleration of every particle, in world units per second squared (smoke rises, sparks fall).");
+	resetFloat("Drag", ioSettings.drag, defaults.drag, 0.01f, 0.f, 100.f);
+	fieldTooltip("Share of the velocity lost per second.");
+	resetFloat("Spin Min", ioSettings.spinMin, defaults.spinMin, 0.01f, -100.f, 100.f, "%.2f rad/s");
+	resetFloat("Spin Max", ioSettings.spinMax, defaults.spinMax, 0.01f, -100.f, 100.f, "%.2f rad/s");
+	fieldTooltip("Each particle turns at a random speed between the two.");
+	resettable("Space", ioSettings.space, defaults.space, drawEnum<renderer::ParticleSpace>);
+	fieldTooltip("World: particles stay where they were spawned when the entity moves; Local: they move with it.");
+}
+
+void renderParticleLook(renderer::ParticleEmitterSettings& ioSettings) {
+	const renderer::ParticleEmitterSettings defaults;
+	resetFloat("Size Min", ioSettings.sizeMin, defaults.sizeMin, 0.005f, 0.f, 1000.f);
+	resetFloat("Size Max", ioSettings.sizeMax, defaults.sizeMax, 0.005f, 0.f, 1000.f);
+	fieldTooltip("Start size of a particle, in world units.");
+	curveRow("Size over Life", ioSettings.sizeOverLife,
+			 "Size multiplier over the life of a particle, from its birth (0) to its death (1); empty keeps 1.");
+	prop::ColorEdit4("Color", ioSettings.color.data());
+	fieldTooltip("Tint of every particle.");
+	gradientRow("Color over Life", ioSettings.colorOverLife,
+				"Colour and opacity over the life of a particle, multiplying the tint.");
+	resetFloat("Emissive", ioSettings.emissive, defaults.emissive, 1.f, 0.f, 1000000.f, "%.0f nits");
+	fieldTooltip(
+			"Luminance added to the colour, pre-exposed like the lights: with the bloom of the camera the particles "
+			"glow (a few thousand nits at night, more under the sun).");
+	resettable("Blend", ioSettings.blend, defaults.blend, drawEnum<renderer::ParticleBlend>);
+	fieldTooltip("Additive: added to the scene in any order (fire, sparks); Alpha: blended over it, sorted far to near "
+				 "on the GPU (smoke, dust).");
+	widgets::textureField("Texture", ioSettings.texture);
+	fieldTooltip("Texture of a particle; none draws a soft disc.");
+}
+
+void renderParticleTrail(renderer::ParticleEmitterSettings& ioSettings) {
+	const renderer::ParticleEmitterSettings defaults;
+	resetUint("Trail Length", ioSettings.trailLength, defaults.trailLength, 0.1f, 0, renderer::g_maxParticleTrail);
+	fieldTooltip("Points of the ribbon each particle leaves behind; 0 draws no trail.");
+	if (ioSettings.trailLength == 0)
+		return;
+	resetFloat("Trail Interval", ioSettings.trailInterval, defaults.trailInterval, 0.001f, 0.001f, 10.f, "%.3f s");
+	fieldTooltip("Seconds between two points of a trail: longer trails for the same number of points.");
+	resetFloat("Trail Width", ioSettings.trailWidth, defaults.trailWidth, 0.01f, 0.f, 10.f);
+	fieldTooltip("Width of the trail at the particle, relative to its size; it tapers to the tail.");
+}
+
+}// namespace
+
+void renderProps(ParticleEmitter& ioComponent) {
+	renderParticlePreview(ioComponent);
+	resetCheckbox("Play on Start", ioComponent.playOnStart, true);
+	fieldTooltip("Start the emission with the scene in Play; off waits for a script (entity.particles_play).");
+	auto& settings = ioComponent.settings;
+	if (widgets::subHeader("Emission", true))
+		renderParticleEmission(settings);
+	if (widgets::subHeader("Motion", true))
+		renderParticleMotion(settings);
+	if (widgets::subHeader("Look", true))
+		renderParticleLook(settings);
+	if (widgets::subHeader("Trails"))
+		renderParticleTrail(settings);
+}
+
+void renderProps(Trail& ioComponent) {
+	const Trail defaults;
+	resetCheckbox("Enabled", ioComponent.enabled, defaults.enabled);
+	fieldTooltip("Record and draw the trail; off clears it.");
+	resetFloat("Lifetime", ioComponent.lifetime, defaults.lifetime, 0.01f, 0.f, 600.f, "%.2f s");
+	fieldTooltip("Seconds a point of the trail lives: the length of the trail behind a moving entity.");
+	resetFloat("Min Distance", ioComponent.minDistance, defaults.minDistance, 0.005f, 0.f, 1000.f);
+	fieldTooltip("Distance the entity moves before a new point is recorded, in world units.");
+	resetUint("Max Points", ioComponent.maxPoints, defaults.maxPoints, 0.2f, 2,
+			  renderer::RendererParticles::g_maxTrailPoints);
+	fieldTooltip("Most points of the trail.");
+	resetFloat("Width", ioComponent.width, defaults.width, 0.005f, 0.f, 1000.f);
+	fieldTooltip("Width of the trail at a width multiplier of 1, in world units.");
+	curveRow("Width over Length", ioComponent.widthOverLength,
+			 "Width multiplier from the entity (0) to the tail (1); empty tapers from 1 to 0.");
+	prop::ColorEdit4("Color", ioComponent.color.data());
+	fieldTooltip("Tint of the trail.");
+	gradientRow("Color over Length", ioComponent.colorOverLength,
+				"Colour from the entity (0) to the tail (1), multiplying the tint; empty fades from opaque to clear.");
+	resetFloat("Emissive", ioComponent.emissive, defaults.emissive, 1.f, 0.f, 1000000.f, "%.0f nits");
+	fieldTooltip("Luminance added to the colour: with the bloom of the camera the trail glows.");
+	resettable("Blend", ioComponent.blend, defaults.blend, drawEnum<renderer::ParticleBlend>);
+	fieldTooltip("Additive: added to the scene; Alpha: blended over it.");
 }
 
 void renderProps(FirstPersonController& ioComponent) {

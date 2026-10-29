@@ -24,6 +24,7 @@
 #include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
 #include "renderer/RendererIsometricLayer.h"
+#include "renderer/RendererParticles.h"
 #include "scene/ComponentRegistry.h"
 #include "scene/Entity.h"
 #include "scene/PrefabSerializer.h"
@@ -1005,6 +1006,44 @@ auto luaEntitySetLightIntensity(lua_State* iState) -> int {
 	if (fields)
 		*fields->intensity = std::max(0.f, intensity);
 	lua_pushboolean(iState, fields ? 1 : 0);
+	return 1;
+}
+
+// The particle system of the entity's emitter, made when a script reaches it before its first frame.
+auto particleSystemOf(lua_State* iState) -> renderer::ParticleSystem* {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::ParticleEmitter>())
+		return nullptr;
+	auto& emitter = entity->getComponent<scene::component::ParticleEmitter>();
+	if (!emitter.m_slot.system)
+		emitter.m_slot.system = renderer::RendererParticles::createSystem();
+	return emitter.m_slot.system.get();
+}
+
+// `entity.particles_<action>(id)`: one call of the entity's particle system.
+template<void (renderer::ParticleSystem::*Action)()>
+auto luaEntityParticles(lua_State* iState) -> int {
+	auto* const system = particleSystemOf(iState);
+	if (system != nullptr)
+		(system->*Action)();
+	lua_pushboolean(iState, system != nullptr ? 1 : 0);
+	return 1;
+}
+
+auto luaEntityParticlesEmit(lua_State* iState) -> int {
+	const auto count = luaL_checkinteger(iState, 2);
+	auto* const system = particleSystemOf(iState);
+	if (system != nullptr && count > 0)
+		system->emit(static_cast<uint32_t>(std::min<lua_Integer>(count, renderer::g_maxParticles)));
+	lua_pushboolean(iState, system != nullptr ? 1 : 0);
+	return 1;
+}
+
+auto luaEntityParticlesIsEmitting(lua_State* iState) -> int {
+	const auto* const system = particleSystemOf(iState);
+	if (system == nullptr)
+		return 0;
+	lua_pushboolean(iState, system->isEmitting() && system->isPlaying() ? 1 : 0);
 	return 1;
 }
 
@@ -2612,6 +2651,37 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::LightFlicker>>,
 		 .description = "Whether the entity's `LightFlicker` runs; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "particles_play",
+		 .function = guarded<luaEntityParticles<&renderer::ParticleSystem::play>>,
+		 .description = "Start or resume the entity's `ParticleEmitter` (its emission and its particles); false when it "
+						"has none.",
+		 .params = {entityId}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "particles_pause",
+		 .function = guarded<luaEntityParticles<&renderer::ParticleSystem::pause>>,
+		 .description = "Freeze the particles and the emission of the entity's `ParticleEmitter` where they are; false "
+						"when it has none.",
+		 .params = {entityId}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "particles_stop",
+		 .function = guarded<luaEntityParticles<&renderer::ParticleSystem::stop>>,
+		 .description = "Stop the emission of the entity's `ParticleEmitter`; the living particles finish their life. "
+						"False when it has none.",
+		 .params = {entityId}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "particles_restart",
+		 .function = guarded<luaEntityParticles<&renderer::ParticleSystem::restart>>,
+		 .description = "Kill the particles of the entity's `ParticleEmitter` and start its emission from the beginning; "
+						"false when it has none.",
+		 .params = {entityId}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "particles_emit", .function = guarded<luaEntityParticlesEmit>,
+		 .description = "Spawn a burst of particles from the entity's `ParticleEmitter` at the next frame, emitting or "
+						"not; false when it has none.",
+		 .params = {entityId, {"count", Integer}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "particles_is_emitting", .function = guarded<luaEntityParticlesIsEmitting>,
+		 .description = "Whether the entity's `ParticleEmitter` plays and emits; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"emitting", Boolean}}},
+		{.table = "entity", .name = "set_trail_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::Trail>>,
+		 .description = "Switch the entity's `Trail` on or off (off clears it); false when it has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
 		{.table = "entity", .name = "set_oscillator_enabled",
 		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::Oscillator>>,
 		 .description = "Switch the entity's `Oscillator` on or off (it stays where it is while off); false when it "
