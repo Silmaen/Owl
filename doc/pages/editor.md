@@ -25,6 +25,9 @@ between runs.
   puts the default layout back; **Reset Layout** returns every panel to its place in the current layout.
 - The palettes show only with their document: the Tile Palette with an open tilemap, the Voxel Palette with a scene
   holding a voxel world, in Edit.
+- The **Log** follows the new messages; scrolling up stops it, scrolling back to the bottom or the follow button
+  resumes it. Its right click copies a line or every shown message; **Select text** shows them as plain text to select
+  and copy with `Ctrl+C`.
 
 ## The ribbon
 

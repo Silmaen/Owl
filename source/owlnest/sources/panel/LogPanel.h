@@ -8,9 +8,13 @@
 
 #pragma once
 
+#include <debug/LogSink.h>
 #include <owlgui.h>
 
 #include <array>
+#include <cstddef>
+#include <string>
+#include <vector>
 
 namespace owl::nest::panel {
 /**
@@ -56,8 +60,36 @@ private:
 	bool m_showApp = true;
 	/// Text search buffer.
 	std::array<char, 256> m_searchBuffer{};
-	/// Auto-scroll to bottom.
+	/// Keep the view on the latest message; scrolling up turns it off, scrolling back to the bottom turns it on.
 	bool m_autoScroll = true;
+	/// Show the messages as plain text that can be selected and copied.
+	bool m_textMode = false;
+	/// Line the context menu was opened on, in the shown lines.
+	size_t m_menuLine = 0;
+	/// Text of the plain text view.
+	std::string m_selectableText;
+
+	/**
+	 * @brief
+	 *  Whether a message passes the level, logger and text filters.
+	 * @param[in] iEntry The message.
+	 * @return True when it is shown.
+	 */
+	[[nodiscard]] auto isShown(const debug::LogEntry& iEntry) const -> bool;
+
+	/**
+	 * @brief
+	 *  Draw the shown messages in colour, with the follow scroll and the copy menu.
+	 * @param[in] iShown The messages.
+	 */
+	void renderColoredLog(const std::vector<const debug::LogEntry*>& iShown);
+
+	/**
+	 * @brief
+	 *  Draw the shown messages as read-only plain text, to select and copy.
+	 * @param[in] iShown The messages.
+	 */
+	void renderSelectableText(const std::vector<const debug::LogEntry*>& iShown);
 };
 
 }// namespace owl::nest::panel
