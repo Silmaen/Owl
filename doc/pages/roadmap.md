@@ -67,7 +67,6 @@ replication, the freezes, the SDK.
 - ![Planned][planned] Consumable SDK: OwlEngine Conan package, `find_package(OwlEngine)` with 1–2 public dependencies, consumer test in CI
 - ![Planned][planned] Windows SDK compatible with MSVC (clang-cl), next to MinGW ([Platforms](design/modding-platforms.md#platforms-msvc))
 - ![Planned][planned] Owl Nest and the runners signed for Windows: a certificate provider for the signing of the `Package` action ([Game export](design/game-export.md#game-export-signing))
-- ![Planned][planned] Settings, logs and caches stay in the application folder, with an import of the settings of a previous version
 - ![Planned][planned] Fuzzers on every file loader
 - ![Planned][planned] Performance budgets verified in CI on every target platform
 - ![Planned][planned] Complete user documentation: tutorials, Lua and visual-scripting references
@@ -76,7 +75,7 @@ replication, the freezes, the SDK.
 ## v0.8.0 -- Expected 2026-12-06
 
 **Goal:** Ship a game everywhere: every target exported from every Owl Nest host, Android and the Web as new
-platforms, mods, accessibility and a local crash reporter
+platforms, mods and a local crash reporter
 ([game export](design/game-export.md), [modding and platforms](design/modding-platforms.md)). Critical path: the build image,
 the templates, the shaders per target, Android and the Web.
 
@@ -92,19 +91,16 @@ the templates, the shaders per target, Android and the Web.
 - ![Planned][planned] Touch screen input: taps and drags as pointer events, pinch and two-finger pan, the HUD and Owl Nest usable by touch ([Input](design/windowing-input.md))
 - ![Planned][planned] Web export through a WebGPU Owl RHI backend, run in the browser from Owl Nest ([Platforms](design/modding-platforms.md#platforms-web))
 - ![Planned][planned] Gamepad improvements: remapping UI, haptics, joysticks and throttles with many axes ([Input](design/windowing-input.md))
-- ![Planned][planned] Accessibility: UI scale, colour-blind modes, subtitles, reduced motion ([Accessibility](design/accessibility.md))
 - ![Planned][planned] Crash reporter: a local report to attach to a GitHub issue, nothing sent ([Crash reporter](design/crash-reporter.md))
 - ![Planned][planned] Mod loading system (`.owlmod` packs, manifest, load order, asset overrides)
 - ![Planned][planned] Lua mod API (custom components, game event hooks, sandboxed)
 - ![Planned][planned] In-game mod manager (enable / disable / reorder, conflict detection)
-- ![Planned][planned] World partition: streaming cells on world coordinates, additive scenes loaded around the player ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Camera tracks in the sequencer, for cutscenes ([Large worlds](design/large-worlds.md))
 
 ## v0.7.0 -- Expected 2026-11-22
 
-**Goal:** The systems that make games — AI, 2D and 3D physics, audio, narrative — as optional modules outside
-`Scene`, on a deterministic simulation with input replay and rewind; articulated bodies, gravity, time warp and
-planets for worlds of any scale ([details](design/gameplay-systems.md), [simulation](design/simulation-networking.md),
+**Goal:** Physics, simulation and AI — 2D and 3D physics and AI as optional modules outside `Scene`, on a
+deterministic simulation with input replay and rewind; articulated bodies, gravity and time warp for worlds of any
+scale ([details](design/gameplay-systems.md), [simulation](design/simulation-networking.md),
 [large worlds](design/large-worlds.md)). Critical path: the deterministic simulation and replay, Jolt, gravity fields.
 
 - ![Planned][planned] Deterministic simulation (seeded streams, cross-platform world-hash test) on the v0.4.0 fixed tick
@@ -118,23 +114,19 @@ planets for worlds of any scale ([details](design/gameplay-systems.md), [simulat
 - ![Planned][planned] Gravity fields (uniform, point, spherical) with trajectory prediction ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Time warp: scaled clock, bodies handed to analytic propagation and back ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Simulation level of detail: far entities on a coarse model, on a slower tick ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Planetary terrain layer: cube-sphere quadtree LOD from PCG graphs, atmospheric scattering, scaled space ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Navigation (NavMesh generation, A*, dynamic avoidance); tile-graph pathfinding comes in v0.4.0
 - ![Planned][planned] Behaviour trees with a visual editor (`.owlbt`)
-- ![To evaluate][evaluate] Lua to visual script: turn a Lua script into a graph ([Visual scripting](design/visual-scripting.md#visual-scripting-lua-to-graph))
 - ![Planned][planned] Steering behaviours and flocking, in 2D and in open 3D space (obstacle avoidance, formations)
-- ![Planned][planned] Audio mixer (buses, per-bus volume, crossfades)
-- ![Planned][planned] Audio effects (reverb zones, low / high-pass filters, Doppler) and adaptive music driven by game states
-- ![Planned][planned] Dialogue system with a visual editor (`.owldlg`)
-- ![Planned][planned] HUD markers anchored to world entities, with off-screen indicators ([HUD system](design/hud-system.md))
 - ![Planned][planned] Engine Demo: enemies demo on the AI modules
-- ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a Zelda-like, a marble or kart game, a lunar lander, an asteroid dogfight, a rail shooter, an orbital golf, a bridge builder ([Pool](design/sample-games.md#sample-games-pool))
+- ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a Zelda-like, a marble or kart game, a lunar lander, an asteroid dogfight, an orbital golf, a bridge builder ([Pool](design/sample-games.md#sample-games-pool))
 
 ## v0.6.0 -- Expected 2026-11-08
 
 **Goal:** Produce content at scale and script games without C++: offline asset pipeline, animation and effects,
-procedural graphs, tile tools, Lua editor scripts, and Blueprints-style visual scripting compiled to Lua. Critical path:
-the cook, double positions with a floating origin, visual scripting; the rest may slip to v0.7.0.
+procedural graphs, tile tools, Lua editor scripts, Blueprints-style visual scripting compiled to Lua; then the content
+side of large worlds, audio, dialogue and cutscenes, accessibility ([large worlds](design/large-worlds.md),
+[gameplay systems](design/gameplay-systems.md)). Critical path: the cook, double positions with a floating origin, visual
+scripting; the rest may slip to v0.7.0.
 
 - ![Done][done] CI: one GCC build (Debug, tests, coverage), a fast first stage, a quick check for agents ([CI streamlining](design/ci-streamlining.md#ci-streamlining-cost-review))
 - ![Done][done] Offline asset pipeline: cook, content-addressed cache, asset GUIDs, KTX2 BC7/ASTC texture compression ([Content](design/content-pipeline.md))
@@ -147,8 +139,17 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Planned][planned] Spline component and its editor: paths, lanes, rails ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Data tables: typed records edited in a grid in Owl Nest, read from Lua ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Mesh sockets: named attachment points, entities assembled at runtime ([Large worlds](design/large-worlds.md))
+- ![Planned][planned] World partition: streaming cells on world coordinates, additive scenes loaded around the player ([Large worlds](design/large-worlds.md))
+- ![Planned][planned] Planetary terrain layer: cube-sphere quadtree LOD from PCG graphs, atmospheric scattering, scaled space ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Skeletal animation (skinning, blending, state machine) and mesh LODs
 - ![Planned][planned] GPU particle system with editor preview and trails, emissive materials and lens flares
+- ![Planned][planned] Audio mixer (buses, per-bus volume, crossfades) ([Gameplay systems](design/gameplay-systems.md))
+- ![Planned][planned] Audio effects (reverb zones, low / high-pass filters, Doppler) and adaptive music driven by game states ([Gameplay systems](design/gameplay-systems.md))
+- ![Planned][planned] Dialogue system with a visual editor (`.owldlg`) ([Gameplay systems](design/gameplay-systems.md))
+- ![Planned][planned] Camera tracks in the sequencer, for cutscenes ([Large worlds](design/large-worlds.md))
+- ![Planned][planned] HUD markers anchored to world entities, with off-screen indicators ([HUD system](design/hud-system.md))
+- ![Planned][planned] Accessibility: UI scale, colour-blind modes, subtitles, reduced motion ([Accessibility](design/accessibility.md))
+- ![Planned][planned] Settings, logs and caches stay in the application folder, with an import of the settings of a previous version
 - ![Done][done] Advanced post-processing (chromatic aberration, film grain, motion blur, depth of field)
 - ![Done][done] Angular radius of a directional light: soft shadows (PCSS), wider highlight, sun disc in the sky ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Done][done] Area lights (rectangle, disc, sphere) lighting through LTC, with soft shadows sharing the PCSS of the sun ([3D core](design/3d-core.md#emissive-and-area-lights))
@@ -159,11 +160,12 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Done][done] Scene Flow view removed: it showed few of the scene links of a real project
 - ![Done][done] Script debugging aids (breakpoint markers, live watch)
 - ![Done][done] Lua editor scripts and interactive Lua console ([Editor scripting](design/editor-scripting.md))
+- ![To evaluate][evaluate] Lua to visual script: turn a Lua script into a graph ([Visual scripting](design/visual-scripting.md#visual-scripting-lua-to-graph))
 - ![Done][done] Procedural generation graphs on `NodeCanvas`, first brick on tilemaps ([PCG graphs](design/pcg-graphs.md))
 - ![Done][done] Tileset editor: compose the atlas from source images ([2D](design/2d-complete.md))
 - ![Done][done] Mipmapped pixel-art atlases: sharp texels up close, filtered mips far away, no bleeding between tiles, for the voxel, raycast and tilemap atlases ([2D](design/2d-complete.md#pixel-art-atlases))
 - ![Done][done] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
-- ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a Mini Minecraft, combat in the Wolfenstein mini, a station trader ([Pool](design/sample-games.md#sample-games-pool))
+- ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a Mini Minecraft, combat in the Wolfenstein mini, a station trader, a rail shooter ([Pool](design/sample-games.md#sample-games-pool))
 
 ## v0.5.0 -- 2026-10-25
 
