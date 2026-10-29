@@ -19,6 +19,7 @@
 #include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
+#include "document/SoundDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
 #include "document/VisualScriptDocument.h"
@@ -662,6 +663,11 @@ void EditorLayer::onAttach() {
 		runCommandFromUi("material.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 		openMaterialFile(iPath);
 	});
+	m_contentBrowser.setSoundOpenCallback([this](const std::filesystem::path& iPath) -> void { openSoundFile(iPath); });
+	m_contentBrowser.setSoundCreateCallback([this](const std::filesystem::path& iPath) -> void {
+		runCommandFromUi("sound.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
+		openSoundFile(iPath);
+	});
 	m_contentBrowser.setMacroRunCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 	});
@@ -947,6 +953,12 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 			if (!material->isOpen()) {
 				toClose.push_back(material->id());
 				material->setOpen(true);
+			}
+		} else if (doc->type() == DocumentType::Sound) {
+			auto* sound = static_cast<SoundDocument*>(doc);
+			if (!sound->isOpen()) {
+				toClose.push_back(sound->id());
+				sound->setOpen(true);
 			}
 		} else if (doc->type() == DocumentType::ActionMap) {
 			auto* actions = static_cast<ActionMapDocument*>(doc);

@@ -48,6 +48,8 @@ auto documentLabel(const DocumentType iType) -> DocumentLabel {
 			return {.glyph = gui::icon::box, .kind = "mesh"};
 		case DocumentType::Material:
 			return {.glyph = gui::icon::paintbrush, .kind = "material"};
+		case DocumentType::Sound:
+			return {.glyph = gui::icon::volume2, .kind = "sound"};
 	}
 	return {.glyph = gui::icon::file, .kind = "doc"};
 }

@@ -41,6 +41,7 @@
 #include "script/LuaEngine.h"
 #include "script/ScriptEngine.h"
 #include "sound/SoundCommand.h"
+#include "sound/SoundHelper.h"
 #include "sound/SoundSystem.h"
 
 #include <algorithm>
@@ -449,14 +450,7 @@ auto luaSoundPlay(lua_State* iState) -> int {
 		lua_pushinteger(iState, static_cast<lua_Integer>(sound::invalidSoundHandle));
 		return 1;
 	}
-	auto& library = sound::SoundSystem::getSoundLibrary();
-	// Auto-load the sound if not already in the library.
-	const auto data = library.exists(assetPath) ? library.get(assetPath) : library.load(assetPath);
-	if (!data) {
-		lua_pushinteger(iState, static_cast<lua_Integer>(sound::invalidSoundHandle));
-		return 1;
-	}
-	const auto handle = sound::SoundCommand::play(data, sound::PlayParams{});
+	const auto handle = sound::SoundHelper::playAsset(assetPath, sound::PlayParams{});
 	lua_pushinteger(iState, static_cast<lua_Integer>(handle));
 	return 1;
 }

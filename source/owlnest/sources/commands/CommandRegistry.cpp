@@ -32,6 +32,7 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 #include <script/visual/VisualScript.h>
+#include <sound/SoundCue.h>
 
 #include <yaml-cpp/yaml.h>
 
@@ -682,6 +683,29 @@ auto createMaterial(const CommandContext& /*iContext*/, const CommandArgs& iArgs
 						 .data = {{"path", path.generic_string()}}};
 }
 
+auto createSoundCue(const CommandContext& /*iContext*/, const CommandArgs& iArgs)
+		-> expected<CommandResult, CommandFailure> {
+	const std::filesystem::path path{iArgs.getText("path")};
+	if (path.extension() != sound::SoundCue::fileExtension())
+		return fail(CommandError::InvalidArgument, "`path` must end with `.owlsound`");
+	if (std::filesystem::exists(path))
+		return fail(CommandError::InvalidArgument, std::format("{} already exists", path.string()));
+	sound::SoundCue cue;
+	if (const auto file = iArgs.getText("file"); !file.empty()) {
+		if (sound::SoundCue::isCue(file))
+			return fail(CommandError::InvalidArgument, "`file` must be an audio file");
+		cue.variants.push_back(
+				{.file = file, .trimStart = 0.f, .trimEnd = 0.f, .loopStart = 0.f, .loopEnd = 0.f, .weight = 1.f});
+	}
+	std::error_code error;
+	std::filesystem::create_directories(path.parent_path(), error);
+	if (!cue.saveToFile(path))
+		return fail(CommandError::NotApplicable, std::format("cannot write {}", path.string()));
+	return CommandResult{.entity = core::UUID{0},
+						 .description = std::format("Create sound cue {}", path.filename().string()),
+						 .data = {{"path", path.generic_string()}}};
+}
+
 auto addRenderLayer(const CommandContext& iContext, const CommandArgs& iArgs)
 		-> expected<CommandResult, CommandFailure> {
 	if (iContext.projectStack == nullptr)
@@ -1050,6 +1074,19 @@ CommandRegistry::CommandRegistry() {
 				   .description = "Asset path of the parent `.owlmat` (a root material when empty)."}},
 		 .factory = {},
 		 .run = createMaterial,
+		 .allowedInPlay = true});
+	add({.name = "sound.create",
+		 .description = "Create a `.owlsound` sound cue, empty or with one take playing a whole audio file.",
+		 .args = {{.name = "path",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "Sound cue file to write (`.owlsound`, must not exist).",
+				   .projectPath = true},
+				  {.name = "file",
+				   .type = ArgType::Text,
+				   .description = "Asset path of the audio file of the first take (none when empty)."}},
+		 .factory = {},
+		 .run = createSoundCue,
 		 .allowedInPlay = true});
 	add({.name = "entity.create_light",
 		 .description = "Create an entity with a `Light`: a directional light (sun) tilted down, or a point, spot, "

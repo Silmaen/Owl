@@ -39,7 +39,7 @@ auto SoundData::create(const Specification& iSpec) -> shared<SoundData> {
 }
 
 auto SoundData::create(const std::filesystem::path& iPath) -> shared<SoundData> {
-	return create(Specification{.file = iPath});
+	return create(Specification{.file = iPath, .trimStart = 0.f, .trimEnd = 0.f, .loopStart = 0.f, .loopEnd = 0.f});
 }
 
 }// namespace owl::sound

@@ -35,13 +35,11 @@ local LEVELS = { "platformer", "raycast", "iso", "voxel", "tavern" }
 local walk_clock = 0
 local shown_frame = -1
 local shown_step = -1
-local STEP_VARIANTS = 4
--- Spelt out so the game export finds and packs every footstep.
-local STEP_SOUNDS = { "sounds/hub/step_1.wav", "sounds/hub/step_2.wav", "sounds/hub/step_3.wav", "sounds/hub/step_4.wav" }
-local step_sound = 0
+-- Sound cues: each play picks one of four takes with its own volume and pitch.
+local STEP_SOUND = "sounds/hub/steps.owlsound"
 -- In the river the hero wades: much slower, and a splash instead of a footstep. The water tiles of the ground layer
 -- (four animation phases, hub_water.lua) tell where it is; the bridges are not water.
-local WADE_SOUNDS = { "sounds/hub/wade_1.wav", "sounds/hub/wade_2.wav", "sounds/hub/wade_3.wav", "sounds/hub/wade_4.wav" }
+local WADE_SOUND = "sounds/hub/wade.owlsound"
 local WATER_TILES = { [132] = true, [133] = true, [137] = true, [138] = true }
 local map_id = 0
 local wading = false
@@ -139,10 +137,7 @@ function on_update(dt)
         -- A footstep each time a foot lands: the contact frames of the cycle (the first and the third).
         local step = (frame - frame_walk) % walk_frames
         if frame >= frame_walk and step ~= shown_step and step % 2 == 0 then
-            -- Four variants, never the same twice in a row, each a little louder or softer (no pitch control in Lua).
-            step_sound = (step_sound + math.random(STEP_VARIANTS - 1) - 1) % STEP_VARIANTS + 1
-            local sounds = wading and WADE_SOUNDS or STEP_SOUNDS
-            sound.set_volume(sound.play(sounds[step_sound]), 0.55 + math.random() * 0.4)
+            sound.play(wading and WADE_SOUND or STEP_SOUND)
         end
         shown_step = frame >= frame_walk and step or -1
     end

@@ -107,6 +107,8 @@ auto typeShortName(const DocumentType iType) -> const char* {
 			return "Mesh";
 		case DocumentType::Material:
 			return "Material";
+		case DocumentType::Sound:
+			return "Sound";
 	}
 	return "Doc";
 }

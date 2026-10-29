@@ -204,6 +204,25 @@ public:
 
 	/**
 	 * @brief
+	 *  Set a callback invoked when a sound cue (`.owlsound`) or an audio file is double-clicked.
+	 * @param[in] iCallback Function taking the cue file path.
+	 */
+	void setSoundOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_soundOpenCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
+	 *  Set the callback creating a sound cue ("New Sound Cue" of the folder menu); it runs `sound.create` and opens the
+	 *  file.
+	 * @param[in] iCallback Function taking the path of the file to create.
+	 */
+	void setSoundCreateCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_soundCreateCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when a macro (`.owlmacro`) is double-clicked or run from its context menu.
 	 * @param[in] iCallback Function taking the macro file path.
 	 */
@@ -395,6 +414,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Ask for a new sound cue in the current directory (a free "New Sound Cue" name).
+	 */
+	void createSoundCue();
+
+	/**
+	 * @brief
 	 *  Create a starter visual script in the current folder and open it.
 	 */
 	void createVisualScript();
@@ -457,6 +482,10 @@ private:
 	std::function<void(const std::filesystem::path&)> m_materialOpenCallback;
 	/// Called with the path of a material file to create.
 	std::function<void(const std::filesystem::path&)> m_materialCreateCallback;
+	/// Called on double-click of a `.owlsound` sound cue.
+	std::function<void(const std::filesystem::path&)> m_soundOpenCallback;
+	/// Creates a sound cue ("New Sound Cue").
+	std::function<void(const std::filesystem::path&)> m_soundCreateCallback;
 	/// Called when a macro (`.owlmacro`) is double-clicked or run from its context menu.
 	std::function<void(const std::filesystem::path&)> m_macroRunCallback;
 	/// Called to export a macro to an editor script.

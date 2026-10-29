@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <optional>
 #include <vector>
 
 namespace owl::sound {
@@ -26,5 +27,13 @@ namespace owl::sound {
  * @return One peak per slice, from 0 to 1; empty when the file cannot be read or the audio module is not built.
  */
 OWL_API auto readWaveform(const std::filesystem::path& iPath, size_t iBuckets) -> std::vector<float>;
+
+/**
+ * @brief
+ *  Length of an audio file.
+ * @param[in] iPath The file on disk.
+ * @return Its duration in seconds, or nothing when it cannot be read.
+ */
+[[nodiscard]] OWL_API auto readSoundDuration(const std::filesystem::path& iPath) -> std::optional<float>;
 
 }// namespace owl::sound

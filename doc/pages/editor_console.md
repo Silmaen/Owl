@@ -95,6 +95,7 @@ A refused command changes nothing and logs why (a bad argument, an edit during P
 | `prefab.instantiate`              | `path` (prefab file), `asset_path`                                                                      |
 | `mesh.create`                     | `path` (mesh file), `asset_path`, `name`, `translation` (world), `parent`, `layer`                      |
 | `material.create`                 | `path` (new `.owlmat` file), `parent` (the parent material, a root material when absent)                |
+| `sound.create`                    | `path` (new `.owlsound` file), `file` (the audio file of a first take, none when absent)                |
 | `material.assign`                 | `entity`, `slot` (from 0, -1 for every slot), `material` (empty for the file's own)                     |
 | `scene.save`                      | `path` (the scene file when absent)                                                                     |
 | `scene.capture_reflection_probes` | none: every probe is captured again (not an undo entry)                                                 |

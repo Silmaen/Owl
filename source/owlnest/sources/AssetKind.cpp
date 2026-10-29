@@ -21,7 +21,7 @@
 namespace owl::nest {
 
 namespace {
-constexpr std::array<std::pair<std::string_view, AssetKind>, 40> g_kinds{{
+constexpr std::array<std::pair<std::string_view, AssetKind>, 45> g_kinds{{
 		{".owl", AssetKind::Scene},
 		{".owlflow", AssetKind::NodeGraph},
 		{".owlvs", AssetKind::NodeGraph},
@@ -33,6 +33,11 @@ constexpr std::array<std::pair<std::string_view, AssetKind>, 40> g_kinds{{
 		{".owlhud", AssetKind::Hud},
 		{".owlmacro", AssetKind::Macro},
 		{".owlmat", AssetKind::Material},
+		{".owlsound", AssetKind::SoundCue},
+		{".wav", AssetKind::Audio},
+		{".ogg", AssetKind::Audio},
+		{".flac", AssetKind::Audio},
+		{".mp3", AssetKind::Audio},
 		{".gltf", AssetKind::Mesh},
 		{".glb", AssetKind::Mesh},
 		{".obj", AssetKind::Mesh},

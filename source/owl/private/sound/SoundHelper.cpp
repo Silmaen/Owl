@@ -14,7 +14,16 @@
 #include "scene/component/SoundSource.h"
 #include "scene/component/Transform.h"
 #include "sound/SoundCommand.h"
+#include "sound/SoundCue.h"
 #include "sound/SoundSystem.h"
+
+#include <cstdint>
+#include <functional>
+#include <map>
+#include <mutex>
+#include <optional>
+#include <random>
+#include <string>
 
 namespace owl::sound {
 
@@ -27,12 +36,6 @@ auto SoundHelper::playEntitySound(const scene::Entity& iEntity) -> SoundHandle {
 		return invalidSoundHandle;
 
 	if (SoundSystem::getState() != SoundSystem::State::Running && SoundSystem::getState() != SoundSystem::State::Error)
-		return invalidSoundHandle;
-
-	auto& soundLibrary = SoundSystem::getSoundLibrary();
-	const auto soundData = soundLibrary.exists(soundComp.soundAsset) ? soundLibrary.get(soundComp.soundAsset)
-																	 : soundLibrary.load(soundComp.soundAsset);
-	if (!soundData)
 		return invalidSoundHandle;
 
 	math::vec3f position{0, 0, 0};
@@ -50,8 +53,72 @@ auto SoundHelper::playEntitySound(const scene::Entity& iEntity) -> SoundHandle {
 							.position = position,
 							.maxDistance = soundComp.maxDistance,
 							.rolloff = soundComp.rolloff};
-	soundComp.runtimeHandle = SoundCommand::play(soundData, params);
+	soundComp.runtimeHandle = playAsset(soundComp.soundAsset, params);
 	return soundComp.runtimeHandle;
+}
+
+namespace {
+
+std::mutex g_cueMutex;
+std::map<std::string, SoundCue, std::less<>> g_cues;
+
+auto getRandom() -> uint64_t {
+	static std::mt19937_64 s_engine{std::random_device{}()};
+	return s_engine();
+}
+
+auto getSoundData(const SoundVariant& iVariant) -> shared<SoundData> {
+	auto& library = SoundSystem::getSoundLibrary();
+	const auto key = getVariantKey(iVariant);
+	if (library.exists(key))
+		return library.get(key);
+	if (key == iVariant.file)
+		return library.load(key);
+	auto data = SoundData::create(getVariantSpecification(iVariant));
+	if (data)
+		library.add(key, data);
+	return data;
+}
+
+}// namespace
+
+auto SoundHelper::playAsset(const std::string& iAsset, const PlayParams& iParams) -> SoundHandle {
+	if (iAsset.empty())
+		return invalidSoundHandle;
+	if (!SoundCue::isCue(iAsset)) {
+		const auto data = getSoundData(
+				{.file = iAsset, .trimStart = 0.f, .trimEnd = 0.f, .loopStart = 0.f, .loopEnd = 0.f, .weight = 1.f});
+		return data ? SoundCommand::play(data, iParams) : invalidSoundHandle;
+	}
+	std::optional<SoundCue> cue;
+	{
+		const std::scoped_lock<std::mutex> lock{g_cueMutex};
+		if (const auto found = g_cues.find(iAsset); found != g_cues.end())
+			cue = found->second;
+	}
+	if (!cue) {
+		cue = SoundCue::load(iAsset);
+		if (!cue)
+			return invalidSoundHandle;
+		const std::scoped_lock<std::mutex> lock{g_cueMutex};
+		g_cues.insert_or_assign(iAsset, *cue);
+	}
+	const auto pick = cue->pick(getRandom());
+	if (!pick)
+		return invalidSoundHandle;
+	const auto data = getSoundData(cue->variants[pick->variant]);
+	if (!data)
+		return invalidSoundHandle;
+	auto params = iParams;
+	params.volume *= pick->volume;
+	params.pitch *= pick->pitch;
+	params.loop = params.loop || cue->loop;
+	return SoundCommand::play(data, params);
+}
+
+void SoundHelper::forgetCue(const std::string& iAsset) {
+	const std::scoped_lock<std::mutex> lock{g_cueMutex};
+	g_cues.erase(iAsset);
 }
 
 void SoundHelper::stopEntitySound(const scene::Entity& iEntity) {

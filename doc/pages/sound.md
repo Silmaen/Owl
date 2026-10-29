@@ -43,7 +43,7 @@ flowchart TD
 1. Place audio files in your project's asset directory (e.g. `sounds/explosion.wav`)
 2. In Owl Nest, select an entity (or create a new one)
 3. Click **Add Component** and choose **Sound Source**
-4. Set the `Sound Asset` field to the relative path (e.g. `sounds/explosion.wav`)
+4. Set the `Sound Asset` field to the relative path of an audio file or a sound cue (e.g. `sounds/explosion.wav`)
 5. Configure volume, pitch, loop, and other properties as needed
 6. For spatial audio, also add a **Sound Listener** component to the camera or player entity
 
@@ -119,8 +119,9 @@ auto handle = owl::sound::SoundHelper::playEntitySound(entity);
 owl::sound::SoundHelper::stopEntitySound(entity);
 ```
 
-It reads the entity's `SoundSource`, loads the data from the `SoundLibrary` and calls `SoundCommand::play()`. For
-more control, use `SoundCommand` directly:
+It reads the entity's `SoundSource` and plays it through `SoundHelper::playAsset`, which loads the data into the
+`SoundLibrary` (a cue picks its take first) and calls `SoundCommand::play()`. For more control, use `SoundCommand`
+directly:
 
 ```c++
 #include <sound/SoundCommand.h>
@@ -164,6 +165,32 @@ sequenceDiagram
     S->>C: onEndRuntime: stop() every sound, runtimeHandle reset
 ```
 
+## Sound Cues
+
+A sound cue (`.owlsound`, `sound::SoundCue`) groups takes of one sound, edited in Owl Nest
+([Sound cues](editor_documents.md#sound-cues)). Each play picks a take by weight and varies its volume and pitch:
+
+```yaml
+SoundCue: ''
+FormatVersion: 1
+volume: 1
+volumeJitter: 0.1   # ±10 % at each play
+pitch: 1
+pitchJitter: 0.05
+loop: false
+variants:
+  - file: sounds/step_a.wav
+    trimStart: 0.02   # seconds from the start of the file
+    trimEnd: 0.4      # 0 for the end of the file
+    loopStart: 0      # loop points, 0 and 0 loop the whole played part
+    loopEnd: 0
+    weight: 1
+```
+
+`SoundHelper::playAsset` plays an audio file or a cue: the scene sources, `sound.play` and the inspector preview go
+through it. A take loads as its own sound data, cut to its trim, with its loop points on the OpenAL buffer
+(`AL_SOFT_loop_points`); `SoundHelper::forgetCue` drops a cached cue after an edit.
+
 ## Supported Formats
 
 | Format | Extension | Notes                                         |
@@ -178,6 +205,6 @@ backend picks the buffer type.
 
 ## Asset Packing
 
-The game export (**Project > Pack Game**) packs every `SoundSource.soundAsset` of the scenes, resolved through the
-asset directories by `AssetScanner`, into the `.owlpack`; the runner reads them from the pack. Packing pipeline:
+The game export (**Project > Pack Game**) packs every `SoundSource.soundAsset` of the scenes, with the audio files of
+the takes of a cue, resolved through the asset directories by `AssetScanner`, into the `.owlpack`; the runner reads them from the pack. Packing pipeline:
 [Architecture](architecture.md).

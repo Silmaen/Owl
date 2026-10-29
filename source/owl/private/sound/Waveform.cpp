@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <optional>
 #include <vector>
 
 namespace owl::sound {
@@ -60,6 +61,26 @@ auto readWaveform(const std::filesystem::path& iPath, const size_t iBuckets) -> 
 #else
 	OWL_CORE_WARN("Waveform: The audio module is not built, {} is not read.", iPath.string())
 	return {};
+#endif
+}
+
+auto readSoundDuration(const std::filesystem::path& iPath) -> std::optional<float> {
+#if OWL_WITH_AUDIO
+	SF_INFO info{};
+	SNDFILE* file = sf_open(reinterpret_cast<const char*>(iPath.u8string().c_str()), SFM_READ, &info);
+	if (file == nullptr) {
+		OWL_CORE_WARN("Waveform: Cannot read {} ({}).", iPath.string(), sf_strerror(nullptr))
+		return std::nullopt;
+	}
+	sf_close(file);
+	if (info.samplerate <= 0) {
+		OWL_CORE_WARN("Waveform: {} has no sample rate.", iPath.string())
+		return std::nullopt;
+	}
+	return static_cast<float>(static_cast<double>(info.frames) / static_cast<double>(info.samplerate));
+#else
+	OWL_CORE_WARN("Waveform: The audio module is not built, {} is not read.", iPath.string())
+	return std::nullopt;
 #endif
 }
 

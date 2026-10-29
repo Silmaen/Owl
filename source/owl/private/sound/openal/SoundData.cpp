@@ -15,9 +15,12 @@
 #include <sndfile.h>
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <optional>
+#include <utility>
 #include <vector>
 
 namespace owl::sound::openal {
@@ -99,6 +102,59 @@ auto sfFormatConvert(const int iSfFormat) -> SoundDataType {
 	}
 }
 
+auto toFrame(const float iSeconds, const int iRate) -> sf_count_t {
+	return static_cast<sf_count_t>(static_cast<double>(iSeconds) * static_cast<double>(iRate));
+}
+
+// First frame and number of frames the trim keeps.
+auto getPlayedFrames(const sound::SoundData::Specification& iSpec, const sf_count_t iFrames, const int iRate)
+		-> std::pair<sf_count_t, sf_count_t> {
+	const auto first = std::clamp<sf_count_t>(toFrame(iSpec.trimStart, iRate), 0, iFrames);
+	const auto last =
+			iSpec.trimEnd > 0.f ? std::clamp<sf_count_t>(toFrame(iSpec.trimEnd, iRate), first, iFrames) : iFrames;
+	return {first, last - first};
+}
+
+// Loop points in frames of the played part, when the loop is narrower than it.
+auto getLoopFrames(const sound::SoundData::Specification& iSpec, const sf_count_t iFirst, const sf_count_t iCount,
+				   const int iRate) -> std::optional<std::pair<sf_count_t, sf_count_t>> {
+	if (iSpec.loopStart <= 0.f && iSpec.loopEnd <= 0.f)
+		return std::nullopt;
+	const auto start = std::clamp<sf_count_t>(toFrame(iSpec.loopStart, iRate) - iFirst, 0, iCount - 1);
+	const auto end = iSpec.loopEnd > 0.f
+							 ? std::clamp<sf_count_t>(toFrame(iSpec.loopEnd, iRate) - iFirst, start + 1, iCount)
+							 : iCount;
+	return std::pair{start, end};
+}
+
+// Seeks to the first frame the trim keeps; block-compressed samples cannot be cut at any frame, so they are decoded.
+auto seekPlayedPart(SNDFILE* ioFile, const sound::SoundData::Specification& iSpec, const SF_INFO& iInfo,
+					SoundDataType& ioFormat) -> std::optional<std::pair<sf_count_t, sf_count_t>> {
+	const auto played = getPlayedFrames(iSpec, iInfo.frames, iInfo.samplerate);
+	if (played.second < 1) {
+		OWL_CORE_WARN("SoundData: Trim of '{}' leaves no sample.", iSpec.file.string())
+		return std::nullopt;
+	}
+	if (played.second != iInfo.frames && (ioFormat == SoundDataType::Ima4 || ioFormat == SoundDataType::MsAdpcm))
+		ioFormat = SoundDataType::Int16;
+	if (played.first > 0 && sf_seek(ioFile, played.first, SEEK_SET) < 0) {
+		OWL_CORE_WARN("SoundData: Cannot seek in '{}'.", iSpec.file.string())
+		return std::nullopt;
+	}
+	return played;
+}
+
+void setLoopPoints(const ALuint iBuffer, const sound::SoundData::Specification& iSpec, const sf_count_t iFirst,
+				   const sf_count_t iCount, const int iRate) {
+	const auto loop = getLoopFrames(iSpec, iFirst, iCount, iRate);
+	if (!loop.has_value() || alIsExtensionPresent("AL_SOFT_loop_points") != AL_TRUE)
+		return;
+	const std::array points{static_cast<ALint>(loop->first), static_cast<ALint>(loop->second)};
+	alBufferiv(iBuffer, AL_LOOP_POINTS_SOFT, points.data());
+	if (const ALenum err = alGetError(); err != AL_NO_ERROR)
+		OWL_CORE_WARN("SoundData: Loop points of '{}' refused: {}.", iSpec.file.string(), alGetString(err))
+}
+
 auto alFormatName(const ALenum iFormat) -> std::string {
 	switch (iFormat) {
 		case AL_FORMAT_MONO8:
@@ -165,6 +221,12 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 		sf_close(file);
 		return;
 	}
+	const auto played = seekPlayedPart(file, m_specification, sfInfo, sampleFormat);
+	if (!played) {
+		sf_close(file);
+		return;
+	}
+	const auto [firstFrame, frameCount] = *played;
 	// Compute block align
 	ALint byteblockalign = 0;
 	ALint splblockalign = 0;
@@ -246,24 +308,24 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 		sf_close(file);
 		return;
 	}
-	if (sfInfo.frames / splblockalign > static_cast<sf_count_t>(INT_MAX / byteblockalign)) {
+	if (frameCount / splblockalign > static_cast<sf_count_t>(INT_MAX / byteblockalign)) {
 		OWL_CORE_WARN("SoundData: Too many samples.")
 		sf_close(file);
 		return;
 	}
 
 	/* Decode the whole audio file to a buffer. */
-	std::vector<char> buffer(static_cast<size_t>(sfInfo.frames / splblockalign * byteblockalign));
+	std::vector<char> buffer(static_cast<size_t>(frameCount / splblockalign * byteblockalign));
 	sf_count_t numFrames = 0;
 
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG19("-Wunsafe-buffer-usage")
 	if (sampleFormat == SoundDataType::Int16)
-		numFrames = sf_readf_short(file, reinterpret_cast<int16_t*>(buffer.data()), sfInfo.frames);
+		numFrames = sf_readf_short(file, reinterpret_cast<int16_t*>(buffer.data()), frameCount);
 	else if (sampleFormat == SoundDataType::Float)
-		numFrames = sf_readf_float(file, reinterpret_cast<float*>(buffer.data()), sfInfo.frames);
+		numFrames = sf_readf_float(file, reinterpret_cast<float*>(buffer.data()), frameCount);
 	else {
-		const sf_count_t count = sfInfo.frames / splblockalign * byteblockalign;
+		const sf_count_t count = frameCount / splblockalign * byteblockalign;
 		numFrames = sf_read_raw(file, buffer.data(), count);
 		if (numFrames > 0)
 			numFrames = numFrames / byteblockalign * splblockalign;
@@ -282,7 +344,8 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 				  sfInfo.samplerate)
 
 	m_buffer = 0;
-
+	// Drop an error left by an earlier call, so it is not read as the one of this buffer.
+	alGetError();
 	alGenBuffers(1, &m_buffer);
 	if (splblockalign > 1)
 
@@ -299,6 +362,7 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 			alDeleteBuffers(1, &m_buffer);
 		return;
 	}
+	setLoopPoints(m_buffer, m_specification, firstFrame, numFrames, sfInfo.samplerate);
 }
 
 SoundData::~SoundData() {

@@ -35,7 +35,7 @@
 #include "script/ScriptEngine.h"
 #include "script/visual/VisualScript.h"
 #include "sound/SoundCommand.h"
-#include "sound/SoundSystem.h"
+#include "sound/SoundHelper.h"
 
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
@@ -1611,7 +1611,7 @@ void renderProps(Visibility& ioComponent) {
 
 void renderProps(SoundSource& ioComponent) {
 	prop::InputText("Sound Asset", &ioComponent.sound.soundAsset);
-	fieldTooltip("Path to the audio file relative to the project (e.g. sounds/explosion.wav).");
+	fieldTooltip("Audio file or sound cue relative to the project (e.g. sounds/explosion.wav, sounds/steps.owlsound).");
 	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Sound, dropped))
 		ioComponent.sound.soundAsset = dropped.string();
 	// Inspector preview: play the asset to verify it.
@@ -1626,15 +1626,10 @@ void renderProps(SoundSource& ioComponent) {
 			sound::SoundCommand::stop(s_previewHandle);
 			s_previewHandle = sound::invalidSoundHandle;
 		} else {
-			auto& library = sound::SoundSystem::getSoundLibrary();
-			const auto data = library.exists(ioComponent.sound.soundAsset) ? library.get(ioComponent.sound.soundAsset)
-																		   : library.load(ioComponent.sound.soundAsset);
-			if (data) {
-				sound::PlayParams params;
-				params.volume = ioComponent.sound.volume;
-				params.pitch = ioComponent.sound.pitch;
-				s_previewHandle = sound::SoundCommand::play(data, params);
-			}
+			sound::PlayParams params;
+			params.volume = ioComponent.sound.volume;
+			params.pitch = ioComponent.sound.pitch;
+			s_previewHandle = sound::SoundHelper::playAsset(ioComponent.sound.soundAsset, params);
 		}
 	}
 	ImGui::EndDisabled();

@@ -17,6 +17,7 @@
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/PcgGraphDocument.h"
+#include "document/SoundDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
 #include "document/VisualScriptDocument.h"
@@ -28,6 +29,7 @@
 #include <scene/SceneSerializer.h>
 #include <scene/ScreenTransition.h>
 #include <scene/SettingsManager.h>
+#include <sound/SoundCue.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -77,6 +79,10 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 			return;
 		case AssetKind::Material:
 			openMaterialFile(iPath);
+			return;
+		case AssetKind::SoundCue:
+		case AssetKind::Audio:
+			openSoundFile(iPath);
 			return;
 		case AssetKind::Macro:
 			runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
@@ -408,6 +414,43 @@ void EditorLayer::openMeshFile(const std::filesystem::path& iPath) {
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
 		OWL_CORE_WARN("Failed to open mesh file: {}.", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openSoundFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	if (classifyAsset(iPath) == AssetKind::Audio) {
+		if (const auto cue = std::filesystem::path{iPath}.replace_extension(sound::SoundCue::fileExtension());
+			exists(cue)) {
+			openSoundFile(cue);
+			return;
+		}
+		auto doc = mkUniq<SoundDocument>();
+		doc->onAttach(this);
+		doc->startFromAudio(iPath);
+		auto* raw = m_documents.add(std::move(doc));
+		m_documents.setActive(raw);
+		syncActiveDocumentPanels();
+		return;
+	}
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Sound && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<SoundDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open sound file: {}.", iPath.string())
 		doc->onDetach();
 		return;
 	}

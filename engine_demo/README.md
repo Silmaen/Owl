@@ -129,8 +129,8 @@ that share an atlas texture with a tileset share its filter.
 
 ## Sounds
 
-`sounds/platformer/` and `sounds/ui/` hold the platformer and menu effects. The hub ambience is a 48 s wind loop (a soft `SoundSource`), with `hub/birds_1..4` and `hub/wind_1..3` played by `hub_ambient.lua` at random gaps and volumes, four footsteps (`hub/step_1..4`, a random one at a random volume: Lua has no pitch control) and four splashes
-for the river (`hub/wade_1..4`), a bell every 100 to 170 s, and two quiet loops heard only within about 5 cells of the water (a light babbling brook along the river, a jet and plops for the fountain). `tools/demo/generate_sounds.py` writes them (`sounds/hub/`, `sounds/raycast/`) and the soft three-note Start
+`sounds/platformer/` and `sounds/ui/` hold the platformer and menu effects. The hub ambience is a 48 s wind loop (a soft `SoundSource`), with `hub/birds_1..4` and `hub/wind_1..3` played by `hub_ambient.lua` at random gaps and volumes, four footsteps (`hub/step_1..4`, the takes of the `hub/steps.owlsound` cue, one at random with a random volume and pitch) and four splashes
+for the river (`hub/wade_1..4`, the `hub/wade.owlsound` cue), a bell every 100 to 170 s, and two quiet loops heard only within about 5 cells of the water (a light babbling brook along the river, a jet and plops for the fountain). `tools/demo/generate_sounds.py` writes them (`sounds/hub/`, `sounds/raycast/`) and the soft three-note Start
 chime `sounds/ui/start.wav`. The iso town sounds are in `sounds/town/` (mono, 16 bit, 22.05 kHz):
 `engine`, `ambience`, `waves` and `yard` loop, `horn`, `cash`, `click_build`, `click_bulldoze`, `error`, `bell` and
 `chirp` play once. The Kenney CC0 audio packs could not be fetched (kenney.nl answers 403 from the build machine), so

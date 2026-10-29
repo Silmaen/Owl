@@ -258,6 +258,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Open a `.owlsound` sound cue in a `SoundDocument` (or switch to it); an audio file opens the cue of the same
+	 *  name beside it, else a new cue of one take, written by its first save.
+	 * @param[in] iPath The cue or audio file.
+	 */
+	void openSoundFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
 	 *  Open an `input_actions.yml` in an `ActionMapDocument` (or switch to it); a missing file starts from the built-in
 	 *  actions and is created by the first save.
 	 * @param[in] iPath Absolute path to the file.

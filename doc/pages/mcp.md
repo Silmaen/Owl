@@ -72,7 +72,7 @@ curl -s http://127.0.0.1:47800/mcp \
 
 `tools/list` gives one tool per editor command, so whatever the console, the command palette and the macros can do,
 the agent can: `entity.create`, `entity.delete`, `entity.duplicate`, `entity.reparent`, `entity.rename`,
-`entity.set_transform`, `entity.create_light`, `component.add`, `component.remove`, `component.set`, `prefab.instantiate`, `mesh.create`, `material.create`, `material.assign`,
+`entity.set_transform`, `entity.create_light`, `component.add`, `component.remove`, `component.set`, `prefab.instantiate`, `mesh.create`, `material.create`, `material.assign`, `sound.create`,
 `scene.save`, `asset.set_import`, `asset.rename`, `asset.move`, `asset.delete`, `asset.cook`, `asset.clear_cache`, `asset.upgrade_references`, `project.add_render_layer`, `edit.undo`, `edit.redo`, `macro.run`, and the commands of the open documents. Each tool declares its arguments (type,
 default, choices) in its input schema. Entities are named by their UUID or their tag.
 

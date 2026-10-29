@@ -1,0 +1,32 @@
+SoundCue: ''
+FormatVersion: 1
+volume: 0.75
+volumeJitter: 0.27
+pitch: 1
+pitchJitter: 0.06
+loop: false
+variants:
+  - file: sounds/hub/step_1.wav
+    trimStart: 0
+    trimEnd: 0
+    loopStart: 0
+    loopEnd: 0
+    weight: 1
+  - file: sounds/hub/step_2.wav
+    trimStart: 0
+    trimEnd: 0
+    loopStart: 0
+    loopEnd: 0
+    weight: 1
+  - file: sounds/hub/step_3.wav
+    trimStart: 0
+    trimEnd: 0
+    loopStart: 0
+    loopEnd: 0
+    weight: 1
+  - file: sounds/hub/step_4.wav
+    trimStart: 0
+    trimEnd: 0
+    loopStart: 0
+    loopEnd: 0
+    weight: 1

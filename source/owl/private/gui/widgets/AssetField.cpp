@@ -58,7 +58,7 @@ auto isPathOfKind(const std::filesystem::path& iPath, const AssetKind iKind) -> 
 		case AssetKind::Font:
 			return matches(ext, {".ttf", ".otf"});
 		case AssetKind::Sound:
-			return matches(ext, {".wav", ".mp3", ".ogg", ".flac"});
+			return matches(ext, {".wav", ".mp3", ".ogg", ".flac", ".owlsound"});
 		case AssetKind::LuaScript:
 			return matches(ext, {".lua", ".owlvs"});
 		case AssetKind::AnyScript:
