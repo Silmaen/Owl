@@ -197,8 +197,8 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
   ([Skeletal animation](design/skeletal-animation.md))
 - ![Done][done] GPU particle system with editor preview and trails, emissive materials and lens flares
   ([Effects](design/gpu-effects.md))
-- ![Planned][planned] Audio mixer (buses, per-bus volume, crossfades) ([Gameplay systems](design/gameplay-systems.md))
-- ![Planned][planned] Audio effects (reverb zones, low / high-pass filters, Doppler) and adaptive music driven by game
+- ![Done][done] Audio mixer (buses, per-bus volume, crossfades) ([Gameplay systems](design/gameplay-systems.md))
+- ![Done][done] Audio effects (reverb zones, low / high-pass filters, Doppler) and adaptive music driven by game
   states ([Gameplay systems](design/gameplay-systems.md))
 - ![Planned][planned] Dialogue system with a visual editor (`.owldlg`) ([Gameplay systems](design/gameplay-systems.md))
 - ![Planned][planned] Camera tracks in the sequencer, for cutscenes ([Large worlds](design/large-worlds.md))

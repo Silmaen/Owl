@@ -73,6 +73,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `UiText::textKey` shows a translated text in the HUD; Lua `tr` and the `locale` table; the built-in `language` setting.
 - Engine Demo settings menu in English and French, with a language button.
 - Owl Nest **Import settings...**, offered at the first start: the settings of a previous installation applied at the next start.
+- Audio mixer: every sound plays on a bus (Master, Music, SFX, Ambient, Voice) with volume, mute, solo and fades, the scene mix saved as `Mixer:`.
+- Music crossfades: `SoundHelper::playMusic` and Lua `sound.play_music` crossfade with equal-power curves, `sound.crossfade` for any two sounds.
+- `ReverbZone` component: box or sphere volumes with EFX reverb presets (cave, hall, underwater...) and a filter, blended at the listener.
+- Low-pass, high-pass and band-pass filters on sound sources, combined with the filter of the reverb zones.
+- Doppler effect on moving spatial sources and the listener, from world positions in double (a floating origin shift is not motion).
+- `AdaptiveMusic` component: synced looping layers, states fading them in and out with a stinger, driven by Lua or a game state key.
+- Lua `sound` bus and music bindings: `set_bus_volume`, `set_bus_muted`, `play_music`, `stop_music`, `crossfade`, `set_music_state`.
+- Owl Nest Mixer panel (`scene.set_mixer`, `sound.set_live_bus` in Play), reverb zones drawn and sized in the viewport, inspectors for zones, filters and adaptive music.
+- Engine Demo sound yard (U from the main menu): a cave reverb, an underwater pool, a radio behind a wall, a passing cart and a music turning from calm to combat.
 
 - GPU particles: `ParticleEmitter` simulated by a compute shader on OpenGL and Vulkan (CPU reference on the Null backend), up to 65536 particles per emitter.
 - `RendererParticles` render-stack layer drawing particles and trails over the 2D, isometric, voxel and mesh layers, under the HUD.
@@ -112,6 +121,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docs: the engine developer guide lists every renderer: the 2D, tilemap, isometric, 3D and post-process sections join the voxel and raycaster pages.
 - Bench: the Linux baseline takes the binary scene load and far-orbit cases, and the 1000-box octree brute-force cull at 15.3 µs, a code layout drift of `main` the confirmation rounds reproduce.
 - Settings, saves, logs and caches go to `user/` beside the executable (`platform::getUserDirectory`), the user profile only when it is read-only.
+- The `volume_music` and `volume_sfx` settings, and the new `volume_ambient` and `volume_voice`, set the player's volume of the mixer buses; `volume_master` sets Master instead of the listener gain.
+- The Null sound backend keeps the state of every source and of the listener, so the mixing logic is tested headless.
 
 ### Removed
 
