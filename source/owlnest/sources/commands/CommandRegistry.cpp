@@ -213,6 +213,35 @@ auto reparentEntity(const shared<scene::Scene>& ioScene, const CommandArgs& iArg
 						   .entity = entity->getUUID()};
 }
 
+auto attachSocket(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto entity = entityArg(*ioScene, iArgs, "entity");
+	if (!entity)
+		return unexpected<CommandFailure>{entity.error()};
+	const auto owner = entityArg(*ioScene, iArgs, "owner");
+	if (!owner)
+		return unexpected<CommandFailure>{owner.error()};
+	const auto socket = iArgs.getText("socket");
+	if (*owner == *entity ||
+		ioScene->isInSubtree(static_cast<entt::entity>(*owner), static_cast<entt::entity>(*entity)))
+		return fail(CommandError::NotApplicable, "an entity cannot be attached to itself or to one of its children");
+	if (!ioScene->getSocketTransform(*owner, socket))
+		return fail(CommandError::InvalidArgument, std::format("`{}` has no socket `{}`", owner->getName(), socket));
+	return PreparedCommand{.command = mkUniq<SocketCommand>(*entity, owner->getUUID(), socket, *ioScene),
+						   .applied = false,
+						   .entity = entity->getUUID()};
+}
+
+auto detachSocket(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto entity = entityArg(*ioScene, iArgs, "entity");
+	if (!entity)
+		return unexpected<CommandFailure>{entity.error()};
+	if (!entity->hasComponent<scene::component::SocketAttachment>())
+		return fail(CommandError::NotApplicable, std::format("`{}` is attached to no socket", entity->getName()));
+	return PreparedCommand{.command = mkUniq<SocketCommand>(*entity, core::UUID{0}, std::string{}, *ioScene),
+						   .applied = false,
+						   .entity = entity->getUUID()};
+}
+
 template<typename Edit>
 auto modifyEntity(const shared<scene::Scene>& ioScene, scene::Entity iEntity, const std::string& iDescription,
 				  Edit&& iEdit) -> Prepared {
@@ -958,6 +987,20 @@ CommandRegistry::CommandRegistry() {
 		 .args = {entitySpec("Entity to move."),
 				  {.name = "parent", .type = ArgType::Entity, .description = "New parent (root when absent)."}},
 		 .factory = reparentEntity});
+	add({.name = "entity.attach_socket",
+		 .description = "Snap an entity on a socket of another one: it becomes its child and follows the socket "
+						"(and its bone).",
+		 .args = {entitySpec("Entity to attach."),
+				  {.name = "owner",
+				   .type = ArgType::Entity,
+				   .required = true,
+				   .description = "Entity owning the socket."},
+				  {.name = "socket", .type = ArgType::Text, .required = true, .description = "Name of the socket."}},
+		 .factory = attachSocket});
+	add({.name = "entity.detach_socket",
+		 .description = "Release an entity from its socket: it keeps its parent and stays where it is.",
+		 .args = {entitySpec("Entity to release.")},
+		 .factory = detachSocket});
 	add({.name = "entity.rename",
 		 .description = "Change the tag of an entity.",
 		 .args = {entitySpec("Entity to rename."),

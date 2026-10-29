@@ -110,6 +110,23 @@ TEST_F(AssetCommandsTest, SetImportIsUndoable) {
 			  CommandError::InvalidArgument);
 }
 
+TEST_F(AssetCommandsTest, SetImportGivesAMeshItsLevelsOfDetail) {
+	const auto arm = test::getTestAssetsPath("mesh_tests") / "skinned_arm.gltf";
+	std::filesystem::create_directories(m_root / "meshes");
+	std::filesystem::copy_file(arm, m_root / "meshes" / "arm.gltf");
+	m_app->removeAssetDirectory(m_root);
+	m_app->addAssetDirectory({.title = "project", .assetsPath = m_root}, true);
+	ASSERT_TRUE(run("asset.set_import",
+					{{"path", std::string{"meshes/arm.gltf"}}, {"lods", int64_t{2}}, {"lod_reduction", 0.4}}));
+	EXPECT_EQ(metaOf("meshes/arm.gltf").mesh.lods, 2u);
+	EXPECT_FLOAT_EQ(metaOf("meshes/arm.gltf").mesh.lodReduction, 0.4f);
+	const auto written = data::assets::readMeta(m_root / "meshes" / "arm.gltf.owlmeta");
+	ASSERT_TRUE(written.has_value());
+	EXPECT_EQ(written->mesh.lods, 2u);
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(metaOf("meshes/arm.gltf").mesh.lods, 0u);
+}
+
 TEST_F(AssetCommandsTest, SetImportOnAFolderChangesEveryTexture) {
 	const auto result =
 			run("asset.set_import",

@@ -142,4 +142,76 @@ private:
 	std::string m_name;
 };
 
+/**
+ * @brief
+ *  Command snapping an entity on a socket of an owner (`Scene::attachToSocket`), or releasing it from its socket.
+ *
+ * Undo puts the entity back under its former parent, with its former transform and its former socket.
+ */
+class SocketCommand final : public SceneUndoCommand {
+public:
+	SocketCommand(const SocketCommand&) = delete;
+
+	SocketCommand(SocketCommand&&) = default;
+
+	auto operator=(const SocketCommand&) -> SocketCommand& = delete;
+
+	auto operator=(SocketCommand&&) -> SocketCommand& = default;
+
+	/**
+	 * @brief
+	 *  Capture the state of the entity before the change.
+	 * @param[in] iEntity The entity attached or released.
+	 * @param[in] iOwnerUuid Owner of the socket; 0 to release the entity.
+	 * @param[in] iSocket Name of the socket (ignored when releasing).
+	 * @param[in] iScene The scene of the entity.
+	 */
+	SocketCommand(const scene::Entity& iEntity, core::UUID iOwnerUuid, std::string iSocket, const scene::Scene& iScene);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~SocketCommand() override;
+
+	/**
+	 * @brief
+	 *  Restore the parent, the transform and the socket of the entity.
+	 * @param[in,out] ioScene The scene.
+	 */
+	void undo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Attach or release the entity.
+	 * @param[in,out] ioScene The scene.
+	 */
+	void redo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Get the description of the command.
+	 * @return The description.
+	 */
+	[[nodiscard]] auto description() const -> std::string override;
+
+private:
+	/// UUID of the entity.
+	core::UUID m_entityUuid;
+	/// Owner of the socket, 0 to release.
+	core::UUID m_ownerUuid;
+	/// Name of the socket.
+	std::string m_socket;
+	/// Parent and sibling index before the change.
+	HierarchySlot m_oldSlot;
+	/// Local transform before the change.
+	math::Transform m_oldLocalTransform;
+	/// Socket the entity was attached to before the change, empty for none.
+	std::string m_oldSocket;
+	/// Whether the entity was attached to a socket before the change.
+	bool m_wasAttached{false};
+	/// Display name used in the Edit-menu undo/redo entry.
+	std::string m_name;
+};
+
 }// namespace owl::nest::commands

@@ -17,6 +17,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -154,7 +155,10 @@ TEST_F(McpDispatcherTest, ListsEveryCommandWithASchema) {
 	EXPECT_EQ(create["name"], "entity.create");
 	EXPECT_EQ(create["inputSchema"]["properties"]["name"]["default"], "Empty Entity");
 	EXPECT_EQ(create["inputSchema"]["properties"]["parent"]["type"], json::array({"integer", "string"}));
-	EXPECT_EQ(tools[5]["inputSchema"]["properties"]["translation"]["minItems"], 3);
+	const auto setTransform = std::ranges::find_if(
+			tools, [](const json& iTool) -> bool { return iTool["name"] == "entity.set_transform"; });
+	ASSERT_NE(setTransform, tools.end());
+	EXPECT_EQ((*setTransform)["inputSchema"]["properties"]["translation"]["minItems"], 3);
 }
 
 TEST_F(McpDispatcherTest, CreatesThroughAToolThenUndoRestoresTheScene) {
