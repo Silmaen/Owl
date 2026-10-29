@@ -82,7 +82,7 @@ A renderer-stack layer, like the voxel and isometric ones, composing with the 3D
 
 - Spline component with its editor: control points, tangents, sampling by distance, paths, lanes and rails
 - Data tables: typed records (columns, references between tables) edited in a grid in Owl Nest, read from Lua
-- Emissive materials, lens flares and particle trails on the v0.6.0 effects
+- Emissive materials, lens flares and particle trails on the v0.6.0 effects ([Effects](gpu-effects.md))
 - HUD markers anchored to world entities, with off-screen indicators ([HUD system](hud-system.md))
 - 3D steering in open space: obstacle avoidance between moving volumes, formations
 - Doppler effect and adaptive music driven by game states

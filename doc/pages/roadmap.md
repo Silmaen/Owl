@@ -195,7 +195,8 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
   space ([Large worlds](design/large-worlds.md))
 - ![Done][done] Skeletal animation (skinning, blending, state machine) and mesh LODs
   ([Skeletal animation](design/skeletal-animation.md))
-- ![Planned][planned] GPU particle system with editor preview and trails, emissive materials and lens flares
+- ![Done][done] GPU particle system with editor preview and trails, emissive materials and lens flares
+  ([Effects](design/gpu-effects.md))
 - ![Planned][planned] Audio mixer (buses, per-bus volume, crossfades) ([Gameplay systems](design/gameplay-systems.md))
 - ![Planned][planned] Audio effects (reverb zones, low / high-pass filters, Doppler) and adaptive music driven by game
   states ([Gameplay systems](design/gameplay-systems.md))

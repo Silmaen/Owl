@@ -934,6 +934,27 @@ equirectangular Radiance `.hdr` image (`EnvironmentMap`, `Equirectangular`).
 - **Editor ambient.** In Edit mode only, `Renderer3D::setEditorAmbient` adds a grey light to every lit 3D surface
   (`EditorSettings::editorAmbient`), to work in dark places; Play never gets it.
 
+## Particles {#renderer-particles}
+
+`RendererParticles` draws the `ParticleEmitter` and `Trail` entities of a `RendererParticles` layer
+([Particles and effects](particles.md)).
+
+- **Simulation.** `ParticleSystem::advance` counts the spawns of the frame on the CPU and records a step;
+  `Scene::prepareParticleRenderData` runs it before the frame graph (a dispatch closes the render pass): the compute
+  shader `engine_assets/shaders/particles/particle_simulate.slang` (one thread per slot) spawns into a range of the
+  ring of slots, ages, moves and records the trails. On Vulkan the particle and trail buffers are never written from the CPU, so they stay persistent
+  device buffers; the step goes through the streamed frame ring. On the Null backend `simulateParticle` runs the same
+  arithmetic on the CPU (the CPU path of `ParticleSystem`).
+- **Sorting.** An alpha-blended emitter writes its sort keys (`particle_sort_keys`, the distance along the view) and
+  sorts them with `bitonic_sort`, 1024 items, then draws in that order.
+- **Drawing.** Block `particles`: binding 0 the uniform block (view-projection, camera axes, colour and size tables of 16
+  samples, flags), 1 the texture, 2 the particles, 3 the sort order, 4 the trail points. One instanced quad per slot
+  (`engine_assets/shaders/particles/particle.slang`, dead slots collapse), ribbons of up to 128 points
+  (`engine_assets/shaders/particles/particle_trail.slang`), depth tested without depth write, `BlendMode::Additive`
+  or `Alpha`.
+- **Emissive.** The colour is decoded from sRGB and multiplied by `1 + emissive · exposure` on a linear target only, so
+  the display-space path (previews) keeps the authored colour.
+
 ## Post-process {#renderer-post-process}
 
 `renderer::PostProcessSettings` sits on `renderer::Camera` (`getPostProcess` / `setPostProcess`), saved by the Camera
@@ -969,6 +990,12 @@ component under `camera.postProcess`.
 | `bokehRadius`                  | `8`         | Largest blur radius, in pixels of a frame 1080 pixels high (at most 32)                                    |
 | `motionBlur`                   | `false`     | Blur along the motion of the camera since the previous frame, in Play only                                 |
 | `motionBlurIntensity`          | `0.5`       | Fraction of the frame the shutter stays open, 0 to 1                                                       |
+| `lensFlare`                    | `false`     | Flares of the lights with a `flare` strength, hidden ones excepted                                         |
+| `lensFlareIntensity`           | `1`         | Strength of every flare                                                                                    |
+| `lensFlareGhosts`              | `4`         | Ghosts per light, 0 to 8                                                                                   |
+| `lensFlareSpacing`             | `0.45`      | Distance between two ghosts, a fraction of the line centre to light                                        |
+| `lensFlareHalo`                | `0.6`       | Radius of the halo around the centre, a fraction of the image height                                       |
+| `lensFlareSize`                | `0.12`      | Size of the glow at a light, a fraction of the image height                                                |
 
 - **Exposure.** The exposure is `1 / (1.2 · 2^EV100)` (`exposureOf`, default `g_defaultEv100` = 15), applied to every
   physical light value before shading ([Lights and shadows](#renderer-lights)); `exposure` then adds an EV
@@ -993,6 +1020,11 @@ component under `camera.postProcess`.
   and `recordMotionBlur` averages 12 taps along the motion of each pixel times `motionBlurIntensity`, at most
   `g_maxMotionPixels` (32). Only the camera moves the pixels (no velocity of the objects); a jump of more than 50 m
   in one frame (a teleport, a floating-origin shift) skips the blur, and the editor views never blur.
+- **Lens flares.** `LensFlare::recordLensFlares` runs after the depth of field and the motion blur when the camera has
+  `lensFlare` and a light has a `flare` strength: the pass copies the colour into a target of its own (the entity ids of
+  the scene colour stay untouched), then adds, per source (the 8 brightest), a glow with streaks, a halo and the ghosts,
+  in one instanced additive draw (`engine_assets/shaders/lens_flare/lens_flare.slang`). The vertex stage tests 16
+  depth taps of the post depth around the source, so a covered light does not flare. See [Particles and effects](particles.md#lens-flares).
 - **Encode order.** `color_encode.slang` reads the scene colour (the red and blue channels moved apart along the
   radius by `chromaticAberrationIntensity`), then applies exposure, bloom (times `bloomIntensity`), tone mapping,
   clamp, vignette (towards the linearised `vignetteColor`), film grain (a hash per cell of `filmGrainSize` pixels,

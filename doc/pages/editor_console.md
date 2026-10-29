@@ -91,6 +91,7 @@ A refused command changes nothing and logs why (a bad argument, an edit during P
 | `entity.create_light`             | `type` (`Directional`, `Point`, `Spot`, `Rectangle`, `Disc`, `Sphere`), `name`, `translation`, `parent` |
 | `entity.create_light2d`           | `type` (`Ambient`, `Point`, `Spot`), `name`, `translation`, `parent`                                    |
 | `entity.create_reflection_probe`  | `name`, `translation`, `parent`                                                                         |
+| `entity.create_particle_emitter`  | `type` (`Fire`, `Smoke`, `Sparks`, `Magic`, `Snow`), `name`, `translation`, `parent`                    |
 | `component.add`                   | `entity`, `component` (display name `Circle Renderer` or file key)                                      |
 | `component.remove`                | `entity`, `component`                                                                                   |
 | `component.set`                   | `entity`, `component`, `values` (a YAML / JSON map merged into the component), `replace`                |
@@ -117,6 +118,7 @@ A refused command changes nothing and logs why (a bad argument, an edit during P
 | `material.assign`                 | `entity`, `slot` (from 0, -1 for every slot), `material` (empty for the file's own)                     |
 | `scene.save`                      | `path` (the scene file when absent)                                                                     |
 | `scene.capture_reflection_probes` | none: every probe is captured again (not an undo entry)                                                 |
+| `particles.preview`               | `action` (`Play`, `Pause`, `Stop`, `Restart`, `Burst`), `entity` (all emitters when absent)             |
 | `asset.set_import`                | `path` (texture or folder), `nearest`, `compression` (`None`, `Uastc`, `Etc1s`), `mips`; undoable       |
 | `asset.rename`                    | `path`, `name`; the sidecar follows, references follow the GUID                                         |
 | `asset.move`                      | `path`, `folder`; the sidecar follows, references follow the GUID                                       |

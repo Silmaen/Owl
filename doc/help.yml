@@ -31,6 +31,7 @@ Groups:
       - doc/pages/skinned_meshes.md
       - doc/pages/event_input.md
       - doc/pages/physics.md
+      - doc/pages/particles.md
       - doc/pages/sound.md
       - doc/pages/languages.md
       - doc/pages/pathfinding.md

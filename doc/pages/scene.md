@@ -347,6 +347,7 @@ changes in place, nothing is reloaded); `Scene::detachFromSocket` removes it. Lu
 | `shadowResolution` | `uint`  | `1024`           | Texels of each cascade, of a spot map or of each face of a point or area cube, 256 to 4096             |
 | `shadowBias`       | `float` | `1.5`            | Normal-offset bias, in shadow-map texels                                                               |
 | `angularRadius`    | `float` | `0`              | Directional only: apparent radius in radians (sun 0.0047), soft shadows (PCSS) and a wider highlight   |
+| `flare`            | `float` | `0`              | Lens flare strength for a camera with `lensFlare`; 0 never flares                                      |
 
 YAML key: `Light`. `intensity` is in physical units (sun 100 000 lx, overcast 10 000, moon 0.25; candle 12 lm,
 60 W bulb 800, fireplace 2 000); point, spot and sphere lights fall off with 1/d², every local light is cut off
@@ -636,6 +637,12 @@ YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
 | `bokehRadius`                  | `float` | `8`         | Largest blur radius, pixels of a 1080-pixel-high frame                                           |
 | `motionBlur`                   | `bool`  | `false`     | Blur along the motion of the camera, in Play                                                     |
 | `motionBlurIntensity`          | `float` | `0.5`       | Fraction of the frame the shutter stays open                                                     |
+| `lensFlare`                    | `bool`  | `false`     | Flares of the lights with a `flare` strength, hidden ones excepted                               |
+| `lensFlareIntensity`           | `float` | `1`         | Strength of every flare                                                                          |
+| `lensFlareGhosts`              | `uint`  | `4`         | Ghosts per light, 0 to 8                                                                         |
+| `lensFlareSpacing`             | `float` | `0.45`      | Distance between two ghosts, a fraction of the line centre to light                              |
+| `lensFlareHalo`                | `float` | `0.6`       | Radius of the halo around the centre, a fraction of the image height                             |
+| `lensFlareSize`                | `float` | `0.12`      | Size of the glow at a light, a fraction of the image height                                      |
 
 `postProcess` sits inside the `camera` map next to `toneMapping`; every key is optional. The passes and their order are in
 [Renderer > Post-process](renderer.md#renderer-post-process).
@@ -775,6 +782,27 @@ LightFlicker:
   seed: 48
   positionJitter: [0.004, 0, 0.004]
   dipRate: 0.55
+```
+
+#### ParticleEmitter and Trail
+
+YAML keys: `ParticleEmitter`, `Trail`, system `owl.particles` (`Late`), drawn by a `RendererParticles` layer. Every field,
+the presets, the trails, the emissive luminance, the Owl Nest preview and the Lua functions are on
+[Particles and effects](particles.md).
+
+```yaml
+ParticleEmitter:
+  maxParticles: 400
+  rate: 120
+  shape: Cone
+  gravity: [0, 1, 0]
+  colorOverLife: [[0, 1, 0.9, 0.5, 1], [1, 0.5, 0.1, 0.05, 0]]
+  emissive: 80000
+  blend: Additive
+Trail:
+  lifetime: 0.6
+  width: 0.4
+  color: [1, 0.6, 0.2, 1]
 ```
 
 #### Oscillator
