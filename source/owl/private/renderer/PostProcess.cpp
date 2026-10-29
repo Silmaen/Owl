@@ -12,6 +12,7 @@
 
 #include "app/Application.h"
 #include "platform/FileUtils.h"
+#include "renderer/ClipSpace.h"
 #include "renderer/EnvironmentMap.h"
 #include "renderer/gpu/DrawData.h"
 #include "renderer/gpu/Framebuffer.h"
@@ -31,11 +32,32 @@ namespace owl::renderer {
 
 namespace {
 constexpr auto g_rendererKey = "post_process";
+constexpr auto g_effectsKey = "depth_effects";
 
 auto blockId() -> gpu::RendererId {
 	static const gpu::RendererId sId = gpu::RendererDescriptors::getId(g_rendererKey);
 	return sId;
 }
+
+auto effectsBlockId() -> gpu::RendererId {
+	static const gpu::RendererId sId = gpu::RendererDescriptors::getId(g_effectsKey);
+	return sId;
+}
+
+struct EffectUbo {
+	math::mat4 reprojection = math::identity<float, 4>();
+	// Depth of field: xy depth of a distance (x + y / d), z focus, w range; motion blur: x shutter, y longest motion.
+	math::vec4 params{0.f, 0.f, 0.f, 0.f};
+	// xy: frame size, z: largest blur radius in pixels, w: mode (0 depth of field, 1 motion blur).
+	math::vec4 frame{1.f, 1.f, 0.f, 0.f};
+};
+
+// One depth effect of the frame, read by its pass body through its index.
+struct EffectStep {
+	RenderGraph::Resource color;
+	RenderGraph::Resource depth;
+	EffectUbo params;
+};
 
 struct BloomUbo {
 	math::vec4 texel{0.f, 0.f, 0.f, 0.f};
@@ -66,6 +88,10 @@ struct InternalData {
 	math::vec4 threshold{1.f, 0.5f, 0.7f, 0.f};
 	std::array<BloomStep, size_t{2} * PostProcess::g_maxBloomLevels> steps{};
 	std::array<BloomStep, g_exposureStepCount> exposureSteps{};
+	shared<gpu::DrawData> effectsDraw;
+	shared<gpu::UniformBuffer> effectsBuffer;
+	// The depth of field, then the motion blur.
+	std::array<EffectStep, 2> effects{};
 	std::unordered_map<std::string, PostProcess::Lut> luts;
 	// Adapted EV100 of the previous and of the current frame, swapped each frame.
 	std::array<shared<gpu::Framebuffer>, 2> exposure;
@@ -137,6 +163,15 @@ void PostProcess::init() {
 	g_data->drawData->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(float)));
 	g_data->uniformBuffer = gpu::UniformBuffer::create(sizeof(BloomUbo), 0, g_rendererKey);
 	g_data->uniformBuffer->bind();
+
+	gpu::RendererDescriptors::declare(g_effectsKey, bindings);
+	const gpu::RendererDescriptors::ScopedActive effectsScoped{effectsBlockId()};
+	g_data->effectsDraw = gpu::DrawData::create();
+	g_data->effectsDraw->init({{"i_Position", gpu::ShaderDataType::Float2}}, g_effectsKey, indices, g_effectsKey,
+							  {.blendMode = gpu::BlendMode::Opaque, .depthTest = false, .depthWrite = false});
+	g_data->effectsDraw->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(float)));
+	g_data->effectsBuffer = gpu::UniformBuffer::create(sizeof(EffectUbo), 0, g_effectsKey);
+	g_data->effectsBuffer->bind();
 }
 
 void PostProcess::shutdown() {
@@ -146,10 +181,87 @@ void PostProcess::shutdown() {
 		return;
 	g_data->drawData.reset();
 	g_data->uniformBuffer.reset();
+	g_data->effectsDraw.reset();
+	g_data->effectsBuffer.reset();
 	g_data->luts.clear();
 	g_data->exposure = {};
 	g_data.reset();
 	gpu::RendererDescriptors::release(g_rendererKey);
+	gpu::RendererDescriptors::release(g_effectsKey);
+}
+
+namespace {
+
+auto recordEffect(RenderGraph& ioGraph, const std::string_view iName, const size_t iIndex, const EffectStep& iStep)
+		-> RenderGraph::Resource {
+	using Graph = RenderGraph;
+	g_data->effects[iIndex] = iStep;
+	const auto target = ioGraph.createTarget(iName, Graph::TargetFormat::Linear);
+	ioGraph.addPass(
+			iName,
+			[color = iStep.color, depth = iStep.depth, target](Graph::PassBuilder& ioBuilder) -> void {
+				ioBuilder.read(color);
+				ioBuilder.read(depth);
+				ioBuilder.write(target);
+			},
+			[iIndex](const Graph::PassContext& iContext) -> void {
+				if (!g_data)
+					return;
+				const auto& step = g_data->effects[iIndex];
+				const gpu::RendererDescriptors::ScopedActive scoped{effectsBlockId()};
+				g_data->effectsBuffer->setData(&step.params, sizeof(EffectUbo), 0);
+				const std::array textures{iContext.getTexture(step.color), iContext.getTexture(step.depth)};
+				gpu::RenderCommand::bindTextures(textures);
+				gpu::RenderCommand::drawData(g_data->effectsDraw, 6);
+			});
+	return target;
+}
+
+auto frameOf(const math::vec2ui& iFrameSize, const float iRadius, const float iMode) -> math::vec4 {
+	return math::vec4{static_cast<float>(iFrameSize.x()), static_cast<float>(iFrameSize.y()), iRadius, iMode};
+}
+
+}// namespace
+
+auto PostProcess::recordDepthOfField(RenderGraph& ioGraph, const RenderGraph::Resource iColor,
+									 const RenderGraph::Resource iDepth, const PostProcessSettings& iSettings,
+									 const math::mat4& iProjection, const math::vec2ui& iFrameSize)
+		-> RenderGraph::Resource {
+	if (!g_data || !iSettings.depthOfField || !iDepth.isValid() || iFrameSize.y() == 0)
+		return {};
+	const float radius = std::clamp(iSettings.bokehRadius, 0.f, 32.f) * static_cast<float>(iFrameSize.y()) / 1080.f;
+	if (radius < 0.5f)
+		return {};
+	EffectStep step{.color = iColor, .depth = iDepth, .params = {}};
+	step.params.params = math::vec4{-iProjection(2, 2), iProjection(2, 3), std::max(iSettings.focusDistance, 0.f),
+									std::max(iSettings.focusRange, 1e-3f)};
+	step.params.frame = frameOf(iFrameSize, radius, 0.f);
+	return recordEffect(ioGraph, "depth of field", 0, step);
+}
+
+auto PostProcess::recordMotionBlur(RenderGraph& ioGraph, const RenderGraph::Resource iColor,
+								   const RenderGraph::Resource iDepth, const PostProcessSettings& iSettings,
+								   const math::mat4& iReprojection, const math::vec2ui& iFrameSize)
+		-> RenderGraph::Resource {
+	const float shutter = std::clamp(iSettings.motionBlurIntensity, 0.f, 1.f);
+	if (!g_data || !iSettings.motionBlur || !iDepth.isValid() || shutter <= 0.f)
+		return {};
+	EffectStep step{.color = iColor, .depth = iDepth, .params = {}};
+	step.params.reprojection = iReprojection;
+	step.params.params = math::vec4{shutter, g_maxMotionPixels, 0.f, 0.f};
+	step.params.frame = frameOf(iFrameSize, 0.f, 1.f);
+	return recordEffect(ioGraph, "motion blur", 1, step);
+}
+
+auto PostProcess::getReprojection(const math::mat4& iProjection, const math::mat4& iView,
+								  const math::mat4& iPreviousProjection, const math::mat4& iPreviousView)
+		-> math::mat4 {
+	const math::vec4 eye4 = inverse(iView) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	const math::vec4 previousEye4 = inverse(iPreviousView) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	const math::vec3 offset{eye4.x() - previousEye4.x(), eye4.y() - previousEye4.y(), eye4.z() - previousEye4.z()};
+	const math::mat4 current = iProjection * cameraRelativeView(iView);
+	const math::mat4 previous = iPreviousProjection * cameraRelativeView(iPreviousView);
+	return previous * math::translate(math::identity<float, 4>(), offset) * inverse(current);
 }
 
 auto PostProcess::getBloomLevelCount(const math::vec2ui& iFrameSize) -> uint32_t {

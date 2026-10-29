@@ -729,7 +729,7 @@ void renderProps(WorldPosition& ioComponent) {
 
 namespace {
 
-// "Post process" section of a camera: exposure, bloom, vignette and colour-grading LUT.
+// "Post process" section of a camera: exposure, bloom, vignette, colour-grading LUT and the lens effects.
 void renderPostProcess(renderer::Camera& ioCamera) {
 	if (!ImGui::TreeNodeEx("Post process", ImGuiTreeNodeFlags_SpanAvailWidth))
 		return;
@@ -789,6 +789,38 @@ void renderPostProcess(renderer::Camera& ioCamera) {
 	if (!settings.lut.empty()) {
 		changed |= resetFloat("LUT contribution", settings.lutContribution, defaults.lutContribution, 0.005f, 0.f, 1.f);
 		fieldTooltip("Weight of the look-up table, 0 none to 1 fully graded.");
+	}
+	changed |= resetCheckbox("Chromatic aberration", settings.chromaticAberration, defaults.chromaticAberration);
+	fieldTooltip("The red and blue channels split towards the edges of the image, like a simple lens.");
+	if (settings.chromaticAberration) {
+		changed |= resetFloat("Aberration intensity", settings.chromaticAberrationIntensity,
+							  defaults.chromaticAberrationIntensity, 0.005f, 0.f, 1.f);
+		fieldTooltip("Strength of the split: 1 puts the channels 1 % of the frame width apart at the corners.");
+	}
+	changed |= resetCheckbox("Film grain", settings.filmGrain, defaults.filmGrain);
+	fieldTooltip("A grain over the image, a new one each frame, strongest in the mid-tones.");
+	if (settings.filmGrain) {
+		changed |= resetFloat("Grain intensity", settings.filmGrainIntensity, defaults.filmGrainIntensity, 0.005f, 0.f,
+							  1.f);
+		fieldTooltip("Strength of the grain.");
+		changed |= resetFloat("Grain size", settings.filmGrainSize, defaults.filmGrainSize, 0.01f, 1.f, 4.f, "%.2f px");
+		fieldTooltip("Size of a grain, in pixels.");
+	}
+	changed |= resetCheckbox("Depth of field", settings.depthOfField, defaults.depthOfField);
+	fieldTooltip("What is away from the focus distance blurs, the 3D layers by their depth.");
+	if (settings.depthOfField) {
+		changed |= resetFloat("Focus distance", settings.focusDistance, defaults.focusDistance, 0.05f, 0.f, 10000.f);
+		fieldTooltip("Distance from the camera that stays sharp, in world units.");
+		changed |= resetFloat("Focus range", settings.focusRange, defaults.focusRange, 0.05f, 0.001f, 10000.f);
+		fieldTooltip("Distance from the focus over which the blur grows to its largest, in world units.");
+		changed |= resetFloat("Bokeh radius", settings.bokehRadius, defaults.bokehRadius, 0.05f, 0.f, 32.f, "%.1f px");
+		fieldTooltip("Largest blur radius, in pixels of a frame 1080 pixels high.");
+	}
+	changed |= resetCheckbox("Motion blur", settings.motionBlur, defaults.motionBlur);
+	fieldTooltip("The image blurs along the motion of the camera, in Play only.");
+	if (settings.motionBlur) {
+		changed |= resetFloat("Shutter", settings.motionBlurIntensity, defaults.motionBlurIntensity, 0.005f, 0.f, 1.f);
+		fieldTooltip("Fraction of the frame the shutter stays open: 1 blurs over the whole motion of a frame.");
 	}
 	ImGui::TreePop();
 	if (changed)

@@ -411,6 +411,14 @@ INSTANTIATE_TEST_SUITE_P(ReflectionProbes, RenderImage,
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
+// The probe scene through a lens: depth of field focused on the chrome sphere, chromatic aberration towards the edges
+// and a film grain.
+INSTANTIATE_TEST_SUITE_P(LensEffects, RenderImage,
+						 testing::Values(RenderCase{"lens_effects", "vulkan"}, RenderCase{"lens_effects", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
 // The lights scene moved 2^20 m away on x and z: camera-relative rendering keeps the meshes, lights and shadows as
 // precise as at the origin (the uploaded matrices never hold the far-away translation).
 INSTANTIATE_TEST_SUITE_P(FarOrigin, RenderImage,

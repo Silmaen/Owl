@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -260,4 +261,30 @@ TEST_F(MeshRendererTest, aMissingFileDrawsNothing) {
 	for (const auto entity: sc->registry.view<scene::component::MeshRenderer>())
 		EXPECT_EQ(sc->registry.get<scene::component::MeshRenderer>(entity).mesh, nullptr);
 	EXPECT_EQ(renderer::RendererMesh::getStatistics().opaqueDrawCount, 0u);
+}
+
+TEST_F(MeshRendererTest, theMotionBlurFollowsTheCameraInPlayOnly) {
+	useStack(true);
+	const auto sc = makeScene(false);
+	for (const auto handle: sc->registry.view<scene::component::Camera>()) {
+		auto& camera = sc->registry.get<scene::component::Camera>(handle).camera;
+		auto post = camera.getPostProcess();
+		post.motionBlur = true;
+		post.depthOfField = true;
+		camera.setPostProcess(post);
+	}
+	const auto passCount = [](const std::string& iName) -> size_t {
+		const auto passes = renderer::Renderer::getRenderGraph().getCompiledPasses();
+		return static_cast<size_t>(std::ranges::count(passes, iName));
+	};
+	sc->onRenderRuntime();
+	EXPECT_EQ(passCount("depth of field"), 1u);
+	EXPECT_EQ(passCount("motion blur"), 0u);
+	sc->onStartRuntime();
+	sc->onRenderRuntime();
+	EXPECT_EQ(passCount("motion blur"), 0u);
+	sc->onRenderRuntime();
+	EXPECT_EQ(passCount("motion blur"), 1u);
+	EXPECT_EQ(passCount("post depth"), 1u);
+	sc->onEndRuntime();
 }

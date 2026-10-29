@@ -931,10 +931,10 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	const auto* const bound = renderer::gpu::Framebuffer::getBound();
 	const math::vec2ui frameSize = bound != nullptr ? bound->getSpecification().size : m_viewportSize;
 	const auto& post = iCamera.getPostProcess();
-	m_postTargets.sceneColor = sceneColor;
-	m_postTargets.exposure = renderer::PostProcess::recordExposure(graph, sceneColor, post, frameSize);
-	m_postTargets.bloom =
-			renderer::PostProcess::recordBloom(graph, sceneColor, post, frameSize, m_postTargets.exposure);
+	const Graph::Resource postColor = recordDepthEffects(graph, sceneColor, frameSize);
+	m_postTargets.sceneColor = postColor;
+	m_postTargets.exposure = renderer::PostProcess::recordExposure(graph, postColor, post, frameSize);
+	m_postTargets.bloom = renderer::PostProcess::recordBloom(graph, postColor, post, frameSize, m_postTargets.exposure);
 	const auto encodeSetup = [sceneColor, target](Graph::PassBuilder& ioBuilder) -> void {
 		ioBuilder.read(sceneColor);
 		ioBuilder.write(target);
@@ -1279,6 +1279,46 @@ void Scene::recordLocalShadowPasses(renderer::RenderGraph& ioGraph) {
 					}
 				});
 	}
+}
+
+auto Scene::recordDepthEffects(renderer::RenderGraph& ioGraph, const renderer::RenderGraph::Resource iSceneColor,
+							   const math::vec2ui& iFrameSize) -> renderer::RenderGraph::Resource {
+	using Graph = renderer::RenderGraph;
+	// A camera moving further than this in one frame jumped (a teleport, a floating-origin shift): no blur then.
+	constexpr float jump = 50.f;
+	m_postDepth = {};
+	const auto& camera = *mp_renderCamera;
+	const auto& post = camera.getPostProcess();
+	const bool tracked = status != Status::Editing && !m_drawingRenderTarget;
+	std::optional<math::mat4> reprojection;
+	if (tracked && post.motionBlur && m_previousView) {
+		const math::vec4 eye = inverse(camera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+		const math::vec4 previousEye = inverse(m_previousView->view) * math::vec4{0.f, 0.f, 0.f, 1.f};
+		if ((eye - previousEye).normSq() < jump * jump)
+			reprojection = renderer::PostProcess::getReprojection(camera.getProjection(), camera.getView(),
+																  m_previousView->projection, m_previousView->view);
+	}
+	if (tracked)
+		m_previousView = PreviousView{.projection = camera.getProjection(), .view = camera.getView()};
+	if (!post.depthOfField && !reprojection)
+		return iSceneColor;
+	// The occluder depth may be smaller than the frame: the effects take a depth of their own, the outline reuses it.
+	m_postDepth = ioGraph.createTarget("post depth", Graph::TargetFormat::Depth);
+	ioGraph.addPass(
+			"post depth", [depth = m_postDepth](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(depth); },
+			[this](const Graph::PassContext&) -> void { renderShadowCasters(*mp_renderCamera); });
+	Graph::Resource color = iSceneColor;
+	if (const auto focused = renderer::PostProcess::recordDepthOfField(ioGraph, color, m_postDepth, post,
+																	   camera.getProjection(), iFrameSize);
+		focused.isValid())
+		color = focused;
+	if (reprojection) {
+		if (const auto blurred = renderer::PostProcess::recordMotionBlur(ioGraph, color, m_postDepth, post,
+																		 *reprojection, iFrameSize);
+			blurred.isValid())
+			color = blurred;
+	}
+	return color;
 }
 
 void Scene::readShadowTargets(renderer::RenderGraph::PassBuilder& ioBuilder) const {
@@ -1712,9 +1752,10 @@ void Scene::recordOutlinePasses(renderer::RenderGraph& ioGraph, const renderer::
 		return;
 	const Graph::Resource mask = ioGraph.createTarget("outline mask", Graph::TargetFormat::Depth);
 	// The occluder depth of the frame, when the occlusion culling made one, spares a depth pass of the whole scene.
-	const bool reuse = m_occluderDepth.isValid();
+	const Graph::Resource known = m_postDepth.isValid() ? m_postDepth : m_occluderDepth;
+	const bool reuse = known.isValid();
 	const Graph::Resource depth =
-			reuse ? m_occluderDepth : ioGraph.createTarget("outline scene depth", Graph::TargetFormat::Depth);
+			reuse ? known : ioGraph.createTarget("outline scene depth", Graph::TargetFormat::Depth);
 	ioGraph.addPass(
 			"outline mask", [mask](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(mask); },
 			[this, rootHandle](const Graph::PassContext&) -> void {

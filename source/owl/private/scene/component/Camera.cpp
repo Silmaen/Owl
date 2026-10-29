@@ -40,6 +40,17 @@ void writePostProcess(YAML::Emitter& iOut, const renderer::PostProcessSettings& 
 		 << iSettings.vignetteColor.y() << iSettings.vignetteColor.z() << YAML::EndSeq;
 	iOut << YAML::Key << "lut" << YAML::Value << iSettings.lut;
 	iOut << YAML::Key << "lutContribution" << YAML::Value << iSettings.lutContribution;
+	iOut << YAML::Key << "chromaticAberration" << YAML::Value << iSettings.chromaticAberration;
+	iOut << YAML::Key << "chromaticAberrationIntensity" << YAML::Value << iSettings.chromaticAberrationIntensity;
+	iOut << YAML::Key << "filmGrain" << YAML::Value << iSettings.filmGrain;
+	iOut << YAML::Key << "filmGrainIntensity" << YAML::Value << iSettings.filmGrainIntensity;
+	iOut << YAML::Key << "filmGrainSize" << YAML::Value << iSettings.filmGrainSize;
+	iOut << YAML::Key << "depthOfField" << YAML::Value << iSettings.depthOfField;
+	iOut << YAML::Key << "focusDistance" << YAML::Value << iSettings.focusDistance;
+	iOut << YAML::Key << "focusRange" << YAML::Value << iSettings.focusRange;
+	iOut << YAML::Key << "bokehRadius" << YAML::Value << iSettings.bokehRadius;
+	iOut << YAML::Key << "motionBlur" << YAML::Value << iSettings.motionBlur;
+	iOut << YAML::Key << "motionBlurIntensity" << YAML::Value << iSettings.motionBlurIntensity;
 	iOut << YAML::EndMap;
 }
 
@@ -65,6 +76,17 @@ auto readPostProcess(const core::YamlNode& iNode) -> renderer::PostProcessSettin
 		settings.vignetteColor = {color[0].as<float>(), color[1].as<float>(), color[2].as<float>()};
 	readInto(iNode, "lut", settings.lut);
 	readInto(iNode, "lutContribution", settings.lutContribution);
+	readInto(iNode, "chromaticAberration", settings.chromaticAberration);
+	readInto(iNode, "chromaticAberrationIntensity", settings.chromaticAberrationIntensity);
+	readInto(iNode, "filmGrain", settings.filmGrain);
+	readInto(iNode, "filmGrainIntensity", settings.filmGrainIntensity);
+	readInto(iNode, "filmGrainSize", settings.filmGrainSize);
+	readInto(iNode, "depthOfField", settings.depthOfField);
+	readInto(iNode, "focusDistance", settings.focusDistance);
+	readInto(iNode, "focusRange", settings.focusRange);
+	readInto(iNode, "bokehRadius", settings.bokehRadius);
+	readInto(iNode, "motionBlur", settings.motionBlur);
+	readInto(iNode, "motionBlurIntensity", settings.motionBlurIntensity);
 	return settings;
 }
 

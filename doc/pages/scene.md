@@ -567,35 +567,46 @@ YAML key: `BackgroundTexture`. Only the first entity with this component is rend
 
 ### Camera Component
 
-| Field              | Type                  | Default | Description                                                     |
-|--------------------|-----------------------|---------|-----------------------------------------------------------------|
-| `primary`          | `bool`                | `true`  | Active camera for rendering                                     |
-| `fixedAspectRatio` | `bool`                | `false` | Lock aspect ratio                                               |
-| `camera`           | `SceneCamera`         | —       | Orthographic or perspective                                     |
-| `toneMapping`      | `ToneMapping`         | `None`  | `None`, `PbrNeutral` or `Aces` (`camera.toneMapping`)           |
-| `postProcess`      | `PostProcessSettings` | all off | EV100, exposure, bloom, vignette and LUT (`camera.postProcess`) |
+| Field              | Type                  | Default | Description                                                                |
+|--------------------|-----------------------|---------|----------------------------------------------------------------------------|
+| `primary`          | `bool`                | `true`  | Active camera for rendering                                                |
+| `fixedAspectRatio` | `bool`                | `false` | Lock aspect ratio                                                          |
+| `camera`           | `SceneCamera`         | —       | Orthographic or perspective                                                |
+| `toneMapping`      | `ToneMapping`         | `None`  | `None`, `PbrNeutral` or `Aces` (`camera.toneMapping`)                      |
+| `postProcess`      | `PostProcessSettings` | all off | EV100, exposure, bloom, vignette, LUT, lens effects (`camera.postProcess`) |
 
 YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
 
-| Field                | Type    | Default     | Description                                                                                      |
-|----------------------|---------|-------------|--------------------------------------------------------------------------------------------------|
-| `ev100`              | `float` | `15`        | Exposure value at ISO 100 (15 sunny, 12 overcast, 8 bright interior, 5 dim room, 3 candle light) |
-| `autoExposure`       | `bool`  | `false`     | Exposure follows the average brightness of the frame                                             |
-| `autoExposureMin`    | `float` | `-2`        | Lowest EV100 of the automatic exposure                                                           |
-| `autoExposureMax`    | `float` | `16`        | Highest EV100 of the automatic exposure                                                          |
-| `autoExposureSpeed`  | `float` | `2`         | Adaptation speed, in EV per second                                                               |
-| `exposure`           | `float` | `0`         | Exposure compensation in EV, on top of `ev100` or the automatic exposure                         |
-| `bloom`              | `bool`  | `false`     | Glow of the bright parts                                                                         |
-| `bloomThreshold`     | `float` | `1`         | Luminance above which the colour blooms                                                          |
-| `bloomKnee`          | `float` | `0.5`       | Softness of the threshold                                                                        |
-| `bloomIntensity`     | `float` | `0.1`       | Strength of the glow                                                                             |
-| `bloomScatter`       | `float` | `0.7`       | Spread of the glow                                                                               |
-| `vignette`           | `bool`  | `false`     | Darkened edges                                                                                   |
-| `vignetteIntensity`  | `float` | `0.3`       | Strength of the vignette                                                                         |
-| `vignetteSmoothness` | `float` | `0.4`       | Softness of its edge                                                                             |
-| `vignetteColor`      | `vec3`  | `{0, 0, 0}` | Colour the edges fade to (sRGB)                                                                  |
-| `lut`                | path    | empty       | Asset path of a `.cube` colour-grading LUT                                                       |
-| `lutContribution`    | `float` | `1`         | Weight of the LUT, 0 to 1                                                                        |
+| Field                          | Type    | Default     | Description                                                                                      |
+|--------------------------------|---------|-------------|--------------------------------------------------------------------------------------------------|
+| `ev100`                        | `float` | `15`        | Exposure value at ISO 100 (15 sunny, 12 overcast, 8 bright interior, 5 dim room, 3 candle light) |
+| `autoExposure`                 | `bool`  | `false`     | Exposure follows the average brightness of the frame                                             |
+| `autoExposureMin`              | `float` | `-2`        | Lowest EV100 of the automatic exposure                                                           |
+| `autoExposureMax`              | `float` | `16`        | Highest EV100 of the automatic exposure                                                          |
+| `autoExposureSpeed`            | `float` | `2`         | Adaptation speed, in EV per second                                                               |
+| `exposure`                     | `float` | `0`         | Exposure compensation in EV, on top of `ev100` or the automatic exposure                         |
+| `bloom`                        | `bool`  | `false`     | Glow of the bright parts                                                                         |
+| `bloomThreshold`               | `float` | `1`         | Luminance above which the colour blooms                                                          |
+| `bloomKnee`                    | `float` | `0.5`       | Softness of the threshold                                                                        |
+| `bloomIntensity`               | `float` | `0.1`       | Strength of the glow                                                                             |
+| `bloomScatter`                 | `float` | `0.7`       | Spread of the glow                                                                               |
+| `vignette`                     | `bool`  | `false`     | Darkened edges                                                                                   |
+| `vignetteIntensity`            | `float` | `0.3`       | Strength of the vignette                                                                         |
+| `vignetteSmoothness`           | `float` | `0.4`       | Softness of its edge                                                                             |
+| `vignetteColor`                | `vec3`  | `{0, 0, 0}` | Colour the edges fade to (sRGB)                                                                  |
+| `lut`                          | path    | empty       | Asset path of a `.cube` colour-grading LUT                                                       |
+| `lutContribution`              | `float` | `1`         | Weight of the LUT, 0 to 1                                                                        |
+| `chromaticAberration`          | `bool`  | `false`     | Red and blue split towards the edges                                                             |
+| `chromaticAberrationIntensity` | `float` | `0.3`       | Strength of the split, 0 to 1                                                                    |
+| `filmGrain`                    | `bool`  | `false`     | Grain over the image, new each frame                                                             |
+| `filmGrainIntensity`           | `float` | `0.15`      | Strength of the grain, 0 to 1                                                                    |
+| `filmGrainSize`                | `float` | `1.5`       | Size of a grain in pixels, 1 to 4                                                                |
+| `depthOfField`                 | `bool`  | `false`     | Blur away from the focus distance                                                                |
+| `focusDistance`                | `float` | `5`         | Distance that stays sharp                                                                        |
+| `focusRange`                   | `float` | `5`         | Distance from the focus to the largest blur                                                      |
+| `bokehRadius`                  | `float` | `8`         | Largest blur radius, pixels of a 1080-pixel-high frame                                           |
+| `motionBlur`                   | `bool`  | `false`     | Blur along the motion of the camera, in Play                                                     |
+| `motionBlurIntensity`          | `float` | `0.5`       | Fraction of the frame the shutter stays open                                                     |
 
 `postProcess` sits inside the `camera` map next to `toneMapping`; every key is optional. The passes and their order are in
 [Renderer > Post-process](renderer.md#renderer-post-process).

@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Content Browser: visual scripts have an icon and a colour of their own.
 - Engine Demo: the tavern cellar ladder is a visual script.
 - Engine Demo: a tavern window glows with a rectangle area light casting soft shadows, and a room reflection probe makes the brass and copper reflect the fire.
+- Engine Demo: the tavern is half a stop brighter, with a slight chromatic aberration and film grain.
 - Script debugging: breakpoints on Lua lines (gutter, F9) and on visual-script nodes (F9, context menu), the game pausing once the script call ends (`ScriptDebugger`).
 - Owl Nest **Script Debug** panel: the hit (script, line, entity, locals) with Continue and Open, and the variables of the scene, HUD and entity scripts (`ScriptInstance::getWatchValues`).
 - Visual scripts show the last value of each wire during Play (`CompileMode::Debug`, `compileForDebug`) and outline the node the game stopped on.
@@ -52,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Point and spot light shadows: a cube per point light, a perspective map per spot light, the nearest to the camera within 4 of each on OpenGL and 16 on Vulkan.
 - Area lights: `Light` types `Rectangle` and `Disc` shaded through linearly transformed cosines, `Sphere` through a representative point, with soft cube shadows (PCSS) and their Owl Nest markers.
 - Reflection probes: a `ReflectionProbe` component captures the scene into a prefiltered cube that replaces the environment reflections inside its box or sphere, with parallax, blending, realtime updates and its Owl Nest markers, inspector and commands.
+- Post-process: chromatic aberration, film grain, depth of field and camera motion blur in `PostProcessSettings`, edited in the camera inspector.
 
 ### Changed
 

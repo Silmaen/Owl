@@ -246,12 +246,16 @@ flowchart LR
   and adapts the exposure ([Post-process](#renderer-post-process)).
 - **bloom down / up** (`renderer::PostProcess::recordBloom`) build the bloom image from the scene colour
   ([Post-process](#renderer-post-process)).
+- **post depth**, **depth of field** and **motion blur** (`renderer::PostProcess::recordDepthOfField` /
+  `recordMotionBlur`, `depth_effects/depth_effects.slang`), when the camera asks for them: the depth of the 3D layers, then the
+  blurred scene colour the bloom and the encode read ([Post-process](#renderer-post-process)).
 - **colour encode** (`renderer::ColorEncoder`, `color_encode.slang`) turns the linear scene colour into the display
-  target: exposure, bloom, tone mapping, vignette, sRGB encoding, then the colour-grading LUT.
+  target: chromatic aberration, exposure, bloom, tone mapping, vignette, film grain, sRGB encoding, then the
+  colour-grading LUT.
 - **outline mask**, **outline scene depth** and **outline** (`renderer::OutlinePass`, `outline.slang`), when the scene
   has an outline (`Scene::setOutline`: the Owl Nest selection, what a first-person walker aims at): the meshes of the
-  outlined subtree alone, then the whole 3D scene (the **occluder depth** of the frame when the occlusion culling made
-  one), are drawn into depth targets, and the line is blended over the target
+  outlined subtree alone, then the whole 3D scene (the **post depth** of the frame, else the **occluder depth** when
+  the occlusion culling made one), are drawn into depth targets, and the line is blended over the target
   around the silhouette, in full where it shows, dimmed where other geometry hides it; gaps thinner than the line close.
 - **entity ids and depth** copies the id and depth attachments into the target, so picking and depth-tested editor
   overlays keep working; skipped when the target is the window surface.
@@ -924,25 +928,36 @@ equirectangular Radiance `.hdr` image (`EnvironmentMap`, `Equirectangular`).
 `renderer::PostProcessSettings` sits on `renderer::Camera` (`getPostProcess` / `setPostProcess`), saved by the Camera
 component under `camera.postProcess`.
 
-| Field                | Default     | Description                                                                                                |
-|----------------------|-------------|------------------------------------------------------------------------------------------------------------|
-| `ev100`              | `15`        | Exposure value at ISO 100: 15 sunny, 12 overcast, 8 bright interior, 5 dim room, 3 candle light            |
-| `autoExposure`       | `false`     | Follow the average brightness of the frame instead of `ev100`                                              |
-| `autoExposureMin`    | `-2`        | Lowest EV100 the automatic exposure may pick                                                               |
-| `autoExposureMax`    | `16`        | Highest EV100 the automatic exposure may pick                                                              |
-| `autoExposureSpeed`  | `2`         | Adaptation speed, in EV per second                                                                         |
-| `exposure`           | `0`         | Compensation in EV on top of `ev100` or the automatic exposure: the brightness is multiplied by 2^exposure |
-| `bloom`              | `false`     | Glow of the bright parts                                                                                   |
-| `bloomThreshold`     | `1`         | Displayed brightness (after exposure) above which the colour blooms                                        |
-| `bloomKnee`          | `0.5`       | Softness of the threshold, 0 to 1                                                                          |
-| `bloomIntensity`     | `0.1`       | Strength of the bloom added to the scene                                                                   |
-| `bloomScatter`       | `0.7`       | Weight of the upsampled level, 0 tight to 1 wide                                                           |
-| `vignette`           | `false`     | Darkened edges                                                                                             |
-| `vignetteIntensity`  | `0.3`       | Strength of the vignette                                                                                   |
-| `vignetteSmoothness` | `0.4`       | Softness of its edge                                                                                       |
-| `vignetteColor`      | `{0, 0, 0}` | sRGB colour the edges fade to                                                                              |
-| `lut`                | empty       | Asset path of a `.cube` colour-grading LUT                                                                 |
-| `lutContribution`    | `1`         | Weight of the LUT, 0 to 1                                                                                  |
+| Field                          | Default     | Description                                                                                                |
+|--------------------------------|-------------|------------------------------------------------------------------------------------------------------------|
+| `ev100`                        | `15`        | Exposure value at ISO 100: 15 sunny, 12 overcast, 8 bright interior, 5 dim room, 3 candle light            |
+| `autoExposure`                 | `false`     | Follow the average brightness of the frame instead of `ev100`                                              |
+| `autoExposureMin`              | `-2`        | Lowest EV100 the automatic exposure may pick                                                               |
+| `autoExposureMax`              | `16`        | Highest EV100 the automatic exposure may pick                                                              |
+| `autoExposureSpeed`            | `2`         | Adaptation speed, in EV per second                                                                         |
+| `exposure`                     | `0`         | Compensation in EV on top of `ev100` or the automatic exposure: the brightness is multiplied by 2^exposure |
+| `bloom`                        | `false`     | Glow of the bright parts                                                                                   |
+| `bloomThreshold`               | `1`         | Displayed brightness (after exposure) above which the colour blooms                                        |
+| `bloomKnee`                    | `0.5`       | Softness of the threshold, 0 to 1                                                                          |
+| `bloomIntensity`               | `0.1`       | Strength of the bloom added to the scene                                                                   |
+| `bloomScatter`                 | `0.7`       | Weight of the upsampled level, 0 tight to 1 wide                                                           |
+| `vignette`                     | `false`     | Darkened edges                                                                                             |
+| `vignetteIntensity`            | `0.3`       | Strength of the vignette                                                                                   |
+| `vignetteSmoothness`           | `0.4`       | Softness of its edge                                                                                       |
+| `vignetteColor`                | `{0, 0, 0}` | sRGB colour the edges fade to                                                                              |
+| `lut`                          | empty       | Asset path of a `.cube` colour-grading LUT                                                                 |
+| `lutContribution`              | `1`         | Weight of the LUT, 0 to 1                                                                                  |
+| `chromaticAberration`          | `false`     | Red and blue channels split towards the edges, like a simple lens                                          |
+| `chromaticAberrationIntensity` | `0.3`       | Strength of the split: 1 puts the channels 1 % of the frame width apart at the corners                     |
+| `filmGrain`                    | `false`     | A grain over the image, a new one each frame, strongest in the mid-tones                                   |
+| `filmGrainIntensity`           | `0.15`      | Strength of the grain, 0 to 1                                                                              |
+| `filmGrainSize`                | `1.5`       | Size of a grain, in pixels, 1 to 4                                                                         |
+| `depthOfField`                 | `false`     | Blur of what is away from `focusDistance`, by the depth of the 3D layers                                   |
+| `focusDistance`                | `5`         | Distance from the camera that stays sharp, in world units                                                  |
+| `focusRange`                   | `5`         | Distance from the focus over which the blur grows to `bokehRadius`                                         |
+| `bokehRadius`                  | `8`         | Largest blur radius, in pixels of a frame 1080 pixels high (at most 32)                                    |
+| `motionBlur`                   | `false`     | Blur along the motion of the camera since the previous frame, in Play only                                 |
+| `motionBlurIntensity`          | `0.5`       | Fraction of the frame the shutter stays open, 0 to 1                                                       |
 
 - **Exposure.** The exposure is `1 / (1.2 · 2^EV100)` (`exposureOf`, default `g_defaultEv100` = 15), applied to every
   physical light value before shading ([Lights and shadows](#renderer-lights)); `exposure` then adds an EV
@@ -957,9 +972,21 @@ component under `camera.postProcess`.
   each time, then 9-tap tent upsamples that add each level back, ending on the half-size target the encode pass reads.
   `getBloomLevelCount` gives at most `g_maxBloomLevels` (6) levels, stopping when a side would fall under 8 pixels
   (0 for a frame too small, which disables the bloom). The shader is `post_process/bloom.slang`.
-- **Encode order.** `color_encode.slang` applies, on the linear colour: exposure, bloom (times `bloomIntensity`),
-  tone mapping, clamp, vignette (towards the linearised `vignetteColor`), then the sRGB encoding and finally the LUT
-  looked up on the encoded colour and mixed in by `lutContribution`.
+- **Depth of field.** `PostProcess::recordDepthOfField` reads the scene colour and a depth of the 3D layers drawn
+  for it (**post depth**, which the outline then reuses): the blur radius of a pixel grows with its distance to
+  `focusDistance` up to `bokehRadius` at `focusRange`; 32 taps on a disc gather the neighbours whose own radius covers
+  the pixel, those behind it only within its radius, so a sharp object keeps its edges over a blurred background.
+  The 2D layers have no depth and blur as the far plane.
+- **Motion blur.** In Play the scene keeps the projection and view of the previous frame;
+  `PostProcess::getReprojection` takes the clip space of this frame to the previous one, both relative to their eye,
+  and `recordMotionBlur` averages 12 taps along the motion of each pixel times `motionBlurIntensity`, at most
+  `g_maxMotionPixels` (32). Only the camera moves the pixels (no velocity of the objects); a jump of more than 50 m
+  in one frame (a teleport, a floating-origin shift) skips the blur, and the editor views never blur.
+- **Encode order.** `color_encode.slang` reads the scene colour (the red and blue channels moved apart along the
+  radius by `chromaticAberrationIntensity`), then applies exposure, bloom (times `bloomIntensity`), tone mapping,
+  clamp, vignette (towards the linearised `vignetteColor`), film grain (a hash per cell of `filmGrainSize` pixels,
+  new each frame, strongest in the mid-tones), then the sRGB encoding and finally the LUT looked up on the encoded
+  colour and mixed in by `lutContribution`.
 - **LUT.** `ColorLut::parse` reads an Adobe / Resolve `.cube` (`LUT_3D_SIZE`, `DOMAIN_MIN` / `DOMAIN_MAX`);
   `PostProcess::getLut` stores it as a 2D strip texture (`toStrip`) once per asset path.
 - **Lifecycle.** `PostProcess::init` / `shutdown` create and release its draw, uniform block and cached LUTs.

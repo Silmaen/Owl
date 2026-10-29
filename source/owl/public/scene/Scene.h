@@ -1852,6 +1852,18 @@ private:
 
 	/**
 	 * @brief
+	 *  Add the depth of field and the motion blur of the render camera after the world passes, with the depth of the
+	 *  3D layers they read.
+	 * @param[in,out] ioGraph The frame graph.
+	 * @param[in] iSceneColor The linear scene colour.
+	 * @param[in] iFrameSize Size of the frame.
+	 * @return The colour the bloom and the encoding read: the scene colour without any of these effects.
+	 */
+	auto recordDepthEffects(renderer::RenderGraph& ioGraph, renderer::RenderGraph::Resource iSceneColor,
+							const math::vec2ui& iFrameSize) -> renderer::RenderGraph::Resource;
+
+	/**
+	 * @brief
 	 *  Record the occlusion passes when a mesh layer with content asks for them: the depth of the mesh and voxel
 	 *  occluders seen by the render camera, then the pyramid the mesh layers test their opaque meshes against.
 	 * @param[in,out] ioGraph Graph of the frame.
@@ -2074,6 +2086,17 @@ private:
 	};
 	/// Post-process targets of the frame being recorded.
 	PostTargets m_postTargets;
+	/// Depth of the 3D layers the depth of field and the motion blur read this frame, invalid without them.
+	renderer::RenderGraph::Resource m_postDepth{};
+	/// Projection and view of the render camera in the previous frame of Play, for the motion blur.
+	struct PreviousView {
+		/// Projection of the camera.
+		math::mat4 projection;
+		/// View of the camera.
+		math::mat4 view;
+	};
+	/// The previous frame of Play, empty before the first one.
+	std::optional<PreviousView> m_previousView;
 	/// Shadow cascades of the frame.
 	renderer::ShadowCascades m_shadowCascades;
 	/// Shadow of the frame, its maps filled when the 3D layers run.

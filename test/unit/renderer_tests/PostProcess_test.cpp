@@ -8,6 +8,9 @@
 
 #include "testHelper.h"
 
+#include <math/linAlgebra.h>
+#include <math/matrixCreation.h>
+#include <renderer/ClipSpace.h>
 #include <renderer/ColorEncoder.h>
 #include <renderer/PostProcess.h>
 #include <renderer/RenderGraph.h>
@@ -73,6 +76,68 @@ TEST_F(PostProcessTest, theBloomChainDownsamplesThenUpsamplesIntoTheEncode) {
 	EXPECT_EQ(std::ranges::count(passes, std::string{"bloom up"}), levels - 1);
 	EXPECT_EQ(passes.back(), "encode");
 	EXPECT_NO_THROW(graph.execute({256, 128}));
+}
+
+TEST_F(PostProcessTest, theDepthEffectsReadTheDepthIntoTheEncode) {
+	Graph graph;
+	const auto target = graph.importTarget("target");
+	const auto scene = graph.createTarget("scene", Graph::TargetFormat::Linear);
+	const auto depth = graph.createTarget("depth", Graph::TargetFormat::Depth);
+	graph.addPass("world", [scene](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(scene); }, {});
+	graph.addPass("depth", [depth](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(depth); }, {});
+	PostProcessSettings settings;
+	settings.depthOfField = true;
+	settings.motionBlur = true;
+	const auto projection = math::perspectiveReversedZ(0.8f, 2.f, 0.1f, 100.f);
+	const auto focused = PostProcess::recordDepthOfField(graph, scene, depth, settings, projection, {256, 128});
+	ASSERT_TRUE(focused.isValid());
+	const auto blurred =
+			PostProcess::recordMotionBlur(graph, focused, depth, settings, math::identity<float, 4>(), {256, 128});
+	ASSERT_TRUE(blurred.isValid());
+	graph.addPass("encode",
+				  [blurred, target](Graph::PassBuilder& ioBuilder) -> void {
+					  ioBuilder.read(blurred);
+					  ioBuilder.write(target);
+				  },
+				  {});
+	ASSERT_TRUE(graph.compile());
+	const auto passes = graph.getCompiledPasses();
+	EXPECT_EQ(std::ranges::count(passes, std::string{"depth of field"}), 1);
+	EXPECT_EQ(std::ranges::count(passes, std::string{"motion blur"}), 1);
+	EXPECT_EQ(passes.back(), "encode");
+	EXPECT_NO_THROW(graph.execute({256, 128}));
+}
+
+TEST_F(PostProcessTest, theDepthEffectsNeedTheirSwitchAndADepth) {
+	Graph graph;
+	const auto scene = graph.createTarget("scene", Graph::TargetFormat::Linear);
+	const auto depth = graph.createTarget("depth", Graph::TargetFormat::Depth);
+	const auto projection = math::perspectiveReversedZ(0.8f, 2.f, 0.1f, 100.f);
+	PostProcessSettings settings;
+	EXPECT_FALSE(PostProcess::recordDepthOfField(graph, scene, depth, settings, projection, {256, 128}).isValid());
+	EXPECT_FALSE(PostProcess::recordMotionBlur(graph, scene, depth, settings, {}, {256, 128}).isValid());
+	settings.depthOfField = true;
+	settings.motionBlur = true;
+	EXPECT_FALSE(PostProcess::recordDepthOfField(graph, scene, {}, settings, projection, {256, 128}).isValid());
+	settings.bokehRadius = 0.f;
+	EXPECT_FALSE(PostProcess::recordDepthOfField(graph, scene, depth, settings, projection, {256, 128}).isValid());
+	settings.motionBlurIntensity = 0.f;
+	EXPECT_FALSE(PostProcess::recordMotionBlur(graph, scene, depth, settings, {}, {256, 128}).isValid());
+}
+
+TEST_F(PostProcessTest, theReprojectionFollowsTheCamera) {
+	const auto projection = math::perspectiveReversedZ(0.8f, 1.f, 0.1f, 100.f);
+	const math::mat4 view = inverse(math::translate(math::identity<float, 4>(), math::vec3{3.f, 1.f, 2.f}));
+	const auto still = PostProcess::getReprojection(projection, view, projection, view);
+	const math::vec4 point{0.25f, -0.5f, 0.3f, 1.f};
+	const math::vec4 same = still * point;
+	EXPECT_NEAR(same.x() / same.w(), point.x(), 1e-4f);
+	EXPECT_NEAR(same.y() / same.w(), point.y(), 1e-4f);
+	// The camera stepped right: what is ahead now was right of the centre in the previous frame.
+	const math::mat4 previousView = inverse(math::translate(math::identity<float, 4>(), math::vec3{2.f, 1.f, 2.f}));
+	const auto moved = PostProcess::getReprojection(projection, view, projection, previousView);
+	const math::vec4 centre = moved * math::vec4{0.f, 0.f, 0.3f, 1.f};
+	EXPECT_GT(centre.x() / centre.w(), 0.f);
 }
 
 TEST_F(PostProcessTest, noBloomAddsNoPass) {

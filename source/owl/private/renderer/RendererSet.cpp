@@ -24,8 +24,9 @@ constexpr std::string_view g_raycastName{"RendererRaycast"};
 constexpr std::string_view g_isometricName{"RendererIsometric"};
 constexpr std::string_view g_renderer3DName{"Renderer3D"};
 
-constexpr std::array<std::string_view, 7> g_baseFolders{
-		"renderer2D", "common", "background", "color_encode", "outline", "post_process", "tilemap_instanced"};
+constexpr std::array<std::string_view, 8> g_baseFolders{"renderer2D",    "common",           "background",
+														"color_encode",  "outline",          "post_process",
+														"depth_effects", "tilemap_instanced"};
 constexpr std::array<std::string_view, 4> g_raycastFolders{"raycast_dda", "raycast_stripe", "raycast_sprite",
 														   "bitonic_sort"};
 constexpr std::array<std::string_view, 1> g_isometricFolders{"isometric"};
