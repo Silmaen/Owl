@@ -476,6 +476,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the bones of the skinned mesh of the selected entity and the sockets it owns, pickable as the entity.
+	 * @param[in] iScene The scene edited.
+	 */
+	void renderSkeletonMarkers(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
 	 *  Draw the `Light2D` markers: a disc for an ambient light, a bulb for a point or spot one; selected, its radius
 	 *  circle or its cone in the sprite plane.
 	 * @param[in] iScene The scene.

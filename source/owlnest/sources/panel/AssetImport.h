@@ -131,6 +131,13 @@ private:
 	 */
 	void renderTextureSettings(const data::assets::AssetMeta& iMeta) const;
 
+	/**
+	 * @brief
+	 *  Draw the mesh settings: the levels of detail the cook builds.
+	 * @param[in] iMeta The current sidecar.
+	 */
+	void renderMeshSettings(const data::assets::AssetMeta& iMeta);
+
 	/// Command registry (non-owning).
 	const commands::CommandRegistry* mp_commands = nullptr;
 	/// Scene whose history records the changes.
@@ -145,6 +152,10 @@ private:
 	bool m_focus = false;
 	/// Cache state of the asset shown, read again when the asset or its settings change.
 	std::optional<bool> m_cached;
+	/// Triangle ratio being dragged, sent as one command when the drag ends.
+	float m_lodReduction = 0.5f;
+	/// Screen size being dragged, sent as one command when the drag ends.
+	float m_lodScreenSize = 0.25f;
 	/// Sidecar the cache state was read for.
 	std::optional<data::assets::AssetMeta> m_cachedFor;
 };

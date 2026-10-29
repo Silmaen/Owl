@@ -734,6 +734,35 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 		if (gui::widgets::menuItem({.glyph = gui::icon::arrowUp, .label = "Unparent"}))
 			std::ignore = target.execute("entity.reparent", {{"entity", entityArg}});
 	}
+	if (auto* scene = iEntity.getScene(); scene != nullptr && ImGui::BeginMenu("Attach to Socket")) {
+		bool any = false;
+		for (const auto handle: scene->registry.view<scene::component::Tag>()) {
+			const scene::Entity owner{handle, scene};
+			if (owner == iEntity)
+				continue;
+			const auto sockets = scene->getSocketNames(owner);
+			if (sockets.empty() ||
+				!ImGui::BeginMenu(
+						std::format("{}##{}", owner.getName(), static_cast<uint64_t>(owner.getUUID())).c_str()))
+				continue;
+			any = true;
+			for (const auto& socket: sockets) {
+				if (ImGui::MenuItem(socket.c_str()))
+					std::ignore =
+							target.execute("entity.attach_socket",
+										   {{"entity", entityArg},
+											{"owner", static_cast<int64_t>(static_cast<uint64_t>(owner.getUUID()))},
+											{"socket", socket}});
+			}
+			ImGui::EndMenu();
+		}
+		if (!any)
+			ImGui::TextDisabled("No entity has a socket: add Mesh Sockets or a mesh with socket_ nodes.");
+		ImGui::EndMenu();
+	}
+	if (iEntity.hasComponent<scene::component::SocketAttachment>() &&
+		gui::widgets::menuItem({.glyph = gui::icon::arrowUp, .label = "Release from Socket"}))
+		std::ignore = target.execute("entity.detach_socket", {{"entity", entityArg}});
 
 	ImGui::Separator();
 	// --- Delete ---

@@ -24,6 +24,7 @@
 #include <filesystem>
 #include <format>
 #include <numbers>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -132,7 +133,7 @@ auto makeMeshPreviewCamera(const renderer::MeshGeometry& iGeometry, const MeshOr
 }
 
 void renderMeshPreview(renderer::gpu::Framebuffer& ioTarget, renderer::MeshResource& ioMesh, const MeshOrbit& iOrbit,
-					   const MeshShading iShading) {
+					   const MeshShading iShading, const MeshPreviewOptions& iOptions) {
 	const auto& size = ioTarget.getSpecification().size;
 	const float aspect = size.y() > 0 ? static_cast<float>(size.x()) / static_cast<float>(size.y()) : 1.f;
 	const bool vulkan = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan;
@@ -147,12 +148,40 @@ void renderMeshPreview(renderer::gpu::Framebuffer& ioTarget, renderer::MeshResou
 	ioTarget.clearAttachment(1, -1);
 	renderer::RendererMesh::beginScene(camera, {.sunDirection = sun, .ambient = {0.32f, 0.32f, 0.36f}});
 	const bool textured = iShading == MeshShading::Textured;
+	const bool skinned = ioMesh.isSkinned() && iOptions.skin.size() == ioMesh.getSkeleton()->getBoneCount();
+	if (skinned || iOptions.lod > 0) {
+		const uint32_t first = skinned ? renderer::RendererMesh::pushSkin(iOptions.skin) : 0;
+		for (size_t index = 0; index < ioMesh.getSubmeshes().size(); ++index) {
+			const renderer::MeshDrawParams params{.tint = textured ? math::vec4{1.f, 1.f, 1.f, 1.f} : g_shadedTint,
+												  .entityId = -1,
+												  .material = textured ? ioMesh.getFileMaterial(index).get() : nullptr};
+			if (skinned)
+				renderer::RendererMesh::drawSkinnedSubmesh(ioMesh, index, iOptions.lod, math::identity<float, 4>(),
+														   first, params);
+			else
+				renderer::RendererMesh::drawSubmesh(ioMesh, index, iOptions.lod, math::identity<float, 4>(), params);
+		}
+		renderer::RendererMesh::endScene();
+		ioTarget.unbind();
+		return;
+	}
 	renderer::RendererMesh::drawMesh(ioMesh, math::identity<float, 4>(),
 									 textured ? ioMesh.getBaseColorTexture() : shared<renderer::gpu::Texture2D>{},
 									 {.tint = textured ? ioMesh.getBaseColorFactor() : g_shadedTint, .entityId = -1},
 									 textured && ioMesh.getBaseColorFactor().a() < 1.f);
 	renderer::RendererMesh::endScene();
 	ioTarget.unbind();
+}
+
+auto projectToCanvas(const math::mat4& iViewProjection, const math::vec3& iPoint, const math::vec2& iCanvasSize,
+					 const bool iVulkanClip) -> std::optional<math::vec2> {
+	const math::vec4 clip = iViewProjection * math::vec4{iPoint.x(), iPoint.y(), iPoint.z(), 1.f};
+	if (clip.w() <= 1e-6f)
+		return std::nullopt;
+	const float x = clip.x() / clip.w();
+	const float y = clip.y() / clip.w();
+	const float down = iVulkanClip ? y * 0.5f + 0.5f : 0.5f - y * 0.5f;
+	return math::vec2{(x * 0.5f + 0.5f) * iCanvasSize.x(), down * iCanvasSize.y()};
 }
 
 auto makePreviewShape(const PreviewShape iShape) -> shared<renderer::MeshResource> {

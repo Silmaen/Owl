@@ -18,6 +18,7 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <filesystem>
 
 using namespace owl;
@@ -110,4 +111,31 @@ TEST(MeshPreview, zoomMovesTheCameraAway) {
 	const math::vec4 nearClip = near.getViewProjection() * corner;
 	const math::vec4 farClip = far.getViewProjection() * corner;
 	EXPECT_LT(std::abs(farClip.x() / farClip.w()), std::abs(nearClip.x() / nearClip.w()));
+}
+
+TEST_F(MeshDocumentTest, previewsTheClipsTheBonesAndTheLevels) {
+	ASSERT_TRUE(m_document.loadFromFile(test::getTestAssetsPath("mesh_tests") / "skinned_arm.gltf"));
+	ASSERT_TRUE(m_document.getMesh()->isSkinned());
+	ASSERT_EQ(m_document.getBoneMatrices().size(), 2u);
+	EXPECT_NEAR(m_document.getBoneMatrices()[1](1, 3), 1.f, 1e-5f);
+	m_document.setClip(size_t{0});
+	ASSERT_EQ(m_document.getClip(), size_t{0});
+	m_document.setClipTime(1.f);
+	// The bend turns the lower bone about its own origin: the elbow stays in place.
+	EXPECT_NEAR(m_document.getBoneMatrices()[1](1, 3), 1.f, 1e-5f);
+	m_document.setPlaying(true);
+	m_document.updatePose(0.25f);
+	EXPECT_NEAR(m_document.getClipTime(), 0.25f, 1e-4f);
+	m_document.setClip(size_t{9});
+	EXPECT_FALSE(m_document.getClip().has_value());
+	m_document.setSelectedBone(size_t{1});
+	EXPECT_EQ(m_document.getSelectedBone(), size_t{1});
+	m_document.setLod(3);
+	EXPECT_EQ(m_document.getLod(), m_document.getMesh()->getLodCount());
+	const auto camera =
+			viewer::makeMeshPreviewCamera(m_document.getMesh()->getGeometry(), m_document.getOrbit(), 1.f, false);
+	const auto centre = viewer::projectToCanvas(camera.getViewProjection(), {0.f, 1.f, 0.f}, {200.f, 100.f}, false);
+	ASSERT_TRUE(centre.has_value());
+	EXPECT_NEAR(centre->x(), 100.f, 2.f);
+	EXPECT_NEAR(centre->y(), 50.f, 2.f);
 }
