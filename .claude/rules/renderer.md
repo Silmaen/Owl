@@ -117,6 +117,9 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   forces it; check both when touching a shader.
 - **Non-blendable attachment formats.** A Vulkan pipeline turns blending off on a colour attachment whose format
   features lack blending (`RedInteger`, `RedFloat`), and data attachments get nearest samplers.
+- **Skinned draws read their palette at binding 5**, the instance binding of `mesh3d` (a skinned draw is never
+  instanced): `RendererMesh::pushSkin` fills one storage buffer per pass, `SceneUbo.ids.w` is the first matrix of the
+  draw. `mesh3d` and `skinned3d` share `common/mesh_surface.slangh`: change the surface shading there, once.
 - **One element type per storage buffer in a shader.** On the OpenGL SPIR-V path NVIDIA binds every SSBO sharing a
   block type to one buffer (two `StructuredBuffer<float4x4>` read the same data); wrap the element in a struct of its
   own. `SlangCompute.shippedShadersGiveEachStorageBufferItsOwnBlockType` checks it; llvmpipe (GLSL path) never shows it.

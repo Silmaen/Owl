@@ -50,6 +50,8 @@ flowchart LR
 
 ## Assembly and articulated bodies
 
+The sockets are detailed in [Skeletal animation](skeletal-animation.md); the physics items are v0.7.0.
+
 - Mesh sockets: named attachment points on a mesh or a prefab, picked and moved in Owl Nest
 - Entities snapped together at runtime on their sockets, the hierarchy rebuilt without reloading the scene
 - Compound rigid bodies rebuilt when parts join or leave; mass, centre of mass and inertia recomputed

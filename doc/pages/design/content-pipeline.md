@@ -60,7 +60,8 @@ Still open:
 
 - Atlas generation
 - Mesh optimisation
-- LOD generation
+
+The cook builds the levels of detail of a mesh whose sidecar asks for some ([Skeletal animation](skeletal-animation.md)).
 
 ## Binary scene format {#content-pipeline-binary}
 
@@ -88,6 +89,8 @@ PackReader thread-safety audit + a worker-friendly API.
   editor runs, state kept through serialization)
 
 ## Animation
+
+Detailed in [Skeletal animation](skeletal-animation.md).
 
 - Skeletal animation
     - Bone hierarchy and skinning

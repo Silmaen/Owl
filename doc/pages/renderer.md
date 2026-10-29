@@ -750,6 +750,17 @@ flowchart LR
   or else the material's, and the entity id; opaque meshes as they come,
   blended ones (`transparent: true`, `Renderer3D::transparentMeshState`) at the end, sorted back-to-front by the
   distance of their bounds centre. In Edit the viewport draws the voxel and mesh layers after its 2D composite.
+- **Skinning**: a skinned `MeshResource` (`isSkinned`: a skeleton and `VertexSkin` per vertex) uploads
+  `SkinnedMesh3DVertex` meshes (`Renderer3D::createSkinnedMesh`, shader `skinned3d.slang`: four joints per vertex).
+  The scene pushes the skin matrices of each `Animator` once per pass (`RendererMesh::pushSkin`) into one storage buffer
+  read at binding 5 (`Renderer3D::g_skinBinding`, the instance binding, free in a single draw), `SceneUbo.ids.w` giving
+  the first matrix of the draw; skinned draws are not instanced and keep the frustum culling of the mesh index.
+  `mesh3d` and `skinned3d` share their surface shading (`common/mesh_surface.slangh`).
+- **Levels of detail**: `MeshResource` keeps the reduced levels of a cooked mesh (`LoadedMesh::lods`) or builds them
+  from the `.owlmeta` of the file (`data::geometry::buildMeshLods`); `Scene` picks one per entity
+  (`MeshResource::selectLod`) from the fraction of the screen height its bounding sphere covers, seen from the camera
+  of the last main pass (shadow passes reuse it), and `RendererMesh::drawSubmesh` draws its compact submesh.
+  `RendererMesh::Statistics` counts `skinnedDrawCount` and `lodDrawCount`.
 - **Instancing and culling**: opaque meshes are queued and, at `endScene`, grouped by mesh, material and texture into
   one instanced draw each; the per-instance data (`renderer::MeshInstance`: model, tint, entity id) sits in a storage
   buffer that `mesh3d.slang` reads. The compute shader `mesh_culling.slang` (`renderer::utils::MeshCullingPass`) culls

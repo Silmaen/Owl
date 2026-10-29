@@ -28,6 +28,7 @@ Groups:
     pages:
       - doc/pages/guide_game_maker.md
       - doc/pages/scene.md
+      - doc/pages/skinned_meshes.md
       - doc/pages/event_input.md
       - doc/pages/physics.md
       - doc/pages/sound.md
