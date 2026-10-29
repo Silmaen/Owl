@@ -605,7 +605,7 @@ void scanMeshRenderer(const YAML::Node& iMeshRenderer, const std::string& iScene
 	}
 }
 
-// The fonts of the texts of an entity and the sound of its `SoundSource`.
+// The fonts of the texts of an entity, the sound of its `SoundSource` and the layers and stingers of its `AdaptiveMusic`.
 void scanFontsAndSounds(const YAML::Node& iEntity, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
 						std::vector<std::string>* ioWarnings) {
 	for (const char* component: {"TextRenderer", "UiText"})
@@ -623,6 +623,14 @@ void scanFontsAndSounds(const YAML::Node& iEntity, const std::string& iSceneName
 	if (auto soundSrc = iEntity["SoundSource"]; soundSrc)
 		if (auto asset = soundSrc["soundAsset"]; asset)
 			followSound(asset.as<std::string>(), iSceneName, ioAssets, ioWarnings);
+	if (auto music = iEntity["AdaptiveMusic"]; music) {
+		for (const auto& layer: music["layers"])
+			if (auto asset = layer["asset"]; asset && !asset.as<std::string>().empty())
+				followSound(asset.as<std::string>(), iSceneName, ioAssets, ioWarnings);
+		for (const auto& state: music["states"])
+			if (auto stinger = state["stinger"]; stinger && !stinger.as<std::string>().empty())
+				followSound(stinger.as<std::string>(), iSceneName, ioAssets, ioWarnings);
+	}
 }
 
 // The fonts of the exported languages: the localised texts are drawn with them.
