@@ -21,6 +21,18 @@ actions:
     type: button
     bindings:
       - {key: K}
+  - name: open_character
+    type: button
+    bindings:
+      - {key: C}
+  - name: character_wave
+    type: button
+    bindings:
+      - {key: N}
+  - name: character_drop
+    type: button
+    bindings:
+      - {key: M}
   - name: orbit_jump
     type: button
     bindings:

@@ -1,0 +1,10 @@
+# The mannequin of the character yard holds its lantern on the `hand_r` socket of its mesh: the lantern follows the
+# hand, near hip height, while the animator plays.
+scene: ../../../engine_demo/scenes/character_yard.owl
+steps:
+  - frames: 20
+  - expect: {entity: Lantern, translation.y: {greater: 0.55}}
+  - expect: {entity: Lantern, translation.y: {less: 1.1}}
+  - input: {key: N, frames: 2}
+  - frames: 30
+  - expect: {entity: Lantern, translation.y: {greater: 0.55}}

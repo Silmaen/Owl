@@ -1,0 +1,40 @@
+Hud: character_yard
+FormatVersion: 1
+Entities:
+- Entity: 4210000000000000001
+  Tag: {tag: HUDCanvas}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Canvas:
+    space: ScreenOverlay
+    sortOrder: 0
+    referenceResolution: [1280, 720]
+    scaleMode: ScaleWithHeight
+  Visibility: {gameVisible: true}
+  Hierarchy: {}
+- Entity: 4210000000000000002
+  Tag: {tag: CharacterReadout}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4210000000000000001}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.8, 0.08]
+    sizeUnit: [ScreenWidth, ScreenHeight]
+    offset: [16, 16]
+  UiText:
+    text: ''
+    color: [1, 0.95, 0.55, 1]
+    fontSize: 24
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 12

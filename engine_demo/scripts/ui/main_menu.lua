@@ -124,6 +124,13 @@ function on_update(dt)
         return
     end
 
+    -- The `open_character` action (C) opens the character yard: a skinned mannequin walking with a lantern in its hand.
+    if not shortcut_requested and input.is_action_pressed("open_character") then
+        shortcut_requested = true
+        scene.transition_to("scenes/character_yard.owl", "fade", 0.3)
+        return
+    end
+
     -- Display mouse position and button state (demonstrates input.get_mouse_x/y and the `primary` action)
     if mouse_label_id ~= 0 then
         local mx = input.get_mouse_x()
