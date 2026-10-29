@@ -9,6 +9,9 @@
 #pragma once
 
 #include "core/Core.h"
+#include "math/vectors.h"
+#include "sound/AudioEffects.h"
+#include "sound/Bus.h"
 #include "sound/SoundHandle.h"
 
 #include <cstdint>
@@ -59,16 +62,12 @@ public:
 	 */
 	auto operator=(SceneSound&&) -> SceneSound& = default;
 
-	/// Sound category.
-	enum struct Category : uint8_t {
-		SFX,///< Sound effect (one-shot or short).
-		Music,///< Background music (typically looping, non-spatial).
-		Ambient///< Ambient sound (environmental, may be spatial).
-	};
+	/// Bus of the sound in the mixer (Master, Music, SFX, Ambient, Voice).
+	using Category = sound::Bus;
 
 	/// Asset path relative to asset directory.
 	std::string soundAsset;
-	/// Sound category.
+	/// Mixer bus the sound plays on.
 	Category category = Category::SFX;
 	/// Volume gain [0..∞).
 	float volume = 1.0f;
@@ -85,6 +84,15 @@ public:
 	/// Rolloff factor for distance attenuation (if spatial).
 	float rolloff = 1.0f;
 
+	/// Direct filter of the sound: low-pass behind a wall, high-pass for a radio.
+	sound::Filter filter{};
+	/// Whether the motion of the entity gives the sound a Doppler effect (spatial sounds only).
+	bool doppler = true;
+
+	/// World position at the previous frame, for the Doppler velocity (not serialized).
+	math::vec3d runtimeLastPosition{0.0, 0.0, 0.0};
+	/// Whether runtimeLastPosition holds a position (not serialized).
+	bool runtimeHasLastPosition = false;
 	/// Runtime handle (not serialized).
 	sound::SoundHandle runtimeHandle = sound::invalidSoundHandle;
 };

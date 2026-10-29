@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 #include "core/Serializer.h"
+#include "math/vectors.h"
 
 namespace owl::scene::component {
 /**
@@ -19,6 +20,10 @@ namespace owl::scene::component {
 struct OWL_API SoundListener {
 	/// Whether this is the primary listener.
 	bool primary = true;
+	/// World position at the previous frame, for the Doppler velocity (not serialized).
+	math::vec3d runtimeLastPosition{0.0, 0.0, 0.0};
+	/// Whether runtimeLastPosition holds a position (not serialized).
+	bool runtimeHasLastPosition = false;
 
 	/**
 	 * @brief

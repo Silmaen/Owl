@@ -17,7 +17,7 @@ An `entity` is the integer UUID of an entity (`entity_id` in its own script, `sc
 |                                                     | `log`       | Engine log.                                                                                                          |
 | [Input](lua-api-input.md)                           | `input`     | Actions of the game's input map, then the raw keyboard, mouse and gamepad state.                                     |
 | [Physics](lua-api-physics.md)                       | `physics`   | Box2D body of an entity.                                                                                             |
-| [Sound](lua-api-sound.md)                           | `sound`     | Sound playback, by handle.                                                                                           |
+| [Sound](lua-api-sound.md)                           | `sound`     | Sound playback by handle, the mixer buses and the music.                                                             |
 | [Time and timers](lua-api-time.md)                  | `time`      | Frame and fixed-tick time.                                                                                           |
 |                                                     | `trigger`   | Timer triggers.                                                                                                      |
 | [HUD](lua-api-ui.md)                                | `ui`        | HUD widgets and screen transitions.                                                                                  |

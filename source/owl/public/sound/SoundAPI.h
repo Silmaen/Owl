@@ -192,6 +192,52 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the direct filter of a sound source.
+	 * @param[in] iHandle The sound handle.
+	 * @param[in] iFilter The filter (neutral: none).
+	 */
+	virtual void setFilter(SoundHandle iHandle, const Filter& iFilter) = 0;
+
+	/**
+	 * @brief
+	 *  Set whether a sound source feeds the reverb of the environment.
+	 * @param[in] iHandle The sound handle.
+	 * @param[in] iSend True to send it to the reverb.
+	 */
+	virtual void setEnvironmentSend(SoundHandle iHandle, bool iSend) = 0;
+
+	/**
+	 * @brief
+	 *  Set the reverb of the environment the listener is in.
+	 * @param[in] iReverb The reverb parameters.
+	 * @param[in] iWet Gain of the reverb, in [0, 1] (0: dry).
+	 */
+	virtual void setReverb(const Reverb& iReverb, float iWet) = 0;
+
+	/**
+	 * @brief
+	 *  Set the listener velocity, for the Doppler effect.
+	 * @param[in] iVelocity The velocity, in world units per second.
+	 */
+	virtual void setListenerVelocity(const math::vec3f& iVelocity) = 0;
+
+	/**
+	 * @brief
+	 *  Set the scale of the Doppler effect (0 disables it, 1 is physical).
+	 * @param[in] iFactor The Doppler factor.
+	 */
+	virtual void setDopplerFactor(float iFactor) = 0;
+
+	/**
+	 * @brief
+	 *  Whether a handle still has a source (playing, paused or not yet released).
+	 * @param[in] iHandle The sound handle.
+	 * @return True when the source exists.
+	 */
+	[[nodiscard]] virtual auto hasSource(SoundHandle iHandle) const -> bool = 0;
+
+	/**
+	 * @brief
 	 *  Stop all playing sounds and release their sources.
 	 */
 	virtual void stopAll() = 0;

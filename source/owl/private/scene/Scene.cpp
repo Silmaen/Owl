@@ -7,6 +7,8 @@
  */
 #include "owlpch.h"
 
+#include "SceneAudio.h"
+
 #include "scene/Scene.h"
 
 #include "data/voxel/TerrainGenerator.h"
@@ -195,6 +197,13 @@ void releaseSoundSource(entt::registry& ioRegistry, const entt::entity iEntity) 
 	soundComp.runtimeHandle = sound::invalidSoundHandle;
 }
 
+void releaseAdaptiveMusic(entt::registry& ioRegistry, const entt::entity iEntity) {
+	auto& music = ioRegistry.get<component::AdaptiveMusic>(iEntity);
+	if (auto* mixer = sound::SoundCommand::getMixer(); music.runtimePlayer && mixer != nullptr)
+		music.runtimePlayer->stop(*mixer, 0.f);
+	music.runtimePlayer.reset();
+}
+
 void releaseRuntimeResources(const Entity& iEntity) {
 	auto& registry = iEntity.getScene()->registry;
 	const auto handle = static_cast<entt::entity>(iEntity);
@@ -205,18 +214,22 @@ void releaseRuntimeResources(const Entity& iEntity) {
 	physics::PhysicCommand::destroyBody(iEntity);
 	if (registry.all_of<component::SoundSource>(handle))
 		releaseSoundSource(registry, handle);
+	if (registry.all_of<component::AdaptiveMusic>(handle))
+		releaseAdaptiveMusic(registry, handle);
 }
 
 void connectRuntimeHooks(entt::registry& ioRegistry) {
 	ioRegistry.on_destroy<component::LuaScript>().connect<&releaseLuaScript>();
 	ioRegistry.on_destroy<component::NativeScript>().connect<&releaseNativeScript>();
 	ioRegistry.on_destroy<component::SoundSource>().connect<&releaseSoundSource>();
+	ioRegistry.on_destroy<component::AdaptiveMusic>().connect<&releaseAdaptiveMusic>();
 }
 
 void disconnectRuntimeHooks(entt::registry& ioRegistry) {
 	ioRegistry.on_destroy<component::LuaScript>().disconnect<&releaseLuaScript>();
 	ioRegistry.on_destroy<component::NativeScript>().disconnect<&releaseNativeScript>();
 	ioRegistry.on_destroy<component::SoundSource>().disconnect<&releaseSoundSource>();
+	ioRegistry.on_destroy<component::AdaptiveMusic>().disconnect<&releaseAdaptiveMusic>();
 }
 
 // Particles and trails draw only on a particle layer: untagged ones go to the first one of the stack.
@@ -283,6 +296,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_enabledRenderers = iOther->m_enabledRenderers;
 	newScene->m_physicsSettings = iOther->m_physicsSettings;
 	newScene->m_floatingOriginSettings = iOther->m_floatingOriginSettings;
+	newScene->m_mixSettings = iOther->m_mixSettings;
 	newScene->m_worldOrigin = iOther->m_worldOrigin;
 	newScene->m_hudPath = iOther->m_hudPath;
 	newScene->m_sceneScript = iOther->m_sceneScript;
@@ -445,6 +459,11 @@ void Scene::onStartRuntime() {
 			if (const auto& [soundComp] = view.get<component::SoundSource>(entity); soundComp.playOnStart)
 				std::ignore = sound::SoundHelper::playEntitySound(Entity{entity, this});
 	}
+	if (auto* mixer = sound::SoundCommand::getMixer(); mixer != nullptr) {
+		mixer->setMix(m_mixSettings);
+		mixer->setEnvironment({});
+		startAdaptiveMusic(*this, *mixer);
+	}
 
 	OWL_CORE_INFO("Scene::onStartRuntime: sound init {:.1f} ms.", ms(clk::now() - soundStart))
 
@@ -515,6 +534,7 @@ void Scene::onEndRuntime() {
 	disconnectRuntimeHooks(registry);
 	// Stop all active sounds (both component-based and Lua-created).
 	sound::SoundCommand::stopAll();
+	for (auto&& [entity, music]: registry.view<component::AdaptiveMusic>().each()) music.runtimePlayer.reset();
 
 	// Destroy Lua scripts
 	if (m_sceneScript.instance && m_sceneScript.instance->isValid())
@@ -4120,6 +4140,15 @@ OWL_API void Scene::onComponentAdded<component::SoundSource>([[maybe_unused]] co
 template<>
 OWL_API void Scene::onComponentAdded<component::SoundListener>([[maybe_unused]] const Entity& iEntity,
 															   [[maybe_unused]] component::SoundListener& ioComponent) {
+}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::ReverbZone>([[maybe_unused]] const Entity& iEntity,
+															[[maybe_unused]] component::ReverbZone& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::AdaptiveMusic>([[maybe_unused]] const Entity& iEntity,
+															   [[maybe_unused]] component::AdaptiveMusic& ioComponent) {
 }
 
 template<>

@@ -8,10 +8,13 @@
 
 #pragma once
 
+#include "AudioEffects.h"
+#include "Bus.h"
 #include "core/Core.h"
 #include "math/vectors.h"
 
 #include <cstdint>
+#include <optional>
 
 namespace owl::sound {
 /// Opaque handle to an active sound source.
@@ -40,6 +43,10 @@ struct OWL_API PlayParams {
 	float maxDistance = 50.0f;
 	/// Rolloff factor for distance attenuation (if spatial).
 	float rolloff = 1.0f;
+	/// Mixer bus of the sound; none: the default bus of its cue, SFX for a bare audio file.
+	std::optional<Bus> bus = std::nullopt;
+	/// Direct filter of the sound (low-pass, high-pass), combined with the filter of the reverb zones.
+	Filter filter{};
 };
 
 }// namespace owl::sound

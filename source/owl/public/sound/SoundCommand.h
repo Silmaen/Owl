@@ -8,10 +8,13 @@
 
 #pragma once
 
+#include "Mixer.h"
 #include "SoundAPI.h"
 #include "core/Core.h"
 
 #include <core/Timestep.h>
+
+#include <tuple>
 
 namespace owl::sound {
 /**
@@ -60,7 +63,24 @@ public:
 	 * @brief
 	 *  Reset RenderAPI.
 	 */
-	static void invalidate() { m_soundApi.reset(); }
+	static void invalidate() {
+		m_mixer.reset();
+		m_soundApi.reset();
+	}
+
+	/**
+	 * @brief
+	 *  The mixer of the backend: buses, fades, music track and environment.
+	 * @return The mixer, null when no backend exists.
+	 */
+	[[nodiscard]] static auto getMixer() -> Mixer* { return m_mixer.get(); }
+
+	/**
+	 * @brief
+	 *  The backend under the mixer (the Null one keeps the state a test checks).
+	 * @return The backend, null when none exists.
+	 */
+	[[nodiscard]] static auto getBackend() -> SoundAPI* { return m_soundApi.get(); }
 
 	/**
 	 * @brief
@@ -96,10 +116,7 @@ public:
 	 *  Play a sound (fire-and-forget).
 	 * @param[in] iData The Sound to play.
 	 */
-	static void playSound(const shared<SoundData>& iData) {
-		if (m_soundApi)
-			m_soundApi->playSound(iData);
-	}
+	static void playSound(const shared<SoundData>& iData) { std::ignore = play(iData, PlayParams{}); }
 
 	/**
 	 * @brief
@@ -133,11 +150,26 @@ public:
 
 	/**
 	 * @brief
-	 *  Set the volume of a sound source.
+	 *  Set the volume of a sound source, before its fade and the gain of its bus.
 	 * @param[in] iHandle The sound handle.
 	 * @param[in] iVolume The volume gain.
 	 */
 	static void setVolume(SoundHandle iHandle, float iVolume);
+
+	/**
+	 * @brief
+	 *  Set the direct filter of a sound source (combined with the zone filter on an environment bus).
+	 * @param[in] iHandle The sound handle.
+	 * @param[in] iFilter The filter.
+	 */
+	static void setFilter(SoundHandle iHandle, const Filter& iFilter);
+
+	/**
+	 * @brief
+	 *  Set the listener velocity, for the Doppler effect.
+	 * @param[in] iVelocity The velocity, in world units per second.
+	 */
+	static void setListenerVelocity(const math::vec3f& iVelocity);
 
 	/**
 	 * @brief
@@ -212,14 +244,13 @@ public:
 	 *  The function to call every frame.
 	 * @param iTs The time step.
 	 */
-	static void frame(const core::Timestep& iTs) {
-		if (m_soundApi)
-			m_soundApi->frame(iTs);
-	}
+	static void frame(const core::Timestep& iTs);
 
 private:
 	/// Pointer to the sound API.
 	static uniq<SoundAPI> m_soundApi;
+	/// Mixer over the sound API.
+	static uniq<Mixer> m_mixer;
 };
 
 }// namespace owl::sound
