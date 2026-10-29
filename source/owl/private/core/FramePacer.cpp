@@ -43,9 +43,9 @@ void FramePacer::wait() {
 		return;
 	OWL_PROFILE_FUNCTION()
 
-	const auto now = clock::now();
-	if (const auto deadline = next(now); deadline > now)
-		std::this_thread::sleep_until(deadline);
+	const auto deadline = next(clock::now());
+	// sleep_until may wake a little early (Windows rounds the wait to its timer): sleep again until the deadline.
+	while (clock::now() < deadline) std::this_thread::sleep_until(deadline);
 }
 
 }// namespace owl::core
