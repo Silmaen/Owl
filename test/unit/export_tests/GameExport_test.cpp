@@ -546,9 +546,12 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 	const auto moved = root / "moved" / exported.filename();
 	std::filesystem::create_directories(moved.parent_path());
 	std::filesystem::rename(exported, moved);
-	const int exitCode = runCommand(std::format("cd '{}' && '{}' --headless --smoke-test 60 > runner.txt 2>&1",
-												workDir.string(), (moved / "launch.sh").string()));
-	const auto log = readFile(workDir / "Owl.log");
+	// Without OWL_USER_DIR the game writes its settings and logs in its own folder.
+	const auto gameLog = moved / "user" / "logs" / "Owl.log";
+	const int exitCode =
+			runCommand(std::format("cd '{}' && env -u OWL_USER_DIR '{}' --headless --smoke-test 60 > runner.txt 2>&1",
+								   workDir.string(), (moved / "launch.sh").string()));
+	const auto log = readFile(gameLog);
 	EXPECT_EQ(exitCode, 0) << readFile(workDir / "runner.txt");
 	EXPECT_EQ(logProblems(log), "");
 	EXPECT_NE(log.find(std::format("Smoke test passed on {} scene(s)", sceneCount)), std::string::npos) << log;
@@ -556,9 +559,9 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 	// The GPU run loads every shader, texture, font and sound, all from the pack.
 	if (canRunOnLavapipe()) {
 		const int gpuExitCode =
-				runCommand(std::format("cd '{}' && {} '{}' --smoke-test 5 > runner_gpu.txt 2>&1", workDir.string(),
-									   g_lavapipeEnvironment, (moved / "launch.sh").string()));
-		const auto gpuLog = readFile(workDir / "Owl.log");
+				runCommand(std::format("cd '{}' && env -u OWL_USER_DIR {} '{}' --smoke-test 5 > runner_gpu.txt 2>&1",
+									   workDir.string(), g_lavapipeEnvironment, (moved / "launch.sh").string()));
+		const auto gpuLog = readFile(gameLog);
 		EXPECT_EQ(gpuExitCode, 0) << readFile(workDir / "runner_gpu.txt");
 		EXPECT_EQ(logProblems(gpuLog), "");
 		EXPECT_EQ(gpuLog.find("Compiling Slang shader"), std::string::npos) << "a shader was compiled at start";

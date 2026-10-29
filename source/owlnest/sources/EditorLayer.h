@@ -43,6 +43,7 @@
 #include "panel/SceneHierarchy.h"
 #include "panel/SceneSettings.h"
 #include "panel/ScriptDebugPanel.h"
+#include "panel/SettingsImportPrompt.h"
 #include "panel/SettingsPanel.h"
 #include "panel/StatusBar.h"
 #include "panel/VoxelPalette.h"
@@ -1153,6 +1154,8 @@ private:
 	RecoveryManager m_recovery;
 	/// Modal offering the autosaves of a session that ended with unsaved changes.
 	panel::RecoveryPrompt m_recoveryPrompt;
+	/// Modal offering, at the first start of an installation, the settings of a previous one.
+	panel::SettingsImportPrompt m_settingsImportPrompt;
 	/// Modal asking for the name, the folder and the template of a new project.
 	panel::NewProjectDialog m_newProjectDialog;
 
@@ -1188,6 +1191,12 @@ private:
 	 * @param[in] iChoice The choice made this frame.
 	 */
 	void handleRecoveryChoice(panel::RecoveryPrompt::Choice iChoice);
+
+	/**
+	 * @brief
+	 *  Ask for the folder of a previous installation and stage its settings for the next start.
+	 */
+	void importSettings();
 
 	/**
 	 * @brief

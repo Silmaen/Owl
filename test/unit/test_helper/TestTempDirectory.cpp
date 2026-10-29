@@ -8,7 +8,8 @@
  * Compiled into every test executable: the process, and the processes it starts, get a temporary directory of their
  * own. `std::filesystem::temp_directory_path()` reads `TMPDIR` (POSIX) and `TMP` / `TEMP` (Windows), so every fixed
  * `temp_directory_path() / "name"` of the tests and of the engine is private to the process: two test processes (the
- * gtest shards of one binary, two build trees) never write the same file.
+ * gtest shards of one binary, two build trees) never write the same file. `OWL_USER_DIR` points the engine's user
+ * directory (settings, saves, logs, caches) inside it too.
  */
 
 #include <core/Environment.h>
@@ -46,6 +47,7 @@ auto isolateTempDirectory() -> bool {
 	if (!std::filesystem::create_directories(g_processTempDirectory, error))
 		return false;
 	for (const auto* variable: {"TMPDIR", "TMP", "TEMP"}) owl::core::setEnv(variable, g_processTempDirectory.string());
+	owl::core::setEnv("OWL_USER_DIR", (g_processTempDirectory / "user").string());
 	std::atexit([]() -> void {
 		std::error_code ignored;
 		std::filesystem::remove_all(g_processTempDirectory, ignored);

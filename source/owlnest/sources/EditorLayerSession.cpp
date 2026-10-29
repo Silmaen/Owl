@@ -9,11 +9,16 @@
 #include "EditorLayer.h"
 
 #include "AssetKind.h"
+#include "SettingsImport.h"
+
+#include <platform/FileDialog.h>
+#include <platform/UserDirectory.h>
 
 
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <format>
 #include <system_error>
 #include <tuple>
 #include <utility>
@@ -22,8 +27,7 @@
 namespace owl::nest {
 
 void EditorLayer::startProjectRecovery() {
-	m_recovery.setDirectory(
-			RecoveryManager::directoryFor(app::Application::get().getWorkingDirectory(), m_project.projectDirectory));
+	m_recovery.setDirectory(RecoveryManager::directoryFor(platform::getUserDirectory(), m_project.projectDirectory));
 	m_recovery.setInterval(static_cast<float>(m_settings.autosaveIntervalSeconds));
 	const auto pending = m_recovery.getPendingEntries();
 	m_recovery.setSuspended(!pending.empty());
@@ -33,6 +37,31 @@ void EditorLayer::startProjectRecovery() {
 	}
 	OWL_WARN("Recovery: {} autosaved document(s) found for project '{}'.", pending.size(), m_project.name)
 	m_recoveryPrompt.open(pending);
+}
+
+void EditorLayer::importSettings() {
+	const auto folder = platform::FileDialog::pickFolder();
+	if (folder.empty())
+		return;
+	const auto staged = settings_import::stageImport(folder, platform::getUserDirectory());
+	if (!staged) {
+		const char* reason = "";
+		switch (staged.error()) {
+			case settings_import::ImportError::NoSettings:
+				reason = "No Owl Nest settings in this folder.";
+				break;
+			case settings_import::ImportError::SameDirectory:
+				reason = "This folder holds the settings in use.";
+				break;
+			case settings_import::ImportError::CopyFailed:
+				reason = "A file could not be copied, see the log.";
+				break;
+		}
+		m_toasts.push(gui::widgets::ToastKind::Error, "Settings not imported", reason);
+		return;
+	}
+	m_toasts.push(gui::widgets::ToastKind::Success, std::format("{} settings file(s) imported", *staged),
+				  "Restart Owl Nest to apply them.");
 }
 
 void EditorLayer::handleRecoveryChoice(const panel::RecoveryPrompt::Choice iChoice) {

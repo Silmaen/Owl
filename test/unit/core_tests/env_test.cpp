@@ -16,12 +16,12 @@
 using namespace owl::core;
 
 TEST(Environment, variables) {
-	EXPECT_STREQ(getEnv("BBOOBBOOBB").c_str(), "");
+	EXPECT_EQ(getEnv("BBOOBBOOBB"), "");
 	appendEnv("BBOOBBOOBB", "yo");
-	EXPECT_STREQ(getEnv("BBOOBBOOBB").c_str(), "yo");
+	// Whole strings: a value carrying its terminating null character must fail.
+	EXPECT_EQ(getEnv("BBOOBBOOBB"), "yo");
 	appendEnv("BBOOBBOOBB", "lo");
-	const std::string uhu = std::format("lo{}yo", g_sep);
-	EXPECT_STREQ(getEnv("BBOOBBOOBB").c_str(), uhu.c_str());
+	EXPECT_EQ(getEnv("BBOOBBOOBB"), std::format("lo{}yo", g_sep));
 	// Leave the process environment as found so the test can repeat or run in any order.
 	setEnv("BBOOBBOOBB", "");
 }

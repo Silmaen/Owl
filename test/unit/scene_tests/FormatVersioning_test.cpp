@@ -17,6 +17,7 @@
 
 #include <core/Log.h>
 #include <platform/AtomicFileFault.h>
+#include <platform/UserDirectory.h>
 #include <scene/AnimationClip.h>
 #include <scene/Entity.h>
 #include <scene/PrefabSerializer.h>
@@ -74,34 +75,22 @@ void writeText(const std::filesystem::path& iPath, const std::string& iText) {
 }
 
 /// Redirects the user directory (saves, settings) into the test's temporary folder.
-class HomeGuard {
+class UserDirectoryGuard {
 public:
-	HomeGuard(const HomeGuard&) = delete;
-	HomeGuard(HomeGuard&&) = delete;
-	auto operator=(const HomeGuard&) -> HomeGuard& = delete;
-	auto operator=(HomeGuard&&) -> HomeGuard& = delete;
+	UserDirectoryGuard(const UserDirectoryGuard&) = delete;
+	UserDirectoryGuard(UserDirectoryGuard&&) = delete;
+	auto operator=(const UserDirectoryGuard&) -> UserDirectoryGuard& = delete;
+	auto operator=(UserDirectoryGuard&&) -> UserDirectoryGuard& = delete;
 
-	explicit HomeGuard(const std::filesystem::path& iHome) {
-		if (const char* previous = std::getenv(k_Variable); previous != nullptr)
-			m_previous = previous;
-		set(iHome.string());
+	explicit UserDirectoryGuard(const std::filesystem::path& iDirectory) : m_previous{platform::getUserDirectory()} {
+		platform::setUserDirectory(iDirectory);
 	}
 
-	~HomeGuard() {
-		if (m_previous)
-			set(*m_previous);
-	}
+	~UserDirectoryGuard() { platform::setUserDirectory(m_previous); }
 
 private:
-#ifdef OWL_PLATFORM_WINDOWS
-	static constexpr const char* k_Variable = "APPDATA";
-	static void set(const std::string& iValue) { _putenv_s(k_Variable, iValue.c_str()); }
-#else
-	static constexpr const char* k_Variable = "HOME";
-	static void set(const std::string& iValue) { setenv(k_Variable, iValue.c_str(), 1); }
-#endif
-	/// Value to restore.
-	std::optional<std::string> m_previous;
+	/// Directory to restore.
+	std::filesystem::path m_previous;
 };
 
 class FormatVersioningTest : public ::testing::Test {
@@ -214,7 +203,7 @@ TEST_F(FormatVersioningTest, PrefabVersioning) {
 }
 
 TEST_F(FormatVersioningTest, SaveVersioning) {
-	const HomeGuard home(m_dir);
+	const UserDirectoryGuard userDirectory(m_dir);
 	SaveManager::setGameName("OwlFormatTest");
 	ASSERT_TRUE(SaveManager::getSaveDirectory().string().starts_with(m_dir.string()));
 	const auto scene = makeScene();
@@ -301,7 +290,7 @@ TEST_F(FormatVersioningTest, AnimationClipVersioning) {
 }
 
 TEST_F(FormatVersioningTest, SettingsVersioning) {
-	const HomeGuard home(m_dir);
+	const UserDirectoryGuard userDirectory(m_dir);
 	SettingsManager settings;
 	settings.setGameName("OwlFormatTest");
 	settings.set("volume", 0.5f);

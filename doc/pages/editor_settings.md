@@ -4,7 +4,9 @@
 
 **View > Settings > Editor** (or **Editor settings** in the File screen) opens the editor settings, one tab per
 topic; each row has a reset button once it differs from its default. They are saved in `OwlNest_settings.yml`, with
-the recent projects and their sessions.
+the recent projects and their sessions, in the `user/` folder beside Owl Nest
+([user directory](architecture.md#architecture-user-directory)). **Import settings...** in the File screen, also offered
+at the first start, takes them from the folder of a previous version and applies them at the next start.
 
 ## Editor settings
 
@@ -27,8 +29,8 @@ The frame pacing settings of **General** spare the GPU:
 
 **View > Settings > Engine** (**Engine parameters** in the File screen) holds the engine's own options: window,
 graphics and sound backends, **Low-Latency Present** (Vulkan MAILBOX: a lower input latency, but the GPU draws as
-many frames as it can), debug options such as hot reload. They are written to the `config.yml` of the working
-folder and apply at the next start.
+many frames as it can), debug options such as hot reload. They are written to the `config.yml` of the user
+directory and apply at the next start.
 
 ## Shortcuts
 

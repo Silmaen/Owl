@@ -85,7 +85,8 @@ A renderer-stack layer, like the voxel and isometric ones, composing with the 3D
 - 3D steering in open space: obstacle avoidance between moving volumes, formations
 - Doppler effect and adaptive music driven by game states
 - Interest management for replication: relevance areas and priorities, so a client receives only what is near it
-- World partition: streaming cells on world coordinates, additive scenes loaded and unloaded around the focus
+- World partition: streaming cells on world coordinates (double), additive scenes merged into the running one, loaded
+  and unloaded around the focus in the background through the task system, without a loading screen
 - Camera tracks in the sequencer, for cutscenes
 
 ## Delivery {#large-worlds-delivery}
@@ -93,9 +94,9 @@ A renderer-stack layer, like the voxel and isometric ones, composing with the 3D
 | Release | Items                                                                                                  |
 |---------|--------------------------------------------------------------------------------------------------------|
 | v0.5.0  | Camera-relative rendering, reversed-Z depth                                                            |
-| v0.6.0  | World positions in double with a floating origin, splines, data tables, mesh sockets, emissive effects |
-| v0.7.0  | Articulated bodies, gravity fields, time warp, simulation LOD, planetary terrain, HUD markers, audio   |
-| v0.8.0  | World partition, camera tracks, joysticks and throttles with many axes                                 |
+| v0.6.0  | Double positions, splines, data tables, sockets, world partition, planets, camera tracks, HUD markers  |
+| v0.7.0  | Articulated bodies, gravity fields, time warp, simulation LOD, planetary terrain collision             |
+| v0.8.0  | Joysticks and throttles with many axes                                                                 |
 | v0.9.0  | Interest management                                                                                    |
 
 World positions in double ship in three steps:

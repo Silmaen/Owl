@@ -2,7 +2,7 @@
 
 [TOC]
 
-Every game made with Owl can be played by more people, with settings the player controls. Planned for v0.8.0, summarised in the [Roadmap](../roadmap.md).
+Every game made with Owl can be played by more people, with settings the player controls. Planned for v0.6.0, summarised in the [Roadmap](../roadmap.md).
 
 ## Plan
 

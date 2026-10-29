@@ -54,7 +54,7 @@ first release whose engine features the game needs.
 | Networked Bomberman     | Bomberman                         | tilemap, deterministic simulation, multiplayer     | v0.9.0        |
 | Asteroids               | Asteroids                         | 2D inertia, screen wrap, particles                 | v0.4.0        |
 | Station trader          | Taipan! / Elite                   | data tables, economy on the fixed tick, trade HUD  | v0.6.0        |
-| Rail shooter            | Star Fox                          | splines, 3D, particles, HUD markers                | v0.7.0        |
+| Rail shooter            | Star Fox                          | splines, 3D, particles, HUD markers                | v0.6.0        |
 | Orbital golf            | Angry Birds Space / Gravitee Wars | 2D gravity fields, trajectory preview              | v0.7.0        |
 | Bridge builder          | Poly Bridge / Bad Piggies         | parts snapped on sockets, breakable joints, replay | v0.7.0        |
 
@@ -403,7 +403,7 @@ Not yet checked against the engine: a plan is refined when its game is picked by
 | Play     | Fly a fighter through an asteroid field, escort a convoy and fight waves of enemy fighters              |
 | Win/lose | The convoy reaches the gate / the convoy or the player is destroyed                                     |
 | Engine   | 6DoF flight on Jolt, 3D steering and formations, particle trails, emissive lights, HUD markers, Doppler |
-| Size     | **M**, once the v0.7.0 AI and audio are in                                                              |
+| Size     | **M**, once the v0.7.0 AI is in                                                                         |
 
 ## Layout
 

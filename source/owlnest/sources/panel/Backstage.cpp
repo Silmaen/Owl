@@ -236,6 +236,8 @@ void Backstage::onImGuiRender(const BackstageContext& iContext) {
 			run(iContext.projectSettings);
 		if (navItem("ribbon_stats", "Engine parameters"))
 			run(iContext.engineSettings);
+		if (navItem("ribbon_import", "Import settings..."))
+			run(iContext.importSettings);
 		if (navItem("ribbon_help", "Help", true, "F1")) {
 			if (iContext.help)
 				iContext.help({});

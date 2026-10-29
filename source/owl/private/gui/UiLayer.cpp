@@ -16,6 +16,7 @@
 #include "data/assets/AssetSearchPaths.h"
 #include "gui/FontPreviewCache.h"
 #include "gui/utils.h"
+#include "platform/UserDirectory.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/vulkan/internal/FrameProfiler.h"
 #include "renderer/gpu/vulkan/internal/VulkanHandler.h"
@@ -254,7 +255,7 @@ void UiLayer::onAttach() {
 		const auto& params = app::Application::get().getInitParams();
 		if (params.argCount > 0 && params.args != nullptr) {
 			const auto stem = std::filesystem::path(params[0]).stem().string();
-			m_iniFilePath = (app::Application::get().getWorkingDirectory() / (stem + "_imgui.ini")).string();
+			m_iniFilePath = (platform::getUserDirectory() / (stem + "_imgui.ini")).string();
 			io.IniFilename = m_iniFilePath.c_str();
 		}
 	}

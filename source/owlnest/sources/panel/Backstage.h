@@ -52,6 +52,8 @@ struct BackstageContext {
 	std::function<void()> projectSettings;
 	/// Open the engine parameters.
 	std::function<void()> engineSettings;
+	/// Import the settings of a previous installation.
+	std::function<void()> importSettings;
 	/// Open the help at a page ("getting_started"), or its index when empty.
 	std::function<void(const std::string&)> help;
 	/// Close the open project.

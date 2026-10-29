@@ -26,15 +26,6 @@ in [Simulation and networking](simulation-networking.md)), summarised in the
     - UI to enable/disable/reorder mods
     - Mod conflict detection
 
-## Large worlds
-
-- World partition ([Large worlds](large-worlds.md))
-    - Streaming cells on world coordinates (double), loaded and unloaded around the player
-    - Additive scenes: a cell is a scene merged into the running one
-    - Background loading via task system
-    - Seamless transitions (no loading screen)
-- Camera tracks in the sequencer, for cutscenes
-
 ## Platforms
 
 Android and Web are both in 1.0 (v0.8.0).

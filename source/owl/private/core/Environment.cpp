@@ -25,6 +25,8 @@ auto getEnv(const std::string& iKey) -> std::string {
 	err = getenv_s(&requiredSize, buffer.data(), requiredSize, iKey.c_str());
 	if (err != 0)
 		return "";
+	// The size counts the terminating null character.
+	buffer.resize(requiredSize - 1);
 	return buffer;
 #else
 	const char* oldPath = getenv(iKey.c_str());

@@ -15,6 +15,7 @@
 #include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/SectionHeader.h>
 #include <magic_enum/magic_enum.hpp>
+#include <platform/UserDirectory.h>
 
 #include <cstdint>
 #include <string>
@@ -65,7 +66,7 @@ auto Parameters::apply() -> bool {
 	params.frameLogFrequency = m_localParams.frameLogFrequency;
 	app::Application::get().setHotReloadEnabled(m_localParams.hotReload);
 
-	const auto configPath = app::Application::get().getWorkingDirectory() / "config.yml";
+	const auto configPath = platform::getUserDirectory() / "config.yml";
 	params.saveToFile(configPath);
 	core::Log::setFrameFrequency(params.frameLogFrequency);
 

@@ -2,8 +2,9 @@
 
 [TOC]
 
-Design page for the gameplay systems of the v0.7.0 release (its deterministic simulation is in
-[Simulation and networking](simulation-networking.md)), summarised in the [Roadmap](../roadmap.md). Gameplay systems ship as optional
+Design page for the gameplay systems: AI in v0.7.0 on its deterministic simulation
+([Simulation and networking](simulation-networking.md)); audio, narrative and HUD markers in v0.6.0. Summarised in the
+[Roadmap](../roadmap.md). Gameplay systems ship as optional
 modules on the v0.3.0 phased systems, not inside `Scene` (A-02). 3D physics is described in
 [Physics API](physics-api.md).
 

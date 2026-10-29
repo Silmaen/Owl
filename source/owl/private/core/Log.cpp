@@ -10,6 +10,7 @@
 
 #include "core/external/spdlog.h"
 #include "debug/LogSink.h"
+#include "platform/UserDirectory.h"
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
@@ -103,8 +104,12 @@ void Log::init(const Level& iLevel, const uint64_t iFrequency) {
 	}
 	std::vector<spdlog::sink_ptr> logSinks;
 	logSinks.emplace_back(mkShared<spdlog::sinks::stdout_color_sink_mt>());
-	// Wide or narrow, whichever filename type spdlog was built with (SPDLOG_WCHAR_FILENAMES).
-	logSinks.emplace_back(mkShared<spdlog::sinks::basic_file_sink_mt>(SPDLOG_FILENAME_T("Owl.log"), true));
+	const auto logFile = platform::getUserDirectory() / "logs" / "Owl.log";
+#ifdef SPDLOG_WCHAR_FILENAMES
+	logSinks.emplace_back(mkShared<spdlog::sinks::basic_file_sink_mt>(logFile.wstring(), true));
+#else
+	logSinks.emplace_back(mkShared<spdlog::sinks::basic_file_sink_mt>(logFile.string(), true));
+#endif
 
 	logSinks.emplace_back(mkShared<EditorLogSink>(g_logBuffer));
 
