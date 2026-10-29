@@ -136,4 +136,28 @@ TEST(Renderer3D, Mesh3dOpenGlSamplesAtMost32Textures) {
 	EXPECT_EQ(cubeBinding, renderer::Renderer3D::g_spotShadowSlot + renderer::g_openGlLocalShadowBudget.spot);
 	core::Log::invalidate();
 }
+TEST(Renderer3D, SkinnedShaderCompilesAndReadsThePaletteAtTheInstanceBinding) {
+	core::Log::init(core::Log::Level::Off);
+	const auto path = findRoot() / "engine_assets" / "shaders" / "renderer3D" / "skinned3d.slang";
+	const auto source = renderer::utils::readShaderSource(path);
+	ASSERT_FALSE(source.empty());
+	EXPECT_TRUE(renderer::utils::compileSlangToSpirv(source, "skinned3d_gl_check", /*iForVulkan=*/false).success);
+	const auto result = renderer::utils::compileSlangToSpirv(source, "skinned3d_vk_check", /*iForVulkan=*/true);
+	ASSERT_TRUE(result.success);
+	const auto it = result.spirvData.find(renderer::gpu::ShaderType::Vertex);
+	ASSERT_NE(it, result.spirvData.end());
+	const spirv_cross::Compiler compiler(it->second);
+	const auto resources = compiler.get_shader_resources();
+	ASSERT_EQ(resources.storage_buffers.size(), 1u);
+	EXPECT_EQ(compiler.get_decoration(resources.storage_buffers[0].id, spv::DecorationBinding),
+			  renderer::Renderer3D::g_skinBinding);
+	EXPECT_EQ(resources.stage_inputs.size(), 8u);
+	core::Log::invalidate();
+}
+
+TEST(Renderer3D, SkinnedVertexAddsTheJointsToTheMeshVertex) {
+	EXPECT_EQ(sizeof(renderer::SkinnedMesh3DVertex), 88u);
+	EXPECT_EQ(offsetof(renderer::SkinnedMesh3DVertex, joints), 56u);
+	EXPECT_EQ(offsetof(renderer::SkinnedMesh3DVertex, weights), 72u);
+}
 #endif

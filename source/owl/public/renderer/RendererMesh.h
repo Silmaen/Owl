@@ -17,6 +17,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 namespace owl::renderer {
 
@@ -64,6 +65,10 @@ public:
 		uint32_t visibleInstanceCount = 0;
 		/// Levels of the occlusion pyramid the opaque meshes were tested against, 0 without occlusion.
 		uint32_t occlusionLevelCount = 0;
+		/// Skinned submeshes drawn.
+		uint32_t skinnedDrawCount = 0;
+		/// Submeshes drawn at a reduced level of detail.
+		uint32_t lodDrawCount = 0;
 	};
 
 	/**
@@ -116,6 +121,39 @@ public:
 	 */
 	static void drawSubmesh(MeshResource& ioMesh, size_t iSubmesh, const math::mat4& iModel,
 							const MeshDrawParams& iParams);
+
+	/**
+	 * @brief
+	 *  Queue one submesh at a level of detail, instanced when opaque, sorted when the material blends.
+	 * @param[in,out] ioMesh The mesh resource.
+	 * @param[in] iSubmesh Index of the submesh.
+	 * @param[in] iLod Level of detail (`MeshResource::selectLod`), 0 for the full mesh.
+	 * @param[in] iModel The model (object-to-world) matrix.
+	 * @param[in] iParams Tint, entity id and material of the draw (the material must live until `endScene`).
+	 */
+	static void drawSubmesh(MeshResource& ioMesh, size_t iSubmesh, size_t iLod, const math::mat4& iModel,
+							const MeshDrawParams& iParams);
+
+	/**
+	 * @brief
+	 *  Add a palette of skin matrices to the pass, for the skinned draws of one entity.
+	 * @param[in] iMatrices The skin matrices (`data::animation::Skeleton::computeSkinMatrices`).
+	 * @return The first matrix of the palette, given to `drawSkinnedSubmesh`.
+	 */
+	[[nodiscard]] static auto pushSkin(std::span<const math::mat4> iMatrices) -> uint32_t;
+
+	/**
+	 * @brief
+	 *  Queue one submesh of a skinned mesh, moved by a palette of the pass (never instanced).
+	 * @param[in,out] ioMesh The mesh resource (`MeshResource::isSkinned`).
+	 * @param[in] iSubmesh Index of the submesh.
+	 * @param[in] iLod Level of detail, 0 for the full mesh.
+	 * @param[in] iModel The model (object-to-world) matrix.
+	 * @param[in] iFirstMatrix First matrix of the palette (`pushSkin`).
+	 * @param[in] iParams Tint, entity id and material of the draw (the material must live until `endScene`).
+	 */
+	static void drawSkinnedSubmesh(MeshResource& ioMesh, size_t iSubmesh, size_t iLod, const math::mat4& iModel,
+								   uint32_t iFirstMatrix, const MeshDrawParams& iParams);
 
 	/**
 	 * @brief

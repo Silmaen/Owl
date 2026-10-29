@@ -330,6 +330,7 @@ void setDrawParams(const math::mat4& iModel, const MeshDrawParams& iParams, cons
 }// namespace
 
 static_assert(sizeof(Mesh3DVertex) == 56, "Mesh3DVertex must stay tightly packed for direct VBO upload.");
+static_assert(sizeof(SkinnedMesh3DVertex) == 88, "SkinnedMesh3DVertex must match the skinned3d vertex input.");
 static_assert(sizeof(MeshInstance) == 96, "MeshInstance must match the std430 layout of MeshInstance in mesh3d.");
 
 void Renderer3D::init() {
@@ -697,6 +698,40 @@ auto Renderer3D::createMesh(std::span<const Mesh3DVertex> iVertices, std::span<c
 			   k_ShaderFolder, indices, iShaderName, iState);
 	draw->setVertexData(iVertices.data(), static_cast<uint32_t>(iVertices.size() * sizeof(Mesh3DVertex)));
 	return draw;
+}
+
+auto Renderer3D::createSkinnedMesh(std::span<const SkinnedMesh3DVertex> iVertices, std::span<const uint32_t> iIndices,
+								   const gpu::PipelineState& iState) -> MeshHandle {
+	auto draw = gpu::DrawData::create();
+	std::vector<uint32_t> indices{iIndices.begin(), iIndices.end()};
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
+	draw->init({{"i_Position", gpu::ShaderDataType::Float3},
+				{"i_Normal", gpu::ShaderDataType::Float3},
+				{"i_Uv", gpu::ShaderDataType::Float2},
+				{"i_TexIndex", gpu::ShaderDataType::Int},
+				{"i_TileRect", gpu::ShaderDataType::Float4},
+				{"i_Ao", gpu::ShaderDataType::Float},
+				{"i_Joints", gpu::ShaderDataType::Int4},
+				{"i_Weights", gpu::ShaderDataType::Float4}},
+			   k_ShaderFolder, indices, "skinned3d", iState);
+	draw->setVertexData(iVertices.data(), static_cast<uint32_t>(iVertices.size() * sizeof(SkinnedMesh3DVertex)));
+	return draw;
+}
+
+void Renderer3D::drawSkinnedMesh(const MeshHandle& iMesh, const math::mat4& iModel,
+								 const shared<gpu::StorageBuffer>& iSkin, const uint32_t iFirstMatrix,
+								 const std::span<const shared<gpu::Texture2D>> iTextures,
+								 const MeshDrawParams& iParams) {
+	OWL_PROFILE_FUNCTION()
+
+	if (!iMesh || iMesh->getIndexCount() == 0 || !iSkin)
+		return;
+	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
+
+	setDrawParams(iModel, iParams, !iTextures.empty() && iTextures.front(), static_cast<int32_t>(iFirstMatrix));
+	iSkin->bind(g_skinBinding);
+	bindMeshTextures(iTextures, iParams.material);
+	gpu::RenderCommand::drawData(iMesh, iMesh->getIndexCount());
 }
 
 void Renderer3D::drawMesh(const MeshHandle& iMesh, const math::mat4& iModel,

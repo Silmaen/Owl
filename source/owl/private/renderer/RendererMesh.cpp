@@ -32,6 +32,16 @@ struct QueuedMesh {
 	shared<gpu::Texture2D> texture;
 	MeshDrawParams params;
 	float distanceSq = 0.f;
+	// First matrix of the palette of a skinned draw, -1 for a static one.
+	int32_t firstMatrix = -1;
+};
+
+// An opaque skinned draw, drawn on its own after the instanced ones.
+struct SkinnedDraw {
+	Renderer3D::MeshHandle mesh;
+	math::mat4 model;
+	MeshDrawParams params;
+	uint32_t firstMatrix = 0;
 };
 
 // An opaque draw waiting for the instanced flush of `endScene`.
@@ -56,6 +66,10 @@ struct FrameData {
 	std::vector<uint32_t> groupLeaders;
 	shared<gpu::StorageBuffer> instanceBuffer;
 	uint32_t instanceCapacity = 0;
+	std::vector<math::mat4> skinMatrices;
+	std::vector<SkinnedDraw> skinned;
+	shared<gpu::StorageBuffer> skinBuffer;
+	uint32_t skinCapacity = 0;
 	utils::MeshCullingPass culling;
 	RendererMesh::Statistics stats;
 };
@@ -178,6 +192,41 @@ void flushOpaque() {
 	data.opaque.clear();
 }
 
+// Uploads the palettes of the pass in one buffer; false when there is none.
+auto uploadSkin() -> bool {
+	auto& data = frameData();
+	if (data.skinMatrices.empty())
+		return false;
+	const auto count = static_cast<uint32_t>(data.skinMatrices.size());
+	if (count > data.skinCapacity || !data.skinBuffer) {
+		data.skinCapacity = std::max(count, data.skinCapacity * 2);
+		data.skinBuffer = gpu::StorageBuffer::create(data.skinCapacity * static_cast<uint32_t>(sizeof(math::mat4)),
+													 Renderer3D::g_skinBinding, "Renderer3D");
+	}
+	if (!data.skinBuffer)
+		return false;
+	data.skinBuffer->setData(data.skinMatrices.data(), count * static_cast<uint32_t>(sizeof(math::mat4)), 0);
+	return true;
+}
+
+void flushSkinned() {
+	OWL_PROFILE_FUNCTION()
+
+	auto& data = frameData();
+	for (const auto& draw: data.skinned)
+		Renderer3D::drawSkinnedMesh(draw.mesh, draw.model, data.skinBuffer, draw.firstMatrix, {}, draw.params);
+	data.stats.skinnedDrawCount += static_cast<uint32_t>(data.skinned.size());
+	data.skinned.clear();
+}
+
+auto distanceSqTo(const MeshResource& iMesh, const math::mat4& iModel) -> float {
+	const auto& geometry = iMesh.getGeometry();
+	const math::vec3 centre = (geometry.boundsMin + geometry.boundsMax) * 0.5f;
+	const math::vec4 world = iModel * math::vec4{centre.x(), centre.y(), centre.z(), 1.f};
+	const math::vec3 delta = math::vec3{world.x(), world.y(), world.z()} - frameData().cameraPosition;
+	return delta.normSq();
+}
+
 }// namespace
 
 void RendererMesh::init() { frameData().culling.init(); }
@@ -187,6 +236,10 @@ void RendererMesh::shutdown() {
 	data.culling.shutdown();
 	data.instanceBuffer.reset();
 	data.instanceCapacity = 0;
+	data.skinBuffer.reset();
+	data.skinCapacity = 0;
+	data.skinMatrices.clear();
+	data.skinned.clear();
 	data.opaque.clear();
 	data.transparent.clear();
 }
@@ -201,6 +254,8 @@ void RendererMesh::beginScene(const Camera& iCamera, const MeshLayerConfig& iCon
 	data.cameraPosition = math::vec3{worldPos.x(), worldPos.y(), worldPos.z()};
 	data.transparent.clear();
 	data.opaque.clear();
+	data.skinned.clear();
+	data.skinMatrices.clear();
 	data.stats = {};
 }
 
@@ -209,9 +264,20 @@ void RendererMesh::endScene() {
 
 	flushOpaque();
 	auto& data = frameData();
+	const bool skin = uploadSkin();
+	if (skin)
+		flushSkinned();
 	std::ranges::sort(data.transparent,
 					  [](const QueuedMesh& iA, const QueuedMesh& iB) -> bool { return iA.distanceSq > iB.distanceSq; });
-	for (const auto& queued: data.transparent) draw(queued.mesh, queued.model, queued.texture, queued.params);
+	for (const auto& queued: data.transparent) {
+		if (queued.firstMatrix < 0)
+			draw(queued.mesh, queued.model, queued.texture, queued.params);
+		else if (skin)
+			Renderer3D::drawSkinnedMesh(queued.mesh, queued.model, data.skinBuffer,
+										static_cast<uint32_t>(queued.firstMatrix), {}, queued.params);
+	}
+	data.skinned.clear();
+	data.skinMatrices.clear();
 	data.stats.transparentDrawCount = static_cast<uint32_t>(data.transparent.size());
 	data.transparent.clear();
 	Renderer3D::endScene();
@@ -240,30 +306,69 @@ void RendererMesh::drawMesh(MeshResource& ioMesh, const math::mat4& iModel, cons
 										  .model = iModel,
 										  .texture = iTexture,
 										  .params = params,
-										  .distanceSq = delta.normSq()});
+										  .distanceSq = delta.normSq(),
+										  .firstMatrix = -1});
 }
 
 void RendererMesh::drawSubmesh(MeshResource& ioMesh, const size_t iSubmesh, const math::mat4& iModel,
 							   const MeshDrawParams& iParams) {
+	drawSubmesh(ioMesh, iSubmesh, 0, iModel, iParams);
+}
+
+auto RendererMesh::pushSkin(const std::span<const math::mat4> iMatrices) -> uint32_t {
+	auto& matrices = frameData().skinMatrices;
+	const auto first = static_cast<uint32_t>(matrices.size());
+	matrices.insert(matrices.end(), iMatrices.begin(), iMatrices.end());
+	return first;
+}
+
+void RendererMesh::drawSkinnedSubmesh(MeshResource& ioMesh, const size_t iSubmesh, const size_t iLod,
+									  const math::mat4& iModel, const uint32_t iFirstMatrix,
+									  const MeshDrawParams& iParams) {
 	const bool blended = iParams.material != nullptr && iParams.material->isBlended();
 	if (blended && Renderer3D::isShadowPass())
 		return;
-	const auto& mesh = ioMesh.getSubmeshMesh(iSubmesh, blended);
+	const auto& mesh = ioMesh.getSubmeshMesh(iSubmesh, blended, iLod, true);
 	if (!mesh)
 		return;
 	auto& data = frameData();
+	if (iLod > 0)
+		++data.stats.lodDrawCount;
+	if (!blended) {
+		data.skinned.push_back({.mesh = mesh, .model = iModel, .params = iParams, .firstMatrix = iFirstMatrix});
+		return;
+	}
+	data.transparent.push_back(QueuedMesh{.mesh = mesh,
+										  .model = iModel,
+										  .texture = {},
+										  .params = iParams,
+										  .distanceSq = distanceSqTo(ioMesh, iModel),
+										  .firstMatrix = static_cast<int32_t>(iFirstMatrix)});
+}
+
+void RendererMesh::drawSubmesh(MeshResource& ioMesh, const size_t iSubmesh, const size_t iLod, const math::mat4& iModel,
+							   const MeshDrawParams& iParams) {
+	const bool blended = iParams.material != nullptr && iParams.material->isBlended();
+	if (blended && Renderer3D::isShadowPass())
+		return;
+	const auto& mesh = ioMesh.getSubmeshMesh(iSubmesh, blended, iLod, false);
+	if (!mesh)
+		return;
+	auto& data = frameData();
+	if (iLod > 0 && !Renderer3D::isShadowPass())
+		++data.stats.lodDrawCount;
 	if (!blended) {
 		queueOpaque(mesh, ioMesh, iModel, nullptr, iParams);
 		if (!Renderer3D::isShadowPass())
 			++data.stats.opaqueDrawCount;
 		return;
 	}
-	const auto& geometry = ioMesh.getGeometry();
-	const math::vec3 centre = (geometry.boundsMin + geometry.boundsMax) * 0.5f;
-	const math::vec4 world = iModel * math::vec4{centre.x(), centre.y(), centre.z(), 1.f};
-	const math::vec3 delta = math::vec3{world.x(), world.y(), world.z()} - data.cameraPosition;
-	data.transparent.push_back(
-			QueuedMesh{.mesh = mesh, .model = iModel, .texture = {}, .params = iParams, .distanceSq = delta.normSq()});
+	data.transparent.push_back(QueuedMesh{.mesh = mesh,
+										  .model = iModel,
+										  .texture = {},
+										  .params = iParams,
+										  .distanceSq = distanceSqTo(ioMesh, iModel),
+										  .firstMatrix = -1});
 }
 
 void RendererMesh::buildOcclusion(const shared<gpu::Texture2D>& iDepth, const math::vec2ui& iSize,

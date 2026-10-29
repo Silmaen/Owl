@@ -17,6 +17,7 @@
 #include "math/vectors.h"
 
 #include <array>
+#include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -174,7 +175,11 @@ struct OWL_API LodSettings {
 	 * @param[in] iOther The other settings.
 	 * @return True when equal.
 	 */
-	auto operator==(const LodSettings& iOther) const -> bool = default;
+	auto operator==(const LodSettings& iOther) const -> bool {
+		return levelCount == iOther.levelCount &&
+			   std::bit_cast<uint32_t>(reduction) == std::bit_cast<uint32_t>(iOther.reduction) &&
+			   std::bit_cast<uint32_t>(screenSize) == std::bit_cast<uint32_t>(iOther.screenSize);
+	}
 };
 
 /**

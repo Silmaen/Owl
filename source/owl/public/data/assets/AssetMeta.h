@@ -12,6 +12,7 @@
 #include "core/expected.h"
 #include "data/assets/AssetReference.h"
 
+#include <bit>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -86,7 +87,11 @@ struct OWL_API MeshImportSettings {
 	 * @param[in] iOther The other settings.
 	 * @return True when equal.
 	 */
-	auto operator==(const MeshImportSettings& iOther) const -> bool = default;
+	auto operator==(const MeshImportSettings& iOther) const -> bool {
+		return lods == iOther.lods &&
+			   std::bit_cast<uint32_t>(lodReduction) == std::bit_cast<uint32_t>(iOther.lodReduction) &&
+			   std::bit_cast<uint32_t>(lodScreenSize) == std::bit_cast<uint32_t>(iOther.lodScreenSize);
+	}
 };
 
 /**
