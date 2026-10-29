@@ -739,6 +739,55 @@ auto Framebuffer::getAttachmentTexture(const uint32_t iIndex) -> shared<renderer
 	return texture;
 }
 
+auto Framebuffer::copyAttachmentToCube(const uint32_t iIndex, renderer::gpu::TextureCube& ioTarget,
+									   const uint32_t iFace, const uint32_t iLevel) -> bool {
+	if (isMainTarget() || !renderer::gpu::Framebuffer::copyAttachmentToCube(iIndex, ioTarget, iFace, iLevel))
+		return false;
+	auto& vkd = internal::Descriptors::get();
+	const auto cubeId = static_cast<uint32_t>(ioTarget.getRendererId());
+	if (!vkd.isTextureRegistered(cubeId)) {
+		OWL_CORE_WARN("Vulkan Framebuffer ({}): The cube has no image.", m_specs.debugName)
+		return false;
+	}
+	auto& source = m_images[attToImgIdx(iIndex)];
+	auto& cube = vkd.getTextureData(cubeId);
+	internal::VulkanHandler::get().recordTransfer([&source, &cube, iFace, iLevel,
+												   size = m_specs.size](VkCommandBuffer iCmd) -> void {
+		constexpr VkPipelineStageFlags stages =
+				VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		constexpr VkAccessFlags access = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
+		internal::imageBarrier(iCmd, source.image, VK_IMAGE_ASPECT_COLOR_BIT, source.layout,
+							   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stages, access, VK_PIPELINE_STAGE_TRANSFER_BIT,
+							   VK_ACCESS_TRANSFER_READ_BIT);
+		internal::imageBarrier(iCmd, cube.textureImage, VK_IMAGE_ASPECT_COLOR_BIT,
+							   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+							   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT,
+							   VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, cube.mipLevels,
+							   renderer::gpu::TextureCube::g_faceCount);
+		const VkImageCopy region{.srcSubresource = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+													.mipLevel = 0,
+													.baseArrayLayer = 0,
+													.layerCount = 1},
+								 .srcOffset = {0, 0, 0},
+								 .dstSubresource = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+													.mipLevel = iLevel,
+													.baseArrayLayer = iFace,
+													.layerCount = 1},
+								 .dstOffset = {0, 0, 0},
+								 .extent = {.width = size.x(), .height = size.y(), .depth = 1}};
+		vkCmdCopyImage(iCmd, source.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, cube.textureImage,
+					   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+		internal::imageBarrier(iCmd, source.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+							   source.layout, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT, stages,
+							   access);
+		internal::imageBarrier(iCmd, cube.textureImage, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+							   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT,
+							   VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+							   VK_ACCESS_SHADER_READ_BIT, cube.mipLevels, renderer::gpu::TextureCube::g_faceCount);
+	});
+	return true;
+}
+
 void Framebuffer::copyAttachment(const uint32_t iIndex, renderer::gpu::Framebuffer& ioTarget) {
 	auto* const target = dynamic_cast<Framebuffer*>(&ioTarget);
 	if (target == nullptr || target->isMainTarget() || isMainTarget() || target->m_specs.size != m_specs.size ||

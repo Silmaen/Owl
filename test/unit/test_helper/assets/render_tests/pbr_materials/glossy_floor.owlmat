@@ -1,0 +1,5 @@
+Material:
+  FormatVersion: 1
+  baseColor: [0.55, 0.55, 0.55, 1]
+  metallic: 0
+  roughness: 0.25

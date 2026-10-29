@@ -1,0 +1,7 @@
+Material:
+  FormatVersion: 1
+  metallic: 0
+  roughness: 0.1
+  baseColor: [0.05, 0.06, 0.08, 1]
+  emissive: [0.62, 0.74, 1]
+  emissiveLuminance: 210

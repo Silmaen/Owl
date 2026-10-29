@@ -21,6 +21,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <vector>
 
 namespace owl::renderer {
 
@@ -54,14 +55,32 @@ struct Mesh3DVertex {
  *  A light as the 3D shaders read it (one element of the light storage buffer, std430).
  */
 struct GpuLight {
-	/// xyz: world position (point, spot); w: range.
+	/// xyz: world position (point, spot, centre of an area light); w: range.
 	math::vec4 positionRange{0.f, 0.f, 0.f, 10.f};
-	/// xyz: direction the light travels, normalized (directional, spot); w: type (0 directional, 1 point, 2 spot).
+	/**
+	 * @brief
+	 *  xyz: direction the light travels, normalized (directional, spot, rectangle, disc); w: type (0 directional,
+	 *  1 point, 2 spot, 3 rectangle, 4 disc, 5 sphere).
+	 */
 	math::vec4 directionType{0.f, -1.f, 0.f, 0.f};
-	/// rgb: linear colour times intensity; w unused.
+	/**
+	 * @brief
+	 *  rgb: linear colour times the strength: illuminance (directional), luminous intensity (point, spot, sphere) or
+	 *  luminance (rectangle, disc); w unused.
+	 */
 	math::vec4 color{1.f, 1.f, 1.f, 0.f};
-	/// x: cosine of the inner angle, y: cosine of the outer angle (spot); zw unused.
-	math::vec4 spotCosines{1.f, 0.f, 0.f, 0.f};
+	/**
+	 * @brief
+	 *  x: cosine of the inner angle, y: cosine of the outer angle (spot); z: local shadow entry (-1 none, set by the
+	 *  renderer from `setLocalShadows`); w: angular radius of a directional light, in radians.
+	 */
+	math::vec4 spotCosines{1.f, 0.f, -1.f, 0.f};
+	/**
+	 * @brief
+	 *  xyz: half width axis of a rectangle, first half axis of a disc, in world units; w: half height of a rectangle,
+	 *  radius of a disc or a sphere (the second half axis is perpendicular to the first and to the direction).
+	 */
+	math::vec4 area{0.f, 0.f, 0.f, 0.f};
 };
 
 /**
@@ -81,6 +100,10 @@ struct ShadowSettings {
 	math::vec4 splitDepths{0.f, 0.f, 0.f, 0.f};
 	/// World size of a shadow-map texel, per cascade.
 	math::vec4 texelWorldSizes{0.f, 0.f, 0.f, 0.f};
+	/// Depth each cascade's light camera covers, in world units (`ShadowCascade::depthRange`).
+	math::vec4 depthRanges{0.f, 0.f, 0.f, 0.f};
+	/// Tangent of the angular radius of the light: 0 for hard shadows, soft ones (PCSS) above.
+	float tanAngularRadius = 0.f;
 	/// Third row of the view matrix of the camera: view depth = -(row . position).
 	math::vec4 viewDepthRow{0.f, 0.f, 0.f, 0.f};
 	/// Shadow map of each cascade (`RedFloat`, normalized device depth).
@@ -93,6 +116,82 @@ struct ShadowSettings {
 	float bias = 1.5f;
 	/// Size of a cascade's shadow map, in texels.
 	uint32_t resolution = 1024;
+};
+
+/**
+ * @brief
+ *  The shadow of a spot light: a perspective map from the light covering its outer cone.
+ */
+struct SpotShadow {
+	/// Index in the lights of the spot light casting the shadow.
+	uint32_t lightIndex = 0;
+	/// Camera-relative view-projection of the light camera (`cameraRelativeView`).
+	math::mat4 relativeViewProjection = math::identity<float, 4>();
+	/// World position of the light camera, the origin of its relative view-projection.
+	math::vec3 origin{0.f, 0.f, 0.f};
+	/// Tangent of the half angle of the light camera (the world size of a texel grows with it).
+	float tanHalfAngle = 1.f;
+	/// Shadow map (`RedFloat`, normalized device depth).
+	shared<gpu::Texture2D> map;
+	/// Size of the map, in texels.
+	uint32_t resolution = 1024;
+	/// Normal-offset bias, in texels.
+	float bias = 1.5f;
+};
+
+/**
+ * @brief
+ *  The shadow of a point light: a cube of six 90 degree faces around the light (`computePointShadowFaces`).
+ */
+struct PointShadow {
+	/// Index in the lights of the point light casting the shadow.
+	uint32_t lightIndex = 0;
+	/// Depth of a face for a point at `d` along its axis: `depth.x() + depth.y() / d`.
+	math::vec2 depth{0.f, 0.f};
+	/// Shadow cube (`R32F`, normalized device depth of each face).
+	shared<gpu::TextureCube> cube;
+	/// Size of a face, in texels.
+	uint32_t resolution = 512;
+	/// Normal-offset bias, in texels.
+	float bias = 1.5f;
+	/// Radius of the emitting surface of an area light, in world units: its shadow softens with it (0 hard).
+	float lightSize = 0.f;
+};
+
+/**
+ * @brief
+ *  The shadows of the point and spot lights the 3D shaders sample, within the budget of the backend
+ *  (`getLocalShadowBudget`): the entries past it are ignored.
+ */
+struct LocalShadowSettings {
+	/// Shadows of spot lights.
+	std::vector<SpotShadow> spots;
+	/// Shadows of point lights.
+	std::vector<PointShadow> points;
+};
+
+/**
+ * @brief
+ *  A local reflection probe the 3D shaders sample: a cube of the scene prefiltered by roughness (level i for roughness
+ *  i / (levelCount - 1)) and its volume of influence, axis-aligned in world space.
+ */
+struct ReflectionProbeData {
+	/// World position of the capture, centre of the volume.
+	math::vec3 position{0.f, 0.f, 0.f};
+	/// Half size of a box volume along each world axis.
+	math::vec3 extents{1.f, 1.f, 1.f};
+	/// Radius of a sphere volume, 0 for a box.
+	float sphereRadius = 0.f;
+	/// Distance over which the probe fades in from the border of its volume.
+	float blendDistance = 0.f;
+	/// Whether the reflected direction is projected on the volume instead of seen from infinitely far.
+	bool parallax = true;
+	/// Scale of the captured radiance.
+	float intensity = 1.f;
+	/// Exposure the cube was captured with (`Renderer3D::getExposure` then), to follow a later exposure.
+	float captureExposure = 1.f;
+	/// The prefiltered cube, `Rgba16F`.
+	shared<gpu::TextureCube> cube;
 };
 
 /**
@@ -296,6 +395,29 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the shadows of the point and spot lights the meshes sample (empty for none).
+	 * @param[in] iShadows The shadows, the lights they belong to given by `setSceneLights`.
+	 */
+	static void setLocalShadows(const LocalShadowSettings& iShadows);
+
+	/**
+	 * @brief
+	 *  Set the reflection probes the meshes sample (empty for none): at most the point shadow budget of the backend
+	 *  (`getLocalShadowBudget`), each one taking the cube slot after the point shadows.
+	 * @param[in] iProbes The probes, the most important first.
+	 */
+	static void setReflectionProbes(std::span<const ReflectionProbeData> iProbes);
+
+	/**
+	 * @brief
+	 *  Get the local shadow a light samples, after `setLocalShadows`.
+	 * @param[in] iLightIndex Index of the light.
+	 * @return The entry of its shadow in the shader table, -1 without shadow.
+	 */
+	[[nodiscard]] static auto getLocalShadowEntry(uint32_t iLightIndex) -> int32_t;
+
+	/**
+	 * @brief
 	 *  Draw the next meshes into a shadow map: the shaders write the depth, the transparent meshes are skipped.
 	 * @param[in] iShadowPass True while a shadow cascade renders.
 	 */
@@ -333,8 +455,12 @@ public:
 	static constexpr uint32_t g_maxLights = 64;
 	/// EV100 used without a camera (previews): a sunny day.
 	static constexpr float g_defaultEv100 = 15.f;
-	/// First texture slot of the shadow maps (one per cascade, up to the last slot).
-	static constexpr uint32_t g_shadowMapSlot = 28;
+	/// First texture slot of the shadow maps (one per cascade).
+	static constexpr uint32_t g_shadowMapSlot = 16;
+	/// First texture slot of the spot shadow maps (as many as the spot budget of the backend).
+	static constexpr uint32_t g_spotShadowSlot = 20;
+	/// Size of the table of reflection probes the 3D shaders read: the largest point shadow budget.
+	static constexpr uint32_t g_maxReflectionProbes = 16;
 
 	/**
 	 * @brief

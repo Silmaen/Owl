@@ -80,6 +80,7 @@ void RenderAPI::init() {
 	// Every draw applies its own PipelineState (depth, culling, blending); only the line style is global.
 	glEnable(GL_LINE_SMOOTH);
 	glLineWidth(2.0f);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	// renderer is now ready
 	setState(State::Ready);
@@ -167,6 +168,16 @@ void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture
 	BindingTable::bindTextures(names);
 }
 
+void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture2D>> iTextures,
+							 const std::span<const shared<renderer::gpu::TextureCube>> iCubes) {
+	thread_local std::vector<uint32_t> names;
+	names.clear();
+	for (const auto& texture: iTextures)
+		names.push_back(texture ? static_cast<uint32_t>(texture->getRendererId()) : 0u);
+	for (const auto& cube: iCubes) names.push_back(cube ? static_cast<uint32_t>(cube->getRendererId()) : 0u);
+	BindingTable::bindTextures(names);
+}
+
 auto RenderAPI::supportsFormat(const ImageFormat iFormat) const -> bool {
 	switch (iFormat) {
 		case ImageFormat::Bc7:
@@ -178,6 +189,8 @@ auto RenderAPI::supportsFormat(const ImageFormat iFormat) const -> bool {
 		case ImageFormat::Rgb8:
 		case ImageFormat::Rgba8:
 		case ImageFormat::Rgba32F:
+		case ImageFormat::R32F:
+		case ImageFormat::Rgba16F:
 			return true;
 	}
 	return false;

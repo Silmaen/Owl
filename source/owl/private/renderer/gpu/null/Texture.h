@@ -99,4 +99,77 @@ private:
 	/// OpenGL binding.
 	uint64_t m_rendererId = 0;
 };
+
+/**
+ * @brief
+ *  Cube texture of the null backend: keeps its specification, holds no pixel.
+ */
+class OWL_API TextureCube final : public renderer::gpu::TextureCube {
+public:
+	TextureCube(const TextureCube&) = default;
+
+	TextureCube(TextureCube&&) = default;
+
+	auto operator=(const TextureCube&) -> TextureCube& = default;
+
+	auto operator=(TextureCube&&) -> TextureCube& = default;
+
+	/**
+	 * @brief
+	 *  Constructor by specifications.
+	 * @param[in] iSpecs The cube's specification.
+	 */
+	explicit TextureCube(const Specification& iSpecs);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~TextureCube() override;
+
+	/**
+	 * @brief
+	 *  Comparison operator.
+	 * @param[in] iOther Other texture to compare.
+	 * @return True if same object.
+	 */
+	auto operator==(const Texture& iOther) const -> bool override { return this == &iOther; }
+
+	/**
+	 * @brief
+	 *  Get renderer id.
+	 * @return 0, nothing is allocated.
+	 */
+	[[nodiscard]] auto getRendererId() const -> uint64_t override { return 0; }
+
+	/**
+	 * @brief
+	 *  Identity of the GPU texture in its backend.
+	 * @return 0, nothing is allocated.
+	 */
+	[[nodiscard]] auto getBackendId() const -> uint64_t override { return 0; }
+
+	/**
+	 * @brief
+	 *  Activate the texture in the GPU (no-op).
+	 * @param[in] iSlot Slot into put the texture.
+	 */
+	void bind(uint32_t iSlot) const override;
+
+	/**
+	 * @brief
+	 *  Check the size of the six faces of level 0.
+	 * @param[in] iData The pixels.
+	 * @param[in] iSize Size of the data in bytes.
+	 */
+	void setData(void* iData, uint32_t iSize) override;
+
+	/**
+	 * @brief
+	 *  Keep the level count of the given levels.
+	 * @param[in] iLevels The levels, six faces each.
+	 * @return True when the levels fit the cube.
+	 */
+	auto setLevels(const TextureLevels& iLevels) -> bool override;
+};
 }// namespace owl::renderer::gpu::null

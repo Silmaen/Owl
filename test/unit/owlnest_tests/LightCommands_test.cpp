@@ -16,6 +16,7 @@
 #include <scene/component/Hierarchy.h>
 #include <scene/component/Light.h>
 #include <scene/component/Light2D.h>
+#include <scene/component/ReflectionProbe.h>
 #include <scene/component/Tag.h>
 #include <scene/component/Transform.h>
 
@@ -23,6 +24,7 @@
 
 #include <string>
 #include <utility>
+#include <variant>
 
 using namespace owl;
 using namespace owl::nest;
@@ -57,7 +59,9 @@ TEST_F(LightCommandTest, EachTypeCreatesALightEntityAndUndoes) {
 	using Type = scene::component::Light::Type;
 	for (const auto& [kind, wanted]:
 		 {std::pair<std::string, Type>{"Directional", Type::Directional},
-		  std::pair<std::string, Type>{"Point", Type::Point}, std::pair<std::string, Type>{"Spot", Type::Spot}}) {
+		  std::pair<std::string, Type>{"Point", Type::Point}, std::pair<std::string, Type>{"Spot", Type::Spot},
+		  std::pair<std::string, Type>{"Rectangle", Type::Rectangle}, std::pair<std::string, Type>{"Disc", Type::Disc},
+		  std::pair<std::string, Type>{"Sphere", Type::Sphere}}) {
 		const auto result = run("entity.create_light", {{"type", kind}});
 		ASSERT_TRUE(result) << result.error().message;
 		auto entity = m_scene->findEntityByUUID(result->entity);
@@ -83,6 +87,17 @@ TEST_F(LightCommandTest, ADirectionalLightPointsDown) {
 	// -Z of the world transform, the direction the light shines along, goes down.
 	const auto world = m_scene->getWorldTransform(entity)();
 	EXPECT_LT((world * math::vec4{0.f, 0.f, -1.f, 0.f}).y(), -0.5f);
+}
+
+TEST_F(LightCommandTest, RectangleAndDiscLightsFaceDown) {
+	for (const auto* kind: {"Rectangle", "Disc"}) {
+		const auto result = run("entity.create_light", {{"type", std::string{kind}}});
+		ASSERT_TRUE(result) << result.error().message;
+		const auto entity = m_scene->findEntityByUUID(result->entity);
+		ASSERT_TRUE(entity);
+		const auto world = m_scene->getWorldTransform(entity)();
+		EXPECT_LT((world * math::vec4{0.f, 0.f, -1.f, 0.f}).y(), -0.99f) << kind;
+	}
 }
 
 TEST_F(LightCommandTest, NameAndParentAreHonoured) {
@@ -133,4 +148,35 @@ TEST_F(LightCommandTest, AnAmbientLight2DStartsDimAndAnUnknownTypeIsRefused) {
 	ASSERT_TRUE(entity);
 	EXPECT_LT(entity.getComponent<scene::component::Light2D>().intensity, 1.f);
 	EXPECT_FALSE(run("entity.create_light2d", {{"type", std::string{"Directional"}}}));
+}
+
+TEST_F(LightCommandTest, AReflectionProbeIsCreatedAboveTheOriginAndUndoes) {
+	const auto result = run("entity.create_reflection_probe", {});
+	ASSERT_TRUE(result) << result.error().message;
+	auto entity = m_scene->findEntityByUUID(result->entity);
+	ASSERT_TRUE(entity);
+	EXPECT_EQ(entity.getName(), "Reflection Probe");
+	EXPECT_TRUE(entity.hasComponent<scene::component::ReflectionProbe>());
+	EXPECT_EQ(entity.getComponent<scene::component::Transform>().transform.translation(), (math::vec3{0.f, 1.5f, 0.f}));
+	ASSERT_TRUE(run("edit.undo", {}));
+	EXPECT_FALSE(m_scene->findEntityByUUID(result->entity));
+}
+
+TEST_F(LightCommandTest, AReflectionProbeTakesAPositionAndAParent) {
+	const auto parent = m_scene->createEntity("Room");
+	const auto result = run("entity.create_reflection_probe",
+							{{"translation", math::vec3{1.f, 2.f, 3.f}}, {"parent", std::string{"Room"}}});
+	ASSERT_TRUE(result) << result.error().message;
+	const auto entity = m_scene->findEntityByUUID(result->entity);
+	ASSERT_TRUE(entity);
+	EXPECT_EQ(entity.getComponent<scene::component::Hierarchy>().parentId, parent.getUUID());
+}
+
+TEST_F(LightCommandTest, CapturingTheProbesIsNotAnUndoEntry) {
+	ASSERT_TRUE(run("entity.create_reflection_probe", {}));
+	const auto result = run("scene.capture_reflection_probes", {});
+	ASSERT_TRUE(result) << result.error().message;
+	EXPECT_EQ(std::get<std::string>(result->data.at("count")), "1");
+	ASSERT_TRUE(run("edit.undo", {}));
+	EXPECT_TRUE(m_scene->registry.view<scene::component::ReflectionProbe>().empty());
 }

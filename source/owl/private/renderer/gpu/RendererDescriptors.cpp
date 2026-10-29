@@ -61,6 +61,7 @@ auto toVkDescriptorType(const BindingType iType) -> VkDescriptorType {
 		case BindingType::UniformBuffer:
 			return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		case BindingType::CombinedImageSampler:
+		case BindingType::CombinedImageSamplerCube:
 			return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		case BindingType::StorageBuffer:
 			return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -101,7 +102,8 @@ void RendererDescriptors::declare(const std::string& iRenderer, std::span<const 
 		vkBindings.push_back({.binding = bd.binding,
 							  .type = toVkDescriptorType(bd.type),
 							  .count = bd.count,
-							  .stages = toVkShaderStages(bd.stages)});
+							  .stages = toVkShaderStages(bd.stages),
+							  .cube = bd.type == BindingType::CombinedImageSamplerCube});
 	}
 	auto block = mkUniq<vulkan::internal::RendererDescriptors>(iRenderer);
 	block->init(vkBindings);

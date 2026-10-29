@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the procedural meshes of the Engine Demo tavern (``engine_demo/meshes/tavern/*.glb``: room shell, hearth,
 mantel beam, fire grate, firewood, ember bed, flame cards, a candle, the cellar trapdoor, key, chest, barrel,
-ladder and a wall sconce, in metres, UVs in world units so the tiled Poly
+ladder, a wall sconce and a window, in metres, UVs in world units so the tiled Poly
 Haven materials keep their scale) and the fire textures (``engine_demo/textures/fire/``)."""
 
 import json
@@ -566,6 +566,22 @@ def ladder(height: float = 3.9) -> MeshBuilder:
     return m
 
 
+def window_frame(width: float = 1.0, height: float = 0.8, bar: float = 0.06) -> MeshBuilder:
+    """Wooden window frame on a wall (z = 0, +Z out), centred on the origin, with a cross of glazing bars."""
+    m = MeshBuilder()
+    for side in (-1, 1):
+        m.extend(box((side * (width - bar) / 2, 0.0, bar / 2), (bar, height, bar), tile=0.6))
+        m.extend(box((0.0, side * (height - bar) / 2, bar / 2), (width - 2 * bar, bar, bar), tile=0.6))
+    m.extend(box((0.0, 0.0, bar / 2), (0.03, height - 2 * bar, 0.03), tile=0.6))
+    m.extend(box((0.0, 0.0, bar / 2), (width - 2 * bar, 0.03, 0.03), tile=0.6))
+    return m
+
+
+def window_pane(width: float = 0.88, height: float = 0.68) -> MeshBuilder:
+    """Glowing pane set into the window frame, its face at z = 0.01."""
+    return box((0.0, 0.0, 0.005), (width, height, 0.01))
+
+
 def main() -> None:
     """Write every procedural mesh and texture of the Engine Demo tavern."""
     OUT.mkdir(parents=True, exist_ok=True)
@@ -590,6 +606,8 @@ def main() -> None:
     write_glb(OUT / "barrel.glb", barrel(31), "Barrel")
     write_glb(OUT / "ladder.glb", ladder(), "Ladder")
     write_glb(OUT / "wall_sconce.glb", wall_sconce(), "WallSconce", color=(0.1, 0.1, 0.1, 1.0))
+    write_glb(OUT / "window_frame.glb", window_frame(), "WindowFrame")
+    write_glb(OUT / "window_pane.glb", window_pane(), "WindowPane")
     flame_texture().save(TEXTURES / "flame.png")
     ember_texture().save(TEXTURES / "embers.png")
     print(f"Meshes written to {OUT}, textures to {TEXTURES}")

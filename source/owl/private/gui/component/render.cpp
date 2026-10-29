@@ -42,6 +42,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cctype>
 #include <cfloat>
 #include <cmath>
@@ -728,7 +729,7 @@ void renderProps(WorldPosition& ioComponent) {
 
 namespace {
 
-// "Post process" section of a camera: exposure, bloom, vignette and colour-grading LUT.
+// "Post process" section of a camera: exposure, bloom, vignette, colour-grading LUT and the lens effects.
 void renderPostProcess(renderer::Camera& ioCamera) {
 	if (!ImGui::TreeNodeEx("Post process", ImGuiTreeNodeFlags_SpanAvailWidth))
 		return;
@@ -788,6 +789,38 @@ void renderPostProcess(renderer::Camera& ioCamera) {
 	if (!settings.lut.empty()) {
 		changed |= resetFloat("LUT contribution", settings.lutContribution, defaults.lutContribution, 0.005f, 0.f, 1.f);
 		fieldTooltip("Weight of the look-up table, 0 none to 1 fully graded.");
+	}
+	changed |= resetCheckbox("Chromatic aberration", settings.chromaticAberration, defaults.chromaticAberration);
+	fieldTooltip("The red and blue channels split towards the edges of the image, like a simple lens.");
+	if (settings.chromaticAberration) {
+		changed |= resetFloat("Aberration intensity", settings.chromaticAberrationIntensity,
+							  defaults.chromaticAberrationIntensity, 0.005f, 0.f, 1.f);
+		fieldTooltip("Strength of the split: 1 puts the channels 1 % of the frame width apart at the corners.");
+	}
+	changed |= resetCheckbox("Film grain", settings.filmGrain, defaults.filmGrain);
+	fieldTooltip("A grain over the image, a new one each frame, strongest in the mid-tones.");
+	if (settings.filmGrain) {
+		changed |= resetFloat("Grain intensity", settings.filmGrainIntensity, defaults.filmGrainIntensity, 0.005f, 0.f,
+							  1.f);
+		fieldTooltip("Strength of the grain.");
+		changed |= resetFloat("Grain size", settings.filmGrainSize, defaults.filmGrainSize, 0.01f, 1.f, 4.f, "%.2f px");
+		fieldTooltip("Size of a grain, in pixels.");
+	}
+	changed |= resetCheckbox("Depth of field", settings.depthOfField, defaults.depthOfField);
+	fieldTooltip("What is away from the focus distance blurs, the 3D layers by their depth.");
+	if (settings.depthOfField) {
+		changed |= resetFloat("Focus distance", settings.focusDistance, defaults.focusDistance, 0.05f, 0.f, 10000.f);
+		fieldTooltip("Distance from the camera that stays sharp, in world units.");
+		changed |= resetFloat("Focus range", settings.focusRange, defaults.focusRange, 0.05f, 0.001f, 10000.f);
+		fieldTooltip("Distance from the focus over which the blur grows to its largest, in world units.");
+		changed |= resetFloat("Bokeh radius", settings.bokehRadius, defaults.bokehRadius, 0.05f, 0.f, 32.f, "%.1f px");
+		fieldTooltip("Largest blur radius, in pixels of a frame 1080 pixels high.");
+	}
+	changed |= resetCheckbox("Motion blur", settings.motionBlur, defaults.motionBlur);
+	fieldTooltip("The image blurs along the motion of the camera, in Play only.");
+	if (settings.motionBlur) {
+		changed |= resetFloat("Shutter", settings.motionBlurIntensity, defaults.motionBlurIntensity, 0.005f, 0.f, 1.f);
+		fieldTooltip("Fraction of the frame the shutter stays open: 1 blurs over the whole motion of a frame.");
 	}
 	ImGui::TreePop();
 	if (changed)
@@ -1238,8 +1271,9 @@ void renderProps(Light& ioComponent) {
 	fieldTooltip("A light switched off keeps its settings and stops shining.");
 	const auto previousType = ioComponent.type;
 	resettable("Type", ioComponent.type, defaults.type, drawEnum<Light::Type>);
-	fieldTooltip("Directional: parallel rays like the sun, the only kind casting shadows. Point: radiates from its "
-				 "position. Spot: a point light restricted to a cone. It shines along -Z of the entity.");
+	fieldTooltip("Directional: parallel rays like the sun. Point: radiates from its position. Spot: a point light "
+				 "restricted to a cone. Rectangle and Disc: a panel emitting from its -Z face, soft highlights and "
+				 "shadows. Sphere: a bulb of a given radius. It shines along -Z of the entity.");
 	const bool directional = ioComponent.type == Light::Type::Directional;
 	const float defaultIntensity = directional ? g_defaultSunIlluminance : g_defaultBulbPower;
 	// Switching between lux and lumens keeps a default value a default value of the new unit.
@@ -1263,6 +1297,22 @@ void renderProps(Light& ioComponent) {
 		resetFloat("Range", ioComponent.range, defaults.range, 0.1f, 0.01f, 100000.0f);
 		fieldTooltip("Distance where the light is cut off smoothly, in world units (metres).");
 	}
+	if (ioComponent.type == Light::Type::Rectangle) {
+		resettable("Size", ioComponent.size, defaults.size, [](const char* iId, math::vec2& ioField) -> bool {
+			if (!prop::DragFloat2(iId, &ioField.x(), 0.01f, g_minAreaSize, 1000.f))
+				return false;
+			ioField = {std::max(ioField.x(), g_minAreaSize), std::max(ioField.y(), g_minAreaSize)};
+			return true;
+		});
+		fieldTooltip(
+				"Width (along X) and height (along Y) of the emitting rectangle, in world units: the power spreads "
+				"over it, a larger panel gives softer highlights and shadows.");
+	}
+	if (ioComponent.type == Light::Type::Disc || ioComponent.type == Light::Type::Sphere) {
+		resetFloat("Radius", ioComponent.radius, defaults.radius, 0.005f, g_minAreaSize, 1000.f);
+		fieldTooltip("Radius of the emitting disc or sphere, in world units: larger gives softer highlights and "
+					 "shadows.");
+	}
 	if (ioComponent.type == Light::Type::Spot) {
 		constexpr float maxAngle = 89.f;
 		if (resetDegrees("Inner Angle", ioComponent.innerAngle, defaults.innerAngle, 0.f, maxAngle))
@@ -1272,23 +1322,39 @@ void renderProps(Light& ioComponent) {
 			ioComponent.innerAngle = std::min(ioComponent.innerAngle, ioComponent.outerAngle);
 		fieldTooltip("Half angle of the cone where the light reaches zero, in degrees.");
 	}
-	if (!directional)
-		return;
+	if (directional) {
+		resettable("Angular Radius", ioComponent.angularRadius, defaults.angularRadius,
+				   [](const char* iId, float& ioField) -> bool {
+					   const float maxDegrees = math::degrees(g_maxAngularRadius);
+					   float degrees = math::degrees(ioField);
+					   if (!prop::DragFloat(iId, &degrees, 0.01f, 0.f, maxDegrees, "%.2f deg"))
+						   return false;
+					   ioField = math::radians(std::clamp(degrees, 0.f, maxDegrees));
+					   return true;
+				   });
+		fieldTooltip("Apparent radius of the light, in degrees: the sun about 0.27. Softens the shadows with the "
+					 "distance to their caster and widens the highlight; 0 for hard shadows.");
+	}
 	resetCheckbox("Cast Shadows", ioComponent.castShadows, defaults.castShadows);
-	fieldTooltip("The first shadow-casting directional light of the scene shadows the 3D layers.");
+	fieldTooltip(directional ? "The first shadow-casting directional light of the scene shadows the 3D layers."
+							 : "Point, spot and area lights nearest to the camera cast shadows, within a budget per "
+							   "frame (4 spots and 4 cubes on OpenGL, 16 of each on Vulkan); the others light without "
+							   "shadow. An area light casts through a cube, softened by its size.");
 	if (!ioComponent.castShadows)
 		return;
-	resetFloat("Shadow Distance", ioComponent.shadowDistance, defaults.shadowDistance, 0.5f, 1.0f, 100000.0f);
-	fieldTooltip("Distance from the camera the shadows cover, in world units.");
-	resettable("Cascades", ioComponent.cascadeCount, defaults.cascadeCount,
-			   [](const char* iId, uint32_t& ioField) -> bool {
-				   int cascades = static_cast<int>(ioField);
-				   if (!prop::DragInt(iId, &cascades, 0.1f, 1, 4))
-					   return false;
-				   ioField = static_cast<uint32_t>(std::clamp(cascades, 1, 4));
-				   return true;
-			   });
-	fieldTooltip("Number of shadow cascades, from 1 to 4: more give sharper shadows near the camera.");
+	if (directional) {
+		resetFloat("Shadow Distance", ioComponent.shadowDistance, defaults.shadowDistance, 0.5f, 1.0f, 100000.0f);
+		fieldTooltip("Distance from the camera the shadows cover, in world units.");
+		resettable("Cascades", ioComponent.cascadeCount, defaults.cascadeCount,
+				   [](const char* iId, uint32_t& ioField) -> bool {
+					   int cascades = static_cast<int>(ioField);
+					   if (!prop::DragInt(iId, &cascades, 0.1f, 1, 4))
+						   return false;
+					   ioField = static_cast<uint32_t>(std::clamp(cascades, 1, 4));
+					   return true;
+				   });
+		fieldTooltip("Number of shadow cascades, from 1 to 4: more give sharper shadows near the camera.");
+	}
 	resettable("Resolution", ioComponent.shadowResolution, defaults.shadowResolution,
 			   [](const char* iId, uint32_t& ioField) -> bool {
 				   bool changed = false;
@@ -1306,7 +1372,9 @@ void renderProps(Light& ioComponent) {
 				   }
 				   return changed;
 			   });
-	fieldTooltip("Size of each cascade's shadow map, in texels.");
+	fieldTooltip(directional ? "Size of each cascade's shadow map, in texels."
+							 : "Size of the shadow map (spot) or of each face of the shadow cube (point and area "
+							   "lights), in texels.");
 	resetFloat("Bias", ioComponent.shadowBias, defaults.shadowBias, 0.05f, 0.0f, 20.0f);
 	fieldTooltip("Depth bias against self-shadowing, in shadow-map texels along the surface normal.");
 }
@@ -2934,6 +3002,53 @@ void renderProps(ProceduralSky& ioComponent) {
 	if (prop::DragInt("Resolution", &resolution, 4.f, 64, 1024))
 		ioComponent.resolution = static_cast<uint32_t>(std::clamp(resolution, 64, 1024));
 	fieldTooltip("Width of the sky image in pixels, its height half of it. Sharper stars, a longer redraw.");
+}
+
+void renderProps(ReflectionProbe& ioComponent) {
+	const ReflectionProbe defaults;
+	resettable("Shape", ioComponent.shape, defaults.shape, drawEnum<ReflectionProbe::Shape>);
+	fieldTooltip("Volume where the probe replaces the reflections of the environment, centred on the entity and "
+				 "aligned on the world axes.");
+	if (ioComponent.shape == ReflectionProbe::Shape::Box) {
+		resettable("Extents", ioComponent.extents, defaults.extents, [](const char* iId, math::vec3& ioField) -> bool {
+			if (!prop::DragFloat3(iId, &ioField.x(), 0.01f, 0.01f, 10000.f))
+				return false;
+			ioField = {std::max(ioField.x(), 0.01f), std::max(ioField.y(), 0.01f), std::max(ioField.z(), 0.01f)};
+			return true;
+		});
+		fieldTooltip("Half size of the box along X, Y and Z, in world units: fit it to the walls of a room.");
+	} else {
+		resetFloat("Radius", ioComponent.radius, defaults.radius, 0.01f, 0.01f, 10000.f);
+		fieldTooltip("Radius of the sphere of influence, in world units.");
+	}
+	resetFloat("Blend Distance", ioComponent.blendDistance, defaults.blendDistance, 0.01f, 0.f, 1000.f);
+	fieldTooltip("Distance inside the volume over which the probe fades in from its border, blending with its "
+				 "neighbour or the environment.");
+	resetCheckbox("Parallax", ioComponent.parallax, defaults.parallax);
+	fieldTooltip("Project the reflections on the volume, so a room reflects its walls at the right place; off sees "
+				 "them as if infinitely far.");
+	resetFloat("Intensity", ioComponent.intensity, defaults.intensity, 0.01f, 0.f, 100.f);
+	fieldTooltip("Scale of the captured reflections.");
+	resettable("Resolution", ioComponent.resolution, defaults.resolution,
+			   [](const char* iId, uint32_t& ioField) -> bool {
+				   constexpr std::array<const char*, 6> sizes{"16", "32", "64", "128", "256", "512"};
+				   int current = std::clamp(std::countr_zero(ioField) - 4, 0, 5);
+				   if (!prop::Combo(iId, &current, std::span<const char* const>{sizes}))
+					   return false;
+				   ioField = 16u << static_cast<uint32_t>(current);
+				   return true;
+			   });
+	fieldTooltip("Size of each face of the captured cube, in texels: sharper mirror reflections, a longer capture.");
+	resetCheckbox("Realtime", ioComponent.realtime, defaults.realtime);
+	fieldTooltip("Capture the probe again while the scene runs, the realtime probes in turn, one per frame; off "
+				 "captures it once, when it moves or is baked.");
+	prop::row("Capture", [&](const char* /*iId*/) -> bool {
+		if (!ImGui::Button("Bake", {-FLT_MIN, 0.f}))
+			return false;
+		++ioComponent.captureRequest;
+		return true;
+	});
+	fieldTooltip("Capture the probe again, after the geometry or the lighting around it changed.");
 }
 
 void renderProps(FirstPersonController& ioComponent) {

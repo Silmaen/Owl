@@ -36,12 +36,16 @@ struct EncodeUbo {
 	math::vec4 post{1.f, 0.f, 0.f, 0.4f};
 	math::vec4 vignetteColor{0.f, 0.f, 0.f, 1.f};
 	math::vec4 frame{1.f, 1.f, 0.f, 0.f};
+	// x: chromatic aberration (0 off), y: film grain (0 off), z: grain size in pixels, w: grain seed of the frame.
+	math::vec4 effects{0.f, 0.f, 1.f, 0.f};
 };
 
 struct InternalData {
 	shared<gpu::DrawData> drawData;
 	shared<gpu::UniformBuffer> uniformBuffer;
 	EncodeUbo params;
+	// Draws so far, so each frame gets a grain of its own.
+	uint32_t drawCount = 0;
 };
 
 shared<InternalData> g_data;
@@ -113,6 +117,10 @@ void ColorEncoder::draw(const shared<gpu::Texture2D>& iSceneColor, const ToneMap
 	const bool adapted = iPost.exposure != nullptr;
 	params.frame = math::vec4{static_cast<float>(iPost.frameSize.x()), static_cast<float>(iPost.frameSize.y()),
 							  settings.ev100, adapted ? 1.f : 0.f};
+	params.effects =
+			math::vec4{settings.chromaticAberration ? std::clamp(settings.chromaticAberrationIntensity, 0.f, 1.f) : 0.f,
+					   settings.filmGrain ? std::clamp(settings.filmGrainIntensity, 0.f, 1.f) : 0.f,
+					   std::clamp(settings.filmGrainSize, 1.f, 4.f), static_cast<float>(g_data->drawCount++ % 1024u)};
 	g_data->uniformBuffer->setData(&params, sizeof(EncodeUbo), 0);
 	const std::array textures{iSceneColor, bloom ? iPost.bloom : iSceneColor, lut ? iPost.lut : iSceneColor,
 							  adapted ? iPost.exposure : iSceneColor};

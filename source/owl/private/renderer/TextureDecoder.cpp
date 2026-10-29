@@ -190,6 +190,8 @@ auto transcodeKtx2(const std::span<const uint8_t> iBytes, const gpu::ImageFormat
 		case gpu::ImageFormat::R8:
 		case gpu::ImageFormat::Rgb8:
 		case gpu::ImageFormat::Rgba32F:
+		case gpu::ImageFormat::R32F:
+		case gpu::ImageFormat::Rgba16F:
 			OWL_CORE_WARN("TextureDecoder: Cannot transcode KTX2 to {}.", magic_enum::enum_name(iTarget))
 			return std::nullopt;
 	}

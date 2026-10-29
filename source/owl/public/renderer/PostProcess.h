@@ -12,6 +12,7 @@
 #include "RenderGraph.h"
 #include "core/Core.h"
 #include "gpu/Texture.h"
+#include "math/matrices.h"
 #include "math/vectors.h"
 
 #include <cstdint>
@@ -100,6 +101,57 @@ public:
 	[[nodiscard]] static auto recordBloom(RenderGraph& ioGraph, RenderGraph::Resource iSceneColor,
 										  const PostProcessSettings& iSettings, const math::vec2ui& iFrameSize,
 										  RenderGraph::Resource iExposure = {}) -> RenderGraph::Resource;
+
+	/**
+	 * @brief
+	 *  Add the depth of field of a camera to a frame graph: the scene colour blurred by the distance of each pixel to
+	 *  `focusDistance`, up to `bokehRadius` pixels (of a frame 1080 pixels high) at `focusRange` from it.
+	 * @param[in,out] ioGraph The frame graph.
+	 * @param[in] iColor The linear scene colour.
+	 * @param[in] iDepth The reversed-Z depth of the 3D layers seen by the camera (a depth target).
+	 * @param[in] iSettings The post-process settings of the camera.
+	 * @param[in] iProjection The projection of the camera, to turn a depth into a distance.
+	 * @param[in] iFrameSize Size of the frame.
+	 * @return The blurred colour, invalid when the depth of field is off.
+	 */
+	[[nodiscard]] static auto recordDepthOfField(RenderGraph& ioGraph, RenderGraph::Resource iColor,
+												 RenderGraph::Resource iDepth, const PostProcessSettings& iSettings,
+												 const math::mat4& iProjection, const math::vec2ui& iFrameSize)
+			-> RenderGraph::Resource;
+
+	/**
+	 * @brief
+	 *  Add the motion blur of a camera to a frame graph: the scene colour averaged along the motion of each pixel
+	 *  since the previous frame, times `motionBlurIntensity`, at most `g_maxMotionPixels`.
+	 * @param[in,out] ioGraph The frame graph.
+	 * @param[in] iColor The linear scene colour.
+	 * @param[in] iDepth The reversed-Z depth of the 3D layers seen by the camera (a depth target).
+	 * @param[in] iSettings The post-process settings of the camera.
+	 * @param[in] iReprojection Clip space of this frame to the clip space of the previous one (`getReprojection`).
+	 * @param[in] iFrameSize Size of the frame.
+	 * @return The blurred colour, invalid when the motion blur is off.
+	 */
+	[[nodiscard]] static auto recordMotionBlur(RenderGraph& ioGraph, RenderGraph::Resource iColor,
+											   RenderGraph::Resource iDepth, const PostProcessSettings& iSettings,
+											   const math::mat4& iReprojection, const math::vec2ui& iFrameSize)
+			-> RenderGraph::Resource;
+
+	/**
+	 * @brief
+	 *  Get the matrix taking the clip space of a camera to the clip space of its previous frame, both relative to their
+	 *  eye (`cameraRelativeView`), so a far-away scene keeps its precision.
+	 * @param[in] iProjection Projection of this frame.
+	 * @param[in] iView View of this frame.
+	 * @param[in] iPreviousProjection Projection of the previous frame.
+	 * @param[in] iPreviousView View of the previous frame.
+	 * @return The reprojection.
+	 */
+	[[nodiscard]] static auto getReprojection(const math::mat4& iProjection, const math::mat4& iView,
+											  const math::mat4& iPreviousProjection, const math::mat4& iPreviousView)
+			-> math::mat4;
+
+	/// Longest motion blur, in pixels.
+	static constexpr float g_maxMotionPixels = 32.f;
 
 	/**
 	 * @brief

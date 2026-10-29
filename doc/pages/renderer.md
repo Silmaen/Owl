@@ -228,7 +228,7 @@ caller's framebuffer back.
 
 ```mermaid
 flowchart LR
-    C["scene clear"] --> S["shadow cascade passes<br/>(one per cascade, when a light casts)"]
+    C["scene clear"] --> S["shadow cascade, spot shadow and point shadow passes<br/>(one per cascade, spot and point light that casts)"]
     C --> K["environment sky<br/>(Environment with showSky)"]
     S -->|"shadow maps (Depth)"| L["one pass per layer with content<br/>(editor composite + voxel / mesh layers in the editor)"]
     K --> L
@@ -246,12 +246,16 @@ flowchart LR
   and adapts the exposure ([Post-process](#renderer-post-process)).
 - **bloom down / up** (`renderer::PostProcess::recordBloom`) build the bloom image from the scene colour
   ([Post-process](#renderer-post-process)).
+- **post depth**, **depth of field** and **motion blur** (`renderer::PostProcess::recordDepthOfField` /
+  `recordMotionBlur`, `depth_effects/depth_effects.slang`), when the camera asks for them: the depth of the 3D layers, then the
+  blurred scene colour the bloom and the encode read ([Post-process](#renderer-post-process)).
 - **colour encode** (`renderer::ColorEncoder`, `color_encode.slang`) turns the linear scene colour into the display
-  target: exposure, bloom, tone mapping, vignette, sRGB encoding, then the colour-grading LUT.
+  target: chromatic aberration, exposure, bloom, tone mapping, vignette, film grain, sRGB encoding, then the
+  colour-grading LUT.
 - **outline mask**, **outline scene depth** and **outline** (`renderer::OutlinePass`, `outline.slang`), when the scene
   has an outline (`Scene::setOutline`: the Owl Nest selection, what a first-person walker aims at): the meshes of the
-  outlined subtree alone, then the whole 3D scene (the **occluder depth** of the frame when the occlusion culling made
-  one), are drawn into depth targets, and the line is blended over the target
+  outlined subtree alone, then the whole 3D scene (the **post depth** of the frame, else the **occluder depth** when
+  the occlusion culling made one), are drawn into depth targets, and the line is blended over the target
   around the silhouette, in full where it shows, dimmed where other geometry hides it; gaps thinner than the line close.
 - **entity ids and depth** copies the id and depth attachments into the target, so picking and depth-tested editor
   overlays keep working; skipped when the target is the window surface.
@@ -290,7 +294,8 @@ The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` component
   (`Ambient` colour times `AmbientLuminance`), as a constant sky.
 - **Physical units.** `Light.intensity` is an illuminance in lux for a directional light (`g_defaultSunIlluminance`,
   100 000) and a luminous power in lumens for a point or spot light (`g_defaultBulbPower`, 800); the shader turns the
-  power into an intensity in candela, lm / 4π for a point light and lm / π for a spot. Reference values: sun
+  power into an intensity in candela, lm / 4π for a point or sphere light and lm / π for a spot, and into a
+  luminance for a rectangle or disc ([Area lights](#renderer-lights)). Reference values: sun
   100 000 lx, overcast sky 10 000 lx, moon 0.25 lx; candle 12 lm, 60 W bulb 800 lm, fireplace 2 000 lm. The
   `Environment` and the emissive surfaces are luminances in cd/m² (nits), see [Image-based lighting](#renderer-ibl) and
   [Materials](#renderer-materials).
@@ -307,7 +312,50 @@ The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` component
   texel grid (no shimmering) and pulled back so off-screen casters still cast.
 - **Passes.** One `shadow cascade` pass per cascade renders the opaque meshes and voxel worlds (transparent ones cast
   no shadow) into a `Depth` target (`RedFloat`, `shadowResolution` squared). The 3D layer passes read the cascades
-  (texture slots 28 to 31) with 3x3 PCF and a normal-offset bias of `shadowBias` texels.
+  (texture slots 16 to 19) with 3x3 PCF and a normal-offset bias of `shadowBias` texels.
+- **Soft sun shadows.** A light with an `angularRadius` above 0 switches the cascades to PCSS: 16 Poisson taps
+  within the cone of the light from the receiver find the blockers, their mean depth sets the penumbra
+  `2 tan(angularRadius) (receiver - blocker)` converted to texels (`ShadowCascade::depthRange`, at most 16), and 16
+  taps filter it; the disc turns with the shadow-map texel, so the noise stays still in the world. The same radius
+  widens the GGX distribution of that light and renormalises it (Karis), so a rough sun highlight grows without
+  gaining energy. At 0, the 3x3 path and the point-like highlight are unchanged.
+- **Local shadows.** Point, spot and area lights with `castShadows` are ranked by distance from the camera to the sphere
+  they reach, then by strength (`renderer::rankShadowCandidates`); the first ones within `getLocalShadowBudget()` cast
+  (4 spot and 4 point lights on OpenGL, whose fragment shaders sample 32 textures at most; 16 of each on Vulkan), the
+  others light without shadow. A `spot shadow` pass draws the casters into a perspective map covering the outer cone
+  (`computeSpotShadowCamera`, texture slots 20 onward). A `point shadow` pass draws the six 90 degree faces of
+  `computePointShadowFaces` one after the other into one `Depth` target per face size and copies each into the
+  light's `TextureCube` (`R32F`, kept between frames); the face projections keep NDC Y up on both backends so the
+  rows match the cube sampling convention. The shaders rebuild the depth of a face from the axis distance
+  (`depth.x + depth.y / d`), take 3x3 taps around the direction and offset the point along its normal by `shadowBias`
+  texels of the map at its distance (`Renderer3D::setLocalShadows`, `LocalShadow` table of the lighting block, entry
+  in `GpuLight::spotCosines.z`).
+- **Area lights.** A `Rectangle` or `Disc` light is a luminance (`getRectangleLuminance`, `getDiscLuminance`: the
+  power over π times the area) integrated over its face by linearly transformed cosines: the shader turns the GGX lobe
+  into a clamped cosine through the inverse matrix of `getLtcTable()` (texture slot 14, fitted once by
+  `computeLtcTable` and stored in the engine), sums the edge integrals of the polygon (a disc is a 12-sided polygon of
+  the same area) into a vector form factor and clips it by the horizon through `computeClippedSphereTable` (slot 15);
+  the diffuse lobe takes the same path with the identity matrix, the base layer only (no sheen, clearcoat nor
+  anisotropy). Both emit from their -Z face (`GpuLight::area` holds the half axes). A `Sphere` light is a point light
+  whose highlight comes from the point of the sphere nearest to the reflected ray, its distribution widened by its
+  apparent radius (Karis). Area lights cast through a cube like point lights, with PCSS: 16 taps towards the emitting
+  surface find the blockers, the penumbra `lightSize (receiver - blocker) / blocker` (half diagonal or radius, at
+  most 16 texels) sets the width of the 16 filtering taps.
+
+### Reflection probes {#renderer-probes}
+
+A `ReflectionProbe` ([Scene > ReflectionProbe](scene.md#reflectionprobe-component)) gives a place its own reflections.
+`Scene::recordReflectionProbePasses` keeps the probes nearest to the camera within the point shadow budget and adds,
+for each probe to capture, a pass drawing the sky and the 3D layers into the six faces of a cube (the face cameras
+of `computePointShadowFaces`, without the probes), the passes building the mip chain of that capture, then one GGX
+pass per level of the probe (`ReflectionProbes`, shader `probe_filter`): level `i` holds the roughness
+`i / (levelCount - 1)`, down to faces of 8 texels (`getProbeLevelCount`), each sample read from the level of the chain
+that matches its solid angle. The face cameras keep the OpenGL clip space on every backend so the faces follow the
+cube convention; on Vulkan the faces then wind backwards, which the scene block tells the shader (`origin.w = -1`).
+`Renderer3D::setReflectionProbes` binds the cubes after the point shadows; the shader takes the two probes of largest
+influence at the point (1 inside the volume, fading over `blendDistance`), projects the reflected ray on the box or
+sphere with `parallax`, and fills the rest with the environment. The captured radiance is pre-exposed: it is scaled by
+the current exposure over the one of the capture.
 
 ### 2D lighting {#renderer-lighting2d}
 
@@ -641,8 +689,10 @@ Convention:
   models, the cascaded shadows, the image-based lighting). Outputs colour + the entity id of the draw to match the
   scene framebuffer.
 - **Texture slots** of the 3D shaders (`gTextures`, binding 1): 0 white, 1 to 6 the material maps (base colour,
-  metallic, normal, occlusion, emissive, roughness), 7 to 12 the prefiltered environment, 13 the DFG table, 28 to 31
-  the shadow cascades.
+  metallic, normal, occlusion, emissive, roughness), 7 to 12 the prefiltered environment, 13 the DFG table, 16 to 19
+  the shadow cascades, 20 onward the spot shadows (24 slots on OpenGL, 36 on Vulkan). Cubes (`gCubes`, binding 7 on
+  Vulkan, the units after the 2D slots on OpenGL): the point shadows, then as many reflection probes
+  ([Reflection probes](#renderer-probes)).
 - **Per-draw parameters** (`renderer::MeshDrawParams`): the tint and the entity id travel in the scene UBO with the
   model matrix (`vec4 tint`, `ivec4 ids`, 192 bytes in all), so picking needs nothing in the vertices; `voxel.slang`
   shares the block and writes the id of its voxel world. The material of the draw (`MeshDrawParams::material`, null
@@ -878,25 +928,36 @@ equirectangular Radiance `.hdr` image (`EnvironmentMap`, `Equirectangular`).
 `renderer::PostProcessSettings` sits on `renderer::Camera` (`getPostProcess` / `setPostProcess`), saved by the Camera
 component under `camera.postProcess`.
 
-| Field                | Default     | Description                                                                                                |
-|----------------------|-------------|------------------------------------------------------------------------------------------------------------|
-| `ev100`              | `15`        | Exposure value at ISO 100: 15 sunny, 12 overcast, 8 bright interior, 5 dim room, 3 candle light            |
-| `autoExposure`       | `false`     | Follow the average brightness of the frame instead of `ev100`                                              |
-| `autoExposureMin`    | `-2`        | Lowest EV100 the automatic exposure may pick                                                               |
-| `autoExposureMax`    | `16`        | Highest EV100 the automatic exposure may pick                                                              |
-| `autoExposureSpeed`  | `2`         | Adaptation speed, in EV per second                                                                         |
-| `exposure`           | `0`         | Compensation in EV on top of `ev100` or the automatic exposure: the brightness is multiplied by 2^exposure |
-| `bloom`              | `false`     | Glow of the bright parts                                                                                   |
-| `bloomThreshold`     | `1`         | Displayed brightness (after exposure) above which the colour blooms                                        |
-| `bloomKnee`          | `0.5`       | Softness of the threshold, 0 to 1                                                                          |
-| `bloomIntensity`     | `0.1`       | Strength of the bloom added to the scene                                                                   |
-| `bloomScatter`       | `0.7`       | Weight of the upsampled level, 0 tight to 1 wide                                                           |
-| `vignette`           | `false`     | Darkened edges                                                                                             |
-| `vignetteIntensity`  | `0.3`       | Strength of the vignette                                                                                   |
-| `vignetteSmoothness` | `0.4`       | Softness of its edge                                                                                       |
-| `vignetteColor`      | `{0, 0, 0}` | sRGB colour the edges fade to                                                                              |
-| `lut`                | empty       | Asset path of a `.cube` colour-grading LUT                                                                 |
-| `lutContribution`    | `1`         | Weight of the LUT, 0 to 1                                                                                  |
+| Field                          | Default     | Description                                                                                                |
+|--------------------------------|-------------|------------------------------------------------------------------------------------------------------------|
+| `ev100`                        | `15`        | Exposure value at ISO 100: 15 sunny, 12 overcast, 8 bright interior, 5 dim room, 3 candle light            |
+| `autoExposure`                 | `false`     | Follow the average brightness of the frame instead of `ev100`                                              |
+| `autoExposureMin`              | `-2`        | Lowest EV100 the automatic exposure may pick                                                               |
+| `autoExposureMax`              | `16`        | Highest EV100 the automatic exposure may pick                                                              |
+| `autoExposureSpeed`            | `2`         | Adaptation speed, in EV per second                                                                         |
+| `exposure`                     | `0`         | Compensation in EV on top of `ev100` or the automatic exposure: the brightness is multiplied by 2^exposure |
+| `bloom`                        | `false`     | Glow of the bright parts                                                                                   |
+| `bloomThreshold`               | `1`         | Displayed brightness (after exposure) above which the colour blooms                                        |
+| `bloomKnee`                    | `0.5`       | Softness of the threshold, 0 to 1                                                                          |
+| `bloomIntensity`               | `0.1`       | Strength of the bloom added to the scene                                                                   |
+| `bloomScatter`                 | `0.7`       | Weight of the upsampled level, 0 tight to 1 wide                                                           |
+| `vignette`                     | `false`     | Darkened edges                                                                                             |
+| `vignetteIntensity`            | `0.3`       | Strength of the vignette                                                                                   |
+| `vignetteSmoothness`           | `0.4`       | Softness of its edge                                                                                       |
+| `vignetteColor`                | `{0, 0, 0}` | sRGB colour the edges fade to                                                                              |
+| `lut`                          | empty       | Asset path of a `.cube` colour-grading LUT                                                                 |
+| `lutContribution`              | `1`         | Weight of the LUT, 0 to 1                                                                                  |
+| `chromaticAberration`          | `false`     | Red and blue channels split towards the edges, like a simple lens                                          |
+| `chromaticAberrationIntensity` | `0.3`       | Strength of the split: 1 puts the channels 1 % of the frame width apart at the corners                     |
+| `filmGrain`                    | `false`     | A grain over the image, a new one each frame, strongest in the mid-tones                                   |
+| `filmGrainIntensity`           | `0.15`      | Strength of the grain, 0 to 1                                                                              |
+| `filmGrainSize`                | `1.5`       | Size of a grain, in pixels, 1 to 4                                                                         |
+| `depthOfField`                 | `false`     | Blur of what is away from `focusDistance`, by the depth of the 3D layers                                   |
+| `focusDistance`                | `5`         | Distance from the camera that stays sharp, in world units                                                  |
+| `focusRange`                   | `5`         | Distance from the focus over which the blur grows to `bokehRadius`                                         |
+| `bokehRadius`                  | `8`         | Largest blur radius, in pixels of a frame 1080 pixels high (at most 32)                                    |
+| `motionBlur`                   | `false`     | Blur along the motion of the camera since the previous frame, in Play only                                 |
+| `motionBlurIntensity`          | `0.5`       | Fraction of the frame the shutter stays open, 0 to 1                                                       |
 
 - **Exposure.** The exposure is `1 / (1.2 · 2^EV100)` (`exposureOf`, default `g_defaultEv100` = 15), applied to every
   physical light value before shading ([Lights and shadows](#renderer-lights)); `exposure` then adds an EV
@@ -911,9 +972,21 @@ component under `camera.postProcess`.
   each time, then 9-tap tent upsamples that add each level back, ending on the half-size target the encode pass reads.
   `getBloomLevelCount` gives at most `g_maxBloomLevels` (6) levels, stopping when a side would fall under 8 pixels
   (0 for a frame too small, which disables the bloom). The shader is `post_process/bloom.slang`.
-- **Encode order.** `color_encode.slang` applies, on the linear colour: exposure, bloom (times `bloomIntensity`),
-  tone mapping, clamp, vignette (towards the linearised `vignetteColor`), then the sRGB encoding and finally the LUT
-  looked up on the encoded colour and mixed in by `lutContribution`.
+- **Depth of field.** `PostProcess::recordDepthOfField` reads the scene colour and a depth of the 3D layers drawn
+  for it (**post depth**, which the outline then reuses): the blur radius of a pixel grows with its distance to
+  `focusDistance` up to `bokehRadius` at `focusRange`; 32 taps on a disc gather the neighbours whose own radius covers
+  the pixel, those behind it only within its radius, so a sharp object keeps its edges over a blurred background.
+  The 2D layers have no depth and blur as the far plane.
+- **Motion blur.** In Play the scene keeps the projection and view of the previous frame;
+  `PostProcess::getReprojection` takes the clip space of this frame to the previous one, both relative to their eye,
+  and `recordMotionBlur` averages 12 taps along the motion of each pixel times `motionBlurIntensity`, at most
+  `g_maxMotionPixels` (32). Only the camera moves the pixels (no velocity of the objects); a jump of more than 50 m
+  in one frame (a teleport, a floating-origin shift) skips the blur, and the editor views never blur.
+- **Encode order.** `color_encode.slang` reads the scene colour (the red and blue channels moved apart along the
+  radius by `chromaticAberrationIntensity`), then applies exposure, bloom (times `bloomIntensity`), tone mapping,
+  clamp, vignette (towards the linearised `vignetteColor`), film grain (a hash per cell of `filmGrainSize` pixels,
+  new each frame, strongest in the mid-tones), then the sRGB encoding and finally the LUT looked up on the encoded
+  colour and mixed in by `lutContribution`.
 - **LUT.** `ColorLut::parse` reads an Adobe / Resolve `.cube` (`LUT_3D_SIZE`, `DOMAIN_MIN` / `DOMAIN_MAX`);
   `PostProcess::getLut` stores it as a 2D strip texture (`toStrip`) once per asset path.
 - **Lifecycle.** `PostProcess::init` / `shutdown` create and release its draw, uniform block and cached LUTs.
@@ -1085,8 +1158,8 @@ capture, a red diff and the runner log in `<build>/render_tests/`. The scenes li
 
 CTest starts the binary under `xvfb-run` when installed; without a display or lavapipe (`OWL_RENDER_TESTS_VK_ICD`
 overrides `/usr/share/vulkan/icd.d/lvp_icd.json`) the cases are skipped. The label takes about 8 s (25 s with a cold
-shader cache); llvmpipe is capped at SSE4.1 (`GALLIUM_OVERRIDE_CPU_CAPS`) with Mesa's shader cache off, so the
-captures do not depend on AVX.
+shader cache); llvmpipe is capped at SSE4.1 (`GALLIUM_OVERRIDE_CPU_CAPS`), so the captures do not depend on AVX,
+with a Mesa shader cache of its own in `<build>/render_tests/mesa_shader_cache` that only capped runs fill.
 
 ## Renderer2D: The Batch Renderer {#renderer2d}
 

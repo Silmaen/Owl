@@ -76,24 +76,24 @@ auto getVulkanIcd() -> std::filesystem::path {
 	return "/usr/share/vulkan/icd.d/lvp_icd.json";
 }
 
-// Environment selecting the software driver of a backend (lavapipe or llvmpipe). The CPU features are capped at
-// SSE4.1, so the tilemap seams do not drift with the host (AVX or not); Mesa's shader cache ignores that cap, so it
-// is off, or code built for AVX is reloaded and crashes.
-constexpr auto g_softwareCpu = "GALLIUM_OVERRIDE_CPU_CAPS=sse4.1 MESA_SHADER_CACHE_DISABLE=true";
-
-auto getDriverEnvironment(const std::string& iBackend) -> std::string {
-	if (iBackend == "vulkan")
-		return std::format("{} VK_ICD_FILENAMES={}", g_softwareCpu, getVulkanIcd().string());
-	return std::format("{} LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe __GLX_VENDOR_LIBRARY_NAME=mesa",
-					   g_softwareCpu);
-}
-
 auto getOutputDir() -> std::filesystem::path {
 #ifdef OWL_RENDER_TEST_OUTPUT_DIR
 	return OWL_RENDER_TEST_OUTPUT_DIR;
 #else
 	return std::filesystem::temp_directory_path() / "owl_render_tests";
 #endif
+}
+
+// Environment selecting the software driver of a backend (lavapipe or llvmpipe). The CPU features are capped at
+// SSE4.1, so the tilemap seams do not drift with the host (AVX or not); Mesa's shader cache ignores that cap, so the
+// image tests keep a cache of their own that only capped runs fill (the default one hands back AVX code and crashes).
+auto getDriverEnvironment(const std::string& iBackend) -> std::string {
+	const auto softwareCpu = std::format(R"(GALLIUM_OVERRIDE_CPU_CAPS=sse4.1 MESA_SHADER_CACHE_DIR="{}")",
+										 (getOutputDir() / "mesa_shader_cache").string());
+	if (iBackend == "vulkan")
+		return std::format("{} VK_ICD_FILENAMES={}", softwareCpu, getVulkanIcd().string());
+	return std::format("{} LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe __GLX_VENDOR_LIBRARY_NAME=mesa",
+					   softwareCpu);
 }
 
 class RenderImage : public testing::TestWithParam<RenderCase> {};
@@ -390,6 +390,31 @@ class RenderPick : public testing::TestWithParam<PickCase> {};
 // light and a blue spot light.
 INSTANTIATE_TEST_SUITE_P(Lights, RenderImage,
 						 testing::Values(RenderCase{"lights", "vulkan"}, RenderCase{"lights", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
+// Area lights of the mesh layer on a glossy floor: a warm rectangle and a cool disc, both casting soft cube shadows,
+// and a small green sphere light without shadow.
+INSTANTIATE_TEST_SUITE_P(AreaLights, RenderImage,
+						 testing::Values(RenderCase{"area_lights", "vulkan"}, RenderCase{"area_lights", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
+// A box reflection probe over a glossy floor: a chrome sphere mirrors the floor, the crate and the spheres around it
+// with parallax, the gold and plastic spheres and the floor take the probe in their specular.
+INSTANTIATE_TEST_SUITE_P(ReflectionProbes, RenderImage,
+						 testing::Values(RenderCase{"reflection_probes", "vulkan"},
+										 RenderCase{"reflection_probes", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
+// The probe scene through a lens: depth of field focused on the chrome sphere, chromatic aberration towards the edges
+// and a film grain.
+INSTANTIATE_TEST_SUITE_P(LensEffects, RenderImage,
+						 testing::Values(RenderCase{"lens_effects", "vulkan"}, RenderCase{"lens_effects", "opengl"}),
 						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });

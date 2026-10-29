@@ -137,6 +137,10 @@ auto Texture::Specification::getPixelSize() const -> uint8_t {
 			return 1;
 		case ImageFormat::Rgba32F:
 			return 16;
+		case ImageFormat::R32F:
+			return 4;
+		case ImageFormat::Rgba16F:
+			return 8;
 		case ImageFormat::Bc7:
 		case ImageFormat::Astc4x4:
 			return 1;
@@ -522,5 +526,59 @@ auto Texture2D::uploadLevels(TextureLevels iLevels) -> bool {
 }
 
 Texture::~Texture() = default;
+
+TextureCube::TextureCube(const Specification& iSpecs) : Texture{iSpecs} {}
+
+TextureCube::~TextureCube() = default;
+
+auto TextureCube::isValidSpecification(const Specification& iSpecs) -> bool {
+	if (iSpecs.size.x() == 0 || iSpecs.size.x() != iSpecs.size.y())
+		return false;
+	switch (iSpecs.format) {
+		case ImageFormat::R32F:
+		case ImageFormat::Rgba16F:
+		case ImageFormat::Rgba32F:
+		case ImageFormat::Rgba8:
+			return true;
+		case ImageFormat::None:
+		case ImageFormat::R8:
+		case ImageFormat::Rgb8:
+		case ImageFormat::Bc7:
+		case ImageFormat::Astc4x4:
+			return false;
+	}
+	return false;
+}
+
+auto TextureCube::getLevelCount() const -> uint32_t { return std::max(1u, m_specification.levelCount); }
+
+auto TextureCube::getFaceSize(const uint32_t iLevel) const -> uint32_t {
+	return std::max(1u, m_specification.size.x() >> iLevel);
+}
+
+auto TextureCube::create(const Specification& iSpecs) -> shared<TextureCube> {
+	if (!isValidSpecification(iSpecs)) {
+		OWL_CORE_WARN("TextureCube: Cannot create a cube of {}x{} in {}.", iSpecs.size.x(), iSpecs.size.y(),
+					  magic_enum::enum_name(iSpecs.format))
+		return nullptr;
+	}
+	const auto api = RenderCommand::getApi();
+	switch (api) {
+		case RenderAPI::Type::Null:
+			return mkShared<null::TextureCube>(iSpecs);
+#if OWL_WITH_RENDER
+		case RenderAPI::Type::OpenGL:
+			return mkShared<opengl::TextureCube>(iSpecs);
+		case RenderAPI::Type::Vulkan:
+			return mkShared<vulkan::TextureCube>(iSpecs);
+#else
+		case RenderAPI::Type::OpenGL:
+		case RenderAPI::Type::Vulkan:
+			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+#endif
+	}
+	OWL_CORE_ERROR("TextureCube: Unknown render API ({}).", static_cast<int>(api))
+	return nullptr;
+}
 
 }// namespace owl::renderer::gpu

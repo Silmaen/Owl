@@ -15,7 +15,8 @@ few translucent overlays. Scenes can sit side by side: drag a scene tab out of t
 | Bottom left  | CPU and GPU time of a frame, the waits for the display excluded: a click opens Stats                                                      |
 | Bottom right | The view-cube; above it the preview of the selected camera                                                                                |
 
-**Show** toggles the grid, the camera and light markers, the trigger icons, the camera preview, the HUD (Edit only,
+**Show** toggles the grid, the camera, light and reflection probe markers (a probe: its capture point and its
+volume, brighter selected), the trigger icons, the camera preview, the HUD (Edit only,
 Play always draws it) and, in the isometric mode, the navigation graph (Shift-click tests a path); its **Editor ambient** slider (0 to 2) adds a grey light to
 the lit 3D surfaces in Edit only, never in Play.
 
@@ -71,8 +72,8 @@ The view-cube does the same: a click on an axis end looks from it, on the centre
 
 ## Selecting
 
-A left click selects the entity under the mouse (sprites, tilemaps, isometric objects, voxel worlds, meshes, camera
-and light markers); a click on empty space clears the selection. The selection is shared with the Scene Hierarchy and
+A left click selects the entity under the mouse (sprites, tilemaps, isometric objects, voxel worlds, meshes, camera,
+light and probe markers); a click on empty space clears the selection. The selection is shared with the Scene Hierarchy and
 Properties and outlined in orange: its quad for a 2D entity, the silhouette of its meshes for a 3D one, dimmed where
 other geometry hides it.
 

@@ -17,6 +17,10 @@
 #include <algorithm>
 #include <bit>
 #include <cstring>
+#include <limits>
+#include <optional>
+#include <ranges>
+#include <span>
 
 namespace owl::renderer::gpu::vulkan::internal {
 
@@ -35,6 +39,7 @@ struct DefaultResources {
 	AllocatedBuffer uniform;// Zeroed uniform buffer.
 	AllocatedBuffer storage;// Zeroed storage buffer.
 	TextureData image;// 1x1 opaque white texture.
+	TextureData cube;// 1x1 transparent black cube.
 };
 
 auto getDefaults() -> DefaultResources& {
@@ -67,6 +72,36 @@ void createWhiteImage(TextureData& oImage) {
 	oImage.createSampler();
 }
 
+void createBlackCube(TextureData& oCube) {
+	oCube.debugName = "rd.defaultCube";
+	oCube.cube = true;
+	oCube.createImage({1, 1});
+	VulkanHandler::get().recordTransfer([&oCube](VkCommandBuffer iCmd) -> void {
+		transitionImageLayout(iCmd, oCube.textureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+							  1, 6);
+		constexpr VkClearColorValue black{.float32 = {0.f, 0.f, 0.f, 0.f}};
+		const VkImageSubresourceRange range{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+											.baseMipLevel = 0,
+											.levelCount = 1,
+											.baseArrayLayer = 0,
+											.layerCount = 6};
+		vkCmdClearColorImage(iCmd, oCube.textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &black, 1, &range);
+		transitionImageLayout(iCmd, oCube.textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+							  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, 6);
+	});
+	oCube.createView();
+	oCube.createSampler();
+}
+
+void destroyDefaultImage(VkDevice iDevice, TextureData& ioImage) {
+	if (ioImage.textureSampler != nullptr)
+		vkDestroySampler(iDevice, ioImage.textureSampler, nullptr);
+	if (ioImage.textureImageView != nullptr)
+		vkDestroyImageView(iDevice, ioImage.textureImageView, nullptr);
+	AllocatedImage allocated{.image = ioImage.textureImage, .allocation = ioImage.textureImageMemory};
+	MemoryAllocator::get().destroyImage(allocated);
+}
+
 void ensureDefaults() {
 	auto& defaults = getDefaults();
 	if (defaults.uniform.buffer == nullptr)
@@ -75,6 +110,8 @@ void ensureDefaults() {
 		defaults.storage = createZeroedBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "rd.defaultStorage");
 	if (defaults.image.textureImage == nullptr)
 		createWhiteImage(defaults.image);
+	if (defaults.cube.textureImage == nullptr)
+		createBlackCube(defaults.cube);
 }
 }// namespace
 
@@ -100,11 +137,15 @@ void RendererDescriptors::init(std::span<const BindingDecl> iBindings) {
 	m_bindings.assign(iBindings.begin(), iBindings.end());
 	m_textureArrayBinding = std::numeric_limits<uint32_t>::max();
 	m_textureArrayCount = 0;
-	for (const auto& bd: m_bindings) {
-		if (bd.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+	m_cubeArrayBinding = std::numeric_limits<uint32_t>::max();
+	for (const auto& bd: std::views::reverse(m_bindings)) {
+		if (bd.type != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+			continue;
+		if (bd.cube) {
+			m_cubeArrayBinding = bd.binding;
+		} else {
 			m_textureArrayBinding = bd.binding;
 			m_textureArrayCount = bd.count;
-			break;// only one texture array binding is supported
 		}
 	}
 
@@ -114,7 +155,7 @@ void RendererDescriptors::init(std::span<const BindingDecl> iBindings) {
 
 	std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
 	layoutBindings.reserve(m_bindings.size());
-	for (const auto& [binding, type, count, stages]: m_bindings) {
+	for (const auto& [binding, type, count, stages, cube]: m_bindings) {
 		layoutBindings.push_back({.binding = binding,
 								  .descriptorType = type,
 								  .descriptorCount = count,
@@ -146,6 +187,7 @@ void RendererDescriptors::release() {
 		m_uniformBindings.clear();
 		m_storageBindings.clear();
 		m_textureBind.clear();
+		m_cubeBind.clear();
 		m_ring.reset();
 		m_layout = nullptr;
 		return;
@@ -156,6 +198,7 @@ void RendererDescriptors::release() {
 	m_uniformBindings.clear();
 	m_storageBindings.clear();
 	m_textureBind.clear();
+	m_cubeBind.clear();
 
 	m_ring.release();
 	if (m_layout != nullptr) {
@@ -174,13 +217,8 @@ void RendererDescriptors::releaseDefaults() {
 	freeBuffer(defaults.uniform);
 	freeBuffer(defaults.storage);
 	// TextureData::freeTexture would recreate the global single-image pool, already released at this point.
-	auto& image = defaults.image;
-	if (image.textureSampler != nullptr)
-		vkDestroySampler(device, image.textureSampler, nullptr);
-	if (image.textureImageView != nullptr)
-		vkDestroyImageView(device, image.textureImageView, nullptr);
-	AllocatedImage allocated{.image = image.textureImage, .allocation = image.textureImageMemory};
-	MemoryAllocator::get().destroyImage(allocated);
+	destroyDefaultImage(device, defaults.image);
+	destroyDefaultImage(device, defaults.cube);
 	defaults = DefaultResources{};
 }
 
@@ -242,6 +280,13 @@ void RendererDescriptors::setTextures(const std::span<const uint32_t> iTextureId
 	m_dirty = true;
 }
 
+void RendererDescriptors::setCubeTextures(const std::span<const uint32_t> iTextureIds) {
+	if (std::ranges::equal(m_cubeBind, iTextureIds))
+		return;
+	m_cubeBind.assign(iTextureIds.begin(), iTextureIds.end());
+	m_dirty = true;
+}
+
 void RendererDescriptors::textureBind(const uint32_t iSlot, const uint32_t iTextureId) {
 	if (iSlot >= m_textureBind.size())
 		m_textureBind.resize(iSlot + 1, 0);
@@ -285,7 +330,8 @@ void RendererDescriptors::writeDescriptor(VkDescriptorSet iSet) {
 	m_bufferInfos.reserve(m_bindings.size());
 	m_imageInfos.clear();
 	m_writes.clear();
-	for (const auto& [binding, type, count, stages]: m_bindings) {
+	m_imageRanges.clear();
+	for (const auto& [binding, type, count, stages, cube]: m_bindings) {
 		VkWriteDescriptorSet write{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 								   .pNext = nullptr,
 								   .dstSet = iSet,
@@ -317,41 +363,48 @@ void RendererDescriptors::writeDescriptor(VkDescriptorSet iSet) {
 			if (info.buffer == nullptr)
 				continue;
 			write.pBufferInfo = &m_bufferInfos.emplace_back(info);
-		} else if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER && binding == m_textureArrayBinding) {
-			if (!collectImageInfos(count))
+		} else if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER &&
+				   (binding == m_textureArrayBinding || binding == m_cubeArrayBinding)) {
+			const auto first = cube ? collectImageInfos(m_cubeBind, defaults.cube, count)
+									: collectImageInfos(m_textureBind, defaults.image, count);
+			if (!first)
 				continue;
-			write.descriptorCount = static_cast<uint32_t>(m_imageInfos.size());
-			write.pImageInfo = m_imageInfos.data();
+			write.descriptorCount = count;
+			m_imageRanges.emplace_back(m_writes.size(), *first);
 		} else {
 			continue;
 		}
 		m_writes.push_back(write);
 	}
+	// The image infos are pointed at once all collected: collecting may reallocate them.
+	for (const auto& [write, first]: m_imageRanges) m_writes[write].pImageInfo = &m_imageInfos[first];
 	if (!m_writes.empty()) {
 		vkUpdateDescriptorSets(core.getLogicalDevice(), static_cast<uint32_t>(m_writes.size()), m_writes.data(), 0,
 							   nullptr);
 	}
 }
 
-auto RendererDescriptors::collectImageInfos(const uint32_t iCount) -> bool {
-	const auto& defaults = getDefaults();
-	const VkDescriptorImageInfo fallback{.sampler = defaults.image.textureSampler,
-										 .imageView = defaults.image.textureImageView,
+auto RendererDescriptors::collectImageInfos(const std::span<const uint32_t> iBind, const TextureData& iFallback,
+											const uint32_t iCount) -> std::optional<size_t> {
+	const VkDescriptorImageInfo fallback{.sampler = iFallback.textureSampler,
+										 .imageView = iFallback.textureImageView,
 										 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-	m_imageInfos.clear();
-	if (fallback.sampler == nullptr || fallback.imageView == nullptr)
-		return false;
+	if (fallback.sampler == nullptr || fallback.imageView == nullptr) {
+		OWL_CORE_WARN("Vulkan RendererDescriptors[{}]: No default texture to fill a texture array.", m_rendererName)
+		return std::nullopt;
+	}
+	const size_t first = m_imageInfos.size();
 	auto& globalTextures = Descriptors::get();
-	m_imageInfos.reserve(iCount);
-	for (const auto& id: m_textureBind) {
-		if (m_imageInfos.size() >= iCount)
+	for (const auto& id: iBind) {
+		if (m_imageInfos.size() - first >= iCount)
 			break;
 		if (!globalTextures.isTextureRegistered(id)) {
 			m_imageInfos.push_back(fallback);
 			continue;
 		}
 		const auto& texData = globalTextures.getTextureData(id);
-		if (texData.textureSampler == nullptr || texData.textureImageView == nullptr) {
+		if (texData.textureSampler == nullptr || texData.textureImageView == nullptr ||
+			texData.cube != iFallback.cube) {
 			m_imageInfos.push_back(fallback);
 			continue;
 		}
@@ -359,8 +412,8 @@ auto RendererDescriptors::collectImageInfos(const uint32_t iCount) -> bool {
 								.imageView = texData.textureImageView,
 								.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
 	}
-	while (m_imageInfos.size() < iCount) m_imageInfos.push_back(fallback);
-	return true;
+	while (m_imageInfos.size() - first < iCount) m_imageInfos.push_back(fallback);
+	return first;
 }
 
 auto RendererDescriptors::getDescriptorSet(const uint32_t iFrame) -> VkDescriptorSet* {

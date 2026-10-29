@@ -56,6 +56,28 @@ struct PostProcessSettings {
 	std::string lut;
 	/// Weight of the LUT, 0 to 1.
 	float lutContribution = 1.f;
+	/// Whether the red and blue channels split towards the edges of the image, like a simple lens.
+	bool chromaticAberration = false;
+	/// Strength of the split, 0 to 1 (1: the channels 1 % of the frame width apart at the corners).
+	float chromaticAberrationIntensity = 0.3f;
+	/// Whether a film grain covers the image, a new one each frame.
+	bool filmGrain = false;
+	/// Strength of the grain, 0 to 1, strongest in the mid-tones.
+	float filmGrainIntensity = 0.15f;
+	/// Size of a grain, in pixels, 1 to 4.
+	float filmGrainSize = 1.5f;
+	/// Whether what is away from the focus distance blurs (depth of field).
+	bool depthOfField = false;
+	/// Distance from the camera that stays sharp, in world units.
+	float focusDistance = 5.f;
+	/// Distance from the focus over which the blur grows to its largest, in world units.
+	float focusRange = 5.f;
+	/// Largest blur radius, in pixels of a frame 1080 pixels high.
+	float bokehRadius = 8.f;
+	/// Whether the image blurs along the motion of the camera, in Play.
+	bool motionBlur = false;
+	/// Fraction of the frame the shutter stays open, 0 to 1.
+	float motionBlurIntensity = 0.5f;
 };
 
 /**

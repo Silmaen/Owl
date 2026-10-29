@@ -104,9 +104,9 @@ A glowing surface is one of three things, in increasing cost.
 | Kind                     | What it does                                                | How                                                                                                         | When                      |
 |--------------------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|---------------------------|
 | Emissive surface         | Shines above 1 in the HDR scene colour, lights nothing else | Emissive colour and luminance in nits in the PBR material; the halo is the bloom of the post stack          | v0.5.0, pull requests 7–8 |
-| Directional angular size | A sun of real apparent size (about 0.5 degree)              | `angularRadius` on the directional `Light`: PCSS penumbra, wider highlight, sky disc                        | Planned, v0.6.0           |
-| Area light               | A rectangle, disc or sphere that lights the other surfaces  | LTC (linearly transformed cosines) for rectangles and discs, representative point for spheres; PCSS shadows | Planned, v0.6.0           |
-| Point and spot shadows   | Shadows of the local lights                                 | Cube shadow maps (point), perspective maps (spot), budgeted per frame                                       | Planned, v0.6.0           |
+| Directional angular size | A sun of real apparent size (about 0.5 degree)              | `angularRadius` on the directional `Light`: PCSS penumbra, wider highlight, sky disc                        | v0.6.0                    |
+| Area light               | A rectangle, disc or sphere that lights the other surfaces  | LTC (linearly transformed cosines) for rectangles and discs, representative point for spheres; PCSS shadows | v0.6.0                    |
+| Point and spot shadows   | Shadows of the local lights                                 | Cube shadow maps (point), perspective maps (spot), budgeted per frame                                       | v0.6.0                    |
 | Bounced light            | A lit or glowing surface tinting its neighbours             | Probes or voxel global illumination                                                                         | Stretch goal              |
 
 A star seen from its planet is a directional light with an angular radius. Seen from space, beside the planet, it
@@ -127,15 +127,16 @@ in `test/bench/cases/SkyBench.cpp`. The voxel level uses both.
 Without a probe, a metal reflects the environment of the scene, a constant sky when there is no image: indoors,
 brass shows a grey sky instead of the fire and the room. Local probes give each place its own reflection.
 
-| Point     | Decision                                                                                                           |
-|-----------|--------------------------------------------------------------------------------------------------------------------|
-| Capture   | A `ReflectionProbe` component renders its surroundings into a cube map, baked in the editor and stored as an asset |
-| Filtering | The same GGX prefiltered levels and spherical harmonics as the `Environment`, so the shading code is shared        |
-| Influence | A box (or sphere) volume with a blend distance; a surface blends the two probes nearest to it, else the sky        |
-| Parallax  | Box projection of the reflected ray, so reflections line up with the walls of the room                             |
-| Runtime   | Optional real-time update of one probe per frame for moving lights (the fire), budgeted                            |
-| Editor    | Volume gizmo, bake button and preview sphere in Owl Nest                                                           |
-| Target    | Planned, v0.6.0, with the point and spot shadows (both make interiors read)                                        |
+| Point     | Decision                                                                                                                      |
+|-----------|-------------------------------------------------------------------------------------------------------------------------------|
+| Capture   | A `ReflectionProbe` component renders the sky and the 3D layers into a cube on the GPU when it first shows, moves or is baked |
+| Filtering | The mip chain of the capture, then GGX levels by filtered importance sampling; the diffuse stays the environment's            |
+| Influence | A box (or sphere) volume with a blend distance; a surface blends the two probes of largest influence, else the sky            |
+| Parallax  | Box or sphere projection of the reflected ray, so reflections line up with the walls of the room                              |
+| Runtime   | Optional real-time capture, the realtime probes in turn, one per frame                                                        |
+| Editor    | Volume and capture-point markers, inspector with a Bake button, `scene.capture_reflection_probes`                             |
+| Budget    | The point shadow budget: 4 probes on OpenGL, 16 on Vulkan, the nearest to the camera                                          |
+| Target    | v0.6.0                                                                                                                        |
 
 ## Instancing and culling {#instancing-and-culling}
 

@@ -30,7 +30,7 @@ Entities:
         orthographicNear: -1
         orthographicFar: 10
         toneMapping: Aces
-        postProcess: {ev100: 4.5, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.08, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.4, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0]}
+        postProcess: {ev100: 4, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.08, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.4, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0], chromaticAberration: true, chromaticAberrationIntensity: 0.15, filmGrain: true, filmGrainIntensity: 0.08}
       primary: true
       fixedAspectRatio: false
     FirstPersonController: {enabled: true, walkSpeed: 2.2, runSpeed: 4, lookSpeed: 1.8, mouseSensitivity: 0.0025, captureCursor: true, eyeHeight: 1.6, height: 1.75, radius: 0.25, stepHeight: 0.3, gravity: 9.81, jumpSpeed: 0}
@@ -286,6 +286,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -309,6 +310,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -332,6 +334,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -355,6 +358,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -378,6 +382,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -401,6 +406,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -424,6 +430,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -447,6 +454,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -470,6 +478,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -493,6 +502,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -516,6 +526,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -686,6 +697,7 @@ Entities:
       color: [1, 0.68, 0.38]
       intensity: 12
       range: 3
+      castShadows: false
     LightFlicker:
       style: Candle
       amplitude: 0.35
@@ -977,6 +989,7 @@ Entities:
       color: [1, 0.85, 0.5]
       intensity: 18
       range: 1.2
+      castShadows: false
     LightFlicker:
       style: Pulse
       amplitude: 0.6
@@ -1058,5 +1071,75 @@ Entities:
       follow: 3900000000000000114
       positionJitter: [0.002, 0, 0.002]
       scaleResponse: [0.1, 0.35, 0.1]
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000118
+    Tag:
+      tag: WindowFrame
+    Transform:
+      translation: [1.3, 1.7, -3]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:cfb07a7b6fae6234:meshes/tavern/window_frame.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000119
+    Tag:
+      tag: WindowPane
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000118}
+    MeshRenderer:
+      mesh: gid:b1fa8c89e4ab2fab:meshes/tavern/window_pane.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:9e7c42aaeb5611bb:materials/moonlit_glass.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000120
+    Tag:
+      tag: WindowLight
+    Transform:
+      translation: [0, 0, 0.02]
+      rotation: [0, 3.14159, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000118}
+    Light:
+      type: Rectangle
+      enabled: true
+      color: [0.62, 0.74, 1]
+      intensity: 400
+      range: 7
+      size: [0.88, 0.68]
+      castShadows: true
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000121
+    Tag:
+      tag: RoomProbe
+    Transform:
+      translation: [0.5, 1.6, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    ReflectionProbe:
+      shape: Box
+      extents: [3.5, 1.6, 3.5]
+      blendDistance: 0.3
+      parallax: true
+      intensity: 1
+      resolution: 128
+      realtime: false
     Visibility:
       gameVisible: true

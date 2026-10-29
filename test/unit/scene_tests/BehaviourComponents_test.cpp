@@ -274,6 +274,11 @@ TEST_F(BehaviourTest, ADayNightCycleTurnsItsLightWithTheSunThenTheMoonAndAdvance
 	EXPECT_NEAR(direction().z(), -toSun.z(), 1e-3f);
 	EXPECT_NEAR(light.intensity, noon.sunIlluminance, 1.f);
 	EXPECT_NEAR(sky.getComponent<component::ProceduralSky>().sunDirection.y(), toSun.y(), 1e-6f);
+	EXPECT_FLOAT_EQ(sky.getComponent<component::ProceduralSky>().discSize, component::ProceduralSky{}.discSize);
+	light.angularRadius = 0.01f;
+	run(*scene, 1);
+	EXPECT_NEAR(sky.getComponent<component::ProceduralSky>().discSize, 2.f * 0.01f * 180.f / std::numbers::pi_v<float>,
+				1e-5f);
 	EXPECT_NEAR(camera.getComponent<component::Camera>().camera.getPostProcess().exposure, 0.f, 1e-5f);
 	sky.getComponent<component::DayNightCycle>().timeOfDay = 0.f;
 	run(*scene, 1);

@@ -27,6 +27,8 @@ enum struct BindingType : uint8_t {
 	CombinedImageSampler,
 	/// Shader storage buffer (read-write, larger than UBO).
 	StorageBuffer,
+	/// Array of cube image+samplers (`SamplerCube` in Slang), filled by `RenderCommand::bindTextures(..., cubes)`.
+	CombinedImageSamplerCube,
 };
 
 /**

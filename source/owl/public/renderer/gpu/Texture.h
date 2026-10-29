@@ -48,6 +48,8 @@ enum struct ImageFormat : uint8_t {
 	Rgba32F,///< Four float channels.
 	Bc7,///< BC7 blocks (4x4 texels in 16 bytes), RGBA unorm: desktop GPUs.
 	Astc4x4,///< ASTC 4x4 blocks (16 bytes), RGBA unorm LDR: mobile and ARM GPUs.
+	R32F,///< One 32-bit float channel (shadow-map distances).
+	Rgba16F,///< Four half-float channels (HDR radiance).
 };
 
 /**
@@ -446,6 +448,92 @@ private:
 	 * @return True when the levels are in use.
 	 */
 	auto uploadLevels(TextureLevels iLevels) -> bool;
+};
+
+/**
+ * @brief
+ *  Cube texture: six square faces sampled by a direction (point-light shadows, reflection probes).
+ *
+ * The specification size is the size of one face. The faces follow the order of the graphics APIs: +X, -X, +Y, -Y,
+ * +Z, -Z. `setData` takes the six faces of level 0 one after the other, each level given to `setLevels` holds its six
+ * faces the same way; `Framebuffer::copyAttachmentToCube` fills one face of one level from a render target. Sampling
+ * clamps to the edges and filters across the faces (nearest for `FilterMode::Nearest`).
+ */
+class OWL_API TextureCube : public Texture {
+public:
+	/// Number of faces of a cube.
+	static constexpr uint32_t g_faceCount = 6;
+
+	/**
+	 * @brief
+	 *  Default copy constructor.
+	 */
+	TextureCube(const TextureCube&) = default;
+
+	/**
+	 * @brief
+	 *  Default move constructor.
+	 */
+	TextureCube(TextureCube&&) = default;
+
+	/**
+	 * @brief
+	 *  Default copy assignation.
+	 * @return This texture.
+	 */
+	auto operator=(const TextureCube&) -> TextureCube& = default;
+
+	/**
+	 * @brief
+	 *  Default move assignation.
+	 * @return This texture.
+	 */
+	auto operator=(TextureCube&&) -> TextureCube& = default;
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~TextureCube() override;
+
+	/**
+	 * @brief
+	 *  Constructor from specifications.
+	 * @param[in] iSpecs The specifications, `size` being the size of one face.
+	 */
+	explicit TextureCube(const Specification& iSpecs);
+
+	/**
+	 * @brief
+	 *  Create a cube texture for the active API.
+	 * @param[in] iSpecs The specifications: square face size, `R32F`, `Rgba16F`, `Rgba32F` or `Rgba8`, `levelCount`
+	 *  mipmap levels (0 or 1 for a single level).
+	 * @return The texture, null for an unsupported specification.
+	 */
+	static auto create(const Specification& iSpecs) -> shared<TextureCube>;
+
+	/**
+	 * @brief
+	 *  Get the size of one face at a mipmap level.
+	 * @param[in] iLevel The level.
+	 * @return The face size in texels, at least 1.
+	 */
+	[[nodiscard]] auto getFaceSize(uint32_t iLevel) const -> uint32_t;
+
+	/**
+	 * @brief
+	 *  Get the number of mipmap levels of the cube.
+	 * @return The level count, at least 1.
+	 */
+	[[nodiscard]] auto getLevelCount() const -> uint32_t;
+
+	/**
+	 * @brief
+	 *  Check a specification for a cube: square, non-empty, of a format a cube can hold.
+	 * @param[in] iSpecs The specifications.
+	 * @return True when a cube can be created from it.
+	 */
+	[[nodiscard]] static auto isValidSpecification(const Specification& iSpecs) -> bool;
 };
 OWL_DIAG_POP
 }// namespace owl::renderer::gpu

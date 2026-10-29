@@ -18,6 +18,7 @@
 namespace owl::renderer::gpu {
 
 class Texture2D;
+class TextureCube;
 /**
  * @brief
  *  Specification for the attachment Framebuffer.
@@ -233,6 +234,31 @@ public:
 	 * @param[in,out] ioTarget Framebuffer receiving the copy.
 	 */
 	virtual void copyAttachment([[maybe_unused]] uint32_t iIndex, [[maybe_unused]] Framebuffer& ioTarget) {}
+
+	/**
+	 * @brief
+	 *  Copy a colour attachment into one face of one level of a cube: the framebuffer is as large as that face, the
+	 *  attachment of the same texel size as the cube (`RedFloat` into `R32F`, `Rgba16F` into `Rgba16F`). Recorded in
+	 *  the frame, outside any pass. The null backend only checks the copy.
+	 * @param[in] iIndex Index of the colour attachment.
+	 * @param[in,out] ioTarget The cube receiving the face.
+	 * @param[in] iFace The face, 0 to 5 (+X, -X, +Y, -Y, +Z, -Z).
+	 * @param[in] iLevel The mipmap level of the cube.
+	 * @return True when the copy is recorded.
+	 */
+	virtual auto copyAttachmentToCube(uint32_t iIndex, TextureCube& ioTarget, uint32_t iFace, uint32_t iLevel) -> bool;
+
+	/**
+	 * @brief
+	 *  Check that an attachment can be copied into a face of a cube (`copyAttachmentToCube`).
+	 * @param[in] iIndex Index of the colour attachment.
+	 * @param[in] iTarget The cube.
+	 * @param[in] iFace The face.
+	 * @param[in] iLevel The mipmap level of the cube.
+	 * @return True when the sizes, the formats and the face match.
+	 */
+	[[nodiscard]] auto canCopyToCube(uint32_t iIndex, const TextureCube& iTarget, uint32_t iFace, uint32_t iLevel) const
+			-> bool;
 
 	/**
 	 * @brief

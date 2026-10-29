@@ -48,6 +48,8 @@ struct ShadowCascade {
 	float splitDepth = 0.f;
 	/// World size of one shadow-map texel (normal-offset bias unit).
 	float texelWorldSize = 0.f;
+	/// Depth the light camera covers, in world units: a stored depth `z` lies `(1 - z) * depthRange` from it.
+	float depthRange = 0.f;
 };
 
 /**

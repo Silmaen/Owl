@@ -21,7 +21,8 @@ namespace owl::scene::component {
  *
  * The `owl.day_night` system advances `timeOfDay` and, each frame (in Owl Nest too, without advancing it), turns the
  * directional `Light` of `sun` along the path of the sun by day and of the moon by night, with their colour and
- * illuminance, and gives the direction of the sun to the `ProceduralSky` of the entity. In Play, it also raises the
+ * illuminance, and gives the direction of the sun to the `ProceduralSky` of the entity (and the size of its disc
+ * when the light has an `angularRadius`). In Play, it also raises the
  * exposure of every camera of the scene at night by `nightExposure`. The sun rises at 6 h towards
  * `azimuth`, culminates at `maxElevation` at noon and sets at 18 h on the opposite side.
  */

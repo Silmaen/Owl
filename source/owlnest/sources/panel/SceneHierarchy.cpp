@@ -43,6 +43,7 @@
 #include <scene/component/Environment.h>
 #include <scene/component/Hierarchy.h>
 #include <scene/component/Light.h>
+#include <scene/component/ReflectionProbe.h>
 
 #include <algorithm>
 #include <cmath>
@@ -171,8 +172,16 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 				return {gui::icon::lightbulb, colour};
 			case Light::Type::Spot:
 				return {gui::icon::flashlight, colour};
+			case Light::Type::Rectangle:
+				return {gui::icon::square, colour};
+			case Light::Type::Disc:
+				return {gui::icon::circleDot, colour};
+			case Light::Type::Sphere:
+				return {gui::icon::globe, colour};
 		}
 	}
+	if (iEntity.hasComponent<ReflectionProbe>())
+		return {gui::icon::scan, 0x73d9ff};
 	if (iEntity.hasComponent<Light2D>()) {
 		const auto& light = iEntity.getComponent<Light2D>();
 		const uint32_t colour = light.enabled ? 0xffb347 : 0x7a7a7a;
@@ -242,14 +251,21 @@ auto kindColor(const uint32_t iHex) -> math::vec4 {
 void drawCreateLightMenu(const auto& iTarget, const std::optional<commands::ArgValue>& iParent) {
 	if (!ImGui::BeginMenu("Light"))
 		return;
-	for (const auto& [kind, glyph]: {std::pair{"Directional", gui::icon::sun}, std::pair{"Point", gui::icon::lightbulb},
-									 std::pair{"Spot", gui::icon::flashlight}}) {
+	for (const auto& [kind, glyph]:
+		 {std::pair{"Directional", gui::icon::sun}, std::pair{"Point", gui::icon::lightbulb},
+		  std::pair{"Spot", gui::icon::flashlight}, std::pair{"Rectangle", gui::icon::square},
+		  std::pair{"Disc", gui::icon::circleDot}, std::pair{"Sphere", gui::icon::globe}}) {
 		if (!gui::widgets::menuItem({.glyph = glyph, .label = kind}))
 			continue;
 		const commands::CommandArgs args =
 				iParent ? commands::CommandArgs{{"type", std::string{kind}}, {"parent", *iParent}}
 						: commands::CommandArgs{{"type", std::string{kind}}};
 		std::ignore = iTarget.execute("entity.create_light", args);
+	}
+	if (gui::widgets::menuItem({.glyph = gui::icon::scan, .label = "Reflection Probe"})) {
+		const commands::CommandArgs args =
+				iParent ? commands::CommandArgs{{"parent", *iParent}} : commands::CommandArgs{};
+		std::ignore = iTarget.execute("entity.create_reflection_probe", args);
 	}
 	ImGui::Separator();
 	for (const auto& [kind, glyph]: {std::pair{"Ambient", gui::icon::sun}, std::pair{"Point", gui::icon::lightbulb},

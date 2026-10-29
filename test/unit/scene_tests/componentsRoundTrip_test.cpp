@@ -520,6 +520,17 @@ TEST(ComponentRoundTrip, CameraPostProcess) {
 				settings.vignetteColor = {0.1f, 0.2f, 0.3f};
 				settings.lut = "luts/warm.cube";
 				settings.lutContribution = 0.5f;
+				settings.chromaticAberration = true;
+				settings.chromaticAberrationIntensity = 0.7f;
+				settings.filmGrain = true;
+				settings.filmGrainIntensity = 0.4f;
+				settings.filmGrainSize = 2.5f;
+				settings.depthOfField = true;
+				settings.focusDistance = 7.5f;
+				settings.focusRange = 2.5f;
+				settings.bokehRadius = 12.f;
+				settings.motionBlur = true;
+				settings.motionBlurIntensity = 0.75f;
 				cam.camera.setPostProcess(settings);
 			},
 			[](const scene::Entity& iEnt) -> void {
@@ -537,6 +548,17 @@ TEST(ComponentRoundTrip, CameraPostProcess) {
 				EXPECT_FLOAT_EQ(settings.vignetteColor.y(), 0.2f);
 				EXPECT_EQ(settings.lut, "luts/warm.cube");
 				EXPECT_FLOAT_EQ(settings.lutContribution, 0.5f);
+				EXPECT_TRUE(settings.chromaticAberration);
+				EXPECT_FLOAT_EQ(settings.chromaticAberrationIntensity, 0.7f);
+				EXPECT_TRUE(settings.filmGrain);
+				EXPECT_FLOAT_EQ(settings.filmGrainIntensity, 0.4f);
+				EXPECT_FLOAT_EQ(settings.filmGrainSize, 2.5f);
+				EXPECT_TRUE(settings.depthOfField);
+				EXPECT_FLOAT_EQ(settings.focusDistance, 7.5f);
+				EXPECT_FLOAT_EQ(settings.focusRange, 2.5f);
+				EXPECT_FLOAT_EQ(settings.bokehRadius, 12.f);
+				EXPECT_TRUE(settings.motionBlur);
+				EXPECT_FLOAT_EQ(settings.motionBlurIntensity, 0.75f);
 			});
 }
 

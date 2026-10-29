@@ -1,12 +1,14 @@
-// End of the world chain: reads the linear scene colour pixel for pixel, applies the exposure and the bloom, the
-// camera tone mapping, the vignette and the colour-grading LUT, and encodes to sRGB into the display target. The
-// entity id is copied afterwards, the id output only fills the slot.
+// End of the world chain: reads the linear scene colour pixel for pixel (its red and blue channels apart towards the
+// edges with a chromatic aberration), applies the exposure and the bloom, the camera tone mapping, the vignette, the
+// film grain and the colour-grading LUT, and encodes to sRGB into the display target. The entity id is copied
+// afterwards, the id output only fills the slot.
 
 struct EncodeParams {
 	int4 mode;          // x: tone mapping (0 None, 1 Khronos PBR Neutral, 2 ACES), y: 1 with bloom, z: 1 with a LUT, w: LUT size.
 	float4 post;        // x exposure multiplier, y bloom intensity, z vignette intensity (0 off), w vignette smoothness.
 	float4 vignetteColor;// rgb: colour of the vignette (sRGB), w: LUT contribution.
 	float4 frame;       // xy: size of the frame in pixels; z: EV100 of the pre-exposure; w: 1 to apply the adapted EV100 of texture 3.
+	float4 effects;     // x: chromatic aberration (0 off), y: film grain (0 off), z: grain size in pixels, w: grain seed.
 };
 
 [[vk::binding(0)]]
@@ -84,9 +86,22 @@ float3 linearToSrgb(float3 c) {
 				  c.b <= 0.0031308 ? low.b : high.b);
 }
 
+float grainHash(float3 p) {
+	p = frac(p * float3(0.1031f, 0.1030f, 0.0973f));
+	p += dot(p, p.yzx + 33.33f);
+	return frac((p.x + p.y) * p.z);
+}
+
 [shader("fragment")]
 FragmentOutput fragmentMain(VertexOutput input) {
-	float4 scene = gTextures[0].SampleLevel(input.svPosition.xy / gParams.frame.xy, 0.0);
+	float2 uv = input.svPosition.xy / gParams.frame.xy;
+	float4 scene = gTextures[0].SampleLevel(uv, 0.0);
+	if (gParams.effects.x > 0.0) {
+		float2 offset = (uv - 0.5f) * (0.02f * gParams.effects.x);
+		float2 inset = 0.5f / gParams.frame.xy;
+		scene.r = gTextures[0].SampleLevel(clamp(uv - offset, inset, 1.0f - inset), 0.0).r;
+		scene.b = gTextures[0].SampleLevel(clamp(uv + offset, inset, 1.0f - inset), 0.0).b;
+	}
 	float3 color = max(scene.rgb, float3(0.0));
 	if (gParams.mode.y != 0)
 		color += gTextures[1].SampleLevel(input.svPosition.xy / gParams.frame.xy, 0.0).rgb * gParams.post.y;
@@ -103,6 +118,13 @@ FragmentOutput fragmentMain(VertexOutput input) {
 		float2 centred = input.svPosition.xy / gParams.frame.xy - 0.5f;
 		float edge = smoothstep(0.75f - gParams.post.w, 0.75f, length(centred) * 1.41421f);
 		color = lerp(color, srgbToLinear(gParams.vignetteColor.rgb), edge * gParams.post.z);
+	}
+	if (gParams.effects.y > 0.0) {
+		float3 cell = float3(floor(input.svPosition.xy / gParams.effects.z), gParams.effects.w);
+		float noise = grainHash(cell) + grainHash(cell + 17.0f) - 1.0f;
+		float luminance = dot(color, float3(0.2126f, 0.7152f, 0.0722f));
+		float response = 0.25f + 3.0f * luminance * (1.0f - luminance);
+		color = saturate(color + noise * gParams.effects.y * 0.5f * response);
 	}
 	float3 encoded = linearToSrgb(color);
 	if (gParams.mode.z != 0)

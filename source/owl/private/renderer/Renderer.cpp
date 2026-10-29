@@ -13,6 +13,7 @@
 #include "renderer/ColorEncoder.h"
 #include "renderer/OutlinePass.h"
 #include "renderer/PostProcess.h"
+#include "renderer/ReflectionProbes.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
 #include "renderer/Renderer3D.h"
@@ -88,6 +89,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress, const Render
 	if (iRenderers.renderer3D) {
 		Renderer3D::init();
 		RendererMesh::init();
+		ReflectionProbes::init();
 	}
 
 	Renderer2DLayer::registerWithFactory();
@@ -108,6 +110,7 @@ auto Renderer::getRendererSet() -> const RendererSet& { return m_rendererSet; }
 void Renderer::shutdown() {
 	// A 3D family started by an earlier set is stopped too: the current set may not hold it.
 	if (m_rendererSet.renderer3D || Renderer3D::isReady()) {
+		ReflectionProbes::shutdown();
 		RendererMesh::shutdown();
 		Renderer3D::shutdown();
 	}

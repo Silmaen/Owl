@@ -223,10 +223,12 @@ void uploadToDeviceBuffer(VkBuffer iDestination, const void* iData, VkDeviceSize
  * @param[in] iDstStage Stages of the later accesses.
  * @param[in] iDstAccess Later accesses.
  * @param[in] iLevelCount Number of mipmap levels, from level 0.
+ * @param[in] iLayerCount Number of array layers, from layer 0 (6 for a cube).
  */
 void imageBarrier(VkCommandBuffer iCmd, VkImage iImage, VkImageAspectFlags iAspect, VkImageLayout iOldLayout,
 				  VkImageLayout iNewLayout, VkPipelineStageFlags iSrcStage, VkAccessFlags iSrcAccess,
-				  VkPipelineStageFlags iDstStage, VkAccessFlags iDstAccess, uint32_t iLevelCount = 1);
+				  VkPipelineStageFlags iDstStage, VkAccessFlags iDstAccess, uint32_t iLevelCount = 1,
+				  uint32_t iLayerCount = 1);
 
 /**
  * @brief
@@ -236,9 +238,10 @@ void imageBarrier(VkCommandBuffer iCmd, VkImage iImage, VkImageAspectFlags iAspe
  * @param[in] iOldLayout Previous image layout.
  * @param[in] iNewLayout New image layout to transition to.
  * @param[in] iLevelCount Number of mipmap levels transitioned, from level 0.
+ * @param[in] iLayerCount Number of array layers transitioned, from layer 0 (6 for a cube).
  */
 void transitionImageLayout(VkCommandBuffer iCmd, VkImage iImage, VkImageLayout iOldLayout, VkImageLayout iNewLayout,
-						   uint32_t iLevelCount = 1);
+						   uint32_t iLevelCount = 1, uint32_t iLayerCount = 1);
 
 /**
  * @brief

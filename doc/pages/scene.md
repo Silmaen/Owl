@@ -301,29 +301,55 @@ slot's material is shared through the `MaterialLibrary` ([Renderer > Materials](
 
 #### Light {#light-component}
 
-| Field              | Type    | Default          | Description                                                                                               |
-|--------------------|---------|------------------|-----------------------------------------------------------------------------------------------------------|
-| `type`             | `Type`  | `Directional`    | `Directional`, `Point` or `Spot`                                                                          |
-| `enabled`          | `bool`  | `true`           | Whether the light shines; switched off it keeps its settings                                              |
-| `color`            | `vec3`  | `{1, 1, 1}`      | Colour, sRGB as authored                                                                                  |
-| `intensity`        | `float` | `100000` / `800` | Directional: illuminance in lux (default 100 000). Point and spot: luminous power in lumens (default 800) |
-| `range`            | `float` | `10`             | Distance where a point or spot light reaches zero                                                         |
-| `innerAngle`       | `float` | 20 degrees       | Half angle of the full-intensity spot cone (radians in YAML)                                              |
-| `outerAngle`       | `float` | 30 degrees       | Half angle where the spot reaches zero (radians in YAML)                                                  |
-| `castShadows`      | `bool`  | `true`           | Directional only: the first such light casts cascaded shadows                                             |
-| `shadowDistance`   | `float` | `60`             | Distance from the camera the shadows cover                                                                |
-| `cascadeCount`     | `uint`  | `4`              | Number of shadow cascades, 1 to 4                                                                         |
-| `shadowResolution` | `uint`  | `1024`           | Texels of each cascade, 256 to 4096                                                                       |
-| `shadowBias`       | `float` | `1.5`            | Normal-offset bias, in shadow-map texels                                                                  |
+| Field              | Type    | Default          | Description                                                                                            |
+|--------------------|---------|------------------|--------------------------------------------------------------------------------------------------------|
+| `type`             | `Type`  | `Directional`    | `Directional`, `Point`, `Spot`, `Rectangle`, `Disc` or `Sphere`                                        |
+| `enabled`          | `bool`  | `true`           | Whether the light shines; switched off it keeps its settings                                           |
+| `color`            | `vec3`  | `{1, 1, 1}`      | Colour, sRGB as authored                                                                               |
+| `intensity`        | `float` | `100000` / `800` | Directional: illuminance in lux (default 100 000). Other types: luminous power in lumens (default 800) |
+| `range`            | `float` | `10`             | Distance where a point, spot or area light reaches zero                                                |
+| `size`             | `vec2`  | `{1, 1}`         | Rectangle: width (along X) and height (along Y), at least 0.001                                        |
+| `radius`           | `float` | `0.1`            | Disc and sphere: radius, at least 0.001                                                                |
+| `innerAngle`       | `float` | 20 degrees       | Half angle of the full-intensity spot cone (radians in YAML)                                           |
+| `outerAngle`       | `float` | 30 degrees       | Half angle where the spot reaches zero (radians in YAML)                                               |
+| `castShadows`      | `bool`  | `true`           | First directional light: cascades; the other lights: the nearest to the camera, within a budget        |
+| `shadowDistance`   | `float` | `60`             | Directional only: distance from the camera the shadows cover                                           |
+| `cascadeCount`     | `uint`  | `4`              | Directional only: number of shadow cascades, 1 to 4                                                    |
+| `shadowResolution` | `uint`  | `1024`           | Texels of each cascade, of a spot map or of each face of a point or area cube, 256 to 4096             |
+| `shadowBias`       | `float` | `1.5`            | Normal-offset bias, in shadow-map texels                                                               |
+| `angularRadius`    | `float` | `0`              | Directional only: apparent radius in radians (sun 0.0047), soft shadows (PCSS) and a wider highlight   |
 
 YAML key: `Light`. `intensity` is in physical units (sun 100 000 lx, overcast 10 000, moon 0.25; candle 12 lm,
-60 W bulb 800, fireplace 2 000); point and spot lights fall off with 1/d² and are cut off smoothly at `range`, and the
-camera `ev100` brings the values back to the displayable range. Shines along -Z of the entity's world transform; a point light ignores the rotation and a
-directional light the position. Lights the 3D layers only (`MeshRenderer` meshes, voxel worlds), up to 64 per frame;
+60 W bulb 800, fireplace 2 000); point, spot and sphere lights fall off with 1/d², every local light is cut off
+smoothly at `range`, and the camera `ev100` brings the values back to the displayable range. Shines along -Z of the
+entity's world transform; a point or sphere light ignores the rotation and a directional light the position. A
+rectangle spans the X and Y axes of the entity and a disc lies in its XY plane, both emitting from their -Z face only
+and spreading the power over their area. Lights the 3D layers only (`MeshRenderer` meshes, voxel worlds), up to 64 per frame;
 the sun of the layer config lights only a scene without any `Light` component (none once the scene has one, even switched off), the ambient comes from the `Environment` or the layer config. See
 [Renderer > Lights and shadows](renderer.md#renderer-lights). Lua: `entity.set_light_color` / `get_light_color`,
 `entity.set_light_intensity` / `get_light_intensity`, `entity.set_light_enabled` / `is_light_enabled`,
 `entity.set_light_range`.
+
+#### ReflectionProbe {#reflectionprobe-component}
+
+| Field           | Type    | Default     | Description                                                                                  |
+|-----------------|---------|-------------|----------------------------------------------------------------------------------------------|
+| `shape`         | `Shape` | `Box`       | `Box` or `Sphere`: the volume of influence, centred on the entity, aligned on the world axes |
+| `extents`       | `vec3`  | `{2, 2, 2}` | Box: half size along X, Y and Z, at least 0.01                                               |
+| `radius`        | `float` | `3`         | Sphere: radius, at least 0.01                                                                |
+| `blendDistance` | `float` | `0.5`       | Distance inside the volume over which the probe fades in from its border                     |
+| `parallax`      | `bool`  | `true`      | Project the reflected ray on the volume, so a room reflects its walls in place               |
+| `intensity`     | `float` | `1`         | Scale of the captured reflections                                                            |
+| `resolution`    | `uint`  | `128`       | Texels of each face of the cube, a power of two from 16 to 512                               |
+| `realtime`      | `bool`  | `false`     | Capture again while the scene runs, the realtime probes in turn, one per frame               |
+
+YAML key: `ReflectionProbe`. The scene seen from the probe (sky and 3D layers, without the probes) is captured into a
+cube and prefiltered by roughness; inside the volume it replaces the specular of the `Environment`, the diffuse still
+comes from the environment. A point blends the two probes of largest influence, the environment fills what they
+leave. A probe is captured when it first shows, moves, changes resolution, when the environment finishes loading, on
+the **Bake** button of the inspector (`captureRequest`, not saved) or the `scene.capture_reflection_probes` command;
+the probes nearest to the camera are used, 4 on OpenGL and 16 on Vulkan. See
+[Renderer > Reflection probes](renderer.md#renderer-probes).
 
 #### Light2D {#light2d-component}
 
@@ -396,7 +422,7 @@ resolution of the screen (`renderer::skyBodiesOf`), so the sun moves smoothly an
 
 YAML key: `DayNightCycle`, system `owl.day_night` (`PostPhysics`). The hours advance with the scene time; each frame the system turns the `sun` light (shadows
 included) along the path of the sun by day and of the moon by night, sets its colour and illuminance, writes the
-direction into the `ProceduralSky` of the scene and, in Play, adds `nightExposure` to the exposure of the cameras as
+direction into the `ProceduralSky` of the scene (and the disc size, twice the `angularRadius` of the light when it is set) and, in Play, adds `nightExposure` to the exposure of the cameras as
 the eye adapts to the dark. Lua: `entity.get_time_of_day(id)`, `entity.set_time_of_day(id, hours)`,
 `entity.set_day_night_enabled(id, bool)`.
 
@@ -541,35 +567,46 @@ YAML key: `BackgroundTexture`. Only the first entity with this component is rend
 
 ### Camera Component
 
-| Field              | Type                  | Default | Description                                                     |
-|--------------------|-----------------------|---------|-----------------------------------------------------------------|
-| `primary`          | `bool`                | `true`  | Active camera for rendering                                     |
-| `fixedAspectRatio` | `bool`                | `false` | Lock aspect ratio                                               |
-| `camera`           | `SceneCamera`         | —       | Orthographic or perspective                                     |
-| `toneMapping`      | `ToneMapping`         | `None`  | `None`, `PbrNeutral` or `Aces` (`camera.toneMapping`)           |
-| `postProcess`      | `PostProcessSettings` | all off | EV100, exposure, bloom, vignette and LUT (`camera.postProcess`) |
+| Field              | Type                  | Default | Description                                                                |
+|--------------------|-----------------------|---------|----------------------------------------------------------------------------|
+| `primary`          | `bool`                | `true`  | Active camera for rendering                                                |
+| `fixedAspectRatio` | `bool`                | `false` | Lock aspect ratio                                                          |
+| `camera`           | `SceneCamera`         | —       | Orthographic or perspective                                                |
+| `toneMapping`      | `ToneMapping`         | `None`  | `None`, `PbrNeutral` or `Aces` (`camera.toneMapping`)                      |
+| `postProcess`      | `PostProcessSettings` | all off | EV100, exposure, bloom, vignette, LUT, lens effects (`camera.postProcess`) |
 
 YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
 
-| Field                | Type    | Default     | Description                                                                                      |
-|----------------------|---------|-------------|--------------------------------------------------------------------------------------------------|
-| `ev100`              | `float` | `15`        | Exposure value at ISO 100 (15 sunny, 12 overcast, 8 bright interior, 5 dim room, 3 candle light) |
-| `autoExposure`       | `bool`  | `false`     | Exposure follows the average brightness of the frame                                             |
-| `autoExposureMin`    | `float` | `-2`        | Lowest EV100 of the automatic exposure                                                           |
-| `autoExposureMax`    | `float` | `16`        | Highest EV100 of the automatic exposure                                                          |
-| `autoExposureSpeed`  | `float` | `2`         | Adaptation speed, in EV per second                                                               |
-| `exposure`           | `float` | `0`         | Exposure compensation in EV, on top of `ev100` or the automatic exposure                         |
-| `bloom`              | `bool`  | `false`     | Glow of the bright parts                                                                         |
-| `bloomThreshold`     | `float` | `1`         | Luminance above which the colour blooms                                                          |
-| `bloomKnee`          | `float` | `0.5`       | Softness of the threshold                                                                        |
-| `bloomIntensity`     | `float` | `0.1`       | Strength of the glow                                                                             |
-| `bloomScatter`       | `float` | `0.7`       | Spread of the glow                                                                               |
-| `vignette`           | `bool`  | `false`     | Darkened edges                                                                                   |
-| `vignetteIntensity`  | `float` | `0.3`       | Strength of the vignette                                                                         |
-| `vignetteSmoothness` | `float` | `0.4`       | Softness of its edge                                                                             |
-| `vignetteColor`      | `vec3`  | `{0, 0, 0}` | Colour the edges fade to (sRGB)                                                                  |
-| `lut`                | path    | empty       | Asset path of a `.cube` colour-grading LUT                                                       |
-| `lutContribution`    | `float` | `1`         | Weight of the LUT, 0 to 1                                                                        |
+| Field                          | Type    | Default     | Description                                                                                      |
+|--------------------------------|---------|-------------|--------------------------------------------------------------------------------------------------|
+| `ev100`                        | `float` | `15`        | Exposure value at ISO 100 (15 sunny, 12 overcast, 8 bright interior, 5 dim room, 3 candle light) |
+| `autoExposure`                 | `bool`  | `false`     | Exposure follows the average brightness of the frame                                             |
+| `autoExposureMin`              | `float` | `-2`        | Lowest EV100 of the automatic exposure                                                           |
+| `autoExposureMax`              | `float` | `16`        | Highest EV100 of the automatic exposure                                                          |
+| `autoExposureSpeed`            | `float` | `2`         | Adaptation speed, in EV per second                                                               |
+| `exposure`                     | `float` | `0`         | Exposure compensation in EV, on top of `ev100` or the automatic exposure                         |
+| `bloom`                        | `bool`  | `false`     | Glow of the bright parts                                                                         |
+| `bloomThreshold`               | `float` | `1`         | Luminance above which the colour blooms                                                          |
+| `bloomKnee`                    | `float` | `0.5`       | Softness of the threshold                                                                        |
+| `bloomIntensity`               | `float` | `0.1`       | Strength of the glow                                                                             |
+| `bloomScatter`                 | `float` | `0.7`       | Spread of the glow                                                                               |
+| `vignette`                     | `bool`  | `false`     | Darkened edges                                                                                   |
+| `vignetteIntensity`            | `float` | `0.3`       | Strength of the vignette                                                                         |
+| `vignetteSmoothness`           | `float` | `0.4`       | Softness of its edge                                                                             |
+| `vignetteColor`                | `vec3`  | `{0, 0, 0}` | Colour the edges fade to (sRGB)                                                                  |
+| `lut`                          | path    | empty       | Asset path of a `.cube` colour-grading LUT                                                       |
+| `lutContribution`              | `float` | `1`         | Weight of the LUT, 0 to 1                                                                        |
+| `chromaticAberration`          | `bool`  | `false`     | Red and blue split towards the edges                                                             |
+| `chromaticAberrationIntensity` | `float` | `0.3`       | Strength of the split, 0 to 1                                                                    |
+| `filmGrain`                    | `bool`  | `false`     | Grain over the image, new each frame                                                             |
+| `filmGrainIntensity`           | `float` | `0.15`      | Strength of the grain, 0 to 1                                                                    |
+| `filmGrainSize`                | `float` | `1.5`       | Size of a grain in pixels, 1 to 4                                                                |
+| `depthOfField`                 | `bool`  | `false`     | Blur away from the focus distance                                                                |
+| `focusDistance`                | `float` | `5`         | Distance that stays sharp                                                                        |
+| `focusRange`                   | `float` | `5`         | Distance from the focus to the largest blur                                                      |
+| `bokehRadius`                  | `float` | `8`         | Largest blur radius, pixels of a 1080-pixel-high frame                                           |
+| `motionBlur`                   | `bool`  | `false`     | Blur along the motion of the camera, in Play                                                     |
+| `motionBlurIntensity`          | `float` | `0.5`       | Fraction of the frame the shutter stays open                                                     |
 
 `postProcess` sits inside the `camera` map next to `toneMapping`; every key is optional. The passes and their order are in
 [Renderer > Post-process](renderer.md#renderer-post-process).

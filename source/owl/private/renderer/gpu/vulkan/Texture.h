@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <span>
 
 namespace owl::renderer::gpu::vulkan {
 /**
@@ -137,6 +138,99 @@ protected:
 
 private:
 	/// Vulkan-side texture identifier (registered with the descriptor pool / bindless table).
+	uint32_t m_textureId = 0;
+};
+
+/**
+ * @brief
+ *  Vulkan cube texture: a cube-compatible image of six layers, kept in `SHADER_READ_ONLY_OPTIMAL` between copies,
+ *  cleared to zero at creation.
+ */
+class OWL_API TextureCube final : public renderer::gpu::TextureCube {
+public:
+	TextureCube(const TextureCube&) = delete;
+
+	TextureCube(TextureCube&&) = delete;
+
+	auto operator=(const TextureCube&) -> TextureCube& = delete;
+
+	auto operator=(TextureCube&&) -> TextureCube& = delete;
+
+	/**
+	 * @brief
+	 *  Allocate the image, its cube view and its sampler.
+	 * @param[in] iSpecs The cube's specification.
+	 */
+	explicit TextureCube(const Specification& iSpecs);
+
+	/**
+	 * @brief
+	 *  Destructor: the image is released once the frames using it are done.
+	 */
+	~TextureCube() override;
+
+	/**
+	 * @brief
+	 *  Comparison operator.
+	 * @param[in] iOther Other texture to compare.
+	 * @return True if same registered texture.
+	 */
+	auto operator==(const Texture& iOther) const -> bool override;
+
+	/**
+	 * @brief
+	 *  Get renderer id.
+	 * @return The registered texture id.
+	 */
+	[[nodiscard]] auto getRendererId() const -> uint64_t override { return m_textureId; }
+
+	/**
+	 * @brief
+	 *  Identity of the GPU texture in its backend.
+	 * @return The registered texture id.
+	 */
+	[[nodiscard]] auto getBackendId() const -> uint64_t override { return m_textureId; }
+
+	/**
+	 * @brief
+	 *  Get the id of the texture in the descriptor registry.
+	 * @return The texture id.
+	 */
+	[[nodiscard]] auto getTextureId() const -> uint32_t { return m_textureId; }
+
+	/**
+	 * @brief
+	 *  Bind to a 2D slot: a cube is bound with `RenderCommand::bindTextures(textures, cubes)`, so this warns.
+	 * @param[in] iSlot The slot.
+	 */
+	void bind(uint32_t iSlot) const override;
+
+	/**
+	 * @brief
+	 *  Upload the six faces of level 0.
+	 * @param[in] iData The faces, one after the other.
+	 * @param[in] iSize Size of the data in bytes.
+	 */
+	void setData(void* iData, uint32_t iSize) override;
+
+	/**
+	 * @brief
+	 *  Upload every level of the cube.
+	 * @param[in] iLevels The levels, six faces each, as many as the cube has.
+	 * @return True when the levels fit the cube.
+	 */
+	auto setLevels(const TextureLevels& iLevels) -> bool override;
+
+private:
+	/**
+	 * @brief
+	 *  Record the upload of levels from memory.
+	 * @param[in] iLevels Data of each level from level 0, six faces each.
+	 * @return True when the upload is recorded.
+	 */
+	[[nodiscard]] auto upload(std::span<const std::span<const uint8_t>> iLevels) const -> bool;
+
+	/// Id of the texture in the descriptor registry.
 	uint32_t m_textureId = 0;
 };
 

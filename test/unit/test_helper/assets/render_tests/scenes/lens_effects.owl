@@ -1,0 +1,131 @@
+Scene: RenderTestLensEffects
+EnabledRenderers:
+- {Name: world, Enabled: false}
+- {Name: mesh_world, Enabled: true}
+- {Name: ui, Enabled: false}
+Entities:
+- Entity: 3810000000000000001
+  Tag: {tag: MeshCamera}
+  Transform:
+    translation: [0, 1.6, 6]
+    rotation: [-0.25, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Camera:
+    camera: {projectionType: Perspective, perspectiveFOV: 0.785398185, perspectiveNear: 0.100000001, perspectiveFar: 100,
+      orthographicSize: 8, orthographicNear: -1, orthographicFar: 10,
+      postProcess: {depthOfField: true, focusDistance: 6, focusRange: 3, bokehRadius: 10, chromaticAberration: true,
+        chromaticAberrationIntensity: 0.8, filmGrain: true, filmGrainIntensity: 0.25, filmGrainSize: 1.5}}
+    primary: true
+    fixedAspectRatio: false
+- Entity: 3810000000000000002
+  Tag: {tag: Sky}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Environment: {hdri: hdri/sky_gradient.hdr, intensity: 1, rotation: 0, showSky: true}
+- Entity: 3810000000000000003
+  Tag: {tag: Sun}
+  Transform:
+    translation: [0, 4, 0]
+    rotation: [-0.8, 2.6, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light:
+    type: Directional
+    intensity: 2
+    castShadows: true
+- Entity: 3810000000000000004
+  Tag: {tag: Ground}
+  Transform:
+    translation: [0, -0.55, 0]
+    rotation: [0, 0, 0]
+    scale: [12, 0.1, 8]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/glossy_floor.owlmat
+- Entity: 3810000000000000005
+  Tag: {tag: Chrome}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/sphere.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/chrome.owlmat
+- Entity: 3810000000000000006
+  Tag: {tag: Crate}
+  Transform:
+    translation: [-1.6, 0, -1.2]
+    rotation: [0, 0.5, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+- Entity: 3810000000000000007
+  Tag: {tag: Plastic}
+  Transform:
+    translation: [1.6, 0, -1.0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/sphere.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/red_plastic.owlmat
+- Entity: 3810000000000000008
+  Tag: {tag: Gold}
+  Transform:
+    translation: [0.9, 0, 1.6]
+    rotation: [0, 0, 0]
+    scale: [0.6, 0.6, 0.6]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/sphere.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/gold.owlmat
+- Entity: 3810000000000000009
+  Tag: {tag: Probe}
+  Transform:
+    translation: [0, 1, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  ReflectionProbe:
+    shape: Box
+    extents: [6, 1.5, 4]
+    blendDistance: 0.5
+    parallax: true
+    intensity: 1
+    resolution: 128
+    realtime: false

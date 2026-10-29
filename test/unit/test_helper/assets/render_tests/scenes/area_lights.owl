@@ -1,0 +1,124 @@
+Scene: RenderTestAreaLights
+EnabledRenderers:
+- {Name: world, Enabled: false}
+- {Name: mesh_world, Enabled: true}
+- {Name: ui, Enabled: false}
+Entities:
+- Entity: 3700000000000000001
+  Tag: {tag: MeshCamera}
+  Transform:
+    translation: [0, 2.2, 6]
+    rotation: [-0.38, 0, 0]
+    scale: [1, 1, 1]
+  Camera:
+    camera: {projectionType: Perspective, perspectiveFOV: 0.785398185, perspectiveNear: 0.100000001, perspectiveFar: 100,
+      orthographicSize: 8, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+- Entity: 3700000000000000002
+  Tag: {tag: Ground}
+  Transform:
+    translation: [0, -0.55, 0]
+    rotation: [0, 0, 0]
+    scale: [12, 0.1, 8]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/glossy_floor.owlmat
+- Entity: 3700000000000000003
+  Tag: {tag: Crate}
+  Transform:
+    translation: [-1.8, 0, 0]
+    rotation: [0, 0.5, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+- Entity: 3700000000000000004
+  Tag: {tag: Plastic}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/sphere.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/red_plastic.owlmat
+- Entity: 3700000000000000005
+  Tag: {tag: Steel}
+  Transform:
+    translation: [1.8, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/sphere.glb
+    color: [1, 1, 1, 1]
+    transparent: false
+    materials:
+      - material: pbr_materials/rough_steel.owlmat
+- Entity: 3700000000000000006
+  Tag: {tag: WarmPanel}
+  Transform:
+    translation: [-1.6, 2.2, 0.6]
+    rotation: [-1.5707964, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light:
+    type: Rectangle
+    color: [1, 0.75, 0.45]
+    intensity: 14
+    range: 8
+    size: [1.6, 0.5]
+    castShadows: true
+    shadowResolution: 512
+- Entity: 3700000000000000007
+  Tag: {tag: CoolDisc}
+  Transform:
+    translation: [1.8, 2, 0.4]
+    rotation: [-1.5707964, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light:
+    type: Disc
+    color: [0.5, 0.7, 1]
+    intensity: 12
+    range: 8
+    radius: 0.35
+    castShadows: true
+    shadowResolution: 512
+- Entity: 3700000000000000008
+  Tag: {tag: Bulb}
+  Transform:
+    translation: [0.4, 0.9, 1.6]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light:
+    type: Sphere
+    color: [0.6, 1, 0.6]
+    intensity: 4
+    range: 5
+    radius: 0.12
+    castShadows: false

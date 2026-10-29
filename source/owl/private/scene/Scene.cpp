@@ -12,6 +12,7 @@
 #include "data/voxel/TerrainGenerator.h"
 #include "math/Frustum.h"
 #include "platform/FileUtils.h"
+#include "renderer/AreaLights.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/ClipSpace.h"
@@ -22,6 +23,7 @@
 #include "renderer/OutlinePass.h"
 #include "renderer/PostProcess.h"
 #include "renderer/ProceduralSky.h"
+#include "renderer/ReflectionProbes.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
@@ -95,6 +97,42 @@ struct VoxelStreamState {
 };
 
 namespace {
+
+// Clear a shadow target between two faces drawn into it: depth to the far plane, no entity.
+void clearShadowFace(renderer::gpu::Framebuffer& ioTarget) {
+	const math::vec4 clearColor = renderer::gpu::RenderCommand::getClearColor();
+	renderer::gpu::RenderCommand::setClearColor(
+			{renderer::g_farDepth, renderer::g_farDepth, renderer::g_farDepth, renderer::g_farDepth});
+	renderer::gpu::RenderCommand::clear();
+	renderer::gpu::RenderCommand::setClearColor(clearColor);
+	ioTarget.clearAttachment(1, -1);
+}
+
+// Clear a probe face between two faces drawn into it, as the graph clears a linear target.
+void clearProbeFace(renderer::gpu::Framebuffer& ioTarget) {
+	const math::vec4 clearColor = renderer::gpu::RenderCommand::getClearColor();
+	renderer::gpu::RenderCommand::setClearColor({renderer::ColorEncoder::srgbToLinear(clearColor.r()),
+												 renderer::ColorEncoder::srgbToLinear(clearColor.g()),
+												 renderer::ColorEncoder::srgbToLinear(clearColor.b()), clearColor.a()});
+	renderer::gpu::RenderCommand::clear();
+	renderer::gpu::RenderCommand::setClearColor(clearColor);
+	ioTarget.clearAttachment(1, -1);
+}
+
+// Distance from a point to the volume of a probe, 0 inside.
+auto distanceToProbe(const math::vec3& iPoint, const math::vec3& iCenter,
+					 const scene::component::ReflectionProbe& iProbe) -> float {
+	const math::vec3 offset = iPoint - iCenter;
+	if (iProbe.shape == scene::component::ReflectionProbe::Shape::Sphere)
+		return std::max(offset.norm() - iProbe.radius, 0.f);
+	const math::vec3 outside{std::max(std::abs(offset.x()) - iProbe.extents.x(), 0.f),
+							 std::max(std::abs(offset.y()) - iProbe.extents.y(), 0.f),
+							 std::max(std::abs(offset.z()) - iProbe.extents.z(), 0.f)};
+	return outside.norm();
+}
+
+// Far plane of the face cameras of a probe, in world units.
+constexpr float g_probeFar = 500.f;
 
 // Entities of one chunk handed to a worker: below it the dispatch costs more than the work it spreads.
 constexpr size_t g_ParallelChunkEntities = 1024;
@@ -888,14 +926,15 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	recordLightPasses(graph);
 	recordOcclusionPasses(graph);
 	recordEnvironmentPass(graph, sceneColor);
+	recordReflectionProbePasses(graph);
 	recordWorldPasses(graph, sceneColor);
 	const auto* const bound = renderer::gpu::Framebuffer::getBound();
 	const math::vec2ui frameSize = bound != nullptr ? bound->getSpecification().size : m_viewportSize;
 	const auto& post = iCamera.getPostProcess();
-	m_postTargets.sceneColor = sceneColor;
-	m_postTargets.exposure = renderer::PostProcess::recordExposure(graph, sceneColor, post, frameSize);
-	m_postTargets.bloom =
-			renderer::PostProcess::recordBloom(graph, sceneColor, post, frameSize, m_postTargets.exposure);
+	const Graph::Resource postColor = recordDepthEffects(graph, sceneColor, frameSize);
+	m_postTargets.sceneColor = postColor;
+	m_postTargets.exposure = renderer::PostProcess::recordExposure(graph, postColor, post, frameSize);
+	m_postTargets.bloom = renderer::PostProcess::recordBloom(graph, postColor, post, frameSize, m_postTargets.exposure);
 	const auto encodeSetup = [sceneColor, target](Graph::PassBuilder& ioBuilder) -> void {
 		ioBuilder.read(sceneColor);
 		ioBuilder.write(target);
@@ -954,6 +993,8 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	renderer::Renderer3D::setEditorAmbient({});
 	renderer::Renderer3D::setExposure(renderer::Renderer3D::exposureOf(renderer::Renderer3D::g_defaultEv100));
 	renderer::Renderer3D::setShadow({});
+	renderer::Renderer3D::setLocalShadows({});
+	renderer::Renderer3D::setReflectionProbes({});
 	renderer::Renderer3D::setEnvironment({});
 	mp_renderCamera = nullptr;
 }
@@ -1014,11 +1055,52 @@ auto Scene::getRenderTarget(const std::string& iName) const -> shared<renderer::
 	return nullptr;
 }
 
+namespace {
+
+// Strength the shaders read for a light (lux, candela or nits) and the shape of an area light (`GpuLight::area`).
+auto lightEmission(const component::Light& iLight, const math::Transform& iWorld) -> std::pair<float, math::vec4> {
+	using Type = component::Light::Type;
+	const float power = std::max(iLight.intensity, 0.f);
+	const math::vec4 axis4 = iWorld() * math::vec4{1.f, 0.f, 0.f, 0.f};
+	math::vec3 axis{axis4.x(), axis4.y(), axis4.z()};
+	axis = axis.normSq() > 1e-12f ? axis.normalized() : math::vec3{1.f, 0.f, 0.f};
+	const float radius = std::max(iLight.radius, component::g_minAreaSize);
+	const math::vec2 size{std::max(iLight.size.x(), component::g_minAreaSize),
+						  std::max(iLight.size.y(), component::g_minAreaSize)};
+	switch (iLight.type) {
+		case Type::Directional:
+			return {power, {}};
+		case Type::Point:
+			return {power / (4.f * std::numbers::pi_v<float>), {}};
+		case Type::Spot:
+			return {power / std::numbers::pi_v<float>, {}};
+		case Type::Rectangle:
+			{
+				const math::vec3 half = axis * (0.5f * size.x());
+				return {renderer::getRectangleLuminance(power, size), {half.x(), half.y(), half.z(), 0.5f * size.y()}};
+			}
+		case Type::Disc:
+			{
+				const math::vec3 half = axis * radius;
+				return {renderer::getDiscLuminance(power, radius), {half.x(), half.y(), half.z(), radius}};
+			}
+		case Type::Sphere:
+			return {power / (4.f * std::numbers::pi_v<float>), {0.f, 0.f, 0.f, radius}};
+	}
+	return {power, {}};
+}
+
+}// namespace
+
 void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 	using Graph = renderer::RenderGraph;
 	const bool editorMode = status == Status::Editing;
 	m_gpuLights.clear();
 	m_shadowSettings = {};
+	m_shadowCandidates.clear();
+	m_localCasters.clear();
+	const math::vec4 eye4 = inverse(mp_renderCamera->getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	const math::vec3 eye{eye4.x(), eye4.y(), eye4.z()};
 	renderer::Renderer3D::setExposure(renderer::Renderer3D::exposureOf(mp_renderCamera->getPostProcess().ev100));
 	m_shadowCascades.count = 0;
 	const component::Light* shadowLight = nullptr;
@@ -1033,12 +1115,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 		const math::vec4 forward = world() * math::vec4{0.f, 0.f, -1.f, 0.f};
 		const math::vec3 direction = math::vec3{forward.x(), forward.y(), forward.z()}.normalized();
 		const math::vec3& position = world.translation();
-		// Lux for a directional light; the luminous intensity (cd) of the lumens of a point or spot light.
-		float strength = std::max(light.intensity, 0.f);
-		if (light.type == component::Light::Type::Point)
-			strength /= 4.f * std::numbers::pi_v<float>;
-		else if (light.type == component::Light::Type::Spot)
-			strength /= std::numbers::pi_v<float>;
+		const auto [strength, area] = lightEmission(light, world);
 		const math::vec3 color = math::vec3{renderer::ColorEncoder::srgbToLinear(light.color.x()),
 											renderer::ColorEncoder::srgbToLinear(light.color.y()),
 											renderer::ColorEncoder::srgbToLinear(light.color.z())} *
@@ -1048,7 +1125,26 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 				 .directionType = {direction.x(), direction.y(), direction.z(), static_cast<float>(light.type)},
 				 .color = {color.x(), color.y(), color.z(), 0.f},
 				 .spotCosines = {std::cos(light.innerAngle), std::cos(std::max(light.outerAngle, light.innerAngle)),
-								 0.f, 0.f}});
+								 -1.f,
+								 light.type == component::Light::Type::Directional
+										 ? std::clamp(light.angularRadius, 0.f, component::g_maxAngularRadius)
+										 : 0.f},
+				 .area = area});
+		if (light.castShadows && light.type != component::Light::Type::Directional) {
+			const auto lightIndex = static_cast<uint32_t>(m_gpuLights.size() - 1);
+			m_localCasters.resize(lightIndex + 1);
+			m_localCasters[lightIndex] = {.position = position,
+										  .direction = direction,
+										  .outerAngle = std::max(light.outerAngle, light.innerAngle),
+										  .range = std::max(light.range, 0.01f),
+										  .resolution = light.shadowResolution,
+										  .bias = light.shadowBias,
+										  .lightSize = area.w(),
+										  .point = light.type != component::Light::Type::Spot};
+			m_shadowCandidates.push_back({.lightIndex = lightIndex,
+										  .distance = renderer::distanceToLightRange(eye, position, light.range),
+										  .intensity = strength});
+		}
 		if (shadowLight == nullptr && light.type == component::Light::Type::Directional && light.castShadows) {
 			shadowLight = &light;
 			shadowDirection = direction;
@@ -1059,6 +1155,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 	// The layer sun stands in for a scene that has no light at all, never for lights switched off.
 	renderer::Renderer3D::setLayerSun(registry.view<component::Light>().empty());
 	renderer::Renderer3D::setEditorAmbient(editorMode ? m_editorAmbient : math::vec3{0.f, 0.f, 0.f});
+	recordLocalShadowPasses(ioGraph);
 	if (shadowLight == nullptr)
 		return;
 	m_shadowCascades = renderer::computeShadowCascades(*mp_renderCamera, {.lightDirection = shadowDirection,
@@ -1067,6 +1164,8 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 																		  .resolution = shadowLight->shadowResolution});
 	m_shadowSettings.cascadeCount = m_shadowCascades.count;
 	m_shadowSettings.bias = shadowLight->shadowBias;
+	m_shadowSettings.tanAngularRadius =
+			std::tan(std::clamp(shadowLight->angularRadius, 0.f, component::g_maxAngularRadius));
 	m_shadowSettings.resolution = shadowLight->shadowResolution;
 	m_shadowSettings.viewDepthRow = mp_renderCamera->getView().row(2);
 	const math::vec2ui mapSize{shadowLight->shadowResolution, shadowLight->shadowResolution};
@@ -1079,6 +1178,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 		m_shadowSettings.origins[index] = math::vec3{lightEye.x(), lightEye.y(), lightEye.z()};
 		m_shadowSettings.splitDepths[index] = cascade.splitDepth;
 		m_shadowSettings.texelWorldSizes[index] = cascade.texelWorldSize;
+		m_shadowSettings.depthRanges[index] = cascade.depthRange;
 		m_shadowTargets[index] = ioGraph.createTarget("shadow map", Graph::TargetFormat::Depth, mapSize);
 		ioGraph.addPass(
 				"shadow cascade",
@@ -1087,6 +1187,347 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 					renderShadowCasters(m_shadowCascades.cascades[index].camera);
 				});
 	}
+}
+
+void Scene::recordLocalShadowPasses(renderer::RenderGraph& ioGraph) {
+	using Graph = renderer::RenderGraph;
+	m_localShadows.spots.clear();
+	m_localShadows.points.clear();
+	m_spotShadowTargets.clear();
+	m_pointFaceTargets.clear();
+	m_spotShadowCameras.clear();
+	m_pointShadowFaces.clear();
+	if (m_shadowCandidates.empty())
+		return;
+	const auto budget = renderer::getLocalShadowBudget();
+	auto& spots = m_shadowCandidates;
+	const auto firstPoint =
+			std::ranges::stable_partition(spots, [this](const renderer::ShadowCandidate& iCandidate) -> bool {
+				return !m_localCasters[iCandidate.lightIndex].point;
+			});
+	std::vector<renderer::ShadowCandidate> points{firstPoint.begin(), firstPoint.end()};
+	spots.erase(firstPoint.begin(), firstPoint.end());
+	renderer::rankShadowCandidates(spots, budget.spot);
+	renderer::rankShadowCandidates(points, budget.point);
+
+	for (const auto& candidate: spots) {
+		const auto& caster = m_localCasters[candidate.lightIndex];
+		const auto camera =
+				renderer::computeSpotShadowCamera(caster.position, caster.direction, caster.outerAngle, caster.range);
+		m_localShadows.spots.push_back(
+				{.lightIndex = candidate.lightIndex,
+				 .relativeViewProjection = camera.getProjection() * renderer::cameraRelativeView(camera.getView()),
+				 .origin = caster.position,
+				 .tanHalfAngle = std::tan(std::clamp(caster.outerAngle, 0.0175f, 1.48f)),
+				 .map = nullptr,
+				 .resolution = caster.resolution,
+				 .bias = caster.bias});
+		m_spotShadowCameras.push_back(camera);
+		const auto target =
+				ioGraph.createTarget("spot shadow", Graph::TargetFormat::Depth, {caster.resolution, caster.resolution});
+		m_spotShadowTargets.push_back(target);
+		ioGraph.addPass(
+				"spot shadow", [target](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(target); },
+				[this, index = m_spotShadowCameras.size() - 1](const Graph::PassContext&) -> void {
+					renderShadowCasters(m_spotShadowCameras[index]);
+				});
+	}
+
+	if (m_pointShadowCubes.size() < points.size())
+		m_pointShadowCubes.resize(points.size());
+	for (size_t index = 0; index < points.size(); ++index) {
+		const auto& caster = m_localCasters[points[index].lightIndex];
+		auto& cube = m_pointShadowCubes[index];
+		if (!cube || cube->getFaceSize(0) != caster.resolution)
+			cube = renderer::gpu::TextureCube::create({.size = {caster.resolution, caster.resolution},
+													   .format = renderer::gpu::ImageFormat::R32F,
+													   .filterMode = renderer::gpu::FilterMode::Nearest});
+		if (!cube)
+			continue;
+		m_pointShadowFaces.push_back(renderer::computePointShadowFaces(caster.position, caster.range));
+		m_localShadows.points.push_back({.lightIndex = points[index].lightIndex,
+										 .depth = m_pointShadowFaces.back().depth,
+										 .cube = cube,
+										 .resolution = caster.resolution,
+										 .bias = caster.bias,
+										 .lightSize = caster.lightSize});
+	}
+	// The faces of every cube of one size are drawn one after the other in a single target.
+	std::vector<uint32_t> faceSizes;
+	for (size_t index = 0; index < m_localShadows.points.size(); ++index) {
+		const uint32_t size = m_localShadows.points[index].resolution;
+		const auto known = std::ranges::find(faceSizes, size);
+		const bool created = known == faceSizes.end();
+		if (created) {
+			faceSizes.push_back(size);
+			m_pointFaceTargets.push_back(
+					ioGraph.createTarget("point shadow face", Graph::TargetFormat::Depth, {size, size}));
+		}
+		const auto target =
+				m_pointFaceTargets[created ? faceSizes.size() - 1 : static_cast<size_t>(known - faceSizes.begin())];
+		ioGraph.addPass(
+				"point shadow", [target](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(target); },
+				[this, index, target](const Graph::PassContext& iContext) -> void {
+					auto* const face = iContext.getFramebuffer(target);
+					const auto& shadow = m_localShadows.points[index];
+					if (face == nullptr || !shadow.cube)
+						return;
+					for (uint32_t side = 0; side < renderer::gpu::TextureCube::g_faceCount; ++side) {
+						clearShadowFace(*face);
+						renderShadowCasters(m_pointShadowFaces[index].cameras[side]);
+						static_cast<void>(face->copyAttachmentToCube(0, *shadow.cube, side, 0));
+					}
+				});
+	}
+}
+
+auto Scene::recordDepthEffects(renderer::RenderGraph& ioGraph, const renderer::RenderGraph::Resource iSceneColor,
+							   const math::vec2ui& iFrameSize) -> renderer::RenderGraph::Resource {
+	using Graph = renderer::RenderGraph;
+	// A camera moving further than this in one frame jumped (a teleport, a floating-origin shift): no blur then.
+	constexpr float jump = 50.f;
+	m_postDepth = {};
+	const auto& camera = *mp_renderCamera;
+	const auto& post = camera.getPostProcess();
+	const bool tracked = status != Status::Editing && !m_drawingRenderTarget;
+	std::optional<math::mat4> reprojection;
+	if (tracked && post.motionBlur && m_previousView) {
+		const math::vec4 eye = inverse(camera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+		const math::vec4 previousEye = inverse(m_previousView->view) * math::vec4{0.f, 0.f, 0.f, 1.f};
+		if ((eye - previousEye).normSq() < jump * jump)
+			reprojection = renderer::PostProcess::getReprojection(camera.getProjection(), camera.getView(),
+																  m_previousView->projection, m_previousView->view);
+	}
+	if (tracked)
+		m_previousView = PreviousView{.projection = camera.getProjection(), .view = camera.getView()};
+	if (!post.depthOfField && !reprojection)
+		return iSceneColor;
+	// The occluder depth may be smaller than the frame: the effects take a depth of their own, the outline reuses it.
+	m_postDepth = ioGraph.createTarget("post depth", Graph::TargetFormat::Depth);
+	ioGraph.addPass(
+			"post depth", [depth = m_postDepth](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(depth); },
+			[this](const Graph::PassContext&) -> void { renderShadowCasters(*mp_renderCamera); });
+	Graph::Resource color = iSceneColor;
+	if (const auto focused = renderer::PostProcess::recordDepthOfField(ioGraph, color, m_postDepth, post,
+																	   camera.getProjection(), iFrameSize);
+		focused.isValid())
+		color = focused;
+	if (reprojection) {
+		if (const auto blurred = renderer::PostProcess::recordMotionBlur(ioGraph, color, m_postDepth, post,
+																		 *reprojection, iFrameSize);
+			blurred.isValid())
+			color = blurred;
+	}
+	return color;
+}
+
+void Scene::readShadowTargets(renderer::RenderGraph::PassBuilder& ioBuilder) const {
+	for (uint32_t index = 0; index < m_shadowSettings.cascadeCount; ++index) ioBuilder.read(m_shadowTargets[index]);
+	for (const auto& target: m_spotShadowTargets) ioBuilder.read(target);
+	for (const auto& target: m_pointFaceTargets) ioBuilder.read(target);
+}
+
+void Scene::recordReflectionProbePasses(renderer::RenderGraph& ioGraph) {
+	using Graph = renderer::RenderGraph;
+	m_probeData.clear();
+	m_probeCaptures.clear();
+	std::erase_if(m_probeStates, [this](const auto& iEntry) -> bool {
+		return !registry.valid(iEntry.first) || !registry.all_of<component::ReflectionProbe>(iEntry.first);
+	});
+	if (!renderer::ReflectionProbes::isReady())
+		return;
+	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
+	bool drawsThreeD = false;
+	for (size_t index = 0; index < layers.size() && !drawsThreeD; ++index) {
+		const std::string_view type{layers[index]->getTypeKey()};
+		drawsThreeD = (type == "RendererVoxel" || type == "RendererMesh") &&
+					  layerHasContent(layers[index]->getName(), index == 0);
+	}
+	if (!drawsThreeD)
+		return;
+	const bool editorMode = status == Status::Editing;
+	const math::vec4 eye4 = inverse(mp_renderCamera->getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	const math::vec3 eye{eye4.x(), eye4.y(), eye4.z()};
+	struct Candidate {
+		entt::entity handle;
+		math::vec3 position;
+		float distance;
+	};
+	std::vector<Candidate> candidates;
+	for (const auto [handle, probe]: registry.view<component::ReflectionProbe>().each()) {
+		const Entity entity{handle, this};
+		if (!isEffectivelyVisible(entity, editorMode))
+			continue;
+		const math::vec3 position = getWorldTransform(entity).translation();
+		candidates.push_back(
+				{.handle = handle, .position = position, .distance = distanceToProbe(eye, position, probe)});
+	}
+	const auto kept = std::min<size_t>(candidates.size(), renderer::getLocalShadowBudget().point);
+	std::ranges::partial_sort(candidates, candidates.begin() + static_cast<std::ptrdiff_t>(kept),
+							  [](const Candidate& iFirst, const Candidate& iSecond) -> bool {
+								  return std::tuple{iFirst.distance, iFirst.handle} <
+										 std::tuple{iSecond.distance, iSecond.handle};
+							  });
+	candidates.resize(kept);
+	++m_probeFrame;
+	const float exposure = renderer::Renderer3D::getExposure();
+	std::vector<entt::entity> captured;
+	entt::entity realtime = entt::null;
+	uint64_t realtimeFrame = std::numeric_limits<uint64_t>::max();
+	for (const auto& candidate: candidates) {
+		const auto& probe = registry.get<component::ReflectionProbe>(candidate.handle);
+		auto& state = m_probeStates[candidate.handle];
+		const uint32_t levels = renderer::getProbeLevelCount(probe.resolution);
+		if (!state.cube || state.cube->getFaceSize(0) != probe.resolution || state.cube->getLevelCount() != levels) {
+			const renderer::gpu::Texture::Specification spec{.size = {probe.resolution, probe.resolution},
+															 .format = renderer::gpu::ImageFormat::Rgba16F,
+															 .levelCount = levels};
+			state.cube = renderer::gpu::TextureCube::create(spec);
+			state.capture = renderer::gpu::TextureCube::create(spec);
+			state.captured = false;
+		}
+		if (!state.cube || !state.capture)
+			continue;
+		const bool stale = !state.captured || (state.position - candidate.position).normSq() > 1e-8f ||
+						   state.generation != m_probeGeneration || state.request != probe.captureRequest;
+		if (stale)
+			captured.push_back(candidate.handle);
+		else if (probe.realtime && state.frame < realtimeFrame) {
+			realtime = candidate.handle;
+			realtimeFrame = state.frame;
+		}
+	}
+	if (realtime != entt::null)
+		captured.push_back(realtime);
+	for (const auto handle: captured) {
+		const auto& probe = registry.get<component::ReflectionProbe>(handle);
+		auto& state = m_probeStates[handle];
+		const auto found = std::ranges::find(candidates, handle, &Candidate::handle);
+		state.position = found->position;
+		state.captureExposure = exposure;
+		state.generation = m_probeGeneration;
+		state.request = probe.captureRequest;
+		state.frame = m_probeFrame;
+		state.captured = true;
+		++m_probeCaptureCount;
+		ProbeCapture capture{.cube = state.cube,
+							 .capture = state.capture,
+							 .faces = renderer::computePointShadowFaces(state.position, g_probeFar),
+							 .chainTargets = {},
+							 .filterTargets = {}};
+		const uint32_t levels = state.cube->getLevelCount();
+		for (uint32_t level = 0; level < levels; ++level) {
+			const uint32_t size = state.cube->getFaceSize(level);
+			capture.chainTargets.push_back(ioGraph.createTarget(level == 0 ? "probe capture" : "probe chain",
+																Graph::TargetFormat::Linear, {size, size}));
+			if (level > 0)
+				capture.filterTargets.push_back(
+						ioGraph.createTarget("probe filter", Graph::TargetFormat::Linear, {size, size}));
+		}
+		m_probeCaptures.push_back(std::move(capture));
+		const size_t index = m_probeCaptures.size() - 1;
+		ioGraph.addPass(
+				"probe capture",
+				[this, index](Graph::PassBuilder& ioBuilder) -> void {
+					ioBuilder.write(m_probeCaptures[index].chainTargets.front());
+					readShadowTargets(ioBuilder);
+				},
+				[this, index](const Graph::PassContext& iContext) -> void {
+					const auto& probeCapture = m_probeCaptures[index];
+					auto* const face = iContext.getFramebuffer(probeCapture.chainTargets.front());
+					if (face == nullptr)
+						return;
+					useShadowMaps(iContext);
+					renderer::Renderer3D::setReflectionProbes({});
+					const uint32_t size = probeCapture.cube->getFaceSize(0);
+					for (uint32_t side = 0; side < renderer::gpu::TextureCube::g_faceCount; ++side) {
+						clearProbeFace(*face);
+						renderProbeFace(probeCapture.faces.cameras[side], size);
+						static_cast<void>(face->copyAttachmentToCube(0, *probeCapture.capture, side, 0));
+						static_cast<void>(face->copyAttachmentToCube(0, *probeCapture.cube, side, 0));
+					}
+				});
+		for (uint32_t level = 1; level < levels; ++level) {
+			ioGraph.addPass(
+					"probe chain",
+					[this, index, level](Graph::PassBuilder& ioBuilder) -> void {
+						ioBuilder.write(m_probeCaptures[index].chainTargets[level]);
+						ioBuilder.read(m_probeCaptures[index].chainTargets[level - 1]);
+					},
+					[this, index, level](const Graph::PassContext& iContext) -> void {
+						const auto& probeCapture = m_probeCaptures[index];
+						auto* const face = iContext.getFramebuffer(probeCapture.chainTargets[level]);
+						if (face == nullptr)
+							return;
+						for (uint32_t side = 0; side < renderer::gpu::TextureCube::g_faceCount; ++side) {
+							renderer::ReflectionProbes::drawDownsampledFace(probeCapture.capture, side, level);
+							static_cast<void>(face->copyAttachmentToCube(0, *probeCapture.capture, side, level));
+						}
+					});
+		}
+		for (uint32_t level = 1; level < levels; ++level) {
+			ioGraph.addPass(
+					"probe filter",
+					[this, index, level](Graph::PassBuilder& ioBuilder) -> void {
+						ioBuilder.write(m_probeCaptures[index].filterTargets[level - 1]);
+						ioBuilder.read(m_probeCaptures[index].chainTargets.back());
+					},
+					[this, index, level](const Graph::PassContext& iContext) -> void {
+						const auto& probeCapture = m_probeCaptures[index];
+						auto* const face = iContext.getFramebuffer(probeCapture.filterTargets[level - 1]);
+						if (face == nullptr)
+							return;
+						for (uint32_t side = 0; side < renderer::gpu::TextureCube::g_faceCount; ++side) {
+							renderer::ReflectionProbes::drawFilteredFace(probeCapture.capture, side, level);
+							static_cast<void>(face->copyAttachmentToCube(0, *probeCapture.cube, side, level));
+						}
+					});
+		}
+	}
+	for (const auto& candidate: candidates) {
+		const auto& probe = registry.get<component::ReflectionProbe>(candidate.handle);
+		const auto& state = m_probeStates[candidate.handle];
+		if (!state.cube || !state.captured)
+			continue;
+		const bool sphere = probe.shape == component::ReflectionProbe::Shape::Sphere;
+		m_probeData.push_back({.position = state.position,
+							   .extents = probe.extents,
+							   .sphereRadius = sphere ? std::max(probe.radius, 0.01f) : 0.f,
+							   .blendDistance = probe.blendDistance,
+							   .parallax = probe.parallax,
+							   .intensity = probe.intensity,
+							   .captureExposure = state.captureExposure,
+							   .cube = state.cube});
+	}
+}
+
+void Scene::renderProbeFace(const renderer::Camera& iCamera, const uint32_t iFaceSize) {
+	const bool editorMode = status == Status::Editing;
+	if (m_drawsSky) {
+		renderer::Renderer3D::beginScene(iCamera);
+		renderer::Renderer3D::drawSky();
+		renderer::Renderer3D::endScene();
+	}
+	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
+	for (size_t index = 0; index < layers.size(); ++index) {
+		const auto& layer = layers[index];
+		const std::string_view type{layer->getTypeKey()};
+		if ((type != "RendererVoxel" && type != "RendererMesh") || !layerHasContent(layer->getName(), index == 0))
+			continue;
+		layer->setViewport({iFaceSize, iFaceSize});
+		layer->onBeginFrame(iCamera);
+		m_currentLayerName = layer->getName();
+		m_currentLayerIsFirst = index == 0;
+		mp_currentLayer = layer.get();
+		if (type == "RendererVoxel")
+			renderVoxelWorlds(editorMode);
+		else
+			renderMeshes(editorMode);
+		layer->onEndFrame();
+	}
+	m_currentLayerName.clear();
+	m_currentLayerIsFirst = true;
+	mp_currentLayer = nullptr;
 }
 
 void Scene::recordOcclusionPasses(renderer::RenderGraph& ioGraph) {
@@ -1131,6 +1572,7 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 	const bool editorMode = status == Status::Editing;
 	const component::Environment* environment = nullptr;
 	const component::ProceduralSky* sky = nullptr;
+	m_drawsSky = false;
 	for (const auto [handle, candidate]: registry.view<component::Environment>().each()) {
 		if (isEffectivelyVisible(Entity{handle, this}, editorMode)) {
 			environment = &candidate;
@@ -1191,6 +1633,7 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 		}
 		state.lighting.irradiance = map.irradiance;
 		state.result.reset();
+		requestReflectionProbeCapture();
 	}
 	if (state.lighting.levelCount == 0) {
 		renderer::Renderer3D::setEnvironment(constantSky);
@@ -1206,6 +1649,7 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 	renderer::Renderer3D::setEnvironment(state.lighting);
 	if (!environment->showSky)
 		return;
+	m_drawsSky = true;
 	ioGraph.addPass(
 			"environment sky", [iSceneColor](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(iSceneColor); },
 			[this](const Graph::PassContext&) -> void {
@@ -1270,6 +1714,12 @@ void Scene::requestProceduralSky(const component::ProceduralSky& iSky) {
 }
 
 void Scene::useShadowMaps(const renderer::RenderGraph::PassContext& iContext) {
+	renderer::Renderer3D::setReflectionProbes(m_probeData);
+	if (!m_localShadows.spots.empty() || !m_localShadows.points.empty()) {
+		for (size_t index = 0; index < m_localShadows.spots.size(); ++index)
+			m_localShadows.spots[index].map = iContext.getTexture(m_spotShadowTargets[index]);
+		renderer::Renderer3D::setLocalShadows(m_localShadows);
+	}
 	if (m_shadowSettings.cascadeCount == 0)
 		return;
 	for (uint32_t index = 0; index < m_shadowSettings.cascadeCount; ++index)
@@ -1302,9 +1752,10 @@ void Scene::recordOutlinePasses(renderer::RenderGraph& ioGraph, const renderer::
 		return;
 	const Graph::Resource mask = ioGraph.createTarget("outline mask", Graph::TargetFormat::Depth);
 	// The occluder depth of the frame, when the occlusion culling made one, spares a depth pass of the whole scene.
-	const bool reuse = m_occluderDepth.isValid();
+	const Graph::Resource known = m_postDepth.isValid() ? m_postDepth : m_occluderDepth;
+	const bool reuse = known.isValid();
 	const Graph::Resource depth =
-			reuse ? m_occluderDepth : ioGraph.createTarget("outline scene depth", Graph::TargetFormat::Depth);
+			reuse ? known : ioGraph.createTarget("outline scene depth", Graph::TargetFormat::Depth);
 	ioGraph.addPass(
 			"outline mask", [mask](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(mask); },
 			[this, rootHandle](const Graph::PassContext&) -> void {
@@ -1362,7 +1813,11 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 	const auto writeScene = [iSceneColor](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(iSceneColor); };
 	const auto writeSceneReadShadows = [this, iSceneColor](Graph::PassBuilder& ioBuilder) -> void {
 		ioBuilder.write(iSceneColor);
-		for (uint32_t index = 0; index < m_shadowSettings.cascadeCount; ++index) ioBuilder.read(m_shadowTargets[index]);
+		readShadowTargets(ioBuilder);
+		for (const auto& capture: m_probeCaptures) {
+			ioBuilder.read(capture.chainTargets.front());
+			for (const auto& target: capture.filterTargets) ioBuilder.read(target);
+		}
 		if (m_occlusionToken.isValid())
 			ioBuilder.read(m_occlusionToken);
 	};
@@ -3408,6 +3863,11 @@ OWL_API void Scene::onComponentAdded<component::Light2D>([[maybe_unused]] const 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light>([[maybe_unused]] const Entity& iEntity,
 													   [[maybe_unused]] component::Light& ioComponent) {}
+
+template<>
+OWL_API void
+Scene::onComponentAdded<component::ReflectionProbe>([[maybe_unused]] const Entity& iEntity,
+													[[maybe_unused]] component::ReflectionProbe& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::LightFlicker>([[maybe_unused]] const Entity& iEntity,

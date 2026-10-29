@@ -19,6 +19,7 @@
 #include "math/vectors.h"
 #include "renderer/Camera.h"
 #include "renderer/Lighting2D.h"
+#include "renderer/LocalShadows.h"
 #include "renderer/RenderGraph.h"
 #include "renderer/RenderStack.h"
 #include "renderer/Renderer3D.h"
@@ -103,6 +104,7 @@ struct FollowTarget;
 struct RenderTarget;
 struct ProceduralSky;
 struct DayNightCycle;
+struct ReflectionProbe;
 struct FirstPersonController;
 struct Environment;
 struct NativeScript;
@@ -348,6 +350,28 @@ public:
 	 * @param[in] iRadiance Linear radiance; black for none.
 	 */
 	void setEditorAmbient(const math::vec3& iRadiance) { m_editorAmbient = iRadiance; }
+
+	/**
+	 * @brief
+	 *  Capture every reflection probe again at its next frame, after the geometry or the lighting changed.
+	 */
+	void requestReflectionProbeCapture() { ++m_probeGeneration; }
+
+	/**
+	 * @brief
+	 *  Get the number of reflection probe captures the scene recorded since it was created.
+	 * @return The capture count.
+	 */
+	[[nodiscard]] auto getReflectionProbeCaptureCount() const -> uint64_t { return m_probeCaptureCount; }
+
+	/**
+	 * @brief
+	 *  Get the reflection probes the last frame gave `Renderer3D`, the most important first.
+	 * @return The probes.
+	 */
+	[[nodiscard]] auto getReflectionProbes() const -> std::span<const renderer::ReflectionProbeData> {
+		return m_probeData;
+	}
 
 	/**
 	 * @brief
@@ -1786,10 +1810,57 @@ private:
 	/**
 	 * @brief
 	 *  Hand the visible `Light` entities to `Renderer3D` and, when a directional light casts shadows, add one
-	 *  frame-graph pass per cascade drawing the opaque meshes and voxel worlds into its shadow map.
+	 *  frame-graph pass per cascade drawing the opaque meshes and voxel worlds into its shadow map; the point and
+	 *  spot lights casting shadows get theirs from `recordLocalShadowPasses`.
 	 * @param[in,out] ioGraph The frame graph.
 	 */
 	void recordLightPasses(renderer::RenderGraph& ioGraph);
+
+	/**
+	 * @brief
+	 *  Add the shadow passes of the point and spot lights nearest to the camera, within the budget of the backend:
+	 *  one map per spot light, six faces copied into a cube per point light.
+	 * @param[in,out] ioGraph The frame graph.
+	 */
+	void recordLocalShadowPasses(renderer::RenderGraph& ioGraph);
+
+	/**
+	 * @brief
+	 *  Give `Renderer3D` the reflection probes nearest to the camera, within the budget of the backend, and add the
+	 *  passes capturing the ones that need it: six faces of the scene into level 0 of the cube, then each prefiltered
+	 *  level from the one above it. A probe is captured when it first shows, moves, changes size, is asked to
+	 *  (`captureRequest`, `requestReflectionProbeCapture`, the environment finishing to load) and, for a realtime one,
+	 *  in turn with the others, one per frame.
+	 * @param[in,out] ioGraph The frame graph.
+	 */
+	void recordReflectionProbePasses(renderer::RenderGraph& ioGraph);
+
+	/**
+	 * @brief
+	 *  Draw the sky and the 3D layers seen by one face camera of a probe, without reflection probes.
+	 * @param[in] iCamera The face camera.
+	 * @param[in] iFaceSize Size of the face, in texels.
+	 */
+	void renderProbeFace(const renderer::Camera& iCamera, uint32_t iFaceSize);
+
+	/**
+	 * @brief
+	 *  Declare the reads of the shadow maps of the frame on a pass that samples them.
+	 * @param[in,out] ioBuilder The builder of the pass.
+	 */
+	void readShadowTargets(renderer::RenderGraph::PassBuilder& ioBuilder) const;
+
+	/**
+	 * @brief
+	 *  Add the depth of field and the motion blur of the render camera after the world passes, with the depth of the
+	 *  3D layers they read.
+	 * @param[in,out] ioGraph The frame graph.
+	 * @param[in] iSceneColor The linear scene colour.
+	 * @param[in] iFrameSize Size of the frame.
+	 * @return The colour the bloom and the encoding read: the scene colour without any of these effects.
+	 */
+	auto recordDepthEffects(renderer::RenderGraph& ioGraph, renderer::RenderGraph::Resource iSceneColor,
+							const math::vec2ui& iFrameSize) -> renderer::RenderGraph::Resource;
 
 	/**
 	 * @brief
@@ -2015,10 +2086,102 @@ private:
 	};
 	/// Post-process targets of the frame being recorded.
 	PostTargets m_postTargets;
+	/// Depth of the 3D layers the depth of field and the motion blur read this frame, invalid without them.
+	renderer::RenderGraph::Resource m_postDepth{};
+	/// Projection and view of the render camera in the previous frame of Play, for the motion blur.
+	struct PreviousView {
+		/// Projection of the camera.
+		math::mat4 projection;
+		/// View of the camera.
+		math::mat4 view;
+	};
+	/// The previous frame of Play, empty before the first one.
+	std::optional<PreviousView> m_previousView;
 	/// Shadow cascades of the frame.
 	renderer::ShadowCascades m_shadowCascades;
 	/// Shadow of the frame, its maps filled when the 3D layers run.
 	renderer::ShadowSettings m_shadowSettings;
+	/// A point or spot light of the frame that casts a shadow, by its index in `m_gpuLights`.
+	struct LocalCaster {
+		/// World position of the light.
+		math::vec3 position{0.f, 0.f, 0.f};
+		/// Direction the light shines (spot).
+		math::vec3 direction{0.f, 0.f, -1.f};
+		/// Half angle of the outer cone (spot), in radians.
+		float outerAngle = 0.f;
+		/// Range of the light.
+		float range = 10.f;
+		/// Size of the shadow map, or of a cube face, in texels.
+		uint32_t resolution = 1024;
+		/// Normal-offset bias, in texels.
+		float bias = 1.5f;
+		/// Radius of the emitting surface of an area light (0 for a point or spot light).
+		float lightSize = 0.f;
+		/// Whether the light casts through a cube (a point or area light; a spot light otherwise).
+		bool point = false;
+	};
+	/// Local casters of the frame, by light index (meaningful for the shadow candidates only).
+	std::vector<LocalCaster> m_localCasters;
+	/// Point and spot lights that may get a shadow this frame.
+	std::vector<renderer::ShadowCandidate> m_shadowCandidates;
+	/// Shadows of the local lights of the frame, their spot maps filled when the 3D layers run.
+	renderer::LocalShadowSettings m_localShadows;
+	/// Shadow-map targets of the spot shadows of the frame.
+	std::vector<renderer::RenderGraph::Resource> m_spotShadowTargets;
+	/// Face targets of the point shadows of the frame, one per face size.
+	std::vector<renderer::RenderGraph::Resource> m_pointFaceTargets;
+	/// Light cameras of the spot shadows of the frame.
+	std::vector<renderer::Camera> m_spotShadowCameras;
+	/// Face cameras of the point shadows of the frame.
+	std::vector<renderer::PointShadowFaces> m_pointShadowFaces;
+	/// Cubes of the point shadows, kept from frame to frame.
+	std::vector<shared<renderer::gpu::TextureCube>> m_pointShadowCubes;
+	/// What the scene keeps of a reflection probe from frame to frame.
+	struct ProbeState {
+		/// The prefiltered cube.
+		shared<renderer::gpu::TextureCube> cube;
+		/// The raw capture and its mip chain, the source of the filter.
+		shared<renderer::gpu::TextureCube> capture;
+		/// World position of the last capture.
+		math::vec3 position{0.f, 0.f, 0.f};
+		/// Exposure of the last capture.
+		float captureExposure = 1.f;
+		/// `m_probeGeneration` at the last capture.
+		uint32_t generation = 0;
+		/// `captureRequest` of the component at the last capture.
+		uint32_t request = 0;
+		/// Frame of the last capture.
+		uint64_t frame = 0;
+		/// Whether the cube holds a capture.
+		bool captured = false;
+	};
+	/// Reflection probes by entity.
+	std::unordered_map<entt::entity, ProbeState> m_probeStates;
+	/// A probe captured this frame: its cubes, its face cameras and the targets of its levels.
+	struct ProbeCapture {
+		/// The prefiltered cube being filled.
+		shared<renderer::gpu::TextureCube> cube;
+		/// The raw capture being filled with its mip chain.
+		shared<renderer::gpu::TextureCube> capture;
+		/// Cameras of the six faces.
+		renderer::PointShadowFaces faces;
+		/// Target of each level of the mip chain, level 0 the capture.
+		std::vector<renderer::RenderGraph::Resource> chainTargets;
+		/// Target of each filtered level, from level 1.
+		std::vector<renderer::RenderGraph::Resource> filterTargets;
+	};
+	/// Probes captured this frame.
+	std::vector<ProbeCapture> m_probeCaptures;
+	/// Probes of the frame, as `Renderer3D` reads them.
+	std::vector<renderer::ReflectionProbeData> m_probeData;
+	/// Raised to capture every probe again.
+	uint32_t m_probeGeneration = 0;
+	/// Probe captures recorded since the scene was created.
+	uint64_t m_probeCaptureCount = 0;
+	/// Frames that recorded the probes, to take the realtime ones in turn.
+	uint64_t m_probeFrame = 0;
+	/// Whether the environment pass of the frame draws the sky.
+	bool m_drawsSky = false;
 	/// The environment image of the scene: its loading on a worker, then its GPU textures.
 	struct EnvironmentState {
 		/// Asset path of the loaded (or loading) image; empty for a procedural sky.
@@ -2111,6 +2274,10 @@ OWL_API void Scene::onComponentAdded<component::MeshRenderer>(const Entity& iEnt
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light>(const Entity& iEntity, component::Light& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::ReflectionProbe>(const Entity& iEntity,
+																 component::ReflectionProbe& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light2D>(const Entity& iEntity, component::Light2D& ioComponent);

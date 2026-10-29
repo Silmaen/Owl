@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Visual scripts: colour and vector values (`Color`, `Vector 2`, `Vector 3`), as variables, make / break nodes, and the `r g b a` / `x y z` parameters of a binding (also prefixed, `vx vy`, `cell_x cell_y`) as one pin that splits into its components; constants have only an output.
 - Content Browser: visual scripts have an icon and a colour of their own.
 - Engine Demo: the tavern cellar ladder is a visual script.
+- Engine Demo: a tavern window glows with a rectangle area light casting soft shadows, and a room reflection probe makes the brass and copper reflect the fire.
+- Engine Demo: the tavern is half a stop brighter, with a slight chromatic aberration and film grain.
 - Script debugging: breakpoints on Lua lines (gutter, F9) and on visual-script nodes (F9, context menu), the game pausing once the script call ends (`ScriptDebugger`).
 - Owl Nest **Script Debug** panel: the hit (script, line, entity, locals) with Continue and Open, and the variables of the scene, HUD and entity scripts (`ScriptInstance::getWatchValues`).
 - Visual scripts show the last value of each wire during Play (`CompileMode::Debug`, `compileForDebug`) and outline the node the game stopped on.
@@ -46,10 +48,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tileset editor: compose the atlas from source images by dropping files or folders, clear, move and grow slots, undoable.
 - Tileset opacity map (`opacityTexture`): its red channel multiplies the atlas alpha in the tilemap, isometric, raycast and voxel shaders.
 - Mipmapped pixel-art atlases: `FilterMode::PixelArt` builds mipmaps cell by cell, sampled inside the cell by the voxel, raycast and tilemap shaders.
+- `gpu::TextureCube` on OpenGL, Vulkan and Null, filled from memory or a render target (`Framebuffer::copyAttachmentToCube`).
+- `Light.angularRadius`: a directional light of apparent size casts soft shadows (PCSS), widens its highlight and sizes the sun disc of a `DayNightCycle` sky.
+- Point and spot light shadows: a cube per point light, a perspective map per spot light, the nearest to the camera within 4 of each on OpenGL and 16 on Vulkan.
+- Area lights: `Light` types `Rectangle` and `Disc` shaded through linearly transformed cosines, `Sphere` through a representative point, with soft cube shadows (PCSS) and their Owl Nest markers.
+- Reflection probes: a `ReflectionProbe` component captures the scene into a prefiltered cube that replaces the environment reflections inside its box or sphere, with parallax, blending, realtime updates and its Owl Nest markers, inspector and commands.
+- Post-process: chromatic aberration, film grain, depth of field and camera motion blur in `PostProcessSettings`, edited in the camera inspector.
 
 ### Changed
 
 - Sample games are picked from the pool once the features of a release are done, none planned per release; hot reload of a C++ game module moves after 1.0.
+- `Light.castShadows`, `shadowResolution` and `shadowBias` apply to point and spot lights too; the 3D shadow cascades move to texture slots 16 to 19.
 - Shipped projects carry sidecars and GUID references; the Engine Demo PBR textures are cooked to ETC1S and UASTC.
 - An exported game packs only its engine files and initialises only its renderer families (`RendererSet`): packs about 3.3 MiB smaller.
 - An exported game reads its textures, sounds, fonts and shaders from the pack in memory: no `assets/` extraction, no cache written next to it.

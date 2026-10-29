@@ -105,6 +105,21 @@ void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture
 	vkd.setTextures(slots, internal::VulkanHandler::get().getCurrentFrameIndex());
 }
 
+void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture2D>> iTextures,
+							 const std::span<const shared<renderer::gpu::TextureCube>> iCubes) {
+	bindTextures(iTextures);
+	thread_local std::vector<uint32_t> cubes;
+	cubes.clear();
+	for (const auto& cube: iCubes)
+		cubes.push_back(cube ? static_cast<const TextureCube*>(cube.get())->getTextureId() : 0u);
+	if (auto* const rd = internal::RendererDescriptors::getActive(); rd != nullptr) {
+		rd->setCubeTextures(cubes);
+		return;
+	}
+	if (!cubes.empty())
+		OWL_CORE_WARN("Vulkan: Cubes bound outside a renderer block are ignored.")
+}
+
 void RenderAPI::beginFrame() {
 	auto& vkh = internal::VulkanHandler::get();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
@@ -268,6 +283,8 @@ auto RenderAPI::supportsFormat(const ImageFormat iFormat) const -> bool {
 		case ImageFormat::Rgb8:
 		case ImageFormat::Rgba8:
 		case ImageFormat::Rgba32F:
+		case ImageFormat::R32F:
+		case ImageFormat::Rgba16F:
 			return true;
 	}
 	return false;

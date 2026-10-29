@@ -35,6 +35,8 @@ struct TextureData {
 	uint32_t mipLevels = 1;
 	/// Sampler filtering: nearest (no mipmap), pixel art (nearest up close, trilinear far away) or linear.
 	gpu::FilterMode filter = gpu::FilterMode::Linear;
+	/// Cube image: six layers, a cube view and a sampler clamped to the edges.
+	bool cube = false;
 	/// Format of the image (8-bit RGBA, or 32-bit float RGBA for HDR images and tables).
 	VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 	/// View and sampler owned elsewhere (a framebuffer attachment): `freeTexture` forgets them without destroying.
