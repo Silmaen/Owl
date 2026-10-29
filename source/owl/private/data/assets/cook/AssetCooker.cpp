@@ -12,6 +12,8 @@
 
 #include "core/YamlNode.h"
 #include "core/external/ktx.h"
+#include "data/geometry/MeshLoader.h"
+#include "data/geometry/MeshLod.h"
 #include "renderer/TextureDecoder.h"
 #include "scene/EntityLinkMigration.h"
 #include "scene/PrefabSerializer.h"
@@ -39,10 +41,29 @@ constexpr ktx_uint32_t g_etc1sQuality = 128;
 constexpr uint32_t g_textureCookerVersion = 1;
 constexpr uint32_t g_copyCookerVersion = 1;
 constexpr uint32_t g_documentCookerVersion = 1;
+constexpr uint32_t g_meshCookerVersion = 1;
 
 auto isSceneDocument(const std::filesystem::path& iFile) -> bool {
 	const auto extension = iFile.extension();
 	return extension == ".owl" || extension == ".owlhud" || extension == ".owlprefab";
+}
+
+// A mesh with its levels of detail in an `OWLM` container; the source as is without any.
+auto cookMesh(const AssetMeta& iMeta, const std::span<const uint8_t> iSource, const std::string_view iName)
+		-> expected<std::vector<uint8_t>, CookError> {
+	if (iMeta.mesh.lods == 0)
+		return std::vector<uint8_t>(iSource.begin(), iSource.end());
+	const std::filesystem::path name{iName};
+	const auto loaded = geometry::MeshLoader::loadMeshFromMemory(iSource, name.extension().string(), std::string{iName},
+																 name.parent_path());
+	if (!loaded.mesh || loaded.mesh->getTriangleCount() == 0) {
+		OWL_CORE_WARN("Cook: Mesh {} cannot be read.", iName)
+		return unexpected{CookError::InvalidSource};
+	}
+	const auto lods = geometry::buildMeshLods(loaded, {.levelCount = iMeta.mesh.lods,
+													   .reduction = iMeta.mesh.lodReduction,
+													   .screenSize = iMeta.mesh.lodScreenSize});
+	return geometry::writeCookedMesh(iSource, lods);
 }
 
 // A scene, HUD or prefab upgraded to the current format and stored as a binary tree: the runner skips the parse.
@@ -195,8 +216,9 @@ auto getCookerVersion(const Importer iImporter) -> uint32_t {
 			return g_textureCookerVersion;
 		case Importer::Document:
 			return g_documentCookerVersion;
-		case Importer::Copy:
 		case Importer::Mesh:
+			return g_meshCookerVersion;
+		case Importer::Copy:
 		case Importer::Sound:
 		case Importer::Script:
 		case Importer::Font:
@@ -214,8 +236,9 @@ auto cookAsset(const AssetMeta& iMeta, const std::span<const uint8_t> iSource, c
 			if (isSceneDocument(std::filesystem::path{iName}))
 				return cookSceneDocument(iSource, iName);
 			break;
-		case Importer::Copy:
 		case Importer::Mesh:
+			return cookMesh(iMeta, iSource, iName);
+		case Importer::Copy:
 		case Importer::Sound:
 		case Importer::Script:
 		case Importer::Font:

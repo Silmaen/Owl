@@ -7,7 +7,9 @@
  */
 #include "owlpch.h"
 
+#include "GltfSkin.h"
 #include "data/geometry/MeshLoader.h"
+#include "data/geometry/MeshLod.h"
 #include "data/geometry/MeshRange.h"
 #include "data/geometry/StaticMesh.h"
 #include "data/geometry/extradata/TriangleNormals.h"
@@ -508,6 +510,8 @@ auto localMatrix(const tinygltf::Node& iNode) -> NodeMatrix {
 struct MeshInstance {
 	size_t mesh = 0;
 	NodeMatrix transform = g_identityMatrix;
+	// Skin of the node, -1 for a static mesh.
+	int skin = -1;
 };
 
 // NOLINTNEXTLINE(misc-no-recursion): the depth is bounded by the node count of the file.
@@ -518,7 +522,7 @@ void collectInstances(const tinygltf::Model& iModel, const int iNode, const Node
 	const auto& node = iModel.nodes[static_cast<size_t>(iNode)];
 	const NodeMatrix transform = multiply(iParent, localMatrix(node));
 	if (node.mesh >= 0 && static_cast<size_t>(node.mesh) < iModel.meshes.size())
-		ioInstances.push_back({.mesh = static_cast<size_t>(node.mesh), .transform = transform});
+		ioInstances.push_back({.mesh = static_cast<size_t>(node.mesh), .transform = transform, .skin = node.skin});
 	for (const int child: node.children) collectInstances(iModel, child, transform, iDepth + 1, ioInstances);
 }
 
@@ -592,6 +596,10 @@ struct GltfBuild {
 	bool hasUv = false;
 	bool hasNormals = false;
 	std::optional<uint32_t> defaultSlot;
+	const gltf::SkinImport& skinImport;
+	// Joints and weights of every vertex added, zero weights for the static ones.
+	std::vector<VertexSkin> skin;
+	bool skinned = false;
 };
 
 auto materialSlot(GltfBuild& ioBuild, const tinygltf::Primitive& iPrimitive) -> uint32_t {
@@ -604,7 +612,8 @@ auto materialSlot(GltfBuild& ioBuild, const tinygltf::Primitive& iPrimitive) -> 
 	return *ioBuild.defaultSlot;
 }
 
-void appendPrimitive(GltfBuild& ioBuild, const tinygltf::Primitive& iPrimitive, const NodeMatrix& iTransform) {
+void appendPrimitive(GltfBuild& ioBuild, const tinygltf::Primitive& iPrimitive, const NodeMatrix& iTransform,
+					 const bool iSkinned) {
 	const auto& model = ioBuild.model;
 	if (iPrimitive.mode != TINYGLTF_MODE_TRIANGLES && iPrimitive.mode != -1) {
 		OWL_CORE_WARN("MeshLoader::loadGltf: Primitive of mode {} in {} is not made of triangles, skipped.",
@@ -639,6 +648,13 @@ void appendPrimitive(GltfBuild& ioBuild, const tinygltf::Primitive& iPrimitive, 
 	// Several primitives share the mesh: their indices start after the vertices of the previous ones.
 	const auto base = static_cast<uint32_t>(mesh.getVertexCount());
 	for (const auto& position: positions) mesh.addVertex(transformPoint(iTransform, position));
+	if (iSkinned) {
+		const auto skin = gltf::readPrimitiveSkin(model, iPrimitive, ioBuild.skinImport, positions.size());
+		ioBuild.skin.insert(ioBuild.skin.end(), skin.begin(), skin.end());
+		ioBuild.skinned = true;
+	} else {
+		ioBuild.skin.resize(ioBuild.skin.size() + positions.size());
+	}
 	for (size_t i = 0; i + 2 < indices->size(); i += 3) {
 		std::array<uint32_t, 3> corners{};
 		std::array<vec2, 3> faceUv{};
@@ -687,6 +703,7 @@ auto buildGltf(const tinygltf::Model& iModel, const std::string& iName) -> Loade
 		}
 	}
 	loaded.mesh->reserveVertices(vertexCount);
+	const auto skinImport = gltf::importSkin(iModel, iName);
 	GltfBuild build{.loaded = loaded,
 					.model = iModel,
 					.name = iName,
@@ -694,11 +711,26 @@ auto buildGltf(const tinygltf::Model& iModel, const std::string& iName) -> Loade
 					.normals = {},
 					.hasUv = false,
 					.hasNormals = false,
-					.defaultSlot = std::nullopt};
+					.defaultSlot = std::nullopt,
+					.skinImport = skinImport,
+					.skin = {},
+					.skinned = false};
+	build.skin.reserve(vertexCount);
 	for (const auto& instance: instances) {
+		// glTF ignores the transform of the node of a skinned mesh: its joints place it.
+		const bool skinned = skinImport.skeleton && instance.skin == 0;
+		if (instance.skin > 0)
+			OWL_CORE_WARN("MeshLoader::loadGltf: Mesh of {} bound to skin {} drawn static (first skin only).", iName,
+						  instance.skin)
 		for (const auto& primitive: iModel.meshes[instance.mesh].primitives)
-			appendPrimitive(build, primitive, instance.transform);
+			appendPrimitive(build, primitive, skinned ? g_identityMatrix : instance.transform, skinned);
 	}
+	if (build.skinned) {
+		loaded.skeleton = skinImport.skeleton;
+		loaded.skin = std::move(build.skin);
+		loaded.clips = gltf::importClips(iModel, skinImport, iName);
+	}
+	loaded.sockets = gltf::importSockets(iModel, skinImport);
 	attachCornerData(*loaded.mesh, build.hasUv ? build.uvCoords : CornerUvs{},
 					 build.hasNormals ? build.normals : CornerNormals{});
 	logCompleteness("loadGltf", iName, *loaded.mesh, build.hasUv, build.hasNormals);
@@ -762,6 +794,18 @@ auto parseGltf(const std::span<const uint8_t> iData, const bool iBinary, const s
 	return model;
 }
 
+auto areLodsValid(const std::vector<MeshLodLevel>& iLods, const LoadedMesh& iMesh) -> bool {
+	const size_t cornerCount = iMesh.mesh->getTriangleCount() * 3;
+	const size_t submeshCount = std::max<size_t>(iMesh.submeshes.size(), 1);
+	return std::ranges::all_of(iLods, [&](const MeshLodLevel& iLevel) -> bool {
+		return iLevel.submeshCorners.size() == submeshCount &&
+			   std::ranges::all_of(iLevel.submeshCorners, [cornerCount](const std::vector<uint32_t>& iCorners) -> bool {
+				   return std::ranges::all_of(
+						   iCorners, [cornerCount](const uint32_t iCorner) -> bool { return iCorner < cornerCount; });
+			   });
+	});
+}
+
 auto readFileBytes(const std::filesystem::path& iFilePath) -> std::optional<std::vector<uint8_t>> {
 	std::ifstream file(iFilePath, std::ios::binary);
 	if (!file) {
@@ -789,9 +833,11 @@ auto MeshLoader::loadMesh(const std::filesystem::path& iFilePath) -> LoadedMesh 
 	return loadMeshFromMemory(*bytes, iFilePath.extension().string(), iFilePath.string(), iFilePath.parent_path());
 }
 
-auto MeshLoader::loadMeshFromMemory(const std::span<const uint8_t> iData, const std::string& iExtension,
-									const std::string& iName, const std::filesystem::path& iBaseDirectory,
-									const MeshFileReader& iReadFile) -> LoadedMesh {
+namespace {
+
+// A mesh read from the bytes of a source file (not a cooked container).
+auto loadSourceMesh(const std::span<const uint8_t> iData, const std::string& iExtension, const std::string& iName,
+					const std::filesystem::path& iBaseDirectory, const MeshFileReader& iReadFile) -> LoadedMesh {
 	if (iExtension == ".gltf" || iExtension == ".glb") {
 		const auto model = parseGltf(iData, iExtension == ".glb", iName, iBaseDirectory, iReadFile);
 		if (!model)
@@ -816,6 +862,27 @@ auto MeshLoader::loadMeshFromMemory(const std::span<const uint8_t> iData, const 
 	}
 	OWL_CORE_ERROR("MeshLoader::loadMesh: Unsupported mesh format {} for {}.", iExtension, iName)
 	return {};
+}
+
+}// namespace
+
+auto MeshLoader::loadMeshFromMemory(const std::span<const uint8_t> iData, const std::string& iExtension,
+									const std::string& iName, const std::filesystem::path& iBaseDirectory,
+									const MeshFileReader& iReadFile) -> LoadedMesh {
+	if (isCookedMesh(iData)) {
+		auto cooked = readCookedMesh(iData);
+		if (!cooked) {
+			OWL_CORE_ERROR("MeshLoader::loadMesh: Cannot read the cooked mesh {}.", iName)
+			return {};
+		}
+		auto loaded = loadSourceMesh(cooked->source, iExtension, iName, iBaseDirectory, iReadFile);
+		if (loaded.mesh && areLodsValid(cooked->lods, loaded))
+			loaded.lods = std::move(cooked->lods);
+		else if (loaded.mesh)
+			OWL_CORE_WARN("MeshLoader::loadMesh: Levels of detail of {} do not match the mesh, ignored.", iName)
+		return loaded;
+	}
+	return loadSourceMesh(iData, iExtension, iName, iBaseDirectory, iReadFile);
 }
 
 namespace {

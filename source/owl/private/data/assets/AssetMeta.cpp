@@ -156,6 +156,11 @@ auto parseMeta(const std::string_view iText, const std::string_view iSourceName)
 								  name)
 			}
 		}
+		if (const auto settings = root["Settings"]; settings && meta.importer == Importer::Mesh) {
+			get(settings, "Lods", meta.mesh.lods);
+			get(settings, "LodReduction", meta.mesh.lodReduction);
+			get(settings, "LodScreenSize", meta.mesh.lodScreenSize);
+		}
 	} catch (const YAML::Exception& exception) {
 		OWL_CORE_WARN("Assets: Cannot read sidecar '{}': {}.", iSourceName, exception.what())
 		return unexpected{MetaError::Unreadable};
@@ -175,6 +180,13 @@ auto serializeMeta(const AssetMeta& iMeta) -> std::string {
 		out << YAML::Key << "Compression" << YAML::Value
 			<< std::string{magic_enum::enum_name(iMeta.texture.compression)};
 		out << YAML::Key << "Mips" << YAML::Value << iMeta.texture.mips;
+		out << YAML::EndMap;
+	}
+	if (iMeta.importer == Importer::Mesh && iMeta.mesh.lods > 0) {
+		out << YAML::Key << "Settings" << YAML::Value << YAML::BeginMap;
+		out << YAML::Key << "Lods" << YAML::Value << iMeta.mesh.lods;
+		out << YAML::Key << "LodReduction" << YAML::Value << iMeta.mesh.lodReduction;
+		out << YAML::Key << "LodScreenSize" << YAML::Value << iMeta.mesh.lodScreenSize;
 		out << YAML::EndMap;
 	}
 	out << YAML::EndMap;

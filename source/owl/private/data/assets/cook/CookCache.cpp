@@ -32,6 +32,8 @@ auto settingsOf(const AssetMeta& iMeta) -> std::string {
 	if (iMeta.importer == Importer::Texture)
 		settings += std::format(":{}:{}:{}", iMeta.texture.nearest, magic_enum::enum_name(iMeta.texture.compression),
 								iMeta.texture.mips);
+	if (iMeta.importer == Importer::Mesh && iMeta.mesh.lods > 0)
+		settings += std::format(":{}:{}:{}", iMeta.mesh.lods, iMeta.mesh.lodReduction, iMeta.mesh.lodScreenSize);
 	return settings;
 }
 

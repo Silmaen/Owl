@@ -88,7 +88,8 @@ TEST(AssetMeta, ImporterFromExtension) {
 TEST(AssetMeta, TextRoundTrip) {
 	const AssetMeta meta{.guid = AssetGuid{7},
 						 .importer = Importer::Texture,
-						 .texture = {.nearest = true, .compression = TextureCompression::Uastc, .mips = false}};
+						 .texture = {.nearest = true, .compression = TextureCompression::Uastc, .mips = false},
+						 .mesh = {}};
 	const auto text = serializeMeta(meta);
 	EXPECT_NE(text.find("FormatVersion"), std::string::npos);
 	const auto read = parseMeta(text, "test");

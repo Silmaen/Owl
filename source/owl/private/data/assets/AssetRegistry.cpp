@@ -112,7 +112,7 @@ auto AssetRegistry::registerLocked(const Root& iRoot, const std::filesystem::pat
 	} else {
 		if (!iRoot.editable)
 			return std::nullopt;
-		meta = AssetMeta{.guid = AssetGuid{}, .importer = *importer, .texture = {}};
+		meta = AssetMeta{.guid = AssetGuid{}, .importer = *importer, .texture = {}, .mesh = {}};
 		if (!writeMeta(metaFile, meta))
 			return std::nullopt;
 		++ioReport.created;
@@ -315,7 +315,7 @@ auto AssetRegistry::copyFile(const std::filesystem::path& iFrom, const std::file
 	const auto* root = rootOf(to);
 	if (!importer || root == nullptr || !root->editable)
 		return std::nullopt;
-	auto meta = AssetMeta{.guid = AssetGuid{}, .importer = *importer, .texture = {}};
+	auto meta = AssetMeta{.guid = AssetGuid{}, .importer = *importer, .texture = {}, .mesh = {}};
 	if (const auto original = m_byAbsolutePath.find(keyOf(from)); original != m_byAbsolutePath.end()) {
 		meta = m_entries.at(original->second).meta;
 		meta.guid = AssetGuid{};
@@ -369,7 +369,7 @@ auto AssetRegistry::loadIndex(const std::string_view iText) -> size_t {
 		}
 		const bool detailed = item.second.IsMap();
 		const auto path = detailed ? item.second["Path"].as<std::string>("") : item.second.as<std::string>();
-		AssetMeta meta{.guid = *guid, .importer = importerOf(path).value_or(Importer::Copy), .texture = {}};
+		AssetMeta meta{.guid = *guid, .importer = importerOf(path).value_or(Importer::Copy), .texture = {}, .mesh = {}};
 		if (detailed)
 			get(item.second, "Nearest", meta.texture.nearest);
 		m_entries.insert_or_assign(*guid, Entry{.meta = meta, .root = {}, .path = path});

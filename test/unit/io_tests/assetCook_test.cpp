@@ -44,7 +44,8 @@ auto makePng() -> std::vector<uint8_t> {
 auto textureMeta(const TextureCompression iCompression) -> AssetMeta {
 	return AssetMeta{.guid = AssetGuid{1},
 					 .importer = Importer::Texture,
-					 .texture = {.nearest = false, .compression = iCompression, .mips = true}};
+					 .texture = {.nearest = false, .compression = iCompression, .mips = true},
+					 .mesh = {}};
 }
 
 void writeBytes(const std::filesystem::path& iFile, const std::vector<uint8_t>& iBytes) {
@@ -111,8 +112,8 @@ TEST(AssetCook, Etc1sWithoutMipsHasOneLevel) {
 
 TEST(AssetCook, OtherAssetsAreCopied) {
 	const std::vector<uint8_t> lua{'-', '-', ' ', 'x'};
-	const auto cooked =
-			cookAsset(AssetMeta{.guid = AssetGuid{2}, .importer = Importer::Script, .texture = {}}, lua, "a.lua");
+	const auto cooked = cookAsset(
+			AssetMeta{.guid = AssetGuid{2}, .importer = Importer::Script, .texture = {}, .mesh = {}}, lua, "a.lua");
 	ASSERT_TRUE(cooked);
 	EXPECT_EQ(*cooked, lua);
 	EXPECT_FALSE(describe(CookError::EncodeFailed).empty());
@@ -167,7 +168,7 @@ TEST(AssetCook, CacheCooksOnceAndPersists) {
 
 TEST(AssetCook, SceneDocumentsBecomeBinaryTrees) {
 	const std::string scene = "Scene: level\nEntities:\n  - Entity: 1\n    Tag:\n      tag: hero\n";
-	const AssetMeta meta{.guid = AssetGuid{3}, .importer = Importer::Document, .texture = {}};
+	const AssetMeta meta{.guid = AssetGuid{3}, .importer = Importer::Document, .texture = {}, .mesh = {}};
 	const auto cooked = cookAsset(meta, std::vector<uint8_t>(scene.begin(), scene.end()), "scenes/level.owl");
 	ASSERT_TRUE(cooked);
 	const std::string binary(cooked->begin(), cooked->end());

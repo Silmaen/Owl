@@ -375,7 +375,8 @@ TEST_F(MeshAssetTest, gltfKeepsTheBytesOfACookedImage) {
 	const data::assets::AssetMeta meta{
 			.guid = data::assets::AssetGuid{1},
 			.importer = data::assets::Importer::Texture,
-			.texture = {.nearest = false, .compression = data::assets::TextureCompression::Uastc, .mips = true}};
+			.texture = {.nearest = false, .compression = data::assets::TextureCompression::Uastc, .mips = true},
+			.mesh = {}};
 	const auto cooked = data::assets::cook::cookAsset(meta, renderer::encodeImagePng({8, 4}, pixels), "albedo.png");
 	ASSERT_TRUE(cooked);
 	const MeshFileReader reader = [&](const std::string& iPath) -> std::optional<std::vector<uint8_t>> {

@@ -9,9 +9,15 @@
 #pragma once
 
 #include "core/Core.h"
+#include "data/animation/SkeletalClip.h"
+#include "data/animation/Skeleton.h"
 #include "data/geometry/StaticMesh.h"
+#include "math/matrices.h"
+#include "math/matrixCreation.h"
 #include "math/vectors.h"
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -126,6 +132,75 @@ struct OWL_API MeshSubmesh {
 
 /**
  * @brief
+ *  The joints moving a vertex of a skinned mesh and their weights.
+ */
+struct OWL_API VertexSkin {
+	/// Bone indices (in `LoadedMesh::skeleton`) of up to four joints.
+	std::array<uint16_t, 4> joints{0, 0, 0, 0};
+	/// Weight of each joint, summing to 1 (all 0 for a vertex that no joint moves).
+	math::vec4 weights{0.f, 0.f, 0.f, 0.f};
+};
+
+/**
+ * @brief
+ *  A named attachment point of a mesh file (a glTF node named `socket_<name>`).
+ */
+struct OWL_API MeshSocket {
+	/// Name of the socket, without the `socket_` prefix.
+	std::string name;
+	/// Name of the bone the socket follows, empty for the mesh origin.
+	std::string bone;
+	/// Transform of the socket relative to its bone (or to the mesh origin without bone).
+	math::mat4 offset = math::identity<float, 4>();
+};
+
+/**
+ * @brief
+ *  Settings of the levels of detail the cook (or the loader of an uncooked mesh) builds for a mesh.
+ */
+struct OWL_API LodSettings {
+	/// Most levels besides the full mesh.
+	static constexpr uint32_t g_maxLevels = 4;
+	/// Levels built besides the full mesh, 0 for none.
+	uint32_t levelCount = 0;
+	/// Ratio of the triangles of a level to the previous one, in `[0.05, 0.95]`.
+	float reduction = 0.5f;
+	/// Fraction of the screen height under which level 1 is drawn; halved for each next level.
+	float screenSize = 0.25f;
+
+	/**
+	 * @brief
+	 *  Compare two settings.
+	 * @param[in] iOther The other settings.
+	 * @return True when equal.
+	 */
+	auto operator==(const LodSettings& iOther) const -> bool = default;
+};
+
+/**
+ * @brief
+ *  One level of detail of a mesh: a subset of the corners of the full mesh, per submesh.
+ */
+struct OWL_API MeshLodLevel {
+	/// Fraction of the screen height under which this level is drawn.
+	float screenSize = 0.f;
+	/// Per submesh, the corners of its triangles (`triangle * 3 + corner` of the full mesh), three per triangle.
+	std::vector<std::vector<uint32_t>> submeshCorners;
+
+	/**
+	 * @brief
+	 *  Get the number of triangles of the level.
+	 * @return The triangle count.
+	 */
+	[[nodiscard]] auto getTriangleCount() const -> size_t {
+		size_t count = 0;
+		for (const auto& corners: submeshCorners) count += corners.size() / 3;
+		return count;
+	}
+};
+
+/**
+ * @brief
  *  A mesh read from a file with its materials and the submeshes using them.
  */
 struct OWL_API LoadedMesh {
@@ -135,6 +210,25 @@ struct OWL_API LoadedMesh {
 	std::vector<MeshMaterial> materials{MeshMaterial{}};
 	/// One run of indices per glTF primitive or OBJ material group, contiguous in the merged index buffer.
 	std::vector<MeshSubmesh> submeshes;
+	/// The skeleton of a skinned mesh (the first glTF skin), null for a static mesh.
+	shared<const animation::Skeleton> skeleton;
+	/// Joints and weights of each vertex of `mesh`, empty for a static mesh.
+	std::vector<VertexSkin> skin;
+	/// The animations of the file that move bones of the skeleton.
+	std::vector<animation::SkeletalClip> clips;
+	/// The sockets of the file.
+	std::vector<MeshSocket> sockets;
+	/// Levels of detail of a cooked mesh, coarser and coarser; empty when the file was not cooked with any.
+	std::vector<MeshLodLevel> lods;
+
+	/**
+	 * @brief
+	 *  Check if the mesh has a skeleton and skinned vertices.
+	 * @return True for a skinned mesh.
+	 */
+	[[nodiscard]] auto isSkinned() const -> bool {
+		return skeleton && !skeleton->isEmpty() && mesh && skin.size() == mesh->getVertexCount();
+	}
 };
 
 /// Reads a file a mesh names (the external buffers and images of a `.gltf`) by its path; nothing when it is missing.
