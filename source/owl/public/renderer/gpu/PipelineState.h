@@ -45,6 +45,8 @@ enum struct BlendMode : uint8_t {
 	Alpha,
 	/// The output replaces the attachment colour.
 	Opaque,
+	/// The colour is added: `src * a + dst`, the destination alpha kept (fire, sparks, flares).
+	Additive,
 };
 
 /**

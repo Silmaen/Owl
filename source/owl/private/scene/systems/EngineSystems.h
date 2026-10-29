@@ -125,6 +125,26 @@ void updateLightFlickers(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Advance the particle emitters and record the trails of the scene in Play (`owl.particles`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateParticles(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
+ *  Advance the particle emitters and the trails by a frame.
+ *
+ * A system is made for each emitter the first time; in Play it starts when its emitter plays on start, in Edit mode it
+ * always starts (the viewport preview), and its pause and restart come from the inspector.
+ * @param[in,out] ioScene The scene.
+ * @param[in] iSeconds Duration of the frame.
+ * @param[in] iEditorMode Whether the scene is edited (the preview) or played.
+ */
+OWL_API void advanceEffects(Scene& ioScene, float iSeconds, bool iEditorMode);
+
+/**
+ * @brief
  *  Spend the frame's budget on the pending path requests of the scene (`owl.navigation`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

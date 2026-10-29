@@ -90,6 +90,13 @@ struct OWL_API Light {
 
 	/**
 	 * @brief
+	 *  Strength of the lens flare of the light, seen by a camera with lens flares: 0 never flares, 1 flares with the
+	 *  pre-exposed illuminance the light gives at the camera.
+	 */
+	float flare = 0.f;
+
+	/**
+	 * @brief
 	 *  Name of the component.
 	 * @return The name.
 	 */

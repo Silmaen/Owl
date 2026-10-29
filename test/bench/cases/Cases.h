@@ -162,4 +162,13 @@ void runCullingBenches(Runner& ioRunner);
  */
 void runSkyBenches(Runner& ioRunner);
 
+/**
+ * @brief
+ *  Particles: one frame of the CPU simulation (the reference of the compute shader, and the Null-backend path) for
+ *  1000 to 65536 particles, and the per-frame bookkeeping of 256 GPU emitters; budget 2 ms for 65536 CPU particles,
+ *  50 us for the 256 emitters.
+ * @param[in,out] ioRunner The runner.
+ */
+void runParticleBenches(Runner& ioRunner);
+
 }// namespace owl::bench

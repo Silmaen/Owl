@@ -1,0 +1,62 @@
+// Particles shared by the simulation, the sort and the draws. The arithmetic of the simulation is the one of
+// `renderer::simulateParticle` (ParticleSystem.cpp): change both together.
+
+struct Particle {
+	float4 position;// xyz position (emitter space for a local emitter), w age in seconds.
+	float4 velocity;// xyz velocity, w lifetime in seconds (dead once the age reaches it).
+	float4 extra;   // x start size, y rotation, z spin, w random value.
+};
+
+struct TrailPoint {
+	float4 position;// xyz position of a point of the trail.
+};
+
+struct SortItem {
+	float key;
+	uint value;
+};
+
+struct ParticleStep {
+	float4 emitter[4];  // columns of the emitter's world matrix at the end of the step.
+	float4 previous[4]; // the same at the start of the step.
+	float4 gravity;     // xyz acceleration in the simulation space, w drag.
+	float4 shape;       // xyz shape size, w cone half angle.
+	float4 life;        // x shortest life, y longest, z slowest speed, w fastest.
+	float4 sizes;       // x smallest size, y largest, z slowest spin, w fastest.
+	float4 velocity;    // xyz velocity added at spawn, w duration of the step.
+	float4 shift;       // xyz origin shift, w seconds between two trail points.
+	uint4 spawn;        // x first slot, y count, z serial of the first spawn, w capacity.
+	uint4 config;       // x shape, y space (1 local), z seed, w trail length.
+	uint4 flags;        // x 1 kills every particle first.
+};
+
+static const float PARTICLE_TWO_PI = 6.28318530718f;
+
+bool isAlive(Particle p) {
+	return p.position.w < p.velocity.w;
+}
+
+uint pcgHash(uint value) {
+	uint state = value * 747796405u + 2891336453u;
+	uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+	return (word >> 22u) ^ word;
+}
+
+float particleRandom(uint seed, uint serial, uint channel) {
+	return float(pcgHash(seed ^ pcgHash(serial * 16u + channel)) >> 8u) * (1.0f / 16777216.0f);
+}
+
+float3 transformPoint(float4 columns[4], float3 p) {
+	return columns[0].xyz * p.x + columns[1].xyz * p.y + columns[2].xyz * p.z + columns[3].xyz;
+}
+
+float3 transformDirection(float4 columns[4], float3 d) {
+	return columns[0].xyz * d.x + columns[1].xyz * d.y + columns[2].xyz * d.z;
+}
+
+float3 randomUnit(float u, float v) {
+	float z = 1.0f - 2.0f * u;
+	float radius = sqrt(max(0.0f, 1.0f - z * z));
+	float phi = PARTICLE_TWO_PI * v;
+	return float3(radius * cos(phi), radius * sin(phi), z);
+}

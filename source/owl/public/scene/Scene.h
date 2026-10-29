@@ -20,6 +20,7 @@
 #include "math/matrixCreation.h"
 #include "math/vectors.h"
 #include "renderer/Camera.h"
+#include "renderer/LensFlare.h"
 #include "renderer/Lighting2D.h"
 #include "renderer/LocalShadows.h"
 #include "renderer/RenderGraph.h"
@@ -103,6 +104,8 @@ struct SocketAttachment;
 struct Light;
 struct Light2D;
 struct LightFlicker;
+struct ParticleEmitter;
+struct Trail;
 struct Oscillator;
 struct Patrol;
 struct Drift;
@@ -1772,6 +1775,29 @@ private:
 	 */
 	[[nodiscard]] auto getScreenSize(const renderer::MeshResource& iMesh, const math::mat4& iModel) const -> float;
 
+	/**
+	 * @brief
+	 *  Draw the particle emitters and the trails accepted by the current particle layer through `RendererParticles`.
+	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 */
+	void renderParticles(bool iEditorMode);
+
+	/**
+	 * @brief
+	 *  Run the pending GPU simulation steps of the particle emitters and sort them for the render camera.
+	 *
+	 *  Called by `renderWithStack` before the first layer records a draw: the compute dispatches would split a render
+	 *  pass.
+	 */
+	void prepareParticleRenderData();
+
+	/**
+	 * @brief
+	 *  Gather the lights that flare for the render camera, the brightest first, into `m_flareSources`.
+	 * @return The number of sources.
+	 */
+	auto collectFlareSources() -> size_t;
+
 
 	/**
 	 * @brief
@@ -2156,6 +2182,8 @@ private:
 	PostTargets m_postTargets;
 	/// Depth of the 3D layers the depth of field and the motion blur read this frame, invalid without them.
 	renderer::RenderGraph::Resource m_postDepth{};
+	/// Lights flaring in the frame being recorded, the brightest first.
+	std::array<renderer::LensFlareSource, renderer::LensFlare::g_maxSources> m_flareSources{};
 	/// Projection and view of the render camera in the previous frame of Play, for the motion blur.
 	struct PreviousView {
 		/// Projection of the camera.
@@ -2366,6 +2394,13 @@ OWL_API void Scene::onComponentAdded<component::SocketAttachment>(const Entity& 
 template<>
 OWL_API void Scene::onComponentAdded<component::LightFlicker>(const Entity& iEntity,
 															  component::LightFlicker& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::ParticleEmitter>(const Entity& iEntity,
+																 component::ParticleEmitter& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Trail>(const Entity& iEntity, component::Trail& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Oscillator>(const Entity& iEntity, component::Oscillator& ioComponent);

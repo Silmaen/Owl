@@ -1,0 +1,83 @@
+// Uniforms and resources of the particle and trail draws (block `RendererParticles`).
+//
+// Layout contract (must match `renderer::RendererParticles`):
+//   binding 0 : UBO  - DrawParams
+//   binding 1 : Sampler2D[1] - the particle texture (white when none)
+//   binding 2 : SSBO - particles[capacity]
+//   binding 3 : SSBO - order[1024] (sorted far to near, alpha-blended emitters)
+//   binding 4 : SSBO - trails[capacity * trail length], or the points of an entity trail
+
+#include "particles.slangh"
+
+struct DrawParams {
+	column_major float4x4 viewProjection;
+	float4 right;      // xyz camera right, w 1 when the target stores linear colour.
+	float4 up;         // xyz camera up, w pre-exposed emissive luminance.
+	float4 eye;        // xyz camera position, w 1 for a perspective camera.
+	float4 forward;    // xyz view direction.
+	float4 emitter[4]; // columns of the emitter's world matrix (local emitters).
+	float4 colors[16]; // colour table over the life (or the length of a trail), sRGB, alpha in w.
+	float4 sizes[4];   // size table, four samples per vector.
+	uint4 config;      // x capacity, y 1 when sorted, z 1 when textured, w 1 for a local emitter.
+	uint4 trail;       // x trail length of a particle, y 1 for an entity trail, z points of an entity trail, w entity id.
+	float4 trailParams;// x width of a trail.
+};
+
+[[vk::binding(0)]]
+ConstantBuffer<DrawParams> gParams;
+
+#ifdef BACKEND_VULKAN
+[[vk::binding(1)]]
+#else
+[[vk::binding(0)]]
+#endif
+Sampler2D gTextures[1];
+
+[[vk::binding(2)]]
+StructuredBuffer<Particle> gParticles;
+
+[[vk::binding(3)]]
+StructuredBuffer<SortItem> gOrder;
+
+[[vk::binding(4)]]
+StructuredBuffer<TrailPoint> gTrails;
+
+struct FragmentOutput {
+	float4 color : SV_Target0;
+	int entityID : SV_Target1;
+};
+
+float3 srgbToLinear(float3 c) {
+	return select(c <= 0.04045f, c / 12.92f, pow((c + 0.055f) / 1.055f, 2.4f));
+}
+
+float4 colorAt(float t) {
+	float position = saturate(t) * 15.0f;
+	uint low = min(uint(position), 15u);
+	uint high = min(low + 1u, 15u);
+	return lerp(gParams.colors[low], gParams.colors[high], position - float(low));
+}
+
+float sizeSample(uint i) {
+	return gParams.sizes[i / 4u][i % 4u];
+}
+
+float sizeAt(float t) {
+	float position = saturate(t) * 15.0f;
+	uint low = min(uint(position), 15u);
+	uint high = min(low + 1u, 15u);
+	return lerp(sizeSample(low), sizeSample(high), position - float(low));
+}
+
+float3 worldOf(float3 p) {
+	return gParams.config.w != 0u ? transformPoint(gParams.emitter, p) : p;
+}
+
+// Colour written to the target: decoded and lit by the emissive luminance on a linear target, as authored otherwise.
+float4 shade(float4 color) {
+	if (gParams.right.w != 0.0f)
+		color.rgb = srgbToLinear(color.rgb) * (1.0f + gParams.up.w);
+	return color;
+}
+
+static const float4 OUTSIDE = float4(2.0f, 2.0f, 2.0f, 1.0f);

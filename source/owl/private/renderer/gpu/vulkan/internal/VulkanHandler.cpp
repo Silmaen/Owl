@@ -333,12 +333,13 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 	if (!colorFormats.empty())
 		vkGetPhysicalDeviceFormatProperties(core.getPhysicalDevice(), colorFormats.front(), &formatProperties);
 	const bool canBlend = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0;
+	const bool additive = iState.blendMode == gpu::BlendMode::Additive;
 	std::vector<VkPipelineColorBlendAttachmentState> att = {
-			{.blendEnable = iState.blendMode == gpu::BlendMode::Alpha && canBlend ? VK_TRUE : VK_FALSE,
+			{.blendEnable = iState.blendMode != gpu::BlendMode::Opaque && canBlend ? VK_TRUE : VK_FALSE,
 			 .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-			 .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+			 .dstColorBlendFactor = additive ? VK_BLEND_FACTOR_ONE : VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
 			 .colorBlendOp = VK_BLEND_OP_ADD,
-			 .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+			 .srcAlphaBlendFactor = additive ? VK_BLEND_FACTOR_ZERO : VK_BLEND_FACTOR_ONE,
 			 .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
 			 .alphaBlendOp = VK_BLEND_OP_ADD,
 			 .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
