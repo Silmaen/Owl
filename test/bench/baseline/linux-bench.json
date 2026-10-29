@@ -1088,13 +1088,13 @@
     {
       "name": "sample/editor_update/settings_menu",
       "items": 1,
-      "batch": 990,
+      "batch": 765,
       "samples": 15,
-      "median_ns": 12072.4,
-      "p25_ns": 12063.2,
-      "p75_ns": 12091.6,
-      "min_ns": 12046.4,
-      "max_ns": 12130.8
+      "median_ns": 15490.0,
+      "p25_ns": 15474.5,
+      "p75_ns": 15505.5,
+      "min_ns": 15450.0,
+      "max_ns": 15550.0
     },
     {
       "name": "sample/editor_update/tavern",
@@ -3387,12 +3387,12 @@
     },
     {
       "name": "sample/entities/settings_menu",
-      "value": 13,
+      "value": 14,
       "unit": "entities"
     },
     {
       "name": "sample/file_bytes/settings_menu",
-      "value": 8522,
+      "value": 9624,
       "unit": "bytes"
     },
     {
