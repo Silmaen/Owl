@@ -13,6 +13,7 @@
 #include "AssetCommands.h"
 #include "CommandJournal.h"
 #include "ComponentCommands.h"
+#include "DocumentCommands.h"
 #include "EntityCommands.h"
 #include "HierarchyCommands.h"
 #include "HudCommands.h"
@@ -1087,7 +1088,8 @@ CommandRegistry::CommandRegistry() {
 				   .description = "Asset path of the audio file of the first take (none when empty)."}},
 		 .factory = {},
 		 .run = createSoundCue,
-		 .allowedInPlay = true});
+		 .allowedInPlay = true,
+		 .needsScene = false});
 	add({.name = "entity.create_light",
 		 .description = "Create an entity with a `Light`: a directional light (sun) tilted down, or a point, spot, "
 						"rectangle, disc or sphere light above the origin (spot, rectangle and disc facing down).",
@@ -1239,6 +1241,7 @@ CommandRegistry::CommandRegistry() {
 		 .run = redoEdit});
 	addHudCommands(*this);
 	addAssetCommands(*this);
+	addDocumentCommands(*this);
 	add(getMacroRunSpec());
 }
 
@@ -1310,7 +1313,7 @@ auto CommandRegistry::run(const std::string_view iName, const CommandArgs& iArgs
 		OWL_WARN("Command: {}.", failure->message)
 		return unexpected<CommandFailure>{*failure};
 	}
-	if (!iContext.scene || iContext.undo == nullptr) {
+	if (spec->needsScene && (!iContext.scene || iContext.undo == nullptr)) {
 		OWL_WARN("Command: {} needs a scene and its undo history.", spec->name)
 		return fail(CommandError::NotApplicable, std::format("{}: no scene or undo history", spec->name));
 	}

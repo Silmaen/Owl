@@ -10,6 +10,8 @@
 
 #include "Document.h"
 #include "UndoManager.h"
+#include "commands/CommandRegistry.h"
+#include "commands/DocumentCommands.h"
 
 #include <sound/SoundCue.h>
 #include <sound/SoundData.h>
@@ -22,6 +24,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace owl::nest {
@@ -45,7 +48,7 @@ enum struct SoundMarker : uint8_t {
  *  Sound cue document (`.owlsound`): its takes with their trim and loop points on the waveform, the volume and pitch
  *  with their random change, and a preview of one take or of the cue.
  */
-class SoundDocument final : public Document {
+class SoundDocument final : public Document, public commands::SoundCueEditor {
 public:
 	SoundDocument(const SoundDocument&) = delete;
 
@@ -238,7 +241,7 @@ public:
 	 *  The cue being edited.
 	 * @return The cue.
 	 */
-	[[nodiscard]] auto cue() const -> const sound::SoundCue& { return m_cue; }
+	[[nodiscard]] auto cue() const -> const sound::SoundCue& override { return m_cue; }
 
 	/**
 	 * @brief
@@ -270,7 +273,7 @@ public:
 	 * @param[in] iMerge Whether the edit merges with the previous one (a drag).
 	 * @return True when something changed.
 	 */
-	auto setProperties(const sound::SoundCue& iCue, bool iMerge = false) -> bool;
+	auto setProperties(const sound::SoundCue& iCue, bool iMerge = false) -> bool override;
 
 	/**
 	 * @brief
@@ -278,7 +281,7 @@ public:
 	 * @param[in] iFile Audio file, relative to the asset folders; a sound cue is refused.
 	 * @return True when it was added.
 	 */
-	auto addVariant(const std::string& iFile) -> bool;
+	auto addVariant(const std::string& iFile) -> bool override;
 
 	/**
 	 * @brief
@@ -288,7 +291,7 @@ public:
 	 * @param[in] iMerge Whether the edit merges with the previous one (a drag).
 	 * @return True when something changed.
 	 */
-	auto setVariant(size_t iIndex, const sound::SoundVariant& iVariant, bool iMerge = false) -> bool;
+	auto setVariant(size_t iIndex, const sound::SoundVariant& iVariant, bool iMerge = false) -> bool override;
 
 	/**
 	 * @brief
@@ -296,7 +299,7 @@ public:
 	 * @param[in] iIndices Indices of the takes.
 	 * @return True when one was removed.
 	 */
-	auto removeVariants(std::span<const size_t> iIndices) -> bool;
+	auto removeVariants(std::span<const size_t> iIndices) -> bool override;
 
 	/**
 	 * @brief
@@ -304,7 +307,7 @@ public:
 	 * @param[in] iIndices Indices of the takes.
 	 * @return True when one was copied.
 	 */
-	auto duplicateVariants(std::span<const size_t> iIndices) -> bool;
+	auto duplicateVariants(std::span<const size_t> iIndices) -> bool override;
 
 	/**
 	 * @brief
@@ -313,7 +316,7 @@ public:
 	 * @param[in] iDown True to move them down.
 	 * @return True when they moved.
 	 */
-	auto moveVariants(std::span<const size_t> iIndices, bool iDown) -> bool;
+	auto moveVariants(std::span<const size_t> iIndices, bool iDown) -> bool override;
 
 	// --- Selection -----------------------------------------------------------
 	/**
@@ -393,6 +396,42 @@ private:
 
 	/**
 	 * @brief
+	 *  Run an edit gesture as a registry command on this cue (journaled, reachable from the console and MCP).
+	 * @param[in] iName The `sound.*` command.
+	 * @param[in] iArgs Its arguments, without `path`.
+	 */
+	void runCommand(std::string_view iName, commands::CommandArgs iArgs);
+
+	/**
+	 * @brief
+	 *  Run a command on this cue as it is, a pending preview left as it is.
+	 * @param[in] iName The `sound.*` command.
+	 * @param[in] iArgs Its arguments, without `path`.
+	 */
+	void sendCommand(std::string_view iName, commands::CommandArgs iArgs) const;
+
+	/**
+	 * @brief
+	 *  Show an edit in progress (a drag, typing) without recording it: the commands run once it ends.
+	 * @param[in] iNext The cue as edited.
+	 */
+	void preview(sound::SoundCue iNext);
+
+	/**
+	 * @brief
+	 *  Turn a finished preview into `sound.set` / `sound.set_take` commands, once no widget is active.
+	 * @param[in] iForce Commit even while a widget is active (another edit comes).
+	 */
+	void commitPreview(bool iForce = false);
+
+	/**
+	 * @brief
+	 *  Drop the preview, back to the cue before it.
+	 */
+	void cancelPreview();
+
+	/**
+	 * @brief
 	 *  Play a take of the cue.
 	 * @param[in] iVariant The take.
 	 * @param[in] iVolume Volume multiplier.
@@ -455,8 +494,8 @@ private:
 	sound::SoundHandle m_previewHandle{sound::invalidSoundHandle};
 	/// Marker being dragged on the waveform.
 	std::optional<SoundMarker> m_draggedMarker;
-	/// Frame of the last edit from a field, to tell a drag from separate edits.
-	int m_lastEditFrame{-2};
+	/// The cue before the edit being previewed, while one is.
+	std::optional<sound::SoundCue> m_previewBefore;
 	/// Tracks the ImGui "Open" state of the tab.
 	bool m_pOpen{true};
 	/// Whether the tab was focused last frame.

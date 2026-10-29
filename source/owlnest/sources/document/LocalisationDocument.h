@@ -10,6 +10,8 @@
 
 #include "Document.h"
 #include "UndoManager.h"
+#include "commands/CommandRegistry.h"
+#include "commands/DocumentCommands.h"
 
 #include <data/localisation/Localisation.h>
 
@@ -31,7 +33,7 @@ using LocalisationUndoManager = UndoManager<data::localisation::Localisation>;
  *  Localisation document (`localisation.yml`): the languages of the game and its string tables, in a grid of one
  *  row per key and one column per language.
  */
-class LocalisationDocument final : public Document {
+class LocalisationDocument final : public Document, public commands::LocalisationEditor {
 public:
 	LocalisationDocument(const LocalisationDocument&) = delete;
 
@@ -191,7 +193,9 @@ public:
 	 *  The localisation being edited.
 	 * @return The localisation.
 	 */
-	[[nodiscard]] auto localisation() const -> const data::localisation::Localisation& { return m_localisation; }
+	[[nodiscard]] auto localisation() const -> const data::localisation::Localisation& override {
+		return m_localisation;
+	}
 
 	/**
 	 * @brief
@@ -215,7 +219,7 @@ public:
 	 * @param[in] iName Its name.
 	 * @return False when the code is empty or taken.
 	 */
-	auto addLanguage(const std::string& iCode, const std::string& iName) -> bool;
+	auto addLanguage(const std::string& iCode, const std::string& iName) -> bool override;
 
 	/**
 	 * @brief
@@ -223,7 +227,7 @@ public:
 	 * @param[in] iCode Its code.
 	 * @return True when it was removed.
 	 */
-	auto removeLanguage(std::string_view iCode) -> bool;
+	auto removeLanguage(std::string_view iCode) -> bool override;
 
 	/**
 	 * @brief
@@ -232,7 +236,7 @@ public:
 	 * @param[in] iMerge Whether the edit merges with the previous one (typing).
 	 * @return True when something changed.
 	 */
-	auto setLanguage(const data::localisation::Language& iLanguage, bool iMerge = false) -> bool;
+	auto setLanguage(const data::localisation::Language& iLanguage, bool iMerge = false) -> bool override;
 
 	/**
 	 * @brief
@@ -240,7 +244,7 @@ public:
 	 * @param[in] iCode A language code of the localisation.
 	 * @return True when it changed.
 	 */
-	auto setFallback(std::string_view iCode) -> bool;
+	auto setFallback(std::string_view iCode) -> bool override;
 
 	/**
 	 * @brief
@@ -249,7 +253,7 @@ public:
 	 * @param[in] iTable Its string table.
 	 * @return The index of the string.
 	 */
-	auto addString(const std::string& iKey, const std::string& iTable) -> size_t;
+	auto addString(const std::string& iKey, const std::string& iTable) -> size_t override;
 
 	/**
 	 * @brief
@@ -258,7 +262,7 @@ public:
 	 * @param[in] iKey The new key, not empty and not taken.
 	 * @return True when it changed.
 	 */
-	auto setKey(size_t iIndex, const std::string& iKey) -> bool;
+	auto setKey(size_t iIndex, const std::string& iKey) -> bool override;
 
 	/**
 	 * @brief
@@ -269,7 +273,8 @@ public:
 	 * @param[in] iMerge Whether the edit merges with the previous one (typing).
 	 * @return True when it changed.
 	 */
-	auto setValue(size_t iIndex, const std::string& iCode, const std::string& iValue, bool iMerge = false) -> bool;
+	auto setValue(size_t iIndex, const std::string& iCode, const std::string& iValue, bool iMerge = false)
+			-> bool override;
 
 	/**
 	 * @brief
@@ -278,7 +283,7 @@ public:
 	 * @param[in] iTable The table.
 	 * @return True when one moved.
 	 */
-	auto setTable(std::span<const size_t> iIndices, const std::string& iTable) -> bool;
+	auto setTable(std::span<const size_t> iIndices, const std::string& iTable) -> bool override;
 
 	/**
 	 * @brief
@@ -286,7 +291,7 @@ public:
 	 * @param[in] iIndices Indices of the strings.
 	 * @return True when one was removed.
 	 */
-	auto removeStrings(std::span<const size_t> iIndices) -> bool;
+	auto removeStrings(std::span<const size_t> iIndices) -> bool override;
 
 	/**
 	 * @brief
@@ -294,7 +299,7 @@ public:
 	 * @param[in] iIndices Indices of the strings.
 	 * @return True when one was copied.
 	 */
-	auto duplicateStrings(std::span<const size_t> iIndices) -> bool;
+	auto duplicateStrings(std::span<const size_t> iIndices) -> bool override;
 
 	/**
 	 * @brief
@@ -347,6 +352,68 @@ private:
 
 	/**
 	 * @brief
+	 *  Run an edit gesture as a registry command on this localisation (journaled, reachable from the console and MCP).
+	 * @param[in] iName The `locale.*` command.
+	 * @param[in] iArgs Its arguments, without `path`.
+	 * @return True when the command ran.
+	 */
+	auto runCommand(std::string_view iName, commands::CommandArgs iArgs) -> bool;
+
+	/**
+	 * @brief
+	 *  Run a command on this localisation as it is, a pending preview left as it is.
+	 * @param[in] iName The `locale.*` command.
+	 * @param[in] iArgs Its arguments, without `path`.
+	 * @return True when the command ran.
+	 */
+	[[nodiscard]] auto sendCommand(std::string_view iName, commands::CommandArgs iArgs) const -> bool;
+
+	/**
+	 * @brief
+	 *  The keys of strings, as the `locale.*` commands read them (`a,b`).
+	 * @param[in] iIndices Indices of the strings.
+	 * @return The keys separated by commas.
+	 */
+	[[nodiscard]] auto getKeys(std::span<const size_t> iIndices) const -> std::string;
+
+	/**
+	 * @brief
+	 *  Run `locale.set_language` with every field of a language.
+	 * @param[in] iLanguage The language as edited.
+	 * @return True when the command ran.
+	 */
+	auto runLanguageCommand(const data::localisation::Language& iLanguage) -> bool;
+
+	/**
+	 * @brief
+	 *  `sendCommand` of `locale.set_language` with every field of a language.
+	 * @param[in] iLanguage The language as edited.
+	 * @return True when the command ran.
+	 */
+	[[nodiscard]] auto sendLanguageCommand(const data::localisation::Language& iLanguage) const -> bool;
+
+	/**
+	 * @brief
+	 *  Show typing in progress without recording it: the commands run once it ends.
+	 * @param[in] iNext The localisation as edited.
+	 */
+	void preview(data::localisation::Localisation iNext);
+
+	/**
+	 * @brief
+	 *  Turn a finished preview into `locale.set_language` / `locale.set_value` commands, once no widget is active.
+	 * @param[in] iForce Commit even while a widget is active (another edit comes).
+	 */
+	void commitPreview(bool iForce = false);
+
+	/**
+	 * @brief
+	 *  Drop the preview, back to the localisation before it.
+	 */
+	void cancelPreview();
+
+	/**
+	 * @brief
 	 *  Draw the languages: code, name, font, export flag and fallback.
 	 */
 	void renderLanguages();
@@ -388,8 +455,8 @@ private:
 	std::string m_newLanguageCode;
 	/// Table typed to move the selection to.
 	std::string m_moveTable;
-	/// Frame of the last edit from a field, to merge the keystrokes of one field.
-	int m_lastEditFrame{-2};
+	/// The localisation before the typing being previewed, while there is some.
+	std::optional<data::localisation::Localisation> m_previewBefore;
 	/// Tracks the ImGui "Open" state of the tab.
 	bool m_pOpen{true};
 	/// Whether the tab was focused last frame.

@@ -30,6 +30,7 @@
 namespace owl::nest::commands {
 
 class CommandJournal;
+class DocumentHost;
 class CommandRegistry;
 
 /**
@@ -271,6 +272,8 @@ struct CommandContext {
 	CommandSource source{CommandSource::Gesture};
 	/// The registry running the command, set by `CommandRegistry::execute` (commands that run other commands).
 	const CommandRegistry* registry{nullptr};
+	/// The asset documents of the editor, edited by the `sound.*` and `locale.*` commands (non-owning, null without).
+	DocumentHost* documents{nullptr};
 };
 
 /**
@@ -295,7 +298,9 @@ struct CommandSpec {
 	/// Command runner, used when there is no factory.
 	Runner run{};// NOLINT(readability-redundant-member-init) callers may omit it
 	/// Whether the command may run while the scene plays (only commands that do not edit it).
-	bool allowedInPlay{false};
+	bool allowedInPlay{
+			false};/// Whether the command edits the scene: it needs one and its undo history (asset documents do not).
+	bool needsScene{true};
 };
 
 /**

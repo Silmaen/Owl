@@ -20,6 +20,7 @@
 #include "VoxelBrush.h"
 #include "commands/CommandForm.h"
 #include "commands/CommandRegistry.h"
+#include "commands/DocumentCommands.h"
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
 #include "mcp/McpServer.h"
@@ -74,7 +75,7 @@ namespace owl::nest {
  * @brief
  *  Class EditorLayer.
  */
-class EditorLayer final : public app::layer::Layer, public session::EditorSession {
+class EditorLayer final : public app::layer::Layer, public session::EditorSession, public commands::DocumentHost {
 	friend class RibbonBuilder;
 
 public:
@@ -276,6 +277,22 @@ public:
 	 *  Open the localisation of the loaded project.
 	 */
 	void openLocalisationEditor();
+
+	/**
+	 * @brief
+	 *  The tab of a sound cue, for the `sound.*` commands: switched to, opened when it is not.
+	 * @param[in] iPath The `.owlsound` file.
+	 * @return Its document, or null when it cannot be opened.
+	 */
+	auto openSoundCue(const std::filesystem::path& iPath) -> commands::SoundCueEditor* override;
+
+	/**
+	 * @brief
+	 *  The tab of a localisation, for the `locale.*` commands: switched to, opened when it is not.
+	 * @param[in] iPath The `localisation.yml` file.
+	 * @return Its document, or null when it cannot be opened.
+	 */
+	auto openLocalisation(const std::filesystem::path& iPath) -> commands::LocalisationEditor* override;
 
 	/**
 	 * @brief

@@ -47,6 +47,7 @@ OWL_DIAG_POP
 #include <ranges>
 #include <span>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -56,6 +57,17 @@ namespace owl::nest {
 namespace {
 
 constexpr size_t g_waveformColumns = 600;
+
+// Every field of a take, as `sound.set_take` reads them.
+auto getTakeArgs(const size_t iIndex, const sound::SoundVariant& iVariant) -> commands::CommandArgs {
+	return {{"take", static_cast<int64_t>(iIndex)},
+			{"file", iVariant.file},
+			{"trim_start", static_cast<double>(iVariant.trimStart)},
+			{"trim_end", static_cast<double>(iVariant.trimEnd)},
+			{"loop_start", static_cast<double>(iVariant.loopStart)},
+			{"loop_end", static_cast<double>(iVariant.loopEnd)},
+			{"weight", static_cast<double>(iVariant.weight)}};
+}
 constexpr float g_waveformHeight = 140.f;
 constexpr float g_markerPick = 6.f;
 constexpr float g_minPart = 0.01f;
@@ -175,6 +187,7 @@ void SoundDocument::onDetach() {
 }
 
 void SoundDocument::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
+	commitPreview();
 	// A finished source still holds its buffer: delete it before the sound data goes.
 	if (m_previewHandle != sound::invalidSoundHandle && !isPlaying())
 		stop();
@@ -247,6 +260,7 @@ auto SoundDocument::restoreRecoverySnapshot(const std::string& iSnapshot) -> boo
 }
 
 void SoundDocument::performUndo() {
+	cancelPreview();
 	if (!m_undo.canUndo())
 		return;
 	m_undo.undo(m_cue);
@@ -254,6 +268,7 @@ void SoundDocument::performUndo() {
 }
 
 void SoundDocument::performRedo() {
+	cancelPreview();
 	if (!m_undo.canRedo())
 		return;
 	m_undo.redo(m_cue);
@@ -268,6 +283,54 @@ auto SoundDocument::commit(sound::SoundCue iNext, const std::string& iDescriptio
 	m_undo.push(mkUniq<ModifySoundCommand>(std::move(before), std::move(iNext), iDescription, iMerge));
 	setSelection(m_selection);
 	return true;
+}
+
+void SoundDocument::runCommand(const std::string_view iName, commands::CommandArgs iArgs) {
+	commitPreview(true);
+	sendCommand(iName, std::move(iArgs));
+}
+
+void SoundDocument::sendCommand(const std::string_view iName, commands::CommandArgs iArgs) const {
+	if (mp_editorLayer == nullptr) {
+		OWL_WARN("SoundDocument: {} ignored, no editor to run it.", iName)
+		return;
+	}
+	iArgs.set("path", m_path.generic_string());
+	std::ignore = mp_editorLayer->execute(iName, iArgs, commands::CommandSource::Gesture);
+}
+
+void SoundDocument::preview(sound::SoundCue iNext) {
+	if (!m_previewBefore.has_value())
+		m_previewBefore = m_cue;
+	m_cue = std::move(iNext);
+}
+
+void SoundDocument::cancelPreview() {
+	if (!m_previewBefore.has_value())
+		return;
+	m_cue = std::move(*m_previewBefore);
+	m_previewBefore.reset();
+}
+
+void SoundDocument::commitPreview(const bool iForce) {
+	if (!m_previewBefore.has_value() || (!iForce && ImGui::IsAnyItemActive()))
+		return;
+	const auto edited = std::move(m_cue);
+	cancelPreview();
+	auto before = m_cue;
+	before.variants.clear();
+	auto after = edited;
+	after.variants.clear();
+	if (after != before)
+		sendCommand("sound.set", {{"volume", static_cast<double>(edited.volume)},
+								  {"volume_change", static_cast<double>(edited.volumeJitter)},
+								  {"pitch", static_cast<double>(edited.pitch)},
+								  {"pitch_change", static_cast<double>(edited.pitchJitter)},
+								  {"loop", edited.loop}});
+	for (size_t i = 0; i < std::min(edited.variants.size(), m_cue.variants.size()); ++i) {
+		if (edited.variants[i] != m_cue.variants[i])
+			sendCommand("sound.set_take", getTakeArgs(i, edited.variants[i]));
+	}
 }
 
 auto SoundDocument::setProperties(const sound::SoundCue& iCue, const bool iMerge) -> bool {
@@ -498,12 +561,8 @@ void SoundDocument::renderPropertiesPanel() {
 		changed |= gui::widgets::propertyBool("Loop", next.loop, false,
 											  "Loop the take, between its loop points when it has some.");
 		gui::widgets::endProperties();
-		if (changed) {
-			const int frame = ImGui::GetFrameCount();
-			const bool dragging = ImGui::IsMouseDown(ImGuiMouseButton_Left) && frame - m_lastEditFrame <= 1;
-			m_lastEditFrame = frame;
-			std::ignore = setProperties(next, dragging);
-		}
+		if (changed)
+			preview(std::move(next));
 	}
 	gui::widgets::endSection();
 }
@@ -514,27 +573,27 @@ void SoundDocument::renderVariantToolbar() {
 											   .tooltip = "Move up",
 											   .description = "Move the selected takes one row up.",
 											   .disabled = none}))
-		std::ignore = moveVariants(m_selection, false);
+		runCommand("sound.move_takes", {{"takes", commands::formatIndices(m_selection)}, {"down", false}});
 	ImGui::SameLine();
 	if (gui::widgets::iconButton("##downTakes", {.glyph = gui::icon::arrowDown,
 												 .tooltip = "Move down",
 												 .description = "Move the selected takes one row down.",
 												 .disabled = none}))
-		std::ignore = moveVariants(m_selection, true);
+		runCommand("sound.move_takes", {{"takes", commands::formatIndices(m_selection)}, {"down", true}});
 	ImGui::SameLine();
 	if (gui::widgets::iconButton("##copyTakes", {.glyph = gui::icon::copy,
 												 .tooltip = "Duplicate",
 												 .shortcut = "Ctrl+D",
 												 .description = "Copy the selected takes.",
 												 .disabled = none}))
-		std::ignore = duplicateVariants(m_selection);
+		runCommand("sound.duplicate_takes", {{"takes", commands::formatIndices(m_selection)}});
 	ImGui::SameLine();
 	if (gui::widgets::iconButton("##removeTakes", {.glyph = gui::icon::trash2,
 												   .tooltip = "Remove",
 												   .shortcut = "Delete",
 												   .description = "Remove the selected takes.",
 												   .disabled = none}))
-		std::ignore = removeVariants(m_selection);
+		runCommand("sound.remove_takes", {{"takes", commands::formatIndices(m_selection)}});
 }
 
 void SoundDocument::clickVariant(const size_t iIndex) {
@@ -592,17 +651,17 @@ void SoundDocument::renderHierarchyPanel() {
 		if (gui::widgets::menuItem({.glyph = gui::icon::play, .label = "Play", .enabled = !m_selection.empty()}))
 			playVariant(m_selection.front());
 		if (gui::widgets::menuItem({.glyph = gui::icon::copy, .label = "Duplicate", .shortcut = "Ctrl+D"}))
-			std::ignore = duplicateVariants(m_selection);
+			runCommand("sound.duplicate_takes", {{"takes", commands::formatIndices(m_selection)}});
 		if (gui::widgets::menuItem(
 					{.glyph = gui::icon::trash2, .label = "Remove", .shortcut = "Delete", .danger = true}))
-			std::ignore = removeVariants(m_selection);
+			runCommand("sound.remove_takes", {{"takes", commands::formatIndices(m_selection)}});
 		ImGui::EndPopup();
 	}
 	if (listFocused && !ImGui::GetIO().WantTextInput) {
 		if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
-			std::ignore = removeVariants(m_selection);
+			runCommand("sound.remove_takes", {{"takes", commands::formatIndices(m_selection)}});
 		if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false))
-			std::ignore = duplicateVariants(m_selection);
+			runCommand("sound.duplicate_takes", {{"takes", commands::formatIndices(m_selection)}});
 		if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_A, false)) {
 			std::vector<size_t> all(m_cue.variants.size());
 			for (size_t i = 0; i < all.size(); ++i) all[i] = i;
@@ -616,7 +675,7 @@ void SoundDocument::renderHierarchyPanel() {
 				  std::max(ImGui::GetFrameHeight() * 2.f, ImGui::GetContentRegionAvail().y)});
 	if (std::filesystem::path dropped;
 		gui::widgets::assetDropTarget(gui::widgets::AssetKind::Sound, dropped) && !sound::SoundCue::isCue(dropped))
-		std::ignore = addVariant(dropped.generic_string());
+		runCommand("sound.add_take", {{"file", dropped.generic_string()}});
 	gui::widgets::endSection();
 }
 
@@ -643,8 +702,7 @@ void SoundDocument::renderVariantEditor() {
 	ImGui::TextDisabled("%s", variant.file.c_str());
 	if (std::filesystem::path dropped;
 		gui::widgets::assetDropTarget(gui::widgets::AssetKind::Sound, dropped) && !sound::SoundCue::isCue(dropped)) {
-		variant.file = dropped.generic_string();
-		std::ignore = setVariant(index, variant);
+		runCommand("sound.set_take", {{"take", static_cast<int64_t>(index)}, {"file", dropped.generic_string()}});
 		gui::widgets::endSection();
 		return;
 	}
@@ -667,10 +725,9 @@ void SoundDocument::renderVariantEditor() {
 											   "Relative chance of this take being picked.");
 		gui::widgets::endProperties();
 		if (changed) {
-			const int frame = ImGui::GetFrameCount();
-			const bool dragging = ImGui::IsMouseDown(ImGuiMouseButton_Left) && frame - m_lastEditFrame <= 1;
-			m_lastEditFrame = frame;
-			std::ignore = setVariant(index, next, dragging);
+			auto cue = m_cue;
+			cue.variants[index] = next;
+			preview(std::move(cue));
 		}
 	}
 	if (view.duration > 0.f)
@@ -736,7 +793,7 @@ void SoundDocument::renderWaveform(const size_t iIndex, const WaveformView& iVie
 	if (hovered.has_value() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
 		auto next = variant;
 		setMarker(next, *hovered, 0.f);
-		std::ignore = setVariant(iIndex, next);
+		runCommand("sound.set_take", getTakeArgs(iIndex, next));
 		m_draggedMarker.reset();
 		return;
 	}
@@ -744,7 +801,9 @@ void SoundDocument::renderWaveform(const size_t iIndex, const WaveformView& iVie
 		const float seconds = std::clamp((mouseX - origin.x) / size.x * iView.duration, 0.f, iView.duration);
 		auto next = variant;
 		setMarker(next, *m_draggedMarker, seconds);
-		std::ignore = setVariant(iIndex, next, !ImGui::IsItemActivated());
+		auto cue = m_cue;
+		cue.variants[iIndex] = next;
+		preview(std::move(cue));
 	}
 	if (!ImGui::IsItemActive())
 		m_draggedMarker.reset();

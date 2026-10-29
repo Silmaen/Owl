@@ -532,6 +532,42 @@ void EditorLayer::openLocalisationFile(const std::filesystem::path& iPath) {
 	syncActiveDocumentPanels();
 }
 
+namespace {
+
+template<typename T>
+auto findOpenDocument(DocumentManager& iDocuments, const DocumentType iType, const std::filesystem::path& iPath) -> T* {
+	for (const auto& docPtr: iDocuments.list()) {
+		if (docPtr && docPtr->type() == iType && docPtr->filePath() == iPath)
+			return static_cast<T*>(docPtr.get());
+	}
+	return nullptr;
+}
+
+auto normalised(const std::filesystem::path& iPath) -> std::filesystem::path {
+	std::error_code error;
+	auto path = std::filesystem::absolute(iPath, error);
+	return error ? iPath : path.lexically_normal();
+}
+
+}// namespace
+
+auto EditorLayer::openSoundCue(const std::filesystem::path& iPath) -> commands::SoundCueEditor* {
+	const auto path = normalised(iPath);
+	if (auto* doc = findOpenDocument<SoundDocument>(m_documents, DocumentType::Sound, path); doc != nullptr)
+		return doc;
+	openSoundFile(path);
+	return findOpenDocument<SoundDocument>(m_documents, DocumentType::Sound, path);
+}
+
+auto EditorLayer::openLocalisation(const std::filesystem::path& iPath) -> commands::LocalisationEditor* {
+	const auto path = normalised(iPath);
+	if (auto* doc = findOpenDocument<LocalisationDocument>(m_documents, DocumentType::Localisation, path);
+		doc != nullptr)
+		return doc;
+	openLocalisationFile(path);
+	return findOpenDocument<LocalisationDocument>(m_documents, DocumentType::Localisation, path);
+}
+
 void EditorLayer::openLocalisationEditor() {
 	if (!m_project.isLoaded())
 		return;

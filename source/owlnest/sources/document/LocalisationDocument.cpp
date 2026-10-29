@@ -40,7 +40,9 @@ OWL_DIAG_POP
 #include <cstdint>
 #include <format>
 #include <ranges>
+#include <span>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -116,7 +118,7 @@ void LocalisationDocument::onAttach(EditorLayer* iEditor) { mp_editorLayer = iEd
 
 void LocalisationDocument::onDetach() { mp_editorLayer = nullptr; }
 
-void LocalisationDocument::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {}
+void LocalisationDocument::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) { commitPreview(); }
 
 void LocalisationDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {}
 
@@ -180,6 +182,7 @@ auto LocalisationDocument::restoreRecoverySnapshot(const std::string& iSnapshot)
 }
 
 void LocalisationDocument::performUndo() {
+	cancelPreview();
 	if (!m_undo.canUndo())
 		return;
 	m_undo.undo(m_localisation);
@@ -187,6 +190,7 @@ void LocalisationDocument::performUndo() {
 }
 
 void LocalisationDocument::performRedo() {
+	cancelPreview();
 	if (!m_undo.canRedo())
 		return;
 	m_undo.redo(m_localisation);
@@ -228,6 +232,80 @@ auto LocalisationDocument::removeLanguage(const std::string_view iCode) -> bool 
 	if (next.fallback == iCode)
 		next.fallback = next.languages.empty() ? std::string{} : next.languages.front().code;
 	return commit(std::move(next), "Remove language", false);
+}
+
+auto LocalisationDocument::runCommand(const std::string_view iName, commands::CommandArgs iArgs) -> bool {
+	commitPreview(true);
+	return sendCommand(iName, std::move(iArgs));
+}
+
+auto LocalisationDocument::sendCommand(const std::string_view iName, commands::CommandArgs iArgs) const -> bool {
+	if (mp_editorLayer == nullptr) {
+		OWL_WARN("LocalisationDocument: {} ignored, no editor to run it.", iName)
+		return false;
+	}
+	iArgs.set("path", m_path.generic_string());
+	return mp_editorLayer->execute(iName, iArgs, commands::CommandSource::Gesture).has_value();
+}
+
+auto LocalisationDocument::runLanguageCommand(const Language& iLanguage) -> bool {
+	commitPreview(true);
+	return sendLanguageCommand(iLanguage);
+}
+
+auto LocalisationDocument::sendLanguageCommand(const Language& iLanguage) const -> bool {
+	return sendCommand("locale.set_language", {{"code", iLanguage.code},
+											   {"name", iLanguage.name},
+											   {"font", iLanguage.font},
+											   {"exported", iLanguage.exported}});
+}
+
+auto LocalisationDocument::getKeys(const std::span<const size_t> iIndices) const -> std::string {
+	std::string keys;
+	for (const auto index: iIndices) {
+		if (index >= m_localisation.strings.size())
+			continue;
+		if (!keys.empty())
+			keys += ',';
+		keys += m_localisation.strings[index].key;
+	}
+	return keys;
+}
+
+void LocalisationDocument::preview(Localisation iNext) {
+	if (!m_previewBefore.has_value())
+		m_previewBefore = m_localisation;
+	m_localisation = std::move(iNext);
+}
+
+void LocalisationDocument::cancelPreview() {
+	if (!m_previewBefore.has_value())
+		return;
+	m_localisation = std::move(*m_previewBefore);
+	m_previewBefore.reset();
+}
+
+void LocalisationDocument::commitPreview(const bool iForce) {
+	if (!m_previewBefore.has_value() || (!iForce && ImGui::IsAnyItemActive()))
+		return;
+	const auto edited = std::move(m_localisation);
+	cancelPreview();
+	for (const auto& language: edited.languages) {
+		if (const auto* before = m_localisation.findLanguage(language.code); before != nullptr && *before != language)
+			std::ignore = sendLanguageCommand(language);
+	}
+	for (size_t i = 0; i < std::min(edited.strings.size(), m_localisation.strings.size()); ++i) {
+		for (const auto& language: edited.languages) {
+			const auto& code = language.code;
+			const auto after = edited.strings[i].values.find(code);
+			const auto before = m_localisation.strings[i].values.find(code);
+			const std::string value = after != edited.strings[i].values.end() ? after->second : std::string{};
+			const std::string old = before != m_localisation.strings[i].values.end() ? before->second : std::string{};
+			if (value != old)
+				std::ignore = sendCommand("locale.set_value",
+										  {{"key", edited.strings[i].key}, {"language", code}, {"value", value}});
+		}
+	}
 }
 
 auto LocalisationDocument::setLanguage(const Language& iLanguage, const bool iMerge) -> bool {
@@ -399,6 +477,7 @@ void LocalisationDocument::renderLanguages() {
 	ImGui::TableHeadersRow();
 	const auto fonts = data::fonts::FontLibrary::getFoundFontNames();
 	std::optional<std::string> removed;
+	std::optional<Language> typed;
 	for (const auto& language: m_localisation.languages) {
 		ImGui::PushID(language.code.c_str());
 		ImGui::TableNextRow();
@@ -408,34 +487,31 @@ void LocalisationDocument::renderLanguages() {
 		ImGui::TableNextColumn();
 		auto next = language;
 		ImGui::SetNextItemWidth(-1.f);
-		if (ImGui::InputText("##name", &next.name)) {
-			const int frame = ImGui::GetFrameCount();
-			std::ignore = setLanguage(next, frame - m_lastEditFrame <= 1);
-			m_lastEditFrame = frame;
-		}
+		if (ImGui::InputText("##name", &next.name))
+			typed = next;
 		ImGui::TableNextColumn();
 		ImGui::SetNextItemWidth(-1.f);
 		if (gui::widgets::beginCombo("##font", language.font.empty() ? "(each text's font)" : language.font.c_str())) {
 			if (ImGui::Selectable("(each text's font)", language.font.empty())) {
 				next.font.clear();
-				std::ignore = setLanguage(next);
+				std::ignore = runLanguageCommand(next);
 			}
 			for (const auto& font: fonts)
 				if (ImGui::Selectable(font.c_str(), font == language.font)) {
 					next.font = font;
-					std::ignore = setLanguage(next);
+					std::ignore = runLanguageCommand(next);
 				}
 			ImGui::EndCombo();
 		}
 		gui::widgets::itemTooltip("Font of the localised HUD texts in this language, for its glyphs.");
 		ImGui::TableNextColumn();
 		if (gui::widgets::checkbox("Export", &next.exported))
-			std::ignore = setLanguage(next);
+			std::ignore = runLanguageCommand(next);
 		gui::widgets::itemTooltip("Pack this language with the game.");
 		ImGui::SameLine();
 		if (const bool fallback = m_localisation.fallback == language.code;
 			gui::widgets::chip("Fallback", fallback) && !fallback)
-			std::ignore = setFallback(language.code);
+			std::ignore = runCommand("locale.set_fallback", {{"code", language.code}});
 		gui::widgets::itemTooltip("A text missing in a language shows its value in this one.");
 		ImGui::TableNextColumn();
 		if (gui::widgets::iconButton("##removeLanguage",
@@ -446,8 +522,13 @@ void LocalisationDocument::renderLanguages() {
 		ImGui::PopID();
 	}
 	ImGui::EndTable();
+	if (typed.has_value()) {
+		auto edited = m_localisation;
+		*std::ranges::find(edited.languages, typed->code, &Language::code) = *typed;
+		preview(std::move(edited));
+	}
 	if (removed.has_value())
-		std::ignore = removeLanguage(*removed);
+		std::ignore = runCommand("locale.remove_language", {{"code", *removed}});
 	ImGui::SetNextItemWidth(80.f);
 	const bool entered =
 			ImGui::InputTextWithHint("##newLanguage", "code", &m_newLanguageCode, ImGuiInputTextFlags_EnterReturnsTrue);
@@ -457,7 +538,7 @@ void LocalisationDocument::renderLanguages() {
 													.description = "Type its code first (en, fr, ja...).",
 													.disabled = m_newLanguageCode.empty()}) ||
 		 entered) &&
-		addLanguage(m_newLanguageCode, m_newLanguageCode))
+		runCommand("locale.add_language", {{"code", m_newLanguageCode}}))
 		m_newLanguageCode.clear();
 }
 
@@ -483,9 +564,10 @@ void LocalisationDocument::renderStringToolbar() {
 	if (gui::widgets::iconButton(
 				"##addString",
 				{.glyph = gui::icon::plus, .tooltip = "Add a string", .description = "A new key in the table shown."}))
-		std::ignore =
-				addString(m_tableFilter.has_value() && !m_tableFilter->empty() ? *m_tableFilter + ".text" : "text",
-						  m_tableFilter.value_or(std::string{}));
+		std::ignore = runCommand(
+				"locale.add_string",
+				{{"key", m_tableFilter.has_value() && !m_tableFilter->empty() ? *m_tableFilter + ".text" : "text"},
+				 {"table", m_tableFilter.value_or(std::string{})}});
 	ImGui::SameLine();
 	const bool none = m_selection.empty();
 	if (gui::widgets::iconButton("##copyStrings", {.glyph = gui::icon::copy,
@@ -493,19 +575,19 @@ void LocalisationDocument::renderStringToolbar() {
 												   .shortcut = "Ctrl+D",
 												   .description = "Copy the selected strings under new keys.",
 												   .disabled = none}))
-		std::ignore = duplicateStrings(m_selection);
+		std::ignore = runCommand("locale.duplicate_strings", {{"keys", getKeys(m_selection)}});
 	ImGui::SameLine();
 	if (gui::widgets::iconButton("##removeStrings", {.glyph = gui::icon::trash2,
 													 .tooltip = "Remove",
 													 .shortcut = "Delete",
 													 .description = "Remove the selected strings.",
 													 .disabled = none}))
-		std::ignore = removeStrings(m_selection);
+		std::ignore = runCommand("locale.remove_strings", {{"keys", getKeys(m_selection)}});
 	ImGui::SameLine();
 	ImGui::BeginDisabled(none);
 	ImGui::SetNextItemWidth(140.f);
 	if (ImGui::InputTextWithHint("##moveTable", "move to table", &m_moveTable, ImGuiInputTextFlags_EnterReturnsTrue))
-		std::ignore = setTable(m_selection, m_moveTable);
+		std::ignore = runCommand("locale.set_table", {{"keys", getKeys(m_selection)}, {"table", m_moveTable}});
 	ImGui::EndDisabled();
 	gui::widgets::itemTooltip("Type a table and press Enter to move the selected strings into it.");
 	for (const auto& language: m_localisation.languages)
@@ -596,23 +678,26 @@ void LocalisationDocument::renderStrings() {
 	}
 	ImGui::EndTable();
 	if (renamed.has_value())
-		std::ignore = setKey(renamed->first, renamed->second);
-	if (moved.has_value()) {
-		const std::vector indices{moved->first};
-		std::ignore = setTable(indices, moved->second);
-	}
+		std::ignore = runCommand("locale.rename_key",
+								 {{"key", m_localisation.strings[renamed->first].key}, {"new_key", renamed->second}});
+	if (moved.has_value())
+		std::ignore = runCommand("locale.set_table",
+								 {{"keys", m_localisation.strings[moved->first].key}, {"table", moved->second}});
 	if (edited.has_value()) {
-		const int frame = ImGui::GetFrameCount();
-		std::ignore = setValue(std::get<0>(*edited), std::get<1>(*edited), std::get<2>(*edited),
-							   frame - m_lastEditFrame <= 1);
-		m_lastEditFrame = frame;
+		const auto& [index, code, value] = *edited;
+		auto next = m_localisation;
+		if (value.empty())
+			next.strings[index].values.erase(code);
+		else
+			next.strings[index].values[code] = value;
+		preview(std::move(next));
 	}
 	const auto& io = ImGui::GetIO();
 	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !io.WantTextInput) {
 		if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
-			std::ignore = removeStrings(m_selection);
+			std::ignore = runCommand("locale.remove_strings", {{"keys", getKeys(m_selection)}});
 		if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_D, false))
-			std::ignore = duplicateStrings(m_selection);
+			std::ignore = runCommand("locale.duplicate_strings", {{"keys", getKeys(m_selection)}});
 		if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_A, false)) {
 			std::vector<size_t> all;
 			for (size_t i = 0; i < m_localisation.strings.size(); ++i)

@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Post-process: chromatic aberration, film grain, depth of field and camera motion blur in `PostProcessSettings`, edited in the camera inspector.
 - Node-graph link waypoints: right-click a link to add one, drag or delete it, **Alt**+click to cut the link, in visual scripts, PCG graphs and `NodeCanvas` graphs.
 - Sound cues (`.owlsound`, `sound::SoundCue`): random weighted takes of one sound, trimmed and looped, with a volume and pitch varied at each play.
+- `sound.*` and `locale.*` editor commands: every edit of a sound cue or of the localisation is journaled and reachable from the Console, macros and MCP.
 - Owl Nest sound editor: takes on their waveform with draggable trim and loop markers, cue and take preview, `sound.create`, **New Sound Cue**, a double-click on an audio file.
 - `SoundHelper::playAsset` plays an audio file or a cue for the scene sources, `sound.play` and the inspector; `readSoundDuration` gives a file's length.
 - Localisation (`localisation.yml`, `data::localisation::Localisation`): languages with a font each, a fallback language and string tables, the export packing the exported languages only.
