@@ -76,24 +76,24 @@ auto getVulkanIcd() -> std::filesystem::path {
 	return "/usr/share/vulkan/icd.d/lvp_icd.json";
 }
 
-// Environment selecting the software driver of a backend (lavapipe or llvmpipe). The CPU features are capped at
-// SSE4.1, so the tilemap seams do not drift with the host (AVX or not); Mesa's shader cache ignores that cap, so it
-// is off, or code built for AVX is reloaded and crashes.
-constexpr auto g_softwareCpu = "GALLIUM_OVERRIDE_CPU_CAPS=sse4.1 MESA_SHADER_CACHE_DISABLE=true";
-
-auto getDriverEnvironment(const std::string& iBackend) -> std::string {
-	if (iBackend == "vulkan")
-		return std::format("{} VK_ICD_FILENAMES={}", g_softwareCpu, getVulkanIcd().string());
-	return std::format("{} LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe __GLX_VENDOR_LIBRARY_NAME=mesa",
-					   g_softwareCpu);
-}
-
 auto getOutputDir() -> std::filesystem::path {
 #ifdef OWL_RENDER_TEST_OUTPUT_DIR
 	return OWL_RENDER_TEST_OUTPUT_DIR;
 #else
 	return std::filesystem::temp_directory_path() / "owl_render_tests";
 #endif
+}
+
+// Environment selecting the software driver of a backend (lavapipe or llvmpipe). The CPU features are capped at
+// SSE4.1, so the tilemap seams do not drift with the host (AVX or not); Mesa's shader cache ignores that cap, so the
+// image tests keep a cache of their own that only capped runs fill (the default one hands back AVX code and crashes).
+auto getDriverEnvironment(const std::string& iBackend) -> std::string {
+	const auto softwareCpu = std::format(R"(GALLIUM_OVERRIDE_CPU_CAPS=sse4.1 MESA_SHADER_CACHE_DIR="{}")",
+										 (getOutputDir() / "mesa_shader_cache").string());
+	if (iBackend == "vulkan")
+		return std::format("{} VK_ICD_FILENAMES={}", softwareCpu, getVulkanIcd().string());
+	return std::format("{} LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe __GLX_VENDOR_LIBRARY_NAME=mesa",
+					   softwareCpu);
 }
 
 class RenderImage : public testing::TestWithParam<RenderCase> {};

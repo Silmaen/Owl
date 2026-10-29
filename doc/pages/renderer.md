@@ -1158,8 +1158,8 @@ capture, a red diff and the runner log in `<build>/render_tests/`. The scenes li
 
 CTest starts the binary under `xvfb-run` when installed; without a display or lavapipe (`OWL_RENDER_TESTS_VK_ICD`
 overrides `/usr/share/vulkan/icd.d/lvp_icd.json`) the cases are skipped. The label takes about 8 s (25 s with a cold
-shader cache); llvmpipe is capped at SSE4.1 (`GALLIUM_OVERRIDE_CPU_CAPS`) with Mesa's shader cache off, so the
-captures do not depend on AVX.
+shader cache); llvmpipe is capped at SSE4.1 (`GALLIUM_OVERRIDE_CPU_CAPS`), so the captures do not depend on AVX,
+with a Mesa shader cache of its own in `<build>/render_tests/mesa_shader_cache` that only capped runs fill.
 
 ## Renderer2D: The Batch Renderer {#renderer2d}
 
