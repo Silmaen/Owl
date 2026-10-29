@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Visual scripts: colour and vector values (`Color`, `Vector 2`, `Vector 3`), as variables, make / break nodes, and the `r g b a` / `x y z` parameters of a binding (also prefixed, `vx vy`, `cell_x cell_y`) as one pin that splits into its components; constants have only an output.
 - Content Browser: visual scripts have an icon and a colour of their own.
 - Engine Demo: the tavern cellar ladder is a visual script.
+- Engine Demo: a tavern window glows with a rectangle area light casting soft shadows.
 - Script debugging: breakpoints on Lua lines (gutter, F9) and on visual-script nodes (F9, context menu), the game pausing once the script call ends (`ScriptDebugger`).
 - Owl Nest **Script Debug** panel: the hit (script, line, entity, locals) with Continue and Open, and the variables of the scene, HUD and entity scripts (`ScriptInstance::getWatchValues`).
 - Visual scripts show the last value of each wire during Play (`CompileMode::Debug`, `compileForDebug`) and outline the node the game stopped on.

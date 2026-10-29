@@ -1073,3 +1073,56 @@ Entities:
       scaleResponse: [0.1, 0.35, 0.1]
     Visibility:
       gameVisible: true
+  - Entity: 3900000000000000118
+    Tag:
+      tag: WindowFrame
+    Transform:
+      translation: [1.3, 1.7, -3]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:cfb07a7b6fae6234:meshes/tavern/window_frame.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000119
+    Tag:
+      tag: WindowPane
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000118}
+    MeshRenderer:
+      mesh: gid:b1fa8c89e4ab2fab:meshes/tavern/window_pane.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:9e7c42aaeb5611bb:materials/moonlit_glass.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000120
+    Tag:
+      tag: WindowLight
+    Transform:
+      translation: [0, 0, 0.02]
+      rotation: [0, 3.14159, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000118}
+    Light:
+      type: Rectangle
+      enabled: true
+      color: [0.62, 0.74, 1]
+      intensity: 400
+      range: 7
+      size: [0.88, 0.68]
+      castShadows: true
+    Visibility:
+      gameVisible: true
