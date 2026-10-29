@@ -1,0 +1,276 @@
+Scene: Sound Yard
+FormatVersion: 7
+SceneScript:
+  scriptPath: scripts/yard/sound_yard.lua
+Mixer:
+  dopplerFactor: 1.5
+  buses:
+    Master: {volume: 1, muted: false, solo: false}
+    Music: {volume: 0.7, muted: false, solo: false}
+    SFX: {volume: 1, muted: false, solo: false}
+    Ambient: {volume: 1, muted: false, solo: false}
+    Voice: {volume: 1, muted: false, solo: false}
+Entities:
+  - Entity: 4200000000000000001
+    Tag:
+      tag: Ground
+    Transform:
+      translation: [0, 0, -1]
+      rotation: [0, 0, 0]
+      scale: [60, 40, 1]
+    SpriteRenderer:
+      color: [0.16, 0.22, 0.14, 1]
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000002
+    Tag:
+      tag: Ear
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    CircleRenderer:
+      color: [0.95, 0.9, 0.4, 1]
+      thickness: 1
+      fade: 0.02
+    SoundListener: {primary: true}
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000003
+    Tag:
+      tag: EarCamera
+    Transform:
+      translation: [0, 0, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.01
+        perspectiveFar: 1000
+        orthographicSize: 30
+        orthographicNear: -10
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    Visibility:
+      gameVisible: true
+    Hierarchy: {parentId: 4200000000000000002}
+  - Entity: 4200000000000000004
+    Tag:
+      tag: Cave
+    Transform:
+      translation: [-13, 0, -0.5]
+      rotation: [0, 0, 0]
+      scale: [8, 8, 1]
+    SpriteRenderer:
+      color: [0.1, 0.1, 0.12, 1]
+    ReverbZone:
+      shape: Box
+      extents: [0.5, 0.5, 2]
+      radius: 3
+      blendDistance: 2
+      preset: Cave
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000005
+    Tag:
+      tag: CaveDrips
+    Transform:
+      translation: [-14, 1, 0]
+      rotation: [0, 0, 0]
+      scale: [0.4, 0.4, 1]
+    SoundSource:
+      soundAsset: sounds/yard/drips.wav
+      category: Ambient
+      volume: 0.9
+      pitch: 1
+      loop: true
+      spatial: true
+      playOnStart: true
+      maxDistance: 12
+      rolloff: 1.2
+      doppler: true
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000006
+    Tag:
+      tag: Pool
+    Transform:
+      translation: [13, 0, -0.5]
+      rotation: [0, 0, 0]
+      scale: [8, 8, 1]
+    SpriteRenderer:
+      color: [0.15, 0.35, 0.7, 1]
+    ReverbZone:
+      shape: Box
+      extents: [0.5, 0.5, 2]
+      radius: 3
+      blendDistance: 1.5
+      preset: Underwater
+      filter: {gain: 0.9, gainLow: 1, gainHigh: 0.08}
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000007
+    Tag:
+      tag: PoolBubbles
+    Transform:
+      translation: [13, -1, 0]
+      rotation: [0, 0, 0]
+      scale: [0.4, 0.4, 1]
+    SoundSource:
+      soundAsset: sounds/yard/bubbles.wav
+      category: Ambient
+      volume: 0.8
+      pitch: 1
+      loop: true
+      spatial: true
+      playOnStart: true
+      maxDistance: 10
+      rolloff: 1.2
+      doppler: true
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000008
+    Tag:
+      tag: Wall
+    Transform:
+      translation: [0, 7.5, 0]
+      rotation: [0, 0, 0]
+      scale: [8, 0.6, 1]
+    SpriteRenderer:
+      color: [0.45, 0.42, 0.4, 1]
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000009
+    Tag:
+      tag: RadioBehindWall
+    Transform:
+      translation: [0, 10, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 0.7, 1]
+    SpriteRenderer:
+      color: [0.6, 0.3, 0.2, 1]
+    SoundSource:
+      soundAsset: sounds/yard/radio.wav
+      category: SFX
+      volume: 0.8
+      pitch: 1
+      loop: true
+      spatial: true
+      playOnStart: true
+      maxDistance: 16
+      rolloff: 1.0
+      doppler: true
+      filter: {gain: 1, gainLow: 1, gainHigh: 0.12}
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000010
+    Tag:
+      tag: Cart
+    Transform:
+      translation: [0, -10, 0]
+      rotation: [0, 0, 0]
+      scale: [1.4, 1.4, 1]
+    CircleRenderer:
+      color: [0.95, 0.55, 0.15, 1]
+      thickness: 1
+      fade: 0.02
+    Oscillator:
+      offset: [22, 0, 0]
+      period: 7
+    SoundSource:
+      soundAsset: sounds/yard/cart_engine.wav
+      category: SFX
+      volume: 0.9
+      pitch: 1
+      loop: true
+      spatial: true
+      playOnStart: true
+      maxDistance: 30
+      rolloff: 0.8
+      doppler: true
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000011
+    Tag:
+      tag: Beast
+    Transform:
+      translation: [0, 18, 0]
+      rotation: [0, 0, 0]
+      scale: [2, 2, 1]
+    CircleRenderer:
+      color: [0.85, 0.15, 0.15, 1]
+      thickness: 1
+      fade: 0.02
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000012
+    Tag:
+      tag: YardMusic
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    AdaptiveMusic:
+      initialState: calm
+      stateKey: yard_threat
+      playOnStart: true
+      fadeSeconds: 2
+      layers:
+        - {name: pads, asset: sounds/yard/music_pads.wav, volume: 0.8}
+        - {name: pulse, asset: sounds/yard/music_pulse.wav, volume: 0.7}
+        - {name: drums, asset: sounds/yard/music_drums.wav, volume: 0.8}
+      states:
+        - name: calm
+          layers: [pads]
+          stinger: ""
+        - name: danger
+          layers: [pads, pulse]
+          stinger: sounds/yard/stinger_danger.wav
+        - name: combat
+          layers: [pulse, drums]
+          stinger: sounds/yard/stinger_combat.wav
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000013
+    Tag:
+      tag: YardCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000014
+    Tag:
+      tag: YardReadout
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.3]
+      sizeUnit: [ScreenWidth, ScreenHeight]
+      offset: [16, 16]
+    UiText:
+      text: ''
+      color: [1, 0.95, 0.6, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Top
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+    Visibility:
+      gameVisible: true
+    Hierarchy: {parentId: 4200000000000000013}
