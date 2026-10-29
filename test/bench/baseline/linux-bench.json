@@ -1099,13 +1099,13 @@
     {
       "name": "sample/editor_update/tavern",
       "items": 1,
-      "batch": 672,
+      "batch": 463,
       "samples": 15,
-      "median_ns": 17201.6,
-      "p25_ns": 17188.2,
-      "p75_ns": 17228.9,
-      "min_ns": 17171.5,
-      "max_ns": 19524.5
+      "median_ns": 24880.1,
+      "p25_ns": 24862.1,
+      "p75_ns": 24893.7,
+      "min_ns": 24799.0,
+      "max_ns": 24923.7
     },
     {
       "name": "sample/editor_update/victory",
@@ -2276,13 +2276,13 @@
     {
       "name": "sample/editor_update/tavern_cellar",
       "items": 1,
-      "batch": 968,
+      "batch": 761,
       "samples": 15,
-      "median_ns": 12382.4,
-      "p25_ns": 12374.6,
-      "p75_ns": 12391.2,
-      "min_ns": 12319.9,
-      "max_ns": 17671.4
+      "median_ns": 15564.6,
+      "p25_ns": 15546.8,
+      "p75_ns": 15586.4,
+      "min_ns": 15461.7,
+      "max_ns": 15594.0
     },
     {
       "name": "sky/draw/256",
