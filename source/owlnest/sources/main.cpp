@@ -10,12 +10,14 @@
 #include "EditorLayer.h"
 #include "EditorSettings.h"
 #include "Project.h"
+#include "SettingsImport.h"
 #include <app/EntryPoint.h>
 #include <core/Core.h>
 #include <data/assets/AssetRegistry.h>
 #include <gui/UiLayer.h>
 #include <platform/AtomicFile.h>
 #include <platform/FileUtils.h>
+#include <platform/UserDirectory.h>
 
 #include <cstdio>
 #include <filesystem>
@@ -78,13 +80,6 @@ auto parseProjectArgument(const int iArgc, char** iArgv) -> std::optional<std::f
 			return std::filesystem::absolute(args[i + 1]);
 	}
 	return std::nullopt;
-}
-
-auto executableDirectory(char** iArgv) -> std::filesystem::path {
-	std::error_code ec;
-	if (const auto self = std::filesystem::canonical("/proc/self/exe", ec); !ec)
-		return self.parent_path();
-	return std::filesystem::absolute(iArgv[0]).parent_path();
 }
 
 }// namespace
@@ -192,7 +187,7 @@ OWL_DIAG_POP
 
 auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 	if (const auto project = parseUpgradeCommand(iArgc, iArgv); project) {
-		std::filesystem::current_path(executableDirectory(iArgv));
+		std::filesystem::current_path(platform::getExecutableDirectory());
 		return mkShared<OwlNestUpgrade>(
 				AppParams{
 						.args = iArgv,
@@ -210,7 +205,7 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 	}
 	if (const auto command = parseExportCommand(iArgc, iArgv); command) {
 		// Engine and editor assets are searched from the working directory: start from the executable's.
-		const auto exeDir = executableDirectory(iArgv);
+		const auto exeDir = platform::getExecutableDirectory();
 		std::filesystem::current_path(exeDir);
 		return mkShared<OwlNestExport>(
 				AppParams{
@@ -227,8 +222,9 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 				},
 				*command, exeDir);
 	}
+	nest::settings_import::applyPendingImport(platform::getUserDirectory());
 	nest::EditorSettings preSettings;
-	if (const auto settingsFile = std::filesystem::current_path() / "OwlNest_settings.yml"; exists(settingsFile))
+	if (const auto settingsFile = platform::getUserDirectory() / "OwlNest_settings.yml"; exists(settingsFile))
 		preSettings.loadFromFile(settingsFile);
 	gui::UiLayer::setUiFontSize(static_cast<float>(preSettings.uiFontSize));
 	gui::UiLayer::setCodeFontSize(static_cast<float>(preSettings.codeEditorFontSize));

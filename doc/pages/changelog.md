@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest localisation editor: languages, and a grid of keys by language with table filter, search, missing texts, bulk duplicate, move and delete.
 - `UiText::textKey` shows a translated text in the HUD; Lua `tr` and the `locale` table; the built-in `language` setting.
 - Engine Demo settings menu in English and French, with a language button.
+- Owl Nest **Import settings...**, offered at the first start: the settings of a previous installation applied at the next start.
 
 ### Changed
 
@@ -84,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scene Flow and every `NodeCanvas` share the node style of visual scripts (`gui/widgets/NodeStyle.h`): one row per pin, title bar, coloured curves.
 - Docs: the engine developer guide lists every renderer: the 2D, tilemap, isometric, 3D and post-process sections join the voxel and raycaster pages.
 - Bench: the Linux baseline takes the binary scene load and far-orbit cases, and the 1000-box octree brute-force cull at 15.3 µs, a code layout drift of `main` the confirmation rounds reproduce.
+- Settings, saves, logs and caches go to `user/` beside the executable (`platform::getUserDirectory`), the user profile only when it is read-only.
 
 ### Removed
 

@@ -29,7 +29,7 @@ desktop windows, which GLFW cannot place under Wayland). See [Building](building
 
 If the graphics driver does not offer a Vulkan 1.3 device, Owl Nest and exported games start on OpenGL instead and
 say so in the log (and in a toast in the editor); update the driver, or set `renderer: OpenGL` in the `config.yml` of
-the working directory to skip the Vulkan attempt ([requirements](renderer.md#renderer-vulkan-requirements)).
+the `user/` folder beside the executable to skip the Vulkan attempt ([requirements](renderer.md#renderer-vulkan-requirements)).
 
 ## Shipping Your Game
 

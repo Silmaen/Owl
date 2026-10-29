@@ -48,7 +48,8 @@ TEST(CategoryName, TestName) {
 Tests **never write into the source tree**: use a temp directory (`std::filesystem::temp_directory_path()`)
 and clean up. Every test process has a temporary directory of its own (`test_helper/TestTempDirectory.cpp` points
 `TMPDIR` / `TMP` / `TEMP` to it and removes it at exit), so a fixed `temp_directory_path() / "name"` never collides
-with another process; the caches under the working directory (`cache/font`, `cache/shader`) stay shared. Fixtures that need GPU or audio must degrade to the Null backend in CI.
+with another process; it also sets `OWL_USER_DIR`, so settings, saves, logs and caches of a test process (and of the
+runners it starts) stay in it. Fixtures that need GPU or audio must degrade to the Null backend in CI.
 
 ## Image tests (`test/unit/render_tests`, label `render`)
 

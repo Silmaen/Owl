@@ -1287,7 +1287,7 @@ extraRanges:
   - [1024, 1279]  # Cyrillic, U+0400 to U+04FF
 ```
 
-The MSDF atlas is cached in `cache/font/<font>-<key>.owlatlas` under the working directory, keyed by the font file,
+The MSDF atlas is cached in `cache/font/<font>-<key>.owlatlas` under the user directory, keyed by the font file,
 the charset and the atlas parameters (a change regenerates it and drops the stale file), and generated on the task
 pool's workers (`Scheduler::getWorkerCount`).
 

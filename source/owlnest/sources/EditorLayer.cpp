@@ -36,6 +36,7 @@
 #include <gui/widgets/Tooltip.h>
 #include <physics/PhysicCommand.h>
 #include <platform/AtomicFile.h>
+#include <platform/UserDirectory.h>
 #include <renderer/gpu/RenderCommand.h>
 #include <scene/component/components.h>
 #include <sound/SoundCommand.h>
@@ -437,8 +438,10 @@ void EditorLayer::onAttach() {
 	m_hotReloadListener = app::Application::get().getHotReload().addListener(
 			[this](const std::filesystem::path& iFile) -> void { onAssetFileChanged(iFile); });
 
-	if (const auto f = app::Application::get().getWorkingDirectory() / "OwlNest_settings.yml"; exists(f))
+	if (const auto f = platform::getUserDirectory() / "OwlNest_settings.yml"; exists(f))
 		m_settings.loadFromFile(f);
+	else
+		m_settingsImportPrompt.open();
 	utils::applyTheme(gui::Theme::fromPreset(gui::Theme::presetFromName(m_settings.themePreset)));
 
 	m_dockLayout.setPreset(DockLayout::presetFromName(m_settings.layoutPreset));
@@ -708,7 +711,7 @@ void EditorLayer::onDetach() {
 	// Sync keybinding overrides before saving
 	m_settings.keybindingOverrides = m_actionRegistry.getOverrides();
 	m_settings.consoleHistory = m_consolePanel.getConsole().getHistory();
-	m_settings.saveToFile(app::Application::get().getWorkingDirectory() / "OwlNest_settings.yml");
+	m_settings.saveToFile(platform::getUserDirectory() / "OwlNest_settings.yml");
 
 	// Pending MCP requests get 503 and the token file goes before any document closes.
 	mp_mcp.reset();
@@ -959,6 +962,8 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	renderCloseDocumentModal();
 	renderMeshLayerModal();
 	handleRecoveryChoice(m_recoveryPrompt.onImGuiRender());
+	if (m_settingsImportPrompt.onImGuiRender() == panel::SettingsImportPrompt::Choice::Import)
+		importSettings();
 	if (const auto request = m_newProjectDialog.onImGuiRender(); request)
 		createProject(*request);
 	//=============================================================
@@ -1113,6 +1118,7 @@ void EditorLayer::renderBackstage() {
 			.editorSettings = [this]() -> void { m_settingsPanel.open(); },
 			.projectSettings = [this]() -> void { m_projectSettings.open(m_project); },
 			.engineSettings = [this]() -> void { m_parameters.open(); },
+			.importSettings = [this]() -> void { importSettings(); },
 			.help = [this](const std::string& iPage) -> void {
 				if (iPage.empty())
 					m_helpPanel.open();

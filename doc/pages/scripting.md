@@ -436,8 +436,8 @@ state as in `settings.set`.
 
 ### `save`
 
-Save files are stored in the user directory (`~/.local/share/<game>/saves/` on Linux,
-`%APPDATA%/<game>/saves/` on Windows) as YAML `.owl_save` files. A save holds the game state, the scene, the HUD
+Save files are stored in `games/<game>/saves/` of the [user directory](architecture.md#architecture-user-directory)
+(`user/` beside the game) as YAML `.owl_save` files. A save holds the game state, the scene, the HUD
 widget values, the body velocities and the cells of every tilemap changed since it was read from its file
 (`isometric.set_cell`, roads and buildings laid in game): the load puts them back before the colliders are built.
 
@@ -476,8 +476,8 @@ GameSettings:
     value: 1.0
 ```
 
-**User overrides** are saved to `~/.local/share/<game>/settings.yml` (Linux) or
-`%APPDATA%/<game>/settings.yml` (Windows).
+**User overrides** are saved to `games/<game>/settings.yml` in the
+[user directory](architecture.md#architecture-user-directory) (`user/` beside the game).
 
 ### `trigger`
 

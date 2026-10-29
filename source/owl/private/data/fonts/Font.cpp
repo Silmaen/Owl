@@ -11,6 +11,7 @@
 
 #include "app/Application.h"
 #include "data/assets/AssetSearchPaths.h"
+#include "platform/UserDirectory.h"
 #include "renderer/gpu/Texture.h"
 
 #undef INFINITE
@@ -290,11 +291,7 @@ Font::~Font() {
 	}
 }
 
-auto Font::getAtlasCacheDirectory() -> std::filesystem::path {
-	if (app::Application::instanced())
-		return app::Application::get().getWorkingDirectory() / "cache" / "font";
-	return std::filesystem::temp_directory_path() / "owl_cache" / "font";
-}
+auto Font::getAtlasCacheDirectory() -> std::filesystem::path { return platform::getUserDirectory() / "cache" / "font"; }
 
 auto Font::getPackedAtlasPath(const std::filesystem::path& iCacheFile) -> std::filesystem::path {
 	return std::filesystem::path{"cache"} / "font" / iCacheFile.filename();

@@ -81,8 +81,9 @@ Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `chi
 
 - `GameState`: key-value store (`variant<int64_t, float, string, bool>`) living on `Scene`, copied across
   transitions, serialized in saves.
-- `SaveManager` (static): `.owl_save` YAML in `~/.local/share/<game>/saves/` (Linux) or
-  `%APPDATA%/<game>/saves/` (Windows): header, GameState, full scene, physics snapshots.
+- `SaveManager` (static): `.owl_save` YAML in `platform::getGameDirectory(<game>) / "saves"` (user directory, `user/`
+  beside the executable, `doc/pages/architecture.md#architecture-user-directory`): header, GameState, full scene,
+  physics snapshots.
 - Lua `save.load_game(slot)` only sets `Scene::saveLoadRequest`; RunnerLayer / EditorLayer apply it after
   `onUpdateRuntime()`. Physics velocities are restored via `PhysicCommand::applySnapshot` after
   `onStartRuntime()`.
@@ -91,7 +92,7 @@ Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `chi
 
 - `SettingsManager` (one per `app::EngineContext`, reached through `Scene::getEngineContext()` or
   `Application::getEngineContext()`, two layers): defaults from `game_settings.yml` (project assets) + user
-  overrides in `settings.yml` (user dir).
+  overrides in `games/<game>/settings.yml` of the user directory.
 - Built-in keys auto-applied by `applyBuiltins()`: `resolution_width`, `resolution_height`, `fullscreen`,
   `resizable`, `volume_master`, `language` (the `EngineContext` language, `localisation.yml`); `volume_music` / `volume_sfx` are stored for scripts only (no category mixing).
 - Runner order: `runner.yml` defaults → `game_settings.yml` → user `settings.yml` → `applyBuiltins()` →

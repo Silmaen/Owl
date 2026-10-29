@@ -13,6 +13,7 @@
 #include "app/EngineContext.h"
 #include "core/FormatVersionYaml.h"
 #include "platform/AtomicFile.h"
+#include "platform/UserDirectory.h"
 #include "sound/SoundCommand.h"
 
 OWL_DIAG_PUSH
@@ -32,20 +33,7 @@ namespace owl::scene {
 void SettingsManager::setGameName(const std::string& iGameName) { m_gameName = iGameName; }
 
 auto SettingsManager::getUserDirectory() const -> std::filesystem::path {
-	const std::string name = m_gameName.empty() ? "OwlGame" : m_gameName;
-	std::filesystem::path baseDir;
-#if defined(OWL_PLATFORM_WINDOWS)
-	if (const char* appdata = std::getenv("APPDATA"); appdata != nullptr)
-		baseDir = appdata;
-	else
-		baseDir = std::filesystem::temp_directory_path();
-#else
-	if (const char* home = std::getenv("HOME"); home != nullptr)
-		baseDir = std::filesystem::path(home) / ".local" / "share";
-	else
-		baseDir = std::filesystem::temp_directory_path();
-#endif
-	const auto userDir = baseDir / name;
+	const auto userDir = platform::getGameDirectory(m_gameName);
 	if (!exists(userDir))
 		create_directories(userDir);
 	return userDir;

@@ -19,6 +19,7 @@
 #include "event/GamepadEvent.h"
 #include "event/MouseEvent.h"
 #include "input/Input.h"
+#include "platform/UserDirectory.h"
 #include "renderer/Renderer.h"
 #include "renderer/RendererVoxel.h"
 #include "renderer/gpu/RenderCommand.h"
@@ -89,11 +90,12 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 		OWL_CORE_INFO("Application: {} on Owl Engine {}.", m_initParams.name, getVersionFullString())
 		OWL_CORE_INFO("Working directory: {}.", m_workingDirectory.string())
+		OWL_CORE_INFO("User directory: {}.", platform::getUserDirectory().string())
 
 		// load config file if any
 		if (!m_initParams.isDummy && m_initParams.useConfigFile) {
 			OWL_SCOPE_UNTRACK
-			const auto configPath = m_workingDirectory / "config.yml";
+			const auto configPath = platform::getUserDirectory() / "config.yml";
 			if (exists(configPath))
 				m_initParams.loadFromFile(configPath);
 			// save config

@@ -15,6 +15,7 @@
 #include "data/assets/AssetSearchPaths.h"
 #include "physics/PhysicCommand.h"
 #include "platform/AtomicFile.h"
+#include "platform/UserDirectory.h"
 #include "scene/Entity.h"
 #include "scene/SceneSerializer.h"
 #include "scene/TilemapAsset.h"
@@ -157,20 +158,7 @@ std::string SaveManager::s_gameName;
 void SaveManager::setGameName(const std::string& iGameName) { s_gameName = iGameName; }
 
 auto SaveManager::getSaveDirectory() -> std::filesystem::path {
-	const std::string name = s_gameName.empty() ? "OwlGame" : s_gameName;
-	std::filesystem::path baseDir;
-#if defined(OWL_PLATFORM_WINDOWS)
-	if (const char* appdata = std::getenv("APPDATA"); appdata != nullptr)
-		baseDir = appdata;
-	else
-		baseDir = std::filesystem::temp_directory_path();
-#else
-	if (const char* home = std::getenv("HOME"); home != nullptr)
-		baseDir = std::filesystem::path(home) / ".local" / "share";
-	else
-		baseDir = std::filesystem::temp_directory_path();
-#endif
-	const auto saveDir = baseDir / name / "saves";
+	const auto saveDir = platform::getGameDirectory(s_gameName) / "saves";
 	std::error_code error;
 	if (!exists(saveDir, error) && !create_directories(saveDir, error) && error)
 		OWL_CORE_WARN("SaveManager: Cannot create the save directory '{}': {}.", saveDir.string(), error.message())

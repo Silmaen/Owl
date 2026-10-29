@@ -356,14 +356,41 @@ the transition overlay and the voxel meshes. A test creates its own context and 
 (`Scene::setEngineContext`), so no state leaks from one test to the next. It is a plain owner with typed accessors,
 not a service locator; each scene keeps its own world (physics, script bindings, UI state).
 
+## User directory {#architecture-user-directory}
+
+An application writes its settings, saves, logs and caches in one folder, its **user directory**
+(`platform::getUserDirectory()`): `user/` beside the executable, so an installation copied elsewhere takes everything
+with it and leaves nothing in the user profile. When that folder cannot be written (an installation in `/usr`, `/opt`
+or `Program Files`), the user profile is used instead: `$XDG_DATA_HOME` or `~/.local/share/<executable>` on Linux,
+`%LOCALAPPDATA%\<executable>` on Windows. The `OWL_USER_DIR` environment variable forces it (the tests point it into
+their temporary folder).
+
+```text
+user/
+├── config.yml               application parameters (backends, window platform, debugging)
+├── logs/Owl.log             log of the last run
+├── cache/shader/            compiled shaders, rebuilt when missing
+├── cache/font/              MSDF atlases, rebuilt when missing
+├── <executable>_imgui.ini   window layout of the ImGui panels
+├── games/<game>/
+│   ├── settings.yml         user overrides of the game settings
+│   └── saves/               save slots
+├── OwlNest_settings.yml     Owl Nest settings, recent projects and their sessions
+└── OwlNest_recovery/        Owl Nest autosaves of modified documents
+```
+
+Owl Nest imports the settings of a previous installation (**Import settings...** in the File screen, or the prompt
+shown at the first start): `config.yml`, `OwlNest_settings.yml`, the ImGui layouts and the games folder are copied from the
+chosen folder and applied at the next start.
+
 ## Game Settings
 
 The `SettingsManager` (one per engine context, `EngineContext::getSettings()`) provides a persistent two-layer
 key-value store for game configuration:
 
 - **Game defaults** — loaded from `game_settings.yml` in the project assets (packed with the game)
-- **User overrides** — loaded from `settings.yml` in the user directory (`~/.local/share/<game>/`
-  on Linux, `%APPDATA%/<game>/` on Windows)
+- **User overrides** — loaded from `games/<game>/settings.yml` in the
+  [user directory](#architecture-user-directory)
 
 Built-in keys (`resolution_width`, `resolution_height`, `fullscreen`, `resizable`,
 `volume_master`, `language`) are auto-applied to the Window, SoundCommand and the engine context's language via
