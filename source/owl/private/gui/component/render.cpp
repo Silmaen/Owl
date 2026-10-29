@@ -53,6 +53,7 @@
 #include <format>
 #include <functional>
 #include <initializer_list>
+#include <numbers>
 #include <optional>
 #include <span>
 #include <string>
@@ -3164,6 +3165,250 @@ auto openAsset(const std::filesystem::path& iPath) -> bool {
 		return false;
 	openAssetHandler()(iPath);
 	return true;
+}
+
+namespace {
+
+// Combo over a list of names; an empty list falls back to free text.
+auto nameCombo(const char* iLabel, std::string& ioValue, const std::vector<std::string>& iNames,
+			   const char* iNone = nullptr) -> bool {
+	if (iNames.empty() && iNone == nullptr)
+		return prop::InputText(iLabel, &ioValue);
+	bool changed = false;
+	const std::string preview = ioValue.empty() && iNone != nullptr ? std::string{iNone} : ioValue;
+	if (prop::BeginCombo(iLabel, preview.c_str())) {
+		if (iNone != nullptr && ImGui::Selectable(iNone, ioValue.empty())) {
+			ioValue.clear();
+			changed = true;
+		}
+		for (const auto& name: iNames) {
+			if (ImGui::Selectable(name.c_str(), name == ioValue)) {
+				ioValue = name;
+				changed = true;
+			}
+		}
+		ImGui::EndCombo();
+	}
+	return changed;
+}
+
+auto removeButton(const char* iTooltip) -> bool {
+	return widgets::iconButton("##remove", {.glyph = icon::x, .tooltip = iTooltip});
+}
+
+template<typename T>
+void eraseAt(std::vector<T>& ioItems, const std::optional<size_t> iIndex) {
+	if (iIndex && *iIndex < ioItems.size())
+		ioItems.erase(ioItems.begin() + static_cast<std::ptrdiff_t>(*iIndex));
+}
+
+auto meshOf(const scene::Entity& iOwner) -> shared<renderer::MeshResource> {
+	if (!iOwner || !iOwner.hasComponent<MeshRenderer>())
+		return nullptr;
+	return iOwner.getComponent<MeshRenderer>().mesh;
+}
+
+void renderAnimatorParameters(data::animation::StateMachine& ioMachine) {
+	if (!widgets::subHeader("Parameters", true))
+		return;
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < ioMachine.parameters.size(); ++index) {
+		auto& parameter = ioMachine.parameters[index];
+		ImGui::PushID(static_cast<int>(index));
+		prop::InputText("Name", &parameter.name);
+		enumCombo("Type", parameter.type);
+		if (parameter.type == data::animation::ParameterType::Float)
+			prop::DragFloat("Default", &parameter.value, 0.01f, -1.e6f, 1.e6f, "%.2f");
+		else if (parameter.type == data::animation::ParameterType::Bool) {
+			bool flag = parameter.value >= 0.5f;
+			if (prop::Checkbox("Default", &flag))
+				parameter.value = flag ? 1.f : 0.f;
+		}
+		if (removeButton("Remove the parameter"))
+			removed = index;
+		ImGui::Separator();
+		ImGui::PopID();
+	}
+	eraseAt(ioMachine.parameters, removed);
+	if (ImGui::Button("Add Parameter", {-FLT_MIN, 0.f}))
+		ioMachine.parameters.push_back({.name = std::format("param{}", ioMachine.parameters.size()),
+										.type = data::animation::ParameterType::Float,
+										.value = 0.f});
+	fieldTooltip("A value the scripts set (`animator.set_float`, `set_bool`, `trigger`) and the transitions test.");
+}
+
+void renderAnimatorStates(data::animation::StateMachine& ioMachine, const std::vector<std::string>& iClips) {
+	if (!widgets::subHeader("States", true))
+		return;
+	std::vector<std::string> names;
+	names.reserve(ioMachine.states.size());
+	for (const auto& state: ioMachine.states) names.push_back(state.name);
+	nameCombo("Entry State", ioMachine.entryState, names, "(first state)");
+	fieldTooltip("State the machine starts in.");
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < ioMachine.states.size(); ++index) {
+		auto& state = ioMachine.states[index];
+		ImGui::PushID(static_cast<int>(index));
+		prop::InputText("Name", &state.name);
+		nameCombo("Clip", state.clip, iClips, "(rest pose)");
+		prop::DragFloat("Speed", &state.speed, 0.01f, -10.f, 10.f, "%.2f");
+		prop::Checkbox("Loop", &state.loop);
+		if (removeButton("Remove the state"))
+			removed = index;
+		ImGui::Separator();
+		ImGui::PopID();
+	}
+	eraseAt(ioMachine.states, removed);
+	if (ImGui::Button("Add State", {-FLT_MIN, 0.f}))
+		ioMachine.states.push_back({.name = std::format("state{}", ioMachine.states.size()),
+									.clip = iClips.empty() ? std::string{} : iClips.front(),
+									.speed = 1.f,
+									.loop = true});
+	if (!iClips.empty() && ImGui::Button("Add a State per Clip", {-FLT_MIN, 0.f})) {
+		for (const auto& clip: iClips) {
+			if (!ioMachine.findState(clip))
+				ioMachine.states.push_back({.name = clip, .clip = clip, .speed = 1.f, .loop = true});
+		}
+	}
+	fieldTooltip("One state per clip of the mesh not yet played by a state, named after the clip.");
+}
+
+void renderTransitionConditions(data::animation::StateTransition& ioTransition,
+								const std::vector<std::string>& iParameters) {
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < ioTransition.conditions.size(); ++index) {
+		auto& condition = ioTransition.conditions[index];
+		ImGui::PushID(static_cast<int>(index));
+		nameCombo("If", condition.parameter, iParameters);
+		enumCombo("Test", condition.op);
+		if (condition.op == data::animation::ConditionOp::Greater || condition.op == data::animation::ConditionOp::Less)
+			prop::DragFloat("Threshold", &condition.threshold, 0.01f, -1.e6f, 1.e6f, "%.2f");
+		if (removeButton("Remove the condition"))
+			removed = index;
+		ImGui::PopID();
+	}
+	eraseAt(ioTransition.conditions, removed);
+	if (ImGui::Button("Add Condition", {-FLT_MIN, 0.f}))
+		ioTransition.conditions.push_back({.parameter = iParameters.empty() ? std::string{} : iParameters.front(),
+										   .op = data::animation::ConditionOp::Greater,
+										   .threshold = 0.f});
+}
+
+void renderAnimatorTransitions(data::animation::StateMachine& ioMachine) {
+	if (!widgets::subHeader("Transitions", true))
+		return;
+	std::vector<std::string> states{std::string{data::animation::StateMachine::g_anyState}};
+	states.reserve(ioMachine.states.size() + 1);
+	for (const auto& state: ioMachine.states) states.push_back(state.name);
+	const std::vector<std::string> targets{states.begin() + 1, states.end()};
+	std::vector<std::string> parameters;
+	parameters.reserve(ioMachine.parameters.size());
+	for (const auto& parameter: ioMachine.parameters) parameters.push_back(parameter.name);
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < ioMachine.transitions.size(); ++index) {
+		auto& transition = ioMachine.transitions[index];
+		ImGui::PushID(static_cast<int>(index));
+		nameCombo("From", transition.from, states);
+		nameCombo("To", transition.to, targets);
+		prop::DragFloat("Fade", &transition.duration, 0.01f, 0.f, 10.f, "%.2f s");
+		fieldTooltip("Length of the cross-fade, in seconds.");
+		bool waits = transition.exitTime >= 0.f;
+		if (prop::Checkbox("Exit Time", &waits))
+			transition.exitTime = waits ? 1.f : -1.f;
+		fieldTooltip("Wait for a normalized time of the source state (1 = the end of its clip) before leaving it.");
+		if (waits)
+			prop::DragFloat("At", &transition.exitTime, 0.01f, 0.f, 100.f, "%.2f");
+		renderTransitionConditions(transition, parameters);
+		if (removeButton("Remove the transition"))
+			removed = index;
+		ImGui::Separator();
+		ImGui::PopID();
+	}
+	eraseAt(ioMachine.transitions, removed);
+	if (ImGui::Button("Add Transition", {-FLT_MIN, 0.f}))
+		ioMachine.transitions.push_back({.from = states.size() > 1 ? states[1] : states.front(),
+										 .to = states.size() > 2 ? states[2] : std::string{},
+										 .duration = 0.2f,
+										 .exitTime = -1.f,
+										 .conditions = {}});
+	fieldTooltip("Transitions are tested in order: the first one whose conditions hold fires.");
+}
+
+}// namespace
+
+void renderProps(Animator& ioComponent, const scene::Entity& iOwner) {
+	const auto mesh = meshOf(iOwner);
+	std::vector<std::string> clips;
+	if (mesh) {
+		for (const auto& clip: mesh->getClips()) clips.push_back(clip.name);
+	}
+	if (!mesh || !mesh->isSkinned())
+		widgets::notice("The Mesh Renderer of this entity draws no skinned mesh: the animator has nothing to move.");
+	prop::Checkbox("Playing", &ioComponent.playing);
+	fieldTooltip("Off holds the current pose.");
+	prop::DragFloat("Speed", &ioComponent.speed, 0.01f, 0.f, 10.f, "%.2f");
+	fieldTooltip("Time scale of the whole machine.");
+	if (prop::Checkbox("Preview", &ioComponent.preview) && !ioComponent.preview)
+		ioComponent.invalidate();
+	fieldTooltip("Play the machine in Edit mode, to check the clips and the fades without starting the game.");
+	if (const auto state = ioComponent.player.getCurrentState(); state && *state < ioComponent.machine.states.size())
+		ImGui::Text("State: %s (%.0f %%)", ioComponent.machine.states[*state].name.c_str(),
+					static_cast<double>(ioComponent.player.getBlendWeight()) * 100.0);
+	if (mesh && mesh->getSkeleton())
+		ImGui::Text("Bones: %zu, clips: %zu", mesh->getSkeleton()->getBoneCount(), clips.size());
+	renderAnimatorParameters(ioComponent.machine);
+	renderAnimatorStates(ioComponent.machine, clips);
+	renderAnimatorTransitions(ioComponent.machine);
+}
+
+void renderProps(MeshSockets& ioComponent, const scene::Entity& iOwner) {
+	const auto mesh = meshOf(iOwner);
+	std::vector<std::string> bones;
+	if (mesh && mesh->getSkeleton()) {
+		for (const auto& bone: mesh->getSkeleton()->getBones()) bones.push_back(bone.name);
+	}
+	if (mesh && !mesh->getSockets().empty()) {
+		std::string fileSockets;
+		for (const auto& socket: mesh->getSockets()) fileSockets += (fileSockets.empty() ? "" : ", ") + socket.name;
+		ImGui::TextWrapped("Sockets of the mesh file: %s", fileSockets.c_str());
+	}
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < ioComponent.sockets.size(); ++index) {
+		auto& socket = ioComponent.sockets[index];
+		ImGui::PushID(static_cast<int>(index));
+		prop::InputText("Name", &socket.name);
+		nameCombo("Bone", socket.bone, bones, "(entity origin)");
+		fieldTooltip("Bone the socket follows in the animation; none for the origin of the entity.");
+		prop::DragFloat3("Position", socket.offset.translation().data(), 0.005f, -1.e4f, 1.e4f, "%.3f");
+		math::vec3 degrees = socket.offset.rotation() * (180.f / std::numbers::pi_v<float>);
+		if (prop::DragFloat3("Rotation", degrees.data(), 0.5f, -360.f, 360.f, "%.1f"))
+			socket.offset.rotation() = degrees * (std::numbers::pi_v<float> / 180.f);
+		prop::DragFloat3("Scale", socket.offset.scale().data(), 0.005f, 0.001f, 1.e3f, "%.3f");
+		if (removeButton("Remove the socket"))
+			removed = index;
+		ImGui::Separator();
+		ImGui::PopID();
+	}
+	eraseAt(ioComponent.sockets, removed);
+	if (ImGui::Button("Add Socket", {-FLT_MIN, 0.f}))
+		ioComponent.sockets.push_back({.name = std::format("socket{}", ioComponent.sockets.size()),
+									   .bone = bones.empty() ? std::string{} : bones.front(),
+									   .offset = {}});
+	fieldTooltip("A named point where an entity is snapped (`socket.attach`, the Attach to Socket menu of the "
+				 "hierarchy); the viewport draws the sockets of the selected entity.");
+}
+
+void renderProps(SocketAttachment& ioComponent, const scene::Entity& iOwner) {
+	std::vector<std::string> names;
+	if (iOwner && iOwner.getScene() != nullptr) {
+		const auto parentId = iOwner.getComponent<Hierarchy>().parentId;
+		if (const auto parent = iOwner.getScene()->findEntityByUUID(parentId); parent)
+			names = iOwner.getScene()->getSocketNames(parent);
+	}
+	if (names.empty())
+		widgets::notice("The parent of this entity has no socket: add a Mesh Sockets component to it.");
+	nameCombo("Socket", ioComponent.socket, names);
+	fieldTooltip("Socket of the parent the entity is snapped on; its transform follows the socket.");
 }
 
 }// namespace owl::gui::component

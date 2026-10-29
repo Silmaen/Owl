@@ -29,3 +29,5 @@ An `entity` is the integer UUID of an entity (`entity_id` in its own script, `sc
 |                                                     | `pushwall`  | Raycast push-walls.                                                                                                  |
 | [Isometric terrain and paths](lua-api-isometric.md) | `isometric` | Terrain picking and tile editing of an isometric tilemap.                                                            |
 |                                                     | `path`      | Shortest paths over the graph a tilemap's `navigation` rules describe (roads, tracks), searched over several frames. |
+| [Animation and sockets](lua-api-animation.md)       | `animator`  | State machine of the `Animator` of a skinned mesh: parameters and states.                                            |
+|                                                     | `socket`    | Entities snapped on the sockets of a mesh or of an entity.                                                           |

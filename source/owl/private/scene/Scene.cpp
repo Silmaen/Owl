@@ -783,6 +783,8 @@ void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Came
 	const math::mat4 camToWorld = inverse(iCamera.getView());
 	updateVoxelStreaming(math::vec3{camToWorld(0, 3), camToWorld(1, 3), camToWorld(2, 3)});
 	systems::applyDayNightCycles(*this);
+	updateAnimators(iTimeStep.getSeconds(), true);
+	updateSocketAttachments();
 	renderTargets();
 	renderEditorView(iCamera);
 }
@@ -2421,9 +2423,26 @@ void Scene::resolveMaterialSlot(component::MeshRenderer& ioMeshRenderer, const s
 	slot.resolved = mkShared<const renderer::Material>(std::move(material));
 }
 
+auto Scene::getScreenSize(const renderer::MeshResource& iMesh, const math::mat4& iModel) const -> float {
+	const auto& geometry = iMesh.getGeometry();
+	float scale = 0.f;
+	for (size_t col = 0; col < 3; ++col)
+		scale = std::max(scale, math::vec3{iModel(0, col), iModel(1, col), iModel(2, col)}.norm());
+	const float radius = (geometry.boundsMax - geometry.boundsMin).norm() * 0.5f * scale;
+	const math::vec3 centre = (geometry.boundsMin + geometry.boundsMax) * 0.5f;
+	const math::vec4 world = iModel * math::vec4{centre.x(), centre.y(), centre.z(), 1.f};
+	const math::vec4 clip = m_lodViewProjection * world;
+	const float rowScale =
+			math::vec3{m_lodViewProjection(1, 0), m_lodViewProjection(1, 1), m_lodViewProjection(1, 2)}.norm();
+	const float depth = std::max(clip.w(), 1e-4f);
+	return radius * rowScale / depth;
+}
+
 void Scene::renderMeshes(const bool iEditorMode) {
 	OWL_PROFILE_FUNCTION()
 
+	if (!renderer::Renderer3D::isShadowPass())
+		m_lodViewProjection = renderer::Renderer3D::getViewProjection();
 	m_cullingStats.meshesInFrustum = markVisible(m_meshIndex, renderer::Renderer3D::getViewProjection(), m_meshVisible);
 	for (const auto view = registry.view<component::Transform, component::MeshRenderer>(); const auto entity: view) {
 		if (!isMarkedVisible(m_meshVisible, entity))
@@ -2437,15 +2456,24 @@ void Scene::renderMeshes(const bool iEditorMode) {
 		if (!meshRenderer.mesh)
 			continue;
 		const math::mat4 model = getWorldTransform(ent)();
-		const auto submeshCount = std::min(meshRenderer.mesh->getSubmeshes().size(), meshRenderer.materials.size());
+		auto& mesh = *meshRenderer.mesh;
+		const size_t lod = mesh.getLodCount() > 0 ? mesh.selectLod(getScreenSize(mesh, model)) : 0;
+		const auto* animator = registry.try_get<component::Animator>(entity);
+		const bool skinned =
+				mesh.isSkinned() && animator != nullptr && animator->hasPose(mesh.getSkeleton()->getBoneCount());
+		const uint32_t firstMatrix = skinned ? renderer::RendererMesh::pushSkin(animator->skinMatrices) : 0;
+		const auto submeshCount = std::min(mesh.getSubmeshes().size(), meshRenderer.materials.size());
 		for (size_t index = 0; index < submeshCount; ++index) {
 			const auto& slot = meshRenderer.materials[index];
 			if (!slot.resolved)
 				continue;
-			renderer::RendererMesh::drawSubmesh(*meshRenderer.mesh, index, model,
-												{.tint = meshRenderer.color,
-												 .entityId = static_cast<int>(entity),
-												 .material = slot.resolved.get()});
+			const renderer::MeshDrawParams params{.tint = meshRenderer.color,
+												  .entityId = static_cast<int>(entity),
+												  .material = slot.resolved.get()};
+			if (skinned)
+				renderer::RendererMesh::drawSkinnedSubmesh(mesh, index, lod, model, firstMatrix, params);
+			else
+				renderer::RendererMesh::drawSubmesh(mesh, index, lod, model, params);
 		}
 	}
 }
@@ -3850,6 +3878,19 @@ template<>
 OWL_API void
 Scene::onComponentAdded<component::ReflectionProbe>([[maybe_unused]] const Entity& iEntity,
 													[[maybe_unused]] component::ReflectionProbe& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Animator>([[maybe_unused]] const Entity& iEntity,
+														  [[maybe_unused]] component::Animator& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::MeshSockets>([[maybe_unused]] const Entity& iEntity,
+															 [[maybe_unused]] component::MeshSockets& ioComponent) {}
+
+template<>
+OWL_API void
+Scene::onComponentAdded<component::SocketAttachment>([[maybe_unused]] const Entity& iEntity,
+													 [[maybe_unused]] component::SocketAttachment& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::LightFlicker>([[maybe_unused]] const Entity& iEntity,

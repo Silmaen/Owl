@@ -1040,6 +1040,124 @@ auto luaEntityGetTimeOfDay(lua_State* iState) -> int {
 	return 1;
 }
 
+// `animator.set_float` / `set_bool`: a parameter of the machine of the entity's `Animator`.
+auto setAnimatorParameter(lua_State* iState, const std::string_view iName, const float iValue) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Animator>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	auto& animator = entity->getComponent<scene::component::Animator>();
+	lua_pushboolean(iState,
+					animator.player.isReady() && animator.player.setParameter(animator.machine, iName, iValue) ? 1 : 0);
+	return 1;
+}
+
+auto luaAnimatorSetFloat(lua_State* iState) -> int {
+	const char* name = luaL_checkstring(iState, 2);
+	const auto value = static_cast<float>(luaL_checknumber(iState, 3));
+	return setAnimatorParameter(iState, name, value);
+}
+
+auto luaAnimatorSetBool(lua_State* iState) -> int {
+	const char* name = luaL_checkstring(iState, 2);
+	const bool value = lua_toboolean(iState, 3) != 0;
+	return setAnimatorParameter(iState, name, value ? 1.f : 0.f);
+}
+
+auto luaAnimatorTrigger(lua_State* iState) -> int {
+	const char* name = luaL_checkstring(iState, 2);
+	return setAnimatorParameter(iState, name, 1.f);
+}
+
+auto luaAnimatorGetParameter(lua_State* iState) -> int {
+	const char* name = luaL_checkstring(iState, 2);
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Animator>())
+		return 0;
+	const auto& animator = entity->getComponent<scene::component::Animator>();
+	const auto value = animator.player.isReady() ? animator.player.getParameter(animator.machine, name) : std::nullopt;
+	if (!value)
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(*value));
+	return 1;
+}
+
+auto luaAnimatorGetState(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Animator>())
+		return 0;
+	const auto& animator = entity->getComponent<scene::component::Animator>();
+	const auto state = animator.player.getCurrentState();
+	if (!state || *state >= animator.machine.states.size())
+		return 0;
+	const auto& name = animator.machine.states[*state].name;
+	lua_pushlstring(iState, name.data(), name.size());
+	return 1;
+}
+
+auto luaAnimatorPlay(lua_State* iState) -> int {
+	const char* state = luaL_checkstring(iState, 2);
+	const auto fade = static_cast<float>(luaL_optnumber(iState, 3, 0.2));
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Animator>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	auto& animator = entity->getComponent<scene::component::Animator>();
+	lua_pushboolean(iState, animator.player.isReady() && animator.player.play(animator.machine, state, fade) ? 1 : 0);
+	return 1;
+}
+
+auto luaAnimatorSetPlaying(lua_State* iState) -> int {
+	const bool playing = lua_toboolean(iState, 2) != 0;
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Animator>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::Animator>().playing = playing;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaSocketAttach(lua_State* iState) -> int {
+	const auto ownerId = static_cast<uint64_t>(luaL_checkinteger(iState, 2));
+	const char* socket = luaL_checkstring(iState, 3);
+	auto* activeScene = getBoundScene(iState);
+	const auto entity = findEntity(iState);
+	if (activeScene == nullptr || !entity) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	const auto owner = activeScene->findEntityByUUID(core::UUID{ownerId});
+	lua_pushboolean(iState, activeScene->attachToSocket(*entity, owner, socket) ? 1 : 0);
+	return 1;
+}
+
+auto luaSocketDetach(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	const auto entity = findEntity(iState);
+	lua_pushboolean(iState, activeScene != nullptr && entity && activeScene->detachFromSocket(*entity) ? 1 : 0);
+	return 1;
+}
+
+auto luaSocketGetPosition(lua_State* iState) -> int {
+	const char* socket = luaL_checkstring(iState, 2);
+	const auto* activeScene = getBoundScene(iState);
+	const auto entity = findEntity(iState);
+	if (activeScene == nullptr || !entity)
+		return 0;
+	const auto local = activeScene->getSocketTransform(*entity, socket);
+	if (!local)
+		return 0;
+	const math::mat4 world = activeScene->getWorldTransform(*entity)() * *local;
+	lua_pushnumber(iState, static_cast<lua_Number>(world(0, 3)));
+	lua_pushnumber(iState, static_cast<lua_Number>(world(1, 3)));
+	lua_pushnumber(iState, static_cast<lua_Number>(world(2, 3)));
+	return 3;
+}
+
 auto luaEntitySetTimeOfDay(lua_State* iState) -> int {
 	const auto hours = static_cast<float>(luaL_checknumber(iState, 2));
 	const auto entity = findEntity(iState);
@@ -2809,6 +2927,36 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "path", .name = "clear_routes", .function = guarded<luaPathClearRoutes>,
 		 .description = "Remove every route given to `path.show_route` for the tilemap.",
 		 .params = {entityId}},
+		{.table = "animator", .name = "set_float", .function = guarded<luaAnimatorSetFloat>,
+		 .description = "Set a number parameter of the entity's `Animator` state machine; false when it has no such parameter.",
+		 .params = {entityId, {"name", String}, {"value", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "animator", .name = "set_bool", .function = guarded<luaAnimatorSetBool>,
+		 .description = "Set a flag parameter of the entity's `Animator` state machine; false when it has no such parameter.",
+		 .params = {entityId, {"name", String}, {"value", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "animator", .name = "trigger", .function = guarded<luaAnimatorTrigger>,
+		 .description = "Fire a trigger parameter of the entity's `Animator`: it stays set until a transition uses it.",
+		 .params = {entityId, {"name", String}}, .returns = {{"done", Boolean}}},
+		{.table = "animator", .name = "get_parameter", .function = guarded<luaAnimatorGetParameter>,
+		 .description = "Value of a parameter of the entity's `Animator` (1 or 0 for a flag); nothing when it has none.",
+		 .params = {entityId, {"name", String}}, .returns = {{"value", Number}}},
+		{.table = "animator", .name = "get_state", .function = guarded<luaAnimatorGetState>,
+		 .description = "Name of the current state of the entity's `Animator`; nothing before its first frame.",
+		 .params = {entityId}, .returns = {{"state", String}}},
+		{.table = "animator", .name = "play", .function = guarded<luaAnimatorPlay>,
+		 .description = "Cross-fade the entity's `Animator` to a state, whatever the transitions, in `fade` seconds (0.2 by default).",
+		 .params = {entityId, {"state", String}, {"fade", Number, true}}, .returns = {{"done", Boolean}}},
+		{.table = "animator", .name = "set_playing", .function = guarded<luaAnimatorSetPlaying>,
+		 .description = "Run or hold the entity's `Animator` (held, the mesh keeps its pose); false when it has none.",
+		 .params = {entityId, {"playing", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "socket", .name = "attach", .function = guarded<luaSocketAttach>,
+		 .description = "Snap the entity on a socket of `owner`: it becomes its child and follows the socket (and its bone); false when the owner has no such socket.",
+		 .params = {entityId, {"owner", Entity}, {"socket", String}}, .returns = {{"done", Boolean}}},
+		{.table = "socket", .name = "detach", .function = guarded<luaSocketDetach>,
+		 .description = "Release the entity from its socket: it keeps its parent and stays where it is; false when it was attached to none.",
+		 .params = {entityId}, .returns = {{"done", Boolean}}},
+		{.table = "socket", .name = "get_position", .function = guarded<luaSocketGetPosition>,
+		 .description = "World position of a socket of the entity, following its bone; nothing when it has no such socket.",
+		 .params = {entityId, {"socket", String}}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
 	};
 	// clang-format on
 }
@@ -2903,6 +3051,9 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "door", .description = "Raycast doors."},
 			{.name = "pushwall", .description = "Raycast push-walls."},
 			{.name = "isometric", .description = "Terrain picking and tile editing of an isometric tilemap."},
+			{.name = "animator",
+			 .description = "State machine of the `Animator` of a skinned mesh: parameters and states."},
+			{.name = "socket", .description = "Entities snapped on the sockets of a mesh or of an entity."},
 			{.name = "path",
 			 .description = "Shortest paths over the graph a tilemap's `navigation` rules describe (roads, tracks), "
 							"searched over several frames."},
@@ -2925,6 +3076,7 @@ auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 			{.file = "lua-api-locale.md", .title = "Localisation", .tables = {"locale"}},
 			{.file = "lua-api-raycast.md", .title = "Raycast doors and push-walls", .tables = {"door", "pushwall"}},
 			{.file = "lua-api-isometric.md", .title = "Isometric terrain and paths", .tables = {"isometric", "path"}},
+			{.file = "lua-api-animation.md", .title = "Animation and sockets", .tables = {"animator", "socket"}},
 	};
 	return s_pages;
 }

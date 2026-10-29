@@ -1,0 +1,80 @@
+Scene: RenderTestSkinned
+EnabledRenderers:
+- {Name: world, Enabled: false}
+- {Name: mesh_world, Enabled: true}
+- {Name: ui, Enabled: false}
+Entities:
+- Entity: 3510000000000000001
+  Tag: {tag: SkinnedCamera}
+  Transform:
+    translation: [0, 1.2, 6]
+    rotation: [-0.1, 0, 0]
+    scale: [1, 1, 1]
+  Camera:
+    camera: {projectionType: Perspective, perspectiveFOV: 0.785398185, perspectiveNear: 0.100000001, perspectiveFar: 100,
+      orthographicSize: 8, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+- Entity: 3510000000000000002
+  Tag: {tag: Ground}
+  Transform:
+    translation: [0, -0.05, 0]
+    rotation: [0, 0, 0]
+    scale: [8, 0.1, 4]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.55, 0.55, 0.6, 1]
+    transparent: false
+- Entity: 3510000000000000003
+  Tag: {tag: BindPoseArm}
+  Transform:
+    translation: [-1.5, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: ../mesh_tests/skinned_arm.gltf
+    color: [0.9, 0.85, 0.8, 1]
+    transparent: false
+- Entity: 3510000000000000004
+  Tag: {tag: BentArm}
+  Transform:
+    translation: [1, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: ../mesh_tests/skinned_arm.gltf
+    color: [1, 0.6, 0.2, 1]
+    transparent: false
+  Animator:
+    playing: false
+    speed: 1
+    entry: held
+    parameters: []
+    states:
+      - {name: held, clip: bent, speed: 1, loop: true}
+    transitions: []
+- Entity: 3510000000000000005
+  Tag: {tag: TipCube}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [0.3, 0.3, 0.3]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 3510000000000000004}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.3, 0.6, 1, 1]
+    transparent: false
+  SocketAttachment: {socket: tip}
