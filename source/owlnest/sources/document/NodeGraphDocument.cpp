@@ -8,6 +8,7 @@
 
 #include "NodeGraphDocument.h"
 
+#include "../commands/NodeGraphCommands.h"
 #include "EditorLayer.h"
 
 #include <gui/IconFont.h>
@@ -24,6 +25,7 @@ OWL_DIAG_POP
 #include <format>
 #include <optional>
 #include <tuple>
+#include <vector>
 
 namespace owl::nest {
 
@@ -59,6 +61,10 @@ void NodeGraphDocument::onAttach(EditorLayer* iEditor) {
 	m_canvas.setOnContextMenu([this](const std::optional<core::UUID> iNode) -> void {
 		m_contextNode = iNode;
 		m_openContextMenu = true;
+	});
+	m_canvas.setOnLinkWaypointsChanged([this](const core::UUID iLink, const std::vector<math::vec2f>& iBefore) -> void {
+		if (const auto* link = m_canvas.findLink(iLink); link != nullptr)
+			m_undoManager.push(mkUniq<commands::SetLinkWaypointsCommand>(*link, iBefore));
 	});
 	onCanvasReady();
 	m_savedSnapshot = gui::widgets::NodeCanvasSerializer::serializeToString(m_canvas);

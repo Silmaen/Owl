@@ -9,6 +9,7 @@
 #include "NodeGraphCommands.h"
 
 #include <cstdint>
+#include <tuple>
 #include <typeinfo>
 #include <utility>
 
@@ -33,7 +34,7 @@ RemoveNodeCommand::RemoveNodeCommand(gui::widgets::Node iNode, std::vector<gui::
 
 void RemoveNodeCommand::undo(NodeCanvas& ioTarget) {
 	ioTarget.addNode(m_node);
-	for (const auto& link: m_attachedLinks) ioTarget.addLink(link.fromPin, link.toPin);
+	for (const auto& link: m_attachedLinks) ioTarget.addLink(link.fromPin, link.toPin, link.waypoints);
 }
 
 void RemoveNodeCommand::redo(NodeCanvas& ioTarget) { ioTarget.removeNode(m_node.id); }
@@ -78,11 +79,29 @@ void AddLinkCommand::undo(NodeCanvas& ioTarget) {
 void AddLinkCommand::redo(NodeCanvas& ioTarget) { m_linkId = ioTarget.addLink(m_fromPin, m_toPin); }
 
 // --- RemoveLinkCommand -----------------------------------------------------
-RemoveLinkCommand::RemoveLinkCommand(gui::widgets::Link iLink) : m_link{iLink} {}
+RemoveLinkCommand::RemoveLinkCommand(gui::widgets::Link iLink) : m_link{std::move(iLink)} {}
 
-void RemoveLinkCommand::undo(NodeCanvas& ioTarget) { m_link.id = ioTarget.addLink(m_link.fromPin, m_link.toPin); }
+void RemoveLinkCommand::undo(NodeCanvas& ioTarget) {
+	m_link.id = ioTarget.addLink(m_link.fromPin, m_link.toPin, m_link.waypoints);
+}
 
 void RemoveLinkCommand::redo(NodeCanvas& ioTarget) { ioTarget.removeLink(m_link.id); }
+
+// --- SetLinkWaypointsCommand ----------------------------------------------
+SetLinkWaypointsCommand::SetLinkWaypointsCommand(const gui::widgets::Link& iLink, std::vector<math::vec2f> iBefore)
+	: m_fromPin{iLink.fromPin}, m_toPin{iLink.toPin}, m_before{std::move(iBefore)}, m_after{iLink.waypoints} {}
+
+void SetLinkWaypointsCommand::undo(NodeCanvas& ioTarget) { apply(ioTarget, m_before); }
+
+void SetLinkWaypointsCommand::redo(NodeCanvas& ioTarget) { apply(ioTarget, m_after); }
+
+void SetLinkWaypointsCommand::apply(NodeCanvas& ioTarget, const std::vector<math::vec2f>& iWaypoints) const {
+	for (const auto& link: ioTarget.links())
+		if (link.fromPin == m_fromPin && link.toPin == m_toPin) {
+			std::ignore = ioTarget.setLinkWaypoints(link.id, iWaypoints);
+			return;
+		}
+}
 
 // --- AddOutputPinCommand ---------------------------------------------------
 AddOutputPinCommand::AddOutputPinCommand(core::UUID iNodeId, gui::widgets::NodePin iPin)

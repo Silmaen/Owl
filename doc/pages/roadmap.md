@@ -155,7 +155,7 @@ the cook, double positions with a floating origin, visual scripting; the rest ma
 - ![Done][done] Point and spot light shadows (cube and perspective shadow maps) ([3D core](design/3d-core.md#emissive-and-area-lights))
 - ![Done][done] Local reflection probes: baked cube maps blended by volume, parallax-corrected, so metals reflect the room ([3D core](design/3d-core.md#reflection-probes))
 - ![Done][done] Visual scripting MVP, event graphs compiled to Lua, node editing of assets ([details](design/visual-scripting.md))
-- ![Planned][planned] Node-graph link waypoints
+- ![Done][done] Node-graph link waypoints, in visual scripts, PCG graphs and every node graph
 - ![Done][done] Scene Flow view removed: it showed few of the scene links of a real project
 - ![Done][done] Script debugging aids (breakpoint markers, live watch)
 - ![Done][done] Lua editor scripts and interactive Lua console ([Editor scripting](design/editor-scripting.md))

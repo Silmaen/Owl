@@ -72,6 +72,7 @@ struct Link {
 	core::UUID id;///< Stable link identifier.
 	core::UUID fromPin;///< Output pin on the source node.
 	core::UUID toPin;///< Input pin on the destination node.
+	std::vector<math::vec2f> waypoints;///< Points the link passes through, in canvas space, from output to input.
 };
 
 /**
@@ -182,9 +183,19 @@ public:
 	 *  Add a link between two pins.
 	 * @param[in] iFromPin UUID of the source (output) pin.
 	 * @param[in] iToPin UUID of the destination (input) pin.
-	 * @return The new link's UUID, or 0 if the validator vetoes the connection.
+	 * @param[in] iWaypoints Points the link passes through, in canvas space.
+	 * @return The new link's UUID.
 	 */
-	auto addLink(core::UUID iFromPin, core::UUID iToPin) -> core::UUID;
+	auto addLink(core::UUID iFromPin, core::UUID iToPin, std::vector<math::vec2f> iWaypoints = {}) -> core::UUID;
+
+	/**
+	 * @brief
+	 *  Replace the waypoints of a link.
+	 * @param[in] iId UUID of the link.
+	 * @param[in] iWaypoints Points the link passes through, in canvas space.
+	 * @return False when the link is unknown.
+	 */
+	auto setLinkWaypoints(core::UUID iId, std::vector<math::vec2f> iWaypoints) -> bool;
 
 	/**
 	 * @brief
@@ -291,6 +302,17 @@ public:
 	 * @param[in] iCb Callback `(iLinkId) -> void`.
 	 */
 	void setOnLinkDeleted(std::function<void(core::UUID iLinkId)> iCb);
+
+	/**
+	 * @brief
+	 *  Set the callback fired when the user inserts, moves or deletes a waypoint of a link.
+	 *
+	 * Right click on a link inserts one at the cursor, a left drag moves one, Delete over one removes it. The link
+	 * already holds its new waypoints when the callback runs; a move fires once, on release.
+	 * @param[in] iCb Callback `(iLinkId, iBefore) -> void`, with the waypoints before the gesture.
+	 */
+	void
+	setOnLinkWaypointsChanged(std::function<void(core::UUID iLinkId, const std::vector<math::vec2f>& iBefore)> iCb);
 
 	/**
 	 * @brief

@@ -41,7 +41,7 @@ auto addNode(VisualScript& ioScript, const std::string& iType, std::map<std::str
 
 void link(VisualScript& ioScript, const core::UUID iFrom, const std::string& iFromPin, const core::UUID iTo,
 		  const std::string& iToPin) {
-	ioScript.links.push_back({.fromNode = iFrom, .fromPin = iFromPin, .toNode = iTo, .toPin = iToPin});
+	ioScript.links.push_back({.fromNode = iFrom, .fromPin = iFromPin, .toNode = iTo, .toPin = iToPin, .waypoints = {}});
 }
 
 auto toBytes(const std::string& iText) -> std::vector<uint8_t> { return {iText.begin(), iText.end()}; }
@@ -116,6 +116,7 @@ TEST(VisualScript, NamesMustBeSafeLuaIdentifiers) {
 TEST(VisualScript, SerializationRoundTrip) {
 	auto script = accumulator();
 	script.nodes.front().position = {12.5f, -3.f};
+	script.links.front().waypoints = {{40.f, 20.f}, {80.f, -10.5f}};
 	const auto text = serialize(script);
 	const auto loaded = deserialize(text, "round_trip.owlvs");
 	ASSERT_TRUE(loaded.has_value());

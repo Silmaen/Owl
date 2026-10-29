@@ -100,6 +100,10 @@ An event appears at most once in a graph.
 | Drag from a pin to the background  | Palette of the nodes to link to                                     |
 | **Alt**+click a pin                | Break its links                                                     |
 | Hover a link, **Delete**           | Remove the link                                                     |
+| **Alt**+click a link               | Cut it                                                              |
+| Right-click a link                 | Add a waypoint at the cursor, to steer the link around nodes        |
+| Drag a waypoint                    | Move it; waypoints between moved nodes follow them                  |
+| Hover a waypoint, **Delete**       | Remove the waypoint                                                 |
 | Drag on the background             | Select many nodes; drag one of them to move them all                |
 | Right-drag, middle-drag, wheel     | Pan and zoom                                                        |
 | **Home**                           | Frame every node                                                    |

@@ -126,9 +126,9 @@ TEST_F(ScriptDebuggerTest, VisualScriptsProbeTheirWiresAndMapTheirNodes) {
 	script.nodes.push_back({.id = update, .type = "event.on_update", .position = {0.f, 0.f}, .values = {}});
 	script.nodes.push_back({.id = add, .type = "math.add", .position = {0.f, 0.f}, .values = {{"B", "3"}}});
 	script.nodes.push_back({.id = set, .type = "var.set", .position = {0.f, 0.f}, .values = {{"variable", "total"}}});
-	script.links.push_back({.fromNode = update, .fromPin = "Then", .toNode = set, .toPin = "Exec"});
-	script.links.push_back({.fromNode = update, .fromPin = "dt", .toNode = add, .toPin = "A"});
-	script.links.push_back({.fromNode = add, .fromPin = "Result", .toNode = set, .toPin = "Value"});
+	script.links.push_back({.fromNode = update, .fromPin = "Then", .toNode = set, .toPin = "Exec", .waypoints = {}});
+	script.links.push_back({.fromNode = update, .fromPin = "dt", .toNode = add, .toPin = "A", .waypoints = {}});
+	script.links.push_back({.fromNode = add, .fromPin = "Result", .toNode = set, .toPin = "Value", .waypoints = {}});
 
 	const auto build = compileForDebug(script);
 	ASSERT_TRUE(build.has_value());

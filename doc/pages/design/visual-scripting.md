@@ -45,11 +45,12 @@ code, or a refusal) are the open questions.
 
 ## Node-graph link waypoints (v0.6.0)
 
-- Right-click on a coloured link in `NodeCanvas` (visual scripts and any other graph) to insert an intermediate point
-  at the cursor position
-- Drag to relocate, Delete to remove — waypoints persist in the `.owlflow` YAML
-- The Bezier routing splits at each waypoint into a series of cubic segments so the user can manually steer links
-  around node clusters when the auto-deflection heuristic isn't enough
+Shipped, in the visual scripts, the PCG graphs and every `NodeCanvas` graph:
+
+- Right-click on a link inserts a waypoint at the cursor, in the segment closest to it
+- Drag to relocate, Delete to remove; the waypoints of a link whose two nodes move together follow them
+- Waypoints persist with the link (`waypoints:` in `.owlvs`, `.owlpcg` and `.owlflow`), each edit one undo step
+- The routing splits at each waypoint into cubic segments shaped like a plain link (`getNodeLinkSegments`)
 
 ## Script debugging aids (v0.6.0)
 

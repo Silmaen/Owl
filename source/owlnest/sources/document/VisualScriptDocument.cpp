@@ -463,7 +463,8 @@ auto VisualScriptDocument::addNode(const std::string& iType, const std::array<fl
 					return iLink.fromNode == from.node && iLink.fromPin == from.pin;
 				return iLink.toNode == to.node && iLink.toPin == to.pin;
 			});
-			next.links.push_back({.fromNode = from.node, .fromPin = from.pin, .toNode = to.node, .toPin = to.pin});
+			next.links.push_back(
+					{.fromNode = from.node, .fromPin = from.pin, .toNode = to.node, .toPin = to.pin, .waypoints = {}});
 		}
 	}
 	next.nodes.push_back(std::move(node));
@@ -1234,7 +1235,7 @@ auto VisualScriptDocument::addFunction(const bool iMacro) -> std::string {
 					  .values = {{"function", name}}};
 	if (iMacro)
 		ret.values["exit"] = "Then";
-	next.links.push_back({.fromNode = entry.id, .fromPin = "Then", .toNode = ret.id, .toPin = "Exec"});
+	next.links.push_back({.fromNode = entry.id, .fromPin = "Then", .toNode = ret.id, .toPin = "Exec", .waypoints = {}});
 	next.nodes.push_back(entry);
 	next.nodes.push_back(std::move(ret));
 	commit(std::move(next), iMacro ? "Add Macro" : "Add Function");

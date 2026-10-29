@@ -82,7 +82,7 @@ TEST_F(VisualScriptDocumentTest, DeleteGroupRemovesNodesAndLinks) {
 	const auto event = script.nodes.front().id;
 	const auto branch = m_document.addNode("flow.branch", {0.f, 0.f});
 	script = m_document.getScript();
-	script.links.push_back({.fromNode = event, .fromPin = "Then", .toNode = branch, .toPin = "Exec"});
+	script.links.push_back({.fromNode = event, .fromPin = "Then", .toNode = branch, .toPin = "Exec", .waypoints = {}});
 	ASSERT_TRUE(m_document.commit(script, "Add Link"));
 	const std::array group{event, branch};
 	m_document.deleteNodes(group);
@@ -99,7 +99,7 @@ TEST_F(VisualScriptDocumentTest, CopyPasteKeepsInternalLinksWithFreshIds) {
 	const auto event = m_document.getScript().nodes.front().id;
 	const auto set = m_document.addNode("var.set", {0.f, 0.f});
 	script = m_document.getScript();
-	script.links.push_back({.fromNode = event, .fromPin = "Then", .toNode = set, .toPin = "Exec"});
+	script.links.push_back({.fromNode = event, .fromPin = "Then", .toNode = set, .toPin = "Exec", .waypoints = {}});
 	ASSERT_TRUE(m_document.commit(script, "Add Link"));
 	const std::array group{event, set};
 	const auto text = m_document.copyNodes(group);
@@ -158,7 +158,7 @@ TEST_F(VisualScriptDocumentTest, SplitPinKeepsTheValueAndDropsItsLinks) {
 	const auto get = m_document.addNode("call.transform.get_position", {0.f, 200.f});
 	auto script = m_document.getScript();
 	script.findNode(set)->values["xyz"] = "1, 2, 3";
-	script.links.push_back({.fromNode = get, .fromPin = "xyz", .toNode = set, .toPin = "xyz"});
+	script.links.push_back({.fromNode = get, .fromPin = "xyz", .toNode = set, .toPin = "xyz", .waypoints = {}});
 	ASSERT_TRUE(m_document.commit(script, "Setup"));
 	m_document.setPinSplit(set, "xyz", true);
 	const auto* node = m_document.getScript().findNode(set);
@@ -220,7 +220,7 @@ TEST_F(VisualScriptDocumentTest, FunctionsAreAddedRenamedAndRemovedWithTheirNode
 	const auto call = m_document.addNode("func.call|function", {0.f, 0.f});
 	const auto get = m_document.addNode("value.number", {0.f, 100.f});
 	auto script = m_document.getScript();
-	script.links.push_back({.fromNode = get, .fromPin = "Result", .toNode = call, .toPin = "speed"});
+	script.links.push_back({.fromNode = get, .fromPin = "Result", .toNode = call, .toPin = "speed", .waypoints = {}});
 	ASSERT_TRUE(m_document.commit(script, "Link"));
 	signature.inputs.front().name = "pace";
 	m_document.setFunction(name, signature);

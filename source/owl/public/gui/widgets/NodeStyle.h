@@ -12,6 +12,9 @@
 #include "math/vectors.h"
 
 #include <array>
+#include <cstddef>
+#include <span>
+#include <vector>
 
 struct ImDrawList;
 
@@ -124,5 +127,73 @@ OWL_API void drawNodeLink(ImDrawList* ioDraw, const math::vec2f& iFrom, const ma
  */
 [[nodiscard]] OWL_API auto getNodeLinkDistance(const math::vec2f& iFrom, const math::vec2f& iTo,
 											   const math::vec2f& iPoint, float iZoom) -> float;
+
+/**
+ * @brief
+ *  Draw a link routed through waypoints: one cubic segment between each pair of consecutive points.
+ * @param[in,out] ioDraw Draw list.
+ * @param[in] iFrom Output pin on the screen.
+ * @param[in] iTo Input pin on the screen.
+ * @param[in] iWaypoints Intermediate points on the screen, from the output to the input.
+ * @param[in] iColor Colour.
+ * @param[in] iThickness Thickness, in pixels.
+ * @param[in] iZoom Zoom factor.
+ */
+OWL_API void drawNodeLink(ImDrawList* ioDraw, const math::vec2f& iFrom, const math::vec2f& iTo,
+						  std::span<const math::vec2f> iWaypoints, const math::vec4& iColor, float iThickness,
+						  float iZoom);
+
+/**
+ * @brief
+ *  Cubic segments of a link routed through waypoints, each one shaped like `getNodeLinkCurve`.
+ * @param[in] iFrom Output pin on the screen.
+ * @param[in] iTo Input pin on the screen.
+ * @param[in] iWaypoints Intermediate points on the screen, from the output to the input.
+ * @param[in] iZoom Zoom factor.
+ * @return One segment more than there are waypoints.
+ */
+[[nodiscard]] OWL_API auto getNodeLinkSegments(const math::vec2f& iFrom, const math::vec2f& iTo,
+											   std::span<const math::vec2f> iWaypoints, float iZoom)
+		-> std::vector<std::array<math::vec2f, 4>>;
+
+/**
+ * @brief
+ *  Distance from a point to a link routed through waypoints.
+ * @param[in] iFrom Output pin on the screen.
+ * @param[in] iTo Input pin on the screen.
+ * @param[in] iWaypoints Intermediate points on the screen, from the output to the input.
+ * @param[in] iPoint The point.
+ * @param[in] iZoom Zoom factor.
+ * @return The distance to the closest segment, in pixels.
+ */
+[[nodiscard]] OWL_API auto getNodeLinkDistance(const math::vec2f& iFrom, const math::vec2f& iTo,
+											   std::span<const math::vec2f> iWaypoints, const math::vec2f& iPoint,
+											   float iZoom) -> float;
+
+/**
+ * @brief
+ *  Where a waypoint inserted at a point goes in the waypoint list of a link.
+ * @param[in] iFrom Output pin on the screen.
+ * @param[in] iTo Input pin on the screen.
+ * @param[in] iWaypoints Intermediate points on the screen, from the output to the input.
+ * @param[in] iPoint The point, near the link.
+ * @param[in] iZoom Zoom factor.
+ * @return The index of the segment closest to the point, which is the insertion index in `iWaypoints`.
+ */
+[[nodiscard]] OWL_API auto getNodeLinkInsertIndex(const math::vec2f& iFrom, const math::vec2f& iTo,
+												  std::span<const math::vec2f> iWaypoints, const math::vec2f& iPoint,
+												  float iZoom) -> size_t;
+
+/**
+ * @brief
+ *  Draw the handle of a link waypoint.
+ * @param[in,out] ioDraw Draw list.
+ * @param[in] iCenter Centre on the screen.
+ * @param[in] iRadius Radius, in pixels.
+ * @param[in] iColor Colour of the link.
+ * @param[in] iHovered Whether the mouse is over it (accent ring).
+ */
+OWL_API void drawNodeLinkWaypoint(ImDrawList* ioDraw, const math::vec2f& iCenter, float iRadius,
+								  const math::vec4& iColor, bool iHovered);
 
 }// namespace owl::gui::widgets

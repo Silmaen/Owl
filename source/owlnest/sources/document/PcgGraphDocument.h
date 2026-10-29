@@ -334,6 +334,13 @@ private:
 
 	/**
 	 * @brief
+	 *  The graph with the node positions and link waypoints the canvas holds.
+	 * @return A copy of the graph.
+	 */
+	[[nodiscard]] auto getCanvasLayout() const -> scene::pcg::Graph;
+
+	/**
+	 * @brief
 	 *  Library of node types: a search field and one tree per category, each type with its glyph.
 	 * @param[in] iPosition Where a clicked type is added.
 	 * @param[in] iPopup Whether it is the canvas menu (the menu closes on a click).
@@ -393,7 +400,7 @@ private:
 	bool m_openMenu{false};
 	/// Whether nodes are being dragged (their positions are committed on release).
 	bool m_moving{false};
-	/// Whether a link was deleted this frame (the Delete key is then not for the nodes).
+	/// Whether the canvas used this frame for a link edit (the Delete key is then not for the nodes).
 	bool m_linkDeleted{false};
 	/// Size of the preview region.
 	math::vec2ui m_previewSize{48, 32};

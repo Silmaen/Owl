@@ -219,3 +219,27 @@ TEST(NodeCanvasSerializer, FileRoundTripCarriesTheFormatVersion) {
 	std::filesystem::remove_all(dir);
 	owl::core::Log::invalidate();
 }
+
+TEST(NodeCanvasSerializer, LinkWaypointsRoundTripAndPaste) {
+	NodeCanvas src;
+	const auto a = src.addNode(makeNode("A", {0.f, 0.f}, {}, {"out"}));
+	const auto b = src.addNode(makeNode("B", {300.f, 0.f}, {"in"}, {}));
+	const std::vector<math::vec2f> waypoints{{100.f, 80.f}, {200.f, -40.f}};
+	const auto link = src.addLink(src.findNode(a)->outputs[0].id, src.findNode(b)->inputs[0].id, waypoints);
+	EXPECT_EQ(src.findLink(link)->waypoints, waypoints);
+
+	NodeCanvas dst;
+	ASSERT_TRUE(NodeCanvasSerializer::deserializeFromString(dst, NodeCanvasSerializer::serializeToString(src)));
+	ASSERT_EQ(dst.links().size(), 1u);
+	EXPECT_EQ(dst.links()[0].waypoints, waypoints);
+
+	const std::vector ids{a, b};
+	NodeCanvas pasted;
+	std::ignore = NodeCanvasSerializer::pasteSubset(pasted, NodeCanvasSerializer::serializeSubset(src, ids));
+	ASSERT_EQ(pasted.links().size(), 1u);
+	EXPECT_EQ(pasted.links()[0].waypoints, waypoints);
+
+	EXPECT_TRUE(dst.setLinkWaypoints(dst.links()[0].id, {}));
+	EXPECT_TRUE(dst.links()[0].waypoints.empty());
+	EXPECT_FALSE(dst.setLinkWaypoints(core::UUID{42}, waypoints));
+}

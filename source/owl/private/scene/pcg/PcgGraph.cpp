@@ -228,9 +228,22 @@ void emitGraph(YAML::Emitter& ioOut, const Graph& iGraph) {
 		ioOut << YAML::Key << "fromPin" << YAML::Value << link.fromPin;
 		ioOut << YAML::Key << "to" << YAML::Value << static_cast<uint64_t>(link.toNode);
 		ioOut << YAML::Key << "toPin" << YAML::Value << link.toPin;
+		if (!link.waypoints.empty()) {
+			ioOut << YAML::Key << "waypoints" << YAML::Value << YAML::BeginSeq;
+			for (const auto& [x, y]: link.waypoints) ioOut << YAML::BeginSeq << x << y << YAML::EndSeq;
+			ioOut << YAML::EndSeq;
+		}
 		ioOut << YAML::EndMap;
 	}
 	ioOut << YAML::EndSeq;
+}
+
+auto parseWaypoints(const YAML::Node& iLink) -> std::vector<std::array<float, 2>> {
+	std::vector<std::array<float, 2>> waypoints;
+	for (const auto& point: iLink["waypoints"])
+		if (point.IsSequence() && point.size() == 2)
+			waypoints.push_back({point[0].as<float>(), point[1].as<float>()});
+	return waypoints;
 }
 
 auto parseGraph(const YAML::Node& iRoot) -> Graph {
@@ -255,7 +268,8 @@ auto parseGraph(const YAML::Node& iRoot) -> Graph {
 			graph.links.push_back({.fromNode = core::UUID{entry["from"].as<uint64_t>()},
 								   .fromPin = entry["fromPin"].as<std::string>(),
 								   .toNode = core::UUID{entry["to"].as<uint64_t>()},
-								   .toPin = entry["toPin"].as<std::string>()});
+								   .toPin = entry["toPin"].as<std::string>(),
+								   .waypoints = parseWaypoints(entry)});
 	}
 	return graph;
 }

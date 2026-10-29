@@ -437,6 +437,11 @@ void emitScript(YAML::Emitter& ioOut, const VisualScript& iScript) {
 		ioOut << YAML::Key << "fromPin" << YAML::Value << link.fromPin;
 		ioOut << YAML::Key << "to" << YAML::Value << static_cast<uint64_t>(link.toNode);
 		ioOut << YAML::Key << "toPin" << YAML::Value << link.toPin;
+		if (!link.waypoints.empty()) {
+			ioOut << YAML::Key << "waypoints" << YAML::Value << YAML::BeginSeq;
+			for (const auto& [x, y]: link.waypoints) ioOut << YAML::BeginSeq << x << y << YAML::EndSeq;
+			ioOut << YAML::EndSeq;
+		}
 		ioOut << YAML::EndMap;
 	}
 	ioOut << YAML::EndSeq;
@@ -493,13 +498,22 @@ auto parseNode(const YAML::Node& iNode) -> std::optional<GraphNode> {
 	return node;
 }
 
+auto parseWaypoints(const YAML::Node& iLink) -> std::vector<std::array<float, 2>> {
+	std::vector<std::array<float, 2>> waypoints;
+	for (const auto& point: iLink["waypoints"])
+		if (point.IsSequence() && point.size() == 2)
+			waypoints.push_back({point[0].as<float>(), point[1].as<float>()});
+	return waypoints;
+}
+
 auto parseLink(const YAML::Node& iNode) -> std::optional<GraphLink> {
 	if (!iNode.IsMap() || !iNode["from"] || !iNode["to"])
 		return std::nullopt;
 	return GraphLink{.fromNode = core::UUID{iNode["from"].as<uint64_t>()},
 					 .fromPin = iNode["fromPin"].as<std::string>(""),
 					 .toNode = core::UUID{iNode["to"].as<uint64_t>()},
-					 .toPin = iNode["toPin"].as<std::string>("")};
+					 .toPin = iNode["toPin"].as<std::string>(""),
+					 .waypoints = parseWaypoints(iNode)};
 }
 
 auto parseScript(const YAML::Node& iRoot) -> VisualScript {

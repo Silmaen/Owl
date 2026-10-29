@@ -60,8 +60,11 @@ TEST(VisualScriptCanvas, LinkedInputsHaveNoField) {
 	script.nodes.push_back(node("value.number"));
 	const auto alone = layoutNode(script, script.nodes.front(), measure);
 	EXPECT_GT(alone.fields[0][1], 0.f);
-	script.links.push_back(
-			{.fromNode = script.nodes[1].id, .fromPin = "Result", .toNode = script.nodes[0].id, .toPin = "A"});
+	script.links.push_back({.fromNode = script.nodes[1].id,
+							.fromPin = "Result",
+							.toNode = script.nodes[0].id,
+							.toPin = "A",
+							.waypoints = {}});
 	const auto linked = layoutNode(script, script.nodes.front(), measure);
 	EXPECT_FLOAT_EQ(linked.fields[0][1], 0.f);
 	EXPECT_GT(linked.fields[1][1], 0.f);

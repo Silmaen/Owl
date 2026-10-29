@@ -313,6 +313,7 @@ private:
 		Select,///< Drawing a selection rectangle.
 		Move,///< Moving the selected nodes.
 		Link,///< Dragging a link from a pin.
+		Waypoint,///< Moving a waypoint of a link.
 	};
 
 	/**
@@ -392,6 +393,22 @@ private:
 
 	/**
 	 * @brief
+	 *  Waypoints of a link on the screen, with the offset of the gesture in progress.
+	 * @param[in] iFrame The frame.
+	 * @param[in] iLink Index of the link.
+	 * @return The points, from the output to the input.
+	 */
+	[[nodiscard]] auto getScreenWaypoints(const Frame& iFrame, size_t iLink) const -> std::vector<math::vec2f>;
+
+	/**
+	 * @brief
+	 *  Ask for a waypoint on the hovered link, at the mouse.
+	 * @param[in,out] ioFrame The frame.
+	 */
+	void insertWaypoint(Frame& ioFrame) const;
+
+	/**
+	 * @brief
 	 *  Apply a pending framing request.
 	 * @param[in] iFrame The frame.
 	 */
@@ -415,6 +432,8 @@ private:
 	std::optional<core::UUID> m_pressedNode;
 	/// Pin a dragged link starts from.
 	std::optional<VisualScriptPinRef> m_linkStart;
+	/// Link and index of the waypoint being moved.
+	std::array<size_t, 2> m_waypoint{0, 0};
 	/// Frame every node at the next render.
 	bool m_frameAll{true};
 	/// Node to centre at the next render.

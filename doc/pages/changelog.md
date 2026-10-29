@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Area lights: `Light` types `Rectangle` and `Disc` shaded through linearly transformed cosines, `Sphere` through a representative point, with soft cube shadows (PCSS) and their Owl Nest markers.
 - Reflection probes: a `ReflectionProbe` component captures the scene into a prefiltered cube that replaces the environment reflections inside its box or sphere, with parallax, blending, realtime updates and its Owl Nest markers, inspector and commands.
 - Post-process: chromatic aberration, film grain, depth of field and camera motion blur in `PostProcessSettings`, edited in the camera inspector.
+- Node-graph link waypoints: right-click a link to add one, drag or delete it, **Alt**+click to cut the link, in visual scripts, PCG graphs and `NodeCanvas` graphs.
 
 ### Changed
 

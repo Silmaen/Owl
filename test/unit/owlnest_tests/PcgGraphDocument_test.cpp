@@ -152,7 +152,8 @@ TEST_F(PcgGraphDocumentTest, TheTilemapGeneratorWritesItsLayerAndUndoes) {
 	graph.nodes.push_back({.id = core::UUID{1}, .type = "source.constant", .position = {0.f, 0.f}, .values = {}});
 	graph.nodes.push_back(
 			{.id = core::UUID{2}, .type = "output.tiles", .position = {0.f, 0.f}, .values = {{"tile", "4"}}});
-	graph.links.push_back({.fromNode = core::UUID{1}, .fromPin = "Field", .toNode = core::UUID{2}, .toPin = "Mask"});
+	graph.links.push_back(
+			{.fromNode = core::UUID{1}, .fromPin = "Field", .toNode = core::UUID{2}, .toPin = "Mask", .waypoints = {}});
 	ASSERT_TRUE(scene::pcg::saveToFile(graph, graphFile));
 
 	TilemapDocument tilemap;
@@ -197,8 +198,13 @@ TEST_F(PcgGraphDocumentTest, ThePreviewImageShowsANodeOrTheTiles) {
 			{.id = core::UUID{2}, .type = "field.threshold", .position = {0.f, 0.f}, .values = {{"min", "0.5"}}});
 	graph.nodes.push_back(
 			{.id = core::UUID{3}, .type = "output.tiles", .position = {0.f, 0.f}, .values = {{"tile", "2"}}});
-	graph.links.push_back({.fromNode = core::UUID{1}, .fromPin = "Field", .toNode = core::UUID{2}, .toPin = "Field"});
-	graph.links.push_back({.fromNode = core::UUID{2}, .fromPin = "Mask", .toNode = core::UUID{3}, .toPin = "Mask"});
+	graph.links.push_back({.fromNode = core::UUID{1},
+						   .fromPin = "Field",
+						   .toNode = core::UUID{2},
+						   .toPin = "Field",
+						   .waypoints = {}});
+	graph.links.push_back(
+			{.fromNode = core::UUID{2}, .fromPin = "Mask", .toNode = core::UUID{3}, .toPin = "Mask", .waypoints = {}});
 	const auto result = scene::pcg::evaluate(graph, {.size = {5, 1}, .seed = 0});
 	ASSERT_TRUE(result.has_value());
 	const auto field = buildPcgPreviewImage(*result, core::UUID{1});

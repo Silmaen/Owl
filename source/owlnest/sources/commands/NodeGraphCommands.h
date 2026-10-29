@@ -233,6 +233,59 @@ private:
 };
 /**
  * @brief
+ *  Replace the waypoints of a link, found by its two pins so that it survives a link re-created by undo.
+ */
+class SetLinkWaypointsCommand final : public NodeGraphUndoCommand {
+public:
+	/**
+	 * @brief
+	 *  Constructor.
+	 * @param[in] iLink The link with its waypoints after the change.
+	 * @param[in] iBefore Its waypoints before the change.
+	 */
+	SetLinkWaypointsCommand(const gui::widgets::Link& iLink, std::vector<math::vec2f> iBefore);
+
+	/**
+	 * @brief
+	 *  Undo.
+	 * @param[in,out] ioTarget The node canvas the action is applied to.
+	 */
+	void undo(NodeCanvas& ioTarget) override;
+
+	/**
+	 * @brief
+	 *  Redo.
+	 * @param[in,out] ioTarget The node canvas the action is applied to.
+	 */
+	void redo(NodeCanvas& ioTarget) override;
+
+	/**
+	 * @brief
+	 *  Description.
+	 * @return Human-readable description for menus and tooltips.
+	 */
+	[[nodiscard]] auto description() const -> std::string override { return "Edit Link Waypoints"; }
+
+private:
+	/**
+	 * @brief
+	 *  Set the waypoints of the link.
+	 * @param[in,out] ioTarget The node canvas.
+	 * @param[in] iWaypoints The waypoints.
+	 */
+	void apply(NodeCanvas& ioTarget, const std::vector<math::vec2f>& iWaypoints) const;
+
+	/// Source pin of the link.
+	core::UUID m_fromPin;
+	/// Destination pin of the link.
+	core::UUID m_toPin;
+	/// Waypoints before the change (restored on undo).
+	std::vector<math::vec2f> m_before;
+	/// Waypoints after the change (restored on redo).
+	std::vector<math::vec2f> m_after;
+};
+/**
+ * @brief
  *  Append an output pin to an existing node. Symmetric `RemoveOutputPinCommand` undoes it.
  */
 class AddOutputPinCommand final : public NodeGraphUndoCommand {
