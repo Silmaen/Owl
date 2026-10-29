@@ -36,6 +36,7 @@
 #include "panel/GpuCounterMonitor.h"
 #include "panel/HelpPanel.h"
 #include "panel/LogPanel.h"
+#include "panel/MixerPanel.h"
 #include "panel/NewProjectDialog.h"
 #include "panel/Parameters.h"
 #include "panel/ProjectSettings.h"
@@ -1251,6 +1252,8 @@ private:
 	panel::ProjectSettings m_projectSettings;
 	/// Scene-wide rendering / physics settings panel.
 	panel::SceneSettings m_sceneSettings;
+	/// Mixer panel: the buses of the scene mix.
+	panel::MixerPanel m_mixerPanel;
 	/// Import settings of the asset selected in the content browser.
 	panel::AssetImport m_assetImport;
 	/// Log output panel (filterable).

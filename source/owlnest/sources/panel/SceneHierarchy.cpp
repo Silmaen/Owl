@@ -38,12 +38,14 @@
 #include <renderer/Renderer.h>
 #include <scene/ComponentRegistry.h>
 #include <scene/PrefabSerializer.h>
+#include <scene/component/AdaptiveMusic.h>
 #include <scene/component/Camera.h>
 #include <scene/component/Canvas.h>
 #include <scene/component/Environment.h>
 #include <scene/component/Hierarchy.h>
 #include <scene/component/Light.h>
 #include <scene/component/ReflectionProbe.h>
+#include <scene/component/ReverbZone.h>
 
 #include <algorithm>
 #include <cmath>
@@ -184,6 +186,10 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 		return {gui::icon::scan, 0x73d9ff};
 	if (iEntity.hasComponent<ParticleEmitter>())
 		return {gui::icon::sparkles, 0xffa94d};
+	if (iEntity.hasComponent<ReverbZone>())
+		return {gui::icon::audioLines, 0x9fd36b};
+	if (iEntity.hasComponent<AdaptiveMusic>())
+		return {gui::icon::music, 0x9fd36b};
 	if (iEntity.hasComponent<Light2D>()) {
 		const auto& light = iEntity.getComponent<Light2D>();
 		const uint32_t colour = light.enabled ? 0xffb347 : 0x7a7a7a;
@@ -301,6 +307,18 @@ void drawCreateEffectsMenu(const auto& iTarget, const std::optional<commands::Ar
 	ImGui::EndMenu();
 }
 
+// "Audio" submenu: `entity.create_reverb_zone`, `entity.create_adaptive_music`, optionally under a parent.
+void drawCreateAudioMenu(const auto& iTarget, const std::optional<commands::ArgValue>& iParent) {
+	if (!ImGui::BeginMenu("Audio"))
+		return;
+	const commands::CommandArgs args = iParent ? commands::CommandArgs{{"parent", *iParent}} : commands::CommandArgs{};
+	if (gui::widgets::menuItem({.glyph = gui::icon::audioLines, .label = "Reverb Zone"}))
+		std::ignore = iTarget.execute("entity.create_reverb_zone", args);
+	if (gui::widgets::menuItem({.glyph = gui::icon::music, .label = "Adaptive Music"}))
+		std::ignore = iTarget.execute("entity.create_adaptive_music", args);
+	ImGui::EndMenu();
+}
+
 auto componentIconName(const char* iCompName) -> const char* {
 	static const std::unordered_map<std::string_view, const char*> map = {
 			{"Transform", "comp_transform"},     {"Camera", "comp_camera"},
@@ -310,7 +328,8 @@ auto componentIconName(const char* iCompName) -> const char* {
 			{"Trigger", "comp_trigger"},         {"Player", "comp_player"},
 			{"Entity Link", "comp_link"},        {"Background Texture", "comp_background"},
 			{"Visibility", "comp_visibility"},   {"Sound Source", "comp_sound"},
-			{"Sound Listener", "comp_sound"},    {"Lua Script", "comp_lua_script"},
+			{"Sound Listener", "comp_sound"},    {"Reverb Zone", "comp_sound"},
+			{"Adaptive Music", "comp_sound"},    {"Lua Script", "comp_lua_script"},
 			{"Canvas", "comp_canvas"},           {"UI Rect", "comp_ui_rect"},
 			{"UI Text", "comp_ui_text"},         {"UI Image", "comp_ui_image"},
 			{"UI Panel", "comp_ui_panel"},       {"UI Button", "comp_ui_button"},
@@ -377,6 +396,7 @@ void SceneHierarchy::renderHierarchy() {
 			}
 			drawCreateLightMenu(getCommandTarget(), std::nullopt);
 			drawCreateEffectsMenu(getCommandTarget(), std::nullopt);
+			drawCreateAudioMenu(getCommandTarget(), std::nullopt);
 			ImGui::EndPopup();
 		}
 		ImGui::PopID();
@@ -423,6 +443,7 @@ void SceneHierarchy::renderHierarchyToolbar() {
 					"entity.create", {{"parent", static_cast<int64_t>(static_cast<uint64_t>(m_selection.getUUID()))}});
 		drawCreateLightMenu(getCommandTarget(), std::nullopt);
 		drawCreateEffectsMenu(getCommandTarget(), std::nullopt);
+		drawCreateAudioMenu(getCommandTarget(), std::nullopt);
 		ImGui::EndPopup();
 	}
 	ImGui::SameLine();
@@ -661,6 +682,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 		std::ignore = target.execute("entity.create", {{"name", std::string{"Child Entity"}}, {"parent", entityArg}});
 	drawCreateLightMenu(target, std::optional<commands::ArgValue>{entityArg});
 	drawCreateEffectsMenu(target, std::optional<commands::ArgValue>{entityArg});
+	drawCreateAudioMenu(target, std::optional<commands::ArgValue>{entityArg});
 
 	ImGui::Separator();
 	// --- Duplicate ---

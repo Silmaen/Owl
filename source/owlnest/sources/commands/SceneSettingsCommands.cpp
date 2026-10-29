@@ -12,6 +12,7 @@
 #include <scene/component/Hierarchy.h>
 #include <scene/component/Transform.h>
 #include <scene/component/WorldPosition.h>
+#include <sound/SoundCommand.h>
 
 #include <format>
 #include <optional>
@@ -96,6 +97,39 @@ auto SetSceneHudCommand::description() const -> std::string {
 
 auto SetSceneHudCommand::typeId() const -> size_t {
 	constexpr size_t kTypeHash = 0x536574487564ULL;// "SetHud"
+	return kTypeHash;
+}
+
+SetMixCommand::SetMixCommand(const sound::MixSettings& iBefore, const sound::MixSettings& iAfter)
+	: m_before{iBefore}, m_after{iAfter} {}
+
+SetMixCommand::~SetMixCommand() = default;
+
+void SetMixCommand::undo(scene::Scene& ioScene) {
+	ioScene.getMixSettings() = m_before;
+	if (auto* mixer = sound::SoundCommand::getMixer(); mixer != nullptr)
+		mixer->setMix(m_before);
+}
+
+void SetMixCommand::redo(scene::Scene& ioScene) {
+	ioScene.getMixSettings() = m_after;
+	if (auto* mixer = sound::SoundCommand::getMixer(); mixer != nullptr)
+		mixer->setMix(m_after);
+}
+
+auto SetMixCommand::description() const -> std::string { return "Edit the scene mix"; }
+
+auto SetMixCommand::mergeWith(const SceneUndoCommand& iOther) -> bool {
+	const auto* other = dynamic_cast<const SetMixCommand*>(&iOther);
+	if (other == nullptr)
+		return false;
+	m_after = other->m_after;
+	m_timestamp = other->m_timestamp;
+	return true;
+}
+
+auto SetMixCommand::typeId() const -> size_t {
+	constexpr size_t kTypeHash = 0x5365744d6978ULL;// "SetMix"
 	return kTypeHash;
 }
 

@@ -236,6 +236,20 @@ OWL_API void renderProps(scene::component::SoundListener& ioComponent);
  *  Render a Gui for editing the component.
  * @param ioComponent The component to edit.
  */
+OWL_API void renderProps(scene::component::ReverbZone& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::AdaptiveMusic& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
 OWL_API void renderProps(scene::component::LuaScript& ioComponent);
 
 /**
@@ -580,12 +594,13 @@ using DrawableComponents =
 				   scene::component::IsometricObject, scene::component::PhysicBody, scene::component::Player,
 				   scene::component::Trigger, scene::component::RaycastDoor, scene::component::RaycastPushWall,
 				   scene::component::EntityLink, scene::component::BackgroundTexture, scene::component::Visibility,
-				   scene::component::SoundSource, scene::component::SoundListener, scene::component::LuaScript,
-				   scene::component::PrefabLink, scene::component::RendererTag, scene::component::VoxelWorld,
-				   scene::component::FlyCamera, scene::component::LightFlicker, scene::component::ParticleEmitter,
-				   scene::component::Trail, scene::component::Oscillator, scene::component::Patrol,
-				   scene::component::Drift, scene::component::FollowTarget, scene::component::RenderTarget,
-				   scene::component::ProceduralSky, scene::component::DayNightCycle, scene::component::ReflectionProbe,
+				   scene::component::SoundSource, scene::component::SoundListener, scene::component::ReverbZone,
+				   scene::component::AdaptiveMusic, scene::component::LuaScript, scene::component::PrefabLink,
+				   scene::component::RendererTag, scene::component::VoxelWorld, scene::component::FlyCamera,
+				   scene::component::LightFlicker, scene::component::ParticleEmitter, scene::component::Trail,
+				   scene::component::Oscillator, scene::component::Patrol, scene::component::Drift,
+				   scene::component::FollowTarget, scene::component::RenderTarget, scene::component::ProceduralSky,
+				   scene::component::DayNightCycle, scene::component::ReflectionProbe,
 				   scene::component::FirstPersonController, scene::component::VoxelPlayer, scene::component::Canvas,
 				   scene::component::UiRect, scene::component::UiText, scene::component::UiImage,
 				   scene::component::UiPanel, scene::component::UiButton, scene::component::UiSlider,

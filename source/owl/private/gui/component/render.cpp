@@ -36,7 +36,10 @@
 #include "scene/ui/HudLayout.h"
 #include "script/ScriptEngine.h"
 #include "script/visual/VisualScript.h"
+#include "sound/AudioEffects.h"
+#include "sound/Bus.h"
 #include "sound/SoundCommand.h"
+#include "sound/SoundCue.h"
 #include "sound/SoundHelper.h"
 
 #include <imgui_internal.h>
@@ -1650,11 +1653,87 @@ void renderProps(Visibility& ioComponent) {
 	prop::Checkbox("Editor Visible", &ioComponent.editorVisible);
 }
 
+namespace {
+
+auto drawBus(const char* iLabel, sound::Bus& ioBus) -> bool {
+	bool changed = false;
+	const std::string current{sound::getBusName(ioBus)};
+	if (!prop::BeginCombo(iLabel, current.c_str()))
+		return false;
+	for (const sound::Bus bus: sound::g_allBuses) {
+		const std::string name{sound::getBusName(bus)};
+		if (ImGui::Selectable(name.c_str(), bus == ioBus)) {
+			ioBus = bus;
+			changed = true;
+		}
+	}
+	ImGui::EndCombo();
+	return changed;
+}
+
+enum struct FilterKind : uint8_t { None, LowPass, HighPass, BandPass };
+
+auto getFilterKind(const sound::Filter& iFilter) -> FilterKind {
+	const bool low = iFilter.gainLow < 1.f;
+	const bool high = iFilter.gainHigh < 1.f;
+	if (low && high)
+		return FilterKind::BandPass;
+	if (high)
+		return FilterKind::LowPass;
+	if (low)
+		return FilterKind::HighPass;
+	return FilterKind::None;
+}
+
+// The filter as a kind (none, low-pass, high-pass, band-pass) and the gains that kind uses.
+void drawFilter(sound::Filter& ioFilter) {
+	constexpr std::array<const char*, 4> kinds{"None", "Low-pass", "High-pass", "Band-pass"};
+	int kind = static_cast<int>(getFilterKind(ioFilter));
+	if (prop::Combo("Filter", &kind, std::span<const char* const>{kinds})) {
+		switch (static_cast<FilterKind>(kind)) {
+			case FilterKind::None:
+				ioFilter = {};
+				break;
+			case FilterKind::LowPass:
+				ioFilter = {.gain = ioFilter.gain, .gainLow = 1.f, .gainHigh = 0.2f};
+				break;
+			case FilterKind::HighPass:
+				ioFilter = {.gain = ioFilter.gain, .gainLow = 0.2f, .gainHigh = 1.f};
+				break;
+			case FilterKind::BandPass:
+				ioFilter = {.gain = ioFilter.gain, .gainLow = 0.5f, .gainHigh = 0.5f};
+				break;
+		}
+	}
+	fieldTooltip("Low-pass muffles the sound (underwater, behind a wall), high-pass thins it (a radio), band-pass "
+				 "does both.");
+	const auto current = getFilterKind(ioFilter);
+	if (current == FilterKind::None)
+		return;
+	drawUnitFloat("Filter Gain", ioFilter.gain);
+	fieldTooltip("Gain of the whole filtered sound.");
+	if (current == FilterKind::LowPass || current == FilterKind::BandPass) {
+		drawUnitFloat("High Frequencies", ioFilter.gainHigh, 0.f, 0.999f);
+		fieldTooltip("Gain left to the frequencies above 5 kHz: lower is more muffled.");
+	}
+	if (current == FilterKind::HighPass || current == FilterKind::BandPass) {
+		drawUnitFloat("Low Frequencies", ioFilter.gainLow, 0.f, 0.999f);
+		fieldTooltip("Gain left to the frequencies below 250 Hz: lower is thinner.");
+	}
+}
+
+}// namespace
+
 void renderProps(SoundSource& ioComponent) {
 	prop::InputText("Sound Asset", &ioComponent.sound.soundAsset);
 	fieldTooltip("Audio file or sound cue relative to the project (e.g. sounds/explosion.wav, sounds/steps.owlsound).");
-	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Sound, dropped))
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Sound, dropped)) {
 		ioComponent.sound.soundAsset = dropped.string();
+		// A dropped cue brings its default bus.
+		if (sound::SoundCue::isCue(dropped))
+			if (const auto cue = sound::SoundCue::load(dropped); cue)
+				ioComponent.sound.category = cue->bus;
+	}
 	// Inspector preview: play the asset to verify it.
 	static sound::SoundHandle s_previewHandle = sound::invalidSoundHandle;
 	const bool playing =
@@ -1670,22 +1749,15 @@ void renderProps(SoundSource& ioComponent) {
 			sound::PlayParams params;
 			params.volume = ioComponent.sound.volume;
 			params.pitch = ioComponent.sound.pitch;
+			params.bus = ioComponent.sound.category;
+			params.filter = ioComponent.sound.filter;
 			s_previewHandle = sound::SoundHelper::playAsset(ioComponent.sound.soundAsset, params);
 		}
 	}
 	ImGui::EndDisabled();
 	fieldTooltip("Preview the sound with current volume and pitch. Not spatialized.");
-	const std::string currentCategory{magic_enum::enum_name(ioComponent.sound.category)};
-	if (prop::BeginCombo("Category", currentCategory.c_str())) {
-		for (const auto& catName: magic_enum::enum_names<SceneSound::Category>()) {
-			const std::string sName{catName};
-			if (ImGui::Selectable(sName.c_str(), currentCategory == sName))
-				ioComponent.sound.category =
-						magic_enum::enum_cast<SceneSound::Category>(sName).value_or(SceneSound::Category::SFX);
-		}
-		ImGui::EndCombo();
-	}
-	fieldTooltip("Category of the sound: SFX, Music, or Ambient (stored, not used for mixing yet).");
+	std::ignore = drawBus("Bus", ioComponent.sound.category);
+	fieldTooltip("Mixer bus of the sound: Music is dry, SFX, Ambient and Voice are heard through the reverb zones.");
 	prop::DragFloat("Volume", &ioComponent.sound.volume, 0.01f, 0.0f, 2.0f);
 	fieldTooltip("Gain factor (0 = silent, 1 = normal, 2 = 200%).");
 	prop::DragFloat("Pitch", &ioComponent.sound.pitch, 0.01f, 0.1f, 3.0f);
@@ -1701,12 +1773,147 @@ void renderProps(SoundSource& ioComponent) {
 		fieldTooltip("Maximum audible distance in world units.");
 		prop::DragFloat("Rolloff", &ioComponent.sound.rolloff, 0.01f, 0.0f, 10.0f);
 		fieldTooltip("Distance attenuation curve. Higher = faster falloff.");
+		prop::Checkbox("Doppler", &ioComponent.sound.doppler);
+		fieldTooltip("Shift the pitch with the motion of the entity relative to the listener (Doppler effect).");
 	}
+	drawFilter(ioComponent.sound.filter);
 }
 
 void renderProps(SoundListener& ioComponent) {
 	prop::Checkbox("Primary", &ioComponent.primary);
 	fieldTooltip("Mark as the active listener (the 'ear' for 3D audio). Only one primary per scene.");
+}
+
+void renderProps(ReverbZone& ioComponent) {
+	const ReverbZone defaults;
+	resettable("Shape", ioComponent.shape, defaults.shape, drawEnum<ReverbZone::Shape>);
+	fieldTooltip("Volume of the zone, centred on the entity and turned and scaled with it: the Scale gizmo resizes "
+				 "it in the viewport.");
+	if (ioComponent.shape == ReverbZone::Shape::Box) {
+		resettable("Extents", ioComponent.extents, defaults.extents, [](const char* iId, math::vec3& ioField) -> bool {
+			if (!prop::DragFloat3(iId, &ioField.x(), 0.01f, 0.01f, 10000.f))
+				return false;
+			ioField = {std::max(ioField.x(), 0.01f), std::max(ioField.y(), 0.01f), std::max(ioField.z(), 0.01f)};
+			return true;
+		});
+		fieldTooltip("Half size of the box along the local X, Y and Z axes of the entity.");
+	} else {
+		resetFloat("Radius", ioComponent.radius, defaults.radius, 0.01f, 0.01f, 10000.f);
+		fieldTooltip("Radius of the sphere, scaled by the largest axis of the entity.");
+	}
+	resetFloat("Blend Distance", ioComponent.blendDistance, defaults.blendDistance, 0.01f, 0.f, 1000.f);
+	fieldTooltip("Distance outside the volume over which the zone fades out, in world units; 0 is a hard edge.");
+	const std::string current{sound::getReverbPresetName(ioComponent.preset)};
+	if (prop::BeginCombo("Preset", current.c_str())) {
+		for (const auto preset: magic_enum::enum_values<sound::ReverbPreset>()) {
+			const std::string name{sound::getReverbPresetName(preset)};
+			if (ImGui::Selectable(name.c_str(), preset == ioComponent.preset)) {
+				// Custom starts from the values of the preset left.
+				if (preset == sound::ReverbPreset::Custom)
+					ioComponent.reverb = ioComponent.getReverb();
+				ioComponent.preset = preset;
+			}
+		}
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Reverb of the zone: a preset of the EFX table (Cave, Hall, Forest, Underwater...), or Custom.");
+	if (ioComponent.preset == sound::ReverbPreset::Custom) {
+		auto& reverb = ioComponent.reverb;
+		drawUnitFloat("Density", reverb.density);
+		drawUnitFloat("Diffusion", reverb.diffusion);
+		drawUnitFloat("Gain", reverb.gain);
+		drawUnitFloat("High Gain", reverb.gainHigh);
+		prop::DragFloat("Decay Time", &reverb.decayTime, 0.01f, 0.1f, 20.f, "%.2f s");
+		fieldTooltip("Time the reverberation takes to die out.");
+		prop::DragFloat("Decay High Ratio", &reverb.decayHighRatio, 0.01f, 0.1f, 2.f);
+		prop::DragFloat("Reflections Gain", &reverb.reflectionsGain, 0.01f, 0.f, 3.16f);
+		prop::DragFloat("Reflections Delay", &reverb.reflectionsDelay, 0.001f, 0.f, 0.3f, "%.3f s");
+		prop::DragFloat("Late Gain", &reverb.lateGain, 0.01f, 0.f, 10.f);
+		prop::DragFloat("Late Delay", &reverb.lateDelay, 0.001f, 0.f, 0.1f, "%.3f s");
+	}
+	drawFilter(ioComponent.filter);
+}
+
+namespace {
+
+// A path to a sound asset, with a drop target for the Sound assets of the browser.
+auto drawSoundAsset(const char* iLabel, std::string& ioAsset) -> bool {
+	bool changed = prop::InputText(iLabel, &ioAsset);
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Sound, dropped)) {
+		ioAsset = dropped.string();
+		changed = true;
+	}
+	return changed;
+}
+
+void drawMusicLayers(sound::AdaptiveMusic& ioMusic) {
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < ioMusic.layers.size(); ++index) {
+		auto& layer = ioMusic.layers[index];
+		ImGui::PushID(static_cast<int>(index));
+		ImGui::SeparatorText(std::format("Layer {}", index + 1).c_str());
+		prop::InputText("Name", &layer.name);
+		std::ignore = drawSoundAsset("Asset", layer.asset);
+		fieldTooltip("Looping track of the layer; the layers start together and stay in sync.");
+		drawUnitFloat("Volume", layer.volume);
+		if (ImGui::Button(std::format("{} Remove layer", icon::trash2).c_str()))
+			removed = index;
+		ImGui::PopID();
+	}
+	if (removed) {
+		const auto name = ioMusic.layers[*removed].name;
+		ioMusic.layers.erase(ioMusic.layers.begin() + static_cast<std::ptrdiff_t>(*removed));
+		for (auto& state: ioMusic.states) std::erase(state.layers, name);
+	}
+	if (ImGui::Button(std::format("{} Add layer", icon::plus).c_str()))
+		ioMusic.layers.push_back(
+				{.name = std::format("layer{}", ioMusic.layers.size() + 1), .asset = {}, .volume = 1.f});
+}
+
+void drawMusicStates(sound::AdaptiveMusic& ioMusic) {
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < ioMusic.states.size(); ++index) {
+		auto& state = ioMusic.states[index];
+		ImGui::PushID(static_cast<int>(1000 + index));
+		ImGui::SeparatorText(std::format("State {}", index + 1).c_str());
+		prop::InputText("Name", &state.name);
+		fieldTooltip("Name the game sets: `sound.set_music_state(name)` or the value of the state key.");
+		for (const auto& layer: ioMusic.layers) {
+			bool heard = state.hasLayer(layer.name);
+			if (prop::Checkbox(layer.name.c_str(), &heard)) {
+				if (heard)
+					state.layers.push_back(layer.name);
+				else
+					std::erase(state.layers, layer.name);
+			}
+		}
+		std::ignore = drawSoundAsset("Stinger", state.stinger);
+		fieldTooltip("One-shot sound played on the Music bus when the state is entered (empty: none).");
+		if (ImGui::Button(std::format("{} Remove state", icon::trash2).c_str()))
+			removed = index;
+		ImGui::PopID();
+	}
+	if (removed)
+		ioMusic.states.erase(ioMusic.states.begin() + static_cast<std::ptrdiff_t>(*removed));
+	if (ImGui::Button(std::format("{} Add state", icon::plus).c_str()))
+		ioMusic.states.push_back(
+				{.name = std::format("state{}", ioMusic.states.size() + 1), .layers = {}, .stinger = {}});
+}
+
+}// namespace
+
+void renderProps(AdaptiveMusic& ioComponent) {
+	prop::InputText("Initial State", &ioComponent.initialState);
+	fieldTooltip("State the music starts in; empty: the first state.");
+	prop::InputText("State Key", &ioComponent.stateKey);
+	fieldTooltip("Game state key whose text value selects the state (`gamestate.set(key, \"combat\")`); "
+				 "empty: Lua only.");
+	prop::Checkbox("Play On Start", &ioComponent.playOnStart);
+	fieldTooltip("Start the music when the scene enters Play mode.");
+	prop::DragFloat("Fade", &ioComponent.music.fadeSeconds, 0.05f, 0.f, 30.f, "%.2f s");
+	fieldTooltip("Length of the equal-power fades between two states.");
+	drawMusicLayers(ioComponent.music);
+	drawMusicStates(ioComponent.music);
 }
 
 namespace {

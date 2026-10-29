@@ -165,6 +165,8 @@ void EditorLayer::syncActiveDocumentPanels() {
 		m_sceneHierarchy.setUndoManager(nullptr);
 		m_sceneSettings.setScene(s_empty);
 		m_sceneSettings.setUndoManager(nullptr);
+		m_mixerPanel.setScene(s_empty);
+		m_mixerPanel.setUndoManager(nullptr);
 		m_assetImport.setScene(s_empty);
 		m_assetImport.setUndoManager(nullptr);
 		m_voxelPalette.setScene(s_empty);
@@ -173,6 +175,8 @@ void EditorLayer::syncActiveDocumentPanels() {
 		m_sceneHierarchy.setUndoManager(&doc->undoManager());
 		m_sceneSettings.setScene(doc->getActiveScene());
 		m_sceneSettings.setUndoManager(&doc->undoManager());
+		m_mixerPanel.setScene(doc->getActiveScene());
+		m_mixerPanel.setUndoManager(&doc->undoManager());
 		m_assetImport.setScene(doc->getActiveScene());
 		m_assetImport.setUndoManager(&doc->undoManager());
 		m_voxelPalette.setScene(doc->getActiveScene());
@@ -180,6 +184,7 @@ void EditorLayer::syncActiveDocumentPanels() {
 	}
 	m_sceneSettings.setProject(m_project);
 	m_sceneSettings.setCommandRegistry(&m_commands);
+	m_mixerPanel.setCommandRegistry(&m_commands);
 	m_assetImport.setCommandRegistry(&m_commands);
 	m_voxelPalette.setProjectDirectory(m_project.projectDirectory);
 	m_sceneHierarchy.setActiveDocument(m_documents.getActive());
@@ -993,6 +998,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_assetImport.setSelection(m_contentBrowser.getSelectedPath());
 	m_assetImport.onImGuiRender();
 	m_sceneSettings.onImGuiRender();
+	m_mixerPanel.onImGuiRender();
 	if (m_sceneSettings.consumeDirtyFlag()) {
 		syncActiveDocumentPanels();
 	}
@@ -1686,6 +1692,8 @@ void EditorLayer::onContextualHelp() {
 			{"Camera", "scene"},
 			{"SoundSource", "sound"},
 			{"SoundListener", "sound"},
+			{"ReverbZone", "sound"},
+			{"AdaptiveMusic", "sound"},
 			{"SpriteRenderer", "renderer"},
 			{"AnimatedSpriteRenderer", "renderer"},
 			{"Isometric Object", "renderer"},

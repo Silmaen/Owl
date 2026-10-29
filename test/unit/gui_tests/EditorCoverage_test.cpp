@@ -109,6 +109,8 @@ auto fieldsDrawn(const std::string& iRender, const std::string& iName) -> std::s
 
 // Fields that are not authored in the inspector, by component, with the reason.
 const std::map<std::string, std::set<std::string>> g_notDrawn{
+		{"SoundListener", {"runtimeLastPosition", "runtimeHasLastPosition"}},// runtime: the Doppler velocity
+		{"AdaptiveMusic", {"runtimePlayer"}},// runtime: the music playing
 		{"Camera", {"camera"}},// a struct drawn field by field (`ioComponent.camera.*` in the camera section)
 		{"UiButton", {"state"}},// runtime: hover and press state
 		{"UiList",

@@ -120,7 +120,7 @@ TEST_F(ConsoleTest, CompletesNamesArgumentsAndChoices) {
 	const Console console{session};
 	const auto commands = console.complete("enti");
 	EXPECT_EQ(commands.completed, "entity.");
-	EXPECT_EQ(commands.candidates.size(), 13u);
+	EXPECT_EQ(commands.candidates.size(), 15u);
 	EXPECT_EQ(console.complete("entity.cr").completed, "entity.create");
 	EXPECT_EQ(console.complete("entity.create_l").completed, "entity.create_light");
 	EXPECT_EQ(console.complete("entity.create_light2").completed, "entity.create_light2d ");

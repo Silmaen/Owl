@@ -12,6 +12,7 @@
 
 #include <core/UUID.h>
 #include <math/vectors.h>
+#include <sound/Mixer.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wshadow")
@@ -192,6 +193,80 @@ private:
 	scene::PhysicsSettings m_before;
 	/// Settings after the edit.
 	scene::PhysicsSettings m_after;
+};
+
+/**
+ * @brief
+ *  Undoable edit of a scene's mix (`sound::MixSettings`): volume, mute and solo of the buses, Doppler factor.
+ *
+ * Applying it also hands the mix to the live mixer, so the editor previews and plays with it. Successive edits within
+ * the `UndoManager` merge window collapse into one history entry.
+ */
+class SetMixCommand final : public SceneUndoCommand {
+public:
+	SetMixCommand(const SetMixCommand&) = delete;
+
+	SetMixCommand(SetMixCommand&&) = default;
+
+	auto operator=(const SetMixCommand&) -> SetMixCommand& = delete;
+
+	auto operator=(SetMixCommand&&) -> SetMixCommand& = default;
+
+	/**
+	 * @brief
+	 *  Create the command.
+	 * @param[in] iBefore The mix before the edit.
+	 * @param[in] iAfter The mix after the edit.
+	 */
+	SetMixCommand(const sound::MixSettings& iBefore, const sound::MixSettings& iAfter);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~SetMixCommand() override;
+
+	/**
+	 * @brief
+	 *  Restore the mix before the edit.
+	 * @param[in,out] ioScene The scene.
+	 */
+	void undo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Apply the mix after the edit.
+	 * @param[in,out] ioScene The scene.
+	 */
+	void redo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Description of the history entry.
+	 * @return The description.
+	 */
+	[[nodiscard]] auto description() const -> std::string override;
+
+	/**
+	 * @brief
+	 *  Merge a following edit of the mix.
+	 * @param[in] iOther The following command.
+	 * @return True when merged.
+	 */
+	[[nodiscard]] auto mergeWith(const SceneUndoCommand& iOther) -> bool override;
+
+	/**
+	 * @brief
+	 *  Type identifier, for merging.
+	 * @return The identifier.
+	 */
+	[[nodiscard]] auto typeId() const -> size_t override;
+
+private:
+	/// Mix before the edit.
+	sound::MixSettings m_before;
+	/// Mix after the edit.
+	sound::MixSettings m_after;
 };
 
 /**

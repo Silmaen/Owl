@@ -26,6 +26,7 @@
 #include <scene/component/Light.h>
 #include <scene/component/MeshRenderer.h>
 #include <scene/component/ReflectionProbe.h>
+#include <scene/component/ReverbZone.h>
 #include <scene/component/VoxelWorld.h>
 
 #include <data/geometry/MeshLoader.h>
@@ -139,6 +140,9 @@ auto snapToTilemapCellCenter(const math::vec3& iWorldTranslation, const TilemapS
 			iWorldTranslation.z(),
 	};
 }
+
+// Draws the reverb zones of a scene, the selected one with the edge of its fade (defined with the light markers).
+void drawReverbZoneMarkers(const shared<scene::Scene>& iScene, const scene::Entity& iSelected);
 
 }// namespace
 
@@ -792,6 +796,7 @@ void Viewport::renderOverlay() const {
 		renderSkeletonMarkers(activeScene);
 
 		const scene::Entity selectedForGizmo = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
+		drawReverbZoneMarkers(activeScene, selectedForGizmo);
 		constexpr math::vec4 kPushwallOutline{0.25f, 0.85f, 0.35f, 1.f};
 		constexpr math::vec4 kDestinationLine{0.95f, 0.85f, 0.25f, 1.f};
 		// 1. Green outline around every pushwall.
@@ -2508,6 +2513,62 @@ void drawProbeMarkers(const shared<scene::Scene>& iScene, const scene::Entity& i
 			drawLightRange(position, probe.radius, volume, id);
 		else
 			drawProbeBox(position, probe.extents, volume, id);
+	}
+}
+
+// Draw the twelve edges of a box of half size `iExtents` in the frame of a world matrix.
+void drawOrientedBox(const math::mat4& iWorld, const math::vec3& iExtents, const math::vec4& iColor,
+					 const int iEntityId) {
+	const auto corner = [&](const uint32_t iBits) -> math::vec3 {
+		const math::vec4 local{(iBits & 1U) != 0 ? iExtents.x() : -iExtents.x(),
+							   (iBits & 2U) != 0 ? iExtents.y() : -iExtents.y(),
+							   (iBits & 4U) != 0 ? iExtents.z() : -iExtents.z(), 1.f};
+		const math::vec4 world = iWorld * local;
+		return {world.x(), world.y(), world.z()};
+	};
+	for (uint32_t bits = 0; bits < 8; ++bits) {
+		for (const uint32_t axis: {1U, 2U, 4U}) {
+			if ((bits & axis) != 0)
+				continue;
+			renderer::Renderer2D::drawLine(
+					{.point1 = corner(bits), .point2 = corner(bits | axis), .color = iColor, .entityId = iEntityId});
+		}
+	}
+}
+
+// Draw the reverb zones: their volume, and selected, the outer edge of their fade.
+void drawReverbZoneMarkers(const shared<scene::Scene>& iScene, const scene::Entity& iSelected) {
+	using Shape = scene::component::ReverbZone::Shape;
+	for (const auto view = iScene->registry.view<scene::component::ReverbZone, scene::component::Transform>();
+		 const auto entity: view) {
+		const auto& zone = view.get<scene::component::ReverbZone>(entity);
+		const scene::Entity ent{entity, iScene.get()};
+		const auto id = static_cast<int>(entity);
+		const math::mat4 world = iScene->getWorldTransform(ent)();
+		const bool isSelected = iSelected && static_cast<uint32_t>(ent) == static_cast<uint32_t>(iSelected);
+		const math::vec4 volume{0.62f, 0.83f, 0.42f, isSelected ? 0.95f : 0.35f};
+		const math::vec4 fade{0.62f, 0.83f, 0.42f, 0.25f};
+		const math::vec3 center{world(0, 3), world(1, 3), world(2, 3)};
+		float scale = 0.f;
+		std::array<float, 3> axisLength{};
+		for (size_t axis = 0; axis < 3; ++axis) {
+			axisLength.at(axis) = math::vec3{world(0, axis), world(1, axis), world(2, axis)}.norm();
+			scale = std::max(scale, axisLength.at(axis));
+		}
+		if (zone.shape == Shape::Sphere) {
+			drawLightRange(center, zone.radius * scale, volume, id);
+			if (isSelected && zone.blendDistance > 0.f)
+				drawLightRange(center, zone.radius * scale + zone.blendDistance, fade, id);
+			continue;
+		}
+		drawOrientedBox(world, zone.extents, volume, id);
+		if (isSelected && zone.blendDistance > 0.f) {
+			math::vec3 outer = zone.extents;
+			for (size_t axis = 0; axis < 3; ++axis)
+				if (axisLength.at(axis) > 1e-6f)
+					outer[axis] += zone.blendDistance / axisLength.at(axis);
+			drawOrientedBox(world, outer, fade, id);
+		}
 	}
 }
 
