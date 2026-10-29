@@ -168,6 +168,12 @@ foreach (child ${children})
             endif ()
             # export_tests exports each shipped project with OwlNest and plays it with the exported OwlRunner.
             if (${child} STREQUAL "export_tests")
+                # One case exports and plays the whole Engine Demo: it grows with the demo (~10 min on GCC Debug).
+                set(exportTimeout 1200)
+                if (${${PROJECT_PREFIX}_TEST_TIMEOUT} GREATER ${exportTimeout})
+                    set(exportTimeout ${${PROJECT_PREFIX}_TEST_TIMEOUT})
+                endif ()
+                set_tests_properties(${testNames} PROPERTIES TIMEOUT ${exportTimeout})
                 foreach (app_target ${CMAKE_PROJECT_NAME}Nest ${CMAKE_PROJECT_NAME}Runner)
                     if (TARGET ${app_target})
                         add_dependencies(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${app_target})
