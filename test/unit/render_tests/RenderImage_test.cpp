@@ -374,6 +374,17 @@ INSTANTIATE_TEST_SUITE_P(Occlusion, RenderImage,
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
+// GPU particles over a mesh layer: additive fire, alpha-blended smoke sorted on the GPU, sparks with ribbon trails, the
+// emissive ones blooming; then 2D particles over a sprite with a trail behind a moving circle; then lens flares of the
+// sun and a lamp, a second lamp hidden behind a wall that does not flare.
+INSTANTIATE_TEST_SUITE_P(Particles, RenderImage,
+						 testing::Values(RenderCase{"particles", "vulkan"}, RenderCase{"particles", "opengl"},
+										 RenderCase{"particles_2d", "vulkan"}, RenderCase{"particles_2d", "opengl"},
+										 RenderCase{"lens_flare", "vulkan"}, RenderCase{"lens_flare", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
 namespace {
 
 // One picking check: a scene, a backend and the entity expected under each pixel of the capture.

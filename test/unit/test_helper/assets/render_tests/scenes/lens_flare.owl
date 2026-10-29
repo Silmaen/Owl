@@ -1,0 +1,91 @@
+Scene: RenderTestLensFlare
+FormatVersion: 7
+EnabledRenderers:
+- {Name: world, Enabled: false}
+- {Name: mesh_world, Enabled: true}
+- {Name: ui, Enabled: false}
+Entities:
+- Entity: 3840000000000000001
+  Tag: {tag: Camera}
+  Transform:
+    translation: [0, 1.2, 6]
+    rotation: [0.05, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Camera:
+    camera: {projectionType: Perspective, perspectiveFOV: 0.9, perspectiveNear: 0.100000001, perspectiveFar: 100,
+      orthographicSize: 8, orthographicNear: -1, orthographicFar: 10,
+      postProcess: {bloom: true, bloomIntensity: 0.1, lensFlare: true, lensFlareIntensity: 1,
+        lensFlareGhosts: 4, lensFlareSpacing: 0.45, lensFlareHalo: 0.6, lensFlareSize: 0.15}}
+    primary: true
+    fixedAspectRatio: false
+- Entity: 3840000000000000002
+  Tag: {tag: Sun}
+  Transform:
+    translation: [0, 4, 0]
+    rotation: [-0.2, 2.75, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light:
+    type: Directional
+    intensity: 100000
+    castShadows: false
+    flare: 2
+- Entity: 3840000000000000003
+  Tag: {tag: Ground}
+  Transform:
+    translation: [0, -0.55, 0]
+    rotation: [0, 0, 0]
+    scale: [12, 0.1, 10]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.45, 0.45, 0.45, 1]
+    transparent: false
+- Entity: 3840000000000000004
+  Tag: {tag: Wall}
+  Transform:
+    translation: [2.2, 0.6, -2]
+    rotation: [0, 0, 0]
+    scale: [1.2, 2.4, 0.3]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.7, 0.7, 0.7, 1]
+    transparent: false
+- Entity: 3840000000000000005
+  Tag: {tag: Lamp}
+  Transform:
+    translation: [-1.8, 1.2, -1]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light:
+    type: Point
+    color: [1, 0.7, 0.4]
+    intensity: 4000
+    range: 8
+    castShadows: false
+    flare: 3000
+- Entity: 3840000000000000006
+  Tag: {tag: HiddenLamp}
+  Transform:
+    translation: [2.2, 0.8, -3]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light:
+    type: Point
+    color: [0.4, 0.7, 1]
+    intensity: 4000
+    range: 8
+    castShadows: false
+    flare: 3000

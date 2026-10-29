@@ -1,0 +1,89 @@
+Scene: RenderTestParticles2D
+FormatVersion: 7
+EnabledRenderers:
+- {Name: raycast_world, Enabled: false}
+Entities:
+- Entity: 3830000000000000001
+  Tag: {tag: MainCamera}
+  Transform:
+    translation: [0, 0, 5]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Camera:
+    camera: {projectionType: Orthographic, perspectiveFOV: 0.785398185, perspectiveNear: 0.00999999978, perspectiveFar: 1000,
+      orthographicSize: 10, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
+  Visibility: {gameVisible: true}
+- Entity: 3830000000000000002
+  Tag: {tag: Background}
+  Transform:
+    translation: [0, 0, -1]
+    rotation: [0, 0, 0]
+    scale: [20, 15, 1]
+  BackgroundTexture:
+    mode: 0
+    type: 1
+    color: [0.05, 0.05, 0.12, 1]
+    topColor: [0.15, 0.2, 0.35, 1]
+  Visibility: {gameVisible: true}
+- Entity: 3830000000000000003
+  Tag: {tag: Block}
+  Transform:
+    translation: [-4, -2, 0]
+    rotation: [0, 0, 0]
+    scale: [3, 3, 1]
+  SpriteRenderer: {color: [0.2, 0.6, 0.3, 1], tilingFactor: 1}
+  Visibility: {gameVisible: true}
+- Entity: 3830000000000000004
+  Tag: {tag: Fountain}
+  Transform:
+    translation: [-4, -0.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  RendererTag: {Name: particles}
+  ParticleEmitter:
+    maxParticles: 300
+    rate: 80
+    lifetimeMin: 1
+    lifetimeMax: 1.5
+    shape: Circle
+    shapeSize: [0.3, 0.3, 0.3]
+    speedMin: 2
+    speedMax: 4
+    velocity: [0, 4, 0]
+    gravity: [0, -9, 0]
+    sizeMin: 0.2
+    sizeMax: 0.35
+    color: [0.4, 0.7, 1, 1]
+    colorOverLife: [[0, 1, 1, 1, 1], [1, 1, 1, 1, 0]]
+    blend: Additive
+    seed: 11
+- Entity: 3830000000000000005
+  Tag: {tag: Comet}
+  Transform:
+    translation: [2, 1, 0.1]
+    rotation: [0, 0, 0]
+    scale: [0.5, 0.5, 1]
+  CircleRenderer: {color: [1, 0.8, 0.3, 1], thickness: 1, fade: 0.05}
+  Oscillator:
+    offset: [3, 2, 0]
+    period: 2
+  Visibility: {gameVisible: true}
+- Entity: 3830000000000000006
+  Tag: {tag: CometTrail}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 3830000000000000005}
+  RendererTag: {Name: particles}
+  Trail:
+    lifetime: 0.6
+    minDistance: 0.05
+    maxPoints: 64
+    width: 0.4
+    color: [1, 0.6, 0.2, 1]
+    blend: Additive
