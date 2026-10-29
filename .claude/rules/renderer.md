@@ -54,6 +54,10 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   shadow cascades, 20 onward spot shadows; cubes `gCubes`: point shadows, then reflection probes. OpenGL fragment
   shaders sample 32 textures at most: 24 2D slots + 8 cubes there (`g_openGlLocalShadowBudget`), larger arrays on
   Vulkan (`BACKEND_VULKAN`). Change a slot in the shaders and in `Renderer3D` together.
+- **Cube faces are drawn in the OpenGL clip space on every backend** (point shadows, reflection probe captures: the
+  cameras of `computePointShadowFaces`, never `toActiveClipSpace`), so a face lands in the cube as the sampling expects.
+  On Vulkan those faces wind backwards: `Renderer3D::beginScene` sets `Scene3D.origin.w = -1` and `mesh3d` inverts
+  `SV_IsFrontFace` with it; a new shader that reads the front face does the same.
 - **The LTC table is fitted, not hand-written**: `source/owl/private/renderer/LtcTable.cpp` is the output of
   `computeLtcTable`, rewritten by `OWL_LTC_TABLE_UPDATE=1 bin/owl_renderer_tests_unit_test
   --gtest_filter=AreaLights.WriteTheStoredTable` (the file lands in the build directory, copy it over). Change the

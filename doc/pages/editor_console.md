@@ -78,37 +78,39 @@ Play.
 
 A refused command changes nothing and logs why (a bad argument, an edit during Play). The main ones:
 
-| Command                    | Arguments                                                                                              |
-|----------------------------|--------------------------------------------------------------------------------------------------------|
-| `entity.create`            | `name` (`Empty Entity`), `parent` (root when absent)                                                   |
-| `entity.delete`            | `entity`, `children` (delete the subtree, else the children move up)                                   |
-| `entity.duplicate`         | `entity`, `children` (duplicate the subtree)                                                           |
-| `entity.reparent`          | `entity`, `parent` (root when absent); the world position is kept                                      |
-| `entity.rename`            | `entity`, `name`                                                                                       |
-| `entity.set_transform`     | `entity`, `translation` / `rotation` (radians) / `scale`                                               |
-| `entity.create_light`      | `type` (`Directional`, `Point`, `Spot`, `Rectangle`, `Disc`, `Sphere`), `name`, `translation`, `parent` |
-| `entity.create_light2d`    | `type` (`Ambient`, `Point`, `Spot`), `name`, `translation`, `parent`                                   |
-| `component.add`            | `entity`, `component` (display name `Circle Renderer` or file key)                                     |
-| `component.remove`         | `entity`, `component`                                                                                  |
-| `component.set`            | `entity`, `component`, `values` (a YAML / JSON map merged into the component), `replace`               |
-| `prefab.instantiate`       | `path` (prefab file), `asset_path`                                                                     |
-| `mesh.create`              | `path` (mesh file), `asset_path`, `name`, `translation` (world), `parent`, `layer`                     |
-| `material.create`          | `path` (new `.owlmat` file), `parent` (the parent material, a root material when absent)               |
-| `material.assign`          | `entity`, `slot` (from 0, -1 for every slot), `material` (empty for the file's own)                    |
-| `scene.save`               | `path` (the scene file when absent)                                                                    |
-| `asset.set_import`         | `path` (texture or folder), `nearest`, `compression` (`None`, `Uastc`, `Etc1s`), `mips`; undoable      |
-| `asset.rename`             | `path`, `name`; the sidecar follows, references follow the GUID                                        |
-| `asset.move`               | `path`, `folder`; the sidecar follows, references follow the GUID                                      |
-| `asset.delete`             | `path` (file or folder); not an undo step                                                              |
-| `asset.cook`               | `path` (file or folder), cooked into the project cache                                                 |
-| `asset.clear_cache`        | none                                                                                                   |
-| `asset.upgrade_references` | none; rewrites the references of every project document by GUID                                        |
-| `edit.undo`, `edit.redo`   | none                                                                                                   |
-| `macro.run`                | `path` (`.owlmacro`)                                                                                   |
-| `hud.add_widget`           | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`, `size_unit`, `offset_unit` |
-| `hud.set_rect`             | `entity`, `anchor_min`, `anchor_max`, `pivot`, `size`, `offset`, `size_unit`, `offset_unit`            |
-| `hud.move`, `hud.delete`   | `entities` (comma separated), `delta` for a move                                                       |
-| `hud.extract_canvas`       | `entity` (root canvas), `path` (`.owlhud`)                                                             |
+| Command                           | Arguments                                                                                               |
+|-----------------------------------|---------------------------------------------------------------------------------------------------------|
+| `entity.create`                   | `name` (`Empty Entity`), `parent` (root when absent)                                                    |
+| `entity.delete`                   | `entity`, `children` (delete the subtree, else the children move up)                                    |
+| `entity.duplicate`                | `entity`, `children` (duplicate the subtree)                                                            |
+| `entity.reparent`                 | `entity`, `parent` (root when absent); the world position is kept                                       |
+| `entity.rename`                   | `entity`, `name`                                                                                        |
+| `entity.set_transform`            | `entity`, `translation` / `rotation` (radians) / `scale`                                                |
+| `entity.create_light`             | `type` (`Directional`, `Point`, `Spot`, `Rectangle`, `Disc`, `Sphere`), `name`, `translation`, `parent` |
+| `entity.create_light2d`           | `type` (`Ambient`, `Point`, `Spot`), `name`, `translation`, `parent`                                    |
+| `entity.create_reflection_probe`  | `name`, `translation`, `parent`                                                                         |
+| `component.add`                   | `entity`, `component` (display name `Circle Renderer` or file key)                                      |
+| `component.remove`                | `entity`, `component`                                                                                   |
+| `component.set`                   | `entity`, `component`, `values` (a YAML / JSON map merged into the component), `replace`                |
+| `prefab.instantiate`              | `path` (prefab file), `asset_path`                                                                      |
+| `mesh.create`                     | `path` (mesh file), `asset_path`, `name`, `translation` (world), `parent`, `layer`                      |
+| `material.create`                 | `path` (new `.owlmat` file), `parent` (the parent material, a root material when absent)                |
+| `material.assign`                 | `entity`, `slot` (from 0, -1 for every slot), `material` (empty for the file's own)                     |
+| `scene.save`                      | `path` (the scene file when absent)                                                                     |
+| `scene.capture_reflection_probes` | none: every probe is captured again (not an undo entry)                                                 |
+| `asset.set_import`                | `path` (texture or folder), `nearest`, `compression` (`None`, `Uastc`, `Etc1s`), `mips`; undoable       |
+| `asset.rename`                    | `path`, `name`; the sidecar follows, references follow the GUID                                         |
+| `asset.move`                      | `path`, `folder`; the sidecar follows, references follow the GUID                                       |
+| `asset.delete`                    | `path` (file or folder); not an undo step                                                               |
+| `asset.cook`                      | `path` (file or folder), cooked into the project cache                                                  |
+| `asset.clear_cache`               | none                                                                                                    |
+| `asset.upgrade_references`        | none; rewrites the references of every project document by GUID                                         |
+| `edit.undo`, `edit.redo`          | none                                                                                                    |
+| `macro.run`                       | `path` (`.owlmacro`)                                                                                    |
+| `hud.add_widget`                  | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`, `size_unit`, `offset_unit`  |
+| `hud.set_rect`                    | `entity`, `anchor_min`, `anchor_max`, `pivot`, `size`, `offset`, `size_unit`, `offset_unit`             |
+| `hud.move`, `hud.delete`          | `entities` (comma separated), `delta` for a move                                                        |
+| `hud.extract_canvas`              | `entity` (root canvas), `path` (`.owlhud`)                                                              |
 
 `help` in the Console lists every command with its arguments, defaults included.
 

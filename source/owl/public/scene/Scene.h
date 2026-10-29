@@ -104,6 +104,7 @@ struct FollowTarget;
 struct RenderTarget;
 struct ProceduralSky;
 struct DayNightCycle;
+struct ReflectionProbe;
 struct FirstPersonController;
 struct Environment;
 struct NativeScript;
@@ -349,6 +350,28 @@ public:
 	 * @param[in] iRadiance Linear radiance; black for none.
 	 */
 	void setEditorAmbient(const math::vec3& iRadiance) { m_editorAmbient = iRadiance; }
+
+	/**
+	 * @brief
+	 *  Capture every reflection probe again at its next frame, after the geometry or the lighting changed.
+	 */
+	void requestReflectionProbeCapture() { ++m_probeGeneration; }
+
+	/**
+	 * @brief
+	 *  Get the number of reflection probe captures the scene recorded since it was created.
+	 * @return The capture count.
+	 */
+	[[nodiscard]] auto getReflectionProbeCaptureCount() const -> uint64_t { return m_probeCaptureCount; }
+
+	/**
+	 * @brief
+	 *  Get the reflection probes the last frame gave `Renderer3D`, the most important first.
+	 * @return The probes.
+	 */
+	[[nodiscard]] auto getReflectionProbes() const -> std::span<const renderer::ReflectionProbeData> {
+		return m_probeData;
+	}
 
 	/**
 	 * @brief
@@ -1803,6 +1826,32 @@ private:
 
 	/**
 	 * @brief
+	 *  Give `Renderer3D` the reflection probes nearest to the camera, within the budget of the backend, and add the
+	 *  passes capturing the ones that need it: six faces of the scene into level 0 of the cube, then each prefiltered
+	 *  level from the one above it. A probe is captured when it first shows, moves, changes size, is asked to
+	 *  (`captureRequest`, `requestReflectionProbeCapture`, the environment finishing to load) and, for a realtime one,
+	 *  in turn with the others, one per frame.
+	 * @param[in,out] ioGraph The frame graph.
+	 */
+	void recordReflectionProbePasses(renderer::RenderGraph& ioGraph);
+
+	/**
+	 * @brief
+	 *  Draw the sky and the 3D layers seen by one face camera of a probe, without reflection probes.
+	 * @param[in] iCamera The face camera.
+	 * @param[in] iFaceSize Size of the face, in texels.
+	 */
+	void renderProbeFace(const renderer::Camera& iCamera, uint32_t iFaceSize);
+
+	/**
+	 * @brief
+	 *  Declare the reads of the shadow maps of the frame on a pass that samples them.
+	 * @param[in,out] ioBuilder The builder of the pass.
+	 */
+	void readShadowTargets(renderer::RenderGraph::PassBuilder& ioBuilder) const;
+
+	/**
+	 * @brief
 	 *  Record the occlusion passes when a mesh layer with content asks for them: the depth of the mesh and voxel
 	 *  occluders seen by the render camera, then the pyramid the mesh layers test their opaque meshes against.
 	 * @param[in,out] ioGraph Graph of the frame.
@@ -2064,6 +2113,52 @@ private:
 	std::vector<renderer::PointShadowFaces> m_pointShadowFaces;
 	/// Cubes of the point shadows, kept from frame to frame.
 	std::vector<shared<renderer::gpu::TextureCube>> m_pointShadowCubes;
+	/// What the scene keeps of a reflection probe from frame to frame.
+	struct ProbeState {
+		/// The prefiltered cube.
+		shared<renderer::gpu::TextureCube> cube;
+		/// The raw capture and its mip chain, the source of the filter.
+		shared<renderer::gpu::TextureCube> capture;
+		/// World position of the last capture.
+		math::vec3 position{0.f, 0.f, 0.f};
+		/// Exposure of the last capture.
+		float captureExposure = 1.f;
+		/// `m_probeGeneration` at the last capture.
+		uint32_t generation = 0;
+		/// `captureRequest` of the component at the last capture.
+		uint32_t request = 0;
+		/// Frame of the last capture.
+		uint64_t frame = 0;
+		/// Whether the cube holds a capture.
+		bool captured = false;
+	};
+	/// Reflection probes by entity.
+	std::unordered_map<entt::entity, ProbeState> m_probeStates;
+	/// A probe captured this frame: its cubes, its face cameras and the targets of its levels.
+	struct ProbeCapture {
+		/// The prefiltered cube being filled.
+		shared<renderer::gpu::TextureCube> cube;
+		/// The raw capture being filled with its mip chain.
+		shared<renderer::gpu::TextureCube> capture;
+		/// Cameras of the six faces.
+		renderer::PointShadowFaces faces;
+		/// Target of each level of the mip chain, level 0 the capture.
+		std::vector<renderer::RenderGraph::Resource> chainTargets;
+		/// Target of each filtered level, from level 1.
+		std::vector<renderer::RenderGraph::Resource> filterTargets;
+	};
+	/// Probes captured this frame.
+	std::vector<ProbeCapture> m_probeCaptures;
+	/// Probes of the frame, as `Renderer3D` reads them.
+	std::vector<renderer::ReflectionProbeData> m_probeData;
+	/// Raised to capture every probe again.
+	uint32_t m_probeGeneration = 0;
+	/// Probe captures recorded since the scene was created.
+	uint64_t m_probeCaptureCount = 0;
+	/// Frames that recorded the probes, to take the realtime ones in turn.
+	uint64_t m_probeFrame = 0;
+	/// Whether the environment pass of the frame draws the sky.
+	bool m_drawsSky = false;
 	/// The environment image of the scene: its loading on a worker, then its GPU textures.
 	struct EnvironmentState {
 		/// Asset path of the loaded (or loading) image; empty for a procedural sky.
@@ -2156,6 +2251,10 @@ OWL_API void Scene::onComponentAdded<component::MeshRenderer>(const Entity& iEnt
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light>(const Entity& iEntity, component::Light& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::ReflectionProbe>(const Entity& iEntity,
+																 component::ReflectionProbe& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light2D>(const Entity& iEntity, component::Light2D& ioComponent);

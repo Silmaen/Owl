@@ -24,6 +24,7 @@
 #include <data/voxel/VoxelRaycast.h>
 #include <scene/component/Light.h>
 #include <scene/component/MeshRenderer.h>
+#include <scene/component/ReflectionProbe.h>
 #include <scene/component/VoxelWorld.h>
 
 #include <data/geometry/MeshLoader.h>
@@ -64,8 +65,10 @@ OWL_DIAG_POP
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <format>
+#include <functional>
 #include <limits>
 #include <numbers>
 #include <optional>
@@ -2459,6 +2462,45 @@ void drawLightArrow(const math::vec3& iStart, const math::vec3& iDirection, cons
 				{.point1 = tip, .point2 = base + side * iHead, .color = iColor, .entityId = iEntityId});
 }
 
+// Draw the twelve edges of an axis-aligned box.
+void drawProbeBox(const math::vec3& iCenter, const math::vec3& iExtents, const math::vec4& iColor,
+				  const int iEntityId) {
+	const auto corner = [&](const uint32_t iBits) -> math::vec3 {
+		return iCenter + math::vec3{(iBits & 1U) != 0 ? iExtents.x() : -iExtents.x(),
+									(iBits & 2U) != 0 ? iExtents.y() : -iExtents.y(),
+									(iBits & 4U) != 0 ? iExtents.z() : -iExtents.z()};
+	};
+	for (uint32_t bits = 0; bits < 8; ++bits) {
+		for (const uint32_t axis: {1U, 2U, 4U}) {
+			if ((bits & axis) != 0)
+				continue;
+			renderer::Renderer2D::drawLine(
+					{.point1 = corner(bits), .point2 = corner(bits | axis), .color = iColor, .entityId = iEntityId});
+		}
+	}
+}
+
+// Draw the reflection probes: a small sphere at the capture point and the volume of influence, brighter selected.
+void drawProbeMarkers(const shared<scene::Scene>& iScene, const scene::Entity& iSelected,
+					  const std::function<float(const math::vec3&)>& iMarkerRadius) {
+	using Shape = scene::component::ReflectionProbe::Shape;
+	for (const auto view = iScene->registry.view<scene::component::ReflectionProbe, scene::component::Transform>();
+		 const auto entity: view) {
+		const auto& probe = view.get<scene::component::ReflectionProbe>(entity);
+		const scene::Entity ent{entity, iScene.get()};
+		const auto id = static_cast<int>(entity);
+		const math::vec3 position = iScene->getWorldTransform(ent).translation();
+		const bool isSelected = iSelected && static_cast<uint32_t>(ent) == static_cast<uint32_t>(iSelected);
+		const math::vec4 color{0.45f, 0.85f, 1.f, 1.f};
+		const math::vec4 volume{0.45f, 0.85f, 1.f, isSelected ? 0.9f : 0.3f};
+		drawLightRange(position, iMarkerRadius(position) * 1.2f, color, id);
+		if (probe.shape == Shape::Sphere)
+			drawLightRange(position, probe.radius, volume, id);
+		else
+			drawProbeBox(position, probe.extents, volume, id);
+	}
+}
+
 }// namespace
 
 void Viewport::renderLightMarkers(const shared<scene::Scene>& iScene) const {
@@ -2569,6 +2611,8 @@ void Viewport::renderLightMarkers(const shared<scene::Scene>& iScene) const {
 		}
 	}
 	renderLight2DMarkers(iScene, selected);
+	drawProbeMarkers(iScene, selected,
+					 [this](const math::vec3& iPosition) -> float { return getLightMarkerRadius(iPosition); });
 }
 
 void Viewport::renderLight2DMarkers(const shared<scene::Scene>& iScene, const scene::Entity& iSelected) const {

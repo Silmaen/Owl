@@ -1126,3 +1126,20 @@ Entities:
       castShadows: true
     Visibility:
       gameVisible: true
+  - Entity: 3900000000000000121
+    Tag:
+      tag: RoomProbe
+    Transform:
+      translation: [0.5, 1.6, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    ReflectionProbe:
+      shape: Box
+      extents: [3.5, 1.6, 3.5]
+      blendDistance: 0.3
+      parallax: true
+      intensity: 1
+      resolution: 128
+      realtime: false
+    Visibility:
+      gameVisible: true

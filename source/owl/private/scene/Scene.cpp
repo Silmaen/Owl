@@ -23,6 +23,7 @@
 #include "renderer/OutlinePass.h"
 #include "renderer/PostProcess.h"
 #include "renderer/ProceduralSky.h"
+#include "renderer/ReflectionProbes.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
@@ -106,6 +107,32 @@ void clearShadowFace(renderer::gpu::Framebuffer& ioTarget) {
 	renderer::gpu::RenderCommand::setClearColor(clearColor);
 	ioTarget.clearAttachment(1, -1);
 }
+
+// Clear a probe face between two faces drawn into it, as the graph clears a linear target.
+void clearProbeFace(renderer::gpu::Framebuffer& ioTarget) {
+	const math::vec4 clearColor = renderer::gpu::RenderCommand::getClearColor();
+	renderer::gpu::RenderCommand::setClearColor({renderer::ColorEncoder::srgbToLinear(clearColor.r()),
+												 renderer::ColorEncoder::srgbToLinear(clearColor.g()),
+												 renderer::ColorEncoder::srgbToLinear(clearColor.b()), clearColor.a()});
+	renderer::gpu::RenderCommand::clear();
+	renderer::gpu::RenderCommand::setClearColor(clearColor);
+	ioTarget.clearAttachment(1, -1);
+}
+
+// Distance from a point to the volume of a probe, 0 inside.
+auto distanceToProbe(const math::vec3& iPoint, const math::vec3& iCenter,
+					 const scene::component::ReflectionProbe& iProbe) -> float {
+	const math::vec3 offset = iPoint - iCenter;
+	if (iProbe.shape == scene::component::ReflectionProbe::Shape::Sphere)
+		return std::max(offset.norm() - iProbe.radius, 0.f);
+	const math::vec3 outside{std::max(std::abs(offset.x()) - iProbe.extents.x(), 0.f),
+							 std::max(std::abs(offset.y()) - iProbe.extents.y(), 0.f),
+							 std::max(std::abs(offset.z()) - iProbe.extents.z(), 0.f)};
+	return outside.norm();
+}
+
+// Far plane of the face cameras of a probe, in world units.
+constexpr float g_probeFar = 500.f;
 
 // Entities of one chunk handed to a worker: below it the dispatch costs more than the work it spreads.
 constexpr size_t g_ParallelChunkEntities = 1024;
@@ -899,6 +926,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	recordLightPasses(graph);
 	recordOcclusionPasses(graph);
 	recordEnvironmentPass(graph, sceneColor);
+	recordReflectionProbePasses(graph);
 	recordWorldPasses(graph, sceneColor);
 	const auto* const bound = renderer::gpu::Framebuffer::getBound();
 	const math::vec2ui frameSize = bound != nullptr ? bound->getSpecification().size : m_viewportSize;
@@ -966,6 +994,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	renderer::Renderer3D::setExposure(renderer::Renderer3D::exposureOf(renderer::Renderer3D::g_defaultEv100));
 	renderer::Renderer3D::setShadow({});
 	renderer::Renderer3D::setLocalShadows({});
+	renderer::Renderer3D::setReflectionProbes({});
 	renderer::Renderer3D::setEnvironment({});
 	mp_renderCamera = nullptr;
 }
@@ -1252,6 +1281,215 @@ void Scene::recordLocalShadowPasses(renderer::RenderGraph& ioGraph) {
 	}
 }
 
+void Scene::readShadowTargets(renderer::RenderGraph::PassBuilder& ioBuilder) const {
+	for (uint32_t index = 0; index < m_shadowSettings.cascadeCount; ++index) ioBuilder.read(m_shadowTargets[index]);
+	for (const auto& target: m_spotShadowTargets) ioBuilder.read(target);
+	for (const auto& target: m_pointFaceTargets) ioBuilder.read(target);
+}
+
+void Scene::recordReflectionProbePasses(renderer::RenderGraph& ioGraph) {
+	using Graph = renderer::RenderGraph;
+	m_probeData.clear();
+	m_probeCaptures.clear();
+	std::erase_if(m_probeStates, [this](const auto& iEntry) -> bool {
+		return !registry.valid(iEntry.first) || !registry.all_of<component::ReflectionProbe>(iEntry.first);
+	});
+	if (!renderer::ReflectionProbes::isReady())
+		return;
+	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
+	bool drawsThreeD = false;
+	for (size_t index = 0; index < layers.size() && !drawsThreeD; ++index) {
+		const std::string_view type{layers[index]->getTypeKey()};
+		drawsThreeD = (type == "RendererVoxel" || type == "RendererMesh") &&
+					  layerHasContent(layers[index]->getName(), index == 0);
+	}
+	if (!drawsThreeD)
+		return;
+	const bool editorMode = status == Status::Editing;
+	const math::vec4 eye4 = inverse(mp_renderCamera->getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	const math::vec3 eye{eye4.x(), eye4.y(), eye4.z()};
+	struct Candidate {
+		entt::entity handle;
+		math::vec3 position;
+		float distance;
+	};
+	std::vector<Candidate> candidates;
+	for (const auto [handle, probe]: registry.view<component::ReflectionProbe>().each()) {
+		const Entity entity{handle, this};
+		if (!isEffectivelyVisible(entity, editorMode))
+			continue;
+		const math::vec3 position = getWorldTransform(entity).translation();
+		candidates.push_back(
+				{.handle = handle, .position = position, .distance = distanceToProbe(eye, position, probe)});
+	}
+	const auto kept = std::min<size_t>(candidates.size(), renderer::getLocalShadowBudget().point);
+	std::ranges::partial_sort(candidates, candidates.begin() + static_cast<std::ptrdiff_t>(kept),
+							  [](const Candidate& iFirst, const Candidate& iSecond) -> bool {
+								  return std::tuple{iFirst.distance, iFirst.handle} <
+										 std::tuple{iSecond.distance, iSecond.handle};
+							  });
+	candidates.resize(kept);
+	++m_probeFrame;
+	const float exposure = renderer::Renderer3D::getExposure();
+	std::vector<entt::entity> captured;
+	entt::entity realtime = entt::null;
+	uint64_t realtimeFrame = std::numeric_limits<uint64_t>::max();
+	for (const auto& candidate: candidates) {
+		const auto& probe = registry.get<component::ReflectionProbe>(candidate.handle);
+		auto& state = m_probeStates[candidate.handle];
+		const uint32_t levels = renderer::getProbeLevelCount(probe.resolution);
+		if (!state.cube || state.cube->getFaceSize(0) != probe.resolution || state.cube->getLevelCount() != levels) {
+			const renderer::gpu::Texture::Specification spec{.size = {probe.resolution, probe.resolution},
+															 .format = renderer::gpu::ImageFormat::Rgba16F,
+															 .levelCount = levels};
+			state.cube = renderer::gpu::TextureCube::create(spec);
+			state.capture = renderer::gpu::TextureCube::create(spec);
+			state.captured = false;
+		}
+		if (!state.cube || !state.capture)
+			continue;
+		const bool stale = !state.captured || (state.position - candidate.position).normSq() > 1e-8f ||
+						   state.generation != m_probeGeneration || state.request != probe.captureRequest;
+		if (stale)
+			captured.push_back(candidate.handle);
+		else if (probe.realtime && state.frame < realtimeFrame) {
+			realtime = candidate.handle;
+			realtimeFrame = state.frame;
+		}
+	}
+	if (realtime != entt::null)
+		captured.push_back(realtime);
+	for (const auto handle: captured) {
+		const auto& probe = registry.get<component::ReflectionProbe>(handle);
+		auto& state = m_probeStates[handle];
+		const auto found = std::ranges::find(candidates, handle, &Candidate::handle);
+		state.position = found->position;
+		state.captureExposure = exposure;
+		state.generation = m_probeGeneration;
+		state.request = probe.captureRequest;
+		state.frame = m_probeFrame;
+		state.captured = true;
+		++m_probeCaptureCount;
+		ProbeCapture capture{.cube = state.cube,
+							 .capture = state.capture,
+							 .faces = renderer::computePointShadowFaces(state.position, g_probeFar),
+							 .chainTargets = {},
+							 .filterTargets = {}};
+		const uint32_t levels = state.cube->getLevelCount();
+		for (uint32_t level = 0; level < levels; ++level) {
+			const uint32_t size = state.cube->getFaceSize(level);
+			capture.chainTargets.push_back(ioGraph.createTarget(level == 0 ? "probe capture" : "probe chain",
+																Graph::TargetFormat::Linear, {size, size}));
+			if (level > 0)
+				capture.filterTargets.push_back(
+						ioGraph.createTarget("probe filter", Graph::TargetFormat::Linear, {size, size}));
+		}
+		m_probeCaptures.push_back(std::move(capture));
+		const size_t index = m_probeCaptures.size() - 1;
+		ioGraph.addPass(
+				"probe capture",
+				[this, index](Graph::PassBuilder& ioBuilder) -> void {
+					ioBuilder.write(m_probeCaptures[index].chainTargets.front());
+					readShadowTargets(ioBuilder);
+				},
+				[this, index](const Graph::PassContext& iContext) -> void {
+					const auto& probeCapture = m_probeCaptures[index];
+					auto* const face = iContext.getFramebuffer(probeCapture.chainTargets.front());
+					if (face == nullptr)
+						return;
+					useShadowMaps(iContext);
+					renderer::Renderer3D::setReflectionProbes({});
+					const uint32_t size = probeCapture.cube->getFaceSize(0);
+					for (uint32_t side = 0; side < renderer::gpu::TextureCube::g_faceCount; ++side) {
+						clearProbeFace(*face);
+						renderProbeFace(probeCapture.faces.cameras[side], size);
+						static_cast<void>(face->copyAttachmentToCube(0, *probeCapture.capture, side, 0));
+						static_cast<void>(face->copyAttachmentToCube(0, *probeCapture.cube, side, 0));
+					}
+				});
+		for (uint32_t level = 1; level < levels; ++level) {
+			ioGraph.addPass(
+					"probe chain",
+					[this, index, level](Graph::PassBuilder& ioBuilder) -> void {
+						ioBuilder.write(m_probeCaptures[index].chainTargets[level]);
+						ioBuilder.read(m_probeCaptures[index].chainTargets[level - 1]);
+					},
+					[this, index, level](const Graph::PassContext& iContext) -> void {
+						const auto& probeCapture = m_probeCaptures[index];
+						auto* const face = iContext.getFramebuffer(probeCapture.chainTargets[level]);
+						if (face == nullptr)
+							return;
+						for (uint32_t side = 0; side < renderer::gpu::TextureCube::g_faceCount; ++side) {
+							renderer::ReflectionProbes::drawDownsampledFace(probeCapture.capture, side, level);
+							static_cast<void>(face->copyAttachmentToCube(0, *probeCapture.capture, side, level));
+						}
+					});
+		}
+		for (uint32_t level = 1; level < levels; ++level) {
+			ioGraph.addPass(
+					"probe filter",
+					[this, index, level](Graph::PassBuilder& ioBuilder) -> void {
+						ioBuilder.write(m_probeCaptures[index].filterTargets[level - 1]);
+						ioBuilder.read(m_probeCaptures[index].chainTargets.back());
+					},
+					[this, index, level](const Graph::PassContext& iContext) -> void {
+						const auto& probeCapture = m_probeCaptures[index];
+						auto* const face = iContext.getFramebuffer(probeCapture.filterTargets[level - 1]);
+						if (face == nullptr)
+							return;
+						for (uint32_t side = 0; side < renderer::gpu::TextureCube::g_faceCount; ++side) {
+							renderer::ReflectionProbes::drawFilteredFace(probeCapture.capture, side, level);
+							static_cast<void>(face->copyAttachmentToCube(0, *probeCapture.cube, side, level));
+						}
+					});
+		}
+	}
+	for (const auto& candidate: candidates) {
+		const auto& probe = registry.get<component::ReflectionProbe>(candidate.handle);
+		const auto& state = m_probeStates[candidate.handle];
+		if (!state.cube || !state.captured)
+			continue;
+		const bool sphere = probe.shape == component::ReflectionProbe::Shape::Sphere;
+		m_probeData.push_back({.position = state.position,
+							   .extents = probe.extents,
+							   .sphereRadius = sphere ? std::max(probe.radius, 0.01f) : 0.f,
+							   .blendDistance = probe.blendDistance,
+							   .parallax = probe.parallax,
+							   .intensity = probe.intensity,
+							   .captureExposure = state.captureExposure,
+							   .cube = state.cube});
+	}
+}
+
+void Scene::renderProbeFace(const renderer::Camera& iCamera, const uint32_t iFaceSize) {
+	const bool editorMode = status == Status::Editing;
+	if (m_drawsSky) {
+		renderer::Renderer3D::beginScene(iCamera);
+		renderer::Renderer3D::drawSky();
+		renderer::Renderer3D::endScene();
+	}
+	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
+	for (size_t index = 0; index < layers.size(); ++index) {
+		const auto& layer = layers[index];
+		const std::string_view type{layer->getTypeKey()};
+		if ((type != "RendererVoxel" && type != "RendererMesh") || !layerHasContent(layer->getName(), index == 0))
+			continue;
+		layer->setViewport({iFaceSize, iFaceSize});
+		layer->onBeginFrame(iCamera);
+		m_currentLayerName = layer->getName();
+		m_currentLayerIsFirst = index == 0;
+		mp_currentLayer = layer.get();
+		if (type == "RendererVoxel")
+			renderVoxelWorlds(editorMode);
+		else
+			renderMeshes(editorMode);
+		layer->onEndFrame();
+	}
+	m_currentLayerName.clear();
+	m_currentLayerIsFirst = true;
+	mp_currentLayer = nullptr;
+}
+
 void Scene::recordOcclusionPasses(renderer::RenderGraph& ioGraph) {
 	using Graph = renderer::RenderGraph;
 	m_occlusionToken = {};
@@ -1294,6 +1532,7 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 	const bool editorMode = status == Status::Editing;
 	const component::Environment* environment = nullptr;
 	const component::ProceduralSky* sky = nullptr;
+	m_drawsSky = false;
 	for (const auto [handle, candidate]: registry.view<component::Environment>().each()) {
 		if (isEffectivelyVisible(Entity{handle, this}, editorMode)) {
 			environment = &candidate;
@@ -1354,6 +1593,7 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 		}
 		state.lighting.irradiance = map.irradiance;
 		state.result.reset();
+		requestReflectionProbeCapture();
 	}
 	if (state.lighting.levelCount == 0) {
 		renderer::Renderer3D::setEnvironment(constantSky);
@@ -1369,6 +1609,7 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 	renderer::Renderer3D::setEnvironment(state.lighting);
 	if (!environment->showSky)
 		return;
+	m_drawsSky = true;
 	ioGraph.addPass(
 			"environment sky", [iSceneColor](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(iSceneColor); },
 			[this](const Graph::PassContext&) -> void {
@@ -1433,6 +1674,7 @@ void Scene::requestProceduralSky(const component::ProceduralSky& iSky) {
 }
 
 void Scene::useShadowMaps(const renderer::RenderGraph::PassContext& iContext) {
+	renderer::Renderer3D::setReflectionProbes(m_probeData);
 	if (!m_localShadows.spots.empty() || !m_localShadows.points.empty()) {
 		for (size_t index = 0; index < m_localShadows.spots.size(); ++index)
 			m_localShadows.spots[index].map = iContext.getTexture(m_spotShadowTargets[index]);
@@ -1530,9 +1772,11 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 	const auto writeScene = [iSceneColor](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(iSceneColor); };
 	const auto writeSceneReadShadows = [this, iSceneColor](Graph::PassBuilder& ioBuilder) -> void {
 		ioBuilder.write(iSceneColor);
-		for (uint32_t index = 0; index < m_shadowSettings.cascadeCount; ++index) ioBuilder.read(m_shadowTargets[index]);
-		for (const auto& target: m_spotShadowTargets) ioBuilder.read(target);
-		for (const auto& target: m_pointFaceTargets) ioBuilder.read(target);
+		readShadowTargets(ioBuilder);
+		for (const auto& capture: m_probeCaptures) {
+			ioBuilder.read(capture.chainTargets.front());
+			for (const auto& target: capture.filterTargets) ioBuilder.read(target);
+		}
 		if (m_occlusionToken.isValid())
 			ioBuilder.read(m_occlusionToken);
 	};
@@ -3578,6 +3822,11 @@ OWL_API void Scene::onComponentAdded<component::Light2D>([[maybe_unused]] const 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light>([[maybe_unused]] const Entity& iEntity,
 													   [[maybe_unused]] component::Light& ioComponent) {}
+
+template<>
+OWL_API void
+Scene::onComponentAdded<component::ReflectionProbe>([[maybe_unused]] const Entity& iEntity,
+													[[maybe_unused]] component::ReflectionProbe& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::LightFlicker>([[maybe_unused]] const Entity& iEntity,

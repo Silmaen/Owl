@@ -42,6 +42,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cctype>
 #include <cfloat>
 #include <cmath>
@@ -2969,6 +2970,53 @@ void renderProps(ProceduralSky& ioComponent) {
 	if (prop::DragInt("Resolution", &resolution, 4.f, 64, 1024))
 		ioComponent.resolution = static_cast<uint32_t>(std::clamp(resolution, 64, 1024));
 	fieldTooltip("Width of the sky image in pixels, its height half of it. Sharper stars, a longer redraw.");
+}
+
+void renderProps(ReflectionProbe& ioComponent) {
+	const ReflectionProbe defaults;
+	resettable("Shape", ioComponent.shape, defaults.shape, drawEnum<ReflectionProbe::Shape>);
+	fieldTooltip("Volume where the probe replaces the reflections of the environment, centred on the entity and "
+				 "aligned on the world axes.");
+	if (ioComponent.shape == ReflectionProbe::Shape::Box) {
+		resettable("Extents", ioComponent.extents, defaults.extents, [](const char* iId, math::vec3& ioField) -> bool {
+			if (!prop::DragFloat3(iId, &ioField.x(), 0.01f, 0.01f, 10000.f))
+				return false;
+			ioField = {std::max(ioField.x(), 0.01f), std::max(ioField.y(), 0.01f), std::max(ioField.z(), 0.01f)};
+			return true;
+		});
+		fieldTooltip("Half size of the box along X, Y and Z, in world units: fit it to the walls of a room.");
+	} else {
+		resetFloat("Radius", ioComponent.radius, defaults.radius, 0.01f, 0.01f, 10000.f);
+		fieldTooltip("Radius of the sphere of influence, in world units.");
+	}
+	resetFloat("Blend Distance", ioComponent.blendDistance, defaults.blendDistance, 0.01f, 0.f, 1000.f);
+	fieldTooltip("Distance inside the volume over which the probe fades in from its border, blending with its "
+				 "neighbour or the environment.");
+	resetCheckbox("Parallax", ioComponent.parallax, defaults.parallax);
+	fieldTooltip("Project the reflections on the volume, so a room reflects its walls at the right place; off sees "
+				 "them as if infinitely far.");
+	resetFloat("Intensity", ioComponent.intensity, defaults.intensity, 0.01f, 0.f, 100.f);
+	fieldTooltip("Scale of the captured reflections.");
+	resettable("Resolution", ioComponent.resolution, defaults.resolution,
+			   [](const char* iId, uint32_t& ioField) -> bool {
+				   constexpr std::array<const char*, 6> sizes{"16", "32", "64", "128", "256", "512"};
+				   int current = std::clamp(std::countr_zero(ioField) - 4, 0, 5);
+				   if (!prop::Combo(iId, &current, std::span<const char* const>{sizes}))
+					   return false;
+				   ioField = 16u << static_cast<uint32_t>(current);
+				   return true;
+			   });
+	fieldTooltip("Size of each face of the captured cube, in texels: sharper mirror reflections, a longer capture.");
+	resetCheckbox("Realtime", ioComponent.realtime, defaults.realtime);
+	fieldTooltip("Capture the probe again while the scene runs, the realtime probes in turn, one per frame; off "
+				 "captures it once, when it moves or is baked.");
+	prop::row("Capture", [&](const char* /*iId*/) -> bool {
+		if (!ImGui::Button("Bake", {-FLT_MIN, 0.f}))
+			return false;
+		++ioComponent.captureRequest;
+		return true;
+	});
+	fieldTooltip("Capture the probe again, after the geometry or the lighting around it changed.");
 }
 
 void renderProps(FirstPersonController& ioComponent) {

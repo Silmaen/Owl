@@ -338,6 +338,21 @@ The 3D layers (`RendererMesh`, `RendererVoxel`) are lit by the `Light` component
   surface find the blockers, the penumbra `lightSize (receiver - blocker) / blocker` (half diagonal or radius, at
   most 16 texels) sets the width of the 16 filtering taps.
 
+### Reflection probes {#renderer-probes}
+
+A `ReflectionProbe` ([Scene > ReflectionProbe](scene.md#reflectionprobe-component)) gives a place its own reflections.
+`Scene::recordReflectionProbePasses` keeps the probes nearest to the camera within the point shadow budget and adds,
+for each probe to capture, a pass drawing the sky and the 3D layers into the six faces of a cube (the face cameras
+of `computePointShadowFaces`, without the probes), the passes building the mip chain of that capture, then one GGX
+pass per level of the probe (`ReflectionProbes`, shader `probe_filter`): level `i` holds the roughness
+`i / (levelCount - 1)`, down to faces of 8 texels (`getProbeLevelCount`), each sample read from the level of the chain
+that matches its solid angle. The face cameras keep the OpenGL clip space on every backend so the faces follow the
+cube convention; on Vulkan the faces then wind backwards, which the scene block tells the shader (`origin.w = -1`).
+`Renderer3D::setReflectionProbes` binds the cubes after the point shadows; the shader takes the two probes of largest
+influence at the point (1 inside the volume, fading over `blendDistance`), projects the reflected ray on the box or
+sphere with `parallax`, and fills the rest with the environment. The captured radiance is pre-exposed: it is scaled by
+the current exposure over the one of the capture.
+
 ### 2D lighting {#renderer-lighting2d}
 
 The `Light2D` components of the scene ([Scene > Light2D](scene.md#light2d-component)) light the sprites, tilemaps and
@@ -672,7 +687,8 @@ Convention:
 - **Texture slots** of the 3D shaders (`gTextures`, binding 1): 0 white, 1 to 6 the material maps (base colour,
   metallic, normal, occlusion, emissive, roughness), 7 to 12 the prefiltered environment, 13 the DFG table, 16 to 19
   the shadow cascades, 20 onward the spot shadows (24 slots on OpenGL, 36 on Vulkan). Cubes (`gCubes`, binding 7 on
-  Vulkan, the units after the 2D slots on OpenGL): the point shadows, then as many reflection probe slots.
+  Vulkan, the units after the 2D slots on OpenGL): the point shadows, then as many reflection probes
+  ([Reflection probes](#renderer-probes)).
 - **Per-draw parameters** (`renderer::MeshDrawParams`): the tint and the entity id travel in the scene UBO with the
   model matrix (`vec4 tint`, `ivec4 ids`, 192 bytes in all), so picking needs nothing in the vertices; `voxel.slang`
   shares the block and writes the id of its voxel world. The material of the draw (`MeshDrawParams::material`, null

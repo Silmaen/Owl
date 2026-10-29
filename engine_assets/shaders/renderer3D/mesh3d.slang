@@ -99,7 +99,7 @@ FragmentOutput fragmentMain(FragmentInput input, bool frontFace : SV_IsFrontFace
 		return output;
 	}
 	float3 geometricNormal = normalize(input.normal);
-	if (!frontFace)
+	if (frontFace == (gScene.origin.w < 0.0f))
 		geometricNormal = -geometricNormal;
 	float3x3 frame = cotangentFrame(geometricNormal, input.position, input.uv);
 	float3 normal = geometricNormal;

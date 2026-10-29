@@ -58,7 +58,7 @@ struct SceneUbo {
 	math::vec4 tint{1.f, 1.f, 1.f, 1.f};
 	// x: entity id, y: linear target, z: shadow pass, w: first visible instance (-1 for a single draw).
 	std::array<int32_t, 4> ids{-1, 0, 0, -1};
-	// xyz: world position of the eye, origin of the camera-relative space the shaders work in.
+	// xyz: eye, origin of the camera-relative space of the shaders; w: -1 when the projection winds faces backwards.
 	math::vec4 origin{0.f, 0.f, 0.f, 1.f};
 };
 
@@ -69,6 +69,16 @@ struct LocalShadowUbo {
 	math::vec4 params{0.f, 0.f, 0.f, 0.f};
 	// xy: depth of a point-light face (depth.x + depth.y / d), z: tangent of the half angle of the light camera.
 	math::vec4 depth{0.f, 0.f, 1.f, 0.f};
+};
+
+// One reflection probe as the shaders read it (ReflectionProbe in pbr.slangh).
+struct ProbeUbo {
+	// xyz: centre relative to the eye, w: 0 box, 1 sphere.
+	math::vec4 center{0.f, 0.f, 0.f, 0.f};
+	// xyz: half size of a box, w: radius of a sphere.
+	math::vec4 extents{0.f, 0.f, 0.f, 0.f};
+	// x: blend distance, y: pre-exposed scale of the radiance, z: prefiltered levels, w: 1 with parallax.
+	math::vec4 params{0.f, 0.f, 0.f, 0.f};
 };
 
 static_assert(sizeof(SceneUbo) == 208, "SceneUbo must match the std140 layout of Scene3D in the renderer3D shaders.");
@@ -91,11 +101,15 @@ struct LightingUbo {
 	math::vec4 skyBodies{0.f, 0.f, 0.f, 0.f};
 	// Depth each cascade's light camera covers, in world units.
 	math::vec4 cascadeDepths{0.f, 0.f, 0.f, 0.f};
+	// Reflection probes, the table declared whole on every backend.
+	std::array<ProbeUbo, Renderer3D::g_maxReflectionProbes> probes{};
 	// Shadows of local lights; the OpenGL shaders declare the first entries of the table only.
 	std::array<LocalShadowUbo, g_maxLocalShadows> localShadows{};
 };
 
-static_assert(sizeof(LightingUbo) == 544 + g_maxLocalShadows * 96,
+static_assert(Renderer3D::g_maxReflectionProbes == g_vulkanLocalShadowBudget.point,
+			  "Every point shadow cube slot has its reflection probe slot.");
+static_assert(sizeof(LightingUbo) == 544 + Renderer3D::g_maxReflectionProbes * 48 + g_maxLocalShadows * 96,
 			  "LightingUbo must match the std140 layout of Lighting in the renderer3D shaders.");
 
 struct MaterialUbo {
@@ -162,6 +176,8 @@ struct InternalData {
 	std::array<shared<gpu::Texture2D>, 4> shadowMaps{};
 	// Local shadows as the scene gives them, within the budget, and the shadow entry of each light (-1 none).
 	LocalShadowSettings localShadows;
+	// Reflection probes within the budget, the most important first.
+	std::vector<ReflectionProbeData> probes;
 	std::array<float, Renderer3D::g_maxLights> lightShadowEntries{};
 	std::array<shared<gpu::Texture2D>, k_MaxTextureSlots> textureSlots;
 	std::array<shared<gpu::TextureCube>, k_MaxCubeSlots> cubeSlots;
@@ -202,6 +218,17 @@ void refreshLighting() {
 				environment.ambient ? *environment.ambient * std::max(environment.intensity, 0.f) : data.layerAmbient;
 		setIrradiance(SphericalHarmonics::constant(sky));
 		data.lighting.environment.x() = exposure;
+	}
+	data.lighting.counts[3] = static_cast<int32_t>(data.probes.size());
+	for (size_t index = 0; index < data.probes.size(); ++index) {
+		const auto& probe = data.probes[index];
+		auto& entry = data.lighting.probes[index];
+		const bool sphere = probe.sphereRadius > 0.f;
+		entry.center.w() = sphere ? 1.f : 0.f;
+		entry.extents = math::vec4{probe.extents.x(), probe.extents.y(), probe.extents.z(), probe.sphereRadius};
+		entry.params = math::vec4{std::max(probe.blendDistance, 0.f),
+								  std::max(probe.intensity, 0.f) * exposure / std::max(probe.captureExposure, 1e-12f),
+								  static_cast<float>(probe.cube->getLevelCount()), probe.parallax ? 1.f : 0.f};
 	}
 	data.scene.sunDirection.w() = data.layerSun ? data.layerSunIlluminance * exposure : 0.f;
 	data.scene.ambient = math::vec4{data.editorAmbient.x(), data.editorAmbient.y(), data.editorAmbient.z(), exposure};
@@ -253,6 +280,9 @@ void bindMeshTextures(const std::span<const shared<gpu::Texture2D>> iTextures, c
 	for (size_t index = 0; index < local.spots.size(); ++index)
 		slots[Renderer3D::g_spotShadowSlot + index] = local.spots[index].map;
 	for (size_t index = 0; index < local.points.size(); ++index) cubes[index] = local.points[index].cube;
+	const uint32_t probeSlot = g_Data->cubeSlotCount / 2;
+	for (size_t index = 0; index < g_Data->probes.size(); ++index)
+		cubes[probeSlot + index] = g_Data->probes[index].cube;
 	gpu::RenderCommand::bindTextures(std::span{slots}.first(g_Data->textureSlotCount),
 									 std::span{cubes}.first(g_Data->cubeSlotCount));
 }
@@ -422,6 +452,7 @@ void Renderer3D::shutdown() {
 	g_Data->localShadows = {};
 	g_Data->textureSlots = {};
 	g_Data->cubeSlots = {};
+	g_Data->probes.clear();
 	g_Data->whiteTexture.reset();
 	g_Data.reset();
 	gpu::RendererDescriptors::release(k_RendererKey);
@@ -437,7 +468,10 @@ void Renderer3D::beginScene(const Camera& iCamera) {
 	data.viewProjection = iCamera.getViewProjection();
 	const math::vec4 eye = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
 	const math::vec3 origin{eye.x(), eye.y(), eye.z()};
-	data.scene.origin = math::vec4{origin.x(), origin.y(), origin.z(), 1.f};
+	// A projection left in the OpenGL clip space on a flipping backend (the cube faces of a probe) winds faces backwards.
+	const bool flipping = toActiveClipSpace(math::identity<float, 4>())(1, 1) < 0.f;
+	const bool mirrored = flipping && iCamera.getProjection()(1, 1) > 0.f;
+	data.scene.origin = math::vec4{origin.x(), origin.y(), origin.z(), mirrored ? -1.f : 1.f};
 	data.scene.viewProjection = iCamera.getProjection() * cameraRelativeView(iCamera.getView());
 	if (data.shadowPass)
 		return;
@@ -452,6 +486,12 @@ void Renderer3D::beginScene(const Camera& iCamera) {
 		const auto& spot = data.localShadows.spots[index];
 		data.lighting.localShadows[index].viewProjection =
 				spot.relativeViewProjection * math::translate(math::identity<float, 4>(), origin - spot.origin);
+	}
+	for (size_t index = 0; index < data.probes.size(); ++index) {
+		const auto& position = data.probes[index].position;
+		auto& center = data.lighting.probes[index].center;
+		center =
+				math::vec4{position.x() - origin.x(), position.y() - origin.y(), position.z() - origin.z(), center.w()};
 	}
 	const auto lightCount = static_cast<size_t>(std::max(data.lighting.counts[0], 0));
 	for (size_t index = 0; index < lightCount; ++index) {
@@ -608,6 +648,20 @@ void Renderer3D::setLocalShadows(const LocalShadowSettings& iShadows) {
 		if (point.lightIndex < g_maxLights)
 			data.lightShadowEntries[point.lightIndex] = static_cast<float>(entry);
 	}
+}
+
+void Renderer3D::setReflectionProbes(const std::span<const ReflectionProbeData> iProbes) {
+	if (!g_Data || (iProbes.empty() && g_Data->probes.empty()))
+		return;
+	auto& probes = g_Data->probes;
+	probes.clear();
+	for (const auto& probe: iProbes) {
+		if (probes.size() >= getLocalShadowBudget().point)
+			break;
+		if (probe.cube)
+			probes.push_back(probe);
+	}
+	refreshLighting();
 }
 
 auto Renderer3D::getLocalShadowEntry(const uint32_t iLightIndex) -> int32_t {

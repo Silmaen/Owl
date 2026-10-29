@@ -402,6 +402,15 @@ INSTANTIATE_TEST_SUITE_P(AreaLights, RenderImage,
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
+// A box reflection probe over a glossy floor: a chrome sphere mirrors the floor, the crate and the spheres around it
+// with parallax, the gold and plastic spheres and the floor take the probe in their specular.
+INSTANTIATE_TEST_SUITE_P(ReflectionProbes, RenderImage,
+						 testing::Values(RenderCase{"reflection_probes", "vulkan"},
+										 RenderCase{"reflection_probes", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
 // The lights scene moved 2^20 m away on x and z: camera-relative rendering keeps the meshes, lights and shadows as
 // precise as at the origin (the uploaded matrices never hold the far-away translation).
 INSTANTIATE_TEST_SUITE_P(FarOrigin, RenderImage,

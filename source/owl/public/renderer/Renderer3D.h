@@ -172,6 +172,30 @@ struct LocalShadowSettings {
 
 /**
  * @brief
+ *  A local reflection probe the 3D shaders sample: a cube of the scene prefiltered by roughness (level i for roughness
+ *  i / (levelCount - 1)) and its volume of influence, axis-aligned in world space.
+ */
+struct ReflectionProbeData {
+	/// World position of the capture, centre of the volume.
+	math::vec3 position{0.f, 0.f, 0.f};
+	/// Half size of a box volume along each world axis.
+	math::vec3 extents{1.f, 1.f, 1.f};
+	/// Radius of a sphere volume, 0 for a box.
+	float sphereRadius = 0.f;
+	/// Distance over which the probe fades in from the border of its volume.
+	float blendDistance = 0.f;
+	/// Whether the reflected direction is projected on the volume instead of seen from infinitely far.
+	bool parallax = true;
+	/// Scale of the captured radiance.
+	float intensity = 1.f;
+	/// Exposure the cube was captured with (`Renderer3D::getExposure` then), to follow a later exposure.
+	float captureExposure = 1.f;
+	/// The prefiltered cube, `Rgba16F`.
+	shared<gpu::TextureCube> cube;
+};
+
+/**
+ * @brief
  *  Per-draw parameters of a mesh, written to the model uniform buffer next to the model matrix.
  */
 class Material;
@@ -378,6 +402,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the reflection probes the meshes sample (empty for none): at most the point shadow budget of the backend
+	 *  (`getLocalShadowBudget`), each one taking the cube slot after the point shadows.
+	 * @param[in] iProbes The probes, the most important first.
+	 */
+	static void setReflectionProbes(std::span<const ReflectionProbeData> iProbes);
+
+	/**
+	 * @brief
 	 *  Get the local shadow a light samples, after `setLocalShadows`.
 	 * @param[in] iLightIndex Index of the light.
 	 * @return The entry of its shadow in the shader table, -1 without shadow.
@@ -427,6 +459,8 @@ public:
 	static constexpr uint32_t g_shadowMapSlot = 16;
 	/// First texture slot of the spot shadow maps (as many as the spot budget of the backend).
 	static constexpr uint32_t g_spotShadowSlot = 20;
+	/// Size of the table of reflection probes the 3D shaders read: the largest point shadow budget.
+	static constexpr uint32_t g_maxReflectionProbes = 16;
 
 	/**
 	 * @brief

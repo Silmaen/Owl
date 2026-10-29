@@ -8,8 +8,8 @@ struct Scene3D {
 	float4 sunDirection;// xyz: direction the sun of the layer travels; w: its pre-exposed illuminance (0 when unlit).
 	float4 ambient;     // rgb: editor ambient added to every lit surface; w: exposure (1 / (1.2 * 2^EV100)).
 	float4 tint;        // per-entity colour multiplied with the base colour.
-	int4 ids;           // x: entity id (-1 none); y: 1 when the target stores linear colour; z: 1 in a shadow pass; w unused.
-	float4 origin;      // xyz: world position of the eye, origin of the camera-relative space of the shading.
+	int4 ids;           // x: entity id (-1 none); y: 1 when the target stores linear colour; z: 1 in a shadow pass; w: first visible instance (-1 for a single draw).
+	float4 origin;      // xyz: world position of the eye, origin of the camera-relative space of the shading; w: -1 when the projection winds the faces backwards.
 };
 
 struct MaterialData {
@@ -57,8 +57,17 @@ struct LocalShadow {
 	float4 depth;                        // xy: depth of a point face (x + y / d), z: tangent of the half angle of the light camera, w: radius of the emitting surface (0 hard).
 };
 
+// A local reflection probe: a prefiltered cube of the scene and its axis-aligned volume of influence.
+struct ReflectionProbe {
+	float4 center;  // xyz: centre relative to the eye, w: 0 box, 1 sphere.
+	float4 extents; // xyz: half size of a box, w: radius of a sphere.
+	float4 params;  // x: blend distance, y: pre-exposed scale of the radiance, z: prefiltered levels, w: 1 with parallax.
+};
+
+static const int MAX_REFLECTION_PROBES = 16;
+
 struct Lighting {
-	int4 counts;          // x: light count (0: the sun of the layer), y: shadow cascades, z: index of the shadowed light.
+	int4 counts;          // x: light count (0: the sun of the layer), y: shadow cascades, z: index of the shadowed light, w: reflection probes.
 	float4 splitDepths;   // view depth where each cascade ends.
 	float4 texelSizes;    // world size of a shadow texel, per cascade.
 	float4 viewDepthRow;  // view depth of a camera-relative point p: -(dot(xyz, p) + w).
@@ -69,6 +78,7 @@ struct Lighting {
 	float4 skySun;        // xyz: direction towards the sun, w: angular radius of the sun and moon discs (0 none).
 	float4 skyBodies;     // pre-exposed radiance: x sun disc, y moon disc, z brightest stars.
 	float4 cascadeDepths; // depth each cascade's light camera covers, in world units.
+	ReflectionProbe probes[MAX_REFLECTION_PROBES];
 	LocalShadow localShadows[MAX_LOCAL_SHADOWS];
 };
 
@@ -546,7 +556,77 @@ float3 prefilteredRadiance(float3 r, float roughness) {
 	return lerp(sampleEnvironmentLevel(low, uv), sampleEnvironmentLevel(high, uv), lod - float(low));
 }
 
-// Ambient light of the Standard model: diffuse from the harmonics, specular from the prefiltered environment.
+// Influence of a probe at a point: 1 inside its volume, fading to 0 over the blend distance from its border.
+float probeInfluence(ReflectionProbe probe, float3 position) {
+	float3 offset = position - probe.center.xyz;
+	float inside = probe.center.w > 0.5f ? probe.extents.w - length(offset) : min(min(probe.extents.x - abs(offset.x),
+		probe.extents.y - abs(offset.y)), probe.extents.z - abs(offset.z));
+	if (inside <= 0.0f)
+		return 0.0f;
+	return probe.params.x > 0.0f ? saturate(inside / probe.params.x) : 1.0f;
+}
+
+// Direction a probe is looked up along for a ray from a point: the ray projected on the volume with parallax.
+float3 probeDirection(ReflectionProbe probe, float3 position, float3 r) {
+	if (probe.params.w < 0.5f)
+		return r;
+	float3 offset = position - probe.center.xyz;
+	float distance;
+	if (probe.center.w > 0.5f) {
+		float b = dot(offset, r);
+		float c = dot(offset, offset) - probe.extents.w * probe.extents.w;
+		distance = -b + sqrt(max(b * b - c, 0.0f));
+	} else {
+		float3 safe = select(abs(r) < 1e-6f, float3(1e-6f), r);
+		float3 far = max((probe.extents.xyz - offset) / safe, (-probe.extents.xyz - offset) / safe);
+		distance = min(min(far.x, far.y), far.z);
+	}
+	return offset + r * max(distance, 0.0f);
+}
+
+// Pre-exposed specular radiance around a reflected direction: the two probes of largest influence at the point, the
+// prefiltered environment for what they leave.
+float3 ambientSpecular(float3 position, float3 r, float roughness) {
+	float3 environment = prefilteredRadiance(r, roughness) * gLighting.environment.x;
+	int count = min(gLighting.counts.w, MAX_POINT_SHADOWS);
+	if (count <= 0)
+		return environment;
+	int first = -1;
+	int second = -1;
+	float firstWeight = 0.0f;
+	float secondWeight = 0.0f;
+	for (int index = 0; index < count; ++index) {
+		float weight = probeInfluence(gLighting.probes[index], position);
+		if (weight > firstWeight) {
+			second = first;
+			secondWeight = firstWeight;
+			first = index;
+			firstWeight = weight;
+		} else if (weight > secondWeight) {
+			second = index;
+			secondWeight = weight;
+		}
+	}
+	if (first < 0)
+		return environment;
+	float total = firstWeight + secondWeight;
+	float scale = total > 1.0f ? 1.0f / total : 1.0f;
+	float3 color = environment * max(1.0f - total, 0.0f);
+	for (int pick = 0; pick < 2; ++pick) {
+		int index = pick == 0 ? first : second;
+		if (index < 0)
+			continue;
+		ReflectionProbe probe = gLighting.probes[index];
+		float lod = roughness * max(probe.params.z - 1.0f, 0.0f);
+		float3 direction = probeDirection(probe, position, r);
+		float3 radiance = gCubes[NonUniformResourceIndex(MAX_POINT_SHADOWS + index)].SampleLevel(direction, lod).rgb;
+		color += radiance * probe.params.y * (pick == 0 ? firstWeight : secondWeight) * scale;
+	}
+	return color;
+}
+
+// Ambient light of the Standard model: diffuse from the harmonics, specular from the probes and the prefiltered
+// environment.
 float3 standardAmbient(Surface s, float3 f0, float3 dfg) {
 	float NoV = max(dot(s.normal, s.view), 1e-4f);
 	float3 r = reflect(-s.view, s.normal);
@@ -560,17 +640,17 @@ float3 standardAmbient(Surface s, float3 f0, float3 dfg) {
 	}
 	float3 specularColor = dfg.x * f0 + dfg.y;
 	float3 energy = 1.0f + f0 * (1.0f / max(dfg.x + dfg.y, 1e-4f) - 1.0f);
-	float3 specular = prefilteredRadiance(r, s.roughness) * specularColor * energy;
-	float3 diffuse = irradianceSH(s.normal) * s.albedo * (1.0f - s.metallic);
+	float3 specular = ambientSpecular(s.position, r, s.roughness) * specularColor * energy;
+	float3 diffuse = irradianceSH(s.normal) * s.albedo * (1.0f - s.metallic) * gLighting.environment.x;
 	float3 color = diffuse + specular;
 	if (any(s.sheenColor > 0.0f))
 		color = color * (1.0f - max(s.sheenColor.r, max(s.sheenColor.g, s.sheenColor.b)) * dfg.z) +
-				s.sheenColor * prefilteredRadiance(s.normal, s.sheenRoughness) * dfg.z;
+				s.sheenColor * prefilteredRadiance(s.normal, s.sheenRoughness) * gLighting.environment.x * dfg.z;
 	if (s.clearcoat > 0.0f) {
 		float Fc = F_Schlick90(iorToF0(gMaterial.toon.w), 1.0f, NoV) * s.clearcoat;
-		color = color * (1.0f - Fc) + prefilteredRadiance(reflect(-s.view, s.normal), s.clearcoatRoughness) * Fc;
+		color = color * (1.0f - Fc) + ambientSpecular(s.position, reflect(-s.view, s.normal), s.clearcoatRoughness) * Fc;
 	}
-	return color * s.occlusion * gLighting.environment.x;
+	return color * s.occlusion;
 }
 
 // ------------------------------------------------------------------ lights

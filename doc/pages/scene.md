@@ -330,6 +330,27 @@ the sun of the layer config lights only a scene without any `Light` component (n
 `entity.set_light_intensity` / `get_light_intensity`, `entity.set_light_enabled` / `is_light_enabled`,
 `entity.set_light_range`.
 
+#### ReflectionProbe {#reflectionprobe-component}
+
+| Field           | Type    | Default     | Description                                                                                  |
+|-----------------|---------|-------------|----------------------------------------------------------------------------------------------|
+| `shape`         | `Shape` | `Box`       | `Box` or `Sphere`: the volume of influence, centred on the entity, aligned on the world axes |
+| `extents`       | `vec3`  | `{2, 2, 2}` | Box: half size along X, Y and Z, at least 0.01                                               |
+| `radius`        | `float` | `3`         | Sphere: radius, at least 0.01                                                                |
+| `blendDistance` | `float` | `0.5`       | Distance inside the volume over which the probe fades in from its border                     |
+| `parallax`      | `bool`  | `true`      | Project the reflected ray on the volume, so a room reflects its walls in place               |
+| `intensity`     | `float` | `1`         | Scale of the captured reflections                                                            |
+| `resolution`    | `uint`  | `128`       | Texels of each face of the cube, a power of two from 16 to 512                               |
+| `realtime`      | `bool`  | `false`     | Capture again while the scene runs, the realtime probes in turn, one per frame               |
+
+YAML key: `ReflectionProbe`. The scene seen from the probe (sky and 3D layers, without the probes) is captured into a
+cube and prefiltered by roughness; inside the volume it replaces the specular of the `Environment`, the diffuse still
+comes from the environment. A point blends the two probes of largest influence, the environment fills what they
+leave. A probe is captured when it first shows, moves, changes resolution, when the environment finishes loading, on
+the **Bake** button of the inspector (`captureRequest`, not saved) or the `scene.capture_reflection_probes` command;
+the probes nearest to the camera are used, 4 on OpenGL and 16 on Vulkan. See
+[Renderer > Reflection probes](renderer.md#renderer-probes).
+
 #### Light2D {#light2d-component}
 
 | Field            | Type    | Default     | Description                                                                                |
