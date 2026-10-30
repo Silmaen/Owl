@@ -55,6 +55,7 @@ Groups:
       - doc/pages/lua-api-raycast.md
       - doc/pages/lua-api-isometric.md
       - doc/pages/lua-api-animation.md
+      - doc/pages/lua-api-data.md
   - title: Engine for C++ developers
     pages:
       - doc/pages/guide_engine_developer.md
