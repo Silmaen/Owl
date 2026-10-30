@@ -20,6 +20,7 @@ scene, its own Play state. The ribbon's last tab holds the commands of the activ
 | Material      | `.owlmat`                                   | [Materials](#materials)                                                    |
 | Sound cue     | `.owlsound`                                 | [Sound cues](#sound-cues)                                                  |
 | Localisation  | `localisation.yml`                          | [Localisation](languages.md)                                               |
+| Data table    | `.owltable`                                 | [Data tables](data_tables.md#data-tables-editor)                           |
 | Image         | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | [Image viewer](#image-viewer)                                              |
 | Mesh          | `.gltf`, `.glb`, `.obj`                     | [Mesh viewer](#mesh-viewer)                                                |
 | Font          | `.ttf`, `.otf`, `.owlfont`                  | [Fonts](#fonts)                                                            |

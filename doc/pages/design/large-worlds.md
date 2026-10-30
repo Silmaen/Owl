@@ -88,7 +88,9 @@ A renderer-stack layer, like the voxel and isometric ones, composing with the 3D
 ## Content and simulation at scale
 
 - Spline component with its editor: control points, tangents, sampling by distance, paths, lanes and rails
+  ([below](#large-worlds-splines))
 - Data tables: typed records (columns, references between tables) edited in a grid in Owl Nest, read from Lua
+  ([below](#large-worlds-data-tables))
 - Emissive materials, lens flares and particle trails on the v0.6.0 effects ([Effects](gpu-effects.md))
 - HUD markers anchored to world entities, with off-screen indicators ([HUD system](hud-system.md))
 - 3D steering in open space: obstacle avoidance between moving volumes, formations
@@ -111,6 +113,40 @@ the focus in the background through the task system, without a loading screen. U
 | Owl Nest: cell table, drop to add, multi-select, move, viewport outlines; `scene.*_world_*` commands | Done    |
 | Lua `scene.is_world_cell_loaded`, `get_loaded_world_cells`, `set_world_streaming`                    | Done    |
 | Streaming in the editor viewport                                                                     | Planned |
+
+## Splines {#large-worlds-splines}
+
+User reference: [Spline](../scene.md#spline-component), [viewport](../editor_viewport.md#viewport-splines).
+
+| Decision                                                                                                      | Why                                                                                   |
+|---------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| The curve math is `math::SplineCurve`, the component `scene::component::Spline` holds one plus lanes and `up` | The math is reusable (camera tracks, roads of a tilemap) without the ECS              |
+| Every interpolation is one cubic Bezier per segment (linear and Catmull-Rom converted to Bezier controls)     | One evaluator, one derivative, one exact split for every mode                         |
+| Uniform Catmull-Rom, handles a sixth of the neighbour vector                                                  | Switching a curve to Bezier keeps its shape: the inspector copies those handles       |
+| Arc-length table rebuilt by every setter, queries `const`                                                     | Sampling is a binary search, two systems may read one curve at once                   |
+| Points in the space of the entity                                                                             | Moving, turning or scaling the entity moves the whole path; prefabs carry their paths |
+| A lane is a name, a lateral offset and a height along `up`                                                    | Road lanes, rail tracks and formations without a second curve                         |
+| `SplineFollower` (`owl.spline_followers`, `PrePhysics`) places the entity in world space, parent included     | Rails for cameras and carts; scripts drive speed, lane and distance                   |
+| Orientation: -Z along the curve in 3D, +X on a 2D path (`up` along Z)                                         | A camera looks ahead; a 2D sprite faces its way                                       |
+| Viewport gestures run `spline.*` commands, the inspector `component.set`                                      | Every edit is undoable and reachable from the console, macros and MCP                 |
+| A point insert splits the Bezier exactly (De Casteljau)                                                       | Refining a path never moves it                                                        |
+
+## Data tables {#large-worlds-data-tables}
+
+User reference: [Data tables](../data_tables.md).
+
+| Decision                                                                                                    | Why                                                                               |
+|-------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| A `.owltable` YAML asset (format 1): columns, then one map per row keyed by column name                     | Diff-friendly, a reordered column does not move the values                        |
+| Seven column types: Integer, Float, Bool, Text, Enum, Asset, Reference                                      | What the sample games need (prices, flags, choices, icons, links between tables)  |
+| Rows have a unique `key`; a Reference cell holds the key of a row of another table (or its own)             | Keys survive reordering; scripts read rows by name                                |
+| A row rename does not rewrite the referencing tables; the grid shows an unknown key in red                  | No hidden edit of other files; the broken link is visible                         |
+| Asset cells and the table of a Reference column are stored by GUID                                          | Rename and move in the Content Browser keep them valid, like the other references |
+| Cells always have the type of their column; a type change converts them                                     | Lua never meets a string where it expects a number                                |
+| `DataTableLibrary` in `app::EngineContext` caches each table once, cleared when Owl Nest saves a table      | No static state; the game and the editor see the saved values                     |
+| The export follows quoted `.owltable` paths in scripts, Reference tables and Asset cells                    | A table and what it names ship with the game                                      |
+| The grid document runs `table.*` commands on its own undo history, typing previewed then committed on leave | Same pattern as the sound cue and localisation documents                          |
+| Lua `datatable.*` (not `table`, the Lua library)                                                            | No clash with the standard `table` functions                                      |
 
 ## Delivery {#large-worlds-delivery}
 

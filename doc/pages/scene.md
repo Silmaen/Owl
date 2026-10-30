@@ -114,7 +114,7 @@ flowchart LR
 | Phase         | Engine systems                                                                                                                                     | Contract                                  |
 |---------------|----------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
 | `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)                                                                            | May move, create or destroy entities      |
-| `PrePhysics`  | `owl.oscillators`, `owl.patrols`, `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input`                                  | Gameplay controllers before the step      |
+| `PrePhysics`  | `owl.oscillators`, `owl.patrols`, `owl.spline_followers`, `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input`          | Gameplay controllers before the step      |
 | `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                                                                                         | Owns the physics step                     |
 | `PostPhysics` | `owl.drift`, `owl.animation`, `owl.sockets`, `owl.light_flicker`, `owl.entity_links`, `owl.triggers`, `owl.floating_origin`, `owl.world_streaming` | Last phase allowed to change the world    |
 | `Late`        | `owl.navigation`, `owl.sound`, `owl.sprite_animation`                                                                                              | Reads the settled world (caches armed)    |
@@ -861,6 +861,50 @@ Without waypoints a `wanderRadius` above 0 picks a random point around the rest 
 | `faceDirection` | `bool`      | `false`    | Mirror the sprite (scale x) towards the direction               |
 | `hopHeight`     | `float`     | `0`        | Hop while walking, in world units                               |
 | `hopRate`       | `float`     | `9`        | Rate of the hop, in radians per second                          |
+
+#### Spline {#spline-component}
+
+YAML key: `Spline`. A path through control points, in the space of the entity: a road, a river, a rail, the track of a
+camera. Every interpolation is drawn as one cubic Bezier segment per pair of points (`Linear`: straight; `CatmullRom`:
+through every point, tangents from the neighbours; `Bezier`: shaped by the two handles of each point); a closed spline
+joins its last point to the first. An arc-length table (`resolution` samples per segment) is rebuilt on each edit, so
+sampling by distance is a binary search (`spline.sample`, a `SplineFollower`): about 70 ns per sample on a 64-point
+loop (`test/bench/cases/SplineBench.cpp`). A lane is a path beside the curve, `offset` to the right of it (looking
+along the curve with `up` above) and `height` along `up`.
+
+| Field           | Type                           | Default      | Description                                                            |
+|-----------------|--------------------------------|--------------|------------------------------------------------------------------------|
+| `interpolation` | enum                           | `CatmullRom` | `Linear`, `CatmullRom` or `Bezier`                                     |
+| `closed`        | `bool`                         | `false`      | Join the last point to the first                                       |
+| `resolution`    | `uint`                         | `16`         | Arc-length samples per segment, 1 to 256                               |
+| `up`            | `vec3`                         | `(0, 1, 0)`  | Up of the path: `(0, 0, 1)` for a 2D path in the XY plane              |
+| `points`        | `vec3` list, or maps in Bezier | empty        | `{position, tangentIn, tangentOut}` in Bezier, handles as offsets      |
+| `lanes`         | list                           | empty        | `{name, offset, height}`, named by followers and `spline.sample`       |
+
+In Owl Nest the curve, its lanes and its points are drawn on the selected entity; see
+[Splines in the viewport](editor_viewport.md#viewport-splines).
+
+#### SplineFollower
+
+YAML key: `SplineFollower`, system `owl.spline_followers` (`PrePhysics`). Moves the entity along the `Spline` of the
+entity `spline` at `speed` units of the spline per second, in the lane `lane` plus `offset`; the entity is placed in
+world space (a parent is taken into account). At the end of an open spline it stops (`Once`), starts again (`Loop`) or
+turns round (`PingPong`); on a closed spline it loops, and `Once` stops after one lap. With `orient` the entity faces
+the curve: its -Z axis in 3D (a camera on a rail looks ahead), its +X axis on a 2D path (`up` along Z).
+
+| Field           | Type     | Default | Description                                                   |
+|-----------------|----------|---------|---------------------------------------------------------------|
+| `enabled`       | `bool`   | `true`  | Lua `entity.set_spline_follower_enabled`                      |
+| `spline`        | UUID     | `0`     | Entity holding the `Spline`                                   |
+| `lane`          | `string` | empty   | Lane followed, empty for the curve                            |
+| `offset`        | `float`  | `0`     | Extra lateral offset                                          |
+| `speed`         | `float`  | `2`     | Units of the spline per second, negative backwards            |
+| `startDistance` | `float`  | `0`     | Distance along the curve at the start of Play                 |
+| `mode`          | enum     | `Loop`  | `Once`, `Loop` or `PingPong`                                  |
+| `orient`        | `bool`   | `true`  | Face the direction of the curve                               |
+
+Lua reads and drives both: `spline.sample`, `spline.get_tangent`, `spline.get_nearest`, `spline.set_speed`,
+`spline.set_lane`, `spline.set_distance` ([reference](lua-api-data.md)).
 
 #### Drift
 
