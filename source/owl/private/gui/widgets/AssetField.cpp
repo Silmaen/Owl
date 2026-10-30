@@ -77,6 +77,8 @@ auto isPathOfKind(const std::filesystem::path& iPath, const AssetKind iKind) -> 
 			return ext == ".json";
 		case AssetKind::Mesh:
 			return ext == ".gltf" || ext == ".glb" || ext == ".obj";
+		case AssetKind::DataTable:
+			return ext == ".owltable";
 		case AssetKind::Any:
 			return true;
 	}

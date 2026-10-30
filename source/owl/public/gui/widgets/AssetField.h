@@ -37,6 +37,7 @@ enum struct AssetKind : uint8_t {
 	Tilemap,///< Tilemap asset (`.owltilemap`).
 	ObjectSheet,///< Isometric object sheet description (`.json`).
 	Mesh,///< Static mesh file (`.gltf`, `.glb`, `.obj`).
+	DataTable,///< Data table (`.owltable`).
 	Any,///< Accepts any extension.
 };
 
