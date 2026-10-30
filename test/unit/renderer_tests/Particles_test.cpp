@@ -326,10 +326,12 @@ TEST(ParticleSystem, EveryShapeSpawnsInsideItsVolume) {
 			const math::vec3 velocity{particle.velocity.x(), particle.velocity.y(), particle.velocity.z()};
 			EXPECT_LE(position.norm(), 1.75f);
 			EXPECT_NEAR(velocity.norm(), 1.f, 1e-4f);
-			if (shape == ParticleShape::Circle)
+			if (shape == ParticleShape::Circle) {
 				EXPECT_FLOAT_EQ(position.z(), 0.f);
-			if (shape == ParticleShape::Cone || shape == ParticleShape::Box)
+			}
+			if (shape == ParticleShape::Cone || shape == ParticleShape::Box) {
 				EXPECT_GT(velocity.y(), 0.f);
+			}
 		}
 	}
 }
@@ -341,8 +343,9 @@ TEST(ParticlePreset, EveryPresetIsAValidEmitter) {
 		EXPECT_GT(settings.rate, 0.f);
 		EXPECT_LE(settings.lifetimeMin, settings.lifetimeMax);
 		EXPECT_LE(settings.trailLength, g_maxParticleTrail);
-		if (settings.blend == ParticleBlend::Alpha)
+		if (settings.blend == ParticleBlend::Alpha) {
 			EXPECT_LE(settings.maxParticles, g_maxSortedParticles);
+		}
 	}
 	EXPECT_EQ(makeParticlePreset(ParticlePreset::Smoke).blend, ParticleBlend::Alpha);
 	EXPECT_GT(makeParticlePreset(ParticlePreset::Sparks).trailLength, 0u);

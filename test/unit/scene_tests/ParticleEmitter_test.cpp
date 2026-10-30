@@ -127,8 +127,9 @@ TEST_F(ParticleEmitterTest, ParticlesAndTrailsFollowTheFloatingOrigin) {
 	systems::advanceEffects(*scene, 0.1f, true);
 	const auto& system = emitter.getComponent<component::ParticleEmitter>().m_slot.system;
 	for (const auto& particle: system->getParticles()) {
-		if (particle.isAlive())
+		if (particle.isAlive()) {
 			EXPECT_LT(std::abs(particle.position.x()), 5.f);
+		}
 	}
 }
 
