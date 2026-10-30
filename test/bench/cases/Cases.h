@@ -180,4 +180,12 @@ void runParticleBenches(Runner& ioRunner);
  */
 void runLargeWorldBenches(Runner& ioRunner);
 
+/**
+ * @brief
+ *  Splines: rebuilding the arc-length table of a 64-point curve, sampling it by distance (a rail of followers) and
+ *  finding the nearest distance to a point; budget 1 us per sample.
+ * @param[in,out] ioRunner The runner.
+ */
+void runSplineBenches(Runner& ioRunner);
+
 }// namespace owl::bench
