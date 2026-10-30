@@ -26,6 +26,22 @@
 
 namespace owl::nest {
 
+namespace {
+
+auto getImportErrorMessage(const settings_import::ImportError iError) -> const char* {
+	switch (iError) {
+		case settings_import::ImportError::NoSettings:
+			return "No Owl Nest settings in this folder.";
+		case settings_import::ImportError::SameDirectory:
+			return "This folder holds the settings in use.";
+		case settings_import::ImportError::CopyFailed:
+			return "A file could not be copied, see the log.";
+	}
+	return "";
+}
+
+}// namespace
+
 void EditorLayer::startProjectRecovery() {
 	m_recovery.setDirectory(RecoveryManager::directoryFor(platform::getUserDirectory(), m_project.projectDirectory));
 	m_recovery.setInterval(static_cast<float>(m_settings.autosaveIntervalSeconds));
@@ -45,19 +61,7 @@ void EditorLayer::importSettings() {
 		return;
 	const auto staged = settings_import::stageImport(folder, platform::getUserDirectory());
 	if (!staged) {
-		const char* reason = "";
-		switch (staged.error()) {
-			case settings_import::ImportError::NoSettings:
-				reason = "No Owl Nest settings in this folder.";
-				break;
-			case settings_import::ImportError::SameDirectory:
-				reason = "This folder holds the settings in use.";
-				break;
-			case settings_import::ImportError::CopyFailed:
-				reason = "A file could not be copied, see the log.";
-				break;
-		}
-		m_toasts.push(gui::widgets::ToastKind::Error, "Settings not imported", reason);
+		m_toasts.push(gui::widgets::ToastKind::Error, "Settings not imported", getImportErrorMessage(staged.error()));
 		return;
 	}
 	m_toasts.push(gui::widgets::ToastKind::Success, std::format("{} settings file(s) imported", *staged),

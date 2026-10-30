@@ -315,8 +315,8 @@ void SoundDocument::cancelPreview() {
 void SoundDocument::commitPreview(const bool iForce) {
 	if (!m_previewBefore.has_value() || (!iForce && ImGui::IsAnyItemActive()))
 		return;
-	const auto edited = std::move(m_cue);
-	cancelPreview();
+	const auto edited = std::exchange(m_cue, std::move(*m_previewBefore));
+	m_previewBefore.reset();
 	auto before = m_cue;
 	before.variants.clear();
 	auto after = edited;
