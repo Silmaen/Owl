@@ -1,0 +1,17 @@
+FormatVersion: 1
+PcgGraph:
+  nodes:
+    - id: 1
+      type: source.noise
+      position: [0, 0]
+      values:
+        scale: 24
+        octaves: 4
+        persistence: 0.5
+        seed: 0
+    - id: 2
+      type: output.height
+      position: [240, 0]
+      values: {}
+  links:
+    - {from: 1, fromPin: Field, to: 2, toPin: Height}

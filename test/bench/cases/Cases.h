@@ -171,4 +171,13 @@ void runSkyBenches(Runner& ioRunner);
  */
 void runParticleBenches(Runner& ioRunner);
 
+/**
+ * @brief
+ *  Large worlds: the quadtree selection of an Earth-sized planet near its ground, the meshing of one chunk, the frame
+ *  of a planet whose chunks are built, and the frame of a world partition of 4096 cells; budget 200 us for the planet
+ *  frame, 100 us for the partition frame.
+ * @param[in,out] ioRunner The runner.
+ */
+void runLargeWorldBenches(Runner& ioRunner);
+
 }// namespace owl::bench

@@ -26,6 +26,7 @@
 #include <renderer/RendererMesh.h>
 #include <renderer/RendererRaycast.h>
 #include <renderer/RendererVoxel.h>
+#include <scene/WorldStreamer.h>
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -37,6 +38,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -516,6 +518,162 @@ void SceneSettings::renderWorldOriginSection() const {
 		std::ignore = target.execute("scene.set_floating_origin", args);
 }
 
+auto SceneSettings::runCommand(const std::string& iName, const commands::CommandArgs& iArgs) const -> bool {
+	const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
+	return target.execute(iName, iArgs).has_value();
+}
+
+namespace {
+
+auto cellsText(const std::vector<math::vec3i>& iCells) -> std::string {
+	std::string text;
+	for (const auto& cell: iCells) {
+		if (!text.empty())
+			text += "; ";
+		text += std::format("{} {} {}", cell.x(), cell.y(), cell.z());
+	}
+	return text;
+}
+
+auto stateLabel(const scene::WorldCellState iState) -> const char* {
+	switch (iState) {
+		case scene::WorldCellState::Unloaded:
+			return "-";
+		case scene::WorldCellState::Loading:
+			return "loading";
+		case scene::WorldCellState::Loaded:
+			return "loaded";
+		case scene::WorldCellState::Failed:
+			return "failed";
+	}
+	return "-";
+}
+
+auto cellVector(const std::array<int32_t, 3>& iCell) -> math::vec3 {
+	return {static_cast<float>(iCell[0]), static_cast<float>(iCell[1]), static_cast<float>(iCell[2])};
+}
+
+}// namespace
+
+void SceneSettings::renderWorldPartitionSection() {
+	if (m_scene->getDocumentKind() != scene::DocumentKind::Scene)
+		return;
+	if (!gui::widgets::sectionHeader("World Partition", gui::icon::grid3x3, false).open)
+		return;
+	const scene::WorldPartitionSettings defaults;
+	const auto& settings = m_scene->getWorldPartitionSettings();
+	bool enabled = settings.enabled;
+	auto cellSize = static_cast<float>(settings.cellSize);
+	auto load = static_cast<float>(settings.loadRadius);
+	auto unload = static_cast<float>(settings.unloadRadius);
+	commands::CommandArgs args;
+	if (gui::widgets::beginProperties("##worldPartition")) {
+		if (gui::widgets::propertyBool("Streaming", enabled, defaults.enabled,
+									   "In Play, merge the scene of each cell near a streaming source (or the camera) "
+									   "into this one, in the background, and remove it once every source left."))
+			args.set("enabled", enabled);
+		if (gui::widgets::propertyFloat("Cell Size", cellSize, static_cast<float>(defaults.cellSize), 1.f, "%.0f m",
+										"Side of a cubic cell on world coordinates."))
+			args.set("cell_size", std::max(static_cast<double>(cellSize), scene::WorldPartitionSettings::minCellSize));
+		if (gui::widgets::propertyFloat("Load Radius", load, static_cast<float>(defaults.loadRadius), 1.f, "%.0f m",
+										"A cell loads once a source is nearer than this to it."))
+			args.set("load_radius", std::max(static_cast<double>(load), 0.0));
+		if (gui::widgets::propertyFloat("Unload Radius", unload, static_cast<float>(defaults.unloadRadius), 1.f,
+										"%.0f m", "A loaded cell leaves once every source is farther than this."))
+			args.set("unload_radius", std::max(static_cast<double>(unload), 0.0));
+		gui::widgets::endProperties();
+	}
+	if (!args.getValues().empty())
+		std::ignore = runCommand("scene.set_world_partition", args);
+	std::erase_if(m_selectedCells,
+				  [&](const math::vec3i& iCell) -> bool { return settings.findCell(iCell) == nullptr; });
+	const bool streamed = m_scene->hasWorldStreamer();
+	std::optional<std::pair<math::vec3i, std::string>> changedScene;
+	std::optional<math::vec3i> removed;
+	constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH |
+										   ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
+	const float height =
+			std::min(ImGui::GetTextLineHeightWithSpacing() * (static_cast<float>(settings.cells.size()) + 1.5f),
+					 ImGui::GetTextLineHeightWithSpacing() * 10.f);
+	if (!settings.cells.empty() && ImGui::BeginTable("##worldCells", 4, tableFlags, {0.f, height})) {
+		ImGui::TableSetupColumn("Cell", ImGuiTableColumnFlags_WidthFixed);
+		ImGui::TableSetupColumn("Scene");
+		ImGui::TableSetupColumn("State", ImGuiTableColumnFlags_WidthFixed);
+		ImGui::TableSetupColumn("##actions", ImGuiTableColumnFlags_WidthFixed);
+		ImGui::TableHeadersRow();
+		for (const auto& cell: settings.cells) {
+			ImGui::PushID(std::format("{} {} {}", cell.coords.x(), cell.coords.y(), cell.coords.z()).c_str());
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			const auto selected = std::ranges::find(m_selectedCells, cell.coords);
+			const bool isSelected = selected != m_selectedCells.end();
+			const auto label = std::format("{} {} {}", cell.coords.x(), cell.coords.y(), cell.coords.z());
+			if (ImGui::Selectable(label.c_str(), isSelected,
+								  ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap)) {
+				if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift)
+					m_selectedCells.clear();
+				if (isSelected && (ImGui::GetIO().KeyCtrl || ImGui::GetIO().KeyShift))
+					std::erase(m_selectedCells, cell.coords);
+				else
+					m_selectedCells.push_back(cell.coords);
+			}
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(cell.scene.c_str());
+			if (std::filesystem::path dropped; gui::widgets::assetDropTarget(gui::widgets::AssetKind::Scene, dropped))
+				changedScene = std::pair{cell.coords, dropped.generic_string()};
+			ImGui::TableNextColumn();
+			ImGui::TextDisabled("%s", streamed ? stateLabel(m_scene->getWorldStreamer().getState(cell.coords)) : "-");
+			ImGui::TableNextColumn();
+			if (gui::widgets::iconButton("##open", {.glyph = gui::icon::externalLink,
+													.tooltip = "Open",
+													.description = "Open the scene of the cell to edit it."}))
+				std::ignore = gui::component::openAsset(cell.scene);
+			ImGui::SameLine();
+			if (gui::widgets::iconButton("##remove", {.glyph = gui::icon::trash2, .tooltip = "Remove the cell"}))
+				removed = cell.coords;
+			ImGui::PopID();
+		}
+		ImGui::EndTable();
+	}
+	if (changedScene)
+		std::ignore = runCommand(
+				"scene.set_world_cell_scene",
+				{{"cell", cellVector({changedScene->first.x(), changedScene->first.y(), changedScene->first.z()})},
+				 {"scene", changedScene->second}});
+	if (removed)
+		std::ignore = runCommand("scene.remove_world_cells", {{"cells", cellsText({*removed})}});
+	ImGui::TextUnformatted("New cell");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	ImGui::InputInt3("##newCell", m_newCell.data());
+	ImGui::TextDisabled("Drop a scene here to add it at these coordinates.");
+	if (std::filesystem::path dropped; gui::widgets::assetDropTarget(gui::widgets::AssetKind::Scene, dropped))
+		std::ignore = runCommand("scene.add_world_cell",
+								 {{"cell", cellVector(m_newCell)}, {"scene", dropped.generic_string()}});
+	if (!m_selectedCells.empty()) {
+		ImGui::Text("%zu selected", m_selectedCells.size());
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+		ImGui::InputInt3("##cellOffset", m_cellOffset.data());
+		ImGui::SameLine();
+		if (ImGui::Button("Move")) {
+			const auto selection = m_selectedCells;
+			if (runCommand("scene.move_world_cells",
+						   {{"cells", cellsText(selection)}, {"offset", cellVector(m_cellOffset)}})) {
+				m_selectedCells.clear();
+				const math::vec3i offset{m_cellOffset[0], m_cellOffset[1], m_cellOffset[2]};
+				for (const auto& cell: selection) m_selectedCells.push_back(cell + offset);
+			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Remove"))
+			std::ignore = runCommand("scene.remove_world_cells", {{"cells", cellsText(m_selectedCells)}});
+	}
+	ImGui::TextDisabled(
+			"Ctrl-click selects several cells; the viewport outlines every cell, the loaded ones in green.");
+	gui::widgets::endSection();
+}
+
 void SceneSettings::renderScriptSection() {
 	const bool hud = m_scene->getDocumentKind() == scene::DocumentKind::Hud;
 	if (!hud && m_scene->getDocumentKind() != scene::DocumentKind::Scene)
@@ -607,6 +765,7 @@ void SceneSettings::onImGuiRender() {
 
 	renderPhysicsSection();
 	renderWorldOriginSection();
+	renderWorldPartitionSection();
 	renderHudSection();
 	renderScriptSection();
 

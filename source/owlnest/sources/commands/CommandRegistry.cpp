@@ -503,6 +503,153 @@ auto createParticleEmitter(const shared<scene::Scene>& ioScene, const CommandArg
 	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(entity), .applied = true, .entity = entity.getUUID()};
 }
 
+auto createPlanet(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	std::optional<scene::Entity> parent;
+	if (iArgs.has("parent")) {
+		auto found = entityArg(*ioScene, iArgs, "parent");
+		if (!found)
+			return unexpected<CommandFailure>{found.error()};
+		parent = *found;
+	}
+	const double radius = iArgs.get<double>("radius").value_or(renderer::PlanetSettings{}.radius);
+	if (!std::isfinite(radius) || radius < 1.0)
+		return fail(CommandError::InvalidArgument, "`radius` must be at least 1");
+	auto entity = ioScene->createEntity(iArgs.getText("name", "Planet"));
+	entity.getComponent<scene::component::Transform>().transform.translation() =
+			iArgs.getVec3("translation").value_or(math::vec3{0.f, 0.f, 0.f});
+	auto& planet = entity.addComponent<scene::component::Planet>();
+	planet.settings.radius = radius;
+	planet.settings.heightScale = static_cast<float>(radius * 0.03);
+	planet.settings.atmosphereHeight = static_cast<float>(radius * 0.08);
+	planet.graph = iArgs.getText("graph");
+	if (parent)
+		ioScene->setParent(entity, *parent);
+	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(entity), .applied = true, .entity = entity.getUUID()};
+}
+
+// Cell coordinates written `x y z`, several separated by `;`.
+auto parseCells(const std::string& iText) -> std::optional<std::vector<math::vec3i>> {
+	std::vector<math::vec3i> cells;
+	std::string normalised = iText;
+	std::ranges::replace(normalised, ',', ' ');
+	size_t start = 0;
+	while (start <= normalised.size()) {
+		const size_t end = std::min(normalised.find(';', start), normalised.size());
+		const std::string item = normalised.substr(start, end - start);
+		start = end + 1;
+		if (item.find_first_not_of(" \t") == std::string::npos)
+			continue;
+		std::istringstream stream{item};
+		math::vec3i cell{0, 0, 0};
+		if (!(stream >> cell.x() >> cell.y() >> cell.z()))
+			return std::nullopt;
+		if (std::string rest; stream >> rest)
+			return std::nullopt;
+		cells.push_back(cell);
+	}
+	return cells;
+}
+
+auto toCell(const math::vec3& iVector) -> math::vec3i {
+	return {static_cast<int32_t>(std::lround(iVector.x())), static_cast<int32_t>(std::lround(iVector.y())),
+			static_cast<int32_t>(std::lround(iVector.z()))};
+}
+
+auto partitionEdit(const shared<scene::Scene>& ioScene, const scene::WorldPartitionSettings& iAfter,
+				   std::string iDescription) -> Prepared {
+	const auto& before = ioScene->getWorldPartitionSettings();
+	const auto after = iAfter.clamped();
+	if (after == before)
+		return fail(CommandError::NotApplicable, "the world partition already has these settings");
+	return PreparedCommand{.command = mkUniq<SetWorldPartitionCommand>(before, after, std::move(iDescription)),
+						   .applied = false};
+}
+
+auto setWorldPartition(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	auto after = ioScene->getWorldPartitionSettings();
+	after.enabled = iArgs.getBool("enabled", after.enabled);
+	for (const auto& [name, field]: {std::pair{"cell_size", &scene::WorldPartitionSettings::cellSize},
+									 std::pair{"load_radius", &scene::WorldPartitionSettings::loadRadius},
+									 std::pair{"unload_radius", &scene::WorldPartitionSettings::unloadRadius}}) {
+		if (const auto value = iArgs.get<double>(name); value) {
+			if (!std::isfinite(*value) || *value < 0.0)
+				return fail(CommandError::InvalidArgument, std::format("`{}` must be a positive number", name));
+			after.*field = *value;
+		}
+	}
+	if (iArgs.has("load_radius") && !iArgs.has("unload_radius"))
+		after.unloadRadius = std::max(after.unloadRadius, after.loadRadius);
+	return partitionEdit(ioScene, after, "Edit the world partition");
+}
+
+auto addWorldCell(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto cell = toCell(iArgs.getVec3("cell").value_or(math::vec3{0.f, 0.f, 0.f}));
+	const auto scenePath = iArgs.getText("scene");
+	if (scenePath.empty())
+		return fail(CommandError::MissingArgument, "give the `scene` of the cell");
+	auto after = ioScene->getWorldPartitionSettings();
+	if (after.findCell(cell) != nullptr)
+		return fail(CommandError::NotApplicable,
+					std::format("the cell {} {} {} already has a scene", cell.x(), cell.y(), cell.z()));
+	after.cells.push_back({.coords = cell, .scene = scenePath});
+	return partitionEdit(ioScene, after, std::format("Add the world cell {} {} {}", cell.x(), cell.y(), cell.z()));
+}
+
+auto setWorldCellScene(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto cell = toCell(iArgs.getVec3("cell").value_or(math::vec3{0.f, 0.f, 0.f}));
+	auto after = ioScene->getWorldPartitionSettings();
+	const auto found =
+			std::ranges::find_if(after.cells, [&](const auto& iCell) -> bool { return iCell.coords == cell; });
+	if (found == after.cells.end())
+		return fail(CommandError::InvalidArgument,
+					std::format("no world cell at {} {} {}", cell.x(), cell.y(), cell.z()));
+	found->scene = iArgs.getText("scene");
+	if (found->scene.empty())
+		return fail(CommandError::MissingArgument, "give the `scene` of the cell");
+	return partitionEdit(ioScene, after, "Change the scene of a world cell");
+}
+
+auto selectedCells(const scene::WorldPartitionSettings& iSettings, const CommandArgs& iArgs)
+		-> expected<std::vector<math::vec3i>, CommandFailure> {
+	const auto cells = parseCells(iArgs.getText("cells"));
+	if (!cells)
+		return fail(CommandError::InvalidArgument, "`cells` must read `x y z; x y z`");
+	if (cells->empty())
+		return fail(CommandError::MissingArgument, "give the `cells`");
+	for (const auto& cell: *cells)
+		if (iSettings.findCell(cell) == nullptr)
+			return fail(CommandError::InvalidArgument,
+						std::format("no world cell at {} {} {}", cell.x(), cell.y(), cell.z()));
+	return *cells;
+}
+
+auto removeWorldCells(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	auto after = ioScene->getWorldPartitionSettings();
+	const auto cells = selectedCells(after, iArgs);
+	if (!cells)
+		return unexpected<CommandFailure>{cells.error()};
+	std::erase_if(after.cells, [&](const auto& iCell) -> bool { return std::ranges::contains(*cells, iCell.coords); });
+	return partitionEdit(ioScene, after, std::format("Remove {} world cell(s)", cells->size()));
+}
+
+auto moveWorldCells(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	auto after = ioScene->getWorldPartitionSettings();
+	const auto cells = selectedCells(after, iArgs);
+	if (!cells)
+		return unexpected<CommandFailure>{cells.error()};
+	const auto offset = toCell(iArgs.getVec3("offset").value_or(math::vec3{0.f, 0.f, 0.f}));
+	if (offset == math::vec3i{0, 0, 0})
+		return fail(CommandError::NotApplicable, "the offset is zero");
+	for (auto& cell: after.cells) {
+		if (std::ranges::contains(*cells, cell.coords))
+			cell.coords = cell.coords + offset;
+		else if (std::ranges::contains(*cells, cell.coords - offset))
+			return fail(CommandError::NotApplicable, std::format("the cell {} {} {} is in the way", cell.coords.x(),
+																 cell.coords.y(), cell.coords.z()));
+	}
+	return partitionEdit(ioScene, after, std::format("Move {} world cell(s)", cells->size()));
+}
+
 auto previewParticles(const CommandContext& iContext, const CommandArgs& iArgs)
 		-> expected<CommandResult, CommandFailure> {
 	const auto action = iArgs.getText("action", "Restart");
@@ -962,22 +1109,32 @@ auto addRenderLayer(const CommandContext& iContext, const CommandArgs& iArgs)
 						 .data = {{"name", name}, {"position", position}}};
 }
 
-// A scene holding particles or trails needs a particle layer: append one to the project stack when it has none.
-void ensureParticleLayer(const CommandContext& iContext) {
+// Append a layer of a type to the project stack when it has none.
+void ensureLayer(const CommandContext& iContext, const std::string& iType, const int64_t iPosition,
+				 const std::string_view iReason) {
+	if (std::ranges::any_of(iContext.projectStack->entries, [&](const renderer::RendererStackEntry& iEntry) -> bool {
+			return iEntry.typeKey == iType;
+		}))
+		return;
+	if (!renderer::RenderLayerFactory::hasType(iType))
+		return;
+	CommandArgs args;
+	args.set("type", iType);
+	args.set("position", iPosition);
+	if (const auto added = addRenderLayer(iContext, args); added)
+		OWL_INFO("Render stack: {}, for the {} of the scene.", added->description, iReason)
+}
+
+// A scene holding particles, trails or planets needs their layer: append one to the project stack when it has none.
+void ensureEffectLayers(const CommandContext& iContext) {
 	if (iContext.projectStack == nullptr || !iContext.scene)
 		return;
 	const auto& registry = iContext.scene->registry;
-	if (registry.view<scene::component::ParticleEmitter>().empty() && registry.view<scene::component::Trail>().empty())
-		return;
-	if (std::ranges::any_of(iContext.projectStack->entries, [](const renderer::RendererStackEntry& iEntry) -> bool {
-			return iEntry.typeKey == "RendererParticles";
-		}))
-		return;
-	CommandArgs args;
-	args.set("type", std::string{"RendererParticles"});
-	args.set("position", std::numeric_limits<int64_t>::max());
-	if (const auto added = addRenderLayer(iContext, args); added)
-		OWL_INFO("Render stack: {}, for the particles of the scene.", added->description)
+	if (!registry.view<scene::component::ParticleEmitter>().empty() ||
+		!registry.view<scene::component::Trail>().empty())
+		ensureLayer(iContext, "RendererParticles", std::numeric_limits<int64_t>::max(), "particles");
+	if (!registry.view<scene::component::Planet>().empty())
+		ensureLayer(iContext, "RendererPlanet", std::numeric_limits<int64_t>::max(), "planets");
 }
 
 auto saveScene(const CommandContext& iContext, const CommandArgs& iArgs) -> expected<CommandResult, CommandFailure> {
@@ -1405,6 +1562,20 @@ CommandRegistry::CommandRegistry() {
 				  {.name = "translation", .type = ArgType::Vec3, .description = "World position of the entity."},
 				  {.name = "parent", .type = ArgType::Entity, .description = "Parent entity (root when absent)."}},
 		 .factory = createParticleEmitter});
+	add({.name = "entity.create_planet",
+		 .description = "Create an entity with a `Planet` drawn by the first `RendererPlanet` layer of the render "
+						"stack (one is added to the project when it has none).",
+		 .args = {{.name = "name", .type = ArgType::Text, .description = "Tag of the entity (`Planet` when absent)."},
+				  {.name = "radius",
+				   .type = ArgType::Number,
+				   .description = "Radius of the sea surface in metres; the relief and the atmosphere follow it."},
+				  {.name = "graph",
+				   .type = ArgType::Text,
+				   .description = "The `.owlpcg` graph of the heights (none when absent).",
+				   .projectPath = true},
+				  {.name = "translation", .type = ArgType::Vec3, .description = "Position of the centre."},
+				  {.name = "parent", .type = ArgType::Entity, .description = "Parent entity (root when absent)."}},
+		 .factory = createPlanet});
 	add({.name = "particles.preview",
 		 .description =
 				 "Play, pause, stop, restart or burst the particle emitters of the scene (one with `entity`), in "
@@ -1526,6 +1697,57 @@ CommandRegistry::CommandRegistry() {
 				   .type = ArgType::Number,
 				   .description = "Distance from the origin, in world units, beyond which the origin moves."}},
 		 .factory = setFloatingOrigin});
+	add({.name = "scene.set_world_partition",
+		 .description = "Edit the world partition of the scene: at runtime the cells nearer than the load radius to a "
+						"streaming source are merged into the scene, and leave it past the unload radius.",
+		 .args = {{.name = "enabled", .type = ArgType::Bool, .description = "Stream the cells at runtime."},
+				  {.name = "cell_size", .type = ArgType::Number, .description = "Side of a cell, in world units."},
+				  {.name = "load_radius",
+				   .type = ArgType::Number,
+				   .description = "A cell loads once a source is nearer than this."},
+				  {.name = "unload_radius",
+				   .type = ArgType::Number,
+				   .description = "A cell unloads once every source is farther than this (at least the load radius)."}},
+		 .factory = setWorldPartition});
+	add({.name = "scene.add_world_cell",
+		 .description = "Give a scene to a cell of the world partition.",
+		 .args = {{.name = "cell",
+				   .type = ArgType::Vec3,
+				   .required = true,
+				   .description = "Integer coordinates of the cell."},
+				  {.name = "scene",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "The `.owl` scene of the cell, its roots placed from the corner of the cell.",
+				   .projectPath = true}},
+		 .factory = addWorldCell});
+	add({.name = "scene.set_world_cell_scene",
+		 .description = "Change the scene of a cell of the world partition.",
+		 .args = {{.name = "cell",
+				   .type = ArgType::Vec3,
+				   .required = true,
+				   .description = "Integer coordinates of the cell."},
+				  {.name = "scene",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "The new `.owl` scene of the cell.",
+				   .projectPath = true}},
+		 .factory = setWorldCellScene});
+	add({.name = "scene.remove_world_cells",
+		 .description = "Remove cells from the world partition.",
+		 .args = {{.name = "cells",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "Coordinates of the cells, `x y z; x y z`."}},
+		 .factory = removeWorldCells});
+	add({.name = "scene.move_world_cells",
+		 .description = "Move cells of the world partition by a whole number of cells, keeping their scenes.",
+		 .args = {{.name = "cells",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "Coordinates of the cells, `x y z; x y z`."},
+				  {.name = "offset", .type = ArgType::Vec3, .required = true, .description = "Cells to move by."}},
+		 .factory = moveWorldCells});
 	add({.name = "scene.set_world_origin",
 		 .description = "Move the world origin of the scene; every root entity keeps its place in the world and its "
 						"transform is written again around the new origin.",
@@ -1694,7 +1916,7 @@ auto CommandRegistry::run(const std::string_view iName, const CommandArgs& iArgs
 		iContext.undo->push(std::move(prepared->command));
 	else
 		iContext.undo->execute(std::move(prepared->command), *iContext.scene);
-	ensureParticleLayer(iContext);
+	ensureEffectLayers(iContext);
 	return result;
 }
 

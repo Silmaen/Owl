@@ -3861,4 +3861,125 @@ void renderProps(SocketAttachment& ioComponent, const scene::Entity& iOwner) {
 	fieldTooltip("Socket of the parent the entity is snapped on; its transform follows the socket.");
 }
 
+namespace {
+
+// A double field with its reset slot, dragged at a speed proportional to the value.
+auto resetDouble(const char* iLabel, double& ioValue, const double iDefault, const double iMin, const double iMax,
+				 const char* iFormat = "%.1f") -> bool {
+	return resettable(iLabel, ioValue, iDefault, [&](const char* iId, double& ioField) -> bool {
+		const float speed = static_cast<float>(std::max(std::abs(ioField) * 0.002, 0.01));
+		return prop::row(iId, [&](const char* iRowId) -> bool {
+			if (!ImGui::DragScalar(iRowId, ImGuiDataType_Double, &ioField, speed, &iMin, &iMax, iFormat))
+				return false;
+			ioField = std::clamp(ioField, iMin, iMax);
+			return true;
+		});
+	});
+}
+
+void renderPlanetShape(renderer::PlanetSettings& ioSettings) {
+	const renderer::PlanetSettings defaults;
+	resetDouble("Radius", ioSettings.radius, defaults.radius, 1.0, 1e12, "%.1f m");
+	fieldTooltip("Radius of the sea surface, in metres (Earth: 6 371 000).");
+	resetFloat("Height Scale", ioSettings.heightScale, defaults.heightScale, 0.5f, 0.f, 1e7f, "%.1f m");
+	fieldTooltip("Height of the highest ground (a height value of 1) above the lowest (0), in metres.");
+	resetFloat("Sea Level", ioSettings.seaLevel, defaults.seaLevel, 0.005f, 0.f, 1.f);
+	fieldTooltip("Height value of the sea: lower ground is flattened to it and drawn as sea.");
+	resetFloat("Detail", ioSettings.detailAmplitude, defaults.detailAmplitude, 0.002f, 0.f, 1.f);
+	fieldTooltip("Amplitude of the noise added to the heights of the graph, in height values.");
+	resetFloat("Detail Frequency", ioSettings.detailFrequency, defaults.detailFrequency, 0.1f, 0.f, 10000.f);
+	fieldTooltip("Cycles of the detail noise around the planet.");
+}
+
+void renderPlanetLod(renderer::PlanetSettings& ioSettings) {
+	const renderer::PlanetSettings defaults;
+	resetUint("Max Level", ioSettings.maxLevel, defaults.maxLevel, 0.1f, 0, renderer::g_planetMaxLevel);
+	fieldTooltip("Deepest level of the quadtree of a cube face: each level halves the chunks near the camera.");
+	resetFloat("LOD Factor", ioSettings.lodFactor, defaults.lodFactor, 0.01f, 0.5f, 16.f);
+	fieldTooltip("A chunk splits while the camera is closer than this many times its size: higher is finer.");
+	resetUint("Chunk Resolution", ioSettings.chunkResolution, defaults.chunkResolution, 0.2f, 2,
+			  renderer::g_planetMaxChunkResolution);
+	fieldTooltip("Quads along a side of a chunk.");
+	resetDouble("Scaled Space", ioSettings.scaledSpaceDistance, defaults.scaledSpaceDistance, 0.0, 1e15, "%.0f m");
+	fieldTooltip("Beyond this distance from its centre the planet is drawn shrunk toward the camera, its angular size "
+				 "kept, with the coarsest chunks only; 0 never.");
+}
+
+void renderPlanetLook(renderer::PlanetSettings& ioSettings) {
+	const renderer::PlanetSettings defaults;
+	resetColor("Sea", ioSettings.seaColor, defaults.seaColor);
+	resetColor("Low Land", ioSettings.lowColor, defaults.lowColor);
+	resetColor("High Land", ioSettings.highColor, defaults.highColor);
+	resetColor("Peaks", ioSettings.peakColor, defaults.peakColor);
+	fieldTooltip("Colours of the ground by height, from the sea floor to the peaks.");
+	resetCheckbox("Atmosphere", ioSettings.atmosphere, defaults.atmosphere);
+	fieldTooltip("Draw the atmosphere shell: the sky from the ground, the blue limb from orbit.");
+	if (!ioSettings.atmosphere)
+		return;
+	resetFloat("Thickness", ioSettings.atmosphereHeight, defaults.atmosphereHeight, 0.5f, 0.f, 1e8f, "%.1f m");
+	fieldTooltip("Height of the atmosphere above the sea surface, in metres (Earth: 100 000).");
+	resettable("Rayleigh", ioSettings.rayleighDepth, defaults.rayleighDepth,
+			   [](const char* iId, math::vec3& ioField) -> bool {
+				   return prop::DragFloat3(iId, ioField.data(), 0.001f, 0.f, 10.f, "%.3f");
+			   });
+	fieldTooltip("Optical depth of the air at the zenith per channel (red, green, blue): the colour of the sky.");
+	resetFloat("Haze", ioSettings.mieDepth, defaults.mieDepth, 0.001f, 0.f, 10.f);
+	fieldTooltip("Optical depth of the haze (Mie): the glow around the sun.");
+	resetFloat("Intensity", ioSettings.scatteringIntensity, defaults.scatteringIntensity, 0.01f, 0.f, 1000.f);
+	fieldTooltip("Strength of the scattered sunlight.");
+}
+
+}// namespace
+
+void renderProps(Planet& ioComponent) {
+	const Planet defaults;
+	if (assetPathRow("Height Graph", ioComponent.graph, "drop a .owlpcg", "Edit the graph."))
+		ioComponent.graph.clear();
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Any, dropped)) {
+		if (dropped.extension() == ".owlpcg")
+			ioComponent.graph = dropped.generic_string();
+	}
+	fieldTooltip("A PCG graph whose Write Heights node gives the relief; without one the detail noise alone shapes "
+				 "the ground.");
+	resettable("Seed", ioComponent.seed, defaults.seed, [](const char* iId, uint64_t& ioField) -> bool {
+		return prop::row(iId, [&](const char* iRowId) -> bool {
+			return ImGui::InputScalar(iRowId, ImGuiDataType_U64, &ioField);
+		});
+	});
+	fieldTooltip("Seed of the graph and of the detail noise: the same seed gives the same planet.");
+	resetUint("Height Resolution", ioComponent.heightResolution, defaults.heightResolution, 1.f,
+			  Planet::minHeightResolution, Planet::maxHeightResolution);
+	fieldTooltip("Side of the square the graph is evaluated on, in cells.");
+	auto& settings = ioComponent.settings;
+	if (ImGui::TreeNodeEx("Shape", ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen)) {
+		renderPlanetShape(settings);
+		ImGui::TreePop();
+	}
+	if (ImGui::TreeNodeEx("Detail and Distance", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+		renderPlanetLod(settings);
+		ImGui::TreePop();
+	}
+	if (ImGui::TreeNodeEx("Colours and Atmosphere", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+		renderPlanetLook(settings);
+		ImGui::TreePop();
+	}
+	if (const auto& terrain = ioComponent.m_runtime.terrain; terrain) {
+		const auto& stats = terrain->getStats();
+		ImGui::TextDisabled("%u chunks drawn of %u selected, %u building, %u kept", stats.drawn, stats.selected,
+							stats.pending, stats.cached);
+	} else {
+		ImGui::TextDisabled("Drawn by a RendererPlanet layer of the renderer stack.");
+	}
+}
+
+void renderProps(StreamingSource& ioComponent) {
+	const StreamingSource defaults;
+	resetCheckbox("Enabled", ioComponent.enabled, defaults.enabled);
+	fieldTooltip("Stream the world partition cells around this entity; a scene without an enabled source streams "
+				 "around its primary camera.");
+	resetFloat("Radius Scale", ioComponent.radiusScale, defaults.radiusScale, 0.01f, StreamingSource::minRadiusScale,
+			   StreamingSource::maxRadiusScale);
+	fieldTooltip("Factor on the load and unload radii of the scene (World Partition, Scene Settings) for this source.");
+}
+
 }// namespace owl::gui::component

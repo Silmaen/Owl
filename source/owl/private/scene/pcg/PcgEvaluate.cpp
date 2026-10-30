@@ -240,6 +240,8 @@ private:
 			return {{"Mask", fieldInput(iNode, "Mask")}};
 		if (type == "output.points")
 			return {{"Points", pointsInput(iNode, "Points")}};
+		if (type == "output.height")
+			return {{"Height", fieldInput(iNode, "Height")}};
 		m_result.warnings.push_back(
 				std::format("Node {} has the unknown type '{}'.", static_cast<uint64_t>(iNode.id), type));
 		return {};
@@ -445,6 +447,12 @@ private:
 		const auto values = m_result.values.find(iNode.id);
 		if (values == m_result.values.end())
 			return;
+		if (iNode.type == "output.height") {
+			if (const auto pin = values->second.find("Height"); pin != values->second.end())
+				if (const auto* heights = std::get_if<Field>(&pin->second); heights != nullptr)
+					m_result.height = *heights;
+			return;
+		}
 		const bool erase = iNode.type == "output.erase";
 		const auto tile =
 				erase ? int32_t{-1} : static_cast<int32_t>(std::clamp<int64_t>(integer(iNode, "tile"), 0, 65535));
@@ -478,7 +486,8 @@ auto evaluate(const Graph& iGraph, const Region& iRegion) -> expected<Result, Pc
 	Result result{.size = iRegion.size,
 				  .tiles = std::vector<int32_t>(iRegion.size.surface(), g_UntouchedTile),
 				  .values = {},
-				  .warnings = {}};
+				  .warnings = {},
+				  .height = {}};
 	if (Evaluator evaluator{iGraph, iRegion, result}; !evaluator.run()) {
 		OWL_CORE_WARN("PcgGraph: The graph has a cycle, nothing generated.")
 		return unexpected{PcgError::Cycle};

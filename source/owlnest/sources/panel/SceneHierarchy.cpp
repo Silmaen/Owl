@@ -190,6 +190,10 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 		return {gui::icon::audioLines, 0x9fd36b};
 	if (iEntity.hasComponent<AdaptiveMusic>())
 		return {gui::icon::music, 0x9fd36b};
+	if (iEntity.hasComponent<Planet>())
+		return {gui::icon::globe, 0x6fb3ff};
+	if (iEntity.hasComponent<StreamingSource>())
+		return {gui::icon::route, 0x8ce99a};
 	if (iEntity.hasComponent<Light2D>()) {
 		const auto& light = iEntity.getComponent<Light2D>();
 		const uint32_t colour = light.enabled ? 0xffb347 : 0x7a7a7a;
@@ -289,7 +293,7 @@ void drawCreateLightMenu(const auto& iTarget, const std::optional<commands::ArgV
 	ImGui::EndMenu();
 }
 
-// "Effects" submenu: `entity.create_particle_emitter` per preset, optionally under a parent.
+// "Effects" submenu: `entity.create_particle_emitter` per preset and `entity.create_planet`, optionally under a parent.
 void drawCreateEffectsMenu(const auto& iTarget, const std::optional<commands::ArgValue>& iParent) {
 	if (!ImGui::BeginMenu("Effects"))
 		return;
@@ -303,6 +307,12 @@ void drawCreateEffectsMenu(const auto& iTarget, const std::optional<commands::Ar
 				iParent ? commands::CommandArgs{{"type", std::string{kind}}, {"parent", *iParent}}
 						: commands::CommandArgs{{"type", std::string{kind}}};
 		std::ignore = iTarget.execute("entity.create_particle_emitter", args);
+	}
+	ImGui::Separator();
+	if (gui::widgets::menuItem({.glyph = gui::icon::globe, .label = "Planet"})) {
+		const commands::CommandArgs args =
+				iParent ? commands::CommandArgs{{"parent", *iParent}} : commands::CommandArgs{};
+		std::ignore = iTarget.execute("entity.create_planet", args);
 	}
 	ImGui::EndMenu();
 }

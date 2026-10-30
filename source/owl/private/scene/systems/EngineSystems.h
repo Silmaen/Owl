@@ -227,6 +227,15 @@ void updateFloatingOrigin(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Stream the world partition cells around the streaming sources, or the primary camera without one
+ *  (`owl.world_streaming`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateWorldStreaming(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Run the timer triggers and the overlap triggers against the primary player (`owl.triggers`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

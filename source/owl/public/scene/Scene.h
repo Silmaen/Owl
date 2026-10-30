@@ -31,6 +31,7 @@
 #include "scene/PhysicsSettings.h"
 #include "scene/SimulationClock.h"
 #include "scene/SystemSchedule.h"
+#include "scene/WorldPartitionSettings.h"
 #include "scene/component/LuaScript.h"
 #include "scene/component/Visibility.h"
 #include "scene/ui/HudLayout.h"
@@ -78,6 +79,10 @@ class Framebuffer;
 }// namespace owl::renderer::gpu
 
 namespace owl::scene {
+class WorldStreamer;
+}// namespace owl::scene
+
+namespace owl::scene {
 
 class Entity;
 class ScriptableEntity;
@@ -107,6 +112,8 @@ struct Light2D;
 struct LightFlicker;
 struct ParticleEmitter;
 struct Trail;
+struct Planet;
+struct StreamingSource;
 struct Oscillator;
 struct Patrol;
 struct Drift;
@@ -1023,6 +1030,46 @@ public:
 
 	/**
 	 * @brief
+	 *  Access the scene's world partition settings (mutable), read every frame by the `owl.world_streaming` system.
+	 * @return The world partition settings.
+	 */
+	[[nodiscard]] auto getWorldPartitionSettings() -> WorldPartitionSettings& { return m_worldPartitionSettings; }
+
+	/**
+	 * @brief
+	 *  Access the scene's world partition settings (const).
+	 * @return The world partition settings.
+	 */
+	[[nodiscard]] auto getWorldPartitionSettings() const -> const WorldPartitionSettings& {
+		return m_worldPartitionSettings;
+	}
+
+	/**
+	 * @brief
+	 *  The streaming runtime of the world partition (which cells are loaded), created on the first call; a copy of
+	 *  the scene starts with none.
+	 * @return The streamer.
+	 */
+	[[nodiscard]] auto getWorldStreamer() -> WorldStreamer&;
+
+	/**
+	 * @brief
+	 *  Whether the scene has a streaming runtime yet.
+	 * @return True once `getWorldStreamer` was called.
+	 */
+	[[nodiscard]] auto hasWorldStreamer() const -> bool { return mp_worldStreamer != nullptr; }
+
+	/**
+	 * @brief
+	 *  World position of an entity in double: its `WorldPosition` for a root that has one, the world origin plus its
+	 *  world transform otherwise.
+	 * @param[in] iEntity The entity.
+	 * @return The world position.
+	 */
+	[[nodiscard]] auto getEntityWorldPosition(const Entity& iEntity) const -> math::vec3d;
+
+	/**
+	 * @brief
 	 *  World position of the scene origin: the point the float `Transform` of a root entity is relative to.
 	 * @return The world origin, in double precision.
 	 */
@@ -1448,6 +1495,10 @@ private:
 	FloatingOriginSettings m_floatingOriginSettings;
 	/// Mix of the scene, given to the mixer when it starts.
 	sound::MixSettings m_mixSettings;
+	/// World partition settings (`WorldPartition:` in the scene file).
+	WorldPartitionSettings m_worldPartitionSettings;
+	/// Streaming runtime of the world partition.
+	shared<WorldStreamer> mp_worldStreamer;
 	/// World position of the scene origin.
 	math::vec3d m_worldOrigin{0.0, 0.0, 0.0};
 	/// Fixed-tick accumulator of the runtime (systems' `tick`, physics steps).
@@ -1816,6 +1867,21 @@ private:
 	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
 	 */
 	void renderParticles(bool iEditorMode);
+
+	/**
+	 * @brief
+	 *  Draw the planets accepted by the current planet layer through `RendererPlanet`.
+	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 */
+	void renderPlanets(bool iEditorMode);
+
+	/**
+	 * @brief
+	 *  Update the terrain of every planet for the render camera (selection, background builds, uploads).
+	 *
+	 *  Called by `renderWithStack` before the first layer records a draw: the uploads would split a render pass.
+	 */
+	void preparePlanetRenderData();
 
 	/**
 	 * @brief
@@ -2436,6 +2502,13 @@ OWL_API void Scene::onComponentAdded<component::ParticleEmitter>(const Entity& i
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Trail>(const Entity& iEntity, component::Trail& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Planet>(const Entity& iEntity, component::Planet& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::StreamingSource>(const Entity& iEntity,
+																 component::StreamingSource& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Oscillator>(const Entity& iEntity, component::Oscillator& ioComponent);

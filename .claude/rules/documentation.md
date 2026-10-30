@@ -73,11 +73,12 @@ If an SVG already exists, keep it alongside the mermaid version for Doxygen comp
 
 ### Roadmap page (`doc/pages/roadmap.md`)
 
-- Versions ordered newest first (upcoming at top, released at bottom)
+- Versions ordered newest first (upcoming at top, then the last released one)
 - Released versions: `## v0.1.0 -- 2026-04-16` (with actual date); upcoming: `## v0.2.0 -- Expected 2026-08-01`
 - Each upcoming version: a **Goal** of 2–3 lines, then **one line per item**, each with a badge and, when one
   exists, a link to its design page. No long sub-lists, no specifications
-- Released sections are history: kept as shipped
+- Only the last released version keeps its section, as shipped; at a release the previous one is removed (the
+  changelog keeps what every version shipped), and an `## Earlier versions` line points to the changelog
 - Feature status badges (references defined at the bottom of the file, shields.io URLs):
   - `![Done][done]` — completed and merged
   - `![In Progress][progress]` — currently being implemented
@@ -97,7 +98,8 @@ If an SVG already exists, keep it alongside the mermaid version for Doxygen comp
 ### When to update
 
 - Starting a feature: badge to In Progress; completing it: badge to Done, a line in `doc/pages/changelog.md`
-- Bumping a version: add the release date, create the new upcoming section, update both root tables
+- Bumping a version: add the release date, create the new upcoming section, remove the section of the version
+  released before, update both root tables
 - Planning a feature: one line under the right version, detail in a design page
 
 ### Changelog page (`doc/pages/changelog.md`)

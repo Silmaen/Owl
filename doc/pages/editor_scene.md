@@ -93,6 +93,12 @@ undo step.
 - **World Origin**: the floating origin (on / off), its shift radius and the **Origin** itself, moved with
   `scene.set_world_origin` (undoable; the roots keep their place in the world); entities with a **World Position**
   component keep their position in double ([World positions](scene.md#world-positions)).
+- **World Partition**: the streaming of the scene's cells ([World partition](world_partition.md)): the enable switch,
+  the cell size, the load and unload radii, and the cell table (coordinates, scene, state while playing). Drop a scene
+  on the table to add a cell at the typed coordinates, on a row to change its scene; select rows to **Remove** them or
+  **Move selected** by an offset in cells; **Open** opens a cell scene. Every change is an undo step
+  (`scene.set_world_partition`, `scene.add_world_cell`, `scene.set_world_cell_scene`, `scene.remove_world_cells`,
+  `scene.move_world_cells`).
 - **HUD**: the HUD drawn over the scene: the project default, none, a project file or a dropped one.
 - **Script**: the script of the scene itself ([Scene script](scripting.md#scene-script)): its file, **Open**, the
   hooks and the properties, as for a Lua Script component.

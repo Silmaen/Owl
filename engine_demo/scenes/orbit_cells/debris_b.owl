@@ -1,0 +1,133 @@
+Scene: DebrisB
+FormatVersion: 7
+Entities:
+  - Entity: 4200000000000001001
+    Tag:
+      tag: DebrisBRock0
+    Transform:
+      translation: [419.6, -111.30000000000001, 76.0]
+      rotation: [0, 2.66, 0]
+      scale: [0.096, 0.096, 0.096]
+    MeshRenderer:
+      mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
+      color: [0.75, 0.7, 0.65, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000001002
+    Tag:
+      tag: DebrisBRock1
+    Transform:
+      translation: [70.2, 208.60000000000002, 83.7]
+      rotation: [0, -1.43, 0]
+      scale: [0.069, 0.069, 0.069]
+    MeshRenderer:
+      mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
+      color: [0.75, 0.7, 0.65, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000001003
+    Tag:
+      tag: DebrisBRock2
+    Transform:
+      translation: [133.4, -77.9, 396.5]
+      rotation: [0, -1.52, 0]
+      scale: [0.083, 0.083, 0.083]
+    MeshRenderer:
+      mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
+      color: [0.75, 0.7, 0.65, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000001004
+    Tag:
+      tag: DebrisBRock3
+    Transform:
+      translation: [390.0, 9.100000000000023, 124.5]
+      rotation: [0, -1.45, 0]
+      scale: [0.078, 0.078, 0.078]
+    MeshRenderer:
+      mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
+      color: [0.75, 0.7, 0.65, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000001005
+    Tag:
+      tag: DebrisBRock4
+    Transform:
+      translation: [433.5, 137.5, 311.3]
+      rotation: [0, 2.83, 0]
+      scale: [0.037, 0.037, 0.037]
+    MeshRenderer:
+      mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
+      color: [0.75, 0.7, 0.65, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000001006
+    Tag:
+      tag: DebrisBRock5
+    Transform:
+      translation: [335.2, 141.3, 237.8]
+      rotation: [0, 2.01, 0]
+      scale: [0.044, 0.044, 0.044]
+    MeshRenderer:
+      mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
+      color: [0.75, 0.7, 0.65, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000001007
+    Tag:
+      tag: DebrisBRock6
+    Transform:
+      translation: [57.6, 140.60000000000002, 334.9]
+      rotation: [0, 1.88, 0]
+      scale: [0.063, 0.063, 0.063]
+    MeshRenderer:
+      mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
+      color: [0.75, 0.7, 0.65, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000001008
+    Tag:
+      tag: DebrisBRock7
+    Transform:
+      translation: [447.0, 168.8, 191.6]
+      rotation: [0, 1.27, 0]
+      scale: [0.059, 0.059, 0.059]
+    MeshRenderer:
+      mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
+      color: [0.75, 0.7, 0.65, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000001009
+    Tag:
+      tag: DebrisBRock8
+    Transform:
+      translation: [199.0, -131.3, 68.2]
+      rotation: [0, 1.47, 0]
+      scale: [0.038, 0.038, 0.038]
+    MeshRenderer:
+      mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
+      color: [0.75, 0.7, 0.65, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000001101
+    Tag:
+      tag: DebrisBBeacon
+    Transform:
+      translation: [250, 0, 250]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 0.6]
+    MeshRenderer:
+      mesh: gid:0f32cf58bd96b825:meshes/orbit/relay.glb
+      color: [1, 0.85, 0.5, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true

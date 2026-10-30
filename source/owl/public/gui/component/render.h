@@ -506,6 +506,20 @@ OWL_API void renderProps(scene::component::Trail& ioComponent);
 
 /**
  * @brief
+ *  Render a Gui for editing the component: height graph, shape, detail and distance, colours and atmosphere.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::Planet& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::StreamingSource& ioComponent);
+
+/**
+ * @brief
  *  Render a Gui for editing the component.
  * @param ioComponent The component to edit.
  */
@@ -598,15 +612,16 @@ using DrawableComponents =
 				   scene::component::AdaptiveMusic, scene::component::LuaScript, scene::component::PrefabLink,
 				   scene::component::RendererTag, scene::component::VoxelWorld, scene::component::FlyCamera,
 				   scene::component::LightFlicker, scene::component::ParticleEmitter, scene::component::Trail,
-				   scene::component::Oscillator, scene::component::Patrol, scene::component::Drift,
-				   scene::component::FollowTarget, scene::component::RenderTarget, scene::component::ProceduralSky,
-				   scene::component::DayNightCycle, scene::component::ReflectionProbe,
-				   scene::component::FirstPersonController, scene::component::VoxelPlayer, scene::component::Canvas,
-				   scene::component::UiRect, scene::component::UiText, scene::component::UiImage,
-				   scene::component::UiPanel, scene::component::UiButton, scene::component::UiSlider,
-				   scene::component::UiProgressBar, scene::component::UiWindow, scene::component::UiLayout,
-				   scene::component::UiTooltip, scene::component::UiToolCursor, scene::component::UiFocus,
-				   scene::component::UiScrollView, scene::component::UiList>;
+				   scene::component::Planet, scene::component::StreamingSource, scene::component::Oscillator,
+				   scene::component::Patrol, scene::component::Drift, scene::component::FollowTarget,
+				   scene::component::RenderTarget, scene::component::ProceduralSky, scene::component::DayNightCycle,
+				   scene::component::ReflectionProbe, scene::component::FirstPersonController,
+				   scene::component::VoxelPlayer, scene::component::Canvas, scene::component::UiRect,
+				   scene::component::UiText, scene::component::UiImage, scene::component::UiPanel,
+				   scene::component::UiButton, scene::component::UiSlider, scene::component::UiProgressBar,
+				   scene::component::UiWindow, scene::component::UiLayout, scene::component::UiTooltip,
+				   scene::component::UiToolCursor, scene::component::UiFocus, scene::component::UiScrollView,
+				   scene::component::UiList>;
 
 
 }// namespace owl::gui::component

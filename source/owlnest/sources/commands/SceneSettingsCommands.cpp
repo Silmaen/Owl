@@ -151,6 +151,32 @@ auto SetMixCommand::typeId() const -> size_t {
 	return kTypeHash;
 }
 
+SetWorldPartitionCommand::SetWorldPartitionCommand(scene::WorldPartitionSettings iBefore,
+												   scene::WorldPartitionSettings iAfter, std::string iDescription)
+	: m_before{std::move(iBefore)}, m_after{std::move(iAfter)}, m_description{std::move(iDescription)} {}
+
+SetWorldPartitionCommand::~SetWorldPartitionCommand() = default;
+
+void SetWorldPartitionCommand::undo(scene::Scene& ioScene) { ioScene.getWorldPartitionSettings() = m_before; }
+
+void SetWorldPartitionCommand::redo(scene::Scene& ioScene) { ioScene.getWorldPartitionSettings() = m_after; }
+
+auto SetWorldPartitionCommand::description() const -> std::string { return m_description; }
+
+auto SetWorldPartitionCommand::mergeWith(const SceneUndoCommand& iOther) -> bool {
+	const auto* other = dynamic_cast<const SetWorldPartitionCommand*>(&iOther);
+	if (other == nullptr || other->m_before.cells != other->m_after.cells || m_before.cells != m_after.cells)
+		return false;
+	m_after = other->m_after;
+	m_timestamp = other->m_timestamp;
+	return true;
+}
+
+auto SetWorldPartitionCommand::typeId() const -> size_t {
+	constexpr size_t kTypeHash = 0x536574576f50ULL;// "SetWoP"
+	return kTypeHash;
+}
+
 SetFloatingOriginCommand::SetFloatingOriginCommand(const scene::FloatingOriginSettings& iBefore,
 												   const scene::FloatingOriginSettings& iAfter)
 	: m_before{iBefore}, m_after{iAfter} {}

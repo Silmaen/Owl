@@ -1,9 +1,9 @@
 # CLAUDE.md
 
 Owl is a C++23 game engine (`OwlEngine`) with an editor (Owl Nest), a game runner, a Python CI wrapper and
-TeamCity pipelines. Version: see `project(... VERSION ...)` in `CMakeLists.txt`; plan and released versions in
-`doc/pages/roadmap.md`. Backends: graphics OpenGL 4.5 / Vulkan 1.3+ / Null, input
-GLFW / Null, sound OpenAL / Null. ECS on EnTT with parent-child hierarchy. Platforms: Linux x64/arm64,
+TeamCity pipelines. Version: see `project(... VERSION ...)` in `CMakeLists.txt`; plan and last release in
+`doc/pages/roadmap.md`, every release in `doc/pages/changelog.md`. Backends: graphics OpenGL 4.5 / Vulkan 1.3+ /
+Null, input GLFW / Null, sound OpenAL / Null. ECS on EnTT with parent-child hierarchy. Platforms: Linux x64/arm64,
 Windows x64 (MinGW).
 
 Detailed, path-scoped rules load automatically from `.claude/rules/` when you touch matching files

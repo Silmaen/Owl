@@ -14,6 +14,8 @@
 #include "../UndoManager.h"
 #include "../commands/CommandRegistry.h"
 
+#include <array>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -148,6 +150,22 @@ private:
 
 	/**
 	 * @brief
+	 *  Render the world partition section: streaming radii, the table of cells (select many, add, open, change the
+	 *  scene, move or remove the selected ones), each edit a `scene.*world*` command.
+	 */
+	void renderWorldPartitionSection();
+
+	/**
+	 * @brief
+	 *  Run a command on the active scene through the panel's command target.
+	 * @param[in] iName The command.
+	 * @param[in] iArgs Its arguments.
+	 * @return True when it ran.
+	 */
+	[[nodiscard]] auto runCommand(const std::string& iName, const commands::CommandArgs& iArgs) const -> bool;
+
+	/**
+	 * @brief
 	 *  Render the HUD section: the `.owlhud` the scene draws (project default, none or a file), chosen through the
 	 *  undoable `scene.set_hud` command.
 	 */
@@ -170,6 +188,12 @@ private:
 	bool m_hudChoiceOpen = false;
 	/// Copy of the scene script the inspector widgets edit (kept between frames: they remember it by address).
 	scene::component::LuaScript m_scriptEdit;
+	/// Cells selected in the world partition table.
+	std::vector<math::vec3i> m_selectedCells;
+	/// Coordinates typed for the next cell.
+	std::array<int32_t, 3> m_newCell{0, 0, 0};
+	/// Offset typed to move the selected cells.
+	std::array<int32_t, 3> m_cellOffset{1, 0, 0};
 	/// Active scene (shared_ptr — same lifetime as `SceneDocument`).
 	shared<scene::Scene> m_scene;
 	/// Undo manager for the active scene (non-owning).

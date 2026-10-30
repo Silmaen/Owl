@@ -483,6 +483,14 @@ private:
 
 	/**
 	 * @brief
+	 *  Outline every cell of the world partition (the loaded ones in green) and the load radius around the camera
+	 *  for a scene with cells.
+	 * @param[in] iScene The scene edited.
+	 */
+	static void renderWorldCells(const shared<scene::Scene>& iScene);
+
+	/**
+	 * @brief
 	 *  Draw the bones of the skinned mesh of the selected entity and the sockets it owns, pickable as the entity.
 	 * @param[in] iScene The scene edited.
 	 */

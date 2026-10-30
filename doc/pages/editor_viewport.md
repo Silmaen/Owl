@@ -81,6 +81,9 @@ light and probe markers); a click on empty space clears the selection. The selec
 Properties and outlined in orange: its quad for a 2D entity, the silhouette of its meshes for a 3D one, dimmed where
 other geometry hides it.
 
+A planet is selected by a click on its terrain like a mesh. In a scene with a world partition the viewport outlines every
+cell, the loaded ones in green ([World partition](world_partition.md)); the editor itself does not stream.
+
 A right click without drag opens the context menu: on an entity **Frame**, **Duplicate**, **Hide in the Editor**,
 **Delete** (and **Camera Viewpoint**, **Pilot Camera** on a camera); on empty space 2D / 3D, the grid, **Reset View**
 and **Frame Scene**.

@@ -25,6 +25,9 @@
 #include "scene/ComponentRegistry.h"
 #include "scene/Entity.h"
 #include "scene/PrefabSerializer.h"
+#include "scene/component/Hierarchy.h"
+#include "scene/component/Transform.h"
+#include "scene/component/WorldPosition.h"
 #include "scene/component/componentsSerialization.h"
 #include "sound/Bus.h"
 #include "sound/Mixer.h"
@@ -36,6 +39,7 @@
 #include <string>
 #include <string_view>
 #include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace owl::scene {
@@ -298,6 +302,51 @@ auto deserializeMix(const core::YamlNode& iNode) -> sound::MixSettings {
 	return mix.clamped();
 }
 
+void serializeWorldPartition(YAML::Emitter& ioEmitter, const Scene& iScene) {
+	const auto& settings = iScene.getWorldPartitionSettings();
+	if (settings == WorldPartitionSettings{})
+		return;
+	ioEmitter << YAML::Key << "WorldPartition" << YAML::Value << YAML::BeginMap;
+	ioEmitter << YAML::Key << "enabled" << YAML::Value << settings.enabled;
+	ioEmitter << YAML::Key << "cellSize" << YAML::Value << settings.cellSize;
+	ioEmitter << YAML::Key << "loadRadius" << YAML::Value << settings.loadRadius;
+	ioEmitter << YAML::Key << "unloadRadius" << YAML::Value << settings.unloadRadius;
+	ioEmitter << YAML::Key << "cells" << YAML::Value << YAML::BeginSeq;
+	for (const auto& cell: settings.cells) {
+		ioEmitter << YAML::Flow << YAML::BeginMap;
+		ioEmitter << YAML::Key << "coords" << YAML::Value << YAML::Flow << YAML::BeginSeq << cell.coords.x()
+				  << cell.coords.y() << cell.coords.z() << YAML::EndSeq;
+		ioEmitter << YAML::Key << "scene" << YAML::Value << data::assets::toAssetReference(cell.scene);
+		ioEmitter << YAML::EndMap;
+	}
+	ioEmitter << YAML::EndSeq;
+	ioEmitter << YAML::EndMap;
+}
+
+void deserializeWorldPartition(Scene& ioScene, const core::YamlNode& iNode) {
+	WorldPartitionSettings settings;
+	if (iNode.isMap()) {
+		settings.enabled = iNode["enabled"].as<bool>(settings.enabled);
+		settings.cellSize = iNode["cellSize"].as<double>(settings.cellSize);
+		settings.loadRadius = iNode["loadRadius"].as<double>(settings.loadRadius);
+		settings.unloadRadius = iNode["unloadRadius"].as<double>(settings.unloadRadius);
+		if (const auto cells = iNode["cells"]; cells.isSequence()) {
+			for (const auto cell: cells) {
+				const auto coords = cell["coords"];
+				const auto scene = cell["scene"];
+				if (!coords.isSequence() || coords.size() < 3 || !scene.isScalar()) {
+					OWL_CORE_WARN("SceneSerializer: A world partition cell without `coords` or `scene` is skipped.")
+					continue;
+				}
+				settings.cells.push_back(
+						{.coords = {coords[0].as<int32_t>(), coords[1].as<int32_t>(), coords[2].as<int32_t>()},
+						 .scene = data::assets::toAssetPath(scene.as<std::string>())});
+			}
+		}
+	}
+	ioScene.getWorldPartitionSettings() = settings.clamped();
+}
+
 void linkIntoHierarchy(Scene& ioScene, const Entity& iEntity) {
 	const core::UUID uuid = iEntity.getUUID();
 	auto& hierarchy = iEntity.getComponent<component::Hierarchy>();
@@ -419,6 +468,7 @@ auto SceneSerializer::serializeToString() const -> std::string {
 		serializePhysicsSettings(sOut.getImpl()->emitter, mp_scene->getPhysicsSettings());
 		serializeFloatingOrigin(sOut.getImpl()->emitter, *mp_scene);
 		serializeMix(sOut.getImpl()->emitter, mp_scene->getMixSettings());
+		serializeWorldPartition(sOut.getImpl()->emitter, *mp_scene);
 	}
 	if (m_kind != DocumentKind::Prefab)
 		if (const auto& sceneScript = mp_scene->getSceneScript(); !sceneScript.scriptPath.empty())
@@ -530,6 +580,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	const auto previousPhysics = mp_scene->getPhysicsSettings();
 	const auto previousFloatingOrigin = mp_scene->getFloatingOriginSettings();
 	const auto previousMix = mp_scene->getMixSettings();
+	const auto previousPartition = mp_scene->getWorldPartitionSettings();
 	const auto previousWorldOrigin = mp_scene->getWorldOrigin();
 	const auto previousHud = mp_scene->getHudPath();
 	const auto previousSceneScript = mp_scene->getSceneScript();
@@ -548,6 +599,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 		mp_scene->getPhysicsSettings() = previousPhysics;
 		mp_scene->getFloatingOriginSettings() = previousFloatingOrigin;
 		mp_scene->getMixSettings() = previousMix;
+		mp_scene->getWorldPartitionSettings() = previousPartition;
 		mp_scene->shiftWorldOrigin(previousWorldOrigin);
 		mp_scene->setHudPath(previousHud);
 		mp_scene->getSceneScript() = previousSceneScript;
@@ -569,6 +621,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 			mp_scene->getPhysicsSettings() = deserializePhysicsSettings(root["Physics"]);
 			deserializeFloatingOrigin(*mp_scene, root["FloatingOrigin"]);
 			mp_scene->getMixSettings() = deserializeMix(root["Mixer"]);
+			deserializeWorldPartition(*mp_scene, root["WorldPartition"]);
 		}
 		mp_scene->getSceneScript() = component::LuaScript{};
 		if (const auto script = root["SceneScript"]; iParsed.kind != DocumentKind::Prefab && script.isMap()) {
@@ -602,6 +655,65 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	OWL_CORE_INFO("SceneSerializer::applyParsed: '{}' total {:.1f} ms ({} entities).", iParsed.sceneName,
 				  std::chrono::duration<double, std::milli>{clk::now() - t0}.count(), created.size())
 	return {};
+}
+
+auto SceneSerializer::mergeParsed(const ParsedScene& iParsed, const math::vec3& iOffset) const
+		-> expected<std::vector<Entity>, SceneLoadError> {
+	OWL_PROFILE_FUNCTION()
+
+	if (!iParsed.valid || !iParsed.serializer) {
+		OWL_CORE_ERROR("SceneSerializer: Cannot merge an invalid parsed scene ({}).", iParsed.error)
+		return unexpected{iParsed.valid ? SceneLoadError::InvalidYaml : iParsed.failure};
+	}
+	const auto& source = iParsed.sourceName.empty() ? iParsed.sceneName : iParsed.sourceName;
+	std::vector<Entity> created;
+	std::unordered_map<uint64_t, uint64_t> renamed;
+	try {
+		const auto& root = iParsed.serializer->getImpl()->node;
+		SeenUuids seen;
+		if (const auto entities = root["Entities"]; entities.isSequence()) {
+			created.reserve(entities.size());
+			const core::Serializer scratch;
+			for (const auto entity: entities) {
+				if (!isValidEntityNode(entity)) {
+					OWL_CORE_ERROR("SceneSerializer: Cannot merge scene '{}': {} has no `Entity:` id.", source,
+								   describeEntityNode(entity, created.size()))
+					rollback(mp_scene, created);
+					return unexpected{SceneLoadError::InvalidEntity};
+				}
+				auto uuid = uniqueUuid(entity["Entity"].as<uint64_t>(), seen, source);
+				if (mp_scene->findEntityByUUID(core::UUID{uuid})) {
+					OWL_CORE_WARN("SceneSerializer: Entity {} of '{}' is already in the scene, it gets a new id.", uuid,
+								  source)
+					const auto fresh = static_cast<uint64_t>(core::UUID{});
+					renamed.emplace(uuid, fresh);
+					uuid = fresh;
+				}
+				created.push_back(createEntityFromNode(mp_scene, entity, uuid));
+				component::deserializeComponents(created.back(), entity, scratch, true);
+			}
+		}
+	} catch (const std::exception& iEx) {
+		OWL_CORE_ERROR("SceneSerializer: Cannot merge scene '{}': it is malformed ({}).", source, iEx.what())
+		rollback(mp_scene, created);
+		return unexpected{SceneLoadError::InvalidEntity};
+	}
+	for (auto& entity: created) {
+		auto& parent = entity.getComponent<component::Hierarchy>().parentId;
+		if (const auto found = renamed.find(static_cast<uint64_t>(parent)); found != renamed.end())
+			parent = core::UUID{found->second};
+	}
+	for (auto& entity: created) {
+		if (!entity.hasComponent<component::Transform>() || entity.hasComponent<component::WorldPosition>())
+			continue;
+		if (entity.hasComponent<component::Hierarchy>() &&
+			entity.getComponent<component::Hierarchy>().parentId != core::UUID{0})
+			continue;
+		auto& translation = entity.getComponent<component::Transform>().transform.translation();
+		translation = translation + iOffset;
+	}
+	mp_scene->rebuildHierarchyChildren();
+	return created;
 }
 
 auto SceneSerializer::serializeEntityToString(const Entity& iEntity) -> std::string {

@@ -517,11 +517,12 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 	PackReader reader;
 	ASSERT_TRUE(reader.open(pack));
 	size_t sceneCount = 0;
-	for (const auto& entry: std::filesystem::directory_iterator(iProject / "scenes")) {
+	// The smoke test plays every scene of the pack, the world partition cells under `scenes/` included.
+	for (const auto& entry: std::filesystem::recursive_directory_iterator(iProject / "scenes")) {
 		if (entry.path().extension() != ".owl")
 			continue;
 		++sceneCount;
-		const auto packPath = "scenes/" + entry.path().filename().string();
+		const auto packPath = "scenes/" + relative(entry.path(), iProject / "scenes").generic_string();
 		EXPECT_TRUE(reader.contains(packPath)) << packPath;
 		const auto data = reader.readEntry(packPath);
 		ASSERT_TRUE(data.has_value());

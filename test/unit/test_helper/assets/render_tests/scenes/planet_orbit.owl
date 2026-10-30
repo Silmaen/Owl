@@ -1,0 +1,92 @@
+Scene: RenderTestPlanetOrbit
+FormatVersion: 7
+EnabledRenderers:
+- {Name: world, Enabled: false}
+- {Name: planet_world, Enabled: true}
+- {Name: ui, Enabled: false}
+Entities:
+- Entity: 3830000000000000001
+  Tag: {tag: Camera}
+  Transform:
+    translation: [0, 400, 3200]
+    rotation: [-0.12, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Camera:
+    camera: {projectionType: Perspective, perspectiveFOV: 0.9, perspectiveNear: 0.5, perspectiveFar: 1000000,
+      orthographicSize: 8, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
+- Entity: 3830000000000000002
+  Tag: {tag: Sun}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [-0.3, 1.1, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light:
+    type: Directional
+    intensity: 100000
+    castShadows: false
+- Entity: 3830000000000000003
+  Tag: {tag: Planet}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Planet:
+    graph: pcg/render_planet_heights.owlpcg
+    seed: 7
+    heightResolution: 128
+    radius: 1000
+    heightScale: 60
+    seaLevel: 0.45
+    detailAmplitude: 0.06
+    detailFrequency: 24
+    maxLevel: 7
+    lodFactor: 2.5
+    chunkResolution: 16
+    seaColor: [0.04, 0.14, 0.36]
+    lowColor: [0.3, 0.46, 0.18]
+    highColor: [0.46, 0.38, 0.28]
+    peakColor: [0.94, 0.94, 0.96]
+    atmosphere: true
+    atmosphereHeight: 140
+    rayleighDepth: [0.046, 0.108, 0.265]
+    mieDepth: 0.02
+    scatteringIntensity: 3
+    scaledSpaceDistance: 0
+- Entity: 3830000000000000004
+  Tag: {tag: Moon}
+  Transform:
+    translation: [-90000, 30000, -150000]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Planet:
+    graph: pcg/render_planet_heights.owlpcg
+    seed: 7
+    heightResolution: 128
+    radius: 6000
+    heightScale: 200
+    seaLevel: 0.45
+    detailAmplitude: 0.06
+    detailFrequency: 24
+    maxLevel: 4
+    lodFactor: 2.5
+    chunkResolution: 16
+    seaColor: [0.04, 0.14, 0.36]
+    lowColor: [0.3, 0.46, 0.18]
+    highColor: [0.46, 0.38, 0.28]
+    peakColor: [0.94, 0.94, 0.96]
+    atmosphere: false
+    atmosphereHeight: 0
+    rayleighDepth: [0.046, 0.108, 0.265]
+    mieDepth: 0.02
+    scatteringIntensity: 3
+    scaledSpaceDistance: 20000

@@ -12,10 +12,10 @@ it from a seed, so the same seed always gives the same tiles. Design notes and w
 Nodes carry two kinds of value over the cells of the region being generated, and a link joins pins of the same kind
 only:
 
-| Pin type   | Content                                                                              |
-|------------|--------------------------------------------------------------------------------------|
-| **Field**  | One number per cell; a **mask** is a field of 0 and 1                                |
-| **Points** | A list of cells (trees, rocks, chests)                                               |
+| Pin type   | Content                                               |
+|------------|-------------------------------------------------------|
+| **Field**  | One number per cell; a **mask** is a field of 0 and 1 |
+| **Points** | A list of cells (trees, rocks, chests)                |
 
 Evaluation starts from the output nodes and pulls the nodes they depend on:
 
@@ -46,10 +46,12 @@ Evaluation starts from the output nodes and pulls the nodes they depend on:
 | **Write Tiles** (`output.tiles`)            | Mask          | none   | `tile` 0                                                            |
 | **Write Tiles at Points** (`output.points`) | Points        | none   | `tile` 0                                                            |
 | **Erase Tiles** (`output.erase`)            | Mask          | none   | none                                                                |
+| **Write Heights** (`output.height`)         | Field         | none   | none                                                                |
 
 Sources and `Combine` (`Field`) give fields; `Threshold` turns a field into a mask between `min` and `max`;
 `Cellular Automaton` smooths a random mask into caves; `Scatter` picks cells of a mask apart from each other by
-`spacing`; `Points to Mask` and the two point outputs bring points back onto tiles.
+`spacing`; `Points to Mask` and the two point outputs bring points back onto tiles. `Write Heights` writes no tiles: its
+field (clamped to 0..1, the lowest such node on the canvas wins) is the height map of a [Planet](planets.md).
 
 ## Editing a graph
 
@@ -75,16 +77,16 @@ open it.
 A tilemap holds a **generator**: the graph, a seed, the layer written, the origin and the size of the region (a zero
 side reaches the end of the grid). In the tilemap editor, the **Procedural** section of the Scene Hierarchy column:
 
-| Control                    | Effect                                                                         |
-|----------------------------|--------------------------------------------------------------------------------|
-| **Add Generator**          | Gives the tilemap a generator                                                  |
-| Graph drop field           | The `.owlpcg` to run, dropped from the Content Browser                         |
-| Seed, Layer, Origin, Size  | The seed and the region written                                                |
-| **Preview**                | Draws the result over the canvas without touching the tilemap                  |
-| **Generate**               | Writes the tiles into the layer                                                |
-| **New Seed**               | Picks another seed                                                             |
-| **Open**                   | Opens the graph                                                                |
-| **Remove**                 | Removes the generator                                                          |
+| Control                   | Effect                                                        |
+|---------------------------|---------------------------------------------------------------|
+| **Add Generator**         | Gives the tilemap a generator                                 |
+| Graph drop field          | The `.owlpcg` to run, dropped from the Content Browser        |
+| Seed, Layer, Origin, Size | The seed and the region written                               |
+| **Preview**               | Draws the result over the canvas without touching the tilemap |
+| **Generate**              | Writes the tiles into the layer                               |
+| **New Seed**              | Picks another seed                                            |
+| **Open**                  | Opens the graph                                               |
+| **Remove**                | Removes the generator                                         |
 
 Each button is one undo step. The Engine Demo ships `pcg/caves.owlpcg` (a cave automaton) and the tilemap
 `tilemaps/pcg_caves.owltilemap` that uses it.

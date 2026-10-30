@@ -202,6 +202,14 @@ auto buildNodeTypes() -> std::vector<NodeType> {
 					 .inputs = {field("Mask")},
 					 .outputs = {},
 					 .params = {}});
+	types.push_back({.id = "output.height",
+					 .title = "Write Heights",
+					 .category = "Outputs",
+					 .description = "Writes the field as the heights of the region (a planet terrain reads them; "
+									"0 is the lowest ground, 1 the highest).",
+					 .inputs = {field("Height")},
+					 .outputs = {},
+					 .params = {}});
 	return types;
 }
 

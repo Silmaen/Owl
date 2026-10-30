@@ -29,14 +29,14 @@ flowchart LR
     C --> G["GPU<br/>(reversed-Z depth)"]
 ```
 
-| Decision          | Choice                                                                                                  |
-|-------------------|---------------------------------------------------------------------------------------------------------|
-| Rendering         | Model matrices built relative to the camera on the CPU, in double, then cast to float                   |
-| Depth             | Reversed-Z with a floating-point depth buffer and an infinite far plane, on Vulkan and OpenGL           |
-| World coordinates | `WorldPosition` in double beside the float `Transform`; scenes without it keep today's behaviour        |
-| Floating origin   | Shifted when the focus leaves a radius; transforms, physics bodies, audio sources and particles follow  |
-| Owl Nest          | Gizmos, picking, snapping and the camera work in world coordinates; the inspector shows doubles         |
-| Serialisation     | Scenes and saves store world positions in double                                                        |
+| Decision          | Choice                                                                                                 |
+|-------------------|--------------------------------------------------------------------------------------------------------|
+| Rendering         | Model matrices built relative to the camera on the CPU, in double, then cast to float                  |
+| Depth             | Reversed-Z with a floating-point depth buffer and an infinite far plane, on Vulkan and OpenGL          |
+| World coordinates | `WorldPosition` in double beside the float `Transform`; scenes without it keep today's behaviour       |
+| Floating origin   | Shifted when the focus leaves a radius; transforms, physics bodies, audio sources and particles follow |
+| Owl Nest          | Gizmos, picking, snapping and the camera work in world coordinates; the inspector shows doubles        |
+| Serialisation     | Scenes and saves store world positions in double                                                       |
 
 ### Lights at astronomical scale {#lights-at-astronomical-scale}
 
@@ -70,13 +70,20 @@ The sockets are detailed in [Skeletal animation](skeletal-animation.md); the phy
 
 ## Planetary terrain
 
-A renderer-stack layer, like the voxel and isometric ones, composing with the 3D layer and the HUD.
+A renderer-stack layer, like the voxel and isometric ones, composing with the 3D layer and the HUD. User guide:
+[Planets](../planets.md).
 
-- Cube-sphere quadtree with seamless LOD, chunks streamed in the background
-- Heights and materials produced by the [PCG graphs](pcg-graphs.md), or read from height maps
-- Atmospheric scattering seen from the ground and from orbit, starfield and sky behind it
-- Scaled space: far bodies drawn at reduced scale, then handed over to the full terrain on approach
-- Physics collision on the chunks near bodies only
+| Item                                                                                                    | Status  |
+|---------------------------------------------------------------------------------------------------------|---------|
+| `RendererPlanet` layer and `Planet` component: cube-sphere quadtree LOD, chunks built in the background | Done    |
+| Horizon culling, skirts, ancestor chunks standing in while a chunk builds                               | Done    |
+| Heights from a PCG graph (`output.height`) and a triplanar detail noise                                 | Done    |
+| Atmospheric scattering (single scattering, Rayleigh and Mie), seen from the ground and from orbit       | Done    |
+| Scaled space: far planets drawn shrunk toward the camera, level-0 chunks only                           | Done    |
+| Owl Nest: inspector, creation, picking; Lua `scene.get_planet_altitude`                                 | Done    |
+| Heights read from height map image files                                                                | Planned |
+| Starfield and sky behind the planet                                                                     | Planned |
+| Physics collision on the chunks near bodies only                                                        | v0.7.0  |
 
 ## Content and simulation at scale
 
@@ -87,26 +94,49 @@ A renderer-stack layer, like the voxel and isometric ones, composing with the 3D
 - 3D steering in open space: obstacle avoidance between moving volumes, formations
 - Doppler effect and adaptive music driven by game states
 - Interest management for replication: relevance areas and priorities, so a client receives only what is near it
-- World partition: streaming cells on world coordinates (double), additive scenes merged into the running one, loaded
-  and unloaded around the focus in the background through the task system, without a loading screen
 - Camera tracks in the sequencer, for cutscenes
+
+## World partition {#world-partition}
+
+Streaming cells on world coordinates (double), additive scenes merged into the running one, loaded and unloaded around
+the focus in the background through the task system, without a loading screen. User guide:
+[World partition](../world_partition.md).
+
+| Item                                                                                                 | Status  |
+|------------------------------------------------------------------------------------------------------|---------|
+| `WorldPartition:` scene settings: cubic cells, load and unload radii, one scene per cell             | Done    |
+| `owl.world_streaming`: cells read and parsed on the task scheduler, merged two per frame             | Done    |
+| `StreamingSource` component, the primary camera when a scene has none                                | Done    |
+| Pack export follows the cell scenes and the planet graphs                                            | Done    |
+| Owl Nest: cell table, drop to add, multi-select, move, viewport outlines; `scene.*_world_*` commands | Done    |
+| Lua `scene.is_world_cell_loaded`, `get_loaded_world_cells`, `set_world_streaming`                    | Done    |
+| Streaming in the editor viewport                                                                     | Planned |
 
 ## Delivery {#large-worlds-delivery}
 
-| Release | Items                                                                                                  |
-|---------|--------------------------------------------------------------------------------------------------------|
-| v0.5.0  | Camera-relative rendering, reversed-Z depth                                                            |
-| v0.6.0  | Double positions, splines, data tables, sockets, world partition, planets, camera tracks, HUD markers  |
-| v0.7.0  | Articulated bodies, gravity fields, time warp, simulation LOD, planetary terrain collision             |
-| v0.8.0  | Joysticks and throttles with many axes                                                                 |
-| v0.9.0  | Interest management                                                                                    |
+| Release | Items                                                                                                 |
+|---------|-------------------------------------------------------------------------------------------------------|
+| v0.5.0  | Camera-relative rendering, reversed-Z depth                                                           |
+| v0.6.0  | Double positions, splines, data tables, sockets, world partition, planets, camera tracks, HUD markers |
+| v0.7.0  | Articulated bodies, gravity fields, time warp, simulation LOD, planetary terrain collision            |
+| v0.8.0  | Joysticks and throttles with many axes                                                                |
+| v0.9.0  | Interest management                                                                                   |
 
 World positions in double ship in three steps:
 
-| Step                                                                                  | Status      |
-|---------------------------------------------------------------------------------------|-------------|
-| `WorldPosition`, world origin and its shift, `FloatingOrigin:` scene settings, editor | Done        |
-| Physics bodies, behaviours and sound follow a shift of the origin                     | Done        |
-| Owl Nest gizmos, picking, snapping and camera in world coordinates                    | Done        |
+| Step                                                                                  | Status |
+|---------------------------------------------------------------------------------------|--------|
+| `WorldPosition`, world origin and its shift, `FloatingOrigin:` scene settings, editor | Done   |
+| Physics bodies, behaviours and sound follow a shift of the origin                     | Done   |
+| Owl Nest gizmos, picking, snapping and camera in world coordinates                    | Done   |
+
+World partition and planets ship in the same release:
+
+| Step                                                                  | Status |
+|-----------------------------------------------------------------------|--------|
+| World partition, streaming sources, Owl Nest cell editing, Lua        | Done   |
+| Planetary terrain layer, atmosphere, scaled space, Owl Nest, Lua      | Done   |
+| `planet/*` and `world_streaming/*` benchmarks, `planet_*` image tests | Done   |
+| Engine Demo far orbit: planet Cinder and streamed debris cells        | Done   |
 
 Sample games that exercise these bricks are listed in [Sample games](sample-games.md).

@@ -36,11 +36,13 @@ flowchart TD
     Stack --> Iso[RendererIsometric]
     Stack --> Vox[RendererVoxel]
     Stack --> Mesh[RendererMesh]
+    Stack --> Planet[RendererPlanet]
     Scene --> Bg[BackgroundRenderer]
     Bg -->|flushed by| R2D
     Ray --> R2D
     Vox --> R3D[Renderer3D]
     Mesh --> R3D
+    Planet --> R3D
     R2D --> RC[RenderCommand]
     Ray --> RC
     Iso --> RC
@@ -50,7 +52,7 @@ flowchart TD
 
 Every renderer kind, the render stack and the base building blocks (`Camera`, `Texture`, `Shader`, `Buffer`,
 `Framebuffer`, `RenderAPI`, `RenderCommand`) live in the single `owl::renderer` namespace: the public facades in
-`source/owl/public/renderer/`, the layer adapters (`Renderer2DLayer`, `RendererRaycastLayer`, `RendererVoxelLayer`)
+`source/owl/public/renderer/`, the layer adapters (`Renderer2DLayer`, `RendererRaycastLayer`, `RendererVoxelLayer`, `RendererPlanetLayer`)
 in `source/owl/private/renderer/`. Only the GPU objects and their backends sit one level down, in
 `owl::renderer::gpu` (`gpu::opengl`, `gpu::vulkan`, `gpu::null`).
 
@@ -933,6 +935,20 @@ equirectangular Radiance `.hdr` image (`EnvironmentMap`, `Equirectangular`).
   reflections fall back to it; without any `Environment` the layer `Ambient` plays that part.
 - **Editor ambient.** In Edit mode only, `Renderer3D::setEditorAmbient` adds a grey light to every lit 3D surface
   (`EditorSettings::editorAmbient`), to work in dark places; Play never gets it.
+
+## Planets {#renderer-planets}
+
+`RendererPlanet` draws the `Planet` entities of a `RendererPlanet` layer ([Planets](planets.md)).
+
+- **Terrain.** `renderer::PlanetTerrain` selects the chunks of the cube-sphere quadtree (`selectPlanetChunks`, with
+  horizon culling), builds them with skirts on the task scheduler (`buildPlanetChunk`) and keeps an ancestor chunk
+  standing in until a chunk is ready; the chunks are drawn as `Renderer3D` meshes lit by the scene lights, in the
+  scaled space of `placePlanet` (the planet shrunk toward the camera beyond `scaledSpaceDistance`, level-0 chunks only).
+- **Atmosphere.** A shell drawn after the terrain with `engine_assets/shaders/planet/planet_atmosphere.slang`: single
+  scattering, Rayleigh and Mie; front faces from outside, back faces from inside.
+- **Config.** The layer reads `SunDirection`, `Ambient`, `SunIlluminance` and `AmbientLuminance` like `RendererMesh`.
+- **Cost.** The benches `planet/*` of `test/bench/cases/LargeWorldBench.cpp` measure the selection, the builds and the
+  frame; the image tests `planet_orbit` and `planet_surface` cover both backends.
 
 ## Particles {#renderer-particles}
 

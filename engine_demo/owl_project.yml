@@ -31,6 +31,11 @@ OwlProject:
       DefaultConfig:
         SunDirection: [-0.4, -1.0, -0.6]
         Ambient: [0.4, 0.4, 0.45]
+    - Type: RendererPlanet
+      Name: planet_world
+      DefaultConfig:
+        SunDirection: [-0.4, -1.0, -0.6]
+        Ambient: [0.05, 0.06, 0.08]
     - Type: RendererIsometric
       Name: iso_world
       DefaultConfig:

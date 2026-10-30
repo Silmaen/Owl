@@ -287,6 +287,8 @@ struct OWL_API Result {
 	std::map<core::UUID, std::map<std::string, PinValue>> values;
 	/// Problems met (unknown node, unlinked input), one sentence each.
 	std::vector<std::string> warnings;
+	/// Heights written by an `output.height` node (the lowest one on the canvas wins), an empty field without one.
+	Field height;
 };
 
 /**
