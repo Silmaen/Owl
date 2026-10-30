@@ -78,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ReverbZone` component: box or sphere volumes with EFX reverb presets (cave, hall, underwater...) and a filter, blended at the listener.
 - Low-pass, high-pass and band-pass filters on sound sources, combined with the filter of the reverb zones.
 - Doppler effect on moving spatial sources and the listener, from world positions in double (a floating origin shift is not motion).
-- `AdaptiveMusic` component: synced looping layers, states fading them in and out with a stinger, driven by Lua or a game state key.
+- `AdaptiveMusic` component: synced looping layers, states fading them in and out with a stinger, driven by Lua or a game state key; its layers and stingers are referenced by GUID, so moving or renaming a music file keeps them.
 - Lua `sound` bus and music bindings: `set_bus_volume`, `set_bus_muted`, `play_music`, `stop_music`, `crossfade`, `set_music_state`.
 - Owl Nest Mixer panel (`scene.set_mixer`, `sound.set_live_bus` in Play), reverb zones drawn and sized in the viewport, inspectors for zones, filters and adaptive music; one undo step per bus edited.
 - Engine Demo sound yard (U from the main menu): a cave reverb, an underwater pool, a radio behind a wall, a passing cart and a music turning from calm to combat.
