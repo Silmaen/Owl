@@ -20,6 +20,7 @@
 #include <scene/component/components.h>
 #include <script/ScriptEngine.h>
 #include <script/ScriptInstance.h>
+#include <sound/SoundCommand.h>
 
 #include <cstdint>
 #include <format>
@@ -918,6 +919,41 @@ TEST(LuaBindings, soundBindingsWithoutSoundSystem) {
 	ASSERT_TRUE(h.has_value());
 	// Invalid handle (sound system off) is 0.
 	EXPECT_EQ(h.value(), 0);
+	core::Log::invalidate();
+}
+
+TEST(LuaBindings, soundMixerBindings) {
+	core::Log::init(core::Log::Level::Off);
+	sound::SoundCommand::create(sound::SoundAPI::Type::Null);
+	sound::SoundCommand::init();
+	auto scn = mkShared<scene::Scene>();
+	const std::string script = "music = 0\n"
+							   "sfx_muted = false\n"
+							   "known = true\n"
+							   "state = 'x'\n"
+							   "function on_create()\n"
+							   "  sound.set_bus_volume('music', 0.5)\n"
+							   "  music = sound.get_bus_volume('Music')\n"
+							   "  sound.set_bus_muted('SFX', true)\n"
+							   "  sfx_muted = sound.is_bus_muted('sfx')\n"
+							   "  sound.set_bus_volume('nowhere', 0.1)\n"
+							   "  known = sound.set_music_state('combat')\n"
+							   "  state = sound.get_music_state()\n"
+							   "  sound.crossfade(0, 0, 1.0)\n"
+							   "  sound.stop_music(0.5)\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "mixer_test", 1));
+	inst.onCreate();
+	EXPECT_NEAR(inst.getPropertyFloat("music").value_or(0.f), 0.5f, 1e-5f);
+	EXPECT_TRUE(inst.getPropertyBool("sfx_muted").value_or(false));
+	EXPECT_FALSE(inst.getPropertyBool("known").value_or(true));
+	EXPECT_EQ(inst.getPropertyString("state").value_or("x"), "");
+	ASSERT_NE(sound::SoundCommand::getMixer(), nullptr);
+	EXPECT_FLOAT_EQ(sound::SoundCommand::getMixer()->getBusGain(sound::Bus::SFX), 0.f);
+	sound::SoundCommand::invalidate();
 	core::Log::invalidate();
 }
 

@@ -20,6 +20,18 @@ strings:
   - key: settings.volume
     table: settings
     values: {en: 'Master Volume: %d%%', fr: 'Volume général : %d %%'}
+  - key: settings.volume_music
+    table: settings
+    values: {en: 'Music Volume: %d%%', fr: 'Volume de la musique : %d %%'}
+  - key: settings.volume_sfx
+    table: settings
+    values: {en: 'Effects Volume: %d%%', fr: 'Volume des effets : %d %%'}
+  - key: settings.volume_ambient
+    table: settings
+    values: {en: 'Ambient Volume: %d%%', fr: "Volume de l'ambiance : %d %%"}
+  - key: settings.volume_voice
+    table: settings
+    values: {en: 'Voice Volume: %d%%', fr: 'Volume des voix : %d %%'}
   - key: settings.speed
     table: settings
     values: {en: 'Player Speed: %.1f', fr: 'Vitesse du joueur : %.1f'}

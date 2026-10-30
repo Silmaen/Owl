@@ -10,6 +10,8 @@
 
 #include "EngineSystems.h"
 
+#include "../SceneAudio.h"
+
 #include "app/Application.h"
 #include "math/box.h"
 #include "physics/PhysicCommand.h"
@@ -20,7 +22,6 @@
 #include "scene/component/components.h"
 #include "scene/nav/NavWorld.h"
 #include "script/ScriptInstance.h"
-#include "sound/SoundCommand.h"
 
 #include <algorithm>
 #include <cmath>
@@ -284,31 +285,8 @@ void updateTriggers(Scene& ioScene, const SystemContext& iContext) {
 		updateTrigger(ioScene, Entity{entity, &ioScene}, player, seconds);
 }
 
-void updateSound(Scene& ioScene, [[maybe_unused]] const SystemContext& iContext) {
-	for (const auto view = ioScene.registry.view<component::Transform, component::SoundListener>();
-		 const auto entity: view) {
-		if (const auto& [transform, listener] = view.get<component::Transform, component::SoundListener>(entity);
-			listener.primary) {
-			const auto wt = ioScene.getWorldTransform(Entity{entity, &ioScene});
-
-			sound::SoundCommand::setListenerPosition(
-					{wt.translation().x(), wt.translation().y(), wt.translation().z()});
-			const float rotZ = wt.rotation().z();
-
-			sound::SoundCommand::setListenerOrientation({std::sin(rotZ), std::cos(rotZ), 0.0f}, {0.0f, 0.0f, 1.0f});
-			break;
-		}
-	}
-	for (const auto view = ioScene.registry.view<component::Transform, component::SoundSource>();
-		 const auto entity: view) {
-		const auto& [soundComp] = view.get<component::SoundSource>(entity);
-		if (soundComp.runtimeHandle == sound::invalidSoundHandle || !soundComp.spatial)
-			continue;
-		const auto wt = ioScene.getWorldTransform(Entity{entity, &ioScene});
-
-		sound::SoundCommand::setPosition(soundComp.runtimeHandle,
-										 {wt.translation().x(), wt.translation().y(), wt.translation().z()});
-	}
+void updateSound(Scene& ioScene, const SystemContext& iContext) {
+	updateSceneAudio(ioScene, iContext.timeStep.getSeconds());
 }
 
 void updateAnimatedSprites(Scene& ioScene, const SystemContext& iContext) {

@@ -1,0 +1,11 @@
+# The sound yard: the adaptive music follows the `yard_threat` game state key, which the scene script sets from the
+# distance of the ear to the beast (north of the yard); walking north turns the music from calm to danger to combat.
+scene: ../../../engine_demo/scenes/sound_yard.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: yard_threat, equals: calm}
+  - input: {key: W, frames: 60}
+  - expect: {gamestate: yard_threat, equals: danger}
+  - input: {key: W, frames: 40}
+  - expect: {gamestate: yard_threat, equals: combat}
+  - expect: {entity: Ear, translation.y: {greater: 12.0}}

@@ -41,6 +41,7 @@
 #include "scene/ui/HudLayout.h"
 #include "script/LuaEngine.h"
 #include "script/ScriptEngine.h"
+#include "sound/Bus.h"
 #include "sound/SoundCommand.h"
 #include "sound/SoundHelper.h"
 #include "sound/SoundSystem.h"
@@ -479,6 +480,81 @@ auto luaSoundSetVolume(lua_State* iState) -> int {
 	const auto vol = static_cast<float>(luaL_checknumber(iState, 2));
 	sound::SoundCommand::setVolume(handle, vol);
 	return 0;
+}
+
+auto checkBus(lua_State* iState, const int iIndex) -> std::optional<sound::Bus> {
+	const char* name = luaL_checkstring(iState, iIndex);
+	const auto bus = sound::parseBus(name);
+	if (!bus)
+		OWL_CORE_WARN("Lua: Unknown sound bus '{}' (Master, Music, SFX, Ambient, Voice).", name)
+	return bus;
+}
+
+auto luaSoundSetBusVolume(lua_State* iState) -> int {
+	const auto bus = checkBus(iState, 1);
+	const auto volume = static_cast<float>(luaL_checknumber(iState, 2));
+	if (auto* mixer = sound::SoundCommand::getMixer(); bus && mixer != nullptr)
+		mixer->setBusVolume(*bus, volume);
+	return 0;
+}
+
+auto luaSoundGetBusVolume(lua_State* iState) -> int {
+	const auto bus = checkBus(iState, 1);
+	const auto* mixer = sound::SoundCommand::getMixer();
+	lua_pushnumber(iState, bus && mixer != nullptr ? static_cast<lua_Number>(mixer->getBusVolume(*bus)) : 0.0);
+	return 1;
+}
+
+auto luaSoundSetBusMuted(lua_State* iState) -> int {
+	const auto bus = checkBus(iState, 1);
+	const bool muted = lua_toboolean(iState, 2) != 0;
+	if (auto* mixer = sound::SoundCommand::getMixer(); bus && mixer != nullptr)
+		mixer->setBusMuted(*bus, muted);
+	return 0;
+}
+
+auto luaSoundIsBusMuted(lua_State* iState) -> int {
+	const auto bus = checkBus(iState, 1);
+	const auto* mixer = sound::SoundCommand::getMixer();
+	lua_pushboolean(iState, bus && mixer != nullptr && mixer->isBusMuted(*bus) ? 1 : 0);
+	return 1;
+}
+
+auto luaSoundPlayMusic(lua_State* iState) -> int {
+	const auto assetPath = data::assets::toAssetPath(luaL_checkstring(iState, 1));
+	const auto fade = static_cast<float>(luaL_optnumber(iState, 2, 1.0));
+	lua_pushinteger(iState, static_cast<lua_Integer>(sound::SoundHelper::playMusic(assetPath, fade)));
+	return 1;
+}
+
+auto luaSoundStopMusic(lua_State* iState) -> int {
+	const auto fade = static_cast<float>(luaL_optnumber(iState, 1, 1.0));
+	if (auto* mixer = sound::SoundCommand::getMixer(); mixer != nullptr)
+		mixer->stopMusic(fade);
+	return 0;
+}
+
+auto luaSoundCrossfade(lua_State* iState) -> int {
+	const auto from = static_cast<sound::SoundHandle>(luaL_checkinteger(iState, 1));
+	const auto to = static_cast<sound::SoundHandle>(luaL_checkinteger(iState, 2));
+	const auto seconds = static_cast<float>(luaL_checknumber(iState, 3));
+	if (auto* mixer = sound::SoundCommand::getMixer(); mixer != nullptr)
+		mixer->crossfade(from, to, seconds);
+	return 0;
+}
+
+auto luaSoundSetMusicState(lua_State* iState) -> int {
+	const std::string state = luaL_checkstring(iState, 1);
+	auto* activeScene = getBoundScene(iState);
+	lua_pushboolean(iState, activeScene != nullptr && activeScene->setMusicState(state) ? 1 : 0);
+	return 1;
+}
+
+auto luaSoundGetMusicState(lua_State* iState) -> int {
+	const auto* activeScene = getBoundScene(iState);
+	const std::string state = activeScene != nullptr ? activeScene->getMusicState() : std::string{};
+	lua_pushstring(iState, state.c_str());
+	return 1;
 }
 
 auto luaSceneFindEntity(lua_State* iState) -> int {
@@ -2497,6 +2573,30 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "sound", .name = "set_volume", .function = guarded<luaSoundSetVolume>,
 		 .description = "Set the volume of a sound (0.0 to 2.0).",
 		 .params = {{"handle", Integer}, {"volume", Number}}},
+		{.table = "sound", .name = "set_bus_volume", .function = guarded<luaSoundSetBusVolume>,
+		 .description = "Set the volume of a mixer bus (`Master`, `Music`, `SFX`, `Ambient`, `Voice`; 0.0 to 2.0).",
+		 .params = {{"bus", String}, {"volume", Number}}},
+		{.table = "sound", .name = "get_bus_volume", .function = guarded<luaSoundGetBusVolume>,
+		 .description = "Volume of a mixer bus.", .params = {{"bus", String}}, .returns = {{"volume", Number}}},
+		{.table = "sound", .name = "set_bus_muted", .function = guarded<luaSoundSetBusMuted>,
+		 .description = "Mute or unmute a mixer bus.", .params = {{"bus", String}, {"muted", Boolean}}},
+		{.table = "sound", .name = "is_bus_muted", .function = guarded<luaSoundIsBusMuted>,
+		 .description = "Whether a mixer bus is muted.", .params = {{"bus", String}}, .returns = {{"muted", Boolean}}},
+		{.table = "sound", .name = "play_music", .function = blocking<luaSoundPlayMusic>,
+		 .description = "Play a looping track on the Music bus, crossfading from the track playing (1 s by default).",
+		 .params = {{"asset_path", String}, {"fade", Number, true}}, .returns = {{"handle", Integer}}},
+		{.table = "sound", .name = "stop_music", .function = guarded<luaSoundStopMusic>,
+		 .description = "Fade out and stop the music track (1 s by default).", .params = {{"fade", Number, true}}},
+		{.table = "sound", .name = "crossfade", .function = guarded<luaSoundCrossfade>,
+		 .description = "Crossfade two sounds: the first fades out and stops, the second fades in from silence.",
+		 .params = {{"from", Integer}, {"to", Integer}, {"seconds", Number}}},
+		{.table = "sound", .name = "set_music_state", .function = blocking<luaSoundSetMusicState>,
+		 .description = "Switch the adaptive musics of the scene to a state (fading the layers, playing its stinger); "
+						"false when none knows it.",
+		 .params = {{"state", String}}, .returns = {{"known", Boolean}}},
+		{.table = "sound", .name = "get_music_state", .function = guarded<luaSoundGetMusicState>,
+		 .description = "State of the adaptive music of the scene, empty when none plays.",
+		 .returns = {{"state", String}}},
 		{.table = "scene", .name = "get_world_origin", .function = guarded<luaSceneGetWorldOrigin>,
 		 .description = "World position of the scene origin, which local positions are relative to.",
 		 .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
@@ -3106,7 +3206,7 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "physics", .description = "Box2D body of an entity."},
 			{.name = "input",
 			 .description = "Actions of the game's input map, then the raw keyboard, mouse and gamepad state."},
-			{.name = "sound", .description = "Sound playback, by handle."},
+			{.name = "sound", .description = "Sound playback by handle, the mixer buses and the music."},
 			{.name = "scene", .description = "Entities of the running level and level changes."},
 			{.name = "engine", .description = "The engine running the game."},
 			{.name = "time", .description = "Frame and fixed-tick time."},

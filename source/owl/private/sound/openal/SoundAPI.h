@@ -93,6 +93,24 @@ public:
 	/** @copydoc sound::SoundAPI::setListenerGain */
 	void setListenerGain(float iGain) override;
 
+	/** @copydoc sound::SoundAPI::setFilter */
+	void setFilter(SoundHandle iHandle, const Filter& iFilter) override;
+
+	/** @copydoc sound::SoundAPI::setEnvironmentSend */
+	void setEnvironmentSend(SoundHandle iHandle, bool iSend) override;
+
+	/** @copydoc sound::SoundAPI::setReverb */
+	void setReverb(const Reverb& iReverb, float iWet) override;
+
+	/** @copydoc sound::SoundAPI::setListenerVelocity */
+	void setListenerVelocity(const math::vec3f& iVelocity) override;
+
+	/** @copydoc sound::SoundAPI::setDopplerFactor */
+	void setDopplerFactor(float iFactor) override;
+
+	/** @copydoc sound::SoundAPI::hasSource */
+	[[nodiscard]] auto hasSource(SoundHandle iHandle) const -> bool override;
+
 	/** @copydoc sound::SoundAPI::stopAll */
 	void stopAll() override;
 
@@ -121,6 +139,15 @@ private:
 	 */
 	auto reclaimSource() -> bool;
 
+	/**
+	 * @brief
+	 *  Delete the EFX filter of a source, if it has one.
+	 * @param[in] iHandle The sound handle.
+	 */
+	void releaseFilter(SoundHandle iHandle);
+
+	/// EFX filter of each filtered source, by handle.
+	std::unordered_map<SoundHandle, uint32_t> m_handleToFilter;
 	/// Mapping from SoundHandle to OpenAL source ID.
 	std::unordered_map<SoundHandle, uint32_t> m_handleToSource;
 	/// Next handle counter.

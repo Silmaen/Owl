@@ -1055,13 +1055,13 @@
     {
       "name": "sample/editor_update/main_menu",
       "items": 1,
-      "batch": 435,
+      "batch": 391,
       "samples": 15,
-      "median_ns": 25364.0,
-      "p25_ns": 25339.6,
-      "p75_ns": 25389.3,
-      "min_ns": 25310.2,
-      "max_ns": 25410.7
+      "median_ns": 30398.2,
+      "p25_ns": 30376.5,
+      "p75_ns": 30433.5,
+      "min_ns": 30348.3,
+      "max_ns": 30504.5
     },
     {
       "name": "sample/editor_update/platformer_house",
@@ -1088,13 +1088,13 @@
     {
       "name": "sample/editor_update/settings_menu",
       "items": 1,
-      "batch": 765,
+      "batch": 537,
       "samples": 15,
-      "median_ns": 15490.0,
-      "p25_ns": 15474.5,
-      "p75_ns": 15505.5,
-      "min_ns": 15450.0,
-      "max_ns": 15550.0
+      "median_ns": 22080.0,
+      "p25_ns": 22055.7,
+      "p75_ns": 22115.7,
+      "min_ns": 22011.1,
+      "max_ns": 22150.5
     },
     {
       "name": "sample/editor_update/tavern",
@@ -1200,11 +1200,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 196538.0,
-      "p25_ns": 195281.0,
-      "p75_ns": 201776.5,
-      "min_ns": 194373.0,
-      "max_ns": 210926.0
+      "median_ns": 311779.0,
+      "p25_ns": 310033.5,
+      "p75_ns": 322850.0,
+      "min_ns": 308497.0,
+      "max_ns": 336155.0
     },
     {
       "name": "sample/load/tavern",

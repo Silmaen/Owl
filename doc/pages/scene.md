@@ -179,7 +179,7 @@ flowchart LR
     E --> C["Camera<br/>Camera, RenderTarget"]
     E --> G["Gameplay<br/>Player, PhysicBody, Trigger,<br/>EntityLink, NativeScript"]
     E --> B["Behaviour<br/>Oscillator, Patrol, Drift,<br/>FollowTarget, LightFlicker"]
-    E --> A["Audio<br/>SoundSource, SoundListener"]
+    E --> A["Audio<br/>SoundSource, SoundListener,<br/>ReverbZone, AdaptiveMusic"]
     E --> S["Scripting<br/>LuaScript"]
     E --> U["UI<br/>Canvas, UiRect, UiText,<br/>UiButton, ..."]
     E --> P["Prefab<br/>PrefabLink"]
@@ -874,8 +874,10 @@ Lua switches it with `entity.set_follow_target_enabled(id, enabled)` and `entity
 
 See [Sound System](sound.md) for the full audio guide.
 
-- **SoundSource** (YAML: `SoundSource`): audio playback with 3D spatial support
+- **SoundSource** (YAML: `SoundSource`): audio playback on a mixer bus, with 3D spatial support, a filter and Doppler
 - **SoundListener** (YAML: `SoundListener`): marks the entity as the audio "ear"
+- **ReverbZone** (YAML: `ReverbZone`): a box or sphere giving its reverb and filter to the sounds heard inside it
+- **AdaptiveMusic** (YAML: `AdaptiveMusic`): music layers switched by states, on the Music bus
 
 ### Scripting Components
 
@@ -1341,6 +1343,9 @@ FloatingOrigin:
   shiftRadius: 2000
   origin: [149600000000, 0, 0]
 ```
+
+A scene with its own mix (Mixer panel) adds `Mixer:` with the Doppler factor and the volume, mute and solo of each bus
+([Mixer](sound.md#sound-mixer)).
 
 Components are written in the order of `SerializableComponents`. `Hierarchy` stores only `parentId`; children are
 rebuilt by `Scene::rebuildHierarchyChildren()`, which also performs the repairs above.

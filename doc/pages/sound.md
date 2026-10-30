@@ -2,12 +2,15 @@
 
 [TOC]
 
-This page describes the Owl Engine sound system: audio in scenes, spatial sound, sounds from gameplay code.
+This page describes the Owl Engine sound system: audio in scenes, spatial sound, the mixer buses, reverb zones and
+filters, the Doppler effect, adaptive music and sounds from gameplay code.
 
 ## Overview
 
 A component-based sound system with 3D spatial audio on an OpenAL or Null backend: files load into `SoundData`
-buffers, playback is driven through opaque `SoundHandle` values ([Supported Formats](#supported-formats)).
+buffers, playback is driven through opaque `SoundHandle` values ([Supported Formats](#supported-formats)). The Null
+backend is silent but keeps the state of every source and of the listener (gains, filters, reverb, velocities), so the
+mixing logic runs and is tested headless.
 
 ## Architecture
 
@@ -23,7 +26,8 @@ flowchart TD
     SH --> SL
     SY[SoundSystem] -->|owns| SL
     SL --> SD[SoundData]
-    SC --> API{SoundAPI}
+    SC --> MX[Mixer]
+    MX --> API{SoundAPI}
     API -->|OpenAL| OAL[OpenAL Backend]
     API -->|Null| NUL[Null Backend]
 ```
@@ -31,7 +35,8 @@ flowchart TD
 | Class          | Role                                                     |
 |----------------|----------------------------------------------------------|
 | `SoundSystem`  | Lifecycle (init / shutdown / reset), owns `SoundLibrary` |
-| `SoundCommand` | Static facade: delegates to the active `SoundAPI`        |
+| `SoundCommand` | Static facade: plays through the `Mixer` of the backend  |
+| `Mixer`        | Buses, fades, music track, environment of the listener   |
 | `SoundAPI`     | Abstract interface implemented by each backend           |
 | `SoundData`    | Loaded audio buffer (PCM data in OpenAL buffer object)   |
 | `SoundHandle`  | Opaque `uint64_t` handle to an active playback source    |
@@ -56,7 +61,7 @@ The scene then holds a `SoundSource:` block with the fields below.
 | Field       | Type     | Default | Description                                       |
 |-------------|----------|---------|---------------------------------------------------|
 | soundAsset  | string   | `""`    | Relative path to the audio file in assets         |
-| category    | Category | SFX     | `SFX`, `Music`, or `Ambient`                      |
+| category    | Bus      | SFX     | Mixer bus: `Master`, `Music`, `SFX`, `Ambient`... |
 | volume      | float    | 1.0     | Gain factor (0 = silent, 1 = normal, >1 = louder) |
 | pitch       | float    | 1.0     | Pitch multiplier (0.1 to 3.0 in editor)           |
 | loop        | bool     | false   | Whether to loop playback                          |
@@ -64,6 +69,8 @@ The scene then holds a `SoundSource:` block with the fields below.
 | playOnStart | bool     | false   | Auto-play when the scene enters Play mode         |
 | maxDistance | float    | 50.0    | Maximum audible distance (spatial only)           |
 | rolloff     | float    | 1.0     | Distance attenuation factor (spatial only)        |
+| doppler     | bool     | true    | Pitch shift from the motion (spatial only)        |
+| filter      | Filter   | none    | `gain`, `gainLow`, `gainHigh`, written when set   |
 
 The internal `runtimeHandle` (not saved) holds the active `SoundHandle` during playback.
 
@@ -77,17 +84,85 @@ The internal `runtimeHandle` (not saved) holds the active `SoundHandle` during p
 
 Keep one primary listener, on the camera or the player; it follows the entity's world transform every frame.
 
-## Sound Categories
+## Mixer {#sound-mixer}
 
-The category is stored for a future per-category mixer and does not change playback yet.
+Every sound plays on a bus of `sound::Mixer`; every bus feeds Master.
 
-| Category | Typical Use                | Typical Settings                                  |
-|----------|----------------------------|---------------------------------------------------|
-| SFX      | Gunshots, footsteps, UI    | `spatial=true`, `loop=false`, `playOnStart=false` |
-| Music    | Background music           | `spatial=false`, `loop=true`, `playOnStart=true`  |
-| Ambient  | Wind, rain, fire crackling | `spatial=true/false`, `loop=true`                 |
+| Bus     | Typical use                | Reverb zones and zone filter |
+|---------|----------------------------|------------------------------|
+| Master  | Sounds routed straight out | No                           |
+| Music   | Music tracks and layers    | No (dry)                     |
+| SFX     | Gunshots, footsteps, UI    | Yes                          |
+| Ambient | Wind, rain, fire, drips    | Yes                          |
+| Voice   | Dialogue, barks            | Yes                          |
 
-Background music is a `SoundSource` with `loop=true` and `spatial=false`: there is no music subsystem.
+The gain a source receives is `volume * fade * bus gain`. The bus gain multiplies the designer volume of the bus (the
+mix of the scene, edited in the Mixer panel and saved as `Mixer:` in the scene), the player's volume (the settings
+`volume_master`, `volume_music`, `volume_sfx`, `volume_ambient`, `volume_voice`) and the gain of Master; a muted bus is
+silent, and while a bus is soloed only the soloed buses are heard. The scene gives its mix to the mixer when it
+starts.
+
+A `SoundSource` picks its bus with `category`; `sound.play` uses the bus of the cue (`bus:` of a `.owlsound`), SFX for a
+bare audio file.
+
+Fades run in the mixer (`Mixer::fadeTo`, linear or equal-power), and `Mixer::crossfade` fades one sound out (then stops
+it) while another fades in. The mixer keeps one music track: `SoundHelper::playMusic` (Lua `sound.play_music`) starts a
+looping track on the Music bus and crossfades from the previous one with equal-power curves, so the loudness holds.
+
+## Reverb Zones and Filters
+
+A **ReverbZone** component gives a reverb (a preset of the EFX table: `Cave`, `Hall`, `Forest`, `Underwater`... or
+`Custom` parameters) and a filter to the sounds the listener hears while inside it:
+
+| Field         | Type   | Default     | Description                                             |
+|---------------|--------|-------------|---------------------------------------------------------|
+| shape         | enum   | Box         | `Box` (half size `extents`) or `Sphere` (`radius`)      |
+| extents       | vec3   | [2, 2, 2]   | Half size, in local units, scaled with the entity       |
+| radius        | float  | 3           | Sphere radius, scaled by the largest axis of the entity |
+| blendDistance | float  | 1           | Fade distance outside the volume, in world units        |
+| preset        | enum   | Cave        | Reverb preset, or `Custom` with `reverb:` parameters    |
+| filter        | Filter | none        | Filter put on the sounds heard inside the zone          |
+
+The volume follows the world transform of the entity, so the gizmo moves, turns and resizes it in the viewport, which
+draws it (and, selected, the edge of its fade). Every frame the `owl.sound` system weighs each zone at the listener
+(1 inside, falling to 0 across the blend distance), averages the reverbs by weight and sets the send gain to the total
+weight (at most 1); the zone filter fades in the same way. The reverb and the zone filter apply to the SFX, Ambient and
+Voice buses. The OpenAL backend uses EFX (`ALC_EXT_EFX`): one auxiliary slot with the standard reverb, and a direct
+filter per filtered source.
+
+A **filter** has three gains in [0, 1]: `gain` for the whole sound, `gainHigh` above 5 kHz (low-pass: underwater,
+behind a wall) and `gainLow` below 250 Hz (high-pass: a radio); both make a band-pass. A source filter and the zone
+filter multiply.
+
+## Doppler Effect
+
+A spatial `SoundSource` with `doppler` set, and the listener, get a velocity from their world positions a frame apart.
+World positions are in double ([Large worlds](design/large-worlds.md)): a shift of the floating origin does not read as
+motion, and a speed above that of sound (a teleport) is held at 343 units per second. The Doppler factor of the scene
+mix scales the effect (0 disables it).
+
+## Adaptive Music
+
+An **AdaptiveMusic** component holds layers (looping tracks that start together and stay in sync, each with a volume)
+and states (`calm`, `danger`, `combat`), each naming the layers it plays and a stinger heard when it is entered:
+
+```yaml
+AdaptiveMusic:
+  initialState: calm
+  stateKey: threat      # game state key whose text value selects the state; empty: Lua only
+  playOnStart: true
+  fadeSeconds: 2
+  layers:
+    - {name: pads, asset: sounds/music_pads.wav, volume: 0.8}
+    - {name: drums, asset: sounds/music_drums.wav, volume: 0.8}
+  states:
+    - {name: calm, layers: [pads], stinger: ""}
+    - {name: combat, layers: [pads, drums], stinger: sounds/stinger.wav}
+```
+
+A state change fades each layer to its volume in the new state (equal power, `fadeSeconds`) through the mixer, then
+plays the stinger on the Music bus. Lua switches it with `sound.set_music_state(state)`; with a `stateKey`, the
+`owl.sound` system follows `gamestate.set(key, state)`. The logic is `sound::AdaptiveMusicPlayer`.
 
 ## Spatial Audio
 
@@ -104,6 +179,12 @@ Where `referenceDistance = 1.0` and `distance` is clamped to `[0, maxDistance]`.
 - **Listener position and orientation** come from the primary `SoundListener` entity
 - For 2D games, the listener's forward direction is derived from the Z-axis rotation
 - **Stereo audio files** are NOT spatialized by OpenAL (only mono sources are positioned in 3D)
+
+## Lua
+
+The `sound` table plays sounds by handle and drives the mixer: `set_bus_volume`, `get_bus_volume`, `set_bus_muted`,
+`is_bus_muted`, `play_music`, `stop_music`, `crossfade`, `set_music_state`, `get_music_state`
+([Lua API: Sound](lua-api-sound.md)).
 
 ## Gameplay Triggers (SoundHelper)
 
@@ -159,8 +240,11 @@ sequenceDiagram
     participant C as SoundCommand
     S->>C: onStartRuntime: listener pose from the primary SoundListener
     S->>C: play() every SoundSource with playOnStart (sound loaded on first use)
+    S->>C: the scene mix to the mixer, adaptive musics started
     loop every frame
-        S->>C: listener pose, then setPosition() of each spatial source with a handle
+        S->>C: listener pose and velocity, reverb zones blended at the listener
+        S->>C: setPosition() and Doppler velocity of each spatial source with a handle
+        S->>C: adaptive musics following their game state key
     end
     S->>C: onEndRuntime: stop() every sound, runtimeHandle reset
 ```
@@ -178,6 +262,7 @@ volumeJitter: 0.1   # ±10 % at each play
 pitch: 1
 pitchJitter: 0.05
 loop: false
+bus: SFX            # bus of sound.play; a Sound Source picks its own
 variants:
   - file: sounds/step_a.wav
     trimStart: 0.02   # seconds from the start of the file

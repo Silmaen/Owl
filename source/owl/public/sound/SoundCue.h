@@ -11,6 +11,7 @@
 #include "core/Core.h"
 #include "core/FormatVersion.h"
 #include "core/Macros.h"
+#include "sound/Bus.h"
 #include "sound/SoundData.h"
 
 #include <cstddef>
@@ -87,6 +88,8 @@ struct OWL_API SoundCue {
 	float pitchJitter{0.f};
 	/// Whether the sound loops.
 	bool loop{false};
+	/// Bus the cue plays on when the caller names none (`sound.play`); a Sound Source picks its own.
+	Bus bus{Bus::SFX};
 
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG("-Wfloat-equal")

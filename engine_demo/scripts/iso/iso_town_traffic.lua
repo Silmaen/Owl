@@ -94,7 +94,7 @@ local camera_id = 0
 local function play(path, volume)
     gamestate.set("town_sounds", gamestate.get("town_sounds", 0) + 1)
     local handle = sound.play(path)
-    sound.set_volume(handle, volume * settings.get("volume_sfx", 1.0))
+    sound.set_volume(handle, volume)
 end
 
 local map_id = 0

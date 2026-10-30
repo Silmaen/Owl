@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 #include "core/FormatVersion.h"
+#include "sound/Mixer.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -186,10 +187,18 @@ public:
 	 * @brief
 	 *  Apply built-in settings to engine subsystems (window, sound).
 	 *
-	 * Applies resolution, fullscreen, resizable to the window, and
-	 * master volume to the sound listener, and the language to the engine context.
+	 * Applies resolution, fullscreen, resizable to the window, the `volume_*` keys to the player's volume of the
+	 * mixer buses (applyVolumes), and the language to the engine context.
 	 */
 	void applyBuiltins() const;
+
+	/**
+	 * @brief
+	 *  Give the `volume_*` keys to the player's volume of the mixer buses (`volume_master` to Master,
+	 *  `volume_music`, `volume_sfx`, `volume_ambient`, `volume_voice`); a missing key leaves its bus as it is.
+	 * @param[in,out] ioMixer The mixer.
+	 */
+	void applyVolumes(sound::Mixer& ioMixer) const;
 
 	/**
 	 * @brief
@@ -211,6 +220,10 @@ public:
 	static constexpr auto KeyVolumeMusic = "volume_music";
 	/// Built-in key for SFX volume.
 	static constexpr auto KeyVolumeSfx = "volume_sfx";
+	/// Built-in key for the volume of the Ambient bus.
+	static constexpr auto KeyVolumeAmbient = "volume_ambient";
+	/// Built-in key for the volume of the Voice bus.
+	static constexpr auto KeyVolumeVoice = "volume_voice";
 	/// Built-in key: code of the language of the texts (`Localisation`), applied to the engine context.
 	static constexpr auto KeyLanguage = "language";
 

@@ -34,6 +34,9 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 #include <script/visual/VisualScript.h>
+#include <sound/AudioEffects.h>
+#include <sound/Bus.h>
+#include <sound/SoundCommand.h>
 #include <sound/SoundCue.h>
 
 #include <yaml-cpp/yaml.h>
@@ -587,6 +590,109 @@ auto setSceneRenderers(const shared<scene::Scene>& ioScene, const CommandArgs& i
 	if (before == afterYaml)
 		return fail(CommandError::NotApplicable, "the scene already has this renderer configuration");
 	return PreparedCommand{.command = mkUniq<ModifyEnabledRenderersCommand>(before, afterYaml), .applied = false};
+}
+
+auto createAudioEntity(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs, const std::string& iName)
+		-> expected<scene::Entity, CommandFailure> {
+	std::optional<scene::Entity> parent;
+	if (iArgs.has("parent")) {
+		auto found = entityArg(*ioScene, iArgs, "parent");
+		if (!found)
+			return unexpected<CommandFailure>{found.error()};
+		parent = *found;
+	}
+	auto entity = ioScene->createEntity(iArgs.getText("name", iName));
+	entity.getComponent<scene::component::Transform>().transform.translation() =
+			iArgs.getVec3("translation").value_or(math::vec3{0.f, 0.f, 0.f});
+	if (parent)
+		ioScene->setParent(entity, *parent);
+	return entity;
+}
+
+auto createReverbZone(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	std::optional<sound::ReverbPreset> preset;
+	if (iArgs.has("preset")) {
+		const auto name = iArgs.getText("preset");
+		preset = sound::parseReverbPreset(name);
+		if (!preset)
+			return fail(CommandError::InvalidArgument, std::format("unknown reverb preset `{}`", name));
+	}
+	auto entity = createAudioEntity(ioScene, iArgs, "Reverb Zone");
+	if (!entity)
+		return unexpected<CommandFailure>{entity.error()};
+	auto& zone = entity->addComponent<scene::component::ReverbZone>();
+	if (preset)
+		zone.preset = *preset;
+	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(*entity),
+						   .applied = true,
+						   .entity = entity->getUUID()};
+}
+
+auto createAdaptiveMusic(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	auto entity = createAudioEntity(ioScene, iArgs, "Adaptive Music");
+	if (!entity)
+		return unexpected<CommandFailure>{entity.error()};
+	auto& music = entity->addComponent<scene::component::AdaptiveMusic>();
+	for (const char* state: {"calm", "danger", "combat"})
+		music.music.states.push_back({.name = state, .layers = {}, .stinger = {}});
+	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(*entity),
+						   .applied = true,
+						   .entity = entity->getUUID()};
+}
+
+auto setMixer(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto before = ioScene->getMixSettings();
+	auto after = before;
+	if (const auto factor = iArgs.get<double>("doppler_factor"); factor) {
+		if (!std::isfinite(*factor) || *factor < 0.0 || *factor > 10.0)
+			return fail(CommandError::InvalidArgument, "`doppler_factor` must be in [0, 10]");
+		after.dopplerFactor = static_cast<float>(*factor);
+	}
+	const bool editsBus = iArgs.has("volume") || iArgs.has("muted") || iArgs.has("solo");
+	if (editsBus && !iArgs.has("bus"))
+		return fail(CommandError::MissingArgument, "`bus` names the bus `volume`, `muted` or `solo` edit");
+	if (iArgs.has("bus")) {
+		const auto bus = sound::parseBus(iArgs.getText("bus"));
+		if (!bus)
+			return fail(CommandError::InvalidArgument, std::format("unknown bus `{}`", iArgs.getText("bus")));
+		auto& settings = after.getBus(*bus);
+		if (const auto volume = iArgs.get<double>("volume"); volume) {
+			if (!std::isfinite(*volume) || *volume < 0.0 || *volume > 2.0)
+				return fail(CommandError::InvalidArgument, "`volume` must be in [0, 2]");
+			settings.volume = static_cast<float>(*volume);
+		}
+		settings.muted = iArgs.getBool("muted", settings.muted);
+		if (iArgs.has("solo")) {
+			if (*bus == sound::Bus::Master)
+				return fail(CommandError::InvalidArgument, "the Master bus cannot be soloed");
+			settings.solo = iArgs.getBool("solo");
+		}
+	}
+	if (after == before)
+		return fail(CommandError::NotApplicable, "the scene already has this mix");
+	return PreparedCommand{.command = mkUniq<SetMixCommand>(before, after), .applied = false};
+}
+
+auto setLiveBus(const CommandContext& /*iContext*/, const CommandArgs& iArgs)
+		-> expected<CommandResult, CommandFailure> {
+	auto* mixer = sound::SoundCommand::getMixer();
+	if (mixer == nullptr)
+		return unexpected<CommandFailure>{CommandFailure{.error = CommandError::NotApplicable,
+														 .message = "sound.set_live_bus: no sound backend"}};
+	const auto bus = sound::parseBus(iArgs.getText("bus"));
+	if (!bus)
+		return unexpected<CommandFailure>{
+				CommandFailure{.error = CommandError::InvalidArgument,
+							   .message = std::format("sound.set_live_bus: unknown bus `{}`", iArgs.getText("bus"))}};
+	if (const auto volume = iArgs.get<double>("volume"); volume)
+		mixer->setBusVolume(*bus, static_cast<float>(*volume));
+	if (iArgs.has("muted"))
+		mixer->setBusMuted(*bus, iArgs.getBool("muted"));
+	if (iArgs.has("solo"))
+		mixer->setBusSolo(*bus, iArgs.getBool("solo"));
+	return CommandResult{.entity = core::UUID{0},
+						 .description = std::format("Set the live {} bus", sound::getBusName(*bus)),
+						 .data = {{"gain", static_cast<double>(mixer->getBusGain(*bus))}}};
 }
 
 auto setFloatingOrigin(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
@@ -1363,6 +1469,55 @@ CommandRegistry::CommandRegistry() {
 								  "writes it.",
 				   .defaultValue = std::string{}}},
 		 .factory = setSceneRenderers});
+	add({.name = "entity.create_reverb_zone",
+		 .description = "Create an entity with a `ReverbZone` (a 4 m box, Cave reverb, fading over 1 m).",
+		 .args = {{.name = "name",
+				   .type = ArgType::Text,
+				   .description = "Tag of the entity (`Reverb Zone` when absent)."},
+				  {.name = "preset",
+				   .type = ArgType::Text,
+				   .description = "Reverb preset (`Cave`, `Hall`, `Forest`, `Underwater`...; Cave when absent)."},
+				  {.name = "translation", .type = ArgType::Vec3, .description = "Position of the entity."},
+				  {.name = "parent", .type = ArgType::Entity, .description = "Parent entity (root when absent)."}},
+		 .factory = createReverbZone});
+	add({.name = "entity.create_adaptive_music",
+		 .description =
+				 "Create an entity with an `AdaptiveMusic` holding the states calm, danger and combat, no layer.",
+		 .args = {{.name = "name",
+				   .type = ArgType::Text,
+				   .description = "Tag of the entity (`Adaptive Music` when absent)."},
+				  {.name = "translation", .type = ArgType::Vec3, .description = "Position of the entity."},
+				  {.name = "parent", .type = ArgType::Entity, .description = "Parent entity (root when absent)."}},
+		 .factory = createAdaptiveMusic});
+	add({.name = "scene.set_mixer",
+		 .description = "Edit the mix of the scene, given to the mixer when it plays: volume, mute and solo of a bus, "
+						"Doppler factor.",
+		 .args = {{.name = "bus",
+				   .type = ArgType::Enum,
+				   .description = "Bus edited by `volume`, `muted` and `solo`.",
+				   .choices = {"Master", "Music", "SFX", "Ambient", "Voice"}},
+				  {.name = "volume", .type = ArgType::Number, .description = "Volume of the bus, in [0, 2]."},
+				  {.name = "muted", .type = ArgType::Bool, .description = "Whether the bus is silent."},
+				  {.name = "solo", .type = ArgType::Bool, .description = "Whether only the soloed buses are heard."},
+				  {.name = "doppler_factor",
+				   .type = ArgType::Number,
+				   .description = "Scale of the Doppler effect, in [0, 10] (0 disables it, 1 is physical)."}},
+		 .factory = setMixer});
+	add({.name = "sound.set_live_bus",
+		 .description = "Change a bus of the live mixer while the game plays (volume, mute, solo), not saved nor an "
+						"undo entry.",
+		 .args = {{.name = "bus",
+				   .type = ArgType::Enum,
+				   .required = true,
+				   .description = "The bus.",
+				   .choices = {"Master", "Music", "SFX", "Ambient", "Voice"}},
+				  {.name = "volume", .type = ArgType::Number, .description = "Volume of the bus, in [0, 2]."},
+				  {.name = "muted", .type = ArgType::Bool, .description = "Whether the bus is silent."},
+				  {.name = "solo", .type = ArgType::Bool, .description = "Whether only the soloed buses are heard."}},
+		 .factory = {},
+		 .run = setLiveBus,
+		 .allowedInPlay = true,
+		 .needsScene = false});
 	add({.name = "scene.set_floating_origin",
 		 .description = "Edit the floating origin of the scene: at runtime the world origin follows the primary camera "
 						"once it is farther than the shift radius.",

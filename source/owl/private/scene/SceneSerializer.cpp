@@ -26,6 +26,8 @@
 #include "scene/Entity.h"
 #include "scene/PrefabSerializer.h"
 #include "scene/component/componentsSerialization.h"
+#include "sound/Bus.h"
+#include "sound/Mixer.h"
 
 #include <cstdint>
 #include <exception>
@@ -259,6 +261,43 @@ void deserializeFloatingOrigin(Scene& ioScene, const core::YamlNode& iNode) {
 	ioScene.shiftWorldOrigin(origin);
 }
 
+void serializeMix(YAML::Emitter& ioEmitter, const sound::MixSettings& iMix) {
+	if (iMix == sound::MixSettings{})
+		return;
+	ioEmitter << YAML::Key << "Mixer" << YAML::Value << YAML::BeginMap;
+	ioEmitter << YAML::Key << "dopplerFactor" << YAML::Value << iMix.dopplerFactor;
+	ioEmitter << YAML::Key << "buses" << YAML::Value << YAML::BeginMap;
+	for (const sound::Bus bus: sound::g_allBuses) {
+		const auto& settings = iMix.getBus(bus);
+		ioEmitter << YAML::Key << std::string{sound::getBusName(bus)} << YAML::Value << YAML::Flow << YAML::BeginMap;
+		ioEmitter << YAML::Key << "volume" << YAML::Value << settings.volume;
+		ioEmitter << YAML::Key << "muted" << YAML::Value << settings.muted;
+		ioEmitter << YAML::Key << "solo" << YAML::Value << settings.solo;
+		ioEmitter << YAML::EndMap;
+	}
+	ioEmitter << YAML::EndMap;
+	ioEmitter << YAML::EndMap;
+}
+
+auto deserializeMix(const core::YamlNode& iNode) -> sound::MixSettings {
+	sound::MixSettings mix;
+	if (!iNode.isMap())
+		return mix;
+	mix.dopplerFactor = iNode["dopplerFactor"].as<float>(mix.dopplerFactor);
+	if (const auto buses = iNode["buses"]; buses.isMap()) {
+		for (const sound::Bus bus: sound::g_allBuses) {
+			const auto node = buses[sound::getBusName(bus)];
+			if (!node.isMap())
+				continue;
+			auto& settings = mix.getBus(bus);
+			settings.volume = node["volume"].as<float>(settings.volume);
+			settings.muted = node["muted"].as<bool>(settings.muted);
+			settings.solo = node["solo"].as<bool>(settings.solo);
+		}
+	}
+	return mix.clamped();
+}
+
 void linkIntoHierarchy(Scene& ioScene, const Entity& iEntity) {
 	const core::UUID uuid = iEntity.getUUID();
 	auto& hierarchy = iEntity.getComponent<component::Hierarchy>();
@@ -379,6 +418,7 @@ auto SceneSerializer::serializeToString() const -> std::string {
 		}
 		serializePhysicsSettings(sOut.getImpl()->emitter, mp_scene->getPhysicsSettings());
 		serializeFloatingOrigin(sOut.getImpl()->emitter, *mp_scene);
+		serializeMix(sOut.getImpl()->emitter, mp_scene->getMixSettings());
 	}
 	if (m_kind != DocumentKind::Prefab)
 		if (const auto& sceneScript = mp_scene->getSceneScript(); !sceneScript.scriptPath.empty())
@@ -489,6 +529,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	const auto previousRenderers = mp_scene->getEnabledRenderers();
 	const auto previousPhysics = mp_scene->getPhysicsSettings();
 	const auto previousFloatingOrigin = mp_scene->getFloatingOriginSettings();
+	const auto previousMix = mp_scene->getMixSettings();
 	const auto previousWorldOrigin = mp_scene->getWorldOrigin();
 	const auto previousHud = mp_scene->getHudPath();
 	const auto previousSceneScript = mp_scene->getSceneScript();
@@ -506,6 +547,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 		mp_scene->getEnabledRenderers() = previousRenderers;
 		mp_scene->getPhysicsSettings() = previousPhysics;
 		mp_scene->getFloatingOriginSettings() = previousFloatingOrigin;
+		mp_scene->getMixSettings() = previousMix;
 		mp_scene->shiftWorldOrigin(previousWorldOrigin);
 		mp_scene->setHudPath(previousHud);
 		mp_scene->getSceneScript() = previousSceneScript;
@@ -526,6 +568,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 				mp_scene->getEnabledRenderers() = renderer::enabledFromYaml(enabled);
 			mp_scene->getPhysicsSettings() = deserializePhysicsSettings(root["Physics"]);
 			deserializeFloatingOrigin(*mp_scene, root["FloatingOrigin"]);
+			mp_scene->getMixSettings() = deserializeMix(root["Mixer"]);
 		}
 		mp_scene->getSceneScript() = component::LuaScript{};
 		if (const auto script = root["SceneScript"]; iParsed.kind != DocumentKind::Prefab && script.isMap()) {

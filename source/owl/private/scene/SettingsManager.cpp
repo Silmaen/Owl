@@ -14,6 +14,7 @@
 #include "core/FormatVersionYaml.h"
 #include "platform/AtomicFile.h"
 #include "platform/UserDirectory.h"
+#include "sound/Bus.h"
 #include "sound/SoundCommand.h"
 
 OWL_DIAG_PUSH
@@ -26,6 +27,7 @@ OWL_DIAG_POP
 #include <fstream>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <variant>
 namespace owl::scene {
 
@@ -202,12 +204,21 @@ void SettingsManager::applyBuiltins() const {
 	if (const auto rs = getAs<bool>(KeyResizable); rs.has_value())
 		window.setResizable(rs.value());
 
-	// Sound settings — master volume via listener gain.
-	if (const auto vol = getAs<float>(KeyVolumeMaster); vol.has_value())
-		sound::SoundCommand::setListenerGain(vol.value());
+	if (auto* mixer = sound::SoundCommand::getMixer(); mixer != nullptr)
+		applyVolumes(*mixer);
 
 	if (const auto language = getAs<std::string>(KeyLanguage); language.has_value())
 		app::Application::get().getEngineContext().setLanguage(language.value());
+}
+
+void SettingsManager::applyVolumes(sound::Mixer& ioMixer) const {
+	for (const auto& [key, bus]:
+		 {std::pair{KeyVolumeMaster, sound::Bus::Master}, std::pair{KeyVolumeMusic, sound::Bus::Music},
+		  std::pair{KeyVolumeSfx, sound::Bus::SFX}, std::pair{KeyVolumeAmbient, sound::Bus::Ambient},
+		  std::pair{KeyVolumeVoice, sound::Bus::Voice}}) {
+		if (const auto volume = getAs<float>(key); volume.has_value())
+			ioMixer.setUserVolume(bus, volume.value());
+	}
 }
 
 void SettingsManager::clear() {

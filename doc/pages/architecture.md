@@ -393,9 +393,9 @@ key-value store for game configuration:
   [user directory](#architecture-user-directory)
 
 Built-in keys (`resolution_width`, `resolution_height`, `fullscreen`, `resizable`,
-`volume_master`, `language`) are auto-applied to the Window, SoundCommand and the engine context's language via
-`SettingsManager::applyBuiltins()`;
-`volume_music` and `volume_sfx` are stored for scripts only (no per-category mixing yet). Custom keys (e.g., `player_speed`)
+`volume_master`, `volume_music`, `volume_sfx`, `volume_ambient`, `volume_voice`, `language`) are auto-applied to the
+Window, the player's volume of the mixer buses and the engine context's language via
+`SettingsManager::applyBuiltins()`. Custom keys (e.g., `player_speed`)
 are stored and accessible from Lua but not automatically applied.
 
 See [Lua Scripting > settings](scripting.md) for the Lua API.

@@ -131,6 +131,13 @@ function on_update(dt)
         return
     end
 
+    -- The `open_yard` action (U) opens the sound yard: reverb zones, filters, Doppler and an adaptive music.
+    if not shortcut_requested and input.is_action_pressed("open_yard") then
+        shortcut_requested = true
+        scene.transition_to("scenes/sound_yard.owl", "fade", 0.3)
+        return
+    end
+
     -- Display mouse position and button state (demonstrates input.get_mouse_x/y and the `primary` action)
     if mouse_label_id ~= 0 then
         local mx = input.get_mouse_x()

@@ -66,6 +66,7 @@ auto SoundCue::serializeToString() const -> std::string {
 	out << YAML::Key << "pitch" << YAML::Value << pitch;
 	out << YAML::Key << "pitchJitter" << YAML::Value << pitchJitter;
 	out << YAML::Key << "loop" << YAML::Value << loop;
+	out << YAML::Key << "bus" << YAML::Value << std::string{getBusName(bus)};
 	out << YAML::Key << "variants" << YAML::Value << YAML::BeginSeq;
 	for (const auto& variant: variants) {
 		out << YAML::BeginMap;
@@ -104,7 +105,8 @@ auto SoundCue::deserializeFromString(const std::string_view iYaml) -> std::optio
 					 .volumeJitter = std::clamp(root["volumeJitter"].as<float>(0.f), 0.f, 1.f),
 					 .pitch = std::max(0.01f, root["pitch"].as<float>(1.f)),
 					 .pitchJitter = std::clamp(root["pitchJitter"].as<float>(0.f), 0.f, 0.9f),
-					 .loop = root["loop"].as<bool>(false)};
+					 .loop = root["loop"].as<bool>(false),
+					 .bus = parseBus(root["bus"].as<std::string>("SFX")).value_or(Bus::SFX)};
 		for (const auto& variant: root["variants"]) cue.variants.push_back(parseVariant(variant));
 		return cue;
 	} catch (const YAML::Exception& e) {

@@ -34,6 +34,7 @@
 #include "scene/component/LuaScript.h"
 #include "scene/component/Visibility.h"
 #include "scene/ui/HudLayout.h"
+#include "sound/Mixer.h"
 
 #include <entt/entt.hpp>
 
@@ -126,6 +127,8 @@ struct RaycastPushWall;
 struct RendererTag;
 struct SoundListener;
 struct SoundSource;
+struct ReverbZone;
+struct AdaptiveMusic;
 struct SpriteRenderer;
 struct Tag;
 struct Text;
@@ -974,6 +977,36 @@ public:
 
 	/**
 	 * @brief
+	 *  Access the scene's mix (mutable): volume, mute and solo of each bus, Doppler factor, given to the mixer when
+	 *  the scene starts.
+	 * @return The mix.
+	 */
+	[[nodiscard]] auto getMixSettings() -> sound::MixSettings& { return m_mixSettings; }
+
+	/**
+	 * @brief
+	 *  Access the scene's mix (const).
+	 * @return The mix.
+	 */
+	[[nodiscard]] auto getMixSettings() const -> const sound::MixSettings& { return m_mixSettings; }
+
+	/**
+	 * @brief
+	 *  Switch every running adaptive music of the scene to a state.
+	 * @param[in] iState The name of the state.
+	 * @return True when at least one music knows the state.
+	 */
+	auto setMusicState(std::string_view iState) -> bool;
+
+	/**
+	 * @brief
+	 *  State of the first running adaptive music of the scene.
+	 * @return The state, empty when no music runs.
+	 */
+	[[nodiscard]] auto getMusicState() const -> std::string;
+
+	/**
+	 * @brief
 	 *  Access the scene's floating origin settings (mutable), read every frame by the `owl.floating_origin` system.
 	 * @return The floating origin settings.
 	 */
@@ -1413,6 +1446,8 @@ private:
 	PhysicsSettings m_physicsSettings;
 	/// Floating origin settings of the scene.
 	FloatingOriginSettings m_floatingOriginSettings;
+	/// Mix of the scene, given to the mixer when it starts.
+	sound::MixSettings m_mixSettings;
 	/// World position of the scene origin.
 	math::vec3d m_worldOrigin{0.0, 0.0, 0.0};
 	/// Fixed-tick accumulator of the runtime (systems' `tick`, physics steps).
@@ -2475,6 +2510,13 @@ OWL_API void Scene::onComponentAdded<component::SoundSource>(const Entity& iEnti
 template<>
 OWL_API void Scene::onComponentAdded<component::SoundListener>(const Entity& iEntity,
 															   component::SoundListener& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::ReverbZone>(const Entity& iEntity, component::ReverbZone& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::AdaptiveMusic>(const Entity& iEntity,
+															   component::AdaptiveMusic& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::LuaScript>(const Entity& iEntity, component::LuaScript& ioComponent);

@@ -26,6 +26,7 @@ The context menu (on an entity, or on the background):
 | Create Root Entity             | A new entity at the root                                                                                                               |
 | Create Child Entity            | A new entity under this one                                                                                                            |
 | Light                          | **Directional**, **Point**, **Spot**, **Ambient 2D**, **Point 2D**, **Spot 2D**: a light entity, under the selection when there is one |
+| Audio                          | **Reverb Zone**, **Adaptive Music** (states calm, danger, combat): an audio entity, under the selection when there is one              |
 | Duplicate Entity               | Copy the entity alone (`Ctrl+D`)                                                                                                       |
 | Duplicate Subtree              | Copy the entity and all its descendants                                                                                                |
 | Create Prefab...               | Save the entity and its descendants as a `.owlprefab` file                                                                             |
@@ -111,3 +112,17 @@ The overrides per layer type: **Renderer2D** `Space` (`World`, or `Screen` for o
 **RendererIsometric** tile size, `ZStep` and the zoom of Play; **RendererMesh** occlusion culling and lighting;
 **RendererVoxel** sun, ambient and their intensities. The layers themselves are described in
 [Renderer](renderer.md#renderer-stack).
+
+## Mixer
+
+**Scene > Scene > Mixer** opens the mix of the active scene, docked with the bottom panels: one strip per bus
+(Master, Music, SFX, Ambient, Voice) with its fader, **M** (mute), **S** (solo) and a meter of the bus gain now
+([Mixer](sound.md#sound-mixer)), then the **Doppler factor**. In Edit mode a change runs `scene.set_mixer` (an undo
+step per bus, however long its fader moves, saved as `Mixer:` with the scene, heard at once in the previews); while the scene plays it runs
+`sound.set_live_bus`, which changes the live mixer only and ends with Play.
+
+A **Reverb Zone** draws its volume in the viewport, brighter when selected with the edge of its fade; move, turn and
+resize it with the gizmo. Its inspector picks the shape, the preset (or **Custom** parameters) and the zone filter; a
+**Sound Source** picks its bus, its filter (low-pass, high-pass, band-pass) and, spatial, its Doppler; an **Adaptive
+Music** lists its layers (name, asset, volume) and its states (a checkbox per layer, a stinger), with add and remove
+buttons.

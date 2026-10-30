@@ -20,6 +20,12 @@ GameSettings:
   - key: volume_sfx
     type: float
     value: 1.0
+  - key: volume_ambient
+    type: float
+    value: 1.0
+  - key: volume_voice
+    type: float
+    value: 1.0
   - key: ui_scale
     type: float
     value: 1.0

@@ -221,8 +221,9 @@ public:
 	 * @brief
 	 *  Rewrite the asset references of an Owl document by GUID, the rest of the text kept byte for byte.
 	 *
-	 * Only the values of the reference keys (`texture`, `mesh`, `scriptPath`, `tilesetPath`...) of a block YAML text are
-	 * changed, and only when the registry knows the file; what follows a document end (`...`) is kept as is.
+	 * Only the values of the reference keys (`texture`, `mesh`, `scriptPath`, `tilesetPath`, the `asset` of a music
+	 * layer, `stinger`...) of a block YAML text, or of a one-line flow map entry of a sequence, are changed, and only
+	 * when the registry knows the file; what follows a document end (`...`) is kept as is.
 	 * @param[in] iText The document text.
 	 * @return The rewritten text.
 	 */

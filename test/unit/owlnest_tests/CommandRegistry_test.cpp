@@ -19,10 +19,12 @@
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
+#include <scene/component/AdaptiveMusic.h>
 #include <scene/component/Canvas.h>
 #include <scene/component/CircleRenderer.h>
 #include <scene/component/Hierarchy.h>
 #include <scene/component/MeshRenderer.h>
+#include <scene/component/ReverbZone.h>
 #include <scene/component/Tag.h>
 #include <scene/component/Tilemap.h>
 #include <scene/component/Transform.h>
@@ -33,6 +35,7 @@
 #include <scene/component/UiScrollView.h>
 #include <scene/component/UiText.h>
 #include <scene/nav/NavProfile.h>
+#include <sound/SoundCommand.h>
 #include <sound/SoundCue.h>
 
 #include <gtest/gtest.h>
@@ -101,7 +104,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 67u);
+	EXPECT_EQ(m_registry.getCommands().size(), 71u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -295,7 +298,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 67u);
+	EXPECT_EQ(m_registry.getCommands().size(), 71u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -1180,4 +1183,77 @@ TEST_F(CommandRegistryTest, MaterialAssignRefusesBadArguments) {
 	EXPECT_FALSE(run("material.assign", {{"entity", idOf(crate)}, {"material", std::string{"gold.png"}}}).has_value());
 	EXPECT_FALSE(run("material.assign", {{"entity", idOf(bare)}, {"material", material}}).has_value());
 	EXPECT_FALSE(m_undo.canUndo());
+}
+
+TEST_F(CommandRegistryTest, CreatesAReverbZoneAndAnAdaptiveMusic) {
+	const auto parent = m_scene->createEntity("Cave");
+	const auto zone =
+			run("entity.create_reverb_zone", {{"preset", std::string{"Underwater"}}, {"parent", idOf(parent)}});
+	ASSERT_TRUE(zone) << zone.error().message;
+	const auto zoneEntity = m_scene->findEntityByUUID(zone->entity);
+	ASSERT_TRUE(zoneEntity);
+	EXPECT_EQ(zoneEntity.getName(), "Reverb Zone");
+	EXPECT_EQ(zoneEntity.getComponent<scene::component::ReverbZone>().preset, sound::ReverbPreset::Underwater);
+	EXPECT_EQ(zoneEntity.getComponent<scene::component::Hierarchy>().parentId, parent.getUUID());
+	EXPECT_FALSE(run("entity.create_reverb_zone", {{"preset", std::string{"Bathroom"}}}).has_value());
+	const auto music = run("entity.create_adaptive_music", {});
+	ASSERT_TRUE(music) << music.error().message;
+	const auto musicEntity = m_scene->findEntityByUUID(music->entity);
+	ASSERT_TRUE(musicEntity);
+	const auto& states = musicEntity.getComponent<scene::component::AdaptiveMusic>().music.states;
+	ASSERT_EQ(states.size(), 3u);
+	EXPECT_EQ(states[2].name, "combat");
+	ASSERT_TRUE(run("edit.undo", {}));
+	EXPECT_FALSE(m_scene->findEntityByUUID(music->entity));
+}
+
+TEST_F(CommandRegistryTest, EditsTheSceneMixWithUndo) {
+	sound::SoundCommand::create(sound::SoundAPI::Type::Null);
+	const auto volume = run("scene.set_mixer", {{"bus", std::string{"Music"}}, {"volume", 0.5}, {"muted", true}});
+	ASSERT_TRUE(volume) << volume.error().message;
+	EXPECT_FLOAT_EQ(m_scene->getMixSettings().getBus(sound::Bus::Music).volume, 0.5f);
+	EXPECT_TRUE(m_scene->getMixSettings().getBus(sound::Bus::Music).muted);
+	EXPECT_FLOAT_EQ(sound::SoundCommand::getMixer()->getBusVolume(sound::Bus::Music), 0.5f);
+	EXPECT_TRUE(run("scene.set_mixer", {{"doppler_factor", 2.0}}).has_value());
+	EXPECT_FLOAT_EQ(m_scene->getMixSettings().dopplerFactor, 2.f);
+	EXPECT_FALSE(run("scene.set_mixer", {{"volume", 0.2}}).has_value());
+	EXPECT_FALSE(run("scene.set_mixer", {{"bus", std::string{"Master"}}, {"solo", true}}).has_value());
+	EXPECT_FALSE(run("scene.set_mixer", {{"bus", std::string{"SFX"}}, {"volume", 3.0}}).has_value());
+	EXPECT_FALSE(run("scene.set_mixer", {{"doppler_factor", 2.0}}).has_value());
+	ASSERT_TRUE(run("edit.undo", {}));
+	EXPECT_FLOAT_EQ(m_scene->getMixSettings().dopplerFactor, 1.f);
+	EXPECT_TRUE(m_scene->getMixSettings().getBus(sound::Bus::Music).muted);
+	ASSERT_TRUE(run("edit.undo", {}));
+	EXPECT_EQ(m_scene->getMixSettings(), sound::MixSettings{});
+	EXPECT_FLOAT_EQ(sound::SoundCommand::getMixer()->getBusVolume(sound::Bus::Music), 1.f);
+	sound::SoundCommand::invalidate();
+}
+
+TEST_F(CommandRegistryTest, MergesMixEditsOfTheSameBusOnly) {
+	sound::SoundCommand::create(sound::SoundAPI::Type::Null);
+	ASSERT_TRUE(run("scene.set_mixer", {{"bus", std::string{"Music"}}, {"volume", 0.5}}));
+	ASSERT_TRUE(run("scene.set_mixer", {{"bus", std::string{"Music"}}, {"volume", 0.3}}));
+	ASSERT_TRUE(run("scene.set_mixer", {{"bus", std::string{"SFX"}}, {"volume", 0.4}}));
+	ASSERT_TRUE(run("edit.undo", {}));
+	EXPECT_FLOAT_EQ(m_scene->getMixSettings().getBus(sound::Bus::SFX).volume, 1.f);
+	EXPECT_FLOAT_EQ(m_scene->getMixSettings().getBus(sound::Bus::Music).volume, 0.3f);
+	ASSERT_TRUE(run("edit.undo", {}));
+	EXPECT_EQ(m_scene->getMixSettings(), sound::MixSettings{});
+	EXPECT_FALSE(m_undo.canUndo());
+	sound::SoundCommand::invalidate();
+}
+
+TEST_F(CommandRegistryTest, ChangesTheLiveMixerWithoutAnUndoEntry) {
+	EXPECT_FALSE(run("sound.set_live_bus", {{"bus", std::string{"SFX"}}, {"muted", true}}).has_value());
+	sound::SoundCommand::create(sound::SoundAPI::Type::Null);
+	const auto result = run("sound.set_live_bus", {{"bus", std::string{"SFX"}}, {"muted", true}, {"volume", 0.5}});
+	ASSERT_TRUE(result) << result.error().message;
+	auto* mixer = sound::SoundCommand::getMixer();
+	EXPECT_TRUE(mixer->isBusMuted(sound::Bus::SFX));
+	EXPECT_FLOAT_EQ(mixer->getBusVolume(sound::Bus::SFX), 0.5f);
+	EXPECT_FALSE(m_undo.canUndo());
+	EXPECT_TRUE(run("sound.set_live_bus", {{"bus", std::string{"Voice"}}, {"solo", true}}).has_value());
+	EXPECT_FLOAT_EQ(mixer->getBusGain(sound::Bus::Music), 0.f);
+	EXPECT_EQ(m_scene->getMixSettings(), sound::MixSettings{});
+	sound::SoundCommand::invalidate();
 }

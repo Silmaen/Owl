@@ -16,6 +16,36 @@ local speed_slider_id = 0
 local ui_scale_label_id = 0
 local ui_scale_slider_id = 0
 
+-- Volume of each mixer bus but Master: the `volume_<bus>` built-in setting, its slider and its label.
+local bus_volumes = {
+    { setting = "volume_music", slider = "MusicVolSlider", label = "MusicVolLabel", text = "settings.volume_music", default = 0.8 },
+    { setting = "volume_sfx", slider = "SfxVolSlider", label = "SfxVolLabel", text = "settings.volume_sfx", default = 1.0 },
+    { setting = "volume_ambient", slider = "AmbientVolSlider", label = "AmbientVolLabel", text = "settings.volume_ambient", default = 1.0 },
+    { setting = "volume_voice", slider = "VoiceVolSlider", label = "VoiceVolLabel", text = "settings.volume_voice", default = 1.0 },
+}
+
+local function update_bus_label(bus)
+    if bus.label_id ~= 0 then
+        local value = settings.get(bus.setting, bus.default)
+        ui.set_text(bus.label_id, string.format(tr(bus.text), math.floor(value * 100 + 0.5)))
+    end
+end
+
+local function reset_bus_sliders()
+    for _, bus in ipairs(bus_volumes) do
+        if bus.slider_id ~= 0 then
+            ui.set_slider_value(bus.slider_id, settings.get(bus.setting, bus.default))
+        end
+    end
+end
+
+local function set_bus_volume(index)
+    local bus = bus_volumes[index]
+    settings.set(bus.setting, _slider_value or bus.default)
+    settings.apply()
+    update_bus_label(bus)
+end
+
 -- Interface size: the `ui_scale` built-in setting scales every HUD in game, 0.75 to 2 times.
 function on_create()
     log.info("Settings menu loaded")
@@ -28,6 +58,11 @@ function on_create()
     speed_slider_id = scene.find_entity("PlayerSpeedSlider")
     ui_scale_label_id = scene.find_entity("UiScaleLabel")
     ui_scale_slider_id = scene.find_entity("UiScaleSlider")
+    for _, bus in ipairs(bus_volumes) do
+        bus.slider_id = scene.find_entity(bus.slider)
+        bus.label_id = scene.find_entity(bus.label)
+    end
+    reset_bus_sliders()
     if ui_scale_slider_id ~= 0 then
         local scale = settings.get("ui_scale", 1.0)
         ui.set_slider_value(ui_scale_slider_id, (scale - ui_scale_min) / (ui_scale_max - ui_scale_min))
@@ -61,6 +96,9 @@ function update_labels()
     if ui_scale_label_id ~= 0 then
         ui.set_text(ui_scale_label_id, string.format(tr("settings.ui_scale"), math.floor(settings.get("ui_scale", 1.0) * 100 + 0.5)))
     end
+    for _, bus in ipairs(bus_volumes) do
+        update_bus_label(bus)
+    end
 end
 
 local leaving = false
@@ -92,6 +130,12 @@ function on_master_vol_changed()
         ui.set_text(vol_label_id, string.format(tr("settings.volume"), math.floor(value * 100)))
     end
 end
+
+-- Slider callbacks: volume of a mixer bus changed (value 0..1), heard at once.
+function on_music_vol_changed() set_bus_volume(1) end
+function on_sfx_vol_changed() set_bus_volume(2) end
+function on_ambient_vol_changed() set_bus_volume(3) end
+function on_voice_vol_changed() set_bus_volume(4) end
 
 -- Slider callback: player speed changed (value 0..1, mapped to 2..20).
 function on_speed_changed()
@@ -147,6 +191,7 @@ function on_reset_clicked()
     if speed_slider_id ~= 0 then
         ui.set_slider_value(speed_slider_id, (speed - 2.0) / 18.0)
     end
+    reset_bus_sliders()
 
     update_labels()
 end

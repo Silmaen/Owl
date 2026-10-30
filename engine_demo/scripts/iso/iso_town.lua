@@ -3,7 +3,7 @@
 --               get_slope, get_height), an edit of the map at runtime (no undo), the mouse, the gamepad stick and the
 --               keyboard through input actions (`build`, `bulldoze`, `town_tool`, `cursor`), a HUD of its own
 --               (huds/iso_town.owlhud) with tool buttons, ui.is_mouse_over_ui, gamestate, sound effects of the tool
---               (`sound.play`, then `sound.set_volume` scaled by the `volume_sfx` setting).
+--               (`sound.play` on the SFX bus, then `sound.set_volume`).
 --
 -- The road layer (layer 1 of the tilemap) holds road overlays, 16 shapes (tiles 3, 11 and 12 to 25): a cell is tiled from
 -- the mask of its four road neighbours (straight along X or Y, corner, T, cross, dead end, alone), and building or
@@ -69,7 +69,7 @@ local trees_at = {}
 local function play(path, volume)
     gamestate.set("town_sounds", gamestate.get("town_sounds", 0) + 1)
     local handle = sound.play(path)
-    sound.set_volume(handle, volume * settings.get("volume_sfx", 1.0))
+    sound.set_volume(handle, volume)
 end
 
 local function money()

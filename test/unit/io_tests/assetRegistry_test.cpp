@@ -273,3 +273,34 @@ TEST_F(AssetRegistryTest, RewriteReferencesTouchesOnlyReferenceKeys) {
 	EXPECT_EQ(registry.rewriteReferences(rewritten), rewritten);
 	EXPECT_EQ(registry.getEditableDirectories().size(), 1u);
 }
+
+TEST_F(AssetRegistryTest, RewriteReferencesFollowsAdaptiveMusicLayersAndStingers) {
+	writeFile(m_root / "sounds" / "pads.wav", "wav");
+	writeFile(m_root / "sounds" / "danger.wav", "wav");
+	AssetRegistry registry;
+	std::ignore = registry.addDirectory(m_root, true);
+	const auto pads = formatReference(*registry.findGuid("sounds/pads.wav"), "sounds/pads.wav");
+	const auto danger = formatReference(*registry.findGuid("sounds/danger.wav"), "sounds/danger.wav");
+	const std::string text = "    AdaptiveMusic:\n"
+							 "      layers:\n"
+							 "        - {name: pads, asset: sounds/pads.wav, volume: 0.8}\n"
+							 "        - {name: 'a, b', asset: missing.wav, volume: 1}\n"
+							 "      states:\n"
+							 "        - name: calm\n"
+							 "          layers: [pads]\n"
+							 "          stinger: \"\"\n"
+							 "        - name: danger\n"
+							 "          layers: [pads]\n"
+							 "          stinger: sounds/danger.wav\n";
+	const auto rewritten = registry.rewriteReferences(text);
+	EXPECT_NE(rewritten.find("        - {name: pads, asset: " + pads + ", volume: 0.8}\n"), std::string::npos);
+	EXPECT_NE(rewritten.find("        - {name: 'a, b', asset: missing.wav, volume: 1}\n"), std::string::npos);
+	EXPECT_NE(rewritten.find("          stinger: \"\"\n"), std::string::npos);
+	EXPECT_NE(rewritten.find("          stinger: " + danger + "\n"), std::string::npos);
+	EXPECT_EQ(registry.rewriteReferences(rewritten), rewritten);
+
+	ASSERT_TRUE(registry.moveFile(m_root / "sounds" / "pads.wav", m_root / "music" / "calm.wav"));
+	ASSERT_TRUE(registry.moveFile(m_root / "sounds" / "danger.wav", m_root / "music" / "alert.wav"));
+	EXPECT_EQ(registry.toAssetPath(pads), "music/calm.wav");
+	EXPECT_EQ(registry.toAssetPath(danger), "music/alert.wav");
+}

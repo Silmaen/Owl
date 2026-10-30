@@ -51,6 +51,8 @@ constexpr auto tilePalette = "###TilePalette";
 constexpr auto sceneSettings = "###SceneSettings";
 /// Import settings of the asset selected in the content browser.
 constexpr auto assetImport = "###AssetImport";
+/// Buses of the mixer.
+constexpr auto mixer = "###Mixer";
 /// Bundled documentation.
 constexpr auto help = "###Help";
 

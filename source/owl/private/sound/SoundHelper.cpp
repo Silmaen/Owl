@@ -51,8 +51,11 @@ auto SoundHelper::playEntitySound(const scene::Entity& iEntity) -> SoundHandle {
 							.loop = soundComp.loop,
 							.spatial = soundComp.spatial,
 							.position = position,
+							.velocity = {0.f, 0.f, 0.f},
 							.maxDistance = soundComp.maxDistance,
-							.rolloff = soundComp.rolloff};
+							.rolloff = soundComp.rolloff,
+							.bus = soundComp.category,
+							.filter = soundComp.filter};
 	soundComp.runtimeHandle = playAsset(soundComp.soundAsset, params);
 	return soundComp.runtimeHandle;
 }
@@ -113,7 +116,24 @@ auto SoundHelper::playAsset(const std::string& iAsset, const PlayParams& iParams
 	params.volume *= pick->volume;
 	params.pitch *= pick->pitch;
 	params.loop = params.loop || cue->loop;
+	if (!params.bus)
+		params.bus = cue->bus;
 	return SoundCommand::play(data, params);
+}
+
+auto SoundHelper::playMusic(const std::string& iAsset, const float iFadeSeconds) -> SoundHandle {
+	auto* mixer = SoundCommand::getMixer();
+	if (mixer == nullptr) {
+		OWL_CORE_WARN("SoundHelper: No sound backend to play the music '{}'.", iAsset)
+		return invalidSoundHandle;
+	}
+	const SoundHandle track = playAsset(iAsset, PlayParams{.volume = 1.f, .loop = true, .bus = Bus::Music});
+	if (track == invalidSoundHandle) {
+		OWL_CORE_WARN("SoundHelper: Music '{}' could not be played.", iAsset)
+		return invalidSoundHandle;
+	}
+	mixer->setMusic(track, iFadeSeconds);
+	return track;
 }
 
 void SoundHelper::forgetCue(const std::string& iAsset) {

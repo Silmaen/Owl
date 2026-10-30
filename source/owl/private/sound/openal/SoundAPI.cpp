@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <ranges>
 
 namespace owl::sound::openal {
 
@@ -32,6 +33,78 @@ struct OpenAlAPI {
 
 namespace {
 internal::OpenAlAPI g_Device;
+
+// EFX entry points, loaded when the device has ALC_EXT_EFX; the effect and the slot carry the environment reverb.
+struct EfxApi {
+	LPALGENEFFECTS genEffects = nullptr;
+	LPALDELETEEFFECTS deleteEffects = nullptr;
+	LPALEFFECTI effecti = nullptr;
+	LPALEFFECTF effectf = nullptr;
+	LPALGENAUXILIARYEFFECTSLOTS genSlots = nullptr;
+	LPALDELETEAUXILIARYEFFECTSLOTS deleteSlots = nullptr;
+	LPALAUXILIARYEFFECTSLOTI sloti = nullptr;
+	LPALAUXILIARYEFFECTSLOTF slotf = nullptr;
+	LPALGENFILTERS genFilters = nullptr;
+	LPALDELETEFILTERS deleteFilters = nullptr;
+	LPALFILTERI filteri = nullptr;
+	LPALFILTERF filterf = nullptr;
+	ALuint effect = 0;
+	ALuint slot = 0;
+	bool available = false;
+};
+EfxApi g_Efx;
+
+template<typename T>
+auto loadProc(const char* iName) -> T {
+	return reinterpret_cast<T>(alGetProcAddress(iName));
+}
+
+void initEfx() {
+	g_Efx = EfxApi{};
+	if (alcIsExtensionPresent(g_Device.device, "ALC_EXT_EFX") == ALC_FALSE) {
+		OWL_CORE_WARN("SoundAPI(OpenAL): No EFX extension, reverb zones and filters are off.")
+		return;
+	}
+	g_Efx.genEffects = loadProc<LPALGENEFFECTS>("alGenEffects");
+	g_Efx.deleteEffects = loadProc<LPALDELETEEFFECTS>("alDeleteEffects");
+	g_Efx.effecti = loadProc<LPALEFFECTI>("alEffecti");
+	g_Efx.effectf = loadProc<LPALEFFECTF>("alEffectf");
+	g_Efx.genSlots = loadProc<LPALGENAUXILIARYEFFECTSLOTS>("alGenAuxiliaryEffectSlots");
+	g_Efx.deleteSlots = loadProc<LPALDELETEAUXILIARYEFFECTSLOTS>("alDeleteAuxiliaryEffectSlots");
+	g_Efx.sloti = loadProc<LPALAUXILIARYEFFECTSLOTI>("alAuxiliaryEffectSloti");
+	g_Efx.slotf = loadProc<LPALAUXILIARYEFFECTSLOTF>("alAuxiliaryEffectSlotf");
+	g_Efx.genFilters = loadProc<LPALGENFILTERS>("alGenFilters");
+	g_Efx.deleteFilters = loadProc<LPALDELETEFILTERS>("alDeleteFilters");
+	g_Efx.filteri = loadProc<LPALFILTERI>("alFilteri");
+	g_Efx.filterf = loadProc<LPALFILTERF>("alFilterf");
+	if (g_Efx.genEffects == nullptr || g_Efx.deleteEffects == nullptr || g_Efx.effecti == nullptr ||
+		g_Efx.effectf == nullptr || g_Efx.genSlots == nullptr || g_Efx.deleteSlots == nullptr ||
+		g_Efx.sloti == nullptr || g_Efx.slotf == nullptr || g_Efx.genFilters == nullptr ||
+		g_Efx.deleteFilters == nullptr || g_Efx.filteri == nullptr || g_Efx.filterf == nullptr) {
+		OWL_CORE_WARN("SoundAPI(OpenAL): EFX entry points missing, reverb zones and filters are off.")
+		return;
+	}
+	alGetError();
+	g_Efx.genEffects(1, &g_Efx.effect);
+	g_Efx.effecti(g_Efx.effect, AL_EFFECT_TYPE, AL_EFFECT_REVERB);
+	g_Efx.genSlots(1, &g_Efx.slot);
+	g_Efx.slotf(g_Efx.slot, AL_EFFECTSLOT_GAIN, 0.f);
+	g_Efx.sloti(g_Efx.slot, AL_EFFECTSLOT_EFFECT, static_cast<ALint>(g_Efx.effect));
+	if (const ALenum err = alGetError(); err != AL_NO_ERROR) {
+		OWL_CORE_WARN("SoundAPI(OpenAL): EFX reverb could not be created ({}), reverb zones are off.", alGetString(err))
+		return;
+	}
+	g_Efx.available = true;
+}
+
+void releaseEfx() {
+	if (g_Efx.available) {
+		g_Efx.deleteSlots(1, &g_Efx.slot);
+		g_Efx.deleteEffects(1, &g_Efx.effect);
+	}
+	g_Efx = EfxApi{};
+}
+
 }// namespace
 
 void SoundAPI::init() {
@@ -75,6 +148,8 @@ void SoundAPI::init() {
 
 	// Distance model for 3D attenuation
 	alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
+	alSpeedOfSound(g_maxDopplerSpeed);
+	initEfx();
 
 	setState(State::Ready);
 }
@@ -82,12 +157,8 @@ void SoundAPI::init() {
 SoundAPI::~SoundAPI() {
 	OWL_PROFILE_FUNCTION()
 
-	// Stop and delete all active sources
-	for (auto& source: m_handleToSource | std::views::values) {
-		alSourceStop(source);
-		alDeleteSources(1, &source);
-	}
-	m_handleToSource.clear();
+	stopAll();
+	releaseEfx();
 
 	if (g_Device.context != nullptr) {
 		alcMakeContextCurrent(nullptr);
@@ -142,10 +213,11 @@ auto SoundAPI::play(const shared<SoundData>& iData, const PlayParams& iParams) -
 		alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
 	}
 
-	alSourcePlay(source);
-
 	const SoundHandle handle = m_nextHandle++;
 	m_handleToSource[handle] = source;
+	if (!iParams.filter.isNeutral())
+		setFilter(handle, iParams.filter);
+	alSourcePlay(source);
 	return handle;
 }
 
@@ -155,6 +227,7 @@ void SoundAPI::stop(const SoundHandle iHandle) {
 		alDeleteSources(1, &it->second);
 		m_handleToSource.erase(it);
 	}
+	releaseFilter(iHandle);
 }
 
 void SoundAPI::pause(const SoundHandle iHandle) {
@@ -204,12 +277,91 @@ void SoundAPI::setListenerOrientation(const math::vec3f& iForward, const math::v
 void SoundAPI::setListenerGain(const float iGain) { alListenerf(AL_GAIN, iGain); }
 
 void SoundAPI::stopAll() {
-	for (auto& [handle, source]: m_handleToSource) {
+	for (auto& source: m_handleToSource | std::views::values) {
 		alSourceStop(source);
 		alDeleteSources(1, &source);
 	}
 	m_handleToSource.clear();
+	for (auto& filter: m_handleToFilter | std::views::values) g_Efx.deleteFilters(1, &filter);
+	m_handleToFilter.clear();
 }
+
+void SoundAPI::releaseFilter(const SoundHandle iHandle) {
+	if (const auto it = m_handleToFilter.find(iHandle); it != m_handleToFilter.end()) {
+		g_Efx.deleteFilters(1, &it->second);
+		m_handleToFilter.erase(it);
+	}
+}
+
+void SoundAPI::setFilter(const SoundHandle iHandle, const Filter& iFilter) {
+	const auto it = m_handleToSource.find(iHandle);
+	if (it == m_handleToSource.end() || !g_Efx.available)
+		return;
+	if (iFilter.isNeutral()) {
+		alSourcei(it->second, AL_DIRECT_FILTER, AL_FILTER_NULL);
+		releaseFilter(iHandle);
+		return;
+	}
+	auto [found, inserted] = m_handleToFilter.try_emplace(iHandle, 0U);
+	if (inserted)
+		g_Efx.genFilters(1, &found->second);
+	const ALuint filter = found->second;
+	const Filter clamped = iFilter.clamped();
+	const bool lowOnly = clamped.gainLow >= 1.f;
+	const bool highOnly = clamped.gainHigh >= 1.f;
+	if (lowOnly) {
+		g_Efx.filteri(filter, AL_FILTER_TYPE, AL_FILTER_LOWPASS);
+		g_Efx.filterf(filter, AL_LOWPASS_GAIN, clamped.gain);
+		g_Efx.filterf(filter, AL_LOWPASS_GAINHF, clamped.gainHigh);
+	} else if (highOnly) {
+		g_Efx.filteri(filter, AL_FILTER_TYPE, AL_FILTER_HIGHPASS);
+		g_Efx.filterf(filter, AL_HIGHPASS_GAIN, clamped.gain);
+		g_Efx.filterf(filter, AL_HIGHPASS_GAINLF, clamped.gainLow);
+	} else {
+		g_Efx.filteri(filter, AL_FILTER_TYPE, AL_FILTER_BANDPASS);
+		g_Efx.filterf(filter, AL_BANDPASS_GAIN, clamped.gain);
+		g_Efx.filterf(filter, AL_BANDPASS_GAINLF, clamped.gainLow);
+		g_Efx.filterf(filter, AL_BANDPASS_GAINHF, clamped.gainHigh);
+	}
+	alSourcei(it->second, AL_DIRECT_FILTER, static_cast<ALint>(filter));
+}
+
+void SoundAPI::setEnvironmentSend(const SoundHandle iHandle, const bool iSend) {
+	const auto it = m_handleToSource.find(iHandle);
+	if (it == m_handleToSource.end() || !g_Efx.available)
+		return;
+	alSource3i(it->second, AL_AUXILIARY_SEND_FILTER,
+			   iSend ? static_cast<ALint>(g_Efx.slot) : static_cast<ALint>(AL_EFFECTSLOT_NULL), 0,
+			   static_cast<ALint>(AL_FILTER_NULL));
+}
+
+void SoundAPI::setReverb(const Reverb& iReverb, const float iWet) {
+	if (!g_Efx.available)
+		return;
+	const Reverb reverb = iReverb.clamped();
+	const ALuint effect = g_Efx.effect;
+	g_Efx.effectf(effect, AL_REVERB_DENSITY, reverb.density);
+	g_Efx.effectf(effect, AL_REVERB_DIFFUSION, reverb.diffusion);
+	g_Efx.effectf(effect, AL_REVERB_GAIN, reverb.gain);
+	g_Efx.effectf(effect, AL_REVERB_GAINHF, reverb.gainHigh);
+	g_Efx.effectf(effect, AL_REVERB_DECAY_TIME, reverb.decayTime);
+	g_Efx.effectf(effect, AL_REVERB_DECAY_HFRATIO, reverb.decayHighRatio);
+	g_Efx.effectf(effect, AL_REVERB_REFLECTIONS_GAIN, reverb.reflectionsGain);
+	g_Efx.effectf(effect, AL_REVERB_REFLECTIONS_DELAY, reverb.reflectionsDelay);
+	g_Efx.effectf(effect, AL_REVERB_LATE_REVERB_GAIN, reverb.lateGain);
+	g_Efx.effectf(effect, AL_REVERB_LATE_REVERB_DELAY, reverb.lateDelay);
+	// The slot copies the effect when it is attached: attach it again after each change.
+	g_Efx.sloti(g_Efx.slot, AL_EFFECTSLOT_EFFECT, static_cast<ALint>(effect));
+	g_Efx.slotf(g_Efx.slot, AL_EFFECTSLOT_GAIN, std::clamp(iWet, 0.f, 1.f));
+}
+
+void SoundAPI::setListenerVelocity(const math::vec3f& iVelocity) {
+	alListener3f(AL_VELOCITY, iVelocity.x(), iVelocity.y(), iVelocity.z());
+}
+
+void SoundAPI::setDopplerFactor(const float iFactor) { alDopplerFactor(std::max(0.f, iFactor)); }
+
+auto SoundAPI::hasSource(const SoundHandle iHandle) const -> bool { return m_handleToSource.contains(iHandle); }
 
 auto SoundAPI::isPlaying(const SoundHandle iHandle) const -> bool {
 	if (const auto it = m_handleToSource.find(iHandle); it != m_handleToSource.end()) {
@@ -227,12 +379,13 @@ void SoundAPI::frame(const core::Timestep&) {
 }
 
 void SoundAPI::releaseStoppedSources() {
-	std::erase_if(m_handleToSource, [](const auto& iEntry) -> bool {
+	std::erase_if(m_handleToSource, [this](const auto& iEntry) -> bool {
 		ALint state = 0;
 		alGetSourcei(iEntry.second, AL_SOURCE_STATE, &state);
 		if (state != AL_STOPPED)
 			return false;
 		alDeleteSources(1, &iEntry.second);
+		releaseFilter(iEntry.first);
 		return true;
 	});
 }

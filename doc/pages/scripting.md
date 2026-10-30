@@ -454,12 +454,14 @@ project assets) overlaid with user overrides (`settings.yml` in user directory).
 | `resolution_height` | int   | Window height in pixels |
 | `fullscreen`        | bool  | Fullscreen mode         |
 | `resizable`         | bool  | Window resizable        |
-| `volume_master`     | float | Master volume (0.0–1.0) |
-| `volume_music`      | float | Read by scripts only    |
-| `volume_sfx`        | float | Read by scripts only    |
+| `volume_master`     | float | Master bus volume       |
+| `volume_music`      | float | Music bus volume        |
+| `volume_sfx`        | float | SFX bus volume          |
+| `volume_ambient`    | float | Ambient bus volume      |
+| `volume_voice`      | float | Voice bus volume        |
 
-`volume_music` and `volume_sfx` are stored and returned, but the engine applies only `volume_master`: there is
-no per-category mixing yet (`SoundSource` categories are not read at run time).
+The `volume_*` keys are the player's volume of each mixer bus, multiplied by the designer mix of the scene
+([Mixer](sound.md#sound-mixer)).
 
 Custom game-specific keys (e.g., `player_speed`, `player_jump_impulse`) can be defined in
 `game_settings.yml` and read from Lua the same way.

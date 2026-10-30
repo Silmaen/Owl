@@ -147,6 +147,33 @@ TEST_F(AssetScannerTest, ScanSceneWithSoundAbsolutePathResolved) {
 	EXPECT_TRUE(found);
 }
 
+TEST_F(AssetScannerTest, ScanSceneFollowsTheLayersAndStingersOfAnAdaptiveMusic) {
+	const auto layerPath = m_tempDir / "layer.wav";
+	const auto stingerPath = m_tempDir / "stinger.wav";
+	writeDummyBinary(layerPath);
+	writeDummyBinary(stingerPath);
+	const auto scenePath = m_tempDir / "withmusic.owl";
+	writeFile(scenePath, "Scene: withmusic\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    AdaptiveMusic:\n"
+						 "      layers:\n"
+						 "        - {name: pads, asset: \"" +
+								 layerPath.generic_string() +
+								 "\", volume: 1}\n"
+								 "      states:\n"
+								 "        - {name: calm, layers: [pads], stinger: \"\"}\n"
+								 "        - {name: combat, layers: [], stinger: \"" +
+								 stingerPath.generic_string() + "\"}\n");
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(scenePath, &warnings);
+	size_t sounds = 0;
+	for (const auto& ref: assets)
+		if (ref.assetType == AssetType::Sound && (ref.diskPath == layerPath || ref.diskPath == stingerPath))
+			++sounds;
+	EXPECT_EQ(sounds, 2u);
+	EXPECT_TRUE(warnings.empty());
+}
+
 TEST_F(AssetScannerTest, ScanSceneWithMalformedYamlSilent) {
 	const auto scenePath = m_tempDir / "garbage.owl";
 	writeFile(scenePath, "Scene: garbage\nEntities: [\n");

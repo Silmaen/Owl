@@ -33,6 +33,14 @@ actions:
     type: button
     bindings:
       - {key: M}
+  - name: open_yard
+    type: button
+    bindings:
+      - {key: U}
+  - name: yard_mute_music
+    type: button
+    bindings:
+      - {key: M}
   - name: orbit_jump
     type: button
     bindings:

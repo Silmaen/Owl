@@ -14,11 +14,14 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <format>
 #include <map>
 #include <mutex>
 #include <ranges>
 #include <shared_mutex>
+#include <string>
+#include <string_view>
 #include <system_error>
 #include <utility>
 
@@ -78,6 +81,42 @@ auto moveOnDisk(const std::filesystem::path& iFrom, const std::filesystem::path&
 	}
 	std::filesystem::remove_all(iFrom, error);
 	return true;
+}
+
+// Keys whose value is an asset reference in an Owl document.
+constexpr std::array<std::string_view, 25> g_ReferenceKeys{"texture",        "normalTexture", "roughnessTexture",
+														   "opacityTexture", "baseColorMap",  "metallicMap",
+														   "roughnessMap",   "normalMap",     "occlusionMap",
+														   "emissiveMap",    "mesh",          "material",
+														   "parent",         "scriptPath",    "hdri",
+														   "tilesetPath",    "tilemapPath",   "prefabAssetPath",
+														   "atlasPath",      "soundAsset",    "asset",
+														   "stinger",        "LevelName",     "Hud",
+														   "Tileset"};
+
+auto isReferenceKey(const std::string_view iKey) -> bool {
+	return std::ranges::find(g_ReferenceKeys, iKey) != g_ReferenceKeys.end();
+}
+
+auto trimmedRight(std::string_view iText) -> std::string_view {
+	while (!iText.empty() && (iText.back() == ' ' || iText.back() == '\r')) iText.remove_suffix(1);
+	return iText;
+}
+
+auto findUnquoted(const std::string_view iText, const char iCharacter, const size_t iFrom) -> size_t {
+	char quote = 0;
+	for (size_t index = iFrom; index < iText.size(); ++index) {
+		const char character = iText[index];
+		if (quote != 0) {
+			if (character == quote)
+				quote = 0;
+		} else if (character == '\'' || character == '"') {
+			quote = character;
+		} else if (character == iCharacter) {
+			return index;
+		}
+	}
+	return std::string_view::npos;
 }
 
 }// namespace
@@ -441,12 +480,46 @@ auto AssetRegistry::toAssetReference(const std::string_view iPath) const -> std:
 }
 
 auto AssetRegistry::rewriteReferences(const std::string_view iText) const -> std::string {
-	static constexpr std::array<std::string_view, 23> referenceKeys{
-			"texture",     "normalTexture", "roughnessTexture", "opacityTexture", "baseColorMap",
-			"metallicMap", "roughnessMap",  "normalMap",        "occlusionMap",   "emissiveMap",
-			"mesh",        "material",      "parent",           "scriptPath",     "hdri",
-			"tilesetPath", "tilemapPath",   "prefabAssetPath",  "atlasPath",      "soundAsset",
-			"LevelName",   "Hud",           "Tileset"};
+	const auto rewriteValue = [this](const std::string_view iValue) -> std::string {
+		const auto value = trimmedRight(iValue);
+		const bool quoted =
+				value.size() >= 2 && (value.front() == '\'' || value.front() == '"') && value.back() == value.front();
+		const auto bare = quoted ? value.substr(1, value.size() - 2) : value;
+		std::string reference;
+		if (bare.starts_with(g_TextureNamePrefix))
+			reference = toAssetReference(bare.substr(g_TextureNamePrefix.size()));
+		else if (bare.starts_with("pat:"))
+			reference = toAssetReference(bare.substr(4));
+		else if (!bare.starts_with(g_GuidReferencePrefix))
+			reference = toAssetReference(bare);
+		if (!reference.starts_with(g_GuidReferencePrefix))
+			return {};
+		const auto quote = quoted ? std::string(1, value.front()) : std::string{};
+		return std::format("{}{}{}{}", quote, reference, quote, iValue.substr(value.size()));
+	};
+	const auto rewriteFlowMap = [&rewriteValue](const std::string_view iEntries) -> std::string {
+		std::string out;
+		bool changed = false;
+		size_t cursor = 0;
+		while (cursor <= iEntries.size()) {
+			const auto comma = std::min(iEntries.size(), findUnquoted(iEntries, ',', cursor));
+			const auto entry = iEntries.substr(cursor, comma - cursor);
+			const auto separator = entry.find(": ");
+			std::string rewritten;
+			if (separator != std::string_view::npos) {
+				const auto key = entry.substr(0, separator);
+				if (isReferenceKey(key.substr(std::min(key.size(), key.find_first_not_of(' ')))))
+					rewritten = rewriteValue(entry.substr(separator + 2));
+			}
+			changed |= !rewritten.empty();
+			out += rewritten.empty() ? std::string{entry}
+									 : std::format("{}{}", entry.substr(0, separator + 2), rewritten);
+			if (comma < iEntries.size())
+				out += ',';
+			cursor = comma + 1;
+		}
+		return changed ? out : std::string{};
+	};
 	const auto headerEnd = std::min(iText.size(), iText.find("\n...\n"));
 	std::string out;
 	out.reserve(iText.size());
@@ -459,25 +532,17 @@ auto AssetRegistry::rewriteReferences(const std::string_view iText) const -> std
 		auto keyStart = line.find_first_not_of(' ');
 		if (keyStart != std::string_view::npos && line.substr(keyStart).starts_with("- "))
 			keyStart += 2;
+		const auto content = trimmedRight(line);
 		std::string rewritten;
-		if (separator != std::string_view::npos && keyStart != std::string_view::npos && keyStart < separator &&
-			std::ranges::find(referenceKeys, line.substr(keyStart, separator - keyStart)) != referenceKeys.end()) {
-			auto value = line.substr(separator + 2);
-			while (!value.empty() && (value.back() == ' ' || value.back() == '\r')) value.remove_suffix(1);
-			const bool quoted = value.size() >= 2 && (value.front() == '\'' || value.front() == '"') &&
-								value.back() == value.front();
-			const auto bare = quoted ? value.substr(1, value.size() - 2) : value;
-			std::string reference;
-			if (bare.starts_with(g_TextureNamePrefix))
-				reference = toAssetReference(bare.substr(g_TextureNamePrefix.size()));
-			else if (bare.starts_with("pat:"))
-				reference = toAssetReference(bare.substr(4));
-			else if (!bare.starts_with(g_GuidReferencePrefix))
-				reference = toAssetReference(bare);
-			if (reference.starts_with(g_GuidReferencePrefix)) {
-				const auto quote = quoted ? std::string(1, value.front()) : std::string{};
-				rewritten = std::format("{}{}{}{}", line.substr(0, separator + 2), quote, reference, quote);
-			}
+		if (keyStart < content.size() && content[keyStart] == '{' && content.ends_with('}')) {
+			if (const auto entries = rewriteFlowMap(content.substr(keyStart + 1, content.size() - keyStart - 2));
+				!entries.empty())
+				rewritten =
+						std::format("{}{}{}", line.substr(0, keyStart + 1), entries, line.substr(content.size() - 1));
+		} else if (separator != std::string_view::npos && keyStart != std::string_view::npos && keyStart < separator &&
+				   isReferenceKey(line.substr(keyStart, separator - keyStart))) {
+			if (const auto value = rewriteValue(line.substr(separator + 2)); !value.empty())
+				rewritten = std::format("{}{}", line.substr(0, separator + 2), value);
 		}
 		out += rewritten.empty() ? std::string{line} : rewritten;
 		if (lineEnd != headerEnd)

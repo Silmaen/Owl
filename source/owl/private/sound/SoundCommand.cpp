@@ -13,8 +13,21 @@
 namespace owl::sound {
 
 uniq<SoundAPI> SoundCommand::m_soundApi = nullptr;
+uniq<Mixer> SoundCommand::m_mixer = nullptr;
 
-void SoundCommand::create(const SoundAPI::Type& iType) { m_soundApi = SoundAPI::create(iType); }
+void SoundCommand::create(const SoundAPI::Type& iType) {
+	m_mixer.reset();
+	m_soundApi = SoundAPI::create(iType);
+	if (m_soundApi)
+		m_mixer = mkUniq<Mixer>(*m_soundApi);
+}
+
+void SoundCommand::frame(const core::Timestep& iTs) {
+	if (!m_soundApi)
+		return;
+	m_soundApi->frame(iTs);
+	m_mixer->update(iTs.getSeconds());
+}
 
 auto SoundCommand::getState() -> SoundAPI::State {
 	if (m_soundApi)
@@ -23,14 +36,14 @@ auto SoundCommand::getState() -> SoundAPI::State {
 }
 
 auto SoundCommand::play(const shared<SoundData>& iData, const PlayParams& iParams) -> SoundHandle {
-	if (m_soundApi)
-		return m_soundApi->play(iData, iParams);
+	if (m_mixer)
+		return m_mixer->play(iData, iParams);
 	return invalidSoundHandle;
 }
 
 void SoundCommand::stop(const SoundHandle iHandle) {
-	if (m_soundApi)
-		m_soundApi->stop(iHandle);
+	if (m_mixer)
+		m_mixer->stop(iHandle);
 }
 
 void SoundCommand::pause(const SoundHandle iHandle) {
@@ -44,8 +57,18 @@ void SoundCommand::resume(const SoundHandle iHandle) {
 }
 
 void SoundCommand::setVolume(const SoundHandle iHandle, const float iVolume) {
+	if (m_mixer)
+		m_mixer->setVolume(iHandle, iVolume);
+}
+
+void SoundCommand::setFilter(const SoundHandle iHandle, const Filter& iFilter) {
+	if (m_mixer)
+		m_mixer->setFilter(iHandle, iFilter);
+}
+
+void SoundCommand::setListenerVelocity(const math::vec3f& iVelocity) {
 	if (m_soundApi)
-		m_soundApi->setVolume(iHandle, iVolume);
+		m_soundApi->setListenerVelocity(iVelocity);
 }
 
 void SoundCommand::setPitch(const SoundHandle iHandle, const float iPitch) {
@@ -86,6 +109,8 @@ void SoundCommand::setListenerGain(const float iGain) {
 void SoundCommand::stopAll() {
 	if (m_soundApi)
 		m_soundApi->stopAll();
+	if (m_mixer)
+		m_mixer->clear();
 }
 
 auto SoundCommand::isPlaying(const SoundHandle iHandle) -> bool {
