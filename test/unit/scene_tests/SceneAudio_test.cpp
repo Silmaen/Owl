@@ -125,11 +125,15 @@ TEST_F(SceneAudioTest, ComponentsAndMixRoundTrip) {
 	EXPECT_EQ(readZone.preset, sound::ReverbPreset::Custom);
 	EXPECT_FLOAT_EQ(readZone.reverb.decayTime, 5.f);
 	EXPECT_FLOAT_EQ(readZone.filter.gainHigh, 0.1f);
-	const auto& readMusic = findByName(loaded, "Music").getComponent<scene::component::AdaptiveMusic>();
+	const auto loadedMusic = findByName(loaded, "Music");
+	ASSERT_TRUE(loadedMusic);
+	const auto& readMusic = loadedMusic.getComponent<scene::component::AdaptiveMusic>();
 	EXPECT_EQ(readMusic.music, music.music);
 	EXPECT_EQ(readMusic.stateKey, "threat");
 	EXPECT_EQ(readMusic.initialState, "calm");
-	const auto& [readSource] = findByName(loaded, "Radio").getComponent<scene::component::SoundSource>();
+	const auto radio = findByName(loaded, "Radio");
+	ASSERT_TRUE(radio);
+	const auto& [readSource] = radio.getComponent<scene::component::SoundSource>();
 	EXPECT_EQ(readSource.category, sound::Bus::Voice);
 	EXPECT_FLOAT_EQ(readSource.filter.gainLow, 0.2f);
 	EXPECT_FALSE(readSource.doppler);
