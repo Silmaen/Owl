@@ -570,7 +570,18 @@ void EditorLayer::onAttach() {
 									[this]() -> void {
 										if (getState() != State::Edit)
 											return;
-										if (const auto ent = getSelectedEntity(); ent) {
+										const auto ent = getSelectedEntity();
+										if (auto& points = gui::component::getSplineSelection();
+											ent && points.entity == ent.getUUID() && !points.points.empty()) {
+											std::ignore = execute(
+													"spline.delete_points",
+													{{"entity", static_cast<int64_t>(static_cast<uint64_t>(ent.getUUID()))},
+													 {"points", commands::formatIndices(points.points)}},
+													commands::CommandSource::Gesture);
+											points.clear();
+											return;
+										}
+										if (ent) {
 											setSelectedEntity({});
 											std::ignore = execute(
 													"entity.delete",
