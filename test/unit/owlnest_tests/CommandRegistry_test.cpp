@@ -104,7 +104,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 77u);
+	EXPECT_EQ(m_registry.getCommands().size(), 93u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -298,7 +298,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 77u);
+	EXPECT_EQ(m_registry.getCommands().size(), 93u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -1256,4 +1256,69 @@ TEST_F(CommandRegistryTest, ChangesTheLiveMixerWithoutAnUndoEntry) {
 	EXPECT_FLOAT_EQ(mixer->getBusGain(sound::Bus::Music), 0.f);
 	EXPECT_EQ(m_scene->getMixSettings(), sound::MixSettings{});
 	sound::SoundCommand::invalidate();
+}
+
+TEST_F(CommandRegistryTest, SplineCommandsEditThePointsAndUndo) {
+	// Each gesture is its own undo entry here (the editor merges edits of an entity made within a second).
+	m_undo.setMergeEnabled(false);
+	auto rail = m_scene->createEntity("Rail");
+	EXPECT_FALSE(run("spline.add_point", {{"entity", idOf(rail)}, {"position", math::vec3{0.f, 0.f, 0.f}}}));
+	auto& spline = rail.addComponent<scene::component::Spline>();
+	spline.curve.setInterpolation(math::SplineInterpolation::Linear);
+	const auto pointsOf = [&rail]() -> const std::vector<math::SplinePoint>& {
+		return rail.getComponent<scene::component::Spline>().curve.getPoints();
+	};
+	EXPECT_FALSE(run("spline.insert_point", {{"entity", idOf(rail)}, {"distance", 1.0}}));
+	ASSERT_TRUE(run("spline.add_point", {{"entity", idOf(rail)}, {"position", math::vec3{0.f, 0.f, 0.f}}}));
+	const auto added = run("spline.add_point", {{"entity", idOf(rail)}, {"position", math::vec3{4.f, 0.f, 0.f}}});
+	ASSERT_TRUE(added);
+	EXPECT_EQ(std::get<int64_t>(added->data.at("point")), 1);
+	ASSERT_TRUE(run("spline.add_point",
+					{{"entity", idOf(rail)}, {"position", math::vec3{-2.f, 0.f, 0.f}}, {"index", int64_t{0}}}));
+	ASSERT_EQ(pointsOf().size(), 3u);
+	EXPECT_FLOAT_EQ(pointsOf()[0].position.x(), -2.f);
+	const auto inserted = run("spline.insert_point", {{"entity", idOf(rail)}, {"distance", 4.0}});
+	ASSERT_TRUE(inserted);
+	EXPECT_EQ(std::get<int64_t>(inserted->data.at("point")), 2);
+	ASSERT_EQ(pointsOf().size(), 4u);
+	EXPECT_NEAR(pointsOf()[2].position.x(), 2.f, 1e-3f);
+	ASSERT_TRUE(run("spline.move_points",
+					{{"entity", idOf(rail)}, {"points", std::string{"0,1"}}, {"offset", math::vec3{0.f, 1.f, 0.f}}}));
+	EXPECT_FLOAT_EQ(pointsOf()[0].position.y(), 1.f);
+	EXPECT_FLOAT_EQ(pointsOf()[1].position.y(), 1.f);
+	EXPECT_FALSE(run("spline.move_points",
+					 {{"entity", idOf(rail)}, {"points", std::string{"0"}}, {"offset", math::vec3{0.f, 0.f, 0.f}}}));
+	EXPECT_FALSE(run("spline.move_points",
+					 {{"entity", idOf(rail)}, {"points", std::string{"7"}}, {"offset", math::vec3{1.f, 0.f, 0.f}}}));
+	ASSERT_TRUE(run("spline.set_point", {{"entity", idOf(rail)},
+										 {"point", int64_t{3}},
+										 {"position", math::vec3{5.f, 0.f, 0.f}},
+										 {"tangent_out", math::vec3{1.f, 0.f, 0.f}}}));
+	EXPECT_FLOAT_EQ(pointsOf()[3].position.x(), 5.f);
+	EXPECT_FLOAT_EQ(pointsOf()[3].tangentOut.x(), 1.f);
+	EXPECT_FALSE(run("spline.set_point", {{"entity", idOf(rail)}, {"point", int64_t{3}}}));
+	EXPECT_FALSE(run("spline.set_point", {{"entity", idOf(rail)}, {"point", int64_t{9}}}));
+	ASSERT_TRUE(run("spline.delete_points", {{"entity", idOf(rail)}, {"points", std::string{"3,0"}}}));
+	ASSERT_EQ(pointsOf().size(), 2u);
+	EXPECT_FALSE(run("spline.delete_points", {{"entity", idOf(rail)}, {"points", std::string{"x"}}}));
+	EXPECT_FALSE(run("spline.delete_points", {{"entity", idOf(rail)}, {"points", std::string{""}}}));
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(pointsOf().size(), 4u);
+	EXPECT_FLOAT_EQ(pointsOf()[3].position.x(), 5.f);
+	m_undo.undo(*m_scene);
+	EXPECT_FLOAT_EQ(pointsOf()[3].position.x(), 4.f);
+	m_undo.redo(*m_scene);
+	m_undo.redo(*m_scene);
+	EXPECT_EQ(pointsOf().size(), 2u);
+}
+
+TEST_F(CommandRegistryTest, SplineAddPointSmoothensABezierPoint) {
+	auto rail = m_scene->createEntity("Rail");
+	auto& spline = rail.addComponent<scene::component::Spline>();
+	spline.curve.setInterpolation(math::SplineInterpolation::Bezier);
+	ASSERT_TRUE(run("spline.add_point", {{"entity", idOf(rail)}, {"position", math::vec3{0.f, 0.f, 0.f}}}));
+	ASSERT_TRUE(run("spline.add_point", {{"entity", idOf(rail)}, {"position", math::vec3{6.f, 0.f, 0.f}}}));
+	const auto& points = rail.getComponent<scene::component::Spline>().curve.getPoints();
+	EXPECT_NEAR(points[1].tangentOut.x(), 1.f, 1e-4f);
+	EXPECT_NEAR(points[1].tangentIn.x(), -1.f, 1e-4f);
 }

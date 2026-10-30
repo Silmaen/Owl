@@ -223,6 +223,25 @@ public:
 
 	/**
 	 * @brief
+	 *  Set a callback invoked when a data table (`.owltable`) is double-clicked.
+	 * @param[in] iCallback Function taking the table file path.
+	 */
+	void setDataTableOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_dataTableOpenCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
+	 *  Set the callback creating a data table ("New Data Table" of the folder menu); it runs `table.create` and opens
+	 *  the file.
+	 * @param[in] iCallback Function taking the path of the file to create.
+	 */
+	void setDataTableCreateCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_dataTableCreateCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when the project's `localisation.yml` is double-clicked.
 	 * @param[in] iCallback Function taking the file path.
 	 */
@@ -429,6 +448,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Ask for a new data table in the current directory (a free "New Data Table" name).
+	 */
+	void createDataTable();
+
+	/**
+	 * @brief
 	 *  Create a starter visual script in the current folder and open it.
 	 */
 	void createVisualScript();
@@ -495,6 +520,10 @@ private:
 	std::function<void(const std::filesystem::path&)> m_soundOpenCallback;
 	/// Creates a sound cue ("New Sound Cue").
 	std::function<void(const std::filesystem::path&)> m_soundCreateCallback;
+	/// Called on double-click of a `.owltable` data table.
+	std::function<void(const std::filesystem::path&)> m_dataTableOpenCallback;
+	/// Creates a data table ("New Data Table").
+	std::function<void(const std::filesystem::path&)> m_dataTableCreateCallback;
 	/// Called on double-click of `localisation.yml`.
 	std::function<void(const std::filesystem::path&)> m_localisationOpenCallback;
 	/// Called when a macro (`.owlmacro`) is double-clicked or run from its context menu.

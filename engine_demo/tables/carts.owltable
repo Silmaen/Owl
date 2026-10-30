@@ -1,0 +1,18 @@
+DataTable: ""
+FormatVersion: 1
+columns:
+  - {name: speed, type: Float}
+  - {name: lane, type: Enum, choices: [inner, outer]}
+  - {name: cargo, type: Reference, table: "gid:690ca68e9f195fec:tables/cargo.owltable"}
+  - {name: mesh, type: Asset}
+rows:
+  - key: CartSlow
+    speed: 0.6
+    lane: inner
+    cargo: grain
+    mesh: "gid:04dd2abdfcec9e7a:meshes/tavern/barrel.glb"
+  - key: CartFast
+    speed: 1.4
+    lane: outer
+    cargo: wine
+    mesh: "gid:04dd2abdfcec9e7a:meshes/tavern/barrel.glb"

@@ -105,6 +105,16 @@ The keys act while the viewport is hovered or focused and no drag is in progress
 (presets `1/4 cell` to `10 cells`) and a dropped entity lands on the nearest cell centre; otherwise the step is in
 world units (presets `0.25` to `10`). The settings are in **Settings > Gizmo Snap**.
 
+### Splines {#viewport-splines}
+
+The selected entity with a **Spline** shows its curve (green), its lanes (faded) and its control points (squares). Click
+a point to select it and move it with the gizmo; **Ctrl+click** adds or removes a point from the selection and the
+gizmo then moves the group (one `spline.move_points`). **Shift+click** on the curve inserts a point there without
+changing the shape (`spline.insert_point`); **Delete** removes the selected points (`spline.delete_points`) instead of
+the entity. A selected point of a Bezier spline shows its two handles: click one and drag it (`spline.set_point`).
+Click elsewhere to drop the point selection and get the entity gizmo back. The inspector lists the same points, with
+**Add Point**, **Insert After Selected** and **Delete Selected**, and the lanes.
+
 The selected **Oscillator** shows its range and the selected **Patrol** its route: click a waypoint to move it with a
 translation gizmo.
 

@@ -232,6 +232,8 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 		return {gui::icon::grid3x3, 0xd65fb8};
 	if (iEntity.hasComponent<IsometricObject>())
 		return {gui::icon::house, 0xd65fb8};
+	if (iEntity.hasComponent<Spline>())
+		return {gui::icon::route, 0x4cd98a};
 	if (iEntity.hasComponent<VoxelWorld>())
 		return {gui::icon::cuboid, 0xe8c15a};
 	if (iEntity.hasComponent<Player>() || iEntity.hasComponent<VoxelPlayer>())

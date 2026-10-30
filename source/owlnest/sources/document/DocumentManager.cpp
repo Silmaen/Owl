@@ -111,6 +111,8 @@ auto typeShortName(const DocumentType iType) -> const char* {
 			return "Sound";
 		case DocumentType::Localisation:
 			return "Texts";
+		case DocumentType::DataTable:
+			return "Table";
 	}
 	return "Doc";
 }

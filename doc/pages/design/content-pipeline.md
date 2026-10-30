@@ -114,8 +114,9 @@ Detailed in [Skeletal animation](skeletal-animation.md).
 Detailed in [Large worlds](large-worlds.md):
 
 - World positions in double with a floating origin
-- Spline component and its editor (paths, lanes, rails)
-- Data tables: typed records edited in a grid in Owl Nest, read from Lua
+- Spline component and its editor (paths, lanes, rails): [Splines](large-worlds.md#large-worlds-splines)
+- Data tables: typed records edited in a grid in Owl Nest, read from Lua, packed with what they reference:
+  [Data tables](large-worlds.md#large-worlds-data-tables)
 - Mesh sockets: named attachment points, entities assembled at runtime
 
 ## Environment

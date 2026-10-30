@@ -158,3 +158,75 @@ Entities:
       seed: 5
     Visibility:
       gameVisible: true
+  - Entity: 4200000000000000020
+    Tag:
+      tag: CartTrack
+    Transform:
+      translation: [0, 0.02, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Spline:
+      interpolation: CatmullRom
+      closed: true
+      resolution: 16
+      up: [0, 1, 0]
+      points:
+        - [2.4, 0, 0]
+        - [1.4, 0, 2]
+        - [-1.2, 0, 2.2]
+        - [-2.6, 0, 0.2]
+        - [-1.6, 0, -2]
+        - [1.2, 0, -2.3]
+      lanes:
+        - {name: inner, offset: -0.35, height: 0}
+        - {name: outer, offset: 0.35, height: 0}
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000021
+    Tag:
+      tag: CartSlow
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.5, 0.5, 0.5]
+    MeshRenderer:
+      mesh: gid:04dd2abdfcec9e7a:meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    SplineFollower:
+      enabled: true
+      spline: 4200000000000000020
+      lane: inner
+      offset: 0
+      speed: 0.6
+      startDistance: 0
+      mode: Loop
+      orient: true
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 4200000000000000022
+    Tag:
+      tag: CartFast
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.5, 0.5, 0.5]
+    MeshRenderer:
+      mesh: gid:04dd2abdfcec9e7a:meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    SplineFollower:
+      enabled: true
+      spline: 4200000000000000020
+      lane: outer
+      offset: 0
+      speed: 1.4
+      startDistance: 6
+      mode: Loop
+      orient: true
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true

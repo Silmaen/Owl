@@ -2476,11 +2476,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 178729.0,
-      "p25_ns": 177960.5,
-      "p75_ns": 182918.5,
-      "min_ns": 176284.0,
-      "max_ns": 193326.0
+      "median_ns": 208552.0,
+      "p25_ns": 206700.5,
+      "p75_ns": 218085.5,
+      "min_ns": 204780.0,
+      "max_ns": 241657.0
     },
     {
       "name": "sample/editor_update/far_orbit",
@@ -2498,11 +2498,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 127952.0,
-      "p25_ns": 126206.5,
-      "p75_ns": 131374.5,
-      "min_ns": 125648.0,
-      "max_ns": 145692.0
+      "median_ns": 166157.0,
+      "p25_ns": 164061.5,
+      "p75_ns": 173245.5,
+      "min_ns": 162176.0,
+      "max_ns": 181731.0
     },
     {
       "name": "sample/editor_update/character_yard",
@@ -2562,46 +2562,90 @@
     {
       "name": "planet/select/near_ground",
       "items": 1048,
-      "batch": 73,
+      "batch": 98,
       "samples": 15,
-      "median_ns": 156769.0,
-      "p25_ns": 156711.1,
-      "p75_ns": 156927.3,
-      "min_ns": 153054.2,
-      "max_ns": 157849.5
+      "median_ns": 121947.5,
+      "p25_ns": 121916.5,
+      "p75_ns": 122029.4,
+      "min_ns": 121852.0,
+      "max_ns": 122220.4
     },
     {
       "name": "planet/build_chunk/16",
       "items": 1,
       "batch": 100,
       "samples": 15,
-      "median_ns": 143048.8,
-      "p25_ns": 131853.9,
-      "p75_ns": 145697.6,
-      "min_ns": 121310.3,
-      "max_ns": 152516.6
+      "median_ns": 105636.3,
+      "p25_ns": 105050.3,
+      "p75_ns": 105669.5,
+      "min_ns": 104845.7,
+      "max_ns": 105708.2
     },
     {
       "name": "planet/update/steady",
       "items": 1048,
-      "batch": 33,
+      "batch": 28,
       "samples": 15,
-      "median_ns": 407259.8,
-      "p25_ns": 395964.3,
-      "p75_ns": 412549.4,
-      "min_ns": 359061.4,
-      "max_ns": 419862.8
+      "median_ns": 426439.5,
+      "p25_ns": 426369.6,
+      "p75_ns": 426859.8,
+      "min_ns": 426250.0,
+      "max_ns": 428921.4
     },
     {
       "name": "world_streaming/update/4096_cells",
       "items": 4097,
-      "batch": 616,
+      "batch": 311,
       "samples": 15,
-      "median_ns": 41063.4,
-      "p25_ns": 39224.2,
-      "p75_ns": 41467.6,
-      "min_ns": 32574.7,
-      "max_ns": 41939.1
+      "median_ns": 39570.5,
+      "p25_ns": 39524.5,
+      "p75_ns": 39601.4,
+      "min_ns": 38431.0,
+      "max_ns": 39637.2
+    },
+    {
+      "name": "spline/rebuild/64_points",
+      "items": 1,
+      "batch": 508,
+      "samples": 15,
+      "median_ns": 23514.6,
+      "p25_ns": 23507.8,
+      "p75_ns": 23522.9,
+      "min_ns": 23503.2,
+      "max_ns": 23572.2
+    },
+    {
+      "name": "spline/sample_distance/1000",
+      "items": 1000,
+      "batch": 91,
+      "samples": 15,
+      "median_ns": 130892.1,
+      "p25_ns": 130862.9,
+      "p75_ns": 130940.5,
+      "min_ns": 130797.7,
+      "max_ns": 130959.6
+    },
+    {
+      "name": "spline/sample_lane/1000",
+      "items": 1000,
+      "batch": 76,
+      "samples": 15,
+      "median_ns": 156601.1,
+      "p25_ns": 156462.3,
+      "p75_ns": 156682.0,
+      "min_ns": 156017.5,
+      "max_ns": 157472.3
+    },
+    {
+      "name": "spline/nearest/100",
+      "items": 100,
+      "batch": 10,
+      "samples": 15,
+      "median_ns": 1103122.9,
+      "p25_ns": 1101841.2,
+      "p75_ns": 1103419.6,
+      "min_ns": 1099155.7,
+      "max_ns": 1108382.0
     }
   ],
   "metrics": [

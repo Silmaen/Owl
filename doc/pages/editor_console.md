@@ -5,7 +5,7 @@
 Every change Owl Nest makes to a scene is a named **command**: a gizmo drag, an inspector edit, a hierarchy drop as
 well as a line typed in the Console, a macro or a request of an [MCP](mcp.md) client. They all go to the same undo
 history and to the session journal, which the Console shows.
-The edits of a sound cue (`sound.*`) and of the localisation (`locale.*`) are commands too: they open the file in its
+The edits of a sound cue (`sound.*`), of the localisation (`locale.*`) and of a data table (`table.*`) are commands too: they open the file in its
 tab when it is not, and go to the undo history of that tab. A drag or a typed text runs one command when it ends.
 
 ## Log
@@ -116,6 +116,22 @@ A refused command changes nothing and logs why (a bad argument, an edit during P
 | `locale.set_table`                | `path`, `keys` (`a,b`), `table`                                                                         |
 | `locale.remove_strings`           | `path`, `keys`                                                                                          |
 | `locale.duplicate_strings`        | `path`, `keys`                                                                                          |
+| `table.create`                    | `path` (new `.owltable` file): a table with a text column and a row                                     |
+| `table.add_row`                   | `path`, `key` (made unique), `after` (the row it follows, appended when absent)                         |
+| `table.remove_rows`               | `path`, `keys` (`a,b`)                                                                                  |
+| `table.duplicate_rows`            | `path`, `keys`                                                                                          |
+| `table.move_rows`                 | `path`, `keys`, `down`                                                                                  |
+| `table.rename_row`                | `path`, `key`, `new_key`                                                                                |
+| `table.set_cell`                  | `path`, `key`, `column`, `value` (as text: `12`, `1.5`, `true`, a choice, a path, a row key)            |
+| `table.add_column`                | `path`, `name`, `type` (`Integer` ... `Reference`), `choices` (`a,b`), `table`, `after`                 |
+| `table.remove_column`             | `path`, `column`                                                                                        |
+| `table.move_column`               | `path`, `column`, `right`                                                                               |
+| `table.set_column`                | `path`, `column`, `name`, `type` (the cells are converted), `choices`, `table`                          |
+| `spline.add_point`                | `entity`, `position` (space of the entity), `index` (appended when absent)                              |
+| `spline.insert_point`             | `entity`, `distance` along the curve; the shape is kept                                                 |
+| `spline.delete_points`            | `entity`, `points` (indices from 0, `0,2`)                                                              |
+| `spline.move_points`              | `entity`, `points`, `offset` (space of the entity)                                                      |
+| `spline.set_point`                | `entity`, `point`, `position`, `tangent_in`, `tangent_out` (Bezier handles, offsets from the point)     |
 | `material.assign`                 | `entity`, `slot` (from 0, -1 for every slot), `material` (empty for the file's own)                     |
 | `scene.save`                      | `path` (the scene file when absent)                                                                     |
 | `scene.capture_reflection_probes` | none: every probe is captured again (not an undo entry)                                                 |

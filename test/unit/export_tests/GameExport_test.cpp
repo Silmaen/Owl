@@ -538,7 +538,8 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 		for (const auto* entry:
 			 {"tilesets/voxel_blocks.owltileset", "textures/atlases/voxel_blocks.png",
 			  "tilesets/raycast_w3d_walls.owltileset", "tilemaps/world_map.owltilemap", "sounds/hub/birds_4.wav",
-			  "sounds/hub/wind_3.wav", "sounds/hub/steps.owlsound", "sounds/hub/step_2.wav", "sounds/hub/wade_4.wav"})
+			  "sounds/hub/wind_3.wav", "sounds/hub/steps.owlsound", "sounds/hub/step_2.wav", "sounds/hub/wade_4.wav",
+			  "tables/carts.owltable", "tables/cargo.owltable"})
 			EXPECT_TRUE(reader.contains(entry)) << entry;
 	}
 	reader.close();

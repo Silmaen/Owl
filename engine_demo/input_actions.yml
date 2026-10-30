@@ -41,6 +41,10 @@ actions:
     type: button
     bindings:
       - {key: M}
+  - name: character_swap_lanes
+    type: button
+    bindings:
+      - {key: V}
   - name: orbit_jump
     type: button
     bindings:

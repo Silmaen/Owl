@@ -794,6 +794,7 @@ void Viewport::renderOverlay() const {
 			renderParticleMarkers(activeScene);
 		}
 		renderBehaviourOverlays(activeScene);
+		renderSplineOverlay(activeScene);
 		renderSkeletonMarkers(activeScene);
 		renderWorldCells(activeScene);
 
@@ -2087,7 +2088,7 @@ void Viewport::renderGizmo() {
 	if (!activeScene)
 		return;
 
-	if (renderWaypointGizmo() || renderSocketGizmo())
+	if (renderWaypointGizmo() || renderSocketGizmo() || renderSplineGizmo())
 		return;
 	if (const scene::Entity selectedEntity = m_parent->getSelectedEntity();
 		selectedEntity && m_gizmoType != gui::Guizmo::Type::None && !isPiloted(selectedEntity)) {
@@ -2366,6 +2367,8 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 				return false;
 			}
 			gui::component::getSocketSelection().clear();
+			if (onSplineClick())
+				return false;
 			if (const int handle = pickPatrolWaypoint(); handle >= 0) {
 				m_patrolHandle = handle;
 				return false;

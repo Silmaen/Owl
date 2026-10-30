@@ -52,6 +52,8 @@ auto documentLabel(const DocumentType iType) -> DocumentLabel {
 			return {.glyph = gui::icon::volume2, .kind = "sound"};
 		case DocumentType::Localisation:
 			return {.glyph = gui::icon::globe, .kind = "localisation"};
+		case DocumentType::DataTable:
+			return {.glyph = gui::icon::rows3, .kind = "datatable"};
 	}
 	return {.glyph = gui::icon::file, .kind = "doc"};
 }

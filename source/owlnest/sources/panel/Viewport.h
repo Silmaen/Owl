@@ -15,6 +15,8 @@
 #include "NavigationToolState.h"
 #include "PlayOverlay.h"
 
+#include <gui/component/render.h>
+#include <math/SplineCurve.h>
 #include <renderer/MeshCache.h>
 #include <renderer/Renderer3D.h>
 #include <renderer/RendererIsometric.h>
@@ -540,6 +542,45 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the curve of the selected `Spline`, its lanes, its points (the selected ones highlighted) and the Bezier
+	 *  handles of the selected point.
+	 * @param[in] iScene The scene edited.
+	 */
+	void renderSplineOverlay(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
+	 *  Point or Bezier handle of the selected `Spline` under the cursor.
+	 * @return The index of the point and the handle hit, or nothing.
+	 */
+	[[nodiscard]] auto pickSplineHandle() const
+			-> std::optional<std::pair<size_t, gui::component::SplineSelection::Handle>>;
+
+	/**
+	 * @brief
+	 *  Distance along the selected `Spline` of the point of its curve under the cursor.
+	 * @return The distance, or nothing when the cursor is not over the curve.
+	 */
+	[[nodiscard]] auto pickSplineDistance() const -> std::optional<float>;
+
+	/**
+	 * @brief
+	 *  Handle a left click on the selected `Spline`: a point or a handle selects it (Ctrl adds the point), Shift on
+	 *  the curve inserts a point (`spline.insert_point`).
+	 * @return True when the click was used.
+	 */
+	auto onSplineClick() -> bool;
+
+	/**
+	 * @brief
+	 *  Move the selected points (or the selected Bezier handle) of the selected `Spline` with a translation gizmo;
+	 *  the move is recorded as one `spline.move_points` or `spline.set_point` command on release.
+	 * @return True when the spline gizmo is shown (the entity gizmo is not).
+	 */
+	auto renderSplineGizmo() -> bool;
+
+	/**
+	 * @brief
 	 *  Socket of the selected entity whose marker is under the cursor.
 	 * @return The socket name, nothing when the click misses every socket.
 	 */
@@ -853,6 +894,10 @@ private:
 	std::vector<math::vec3> m_patrolBefore;
 	/// Whether the waypoint gizmo was being used last frame.
 	bool m_patrolWasUsing = false;
+	/// Points of the selected `Spline` when the drag of its points began.
+	std::vector<math::SplinePoint> m_splineBefore;
+	/// Whether the spline gizmo was being used last frame.
+	bool m_splineWasUsing = false;
 	/// Offset of the selected socket when its drag began.
 	std::optional<math::Transform> m_socketBefore;
 	/// Whether the socket gizmo was being used last frame.

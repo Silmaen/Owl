@@ -14,6 +14,7 @@
 #include "data/fonts/FontSettings.h"
 #include "data/geometry/MeshLoader.h"
 #include "data/localisation/Localisation.h"
+#include "data/table/DataTable.h"
 #include "script/visual/VisualScript.h"
 
 #include <algorithm>
@@ -25,6 +26,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <variant>
 #include <vector>
 
 OWL_DIAG_PUSH
@@ -301,6 +303,52 @@ void followTexture(const std::string& iSerialized, const std::string& iSource, s
 		pushWarning(ioWarnings, "Texture", iSerialized, iSource);
 }
 
+auto isDataTableFile(const std::string& iName) -> bool {
+	return data::table::DataTable::isTable(std::filesystem::path(iName));
+}
+
+void scanDataFile(const std::string& iPath, const char* iKind, const std::string& iSource,
+				  std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings);
+
+auto isSoundFile(const std::string& iName) -> bool;
+
+// A data table carries the tables its Reference columns point into and the assets of its Asset cells.
+void followDataTable(const std::string& iName, const std::string& iSource,// NOLINT(misc-no-recursion)
+					 std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+	auto ref = resolveDataAsset(iName);
+	if (!ref) {
+		pushWarning(ioWarnings, "Data table", iName, iSource);
+		return;
+	}
+	if (hasAsset(ioAssets, ref->packPath))
+		return;
+	ioAssets.push_back(*ref);
+	const auto table = data::table::DataTable::loadFile(ref->diskPath);
+	if (!table) {
+		pushWarning(ioWarnings, "Data table", std::format("{} (unreadable)", iName), iSource);
+		return;
+	}
+	const auto source = std::format("the data table {}", iName);
+	for (size_t column = 0; column < table->columns.size(); ++column) {
+		const auto& definition = table->columns[column];
+		if (definition.type == data::table::ColumnType::Reference && !definition.table.empty())
+			followDataTable(definition.table, source, ioAssets, ioWarnings);
+		if (definition.type != data::table::ColumnType::Asset)
+			continue;
+		for (const auto& row: table->rows) {
+			const auto& asset = std::get<std::string>(row.cells[column]);
+			if (asset.empty())
+				continue;
+			if (isDataTableFile(asset))
+				followDataTable(asset, source, ioAssets, ioWarnings);
+			else if (isSoundFile(asset))
+				followSound(asset, source, ioAssets, ioWarnings);
+			else
+				scanDataFile(asset, "Asset", source, ioAssets, ioWarnings);
+		}
+	}
+}
+
 auto isSoundFile(const std::string& iName) -> bool {
 	const auto ext = std::filesystem::path(iName).extension();
 	return ext == ".wav" || ext == ".ogg" || ext == ".mp3" || ext == ".flac" || ext == ".owlsound";
@@ -359,6 +407,9 @@ void scanLuaScript(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-re
 		followSound((*it)[1].matched ? (*it)[1].str() : (*it)[2].str(), source, ioAssets, ioWarnings);
 	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), texturePattern); it != end; ++it)
 		followTexture((*it)[1].str(), source, ioAssets, ioWarnings);
+	static const std::regex tablePattern(R"(["']([^"'\s]+\.owltable)["'])");
+	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), tablePattern); it != end; ++it)
+		followDataTable((*it)[1].str(), source, ioAssets, ioWarnings);
 	// The modules it requires (`require("scripts.game.towers")` reads `scripts/game/towers.lua`), scanned in turn.
 	static const std::regex requirePattern(R"(\brequire\s*\(?\s*["']([A-Za-z0-9_.]+)["'])");
 	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), requirePattern); it != end; ++it) {
@@ -403,6 +454,8 @@ void scanScriptProperties(const YAML::Node& iProperties,// NOLINT(misc-no-recurs
 				followScene(text, source, ioVisitedScenes, ioAssets, ioWarnings);
 			else if (isSoundFile(text))
 				followSound(text, source, ioAssets, ioWarnings);
+			else if (isDataTableFile(text))
+				followDataTable(text, source, ioAssets, ioWarnings);
 		}
 	}
 }

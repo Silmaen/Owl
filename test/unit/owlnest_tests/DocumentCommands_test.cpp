@@ -8,6 +8,7 @@
 
 #include "commands/DocumentCommands.h"
 #include "commands/CommandRegistry.h"
+#include "document/DataTableDocument.h"
 #include "document/LocalisationDocument.h"
 #include "document/SoundDocument.h"
 #include "testHelper.h"
@@ -20,6 +21,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <tuple>
 #include <vector>
 
 using namespace owl;
@@ -41,8 +43,13 @@ public:
 		return iPath == localisation.filePath() ? &localisation : nullptr;
 	}
 
+	auto openDataTable(const std::filesystem::path& iPath) -> DataTableEditor* override {
+		return iPath == table.filePath() ? &table : nullptr;
+	}
+
 	SoundDocument sound;
 	LocalisationDocument localisation;
+	DataTableDocument table;
 };
 
 class DocumentCommandsTest : public ::testing::Test {
@@ -57,11 +64,19 @@ protected:
 		ASSERT_TRUE(m_host.sound.loadFromFile(m_cue));
 		m_locale = m_root / "localisation.yml";
 		m_host.localisation.startEmpty(m_locale);
+		m_table = m_root / "goods.owltable";
+		data::table::DataTable table;
+		ASSERT_TRUE(table.addColumn({.name = "name", .type = data::table::ColumnType::Text, .choices = {}, .table = {}},
+									0));
+		ASSERT_TRUE(table.addRow("row", 0));
+		ASSERT_TRUE(table.saveToFile(m_table));
+		ASSERT_TRUE(m_host.table.loadFromFile(m_table));
 	}
 
 	void TearDown() override {
 		m_host.sound.onDetach();
 		m_host.localisation.onDetach();
+		m_host.table.onDetach();
 		std::filesystem::remove_all(m_root);
 		core::Log::invalidate();
 	}
@@ -77,6 +92,7 @@ protected:
 	std::filesystem::path m_root;
 	std::filesystem::path m_cue;
 	std::filesystem::path m_locale;
+	std::filesystem::path m_table;
 	TestHost m_host;
 	CommandRegistry m_registry;
 };
@@ -144,4 +160,62 @@ TEST_F(DocumentCommandsTest, LocaleCommandsEditTheOpenLocalisation) {
 	EXPECT_EQ(m_host.localisation.localisation().strings.size(), 1u);
 	ASSERT_TRUE(run("locale.remove_language", {{"code", "fr"}}, m_locale));
 	EXPECT_EQ(m_host.localisation.localisation().findLanguage("fr"), nullptr);
+}
+
+TEST_F(DocumentCommandsTest, TableCommandsEditTheOpenDataTable) {
+	ASSERT_TRUE(run("table.add_column", {{"name", "price"}, {"type", "Float"}}, m_table));
+	ASSERT_TRUE(run("table.add_column", {{"name", "kind"}, {"type", "Enum"}, {"choices", "food, metal"}}, m_table));
+	ASSERT_TRUE(run("table.add_column", {{"name", "stock"}, {"type", "Integer"}, {"after", "name"}}, m_table));
+	EXPECT_FALSE(run("table.add_column", {{"name", "key"}, {"type", "Text"}}, m_table));
+	EXPECT_FALSE(run("table.add_column", {{"name", "x"}, {"type", "Text"}, {"after", "missing"}}, m_table));
+	const auto& table = m_host.table.table();
+	ASSERT_EQ(table.columns.size(), 4u);
+	EXPECT_EQ(table.columns[1].name, "stock");
+	EXPECT_EQ(table.columns[3].choices.size(), 2u);
+	ASSERT_TRUE(run("table.add_row", {{"key", "wheat"}}, m_table));
+	ASSERT_TRUE(run("table.add_row", {{"key", "wheat"}, {"after", "row"}}, m_table));
+	EXPECT_EQ(table.rows[1].key, "wheat_2");
+	ASSERT_TRUE(run("table.set_cell", {{"key", "wheat"}, {"column", "price"}, {"value", "2.5"}}, m_table));
+	EXPECT_FALSE(run("table.set_cell", {{"key", "wheat"}, {"column", "price"}, {"value", "cheap"}}, m_table));
+	EXPECT_FALSE(run("table.set_cell", {{"key", "rye"}, {"column", "price"}, {"value", "1"}}, m_table));
+	EXPECT_FALSE(run("table.set_cell", {{"key", "wheat"}, {"column", "weight"}, {"value", "1"}}, m_table));
+	ASSERT_TRUE(run("table.set_cell", {{"key", "wheat"}, {"column", "kind"}, {"value", "metal"}}, m_table));
+	EXPECT_DOUBLE_EQ(std::get<double>(*table.getCell("wheat", "price")), 2.5);
+	ASSERT_TRUE(run("table.rename_row", {{"key", "wheat"}, {"new_key", "barley"}}, m_table));
+	EXPECT_FALSE(run("table.rename_row", {{"key", "barley"}, {"new_key", "row"}}, m_table));
+	ASSERT_TRUE(run("table.move_rows", {{"keys", "barley"}, {"down", false}}, m_table));
+	EXPECT_EQ(table.rows[1].key, "barley");
+	EXPECT_FALSE(run("table.move_rows", {{"keys", "row"}, {"down", false}}, m_table));
+	ASSERT_TRUE(run("table.duplicate_rows", {{"keys", "barley, row"}}, m_table));
+	EXPECT_EQ(table.rows.size(), 5u);
+	ASSERT_TRUE(run("table.set_column", {{"column", "price"}, {"name", "cost"}, {"type", "Integer"}}, m_table));
+	EXPECT_EQ(std::get<int64_t>(*table.getCell("barley", "cost")), 3);
+	EXPECT_FALSE(run("table.set_column", {{"column", "cost"}}, m_table));
+	EXPECT_FALSE(run("table.set_column", {{"column", "cost"}, {"name", "stock"}}, m_table));
+	ASSERT_TRUE(run("table.move_column", {{"column", "cost"}, {"right", true}}, m_table));
+	EXPECT_EQ(table.columns[3].name, "cost");
+	EXPECT_FALSE(run("table.move_column", {{"column", "cost"}, {"right", true}}, m_table));
+	EXPECT_FALSE(run("table.move_column", {{"column", "name"}, {"right", false}}, m_table));
+	ASSERT_TRUE(run("table.remove_column", {{"column", "kind"}}, m_table));
+	EXPECT_FALSE(run("table.remove_column", {{"column", "kind"}}, m_table));
+	ASSERT_TRUE(run("table.remove_rows", {{"keys", "barley_2,row_2"}}, m_table));
+	EXPECT_FALSE(run("table.remove_rows", {{"keys", "gold"}}, m_table));
+	EXPECT_FALSE(run("table.remove_rows", {{"keys", ""}}, m_table));
+	EXPECT_EQ(m_host.table.table().rows.size(), 3u);
+	m_host.table.performUndo();
+	EXPECT_EQ(m_host.table.table().rows.size(), 5u);
+}
+
+TEST_F(DocumentCommandsTest, TableCreateWritesANewTable) {
+	const auto path = m_root / "new.owltable";
+	const CommandContext context;
+	ASSERT_TRUE(m_registry.execute("table.create", {{"path", path.generic_string()}}, context));
+	const auto created = data::table::DataTable::loadFile(path);
+	ASSERT_TRUE(created.has_value());
+	EXPECT_EQ(created->columns.size(), 1u);
+	EXPECT_EQ(created->rows.size(), 1u);
+	EXPECT_FALSE(m_registry.execute("table.create", {{"path", path.generic_string()}}, context));
+	EXPECT_FALSE(m_registry.execute("table.create", {{"path", (m_root / "x.yml").generic_string()}}, context));
+	EXPECT_FALSE(run("table.add_row", {{"key", "a"}}, path));
+	EXPECT_FALSE(run("table.add_row", {{"key", "a"}}, m_locale));
 }

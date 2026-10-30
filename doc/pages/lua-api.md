@@ -31,3 +31,5 @@ An `entity` is the integer UUID of an entity (`entity_id` in its own script, `sc
 |                                                     | `path`      | Shortest paths over the graph a tilemap's `navigation` rules describe (roads, tracks), searched over several frames. |
 | [Animation and sockets](lua-api-animation.md)       | `animator`  | State machine of the `Animator` of a skinned mesh: parameters and states.                                            |
 |                                                     | `socket`    | Entities snapped on the sockets of a mesh or of an entity.                                                           |
+| [Splines and data tables](lua-api-data.md)          | `spline`    | Splines sampled by distance, and the entities following them.                                                        |
+|                                                     | `datatable` | Typed records of the `.owltable` data tables, by row key and column.                                                 |

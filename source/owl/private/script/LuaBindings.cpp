@@ -16,6 +16,7 @@
 #include "core/external/lua.h"
 #include "data/assets/AssetReference.h"
 #include "data/assets/AssetSearchPaths.h"
+#include "data/table/DataTableLibrary.h"
 #include "input/ActionFrame.h"
 #include "input/Gamepad.h"
 #include "input/Input.h"
@@ -2489,6 +2490,306 @@ auto luaPathGetDebug(lua_State* iState) -> int {
 	return 1;
 }
 
+auto splineEntity(lua_State* iState) -> std::optional<scene::Entity> {
+	if (auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Spline>())
+		return entity;
+	return std::nullopt;
+}
+
+auto worldPoint(const math::mat4& iMatrix, const math::vec3& iPoint) -> math::vec3 {
+	const math::vec4 point = iMatrix * math::vec4{iPoint.x(), iPoint.y(), iPoint.z(), 1.f};
+	return {point.x(), point.y(), point.z()};
+}
+
+auto pushVec3(lua_State* iState, const math::vec3& iVector) -> int {
+	lua_pushnumber(iState, static_cast<lua_Number>(iVector.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(iVector.y()));
+	lua_pushnumber(iState, static_cast<lua_Number>(iVector.z()));
+	return 3;
+}
+
+auto luaSplineGetLength(lua_State* iState) -> int {
+	const auto entity = splineEntity(iState);
+	if (!entity)
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(entity->getComponent<scene::component::Spline>().curve.getLength()));
+	return 1;
+}
+
+auto luaSplineSample(lua_State* iState) -> int {
+	const auto distance = static_cast<float>(luaL_checknumber(iState, 2));
+	const char* lane = luaL_optstring(iState, 3, "");
+	const auto entity = splineEntity(iState);
+	if (!entity)
+		return 0;
+	const auto sample = entity->getComponent<scene::component::Spline>().sample(distance, lane);
+	return pushVec3(iState, worldPoint(getBoundScene(iState)->getWorldTransform(*entity)(), sample.position));
+}
+
+auto luaSplineGetTangent(lua_State* iState) -> int {
+	const auto distance = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto entity = splineEntity(iState);
+	if (!entity)
+		return 0;
+	const auto sample = entity->getComponent<scene::component::Spline>().curve.sampleAtDistance(distance);
+	const math::mat4 world = getBoundScene(iState)->getWorldTransform(*entity)();
+	const math::vec4 direction = world * math::vec4{sample.tangent.x(), sample.tangent.y(), sample.tangent.z(), 0.f};
+	math::vec3 tangent{direction.x(), direction.y(), direction.z()};
+	if (const float length = tangent.norm(); length > 0.f)
+		tangent = tangent * (1.f / length);
+	return pushVec3(iState, tangent);
+}
+
+auto luaSplineGetNearest(lua_State* iState) -> int {
+	const math::vec3 position{static_cast<float>(luaL_checknumber(iState, 2)),
+							  static_cast<float>(luaL_checknumber(iState, 3)),
+							  static_cast<float>(luaL_checknumber(iState, 4))};
+	const auto entity = splineEntity(iState);
+	if (!entity)
+		return 0;
+	const math::mat4 toLocal = math::inverse(getBoundScene(iState)->getWorldTransform(*entity)());
+	const auto& curve = entity->getComponent<scene::component::Spline>().curve;
+	lua_pushnumber(iState, static_cast<lua_Number>(curve.getNearestDistance(worldPoint(toLocal, position))));
+	return 1;
+}
+
+auto luaSplineGetPointCount(lua_State* iState) -> int {
+	const auto entity = splineEntity(iState);
+	if (!entity)
+		return 0;
+	const auto& curve = entity->getComponent<scene::component::Spline>().curve;
+	lua_pushinteger(iState, static_cast<lua_Integer>(curve.getPoints().size()));
+	return 1;
+}
+
+auto luaSplineGetPoint(lua_State* iState) -> int {
+	const auto index = luaL_checkinteger(iState, 2);
+	const auto entity = splineEntity(iState);
+	if (!entity)
+		return 0;
+	const auto& points = entity->getComponent<scene::component::Spline>().curve.getPoints();
+	if (index < 1 || std::cmp_greater(index, points.size()))
+		return 0;
+	return pushVec3(iState, worldPoint(getBoundScene(iState)->getWorldTransform(*entity)(),
+									   points[static_cast<size_t>(index - 1)].position));
+}
+
+auto luaSplineSetPoint(lua_State* iState) -> int {
+	const auto index = luaL_checkinteger(iState, 2);
+	const math::vec3 position{static_cast<float>(luaL_checknumber(iState, 3)),
+							  static_cast<float>(luaL_checknumber(iState, 4)),
+							  static_cast<float>(luaL_checknumber(iState, 5))};
+	const auto entity = splineEntity(iState);
+	if (!entity) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	auto& curve = entity->getComponent<scene::component::Spline>().curve;
+	auto points = curve.getPoints();
+	if (index < 1 || std::cmp_greater(index, points.size())) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	const math::mat4 toLocal = math::inverse(getBoundScene(iState)->getWorldTransform(*entity)());
+	points[static_cast<size_t>(index - 1)].position = worldPoint(toLocal, position);
+	curve.setPoints(std::move(points));
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto followerOf(lua_State* iState) -> scene::component::SplineFollower* {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::SplineFollower>())
+		return &entity->getComponent<scene::component::SplineFollower>();
+	return nullptr;
+}
+
+auto luaSplineGetDistance(lua_State* iState) -> int {
+	const auto* follower = followerOf(iState);
+	if (follower == nullptr)
+		return 0;
+	lua_pushnumber(iState,
+				   static_cast<lua_Number>(follower->m_started ? follower->m_distance : follower->startDistance));
+	return 1;
+}
+
+auto luaSplineSetDistance(lua_State* iState) -> int {
+	const auto distance = static_cast<float>(luaL_checknumber(iState, 2));
+	auto* follower = followerOf(iState);
+	if (follower == nullptr) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	follower->m_distance = distance;
+	follower->m_travelled = 0.f;
+	follower->m_started = true;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaSplineGetSpeed(lua_State* iState) -> int {
+	const auto* follower = followerOf(iState);
+	if (follower == nullptr)
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(follower->speed));
+	return 1;
+}
+
+auto luaSplineSetSpeed(lua_State* iState) -> int {
+	const auto speed = static_cast<float>(luaL_checknumber(iState, 2));
+	auto* follower = followerOf(iState);
+	if (follower == nullptr) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	follower->speed = speed;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaSplineSetLane(lua_State* iState) -> int {
+	const char* lane = luaL_checkstring(iState, 2);
+	auto* follower = followerOf(iState);
+	if (follower == nullptr) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	follower->lane = lane;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto tableOf(lua_State* iState, const char* iPath) -> shared<const data::table::DataTable> {
+	auto* context = contextOf(iState);
+	return context != nullptr ? context->getDataTables().get(iPath) : nullptr;
+}
+
+void pushCell(lua_State* iState, const data::table::CellValue& iValue) {
+	if (const auto* integer = std::get_if<int64_t>(&iValue); integer != nullptr)
+		lua_pushinteger(iState, static_cast<lua_Integer>(*integer));
+	else if (const auto* number = std::get_if<double>(&iValue); number != nullptr)
+		lua_pushnumber(iState, static_cast<lua_Number>(*number));
+	else if (const auto* flag = std::get_if<bool>(&iValue); flag != nullptr)
+		lua_pushboolean(iState, *flag ? 1 : 0);
+	else
+		lua_pushstring(iState, std::get<std::string>(iValue).c_str());
+}
+
+auto luaDataTableGet(lua_State* iState) -> int {
+	const char* path = luaL_checkstring(iState, 1);
+	const char* row = luaL_checkstring(iState, 2);
+	const char* column = luaL_checkstring(iState, 3);
+	const auto table = tableOf(iState, path);
+	const auto* cell = table ? table->getCell(row, column) : nullptr;
+	if (cell == nullptr)
+		return 0;
+	pushCell(iState, *cell);
+	return 1;
+}
+
+auto luaDataTableGetRow(lua_State* iState) -> int {
+	const char* path = luaL_checkstring(iState, 1);
+	const char* key = luaL_checkstring(iState, 2);
+	const auto table = tableOf(iState, path);
+	const auto row = table ? table->findRow(key) : std::nullopt;
+	if (!row)
+		return 0;
+	lua_newtable(iState);
+	for (size_t column = 0; column < table->columns.size(); ++column) {
+		pushCell(iState, table->rows[*row].cells[column]);
+		lua_setfield(iState, -2, table->columns[column].name.c_str());
+	}
+	return 1;
+}
+
+auto luaDataTableGetKeys(lua_State* iState) -> int {
+	const char* path = luaL_checkstring(iState, 1);
+	const auto table = tableOf(iState, path);
+	if (!table)
+		return 0;
+	lua_newtable(iState);
+	for (size_t index = 0; index < table->rows.size(); ++index) {
+		lua_pushstring(iState, table->rows[index].key.c_str());
+		lua_rawseti(iState, -2, static_cast<lua_Integer>(index) + 1);
+	}
+	return 1;
+}
+
+auto luaDataTableGetColumns(lua_State* iState) -> int {
+	const char* path = luaL_checkstring(iState, 1);
+	const auto table = tableOf(iState, path);
+	if (!table)
+		return 0;
+	lua_newtable(iState);
+	for (size_t index = 0; index < table->columns.size(); ++index) {
+		lua_pushstring(iState, table->columns[index].name.c_str());
+		lua_rawseti(iState, -2, static_cast<lua_Integer>(index) + 1);
+	}
+	return 1;
+}
+
+auto luaDataTableGetCount(lua_State* iState) -> int {
+	const char* path = luaL_checkstring(iState, 1);
+	const auto table = tableOf(iState, path);
+	if (!table)
+		return 0;
+	lua_pushinteger(iState, static_cast<lua_Integer>(table->rows.size()));
+	return 1;
+}
+
+auto luaDataTableHasRow(lua_State* iState) -> int {
+	const char* path = luaL_checkstring(iState, 1);
+	const char* key = luaL_checkstring(iState, 2);
+	const auto table = tableOf(iState, path);
+	lua_pushboolean(iState, table && table->findRow(key) ? 1 : 0);
+	return 1;
+}
+
+auto luaDataTableResolve(lua_State* iState) -> int {
+	const char* path = luaL_checkstring(iState, 1);
+	const char* row = luaL_checkstring(iState, 2);
+	const char* column = luaL_checkstring(iState, 3);
+	const auto table = tableOf(iState, path);
+	const auto index = table ? table->findColumn(column) : std::nullopt;
+	const auto* cell = table ? table->getCell(row, column) : nullptr;
+	if (!index || cell == nullptr || table->columns[*index].type != data::table::ColumnType::Reference)
+		return 0;
+	const auto& target = table->columns[*index].table;
+	lua_pushstring(iState, target.empty() ? path : target.c_str());
+	lua_pushstring(iState, std::get<std::string>(*cell).c_str());
+	return 2;
+}
+
+auto readLuaCell(lua_State* iState, const int iIndex) -> data::table::CellValue {
+	if (lua_isboolean(iState, iIndex))
+		return lua_toboolean(iState, iIndex) != 0;
+	if (lua_isinteger(iState, iIndex) != 0)
+		return static_cast<int64_t>(lua_tointeger(iState, iIndex));
+	if (lua_isnumber(iState, iIndex) != 0)
+		return static_cast<double>(lua_tonumber(iState, iIndex));
+	const char* text = lua_tostring(iState, iIndex);
+	return std::string{text != nullptr ? text : ""};
+}
+
+auto luaDataTableFind(lua_State* iState) -> int {
+	const char* path = luaL_checkstring(iState, 1);
+	const char* column = luaL_checkstring(iState, 2);
+	luaL_checkany(iState, 3);
+	const auto value = readLuaCell(iState, 3);
+	const auto table = tableOf(iState, path);
+	const auto index = table ? table->findColumn(column) : std::nullopt;
+	if (!index)
+		return 0;
+	const auto wanted = data::table::convertValue(value, table->columns[*index]);
+	for (const auto& row: table->rows) {
+		const bool same = data::table::isSameValue(row.cells[*index], wanted);
+		if (same) {
+			lua_pushstring(iState, row.key.c_str());
+			return 1;
+		}
+	}
+	return 0;
+}
+
 using enum LuaType;
 
 OWL_DIAG_PUSH
@@ -3194,6 +3495,74 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "socket", .name = "get_position", .function = guarded<luaSocketGetPosition>,
 		 .description = "World position of a socket of the entity, following its bone; nothing when it has no such socket.",
 		 .params = {entityId, {"socket", String}}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "spline", .name = "get_length", .function = guarded<luaSplineGetLength>,
+		 .description = "Length of the entity's `Spline`, in the units of the entity; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"length", Number}}},
+		{.table = "spline", .name = "sample", .function = guarded<luaSplineSample>,
+		 .description = "World position at a distance along the entity's `Spline` (clamped when open, wrapped when closed), in a lane when named; nothing when it has none.",
+		 .params = {entityId, {"distance", Number}, {"lane", String, true}}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "spline", .name = "get_tangent", .function = guarded<luaSplineGetTangent>,
+		 .description = "World unit direction of the entity's `Spline` at a distance along it; nothing when it has none.",
+		 .params = {entityId, {"distance", Number}}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "spline", .name = "get_nearest", .function = guarded<luaSplineGetNearest>,
+		 .description = "Distance along the entity's `Spline` of its point nearest to a world position; nothing when it has none.",
+		 .params = {entityId, {"x", Number}, {"y", Number}, {"z", Number}}, .returns = {{"distance", Number}}},
+		{.table = "spline", .name = "get_point_count", .function = guarded<luaSplineGetPointCount>,
+		 .description = "Number of control points of the entity's `Spline`; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"count", Integer}}},
+		{.table = "spline", .name = "get_point", .function = guarded<luaSplineGetPoint>,
+		 .description = "World position of a control point of the entity's `Spline`, from 1; nothing when it has no such point.",
+		 .params = {entityId, {"index", Integer}}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "spline", .name = "set_point", .function = guarded<luaSplineSetPoint>,
+		 .description = "Move a control point of the entity's `Spline` (from 1) to a world position; false when it has no such point.",
+		 .params = {entityId, {"index", Integer}, {"x", Number}, {"y", Number}, {"z", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "spline", .name = "get_distance", .function = guarded<luaSplineGetDistance>,
+		 .description = "Distance along its spline of the entity's `SplineFollower`; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"distance", Number}}},
+		{.table = "spline", .name = "set_distance", .function = guarded<luaSplineSetDistance>,
+		 .description = "Put the entity's `SplineFollower` at a distance along its spline (placed at the next frame); false when it has none.",
+		 .params = {entityId, {"distance", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "spline", .name = "get_speed", .function = guarded<luaSplineGetSpeed>,
+		 .description = "Speed of the entity's `SplineFollower`, in units of the spline per second; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"speed", Number}}},
+		{.table = "spline", .name = "set_speed", .function = guarded<luaSplineSetSpeed>,
+		 .description = "Set the speed of the entity's `SplineFollower` (negative goes backwards); false when it has none.",
+		 .params = {entityId, {"speed", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "spline", .name = "set_lane", .function = guarded<luaSplineSetLane>,
+		 .description = "Move the entity's `SplineFollower` to a lane of its spline (empty: the curve itself); false when it has none.",
+		 .params = {entityId, {"lane", String}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "set_spline_follower_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::SplineFollower>>,
+		 .description = "Switch the entity's `SplineFollower` on or off (it stays where it is while off); false when it has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_spline_follower_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::SplineFollower>>,
+		 .description = "Whether the entity's `SplineFollower` moves it; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "datatable", .name = "get", .function = guarded<luaDataTableGet>,
+		 .description = "Cell of a `.owltable` by row key and column name: an integer, a number, a boolean or a string (an asset path, the row key of a reference); nothing when absent.",
+		 .params = {{"table", String}, {"row", String}, {"column", String}}, .returns = {{"value", Any}}},
+		{.table = "datatable", .name = "get_row", .function = guarded<luaDataTableGetRow>,
+		 .description = "Every cell of a row of a `.owltable`, by column name; nothing when it has no such row.",
+		 .params = {{"table", String}, {"row", String}}, .returns = {{"row", Table}}},
+		{.table = "datatable", .name = "get_keys", .function = guarded<luaDataTableGetKeys>,
+		 .description = "Keys of the rows of a `.owltable`, in order; nothing when it cannot be read.",
+		 .params = {{"table", String}}, .returns = {{"keys", Table}}},
+		{.table = "datatable", .name = "get_columns", .function = guarded<luaDataTableGetColumns>,
+		 .description = "Names of the columns of a `.owltable`, in order; nothing when it cannot be read.",
+		 .params = {{"table", String}}, .returns = {{"columns", Table}}},
+		{.table = "datatable", .name = "get_count", .function = guarded<luaDataTableGetCount>,
+		 .description = "Number of rows of a `.owltable`; nothing when it cannot be read.",
+		 .params = {{"table", String}}, .returns = {{"count", Integer}}},
+		{.table = "datatable", .name = "has_row", .function = guarded<luaDataTableHasRow>,
+		 .description = "Whether a `.owltable` has a row of this key.",
+		 .params = {{"table", String}, {"row", String}}, .returns = {{"found", Boolean}}},
+		{.table = "datatable", .name = "resolve", .function = guarded<luaDataTableResolve>,
+		 .description = "Follow a reference cell: the table it points into and the key of the row; nothing when the column is not a reference.",
+		 .params = {{"table", String}, {"row", String}, {"column", String}}, .returns = {{"table", String}, {"key", String}}},
+		{.table = "datatable", .name = "find", .function = guarded<luaDataTableFind>,
+		 .description = "Key of the first row of a `.owltable` whose cell in a column equals a value; nothing when none does.",
+		 .params = {{"table", String}, {"column", String}, {"value", Any}}, .returns = {{"key", String}}},
 	};
 	// clang-format on
 }
@@ -3291,6 +3660,9 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "animator",
 			 .description = "State machine of the `Animator` of a skinned mesh: parameters and states."},
 			{.name = "socket", .description = "Entities snapped on the sockets of a mesh or of an entity."},
+			{.name = "spline", .description = "Splines sampled by distance, and the entities following them."},
+			{.name = "datatable",
+			 .description = "Typed records of the `.owltable` data tables, by row key and column."},
 			{.name = "path",
 			 .description = "Shortest paths over the graph a tilemap's `navigation` rules describe (roads, tracks), "
 							"searched over several frames."},
@@ -3314,6 +3686,7 @@ auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 			{.file = "lua-api-raycast.md", .title = "Raycast doors and push-walls", .tables = {"door", "pushwall"}},
 			{.file = "lua-api-isometric.md", .title = "Isometric terrain and paths", .tables = {"isometric", "path"}},
 			{.file = "lua-api-animation.md", .title = "Animation and sockets", .tables = {"animator", "socket"}},
+			{.file = "lua-api-data.md", .title = "Splines and data tables", .tables = {"spline", "datatable"}},
 	};
 	return s_pages;
 }

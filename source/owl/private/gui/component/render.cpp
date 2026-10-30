@@ -60,6 +60,7 @@
 #include <initializer_list>
 #include <numbers>
 #include <optional>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -3861,7 +3862,148 @@ void renderProps(SocketAttachment& ioComponent, const scene::Entity& iOwner) {
 	fieldTooltip("Socket of the parent the entity is snapped on; its transform follows the socket.");
 }
 
+
+auto SplineSelection::contains(const core::UUID iEntity, const size_t iIndex) const -> bool {
+	return entity == iEntity && entity != core::UUID{0} && std::ranges::binary_search(points, iIndex);
+}
+
+void SplineSelection::select(const core::UUID iEntity, const size_t iIndex, const bool iAdd, const Handle iHandle) {
+	if (entity != iEntity || !iAdd) {
+		entity = iEntity;
+		points.clear();
+	}
+	handle = iHandle;
+	if (const auto found = std::ranges::lower_bound(points, iIndex); found != points.end() && *found == iIndex) {
+		if (iAdd)
+			points.erase(found);
+	} else {
+		points.insert(found, iIndex);
+	}
+	if (points.size() != 1)
+		handle = Handle::Point;
+}
+
+void SplineSelection::clamp(const core::UUID iEntity, const size_t iCount) {
+	if (entity != iEntity) {
+		clear();
+		return;
+	}
+	std::erase_if(points, [iCount](const size_t iIndex) -> bool { return iIndex >= iCount; });
+	if (points.size() != 1)
+		handle = Handle::Point;
+}
+
+auto getSplineSelection() -> SplineSelection& {
+	static SplineSelection s_selection;
+	return s_selection;
+}
+
 namespace {
+
+// Point added after the last one, one unit further along the end of the curve.
+auto nextPoint(const math::SplineCurve& iCurve) -> math::SplinePoint {
+	const auto& points = iCurve.getPoints();
+	if (points.empty())
+		return {};
+	const auto end = iCurve.sampleAtDistance(iCurve.getLength());
+	const math::vec3 direction = end.tangent.normSq() > 0.f ? end.tangent : math::vec3{1.f, 0.f, 0.f};
+	const math::vec3 position = points.back().position + direction;
+	return {.position = position, .tangentIn = direction * -0.33f, .tangentOut = direction * 0.33f};
+}
+
+void renderSplinePoints(Spline& ioComponent, const scene::Entity& iOwner) {
+	auto& selection = getSplineSelection();
+	const core::UUID owner = iOwner ? iOwner.getUUID() : core::UUID{0};
+	auto points = ioComponent.curve.getPoints();
+	selection.clamp(owner, points.size());
+	const bool bezier = ioComponent.curve.getInterpolation() == math::SplineInterpolation::Bezier;
+	bool changed = false;
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < points.size(); ++index) {
+		auto& point = points[index];
+		ImGui::PushID(static_cast<int>(index));
+		const bool selected = selection.contains(owner, index);
+		if (ImGui::Selectable(std::format("Point {}", index).c_str(), selected, ImGuiSelectableFlags_AllowOverlap,
+							  {ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight() * 2.f, 0.f}))
+			selection.select(owner, index, ImGui::GetIO().KeyCtrl || ImGui::GetIO().KeyShift);
+		ImGui::SameLine();
+		if (bezier && widgets::iconButton("##smooth", {.glyph = icon::route,
+													   .tooltip = "Smooth the point",
+													   .description = "Set its two handles from its neighbours."})) {
+			point.tangentOut = ioComponent.curve.getSmoothTangent(index);
+			point.tangentIn = point.tangentOut * -1.f;
+			changed = true;
+		}
+		ImGui::SameLine();
+		if (removeButton("Delete the point"))
+			removed = index;
+		changed |= prop::DragFloat3("Position", point.position.data(), 0.05f, 0.f, 0.f, "%.2f");
+		if (bezier) {
+			changed |= prop::DragFloat3("Handle In", point.tangentIn.data(), 0.05f, 0.f, 0.f, "%.2f");
+			changed |= prop::DragFloat3("Handle Out", point.tangentOut.data(), 0.05f, 0.f, 0.f, "%.2f");
+		}
+		ImGui::PopID();
+	}
+	if (removed) {
+		eraseAt(points, removed);
+		selection.clear();
+		changed = true;
+	}
+	if (ImGui::Button("Add Point", {-FLT_MIN, 0.f})) {
+		points.push_back(nextPoint(ioComponent.curve));
+		selection.select(owner, points.size() - 1);
+		changed = true;
+	}
+	fieldTooltip("Append a point one unit after the end of the curve; drag its handle in the viewport to place it. "
+				 "In the viewport: click a point, Ctrl+click adds it to the selection, Alt+click on the curve inserts "
+				 "a point, Delete removes the selected points.");
+	if (changed)
+		ioComponent.curve.setPoints(std::move(points));
+	const bool canInsert = selection.points.size() == 1 && selection.entity == owner &&
+						   selection.points.front() < ioComponent.curve.getSegmentCount();
+	ImGui::BeginDisabled(!canInsert);
+	if (ImGui::Button("Insert After Selected", {-FLT_MIN, 0.f}) && canInsert) {
+		const size_t inserted =
+				ioComponent.curve.insertAtParameter(static_cast<float>(selection.points.front()) + 0.5f);
+		selection.select(owner, inserted);
+	}
+	ImGui::EndDisabled();
+	fieldTooltip("Insert a point in the middle of the segment after the selected point, keeping the shape.");
+	ImGui::BeginDisabled(selection.entity != owner || selection.points.empty());
+	if (ImGui::Button("Delete Selected", {-FLT_MIN, 0.f}) && selection.entity == owner) {
+		auto kept = ioComponent.curve.getPoints();
+		for (const auto index: selection.points | std::views::reverse)
+			if (index < kept.size())
+				kept.erase(kept.begin() + static_cast<std::ptrdiff_t>(index));
+		ioComponent.curve.setPoints(std::move(kept));
+		selection.clear();
+	}
+	ImGui::EndDisabled();
+}
+
+void renderSplineLanes(Spline& ioComponent) {
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < ioComponent.lanes.size(); ++index) {
+		auto& lane = ioComponent.lanes[index];
+		ImGui::PushID(static_cast<int>(index));
+		prop::InputText("Name", &lane.name);
+		ImGui::SameLine();
+		if (removeButton("Remove the lane"))
+			removed = index;
+		prop::DragFloat("Offset", &lane.offset, 0.05f, -1.e4f, 1.e4f, "%.2f");
+		fieldTooltip("Lateral offset from the curve: positive to the right when looking along it.");
+		prop::DragFloat("Height", &lane.height, 0.05f, -1.e4f, 1.e4f, "%.2f");
+		fieldTooltip("Offset along the up direction.");
+		ImGui::Separator();
+		ImGui::PopID();
+	}
+	eraseAt(ioComponent.lanes, removed);
+	if (ImGui::Button("Add Lane", {-FLT_MIN, 0.f}))
+		ioComponent.lanes.push_back({.name = std::format("lane{}", ioComponent.lanes.size()),
+									 .offset = ioComponent.lanes.empty() ? 1.f : ioComponent.lanes.back().offset + 1.f,
+									 .height = 0.f});
+	fieldTooltip("A path beside the curve that followers and scripts name: a lane of a road, a track of a rail.");
+}
 
 // A double field with its reset slot, dragged at a speed proportional to the value.
 auto resetDouble(const char* iLabel, double& ioValue, const double iDefault, const double iMin, const double iMax,
@@ -3980,6 +4122,67 @@ void renderProps(StreamingSource& ioComponent) {
 	resetFloat("Radius Scale", ioComponent.radiusScale, defaults.radiusScale, 0.01f, StreamingSource::minRadiusScale,
 			   StreamingSource::maxRadiusScale);
 	fieldTooltip("Factor on the load and unload radii of the scene (World Partition, Scene Settings) for this source.");
+}
+
+void renderProps(Spline& ioComponent, const scene::Entity& iOwner) {
+	auto interpolation = ioComponent.curve.getInterpolation();
+	enumCombo("Interpolation", interpolation);
+	if (interpolation != ioComponent.curve.getInterpolation()) {
+		if (interpolation == math::SplineInterpolation::Bezier) {
+			// Bezier handles start where the Catmull-Rom curve had them: the shape stays.
+			auto points = ioComponent.curve.getPoints();
+			for (size_t index = 0; index < points.size(); ++index) {
+				points[index].tangentOut = ioComponent.curve.getSmoothTangent(index);
+				points[index].tangentIn = points[index].tangentOut * -1.f;
+			}
+			ioComponent.curve.setPoints(std::move(points));
+		}
+		ioComponent.curve.setInterpolation(interpolation);
+	}
+	fieldTooltip("Linear: straight segments. CatmullRom: a smooth curve through the points. Bezier: a smooth curve "
+				 "shaped by two handles per point.");
+	if (bool closed = ioComponent.curve.isClosed(); prop::Checkbox("Closed", &closed))
+		ioComponent.curve.setClosed(closed);
+	fieldTooltip("Join the last point to the first: a loop.");
+	if (auto resolution = static_cast<int>(ioComponent.curve.getResolution());
+		prop::DragInt("Resolution", &resolution, 0.2f, 1, 256))
+		ioComponent.curve.setResolution(static_cast<uint32_t>(std::clamp(resolution, 1, 256)));
+	fieldTooltip("Samples per segment of the table that measures the distances along the curve.");
+	prop::DragFloat3("Up", ioComponent.up.data(), 0.01f, -1.f, 1.f, "%.2f");
+	fieldTooltip("Up direction of the path, in the space of the entity: (0, 1, 0) in 3D, (0, 0, 1) for a 2D path. "
+				 "It places the lanes and turns the followers.");
+	ImGui::TextDisabled("Length: %.2f, %zu segments", static_cast<double>(ioComponent.curve.getLength()),
+						ioComponent.curve.getSegmentCount());
+	if (widgets::subHeader("Points", true))
+		renderSplinePoints(ioComponent, iOwner);
+	if (widgets::subHeader("Lanes", true))
+		renderSplineLanes(ioComponent);
+}
+
+void renderProps(SplineFollower& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Switch the follower off to leave the entity where it is.");
+	auto spline = static_cast<uint64_t>(ioComponent.spline);
+	prop::row("Spline", [&](const char*) -> bool {
+		if (scriptEntityPicker(spline, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.spline = core::UUID{spline};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Entity holding the Spline component the entity moves along.");
+	prop::InputText("Lane", &ioComponent.lane);
+	fieldTooltip("Name of a lane of the spline; empty for the curve itself.");
+	prop::DragFloat("Offset", &ioComponent.offset, 0.05f, -1.e4f, 1.e4f, "%.2f");
+	fieldTooltip("Extra lateral offset, added to the lane's.");
+	prop::DragFloat("Speed", &ioComponent.speed, 0.05f, -1.e4f, 1.e4f, "%.2f");
+	fieldTooltip("Speed along the curve, in units of the spline per second; negative goes backwards.");
+	prop::DragFloat("Start Distance", &ioComponent.startDistance, 0.05f, -1.e6f, 1.e6f, "%.2f");
+	fieldTooltip("Distance along the curve where Play starts the entity.");
+	enumCombo("Mode", ioComponent.mode);
+	fieldTooltip("At the end: Once stops (after a lap on a closed spline), Loop starts again, PingPong turns round.");
+	prop::Checkbox("Orient", &ioComponent.orient);
+	fieldTooltip("Face the direction of the curve: the -Z axis in 3D, the +X axis on a 2D path.");
 }
 
 }// namespace owl::gui::component

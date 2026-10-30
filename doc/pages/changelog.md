@@ -107,6 +107,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `scene.is_world_cell_loaded`, `scene.get_loaded_world_cells`, `scene.set_world_streaming` and `scene.get_planet_altitude`.
 - Engine Demo far orbit: planet Cinder with a PCG relief and atmosphere, streamed debris cells, altitude and loaded cells in the HUD.
 
+- `Spline` component: linear, Catmull-Rom or Bezier paths, open or closed, sampled by distance through an arc-length table, with named lanes beside the curve.
+- `SplineFollower` component (`owl.spline_followers`): an entity rides a spline or one of its lanes, once, in a loop or back and forth, facing the curve.
+- Owl Nest spline editing: curve, lanes and points drawn in the viewport, click / Ctrl+click to select points, group gizmo, Shift+click inserts, Delete removes, Bezier handles dragged, and a Spline inspector.
+- `spline.add_point`, `insert_point`, `delete_points`, `move_points` and `set_point` commands, one undo step each.
+- Data tables (`.owltable`): typed columns (integer, float, bool, text, enum, asset, reference to a row of a table), read once per engine context (`DataTableLibrary`).
+- Owl Nest data table document: a grid to add, move, duplicate and remove rows and columns, typed cells, references picked from a list, through the `table.*` commands.
+- Lua `spline.*` (sample by distance, tangent, nearest distance, points, follower speed, lane and distance) and `datatable.*` (cells, rows, keys, columns, references, find).
+- The export packs the tables a script names, the tables they reference and the assets of their cells.
+- Benchmarks `spline/rebuild`, `spline/sample_distance`, `spline/sample_lane` and `spline/nearest`.
+- Engine Demo: two barrel carts ride the lanes of a spline in the character yard, their speed, lane and cargo read from two linked data tables.
+
 ### Changed
 
 - `mesh3d.slang` shares its surface shading with the new `skinned3d.slang` through `common/mesh_surface.slangh`; its output is unchanged.

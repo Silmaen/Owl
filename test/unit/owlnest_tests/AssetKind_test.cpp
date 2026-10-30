@@ -24,6 +24,8 @@ TEST(AssetKind, ClassifiesTheEngineFormats) {
 
 TEST(AssetKind, ClassifiesMaterials) { EXPECT_EQ(classifyAsset("materials/gold.owlmat"), AssetKind::Material); }
 
+TEST(AssetKind, ClassifiesDataTables) { EXPECT_EQ(classifyAsset("tables/goods.owltable"), AssetKind::DataTable); }
+
 TEST(AssetKind, ClassifiesSoundCues) {
 	EXPECT_EQ(classifyAsset("sounds/steps.owlsound"), AssetKind::SoundCue);
 	for (const auto* name: {"a.wav", "a.ogg", "a.flac", "a.mp3"})

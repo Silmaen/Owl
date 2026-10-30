@@ -26,7 +26,7 @@ namespace {
 constexpr std::array<core::MigrationStep, 0> g_metaMigrations{};
 constexpr core::DocumentFormat g_metaFormat{.name = "Asset meta", .migrations = g_metaMigrations};
 
-constexpr std::array<std::pair<std::string_view, Importer>, 27> g_importerByExtension{{
+constexpr std::array<std::pair<std::string_view, Importer>, 28> g_importerByExtension{{
 		{".png", Importer::Texture},
 		{".jpg", Importer::Texture},
 		{".jpeg", Importer::Texture},
@@ -53,6 +53,7 @@ constexpr std::array<std::pair<std::string_view, Importer>, 27> g_importerByExte
 		{".owlprefab", Importer::Document},
 		{".owlanim", Importer::Document},
 		{".owlsound", Importer::Document},
+		{".owltable", Importer::Document},
 		{".owlvoxstruct", Importer::Document},
 }};
 

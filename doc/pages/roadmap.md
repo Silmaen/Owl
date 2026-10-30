@@ -184,9 +184,9 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
   ([Localisation](design/localisation.md))
 - ![Done][done] World positions in double with a floating origin, through scene, physics, audio and Owl Nest
   ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Spline component and its editor: paths, lanes, rails ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Data tables: typed records edited in a grid in Owl Nest, read from Lua
-  ([Large worlds](design/large-worlds.md))
+- ![Done][done] Spline component and its editor: paths, lanes, rails ([Large worlds](design/large-worlds.md#large-worlds-splines))
+- ![Done][done] Data tables: typed records edited in a grid in Owl Nest, read from Lua
+  ([Large worlds](design/large-worlds.md#large-worlds-data-tables))
 - ![Done][done] Mesh sockets: named attachment points, entities assembled at runtime
   ([Skeletal animation](design/skeletal-animation.md))
 - ![Done][done] World partition: streaming cells on world coordinates, additive scenes loaded around the player

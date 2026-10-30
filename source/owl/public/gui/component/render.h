@@ -12,11 +12,13 @@
 #include <core/Core.h>
 #include <core/UUID.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <string>
 #include <tuple>
+#include <vector>
 
 namespace owl::scene {
 class Scene;
@@ -555,6 +557,86 @@ OWL_API void renderProps(scene::component::FollowTarget& ioComponent);
 
 /**
  * @brief
+ *  The points of a spline picked in the inspector or the viewport, moved by the viewport gizmo of Owl Nest.
+ */
+struct OWL_API SplineSelection {
+	/// What the viewport gizmo moves.
+	enum struct Handle : uint8_t {
+		Point,///< The selected points.
+		TangentIn,///< The Bezier handle before the selected point.
+		TangentOut,///< The Bezier handle after the selected point.
+	};
+
+	/// Entity owning the spline, 0 for none.
+	core::UUID entity{0};
+	/// Indices of the selected points, in increasing order.
+	std::vector<size_t> points;
+	/// What the gizmo moves.
+	Handle handle{Handle::Point};
+
+	/**
+	 * @brief
+	 *  Check if a point of a spline is selected.
+	 * @param[in] iEntity The entity owning the spline.
+	 * @param[in] iIndex Index of the point.
+	 * @return True when it is one of the selected points.
+	 */
+	[[nodiscard]] auto contains(core::UUID iEntity, size_t iIndex) const -> bool;
+
+	/**
+	 * @brief
+	 *  Select a point.
+	 * @param[in] iEntity The entity owning the spline.
+	 * @param[in] iIndex Index of the point.
+	 * @param[in] iAdd Whether the point is toggled in the selection instead of replacing it.
+	 * @param[in] iHandle What the gizmo moves.
+	 */
+	void select(core::UUID iEntity, size_t iIndex, bool iAdd = false, Handle iHandle = Handle::Point);
+
+	/**
+	 * @brief
+	 *  Forget the selected points beyond a point count, or all of them when they belong to another entity.
+	 * @param[in] iEntity The entity whose spline is shown.
+	 * @param[in] iCount The number of points of its spline.
+	 */
+	void clamp(core::UUID iEntity, size_t iCount);
+
+	/**
+	 * @brief
+	 *  Forget the selection.
+	 */
+	void clear() {
+		entity = core::UUID{0};
+		points.clear();
+		handle = Handle::Point;
+	}
+};
+
+/**
+ * @brief
+ *  Get the spline point selection shared by the spline inspector and the viewport.
+ * @return The selection.
+ */
+OWL_API auto getSplineSelection() -> SplineSelection&;
+
+/**
+ * @brief
+ *  Render a Gui for editing a spline: interpolation, closure, resolution, up axis, its points (the ones picked in the
+ *  viewport highlighted) and its lanes.
+ * @param ioComponent The component to edit.
+ * @param iOwner The entity holding it (the point selection is per entity).
+ */
+OWL_API void renderProps(scene::component::Spline& ioComponent, const scene::Entity& iOwner);
+
+/**
+ * @brief
+ *  Render a Gui for editing a spline follower: the spline entity, its lane, speed, start and end mode.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::SplineFollower& ioComponent);
+
+/**
+ * @brief
  *  Render a Gui for editing the component.
  * @param ioComponent The component to edit.
  */
@@ -613,15 +695,15 @@ using DrawableComponents =
 				   scene::component::RendererTag, scene::component::VoxelWorld, scene::component::FlyCamera,
 				   scene::component::LightFlicker, scene::component::ParticleEmitter, scene::component::Trail,
 				   scene::component::Planet, scene::component::StreamingSource, scene::component::Oscillator,
-				   scene::component::Patrol, scene::component::Drift, scene::component::FollowTarget,
-				   scene::component::RenderTarget, scene::component::ProceduralSky, scene::component::DayNightCycle,
-				   scene::component::ReflectionProbe, scene::component::FirstPersonController,
-				   scene::component::VoxelPlayer, scene::component::Canvas, scene::component::UiRect,
-				   scene::component::UiText, scene::component::UiImage, scene::component::UiPanel,
-				   scene::component::UiButton, scene::component::UiSlider, scene::component::UiProgressBar,
-				   scene::component::UiWindow, scene::component::UiLayout, scene::component::UiTooltip,
-				   scene::component::UiToolCursor, scene::component::UiFocus, scene::component::UiScrollView,
-				   scene::component::UiList>;
+				   scene::component::Patrol, scene::component::Spline, scene::component::SplineFollower,
+				   scene::component::Drift, scene::component::FollowTarget, scene::component::RenderTarget,
+				   scene::component::ProceduralSky, scene::component::DayNightCycle, scene::component::ReflectionProbe,
+				   scene::component::FirstPersonController, scene::component::VoxelPlayer, scene::component::Canvas,
+				   scene::component::UiRect, scene::component::UiText, scene::component::UiImage,
+				   scene::component::UiPanel, scene::component::UiButton, scene::component::UiSlider,
+				   scene::component::UiProgressBar, scene::component::UiWindow, scene::component::UiLayout,
+				   scene::component::UiTooltip, scene::component::UiToolCursor, scene::component::UiFocus,
+				   scene::component::UiScrollView, scene::component::UiList>;
 
 
 }// namespace owl::gui::component
