@@ -38,3 +38,36 @@ strings:
   - key: settings.ui_scale
     table: settings
     values: {en: 'Interface Size: %d%%', fr: "Taille de l'interface : %d %%"}
+  - key: dialogue.wizard.name
+    table: dialogue
+    values: {en: 'Wizard', fr: 'Magicien'}
+  - key: dialogue.wizard.greeting
+    table: dialogue
+    values: {en: 'Greetings, traveller. Few come to talk to an old wizard.', fr: 'Salut à toi, voyageur. Rares sont ceux qui viennent parler à un vieux magicien.'}
+  - key: dialogue.wizard.awake
+    table: dialogue
+    values: {en: 'The five worlds are done and the portal is awake: go to the shrine!', fr: 'Les cinq mondes sont achevés et le portail est éveillé : va au sanctuaire !'}
+  - key: dialogue.wizard.ask
+    table: dialogue
+    values: {en: 'What would you know?', fr: 'Que veux-tu savoir ?'}
+  - key: dialogue.wizard.answer_portal
+    table: dialogue
+    values: {en: 'How do I wake the portal?', fr: 'Comment réveiller le portail ?'}
+  - key: dialogue.wizard.answer_spell
+    table: dialogue
+    values: {en: 'Show me a spell.', fr: 'Montre-moi un sort.'}
+  - key: dialogue.wizard.answer_bye
+    table: dialogue
+    values: {en: 'Farewell.', fr: 'Adieu.'}
+  - key: dialogue.wizard.portal
+    table: dialogue
+    values: {en: 'Finish the five houses of the high street: platformer, raycast, iso town, voxels and tavern.', fr: 'Termine les cinq maisons de la grand-rue : plateforme, raycast, ville iso, voxels et taverne.'}
+  - key: dialogue.wizard.spell
+    table: dialogue
+    values: {en: 'There! Only a little Lua, but the bell of the church never fails to ring.', fr: 'Voilà ! Rien qu''un peu de Lua, mais la cloche de l''église sonne à tous les coups.'}
+  - key: dialogue.wizard.bye
+    table: dialogue
+    values: {en: 'Come back when you want, I have time.', fr: 'Reviens quand tu veux, j''ai le temps.'}
+  - key: dialogue.wizard.next
+    table: dialogue
+    values: {en: 'Next', fr: 'Suite'}

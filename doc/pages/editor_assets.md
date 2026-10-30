@@ -54,7 +54,8 @@ Every asset of the project has a `<file>.owlmeta` sidecar holding its GUID and, 
 treats them as part of their file:
 
 - **Rename**, drag to another folder and **Delete** run the `asset.rename`, `asset.move` and `asset.delete` commands:
-  the sidecar follows the file, and every reference written by GUID keeps resolving.
+  the sidecar follows the file, and every reference written by GUID keeps resolving. `Delete` and `F2` delete and
+  rename the selected item.
 - **Cook** and **Cook Folder** run `asset.cook`: the asset is cooked into the project cache now, as the export would.
 
 The **Import** panel (docked with Properties) shows the selected asset:

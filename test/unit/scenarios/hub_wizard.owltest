@@ -1,0 +1,34 @@
+# The wizard of the hub talks through a dialogue tree (hub_wizard.lua, dialogues/wizard.owldlg): E starts the
+# conversation and freezes the hero, E shows the next line, Escape ends it without pausing the game.
+scene: ../../../engine_demo/scenes/world_map.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: wizard_talks, equals: 0}
+  - expect: {gamestate: dialogue_open, equals: 0}
+  # The wizard, stopped and brought onto the hero, answers on E with the panel of the HUD.
+  - {command: component.remove, args: {entity: Wizard, component: Patrol}}
+  - {command: entity.set_transform, args: {entity: Wizard, translation: [32.5, -36.5, 0.5]}}
+  - frames: 3
+  - input: {key: E, frames: 3}
+  - frames: 5
+  - expect: {gamestate: wizard_talks, equals: 1}
+  - expect: {gamestate: dialogue_open, equals: 1}
+  - expect: {gamestate: wizard_choices, equals: 0}
+  # E again: the greeting goes on to the question and its answers.
+  - input: {key: E, frames: 3}
+  - frames: 5
+  # A first talk offers two answers: the spell waits for the second one (condition has_met_wizard).
+  - expect: {gamestate: wizard_choices, equals: 2}
+  # Escape ends the conversation and gives the hero back, the game is not paused.
+  - input: {key: Escape, frames: 3}
+  - frames: 5
+  - expect: {gamestate: dialogue_open, equals: 0}
+  - expect: {gamestate: wizard_choices, equals: 0}
+  - expect: {entity: Wizard, exists: true}
+  # The second talk offers the spell too.
+  - input: {key: E, frames: 3}
+  - frames: 5
+  - input: {key: E, frames: 3}
+  - frames: 5
+  - expect: {gamestate: wizard_talks, equals: 2}
+  - expect: {gamestate: wizard_choices, equals: 3}

@@ -443,6 +443,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Render the rename and delete confirmation popups of the selected item.
+	 */
+	void renderItemDialogs();
+
+	/**
+	 * @brief
 	 *  Delete the currently selected file or folder.
 	 */
 	void deleteSelected();

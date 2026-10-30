@@ -418,9 +418,10 @@ void RibbonBuilder::buildSceneTab() {
 	m_ribbon.addButton(sceneTab, gShow,
 					   Button{.iconName = "comp_sound",
 							  .label = "Mixer",
-							  .tooltip = "Open the mixer: volume, mute and solo of the buses of the scene",
+							  .tooltip = "Show or hide the mixer: volume, mute and solo of the buses of the scene",
 							  .isEnabled = [this]() -> bool { return mp_editor->activeSceneDocument() != nullptr; },
-							  .onClick = [this]() -> void { mp_editor->m_mixerPanel.open(); },
+							  .isChecked = [this]() -> bool { return mp_editor->m_mixerPanel.isVisible(); },
+							  .onClick = [this]() -> void { mp_editor->m_mixerPanel.toggle(); },
 							  .size = Size::Small});
 
 	m_ribbon.addButton(sceneTab, gShow,

@@ -1,0 +1,65 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7100000000000000001
+    kind: Start
+    position: [0, 120]
+    next: 7100000000000000002
+  - id: 7100000000000000002
+    kind: Line
+    position: [260, 120]
+    speaker: {text: Wizard, key: dialogue.wizard.name}
+    text: {text: "Greetings, traveller. Few come to talk to an old wizard.", key: dialogue.wizard.greeting}
+    sound: sounds/hub/board.wav
+    next: 7100000000000000003
+  - id: 7100000000000000003
+    kind: Branch
+    position: [540, 120]
+    function: is_portal_awake
+    next: 7100000000000000004
+    nextFalse: 7100000000000000005
+  - id: 7100000000000000004
+    kind: Line
+    position: [820, 0]
+    speaker: {text: Wizard, key: dialogue.wizard.name}
+    text: {text: "The five worlds are done and the portal is awake: go to the shrine!", key: dialogue.wizard.awake}
+    next: 7100000000000000010
+  - id: 7100000000000000005
+    kind: Choice
+    position: [820, 240]
+    speaker: {text: Wizard, key: dialogue.wizard.name}
+    text: {text: "What would you know?", key: dialogue.wizard.ask}
+    options:
+      - text: {text: "How do I wake the portal?", key: dialogue.wizard.answer_portal}
+        next: 7100000000000000006
+      - text: {text: "Show me a spell.", key: dialogue.wizard.answer_spell}
+        condition: has_met_wizard
+        next: 7100000000000000007
+      - text: {text: "Farewell.", key: dialogue.wizard.answer_bye}
+        next: 7100000000000000009
+  - id: 7100000000000000006
+    kind: Line
+    position: [1120, 120]
+    speaker: {text: Wizard, key: dialogue.wizard.name}
+    text: {text: "Finish the five houses of the high street: platformer, raycast, iso town, voxels and tavern.", key: dialogue.wizard.portal}
+    next: 7100000000000000005
+  - id: 7100000000000000007
+    kind: Event
+    position: [1120, 260]
+    function: cast_spell
+    next: 7100000000000000008
+  - id: 7100000000000000008
+    kind: Line
+    position: [1380, 260]
+    speaker: {text: Wizard, key: dialogue.wizard.name}
+    text: {text: "There! Only a little Lua, but the bell of the church never fails to ring.", key: dialogue.wizard.spell}
+    next: 7100000000000000005
+  - id: 7100000000000000009
+    kind: Line
+    position: [1120, 420]
+    speaker: {text: Wizard, key: dialogue.wizard.name}
+    text: {text: "Come back when you want, I have time.", key: dialogue.wizard.bye}
+    next: 7100000000000000010
+  - id: 7100000000000000010
+    kind: End
+    position: [1660, 120]

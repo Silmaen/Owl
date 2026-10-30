@@ -420,6 +420,7 @@ void ContentBrowser::onImGuiRender() {
 	renderContent();
 	// In the child: the popup is opened from its tiles, and a popup id belongs to the window that opens it.
 	renderContextMenu();
+	renderItemDialogs();
 	ImGui::EndChild();
 
 	ImGui::End();
@@ -798,28 +799,30 @@ void ContentBrowser::renderContextMenu() {
 		ImGui::Separator();
 		renderCreateItems();
 	}
-
 	ImGui::EndPopup();
+}
 
-	// Rename dialog
-	if (m_renaming && !m_selectedPath.empty()) {
-		ImGui::OpenPopup("RenameItem");
+void ContentBrowser::renderItemDialogs() {
+	if (!m_selectedPath.empty() && !m_renaming && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+		!ImGui::IsAnyItemActive() && !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup)) {
+		if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+			m_pendingDelete = true;
+		if (ImGui::IsKeyPressed(ImGuiKey_F2, false)) {
+			m_renaming = true;
+			m_renameBuffer = m_selectedPath.filename().string();
+		}
 	}
-
+	if (m_renaming && !m_selectedPath.empty())
+		ImGui::OpenPopup("RenameItem");
 	if (ImGui::BeginPopupModal("RenameItem", &m_renaming, ImGuiWindowFlags_AlwaysAutoResize)) {
 		ImGui::Text("Rename: %s", m_selectedPath.filename().string().c_str());
-		const bool submitted =
-
-				ImGui::InputText("##rename", &m_renameBuffer, ImGuiInputTextFlags_EnterReturnsTrue);
-
+		const bool submitted = ImGui::InputText("##rename", &m_renameBuffer, ImGuiInputTextFlags_EnterReturnsTrue);
 		ImGui::SameLine();
 		const bool okClicked = gui::widgets::button("OK", {.glyph = gui::icon::check, .label = "OK", .primary = true});
-
 		ImGui::SameLine();
 		if (gui::widgets::button("Cancel", {.glyph = gui::icon::x, .label = "Cancel"})) {
 			m_renaming = false;
 			m_selectedPath.clear();
-
 			ImGui::CloseCurrentPopup();
 		}
 		if (submitted || okClicked) {
@@ -827,14 +830,10 @@ void ContentBrowser::renderContextMenu() {
 				std::ignore = runCommand("asset.rename", {{"path", m_selectedPath.string()}, {"name", m_renameBuffer}});
 			m_renaming = false;
 			m_selectedPath.clear();
-
 			ImGui::CloseCurrentPopup();
 		}
-
 		ImGui::EndPopup();
 	}
-
-	// Delete confirmation popup
 	if (m_pendingDelete && !m_selectedPath.empty()) {
 		ImGui::OpenPopup("ConfirmDelete");
 		m_pendingDelete = false;
@@ -842,29 +841,21 @@ void ContentBrowser::renderContextMenu() {
 	if (ImGui::BeginPopupModal("ConfirmDelete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 		ImGui::Text("Delete '%s'?", m_selectedPath.filename().string().c_str());
 		if (is_directory(m_selectedPath))
-
 			ImGui::TextColored({1.0f, 0.6f, 0.2f, 1.0f}, "This will delete all contents of the folder.");
-
 		ImGui::Separator();
 		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() +
-
 								  ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		const float totalWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
-
 		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
 		if (gui::widgets::button("Delete", {.glyph = gui::icon::trash2, .label = "Delete", .width = buttonWidth})) {
 			deleteSelected();
-
 			ImGui::CloseCurrentPopup();
 		}
-
 		ImGui::SameLine();
 		if (gui::widgets::button("Cancel", {.glyph = gui::icon::x, .label = "Cancel", .width = buttonWidth})) {
 			m_selectedPath.clear();
-
 			ImGui::CloseCurrentPopup();
 		}
-
 		ImGui::EndPopup();
 	}
 }

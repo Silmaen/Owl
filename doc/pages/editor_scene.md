@@ -121,7 +121,7 @@ The overrides per layer type: **Renderer2D** `Space` (`World`, or `Screen` for o
 
 ## Mixer
 
-**Scene > Scene > Mixer** opens the mix of the active scene, docked with the bottom panels: one strip per bus
+**Scene > Scene > Mixer** shows or hides the mix of the active scene, docked with Properties: one strip per bus
 (Master, Music, SFX, Ambient, Voice) with its fader, **M** (mute), **S** (solo) and a meter of the bus gain now
 ([Mixer](sound.md#sound-mixer)), then the **Doppler factor**. In Edit mode a change runs `scene.set_mixer` (an undo
 step per bus, however long its fader moves, saved as `Mixer:` with the scene, heard at once in the previews); while the scene plays it runs

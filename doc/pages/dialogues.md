@@ -118,6 +118,8 @@ function on_answer_3() answer(3) end
   conversations stop when Play stops.
 - The HUD is the game's: `ui.find` the widgets once and fill them with `ui.set_text`, `ui.set_visible`
   ([UI functions](lua-api-ui.md)). A `sound` of the line is played by the script, with the `sound` table.
+- The wizard of the Engine Demo hub is a complete example: `engine_demo/scripts/hub/hub_wizard.lua` with
+  `dialogues/wizard.owldlg` and the dialogue panel of `huds/world_map.owlhud`.
 
 ## Localisation {#dialogues-localisation}
 

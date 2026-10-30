@@ -819,6 +819,7 @@ void DialogueDocument::renderText(const char* iLabel, const DialogueText& iText,
 	const bool changed = iMultiline ? ImGui::InputTextMultiline(std::format("##{}", iTextField).c_str(), &text,
 																{-FLT_MIN, ImGui::GetTextLineHeight() * 3.5f})
 									: ImGui::InputText(std::format("##{}", iTextField).c_str(), &text);
+	std::ignore = gui::widgets::propertyReset(false);
 	if (changed) {
 		auto args = iArgs;
 		args.set(iTextField, text);
@@ -840,6 +841,7 @@ void DialogueDocument::renderText(const char* iLabel, const DialogueText& iText,
 			ImGui::TextDisabled("%s No string with this key", gui::icon::triangleAlert);
 		else
 			ImGui::TextDisabled("%s %.*s", gui::icon::globe, static_cast<int>(translated.size()), translated.data());
+		std::ignore = gui::widgets::propertyReset(false);
 	}
 }
 
@@ -867,6 +869,7 @@ void DialogueDocument::renderOptions(const DialogueNode& iNode) {
 			const auto* next = m_dialogue.findNode(target);
 			gui::widgets::propertyLabel("Leads To");
 			ImGui::TextDisabled("%s", next != nullptr ? getDialogueNodeTitle(*next).c_str() : "Nothing: ends");
+			std::ignore = gui::widgets::propertyReset(false);
 			gui::widgets::endProperties();
 		}
 		if (gui::widgets::iconButton("##up", {.glyph = gui::icon::arrowUp,
@@ -952,6 +955,7 @@ void DialogueDocument::renderPropertiesPanel() {
 				const auto* next = m_dialogue.findNode(Dialogue::getOutput(*node, output));
 				gui::widgets::propertyLabel(getDialogueOutputLabel(*node, output).c_str());
 				ImGui::TextDisabled("%s", next != nullptr ? getDialogueNodeTitle(*next).c_str() : "Nothing: ends");
+				std::ignore = gui::widgets::propertyReset(false);
 			}
 		}
 		gui::widgets::endProperties();
