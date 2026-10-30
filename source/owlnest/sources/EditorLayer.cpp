@@ -435,6 +435,24 @@ void EditorLayer::renderCloseDocumentModal() {
 	}
 }
 
+void EditorLayer::deleteSelection() {
+	if (getState() != State::Edit)
+		return;
+	const auto ent = getSelectedEntity();
+	if (!ent)
+		return;
+	const auto entity = static_cast<int64_t>(static_cast<uint64_t>(ent.getUUID()));
+	if (auto& points = gui::component::getSplineSelection(); points.entity == ent.getUUID() && !points.points.empty()) {
+		std::ignore = execute("spline.delete_points",
+							  {{"entity", entity}, {"points", commands::formatIndices(points.points)}},
+							  commands::CommandSource::Gesture);
+		points.clear();
+		return;
+	}
+	setSelectedEntity({});
+	std::ignore = execute("entity.delete", {{"entity", entity}}, commands::CommandSource::Gesture);
+}
+
 void EditorLayer::bindDataTableCallbacks() {
 	m_contentBrowser.setDataTableOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openDataTableFile(iPath); });
@@ -576,28 +594,7 @@ void EditorLayer::onAttach() {
 									});
 	// Entity actions
 	m_actionRegistry.registerAction("entity.delete", "Delete Entity", {input::key::Delete, Modifiers::None},
-									[this]() -> void {
-										if (getState() != State::Edit)
-											return;
-										const auto ent = getSelectedEntity();
-										if (auto& points = gui::component::getSplineSelection();
-											ent && points.entity == ent.getUUID() && !points.points.empty()) {
-											std::ignore = execute(
-													"spline.delete_points",
-													{{"entity", static_cast<int64_t>(static_cast<uint64_t>(ent.getUUID()))},
-													 {"points", commands::formatIndices(points.points)}},
-													commands::CommandSource::Gesture);
-											points.clear();
-											return;
-										}
-										if (ent) {
-											setSelectedEntity({});
-											std::ignore = execute(
-													"entity.delete",
-													{{"entity", static_cast<int64_t>(static_cast<uint64_t>(ent.getUUID()))}},
-													commands::CommandSource::Gesture);
-										}
-									});
+									[this]() -> void { deleteSelection(); });
 	// Undo/Redo
 	m_actionRegistry.registerAction("edit.undo", "Undo", {input::key::Z, Modifiers::Ctrl},
 									[this]() -> void { performUndo(); });

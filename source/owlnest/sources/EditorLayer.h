@@ -1048,6 +1048,13 @@ private:
 
 	/**
 	 * @brief
+	 *  The Delete shortcut: the points picked on the selected spline (`spline.delete_points`), else the selected
+	 *  entity (`entity.delete`).
+	 */
+	void deleteSelection();
+
+	/**
+	 * @brief
 	 *  Select the custom event a just-opened visual script was opened for.
 	 * @param[in] iPath Path of the opened document.
 	 */
