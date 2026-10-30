@@ -1221,8 +1221,25 @@ TEST_F(CommandRegistryTest, EditsTheSceneMixWithUndo) {
 	EXPECT_FALSE(run("scene.set_mixer", {{"bus", std::string{"SFX"}}, {"volume", 3.0}}).has_value());
 	EXPECT_FALSE(run("scene.set_mixer", {{"doppler_factor", 2.0}}).has_value());
 	ASSERT_TRUE(run("edit.undo", {}));
+	EXPECT_FLOAT_EQ(m_scene->getMixSettings().dopplerFactor, 1.f);
+	EXPECT_TRUE(m_scene->getMixSettings().getBus(sound::Bus::Music).muted);
+	ASSERT_TRUE(run("edit.undo", {}));
 	EXPECT_EQ(m_scene->getMixSettings(), sound::MixSettings{});
 	EXPECT_FLOAT_EQ(sound::SoundCommand::getMixer()->getBusVolume(sound::Bus::Music), 1.f);
+	sound::SoundCommand::invalidate();
+}
+
+TEST_F(CommandRegistryTest, MergesMixEditsOfTheSameBusOnly) {
+	sound::SoundCommand::create(sound::SoundAPI::Type::Null);
+	ASSERT_TRUE(run("scene.set_mixer", {{"bus", std::string{"Music"}}, {"volume", 0.5}}));
+	ASSERT_TRUE(run("scene.set_mixer", {{"bus", std::string{"Music"}}, {"volume", 0.3}}));
+	ASSERT_TRUE(run("scene.set_mixer", {{"bus", std::string{"SFX"}}, {"volume", 0.4}}));
+	ASSERT_TRUE(run("edit.undo", {}));
+	EXPECT_FLOAT_EQ(m_scene->getMixSettings().getBus(sound::Bus::SFX).volume, 1.f);
+	EXPECT_FLOAT_EQ(m_scene->getMixSettings().getBus(sound::Bus::Music).volume, 0.3f);
+	ASSERT_TRUE(run("edit.undo", {}));
+	EXPECT_EQ(m_scene->getMixSettings(), sound::MixSettings{});
+	EXPECT_FALSE(m_undo.canUndo());
 	sound::SoundCommand::invalidate();
 }
 

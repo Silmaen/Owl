@@ -14,6 +14,9 @@
 #include <scene/component/WorldPosition.h>
 #include <sound/SoundCommand.h>
 
+#include <bit>
+#include <cstddef>
+#include <cstdint>
 #include <format>
 #include <optional>
 #include <utility>
@@ -100,8 +103,23 @@ auto SetSceneHudCommand::typeId() const -> size_t {
 	return kTypeHash;
 }
 
+namespace {
+
+auto getTouchedParts(const sound::MixSettings& iBefore, const sound::MixSettings& iAfter) -> uint32_t {
+	uint32_t touched = 0;
+	for (size_t index = 0; index < sound::g_busCount; ++index) {
+		if (iBefore.buses.at(index) != iAfter.buses.at(index))
+			touched |= 1u << index;
+	}
+	if (std::bit_cast<uint32_t>(iBefore.dopplerFactor) != std::bit_cast<uint32_t>(iAfter.dopplerFactor))
+		touched |= 1u << sound::g_busCount;
+	return touched;
+}
+
+}// namespace
+
 SetMixCommand::SetMixCommand(const sound::MixSettings& iBefore, const sound::MixSettings& iAfter)
-	: m_before{iBefore}, m_after{iAfter} {}
+	: m_before{iBefore}, m_after{iAfter}, m_touched{getTouchedParts(iBefore, iAfter)} {}
 
 SetMixCommand::~SetMixCommand() = default;
 
@@ -121,7 +139,7 @@ auto SetMixCommand::description() const -> std::string { return "Edit the scene 
 
 auto SetMixCommand::mergeWith(const SceneUndoCommand& iOther) -> bool {
 	const auto* other = dynamic_cast<const SetMixCommand*>(&iOther);
-	if (other == nullptr)
+	if (other == nullptr || other->m_touched != m_touched)
 		return false;
 	m_after = other->m_after;
 	m_timestamp = other->m_timestamp;

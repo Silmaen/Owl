@@ -20,6 +20,7 @@ OWL_DIAG_DISABLE_CLANG("-Wshadow")
 OWL_DIAG_POP
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
@@ -200,7 +201,8 @@ private:
  *  Undoable edit of a scene's mix (`sound::MixSettings`): volume, mute and solo of the buses, Doppler factor.
  *
  * Applying it also hands the mix to the live mixer, so the editor previews and plays with it. Successive edits within
- * the `UndoManager` merge window collapse into one history entry.
+ * the `UndoManager` merge window collapse into one history entry when they touch the same buses (and the Doppler
+ * factor alike): dragging a fader is one entry, two faders are two.
  */
 class SetMixCommand final : public SceneUndoCommand {
 public:
@@ -267,6 +269,8 @@ private:
 	sound::MixSettings m_before;
 	/// Mix after the edit.
 	sound::MixSettings m_after;
+	/// What the edit touches: one bit per bus that differs, the bit after them for the Doppler factor.
+	uint32_t m_touched{0};
 };
 
 /**
