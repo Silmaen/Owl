@@ -111,14 +111,14 @@ flowchart LR
     T -->|no| U2["update: Physics,<br/>PostPhysics, Late"] --> R["world transforms,<br/>render"]
 ```
 
-| Phase         | Engine systems                                                                                                              | Contract                                  |
-|---------------|-----------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
-| `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)                                                     | May move, create or destroy entities      |
-| `PrePhysics`  | `owl.oscillators`, `owl.patrols`, `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input`           | Gameplay controllers before the step      |
-| `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                                                                  | Owns the physics step                     |
-| `PostPhysics` | `owl.drift`, `owl.animation`, `owl.sockets`, `owl.light_flicker`, `owl.entity_links`, `owl.triggers`, `owl.floating_origin` | Last phase allowed to change the world    |
-| `Late`        | `owl.navigation`, `owl.sound`, `owl.sprite_animation`                                                                       | Reads the settled world (caches armed)    |
-| `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                                                                         | Replaces every other phase once game over |
+| Phase         | Engine systems                                                                                                                                     | Contract                                  |
+|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)                                                                            | May move, create or destroy entities      |
+| `PrePhysics`  | `owl.oscillators`, `owl.patrols`, `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input`                                  | Gameplay controllers before the step      |
+| `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                                                                                         | Owns the physics step                     |
+| `PostPhysics` | `owl.drift`, `owl.animation`, `owl.sockets`, `owl.light_flicker`, `owl.entity_links`, `owl.triggers`, `owl.floating_origin`, `owl.world_streaming` | Last phase allowed to change the world    |
+| `Late`        | `owl.navigation`, `owl.sound`, `owl.sprite_animation`                                                                                              | Reads the settled world (caches armed)    |
+| `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                                                                                                | Replaces every other phase once game over |
 
 `owl.scripts` calls `on_update` in its `update` and `on_tick` in its `tick`; `owl.physics` steps the world in its
 `tick`. `Scene::getInputFrame()` gives the input of the running step (the tick frame in a `tick`, the frame one in an
@@ -805,6 +805,25 @@ Trail:
   color: [1, 0.6, 0.2, 1]
 ```
 
+#### Planet and StreamingSource {#planet-component}
+
+YAML keys: `Planet`, `StreamingSource`. A `Planet` is a cube-sphere terrain with an atmosphere, drawn by a
+`RendererPlanet` layer; its centre is the world position of the entity. A `StreamingSource` (`enabled`, `radiusScale`)
+is a point the cells of the [world partition](world_partition.md) are streamed around, in Play. Every field is on
+[Planets](planets.md) and [World partition](world_partition.md).
+
+```yaml
+Planet:
+  graph: pcg/planet_heights.owlpcg
+  seed: 42
+  radius: 30000
+  heightScale: 1800
+  atmosphere: true
+StreamingSource:
+  enabled: true
+  radiusScale: 1
+```
+
 #### Oscillator
 
 YAML key: `Oscillator`, system `owl.oscillators` (`PrePhysics`, `update` and `tick`). Moves the entity from its rest
@@ -1346,6 +1365,19 @@ FloatingOrigin:
 
 A scene with its own mix (Mixer panel) adds `Mixer:` with the Doppler factor and the volume, mute and solo of each bus
 ([Mixer](sound.md#sound-mixer)).
+
+A scene with a world partition adds, before `Entities:`, the cells streamed in Play by the `owl.world_streaming` system
+([World partition](world_partition.md)):
+
+```yaml
+WorldPartition:
+  enabled: true
+  cellSize: 500
+  loadRadius: 600
+  unloadRadius: 900
+  cells:
+    - {coords: [0, 0, -1], scene: scenes/cells/debris_a.owl}
+```
 
 Components are written in the order of `SerializableComponents`. `Hierarchy` stores only `parentId`; children are
 rebuilt by `Scene::rebuildHierarchyChildren()`, which also performs the repairs above.

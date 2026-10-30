@@ -98,6 +98,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `entity.particles_play` / `pause` / `stop` / `restart` / `emit` / `is_emitting` and `entity.set_trail_enabled`.
 - Benchmarks `particles/simulate_cpu/*` and `particles/advance_gpu/256_emitters`; image tests of particles, 2D particles and trails, and lens flares.
 - Engine Demo: embers with trails and smoke rise from the tavern hearth, whose fire flares in the lens.
+- World partition: the `WorldPartition:` scene key cuts the world into cubic cells on world coordinates, each a scene streamed in and out around the camera by the `owl.world_streaming` system, without a loading screen.
+- `StreamingSource` component: the points the cells stream around, with a radius factor; the primary camera when a scene has none.
+- `RendererPlanet` layer and `Planet` component: a cube-sphere terrain with quadtree LOD, chunks built in the background, horizon culling and lighting by the scene lights.
+- Planet atmosphere (single scattering, Rayleigh and Mie, seen from the ground and from orbit) and scaled space for far planets.
+- PCG `output.height` node (**Write Heights**): the height map of a planet from a `.owlpcg` graph.
+- Owl Nest planets and streaming: Planet and Streaming Source inspectors, hierarchy Effects > Planet, viewport picking and cell outlines, Scene Settings World Partition section, `entity.create_planet` and `scene.*_world_*` commands.
+- Lua `scene.is_world_cell_loaded`, `scene.get_loaded_world_cells`, `scene.set_world_streaming` and `scene.get_planet_altitude`.
+- Engine Demo far orbit: planet Cinder with a PCG relief and atmosphere, streamed debris cells, altitude and loaded cells in the HUD.
 
 ### Changed
 

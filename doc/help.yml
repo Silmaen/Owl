@@ -32,6 +32,8 @@ Groups:
       - doc/pages/event_input.md
       - doc/pages/physics.md
       - doc/pages/particles.md
+      - doc/pages/planets.md
+      - doc/pages/world_partition.md
       - doc/pages/sound.md
       - doc/pages/languages.md
       - doc/pages/pathfinding.md
