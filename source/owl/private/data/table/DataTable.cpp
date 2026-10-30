@@ -338,7 +338,7 @@ auto DataTable::getCell(const std::string_view iKey, const std::string_view iCol
 }
 
 auto DataTable::getUniqueKey(const std::string_view iBase) const -> std::string {
-	const std::string base = iBase.empty() ? std::string{"row"} : std::string{iBase};
+	std::string base = iBase.empty() ? std::string{"row"} : std::string{iBase};
 	if (!findRow(base))
 		return base;
 	for (uint32_t counter = 2;; ++counter)
@@ -347,7 +347,7 @@ auto DataTable::getUniqueKey(const std::string_view iBase) const -> std::string 
 }
 
 auto DataTable::getUniqueColumnName(const std::string_view iBase) const -> std::string {
-	const std::string base = isUsableName(iBase) ? std::string{iBase} : std::string{"column"};
+	std::string base = isUsableName(iBase) ? std::string{iBase} : std::string{"column"};
 	if (!findColumn(base))
 		return base;
 	for (uint32_t counter = 2;; ++counter)

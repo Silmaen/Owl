@@ -71,8 +71,12 @@ auto SplineCurve::getSmoothTangent(const size_t iIndex) const -> vec3 {
 	if (iIndex >= count || count < 2)
 		return {0.f, 0.f, 0.f};
 	const bool wraps = m_closed && count > 2;
-	const size_t previous = iIndex > 0 ? iIndex - 1 : (wraps ? count - 1 : 0);
-	const size_t next = iIndex + 1 < count ? iIndex + 1 : (wraps ? 0 : count - 1);
+	size_t previous = wraps ? count - 1 : 0;
+	if (iIndex > 0)
+		previous = iIndex - 1;
+	size_t next = wraps ? 0 : count - 1;
+	if (iIndex + 1 < count)
+		next = iIndex + 1;
 	return (m_points[next].position - m_points[previous].position) * (1.f / 6.f);
 }
 
@@ -235,7 +239,7 @@ auto SplineCurve::insertAtParameter(const float iParameter) -> size_t {
 	const vec3 ab = lerp(a, b, local);
 	const vec3 bc = lerp(b, c, local);
 	const vec3 middle = lerp(ab, bc, local);
-	SplinePoint point{.position = middle, .tangentIn = ab - middle, .tangentOut = bc - middle};
+	const SplinePoint point{.position = middle, .tangentIn = ab - middle, .tangentOut = bc - middle};
 	if (m_interpolation == SplineInterpolation::Bezier) {
 		m_points[segment].tangentOut = a - b0;
 		m_points[(segment + 1) % count].tangentIn = c - b3;

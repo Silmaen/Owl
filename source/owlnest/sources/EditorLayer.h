@@ -1042,6 +1042,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Give the Content Browser the data table actions: open a `.owltable`, create one (`table.create`).
+	 */
+	void bindDataTableCallbacks();
+
+	/**
+	 * @brief
 	 *  Select the custom event a just-opened visual script was opened for.
 	 * @param[in] iPath Path of the opened document.
 	 */

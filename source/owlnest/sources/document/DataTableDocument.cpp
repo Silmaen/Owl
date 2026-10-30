@@ -593,7 +593,7 @@ void DataTableDocument::renderColumnHeader(const size_t iIndex) {
 		if (ImGui::InputTextWithHint("##choices", "choices: a,b,c", &choices, ImGuiInputTextFlags_EnterReturnsTrue)) {
 			edited.choices.clear();
 			for (const auto part: choices | std::views::split(','))
-				if (std::string item{part.begin(), part.end()}; !item.empty())
+				if (const std::string item{part.begin(), part.end()}; !item.empty())
 					edited.choices.push_back(item);
 			changed = edited;
 		}
@@ -630,7 +630,7 @@ void DataTableDocument::renderCell(const size_t iRow, const size_t iColumn) {
 	const auto column = m_table.columns[iColumn];
 	const auto cell = m_table.rows[iRow].cells[iColumn];
 	const auto key = m_table.rows[iRow].key;
-	const auto previewCell = [&](CellValue iValue) -> void {
+	const auto previewCell = [&](const CellValue& iValue) -> void {
 		auto next = m_table;
 		std::ignore = next.setCell(iRow, iColumn, iValue);
 		preview(std::move(next));

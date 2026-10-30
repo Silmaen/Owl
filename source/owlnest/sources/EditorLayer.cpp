@@ -435,6 +435,15 @@ void EditorLayer::renderCloseDocumentModal() {
 	}
 }
 
+void EditorLayer::bindDataTableCallbacks() {
+	m_contentBrowser.setDataTableOpenCallback(
+			[this](const std::filesystem::path& iPath) -> void { openDataTableFile(iPath); });
+	m_contentBrowser.setDataTableCreateCallback([this](const std::filesystem::path& iPath) -> void {
+		runCommandFromUi("table.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
+		openDataTableFile(iPath);
+	});
+}
+
 void EditorLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
@@ -687,12 +696,7 @@ void EditorLayer::onAttach() {
 	m_contentBrowser.setLocalisationOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openLocalisationFile(iPath); });
 	m_contentBrowser.setSoundOpenCallback([this](const std::filesystem::path& iPath) -> void { openSoundFile(iPath); });
-	m_contentBrowser.setDataTableOpenCallback(
-			[this](const std::filesystem::path& iPath) -> void { openDataTableFile(iPath); });
-	m_contentBrowser.setDataTableCreateCallback([this](const std::filesystem::path& iPath) -> void {
-		runCommandFromUi("table.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
-		openDataTableFile(iPath);
-	});
+	bindDataTableCallbacks();
 	m_contentBrowser.setSoundCreateCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("sound.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 		openSoundFile(iPath);

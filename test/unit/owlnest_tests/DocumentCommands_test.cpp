@@ -208,7 +208,7 @@ TEST_F(DocumentCommandsTest, TableCommandsEditTheOpenDataTable) {
 
 TEST_F(DocumentCommandsTest, TableCreateWritesANewTable) {
 	const auto path = m_root / "new.owltable";
-	CommandContext context;
+	const CommandContext context;
 	ASSERT_TRUE(m_registry.execute("table.create", {{"path", path.generic_string()}}, context));
 	const auto created = data::table::DataTable::loadFile(path);
 	ASSERT_TRUE(created.has_value());
