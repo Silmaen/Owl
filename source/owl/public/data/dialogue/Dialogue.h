@@ -13,6 +13,7 @@
 #include "core/UUID.h"
 #include "math/vectors.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -116,6 +117,27 @@ struct OWL_API DialogueNode {
 
 /**
  * @brief
+ *  Bends a link of the graph editor goes through, kept with the dialogue.
+ */
+struct OWL_API DialogueRoute {
+	/// Node the link leaves.
+	core::UUID node{0};
+	/// Output of the node it leaves (see `Dialogue::getOutput`).
+	uint32_t output{0};
+	/// Waypoints in canvas space, from the output to the next node.
+	std::vector<math::vec2f> points;
+
+	/**
+	 * @brief
+	 *  Comparison operator.
+	 * @param[in] iOther The other route.
+	 * @return True when both are the same.
+	 */
+	auto operator==(const DialogueRoute& iOther) const -> bool = default;
+};
+
+/**
+ * @brief
  *  Problem found by `Dialogue::getProblems`, shown by the editor.
  */
 struct OWL_API DialogueProblem {
@@ -140,6 +162,8 @@ struct OWL_API DialogueProblem {
 struct OWL_API Dialogue {
 	/// Nodes, in the order of the file.
 	std::vector<DialogueNode> nodes;
+	/// Bends of the links drawn by the graph editor.
+	std::vector<DialogueRoute> routes;
 
 	/**
 	 * @brief
@@ -235,6 +259,43 @@ struct OWL_API Dialogue {
 
 	/**
 	 * @brief
+	 *  Number of outputs of a node: one for Start, Line and Event, two for Branch (true, false), one per option of a
+	 *  Choice, none for End.
+	 * @param[in] iNode The node.
+	 * @return The count.
+	 */
+	[[nodiscard]] static auto getOutputCount(const DialogueNode& iNode) -> size_t;
+
+	/**
+	 * @brief
+	 *  The node an output leads to.
+	 * @param[in] iNode The node.
+	 * @param[in] iOutput Index of the output.
+	 * @return The node id, null when the output is not linked or does not exist.
+	 */
+	[[nodiscard]] static auto getOutput(const DialogueNode& iNode, size_t iOutput) -> core::UUID;
+
+	/**
+	 * @brief
+	 *  Link an output to a node.
+	 * @param[in,out] ioNode The node.
+	 * @param[in] iOutput Index of the output.
+	 * @param[in] iTarget The node it leads to, null to unlink.
+	 * @return False when the node has no such output.
+	 */
+	static auto setOutput(DialogueNode& ioNode, size_t iOutput, core::UUID iTarget) -> bool;
+
+	/**
+	 * @brief
+	 *  The bends of the link of an output.
+	 * @param[in] iNode The node the link leaves.
+	 * @param[in] iOutput Index of the output.
+	 * @return The route, null when the link is straight.
+	 */
+	[[nodiscard]] auto findRoute(core::UUID iNode, size_t iOutput) const -> const DialogueRoute*;
+
+	/**
+	 * @brief
 	 *  The node the conversation starts at.
 	 * @return The first Start node, null when there is none.
 	 */
@@ -270,6 +331,14 @@ struct OWL_API Dialogue {
  * @return Its name.
  */
 OWL_API auto getNodeKindName(NodeKind iKind) -> std::string_view;
+
+/**
+ * @brief
+ *  Node kind from its name.
+ * @param[in] iName The name, as written in the file.
+ * @return The kind, nothing for an unknown name.
+ */
+OWL_API auto parseNodeKind(std::string_view iName) -> std::optional<NodeKind>;
 
 /**
  * @brief

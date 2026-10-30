@@ -23,6 +23,7 @@ namespace owl::nest::commands {
 
 class CommandRegistry;
 class DataTableEditor;
+class DialogueEditor;
 
 /**
  * @brief
@@ -270,6 +271,14 @@ public:
 	 * @return The editor of the table, or null when it cannot be opened.
 	 */
 	virtual auto openDataTable(const std::filesystem::path& iPath) -> DataTableEditor* = 0;
+
+	/**
+	 * @brief
+	 *  The tab of a dialogue, opened when it is not.
+	 * @param[in] iPath The `.owldlg` file.
+	 * @return The editor of the dialogue, or null when it cannot be opened.
+	 */
+	virtual auto openDialogue(const std::filesystem::path& iPath) -> DialogueEditor* = 0;
 };
 
 /**

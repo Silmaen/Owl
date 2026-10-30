@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <sstream>
@@ -53,26 +54,9 @@ auto readId(const YAML::Node& iNode) -> core::UUID { return core::UUID{iNode.as<
 // The nodes a node leads to, null ids left out.
 auto successorsOf(const DialogueNode& iNode) -> std::vector<core::UUID> {
 	std::vector<core::UUID> next;
-	const auto add = [&next](const core::UUID iId) {
-		if (iId != core::UUID{0})
-			next.push_back(iId);
-	};
-	switch (iNode.kind) {
-		case NodeKind::Start:
-		case NodeKind::Line:
-		case NodeKind::Event:
-			add(iNode.next);
-			break;
-		case NodeKind::Branch:
-			add(iNode.next);
-			add(iNode.nextFalse);
-			break;
-		case NodeKind::Choice:
-			for (const auto& option: iNode.options) add(option.next);
-			break;
-		case NodeKind::End:
-			break;
-	}
+	for (size_t output = 0; output < Dialogue::getOutputCount(iNode); ++output)
+		if (const auto target = Dialogue::getOutput(iNode, output); target != core::UUID{0})
+			next.push_back(target);
 	return next;
 }
 
@@ -81,6 +65,8 @@ auto hasSpeech(const NodeKind iKind) -> bool { return iKind == NodeKind::Line ||
 }// namespace
 
 auto getNodeKindName(const NodeKind iKind) -> std::string_view { return magic_enum::enum_name(iKind); }
+
+auto parseNodeKind(const std::string_view iName) -> std::optional<NodeKind> { return magic_enum::enum_cast<NodeKind>(iName); }
 
 auto getNodeKinds() -> std::span<const NodeKind> {
 	static constexpr auto s_kinds = magic_enum::enum_values<NodeKind>();
@@ -145,6 +131,19 @@ auto Dialogue::serializeToString() const -> std::string {
 		out << YAML::EndMap;
 	}
 	out << YAML::EndSeq;
+	if (!routes.empty()) {
+		out << YAML::Key << "routes" << YAML::Value << YAML::BeginSeq;
+		for (const auto& route: routes) {
+			out << YAML::Flow << YAML::BeginMap;
+			out << YAML::Key << "node" << YAML::Value << static_cast<uint64_t>(route.node);
+			out << YAML::Key << "output" << YAML::Value << route.output;
+			out << YAML::Key << "points" << YAML::Value << YAML::BeginSeq;
+			for (const auto& point: route.points)
+				out << YAML::Flow << YAML::BeginSeq << point.x() << point.y() << YAML::EndSeq;
+			out << YAML::EndSeq << YAML::EndMap;
+		}
+		out << YAML::EndSeq;
+	}
 	out << YAML::EndMap;
 	return std::string{out.c_str()};
 }
@@ -174,7 +173,7 @@ auto Dialogue::deserializeFromString(const std::string_view iYaml) -> std::optio
 				OWL_CORE_WARN("Dialogue: Node {} skipped (no id or twice).", static_cast<uint64_t>(node.id))
 				continue;
 			}
-			if (const auto kind = magic_enum::enum_cast<NodeKind>(item["kind"].as<std::string>("Line"));
+			if (const auto kind = parseNodeKind(item["kind"].as<std::string>("Line"));
 				kind.has_value())
 				node.kind = *kind;
 			if (const auto& position = item["position"]; position && position.IsSequence() && position.size() == 2)
@@ -190,6 +189,17 @@ auto Dialogue::deserializeFromString(const std::string_view iYaml) -> std::optio
 			node.next = readId(item["next"]);
 			node.nextFalse = readId(item["nextFalse"]);
 			dialogue.nodes.push_back(std::move(node));
+		}
+		for (const auto& item: root["routes"]) {
+			DialogueRoute route{.node = readId(item["node"]), .output = item["output"].as<uint32_t>(0), .points = {}};
+			const auto* node = dialogue.findNode(route.node);
+			if (node == nullptr || route.output >= getOutputCount(*node) ||
+				dialogue.findRoute(route.node, route.output) != nullptr)
+				continue;
+			for (const auto& point: item["points"])
+				if (point.IsSequence() && point.size() == 2)
+					route.points.emplace_back(point[0].as<float>(0.f), point[1].as<float>(0.f));
+			dialogue.routes.push_back(std::move(route));
 		}
 		return dialogue;
 	} catch (const YAML::Exception& e) {
@@ -234,6 +244,49 @@ auto Dialogue::findNode(const core::UUID iId) const -> const DialogueNode* {
 auto Dialogue::findNode(const core::UUID iId) -> DialogueNode* {
 	const auto found = std::ranges::find(nodes, iId, &DialogueNode::id);
 	return found == nodes.end() ? nullptr : &*found;
+}
+
+auto Dialogue::getOutputCount(const DialogueNode& iNode) -> size_t {
+	switch (iNode.kind) {
+		case NodeKind::Start:
+		case NodeKind::Line:
+		case NodeKind::Event:
+			return 1;
+		case NodeKind::Branch:
+			return 2;
+		case NodeKind::Choice:
+			return iNode.options.size();
+		case NodeKind::End:
+			return 0;
+	}
+	return 0;
+}
+
+auto Dialogue::getOutput(const DialogueNode& iNode, const size_t iOutput) -> core::UUID {
+	if (iOutput >= getOutputCount(iNode))
+		return core::UUID{0};
+	if (iNode.kind == NodeKind::Choice)
+		return iNode.options[iOutput].next;
+	return iOutput == 0 ? iNode.next : iNode.nextFalse;
+}
+
+auto Dialogue::setOutput(DialogueNode& ioNode, const size_t iOutput, const core::UUID iTarget) -> bool {
+	if (iOutput >= getOutputCount(ioNode))
+		return false;
+	if (ioNode.kind == NodeKind::Choice)
+		ioNode.options[iOutput].next = iTarget;
+	else if (iOutput == 0)
+		ioNode.next = iTarget;
+	else
+		ioNode.nextFalse = iTarget;
+	return true;
+}
+
+auto Dialogue::findRoute(const core::UUID iNode, const size_t iOutput) const -> const DialogueRoute* {
+	const auto found = std::ranges::find_if(routes, [iNode, iOutput](const DialogueRoute& iRoute) -> bool {
+		return iRoute.node == iNode && iRoute.output == iOutput;
+	});
+	return found == routes.end() ? nullptr : &*found;
 }
 
 auto Dialogue::findStart() const -> const DialogueNode* {

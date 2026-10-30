@@ -113,6 +113,8 @@ auto typeShortName(const DocumentType iType) -> const char* {
 			return "Texts";
 		case DocumentType::DataTable:
 			return "Table";
+		case DocumentType::Dialogue:
+			return "Dialogue";
 	}
 	return "Doc";
 }

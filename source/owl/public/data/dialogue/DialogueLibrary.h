@@ -69,6 +69,12 @@ public:
 
 	/**
 	 * @brief
+	 *  Forget every dialogue, so the next `get` reads the files again; conversations playing keep their copy.
+	 */
+	void invalidateAll();
+
+	/**
+	 * @brief
 	 *  Forget every dialogue and stop every conversation.
 	 */
 	void clear();

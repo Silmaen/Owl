@@ -313,6 +313,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Open a `.owldlg` in a `DialogueDocument` (or switch to it).
+	 * @param[in] iPath The file.
+	 */
+	void openDialogueFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  The tab of a dialogue, for the `dialogue.*` commands: switched to, opened when it is not.
+	 * @param[in] iPath The `.owldlg` file.
+	 * @return Its document, or null when it cannot be opened.
+	 */
+	auto openDialogue(const std::filesystem::path& iPath) -> commands::DialogueEditor* override;
+
+	/**
+	 * @brief
 	 *  Open an `input_actions.yml` in an `ActionMapDocument` (or switch to it); a missing file starts from the built-in
 	 *  actions and is created by the first save.
 	 * @param[in] iPath Absolute path to the file.
@@ -1045,6 +1060,12 @@ private:
 	 *  Give the Content Browser the data table actions: open a `.owltable`, create one (`table.create`).
 	 */
 	void bindDataTableCallbacks();
+
+	/**
+	 * @brief
+	 *  Give the Content Browser the dialogue actions: open a `.owldlg`, create one (`dialogue.create`).
+	 */
+	void bindDialogueCallbacks();
 
 	/**
 	 * @brief

@@ -87,7 +87,7 @@ auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> 
 			{".yaml", {rgb(0x8a929e), "Settings"}},      {".json", {rgb(0x8a929e), "Data"}},
 			{".md", {rgb(0x8a929e), "Document"}},        {".owlfont", {rgb(0x9a7ae0), "Font settings"}},
 			{".owlmat", {rgb(0xc77dff), "Material"}},    {".owlsound", {rgb(0x3faa72), "Sound cue"}},
-			{".owltable", {rgb(0x4fb3d9), "Data table"}}};
+			{".owltable", {rgb(0x4fb3d9), "Data table"}},  {".owldlg", {rgb(0xd98f4f), "Dialogue"}}};
 	if (const auto it = kinds.find(iPath.extension().string()); it != kinds.end())
 		return it->second;
 	return {rgb(0x8a929e), "File"};
@@ -594,6 +594,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 		m_soundOpenCallback(path);
 	} else if (path.extension() == ".owltable" && m_dataTableOpenCallback) {
 		m_dataTableOpenCallback(path);
+	} else if (path.extension() == ".owldlg" && m_dialogueOpenCallback) {
+		m_dialogueOpenCallback(path);
 	} else if (path.filename() == data::localisation::Localisation::fileName && m_localisationOpenCallback) {
 		m_localisationOpenCallback(path);
 	} else if (path.extension() == ".owlmacro" && m_macroRunCallback) {
@@ -714,6 +716,8 @@ void ContentBrowser::renderCreateItems() {
 		createSoundCue();
 	if (m_dataTableCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::rows3, .label = "New Data Table"}))
 		createDataTable();
+	if (m_dialogueCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::bookOpen, .label = "New Dialogue"}))
+		createDialogue();
 	if (gui::widgets::menuItem({.glyph = gui::icon::workflow, .label = "New Visual Script"}))
 		createVisualScript();
 	if (gui::widgets::menuItem({.glyph = gui::icon::sparkles, .label = "New PCG Graph"}))
@@ -902,6 +906,14 @@ void ContentBrowser::createDataTable() {
 	for (uint32_t counter = 1; exists(tablePath); ++counter)
 		tablePath = m_currentPath / std::format("New Data Table {}.owltable", counter);
 	m_dataTableCreateCallback(tablePath);
+	m_rescanRequested = true;
+}
+
+void ContentBrowser::createDialogue() {
+	auto dialoguePath = m_currentPath / "New Dialogue.owldlg";
+	for (uint32_t counter = 1; exists(dialoguePath); ++counter)
+		dialoguePath = m_currentPath / std::format("New Dialogue {}.owldlg", counter);
+	m_dialogueCreateCallback(dialoguePath);
 	m_rescanRequested = true;
 }
 

@@ -35,11 +35,13 @@ void DialogueLibrary::invalidate(const std::string_view iAsset) {
 	m_dialogues.erase(path);
 }
 
+void DialogueLibrary::invalidateAll() {
+	const std::scoped_lock<std::mutex> lock{m_mutex};
+	m_dialogues.clear();
+}
+
 void DialogueLibrary::clear() {
-	{
-		const std::scoped_lock<std::mutex> lock{m_mutex};
-		m_dialogues.clear();
-	}
+	invalidateAll();
 	for (auto& [id, conversation]: m_conversations) conversation->stop();
 	collect();
 }

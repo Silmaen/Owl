@@ -12,6 +12,7 @@
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/DataTableDocument.h"
+#include "document/DialogueDocument.h"
 #include "document/FontDocument.h"
 #include "document/ImageDocument.h"
 #include "document/LocalisationDocument.h"
@@ -91,6 +92,9 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 			return;
 		case AssetKind::DataTable:
 			openDataTableFile(iPath);
+			return;
+		case AssetKind::Dialogue:
+			openDialogueFile(iPath);
 			return;
 		case AssetKind::Macro:
 			runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
@@ -601,6 +605,37 @@ auto EditorLayer::openDataTable(const std::filesystem::path& iPath) -> commands:
 		return doc;
 	openDataTableFile(path);
 	return findOpenDocument<DataTableDocument>(m_documents, DocumentType::DataTable, path);
+}
+
+void EditorLayer::openDialogueFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Dialogue && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<DialogueDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open dialogue: {}.", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+auto EditorLayer::openDialogue(const std::filesystem::path& iPath) -> commands::DialogueEditor* {
+	const auto path = normalised(iPath);
+	if (auto* doc = findOpenDocument<DialogueDocument>(m_documents, DocumentType::Dialogue, path); doc != nullptr)
+		return doc;
+	openDialogueFile(path);
+	return findOpenDocument<DialogueDocument>(m_documents, DocumentType::Dialogue, path);
 }
 
 void EditorLayer::openLocalisationEditor() {

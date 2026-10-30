@@ -128,6 +128,36 @@ TEST(Dialogue, SkipsNodesWithoutOrWithTwiceTheSameId) {
 	core::Log::invalidate();
 }
 
+TEST(Dialogue, OutputsAndRoutesFollowTheKind) {
+	core::Log::init(core::Log::Level::Off);
+	auto dialogue = makeDialogue();
+	EXPECT_EQ(Dialogue::getOutputCount(*dialogue.findNode(1)), 1);
+	EXPECT_EQ(Dialogue::getOutputCount(*dialogue.findNode(3)), 2);
+	EXPECT_EQ(Dialogue::getOutputCount(*dialogue.findNode(4)), 2);
+	EXPECT_EQ(Dialogue::getOutputCount(*dialogue.findNode(7)), 0);
+	EXPECT_EQ(Dialogue::getOutput(*dialogue.findNode(3), 1), 6);
+	EXPECT_EQ(Dialogue::getOutput(*dialogue.findNode(4), 1), 7);
+	EXPECT_EQ(Dialogue::getOutput(*dialogue.findNode(4), 2), 0);
+	EXPECT_TRUE(Dialogue::setOutput(*dialogue.findNode(4), 0, 6));
+	EXPECT_EQ(dialogue.findNode(4)->options[0].next, 6);
+	EXPECT_TRUE(Dialogue::setOutput(*dialogue.findNode(3), 1, 0));
+	EXPECT_EQ(dialogue.findNode(3)->nextFalse, 0);
+	EXPECT_FALSE(Dialogue::setOutput(*dialogue.findNode(7), 0, 1));
+	dialogue.routes = {{.node = 3, .output = 0, .points = {{10.f, 20.f}, {30.f, 40.f}}}};
+	const auto read = Dialogue::deserializeFromString(dialogue.serializeToString() +
+													  "\nextra: 0\n");// unknown keys are ignored
+	ASSERT_TRUE(read.has_value());
+	EXPECT_EQ(read->routes, dialogue.routes);
+	ASSERT_NE(read->findRoute(3, 0), nullptr);
+	EXPECT_EQ(read->findRoute(3, 1), nullptr);
+	const auto dropped = Dialogue::deserializeFromString("Dialogue: ''\nnodes:\n  - {id: 1, kind: End}\n"
+														 "routes:\n  - {node: 1, output: 0, points: [[1, 2]]}\n"
+														 "  - {node: 9, output: 0, points: []}\n");
+	ASSERT_TRUE(dropped.has_value());
+	EXPECT_TRUE(dropped->routes.empty());
+	core::Log::invalidate();
+}
+
 TEST(Dialogue, DefaultHasAStartLinkedToAnEnd) {
 	const auto dialogue = Dialogue::makeDefault();
 	ASSERT_EQ(dialogue.nodes.size(), 2);
@@ -168,6 +198,8 @@ TEST(Dialogue, ListsItsKeysAndFunctions) {
 	EXPECT_EQ(dialogue.getFunctions(), (std::vector<std::string>{"has_key", "can_open", "open_gate"}));
 	EXPECT_EQ(getNodeKindName(NodeKind::Choice), "Choice");
 	EXPECT_EQ(getNodeKinds().size(), 6);
+	EXPECT_EQ(parseNodeKind("Branch"), NodeKind::Branch);
+	EXPECT_FALSE(parseNodeKind("Loop").has_value());
 }
 
 TEST(Conversation, FollowsBranchesChoicesAndEvents) {
@@ -261,6 +293,10 @@ TEST(DialogueLibrary, PlaysConversationsByNumber) {
 	EXPECT_EQ(library.getLoadCount(), 3);
 	const auto third = library.start(path.generic_string(), recorder.hooks());
 	ASSERT_TRUE(third.has_value());
+	library.invalidateAll();
+	EXPECT_NE(library.find(*third), nullptr);// a playing conversation keeps its copy
+	std::ignore = library.get(path.generic_string());
+	EXPECT_EQ(library.getLoadCount(), 4);
 	library.clear();
 	EXPECT_EQ(library.find(*third), nullptr);
 	std::filesystem::remove(path);

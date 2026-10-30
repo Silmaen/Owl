@@ -14,6 +14,7 @@
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/DataTableDocument.h"
+#include "document/DialogueDocument.h"
 #include "document/FontDocument.h"
 #include "document/LocalisationDocument.h"
 #include "document/MaterialDocument.h"
@@ -308,6 +309,9 @@ void RibbonBuilder::build() {
 			break;
 		case DocumentType::DataTable:
 			buildDataTableTab();
+			break;
+		case DocumentType::Dialogue:
+			buildDialogueTab();
 			break;
 		case DocumentType::Scene:
 			buildSceneTab();
@@ -853,6 +857,68 @@ void RibbonBuilder::buildDataTableTab() {
 							  .tooltip = "Close the active document",
 							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
 							  .size = Size::Small});
+}
+
+void RibbonBuilder::buildDialogueTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto activeDialogue = [this]() -> DialogueDocument* {
+		auto* d = mp_editor->m_documents.getActive();
+		if (d != nullptr && d->type() == DocumentType::Dialogue)
+			return static_cast<DialogueDocument*>(d);
+		return nullptr;
+	};
+	const auto open = [activeDialogue]() -> bool { return activeDialogue() != nullptr; };
+	const auto tab = m_ribbon.addTab("Dialogue");
+	const auto gFile = m_ribbon.addGroup(tab, "File");
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_save",
+							  .label = "Save",
+							  .tooltip = "Save the dialogue; the next conversations read it (Ctrl+S)",
+							  .isEnabled = open,
+							  .onClick = [activeDialogue]() -> void {
+								  if (auto* d = activeDialogue())
+									  std::ignore = d->save();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_close",
+							  .label = "Close",
+							  .tooltip = "Close the active document",
+							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
+							  .size = Size::Small});
+	const auto gGraph = m_ribbon.addGroup(tab, "Graph");
+	m_ribbon.addButton(tab, gGraph,
+					   Button{.iconName = "ribbon_frame_scene",
+							  .label = "Frame All",
+							  .tooltip = "Show every node (Home)",
+							  .isEnabled = open,
+							  .onClick = [activeDialogue]() -> void {
+								  if (auto* d = activeDialogue())
+									  d->frameAll();
+							  },
+							  .size = Size::Small});
+	m_ribbon.addButton(tab, gGraph,
+					   Button{.iconName = "ribbon_copy",
+							  .label = "Duplicate",
+							  .tooltip = "Copy the selected nodes beside them (Ctrl+D)",
+							  .isEnabled = open,
+							  .onClick = [activeDialogue]() -> void {
+								  if (auto* d = activeDialogue())
+									  d->duplicateSelection();
+							  },
+							  .size = Size::Small});
+	const auto gPreview = m_ribbon.addGroup(tab, "Preview");
+	m_ribbon.addButton(tab, gPreview,
+					   Button{.iconName = "ribbon_play",
+							  .label = "Preview",
+							  .tooltip = "Play the dialogue beside the graph, the conditions answered by hand",
+							  .isEnabled = open,
+							  .onClick = [activeDialogue]() -> void {
+								  if (auto* d = activeDialogue())
+									  d->setPreviewShown(!d->isPreviewShown());
+							  },
+							  .size = Size::Large});
 }
 
 void RibbonBuilder::buildLocalisationTab() {

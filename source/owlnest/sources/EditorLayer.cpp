@@ -15,6 +15,7 @@
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/DataTableDocument.h"
+#include "document/DialogueDocument.h"
 #include "document/FontDocument.h"
 #include "document/ImageDocument.h"
 #include "document/LocalisationDocument.h"
@@ -462,6 +463,15 @@ void EditorLayer::bindDataTableCallbacks() {
 	});
 }
 
+void EditorLayer::bindDialogueCallbacks() {
+	m_contentBrowser.setDialogueOpenCallback(
+			[this](const std::filesystem::path& iPath) -> void { openDialogueFile(iPath); });
+	m_contentBrowser.setDialogueCreateCallback([this](const std::filesystem::path& iPath) -> void {
+		runCommandFromUi("dialogue.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
+		openDialogueFile(iPath);
+	});
+}
+
 void EditorLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
@@ -694,6 +704,7 @@ void EditorLayer::onAttach() {
 			[this](const std::filesystem::path& iPath) -> void { openLocalisationFile(iPath); });
 	m_contentBrowser.setSoundOpenCallback([this](const std::filesystem::path& iPath) -> void { openSoundFile(iPath); });
 	bindDataTableCallbacks();
+	bindDialogueCallbacks();
 	m_contentBrowser.setSoundCreateCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("sound.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 		openSoundFile(iPath);
@@ -928,6 +939,8 @@ auto consumeTabClose(Document* ioDocument) -> bool {
 			return consumeClose<LocalisationDocument>(ioDocument);
 		case DocumentType::DataTable:
 			return consumeClose<DataTableDocument>(ioDocument);
+		case DocumentType::Dialogue:
+			return consumeClose<DialogueDocument>(ioDocument);
 	}
 	return false;
 }

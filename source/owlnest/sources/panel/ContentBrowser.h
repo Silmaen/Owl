@@ -242,6 +242,25 @@ public:
 
 	/**
 	 * @brief
+	 *  Set a callback invoked when a dialogue (`.owldlg`) is double-clicked.
+	 * @param[in] iCallback Function taking the dialogue file path.
+	 */
+	void setDialogueOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_dialogueOpenCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
+	 *  Set the callback creating a dialogue ("New Dialogue" of the folder menu); it runs `dialogue.create` and opens
+	 *  the file.
+	 * @param[in] iCallback Function taking the path of the file to create.
+	 */
+	void setDialogueCreateCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_dialogueCreateCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when the project's `localisation.yml` is double-clicked.
 	 * @param[in] iCallback Function taking the file path.
 	 */
@@ -454,6 +473,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Create a dialogue in the current folder (`New Dialogue.owldlg`, numbered when taken) and open it.
+	 */
+	void createDialogue();
+
+	/**
+	 * @brief
 	 *  Create a starter visual script in the current folder and open it.
 	 */
 	void createVisualScript();
@@ -524,6 +549,10 @@ private:
 	std::function<void(const std::filesystem::path&)> m_dataTableOpenCallback;
 	/// Creates a data table ("New Data Table").
 	std::function<void(const std::filesystem::path&)> m_dataTableCreateCallback;
+	/// Called on double-click of a `.owldlg` dialogue.
+	std::function<void(const std::filesystem::path&)> m_dialogueOpenCallback;
+	/// Creates a dialogue ("New Dialogue").
+	std::function<void(const std::filesystem::path&)> m_dialogueCreateCallback;
 	/// Called on double-click of `localisation.yml`.
 	std::function<void(const std::filesystem::path&)> m_localisationOpenCallback;
 	/// Called when a macro (`.owlmacro`) is double-clicked or run from its context menu.

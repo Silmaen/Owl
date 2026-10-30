@@ -41,6 +41,7 @@ enum struct DocumentType : uint8_t {
 	Sound,///< A `.owlsound` sound cue: its takes, trim and loop points, volume and pitch.
 	Localisation,///< The `localisation.yml` of a project: its languages and string tables.
 	DataTable,///< A `.owltable` data table: typed records edited in a grid.
+	Dialogue,///< A `.owldlg` dialogue: a branching conversation edited as a graph.
 };
 
 /**

@@ -9,11 +9,13 @@
 #include "commands/DocumentCommands.h"
 #include "commands/CommandRegistry.h"
 #include "document/DataTableDocument.h"
+#include "document/DialogueDocument.h"
 #include "document/LocalisationDocument.h"
 #include "document/SoundDocument.h"
 #include "testHelper.h"
 
 #include <core/Log.h>
+#include <data/dialogue/Dialogue.h>
 
 #include <gtest/gtest.h>
 
@@ -21,6 +23,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <variant>
 #include <tuple>
 #include <vector>
 
@@ -47,9 +50,14 @@ public:
 		return iPath == table.filePath() ? &table : nullptr;
 	}
 
+	auto openDialogue(const std::filesystem::path& iPath) -> DialogueEditor* override {
+		return iPath == dialogue.filePath() ? &dialogue : nullptr;
+	}
+
 	SoundDocument sound;
 	LocalisationDocument localisation;
 	DataTableDocument table;
+	DialogueDocument dialogue;
 };
 
 class DocumentCommandsTest : public ::testing::Test {
@@ -71,12 +79,16 @@ protected:
 		ASSERT_TRUE(table.addRow("row", 0));
 		ASSERT_TRUE(table.saveToFile(m_table));
 		ASSERT_TRUE(m_host.table.loadFromFile(m_table));
+		m_dialogue = m_root / "guard.owldlg";
+		ASSERT_TRUE(data::dialogue::Dialogue::makeDefault().saveToFile(m_dialogue));
+		ASSERT_TRUE(m_host.dialogue.loadFromFile(m_dialogue));
 	}
 
 	void TearDown() override {
 		m_host.sound.onDetach();
 		m_host.localisation.onDetach();
 		m_host.table.onDetach();
+		m_host.dialogue.onDetach();
 		std::filesystem::remove_all(m_root);
 		core::Log::invalidate();
 	}
@@ -93,6 +105,7 @@ protected:
 	std::filesystem::path m_cue;
 	std::filesystem::path m_locale;
 	std::filesystem::path m_table;
+	std::filesystem::path m_dialogue;
 	TestHost m_host;
 	CommandRegistry m_registry;
 };
@@ -218,4 +231,84 @@ TEST_F(DocumentCommandsTest, TableCreateWritesANewTable) {
 	EXPECT_FALSE(m_registry.execute("table.create", {{"path", (m_root / "x.yml").generic_string()}}, context));
 	EXPECT_FALSE(run("table.add_row", {{"key", "a"}}, path));
 	EXPECT_FALSE(run("table.add_row", {{"key", "a"}}, m_locale));
+}
+
+namespace {
+
+auto resultText(const expected<CommandResult, CommandFailure>& iResult, const std::string& iField) -> std::string {
+	if (!iResult)
+		return {};
+	const auto found = iResult->data.find(iField);
+	return found == iResult->data.end() ? std::string{} : std::get<std::string>(found->second);
+}
+
+}// namespace
+
+TEST_F(DocumentCommandsTest, DialogueCommandsBuildAConversation) {
+	using data::dialogue::Dialogue;
+	using data::dialogue::NodeKind;
+	const auto& dialogue = m_host.dialogue.dialogue();
+	const auto start = std::to_string(static_cast<uint64_t>(dialogue.findStart()->id));
+	const auto end = std::to_string(static_cast<uint64_t>(dialogue.findStart()->next));
+	EXPECT_FALSE(run("dialogue.add_node", {{"kind", "Loop"}}, m_dialogue));
+	EXPECT_FALSE(run("dialogue.add_node", {{"kind", "Line"}, {"from", "42"}}, m_dialogue));
+	const auto line = resultText(run("dialogue.add_node", {{"kind", "Line"}, {"from", start}, {"position", math::vec2{200.f, 0.f}}}, m_dialogue), "node");
+	ASSERT_FALSE(line.empty());
+	EXPECT_EQ(std::to_string(static_cast<uint64_t>(dialogue.findStart()->next)), line);
+	ASSERT_TRUE(run("dialogue.set_node", {{"node", line}, {"speaker", "Guard"}, {"text", "Halt!"}, {"text_key", "line.halt"}}, m_dialogue));
+	const auto* lineNode = dialogue.findNode(std::stoull(line));
+	ASSERT_NE(lineNode, nullptr);
+	EXPECT_EQ(lineNode->speaker.text, "Guard");
+	EXPECT_EQ(lineNode->text.key, "line.halt");
+	const auto choice = resultText(run("dialogue.add_node", {{"kind", "Choice"}, {"from", line}}, m_dialogue), "node");
+	ASSERT_FALSE(choice.empty());
+	ASSERT_TRUE(run("dialogue.add_option", {{"node", choice}, {"text", "Leave"}}, m_dialogue));
+	EXPECT_FALSE(run("dialogue.add_option", {{"node", line}}, m_dialogue));
+	ASSERT_TRUE(run("dialogue.set_option", {{"node", choice}, {"option", int64_t{0}}, {"text", "Trade"}, {"condition", "has_goods"}}, m_dialogue));
+	EXPECT_FALSE(run("dialogue.set_option", {{"node", choice}, {"option", int64_t{5}}, {"text", "x"}}, m_dialogue));
+	ASSERT_TRUE(run("dialogue.link", {{"from", choice}, {"output", int64_t{0}}, {"to", end}}, m_dialogue));
+	ASSERT_TRUE(run("dialogue.set_route", {{"node", choice}, {"output", int64_t{0}}, {"points", "10,20; 30,40"}}, m_dialogue));
+	EXPECT_FALSE(run("dialogue.set_route", {{"node", choice}, {"output", int64_t{0}}, {"points", "oops"}}, m_dialogue));
+	ASSERT_NE(dialogue.findRoute(std::stoull(choice), 0), nullptr);
+	ASSERT_TRUE(run("dialogue.move_option", {{"node", choice}, {"option", int64_t{0}}, {"down", true}}, m_dialogue));
+	const auto* choiceNode = dialogue.findNode(std::stoull(choice));
+	ASSERT_EQ(choiceNode->options.size(), 2u);
+	EXPECT_EQ(choiceNode->options[1].text.text, "Trade");
+	EXPECT_EQ(choiceNode->options[1].next, std::stoull(end));
+	ASSERT_NE(dialogue.findRoute(choiceNode->id, 1), nullptr);// the bends follow the moved answer
+	EXPECT_FALSE(run("dialogue.move_option", {{"node", choice}, {"option", int64_t{1}}, {"down", true}}, m_dialogue));
+	EXPECT_FALSE(run("dialogue.link", {{"from", choice}, {"output", int64_t{0}}, {"to", start}}, m_dialogue));
+	ASSERT_TRUE(run("dialogue.move_nodes", {{"nodes", line + "," + choice}, {"offset", math::vec2{10.f, 5.f}}}, m_dialogue));
+	EXPECT_FLOAT_EQ(dialogue.findNode(std::stoull(line))->position.x(), 210.f);
+	const auto copies = resultText(run("dialogue.duplicate_nodes", {{"nodes", line + "," + choice}}, m_dialogue), "nodes");
+	ASSERT_EQ(dialogue.nodes.size(), 6u);
+	const auto copyLine = copies.substr(0, copies.find(','));
+	const auto copyChoice = copies.substr(copies.find(',') + 1);
+	EXPECT_EQ(dialogue.findNode(std::stoull(copyLine))->next, std::stoull(copyChoice));// inner link follows the copies
+	EXPECT_EQ(dialogue.findNode(std::stoull(copyChoice))->options[1].next, std::stoull(end));// outer link kept
+	ASSERT_TRUE(run("dialogue.remove_option", {{"node", choice}, {"option", int64_t{0}}}, m_dialogue));
+	ASSERT_NE(dialogue.findRoute(choiceNode->id, 0), nullptr);
+	ASSERT_TRUE(run("dialogue.remove_nodes", {{"nodes", copies + "," + end}}, m_dialogue));
+	EXPECT_EQ(dialogue.nodes.size(), 3u);
+	EXPECT_EQ(dialogue.findNode(std::stoull(choice))->options[0].next, 0);
+	EXPECT_TRUE(dialogue.routes.empty());
+	EXPECT_FALSE(run("dialogue.remove_nodes", {{"nodes", "1"}}, m_dialogue));
+	ASSERT_TRUE(run("dialogue.link", {{"from", line}, {"to", ""}}, m_dialogue));
+	EXPECT_EQ(dialogue.findNode(std::stoull(line))->next, 0);
+	EXPECT_FALSE(run("dialogue.link", {{"from", line}, {"to", ""}}, m_dialogue));// nothing changes
+	EXPECT_TRUE(m_host.dialogue.isDirty());
+	m_host.dialogue.performUndo();
+	EXPECT_EQ(dialogue.findNode(std::stoull(line))->next, std::stoull(choice));
+	EXPECT_FALSE(run("dialogue.link", {{"from", line}, {"to", ""}}, m_root / "goods.owltable"));
+	EXPECT_FALSE(run("dialogue.link", {{"from", line}, {"to", ""}}, m_root / "other.owldlg"));
+}
+
+TEST_F(DocumentCommandsTest, DialogueCreateWritesANewDialogue) {
+	const auto path = m_root / "new.owldlg";
+	ASSERT_TRUE(run("dialogue.create", {}, path));
+	const auto read = data::dialogue::Dialogue::loadFile(path);
+	ASSERT_TRUE(read.has_value());
+	EXPECT_TRUE(read->getProblems().empty());
+	EXPECT_FALSE(run("dialogue.create", {}, path));
+	EXPECT_FALSE(run("dialogue.create", {}, m_root / "new.txt"));
 }
