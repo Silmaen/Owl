@@ -38,6 +38,8 @@ OwlProject:
         TileHeight: 32
         ZStep: 16
         Zoom: 0
+    - Type: RendererParticles
+      Name: particles
     - Type: Renderer2D
       Name: ui
     - Type: Renderer2D

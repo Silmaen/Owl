@@ -133,10 +133,14 @@ auto RenderAPI::prepareDraw(const shared<DrawData>& iData) -> uint32_t {
 		}
 	}
 	if (first || m_appliedState->blendMode != state.blendMode) {
-		if (state.blendMode == BlendMode::Alpha)
-			glEnable(GL_BLEND);
-		else
+		if (state.blendMode == BlendMode::Opaque)
 			glDisable(GL_BLEND);
+		else
+			glEnable(GL_BLEND);
+		if (state.blendMode == BlendMode::Additive)
+			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ZERO, GL_ONE);
+		else if (state.blendMode == BlendMode::Alpha && (first || m_appliedState->blendMode == BlendMode::Additive))
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 	m_appliedState = state;
 	iData->bind();

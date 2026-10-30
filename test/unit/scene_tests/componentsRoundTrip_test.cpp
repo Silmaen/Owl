@@ -533,6 +533,12 @@ TEST(ComponentRoundTrip, CameraPostProcess) {
 				settings.bokehRadius = 12.f;
 				settings.motionBlur = true;
 				settings.motionBlurIntensity = 0.75f;
+				settings.lensFlare = true;
+				settings.lensFlareIntensity = 2.5f;
+				settings.lensFlareGhosts = 6;
+				settings.lensFlareSpacing = 0.3f;
+				settings.lensFlareHalo = 0.5f;
+				settings.lensFlareSize = 0.2f;
 				cam.camera.setPostProcess(settings);
 			},
 			[](const scene::Entity& iEnt) -> void {
@@ -561,6 +567,12 @@ TEST(ComponentRoundTrip, CameraPostProcess) {
 				EXPECT_FLOAT_EQ(settings.bokehRadius, 12.f);
 				EXPECT_TRUE(settings.motionBlur);
 				EXPECT_FLOAT_EQ(settings.motionBlurIntensity, 0.75f);
+				EXPECT_TRUE(settings.lensFlare);
+				EXPECT_FLOAT_EQ(settings.lensFlareIntensity, 2.5f);
+				EXPECT_EQ(settings.lensFlareGhosts, 6u);
+				EXPECT_FLOAT_EQ(settings.lensFlareSpacing, 0.3f);
+				EXPECT_FLOAT_EQ(settings.lensFlareHalo, 0.5f);
+				EXPECT_FLOAT_EQ(settings.lensFlareSize, 0.2f);
 			});
 }
 
@@ -646,6 +658,112 @@ TEST(ComponentRoundTrip, LightFlicker) {
 				EXPECT_FLOAT_EQ(flicker.dipDepth, 0.4f);
 				EXPECT_EQ(flicker.follow, core::UUID{77});
 				EXPECT_FLOAT_EQ(flicker.scaleResponse.y(), 0.35f);
+			});
+}
+
+TEST(ComponentRoundTrip, ParticleEmitter) {
+	roundTrip(
+			"ParticleEmitter",
+			[](scene::Entity& iEnt) -> void {
+				auto& emitter = iEnt.addComponent<scene::component::ParticleEmitter>();
+				emitter.playOnStart = false;
+				auto& settings = emitter.settings;
+				settings.maxParticles = 300;
+				settings.rate = 12.5f;
+				settings.burst = 7;
+				settings.duration = 3.f;
+				settings.loop = false;
+				settings.lifetimeMin = 0.5f;
+				settings.lifetimeMax = 1.5f;
+				settings.shape = renderer::ParticleShape::Box;
+				settings.shapeSize = {1.f, 2.f, 3.f};
+				settings.coneAngle = 0.7f;
+				settings.speedMin = 0.25f;
+				settings.speedMax = 0.75f;
+				settings.velocity = {0.f, 1.f, 0.f};
+				settings.gravity = {0.f, -2.f, 0.f};
+				settings.drag = 0.3f;
+				settings.sizeMin = 0.05f;
+				settings.sizeMax = 0.5f;
+				settings.sizeOverLife.addKey({0.f, 1.f});
+				settings.sizeOverLife.addKey({1.f, 0.25f});
+				settings.spinMin = -1.f;
+				settings.spinMax = 2.f;
+				settings.color = {1.f, 0.5f, 0.25f, 0.8f};
+				settings.colorOverLife.addKey({.time = 0.5f, .color = {0.f, 1.f, 0.f, 0.5f}});
+				settings.emissive = 1200.f;
+				settings.blend = renderer::ParticleBlend::Alpha;
+				settings.space = renderer::ParticleSpace::Local;
+				settings.trailLength = 5;
+				settings.trailInterval = 0.02f;
+				settings.trailWidth = 0.9f;
+				settings.seed = 42;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::ParticleEmitter>());
+				const auto& emitter = iEnt.getComponent<scene::component::ParticleEmitter>();
+				const auto& settings = emitter.settings;
+				EXPECT_FALSE(emitter.playOnStart);
+				EXPECT_EQ(settings.maxParticles, 300u);
+				EXPECT_FLOAT_EQ(settings.rate, 12.5f);
+				EXPECT_EQ(settings.burst, 7u);
+				EXPECT_FLOAT_EQ(settings.duration, 3.f);
+				EXPECT_FALSE(settings.loop);
+				EXPECT_FLOAT_EQ(settings.lifetimeMin, 0.5f);
+				EXPECT_FLOAT_EQ(settings.lifetimeMax, 1.5f);
+				EXPECT_EQ(settings.shape, renderer::ParticleShape::Box);
+				EXPECT_FLOAT_EQ(settings.shapeSize.z(), 3.f);
+				EXPECT_FLOAT_EQ(settings.coneAngle, 0.7f);
+				EXPECT_FLOAT_EQ(settings.speedMax, 0.75f);
+				EXPECT_FLOAT_EQ(settings.velocity.y(), 1.f);
+				EXPECT_FLOAT_EQ(settings.gravity.y(), -2.f);
+				EXPECT_FLOAT_EQ(settings.drag, 0.3f);
+				EXPECT_FLOAT_EQ(settings.sizeMax, 0.5f);
+				ASSERT_EQ(settings.sizeOverLife.keyCount(), 2u);
+				EXPECT_FLOAT_EQ(settings.sizeOverLife.key(1).value, 0.25f);
+				EXPECT_FLOAT_EQ(settings.spinMax, 2.f);
+				EXPECT_FLOAT_EQ(settings.color.w(), 0.8f);
+				ASSERT_EQ(settings.colorOverLife.keys.size(), 1u);
+				EXPECT_FLOAT_EQ(settings.colorOverLife.keys[0].color.y(), 1.f);
+				EXPECT_FLOAT_EQ(settings.emissive, 1200.f);
+				EXPECT_EQ(settings.blend, renderer::ParticleBlend::Alpha);
+				EXPECT_EQ(settings.space, renderer::ParticleSpace::Local);
+				EXPECT_EQ(settings.trailLength, 5u);
+				EXPECT_FLOAT_EQ(settings.trailInterval, 0.02f);
+				EXPECT_FLOAT_EQ(settings.trailWidth, 0.9f);
+				EXPECT_EQ(settings.seed, 42u);
+			});
+}
+
+TEST(ComponentRoundTrip, Trail) {
+	roundTrip(
+			"Trail",
+			[](scene::Entity& iEnt) -> void {
+				auto& trail = iEnt.addComponent<scene::component::Trail>();
+				trail.enabled = false;
+				trail.lifetime = 1.25f;
+				trail.minDistance = 0.2f;
+				trail.maxPoints = 64;
+				trail.width = 0.4f;
+				trail.widthOverLength.addKey({0.f, 1.f});
+				trail.color = {0.2f, 0.4f, 1.f, 1.f};
+				trail.colorOverLength.addKey({.time = 1.f, .color = {1.f, 1.f, 1.f, 0.f}});
+				trail.emissive = 500.f;
+				trail.blend = renderer::ParticleBlend::Alpha;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::Trail>());
+				const auto& trail = iEnt.getComponent<scene::component::Trail>();
+				EXPECT_FALSE(trail.enabled);
+				EXPECT_FLOAT_EQ(trail.lifetime, 1.25f);
+				EXPECT_FLOAT_EQ(trail.minDistance, 0.2f);
+				EXPECT_EQ(trail.maxPoints, 64u);
+				EXPECT_FLOAT_EQ(trail.width, 0.4f);
+				EXPECT_EQ(trail.widthOverLength.keyCount(), 1u);
+				EXPECT_FLOAT_EQ(trail.color.z(), 1.f);
+				ASSERT_EQ(trail.colorOverLength.keys.size(), 1u);
+				EXPECT_FLOAT_EQ(trail.emissive, 500.f);
+				EXPECT_EQ(trail.blend, renderer::ParticleBlend::Alpha);
 			});
 }
 

@@ -1033,13 +1033,13 @@
     {
       "name": "sample/editor_update/game_over",
       "items": 1,
-      "batch": 1430,
+      "batch": 1223,
       "samples": 15,
-      "median_ns": 8282.9,
-      "p25_ns": 8270.1,
-      "p75_ns": 8292.8,
-      "min_ns": 8248.5,
-      "max_ns": 8402.2
+      "median_ns": 9692.8,
+      "p25_ns": 9665.9,
+      "p75_ns": 9715.2,
+      "min_ns": 9639.7,
+      "max_ns": 9754.9
     },
     {
       "name": "sample/editor_update/iso_town",
@@ -1099,24 +1099,24 @@
     {
       "name": "sample/editor_update/tavern",
       "items": 1,
-      "batch": 463,
+      "batch": 405,
       "samples": 15,
-      "median_ns": 24880.1,
-      "p25_ns": 24862.1,
-      "p75_ns": 24893.7,
-      "min_ns": 24799.0,
-      "max_ns": 24923.7
+      "median_ns": 30092.9,
+      "p25_ns": 30068.9,
+      "p75_ns": 30146.3,
+      "min_ns": 30035.1,
+      "max_ns": 30302.4
     },
     {
       "name": "sample/editor_update/victory",
       "items": 1,
-      "batch": 1513,
+      "batch": 1275,
       "samples": 15,
-      "median_ns": 7863.5,
-      "p25_ns": 7859.9,
-      "p75_ns": 7868.2,
-      "min_ns": 7850.6,
-      "max_ns": 7935.2
+      "median_ns": 9317.3,
+      "p25_ns": 9289.0,
+      "p75_ns": 9336.5,
+      "min_ns": 9259.1,
+      "max_ns": 9351.1
     },
     {
       "name": "sample/editor_update/voxel_terrain",
@@ -1725,14 +1725,14 @@
     },
     {
       "name": "slang/compile_warm/all_engine_shaders_vulkan",
-      "items": 23,
+      "items": 31,
       "batch": 1,
       "samples": 15,
-      "median_ns": 674857142.0,
-      "p25_ns": 673451270.5,
-      "p75_ns": 677603650.5,
-      "min_ns": 672633758.0,
-      "max_ns": 681178359.0
+      "median_ns": 806689808.0,
+      "p25_ns": 806470500.0,
+      "p75_ns": 806814826.0,
+      "min_ns": 806158650.0,
+      "max_ns": 807202386.0
     },
     {
       "name": "slang/compile_warm/quad_opengl",
@@ -2485,13 +2485,79 @@
     {
       "name": "sample/editor_update/far_orbit",
       "items": 1,
+      "batch": 934,
+      "samples": 15,
+      "median_ns": 12718.6,
+      "p25_ns": 12708.2,
+      "p75_ns": 12762.3,
+      "min_ns": 12678.3,
+      "max_ns": 12908.1
+    },
+    {
+      "name": "sample/load/character_yard",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 127952.0,
+      "p25_ns": 126206.5,
+      "p75_ns": 131374.5,
+      "min_ns": 125648.0,
+      "max_ns": 145692.0
+    },
+    {
+      "name": "sample/editor_update/character_yard",
+      "items": 1,
+      "batch": 877,
+      "samples": 15,
+      "median_ns": 13368.6,
+      "p25_ns": 13344.5,
+      "p75_ns": 13400.9,
+      "min_ns": 13279.3,
+      "max_ns": 13492.4
+    },
+    {
+      "name": "particles/simulate_cpu/1000",
+      "items": 1000,
+      "batch": 709,
+      "samples": 15,
+      "median_ns": 16830.1,
+      "p25_ns": 16823.3,
+      "p75_ns": 16845.4,
+      "min_ns": 16807.0,
+      "max_ns": 16862.7
+    },
+    {
+      "name": "particles/simulate_cpu/10000",
+      "items": 10000,
+      "batch": 71,
+      "samples": 15,
+      "median_ns": 166941.7,
+      "p25_ns": 166823.7,
+      "p75_ns": 166974.7,
+      "min_ns": 166743.0,
+      "max_ns": 167485.7
+    },
+    {
+      "name": "particles/simulate_cpu/65536",
+      "items": 65536,
+      "batch": 10,
+      "samples": 15,
+      "median_ns": 1090502.1,
+      "p25_ns": 1090020.1,
+      "p75_ns": 1091123.7,
+      "min_ns": 1089754.8,
+      "max_ns": 1094825.4
+    },
+    {
+      "name": "particles/advance_gpu/256_emitters",
+      "items": 256,
       "batch": 1000,
       "samples": 15,
-      "median_ns": 10643.5,
-      "p25_ns": 10616.4,
-      "p75_ns": 10669.4,
-      "min_ns": 10583.7,
-      "max_ns": 12725.3
+      "median_ns": 10941.1,
+      "p25_ns": 10937.2,
+      "p75_ns": 10945.7,
+      "min_ns": 10933.4,
+      "max_ns": 10974.6
     }
   ],
   "metrics": [

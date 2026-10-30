@@ -78,6 +78,18 @@ struct PostProcessSettings {
 	bool motionBlur = false;
 	/// Fraction of the frame the shutter stays open, 0 to 1.
 	float motionBlurIntensity = 0.5f;
+	/// Whether the lights with a flare strength (and the sun) flare in the lens, hidden ones excepted.
+	bool lensFlare = false;
+	/// Strength of every flare.
+	float lensFlareIntensity = 1.f;
+	/// Number of ghosts along the line from a light through the centre of the frame, 0 to 8.
+	uint32_t lensFlareGhosts = 4;
+	/// Distance between two ghosts, as a fraction of the line from the centre to the light.
+	float lensFlareSpacing = 0.45f;
+	/// Radius of the halo around the centre of the frame, as a fraction of the frame height.
+	float lensFlareHalo = 0.6f;
+	/// Size of the glow at a light, as a fraction of the frame height.
+	float lensFlareSize = 0.12f;
 };
 
 /**

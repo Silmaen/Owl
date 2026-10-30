@@ -74,9 +74,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Engine Demo settings menu in English and French, with a language button.
 - Owl Nest **Import settings...**, offered at the first start: the settings of a previous installation applied at the next start.
 
+- GPU particles: `ParticleEmitter` simulated by a compute shader on OpenGL and Vulkan (CPU reference on the Null backend), up to 65536 particles per emitter.
+- `RendererParticles` render-stack layer drawing particles and trails over the 2D, isometric, voxel and mesh layers, under the HUD.
+- Alpha-blended particles sorted far to near on the GPU; additive particles through the new `BlendMode::Additive`.
+- Colour over life (gradient) and size over life (curve), shapes, gravity, drag, spin, world or local space, bursts, loops and presets (`ParticlePreset`).
+- Ribbon trails behind particles and behind entities (`Trail` component).
+- Emissive particles and trails: a luminance in nits, pre-exposed like the lights, glowing through the bloom.
+- Lens flares of the sun and the lights with a `flare` strength, occlusion tested on the GPU (camera `lensFlare*` settings).
+- Particles and trails follow a shift of the floating origin.
+- Owl Nest: particle emitter and trail inspectors, gradient editor, live viewport preview in Edit mode (play, pause, restart, stop, burst).
+- Owl Nest **Create > Effects** and the `entity.create_particle_emitter` and `particles.preview` commands.
+- Owl Nest appends a `RendererParticles` layer to the project stack for the first emitter, and draws a pickable sparkle at every emitter in the viewport.
+- Lua `entity.particles_play` / `pause` / `stop` / `restart` / `emit` / `is_emitting` and `entity.set_trail_enabled`.
+- Benchmarks `particles/simulate_cpu/*` and `particles/advance_gpu/256_emitters`; image tests of particles, 2D particles and trails, and lens flares.
+- Engine Demo: embers with trails and smoke rise from the tavern hearth, whose fire flares in the lens.
+
 ### Changed
 
 - `mesh3d.slang` shares its surface shading with the new `skinned3d.slang` through `common/mesh_surface.slangh`; its output is unchanged.
+- Compute shaders resolve their `#include`s like the graphics shaders and the shader bake.
 - Sample games are picked from the pool once the features of a release are done, none planned per release; hot reload of a C++ game module moves after 1.0.
 - `Light.castShadows`, `shadowResolution` and `shadowBias` apply to point and spot lights too; the 3D shadow cascades move to texture slots 16 to 19.
 - Shipped projects carry sidecars and GUID references; the Engine Demo PBR textures are cooked to ETC1S and UASTC.

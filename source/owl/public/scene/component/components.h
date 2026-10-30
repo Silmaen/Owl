@@ -32,6 +32,7 @@
 #include "MeshSockets.h"
 #include "NativeScript.h"
 #include "Oscillator.h"
+#include "ParticleEmitter.h"
 #include "Patrol.h"
 #include "PhysicBody.h"
 #include "Player.h"
@@ -48,6 +49,7 @@
 #include "Tag.h"
 #include "Text.h"
 #include "Tilemap.h"
+#include "Trail.h"
 #include "Transform.h"
 #include "Trigger.h"
 #include "UiButton.h"
@@ -86,6 +88,7 @@ concept isComponent =
 		std::is_same_v<Component, FlyCamera> || std::is_same_v<Component, Hierarchy> || std::is_same_v<Component, ID> ||
 		std::is_same_v<Component, IsometricObject> || std::is_same_v<Component, Light> ||
 		std::is_same_v<Component, Light2D> || std::is_same_v<Component, LightFlicker> ||
+		std::is_same_v<Component, ParticleEmitter> || std::is_same_v<Component, Trail> ||
 		std::is_same_v<Component, Oscillator> || std::is_same_v<Component, Patrol> ||
 		std::is_same_v<Component, Drift> || std::is_same_v<Component, FollowTarget> ||
 		std::is_same_v<Component, RenderTarget> || std::is_same_v<Component, ProceduralSky> ||
@@ -153,10 +156,10 @@ using CopiableComponents =
 				   MeshRenderer, Animator, MeshSockets, SocketAttachment, Light, Light2D, Environment, Text, Tilemap,
 				   IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, Visibility,
 				   Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall,
-				   RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, Oscillator, Patrol, Drift, FollowTarget,
-				   RenderTarget, ProceduralSky, DayNightCycle, ReflectionProbe, FirstPersonController, UiButton,
-				   UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip,
-				   UiWindow, UiFocus, UiScrollView, UiList>;
+				   RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, ParticleEmitter, Trail, Oscillator, Patrol,
+				   Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle, ReflectionProbe,
+				   FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout,
+				   UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
  * @brief
@@ -168,10 +171,10 @@ using SerializableComponents =
 				   CircleRenderer, MeshRenderer, Animator, MeshSockets, SocketAttachment, Light, Light2D, Environment,
 				   Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera,
 				   BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink,
-				   RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, Oscillator, Patrol,
-				   Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle, ReflectionProbe,
-				   FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout,
-				   UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
+				   RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, ParticleEmitter,
+				   Trail, Oscillator, Patrol, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle,
+				   ReflectionProbe, FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider,
+				   UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
  * @brief
@@ -183,8 +186,9 @@ using OptionalComponents =
 				   Animator, MeshSockets, SocketAttachment, Light, Light2D, Environment, Text, Tilemap, IsometricObject,
 				   PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, SoundSource, SoundListener,
 				   LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer,
-				   LightFlicker, Oscillator, Patrol, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle,
-				   ReflectionProbe, FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider,
-				   UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
+				   LightFlicker, ParticleEmitter, Trail, Oscillator, Patrol, Drift, FollowTarget, RenderTarget,
+				   ProceduralSky, DayNightCycle, ReflectionProbe, FirstPersonController, UiButton, UiImage, UiPanel,
+				   UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus,
+				   UiScrollView, UiList>;
 
 }// namespace owl::scene::component

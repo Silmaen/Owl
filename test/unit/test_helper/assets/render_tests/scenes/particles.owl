@@ -1,0 +1,145 @@
+Scene: RenderTestParticles
+FormatVersion: 7
+EnabledRenderers:
+- {Name: world, Enabled: false}
+- {Name: mesh_world, Enabled: true}
+- {Name: ui, Enabled: false}
+Entities:
+- Entity: 3820000000000000001
+  Tag: {tag: Camera}
+  Transform:
+    translation: [0, 1.4, 5]
+    rotation: [-0.15, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Camera:
+    camera: {projectionType: Perspective, perspectiveFOV: 0.785398185, perspectiveNear: 0.100000001, perspectiveFar: 100,
+      orthographicSize: 8, orthographicNear: -1, orthographicFar: 10,
+      postProcess: {bloom: true, bloomThreshold: 1, bloomIntensity: 0.15}}
+    primary: true
+    fixedAspectRatio: false
+- Entity: 3820000000000000002
+  Tag: {tag: Sun}
+  Transform:
+    translation: [0, 4, 0]
+    rotation: [-0.9, 0.6, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  Light:
+    type: Directional
+    intensity: 100000
+    castShadows: false
+- Entity: 3820000000000000003
+  Tag: {tag: Ground}
+  Transform:
+    translation: [0, -0.55, 0]
+    rotation: [0, 0, 0]
+    scale: [10, 0.1, 8]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.5, 0.5, 0.5, 1]
+    transparent: false
+- Entity: 3820000000000000004
+  Tag: {tag: Pillar}
+  Transform:
+    translation: [0.9, 0.5, 0.8]
+    rotation: [0, 0.4, 0]
+    scale: [0.5, 2, 0.5]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: mesh_world}
+  MeshRenderer:
+    mesh: meshes/textured_cube.glb
+    color: [0.8, 0.8, 0.8, 1]
+    transparent: false
+- Entity: 3820000000000000005
+  Tag: {tag: Fire}
+  Transform:
+    translation: [-1.2, -0.5, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: particles}
+  ParticleEmitter:
+    maxParticles: 400
+    rate: 120
+    lifetimeMin: 0.5
+    lifetimeMax: 1
+    shape: Cone
+    shapeSize: [0.25, 0.25, 0.25]
+    coneAngle: 0.25
+    speedMin: 0.6
+    speedMax: 1.4
+    gravity: [0, 1, 0]
+    drag: 0.8
+    sizeMin: 0.25
+    sizeMax: 0.45
+    sizeOverLife: {interpolation: Linear, keys: [[0, 0.6], [0.3, 1], [1, 0]]}
+    color: [1, 1, 1, 1]
+    colorOverLife: [[0, 1, 0.9, 0.5, 1], [0.4, 1, 0.5, 0.1, 0.8], [1, 0.5, 0.1, 0.05, 0]]
+    emissive: 80000
+    blend: Additive
+    seed: 3
+- Entity: 3820000000000000006
+  Tag: {tag: Smoke}
+  Transform:
+    translation: [2.4, -0.5, -1.2]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: particles}
+  ParticleEmitter:
+    maxParticles: 200
+    rate: 25
+    lifetimeMin: 2
+    lifetimeMax: 3
+    shape: Cone
+    shapeSize: [0.3, 0.3, 0.3]
+    coneAngle: 0.3
+    speedMin: 0.4
+    speedMax: 0.7
+    gravity: [0, 0.3, 0]
+    drag: 0.3
+    sizeMin: 0.4
+    sizeMax: 0.6
+    sizeOverLife: {interpolation: Linear, keys: [[0, 0.5], [1, 2]]}
+    color: [0.4, 0.45, 0.5, 1]
+    colorOverLife: [[0, 1, 1, 1, 0], [0.15, 1, 1, 1, 0.7], [1, 1, 1, 1, 0]]
+    blend: Alpha
+    seed: 5
+- Entity: 3820000000000000007
+  Tag: {tag: Sparks}
+  Transform:
+    translation: [0, 0.2, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 0}
+  RendererTag: {Name: particles}
+  ParticleEmitter:
+    maxParticles: 128
+    rate: 30
+    burst: 20
+    lifetimeMin: 0.8
+    lifetimeMax: 1.2
+    shape: Point
+    speedMin: 2
+    speedMax: 3
+    gravity: [0, -6, 0]
+    sizeMin: 0.05
+    sizeMax: 0.08
+    color: [1, 1, 1, 1]
+    colorOverLife: [[0, 1, 0.95, 0.7, 1], [1, 1, 0.4, 0.1, 0.2]]
+    emissive: 200000
+    blend: Additive
+    trailLength: 6
+    trailInterval: 0.03
+    trailWidth: 0.8
+    seed: 7

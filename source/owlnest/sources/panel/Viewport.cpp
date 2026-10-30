@@ -784,8 +784,10 @@ void Viewport::renderOverlay() const {
 
 		if (m_parent != nullptr && m_parent->getSettings().showCameraGizmos)
 			renderCameraMarkers(activeScene);
-		if (showsLightMarkers())
+		if (showsLightMarkers()) {
 			renderLightMarkers(activeScene);
+			renderParticleMarkers(activeScene);
+		}
 		renderBehaviourOverlays(activeScene);
 		renderSkeletonMarkers(activeScene);
 
@@ -2732,6 +2734,57 @@ void Viewport::drawLightBulb(const math::vec3& iPosition, const float iSize, con
 	renderer::Renderer2D::drawQuad({.transform = transform, .texture = texture, .entityId = iEntityId});
 }
 
+void Viewport::renderParticleMarkers(const shared<scene::Scene>& iScene) const {
+	const scene::Entity selected = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
+	const math::mat4 cameraToWorld = inverse(getActiveCamera().getView());
+	const math::vec3 right{cameraToWorld(0, 0), cameraToWorld(1, 0), cameraToWorld(2, 0)};
+	const math::vec3 up{cameraToWorld(0, 1), cameraToWorld(1, 1), cameraToWorld(2, 1)};
+	for (const auto view = iScene->registry.view<scene::component::ParticleEmitter, scene::component::Transform>();
+		 const auto entity: view) {
+		const scene::Entity emitter{entity, iScene.get()};
+		const math::vec3 position = iScene->getWorldTransform(emitter).translation();
+		const bool isSelected = selected && static_cast<uint32_t>(emitter) == static_cast<uint32_t>(selected);
+		const math::vec4 color = isSelected ? math::vec4{1.f, 0.8f, 0.45f, 1.f} : math::vec4{1.f, 0.66f, 0.3f, 0.8f};
+		const float radius = getLightMarkerRadius(position);
+		// Four long rays and four short diagonal ones.
+		constexpr int rays = 8;
+		for (int ray = 0; ray < rays; ++ray) {
+			const float angle = std::numbers::pi_v<float> * static_cast<float>(ray) / 4.f;
+			const float length = radius * (ray % 2 == 0 ? 1.4f : 0.7f);
+			const math::vec3 out = right * std::cos(angle) + up * std::sin(angle);
+			renderer::Renderer2D::drawLine({.point1 = position + out * (radius * 0.2f),
+											.point2 = position + out * length,
+											.color = color,
+											.entityId = static_cast<int>(entity)});
+		}
+	}
+}
+
+auto Viewport::pickParticleEmitter() const -> scene::Entity {
+	if (!showsLightMarkers())
+		return {};
+	const auto& scene = mp_document->getActiveScene();
+	const auto ray = getCursorRay();
+	if (!scene || !ray)
+		return {};
+	const auto& [origin, direction] = *ray;
+	scene::Entity nearest;
+	float nearestDistance = std::numeric_limits<float>::max();
+	for (const auto view = scene->registry.view<scene::component::ParticleEmitter, scene::component::Transform>();
+		 const auto entity: view) {
+		const scene::Entity emitter{entity, scene.get()};
+		const math::vec3 center = scene->getWorldTransform(emitter).translation();
+		const float radius = getLightMarkerRadius(center) * 1.4f;
+		const math::vec3 toCenter = center - origin;
+		const float along = toCenter * direction;
+		if (along < 0.f || toCenter.normSq() - along * along > radius * radius || along >= nearestDistance)
+			continue;
+		nearestDistance = along;
+		nearest = emitter;
+	}
+	return nearest;
+}
+
 auto Viewport::pickLight() const -> scene::Entity {
 	if (!showsLightMarkers())
 		return {};
@@ -3010,7 +3063,9 @@ auto Viewport::renderSocketGizmo() -> bool {
 auto Viewport::pickMarker() const -> scene::Entity {
 	if (const auto camera = pickCameraModel(); camera)
 		return camera;
-	return pickLight();
+	if (const auto light = pickLight(); light)
+		return light;
+	return pickParticleEmitter();
 }
 
 auto Viewport::getHoveredEntity() const -> scene::Entity {

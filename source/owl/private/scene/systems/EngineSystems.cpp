@@ -175,6 +175,7 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.entity_links", SystemPhase::PostPhysics, &updateEntityLinks);
 	add("owl.triggers", SystemPhase::PostPhysics, &updateTriggers);
 	add("owl.floating_origin", SystemPhase::PostPhysics, &updateFloatingOrigin);
+	add("owl.particles", SystemPhase::Late, &updateParticles);
 	add("owl.navigation", SystemPhase::Late, &updateNavigation);
 	add("owl.sound", SystemPhase::Late, &updateSound);
 	add("owl.sprite_animation", SystemPhase::Late, &updateAnimatedSprites);

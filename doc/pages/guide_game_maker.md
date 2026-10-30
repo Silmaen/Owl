@@ -31,6 +31,7 @@ flowchart LR
 | [Physics](physics.md)              | Box2D bodies, colliders, triggers        |
 | [Sound](sound.md)                  | Effects, music, listeners, spatial audio |
 | [Pathfinding](pathfinding.md)      | Tile-graph navigation on tilemaps        |
+| [Particles](particles.md)          | Particles, trails and lens flares        |
 | [MCP Server](mcp.md)               | Drive Owl Nest from an AI agent          |
 
 ## Rendering styles

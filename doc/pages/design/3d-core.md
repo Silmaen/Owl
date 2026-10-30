@@ -109,6 +109,9 @@ A glowing surface is one of three things, in increasing cost.
 | Point and spot shadows   | Shadows of the local lights                                 | Cube shadow maps (point), perspective maps (spot), budgeted per frame                                       | v0.6.0                    |
 | Bounced light            | A lit or glowing surface tinting its neighbours             | Probes or voxel global illumination                                                                         | Stretch goal              |
 
+Particles and trails glow the same way, with a luminance in nits pre-exposed like the lights, and the bright lights and
+the sun flare in the lens, hidden by the geometry in front of them: [Effects](gpu-effects.md).
+
 A star seen from its planet is a directional light with an angular radius. Seen from space, beside the planet, it
 is an emissive body carrying a point light without falloff; its scale belongs to
 [Large worlds](large-worlds.md#lights-at-astronomical-scale).

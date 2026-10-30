@@ -11,6 +11,7 @@
 
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/ColorEncoder.h"
+#include "renderer/LensFlare.h"
 #include "renderer/OutlinePass.h"
 #include "renderer/PostProcess.h"
 #include "renderer/ReflectionProbes.h"
@@ -21,6 +22,8 @@
 #include "renderer/RendererIsometricLayer.h"
 #include "renderer/RendererMesh.h"
 #include "renderer/RendererMeshLayer.h"
+#include "renderer/RendererParticles.h"
+#include "renderer/RendererParticlesLayer.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
@@ -80,6 +83,8 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress, const Render
 	ColorEncoder::init();
 	OutlinePass::init();
 	PostProcess::init();
+	LensFlare::init();
+	RendererParticles::init();
 
 	if (iRenderers.raycast)
 		RendererRaycast::init();
@@ -93,6 +98,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress, const Render
 	}
 
 	Renderer2DLayer::registerWithFactory();
+	RendererParticlesLayer::registerWithFactory();
 	if (iRenderers.raycast)
 		RendererRaycastLayer::registerWithFactory();
 	if (iRenderers.renderer3D) {
@@ -118,6 +124,8 @@ void Renderer::shutdown() {
 	RendererTilemap::shutdown();
 	RendererRaycast::shutdown();
 	m_renderGraph.releasePool();
+	RendererParticles::shutdown();
+	LensFlare::shutdown();
 	PostProcess::shutdown();
 	OutlinePass::shutdown();
 	ColorEncoder::shutdown();

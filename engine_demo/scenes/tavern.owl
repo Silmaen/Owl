@@ -30,7 +30,7 @@ Entities:
         orthographicNear: -1
         orthographicFar: 10
         toneMapping: Aces
-        postProcess: {ev100: 4, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.08, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.4, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0], chromaticAberration: true, chromaticAberrationIntensity: 0.15, filmGrain: true, filmGrainIntensity: 0.08}
+        postProcess: {ev100: 4, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.08, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.4, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0], chromaticAberration: true, chromaticAberrationIntensity: 0.15, filmGrain: true, filmGrainIntensity: 0.08, lensFlare: true, lensFlareIntensity: 0.6, lensFlareGhosts: 3, lensFlareSpacing: 0.5, lensFlareHalo: 0.5, lensFlareSize: 0.08}
       primary: true
       fixedAspectRatio: false
     FirstPersonController: {enabled: true, walkSpeed: 2.2, runSpeed: 4, lookSpeed: 1.8, mouseSensitivity: 0.0025, captureCursor: true, eyeHeight: 1.6, height: 1.75, radius: 0.25, stepHeight: 0.3, gravity: 9.81, jumpSpeed: 0}
@@ -226,6 +226,76 @@ Entities:
       scaleResponse: [0, 0.571, 0]
     Visibility:
       gameVisible: true
+  - Entity: 3900000000000000901
+    Tag:
+      tag: HearthEmbers
+    Transform:
+      translation: [0, 0.3, 0.36]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000007}
+    RendererTag:
+      Name: particles
+    ParticleEmitter:
+      playOnStart: true
+      maxParticles: 96
+      rate: 30
+      lifetimeMin: 1.2
+      lifetimeMax: 2.4
+      shape: Cone
+      shapeSize: [0.18, 0.1, 0.1]
+      coneAngle: 0.35
+      speedMin: 0.4
+      speedMax: 0.9
+      gravity: [0, 0.35, 0]
+      drag: 0.6
+      sizeMin: 0.02
+      sizeMax: 0.04
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.85, 0.45, 1], [0.6, 1, 0.45, 0.12, 0.9], [1, 0.6, 0.15, 0.05, 0]]
+      emissive: 400
+      blend: Additive
+      space: World
+      trailLength: 5
+      trailInterval: 0.04
+      trailWidth: 0.7
+      seed: 17
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000902
+    Tag:
+      tag: HearthSmoke
+    Transform:
+      translation: [0, 0.55, 0.3]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000000007}
+    RendererTag:
+      Name: particles
+    ParticleEmitter:
+      playOnStart: true
+      maxParticles: 64
+      rate: 6
+      lifetimeMin: 1.6
+      lifetimeMax: 2.6
+      shape: Cone
+      shapeSize: [0.15, 0.1, 0.1]
+      coneAngle: 0.2
+      speedMin: 0.2
+      speedMax: 0.35
+      gravity: [0, 0.15, 0]
+      drag: 0.4
+      sizeMin: 0.12
+      sizeMax: 0.2
+      sizeOverLife: {interpolation: Linear, keys: [[0, 0.6], [1, 2.2]]}
+      color: [0.35, 0.32, 0.3, 1]
+      colorOverLife: [[0, 1, 1, 1, 0], [0.2, 1, 1, 1, 0.35], [1, 1, 1, 1, 0]]
+      blend: Alpha
+      space: World
+      seed: 23
+    Visibility:
+      gameVisible: true
   - Entity: 3900000000000000013
     Tag:
       tag: FireLight
@@ -240,6 +310,7 @@ Entities:
       color: [1, 0.55, 0.22]
       intensity: 1800
       range: 12
+      flare: 4
     LightFlicker:
       style: Fire
       amplitude: 0.28

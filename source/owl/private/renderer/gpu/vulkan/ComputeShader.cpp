@@ -12,7 +12,6 @@
 
 #include "StorageBuffer.h"
 #include "Texture.h"
-#include "data/assets/AssetSearchPaths.h"
 #include "internal/Descriptors.h"
 #include "internal/VulkanCore.h"
 #include "internal/VulkanHandler.h"
@@ -43,12 +42,13 @@ auto loadSlangSource(const std::string& iShaderName, const std::string& iRendere
 		OWL_CORE_ERROR("Vulkan compute shader: source not found for '{}' / '{}'.", iRenderer, iShaderName)
 		return {};
 	}
-	auto source = data::assets::readAssetText(sourcePath);
-	if (!source) {
+	// Expanded like the graphics shaders and the bake: the includes resolved, the cache key of the same text.
+	auto source = renderer::utils::readShaderSource(sourcePath);
+	if (source.empty()) {
 		OWL_CORE_ERROR("Vulkan compute shader: cannot open '{}'.", sourcePath.string())
 		return {};
 	}
-	return std::move(*source);
+	return source;
 }
 
 struct ReflectedBindings {

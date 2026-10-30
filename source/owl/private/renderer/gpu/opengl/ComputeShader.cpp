@@ -13,7 +13,6 @@
 #include "Shader.h"
 
 #include "core/external/opengl46.h"
-#include "data/assets/AssetSearchPaths.h"
 #include "renderer/Renderer.h"
 #include "renderer/utils/shaderFileUtils.h"
 
@@ -32,12 +31,13 @@ auto loadSlangSource(const std::string& iShaderName, const std::string& iRendere
 		OWL_CORE_ERROR("OpenGL compute shader: source not found for '{}' / '{}'.", iRenderer, iShaderName)
 		return {};
 	}
-	auto source = data::assets::readAssetText(sourcePath);
-	if (!source) {
+	// Expanded like the graphics shaders and the bake: the includes resolved, the cache key of the same text.
+	auto source = renderer::utils::readShaderSource(sourcePath);
+	if (source.empty()) {
 		OWL_CORE_ERROR("OpenGL compute shader: cannot open '{}'.", sourcePath.string())
 		return {};
 	}
-	return std::move(*source);
+	return source;
 }
 // Build and link a compute program from SPIR-V; 0 when the stage or the link fails (logged).
 auto linkProgram(const std::vector<uint32_t>& iSpirv, const std::string& iName) -> GLuint {

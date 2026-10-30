@@ -51,6 +51,12 @@ void writePostProcess(YAML::Emitter& iOut, const renderer::PostProcessSettings& 
 	iOut << YAML::Key << "bokehRadius" << YAML::Value << iSettings.bokehRadius;
 	iOut << YAML::Key << "motionBlur" << YAML::Value << iSettings.motionBlur;
 	iOut << YAML::Key << "motionBlurIntensity" << YAML::Value << iSettings.motionBlurIntensity;
+	iOut << YAML::Key << "lensFlare" << YAML::Value << iSettings.lensFlare;
+	iOut << YAML::Key << "lensFlareIntensity" << YAML::Value << iSettings.lensFlareIntensity;
+	iOut << YAML::Key << "lensFlareGhosts" << YAML::Value << iSettings.lensFlareGhosts;
+	iOut << YAML::Key << "lensFlareSpacing" << YAML::Value << iSettings.lensFlareSpacing;
+	iOut << YAML::Key << "lensFlareHalo" << YAML::Value << iSettings.lensFlareHalo;
+	iOut << YAML::Key << "lensFlareSize" << YAML::Value << iSettings.lensFlareSize;
 	iOut << YAML::EndMap;
 }
 
@@ -87,6 +93,12 @@ auto readPostProcess(const core::YamlNode& iNode) -> renderer::PostProcessSettin
 	readInto(iNode, "bokehRadius", settings.bokehRadius);
 	readInto(iNode, "motionBlur", settings.motionBlur);
 	readInto(iNode, "motionBlurIntensity", settings.motionBlurIntensity);
+	readInto(iNode, "lensFlare", settings.lensFlare);
+	readInto(iNode, "lensFlareIntensity", settings.lensFlareIntensity);
+	readInto(iNode, "lensFlareGhosts", settings.lensFlareGhosts);
+	readInto(iNode, "lensFlareSpacing", settings.lensFlareSpacing);
+	readInto(iNode, "lensFlareHalo", settings.lensFlareHalo);
+	readInto(iNode, "lensFlareSize", settings.lensFlareSize);
 	return settings;
 }
 

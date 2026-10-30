@@ -15,7 +15,9 @@
 #include "scene/component/Hierarchy.h"
 #include "scene/component/LightFlicker.h"
 #include "scene/component/Oscillator.h"
+#include "scene/component/ParticleEmitter.h"
 #include "scene/component/Patrol.h"
+#include "scene/component/Trail.h"
 #include "scene/component/Transform.h"
 #include "scene/component/WorldPosition.h"
 
@@ -99,6 +101,11 @@ void Scene::shiftWorldOrigin(const math::vec3d& iOrigin) {
 		}
 		shiftBehaviourAnchors(registry, handle, shift);
 	}
+	for (const auto [handle, emitter]: registry.view<component::ParticleEmitter>().each()) {
+		if (emitter.m_slot.system)
+			emitter.m_slot.system->shiftOrigin(shift);
+	}
+	for (const auto [handle, trail]: registry.view<component::Trail>().each()) trail.shiftOrigin(shift);
 	physics::PhysicCommand::shiftOrigin(*this, {shift.x(), shift.y()});
 }
 

@@ -31,6 +31,7 @@
 #include "renderer/RendererIsometricLayer.h"
 #include "renderer/RendererMesh.h"
 #include "renderer/RendererMeshLayer.h"
+#include "renderer/RendererParticles.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
@@ -216,6 +217,17 @@ void disconnectRuntimeHooks(entt::registry& ioRegistry) {
 	ioRegistry.on_destroy<component::LuaScript>().disconnect<&releaseLuaScript>();
 	ioRegistry.on_destroy<component::NativeScript>().disconnect<&releaseNativeScript>();
 	ioRegistry.on_destroy<component::SoundSource>().disconnect<&releaseSoundSource>();
+}
+
+// Particles and trails draw only on a particle layer: untagged ones go to the first one of the stack.
+auto isEffectOfLayer(const Entity& iEntity, const std::string& iLayerName) -> bool {
+	if (iEntity.hasComponent<component::RendererTag>())
+		return iEntity.getComponent<component::RendererTag>().rendererName == iLayerName;
+	for (const auto& layer: renderer::Renderer::getRenderStack().getLayers()) {
+		if (std::string_view{layer->getTypeKey()} == "RendererParticles")
+			return layer->getName() == iLayerName;
+	}
+	return false;
 }
 
 }// namespace
@@ -785,6 +797,7 @@ void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Came
 	systems::applyDayNightCycles(*this);
 	updateAnimators(iTimeStep.getSeconds(), true);
 	updateSocketAttachments();
+	systems::advanceEffects(*this, iTimeStep.getSeconds(), true);
 	renderTargets();
 	renderEditorView(iCamera);
 }
@@ -875,6 +888,16 @@ auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) 
 		for (const auto e: registry.view<component::MeshRenderer>())
 			if (matches(e))
 				return true;
+		const auto matchesEffect = [&](const entt::entity e) -> bool {
+			const Entity ent{e, self};
+			return isEffectivelyVisible(ent, /*iEditorMode=*/false) && isEffectOfLayer(ent, iLayerName);
+		};
+		for (const auto e: registry.view<component::ParticleEmitter>())
+			if (matchesEffect(e))
+				return true;
+		for (const auto e: registry.view<component::Trail>())
+			if (matchesEffect(e))
+				return true;
 		// Backgrounds always sit behind every layer — they only contribute to the first one.
 		if (iIsFirst) {
 			for (const auto e: registry.view<component::BackgroundTexture>())
@@ -898,6 +921,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	updateSpatialIndex();
 	renderer::RendererMesh::clearOcclusion();
 	mp_renderCamera = &iCamera;
+	prepareParticleRenderData();
 	using Graph = renderer::RenderGraph;
 	auto& graph = renderer::Renderer::getRenderGraph();
 	graph.reset();
@@ -1284,7 +1308,8 @@ auto Scene::recordDepthEffects(renderer::RenderGraph& ioGraph, const renderer::R
 	}
 	if (tracked)
 		m_previousView = PreviousView{.projection = camera.getProjection(), .view = camera.getView()};
-	if (!post.depthOfField && !reprojection)
+	const size_t flares = post.lensFlare ? collectFlareSources() : 0;
+	if (!post.depthOfField && !reprojection && flares == 0)
 		return iSceneColor;
 	// The occluder depth may be smaller than the frame: the effects take a depth of their own, the outline reuses it.
 	m_postDepth = ioGraph.createTarget("post depth", Graph::TargetFormat::Depth);
@@ -1302,7 +1327,100 @@ auto Scene::recordDepthEffects(renderer::RenderGraph& ioGraph, const renderer::R
 			blurred.isValid())
 			color = blurred;
 	}
+	if (flares > 0) {
+		if (const auto flared =
+					renderer::LensFlare::recordLensFlares(ioGraph, color, m_postDepth, post, camera.getViewProjection(),
+														  std::span{m_flareSources.data(), flares}, iFrameSize);
+			flared.isValid())
+			color = flared;
+	}
 	return color;
+}
+
+auto Scene::collectFlareSources() -> size_t {
+	const bool editorMode = status == Status::Editing;
+	const math::vec4 eye4 = inverse(mp_renderCamera->getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	const math::vec3 eye{eye4.x(), eye4.y(), eye4.z()};
+	const float exposure = renderer::Renderer3D::getExposure();
+	std::array<float, renderer::LensFlare::g_maxSources> brightness{};
+	size_t count = 0;
+	for (const auto [handle, light]: registry.view<component::Light>().each()) {
+		const Entity entity{handle, this};
+		if (!light.enabled || light.flare <= 0.f || !isEffectivelyVisible(entity, editorMode))
+			continue;
+		const math::Transform world = getWorldTransform(entity);
+		const bool directional = light.type == component::Light::Type::Directional;
+		renderer::LensFlareSource source{.position = world.translation(), .directional = directional, .color = {}};
+		float candela = light.intensity / (4.f * std::numbers::pi_v<float>);
+		float distance = (world.translation() - eye).norm();
+		if (directional) {
+			const math::vec4 forward = world() * math::vec4{0.f, 0.f, -1.f, 0.f};
+			source.position = math::vec3{-forward.x(), -forward.y(), -forward.z()}.normalized();
+			candela = light.intensity;
+			distance = 0.f;
+		} else if (light.type == component::Light::Type::Spot) {
+			candela = light.intensity / std::numbers::pi_v<float>;
+		}
+		const float value = renderer::LensFlare::brightnessOf(candela, distance, exposure, light.flare);
+		if (value <= 1e-4f)
+			continue;
+		const math::vec3 linear{renderer::ColorEncoder::srgbToLinear(light.color.x()),
+								renderer::ColorEncoder::srgbToLinear(light.color.y()),
+								renderer::ColorEncoder::srgbToLinear(light.color.z())};
+		source.color = linear * value;
+		size_t slot = count < brightness.size() ? count++ : brightness.size();
+		if (slot == brightness.size()) {
+			if (value <= brightness.back())
+				continue;
+			slot = brightness.size() - 1;
+		}
+		while (slot > 0 && brightness[slot - 1] < value) {
+			brightness[slot] = brightness[slot - 1];
+			m_flareSources[slot] = m_flareSources[slot - 1];
+			--slot;
+		}
+		brightness[slot] = value;
+		m_flareSources[slot] = source;
+	}
+	return count;
+}
+
+void Scene::prepareParticleRenderData() {
+	OWL_PROFILE_FUNCTION()
+
+	if (mp_renderCamera == nullptr)
+		return;
+	for (const auto [handle, emitter]: registry.view<component::ParticleEmitter>().each()) {
+		if (emitter.m_slot.system)
+			renderer::RendererParticles::prepare(*emitter.m_slot.system, emitter.settings, *mp_renderCamera);
+	}
+}
+
+void Scene::renderParticles(const bool iEditorMode) {
+	OWL_PROFILE_FUNCTION()
+
+	const auto acceptsEffect = [this](const Entity& iEntity) -> bool {
+		return m_currentLayerName.empty() || isEffectOfLayer(iEntity, m_currentLayerName);
+	};
+	for (const auto view = registry.view<component::Transform, component::ParticleEmitter>(); const auto handle: view) {
+		const Entity entity{handle, this};
+		auto& emitter = view.get<component::ParticleEmitter>(handle);
+		if (!emitter.m_slot.system || !isEffectivelyVisible(entity, iEditorMode) || !acceptsEffect(entity))
+			continue;
+		renderer::RendererParticles::drawSystem(*emitter.m_slot.system, emitter.settings, static_cast<int32_t>(handle));
+	}
+	for (const auto view = registry.view<component::Transform, component::Trail>(); const auto handle: view) {
+		const Entity entity{handle, this};
+		auto& trail = view.get<component::Trail>(handle);
+		if (!trail.enabled || trail.m_points.size() < 2 || !isEffectivelyVisible(entity, iEditorMode) ||
+			!acceptsEffect(entity))
+			continue;
+		trail.m_tables = trail.bakeTables();
+		renderer::RendererParticles::drawTrail(
+				trail.m_points,
+				{.tables = &trail.m_tables, .width = trail.width, .emissive = trail.emissive, .blend = trail.blend},
+				static_cast<int32_t>(handle));
+	}
 }
 
 void Scene::readShadowTargets(renderer::RenderGraph::PassBuilder& ioBuilder) const {
@@ -1825,26 +1943,29 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 		for (size_t index = 0; index < layers.size(); ++index) {
 			const auto& layer = layers[index];
 			const std::string_view type{layer->getTypeKey()};
-			if ((type != "RendererVoxel" && type != "RendererMesh") || !layerHasContent(layer->getName(), index == 0))
+			if ((type != "RendererVoxel" && type != "RendererMesh" && type != "RendererParticles") ||
+				!layerHasContent(layer->getName(), index == 0))
 				continue;
-			ioGraph.addPass(layer->getName(), writeSceneReadShadows,
-							[this, index](const Graph::PassContext& iContext) -> void {
-								useShadowMaps(iContext);
-								const auto& stackLayer = renderer::Renderer::getRenderStack().getLayers()[index];
-								stackLayer->setViewport(m_viewportSize);
-								stackLayer->onBeginFrame(*mp_renderCamera);
-								m_currentLayerName = stackLayer->getName();
-								m_currentLayerIsFirst = index == 0;
-								mp_currentLayer = stackLayer.get();
-								if (std::string_view{stackLayer->getTypeKey()} == "RendererVoxel")
-									renderVoxelWorlds(true);
-								else
-									renderMeshes(true);
-								stackLayer->onEndFrame();
-								m_currentLayerName.clear();
-								m_currentLayerIsFirst = true;
-								mp_currentLayer = nullptr;
-							});
+			ioGraph.addPass(
+					layer->getName(), writeSceneReadShadows, [this, index](const Graph::PassContext& iContext) -> void {
+						useShadowMaps(iContext);
+						const auto& stackLayer = renderer::Renderer::getRenderStack().getLayers()[index];
+						stackLayer->setViewport(m_viewportSize);
+						stackLayer->onBeginFrame(*mp_renderCamera);
+						m_currentLayerName = stackLayer->getName();
+						m_currentLayerIsFirst = index == 0;
+						mp_currentLayer = stackLayer.get();
+						if (const std::string_view layerType{stackLayer->getTypeKey()}; layerType == "RendererVoxel")
+							renderVoxelWorlds(true);
+						else if (layerType == "RendererParticles")
+							renderParticles(true);
+						else
+							renderMeshes(true);
+						stackLayer->onEndFrame();
+						m_currentLayerName.clear();
+						m_currentLayerIsFirst = true;
+						mp_currentLayer = nullptr;
+					});
 		}
 		return;
 	}
@@ -1985,6 +2106,10 @@ void Scene::render() {
 			mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererVoxel";
 	const bool meshLayer =
 			mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererMesh";
+	if (mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererParticles") {
+		renderParticles(editorMode);
+		return;
+	}
 
 	if (m_currentLayerIsFirst && !raycastLayer && !voxelLayer) {
 		if (const auto bgView = registry.view<component::BackgroundTexture>(); !bgView.empty()) {
@@ -3895,6 +4020,15 @@ Scene::onComponentAdded<component::SocketAttachment>([[maybe_unused]] const Enti
 template<>
 OWL_API void Scene::onComponentAdded<component::LightFlicker>([[maybe_unused]] const Entity& iEntity,
 															  [[maybe_unused]] component::LightFlicker& ioComponent) {}
+
+template<>
+OWL_API void
+Scene::onComponentAdded<component::ParticleEmitter>([[maybe_unused]] const Entity& iEntity,
+													[[maybe_unused]] component::ParticleEmitter& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Trail>([[maybe_unused]] const Entity& iEntity,
+													   [[maybe_unused]] component::Trail& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Oscillator>([[maybe_unused]] const Entity& iEntity,

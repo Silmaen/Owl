@@ -110,6 +110,7 @@ translation gizmo.
 - **Camera markers**: an icon, an arrow and the field of view in 2D; in 3D a camera model with its frustum and a
   triangle pointing to its up. Lights have markers too: a sun disc with its direction, a spot cone, a bulb lit or off;
   selected, a light shows its range or its cones. 2D lights show a disc, a bulb, their radius or cone.
+  A particle emitter shows an orange sparkle facing the camera, brighter when selected; a click on it selects it.
 - **Camera preview**: with a camera selected in Edit, the bottom-right corner shows what it sees, with a button that
   pilots it.
 - **Piloting**: **Pilot Selected Camera** renders the view through the camera; every move of the view moves the
