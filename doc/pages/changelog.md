@@ -132,6 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings, saves, logs and caches go to `user/` beside the executable (`platform::getUserDirectory`), the user profile only when it is read-only.
 - The `volume_music` and `volume_sfx` settings, and the new `volume_ambient` and `volume_voice`, set the player's volume of the mixer buses; `volume_master` sets Master instead of the listener gain.
 - The Null sound backend keeps the state of every source and of the listener, so the mixing logic is tested headless.
+- The roadmap page keeps the upcoming versions and the last release only; what earlier versions shipped is in the changelog.
 
 ### Removed
 

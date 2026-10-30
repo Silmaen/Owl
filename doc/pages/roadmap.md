@@ -3,9 +3,9 @@
 [TOC]
 
 **Owl Engine is the engine that mixes rendering styles** — 2D, raycast, voxel, isometric and 3D in one game, through the
-renderer stack. Each version below has a short goal and one line per item; the detail lives in the design pages under
-`doc/pages/design/`. A one-glance summary is in the root `ROADMAP.md`; shipped changes are in the
-[Changelog](changelog.md).
+renderer stack. Each upcoming version below, and the last released one, has a short goal and one line per item; the
+detail lives in the design pages under `doc/pages/design/`. A one-glance summary is in the root `ROADMAP.md`; shipped
+changes are in the [Changelog](changelog.md).
 
 Development uses Claude Code as a supervised tool: every change is reviewed and owned by the maintainer, behind a
 strict CI, hence the cadence below. **Exit criteria take precedence over dates**: a version ships when its criteria
@@ -294,148 +294,9 @@ render graph, essential post-processing — with full 3D editing ([details](desi
 - ![Done][done] Tower defence campaign: 10 levels in 3D, day and night, modifiers, sprite enemies, world map, star
   upgrades ([Sample games](design/sample-games.md#sample-games-tower-defence))
 
-## v0.4.0 -- 2026-10-20
+## Earlier versions
 
-**Goal:** An engine able to carry a Transport Tycoon-like game: an isometric renderer on large chunked tile maps with
-slopes, vehicles finding their way on a tile graph, a HUD for management games and its editor, input actions with a
-gamepad, a fixed simulation tick, and a local
-MCP server in Owl Nest ([plan](design/isometric-worlds.md)).
-
-- ![Done][done] Renderer2D transients sized per frame (PR-30: B-09)
-- ![Done][done] Persistent, chunked and culled tilemaps, binary storage up to 1024² (PR-31: B-13)
-- ![Done][done] `RendererIsometric` layer: dimetric camera, depth with alpha cutout, billboards
-  ([details](design/isometric.md))
-- ![Done][done] Isometric terrain: corner heights, 19 slopes, foundations, tracks and roads, slope-aware picking
-- ![Done][done] Isometric atlas generator (`tools/iso_atlas`): terrain × 19 slopes, foundations, overlays, sliced
-  buildings, albedo + normal + depth
-- ![Done][done] Isometric objects sliced per footprint tile and thousands of vehicles as matrix-free sprites, pixel
-  snapping at integer zoom
-- ![Done][done] Persistent isometric chunk buffers and the `iso_town` demo
-- ![Done][done] Tile-graph pathfinding on chunked tilemaps, vehicles following roads (moved from v0.5.0)
-  ([Pathfinding](pathfinding.md))
-- ![Done][done] Guaranteed 2D draw order: a sort key instead of the primitive type and storage order (PR-30: B-10, moved
-  from v0.5.0)
-- ![Done][done] UTF-8 text, Latin charset with extra ranges per font, atlas cached on disk (PR-30: D-18)
-- ![Done][done] Aspect-correct text with alignment and fit
-- ![Done][done] HUD overhaul: HUD pass in pixels, `.owlhud` asset, windows, layouts, tooltips and tool cursor, HUD
-  editor, keyboard and gamepad focus, migration ([details](design/hud-system.md))
-- ![Done][done] HUD scroll views and virtualised lists (moved from v0.5.0) ([HUD system](design/hud-system.md))
-- ![Done][done] Fixed simulation tick (`on_tick`) for systems and scripts ([Scene](scene.md#fixed-tick))
-- ![Done][done] Input frames with edges, gamepad with dead zones and the action map and its editor
-  ([Input](design/windowing-input.md))
-- ![Done][done] MCP server built into Owl Nest, on the editor command API, with `play.run` and a client guide
-  ([MCP server](mcp.md))
-- ![Done][done] Native file dialogues through the desktop portal, no GTK ([Nest UI](design/nest-ui.md))
-- ![Done][done] Editor console and command journal, macros replayable as `.owlmacro`
-  ([Editor scripting](design/editor-scripting.md))
-- ![Done][done] Engine Demo: inventory demo on the new HUD widgets, playable with a gamepad
-- ![Done][done] Engine Demo overhaul: the isometric town, the new HUD everywhere, hub and platformer redrawn with CC0
-  art
-- ![Done][done] Sample game Breakout, the first project of `samples/` (moved from v0.5.0)
-  ([Sample games](design/sample-games.md))
-- ![Done][done] Sample game Sokoban: level editing in Owl Nest, undo and saves (moved from v0.5.0)
-  ([Sample games](design/sample-games.md))
-- ![Done][done] Sample game Wolfenstein mini: exploration with score, items, secrets and map explored, combat later
-  (moved from v0.6.0) ([Sample games](design/sample-games.md))
-
-## v0.3.0 -- 2026-10-11
-
-**Goal:** Foundations — every known bug fixed, safety nets, Owl RHI repaired, architecture opened, iteration sped up,
-Owl Nest made ergonomic. No new gameplay feature ([details](design/foundations.md)).
-
-- ![Done][done] Phase 0 — Conan 2 the only dependency provider (ConanCenter + local recipes), breaking upgrades first
-  (EnTT 4, Taskflow 4.1) ([Conan](design/conan-migration.md))
-- ![Done][done] Phase A — every confirmed correctness bug fixed with its regression test, `on_collision`, game export
-  tested end to end, full Wayland, OpenGL compatibility backend fixed
-- ![Done][done] Phase B — benchmark harness and runner frame bench in CI, blocking sanitizers, image tests on
-  lavapipe / llvmpipe, headless `OwlRunner --scenario`, editor tests, two-level CI with a `PR Ready` gate, Tracy
-  ([Profiling](profiling.md))
-- ![Done][done] Phase C — Vulkan first behind Owl RHI, OpenGL frozen as fallback, ABI clean-up, world per scene,
-  optional engine modules, editor command API, typed Lua bindings ([Lua API](lua-api.md)), Owl Engine stays on GLFW
-- ![Done][done] Phase D — public dependencies reduced to EnTT, hot reload of assets, shaders and scripts, autosave,
-  crash recovery, session restore, project templates, documentation checked in CI
-- ![Done][done] Phase E — Owl Nest ergonomics revamp: default layout, ribbon and File screen, command palette, context
-  menus, drag & drop, text scale, Owl theme and duotone icons, asset previews, camera presets and view-cube
-  ([Nest UI](design/nest-ui.md))
-- ![Done][done] Performance targets met or accepted ([targets](design/foundations.md#performance-targets))
-
-## v0.2.1 -- 2026-06-27
-
-**Goal:** Add the second non-2D rendering mode — a voxel engine for block-based worlds (Minecraft-style).
-
-- ![Done][done] Voxel world core — `BlockRegistry`, RLE `Chunk`, sparse `VoxelWorld`, async chunk streaming
-- ![Done][done] Greedy chunk meshing with face culling, per-vertex AO and per-chunk CPU frustum culling
-- ![Done][done] Seed-reproducible terrain generator (height layers, shoreline, caves, biomes)
-- ![Done][done] `VoxelPlayer` first-person controller with voxel collision, mouse-look and fly mode
-- ![Done][done] Block break / place via `raycastVoxel`, per-block orientation and state metadata
-- ![Done][done] `Renderer3D` + `RendererVoxel` on Vulkan and OpenGL, lighting and water pass, editor and Play
-- ![Done][done] Editor Voxel Palette brush and `.owlvoxstruct` structure capture / stamp
-- ![Done][done] Vulkan / OpenGL hardening — zero Vulkan validation messages in Owl Nest
-
-## v0.2.0 -- 2026-06-02
-
-**Goal:** A composable renderer stack mixing rendering modes, the raycasting renderer, tilemaps, scene transitions,
-and a GPU-driven renderer foundation.
-
-- ![Done][done] Renderer stack — `RenderLayer` / `RenderStack` / `RendererTag`, YAML round-trip, per-scene overrides
-- ![Done][done] Renderer stack editor UI — project stack composition, per-scene `Scene Settings` panel
-- ![Done][done] Tilemap system — `.owltileset` / `.owltilemap`, `TilemapDocument` editor, static Box2D body
-- ![Done][done] Raycasting renderer — per-column DDA, textured floors / ceilings, billboard sprites, fog
-- ![Done][done] Raycast map features — variable wall heights, transparent walls, doors and pushwalls
-- ![Done][done] Raycast map editor — top-down edit view, first-person Play, camera viewport marker
-- ![Done][done] Scene transition effects — fades and wipes, custom tint, Lua `ui.transition_play`
-- ![Done][done] Scene loading ~550× faster, plus async load and in-game hot-path caches
-- ![Done][done] GPU-driven Renderer2D — compute foundation, instanced SSBO batches, `WorldTransformPass`
-- ![Done][done] GPU raycast DDA pass, `BitonicSortPass` utility, single-drawcall tilemap rendering
-- ![Done][done] Bug fixes — editor modifier shortcuts, top-down player drift, hidden triggers no longer fire
-
-## v0.1.1 -- 2026-04-30
-
-**Goal:** A multi-document editor workspace with dedicated asset editors; long-running operations become
-asynchronous with progress feedback.
-
-- ![Done][done] Async operations — packaging, scene save / load, shader compilation, textures, transitions, browser
-- ![Done][done] Multi-document tabs with per-document undo, viewports and Play state; detachable panels
-- ![Done][done] Code editor document with syntax highlighting and live Markdown / SVG preview
-- ![Done][done] Node graph framework (`NodeCanvas`) and the Scene Flow view
-- ![Done][done] Animation editor (`.owlanim`) with sequencer timeline
-- ![Done][done] Enhanced inspector — sound preview, texture / font thumbnails, drag-drop, curve editor
-- ![Done][done] Packaging wizard with validation and post-pack report
-- ![Done][done] Ribbon main menu, recent projects, Save Project As
-- ![Done][done] In-editor help pages, tooltips everywhere, unique ImGui IDs, icon clarity pass
-- ![Done][done] Linux ARM64 CI restored, Windows Debug builds fixed
-
-## v0.1.0 -- 2026-04-16
-
-**Goal:** Design a complete game in Owl Nest and package it as a standalone application (Linux / Windows).
-
-- ![Done][done] Lua 5.5 scripting — `LuaScript` component, lifecycle callbacks, engine API, runner support
-- ![Done][done] In-game UI — `Canvas`, base widgets, input handling, UI editor, standard game screens
-- ![Done][done] Game state and save system — `GameState`, multi-slot `SaveManager`, full scene state save
-- ![Done][done] Runner and distribution — project config, improved runner, persistent settings, packaging
-- ![Done][done] Prefab system and undo / redo in Owl Nest
-- ![Done][done] Timer, Interaction and LuaCallback triggers with enter / exit edges; shared game settings
-- ![Done][done] Complete sample game — six scenes exercising every Lua API, widget and trigger
-
-## v0.0.3 -- 2026-04-09
-
-- ![Done][done] Sound — one-shot and looping sources, categories, full playback control, 3D spatialization
-- ![Done][done] Animated sprites with spritesheet grid
-- ![Done][done] Mesh loading — OBJ, glTF, GLB, FBX
-- ![Done][done] Configurable keymap
-- ![Done][done] Scene hierarchy, `.owlpack` asset packing, Taskflow task system
-- ![Done][done] Owl Nest project system, settings panel, hierarchy panel, runtime SVG icons, level links
-
-## v0.0.2 -- 2026-03-03
-
-- ![Done][done] Third-party-free public headers, more static linking
-- ![Done][done] Backgrounds / sky boxes and shaders migrated to Slang
-- ![Done][done] Pause, frame stepping, general settings, scene jumps
-- ![Done][done] Owl Map: global game settings, log frame, visibility toggles
-
-## v0.0.1 -- 2025-02-06
-
-First basic release: minimal viable engine with the ability to run simple games defined in scenes.
+What the earlier versions shipped is in the [Changelog](changelog.md).
 
 ## Badge Legend
 
