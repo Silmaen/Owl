@@ -174,8 +174,10 @@ TEST_F(SplineTest, AFollowerUnderAParentAndOnAClosedLoopOnce) {
 	auto& spline = rail.addComponent<component::Spline>();
 	spline.curve.setInterpolation(math::SplineInterpolation::Linear);
 	spline.curve.setClosed(true);
-	spline.curve.setPoints({{.position = {0.f, 0.f, 0.f}}, {.position = {4.f, 0.f, 0.f}},
-							{.position = {4.f, 4.f, 0.f}}, {.position = {0.f, 4.f, 0.f}}});
+	spline.curve.setPoints({{.position = {0.f, 0.f, 0.f}},
+							{.position = {4.f, 0.f, 0.f}},
+							{.position = {4.f, 4.f, 0.f}},
+							{.position = {0.f, 4.f, 0.f}}});
 	spline.up = {0.f, 0.f, 1.f};
 	auto holder = scene->createEntity("Holder");
 	holder.getComponent<component::Transform>().transform.translation() = {10.f, 0.f, 0.f};

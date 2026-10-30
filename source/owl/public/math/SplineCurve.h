@@ -268,7 +268,10 @@ public:
 	auto insertAtParameter(float iParameter) -> size_t;
 
 private:
-	/// Rebuild the Bezier controls and the arc-length table from the definition.
+	/**
+	 * @brief
+	 *  Rebuild the Bezier controls and the arc-length table from the definition.
+	 */
 	void rebuild();
 
 	/**

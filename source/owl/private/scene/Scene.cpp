@@ -4186,8 +4186,9 @@ OWL_API void Scene::onComponentAdded<component::Spline>([[maybe_unused]] const E
 														[[maybe_unused]] component::Spline& ioComponent) {}
 
 template<>
-OWL_API void Scene::onComponentAdded<component::SplineFollower>([[maybe_unused]] const Entity& iEntity,
-																[[maybe_unused]] component::SplineFollower& ioComponent) {}
+OWL_API void
+Scene::onComponentAdded<component::SplineFollower>([[maybe_unused]] const Entity& iEntity,
+												   [[maybe_unused]] component::SplineFollower& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>([[maybe_unused]] const Entity& iEntity,

@@ -15,9 +15,12 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
+#include <tuple>
 
 using namespace owl;
 using namespace owl::data::table;
@@ -30,7 +33,7 @@ auto makeTable() -> DataTable {
 	EXPECT_TRUE(table.addColumn({.name = "stock", .type = ColumnType::Integer, .choices = {}, .table = {}}, 9));
 	EXPECT_TRUE(table.addColumn({.name = "legal", .type = ColumnType::Bool, .choices = {}, .table = {}}, 9));
 	EXPECT_TRUE(
-			table.addColumn({.name = "kind", .type = ColumnType::Enum, .choices = {"food", "ore"}, .table = {}}, 9));
+			table.addColumn({.name = "kind", .type = ColumnType::Enum, .choices = {"food", "metal"}, .table = {}}, 9));
 	EXPECT_TRUE(table.addColumn({.name = "label", .type = ColumnType::Text, .choices = {}, .table = {}}, 9));
 	EXPECT_TRUE(table.addColumn({.name = "icon", .type = ColumnType::Asset, .choices = {}, .table = {}}, 9));
 	EXPECT_TRUE(table.addColumn(
@@ -40,7 +43,7 @@ auto makeTable() -> DataTable {
 	EXPECT_TRUE(table.setCell(0, 0, 2.5));
 	EXPECT_TRUE(table.setCell(0, 1, int64_t{40}));
 	EXPECT_TRUE(table.setCell(0, 2, true));
-	EXPECT_TRUE(table.setCell(1, 3, std::string{"ore"}));
+	EXPECT_TRUE(table.setCell(1, 3, std::string{"metal"}));
 	EXPECT_TRUE(table.setCell(0, 4, std::string{"Golden wheat"}));
 	EXPECT_TRUE(table.setCell(0, 5, std::string{"textures/wheat.png"}));
 	EXPECT_TRUE(table.setCell(1, 6, std::string{"harbour"}));
@@ -186,6 +189,12 @@ TEST(DataTable, ValuesAreFormattedAndParsed) {
 	EXPECT_DOUBLE_EQ(std::get<double>(convertValue(false, number)), 0.);
 	EXPECT_EQ(std::get<int64_t>(convertValue(true, integer)), 1);
 	EXPECT_FALSE(std::get<bool>(convertValue(0., flag)));
+	EXPECT_TRUE(isSameValue(1.5, 1.5));
+	EXPECT_FALSE(isSameValue(1.5, int64_t{1}));
+	EXPECT_EQ(getColumnTypeName(ColumnType::Reference), "Reference");
+	EXPECT_EQ(parseColumnType("Enum"), std::optional<ColumnType>{ColumnType::Enum});
+	EXPECT_FALSE(parseColumnType("Strange").has_value());
+	EXPECT_EQ(getColumnTypes().size(), 7u);
 }
 
 TEST(DataTableLibrary, ReadsEachTableOnceUntilForgotten) {

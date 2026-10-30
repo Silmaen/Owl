@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <tuple>
 #include <vector>
 
 using namespace owl;
@@ -65,7 +66,8 @@ protected:
 		m_host.localisation.startEmpty(m_locale);
 		m_table = m_root / "goods.owltable";
 		data::table::DataTable table;
-		ASSERT_TRUE(table.addColumn({.name = "name", .type = data::table::ColumnType::Text, .choices = {}, .table = {}}, 0));
+		ASSERT_TRUE(table.addColumn({.name = "name", .type = data::table::ColumnType::Text, .choices = {}, .table = {}},
+									0));
 		ASSERT_TRUE(table.addRow("row", 0));
 		ASSERT_TRUE(table.saveToFile(m_table));
 		ASSERT_TRUE(m_host.table.loadFromFile(m_table));
@@ -162,7 +164,7 @@ TEST_F(DocumentCommandsTest, LocaleCommandsEditTheOpenLocalisation) {
 
 TEST_F(DocumentCommandsTest, TableCommandsEditTheOpenDataTable) {
 	ASSERT_TRUE(run("table.add_column", {{"name", "price"}, {"type", "Float"}}, m_table));
-	ASSERT_TRUE(run("table.add_column", {{"name", "kind"}, {"type", "Enum"}, {"choices", "food, ore"}}, m_table));
+	ASSERT_TRUE(run("table.add_column", {{"name", "kind"}, {"type", "Enum"}, {"choices", "food, metal"}}, m_table));
 	ASSERT_TRUE(run("table.add_column", {{"name", "stock"}, {"type", "Integer"}, {"after", "name"}}, m_table));
 	EXPECT_FALSE(run("table.add_column", {{"name", "key"}, {"type", "Text"}}, m_table));
 	EXPECT_FALSE(run("table.add_column", {{"name", "x"}, {"type", "Text"}, {"after", "missing"}}, m_table));
@@ -177,7 +179,7 @@ TEST_F(DocumentCommandsTest, TableCommandsEditTheOpenDataTable) {
 	EXPECT_FALSE(run("table.set_cell", {{"key", "wheat"}, {"column", "price"}, {"value", "cheap"}}, m_table));
 	EXPECT_FALSE(run("table.set_cell", {{"key", "rye"}, {"column", "price"}, {"value", "1"}}, m_table));
 	EXPECT_FALSE(run("table.set_cell", {{"key", "wheat"}, {"column", "weight"}, {"value", "1"}}, m_table));
-	ASSERT_TRUE(run("table.set_cell", {{"key", "wheat"}, {"column", "kind"}, {"value", "ore"}}, m_table));
+	ASSERT_TRUE(run("table.set_cell", {{"key", "wheat"}, {"column", "kind"}, {"value", "metal"}}, m_table));
 	EXPECT_DOUBLE_EQ(std::get<double>(*table.getCell("wheat", "price")), 2.5);
 	ASSERT_TRUE(run("table.rename_row", {{"key", "wheat"}, {"new_key", "barley"}}, m_table));
 	EXPECT_FALSE(run("table.rename_row", {{"key", "barley"}, {"new_key", "row"}}, m_table));

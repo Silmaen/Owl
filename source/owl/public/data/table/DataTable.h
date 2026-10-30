@@ -285,6 +285,15 @@ struct OWL_API DataTable {
 
 /**
  * @brief
+ *  Compare two cell values exactly (same type, same value).
+ * @param[in] iFirst A value.
+ * @param[in] iSecond Another value.
+ * @return True when they are equal.
+ */
+[[nodiscard]] OWL_API auto isSameValue(const CellValue& iFirst, const CellValue& iSecond) -> bool;
+
+/**
+ * @brief
  *  Name of a column type, as the files write it.
  * @param[in] iType The type.
  * @return Its name (`Integer`, `Float`...).

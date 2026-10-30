@@ -98,9 +98,9 @@ void SplineCurve::rebuild() {
 													 lerp(start.position, end.position, 2.f / 3.f), end.position});
 				break;
 			case SplineInterpolation::CatmullRom:
-				m_controls.insert(m_controls.end(), {start.position, start.position + getSmoothTangent(segment),
-													 end.position - getSmoothTangent((segment + 1) % count),
-													 end.position});
+				m_controls.insert(m_controls.end(),
+								  {start.position, start.position + getSmoothTangent(segment),
+								   end.position - getSmoothTangent((segment + 1) % count), end.position});
 				break;
 			case SplineInterpolation::Bezier:
 				m_controls.insert(m_controls.end(), {start.position, start.position + start.tangentOut,
@@ -208,7 +208,8 @@ auto SplineCurve::getNearestDistance(const vec3& iPosition) const -> float {
 	for (size_t index = 0; index + 1 < m_samples.size(); ++index) {
 		const vec3 chord = m_samples[index + 1] - m_samples[index];
 		const float chordSq = chord.normSq();
-		const float along = chordSq > 0.f ? std::clamp((iPosition - m_samples[index]) * chord / chordSq, 0.f, 1.f) : 0.f;
+		const float along =
+				chordSq > 0.f ? std::clamp((iPosition - m_samples[index]) * chord / chordSq, 0.f, 1.f) : 0.f;
 		if (const float missSq = (m_samples[index] + chord * along - iPosition).normSq(); missSq < best) {
 			best = missSq;
 			bestDistance = m_lengths[index] + (m_lengths[index + 1] - m_lengths[index]) * along;

@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <tuple>
 #include <vector>
 
 using namespace owl;
@@ -128,8 +129,10 @@ TEST_F(DataTableDocumentTest, RowsAreAddedMovedDuplicatedAndRemovedAsGroups) {
 }
 
 TEST_F(DataTableDocumentTest, ColumnsAndReferencesAreEdited) {
-	const data::table::Column market{
-			.name = "market", .type = ColumnType::Reference, .choices = {}, .table = m_markets.generic_string()};
+	const data::table::Column market{.name = "market",
+									 .type = ColumnType::Reference,
+									 .choices = {},
+									 .table = m_markets.generic_string()};
 	ASSERT_TRUE(m_document.addColumn(market, 5));
 	EXPECT_FALSE(m_document.addColumn(market, 0));
 	EXPECT_EQ(m_document.getReferenceKeys(m_document.table().columns[1]),

@@ -101,8 +101,8 @@ auto addPoint(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> 
 	return editPoints(ioScene, *entity, std::format("Add a point to '{}'", entity->getName()),
 					  [position, index](math::SplineCurve& ioCurve, std::vector<math::SplinePoint>& ioPoints,
 										ResultData& oData) -> bool {
-						  const size_t at = index < 0 ? ioPoints.size()
-													  : std::min(static_cast<size_t>(index), ioPoints.size());
+						  const size_t at =
+								  index < 0 ? ioPoints.size() : std::min(static_cast<size_t>(index), ioPoints.size());
 						  ioPoints.insert(ioPoints.begin() + static_cast<std::ptrdiff_t>(at),
 										  math::SplinePoint{.position = position});
 						  ioCurve.setPoints(std::move(ioPoints));
@@ -122,8 +122,8 @@ auto insertPoint(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) 
 	return editPoints(ioScene, *entity, std::format("Insert a point in '{}'", entity->getName()),
 					  [distance](math::SplineCurve& ioCurve, std::vector<math::SplinePoint>& /*ioPoints*/,
 								 ResultData& oData) -> bool {
-						  const size_t index =
-								  ioCurve.insertAtParameter(ioCurve.getParameterAtDistance(static_cast<float>(distance)));
+						  const size_t index = ioCurve.insertAtParameter(
+								  ioCurve.getParameterAtDistance(static_cast<float>(distance)));
 						  oData.emplace("point", static_cast<int64_t>(index));
 						  return true;
 					  });
@@ -133,8 +133,7 @@ auto deletePoints(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs)
 	const auto entity = splineEntity(*ioScene, iArgs);
 	if (!entity)
 		return unexpected<CommandFailure>{entity.error()};
-	const auto indices =
-			pointIndices(iArgs, entity->getComponent<scene::component::Spline>().curve.getPoints().size());
+	const auto indices = pointIndices(iArgs, entity->getComponent<scene::component::Spline>().curve.getPoints().size());
 	if (!indices)
 		return unexpected<CommandFailure>{indices.error()};
 	return editPoints(ioScene, *entity,
@@ -152,8 +151,7 @@ auto movePoints(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -
 	const auto entity = splineEntity(*ioScene, iArgs);
 	if (!entity)
 		return unexpected<CommandFailure>{entity.error()};
-	const auto indices =
-			pointIndices(iArgs, entity->getComponent<scene::component::Spline>().curve.getPoints().size());
+	const auto indices = pointIndices(iArgs, entity->getComponent<scene::component::Spline>().curve.getPoints().size());
 	if (!indices)
 		return unexpected<CommandFailure>{indices.error()};
 	const auto offset = iArgs.getVec3("offset").value_or(math::vec3{0.f, 0.f, 0.f});
@@ -230,7 +228,8 @@ void addSplineCommands(CommandRegistry& ioRegistry) {
 					.factory = deletePoints});
 	ioRegistry.add({.name = "spline.move_points",
 					.description = "Move control points of the Spline of an entity by an offset of the entity's space.",
-					.args = {entitySpec(), pointsSpec("Indices of the points, from 0 (`0,2`)."),
+					.args = {entitySpec(),
+							 pointsSpec("Indices of the points, from 0 (`0,2`)."),
 							 {.name = "offset",
 							  .type = ArgType::Vec3,
 							  .required = true,

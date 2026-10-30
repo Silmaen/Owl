@@ -58,8 +58,7 @@ void Spline::serialize(const core::Serializer& iOut) const {
 	auto& out = iOut.getImpl()->emitter;
 	out << YAML::Key << key();
 	out << YAML::BeginMap;// Spline
-	out << YAML::Key << "interpolation" << YAML::Value
-		<< std::string(magic_enum::enum_name(curve.getInterpolation()));
+	out << YAML::Key << "interpolation" << YAML::Value << std::string(magic_enum::enum_name(curve.getInterpolation()));
 	out << YAML::Key << "closed" << YAML::Value << curve.isClosed();
 	out << YAML::Key << "resolution" << YAML::Value << curve.getResolution();
 	out << YAML::Key << "up" << YAML::Value << up;
@@ -92,8 +91,8 @@ void Spline::serialize(const core::Serializer& iOut) const {
 void Spline::deserialize(const core::Serializer& iNode) {
 	const auto& node = iNode.getImpl()->node;
 	if (node["interpolation"]) {
-		if (const auto parsed = magic_enum::enum_cast<math::SplineInterpolation>(
-					node["interpolation"].as<std::string>());
+		if (const auto parsed =
+					magic_enum::enum_cast<math::SplineInterpolation>(node["interpolation"].as<std::string>());
 			parsed.has_value())
 			curve.setInterpolation(parsed.value());
 	}

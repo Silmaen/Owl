@@ -26,6 +26,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace owl::nest::panel {
@@ -221,9 +222,8 @@ auto Viewport::onSplineClick() -> bool {
 												 .scene = mp_document->getActiveScene(),
 												 .undo = mp_undoManager};
 			const auto result = target.execute(
-					"spline.insert_point",
-					{{"entity", static_cast<int64_t>(static_cast<uint64_t>(selected.getUUID()))},
-					 {"distance", static_cast<double>(*distance)}});
+					"spline.insert_point", {{"entity", static_cast<int64_t>(static_cast<uint64_t>(selected.getUUID()))},
+											{"distance", static_cast<double>(*distance)}});
 			if (result) {
 				if (const auto point = result->data.find("point"); point != result->data.end())
 					if (const auto* index = std::get_if<int64_t>(&point->second); index != nullptr)

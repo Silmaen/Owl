@@ -429,10 +429,7 @@ void DataTableDocument::commitPreview(const bool iForce) {
 		return;
 	for (size_t row = 0; row < std::min(edited.rows.size(), m_table.rows.size()); ++row) {
 		for (size_t column = 0; column < m_table.columns.size(); ++column) {
-			OWL_DIAG_PUSH
-			OWL_DIAG_DISABLE_CLANG("-Wfloat-equal")
-			const bool same = edited.rows[row].cells[column] == m_table.rows[row].cells[column];
-			OWL_DIAG_POP
+			const bool same = data::table::isSameValue(edited.rows[row].cells[column], m_table.rows[row].cells[column]);
 			if (!same)
 				std::ignore = sendCommand("table.set_cell",
 										  {{"key", m_table.rows[row].key},
@@ -526,7 +523,8 @@ void DataTableDocument::renderToolbar() {
 												  ImGuiInputTextFlags_EnterReturnsTrue);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(110.f);
-	if (gui::widgets::beginCombo("##newColumnType", std::string{data::table::getColumnTypeName(m_newColumnType)}.c_str())) {
+	if (gui::widgets::beginCombo("##newColumnType",
+								 std::string{data::table::getColumnTypeName(m_newColumnType)}.c_str())) {
 		for (const auto type: data::table::getColumnTypes())
 			if (ImGui::Selectable(std::format("{} {}", typeGlyph(type), data::table::getColumnTypeName(type)).c_str(),
 								  type == m_newColumnType))
@@ -563,9 +561,8 @@ void DataTableDocument::renderColumnHeader(const size_t iIndex) {
 		changed = edited;
 	gui::widgets::itemTooltip("Name of the column, read by `datatable.get`; Enter renames it.");
 	ImGui::SameLine();
-	if (gui::widgets::iconButton("##left", {.glyph = gui::icon::chevronLeft,
-											.tooltip = "Move left",
-											.disabled = iIndex == 0}))
+	if (gui::widgets::iconButton("##left",
+								 {.glyph = gui::icon::chevronLeft, .tooltip = "Move left", .disabled = iIndex == 0}))
 		std::ignore = runCommand("table.move_column", {{"column", column.name}, {"right", false}});
 	ImGui::SameLine();
 	if (gui::widgets::iconButton("##right", {.glyph = gui::icon::chevronRight,
@@ -574,10 +571,9 @@ void DataTableDocument::renderColumnHeader(const size_t iIndex) {
 		std::ignore = runCommand("table.move_column", {{"column", column.name}, {"right", true}});
 	ImGui::SameLine();
 	bool removed = false;
-	if (gui::widgets::iconButton("##removeColumn",
-								 {.glyph = gui::icon::x,
-								  .tooltip = "Remove the column",
-								  .description = "Its cells go with it; undo brings them back."}))
+	if (gui::widgets::iconButton("##removeColumn", {.glyph = gui::icon::x,
+													.tooltip = "Remove the column",
+													.description = "Its cells go with it; undo brings them back."}))
 		removed = true;
 	ImGui::SetNextItemWidth(-1.f);
 	if (gui::widgets::beginCombo("##type", std::string{data::table::getColumnTypeName(column.type)}.c_str())) {
@@ -617,8 +613,7 @@ void DataTableDocument::renderColumnHeader(const size_t iIndex) {
 				}
 			ImGui::EndCombo();
 		}
-		if (std::filesystem::path dropped;
-			gui::widgets::assetDropTarget(gui::widgets::AssetKind::DataTable, dropped)) {
+		if (std::filesystem::path dropped; gui::widgets::assetDropTarget(gui::widgets::AssetKind::DataTable, dropped)) {
 			edited.table = dropped.generic_string();
 			changed = edited;
 		}
@@ -646,66 +641,73 @@ void DataTableDocument::renderCell(const size_t iRow, const size_t iColumn) {
 	};
 	ImGui::SetNextItemWidth(-1.f);
 	switch (column.type) {
-		case ColumnType::Integer: {
-			auto value = std::get<int64_t>(cell);
-			if (ImGui::DragScalar("##cell", ImGuiDataType_S64, &value, 0.2f))
-				previewCell(value);
-			break;
-		}
-		case ColumnType::Float: {
-			auto value = std::get<double>(cell);
-			if (ImGui::DragScalar("##cell", ImGuiDataType_Double, &value, 0.01f, nullptr, nullptr, "%.3f"))
-				previewCell(value);
-			break;
-		}
-		case ColumnType::Bool: {
-			auto value = std::get<bool>(cell);
-			if (gui::widgets::toggle("##cell", &value))
-				setNow(value);
-			break;
-		}
-		case ColumnType::Text: {
-			auto value = std::get<std::string>(cell);
-			if (ImGui::InputText("##cell", &value))
-				previewCell(value);
-			break;
-		}
-		case ColumnType::Enum: {
-			const auto& value = std::get<std::string>(cell);
-			if (gui::widgets::beginCombo("##cell", value.c_str())) {
-				for (const auto& choice: column.choices)
-					if (ImGui::Selectable(choice.c_str(), choice == value))
-						setNow(choice);
-				ImGui::EndCombo();
+		case ColumnType::Integer:
+			{
+				auto value = std::get<int64_t>(cell);
+				if (ImGui::DragScalar("##cell", ImGuiDataType_S64, &value, 0.2f))
+					previewCell(value);
+				break;
 			}
-			break;
-		}
-		case ColumnType::Asset: {
-			auto value = std::get<std::string>(cell);
-			if (ImGui::InputTextWithHint("##cell", "drop an asset", &value))
-				previewCell(value);
-			if (std::filesystem::path dropped; gui::widgets::assetDropTarget(gui::widgets::AssetKind::Any, dropped))
-				setNow(dropped.generic_string());
-			break;
-		}
-		case ColumnType::Reference: {
-			const auto& value = std::get<std::string>(cell);
-			const auto keys = getReferenceKeys(column);
-			if (!value.empty() && !std::ranges::contains(keys, value))
-				ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg,
-									   ImGui::GetColorU32(gui::vec(
-											   gui::Theme::withAlpha(gui::UiLayer::getTheme().error, 0.25f))));
-			if (gui::widgets::beginCombo("##cell", value.empty() ? "(none)" : value.c_str())) {
-				if (ImGui::Selectable("(none)", value.empty()))
-					setNow(std::string{});
-				for (const auto& target: keys)
-					if (ImGui::Selectable(target.c_str(), target == value))
-						setNow(target);
-				ImGui::EndCombo();
+		case ColumnType::Float:
+			{
+				auto value = std::get<double>(cell);
+				if (ImGui::DragScalar("##cell", ImGuiDataType_Double, &value, 0.01f, nullptr, nullptr, "%.3f"))
+					previewCell(value);
+				break;
 			}
-			gui::widgets::itemTooltip("Row of the referenced table; red when its key is unknown there.");
-			break;
-		}
+		case ColumnType::Bool:
+			{
+				auto value = std::get<bool>(cell);
+				if (gui::widgets::toggle("##cell", &value))
+					setNow(value);
+				break;
+			}
+		case ColumnType::Text:
+			{
+				auto value = std::get<std::string>(cell);
+				if (ImGui::InputText("##cell", &value))
+					previewCell(value);
+				break;
+			}
+		case ColumnType::Enum:
+			{
+				const auto& value = std::get<std::string>(cell);
+				if (gui::widgets::beginCombo("##cell", value.c_str())) {
+					for (const auto& choice: column.choices)
+						if (ImGui::Selectable(choice.c_str(), choice == value))
+							setNow(choice);
+					ImGui::EndCombo();
+				}
+				break;
+			}
+		case ColumnType::Asset:
+			{
+				auto value = std::get<std::string>(cell);
+				if (ImGui::InputTextWithHint("##cell", "drop an asset", &value))
+					previewCell(value);
+				if (std::filesystem::path dropped; gui::widgets::assetDropTarget(gui::widgets::AssetKind::Any, dropped))
+					setNow(dropped.generic_string());
+				break;
+			}
+		case ColumnType::Reference:
+			{
+				const auto& value = std::get<std::string>(cell);
+				const auto keys = getReferenceKeys(column);
+				if (!value.empty() && !std::ranges::contains(keys, value))
+					ImGui::TableSetBgColor(
+							ImGuiTableBgTarget_CellBg,
+							ImGui::GetColorU32(gui::vec(gui::Theme::withAlpha(gui::UiLayer::getTheme().error, 0.25f))));
+				if (gui::widgets::beginCombo("##cell", value.empty() ? "(none)" : value.c_str())) {
+					if (ImGui::Selectable("(none)", value.empty()))
+						setNow(std::string{});
+					for (const auto& target: keys)
+						if (ImGui::Selectable(target.c_str(), target == value))
+							setNow(target);
+					ImGui::EndCombo();
+				}
+				gui::widgets::itemTooltip("Row of the referenced table; red when its key is unknown there.");
+				break;
+			}
 	}
 }
 

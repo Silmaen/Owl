@@ -19,13 +19,16 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <fstream>
 #include <iterator>
+#include <span>
 #include <sstream>
 #include <string>
 #include <utility>
+#include <variant>
 
 namespace owl::data::table {
 
@@ -101,6 +104,11 @@ auto readColumn(const YAML::Node& iNode) -> Column {
 }
 
 }// namespace
+
+OWL_DIAG_PUSH
+OWL_DIAG_DISABLE_CLANG("-Wfloat-equal")
+auto isSameValue(const CellValue& iFirst, const CellValue& iSecond) -> bool { return iFirst == iSecond; }
+OWL_DIAG_POP
 
 auto getColumnTypeName(const ColumnType iType) -> std::string_view { return magic_enum::enum_name(iType); }
 

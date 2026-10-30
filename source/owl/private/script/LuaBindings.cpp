@@ -14,9 +14,9 @@
 #include "core/Core.h"
 #include "core/Macros.h"
 #include "core/external/lua.h"
-#include "data/table/DataTableLibrary.h"
 #include "data/assets/AssetReference.h"
 #include "data/assets/AssetSearchPaths.h"
+#include "data/table/DataTableLibrary.h"
 #include "input/ActionFrame.h"
 #include "input/Gamepad.h"
 #include "input/Input.h"
@@ -2781,10 +2781,7 @@ auto luaDataTableFind(lua_State* iState) -> int {
 		return 0;
 	const auto wanted = data::table::convertValue(value, table->columns[*index]);
 	for (const auto& row: table->rows) {
-		OWL_DIAG_PUSH
-		OWL_DIAG_DISABLE_CLANG("-Wfloat-equal")
-		const bool same = row.cells[*index] == wanted;
-		OWL_DIAG_POP
+		const bool same = data::table::isSameValue(row.cells[*index], wanted);
 		if (same) {
 			lua_pushstring(iState, row.key.c_str());
 			return 1;
@@ -3664,7 +3661,8 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			 .description = "State machine of the `Animator` of a skinned mesh: parameters and states."},
 			{.name = "socket", .description = "Entities snapped on the sockets of a mesh or of an entity."},
 			{.name = "spline", .description = "Splines sampled by distance, and the entities following them."},
-			{.name = "datatable", .description = "Typed records of the `.owltable` data tables, by row key and column."},
+			{.name = "datatable",
+			 .description = "Typed records of the `.owltable` data tables, by row key and column."},
 			{.name = "path",
 			 .description = "Shortest paths over the graph a tilemap's `navigation` rules describe (roads, tracks), "
 							"searched over several frames."},

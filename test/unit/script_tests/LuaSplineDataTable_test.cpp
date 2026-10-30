@@ -53,29 +53,28 @@ TEST(LuaBindings, splineSampledInTheWorld) {
 	auto& follower = cart.addComponent<scene::component::SplineFollower>();
 	follower.spline = rail.getUUID();
 	follower.startDistance = 3.f;
-	const std::string script = std::string{
-			"function on_create()\n"
-			"  cart = scene.find_entity('Cart')\n"
-			"  length = spline.get_length(entity_id)\n"
-			"  sx, sy, sz = spline.sample(entity_id, 4)\n"
-			"  lx, ly, lz = spline.sample(entity_id, 4, 'right')\n"
-			"  tx, ty, tz = spline.get_tangent(entity_id, 2)\n"
-			"  near = spline.get_nearest(entity_id, 6, 3, 5)\n"
-			"  count = spline.get_point_count(entity_id)\n"
-			"  moved = spline.set_point(entity_id, 2, 20, 0, 5)\n"
-			"  bad = spline.set_point(entity_id, 3, 0, 0, 0)\n"
-			"  px, py, pz = spline.get_point(entity_id, 2)\n"
-			"  none = spline.get_length(cart) == nil\n"
-			"  start = spline.get_distance(cart)\n"
-			"  spline.set_speed(cart, 4)\n"
-			"  speed = spline.get_speed(cart)\n"
-			"  spline.set_distance(cart, 7)\n"
-			"  distance = spline.get_distance(cart)\n"
-			"  laned = spline.set_lane(cart, 'right')\n"
-			"  noFollower = spline.set_speed(entity_id, 1)\n"
-			"  entity.set_spline_follower_enabled(cart, false)\n"
-			"  following = entity.is_spline_follower_enabled(cart)\n"
-			"end\n"};
+	const std::string script = std::string{"function on_create()\n"
+										   "  cart = scene.find_entity('Cart')\n"
+										   "  length = spline.get_length(entity_id)\n"
+										   "  sx, sy, sz = spline.sample(entity_id, 4)\n"
+										   "  lx, ly, lz = spline.sample(entity_id, 4, 'right')\n"
+										   "  tx, ty, tz = spline.get_tangent(entity_id, 2)\n"
+										   "  near = spline.get_nearest(entity_id, 6, 3, 5)\n"
+										   "  count = spline.get_point_count(entity_id)\n"
+										   "  moved = spline.set_point(entity_id, 2, 20, 0, 5)\n"
+										   "  bad = spline.set_point(entity_id, 3, 0, 0, 0)\n"
+										   "  px, py, pz = spline.get_point(entity_id, 2)\n"
+										   "  none = spline.get_length(cart) == nil\n"
+										   "  start = spline.get_distance(cart)\n"
+										   "  spline.set_speed(cart, 4)\n"
+										   "  speed = spline.get_speed(cart)\n"
+										   "  spline.set_distance(cart, 7)\n"
+										   "  distance = spline.get_distance(cart)\n"
+										   "  laned = spline.set_lane(cart, 'right')\n"
+										   "  noFollower = spline.set_speed(entity_id, 1)\n"
+										   "  entity.set_spline_follower_enabled(cart, false)\n"
+										   "  following = entity.is_spline_follower_enabled(cart)\n"
+										   "end\n"};
 	const ScriptInstance inst;
 	ASSERT_TRUE(runScript(scn, script, static_cast<uint64_t>(rail.getUUID()), inst));
 	EXPECT_NEAR(inst.getPropertyFloat("length").value_or(0), 10.f, 1e-3f);
@@ -117,8 +116,7 @@ TEST(LuaBindings, dataTableRowsAndReferences) {
 	ASSERT_TRUE(table.addColumn({.name = "price", .type = ColumnType::Float, .choices = {}, .table = {}}, 0));
 	ASSERT_TRUE(table.addColumn({.name = "stock", .type = ColumnType::Integer, .choices = {}, .table = {}}, 1));
 	ASSERT_TRUE(table.addColumn({.name = "legal", .type = ColumnType::Bool, .choices = {}, .table = {}}, 2));
-	ASSERT_TRUE(
-			table.addColumn({.name = "market", .type = ColumnType::Reference, .choices = {}, .table = markets}, 3));
+	ASSERT_TRUE(table.addColumn({.name = "market", .type = ColumnType::Reference, .choices = {}, .table = markets}, 3));
 	ASSERT_TRUE(table.addRow("wheat", 0));
 	ASSERT_TRUE(table.addRow("iron", 1));
 	ASSERT_TRUE(table.setCell(0, 0, 2.5));

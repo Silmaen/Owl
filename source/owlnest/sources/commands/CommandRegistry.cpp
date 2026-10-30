@@ -13,6 +13,7 @@
 #include "AssetCommands.h"
 #include "CommandJournal.h"
 #include "ComponentCommands.h"
+#include "DataTableCommands.h"
 #include "DocumentCommands.h"
 #include "EntityCommands.h"
 #include "HierarchyCommands.h"
@@ -21,7 +22,6 @@
 #include "PrefabCommands.h"
 #include "SceneSettingsCommands.h"
 #include "SplineCommands.h"
-#include "DataTableCommands.h"
 
 #include <app/EngineContext.h>
 #include <data/geometry/MeshLoader.h>

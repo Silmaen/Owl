@@ -58,7 +58,8 @@ void runSplineBenches(Runner& ioRunner) {
 	ioRunner.measure("spline/sample_lane/1000", samples, [&]() -> void {
 		float sum = 0.f;
 		for (size_t index = 0; index < samples; ++index)
-			sum += spline.sample(length * static_cast<float>(index) / static_cast<float>(samples), "outer").position.z();
+			sum += spline.sample(length * static_cast<float>(index) / static_cast<float>(samples), "outer")
+						   .position.z();
 		doNotOptimize(sum);
 	});
 	ioRunner.measure("spline/nearest/100", 100, [&]() -> void {

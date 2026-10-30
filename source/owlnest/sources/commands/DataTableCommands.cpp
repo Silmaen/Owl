@@ -182,9 +182,9 @@ auto setCell(DataTableEditor& ioEditor, const CommandArgs& iArgs) -> expected<st
 	const auto& definition = ioEditor.table().columns[*column];
 	const auto value = data::table::parseValue(iArgs.getText("value"), definition);
 	if (!value)
-		return fail(CommandError::InvalidArgument, std::format("`{}` does not fit the {} column `{}`",
-															   iArgs.getText("value"),
-															   data::table::getColumnTypeName(definition.type), definition.name));
+		return fail(CommandError::InvalidArgument,
+					std::format("`{}` does not fit the {} column `{}`", iArgs.getText("value"),
+								data::table::getColumnTypeName(definition.type), definition.name));
 	if (!ioEditor.setCell(*row, *column, *value))
 		return unchanged();
 	return "Edit cell";
