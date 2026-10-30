@@ -13,8 +13,11 @@
 #include <scene/WorldStreamer.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <format>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace owl::bench {

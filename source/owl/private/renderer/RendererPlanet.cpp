@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <numbers>
 #include <utility>
 #include <vector>
@@ -31,7 +32,7 @@ namespace {
 constexpr auto g_rendererKey = "planet";
 constexpr uint32_t g_shellRings = 32;
 constexpr uint32_t g_shellSegments = 64;
-/// Scale heights of the Rayleigh and Mie densities, as fractions of the atmosphere thickness.
+// Scale heights of the Rayleigh and Mie densities, as fractions of the atmosphere thickness.
 constexpr double g_rayleighScale = 0.1;
 constexpr double g_mieScale = 0.015;
 

@@ -21,10 +21,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <iterator>
 #include <limits>
 #include <mutex>
 #include <set>
+#include <span>
 #include <string>
 #include <utility>
 

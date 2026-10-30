@@ -500,11 +500,27 @@ private:
 		std::vector<PlanetChunkMesh> done;
 	};
 
-	/// Take the finished builds into the cache.
+	/**
+	 * @brief
+	 *  Take the finished builds into the cache.
+	 */
 	void collectBuilds();
-	/// Ask for a chunk build.
+
+	/**
+	 * @brief
+	 *  Ask for a chunk build, built at once without a scheduler.
+	 * @param[in] iKey The chunk.
+	 * @param[in,out] ioScheduler The scheduler, or null.
+	 * @param[in,out] ioBudget Builds left for this update.
+	 */
 	void requestBuild(const PlanetChunkKey& iKey, core::task::Scheduler* ioScheduler, uint32_t& ioBudget);
-	/// Draw list entry of a cached chunk, uploading it first when needed.
+
+	/**
+	 * @brief
+	 *  A cached chunk, uploaded to the GPU first when needed.
+	 * @param[in] iPacked The packed key.
+	 * @return The chunk, or null when it is not built.
+	 */
 	auto drawChunkOf(uint64_t iPacked) -> CachedChunk*;
 
 	/// The surface the chunks are built from.

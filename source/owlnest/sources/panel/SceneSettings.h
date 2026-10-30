@@ -15,6 +15,7 @@
 #include "../commands/CommandRegistry.h"
 
 #include <array>
+#include <cstdint>
 #include <string>
 #include <vector>
 

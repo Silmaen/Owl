@@ -16,6 +16,7 @@
 #include <map>
 #include <mutex>
 #include <span>
+#include <string>
 #include <vector>
 
 namespace owl::core::task {
@@ -206,13 +207,35 @@ private:
 	/// Where the workers put their parses.
 	struct Inbox;
 
-	/// Start the load of a cell.
+	/**
+	 * @brief
+	 *  Start the load of a cell.
+	 * @param[in] iCell The cell.
+	 * @param[in,out] ioRuntime Its runtime.
+	 * @param[in,out] ioScheduler The scheduler, or null.
+	 */
 	void startLoad(const WorldCell& iCell, CellRuntime& ioRuntime, core::task::Scheduler* ioScheduler);
-	/// Merge the finished loads, within the budget.
+
+	/**
+	 * @brief
+	 *  Merge the finished loads, within the budget.
+	 * @param[in,out] ioScene The scene.
+	 * @param[in] iSettings The partition settings.
+	 */
 	void mergeFinished(Scene& ioScene, const WorldPartitionSettings& iSettings);
-	/// Remove the entities of a cell.
+
+	/**
+	 * @brief
+	 *  Remove the entities of a cell.
+	 * @param[in,out] ioScene The scene.
+	 * @param[in,out] ioRuntime The cell runtime.
+	 */
 	static void unloadCell(Scene& ioScene, CellRuntime& ioRuntime);
-	/// Refresh the counters of the current states.
+
+	/**
+	 * @brief
+	 *  Refresh the counters of the current states.
+	 */
 	void countStates();
 
 	/// Runtime of the cells met, by coordinates.

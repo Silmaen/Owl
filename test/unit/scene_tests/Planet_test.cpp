@@ -16,6 +16,7 @@
 #include <scene/pcg/PcgGraph.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <string>
