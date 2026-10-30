@@ -48,6 +48,7 @@
 #include "ReverbZone.h"
 #include "SoundListener.h"
 #include "SoundSource.h"
+#include "Spline.h"
 #include "SpriteRenderer.h"
 #include "StreamingSource.h"
 #include "Tag.h"
@@ -95,6 +96,7 @@ concept isComponent =
 		std::is_same_v<Component, ParticleEmitter> || std::is_same_v<Component, Trail> ||
 		std::is_same_v<Component, Planet> || std::is_same_v<Component, StreamingSource> ||
 		std::is_same_v<Component, Oscillator> || std::is_same_v<Component, Patrol> ||
+		std::is_same_v<Component, Spline> || std::is_same_v<Component, SplineFollower> ||
 		std::is_same_v<Component, Drift> || std::is_same_v<Component, FollowTarget> ||
 		std::is_same_v<Component, RenderTarget> || std::is_same_v<Component, ProceduralSky> ||
 		std::is_same_v<Component, DayNightCycle> || std::is_same_v<Component, ReflectionProbe> ||
@@ -163,9 +165,10 @@ using CopiableComponents =
 				   IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, Visibility,
 				   Hierarchy, SoundSource, SoundListener, ReverbZone, AdaptiveMusic, LuaScript, PrefabLink, RaycastDoor,
 				   RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, ParticleEmitter, Trail, Planet,
-				   StreamingSource, Oscillator, Patrol, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle,
-				   ReflectionProbe, FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider,
-				   UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
+				   StreamingSource, Oscillator, Patrol, Spline, SplineFollower, Drift, FollowTarget, RenderTarget,
+				   ProceduralSky, DayNightCycle, ReflectionProbe, FirstPersonController, UiButton, UiImage, UiPanel,
+				   UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus,
+				   UiScrollView, UiList>;
 
 /**
  * @brief
@@ -178,10 +181,10 @@ using SerializableComponents =
 				   Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera,
 				   BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener, ReverbZone, AdaptiveMusic,
 				   LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer,
-				   LightFlicker, ParticleEmitter, Trail, Planet, StreamingSource, Oscillator, Patrol, Drift,
-				   FollowTarget, RenderTarget, ProceduralSky, DayNightCycle, ReflectionProbe, FirstPersonController,
-				   UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor,
-				   UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
+				   LightFlicker, ParticleEmitter, Trail, Planet, StreamingSource, Oscillator, Patrol, Spline,
+				   SplineFollower, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle, ReflectionProbe,
+				   FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout,
+				   UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
  * @brief
@@ -194,8 +197,8 @@ using OptionalComponents =
 				   PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, SoundSource, SoundListener,
 				   ReverbZone, AdaptiveMusic, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag,
 				   VoxelWorld, VoxelPlayer, LightFlicker, ParticleEmitter, Trail, Planet, StreamingSource, Oscillator,
-				   Patrol, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle, ReflectionProbe,
-				   FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout,
-				   UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
+				   Patrol, Spline, SplineFollower, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle,
+				   ReflectionProbe, FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider,
+				   UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
 
 }// namespace owl::scene::component

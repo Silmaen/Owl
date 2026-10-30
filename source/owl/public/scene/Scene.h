@@ -116,6 +116,8 @@ struct Planet;
 struct StreamingSource;
 struct Oscillator;
 struct Patrol;
+struct Spline;
+struct SplineFollower;
 struct Drift;
 struct WorldPosition;
 struct FollowTarget;
@@ -2515,6 +2517,13 @@ OWL_API void Scene::onComponentAdded<component::Oscillator>(const Entity& iEntit
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Patrol>(const Entity& iEntity, component::Patrol& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Spline>(const Entity& iEntity, component::Spline& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::SplineFollower>(const Entity& iEntity,
+																component::SplineFollower& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>(const Entity& iEntity, component::Drift& ioComponent);

@@ -77,6 +77,14 @@ void updatePatrols(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Move the entities with a `SplineFollower` along their spline (`owl.spline_followers`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateSplineFollowers(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Move the entities with a `Drift` (`owl.drift`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.
