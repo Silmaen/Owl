@@ -155,7 +155,8 @@ auto getPcgNodeGlyph(const std::string_view iType) -> const char* {
 																{"points.to_mask", gui::icon::scan},
 																{"output.tiles", gui::icon::paintbrush},
 																{"output.points", gui::icon::flag},
-																{"output.erase", gui::icon::eraser}};
+																{"output.erase", gui::icon::eraser},
+																{"output.height", gui::icon::gauge}};
 	const auto found = glyphs.find(iType);
 	return found == glyphs.end() ? gui::icon::circleHelp : found->second;
 }

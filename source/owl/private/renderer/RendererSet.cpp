@@ -29,8 +29,8 @@ constexpr std::array<std::string_view, 11> g_baseFolders{
 		"tilemap_instanced", "particles", "lens_flare", "bitonic_sort"};
 constexpr std::array<std::string_view, 3> g_raycastFolders{"raycast_dda", "raycast_stripe", "raycast_sprite"};
 constexpr std::array<std::string_view, 1> g_isometricFolders{"isometric"};
-constexpr std::array<std::string_view, 4> g_renderer3DFolders{"renderer3D", "mesh_culling", "hiz_build",
-															  "probe_filter"};
+constexpr std::array<std::string_view, 5> g_renderer3DFolders{"renderer3D", "mesh_culling", "hiz_build", "probe_filter",
+															  "planet"};
 
 }// namespace
 
@@ -42,7 +42,7 @@ auto RendererSet::forLayerType(const std::string_view iTypeKey) -> RendererSet {
 		set.raycast = true;
 	else if (iTypeKey == "RendererIsometric")
 		set.isometric = true;
-	else if (iTypeKey == "RendererMesh" || iTypeKey == "RendererVoxel")
+	else if (iTypeKey == "RendererMesh" || iTypeKey == "RendererVoxel" || iTypeKey == "RendererPlanet")
 		set.renderer3D = true;
 	return set;
 }

@@ -1,0 +1,68 @@
+/**
+ * @file RendererPlanetLayer.cpp
+ * @author Silmaen
+ * @date 30/10/2026
+ * Copyright (c) 2026 All rights reserved.
+ * All modification must get authorization from the author.
+ */
+#include "owlpch.h"
+
+#include "renderer/RendererPlanetLayer.h"
+
+#include "core/external/yaml.h"
+#include "renderer/RenderLayerFactory.h"
+#include "renderer/RenderStackYaml.h"
+#include "renderer/RendererPlanet.h"
+
+#include <string>
+#include <utility>
+
+namespace owl::renderer {
+
+namespace {
+auto readVec3(const YAML::Node& iNode, const math::vec3& iFallback) -> math::vec3 {
+	if (iNode && iNode.IsSequence() && iNode.size() >= 3)
+		return math::vec3{iNode[0].as<float>(), iNode[1].as<float>(), iNode[2].as<float>()};
+	return iFallback;
+}
+}// namespace
+
+void RendererPlanetLayer::registerWithFactory() {
+	if (RenderLayerFactory::hasType(typeKey()))
+		return;
+	RenderLayerFactory::registerType(typeKey(), [](const std::string& iName) -> shared<RenderLayer> {
+		return mkShared<RendererPlanetLayer>(iName);
+	});
+}
+
+RendererPlanetLayer::RendererPlanetLayer(std::string iName) : m_name{std::move(iName)} {}
+
+void RendererPlanetLayer::onBeginFrame(const Camera& iCamera) {
+	OWL_PROFILE_FUNCTION()
+
+	RendererMesh::beginScene(iCamera, m_config);
+	RendererPlanet::beginScene(iCamera);
+}
+
+void RendererPlanetLayer::onRender([[maybe_unused]] scene::Scene& ioScene) {}
+
+void RendererPlanetLayer::onEndFrame() {
+	OWL_PROFILE_FUNCTION()
+
+	RendererMesh::endScene();
+	RendererPlanet::endScene();
+}
+
+void RendererPlanetLayer::applyConfig(const std::string& iConfig) {
+	const auto config = parseYamlText(iConfig);
+	if (!config || !config.IsMap())
+		return;
+	m_config.sunDirection = readVec3(config["SunDirection"], m_config.sunDirection);
+	m_config.ambient = readVec3(config["Ambient"], m_config.ambient);
+	if (const auto sun = config["SunIlluminance"]; sun)
+		m_config.sunIlluminance = sun.as<float>();
+	if (const auto luminance = config["AmbientLuminance"]; luminance)
+		m_config.ambientLuminance = luminance.as<float>();
+}
+
+}// namespace owl::renderer

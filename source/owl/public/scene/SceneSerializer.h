@@ -9,10 +9,12 @@
 #pragma once
 
 #include "DocumentKind.h"
+#include "Entity.h"
 #include "Scene.h"
 #include "core/FormatVersion.h"
 #include "core/Serializer.h"
 #include "core/expected.h"
+#include "math/vectors.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -176,6 +178,21 @@ public:
 	 * @return Nothing when the scene populated cleanly, the failure reason otherwise.
 	 */
 	[[nodiscard]] auto applyParsed(const ParsedScene& iParsed) const -> SceneLoadResult;
+
+	/**
+	 * @brief
+	 *  Add the entities of a parsed scene to the bound scene, which keeps its settings (renderers, physics, origin,
+	 *  HUD, script): the additive load of the world partition. Must run on the main thread.
+	 *
+	 * A root without a `WorldPosition` is moved by the offset; a root with one keeps its world position. An identifier
+	 * already used in the bound scene gets a fresh one. A malformed entity aborts the merge and removes the entities
+	 * already added.
+	 * @param[in] iParsed The parsed scene.
+	 * @param[in] iOffset Translation of the roots, in the bound scene's float space.
+	 * @return The entities added, or the failure reason.
+	 */
+	[[nodiscard]] auto mergeParsed(const ParsedScene& iParsed, const math::vec3& iOffset) const
+			-> expected<std::vector<Entity>, SceneLoadError>;
 
 	/**
 	 * @brief

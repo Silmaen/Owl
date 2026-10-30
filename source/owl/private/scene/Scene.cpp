@@ -34,6 +34,8 @@
 #include "renderer/RendererMesh.h"
 #include "renderer/RendererMeshLayer.h"
 #include "renderer/RendererParticles.h"
+#include "renderer/RendererPlanet.h"
+#include "renderer/RendererPlanetLayer.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
@@ -46,6 +48,7 @@
 #include "scene/Entity.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
+#include "scene/WorldStreamer.h"
 #include "scene/nav/NavDebugDraw.h"
 #include "scene/nav/NavWorld.h"
 #include "systems/EngineSystems.h"
@@ -232,15 +235,35 @@ void disconnectRuntimeHooks(entt::registry& ioRegistry) {
 	ioRegistry.on_destroy<component::AdaptiveMusic>().disconnect<&releaseAdaptiveMusic>();
 }
 
-// Particles and trails draw only on a particle layer: untagged ones go to the first one of the stack.
-auto isEffectOfLayer(const Entity& iEntity, const std::string& iLayerName) -> bool {
+// Entities drawn only by one layer type: a tagged one on its layer, an untagged one on the first layer of the type.
+auto isRoutedToLayer(const Entity& iEntity, const std::string& iLayerName, const std::string_view iTypeKey) -> bool {
 	if (iEntity.hasComponent<component::RendererTag>())
 		return iEntity.getComponent<component::RendererTag>().rendererName == iLayerName;
 	for (const auto& layer: renderer::Renderer::getRenderStack().getLayers()) {
-		if (std::string_view{layer->getTypeKey()} == "RendererParticles")
+		if (std::string_view{layer->getTypeKey()} == iTypeKey)
 			return layer->getName() == iLayerName;
 	}
 	return false;
+}
+
+// Particles and trails draw only on a particle layer: untagged ones go to the first one of the stack.
+auto isEffectOfLayer(const Entity& iEntity, const std::string& iLayerName) -> bool {
+	return isRoutedToLayer(iEntity, iLayerName, "RendererParticles");
+}
+
+// Planets draw only on a planet layer: untagged ones go to the first one of the stack.
+auto isPlanetOfLayer(const Entity& iEntity, const std::string& iLayerName) -> bool {
+	return isRoutedToLayer(iEntity, iLayerName, "RendererPlanet");
+}
+
+auto hasPlanetLayer() -> bool {
+	return std::ranges::any_of(renderer::Renderer::getRenderStack().getLayers(), [](const auto& iLayer) -> bool {
+		return std::string_view{iLayer->getTypeKey()} == "RendererPlanet";
+	});
+}
+
+auto toDoubleVector(const math::vec3& iVector) -> math::vec3d {
+	return {static_cast<double>(iVector.x()), static_cast<double>(iVector.y()), static_cast<double>(iVector.z())};
 }
 
 }// namespace
@@ -297,6 +320,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_physicsSettings = iOther->m_physicsSettings;
 	newScene->m_floatingOriginSettings = iOther->m_floatingOriginSettings;
 	newScene->m_mixSettings = iOther->m_mixSettings;
+	newScene->m_worldPartitionSettings = iOther->m_worldPartitionSettings;
 	newScene->m_worldOrigin = iOther->m_worldOrigin;
 	newScene->m_hudPath = iOther->m_hudPath;
 	newScene->m_sceneScript = iOther->m_sceneScript;
@@ -918,6 +942,11 @@ auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) 
 		for (const auto e: registry.view<component::Trail>())
 			if (matchesEffect(e))
 				return true;
+		for (const auto e: registry.view<component::Planet>()) {
+			const Entity ent{e, self};
+			if (isEffectivelyVisible(ent, /*iEditorMode=*/false) && isPlanetOfLayer(ent, iLayerName))
+				return true;
+		}
 		// Backgrounds always sit behind every layer — they only contribute to the first one.
 		if (iIsFirst) {
 			for (const auto e: registry.view<component::BackgroundTexture>())
@@ -942,6 +971,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	renderer::RendererMesh::clearOcclusion();
 	mp_renderCamera = &iCamera;
 	prepareParticleRenderData();
+	preparePlanetRenderData();
 	using Graph = renderer::RenderGraph;
 	auto& graph = renderer::Renderer::getRenderGraph();
 	graph.reset();
@@ -1440,6 +1470,83 @@ void Scene::renderParticles(const bool iEditorMode) {
 				trail.m_points,
 				{.tables = &trail.m_tables, .width = trail.width, .emissive = trail.emissive, .blend = trail.blend},
 				static_cast<int32_t>(handle));
+	}
+}
+
+auto Scene::getWorldStreamer() -> WorldStreamer& {
+	if (!mp_worldStreamer)
+		mp_worldStreamer = mkShared<WorldStreamer>();
+	return *mp_worldStreamer;
+}
+
+void Scene::preparePlanetRenderData() {
+	OWL_PROFILE_FUNCTION()
+
+	if (mp_renderCamera == nullptr || registry.view<component::Planet>().empty() || !hasPlanetLayer())
+		return;
+	const bool editorMode = status == Status::Editing;
+	const math::vec4 eye4 = inverse(mp_renderCamera->getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	const math::vec3d eye = m_worldOrigin + toDoubleVector(math::vec3{eye4.x(), eye4.y(), eye4.z()});
+	for (const auto [handle, planet]: registry.view<component::Planet>().each()) {
+		const Entity entity{handle, this};
+		if (!isEffectivelyVisible(entity, editorMode))
+			continue;
+		const math::vec3d center = getEntityWorldPosition(entity);
+		const auto placement = renderer::placePlanet(planet.settings, center - eye);
+		planet.getTerrain().update(eye - center, placement.scaledSpace, mp_taskScheduler);
+	}
+}
+
+auto Scene::getEntityWorldPosition(const Entity& iEntity) const -> math::vec3d {
+	if (iEntity.hasComponent<component::WorldPosition>() && iEntity.hasComponent<component::Hierarchy>() &&
+		iEntity.getComponent<component::Hierarchy>().parentId == core::UUID{0})
+		return iEntity.getComponent<component::WorldPosition>().position;
+	return m_worldOrigin + toDoubleVector(getWorldTransform(iEntity).translation());
+}
+
+void Scene::renderPlanets(const bool iEditorMode) {
+	OWL_PROFILE_FUNCTION()
+
+	if (mp_renderCamera == nullptr)
+		return;
+	renderer::PlanetSun sun;
+	bool lit = false;
+	for (const auto [handle, light]: registry.view<component::Light>().each()) {
+		const Entity entity{handle, this};
+		if (!light.enabled || light.type != component::Light::Type::Directional ||
+			!isEffectivelyVisible(entity, iEditorMode))
+			continue;
+		const math::vec4 forward = getWorldTransform(entity)() * math::vec4{0.f, 0.f, -1.f, 0.f};
+		sun.toSun = math::vec3{-forward.x(), -forward.y(), -forward.z()};
+		sun.illuminance = math::vec3{renderer::ColorEncoder::srgbToLinear(light.color.x()),
+									 renderer::ColorEncoder::srgbToLinear(light.color.y()),
+									 renderer::ColorEncoder::srgbToLinear(light.color.z())} *
+						  light.intensity;
+		lit = true;
+		break;
+	}
+	if (!lit) {
+		if (const auto* layer = dynamic_cast<const renderer::RendererPlanetLayer*>(mp_currentLayer); layer != nullptr) {
+			const auto& config = layer->getConfig();
+			sun.toSun = config.sunDirection * -1.f;
+			sun.illuminance = math::vec3{1.f, 1.f, 1.f} * config.sunIlluminance;
+		}
+	}
+	renderer::RendererPlanet::setSun(sun);
+	const math::vec4 eye4 = inverse(mp_renderCamera->getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	const math::vec3d eyeLocal = toDoubleVector(math::vec3{eye4.x(), eye4.y(), eye4.z()});
+	const math::vec3d eye = m_worldOrigin + eyeLocal;
+	for (const auto [handle, planet]: registry.view<component::Planet>().each()) {
+		const Entity entity{handle, this};
+		if (!isEffectivelyVisible(entity, iEditorMode) ||
+			(!m_currentLayerName.empty() && !isPlanetOfLayer(entity, m_currentLayerName)) || !planet.m_runtime.terrain)
+			continue;
+		const auto placement = renderer::placePlanet(planet.settings, getEntityWorldPosition(entity) - eye);
+		renderer::RendererPlanet::drawPlanet(*planet.m_runtime.terrain,
+											 {.settings = &planet.m_runtime.terrain->getSurface()->getSettings(),
+											  .placement = placement,
+											  .eye = eyeLocal,
+											  .entityId = static_cast<int32_t>(handle)});
 	}
 }
 
@@ -1963,7 +2070,8 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 		for (size_t index = 0; index < layers.size(); ++index) {
 			const auto& layer = layers[index];
 			const std::string_view type{layer->getTypeKey()};
-			if ((type != "RendererVoxel" && type != "RendererMesh" && type != "RendererParticles") ||
+			if ((type != "RendererVoxel" && type != "RendererMesh" && type != "RendererParticles" &&
+				 type != "RendererPlanet") ||
 				!layerHasContent(layer->getName(), index == 0))
 				continue;
 			ioGraph.addPass(
@@ -1979,6 +2087,8 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 							renderVoxelWorlds(true);
 						else if (layerType == "RendererParticles")
 							renderParticles(true);
+						else if (layerType == "RendererPlanet")
+							renderPlanets(true);
 						else
 							renderMeshes(true);
 						stackLayer->onEndFrame();
@@ -2000,12 +2110,12 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 		if (mp_drawnTarget != nullptr && !mp_drawnTarget->drawsLayer(layer->getName()))
 			continue;
 		const std::string_view type{layer->getTypeKey()};
-		const bool threeD = type == "RendererVoxel" || type == "RendererMesh";
+		const bool threeD = type == "RendererVoxel" || type == "RendererMesh" || type == "RendererPlanet";
 		// Two pointer-sized captures at most: the body stays in the small buffer of `std::function`, no allocation.
 		const auto body = [this, index](const Graph::PassContext& iContext) -> void {
 			const auto& stackLayer = renderer::Renderer::getRenderStack().getLayers()[index];
 			if (const std::string_view layerType{stackLayer->getTypeKey()};
-				layerType == "RendererVoxel" || layerType == "RendererMesh")
+				layerType == "RendererVoxel" || layerType == "RendererMesh" || layerType == "RendererPlanet")
 				useShadowMaps(iContext);
 			stackLayer->setViewport(m_viewportSize);
 			stackLayer->onBeginFrame(*mp_renderCamera);
@@ -2128,6 +2238,10 @@ void Scene::render() {
 			mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererMesh";
 	if (mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererParticles") {
 		renderParticles(editorMode);
+		return;
+	}
+	if (mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererPlanet") {
+		renderPlanets(editorMode);
 		return;
 	}
 
@@ -4049,6 +4163,15 @@ Scene::onComponentAdded<component::ParticleEmitter>([[maybe_unused]] const Entit
 template<>
 OWL_API void Scene::onComponentAdded<component::Trail>([[maybe_unused]] const Entity& iEntity,
 													   [[maybe_unused]] component::Trail& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Planet>([[maybe_unused]] const Entity& iEntity,
+														[[maybe_unused]] component::Planet& ioComponent) {}
+
+template<>
+OWL_API void
+Scene::onComponentAdded<component::StreamingSource>([[maybe_unused]] const Entity& iEntity,
+													[[maybe_unused]] component::StreamingSource& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Oscillator>([[maybe_unused]] const Entity& iEntity,
