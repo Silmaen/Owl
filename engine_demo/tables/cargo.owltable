@@ -1,0 +1,19 @@
+DataTable: ""
+FormatVersion: 1
+columns:
+  - {name: label, type: Text}
+  - {name: value, type: Integer}
+  - {name: fragile, type: Bool}
+rows:
+  - key: wine
+    label: Casks of wine
+    value: 120
+    fragile: true
+  - key: grain
+    label: Sacks of grain
+    value: 35
+    fragile: false
+  - key: iron
+    label: Iron ingots
+    value: 80
+    fragile: false
