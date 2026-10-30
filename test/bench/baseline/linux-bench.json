@@ -2560,50 +2560,50 @@
       "max_ns": 10974.6
     },
     {
-<<<<<<< HEAD
       "name": "planet/select/near_ground",
       "items": 1048,
-      "batch": 73,
+      "batch": 98,
       "samples": 15,
-      "median_ns": 156769.0,
-      "p25_ns": 156711.1,
-      "p75_ns": 156927.3,
-      "min_ns": 153054.2,
-      "max_ns": 157849.5
+      "median_ns": 121947.5,
+      "p25_ns": 121916.5,
+      "p75_ns": 122029.4,
+      "min_ns": 121852.0,
+      "max_ns": 122220.4
     },
     {
       "name": "planet/build_chunk/16",
       "items": 1,
       "batch": 100,
       "samples": 15,
-      "median_ns": 143048.8,
-      "p25_ns": 131853.9,
-      "p75_ns": 145697.6,
-      "min_ns": 121310.3,
-      "max_ns": 152516.6
+      "median_ns": 105636.3,
+      "p25_ns": 105050.3,
+      "p75_ns": 105669.5,
+      "min_ns": 104845.7,
+      "max_ns": 105708.2
     },
     {
       "name": "planet/update/steady",
       "items": 1048,
-      "batch": 33,
+      "batch": 28,
       "samples": 15,
-      "median_ns": 407259.8,
-      "p25_ns": 395964.3,
-      "p75_ns": 412549.4,
-      "min_ns": 359061.4,
-      "max_ns": 419862.8
+      "median_ns": 426439.5,
+      "p25_ns": 426369.6,
+      "p75_ns": 426859.8,
+      "min_ns": 426250.0,
+      "max_ns": 428921.4
     },
     {
       "name": "world_streaming/update/4096_cells",
       "items": 4097,
-      "batch": 616,
+      "batch": 311,
       "samples": 15,
-      "median_ns": 41063.4,
-      "p25_ns": 39224.2,
-      "p75_ns": 41467.6,
-      "min_ns": 32574.7,
-      "max_ns": 41939.1
-=======
+      "median_ns": 39570.5,
+      "p25_ns": 39524.5,
+      "p75_ns": 39601.4,
+      "min_ns": 38431.0,
+      "max_ns": 39637.2
+    },
+    {
       "name": "spline/rebuild/64_points",
       "items": 1,
       "batch": 1370,
@@ -2646,7 +2646,6 @@
       "p75_ns": 450316.9,
       "min_ns": 448747.3,
       "max_ns": 451604.9
->>>>>>> 149f7e7c (Benchmark spline rebuild, sampling by distance and nearest point)
     }
   ],
   "metrics": [
