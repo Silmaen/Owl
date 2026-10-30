@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 #include "data/localisation/Localisation.h"
+#include "data/table/DataTableLibrary.h"
 #include "input/ActionMap.h"
 #include "scene/SimulationClock.h"
 
@@ -38,7 +39,7 @@ namespace owl::app {
  *  Engine state shared by the scenes of one application, owned by `Application` instead of static storage.
  *
  * Holds the screen transition, the game settings, the project's simulation tick rate, its action map and default HUD,
- * the HUD library, the static mesh cache and the voxel mesh cache. The
+ * the HUD library, the data tables, the static mesh cache and the voxel mesh cache. The
  * application creates it and releases it before shutting the renderer down; every new scene points at the
  * application's one (`Scene::getEngineContext`). A test that needs one creates its own and gives it to its scenes
  * (`Scene::setEngineContext`), so nothing leaks from a test to the next.
@@ -157,6 +158,13 @@ public:
 
 	/**
 	 * @brief
+	 *  The `.owltable` data tables read so far, shared by the scenes and kept across scene transitions.
+	 * @return The data table library.
+	 */
+	[[nodiscard]] auto getDataTables() -> data::table::DataTableLibrary& { return m_dataTables; }
+
+	/**
+	 * @brief
 	 *  HUD asset of the scenes that name none (the project's `DefaultHud`).
 	 * @return The asset path, empty for no default HUD.
 	 */
@@ -254,6 +262,8 @@ private:
 	std::string m_requestedLanguage;
 	/// Counter of the localisation changes.
 	uint64_t m_localisationGeneration{0};
+	/// Data tables read by the scripts.
+	data::table::DataTableLibrary m_dataTables;
 	/// Loaded HUD scenes (declared last: they hold GPU resources and are destroyed first).
 	uniq<scene::HudLibrary> mp_hudLibrary;
 };
