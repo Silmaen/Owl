@@ -60,6 +60,15 @@ never a raw font size:
 Write property labels in Title Case, as the inspector does ("Fixed Aspect Ratio"), button labels as a verb ("Add
 Component"), and end a hint, a tooltip or a notice with a period.
 
+Owl Nest will be translated after 1.0 ([Localisation](localisation.md)), so a label must survive a text 30 % longer:
+
+- A width comes from the measured text (`CalcTextSize`) with a minimum, never from a constant sized for English; the
+  ribbon scrolls sideways under the wheel when its groups outgrow the window.
+- A window or a tab names its ImGui ID after `###` (`panelWindow::title`, `documentWindowTitle`), so a translated
+  label keeps its docking place and its saved state.
+- Text a user types (names, paths, string tables) renders in any script: system fonts are merged after Inter for
+  CJK, Arabic, Hebrew, Devanagari and Thai.
+
 ## Spacing and shape
 
 - Base unit 4 px, scaled with the monitor (`UiLayer::getDpiScale`); never hard-code a size that does not scale with

@@ -53,7 +53,7 @@ void SettingsPanel::onImGuiRender(EditorSettings& ioSettings, ActionRegistry& io
 	if (!m_visible)
 		return;
 	ImGui::SetNextWindowSize({ImGui::GetFontSize() * 34.f, ImGui::GetFontSize() * 26.f}, ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin("Editor Settings", &m_visible)) {
+	if (!ImGui::Begin("Editor Settings###EditorSettings", &m_visible)) {
 		ImGui::End();
 		return;
 	}

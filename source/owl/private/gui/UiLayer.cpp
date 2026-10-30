@@ -28,9 +28,17 @@ OWL_DIAG_DISABLE_CLANG("-Wzero-as-null-pointer-constant")
 #include <ImGuizmo.h>
 OWL_DIAG_POP
 
+#include <array>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <fstream>
+#include <initializer_list>
+#include <iterator>
+#include <string_view>
+#include <system_error>
+#include <vector>
 
 namespace owl::gui {
 
@@ -175,6 +183,72 @@ auto loadFont(const char* iRelative, const float iSize) -> ImFont* {
 	return addFont(iRelative, iSize, config);
 }
 
+// System fonts for the scripts Inter lacks, one list per script, the first file found wins: user text (file names,
+// entity names, string tables) renders instead of boxes. Right-to-left scripts show unshaped glyphs.
+auto fallbackFontCandidates() -> std::vector<std::vector<std::filesystem::path>> {
+#ifdef OWL_PLATFORM_WINDOWS
+	const char* winDir = std::getenv("WINDIR");// NOLINT(concurrency-mt-unsafe) read once, before any thread starts
+	const std::filesystem::path fonts = std::filesystem::path{winDir != nullptr ? winDir : "C:/Windows"} / "Fonts";
+	return {{fonts / "msyh.ttc", fonts / "meiryo.ttc", fonts / "malgun.ttf"},
+			{fonts / "segoeui.ttf"},
+			{fonts / "Nirmala.ttc", fonts / "mangal.ttf"},
+			{fonts / "leelawui.ttf", fonts / "tahoma.ttf"}};
+#else
+	const std::array<std::filesystem::path, 4> dirs{"/usr/share/fonts/opentype/noto", "/usr/share/fonts/truetype/noto",
+													"/usr/share/fonts/google-noto", "/usr/share/fonts/noto"};
+	const auto inDirs = [&dirs](const std::initializer_list<std::string_view> iNames) {
+		std::vector<std::filesystem::path> paths;
+		for (const auto& name: iNames)
+			for (const auto& dir: dirs) paths.push_back(dir / name);
+		return paths;
+	};
+	auto cjk = inDirs({"NotoSansCJK-Regular.ttc", "NotoSansCJKsc-Regular.otf"});
+	cjk.emplace_back("/usr/share/fonts/google-noto-cjk/NotoSansCJK-Regular.ttc");
+	cjk.emplace_back("/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc");
+	cjk.emplace_back("/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf");
+	return {std::move(cjk), inDirs({"NotoSansArabic-Regular.ttf", "NotoNaskhArabicUI-Regular.ttf"}),
+			inDirs({"NotoSansHebrew-Regular.ttf"}), inDirs({"NotoSansDevanagari-Regular.ttf"}),
+			inDirs({"NotoSansThai-Regular.ttf", "NotoLoopedThaiUI-Regular.ttf"})};
+#endif
+}
+
+// Fallback font files, read once and shared by every font that merges them (a CJK font weighs about 20 MB).
+auto fallbackFontData() -> const std::vector<std::vector<uint8_t>>& {
+	static const std::vector<std::vector<uint8_t>> data = [] {
+		std::vector<std::vector<uint8_t>> found;
+		for (const auto& candidates: fallbackFontCandidates()) {
+			for (const auto& path: candidates) {
+				std::error_code error;
+				if (!std::filesystem::is_regular_file(path, error))
+					continue;
+				std::ifstream file{path, std::ios::binary};
+				std::vector<uint8_t> bytes{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
+				if (bytes.empty())
+					continue;
+				OWL_CORE_TRACE("UiLayer: fallback font {}", path.string())
+				found.push_back(std::move(bytes));
+				break;
+			}
+		}
+		return found;
+	}();
+	return data;
+}
+
+// Merge the system fallback fonts into the font loaded last; its own glyphs keep precedence.
+void mergeFallbackFonts(const float iSize) {
+	for (const auto& bytes: fallbackFontData()) {
+		ImFontConfig config;
+		config.MergeMode = true;
+		config.FontDataOwnedByAtlas = false;
+		config.GlyphExcludeRanges = g_privateUseExcluded;
+		// ImGui takes a mutable pointer but never writes into font data it does not own.
+		ImGui::GetIO().Fonts->AddFontFromMemoryTTF(
+				const_cast<uint8_t*>(bytes.data()),// NOLINT(cppcoreguidelines-pro-type-const-cast) see above
+				static_cast<int>(bytes.size()), iSize, &config);
+	}
+}
+
 // Merge the Lucide glyphs (`gui::icon`) into the font loaded last.
 void mergeIconFont(const float iSize) {
 	ImFontConfig config;
@@ -287,11 +361,15 @@ void UiLayer::onAttach() {
 			OWL_CORE_ERROR("UiLayer: could not load Inter-Regular.ttf from engine_assets/fonts/, using Roboto.")
 			g_bodyFont = loadFont("fonts/Roboto-Regular.ttf", uiSize);
 		}
-		if (g_bodyFont != nullptr)
+		if (g_bodyFont != nullptr) {
+			mergeFallbackFonts(uiSize);
 			mergeIconFont(uiSize);
+		}
 		g_strongFont = loadFont("fonts/Inter-SemiBold.ttf", uiSize);
-		if (g_strongFont != nullptr)
+		if (g_strongFont != nullptr) {
+			mergeFallbackFonts(uiSize);
 			mergeIconFont(uiSize);
+		}
 		g_monoFont = loadFont("fonts/JetBrainsMono-Regular.ttf", g_codeFontSize);
 		if (g_monoFont == nullptr)
 			OWL_CORE_ERROR("UiLayer: could not load JetBrainsMono-Regular.ttf — code editor will fall back to UI font.")

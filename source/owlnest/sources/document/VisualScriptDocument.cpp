@@ -903,15 +903,15 @@ void VisualScriptDocument::renderPropertiesPanel() {
 	compileIfStale();
 	if (!ImGui::BeginTabBar("##vsTabs"))
 		return;
-	if (ImGui::BeginTabItem(std::format("{} Variables", gui::icon::variable).c_str())) {
+	if (ImGui::BeginTabItem(std::format("{} Variables###variables", gui::icon::variable).c_str())) {
 		renderVariables();
 		ImGui::EndTabItem();
 	}
-	if (ImGui::BeginTabItem(std::format("{} Functions", gui::icon::component).c_str())) {
+	if (ImGui::BeginTabItem(std::format("{} Functions###functions", gui::icon::component).c_str())) {
 		renderFunctions();
 		ImGui::EndTabItem();
 	}
-	if (ImGui::BeginTabItem(std::format("{} Node", gui::icon::squareFunction).c_str())) {
+	if (ImGui::BeginTabItem(std::format("{} Node###node", gui::icon::squareFunction).c_str())) {
 		renderSelectedNode();
 		ImGui::EndTabItem();
 	}
