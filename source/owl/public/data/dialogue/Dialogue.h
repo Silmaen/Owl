@@ -23,7 +23,8 @@
 #include <vector>
 
 /**
- * @brief Branching conversations (`.owldlg`): the graph, its file and its playback.
+ * @brief
+ *  Branching conversations (`.owldlg`): the graph, its file and its playback.
  */
 namespace owl::data::dialogue {
 

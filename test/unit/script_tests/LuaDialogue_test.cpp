@@ -55,7 +55,8 @@ auto makeText(std::string iText, std::string iKey = {}) -> DialogueText {
 	return {.text = std::move(iText), .key = std::move(iKey)};
 }
 
-auto makeSpeech(const uint64_t iId, const NodeKind iKind, DialogueText iText, const uint64_t iNext = 0) -> DialogueNode {
+auto makeSpeech(const uint64_t iId, const NodeKind iKind, DialogueText iText, const uint64_t iNext = 0)
+		-> DialogueNode {
 	auto node = makeNode(iId, iKind, iNext);
 	node.text = std::move(iText);
 	return node;

@@ -2802,7 +2802,7 @@ auto callDialogueHook(lua_State* iState, const std::string_view iName) -> bool {
 		return false;
 	}
 	if (lua_pcall(iState, 0, 1, 0) != LUA_OK) {
-		OWL_CORE_WARN("Lua: Dialogue function '{}' failed: {}", name, lua_tostring(iState, -1))
+		OWL_CORE_WARN("Lua: Dialogue function '{}' failed: {}.", name, lua_tostring(iState, -1))
 		lua_pop(iState, 1);
 		return false;
 	}

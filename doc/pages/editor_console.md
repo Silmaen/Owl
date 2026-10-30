@@ -5,7 +5,7 @@
 Every change Owl Nest makes to a scene is a named **command**: a gizmo drag, an inspector edit, a hierarchy drop as
 well as a line typed in the Console, a macro or a request of an [MCP](mcp.md) client. They all go to the same undo
 history and to the session journal, which the Console shows.
-The edits of a sound cue (`sound.*`), of the localisation (`locale.*`) and of a data table (`table.*`) are commands too: they open the file in its
+The edits of a sound cue (`sound.*`), of the localisation (`locale.*`) of a data table (`table.*`) and of a dialogue (`dialogue.*`) are commands too: they open the file in its
 tab when it is not, and go to the undo history of that tab. A drag or a typed text runs one command when it ends.
 
 ## Log
@@ -127,6 +127,18 @@ A refused command changes nothing and logs why (a bad argument, an edit during P
 | `table.remove_column`             | `path`, `column`                                                                                        |
 | `table.move_column`               | `path`, `column`, `right`                                                                               |
 | `table.set_column`                | `path`, `column`, `name`, `type` (the cells are converted), `choices`, `table`                          |
+| `dialogue.create`                 | `path` (new `.owldlg` file): a Start node linked to an End node                                         |
+| `dialogue.add_node`               | `path`, `kind`, `position`, `from` and `output` (the node and output that lead to the new one)          |
+| `dialogue.remove_nodes`           | `path`, `nodes` (`a,b`)                                                                                 |
+| `dialogue.duplicate_nodes`        | `path`, `nodes`, `offset`                                                                               |
+| `dialogue.move_nodes`             | `path`, `nodes`, `offset`                                                                               |
+| `dialogue.link`                   | `path`, `from`, `output`, `to` (empty unlinks)                                                          |
+| `dialogue.set_node`               | `path`, `node`, `speaker`, `speaker_key`, `text`, `text_key`, `sound`, `function`                       |
+| `dialogue.add_option`             | `path`, `node`, `text`                                                                                  |
+| `dialogue.remove_option`          | `path`, `node`, `option` (from 0)                                                                       |
+| `dialogue.move_option`            | `path`, `node`, `option`, `down`                                                                        |
+| `dialogue.set_option`             | `path`, `node`, `option`, `text`, `text_key`, `condition`                                               |
+| `dialogue.set_route`              | `path`, `node`, `output`, `points` (`x,y;x,y`)                                                          |
 | `spline.add_point`                | `entity`, `position` (space of the entity), `index` (appended when absent)                              |
 | `spline.insert_point`             | `entity`, `distance` along the curve; the shape is kept                                                 |
 | `spline.delete_points`            | `entity`, `points` (indices from 0, `0,2`)                                                              |

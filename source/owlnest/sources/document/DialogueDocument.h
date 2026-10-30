@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <optional>
 #include <string>
@@ -407,7 +408,8 @@ private:
 	 * @param[in] iCommand The command that edits it.
 	 */
 	void renderText(const char* iLabel, const data::dialogue::DialogueText& iText, const char* iTextField,
-					const char* iKeyField, bool iMultiline, const commands::CommandArgs& iArgs, std::string_view iCommand);
+					const char* iKeyField, bool iMultiline, const commands::CommandArgs& iArgs,
+					std::string_view iCommand);
 
 	/**
 	 * @brief

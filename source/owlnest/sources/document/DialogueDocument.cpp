@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <charconv>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -51,7 +52,7 @@ using data::dialogue::DialogueNode;
 using data::dialogue::DialogueText;
 using data::dialogue::NodeKind;
 
-/// Longest text written in a node title or a pin label.
+// Longest text written in a node title or a pin label.
 constexpr size_t g_titleLength = 28;
 
 class ModifyDialogueCommand final : public UndoCommand<Dialogue> {
@@ -156,18 +157,22 @@ auto getDialogueNodeTitle(const DialogueNode& iNode) -> std::string {
 	const auto* glyph = getDialogueNodeGlyph(iNode.kind);
 	switch (iNode.kind) {
 		case NodeKind::Line:
-		case NodeKind::Choice: {
-			const auto speaker = shownText(iNode.speaker);
-			const auto text = shownText(iNode.text);
-			if (speaker.empty() && text.empty())
-				return std::format("{}  {}", glyph, data::dialogue::getNodeKindName(iNode.kind));
-			return std::format("{}  {}", glyph,
-							   shortened(speaker.empty() ? std::string{text} : std::format("{}: {}", speaker, text)));
-		}
+		case NodeKind::Choice:
+			{
+				const auto speaker = shownText(iNode.speaker);
+				const auto text = shownText(iNode.text);
+				if (speaker.empty() && text.empty())
+					return std::format("{}  {}", glyph, data::dialogue::getNodeKindName(iNode.kind));
+				return std::format(
+						"{}  {}", glyph,
+						shortened(speaker.empty() ? std::string{text} : std::format("{}: {}", speaker, text)));
+			}
 		case NodeKind::Branch:
-			return std::format("{}  {}?", glyph, iNode.function.empty() ? std::string{"Branch"} : shortened(iNode.function));
+			return std::format("{}  {}?", glyph,
+							   iNode.function.empty() ? std::string{"Branch"} : shortened(iNode.function));
 		case NodeKind::Event:
-			return std::format("{}  {}()", glyph, iNode.function.empty() ? std::string{"Event"} : shortened(iNode.function));
+			return std::format("{}  {}()", glyph,
+							   iNode.function.empty() ? std::string{"Event"} : shortened(iNode.function));
 		case NodeKind::Start:
 		case NodeKind::End:
 			break;
@@ -266,8 +271,10 @@ void DialogueDocument::rebuildCanvas() {
 	const auto problems = m_dialogue.getProblems();
 	const auto& theme = gui::UiLayer::getTheme();
 	for (const auto& node: m_dialogue.nodes) {
-		const bool faulty = std::ranges::any_of(
-				problems, [&node](const data::dialogue::DialogueProblem& iProblem) { return iProblem.node == node.id; });
+		const bool faulty =
+				std::ranges::any_of(problems, [&node](const data::dialogue::DialogueProblem& iProblem) -> bool {
+					return iProblem.node == node.id;
+				});
 		gui::widgets::Node canvasNode{.id = node.id,
 									  .title = getDialogueNodeTitle(node),
 									  .position = node.position,
@@ -277,8 +284,11 @@ void DialogueDocument::rebuildCanvas() {
 									  .titleColor = faulty ? theme.error : kindColor(node.kind)};
 		if (node.kind != NodeKind::Start) {
 			const core::UUID pin;
-			canvasNode.inputs.push_back(
-					{.id = pin, .label = "In", .typeTag = "flow", .kind = gui::widgets::PinKind::Input, .labelColor = theme.textMuted});
+			canvasNode.inputs.push_back({.id = pin,
+										 .label = "In",
+										 .typeTag = "flow",
+										 .kind = gui::widgets::PinKind::Input,
+										 .labelColor = theme.textMuted});
 			m_pins[pin] = {.node = node.id, .output = std::nullopt};
 			m_inputPins[node.id] = pin;
 		}
@@ -685,8 +695,7 @@ void DialogueDocument::renderGraphMenu() {
 									  std::pair{node->id, output});
 			ImGui::PopID();
 		}
-		if (node->kind == NodeKind::Choice &&
-			gui::widgets::menuItem({.glyph = gui::icon::plus, .label = "Add Option"}))
+		if (node->kind == NodeKind::Choice && gui::widgets::menuItem({.glyph = gui::icon::plus, .label = "Add Option"}))
 			std::ignore = sendCommand("dialogue.add_option", {{"node", formatId(node->id)}});
 		ImGui::Separator();
 		if (gui::widgets::menuItem({.glyph = gui::icon::copy, .label = "Duplicate", .shortcut = "Ctrl+D"}))
@@ -808,7 +817,7 @@ void DialogueDocument::renderText(const char* iLabel, const DialogueText& iText,
 	gui::widgets::propertyLabel(iLabel);
 	ImGui::SetNextItemWidth(-FLT_MIN);
 	const bool changed = iMultiline ? ImGui::InputTextMultiline(std::format("##{}", iTextField).c_str(), &text,
-															   {-FLT_MIN, ImGui::GetTextLineHeight() * 3.5f})
+																{-FLT_MIN, ImGui::GetTextLineHeight() * 3.5f})
 									: ImGui::InputText(std::format("##{}", iTextField).c_str(), &text);
 	if (changed) {
 		auto args = iArgs;
@@ -864,7 +873,8 @@ void DialogueDocument::renderOptions(const DialogueNode& iNode) {
 											  .tooltip = "Move Up",
 											  .description = "Offer the answer one place earlier.",
 											  .disabled = index == 0}))
-			std::ignore = sendCommand("dialogue.move_option", {{"node", node}, {"option", static_cast<int64_t>(index)}});
+			std::ignore =
+					sendCommand("dialogue.move_option", {{"node", node}, {"option", static_cast<int64_t>(index)}});
 		ImGui::SameLine(0.f, 2.f);
 		if (gui::widgets::iconButton("##down", {.glyph = gui::icon::arrowDown,
 												.tooltip = "Move Down",
@@ -876,7 +886,8 @@ void DialogueDocument::renderOptions(const DialogueNode& iNode) {
 		if (gui::widgets::iconButton("##remove", {.glyph = gui::icon::trash2,
 												  .tooltip = "Remove",
 												  .description = "Remove the answer and its link."})) {
-			std::ignore = sendCommand("dialogue.remove_option", {{"node", node}, {"option", static_cast<int64_t>(index)}});
+			std::ignore =
+					sendCommand("dialogue.remove_option", {{"node", node}, {"option", static_cast<int64_t>(index)}});
 			ImGui::PopID();
 			break;
 		}
@@ -908,8 +919,9 @@ void DialogueDocument::renderPropertiesPanel() {
 			renderText("Speaker", node->speaker, "speaker", "speaker_key", false, args, "dialogue.set_node");
 			renderText("Text", node->text, "text", "text_key", true, args, "dialogue.set_node");
 			std::string sound = node->sound;
-			bool changed = gui::widgets::propertyText("Sound", sound, "None", "Voice line or sound played with the text; "
-																			  "drop a sound file here.");
+			bool changed = gui::widgets::propertyText("Sound", sound, "None",
+													  "Voice line or sound played with the text; "
+													  "drop a sound file here.");
 			if (std::filesystem::path dropped; gui::widgets::assetDropTarget(gui::widgets::AssetKind::Sound, dropped)) {
 				sound = dropped.generic_string();
 				changed = true;

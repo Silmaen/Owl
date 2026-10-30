@@ -167,7 +167,7 @@ TEST_F(DialogueDocumentTest, SelectionKeepsOnlyExistingNodes) {
 	m_document.selectNodes({core::UUID{4}, core::UUID{5}});
 	EXPECT_EQ(m_document.getSelectedNode(), core::UUID{4});
 	auto next = m_document.dialogue();
-	std::erase_if(next.nodes, [](const DialogueNode& iNode) { return iNode.id == 4; });
+	std::erase_if(next.nodes, [](const DialogueNode& iNode) -> bool { return iNode.id == 4; });
 	ASSERT_TRUE(m_document.apply(next, "Remove node", false));
 	m_document.selectNodes({});
 	EXPECT_FALSE(m_document.getSelectedNode().has_value());

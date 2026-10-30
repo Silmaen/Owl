@@ -23,8 +23,8 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
-#include <variant>
 #include <tuple>
+#include <variant>
 #include <vector>
 
 using namespace owl;
@@ -252,10 +252,14 @@ TEST_F(DocumentCommandsTest, DialogueCommandsBuildAConversation) {
 	const auto end = std::to_string(static_cast<uint64_t>(dialogue.findStart()->next));
 	EXPECT_FALSE(run("dialogue.add_node", {{"kind", "Loop"}}, m_dialogue));
 	EXPECT_FALSE(run("dialogue.add_node", {{"kind", "Line"}, {"from", "42"}}, m_dialogue));
-	const auto line = resultText(run("dialogue.add_node", {{"kind", "Line"}, {"from", start}, {"position", math::vec2{200.f, 0.f}}}, m_dialogue), "node");
+	const auto line =
+			resultText(run("dialogue.add_node",
+						   {{"kind", "Line"}, {"from", start}, {"position", math::vec2{200.f, 0.f}}}, m_dialogue),
+					   "node");
 	ASSERT_FALSE(line.empty());
 	EXPECT_EQ(std::to_string(static_cast<uint64_t>(dialogue.findStart()->next)), line);
-	ASSERT_TRUE(run("dialogue.set_node", {{"node", line}, {"speaker", "Guard"}, {"text", "Halt!"}, {"text_key", "line.halt"}}, m_dialogue));
+	ASSERT_TRUE(run("dialogue.set_node",
+					{{"node", line}, {"speaker", "Guard"}, {"text", "Halt!"}, {"text_key", "line.halt"}}, m_dialogue));
 	const auto* lineNode = dialogue.findNode(std::stoull(line));
 	ASSERT_NE(lineNode, nullptr);
 	EXPECT_EQ(lineNode->speaker.text, "Guard");
@@ -264,10 +268,13 @@ TEST_F(DocumentCommandsTest, DialogueCommandsBuildAConversation) {
 	ASSERT_FALSE(choice.empty());
 	ASSERT_TRUE(run("dialogue.add_option", {{"node", choice}, {"text", "Leave"}}, m_dialogue));
 	EXPECT_FALSE(run("dialogue.add_option", {{"node", line}}, m_dialogue));
-	ASSERT_TRUE(run("dialogue.set_option", {{"node", choice}, {"option", int64_t{0}}, {"text", "Trade"}, {"condition", "has_goods"}}, m_dialogue));
+	ASSERT_TRUE(run("dialogue.set_option",
+					{{"node", choice}, {"option", int64_t{0}}, {"text", "Trade"}, {"condition", "has_goods"}},
+					m_dialogue));
 	EXPECT_FALSE(run("dialogue.set_option", {{"node", choice}, {"option", int64_t{5}}, {"text", "x"}}, m_dialogue));
 	ASSERT_TRUE(run("dialogue.link", {{"from", choice}, {"output", int64_t{0}}, {"to", end}}, m_dialogue));
-	ASSERT_TRUE(run("dialogue.set_route", {{"node", choice}, {"output", int64_t{0}}, {"points", "10,20; 30,40"}}, m_dialogue));
+	ASSERT_TRUE(run("dialogue.set_route", {{"node", choice}, {"output", int64_t{0}}, {"points", "10,20; 30,40"}},
+					m_dialogue));
 	EXPECT_FALSE(run("dialogue.set_route", {{"node", choice}, {"output", int64_t{0}}, {"points", "oops"}}, m_dialogue));
 	ASSERT_NE(dialogue.findRoute(std::stoull(choice), 0), nullptr);
 	ASSERT_TRUE(run("dialogue.move_option", {{"node", choice}, {"option", int64_t{0}}, {"down", true}}, m_dialogue));
@@ -278,9 +285,11 @@ TEST_F(DocumentCommandsTest, DialogueCommandsBuildAConversation) {
 	ASSERT_NE(dialogue.findRoute(choiceNode->id, 1), nullptr);// the bends follow the moved answer
 	EXPECT_FALSE(run("dialogue.move_option", {{"node", choice}, {"option", int64_t{1}}, {"down", true}}, m_dialogue));
 	EXPECT_FALSE(run("dialogue.link", {{"from", choice}, {"output", int64_t{0}}, {"to", start}}, m_dialogue));
-	ASSERT_TRUE(run("dialogue.move_nodes", {{"nodes", line + "," + choice}, {"offset", math::vec2{10.f, 5.f}}}, m_dialogue));
+	ASSERT_TRUE(run("dialogue.move_nodes", {{"nodes", line + "," + choice}, {"offset", math::vec2{10.f, 5.f}}},
+					m_dialogue));
 	EXPECT_FLOAT_EQ(dialogue.findNode(std::stoull(line))->position.x(), 210.f);
-	const auto copies = resultText(run("dialogue.duplicate_nodes", {{"nodes", line + "," + choice}}, m_dialogue), "nodes");
+	const auto copies =
+			resultText(run("dialogue.duplicate_nodes", {{"nodes", line + "," + choice}}, m_dialogue), "nodes");
 	ASSERT_EQ(dialogue.nodes.size(), 6u);
 	const auto copyLine = copies.substr(0, copies.find(','));
 	const auto copyChoice = copies.substr(copies.find(',') + 1);

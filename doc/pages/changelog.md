@@ -117,6 +117,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The export packs the tables a script names, the tables they reference and the assets of their cells.
 - Benchmarks `spline/rebuild`, `spline/sample_distance`, `spline/sample_lane` and `spline/nearest`.
 - Engine Demo: two barrel carts ride the lanes of a spline in the character yard, their speed, lane and cargo read from two linked data tables.
+- Dialogue trees (`.owldlg`): lines, choices with Lua conditions, branches and events, a graph editor with a preview in Owl Nest (`dialogue.*` commands) and the `dialogue` Lua API.
+- Owl Nest prepared for translation: stable window and tab IDs, system fallback fonts for CJK, Arabic, Hebrew, Devanagari and Thai, the ribbon scrolls sideways under the wheel instead of clipping.
 
 ### Changed
 

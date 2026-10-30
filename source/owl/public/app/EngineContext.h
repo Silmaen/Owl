@@ -9,8 +9,8 @@
 #pragma once
 
 #include "core/Core.h"
-#include "data/localisation/Localisation.h"
 #include "data/dialogue/DialogueLibrary.h"
+#include "data/localisation/Localisation.h"
 #include "data/table/DataTableLibrary.h"
 #include "input/ActionMap.h"
 #include "scene/SimulationClock.h"

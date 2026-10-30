@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
+#include <span>
 #include <sstream>
 #include <string>
 #include <unordered_set>
@@ -66,7 +67,9 @@ auto hasSpeech(const NodeKind iKind) -> bool { return iKind == NodeKind::Line ||
 
 auto getNodeKindName(const NodeKind iKind) -> std::string_view { return magic_enum::enum_name(iKind); }
 
-auto parseNodeKind(const std::string_view iName) -> std::optional<NodeKind> { return magic_enum::enum_cast<NodeKind>(iName); }
+auto parseNodeKind(const std::string_view iName) -> std::optional<NodeKind> {
+	return magic_enum::enum_cast<NodeKind>(iName);
+}
 
 auto getNodeKinds() -> std::span<const NodeKind> {
 	static constexpr auto s_kinds = magic_enum::enum_values<NodeKind>();
@@ -173,8 +176,7 @@ auto Dialogue::deserializeFromString(const std::string_view iYaml) -> std::optio
 				OWL_CORE_WARN("Dialogue: Node {} skipped (no id or twice).", static_cast<uint64_t>(node.id))
 				continue;
 			}
-			if (const auto kind = parseNodeKind(item["kind"].as<std::string>("Line"));
-				kind.has_value())
+			if (const auto kind = parseNodeKind(item["kind"].as<std::string>("Line")); kind.has_value())
 				node.kind = *kind;
 			if (const auto& position = item["position"]; position && position.IsSequence() && position.size() == 2)
 				node.position = {position[0].as<float>(0.f), position[1].as<float>(0.f)};
@@ -308,9 +310,9 @@ auto Dialogue::getProblems() const -> std::vector<DialogueProblem> {
 		if (node.kind == NodeKind::Choice && node.options.empty())
 			problems.push_back({.node = node.id, .message = "The choice has no option."});
 		if ((node.kind == NodeKind::Branch || node.kind == NodeKind::Event) && node.function.empty())
-			problems.push_back({.node = node.id, .message = node.kind == NodeKind::Branch
-																	? "The branch names no condition function."
-																	: "The event names no function."});
+			problems.push_back({.node = node.id,
+								.message = node.kind == NodeKind::Branch ? "The branch names no condition function."
+																		 : "The event names no function."});
 	}
 	if (const auto* start = findStart(); start != nullptr) {
 		std::unordered_set<uint64_t> reached{start->id};
@@ -333,7 +335,7 @@ auto Dialogue::getProblems() const -> std::vector<DialogueProblem> {
 
 auto Dialogue::getTextKeys() const -> std::vector<std::string> {
 	std::vector<std::string> keys;
-	const auto add = [&keys](const DialogueText& iText) {
+	const auto add = [&keys](const DialogueText& iText) -> void {
 		if (!iText.key.empty() && std::ranges::find(keys, iText.key) == keys.end())
 			keys.push_back(iText.key);
 	};
@@ -347,7 +349,7 @@ auto Dialogue::getTextKeys() const -> std::vector<std::string> {
 
 auto Dialogue::getFunctions() const -> std::vector<std::string> {
 	std::vector<std::string> functions;
-	const auto add = [&functions](const std::string& iName) {
+	const auto add = [&functions](const std::string& iName) -> void {
 		if (!iName.empty() && std::ranges::find(functions, iName) == functions.end())
 			functions.push_back(iName);
 	};

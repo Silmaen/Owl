@@ -67,11 +67,8 @@ User guide: [Sound](../sound.md).
 
 ## Narrative
 
-- Dialogue system
-    - Dialogue tree asset (`.owldlg`) with branching conversations
-    - Visual dialogue editor in Owl Nest (node graph)
-    - Lua hooks for conditions and consequences
-    - Subtitle rendering via in-game UI
+- Dialogue trees (`.owldlg`): lines, choices with Lua conditions, branches and events, drawn as a graph in Owl Nest
+  with a preview, played from Lua with `dialogue.*` and displayed by the game's HUD ([Dialogues](../dialogues.md))
 
 ## HUD markers
 

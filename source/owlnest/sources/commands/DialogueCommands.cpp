@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <iterator>
 #include <map>
 #include <optional>
 #include <ranges>
@@ -63,11 +64,11 @@ auto formatId(const core::UUID iId) -> std::string { return std::to_string(stati
 
 // What a command does to the dialogue: the description of its undo entry, or why it cannot.
 struct Edit {
-	/// Description of the undo entry.
+	// Description of the undo entry.
 	std::string description;
-	/// Whether it merges with the previous entry of the same description.
+	// Whether it merges with the previous entry of the same description.
 	bool merge{false};
-	/// Fields given back to the caller (`node`, `nodes`).
+	// Fields given back to the caller (`node`, `nodes`).
 	ResultData data{};// NOLINT(readability-redundant-member-init) most edits give nothing back
 };
 
@@ -152,8 +153,9 @@ auto createDialogue(const CommandContext& /*iContext*/, const CommandArgs& iArgs
 		return fail(CommandError::InvalidArgument, std::format("{} exists already", path.string()));
 	if (!Dialogue::makeDefault().saveToFile(path))
 		return fail(CommandError::NotApplicable, std::format("cannot write {}", path.string()));
-	return CommandResult{
-			.entity = core::UUID{0}, .description = "Create dialogue", .data = {{"path", path.generic_string()}}};
+	return CommandResult{.entity = core::UUID{0},
+						 .description = "Create dialogue",
+						 .data = {{"path", path.generic_string()}}};
 }
 
 auto addNode(Dialogue& ioDialogue, const CommandArgs& iArgs) -> expected<Edit, CommandFailure> {
@@ -171,13 +173,16 @@ auto addNode(Dialogue& ioDialogue, const CommandArgs& iArgs) -> expected<Edit, C
 		const auto from = nodeOf(ioDialogue, iArgs, "from");
 		if (!from)
 			return unexpected<CommandFailure>{from.error()};
-		if (!Dialogue::setOutput(**from, static_cast<size_t>(std::max<int64_t>(0, iArgs.get<int64_t>("output").value_or(0))),
+		if (!Dialogue::setOutput(**from,
+								 static_cast<size_t>(std::max<int64_t>(0, iArgs.get<int64_t>("output").value_or(0))),
 								 node.id))
 			return fail(CommandError::InvalidArgument, "the `from` node has no such output");
 	}
 	const auto id = formatId(node.id);
 	ioDialogue.nodes.push_back(std::move(node));
-	return Edit{.description = std::format("Add {} node", data::dialogue::getNodeKindName(*kind)), .merge = false, .data = {{"node", id}}};
+	return Edit{.description = std::format("Add {} node", data::dialogue::getNodeKindName(*kind)),
+				.merge = false,
+				.data = {{"node", id}}};
 }
 
 auto removeNodes(Dialogue& ioDialogue, const CommandArgs& iArgs) -> expected<Edit, CommandFailure> {
@@ -295,9 +300,8 @@ auto addOption(Dialogue& ioDialogue, const CommandArgs& iArgs) -> expected<Edit,
 		return unexpected<CommandFailure>{found.error()};
 	if ((*found)->kind != NodeKind::Choice)
 		return fail(CommandError::InvalidArgument, "the node is not a choice");
-	(*found)->options.push_back({.text = {.text = iArgs.getText("text", "Answer"), .key = {}},
-								  .condition = {},
-								  .next = core::UUID{0}});
+	(*found)->options.push_back(
+			{.text = {.text = iArgs.getText("text", "Answer"), .key = {}}, .condition = {}, .next = core::UUID{0}});
 	return Edit{.description = "Add option"};
 }
 

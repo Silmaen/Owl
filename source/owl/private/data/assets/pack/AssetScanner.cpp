@@ -10,11 +10,11 @@
 
 #include "app/Application.h"
 #include "data/assets/AssetReference.h"
+#include "data/dialogue/Dialogue.h"
 #include "data/fonts/FontLibrary.h"
 #include "data/fonts/FontSettings.h"
 #include "data/geometry/MeshLoader.h"
 #include "data/localisation/Localisation.h"
-#include "data/dialogue/Dialogue.h"
 #include "data/table/DataTable.h"
 #include "script/visual/VisualScript.h"
 

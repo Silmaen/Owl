@@ -42,7 +42,8 @@ auto makeText(std::string iText, std::string iKey = {}) -> DialogueText {
 	return {.text = std::move(iText), .key = std::move(iKey)};
 }
 
-auto makeSpeech(const uint64_t iId, const NodeKind iKind, DialogueText iText, const uint64_t iNext = 0) -> DialogueNode {
+auto makeSpeech(const uint64_t iId, const NodeKind iKind, DialogueText iText, const uint64_t iNext = 0)
+		-> DialogueNode {
 	auto node = makeNode(iId, iKind, iNext);
 	node.text = std::move(iText);
 	return node;
@@ -144,8 +145,8 @@ TEST(Dialogue, OutputsAndRoutesFollowTheKind) {
 	EXPECT_EQ(dialogue.findNode(3)->nextFalse, 0);
 	EXPECT_FALSE(Dialogue::setOutput(*dialogue.findNode(7), 0, 1));
 	dialogue.routes = {{.node = 3, .output = 0, .points = {{10.f, 20.f}, {30.f, 40.f}}}};
-	const auto read = Dialogue::deserializeFromString(dialogue.serializeToString() +
-													  "\nextra: 0\n");// unknown keys are ignored
+	const auto read =
+			Dialogue::deserializeFromString(dialogue.serializeToString() + "\nextra: 0\n");// unknown keys are ignored
 	ASSERT_TRUE(read.has_value());
 	EXPECT_EQ(read->routes, dialogue.routes);
 	ASSERT_NE(read->findRoute(3, 0), nullptr);
@@ -177,8 +178,8 @@ TEST(Dialogue, ProblemsNameTheFaultyNodes) {
 	dialogue.findNode(6)->next = 99;
 	dialogue.nodes.push_back(makeNode(8, NodeKind::Line));
 	const auto problems = dialogue.getProblems();
-	const auto concerns = [&problems](const uint64_t iNode) {
-		return std::ranges::any_of(problems, [iNode](const auto& iProblem) { return iProblem.node == iNode; });
+	const auto concerns = [&problems](const uint64_t iNode) -> bool {
+		return std::ranges::any_of(problems, [iNode](const auto& iProblem) -> bool { return iProblem.node == iNode; });
 	};
 	EXPECT_TRUE(concerns(3));
 	EXPECT_TRUE(concerns(4));
@@ -262,7 +263,8 @@ TEST(Conversation, AnActionMayMoveTheConversation) {
 	dialogue.nodes = {makeNode(1, NodeKind::Start, 2), makeHook(2, NodeKind::Event, "jump", 3),
 					  makeNode(3, NodeKind::Line)};
 	Conversation conversation{mkShared<const Dialogue>(dialogue)};
-	const ConversationHooks hooks{.condition = {}, .action = [&conversation](std::string_view) { conversation.stop(); }};
+	const ConversationHooks hooks{.condition = {},
+								  .action = [&conversation](std::string_view) -> void { conversation.stop(); }};
 	EXPECT_FALSE(conversation.start(hooks));
 	EXPECT_TRUE(conversation.start({}));// no action hook: the event is passed through
 	EXPECT_EQ(conversation.getCurrent()->id, 3);
@@ -313,7 +315,7 @@ TEST(DialogueLibrary, AHookMayStopItsOwnConversation) {
 	ASSERT_TRUE(id.has_value());
 	ASSERT_TRUE(library.advance(*id, recorder.hooks()));
 	const ConversationHooks stopping{.condition = {},
-									 .action = [&library, &id](std::string_view) { library.stop(*id); }};
+									 .action = [&library, &id](std::string_view) -> void { library.stop(*id); }};
 	EXPECT_FALSE(library.choose(*id, 0, stopping));
 	EXPECT_EQ(library.find(*id), nullptr);
 	std::filesystem::remove(path);

@@ -11,6 +11,7 @@
 
 #include "data/assets/AssetReference.h"
 
+#include <cstdint>
 #include <mutex>
 #include <string>
 
@@ -46,8 +47,7 @@ void DialogueLibrary::clear() {
 	collect();
 }
 
-auto DialogueLibrary::start(const std::string_view iAsset, const ConversationHooks& iHooks)
-		-> std::optional<uint64_t> {
+auto DialogueLibrary::start(const std::string_view iAsset, const ConversationHooks& iHooks) -> std::optional<uint64_t> {
 	auto dialogue = get(iAsset);
 	if (!dialogue)
 		return std::nullopt;
@@ -106,7 +106,7 @@ auto DialogueLibrary::getConversations() const -> std::vector<uint64_t> {
 void DialogueLibrary::collect() {
 	if (m_busy > 0)
 		return;
-	std::erase_if(m_conversations, [](const auto& iEntry) { return !iEntry.second->isRunning(); });
+	std::erase_if(m_conversations, [](const auto& iEntry) -> bool { return !iEntry.second->isRunning(); });
 }
 
 }// namespace owl::data::dialogue

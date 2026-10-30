@@ -37,6 +37,7 @@ Groups:
       - doc/pages/sound.md
       - doc/pages/languages.md
       - doc/pages/data_tables.md
+      - doc/pages/dialogues.md
       - doc/pages/pathfinding.md
       - doc/pages/pcg_graphs.md
   - title: Scripting
