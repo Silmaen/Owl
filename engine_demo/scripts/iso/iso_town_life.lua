@@ -4,7 +4,7 @@
 --               `transform.set_*` and `ui.set_visible` every frame), sprites of the isometric layer (smoke that rises and
 --               shrinks, glints that swell and fade, lights that blink) next to sprites of the 2D `overlay` layer drawn
 --               over it (animated gulls and the night tint, both pinned to the camera), `sound.play` for a bell and the
---               gulls' chirps, the `volume_sfx` setting.
+--               gulls' chirps on the SFX bus.
 --
 -- Entities by tag: `Chimney_<c>` with `Smoke_<c>_<n>` (4 puffs a chimney), `Sparkle_<n>`, `LampGlow_<n>`, `Beacon_<n>`,
 -- `Bird_<n>` and `Tint_<n>` (the first night level is `Tint_1`, each one adds some darkness). The gamestate keys
@@ -49,7 +49,7 @@ end
 local function play(path, volume)
     gamestate.set("town_sounds", gamestate.get("town_sounds", 0) + 1)
     local handle = sound.play(path)
-    sound.set_volume(handle, volume * settings.get("volume_sfx", 1.0))
+    sound.set_volume(handle, volume)
 end
 
 function on_create()

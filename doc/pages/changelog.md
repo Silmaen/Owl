@@ -82,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `sound` bus and music bindings: `set_bus_volume`, `set_bus_muted`, `play_music`, `stop_music`, `crossfade`, `set_music_state`.
 - Owl Nest Mixer panel (`scene.set_mixer`, `sound.set_live_bus` in Play), reverb zones drawn and sized in the viewport, inspectors for zones, filters and adaptive music; one undo step per bus edited.
 - Engine Demo sound yard (U from the main menu): a cave reverb, an underwater pool, a radio behind a wall, a passing cart and a music turning from calm to combat.
+- Engine Demo settings menu: a volume slider for each mixer bus (master, music, effects, ambient, voice).
 
 - GPU particles: `ParticleEmitter` simulated by a compute shader on OpenGL and Vulkan (CPU reference on the Null backend), up to 65536 particles per emitter.
 - `RendererParticles` render-stack layer drawing particles and trails over the 2D, isometric, voxel and mesh layers, under the HUD.
