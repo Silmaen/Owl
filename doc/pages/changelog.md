@@ -84,6 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Particles and trails follow a shift of the floating origin.
 - Owl Nest: particle emitter and trail inspectors, gradient editor, live viewport preview in Edit mode (play, pause, restart, stop, burst).
 - Owl Nest **Create > Effects** and the `entity.create_particle_emitter` and `particles.preview` commands.
+- Owl Nest appends a `RendererParticles` layer to the project stack for the first emitter, and draws a pickable sparkle at every emitter in the viewport.
 - Lua `entity.particles_play` / `pause` / `stop` / `restart` / `emit` / `is_emitting` and `entity.set_trail_enabled`.
 - Benchmarks `particles/simulate_cpu/*` and `particles/advance_gpu/256_emitters`; image tests of particles, 2D particles and trails, and lens flares.
 - Engine Demo: embers with trails and smoke rise from the tavern hearth, whose fire flares in the lens.

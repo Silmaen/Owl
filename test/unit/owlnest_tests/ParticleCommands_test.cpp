@@ -12,6 +12,9 @@
 #include "testHelper.h"
 
 #include <renderer/ParticleSystem.h>
+#include <renderer/RenderLayer.h>
+#include <renderer/RenderLayerFactory.h>
+#include <renderer/RenderStack.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/component/ParticleEmitter.h>
@@ -94,4 +97,26 @@ TEST_F(ParticleCommandTest, PreviewDrivesTheSystemsWithoutAnUndoEntry) {
 	EXPECT_TRUE(emitter.m_slot.system->isEmitting());
 	ASSERT_TRUE(run("particles.preview", {{"action", std::string{"Burst"}}}));
 	EXPECT_FALSE(m_undo.canUndo());
+}
+
+TEST_F(ParticleCommandTest, TheFirstEmitterAppendsAParticleLayerToTheProject) {
+	if (!renderer::RenderLayerFactory::hasType("RendererParticles"))
+		renderer::RenderLayerFactory::registerType(
+				"RendererParticles",
+				[](const std::string& /*iName*/) -> shared<renderer::RenderLayer> { return nullptr; });
+	renderer::RendererStackConfig stack;
+	int notified = 0;
+	CommandContext context{.scene = m_scene, .undo = &m_undo, .playing = false};
+	ASSERT_TRUE(m_registry.execute("entity.create_particle_emitter", {}, context));
+	context.projectStack = &stack;
+	context.onProjectStackChanged = [&notified]() -> void { ++notified; };
+	ASSERT_TRUE(m_registry.execute("entity.create", {{"name", std::string{"Plain"}}}, context));
+	ASSERT_TRUE(m_registry.execute("entity.create_particle_emitter", {{"type", std::string{"Snow"}}}, context));
+	// The default layer stays first, the particle layer comes last.
+	ASSERT_EQ(stack.entries.size(), 2u);
+	EXPECT_EQ(stack.entries.back().typeKey, "RendererParticles");
+	EXPECT_EQ(notified, 1);
+	ASSERT_TRUE(m_registry.execute("entity.create_particle_emitter", {}, context));
+	EXPECT_EQ(stack.entries.size(), 2u);
+	EXPECT_EQ(notified, 1);
 }

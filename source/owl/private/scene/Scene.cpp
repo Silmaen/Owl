@@ -219,6 +219,17 @@ void disconnectRuntimeHooks(entt::registry& ioRegistry) {
 	ioRegistry.on_destroy<component::SoundSource>().disconnect<&releaseSoundSource>();
 }
 
+// Particles and trails draw only on a particle layer: untagged ones go to the first one of the stack.
+auto isEffectOfLayer(const Entity& iEntity, const std::string& iLayerName) -> bool {
+	if (iEntity.hasComponent<component::RendererTag>())
+		return iEntity.getComponent<component::RendererTag>().rendererName == iLayerName;
+	for (const auto& layer: renderer::Renderer::getRenderStack().getLayers()) {
+		if (std::string_view{layer->getTypeKey()} == "RendererParticles")
+			return layer->getName() == iLayerName;
+	}
+	return false;
+}
+
 }// namespace
 
 Scene::Scene()
@@ -877,11 +888,15 @@ auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) 
 		for (const auto e: registry.view<component::MeshRenderer>())
 			if (matches(e))
 				return true;
+		const auto matchesEffect = [&](const entt::entity e) -> bool {
+			const Entity ent{e, self};
+			return isEffectivelyVisible(ent, /*iEditorMode=*/false) && isEffectOfLayer(ent, iLayerName);
+		};
 		for (const auto e: registry.view<component::ParticleEmitter>())
-			if (matches(e))
+			if (matchesEffect(e))
 				return true;
 		for (const auto e: registry.view<component::Trail>())
-			if (matches(e))
+			if (matchesEffect(e))
 				return true;
 		// Backgrounds always sit behind every layer — they only contribute to the first one.
 		if (iIsFirst) {
@@ -1384,10 +1399,13 @@ void Scene::prepareParticleRenderData() {
 void Scene::renderParticles(const bool iEditorMode) {
 	OWL_PROFILE_FUNCTION()
 
+	const auto acceptsEffect = [this](const Entity& iEntity) -> bool {
+		return m_currentLayerName.empty() || isEffectOfLayer(iEntity, m_currentLayerName);
+	};
 	for (const auto view = registry.view<component::Transform, component::ParticleEmitter>(); const auto handle: view) {
 		const Entity entity{handle, this};
 		auto& emitter = view.get<component::ParticleEmitter>(handle);
-		if (!emitter.m_slot.system || !isEffectivelyVisible(entity, iEditorMode) || !layerAccepts(entity))
+		if (!emitter.m_slot.system || !isEffectivelyVisible(entity, iEditorMode) || !acceptsEffect(entity))
 			continue;
 		renderer::RendererParticles::drawSystem(*emitter.m_slot.system, emitter.settings, static_cast<int32_t>(handle));
 	}
@@ -1395,7 +1413,7 @@ void Scene::renderParticles(const bool iEditorMode) {
 		const Entity entity{handle, this};
 		auto& trail = view.get<component::Trail>(handle);
 		if (!trail.enabled || trail.m_points.size() < 2 || !isEffectivelyVisible(entity, iEditorMode) ||
-			!layerAccepts(entity))
+			!acceptsEffect(entity))
 			continue;
 		trail.m_tables = trail.bakeTables();
 		renderer::RendererParticles::drawTrail(

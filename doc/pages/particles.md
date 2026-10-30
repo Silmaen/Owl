@@ -20,8 +20,9 @@ RendererStack:
     Name: ui
 ```
 
-An emitter or a trail is drawn by the layer its `RendererTag` names (untagged: the first layer of the stack). Owl Nest
-tags a new emitter to the first particle layer.
+An emitter or a trail is drawn by the layer its `RendererTag` names; untagged, by the first particle layer of the stack.
+When an edit leaves particles or trails in a scene whose project stack has no particle layer, Owl Nest appends one at
+the end of the stack. In Edit mode the viewport draws a sparkle at every emitter, which selects it on a click.
 
 ## ParticleEmitter
 

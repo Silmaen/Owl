@@ -42,7 +42,6 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   Visibility: {gameVisible: true}
-  RendererTag: {Name: particles}
   ParticleEmitter:
     maxParticles: 300
     rate: 80

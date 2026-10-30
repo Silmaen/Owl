@@ -476,6 +476,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw a sparkle facing the camera at every particle emitter, pickable, brighter on the selected one.
+	 * @param[in] iScene The scene edited.
+	 */
+	void renderParticleMarkers(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
 	 *  Draw the bones of the skinned mesh of the selected entity and the sockets it owns, pickable as the entity.
 	 * @param[in] iScene The scene edited.
 	 */
@@ -547,7 +554,14 @@ private:
 
 	/**
 	 * @brief
-	 *  Camera or light marker under the cursor, the camera first.
+	 *  Particle emitter whose marker is under the cursor.
+	 * @return The nearest emitter hit, or an invalid entity.
+	 */
+	[[nodiscard]] auto pickParticleEmitter() const -> scene::Entity;
+
+	/**
+	 * @brief
+	 *  Camera, light or particle emitter marker under the cursor, in that order.
 	 * @return The entity picked, or an invalid entity.
 	 */
 	[[nodiscard]] auto pickMarker() const -> scene::Entity;

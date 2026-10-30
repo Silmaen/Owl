@@ -48,6 +48,7 @@
 #include <filesystem>
 #include <format>
 #include <iterator>
+#include <limits>
 #include <numbers>
 #include <optional>
 #include <sstream>
@@ -494,14 +495,6 @@ auto createParticleEmitter(const shared<scene::Scene>& ioScene, const CommandArg
 	entity.getComponent<scene::component::Transform>().transform.translation() =
 			iArgs.getVec3("translation").value_or(math::vec3{0.f, 0.f, 0.f});
 	entity.addComponent<scene::component::ParticleEmitter>().settings = renderer::makeParticlePreset(*preset);
-	// Tagged to the first particle layer of the stack: untagged entities go to the first layer only.
-	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
-	for (size_t index = 1; index < layers.size(); ++index) {
-		if (std::string_view{layers[index]->getTypeKey()} == "RendererParticles") {
-			entity.addComponent<scene::component::RendererTag>().rendererName = layers[index]->getName();
-			break;
-		}
-	}
 	if (parent)
 		ioScene->setParent(entity, *parent);
 	return PreparedCommand{.command = mkUniq<CreateEntityCommand>(entity), .applied = true, .entity = entity.getUUID()};
@@ -861,6 +854,24 @@ auto addRenderLayer(const CommandContext& iContext, const CommandArgs& iArgs)
 	return CommandResult{.entity = core::UUID{0},
 						 .description = std::format("Add the {} layer {} to the project", type, name),
 						 .data = {{"name", name}, {"position", position}}};
+}
+
+// A scene holding particles or trails needs a particle layer: append one to the project stack when it has none.
+void ensureParticleLayer(const CommandContext& iContext) {
+	if (iContext.projectStack == nullptr || !iContext.scene)
+		return;
+	const auto& registry = iContext.scene->registry;
+	if (registry.view<scene::component::ParticleEmitter>().empty() && registry.view<scene::component::Trail>().empty())
+		return;
+	if (std::ranges::any_of(iContext.projectStack->entries, [](const renderer::RendererStackEntry& iEntry) -> bool {
+			return iEntry.typeKey == "RendererParticles";
+		}))
+		return;
+	CommandArgs args;
+	args.set("type", std::string{"RendererParticles"});
+	args.set("position", std::numeric_limits<int64_t>::max());
+	if (const auto added = addRenderLayer(iContext, args); added)
+		OWL_INFO("Render stack: {}, for the particles of the scene.", added->description)
 }
 
 auto saveScene(const CommandContext& iContext, const CommandArgs& iArgs) -> expected<CommandResult, CommandFailure> {
@@ -1528,6 +1539,7 @@ auto CommandRegistry::run(const std::string_view iName, const CommandArgs& iArgs
 		iContext.undo->push(std::move(prepared->command));
 	else
 		iContext.undo->execute(std::move(prepared->command), *iContext.scene);
+	ensureParticleLayer(iContext);
 	return result;
 }
 
