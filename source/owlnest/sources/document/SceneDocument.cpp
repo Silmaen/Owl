@@ -194,9 +194,11 @@ void SceneDocument::onSceneStop() {
 }
 
 void SceneDocument::resetHudValues() {
-	// The HUD scenes are shared: what the game did to their widgets must not outlive the play.
-	if (app::Application::instanced())
+	// The HUD scenes are shared: what the game did to their widgets must not outlive the play, nor its conversations.
+	if (app::Application::instanced()) {
 		app::Application::get().getEngineContext().getHudLibrary().clear();
+		app::Application::get().getEngineContext().getDialogues().clear();
+	}
 }
 
 auto SceneDocument::consumeStepRequest() -> bool {

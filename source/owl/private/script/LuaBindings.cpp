@@ -16,6 +16,7 @@
 #include "core/external/lua.h"
 #include "data/assets/AssetReference.h"
 #include "data/assets/AssetSearchPaths.h"
+#include "data/dialogue/DialogueLibrary.h"
 #include "data/table/DataTableLibrary.h"
 #include "input/ActionFrame.h"
 #include "input/Gamepad.h"
@@ -60,6 +61,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -2790,6 +2792,115 @@ auto luaDataTableFind(lua_State* iState) -> int {
 	return 0;
 }
 
+// A condition or an action of a dialogue: a global function of the script driving the conversation.
+auto callDialogueHook(lua_State* iState, const std::string_view iName) -> bool {
+	const std::string name{iName};
+	lua_getglobal(iState, name.c_str());
+	if (!lua_isfunction(iState, -1)) {
+		lua_pop(iState, 1);
+		OWL_CORE_WARN("Lua: Dialogue function '{}' is not defined by the script.", name)
+		return false;
+	}
+	if (lua_pcall(iState, 0, 1, 0) != LUA_OK) {
+		OWL_CORE_WARN("Lua: Dialogue function '{}' failed: {}", name, lua_tostring(iState, -1))
+		lua_pop(iState, 1);
+		return false;
+	}
+	const bool result = lua_toboolean(iState, -1) != 0;
+	lua_pop(iState, 1);
+	return result;
+}
+
+auto dialogueHooksOf(lua_State* iState) -> data::dialogue::ConversationHooks {
+	return {.condition = [iState](const std::string_view iName) -> bool { return callDialogueHook(iState, iName); },
+			.action = [iState](const std::string_view iName) -> void {
+				std::ignore = callDialogueHook(iState, iName);
+			}};
+}
+
+auto dialoguesOf(lua_State* iState) -> data::dialogue::DialogueLibrary* {
+	auto* context = contextOf(iState);
+	return context != nullptr ? &context->getDialogues() : nullptr;
+}
+
+// A text in the language of the game: the translation of its key, else its own value.
+void pushDialogueText(lua_State* iState, const data::dialogue::DialogueText& iText) {
+	const auto* context = contextOf(iState);
+	std::string_view value = iText.text;
+	if (!iText.key.empty() && context != nullptr) {
+		if (const auto translated = context->translate(iText.key); translated != iText.key || iText.text.empty())
+			value = translated;
+	}
+	lua_pushlstring(iState, value.data(), value.size());
+}
+
+auto luaDialogueStart(lua_State* iState) -> int {
+	const char* path = luaL_checkstring(iState, 1);
+	auto* dialogues = dialoguesOf(iState);
+	const auto id = dialogues != nullptr ? dialogues->start(path, dialogueHooksOf(iState)) : std::nullopt;
+	if (!id)
+		return 0;
+	lua_pushinteger(iState, static_cast<lua_Integer>(*id));
+	return 1;
+}
+
+auto luaDialogueGetLine(lua_State* iState) -> int {
+	const auto id = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	auto* dialogues = dialoguesOf(iState);
+	const auto* conversation = dialogues != nullptr ? dialogues->find(id) : nullptr;
+	if (conversation == nullptr)
+		return 0;
+	const auto& node = *conversation->getCurrent();
+	lua_newtable(iState);
+	lua_pushstring(iState, std::string{data::dialogue::getNodeKindName(node.kind)}.c_str());
+	lua_setfield(iState, -2, "kind");
+	pushDialogueText(iState, node.speaker);
+	lua_setfield(iState, -2, "speaker");
+	pushDialogueText(iState, node.text);
+	lua_setfield(iState, -2, "text");
+	lua_pushstring(iState, node.sound.c_str());
+	lua_setfield(iState, -2, "sound");
+	lua_newtable(iState);
+	lua_Integer index = 1;
+	for (const size_t option: conversation->getOfferedOptions()) {
+		pushDialogueText(iState, node.options[option].text);
+		lua_rawseti(iState, -2, index++);
+	}
+	lua_setfield(iState, -2, "choices");
+	return 1;
+}
+
+auto luaDialogueNext(lua_State* iState) -> int {
+	const auto id = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	auto* dialogues = dialoguesOf(iState);
+	lua_pushboolean(iState, dialogues != nullptr && dialogues->advance(id, dialogueHooksOf(iState)) ? 1 : 0);
+	return 1;
+}
+
+auto luaDialogueChoose(lua_State* iState) -> int {
+	const auto id = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto choice = luaL_checkinteger(iState, 2);
+	auto* dialogues = dialoguesOf(iState);
+	const bool running = dialogues != nullptr && choice >= 1 &&
+						 dialogues->choose(id, static_cast<size_t>(choice - 1), dialogueHooksOf(iState));
+	lua_pushboolean(iState, running ? 1 : 0);
+	return 1;
+}
+
+auto luaDialogueIsRunning(lua_State* iState) -> int {
+	const auto id = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	auto* dialogues = dialoguesOf(iState);
+	lua_pushboolean(iState, dialogues != nullptr && dialogues->find(id) != nullptr ? 1 : 0);
+	return 1;
+}
+
+auto luaDialogueStop(lua_State* iState) -> int {
+	const auto id = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	if (auto* dialogues = dialoguesOf(iState); dialogues != nullptr)
+		dialogues->stop(id);
+	return 0;
+}
+
 using enum LuaType;
 
 OWL_DIAG_PUSH
@@ -3563,6 +3674,23 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "datatable", .name = "find", .function = guarded<luaDataTableFind>,
 		 .description = "Key of the first row of a `.owltable` whose cell in a column equals a value; nothing when none does.",
 		 .params = {{"table", String}, {"column", String}, {"value", Any}}, .returns = {{"key", String}}},
+		{.table = "dialogue", .name = "start", .function = guarded<luaDialogueStart>,
+		 .description = "Start a conversation over a `.owldlg` dialogue and go to its first line; its conditions and actions are global functions of the calling script. Nothing when the dialogue cannot be read or ends at once.",
+		 .params = {{"dialogue", String}}, .returns = {{"conversation", Integer}}},
+		{.table = "dialogue", .name = "get_line", .function = guarded<luaDialogueGetLine>,
+		 .description = "What a conversation shows: `{kind, speaker, text, sound, choices}`, the texts in the language of the game, `choices` the offered answers of a Choice (empty on a Line); nothing once it ended.",
+		 .params = {{"conversation", Integer}}, .returns = {{"line", Table}}},
+		{.table = "dialogue", .name = "next", .function = guarded<luaDialogueNext>,
+		 .description = "Leave the current line for the next one; does nothing on a Choice. False once the conversation ended.",
+		 .params = {{"conversation", Integer}}, .returns = {{"running", Boolean}}},
+		{.table = "dialogue", .name = "choose", .function = guarded<luaDialogueChoose>,
+		 .description = "Pick an offered answer of the current Choice, from 1. False once the conversation ended.",
+		 .params = {{"conversation", Integer}, {"choice", Integer}}, .returns = {{"running", Boolean}}},
+		{.table = "dialogue", .name = "is_running", .function = guarded<luaDialogueIsRunning>,
+		 .description = "Whether a conversation still shows a line.",
+		 .params = {{"conversation", Integer}}, .returns = {{"running", Boolean}}},
+		{.table = "dialogue", .name = "stop", .function = guarded<luaDialogueStop>,
+		 .description = "End a conversation where it is.", .params = {{"conversation", Integer}}, .returns = {}},
 	};
 	// clang-format on
 }
@@ -3663,6 +3791,8 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "spline", .description = "Splines sampled by distance, and the entities following them."},
 			{.name = "datatable",
 			 .description = "Typed records of the `.owltable` data tables, by row key and column."},
+			{.name = "dialogue",
+			 .description = "Conversations over the `.owldlg` dialogues: lines, choices, Lua conditions and actions."},
 			{.name = "path",
 			 .description = "Shortest paths over the graph a tilemap's `navigation` rules describe (roads, tracks), "
 							"searched over several frames."},
@@ -3687,6 +3817,7 @@ auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 			{.file = "lua-api-isometric.md", .title = "Isometric terrain and paths", .tables = {"isometric", "path"}},
 			{.file = "lua-api-animation.md", .title = "Animation and sockets", .tables = {"animator", "socket"}},
 			{.file = "lua-api-data.md", .title = "Splines and data tables", .tables = {"spline", "datatable"}},
+			{.file = "lua-api-dialogue.md", .title = "Dialogues", .tables = {"dialogue"}},
 	};
 	return s_pages;
 }
