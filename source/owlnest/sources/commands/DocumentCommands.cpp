@@ -80,13 +80,13 @@ auto done(const std::filesystem::path& iPath, std::string iDescription) -> Comma
 			.data = {{"path", iPath.generic_string()}}};
 }
 
-// Every command of this file: find the document of `path`, then apply the edit, which reports a no-op.
-using SoundEdit = std::function<expected<std::string, CommandFailure>(SoundCueEditor&, const CommandArgs&)>;
-using LocaleEdit = std::function<expected<std::string, CommandFailure>(LocalisationEditor&, const CommandArgs&)>;
+// Find the document of `path`, then edit it; a function pointer fits std::function's buffer (false NewDeleteLeaks).
+using SoundEdit = auto (*)(SoundCueEditor&, const CommandArgs&) -> expected<std::string, CommandFailure>;
+using LocaleEdit = auto (*)(LocalisationEditor&, const CommandArgs&) -> expected<std::string, CommandFailure>;
 
 auto soundRunner(SoundEdit iEdit) -> CommandSpec::Runner {
-	return [edit = std::move(iEdit)](const CommandContext& iContext,
-									 const CommandArgs& iArgs) -> expected<CommandResult, CommandFailure> {
+	return [edit = iEdit](const CommandContext& iContext,
+						  const CommandArgs& iArgs) -> expected<CommandResult, CommandFailure> {
 		const std::filesystem::path path{iArgs.getText("path")};
 		if (path.extension() != sound::SoundCue::fileExtension())
 			return fail(CommandError::InvalidArgument, "`path` must end with `.owlsound`");
@@ -101,8 +101,8 @@ auto soundRunner(SoundEdit iEdit) -> CommandSpec::Runner {
 }
 
 auto localeRunner(LocaleEdit iEdit) -> CommandSpec::Runner {
-	return [edit = std::move(iEdit)](const CommandContext& iContext,
-									 const CommandArgs& iArgs) -> expected<CommandResult, CommandFailure> {
+	return [edit = iEdit](const CommandContext& iContext,
+						  const CommandArgs& iArgs) -> expected<CommandResult, CommandFailure> {
 		const std::filesystem::path path{iArgs.getText("path")};
 		if (path.filename() != data::localisation::Localisation::fileName)
 			return fail(CommandError::InvalidArgument, "`path` must be a `localisation.yml`");
@@ -249,7 +249,7 @@ void addSoundCommands(CommandRegistry& ioRegistry) {
 						.description = iDescription,
 						.args = std::move(iArgs),
 						.factory = {},
-						.run = soundRunner(std::move(iEdit)),
+						.run = soundRunner(iEdit),
 						.allowedInPlay = true,
 						.needsScene = false});
 	};
@@ -319,7 +319,7 @@ void addLocaleCommands(CommandRegistry& ioRegistry) {
 						.description = iDescription,
 						.args = std::move(iArgs),
 						.factory = {},
-						.run = localeRunner(std::move(iEdit)),
+						.run = localeRunner(iEdit),
 						.allowedInPlay = true,
 						.needsScene = false});
 	};

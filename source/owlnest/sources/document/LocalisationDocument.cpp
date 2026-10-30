@@ -288,8 +288,8 @@ void LocalisationDocument::cancelPreview() {
 void LocalisationDocument::commitPreview(const bool iForce) {
 	if (!m_previewBefore.has_value() || (!iForce && ImGui::IsAnyItemActive()))
 		return;
-	const auto edited = std::move(m_localisation);
-	cancelPreview();
+	const auto edited = std::exchange(m_localisation, std::move(*m_previewBefore));
+	m_previewBefore.reset();
 	for (const auto& language: edited.languages) {
 		if (const auto* before = m_localisation.findLanguage(language.code); before != nullptr && *before != language)
 			std::ignore = sendLanguageCommand(language);
