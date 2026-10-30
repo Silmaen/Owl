@@ -105,6 +105,9 @@ size and the tilesets that use the image; pick one to draw its tile grid with th
 A read-only tab, opened by **Open** in the context menu of a mesh or the **Mesh** field of the inspector: drag to
 orbit, wheel to zoom, double-click to reset; **Mesh View** shows the material or plain grey, **Place in Scene** adds
 the mesh to the active scene. The **Mesh** panel gives vertex and triangle counts, bounds, base colour and texture.
+A skinned mesh adds its **Skeleton** tree (select a bone to highlight it in the preview, drawn with the sockets) and an
+**Animation** section: pick a clip, play it, scrub it on the timeline. A mesh with levels of detail lists them in
+**Levels of detail**, with their triangle counts, and draws the one picked ([Skinned meshes](skinned_meshes.md)).
 
 ## Fonts
 

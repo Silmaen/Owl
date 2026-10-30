@@ -42,7 +42,7 @@ ignores it.
 | File or folder | **Open**, **Rename**, **Delete**                                              |
 | Texture        | **Import Settings** (selects it in the Import panel), **Cook**                |
 | Folder         | **Cook Folder**                                                               |
-| Mesh           | **Open** (the mesh viewer), **Place in Scene**                                |
+| Mesh           | **Open** (the mesh viewer), **Place in Scene**, **Import Settings** (LODs)    |
 | Macro          | **Edit as Text**                                                              |
 
 **New Material** creates `New Material.owlmat` in the folder shown and opens it in the material editor.

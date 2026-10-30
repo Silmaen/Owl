@@ -751,7 +751,8 @@ void ContentBrowser::renderContextMenu() {
 			std::ranges::contains(m_selectedPath.parent_path(), std::filesystem::path{"editor"}) &&
 			gui::widgets::menuItem({.glyph = gui::icon::play, .label = "Run as Editor Script"}))
 			m_editorScriptRunCallback(m_selectedPath);
-		if (!isDir && data::assets::importerOf(m_selectedPath) == data::assets::Importer::Texture &&
+		if (const auto importer = isDir ? std::nullopt : data::assets::importerOf(m_selectedPath);
+			(importer == data::assets::Importer::Texture || importer == data::assets::Importer::Mesh) &&
 			m_importSettingsCallback &&
 			gui::widgets::menuItem({.glyph = gui::icon::slidersHorizontal, .label = "Import Settings"}))
 			m_importSettingsCallback(m_selectedPath);

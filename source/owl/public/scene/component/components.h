@@ -9,6 +9,7 @@
 #pragma once
 
 #include "AnimatedSpriteRenderer.h"
+#include "Animator.h"
 #include "BackgroundTexture.h"
 #include "Camera.h"
 #include "Canvas.h"
@@ -28,6 +29,7 @@
 #include "LightFlicker.h"
 #include "LuaScript.h"
 #include "MeshRenderer.h"
+#include "MeshSockets.h"
 #include "NativeScript.h"
 #include "Oscillator.h"
 #include "Patrol.h"
@@ -90,16 +92,18 @@ concept isComponent =
 		std::is_same_v<Component, DayNightCycle> || std::is_same_v<Component, ReflectionProbe> ||
 		std::is_same_v<Component, FirstPersonController> || std::is_same_v<Component, Environment> ||
 		std::is_same_v<Component, LuaScript> || std::is_same_v<Component, MeshRenderer> ||
-		std::is_same_v<Component, NativeScript> || std::is_same_v<Component, PhysicBody> ||
-		std::is_same_v<Component, Player> || std::is_same_v<Component, PrefabLink> ||
-		std::is_same_v<Component, RaycastDoor> || std::is_same_v<Component, RaycastPushWall> ||
-		std::is_same_v<Component, RendererTag> || std::is_same_v<Component, SoundListener> ||
-		std::is_same_v<Component, SoundSource> || std::is_same_v<Component, SpriteRenderer> ||
-		std::is_same_v<Component, Tag> || std::is_same_v<Component, Text> || std::is_same_v<Component, Tilemap> ||
-		std::is_same_v<Component, Transform> || std::is_same_v<Component, Trigger> ||
-		std::is_same_v<Component, UiButton> || std::is_same_v<Component, UiImage> ||
-		std::is_same_v<Component, UiPanel> || std::is_same_v<Component, UiProgressBar> ||
-		std::is_same_v<Component, UiRect> || std::is_same_v<Component, UiSlider> || std::is_same_v<Component, UiText> ||
+		std::is_same_v<Component, Animator> || std::is_same_v<Component, MeshSockets> ||
+		std::is_same_v<Component, SocketAttachment> || std::is_same_v<Component, NativeScript> ||
+		std::is_same_v<Component, PhysicBody> || std::is_same_v<Component, Player> ||
+		std::is_same_v<Component, PrefabLink> || std::is_same_v<Component, RaycastDoor> ||
+		std::is_same_v<Component, RaycastPushWall> || std::is_same_v<Component, RendererTag> ||
+		std::is_same_v<Component, SoundListener> || std::is_same_v<Component, SoundSource> ||
+		std::is_same_v<Component, SpriteRenderer> || std::is_same_v<Component, Tag> ||
+		std::is_same_v<Component, Text> || std::is_same_v<Component, Tilemap> || std::is_same_v<Component, Transform> ||
+		std::is_same_v<Component, Trigger> || std::is_same_v<Component, UiButton> ||
+		std::is_same_v<Component, UiImage> || std::is_same_v<Component, UiPanel> ||
+		std::is_same_v<Component, UiProgressBar> || std::is_same_v<Component, UiRect> ||
+		std::is_same_v<Component, UiSlider> || std::is_same_v<Component, UiText> ||
 		std::is_same_v<Component, UiLayout> || std::is_same_v<Component, UiToolCursor> ||
 		std::is_same_v<Component, UiFocus> || std::is_same_v<Component, UiTooltip> ||
 		std::is_same_v<Component, UiWindow> || std::is_same_v<Component, UiScrollView> ||
@@ -146,12 +150,13 @@ concept isDeserializableComponent =
  */
 using CopiableComponents =
 		std::tuple<Transform, WorldPosition, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer,
-				   MeshRenderer, Light, Light2D, Environment, Text, Tilemap, IsometricObject, PhysicBody, Player,
-				   Trigger, EntityLink, FlyCamera, BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener,
-				   LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer,
-				   LightFlicker, Oscillator, Patrol, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle,
-				   ReflectionProbe, FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider,
-				   UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
+				   MeshRenderer, Animator, MeshSockets, SocketAttachment, Light, Light2D, Environment, Text, Tilemap,
+				   IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, Visibility,
+				   Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall,
+				   RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, Oscillator, Patrol, Drift, FollowTarget,
+				   RenderTarget, ProceduralSky, DayNightCycle, ReflectionProbe, FirstPersonController, UiButton,
+				   UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip,
+				   UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
  * @brief
@@ -160,13 +165,13 @@ using CopiableComponents =
  */
 using SerializableComponents =
 		std::tuple<Tag, Transform, WorldPosition, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer,
-				   CircleRenderer, MeshRenderer, Light, Light2D, Environment, Text, Tilemap, IsometricObject,
-				   PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, Visibility, Hierarchy,
-				   SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag,
-				   VoxelWorld, VoxelPlayer, LightFlicker, Oscillator, Patrol, Drift, FollowTarget, RenderTarget,
-				   ProceduralSky, DayNightCycle, ReflectionProbe, FirstPersonController, UiButton, UiImage, UiPanel,
-				   UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus,
-				   UiScrollView, UiList>;
+				   CircleRenderer, MeshRenderer, Animator, MeshSockets, SocketAttachment, Light, Light2D, Environment,
+				   Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera,
+				   BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink,
+				   RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, Oscillator, Patrol,
+				   Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle, ReflectionProbe,
+				   FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout,
+				   UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
  * @brief
@@ -175,11 +180,11 @@ using SerializableComponents =
  */
 using OptionalComponents =
 		std::tuple<WorldPosition, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, MeshRenderer,
-				   Light, Light2D, Environment, Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink,
-				   FlyCamera, BackgroundTexture, SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor,
-				   RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, Oscillator, Patrol, Drift,
-				   FollowTarget, RenderTarget, ProceduralSky, DayNightCycle, ReflectionProbe, FirstPersonController,
-				   UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor,
-				   UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
+				   Animator, MeshSockets, SocketAttachment, Light, Light2D, Environment, Text, Tilemap, IsometricObject,
+				   PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, SoundSource, SoundListener,
+				   LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer,
+				   LightFlicker, Oscillator, Patrol, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle,
+				   ReflectionProbe, FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider,
+				   UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
 
 }// namespace owl::scene::component

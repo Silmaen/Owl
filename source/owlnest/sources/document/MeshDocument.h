@@ -11,13 +11,18 @@
 #include "Document.h"
 #include "viewer/MeshPreview.h"
 
+#include <data/animation/Skeleton.h>
+#include <math/matrices.h>
 #include <math/vectors.h>
 #include <renderer/MeshCache.h>
 #include <renderer/gpu/Framebuffer.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
+#include <vector>
 
 namespace owl::nest {
 
@@ -222,6 +227,90 @@ public:
 
 	/**
 	 * @brief
+	 *  Select the clip played by the preview.
+	 * @param[in] iClip Index of the clip in the mesh, nothing for the bind pose.
+	 */
+	void setClip(std::optional<size_t> iClip);
+
+	/**
+	 * @brief
+	 *  Get the clip played by the preview.
+	 * @return The index of the clip, nothing for the bind pose.
+	 */
+	[[nodiscard]] auto getClip() const -> std::optional<size_t> { return m_clip; }
+
+	/**
+	 * @brief
+	 *  Set the time of the clip in the preview.
+	 * @param[in] iSeconds The time, wrapped into the clip.
+	 */
+	void setClipTime(float iSeconds);
+
+	/**
+	 * @brief
+	 *  Get the time of the clip in the preview.
+	 * @return The time, in seconds.
+	 */
+	[[nodiscard]] auto getClipTime() const -> float { return m_clipTime; }
+
+	/**
+	 * @brief
+	 *  Play or pause the clip of the preview.
+	 * @param[in] iPlaying True to play.
+	 */
+	void setPlaying(const bool iPlaying) { m_playing = iPlaying; }
+
+	/**
+	 * @brief
+	 *  Check if the clip of the preview plays.
+	 * @return True while it plays.
+	 */
+	[[nodiscard]] auto isPlaying() const -> bool { return m_playing; }
+
+	/**
+	 * @brief
+	 *  Select the level of detail drawn by the preview.
+	 * @param[in] iLod The level (0 is the full mesh), clamped to the levels of the mesh.
+	 */
+	void setLod(size_t iLod);
+
+	/**
+	 * @brief
+	 *  Get the level of detail drawn by the preview.
+	 * @return The level.
+	 */
+	[[nodiscard]] auto getLod() const -> size_t { return m_lod; }
+
+	/**
+	 * @brief
+	 *  Select a bone, highlighted in the preview.
+	 * @param[in] iBone Index of the bone, nothing for none.
+	 */
+	void setSelectedBone(const std::optional<size_t> iBone) { m_selectedBone = iBone; }
+
+	/**
+	 * @brief
+	 *  Get the selected bone.
+	 * @return Its index, nothing for none.
+	 */
+	[[nodiscard]] auto getSelectedBone() const -> std::optional<size_t> { return m_selectedBone; }
+
+	/**
+	 * @brief
+	 *  Get the model-space matrix of every bone of the pose shown.
+	 * @return The matrices, empty for a static mesh.
+	 */
+	[[nodiscard]] auto getBoneMatrices() const -> const std::vector<math::mat4>& { return m_boneMatrices; }
+
+	/**
+	 * @brief
+	 *  Advance the clip and compute the pose of the preview.
+	 * @param[in] iSeconds Elapsed time (the clip advances while it plays).
+	 */
+	void updatePose(float iSeconds);
+
+	/**
+	 * @brief
 	 *  Check whether the document tab is open.
 	 * @return True while open.
 	 */
@@ -235,6 +324,26 @@ public:
 	void setOpen(const bool iOpen) { m_pOpen = iOpen; }
 
 private:
+	/**
+	 * @brief
+	 *  Draw the bones and sockets of the mesh over the preview image.
+	 * @param[in] iMin Top-left corner of the image, in screen pixels.
+	 * @param[in] iSize Size of the image, in pixels.
+	 */
+	void drawSkeletonOverlay(const math::vec2& iMin, const math::vec2& iSize) const;
+
+	/**
+	 * @brief
+	 *  Draw the skeleton tree, the sockets and the clips in the hierarchy panel.
+	 */
+	void renderSkeletonSection();
+
+	/**
+	 * @brief
+	 *  Draw the clip timeline and the level-of-detail pick in the properties panel.
+	 */
+	void renderAnimationSection();
+
 	/// Path of the mesh file.
 	std::filesystem::path m_path;
 	/// The mesh, owned by the viewer (not shared with the scenes).
@@ -255,6 +364,26 @@ private:
 	bool m_wasFocused{false};
 	/// Placeholder: `Document::undoManager()` returns a `SceneUndoManager&`.
 	SceneUndoManager m_emptySceneUndo;
+	/// Clip played by the preview, nothing for the bind pose.
+	std::optional<size_t> m_clip;
+	/// Time in the clip, in seconds.
+	float m_clipTime{0.f};
+	/// Whether the clip plays.
+	bool m_playing{false};
+	/// Level of detail drawn.
+	size_t m_lod{0};
+	/// Whether the bones and sockets are drawn over the preview.
+	bool m_showSkeleton{true};
+	/// Bone highlighted in the preview.
+	std::optional<size_t> m_selectedBone;
+	/// Pose shown.
+	data::animation::Pose m_pose;
+	/// Model-space matrix of every bone of the pose shown.
+	std::vector<math::mat4> m_boneMatrices;
+	/// Skin matrices of the pose shown.
+	std::vector<math::mat4> m_skinMatrices;
+	/// First frame shown by the clip timeline.
+	int32_t m_firstVisibleFrame{0};
 };
 
 }// namespace owl::nest

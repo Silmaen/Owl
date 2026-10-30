@@ -101,7 +101,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 62u);
+	EXPECT_EQ(m_registry.getCommands().size(), 65u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -144,6 +144,57 @@ TEST_F(CommandRegistryTest, DuplicateReparentAndRename) {
 	EXPECT_EQ(b.getName(), "Renamed");
 	m_undo.undo(*m_scene);
 	EXPECT_EQ(m_scene->findEntityByUUID(b.getUUID()).getName(), "B");
+}
+
+TEST_F(CommandRegistryTest, AttachToASocketThenDetachAndUndo) {
+	auto owner = m_scene->createEntity("Hero");
+	auto& sockets = owner.addComponent<scene::component::MeshSockets>();
+	sockets.sockets.push_back({.name = "hand", .bone = "", .offset = {}});
+	sockets.sockets.back().offset.translation() = {0.5f, 1.f, 0.f};
+	auto item = m_scene->createEntity("Lantern");
+	item.getComponent<scene::component::Transform>().transform.translation() = {4.f, 0.f, 0.f};
+	EXPECT_FALSE(run("entity.attach_socket",
+					 {{"entity", idOf(item)}, {"owner", idOf(owner)}, {"socket", std::string{"foot"}}}));
+	EXPECT_FALSE(run("entity.attach_socket",
+					 {{"entity", idOf(owner)}, {"owner", idOf(owner)}, {"socket", std::string{"hand"}}}));
+	EXPECT_FALSE(run("entity.detach_socket", {{"entity", idOf(item)}}));
+	ASSERT_TRUE(run("entity.attach_socket",
+					{{"entity", idOf(item)}, {"owner", idOf(owner)}, {"socket", std::string{"hand"}}}));
+	EXPECT_EQ(item.getComponent<scene::component::Hierarchy>().parentId, owner.getUUID());
+	EXPECT_EQ(item.getComponent<scene::component::SocketAttachment>().socket, "hand");
+	EXPECT_FLOAT_EQ(item.getComponent<scene::component::Transform>().transform.translation().y(), 1.f);
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(item.getComponent<scene::component::Hierarchy>().parentId, core::UUID{0});
+	EXPECT_FALSE(item.hasComponent<scene::component::SocketAttachment>());
+	EXPECT_FLOAT_EQ(item.getComponent<scene::component::Transform>().transform.translation().x(), 4.f);
+	m_undo.redo(*m_scene);
+	ASSERT_TRUE(run("entity.detach_socket", {{"entity", idOf(item)}}));
+	EXPECT_FALSE(item.hasComponent<scene::component::SocketAttachment>());
+	EXPECT_EQ(item.getComponent<scene::component::Hierarchy>().parentId, owner.getUUID());
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(item.getComponent<scene::component::SocketAttachment>().socket, "hand");
+}
+
+TEST_F(CommandRegistryTest, SetSocketMovesItAndUndoes) {
+	auto owner = m_scene->createEntity("Hero");
+	owner.addComponent<scene::component::MeshSockets>().sockets.push_back({.name = "hand", .bone = "", .offset = {}});
+	const auto socketOf = [&owner]() -> const scene::component::MeshSockets::Socket& {
+		return owner.getComponent<scene::component::MeshSockets>().sockets.front();
+	};
+	EXPECT_FALSE(run("entity.set_socket", {{"entity", idOf(owner)}, {"socket", std::string{"foot"}}}));
+	ASSERT_TRUE(run("entity.set_socket", {{"entity", idOf(owner)},
+										  {"socket", std::string{"hand"}},
+										  {"translation", math::vec3{0.f, 1.5f, 0.f}},
+										  {"rotation", math::vec3{0.f, 0.5f, 0.f}},
+										  {"bone", std::string{"hand_r"}}}));
+	EXPECT_FLOAT_EQ(socketOf().offset.translation().y(), 1.5f);
+	EXPECT_FLOAT_EQ(socketOf().offset.rotation().y(), 0.5f);
+	EXPECT_EQ(socketOf().bone, "hand_r");
+	m_undo.undo(*m_scene);
+	EXPECT_FLOAT_EQ(socketOf().offset.translation().y(), 0.f);
+	EXPECT_TRUE(socketOf().bone.empty());
+	m_undo.redo(*m_scene);
+	EXPECT_FLOAT_EQ(socketOf().offset.translation().y(), 1.5f);
 }
 
 TEST_F(CommandRegistryTest, SetTransformAndComponents) {
@@ -244,7 +295,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 62u);
+	EXPECT_EQ(m_registry.getCommands().size(), 65u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {

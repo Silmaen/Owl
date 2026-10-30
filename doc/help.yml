@@ -28,6 +28,7 @@ Groups:
     pages:
       - doc/pages/guide_game_maker.md
       - doc/pages/scene.md
+      - doc/pages/skinned_meshes.md
       - doc/pages/event_input.md
       - doc/pages/physics.md
       - doc/pages/sound.md
@@ -50,6 +51,7 @@ Groups:
       - doc/pages/lua-api-locale.md
       - doc/pages/lua-api-raycast.md
       - doc/pages/lua-api-isometric.md
+      - doc/pages/lua-api-animation.md
   - title: Engine for C++ developers
     pages:
       - doc/pages/guide_engine_developer.md

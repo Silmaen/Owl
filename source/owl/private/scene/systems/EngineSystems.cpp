@@ -163,6 +163,13 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.physics", SystemPhase::Physics, &updatePhysics, &tickPhysics);
 	add("owl.drift", SystemPhase::PostPhysics, &updateDrifts);
 	add("owl.follow_target", SystemPhase::PostPhysics, &updateFollowTargets);
+	add("owl.animation", SystemPhase::PostPhysics, [](Scene& ioScene, const SystemContext& iContext) -> void {
+		ioScene.updateAnimators(iContext.timeStep.getSeconds(), false);
+	});
+	add("owl.sockets", SystemPhase::PostPhysics,
+		[](Scene& ioScene, [[maybe_unused]] const SystemContext& iContext) -> void {
+			ioScene.updateSocketAttachments();
+		});
 	add("owl.day_night", SystemPhase::PostPhysics, &updateDayNightCycles);
 	add("owl.light_flicker", SystemPhase::PostPhysics, &updateLightFlickers);
 	add("owl.entity_links", SystemPhase::PostPhysics, &updateEntityLinks);

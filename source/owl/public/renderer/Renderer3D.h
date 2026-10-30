@@ -52,6 +52,19 @@ struct Mesh3DVertex {
 
 /**
  * @brief
+ *  One vertex of a skinned mesh: a `Mesh3DVertex` and the joints moving it (`skinned3d.slang`, 88 bytes).
+ */
+struct SkinnedMesh3DVertex {
+	/// The vertex in bind space.
+	Mesh3DVertex vertex;
+	/// Bone indices of up to four joints, into the palette of the draw.
+	std::array<int32_t, 4> joints{0, 0, 0, 0};
+	/// Weight of each joint (all zero keeps the bind-space vertex).
+	math::vec4 weights{0.f, 0.f, 0.f, 0.f};
+};
+
+/**
+ * @brief
  *  A light as the 3D shaders read it (one element of the light storage buffer, std430).
  */
 struct GpuLight {
@@ -468,6 +481,35 @@ public:
 	 * @return The texture, null before `init`.
 	 */
 	[[nodiscard]] static auto getWhiteTexture() -> shared<gpu::Texture2D>;
+
+	/**
+	 * @brief
+	 *  Upload a skinned mesh to the GPU (`skinned3d` shader) and return a handle for `drawSkinnedMesh`.
+	 * @param[in] iVertices The vertices with their joints.
+	 * @param[in] iIndices Triangle-list indices into `iVertices`.
+	 * @param[in] iState Fixed-function state of the draw.
+	 * @return A handle to the uploaded mesh.
+	 */
+	[[nodiscard]] static auto createSkinnedMesh(std::span<const SkinnedMesh3DVertex> iVertices,
+												std::span<const uint32_t> iIndices,
+												const gpu::PipelineState& iState = opaqueMeshState) -> MeshHandle;
+
+	/**
+	 * @brief
+	 *  Draw a skinned mesh with one material, its vertices moved by a palette of skin matrices.
+	 * @param[in] iMesh Handle from `createSkinnedMesh`.
+	 * @param[in] iModel The model (object-to-world) matrix.
+	 * @param[in] iSkin Storage buffer of skin matrices (one `math::mat4` each).
+	 * @param[in] iFirstMatrix First matrix of the palette of this draw in `iSkin`.
+	 * @param[in] iTextures Textures of the draw without a material (slot 1 onward).
+	 * @param[in] iParams Tint, entity id and material of the draw.
+	 */
+	static void drawSkinnedMesh(const MeshHandle& iMesh, const math::mat4& iModel,
+								const shared<gpu::StorageBuffer>& iSkin, uint32_t iFirstMatrix,
+								std::span<const shared<gpu::Texture2D>> iTextures, const MeshDrawParams& iParams);
+
+	/// Storage binding of the skin palette, shared with the instance list (a skinned draw is never instanced).
+	static constexpr uint32_t g_skinBinding = 5;
 
 	/**
 	 * @brief

@@ -342,6 +342,14 @@ INSTANTIATE_TEST_SUITE_P(Mesh, RenderImage, testing::Values(RenderCase{"mesh", "
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
+// Skinned meshes of the mesh layer: an arm in its bind pose, the same arm held bent by its `Animator`, and a cube snapped
+// on the socket at the tip of the bent arm.
+INSTANTIATE_TEST_SUITE_P(Skinned, RenderImage,
+						 testing::Values(RenderCase{"skinned", "vulkan"}, RenderCase{"skinned", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
+
 // What a first-person walker aims at is outlined: in full where it shows, dimmed behind the crate in front of it.
 INSTANTIATE_TEST_SUITE_P(Outline, RenderImage,
 						 testing::Values(RenderCase{"outline", "vulkan"}, RenderCase{"outline", "opengl"}),

@@ -24,6 +24,7 @@ what is planned; what exists is in the guides ([contributors](../guide_contribut
 | [Simulation and networking](simulation-networking.md) | Deterministic simulation and networking                    |
 | [Modding and platforms](modding-platforms.md)         | Modding and new platforms                                  |
 | [Content pipeline](content-pipeline.md)               | Assets, animation, effects                                 |
+| [Skeletal animation](skeletal-animation.md)           | Skinning, state machines, mesh LODs and sockets            |
 | [PCG graphs](pcg-graphs.md)                           | Procedural generation graphs                               |
 | [HUD system](hud-system.md)                           | The HUD and its text                                       |
 | [Game export](game-export.md)                         | Exporting a game from Owl Nest                             |
@@ -62,6 +63,7 @@ what is planned; what exists is in the guides ([contributors](../guide_contribut
 <!-- subpage: ongoing-quality.md -->
 <!-- subpage: owl-rhi.md -->
 <!-- subpage: pcg-graphs.md -->
+<!-- subpage: skeletal-animation.md -->
 <!-- subpage: physics-api.md -->
 <!-- subpage: sample-games.md -->
 <!-- subpage: simulation-networking.md -->

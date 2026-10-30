@@ -476,6 +476,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the bones of the skinned mesh of the selected entity and the sockets it owns, pickable as the entity.
+	 * @param[in] iScene The scene edited.
+	 */
+	void renderSkeletonMarkers(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
 	 *  Draw the `Light2D` markers: a disc for an ambient light, a bulb for a point or spot one; selected, its radius
 	 *  circle or its cone in the sprite plane.
 	 * @param[in] iScene The scene.
@@ -515,6 +522,21 @@ private:
 	 * @return True when the waypoint gizmo is shown (the entity gizmo is not).
 	 */
 	auto renderWaypointGizmo() -> bool;
+
+	/**
+	 * @brief
+	 *  Socket of the selected entity whose marker is under the cursor.
+	 * @return The socket name, nothing when the click misses every socket.
+	 */
+	[[nodiscard]] auto pickSocket() const -> std::optional<std::string>;
+
+	/**
+	 * @brief
+	 *  Move or turn the selected socket of the `MeshSockets` of the selected entity with the gizmo, relative to its
+	 *  bone; the gesture previews live and is recorded as one `entity.set_socket` command on release.
+	 * @return True when the socket gizmo is shown (the entity gizmo is not).
+	 */
+	auto renderSocketGizmo() -> bool;
 
 	/**
 	 * @brief
@@ -809,6 +831,10 @@ private:
 	std::vector<math::vec3> m_patrolBefore;
 	/// Whether the waypoint gizmo was being used last frame.
 	bool m_patrolWasUsing = false;
+	/// Offset of the selected socket when its drag began.
+	std::optional<math::Transform> m_socketBefore;
+	/// Whether the socket gizmo was being used last frame.
+	bool m_socketWasUsing = false;
 	/// Message shown for a moment when Play or Pause starts.
 	PlayBanner m_playBanner;
 	/// Keeps the clicks on the overlay controls away from the game.

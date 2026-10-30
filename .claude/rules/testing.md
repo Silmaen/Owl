@@ -135,5 +135,5 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
   the whole fixture), and code reaching a private backend header sits under `#if OWL_WITH_RENDER`.
   `linux-clang-minimal` (every module off) must pass.
 - Tests link against both `OwlEngine` and `OwlEnginePrivate` (access to private headers)
-- Timeout per test binary: `OWL_TEST_TIMEOUT`, 600 s (1800 s on the sanitizer presets, 3600 s on `linux-cross-arm64`; `script_tests` 300 s): a hang
+- Timeout per test binary: `OWL_TEST_TIMEOUT`, 600 s (1800 s on the sanitizer presets, 3600 s on `linux-cross-arm64`; `script_tests` 300 s, `export_tests` at least 1200 s): a hang
   costs minutes, not an hour. The slowest binary takes ~190 s (GCC Debug `scene_tests`).

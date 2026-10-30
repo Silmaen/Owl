@@ -13,7 +13,10 @@
 #include <renderer/MeshCache.h>
 #include <renderer/gpu/Framebuffer.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <optional>
+#include <span>
 
 namespace owl::nest::viewer {
 
@@ -47,20 +50,44 @@ struct MeshOrbit {
 
 /**
  * @brief
+ *  What a mesh preview draws besides the full mesh at rest.
+ */
+struct MeshPreviewOptions {
+	/// Level of detail drawn (0 is the full mesh).
+	size_t lod = 0;
+	/// Skin matrices of the pose drawn (a skinned mesh); empty draws the bind pose.
+	std::span<const math::mat4> skin;
+};
+
+/**
+ * @brief
  *  Render a mesh alone into a framebuffer (cleared first), lit from the side of the viewer.
  * @param[in,out] ioTarget The framebuffer: colour, entity id and depth attachments.
  * @param[in,out] ioMesh The mesh (its GPU mesh is built on first use).
  * @param[in] iOrbit The orbit of the camera.
  * @param[in] iShading How the surface is coloured.
+ * @param[in] iOptions The level of detail and the pose drawn.
  */
 void renderMeshPreview(renderer::gpu::Framebuffer& ioTarget, renderer::MeshResource& ioMesh, const MeshOrbit& iOrbit,
-					   MeshShading iShading);
+					   MeshShading iShading, const MeshPreviewOptions& iOptions = {});
 
 /// Shape a material preview is drawn on.
 enum struct PreviewShape : uint8_t {
 	Sphere,///< A unit sphere.
 	Cube,///< A cube.
 };
+
+/**
+ * @brief
+ *  Project a point of a mesh preview onto its canvas.
+ * @param[in] iViewProjection View-projection of the preview camera (`makeMeshPreviewCamera`).
+ * @param[in] iPoint The point, in mesh space.
+ * @param[in] iCanvasSize Size of the canvas, in pixels.
+ * @param[in] iVulkanClip True when the projection flips Y (Vulkan).
+ * @return The point in canvas pixels from the top-left corner, nothing behind the camera.
+ */
+[[nodiscard]] auto projectToCanvas(const math::mat4& iViewProjection, const math::vec3& iPoint,
+								   const math::vec2& iCanvasSize, bool iVulkanClip) -> std::optional<math::vec2>;
 
 /**
  * @brief

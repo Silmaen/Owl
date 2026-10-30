@@ -111,14 +111,14 @@ flowchart LR
     T -->|no| U2["update: Physics,<br/>PostPhysics, Late"] --> R["world transforms,<br/>render"]
 ```
 
-| Phase         | Engine systems                                                                                                    | Contract                                  |
-|---------------|-------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
-| `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)                                           | May move, create or destroy entities      |
-| `PrePhysics`  | `owl.oscillators`, `owl.patrols`, `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input` | Gameplay controllers before the step      |
-| `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                                                        | Owns the physics step                     |
-| `PostPhysics` | `owl.drift`, `owl.light_flicker`, `owl.entity_links`, `owl.triggers`, `owl.floating_origin`                       | Last phase allowed to change the world    |
-| `Late`        | `owl.navigation`, `owl.sound`, `owl.sprite_animation`                                                             | Reads the settled world (caches armed)    |
-| `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                                                               | Replaces every other phase once game over |
+| Phase         | Engine systems                                                                                                              | Contract                                  |
+|---------------|-----------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)                                                     | May move, create or destroy entities      |
+| `PrePhysics`  | `owl.oscillators`, `owl.patrols`, `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input`           | Gameplay controllers before the step      |
+| `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                                                                  | Owns the physics step                     |
+| `PostPhysics` | `owl.drift`, `owl.animation`, `owl.sockets`, `owl.light_flicker`, `owl.entity_links`, `owl.triggers`, `owl.floating_origin` | Last phase allowed to change the world    |
+| `Late`        | `owl.navigation`, `owl.sound`, `owl.sprite_animation`                                                                       | Reads the settled world (caches armed)    |
+| `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                                                                         | Replaces every other phase once game over |
 
 `owl.scripts` calls `on_update` in its `update` and `on_tick` in its `tick`; `owl.physics` steps the world in its
 `tick`. `Scene::getInputFrame()` gives the input of the running step (the tick frame in a `tick`, the frame one in an
@@ -297,7 +297,36 @@ YAML key: `CircleRenderer`
 YAML key: `MeshRenderer`. Drawn in 3D by a `RendererMesh` layer of the render stack; the file is loaded once per
 engine context and shared by every entity drawing it ([Renderer > Static meshes](renderer.md#renderer-meshes)); each
 slot's material is shared through the `MaterialLibrary` ([Renderer > Materials](renderer.md#renderer-materials)). Lua:
-`entity.set_mesh` / `get_mesh`, `entity.set_tint` / `get_tint`, `entity.set_material` / `get_material`.
+`entity.set_mesh` / `get_mesh`, `entity.set_tint` / `get_tint`, `entity.set_material` / `get_material`. A skinned mesh
+is drawn in the pose of the `Animator` of the entity (bind pose without one), and a mesh with levels of detail draws the
+level picked by its screen size ([Skinned meshes](skinned_meshes.md)).
+
+#### Animator
+
+| Field         | Type           | Default | Description                                                                                         |
+|---------------|----------------|---------|-----------------------------------------------------------------------------------------------------|
+| `playing`     | `bool`         | `true`  | Whether the state machine advances; off holds the pose                                              |
+| `speed`       | `float`        | `1`     | Time scale of the machine                                                                           |
+| `preview`     | `bool`         | `false` | Plays in Edit mode too (Owl Nest); written only when set                                            |
+| `entry`       | string         | empty   | State entered first; empty for the first state                                                      |
+| `parameters`  | list           | empty   | `name`, `type` (`Float`, `Bool`, `Trigger`) and default `value`                                     |
+| `states`      | list           | empty   | `name`, `clip` (a clip of the mesh file, empty for the rest pose), `speed`, `loop`                  |
+| `transitions` | list           | empty   | `from` (`*` for any state), `to`, `duration` (cross-fade), `exitTime` (-1 none), `conditions`       |
+
+YAML key: `Animator`, system `owl.animation` (`PostPhysics`). Plays the clips of the skinned mesh of the
+`MeshRenderer` of the entity: the first transition whose conditions all hold (`Greater` / `Less` than a threshold,
+`IsTrue` / `IsFalse`; a fired trigger is cleared by the transition using it) cross-fades to its target; a transition
+without condition nor exit time leaves at the end of the clip. Lua: the `animator` table
+([Lua API: Animation and sockets](lua-api-animation.md)); guide: [Skinned meshes](skinned_meshes.md).
+
+#### MeshSockets and SocketAttachment
+
+`MeshSockets` lists named attachment points of the entity: `name`, `bone` (empty for the entity origin) and an offset
+`translation`, `rotation`, `scale`; it adds to the `socket_*` nodes of the mesh file and hides one of the same name.
+`SocketAttachment` (`socket`: a socket name) snaps the entity on that socket of its parent: system `owl.sockets`
+(`PostPhysics`, after `owl.animation`) sets its local transform to the socket every frame, so a socket bound to a bone
+carries it with the animation. `Scene::attachToSocket` parents the entity and adds the attachment (the hierarchy
+changes in place, nothing is reloaded); `Scene::detachFromSocket` removes it. Lua: the `socket` table.
 
 #### Light {#light-component}
 

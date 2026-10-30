@@ -11,10 +11,12 @@
 #include "CommandRegistry.h"
 
 #include <app/Application.h>
+#include <app/EngineContext.h>
 #include <data/assets/AssetRegistry.h>
 #include <data/assets/cook/CookCache.h>
 #include <platform/AtomicFile.h>
 #include <platform/FileUtils.h>
+#include <renderer/MeshCache.h>
 #include <renderer/Renderer.h>
 
 #include <algorithm>
@@ -97,21 +99,31 @@ auto setImportSettings(const shared<scene::Scene>& /*ioScene*/, const CommandArg
 	std::vector<AssetMeta> before;
 	std::vector<AssetMeta> after;
 	for (const auto& entry: entriesOf(*path)) {
-		if (entry.meta.importer != Importer::Texture)
+		if (entry.meta.importer != Importer::Texture && entry.meta.importer != Importer::Mesh)
 			continue;
 		auto changed = entry.meta;
-		changed.texture.nearest = iArgs.getBool("nearest", changed.texture.nearest);
-		changed.texture.mips = iArgs.getBool("mips", changed.texture.mips);
-		if (iArgs.has("compression"))
-			changed.texture.compression = compressionOf(iArgs.getText("compression"));
+		if (entry.meta.importer == Importer::Texture) {
+			changed.texture.nearest = iArgs.getBool("nearest", changed.texture.nearest);
+			changed.texture.mips = iArgs.getBool("mips", changed.texture.mips);
+			if (iArgs.has("compression"))
+				changed.texture.compression = compressionOf(iArgs.getText("compression"));
+		} else {
+			if (const auto lods = iArgs.get<int64_t>("lods"); lods)
+				changed.mesh.lods = static_cast<uint32_t>(std::clamp<int64_t>(*lods, 0, 4));
+			if (const auto reduction = iArgs.get<double>("lod_reduction"); reduction)
+				changed.mesh.lodReduction = std::clamp(static_cast<float>(*reduction), 0.05f, 0.95f);
+			if (const auto screen = iArgs.get<double>("lod_screen_size"); screen)
+				changed.mesh.lodScreenSize = std::clamp(static_cast<float>(*screen), 0.001f, 1.f);
+		}
 		if (changed == entry.meta)
 			continue;
 		before.push_back(entry.meta);
 		after.push_back(changed);
 	}
 	if (after.empty())
-		return fail(CommandError::NotApplicable,
-					std::format("asset.set_import: no texture with a sidecar changes under `{}`", path->string()));
+		return fail(
+				CommandError::NotApplicable,
+				std::format("asset.set_import: no texture or mesh with a sidecar changes under `{}`", path->string()));
 	const auto count = static_cast<int64_t>(after.size());
 	return PreparedCommand{.command = mkUniq<SetImportSettingsCommand>(std::move(before), std::move(after)),
 						   .applied = false,
@@ -260,6 +272,10 @@ void SetImportSettingsCommand::apply(const std::vector<AssetMeta>& iMetas) {
 		const auto entry = registry.find(meta.guid);
 		if (!entry)
 			continue;
+		if (meta.importer == Importer::Mesh) {
+			app::Application::get().getEngineContext().getMeshCache().invalidate(entry->root / entry->path);
+			continue;
+		}
 		const auto name = "nam:" + entry->path;
 		const auto mode = meta.texture.nearest ? renderer::gpu::FilterMode::Nearest : renderer::gpu::FilterMode::Linear;
 		library.forEach(
@@ -278,7 +294,8 @@ void addAssetCommands(CommandRegistry& ioRegistry) {
 						   .projectPath = true};
 	ioRegistry.add(
 			{.name = "asset.set_import",
-			 .description = "Change the import settings of a texture, or of every texture of a folder (undoable).",
+			 .description =
+					 "Change the import settings of a texture or a mesh, or of every one of a folder (undoable).",
 			 .args = {pathSpec,
 					  {.name = "nearest", .type = ArgType::Bool, .description = "Nearest-texel filtering (pixel art)."},
 					  {.name = "compression",
@@ -287,7 +304,16 @@ void addAssetCommands(CommandRegistry& ioRegistry) {
 					   .choices = {"None", "Uastc", "Etc1s"}},
 					  {.name = "mips",
 					   .type = ArgType::Bool,
-					   .description = "Mipmap chain built by the cook (compressed textures)."}},
+					   .description = "Mipmap chain built by the cook (compressed textures)."},
+					  {.name = "lods",
+					   .type = ArgType::Integer,
+					   .description = "Levels of detail of a mesh besides the full one (0 to 4)."},
+					  {.name = "lod_reduction",
+					   .type = ArgType::Number,
+					   .description = "Ratio of the triangles of a mesh level to the previous one."},
+					  {.name = "lod_screen_size",
+					   .type = ArgType::Number,
+					   .description = "Screen height fraction under which the first mesh level is drawn."}},
 			 .factory = setImportSettings,
 			 .allowedInPlay = true});
 	ioRegistry.add({.name = "asset.rename",

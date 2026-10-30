@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Skeletal animation: `MeshLoader` reads the first glTF skin, its clips and its `socket_*` nodes, drawn skinned on the GPU (`skinned3d.slang`).
+- `Animator` component: a state machine of clips with parameters, conditions, exit times and cross-fades, driven from Lua (`animator.*`).
+- Mesh levels of detail: built by the cook (`OWLM` container) from the `.owlmeta` settings and picked at runtime by screen size.
+- Mesh sockets: `MeshSockets` and `SocketAttachment` snap entities on a socket or a bone (`Scene::attachToSocket`, `socket.*`).
+- Owl Nest: skeleton, clip timeline and LOD views in the mesh document, Animator and socket inspectors, `entity.attach_socket` / `entity.detach_socket`.
+- `asset.set_import` and the Import panel set the levels of detail of a mesh.
+- Owl Nest socket gizmo: click a socket marker (or select it in the inspector) and move it with the transform gizmo, one `entity.set_socket` per drag.
+- Engine Demo `character_yard` scene: a skinned mannequin walking with a lantern on its hand socket (**C** from the menu).
+
 - Asset GUIDs: every asset of a project opened in Owl Nest gets a `.owlmeta` sidecar, and `AssetRegistry` maps GUID and path.
 - Asset references written by GUID (`gid:<guid>:<path hint>`): renaming or moving a file keeps every reference valid.
 - Asset cook: the export cooks every packed asset through a content-addressed cache in `<project>/.owl/cache/cooked/`.
@@ -67,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `mesh3d.slang` shares its surface shading with the new `skinned3d.slang` through `common/mesh_surface.slangh`; its output is unchanged.
 - Sample games are picked from the pool once the features of a release are done, none planned per release; hot reload of a C++ game module moves after 1.0.
 - `Light.castShadows`, `shadowResolution` and `shadowBias` apply to point and spot lights too; the 3D shadow cascades move to texture slots 16 to 19.
 - Shipped projects carry sidecars and GUID references; the Engine Demo PBR textures are cooked to ETC1S and UASTC.

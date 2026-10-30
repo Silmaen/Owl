@@ -12,6 +12,7 @@
 #include "core/expected.h"
 #include "data/assets/AssetReference.h"
 
+#include <bit>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -70,6 +71,31 @@ struct OWL_API TextureImportSettings {
 
 /**
  * @brief
+ *  Import settings of a mesh asset: the levels of detail the cook builds.
+ */
+struct OWL_API MeshImportSettings {
+	/// Levels of detail besides the full mesh (0 to 4), 0 for none.
+	uint32_t lods{0};
+	/// Ratio of the triangles of a level to the previous one.
+	float lodReduction{0.5f};
+	/// Fraction of the screen height under which the first level is drawn, halved for each next level.
+	float lodScreenSize{0.25f};
+
+	/**
+	 * @brief
+	 *  Compare two settings.
+	 * @param[in] iOther The other settings.
+	 * @return True when equal.
+	 */
+	auto operator==(const MeshImportSettings& iOther) const -> bool {
+		return lods == iOther.lods &&
+			   std::bit_cast<uint32_t>(lodReduction) == std::bit_cast<uint32_t>(iOther.lodReduction) &&
+			   std::bit_cast<uint32_t>(lodScreenSize) == std::bit_cast<uint32_t>(iOther.lodScreenSize);
+	}
+};
+
+/**
+ * @brief
  *  Content of an `.owlmeta` sidecar.
  */
 struct OWL_API AssetMeta {
@@ -79,6 +105,8 @@ struct OWL_API AssetMeta {
 	Importer importer{Importer::Copy};
 	/// Settings of a texture asset (unused by the other importers).
 	TextureImportSettings texture;
+	/// Settings of a mesh asset (unused by the other importers).
+	MeshImportSettings mesh;
 
 	/**
 	 * @brief

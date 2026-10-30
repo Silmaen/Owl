@@ -16,6 +16,8 @@
 #include "input/ActionFrame.h"
 #include "input/InputFrame.h"
 #include "math/Transform.h"
+#include "math/matrices.h"
+#include "math/matrixCreation.h"
 #include "math/vectors.h"
 #include "renderer/Camera.h"
 #include "renderer/Lighting2D.h"
@@ -41,6 +43,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -65,6 +68,7 @@ class PhysicsWorld;
 
 namespace owl::renderer {
 class MaterialLibrary;
+class MeshResource;
 }// namespace owl::renderer
 
 namespace owl::renderer::gpu {
@@ -93,6 +97,9 @@ struct Hierarchy;
 struct ID;
 struct LuaScript;
 struct MeshRenderer;
+struct Animator;
+struct MeshSockets;
+struct SocketAttachment;
 struct Light;
 struct Light2D;
 struct LightFlicker;
@@ -735,6 +742,58 @@ public:
 	 * @param[in] iChild The entity to unparent.
 	 */
 	void unparent(const Entity& iChild) const;
+
+	/**
+	 * @brief
+	 *  Snap an entity on a socket of another one: the owner becomes its parent and a `SocketAttachment` keeps its
+	 *  local transform on the socket from then on (the hierarchy is rebuilt in place, nothing is reloaded).
+	 * @param[in] iEntity The entity to attach.
+	 * @param[in] iOwner The entity owning the socket (`MeshSockets` or a mesh socket of its `MeshRenderer`).
+	 * @param[in] iSocket Name of the socket.
+	 * @return False when the owner has no such socket or would become a child of the entity.
+	 */
+	auto attachToSocket(const Entity& iEntity, const Entity& iOwner, const std::string& iSocket) -> bool;
+
+	/**
+	 * @brief
+	 *  Release an entity from its socket: the `SocketAttachment` is removed, the entity keeps its parent and its
+	 *  current transform.
+	 * @param[in] iEntity The entity.
+	 * @return False when the entity is attached to no socket.
+	 */
+	auto detachFromSocket(const Entity& iEntity) -> bool;
+
+	/**
+	 * @brief
+	 *  Get the transform of a socket relative to its owner, following its bone in the current pose.
+	 * @param[in] iOwner The entity owning the socket.
+	 * @param[in] iSocket Name of the socket.
+	 * @return The local matrix of the socket, nothing when the owner has no such socket.
+	 */
+	[[nodiscard]] auto getSocketTransform(const Entity& iOwner, std::string_view iSocket) const
+			-> std::optional<math::mat4>;
+
+	/**
+	 * @brief
+	 *  List the sockets of an entity: those of its `MeshSockets`, then those of its mesh file.
+	 * @param[in] iOwner The entity.
+	 * @return The socket names, without duplicates.
+	 */
+	[[nodiscard]] auto getSocketNames(const Entity& iOwner) const -> std::vector<std::string>;
+
+	/**
+	 * @brief
+	 *  Advance the animators of the skinned meshes and compute their poses (the `owl.animation` system).
+	 * @param[in] iSeconds Elapsed time.
+	 * @param[in] iPreviewOnly True in Edit mode: only the animators previewed in Owl Nest advance.
+	 */
+	void updateAnimators(float iSeconds, bool iPreviewOnly);
+
+	/**
+	 * @brief
+	 *  Snap every entity holding a `SocketAttachment` on the socket of its parent (the `owl.sockets` system).
+	 */
+	void updateSocketAttachments();
 
 	/**
 	 * @brief
@@ -1704,6 +1763,15 @@ private:
 	 */
 	void renderMeshes(bool iEditorMode);
 
+	/**
+	 * @brief
+	 *  Get the fraction of the screen height a mesh covers, seen from the camera of the last main pass.
+	 * @param[in] iMesh The mesh.
+	 * @param[in] iModel Its model matrix.
+	 * @return The screen size, for the level-of-detail pick.
+	 */
+	[[nodiscard]] auto getScreenSize(const renderer::MeshResource& iMesh, const math::mat4& iModel) const -> float;
+
 
 	/**
 	 * @brief
@@ -2230,6 +2298,8 @@ private:
 	math::vec3i m_voxelHighlightNormal{0, 0, 0};
 	/// Entity outlined over the 3D scene.
 	std::optional<Outline> m_outline;
+	/// View-projection of the last main (not shadow) mesh pass, the camera of the level-of-detail pick.
+	math::mat4 m_lodViewProjection = math::identity<float, 4>();
 	/// Root of the subtree `renderMeshes` draws alone (the outline mask), `entt::null` for every mesh.
 	entt::entity m_meshFilterRoot = entt::null;
 	/// World box of the interaction aimed at this frame, outlined over the scene.
@@ -2281,6 +2351,17 @@ OWL_API void Scene::onComponentAdded<component::ReflectionProbe>(const Entity& i
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Light2D>(const Entity& iEntity, component::Light2D& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Animator>(const Entity& iEntity, component::Animator& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::MeshSockets>(const Entity& iEntity,
+															 component::MeshSockets& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::SocketAttachment>(const Entity& iEntity,
+																  component::SocketAttachment& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::LightFlicker>(const Entity& iEntity,

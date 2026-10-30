@@ -21,6 +21,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <tuple>
 #include <utility>
@@ -91,6 +92,39 @@ void AssetImport::renderTextureSettings(const data::assets::AssetMeta& iMeta) co
 	gui::widgets::endProperties();
 }
 
+void AssetImport::renderMeshSettings(const data::assets::AssetMeta& iMeta) {
+	if (!gui::widgets::beginProperties("##meshImport"))
+		return;
+	int lods = static_cast<int>(iMeta.mesh.lods);
+	gui::widgets::propertyLabel("Levels of detail",
+								"Reduced copies of the mesh the cook builds, drawn when the mesh covers less of the "
+								"screen; 0 draws the full mesh at any distance.");
+	if (ImGui::SliderInt("##lods", &lods, 0, 4))
+		std::ignore = run("asset.set_import", {{"lods", static_cast<int64_t>(lods)}});
+	if (gui::widgets::propertyReset(iMeta.mesh.lods != 0))
+		std::ignore = run("asset.set_import", {{"lods", int64_t{0}}});
+	ImGui::BeginDisabled(iMeta.mesh.lods == 0);
+	if (!ImGui::IsAnyItemActive()) {
+		m_lodReduction = iMeta.mesh.lodReduction;
+		m_lodScreenSize = iMeta.mesh.lodScreenSize;
+	}
+	gui::widgets::propertyLabel("Reduction", "Ratio of the triangles of a level to the previous one.");
+	ImGui::DragFloat("##lodReduction", &m_lodReduction, 0.01f, 0.05f, 0.95f, "%.2f");
+	if (ImGui::IsItemDeactivatedAfterEdit())
+		std::ignore = run("asset.set_import", {{"lod_reduction", static_cast<double>(m_lodReduction)}});
+	std::ignore = gui::widgets::propertyReset(false);
+	gui::widgets::propertyLabel("Screen size",
+								"Fraction of the screen height under which the first reduced level is drawn; each next "
+								"level at half of it.");
+	ImGui::DragFloat("##lodScreen", &m_lodScreenSize, 0.005f, 0.001f, 1.f, "%.3f");
+	if (ImGui::IsItemDeactivatedAfterEdit())
+		std::ignore = run("asset.set_import", {{"lod_screen_size", static_cast<double>(m_lodScreenSize)}});
+	std::ignore = gui::widgets::propertyReset(false);
+	ImGui::EndDisabled();
+	gui::widgets::endProperties();
+	ImGui::TextDisabled("The mesh document previews every level.");
+}
+
 void AssetImport::onImGuiRender() {
 	if (!m_visible)
 		return;
@@ -139,6 +173,8 @@ void AssetImport::onImGuiRender() {
 			const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
 			std::ignore = target.execute("asset.set_import", args);
 		}
+	} else if (meta.importer == data::assets::Importer::Mesh) {
+		renderMeshSettings(meta);
 	} else {
 		ImGui::TextDisabled("No import setting: the asset is packed as it is.");
 	}

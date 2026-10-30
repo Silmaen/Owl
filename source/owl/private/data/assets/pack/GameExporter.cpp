@@ -76,7 +76,8 @@ auto metaOf(const AssetReference& iRef) -> AssetMeta {
 	}
 	return AssetMeta{.guid = AssetGuid{0},
 					 .importer = importerOf(iRef.diskPath).value_or(Importer::Copy),
-					 .texture = {}};
+					 .texture = {},
+					 .mesh = {}};
 }
 
 auto isRelocatable(const AssetReference& iRef) -> bool {

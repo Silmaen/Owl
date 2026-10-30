@@ -187,13 +187,14 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
 - ![Planned][planned] Spline component and its editor: paths, lanes, rails ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Data tables: typed records edited in a grid in Owl Nest, read from Lua
   ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Mesh sockets: named attachment points, entities assembled at runtime
-  ([Large worlds](design/large-worlds.md))
+- ![Done][done] Mesh sockets: named attachment points, entities assembled at runtime
+  ([Skeletal animation](design/skeletal-animation.md))
 - ![Planned][planned] World partition: streaming cells on world coordinates, additive scenes loaded around the player
   ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Planetary terrain layer: cube-sphere quadtree LOD from PCG graphs, atmospheric scattering, scaled
   space ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Skeletal animation (skinning, blending, state machine) and mesh LODs
+- ![Done][done] Skeletal animation (skinning, blending, state machine) and mesh LODs
+  ([Skeletal animation](design/skeletal-animation.md))
 - ![Planned][planned] GPU particle system with editor preview and trails, emissive materials and lens flares
 - ![Planned][planned] Audio mixer (buses, per-bus volume, crossfades) ([Gameplay systems](design/gameplay-systems.md))
 - ![Planned][planned] Audio effects (reverb zones, low / high-pass filters, Doppler) and adaptive music driven by game
