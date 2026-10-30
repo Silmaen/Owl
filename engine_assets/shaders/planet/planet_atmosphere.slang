@@ -74,13 +74,13 @@ float2 sunDepths(float3 point) {
 	if (planet.x <= planet.y && planet.x > 0.0f)
 		return float2(-1.0f, -1.0f);
 	float2 shell = sphereHits(point, toSun, sphereC(point, gParams.shell.x));
-	float length = max(shell.y, 0.0f);
-	float step = length / float(kLightSamples);
+	float reach = max(shell.y, 0.0f);
+	float stride = reach / float(kLightSamples);
 	float2 depths = float2(0.0f, 0.0f);
 	for (int i = 0; i < kLightSamples; ++i) {
-		float3 sample = point + toSun * (step * (float(i) + 0.5f));
-		float height = max(distance(sample, gParams.center.xyz) - gParams.center.w, 0.0f);
-		depths += float2(exp(-height / gParams.shell.y), exp(-height / gParams.shell.z)) * step;
+		float3 at = point + toSun * (stride * (float(i) + 0.5f));
+		float height = max(distance(at, gParams.center.xyz) - gParams.center.w, 0.0f);
+		depths += float2(exp(-height / gParams.shell.y), exp(-height / gParams.shell.z)) * stride;
 	}
 	return depths;
 }
@@ -104,18 +104,18 @@ FragmentOutput fragmentMain(FragmentInput input) {
 		end = min(end, sea.x);
 	if (end <= start)
 		discard;
-	float step = (end - start) / float(kViewSamples);
+	float stride = (end - start) / float(kViewSamples);
 	float3 betaR = gParams.scattering.xyz;
 	float betaM = gParams.scattering.w;
 	float2 viewDepths = float2(0.0f, 0.0f);
 	float3 sumR = float3(0.0f, 0.0f, 0.0f);
 	float3 sumM = float3(0.0f, 0.0f, 0.0f);
 	for (int i = 0; i < kViewSamples; ++i) {
-		float3 sample = direction * (start + step * (float(i) + 0.5f));
-		float height = max(distance(sample, gParams.center.xyz) - gParams.center.w, 0.0f);
-		float2 densities = float2(exp(-height / gParams.shell.y), exp(-height / gParams.shell.z)) * step;
+		float3 at = direction * (start + stride * (float(i) + 0.5f));
+		float height = max(distance(at, gParams.center.xyz) - gParams.center.w, 0.0f);
+		float2 densities = float2(exp(-height / gParams.shell.y), exp(-height / gParams.shell.z)) * stride;
 		viewDepths += densities;
-		float2 light = sunDepths(sample);
+		float2 light = sunDepths(at);
 		if (light.x < 0.0f)
 			continue;
 		float3 tau = betaR * (viewDepths.x + light.x) + betaM * 1.1f * (viewDepths.y + light.y);

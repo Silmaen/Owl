@@ -76,8 +76,8 @@ struct OWL_API PlanetSettings {
 	math::vec3 rayleighDepth{0.046f, 0.108f, 0.265f};
 	/// Mie (haze) optical depth of the atmosphere at the zenith.
 	float mieDepth = 0.02f;
-	/// Strength of the sunlight scattered by the atmosphere, multiplying the illuminance of the sun.
-	float scatteringIntensity = 1.f;
+	/// Strength of the sunlight scattered by the atmosphere; above 1 it stands in for the multiple scattering.
+	float scatteringIntensity = 3.f;
 	/// Beyond this distance from its centre, in metres, the planet is drawn in scaled space; 0 never.
 	double scaledSpaceDistance = 0.0;
 

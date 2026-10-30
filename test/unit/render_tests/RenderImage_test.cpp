@@ -492,25 +492,38 @@ TEST_P(RenderPick, entityUnderEachPixel) {
 
 INSTANTIATE_TEST_SUITE_P(
 		Picking, RenderPick,
-		testing::Values(PickCase{"mesh",
-								 "vulkan",
-								 {{{95, 80}, "TexturedCrate"},
-								  {{160, 95}, "GlassCrate"},
-								  {{215, 85}, "TintedCrate"},
-								  {{40, 165}, "Ground"},
-								  {{160, 10}, "none"}}},
-						PickCase{"mesh",
-								 "opengl",
-								 {{{95, 80}, "TexturedCrate"},
-								  {{160, 95}, "GlassCrate"},
-								  {{215, 85}, "TintedCrate"},
-								  {{40, 165}, "Ground"},
-								  {{160, 10}, "none"}}},
-						PickCase{"voxel", "vulkan", {{{160, 150}, "ProceduralTerrain"}, {{160, 5}, "none"}}},
-						PickCase{"voxel", "opengl", {{{160, 150}, "ProceduralTerrain"}, {{160, 5}, "none"}}}),
+		testing::Values(
+				PickCase{"mesh",
+						 "vulkan",
+						 {{{95, 80}, "TexturedCrate"},
+						  {{160, 95}, "GlassCrate"},
+						  {{215, 85}, "TintedCrate"},
+						  {{40, 165}, "Ground"},
+						  {{160, 10}, "none"}}},
+				PickCase{"mesh",
+						 "opengl",
+						 {{{95, 80}, "TexturedCrate"},
+						  {{160, 95}, "GlassCrate"},
+						  {{215, 85}, "TintedCrate"},
+						  {{40, 165}, "Ground"},
+						  {{160, 10}, "none"}}},
+				PickCase{"voxel", "vulkan", {{{160, 150}, "ProceduralTerrain"}, {{160, 5}, "none"}}},
+				PickCase{"voxel", "opengl", {{{160, 150}, "ProceduralTerrain"}, {{160, 5}, "none"}}},
+				PickCase{"planet_orbit", "vulkan", {{{160, 90}, "Planet"}, {{47, 28}, "Moon"}, {{5, 175}, "none"}}},
+				PickCase{"planet_orbit", "opengl", {{{160, 90}, "Planet"}, {{47, 28}, "Moon"}, {{5, 175}, "none"}}}),
 		[](const testing::TestParamInfo<PickCase>& iInfo) -> std::string {
 			return iInfo.param.scene + "_" + iInfo.param.backend;
 		});
+
+// Planets of a planet layer: from orbit, the terrain of a PCG graph under its atmosphere and a moon far away drawn in
+// scaled space; from the ground, the horizon under the sky of the same atmosphere.
+INSTANTIATE_TEST_SUITE_P(Planets, RenderImage,
+						 testing::Values(RenderCase{"planet_orbit", "vulkan"}, RenderCase{"planet_orbit", "opengl"},
+										 RenderCase{"planet_surface", "vulkan"},
+										 RenderCase{"planet_surface", "opengl"}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return iInfo.param.scene + "_" + iInfo.param.backend;
+						 });
 
 // A Vulkan run without any usable device falls back to OpenGL and renders the OpenGL reference.
 TEST(RenderFallback, vulkanWithoutDeviceRendersWithOpenGl) {
