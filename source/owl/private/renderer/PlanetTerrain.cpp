@@ -69,21 +69,39 @@ auto packColor(const math::vec3& iColor) -> uint32_t {
 	return channel(iColor.x()) | channel(iColor.y()) << 8u | channel(iColor.z()) << 16u | 0xff000000u;
 }
 
-// Square of the distance from a point to the bounding sphere of a chunk, 0 inside it.
-auto distanceToChunk(const PlanetSettings& iSettings, const PlanetChunkKey& iKey, const math::vec3d& iEye) -> double {
+// Distance from a point to the bounding sphere of a chunk (0 inside it), and whether the horizon hides the chunk.
+struct ChunkView {
+	double distance = 0.0;
+	bool hidden = false;
+};
+
+auto viewChunk(const PlanetSettings& iSettings, const PlanetChunkKey& iKey, const math::vec3d& iEye) -> ChunkView {
 	const double size = getChunkSize(iKey, iSettings.radius);
 	const double top =
 			static_cast<double>(iSettings.heightScale) * (1.0 + static_cast<double>(iSettings.detailAmplitude));
 	const math::vec3d center = getChunkDirection(iKey) * (iSettings.radius + top * 0.5);
-	const double bound = size * 0.75 + top * 0.5;
-	return std::max(0.0, (iEye - center).norm() - bound);
+	// The relief a chunk spans is bounded by its size as much as by the height scale.
+	const double bound = size * 0.6 + std::min(top, size) * 0.5;
+	const double distance = std::max(0.0, (iEye - center).norm() - bound);
+	// Hidden when farther than the horizon of the eye plus the horizon of the highest ground (a sphere at sea level).
+	const double radius = iSettings.radius;
+	const double eyeSquared = iEye.normSq();
+	bool hidden = false;
+	if (eyeSquared > radius * radius && iKey.level > 0) {
+		const double highest = radius + top;
+		const double horizon = std::sqrt(eyeSquared - radius * radius) + std::sqrt(highest * highest - radius * radius);
+		hidden = distance > horizon;
+	}
+	return {.distance = distance, .hidden = hidden};
 }
 
 void selectNode(const PlanetSettings& iSettings, const math::vec3d& iEye, const PlanetChunkKey& iKey,
 				std::vector<PlanetChunkKey>& oLeaves) {// NOLINT(misc-no-recursion)
+	const auto view = viewChunk(iSettings, iKey, iEye);
+	if (view.hidden)
+		return;
 	if (iKey.level >= iSettings.maxLevel ||
-		distanceToChunk(iSettings, iKey, iEye) >=
-				static_cast<double>(iSettings.lodFactor) * getChunkSize(iKey, iSettings.radius)) {
+		view.distance >= static_cast<double>(iSettings.lodFactor) * getChunkSize(iKey, iSettings.radius)) {
 		oLeaves.push_back(iKey);
 		return;
 	}
@@ -418,7 +436,7 @@ void PlanetTerrain::collectBuilds() {
 	for (auto& mesh: done) {
 		const uint64_t packed = mesh.key.packed();
 		m_pending.erase(packed);
-		m_cache[packed] = CachedChunk{.mesh = std::move(mesh), .gpuMesh = nullptr, .lastUsed = m_frame};
+		m_cache[packed] = CachedChunk{.mesh = std::move(mesh), .gpuMesh = nullptr, .lastUsed = m_frame, .drawFrame = 0};
 		++m_stats.built;
 	}
 }
@@ -429,8 +447,10 @@ void PlanetTerrain::requestBuild(const PlanetChunkKey& iKey, core::task::Schedul
 		return;
 	--ioBudget;
 	if (ioScheduler == nullptr) {
-		m_cache[packed] =
-				CachedChunk{.mesh = buildPlanetChunk(*m_surface, iKey), .gpuMesh = nullptr, .lastUsed = m_frame};
+		m_cache[packed] = CachedChunk{.mesh = buildPlanetChunk(*m_surface, iKey),
+									  .gpuMesh = nullptr,
+									  .lastUsed = m_frame,
+									  .drawFrame = 0};
 		++m_stats.built;
 		return;
 	}
@@ -482,10 +502,6 @@ void PlanetTerrain::update(const math::vec3d& iEye, const bool iScaledSpace, cor
 			m_selection.push_back({.face = face, .level = 0, .x = 0, .y = 0});
 	} else {
 		selectPlanetChunks(settings, iEye, m_selection);
-		std::ranges::sort(m_selection, [&](const PlanetChunkKey& iA, const PlanetChunkKey& iB) -> bool {
-			return (getChunkDirection(iA) * settings.radius - iEye).normSq() <
-				   (getChunkDirection(iB) * settings.radius - iEye).normSq();
-		});
 	}
 	uint32_t budget = ioScheduler != nullptr ? g_asyncBuildBudget : g_syncBuildBudget;
 	// The roots first: a leaf always has a built ancestor to stand in for it.
@@ -493,20 +509,38 @@ void PlanetTerrain::update(const math::vec3d& iEye, const bool iScaledSpace, cor
 		uint32_t rootBudget = 1;
 		requestBuild({.face = face, .level = 0, .x = 0, .y = 0}, ioScheduler, rootBudget);
 	}
+	m_missing.clear();
 	for (const auto& leaf: m_selection) {
-		requestBuild(leaf, ioScheduler, budget);
 		PlanetChunkKey node = leaf;
-		while (!m_cache.contains(node.packed()) && node.level > 0) node = node.getParent();
-		if (!m_cache.contains(node.packed()))
-			continue;
-		if (const uint64_t packed = node.packed(); std::ranges::find(m_drawnKeys, packed) == m_drawnKeys.end())
-			m_drawnKeys.push_back(packed);
+		auto found = m_cache.find(node.packed());
+		if (found == m_cache.end()) {
+			if (!m_pending.contains(node.packed()))
+				m_missing.emplace_back((getChunkDirection(leaf) * settings.radius - iEye).normSq(), leaf);
+			while (found == m_cache.end() && node.level > 0) {
+				node = node.getParent();
+				found = m_cache.find(node.packed());
+			}
+			if (found == m_cache.end())
+				continue;
+		}
+		if (found->second.drawFrame != m_frame) {
+			found->second.drawFrame = m_frame;
+			m_drawnKeys.push_back(found->first);
+		}
+	}
+	// The nearest missing chunks are asked for first.
+	std::ranges::sort(m_missing, [](const auto& iA, const auto& iB) -> bool { return iA.first < iB.first; });
+	for (const auto& missing: m_missing) {
+		if (budget == 0)
+			break;
+		requestBuild(missing.second, ioScheduler, budget);
 	}
 	// An ancestor standing in for a leaf hides the built leaves below it: they would overlap.
 	const auto hasDrawnAncestor = [this](PlanetChunkKey iNode) -> bool {
 		while (iNode.level > 0) {
 			iNode = iNode.getParent();
-			if (std::ranges::find(m_drawnKeys, iNode.packed()) != m_drawnKeys.end())
+			if (const auto found = m_cache.find(iNode.packed());
+				found != m_cache.end() && found->second.drawFrame == m_frame)
 				return true;
 		}
 		return false;

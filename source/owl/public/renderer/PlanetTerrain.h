@@ -18,6 +18,7 @@
 #include <mutex>
 #include <span>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace owl::core::task {
@@ -272,7 +273,7 @@ struct OWL_API PlanetChunkKey {
 /**
  * @brief
  *  Leaves of the quadtree for an eye position: a chunk splits while the eye is closer than `lodFactor` times its size,
- *  down to `maxLevel`; the leaves cover the sphere once, without overlap.
+ *  down to `maxLevel`; a chunk the horizon hides is left out. The leaves never overlap, and cover what the eye sees.
  * @param[in] iSettings The planet settings.
  * @param[in] iEye Eye position relative to the centre of the planet, in metres.
  * @param[out] oLeaves The selected chunks, cleared first.
@@ -488,6 +489,8 @@ private:
 		Renderer3D::MeshHandle gpuMesh;
 		/// Update count when the chunk was last drawn.
 		uint64_t lastUsed = 0;
+		/// Update count when the chunk was last put in the draw list (an ancestor standing in included).
+		uint64_t drawFrame = 0;
 	};
 	/// Chunks finished by the workers, waiting for the main thread.
 	struct Inbox {
@@ -516,8 +519,10 @@ private:
 	std::vector<PlanetChunkKey> m_selection;
 	/// Draw list of the last update.
 	std::vector<DrawChunk> m_drawList;
-	/// Packed keys already in the draw list (an ancestor standing in for several leaves).
+	/// Packed keys of the chunks chosen to draw (an ancestor standing in for several leaves once).
 	std::vector<uint64_t> m_drawnKeys;
+	/// Leaves without a chunk yet, with their squared distance to the eye.
+	std::vector<std::pair<double, PlanetChunkKey>> m_missing;
 	/// The colour ramp texture.
 	shared<gpu::Texture2D> m_colorRamp;
 	/// Number of updates.

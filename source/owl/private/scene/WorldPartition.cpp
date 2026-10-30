@@ -24,6 +24,7 @@
 #include <iterator>
 #include <limits>
 #include <mutex>
+#include <set>
 #include <string>
 #include <utility>
 
@@ -57,6 +58,12 @@ auto nearestDistance(const WorldPartitionSettings& iSettings, const math::vec3i&
 	return nearest;
 }
 
+// Load and unload radii of the settings, brought into their accepted range without copying the cells.
+auto streamRadii(const WorldPartitionSettings& iSettings) -> std::pair<double, double> {
+	const double load = std::max(finiteOr(iSettings.loadRadius, WorldPartitionSettings{}.loadRadius), 0.0);
+	return {load, std::max(finiteOr(iSettings.unloadRadius, WorldPartitionSettings{}.unloadRadius), load)};
+}
+
 }// namespace
 
 auto WorldPartitionSettings::clamped() const -> WorldPartitionSettings {
@@ -66,9 +73,9 @@ auto WorldPartitionSettings::clamped() const -> WorldPartitionSettings {
 	out.loadRadius = std::max(finiteOr(loadRadius, defaults.loadRadius), 0.0);
 	out.unloadRadius = std::max(finiteOr(unloadRadius, defaults.unloadRadius), out.loadRadius);
 	out.cells.clear();
+	std::set<math::vec3i, decltype(&coordsLess)> seen{&coordsLess};
 	for (const auto& cell: cells) {
-		if (std::ranges::none_of(out.cells,
-								 [&](const WorldCell& iKept) -> bool { return iKept.coords == cell.coords; }))
+		if (seen.insert(cell.coords).second)
 			out.cells.push_back(cell);
 	}
 	return out;
@@ -134,7 +141,7 @@ auto WorldStreamer::getWantedCells(const WorldPartitionSettings& iSettings, cons
 		-> std::vector<math::vec3i> {
 	std::vector<math::vec3i> wanted;
 	for (const auto& cell: iSettings.cells) {
-		if (!cell.scene.empty() && nearestDistance(iSettings, cell.coords, iSources) <= iSettings.loadRadius)
+		if (!cell.scene.empty() && nearestDistance(iSettings, cell.coords, iSources) <= streamRadii(iSettings).first)
 			wanted.push_back(cell.coords);
 	}
 	std::ranges::sort(wanted, coordsLess);
@@ -239,16 +246,17 @@ void WorldStreamer::update(Scene& ioScene, const std::span<const StreamPoint> iS
 						   core::task::Scheduler* ioScheduler) {
 	OWL_PROFILE_FUNCTION()
 
-	const auto settings = ioScene.getWorldPartitionSettings().clamped();
+	const auto& settings = ioScene.getWorldPartitionSettings();
 	if (!settings.enabled) {
 		unloadAll(ioScene);
 		return;
 	}
+	const auto [load, unload] = streamRadii(settings);
 	mergeFinished(ioScene, settings);
 	for (auto& [coords, runtime]: m_cells) {
 		const auto* cell = settings.findCell(coords);
 		const bool changed = cell == nullptr || cell->scene != runtime.scene;
-		const bool far = nearestDistance(settings, coords, iSources) > settings.unloadRadius;
+		const bool far = nearestDistance(settings, coords, iSources) > unload;
 		if (runtime.state == WorldCellState::Loaded && (changed || far)) {
 			unloadCell(ioScene, runtime);
 			++m_stats.unloads;
@@ -258,10 +266,12 @@ void WorldStreamer::update(Scene& ioScene, const std::span<const StreamPoint> iS
 		}
 	}
 	std::erase_if(m_cells, [](const auto& iEntry) -> bool { return iEntry.second.state == WorldCellState::Unloaded; });
-	for (const auto& coords: getWantedCells(settings, iSources)) {
-		auto& runtime = m_cells[coords];
+	for (const auto& cell: settings.cells) {
+		if (cell.scene.empty() || nearestDistance(settings, cell.coords, iSources) > load)
+			continue;
+		auto& runtime = m_cells[cell.coords];
 		if (runtime.state == WorldCellState::Unloaded)
-			startLoad(*settings.findCell(coords), runtime, ioScheduler);
+			startLoad(cell, runtime, ioScheduler);
 	}
 	if (ioScheduler == nullptr)
 		mergeFinished(ioScene, settings);

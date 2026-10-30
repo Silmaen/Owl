@@ -91,7 +91,13 @@ TEST(PlanetTerrain, ANearEyeRefinesUnderItAndCoversTheSphereOnce) {
 	std::vector<PlanetChunkKey> leaves;
 	selectPlanetChunks(settings, {0.0, 1002.0, 0.0}, leaves);
 	EXPECT_GT(leaves.size(), 6u);
-	EXPECT_NEAR(coveredFaces(leaves), 6.0, 1e-9);
+	// Near the ground the horizon hides most of the sphere.
+	EXPECT_LT(coveredFaces(leaves), 6.0);
+	std::vector<PlanetChunkKey> above;
+	selectPlanetChunks(settings, {0.0, 1500.0, 0.0}, above);
+	// Higher, the horizon hides less: the far side is still left out, the leaves never overlap.
+	EXPECT_GT(coveredFaces(above), coveredFaces(leaves));
+	EXPECT_LE(coveredFaces(above), 6.0 + 1e-9);
 	uint8_t deepest = 0;
 	PlanetChunkKey deepestKey;
 	for (const auto& leaf: leaves) {

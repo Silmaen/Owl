@@ -2558,6 +2558,50 @@
       "p75_ns": 10945.7,
       "min_ns": 10933.4,
       "max_ns": 10974.6
+    },
+    {
+      "name": "planet/select/near_ground",
+      "items": 1048,
+      "batch": 73,
+      "samples": 15,
+      "median_ns": 156769.0,
+      "p25_ns": 156711.1,
+      "p75_ns": 156927.3,
+      "min_ns": 153054.2,
+      "max_ns": 157849.5
+    },
+    {
+      "name": "planet/build_chunk/16",
+      "items": 1,
+      "batch": 100,
+      "samples": 15,
+      "median_ns": 143048.8,
+      "p25_ns": 131853.9,
+      "p75_ns": 145697.6,
+      "min_ns": 121310.3,
+      "max_ns": 152516.6
+    },
+    {
+      "name": "planet/update/steady",
+      "items": 1048,
+      "batch": 33,
+      "samples": 15,
+      "median_ns": 407259.8,
+      "p25_ns": 395964.3,
+      "p75_ns": 412549.4,
+      "min_ns": 359061.4,
+      "max_ns": 419862.8
+    },
+    {
+      "name": "world_streaming/update/4096_cells",
+      "items": 4097,
+      "batch": 616,
+      "samples": 15,
+      "median_ns": 41063.4,
+      "p25_ns": 39224.2,
+      "p75_ns": 41467.6,
+      "min_ns": 32574.7,
+      "max_ns": 41939.1
     }
   ],
   "metrics": [
