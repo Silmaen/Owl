@@ -159,6 +159,8 @@ struct GraphLink {
 	std::string toPin;
 	/// Points the link passes through in the editor, canvas units, from the output to the input.
 	std::vector<std::array<float, 2>> waypoints;
+	/// Colour name of an execution link in the editor (`Red`, `Green`...), empty for the default one.
+	std::string color{};
 
 	/**
 	 * @brief

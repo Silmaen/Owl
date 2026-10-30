@@ -63,3 +63,7 @@ nodes:
   - id: 7100000000000000010
     kind: End
     position: [1660, 120]
+routes:
+  - {node: 7100000000000000006, output: 0, points: [], color: Violet}
+  - {node: 7100000000000000008, output: 0, points: [], color: Violet}
+  - {node: 7100000000000000003, output: 0, points: [], color: Green}

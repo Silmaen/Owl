@@ -12,6 +12,7 @@
 #include "EditorLayer.h"
 
 #include <gui/IconFont.h>
+#include <gui/widgets/IconButton.h>
 #include <gui/widgets/Menu.h>
 #include <gui/widgets/NodeCanvasSerializer.h>
 
@@ -28,6 +29,21 @@ OWL_DIAG_POP
 #include <vector>
 
 namespace owl::nest {
+
+auto isGraphSnapOn(const EditorLayer* iEditor) -> bool {
+	return iEditor != nullptr && iEditor->getSettings().graphSnap;
+}
+
+void graphSnapButton(EditorLayer* ioEditor) {
+	if (ioEditor == nullptr)
+		return;
+	auto& settings = ioEditor->getSettings();
+	if (gui::widgets::iconButton("##graphSnap", {.glyph = gui::icon::magnet,
+												 .tooltip = "Snap to Grid",
+												 .description = "Nodes and waypoints land on the grid when moved.",
+												 .selected = settings.graphSnap}))
+		settings.graphSnap = !settings.graphSnap;
+}
 
 NodeGraphDocument::NodeGraphDocument() = default;
 
@@ -65,6 +81,11 @@ void NodeGraphDocument::onAttach(EditorLayer* iEditor) {
 	m_canvas.setOnLinkWaypointsChanged([this](const core::UUID iLink, const std::vector<math::vec2f>& iBefore) -> void {
 		if (const auto* link = m_canvas.findLink(iLink); link != nullptr)
 			m_undoManager.push(mkUniq<commands::SetLinkWaypointsCommand>(*link, iBefore));
+	});
+	m_canvas.setLinkColorsEnabled(true);
+	m_canvas.setOnLinkColorChanged([this](const core::UUID iLink, const std::string& iBefore) -> void {
+		if (const auto* link = m_canvas.findLink(iLink); link != nullptr)
+			m_undoManager.push(mkUniq<commands::SetLinkColorCommand>(*link, iBefore));
 	});
 	onCanvasReady();
 	m_savedSnapshot = gui::widgets::NodeCanvasSerializer::serializeToString(m_canvas);
@@ -104,6 +125,7 @@ void NodeGraphDocument::onImGuiRender() {
 		if (windowFocused && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
 			std::ignore = save();
 		}
+		m_canvas.setSnapToGrid(isGraphSnapOn(mp_editorLayer));
 		m_canvas.onRender();
 		renderContextMenu();
 	}

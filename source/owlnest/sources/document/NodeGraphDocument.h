@@ -18,6 +18,24 @@
 #include <string>
 
 namespace owl::nest {
+
+class EditorLayer;
+
+/**
+ * @brief
+ *  Whether the node editors snap their nodes and waypoints to the grid (`EditorSettings::graphSnap`).
+ * @param[in] iEditor The editor, or null (no snap).
+ * @return True when the snap is on.
+ */
+[[nodiscard]] auto isGraphSnapOn(const EditorLayer* iEditor) -> bool;
+
+/**
+ * @brief
+ *  Toolbar toggle of the grid snap of every node editor (`EditorSettings::graphSnap`, kept with the settings).
+ * @param[in,out] ioEditor The editor, or null (nothing drawn).
+ */
+void graphSnapButton(EditorLayer* ioEditor);
+
 /**
  * @brief
  *  Undo manager typed for node-graph edits (nodes, pins, links on a `NodeCanvas`).

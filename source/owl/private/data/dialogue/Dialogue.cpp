@@ -143,7 +143,10 @@ auto Dialogue::serializeToString() const -> std::string {
 			out << YAML::Key << "points" << YAML::Value << YAML::BeginSeq;
 			for (const auto& point: route.points)
 				out << YAML::Flow << YAML::BeginSeq << point.x() << point.y() << YAML::EndSeq;
-			out << YAML::EndSeq << YAML::EndMap;
+			out << YAML::EndSeq;
+			if (!route.color.empty())
+				out << YAML::Key << "color" << YAML::Value << route.color;
+			out << YAML::EndMap;
 		}
 		out << YAML::EndSeq;
 	}
@@ -201,6 +204,7 @@ auto Dialogue::deserializeFromString(const std::string_view iYaml) -> std::optio
 			for (const auto& point: item["points"])
 				if (point.IsSequence() && point.size() == 2)
 					route.points.emplace_back(point[0].as<float>(0.f), point[1].as<float>(0.f));
+			route.color = item["color"].as<std::string>("");
 			dialogue.routes.push_back(std::move(route));
 		}
 		return dialogue;

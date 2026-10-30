@@ -518,6 +518,15 @@ void RibbonBuilder::buildNodeGraphTab() {
 							  },
 							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
 							  .size = Size::Large});
+	const auto gView = m_ribbon.addGroup(graphTab, "View");
+	m_ribbon.addButton(
+			graphTab, gView,
+			Button{.iconName = gui::icon::magnet,
+				   .label = "Snap",
+				   .tooltip = "Snap the nodes and waypoints of every node editor to the grid",
+				   .isChecked = [this]() -> bool { return mp_editor->m_settings.graphSnap; },
+				   .onClick = [this]() -> void { mp_editor->m_settings.graphSnap = !mp_editor->m_settings.graphSnap; },
+				   .size = Size::Large});
 }
 
 void RibbonBuilder::buildAnimationTab() {

@@ -239,6 +239,15 @@ TEST(NodeCanvasSerializer, LinkWaypointsRoundTripAndPaste) {
 	ASSERT_EQ(pasted.links().size(), 1u);
 	EXPECT_EQ(pasted.links()[0].waypoints, waypoints);
 
+	EXPECT_TRUE(src.setLinkColor(link, "Violet"));
+	NodeCanvas coloured;
+	ASSERT_TRUE(NodeCanvasSerializer::deserializeFromString(coloured, NodeCanvasSerializer::serializeToString(src)));
+	EXPECT_EQ(coloured.links()[0].color, "Violet");
+	NodeCanvas pastedColour;
+	std::ignore = NodeCanvasSerializer::pasteSubset(pastedColour, NodeCanvasSerializer::serializeSubset(src, ids));
+	EXPECT_EQ(pastedColour.links()[0].color, "Violet");
+	EXPECT_FALSE(dst.setLinkColor(core::UUID{42}, "Red"));
+
 	EXPECT_TRUE(dst.setLinkWaypoints(dst.links()[0].id, {}));
 	EXPECT_TRUE(dst.links()[0].waypoints.empty());
 	EXPECT_FALSE(dst.setLinkWaypoints(core::UUID{42}, waypoints));

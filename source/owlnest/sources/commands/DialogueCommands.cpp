@@ -11,6 +11,8 @@
 #include "CommandRegistry.h"
 #include "DocumentCommands.h"
 
+#include <gui/widgets/NodeStyle.h>
+
 #include <algorithm>
 #include <charconv>
 #include <cstddef>
@@ -359,6 +361,15 @@ auto setOption(Dialogue& ioDialogue, const CommandArgs& iArgs) -> expected<Edit,
 	return Edit{.description = "Edit option", .merge = iArgs.getBool("merge")};
 }
 
+// Replaces the route of an output; a route with no point and the default colour is not kept.
+void storeRoute(Dialogue& ioDialogue, DialogueRoute iRoute) {
+	std::erase_if(ioDialogue.routes, [&iRoute](const DialogueRoute& iOther) -> bool {
+		return iOther.node == iRoute.node && iOther.output == iRoute.output;
+	});
+	if (!iRoute.points.empty() || !iRoute.color.empty())
+		ioDialogue.routes.push_back(std::move(iRoute));
+}
+
 auto setRoute(Dialogue& ioDialogue, const CommandArgs& iArgs) -> expected<Edit, CommandFailure> {
 	const auto found = nodeOf(ioDialogue, iArgs);
 	if (!found)
@@ -381,13 +392,31 @@ auto setRoute(Dialogue& ioDialogue, const CommandArgs& iArgs) -> expected<Edit, 
 			return fail(CommandError::InvalidArgument, std::format("`{}` is not a point `x,y`", text));
 		route.points.emplace_back(x, y);
 	}
-	const auto id = (*found)->id;
-	std::erase_if(ioDialogue.routes, [id, output](const DialogueRoute& iRoute) -> bool {
-		return iRoute.node == id && iRoute.output == output;
-	});
-	if (!route.points.empty())
-		ioDialogue.routes.push_back(std::move(route));
+	if (const auto* existing = ioDialogue.findRoute((*found)->id, output); existing != nullptr)
+		route.color = existing->color;
+	storeRoute(ioDialogue, std::move(route));
 	return Edit{.description = "Edit link waypoints"};
+}
+
+auto setLinkColor(Dialogue& ioDialogue, const CommandArgs& iArgs) -> expected<Edit, CommandFailure> {
+	const auto found = nodeOf(ioDialogue, iArgs);
+	if (!found)
+		return unexpected<CommandFailure>{found.error()};
+	const auto output = static_cast<uint32_t>(std::max<int64_t>(0, iArgs.get<int64_t>("output").value_or(0)));
+	if (output >= Dialogue::getOutputCount(**found))
+		return fail(CommandError::InvalidArgument, std::format("the node has no output {}", output));
+	if (Dialogue::getOutput(**found, output) == core::UUID{0})
+		return fail(CommandError::NotApplicable, std::format("output {} of the node has no link", output));
+	auto color = iArgs.getText("color");
+	if (!color.empty() && !gui::widgets::findLinkColor(color).has_value())
+		return fail(CommandError::InvalidArgument, std::format("`{}` is not a link colour", color));
+	const auto* existing = ioDialogue.findRoute((*found)->id, output);
+	DialogueRoute route{.node = (*found)->id,
+						.output = output,
+						.points = existing != nullptr ? existing->points : std::vector<math::vec2f>{},
+						.color = std::move(color)};
+	storeRoute(ioDialogue, std::move(route));
+	return Edit{.description = "Set link colour"};
 }
 
 auto pathSpec() -> ArgSpec {
@@ -492,6 +521,11 @@ void addDialogueCommands(CommandRegistry& ioRegistry) {
 		{text("node", "Id of the node the link leaves.", true), integer("output", "Its output."),
 		 text("points", "Waypoints `x,y;x,y` in graph space.")},
 		setRoute);
+	add("dialogue.set_link_color",
+		"Give the link of an output a colour of the graph palette; empty restores the default.",
+		{text("node", "Id of the node the link leaves.", true), integer("output", "Its output."),
+		 text("color", "Colour name (Red, Orange, Yellow, Green, Teal, Blue, Violet, Pink), empty for the default.")},
+		setLinkColor);
 }
 
 }// namespace owl::nest::commands

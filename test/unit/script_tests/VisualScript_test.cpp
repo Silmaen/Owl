@@ -117,6 +117,7 @@ TEST(VisualScript, SerializationRoundTrip) {
 	auto script = accumulator();
 	script.nodes.front().position = {12.5f, -3.f};
 	script.links.front().waypoints = {{40.f, 20.f}, {80.f, -10.5f}};
+	script.links.front().color = "Teal";
 	const auto text = serialize(script);
 	const auto loaded = deserialize(text, "round_trip.owlvs");
 	ASSERT_TRUE(loaded.has_value());

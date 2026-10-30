@@ -96,24 +96,6 @@ auto shortened(const std::string_view iText) -> std::string {
 
 auto shownText(const DialogueText& iText) -> std::string_view { return iText.text.empty() ? iText.key : iText.text; }
 
-auto kindColor(const NodeKind iKind) -> math::vec4 {
-	const auto& theme = gui::UiLayer::getTheme();
-	switch (iKind) {
-		case NodeKind::Start:
-			return theme.success;
-		case NodeKind::Line:
-		case NodeKind::Choice:
-			return theme.text;
-		case NodeKind::Branch:
-			return theme.info;
-		case NodeKind::Event:
-			return theme.accent;
-		case NodeKind::End:
-			return theme.textMuted;
-	}
-	return theme.text;
-}
-
 auto formatId(const core::UUID iId) -> std::string { return std::to_string(static_cast<uint64_t>(iId)); }
 
 auto parseIds(const std::string_view iText) -> std::vector<core::UUID> {
@@ -153,8 +135,7 @@ auto getDialogueNodeGlyph(const NodeKind iKind) -> const char* {
 	return gui::icon::circleHelp;
 }
 
-auto getDialogueNodeTitle(const DialogueNode& iNode) -> std::string {
-	const auto* glyph = getDialogueNodeGlyph(iNode.kind);
+auto getDialogueNodeLabel(const DialogueNode& iNode) -> std::string {
 	switch (iNode.kind) {
 		case NodeKind::Line:
 		case NodeKind::Choice:
@@ -162,22 +143,41 @@ auto getDialogueNodeTitle(const DialogueNode& iNode) -> std::string {
 				const auto speaker = shownText(iNode.speaker);
 				const auto text = shownText(iNode.text);
 				if (speaker.empty() && text.empty())
-					return std::format("{}  {}", glyph, data::dialogue::getNodeKindName(iNode.kind));
-				return std::format(
-						"{}  {}", glyph,
-						shortened(speaker.empty() ? std::string{text} : std::format("{}: {}", speaker, text)));
+					return std::string{data::dialogue::getNodeKindName(iNode.kind)};
+				return shortened(speaker.empty() ? std::string{text} : std::format("{}: {}", speaker, text));
 			}
 		case NodeKind::Branch:
-			return std::format("{}  {}?", glyph,
-							   iNode.function.empty() ? std::string{"Branch"} : shortened(iNode.function));
+			return std::format("{}?", iNode.function.empty() ? std::string{"Branch"} : shortened(iNode.function));
 		case NodeKind::Event:
-			return std::format("{}  {}()", glyph,
-							   iNode.function.empty() ? std::string{"Event"} : shortened(iNode.function));
+			return std::format("{}()", iNode.function.empty() ? std::string{"Event"} : shortened(iNode.function));
 		case NodeKind::Start:
 		case NodeKind::End:
 			break;
 	}
-	return std::format("{}  {}", glyph, data::dialogue::getNodeKindName(iNode.kind));
+	return std::string{data::dialogue::getNodeKindName(iNode.kind)};
+}
+
+auto getDialogueNodeTitle(const DialogueNode& iNode) -> std::string {
+	return std::format("{}  {}", getDialogueNodeGlyph(iNode.kind), getDialogueNodeLabel(iNode));
+}
+
+auto getDialogueNodeColor(const NodeKind iKind) -> math::vec4 {
+	const auto& theme = gui::UiLayer::getTheme();
+	switch (iKind) {
+		case NodeKind::Start:
+			return theme.success;
+		case NodeKind::Line:
+			return theme.info;
+		case NodeKind::Choice:
+			return {0.69f, 0.52f, 0.96f, 1.f};
+		case NodeKind::Branch:
+			return {0.3f, 0.8f, 0.78f, 1.f};
+		case NodeKind::Event:
+			return theme.accent;
+		case NodeKind::End:
+			return theme.error;
+	}
+	return theme.text;
 }
 
 auto getDialogueOutputLabel(const DialogueNode& iNode, const size_t iOutput) -> std::string {
@@ -252,6 +252,16 @@ void DialogueDocument::onCanvasReady() {
 														 {"output", static_cast<int64_t>(*pin->second.output)},
 														 {"points", points}});
 	});
+	m_canvas.setOnLinkColorChanged([this](const core::UUID iLink, const std::string&) -> void {
+		m_linkEdited = true;
+		const auto* link = m_canvas.findLink(iLink);
+		const auto pin = link != nullptr ? m_pins.find(link->fromPin) : m_pins.end();
+		if (pin == m_pins.end() || !pin->second.output)
+			return;
+		std::ignore = sendCommand("dialogue.set_link_color", {{"node", formatId(pin->second.node)},
+															  {"output", static_cast<int64_t>(*pin->second.output)},
+															  {"color", link->color}});
+	});
 	m_canvas.setOnNodeMoved([this](core::UUID, math::vec2f) -> void { m_moving = true; });
 	m_canvas.setOnNodeSelected([this](const core::UUID iNode) -> void { m_selectedNode = iNode; });
 	m_canvas.setOnContextMenu([this](const std::optional<core::UUID> iNode) -> void {
@@ -276,19 +286,22 @@ void DialogueDocument::rebuildCanvas() {
 					return iProblem.node == node.id;
 				});
 		gui::widgets::Node canvasNode{.id = node.id,
-									  .title = getDialogueNodeTitle(node),
+									  .title = getDialogueNodeLabel(node),
 									  .position = node.position,
 									  .inputs = {},
 									  .outputs = {},
 									  .customData = {},
-									  .titleColor = faulty ? theme.error : kindColor(node.kind)};
+									  .titleColor = faulty ? theme.error : theme.text,
+									  .glyph = getDialogueNodeGlyph(node.kind),
+									  .glyphColor = getDialogueNodeColor(node.kind)};
 		if (node.kind != NodeKind::Start) {
 			const core::UUID pin;
 			canvasNode.inputs.push_back({.id = pin,
 										 .label = "In",
 										 .typeTag = "flow",
 										 .kind = gui::widgets::PinKind::Input,
-										 .labelColor = theme.textMuted});
+										 .labelColor = theme.text,
+										 .exec = true});
 			m_pins[pin] = {.node = node.id, .output = std::nullopt};
 			m_inputPins[node.id] = pin;
 		}
@@ -298,7 +311,8 @@ void DialogueDocument::rebuildCanvas() {
 										  .label = getDialogueOutputLabel(node, output),
 										  .typeTag = "flow",
 										  .kind = gui::widgets::PinKind::Output,
-										  .labelColor = theme.text});
+										  .labelColor = theme.text,
+										  .exec = true});
 			m_pins[pin] = {.node = node.id, .output = output};
 			m_outputPins[{node.id, output}] = pin;
 		}
@@ -312,8 +326,10 @@ void DialogueDocument::rebuildCanvas() {
 			if (target == core::UUID{0} || from == m_outputPins.end() || to == m_inputPins.end())
 				continue;
 			const auto* route = m_dialogue.findRoute(node.id, output);
-			std::ignore = m_canvas.addLink(from->second, to->second,
-										   route != nullptr ? route->points : std::vector<math::vec2f>{});
+			const auto link = m_canvas.addLink(from->second, to->second,
+											   route != nullptr ? route->points : std::vector<math::vec2f>{});
+			if (route != nullptr && !route->color.empty())
+				std::ignore = m_canvas.setLinkColor(link, route->color);
 		}
 	}
 	std::vector<core::UUID> kept;
@@ -579,6 +595,7 @@ void DialogueDocument::onImGuiRender() {
 			m_canvas.requestFitToContent();
 			--m_fitFrames;
 		}
+		m_canvas.setSnapToGrid(isGraphSnapOn(mp_editorLayer));
 		m_canvas.onRender();
 		if (m_moving && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 			m_moving = false;
@@ -615,6 +632,8 @@ void DialogueDocument::renderToolbar() {
 												.shortcut = "Home",
 												.description = "Show every node."}))
 		frameAll();
+	ImGui::SameLine();
+	graphSnapButton(mp_editorLayer);
 	separator();
 	const auto center = m_canvas.getMouseCanvasPosition();
 	for (const auto kind: data::dialogue::getNodeKinds()) {
@@ -791,9 +810,11 @@ void DialogueDocument::renderHierarchyPanel() {
 	const auto selection = m_canvas.selection();
 	for (const auto& node: m_dialogue.nodes) {
 		ImGui::PushID(static_cast<int>(static_cast<uint64_t>(node.id) & 0x7FFFFFFFU));
-		const auto title = getDialogueNodeTitle(node);
-		const auto result = gui::widgets::treeRow(
-				"##node", {.label = title.c_str(), .selected = std::ranges::contains(selection, node.id)});
+		const auto label = getDialogueNodeLabel(node);
+		const auto result = gui::widgets::treeRow("##node", {.label = label.c_str(),
+															 .glyph = getDialogueNodeGlyph(node.kind),
+															 .glyphColor = getDialogueNodeColor(node.kind),
+															 .selected = std::ranges::contains(selection, node.id)});
 		if (result.clicked) {
 			if (ImGui::GetIO().KeyCtrl) {
 				auto next = selection;

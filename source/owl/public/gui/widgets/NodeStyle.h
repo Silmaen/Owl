@@ -13,7 +13,10 @@
 
 #include <array>
 #include <cstddef>
+#include <optional>
 #include <span>
+#include <string>
+#include <string_view>
 #include <vector>
 
 struct ImDrawList;
@@ -145,7 +148,9 @@ OWL_API void drawNodeLink(ImDrawList* ioDraw, const math::vec2f& iFrom, const ma
 
 /**
  * @brief
- *  Cubic segments of a link routed through waypoints, each one shaped like `getNodeLinkCurve`.
+ *  Cubic segments of a link routed through waypoints: `getNodeLinkCurve` without any; else the pins keep their
+ *  horizontal tangents and each waypoint is crossed level towards where the link goes (leftwards on a way back,
+ *  vertically when its neighbours are one above the other), so a link going backwards does not loop.
  * @param[in] iFrom Output pin on the screen.
  * @param[in] iTo Input pin on the screen.
  * @param[in] iWaypoints Intermediate points on the screen, from the output to the input.
@@ -195,5 +200,47 @@ OWL_API void drawNodeLink(ImDrawList* ioDraw, const math::vec2f& iFrom, const ma
  */
 OWL_API void drawNodeLinkWaypoint(ImDrawList* ioDraw, const math::vec2f& iCenter, float iRadius,
 								  const math::vec4& iColor, bool iHovered);
+
+/**
+ * @brief
+ *  Nearest point of the background grid of the node editors (`drawNodeGrid`), for the snap of nodes and waypoints.
+ * @param[in] iPoint Point in canvas units.
+ * @return The grid point nearest to it.
+ */
+[[nodiscard]] OWL_API auto snapToNodeGrid(const math::vec2f& iPoint) -> math::vec2f;
+
+/**
+ * @brief
+ *  A colour a link of a graph can be given, by name, so that a document keeps a name rather than a colour.
+ */
+struct LinkColor {
+	/// Name kept in the document (`Red`, `Green`...).
+	const char* name = "";
+	/// Colour of the link and of its pins.
+	math::vec4 color{1.f, 1.f, 1.f, 1.f};
+};
+
+/**
+ * @brief
+ *  Palette of the colours a link can be given; the default colour of a link (no name) is not part of it.
+ * @return The colours, in the order of the menu.
+ */
+[[nodiscard]] OWL_API auto getLinkColors() -> std::span<const LinkColor>;
+
+/**
+ * @brief
+ *  Colour of a palette name.
+ * @param[in] iName Name of the colour.
+ * @return The colour, or nothing for an empty or unknown name (the link keeps its default colour).
+ */
+[[nodiscard]] OWL_API auto findLinkColor(std::string_view iName) -> std::optional<math::vec4>;
+
+/**
+ * @brief
+ *  Row of swatches choosing the colour of a link, inside a menu: the default colour first, then the palette.
+ * @param[in] iCurrent Name of the current colour (empty for the default).
+ * @return The name clicked (empty for the default), or nothing when no swatch was clicked.
+ */
+[[nodiscard]] OWL_API auto linkColorSwatches(std::string_view iCurrent) -> std::optional<std::string>;
 
 }// namespace owl::gui::widgets

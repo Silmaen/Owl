@@ -9,8 +9,10 @@
 
 #include "gui/widgets/NodeCanvas.h"
 
+#include "gui/IconFont.h"
 #include "gui/UiLayer.h"
 #include "gui/utils.h"
+#include "gui/widgets/Menu.h"
 #include "gui/widgets/NodeStyle.h"
 
 OWL_DIAG_PUSH
@@ -21,6 +23,7 @@ OWL_DIAG_POP
 
 #include <algorithm>
 #include <array>
+#include <cfloat>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -29,6 +32,7 @@ OWL_DIAG_POP
 #include <optional>
 #include <ranges>
 #include <span>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <utility>
@@ -72,7 +76,8 @@ auto computeNodeSize(const Node& iNode) -> math::vec2f {
 	float outputs = 0.f;
 	for (const auto& pin: iNode.outputs) outputs = std::max(outputs, g_pinSpace + measure(pin.label));
 	const float body = inputs + outputs + (inputs > 0.f && outputs > 0.f ? g_columnGap : 0.f);
-	const float width = std::max({g_minWidth, body + 2.f * g_padding, measure(iNode.title) + 2.f * g_padding});
+	const float glyph = iNode.glyph.empty() ? 0.f : measure(iNode.glyph) + g_padding * 0.5f;
+	const float width = std::max({g_minWidth, body + 2.f * g_padding, glyph + measure(iNode.title) + 2.f * g_padding});
 	const auto rows = std::max(iNode.inputs.size(), iNode.outputs.size());
 	return {width, g_headerHeight + g_bodyTop + static_cast<float>(rows) * g_rowHeight + g_bodyBottom};
 }
@@ -133,6 +138,16 @@ struct NodeCanvas::Impl final {
 	std::function<void(core::UUID, core::UUID, core::UUID)> m_onLinkCreated;
 	std::function<void(core::UUID)> m_onLinkDeleted;
 	std::function<void(core::UUID, const std::vector<math::vec2f>&)> m_onLinkWaypointsChanged;
+	std::function<void(core::UUID, const std::string&)> m_onLinkColorChanged;
+	bool m_linkColors{false};
+	// Link of the open link menu and the canvas point it was opened at.
+	core::UUID m_menuLink{0};
+	std::array<float, 2> m_menuPoint{0.f, 0.f};
+	bool m_openLinkMenu{false};
+	bool m_snap{false};
+	// Node under the press of a move and its position then: with the snap, it lands on the grid and the others follow.
+	core::UUID m_anchorNode{0};
+	math::vec2f m_anchorStart{0.f, 0.f};
 	core::UUID m_draggedLink{0};
 	size_t m_draggedWaypoint{0};
 	std::vector<math::vec2f> m_waypointsBefore;
@@ -284,7 +299,8 @@ struct NodeCanvas::Impl final {
 			const bool highlighted = m_hoveredLink == i || link.fromPin == m_hoveredPin || link.toPin == m_hoveredPin ||
 									 isSelected(m_owner.m_nodes[from->second.node].id) ||
 									 isSelected(m_owner.m_nodes[to->second.node].id);
-			const auto color = highlighted ? lighter(from->second.color, 0.35f) : from->second.color;
+			const auto base = findLinkColor(link.color).value_or(from->second.color);
+			const auto color = highlighted ? lighter(base, 0.35f) : base;
 			drawNodeLink(ioDraw, from->second.position, to->second.position, screen[i], color,
 						 2.4f * m_zoom * (highlighted ? 1.5f : 1.f), m_zoom);
 			for (size_t w = 0; w < screen[i].size(); ++w)
@@ -294,17 +310,17 @@ struct NodeCanvas::Impl final {
 		}
 	}
 
-	void insertWaypoint() {
-		auto& link = m_owner.m_links[*m_hoveredLink];
+	void insertWaypoint(Link& ioLink, const std::array<float, 2>& iPoint) {
+		auto& link = ioLink;
 		const auto from = m_pins.find(static_cast<uint64_t>(link.fromPin));
 		const auto to = m_pins.find(static_cast<uint64_t>(link.toPin));
 		if (from == m_pins.end() || to == m_pins.end())
 			return;
 		const auto before = link.waypoints;
+		const math::vec2f point{iPoint[0], iPoint[1]};
 		const auto index = getNodeLinkInsertIndex(from->second.position, to->second.position,
-												  toScreenPoints(link.waypoints), toVec(ImGui::GetMousePos()), m_zoom);
-		const auto mouse = toCanvas(ImGui::GetMousePos());
-		link.waypoints.insert(link.waypoints.begin() + static_cast<ptrdiff_t>(index), math::vec2f{mouse[0], mouse[1]});
+												  toScreenPoints(link.waypoints), toVec(toScreen(point)), m_zoom);
+		link.waypoints.insert(link.waypoints.begin() + static_cast<ptrdiff_t>(index), point);
 		if (m_onLinkWaypointsChanged)
 			m_onLinkWaypointsChanged(link.id, before);
 	}
@@ -340,10 +356,17 @@ struct NodeCanvas::Impl final {
 						   .hovered = m_hoveredNode == index,
 						   .faulty = false},
 						  m_zoom);
-			if (shouldDrawNodeTitles(m_zoom) && !node.title.empty())
-				ioDraw->AddText(strong, fontSize,
-								{min.x + g_padding * m_zoom, min.y + (g_headerHeight * m_zoom - fontSize) * 0.5f},
-								toU32(node.titleColor), node.title.c_str());
+			if (shouldDrawNodeTitles(m_zoom)) {
+				const float titleY = min.y + (g_headerHeight * m_zoom - fontSize) * 0.5f;
+				float titleX = min.x + g_padding * m_zoom;
+				if (!node.glyph.empty()) {
+					ioDraw->AddText(font, fontSize, {titleX, titleY}, toU32(node.glyphColor), node.glyph.c_str());
+					titleX += font->CalcTextSizeA(fontSize, FLT_MAX, 0.f, node.glyph.c_str()).x +
+							  g_padding * 0.5f * m_zoom;
+				}
+				if (!node.title.empty())
+					ioDraw->AddText(strong, fontSize, {titleX, titleY}, toU32(node.titleColor), node.title.c_str());
+			}
 			const auto drawPins = [&](const std::vector<NodePin>& iPins) -> void {
 				for (const auto& pin: iPins) {
 					const auto& view = m_pins.at(static_cast<uint64_t>(pin.id));
@@ -351,12 +374,21 @@ struct NodeCanvas::Impl final {
 						return iLink.fromPin == pin.id || iLink.toPin == pin.id;
 					});
 					auto color = pin.labelColor;
+					for (const auto& link: m_owner.m_links)
+						if (link.fromPin == pin.id || link.toPin == pin.id)
+							if (const auto linkColor = findLinkColor(link.color); linkColor.has_value()) {
+								color = *linkColor;
+								break;
+							}
 					if (pin.id == m_hoveredPin) {
 						ioDraw->AddCircleFilled(toIm(view.position), g_pinRadius * 2.2f * m_zoom,
 												toU32({color.x(), color.y(), color.z(), 0.25f}));
 						color = lighter(color, 0.3f);
 					}
-					drawDataPin(ioDraw, view.position, g_pinRadius * m_zoom, color, linked);
+					if (pin.exec)
+						drawExecPin(ioDraw, view.position, g_pinRadius * 1.15f * m_zoom, color, linked);
+					else
+						drawDataPin(ioDraw, view.position, g_pinRadius * m_zoom, color, linked);
 					if (!shouldDrawPinLabels(m_zoom) || pin.label.empty())
 						continue;
 					const auto size = font->CalcTextSizeA(fontSize, FLT_MAX, 0.f, pin.label.c_str());
@@ -469,6 +501,8 @@ struct NodeCanvas::Impl final {
 			m_draggedWaypoint = m_hoveredWaypoint->index;
 			m_waypointsBefore = link.waypoints;
 		} else if (m_hoveredNode.has_value()) {
+			m_anchorNode = m_owner.m_nodes[*m_hoveredNode].id;
+			m_anchorStart = m_owner.m_nodes[*m_hoveredNode].position;
 			clickNode(*m_hoveredNode);
 			m_movedLinks.clear();
 			for (const auto& link: m_owner.m_links)
@@ -484,14 +518,20 @@ struct NodeCanvas::Impl final {
 	void dragLeft(const std::array<float, 2>& iMouse) {
 		if (m_gesture == Gesture::Waypoint) {
 			for (auto& link: m_owner.m_links)
-				if (link.id == m_draggedLink && m_draggedWaypoint < link.waypoints.size())
-					link.waypoints[m_draggedWaypoint] = {iMouse[0], iMouse[1]};
+				if (link.id == m_draggedLink && m_draggedWaypoint < link.waypoints.size()) {
+					const math::vec2f point{iMouse[0], iMouse[1]};
+					link.waypoints[m_draggedWaypoint] = m_snap ? snapToNodeGrid(point) : point;
+				}
 			return;
 		}
 		if (m_gesture != Gesture::Move)
 			return;
-		const math::vec2f delta{iMouse[0] - m_lastMouse[0], iMouse[1] - m_lastMouse[1]};
+		math::vec2f delta{iMouse[0] - m_lastMouse[0], iMouse[1] - m_lastMouse[1]};
 		m_lastMouse = iMouse;
+		if (const auto* anchor = m_owner.findNode(m_anchorNode); m_snap && anchor != nullptr)
+			delta = snapToNodeGrid(m_anchorStart +
+								   math::vec2f{iMouse[0] - m_gestureStart[0], iMouse[1] - m_gestureStart[1]}) -
+					anchor->position;
 		if (std::abs(iMouse[0] - m_gestureStart[0]) + std::abs(iMouse[1] - m_gestureStart[1]) >
 			g_dragThreshold / m_zoom)
 			m_moved = true;
@@ -530,9 +570,11 @@ struct NodeCanvas::Impl final {
 			!ImGui::IsMouseDown(ImGuiMouseButton_Middle))
 			m_gesture = Gesture::None;
 		else if (m_gesture == Gesture::None && m_hovered && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
-			if (m_hoveredLink.has_value() && !m_hoveredWaypoint.has_value())
-				insertWaypoint();
-			else if (m_onContextMenu)
+			if (m_hoveredLink.has_value() && !m_hoveredWaypoint.has_value()) {
+				m_menuLink = m_owner.m_links[*m_hoveredLink].id;
+				m_menuPoint = mouse;
+				m_openLinkMenu = true;
+			} else if (m_onContextMenu)
 				m_onContextMenu(m_hoveredNode.has_value() ? std::optional{m_owner.m_nodes[*m_hoveredNode].id}
 														  : std::nullopt);
 		}
@@ -545,6 +587,42 @@ struct NodeCanvas::Impl final {
 		if (m_hovered && m_hoveredLink.has_value() && m_hoveredPin == 0 && m_gesture == Gesture::None &&
 			ImGui::IsKeyPressed(ImGuiKey_Delete, false))
 			deleteHovered();
+	}
+
+	void renderLinkMenu() {
+		if (m_openLinkMenu) {
+			ImGui::OpenPopup("##nodeLinkMenu");
+			m_openLinkMenu = false;
+		}
+		if (!ImGui::BeginPopup("##nodeLinkMenu"))
+			return;
+		const auto found = std::ranges::find(m_owner.m_links, m_menuLink, &Link::id);
+		if (found == m_owner.m_links.end()) {
+			ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+			return;
+		}
+		menuHeader("Link");
+		if (menuItem({.glyph = icon::plus, .label = "Add Waypoint"}))
+			insertWaypoint(*found, m_menuPoint);
+		if (m_linkColors) {
+			ImGui::SeparatorText("Colour");
+			if (const auto chosen = linkColorSwatches(found->color); chosen.has_value() && *chosen != found->color) {
+				const auto before = found->color;
+				found->color = *chosen;
+				if (m_onLinkColorChanged)
+					m_onLinkColorChanged(found->id, before);
+				ImGui::CloseCurrentPopup();
+			}
+		}
+		ImGui::Separator();
+		if (menuItem({.glyph = icon::trash2, .label = "Delete Link", .danger = true})) {
+			const auto id = found->id;
+			m_owner.removeLink(id);
+			if (m_onLinkDeleted)
+				m_onLinkDeleted(id);
+		}
+		ImGui::EndPopup();
 	}
 
 	void drawOverlays(ImDrawList* ioDraw) const {
@@ -657,6 +735,16 @@ auto NodeCanvas::setLinkWaypoints(core::UUID iId, std::vector<math::vec2f> iWayp
 	return false;
 }
 
+auto NodeCanvas::setLinkColor(core::UUID iId, const std::string& iColor) -> bool {
+	for (auto& link: m_links)
+		if (link.id == iId) {
+			link.color = iColor;
+			return true;
+		}
+	OWL_CORE_WARN("NodeCanvas: Link {} not found, colour not set.", static_cast<uint64_t>(iId))
+	return false;
+}
+
 void NodeCanvas::removeLink(core::UUID iId) {
 	std::erase_if(m_links, [iId](const Link& iLink) -> bool { return iLink.id == iId; });
 }
@@ -728,6 +816,14 @@ void NodeCanvas::setOnLinkWaypointsChanged(std::function<void(core::UUID, const 
 	mp_impl->m_onLinkWaypointsChanged = std::move(iCb);
 }
 
+void NodeCanvas::setLinkColorsEnabled(const bool iEnabled) { mp_impl->m_linkColors = iEnabled; }
+
+void NodeCanvas::setSnapToGrid(const bool iEnabled) { mp_impl->m_snap = iEnabled; }
+
+void NodeCanvas::setOnLinkColorChanged(std::function<void(core::UUID, const std::string&)> iCb) {
+	mp_impl->m_onLinkColorChanged = std::move(iCb);
+}
+
 void NodeCanvas::setOnNodeMoved(std::function<void(core::UUID, math::vec2f)> iCb) {
 	mp_impl->m_onNodeMoved = std::move(iCb);
 }
@@ -778,6 +874,7 @@ void NodeCanvas::onRender() {
 	if (impl.m_enabled)
 		impl.handleMouse();
 	impl.drawOverlays(draw);
+	impl.renderLinkMenu();
 	ImGui::EndChild();
 }
 

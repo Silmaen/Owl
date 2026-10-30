@@ -17,6 +17,8 @@
 #include <fstream>
 #include <span>
 #include <sstream>
+#include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -63,6 +65,8 @@ void emitLink(YAML::Emitter& ioOut, const Link& iLink) {
 		for (const auto& point: iLink.waypoints) ioOut << YAML::BeginSeq << point.x() << point.y() << YAML::EndSeq;
 		ioOut << YAML::EndSeq;
 	}
+	if (!iLink.color.empty())
+		ioOut << YAML::Key << "color" << YAML::Value << iLink.color;
 	ioOut << YAML::EndMap;
 }
 
@@ -163,7 +167,9 @@ auto NodeCanvasSerializer::deserializeFromString(NodeCanvas& ioCanvas, std::stri
 				continue;
 			const core::UUID fromPin{raw["from"].as<uint64_t>()};
 			const core::UUID toPin{raw["to"].as<uint64_t>()};
-			ioCanvas.addLink(fromPin, toPin, parseWaypoints(raw));
+			const auto link = ioCanvas.addLink(fromPin, toPin, parseWaypoints(raw));
+			if (const auto color = raw["color"]; color)
+				std::ignore = ioCanvas.setLinkColor(link, color.as<std::string>(""));
 		}
 	}
 	return true;
@@ -209,7 +215,7 @@ auto NodeCanvasSerializer::serializeSubset(const NodeCanvas& iCanvas, std::span<
 	for (const auto& link: iCanvas.links()) {
 		if (pinsInSubset.contains(static_cast<uint64_t>(link.fromPin)) &&
 			pinsInSubset.contains(static_cast<uint64_t>(link.toPin))) {
-			subset.addLink(link.fromPin, link.toPin, link.waypoints);
+			std::ignore = subset.setLinkColor(subset.addLink(link.fromPin, link.toPin, link.waypoints), link.color);
 		}
 	}
 	return serializeToString(subset);
@@ -258,7 +264,9 @@ auto NodeCanvasSerializer::pasteSubset(NodeCanvas& ioCanvas, std::string_view iY
 			const auto toIt = pinIdMap.find(oldTo);
 			if (fromIt == pinIdMap.end() || toIt == pinIdMap.end())
 				continue;
-			ioCanvas.addLink(fromIt->second, toIt->second, parseWaypoints(raw));
+			const auto link = ioCanvas.addLink(fromIt->second, toIt->second, parseWaypoints(raw));
+			if (const auto color = raw["color"]; color)
+				std::ignore = ioCanvas.setLinkColor(link, color.as<std::string>(""));
 		}
 	}
 	return createdNodeIds;

@@ -144,13 +144,16 @@ TEST(Dialogue, OutputsAndRoutesFollowTheKind) {
 	EXPECT_TRUE(Dialogue::setOutput(*dialogue.findNode(3), 1, 0));
 	EXPECT_EQ(dialogue.findNode(3)->nextFalse, 0);
 	EXPECT_FALSE(Dialogue::setOutput(*dialogue.findNode(7), 0, 1));
-	dialogue.routes = {{.node = 3, .output = 0, .points = {{10.f, 20.f}, {30.f, 40.f}}}};
+	dialogue.routes = {{.node = 3, .output = 0, .points = {{10.f, 20.f}, {30.f, 40.f}}, .color = {}},
+					   {.node = 3, .output = 1, .points = {}, .color = "Green"}};
 	const auto read =
 			Dialogue::deserializeFromString(dialogue.serializeToString() + "\nextra: 0\n");// unknown keys are ignored
 	ASSERT_TRUE(read.has_value());
 	EXPECT_EQ(read->routes, dialogue.routes);
 	ASSERT_NE(read->findRoute(3, 0), nullptr);
-	EXPECT_EQ(read->findRoute(3, 1), nullptr);
+	ASSERT_NE(read->findRoute(3, 1), nullptr);// a colour alone keeps the route
+	EXPECT_EQ(read->findRoute(3, 1)->color, "Green");
+	EXPECT_EQ(read->findRoute(3, 2), nullptr);
 	const auto dropped = Dialogue::deserializeFromString("Dialogue: ''\nnodes:\n  - {id: 1, kind: End}\n"
 														 "routes:\n  - {node: 1, output: 0, points: [[1, 2]]}\n"
 														 "  - {node: 9, output: 0, points: []}\n");

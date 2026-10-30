@@ -35,8 +35,11 @@ double-click. The tab is a graph on the node canvas; the **Nodes** and **Node** 
 Properties panels while it is the active document.
 
 - **Graph**: right-click the canvas to add a node of any kind, drag a link from an output to a node to connect it
-  (dropping on empty canvas unlinks the output). The bends of a link are kept with the dialogue. Click or box-select
-  nodes, drag them to move, `Delete` removes, `Ctrl+D` duplicates, `Home` frames the graph.
+  (dropping on empty canvas unlinks the output). The pins are execution chevrons and each kind has the colour of its
+  glyph, in the graph and the Nodes panel. Right-click a link for its menu: **Add Waypoint**, a **Colour** (the link and
+  its pins take it, until the link is removed) and **Delete Link**; the bends and the colour are kept with the dialogue
+  (`routes:`). Click or box-select nodes, drag them to move (on the grid with **Snap to Grid**, the magnet of the
+  toolbar), `Delete` removes, `Ctrl+D` duplicates, `Home` frames the graph.
 - **Nodes panel**: every node with its kind and text, and the problems of the graph; a click selects the node in the
   graph.
 - **Node panel**: for a Line or a Choice, the speaker, the text and their localisation keys, with the translation

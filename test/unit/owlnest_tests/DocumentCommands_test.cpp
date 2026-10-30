@@ -277,6 +277,14 @@ TEST_F(DocumentCommandsTest, DialogueCommandsBuildAConversation) {
 					m_dialogue));
 	EXPECT_FALSE(run("dialogue.set_route", {{"node", choice}, {"output", int64_t{0}}, {"points", "oops"}}, m_dialogue));
 	ASSERT_NE(dialogue.findRoute(std::stoull(choice), 0), nullptr);
+	ASSERT_TRUE(
+			run("dialogue.set_link_color", {{"node", choice}, {"output", int64_t{0}}, {"color", "Red"}}, m_dialogue));
+	EXPECT_EQ(dialogue.findRoute(std::stoull(choice), 0)->color, "Red");
+	EXPECT_EQ(dialogue.findRoute(std::stoull(choice), 0)->points.size(), 2u);// the colour keeps the bends
+	EXPECT_FALSE(
+			run("dialogue.set_link_color", {{"node", choice}, {"output", int64_t{0}}, {"color", "Mauve"}}, m_dialogue));
+	EXPECT_FALSE(run("dialogue.set_link_color", {{"node", choice}, {"output", int64_t{1}}, {"color", "Red"}},
+					 m_dialogue));// no link there
 	ASSERT_TRUE(run("dialogue.move_option", {{"node", choice}, {"option", int64_t{0}}, {"down", true}}, m_dialogue));
 	const auto* choiceNode = dialogue.findNode(std::stoull(choice));
 	ASSERT_EQ(choiceNode->options.size(), 2u);

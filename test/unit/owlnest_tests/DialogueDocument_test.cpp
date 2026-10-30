@@ -95,6 +95,11 @@ TEST(DialogueDocument, TitlesAndLabelsNameWhatANodeDoes) {
 	EXPECT_EQ(getDialogueOutputLabel(*dialogue.findNode(4), 1), "Answer 2");
 	EXPECT_EQ(getDialogueOutputLabel(*dialogue.findNode(2), 0), "Next");
 	for (const auto kind: data::dialogue::getNodeKinds()) EXPECT_NE(getDialogueNodeGlyph(kind), nullptr);
+	EXPECT_EQ(getDialogueNodeLabel(*dialogue.findNode(3)).find(getDialogueNodeGlyph(NodeKind::Branch)),
+			  std::string::npos);
+	EXPECT_NE(getDialogueNodeLabel(*dialogue.findNode(3)).find("has_key?"), std::string::npos);
+	EXPECT_NE(getDialogueNodeColor(NodeKind::Line), getDialogueNodeColor(NodeKind::Choice));
+	EXPECT_NE(getDialogueNodeColor(NodeKind::Start), getDialogueNodeColor(NodeKind::End));
 }
 
 TEST_F(DialogueDocumentTest, EditsAreUndoneRedoneAndSaved) {

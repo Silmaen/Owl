@@ -51,6 +51,22 @@ using DialogueUndoManager = UndoManager<data::dialogue::Dialogue>;
 
 /**
  * @brief
+ *  Title of a dialogue node without its glyph: who speaks and what, or the function it calls.
+ * @param[in] iNode The node.
+ * @return The label, shortened to fit a node.
+ */
+[[nodiscard]] auto getDialogueNodeLabel(const data::dialogue::DialogueNode& iNode) -> std::string;
+
+/**
+ * @brief
+ *  Colour of the glyph of a dialogue node kind, in the graph and the node list.
+ * @param[in] iKind The kind.
+ * @return The colour.
+ */
+[[nodiscard]] auto getDialogueNodeColor(data::dialogue::NodeKind iKind) -> math::vec4;
+
+/**
+ * @brief
  *  Label of an output of a dialogue node: `Next`, `True` / `False`, or the text of the option.
  * @param[in] iNode The node.
  * @param[in] iOutput Index of the output.

@@ -25,6 +25,8 @@ classDiagram
         +removeNode(UUID)
         +addLink(fromPin, toPin, waypoints) UUID
         +setLinkWaypoints(UUID, waypoints) bool
+        +setLinkColor(UUID, name) bool
+        +setSnapToGrid(bool)
         +removeLink(UUID)
         +onRender()
         -Impl (drawing and gestures)
@@ -67,8 +69,11 @@ connects two scenes) belong to the callbacks the client installs.
 |-----------|------------------------------------------------------------------------|
 | `PinKind` | `Input` / `Output` — side of the node the pin sits on                  |
 | `NodePin` | UUID + label + `typeTag` (opaque string for client-side validation)    |
+|           | + colour + `exec` (an execution chevron rather than a data circle)     |
 | `Node`    | UUID + title + 2D position + input/output pins + `customData` + colour |
+|           | + a glyph before the title, in its own colour (the kind of the node)   |
 | `Link`    | UUID + source output pin UUID + destination input pin UUID + waypoints |
+|           | + `color`, a name of `getLinkColors` (empty: the colour of its pin)    |
 
 `customData` is an opaque YAML blob owned by the client — it travels through copy/paste and serialization unchanged. The
 Scene Flow view stores the relative scene path there.
@@ -83,6 +88,7 @@ Every callback is optional. Install them with `setOn*` methods before the first 
 | `setOnLinkCreated`          | After a link was accepted and added to the canvas                   |
 | `setOnLinkDeleted`          | User deleted a link (keyboard / context menu)                       |
 | `setOnLinkWaypointsChanged` | Waypoints inserted, moved or deleted; receives the ones before      |
+| `setOnLinkColorChanged`     | Colour chosen in the link menu (`setLinkColorsEnabled`); the before |
 | `setOnNodeMoved`            | User dragged a node — receives the new top-left position            |
 | `setOnNodeSelected`         | Single click on a node                                              |
 | `setOnNodeDoubleClicked`    | Double click on the same node within 300 ms (detected in wrapper)   |
@@ -92,7 +98,10 @@ Every callback is optional. Install them with `setOn*` methods before the first 
 
 The canvas draws itself with the node style of `gui/widgets/NodeStyle.h`, shared with the visual script editor: grid,
 title bar, round pins on one row each (inputs and outputs aligned), links as curves coloured by their source pin. A link
-with waypoints is a chain of curves, one from each point to the next, to steer it around nodes.
+with waypoints is a chain of curves, one from each point to the next, to steer it around nodes: the pins keep their
+sides and each waypoint is crossed level towards where the link goes, so a link routed backwards does not loop. A
+coloured link draws its pins in its colour. With `setSnapToGrid`, the node under the mouse and the dragged waypoints
+land on the grid (`snapToNodeGrid`), the other selected nodes keep their place relative to it.
 
 | Gesture                        | Action                                                          |
 |--------------------------------|-----------------------------------------------------------------|
@@ -102,7 +111,7 @@ with waypoints is a chain of curves, one from each point to the next, to steer i
 | Drag from a pin to a pin       | Link, through `setLinkValidator`                                |
 | Hover a link, **Delete**       | Remove the link                                                 |
 | **Alt**+click a link           | Cut it (`setOnLinkDeleted`)                                     |
-| Right click a link             | Insert a waypoint at the cursor                                 |
+| Right click a link             | Its menu: **Add Waypoint** here, **Colour**, **Delete Link**    |
 | Drag a waypoint                | Move it; the waypoints of links inside a moved selection follow |
 | Hover a waypoint, **Delete**   | Remove the waypoint                                             |
 | Right-drag, middle-drag, wheel | Pan and zoom; the wheel zooms only with no popup open           |

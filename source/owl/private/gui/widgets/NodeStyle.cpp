@@ -20,7 +20,10 @@ OWL_DIAG_POP
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <span>
+#include <string>
+#include <string_view>
 
 namespace owl::gui::widgets {
 
@@ -168,14 +171,36 @@ void drawNodeLink(ImDrawList* ioDraw, const math::vec2f& iFrom, const math::vec2
 auto getNodeLinkSegments(const math::vec2f& iFrom, const math::vec2f& iTo,
 						 const std::span<const math::vec2f> iWaypoints, const float iZoom)
 		-> std::vector<std::array<math::vec2f, 4>> {
+	if (iWaypoints.empty())
+		return {getNodeLinkCurve(iFrom, iTo, iZoom)};
+	std::vector<math::vec2f> points;
+	points.reserve(iWaypoints.size() + 2);
+	points.push_back(iFrom);
+	points.insert(points.end(), iWaypoints.begin(), iWaypoints.end());
+	points.push_back(iTo);
+	const size_t last = points.size() - 1;
+	const math::vec2f horizontal{1.f, 0.f};
+	// A pin is left to the right and entered from the left; a waypoint is crossed level, towards where the link goes.
+	const auto tangentAt = [&points, last, &horizontal](const size_t iIndex) -> math::vec2f {
+		if (iIndex == 0 || iIndex == last)
+			return horizontal;
+		const auto through = points[iIndex + 1] - points[iIndex - 1];
+		if (std::abs(through.x()) >= std::abs(through.y()) * 0.25f)
+			return {through.x() < 0.f ? -1.f : 1.f, 0.f};
+		return {0.f, through.y() < 0.f ? -1.f : 1.f};
+	};
 	std::vector<std::array<math::vec2f, 4>> segments;
-	segments.reserve(iWaypoints.size() + 1);
-	math::vec2f start = iFrom;
-	for (const auto& waypoint: iWaypoints) {
-		segments.push_back(getNodeLinkCurve(start, waypoint, iZoom));
-		start = waypoint;
+	segments.reserve(last);
+	for (size_t i = 0; i < last; ++i) {
+		const auto& start = points[i];
+		const auto& end = points[i + 1];
+		const float distance = (end - start).norm();
+		const float pinReach = std::min(std::max(std::abs(end.x() - start.x()) * 0.5f, 40.f * iZoom),
+										std::max(distance, 20.f * iZoom));
+		const float startReach = i == 0 ? pinReach : distance * 0.35f;
+		const float endReach = i + 1 == last ? pinReach : distance * 0.35f;
+		segments.push_back({start, start + tangentAt(i) * startReach, end - tangentAt(i + 1) * endReach, end});
 	}
-	segments.push_back(getNodeLinkCurve(start, iTo, iZoom));
 	return segments;
 }
 
@@ -220,6 +245,65 @@ void drawNodeLinkWaypoint(ImDrawList* ioDraw, const math::vec2f& iCenter, const 
 	ioDraw->AddCircleFilled(toIm(iCenter), iRadius, toU32(iColor));
 	if (iHovered)
 		ioDraw->AddCircle(toIm(iCenter), iRadius + 3.f, toU32(UiLayer::getTheme().accent), 0, 2.f);
+}
+
+namespace {
+
+constexpr std::array g_linkColors{
+		LinkColor{.name = "Red", .color = {0.93f, 0.37f, 0.34f, 1.f}},
+		LinkColor{.name = "Orange", .color = {0.96f, 0.6f, 0.26f, 1.f}},
+		LinkColor{.name = "Yellow", .color = {0.95f, 0.85f, 0.36f, 1.f}},
+		LinkColor{.name = "Green", .color = {0.42f, 0.8f, 0.46f, 1.f}},
+		LinkColor{.name = "Teal", .color = {0.3f, 0.8f, 0.78f, 1.f}},
+		LinkColor{.name = "Blue", .color = {0.42f, 0.62f, 0.98f, 1.f}},
+		LinkColor{.name = "Violet", .color = {0.69f, 0.52f, 0.96f, 1.f}},
+		LinkColor{.name = "Pink", .color = {0.96f, 0.52f, 0.76f, 1.f}},
+};
+
+}// namespace
+
+auto getLinkColors() -> std::span<const LinkColor> { return g_linkColors; }
+
+auto snapToNodeGrid(const math::vec2f& iPoint) -> math::vec2f {
+	return {std::round(iPoint.x() / g_gridStep) * g_gridStep, std::round(iPoint.y() / g_gridStep) * g_gridStep};
+}
+
+auto findLinkColor(const std::string_view iName) -> std::optional<math::vec4> {
+	if (iName.empty())
+		return std::nullopt;
+	for (const auto& entry: g_linkColors)
+		if (iName == entry.name)
+			return entry.color;
+	return std::nullopt;
+}
+
+auto linkColorSwatches(const std::string_view iCurrent) -> std::optional<std::string> {
+	const auto& theme = UiLayer::getTheme();
+	const float side = ImGui::GetFrameHeight();
+	std::optional<std::string> chosen;
+	const auto swatch = [&](const char* iName, const char* iTooltip, const math::vec4& iColor) -> void {
+		ImGui::PushID(iName);
+		if (ImGui::InvisibleButton("##swatch", {side, side}))
+			chosen = std::string{iName};
+		const bool hovered = ImGui::IsItemHovered();
+		const ImVec2 min = ImGui::GetItemRectMin();
+		const ImVec2 max = ImGui::GetItemRectMax();
+		auto* draw = ImGui::GetWindowDrawList();
+		const float inset = std::floor(side * 0.2f);
+		draw->AddRectFilled({min.x + inset, min.y + inset}, {max.x - inset, max.y - inset}, toU32(iColor),
+							theme.frameRounding);
+		if (iCurrent == iName || hovered)
+			draw->AddRect({min.x + 1.f, min.y + 1.f}, {max.x - 1.f, max.y - 1.f},
+						  toU32(iCurrent == iName ? theme.accent : theme.text), theme.frameRounding, 0, 1.5f);
+		if (hovered)
+			ImGui::SetTooltip("%s", iTooltip);
+		ImGui::PopID();
+		ImGui::SameLine(0.f, 2.f);
+	};
+	swatch("", "Default", theme.text);
+	for (const auto& entry: g_linkColors) swatch(entry.name, entry.name, entry.color);
+	ImGui::NewLine();
+	return chosen;
 }
 
 }// namespace owl::gui::widgets

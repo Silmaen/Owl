@@ -270,6 +270,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Snap the moved nodes and waypoints to the grid: the one under the mouse lands on it, the others follow.
+	 * @param[in] iEnabled Whether the snap is on.
+	 */
+	void setSnapToGrid(const bool iEnabled) { m_snap = iEnabled; }
+
+	/**
+	 * @brief
 	 *  Replace what the debugger shows on the graph.
 	 * @param[in] iView Breakpoints, stopped node and wire values.
 	 */
@@ -402,10 +409,19 @@ private:
 
 	/**
 	 * @brief
-	 *  Ask for a waypoint on the hovered link, at the mouse.
-	 * @param[in,out] ioFrame The frame.
+	 *  Draw the menu of a link (right click on it): add a waypoint, a colour for an execution link, delete it.
+	 * @param[in,out] ioFrame The frame; a chosen entry sets its edit.
 	 */
-	void insertWaypoint(Frame& ioFrame) const;
+	void renderLinkMenu(Frame& ioFrame);
+
+	/**
+	 * @brief
+	 *  Ask for a waypoint on a link, at a canvas point.
+	 * @param[in,out] ioFrame The frame.
+	 * @param[in] iLink Index of the link.
+	 * @param[in] iPoint Canvas point of the waypoint.
+	 */
+	void insertWaypoint(Frame& ioFrame, size_t iLink, const std::array<float, 2>& iPoint) const;
 
 	/**
 	 * @brief
@@ -434,6 +450,16 @@ private:
 	std::optional<VisualScriptPinRef> m_linkStart;
 	/// Link and index of the waypoint being moved.
 	std::array<size_t, 2> m_waypoint{0, 0};
+	/// Link of the link menu, by its ends (an index would not survive a change of the graph).
+	std::optional<script::visual::GraphLink> m_menuLink;
+	/// Canvas point the link menu was opened at.
+	std::array<float, 2> m_menuPoint{0.f, 0.f};
+	/// Whether the link menu opens at the next render.
+	bool m_openLinkMenu{false};
+	/// Whether the moved nodes and waypoints snap to the grid.
+	bool m_snap{false};
+	/// Position, at the press, of the node or waypoint under the mouse: with the snap, it lands on the grid.
+	math::vec2f m_anchorStart{0.f, 0.f};
 	/// Frame every node at the next render.
 	bool m_frameAll{true};
 	/// Node to centre at the next render.

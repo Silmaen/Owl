@@ -604,6 +604,7 @@ void VisualScriptDocument::onImGuiRender() {
 			const float width = std::max(ImGui::GetContentRegionAvail().x * 0.55f, 200.f);
 			ImGui::BeginChild("##vsGraphPane", {width, 0.f}, ImGuiChildFlags_ResizeX);
 		}
+		m_view.setSnapToGrid(isGraphSnapOn(mp_editorLayer));
 		const auto result = m_view.render(m_script, m_diagnostics);
 		if (m_viewMode == VisualScriptViewMode::Split) {
 			ImGui::EndChild();
@@ -643,6 +644,8 @@ void VisualScriptDocument::renderToolbar() {
 											   .description = "Show every node.",
 											   .disabled = m_viewMode == VisualScriptViewMode::Code}))
 		m_view.requestFrameAll();
+	ImGui::SameLine();
+	graphSnapButton(mp_editorLayer);
 	separator();
 	constexpr std::array modes{
 			std::tuple{VisualScriptViewMode::Graph, gui::icon::workflow, "Graph", "The nodes only."},

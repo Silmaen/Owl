@@ -442,6 +442,8 @@ void emitScript(YAML::Emitter& ioOut, const VisualScript& iScript) {
 			for (const auto& [x, y]: link.waypoints) ioOut << YAML::BeginSeq << x << y << YAML::EndSeq;
 			ioOut << YAML::EndSeq;
 		}
+		if (!link.color.empty())
+			ioOut << YAML::Key << "color" << YAML::Value << link.color;
 		ioOut << YAML::EndMap;
 	}
 	ioOut << YAML::EndSeq;
@@ -513,7 +515,8 @@ auto parseLink(const YAML::Node& iNode) -> std::optional<GraphLink> {
 					 .fromPin = iNode["fromPin"].as<std::string>(""),
 					 .toNode = core::UUID{iNode["to"].as<uint64_t>()},
 					 .toPin = iNode["toPin"].as<std::string>(""),
-					 .waypoints = parseWaypoints(iNode)};
+					 .waypoints = parseWaypoints(iNode),
+					 .color = iNode["color"].as<std::string>("")};
 }
 
 auto parseScript(const YAML::Node& iRoot) -> VisualScript {

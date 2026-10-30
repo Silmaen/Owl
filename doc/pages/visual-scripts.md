@@ -101,11 +101,12 @@ An event appears at most once in a graph.
 | **Alt**+click a pin                | Break its links                                                     |
 | Hover a link, **Delete**           | Remove the link                                                     |
 | **Alt**+click a link               | Cut it                                                              |
-| Right-click a link                 | Add a waypoint at the cursor, to steer the link around nodes        |
+| Right-click a link                 | Its menu: add a waypoint there, a colour (execution links), delete  |
 | Drag a waypoint                    | Move it; waypoints between moved nodes follow them                  |
 | Hover a waypoint, **Delete**       | Remove the waypoint                                                 |
 | Drag on the background             | Select many nodes; drag one of them to move them all                |
 | Right-drag, middle-drag, wheel     | Pan and zoom                                                        |
+| Magnet of the toolbar              | Snap nodes and waypoints to the grid, in every node editor          |
 | **Home**                           | Frame every node                                                    |
 | **Delete**                         | Delete the selected nodes and their links                           |
 | **Ctrl+C**, **Ctrl+X**, **Ctrl+V** | Copy, cut, paste (also between graphs, with the variables they use) |

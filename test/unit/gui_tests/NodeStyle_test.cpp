@@ -53,6 +53,24 @@ TEST(NodeStyle, LinkSegmentsPassThroughEveryWaypoint) {
 	EXPECT_EQ(getNodeLinkSegments(from, to, {}, 1.f).size(), 1u);
 }
 
+TEST(NodeStyle, LinkSegmentsGoBackwardsThroughWaypointsWithoutLooping) {
+	const math::vec2f from{400.f, 0.f};
+	const math::vec2f to{0.f, 0.f};
+	const std::vector<math::vec2f> waypoints{{450.f, 200.f}, {-50.f, 200.f}};
+	const auto segments = getNodeLinkSegments(from, to, waypoints, 1.f);
+	ASSERT_EQ(segments.size(), 3u);
+	// The pins keep their sides: the output leaves to the right, the input is entered from the left.
+	EXPECT_GT(segments[0][1].x(), from.x());
+	EXPECT_LT(segments[2][2].x(), to.x());
+	// The leftward middle segment leaves and enters its waypoints heading left, not to the right.
+	EXPECT_LT(segments[1][1].x(), waypoints[0].x());
+	EXPECT_GT(segments[1][2].x(), waypoints[1].x());
+	// The tangent is continuous through a waypoint.
+	const auto in = segments[0][3] - segments[0][2];
+	const auto out = segments[1][1] - segments[1][0];
+	EXPECT_NEAR(in.x() * out.y() - in.y() * out.x(), 0.f, 1e-2f);
+}
+
 TEST(NodeStyle, LinkDistanceAndInsertIndexFollowTheWaypoints) {
 	const math::vec2f from{0.f, 0.f};
 	const math::vec2f to{300.f, 0.f};
@@ -62,4 +80,17 @@ TEST(NodeStyle, LinkDistanceAndInsertIndexFollowTheWaypoints) {
 	EXPECT_EQ(getNodeLinkInsertIndex(from, to, waypoints, {150.f, 100.f}, 1.f), 1u);
 	EXPECT_EQ(getNodeLinkInsertIndex(from, to, waypoints, {20.f, 10.f}, 1.f), 0u);
 	EXPECT_EQ(getNodeLinkInsertIndex(from, to, waypoints, {280.f, 10.f}, 1.f), 2u);
+}
+
+TEST(NodeStyle, LinkColorsAreNamedAndTheGridSnapRounds) {
+	ASSERT_FALSE(getLinkColors().empty());
+	for (const auto& entry: getLinkColors()) {
+		const auto color = findLinkColor(entry.name);
+		ASSERT_TRUE(color.has_value());
+		EXPECT_EQ(*color, entry.color);
+	}
+	EXPECT_FALSE(findLinkColor("").has_value());
+	EXPECT_FALSE(findLinkColor("Chartreuse").has_value());
+	EXPECT_EQ(snapToNodeGrid({7.f, 9.f}), (math::vec2f{0.f, 16.f}));
+	EXPECT_EQ(snapToNodeGrid({-25.f, 40.f}), (math::vec2f{-32.f, 48.f}));
 }

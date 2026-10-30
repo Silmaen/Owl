@@ -134,6 +134,7 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			snapRotationDegrees = std::clamp(config["snapRotationDegrees"].as<float>(), 0.1f, 180.f);
 		readKey(config, "snapAutoFromTilemap", snapAutoFromTilemap);
 		readKey(config, "showCameraGizmos", showCameraGizmos);
+		readKey(config, "graphSnap", graphSnap);
 		readKey(config, "showCameraPreview", showCameraPreview);
 		readKey(config, "showFrameChip", showFrameChip);
 		readKey(config, "showGrid", showGrid);
@@ -199,6 +200,7 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "snapRotationDegrees" << YAML::Value << snapRotationDegrees;
 	out << YAML::Key << "snapAutoFromTilemap" << YAML::Value << snapAutoFromTilemap;
 	out << YAML::Key << "showCameraGizmos" << YAML::Value << showCameraGizmos;
+	out << YAML::Key << "graphSnap" << YAML::Value << graphSnap;
 	out << YAML::Key << "showCameraPreview" << YAML::Value << showCameraPreview;
 	out << YAML::Key << "showFrameChip" << YAML::Value << showFrameChip;
 	out << YAML::Key << "showGrid" << YAML::Value << showGrid;
