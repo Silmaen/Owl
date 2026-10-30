@@ -35,6 +35,7 @@
 #include "scene/SettingsManager.h"
 #include "scene/TilemapTerrain.h"
 #include "scene/UiInputSystem.h"
+#include "scene/WorldStreamer.h"
 #include "scene/component/components.h"
 #include "scene/nav/NavWorld.h"
 #include "scene/nav/Pathfinder.h"
@@ -667,6 +668,57 @@ auto luaScenePickEntity(lua_State* iState) -> int {
 	const std::string_view tag = luaL_optstring(iState, 3, "");
 	const auto picked = scene::pickEntity(*activeScene, {pointX, pointY}, tag);
 	lua_pushinteger(iState, picked ? static_cast<lua_Integer>(static_cast<uint64_t>(picked.getUUID())) : 0);
+	return 1;
+}
+
+auto luaSceneIsWorldCellLoaded(lua_State* iState) -> int {
+	const math::vec3i cell{static_cast<int32_t>(luaL_checkinteger(iState, 1)),
+						   static_cast<int32_t>(luaL_checkinteger(iState, 2)),
+						   static_cast<int32_t>(luaL_checkinteger(iState, 3))};
+	auto* activeScene = getBoundScene(iState);
+	const bool loaded = activeScene != nullptr && activeScene->hasWorldStreamer() &&
+						activeScene->getWorldStreamer().getState(cell) == scene::WorldCellState::Loaded;
+	lua_pushboolean(iState, loaded ? 1 : 0);
+	return 1;
+}
+
+auto luaSceneGetLoadedWorldCells(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	const auto count = activeScene != nullptr && activeScene->hasWorldStreamer()
+							   ? activeScene->getWorldStreamer().getStats().loaded
+							   : 0u;
+	lua_pushinteger(iState, static_cast<lua_Integer>(count));
+	return 1;
+}
+
+auto luaSceneSetWorldStreaming(lua_State* iState) -> int {
+	const bool enabled = lua_toboolean(iState, 1) != 0;
+	if (auto* activeScene = getBoundScene(iState); activeScene != nullptr)
+		activeScene->getWorldPartitionSettings().enabled = enabled;
+	return 0;
+}
+
+auto luaSceneGetPlanetAltitude(lua_State* iState) -> int {
+	const auto planetId = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto entityId = static_cast<uint64_t>(luaL_checkinteger(iState, 2));
+	auto* activeScene = getBoundScene(iState);
+	if (activeScene == nullptr) {
+		lua_pushnumber(iState, 0.0);
+		return 1;
+	}
+	auto planet = activeScene->findEntityByUUID(core::UUID{planetId});
+	const auto entity = activeScene->findEntityByUUID(core::UUID{entityId});
+	if (!planet || !entity || !planet.hasComponent<scene::component::Planet>()) {
+		lua_pushnumber(iState, 0.0);
+		return 1;
+	}
+	const math::vec3d offset =
+			activeScene->getEntityWorldPosition(entity) - activeScene->getEntityWorldPosition(planet);
+	const double distance = offset.norm();
+	const auto& surface = planet.getComponent<scene::component::Planet>().getSurface();
+	const double ground =
+			distance > 0.0 ? surface->getSurfaceRadius(offset * (1.0 / distance)) : surface->getSettings().radius;
+	lua_pushnumber(iState, static_cast<lua_Number>(distance - ground));
 	return 1;
 }
 
@@ -2624,6 +2676,21 @@ auto declareBindings() -> std::vector<LuaBinding> {
 						"a hit on a descendant giving its tagged ancestor (a tower built of parts). 0 when none.",
 		 .params = {{"x", Number, true}, {"y", Number, true}, {"tag", String, true}},
 		 .returns = {{"entity_id", Entity}}},
+		{.table = "scene", .name = "is_world_cell_loaded", .function = guarded<luaSceneIsWorldCellLoaded>,
+		 .description = "Whether the world partition cell at integer coordinates is merged into the scene.",
+		 .params = {{"x", Integer}, {"y", Integer}, {"z", Integer}},
+		 .returns = {{"loaded", Boolean}}},
+		{.table = "scene", .name = "get_loaded_world_cells", .function = guarded<luaSceneGetLoadedWorldCells>,
+		 .description = "Number of world partition cells merged into the scene.",
+		 .returns = {{"count", Integer}}},
+		{.table = "scene", .name = "set_world_streaming", .function = guarded<luaSceneSetWorldStreaming>,
+		 .description = "Switch the streaming of the world partition on or off; off unloads every cell.",
+		 .params = {{"enabled", Boolean}}},
+		{.table = "scene", .name = "get_planet_altitude", .function = guarded<luaSceneGetPlanetAltitude>,
+		 .description = "Height of an entity above the ground (or the sea) of a planet, in metres; negative below "
+						"it, 0 when either entity is missing.",
+		 .params = {{"planet_id", Entity}, {"entity_id", Entity}},
+		 .returns = {{"altitude", Number}}},
 		{.table = "scene", .name = "get_viewport_size", .function = guarded<luaSceneGetViewportSize>,
 		 .description = "Size of the viewport the scene is drawn into, in pixels (the window, or the game panel of "
 						"Owl Nest); zeros before the first frame.",

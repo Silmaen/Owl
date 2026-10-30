@@ -49,6 +49,7 @@
 #include <scene/TilemapAsset.h>
 #include <scene/TilemapTerrain.h>
 #include <scene/Tileset.h>
+#include <scene/WorldStreamer.h>
 #include <scene/component/RaycastDoor.h>
 #include <scene/component/RaycastPushWall.h>
 #include <scene/component/RendererTag.h>
@@ -794,6 +795,7 @@ void Viewport::renderOverlay() const {
 		}
 		renderBehaviourOverlays(activeScene);
 		renderSkeletonMarkers(activeScene);
+		renderWorldCells(activeScene);
 
 		const scene::Entity selectedForGizmo = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
 		drawReverbZoneMarkers(activeScene, selectedForGizmo);
@@ -2817,6 +2819,38 @@ void Viewport::renderParticleMarkers(const shared<scene::Scene>& iScene) const {
 											.point2 = position + out * length,
 											.color = color,
 											.entityId = static_cast<int>(entity)});
+		}
+	}
+}
+
+void Viewport::renderWorldCells(const shared<scene::Scene>& iScene) {
+	const auto& settings = iScene->getWorldPartitionSettings();
+	if (settings.cells.empty())
+		return;
+	const auto& origin = iScene->getWorldOrigin();
+	const auto size = static_cast<float>(std::max(settings.cellSize, scene::WorldPartitionSettings::minCellSize));
+	const bool streamed = iScene->hasWorldStreamer();
+	for (const auto& cell: settings.cells) {
+		const math::vec3d corner = settings.getCellCorner(cell.coords) - origin;
+		const math::vec3 low{static_cast<float>(corner.x()), static_cast<float>(corner.y()),
+							 static_cast<float>(corner.z())};
+		const bool loaded =
+				streamed && iScene->getWorldStreamer().getState(cell.coords) == scene::WorldCellState::Loaded;
+		const math::vec4 color = loaded ? math::vec4{0.35f, 0.9f, 0.45f, 0.9f} : math::vec4{0.4f, 0.6f, 1.f, 0.6f};
+		const auto at = [&](const int iX, const int iY, const int iZ) -> math::vec3 {
+			return low + math::vec3{static_cast<float>(iX) * size, static_cast<float>(iY) * size,
+									static_cast<float>(iZ) * size};
+		};
+		// The twelve edges of the cube: from each of four corners, the edges toward its three neighbours.
+		for (const auto& [x, y, z]:
+			 {std::array{0, 0, 0}, std::array{1, 1, 0}, std::array{1, 0, 1}, std::array{0, 1, 1}}) {
+			for (const auto& [dx, dy, dz]: {std::array{1, 0, 0}, std::array{0, 1, 0}, std::array{0, 0, 1}}) {
+				const int nx = dx != 0 ? 1 - x : x;
+				const int ny = dy != 0 ? 1 - y : y;
+				const int nz = dz != 0 ? 1 - z : z;
+				renderer::Renderer2D::drawLine(
+						{.point1 = at(x, y, z), .point2 = at(nx, ny, nz), .color = color, .entityId = -1});
+			}
 		}
 	}
 }

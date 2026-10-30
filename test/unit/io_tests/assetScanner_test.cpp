@@ -995,3 +995,25 @@ TEST_F(AssetScannerTest, ScanSceneFollowsMaterialsEnvironmentAndLut) {
 	EXPECT_TRUE(found(hdri));
 	EXPECT_TRUE(found(lut));
 }
+
+TEST_F(AssetScannerTest, ScanSceneFollowsPlanetGraphsAndWorldCells) {
+	const auto scenePath = m_tempDir / "world.owl";
+	writeFile(scenePath, "Scene: world\n"
+						 "WorldPartition:\n"
+						 "  enabled: true\n"
+						 "  cells:\n"
+						 "    - {coords: [0, 0, 0], scene: scenes/cells/none.owl}\n"
+						 "Entities:\n"
+						 "  - Entity: 1\n"
+						 "    Planet:\n"
+						 "      graph: pcg/none.owlpcg\n");
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(scenePath, &warnings);
+	EXPECT_GE(assets.size(), 1u);
+	const auto names = [&](const std::string& iNeedle) -> bool {
+		return std::ranges::any_of(warnings,
+								   [&](const std::string& iWarning) -> bool { return iWarning.contains(iNeedle); });
+	};
+	EXPECT_TRUE(names("pcg/none.owlpcg"));
+	EXPECT_TRUE(names("scenes/cells/none.owl"));
+}

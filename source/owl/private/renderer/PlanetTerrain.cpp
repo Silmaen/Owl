@@ -102,6 +102,16 @@ auto chunkRect(const PlanetChunkKey& iKey) -> std::array<double, 4> {
 			-1.0 + step * static_cast<double>(iKey.x + 1), -1.0 + step * static_cast<double>(iKey.y + 1)};
 }
 
+OWL_DIAG_PUSH
+OWL_DIAG_DISABLE_CLANG("-Wfloat-equal")
+// Whether two settings build the same chunks.
+auto hasSameGround(const PlanetSettings& iA, const PlanetSettings& iB) -> bool {
+	return iA.radius == iB.radius && iA.heightScale == iB.heightScale && iA.seaLevel == iB.seaLevel &&
+		   iA.detailAmplitude == iB.detailAmplitude && iA.detailFrequency == iB.detailFrequency &&
+		   iA.chunkResolution == iB.chunkResolution;
+}
+OWL_DIAG_POP
+
 auto isGpuBackend() -> bool {
 	return gpu::RenderCommand::getApi() != gpu::RenderAPI::Type::Null && Renderer3D::isReady();
 }
@@ -382,8 +392,11 @@ PlanetTerrain::~PlanetTerrain() = default;
 void PlanetTerrain::setSurface(const shared<const PlanetSurface>& iSurface) {
 	if (m_surface == iSurface)
 		return;
-	if (m_surface && iSurface && m_surface->getSettings() == iSurface->getSettings() &&
+	if (m_surface && iSurface && hasSameGround(m_surface->getSettings(), iSurface->getSettings()) &&
 		m_surface->getSeed() == iSurface->getSeed() && m_surface->getHeights() == iSurface->getHeights()) {
+		// The chunks stay: only the colours, the detail or the atmosphere changed.
+		if (!(m_surface->getSettings() == iSurface->getSettings()))
+			m_colorRamp.reset();
 		m_surface = iSurface;
 		return;
 	}

@@ -442,6 +442,19 @@ void scanSceneRecursive(const std::filesystem::path& iSceneFile,// NOLINT(misc-n
 		scanEntity(holder, sceneName, ioVisitedScenes, ioAssets, ioWarnings);
 	}
 
+	if (const auto partition = data["WorldPartition"];
+		partition && partition["cells"] && partition["cells"].IsSequence()) {
+		for (const auto cell: partition["cells"]) {
+			const auto scene = cell["scene"];
+			if (!scene || !scene.IsScalar())
+				continue;
+			if (const auto ref = resolveDataAsset(scene.as<std::string>()); ref)
+				scanSceneRecursive(ref->diskPath, ioVisitedScenes, ioAssets, ioWarnings);
+			else
+				pushWarning(ioWarnings, "World cell scene", scene.as<std::string>(), sceneName);
+		}
+	}
+
 	auto entities = data["Entities"];
 	if (!entities)
 		return;
@@ -721,6 +734,15 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 	if (auto voxel = iEntity["VoxelWorld"]; voxel)
 		if (auto path = voxel["Tileset"]; path)
 			scanTileset(path.as<std::string>(), iSceneName, ioAssets, ioWarnings);
+	if (auto planet = iEntity["Planet"]; planet)
+		if (auto graph = planet["graph"]; graph && graph.IsScalar() && !graph.as<std::string>().empty()) {
+			if (const auto ref = resolveDataAsset(graph.as<std::string>()); ref) {
+				if (!hasAsset(ioAssets, ref->packPath))
+					ioAssets.push_back(*ref);
+			} else {
+				pushWarning(ioWarnings, "Planet graph", graph.as<std::string>(), iSceneName);
+			}
+		}
 }
 
 // NOLINTNEXTLINE(misc-no-recursion) a HUD is scanned like a scene, and its scripts can name scenes

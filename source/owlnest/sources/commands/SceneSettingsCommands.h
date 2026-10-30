@@ -275,6 +275,82 @@ private:
 
 /**
  * @brief
+ *  Undoable edit of a scene's `WorldPartitionSettings`: the streaming radii and the cells (added, removed, moved,
+ *  their scene changed), the whole settings before and after.
+ */
+class SetWorldPartitionCommand final : public SceneUndoCommand {
+public:
+	SetWorldPartitionCommand(const SetWorldPartitionCommand&) = delete;
+
+	SetWorldPartitionCommand(SetWorldPartitionCommand&&) = default;
+
+	auto operator=(const SetWorldPartitionCommand&) -> SetWorldPartitionCommand& = delete;
+
+	auto operator=(SetWorldPartitionCommand&&) -> SetWorldPartitionCommand& = default;
+
+	/**
+	 * @brief
+	 *  Construct from the settings before and after the edit.
+	 * @param[in] iBefore Settings prior to the edit.
+	 * @param[in] iAfter Settings after the edit.
+	 * @param[in] iDescription What the edit does, for the history.
+	 */
+	SetWorldPartitionCommand(scene::WorldPartitionSettings iBefore, scene::WorldPartitionSettings iAfter,
+							 std::string iDescription);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~SetWorldPartitionCommand() override;
+
+	/**
+	 * @brief
+	 *  Restore the settings prior to the edit.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void undo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Apply the edited settings again.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void redo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Description.
+	 * @return Human-readable description for menus and tooltips.
+	 */
+	[[nodiscard]] auto description() const -> std::string override;
+
+	/**
+	 * @brief
+	 *  Coalesce two consecutive edits of the radii into one undo step (cell edits never merge).
+	 * @param[in] iOther The newer command.
+	 * @return True when the merge succeeded.
+	 */
+	[[nodiscard]] auto mergeWith(const SceneUndoCommand& iOther) -> bool override;
+
+	/**
+	 * @brief
+	 *  Stable identifier of the command type for merge compatibility checks.
+	 * @return The command type id.
+	 */
+	[[nodiscard]] auto typeId() const -> size_t override;
+
+private:
+	/// Settings before the edit.
+	scene::WorldPartitionSettings m_before;
+	/// Settings after the edit.
+	scene::WorldPartitionSettings m_after;
+	/// What the edit does.
+	std::string m_description;
+};
+
+/**
+ * @brief
  *  Undoable edit of a scene's `FloatingOriginSettings` (enabled, shift radius).
  *
  * Successive edits within the `UndoManager` merge window collapse into one history entry.

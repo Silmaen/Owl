@@ -1315,3 +1315,34 @@ TEST(LuaBindings, localeTranslatesAndSwitchesLanguage) {
 	scn->setEngineContext(nullptr);
 	core::Log::invalidate();
 }
+
+TEST(LuaBindings, sceneReadsTheWorldPartitionAndThePlanetAltitude) {
+	core::Log::init(core::Log::Level::Off);
+	const auto scn = mkShared<scene::Scene>();
+	auto planet = scn->createEntity("Planet");
+	auto& body = planet.addComponent<scene::component::Planet>();
+	body.settings.radius = 1000.0;
+	body.settings.detailAmplitude = 0.f;
+	body.settings.seaLevel = 0.5f;
+	const auto probe = scn->createEntity("Probe");
+	probe.getComponent<scene::component::Transform>().transform.translation() = {0.f, 1250.f, 0.f};
+	const std::string script = std::format("altitude = 0\nloaded = 1\ncells = 9\n"
+										   "function on_create()\n"
+										   "  altitude = scene.get_planet_altitude({}, {})\n"
+										   "  loaded = scene.is_world_cell_loaded(0, 0, 0) and 1 or 0\n"
+										   "  cells = scene.get_loaded_world_cells()\n"
+										   "  scene.set_world_streaming(true)\n"
+										   "end\n",
+										   static_cast<int64_t>(static_cast<uint64_t>(planet.getUUID())),
+										   static_cast<int64_t>(static_cast<uint64_t>(probe.getUUID())));
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "planet_test", static_cast<uint64_t>(probe.getUUID())));
+	inst.onCreate();
+	EXPECT_NEAR(inst.getPropertyFloat("altitude").value_or(0), 250.f, 1e-3f);
+	EXPECT_NEAR(inst.getPropertyFloat("loaded").value_or(1), 0.f, 1e-6f);
+	EXPECT_NEAR(inst.getPropertyFloat("cells").value_or(9), 0.f, 1e-6f);
+	EXPECT_TRUE(scn->getWorldPartitionSettings().enabled);
+	core::Log::invalidate();
+}
