@@ -7,7 +7,7 @@ cells near a streaming source are read in the background and merged into the run
 source has moved away, without a loading screen. Design notes and what is planned:
 [Large worlds](design/large-worlds.md).
 
-## Settings
+## Settings {#world-partition-settings}
 
 Scene key `WorldPartition:` (Scene Settings, **World Partition**):
 
@@ -30,20 +30,20 @@ WorldPartition:
 | `unloadRadius` | 512     | A loaded cell unloads once every source is farther than this (at least `loadRadius`)      |
 | `cells`        | empty   | `coords` (integer x, y, z) and `scene` (an `.owl` path); at most one cell per coordinates |
 
-## Cells
+## Cells {#world-partition-cells}
 
 The cells are cubes on world coordinates (double): the cell `coords` spans `[coords, coords + 1) * cellSize`. The roots
 of a cell scene without `WorldPosition` are placed from the corner of the cell; those with one keep their world
 position. The distance of a source to a cell is the distance to its nearest point (0 inside). The export packs the
 cell scenes with the scene that lists them.
 
-## Streaming sources
+## Streaming sources {#world-partition-streaming-sources}
 
 The cells are streamed around the **Streaming Source** components (`StreamingSource`: `enabled`, `radiusScale`, a
 factor on both radii) of the scene, or around the primary camera when no source is enabled. Position a source on an
 entity that moves: the player, a ship. Several sources load the union of their cells.
 
-## Lifecycle
+## Lifecycle {#world-partition-lifecycle}
 
 The `owl.world_streaming` system (`PostPhysics`, after `owl.floating_origin`) runs in Play only; Owl Nest does not stream
 in Edit mode. A cell scene is read and parsed on the workers of the task scheduler and merged by the main thread, at
@@ -60,7 +60,7 @@ stateDiagram-v2
     Failed --> Unloaded: no source wants the cell any more
 ```
 
-## In Owl Nest
+## In Owl Nest {#world-partition-in-owl-nest}
 
 **Scene Settings > World Partition**: the enable switch, the cell size and the radii, then the cell table (coordinates,
 scene, state while playing).
@@ -78,7 +78,7 @@ scene, state while playing).
 | `scene.remove_world_cells`   | `cells` (`x y z; x y z`)                               |
 | `scene.move_world_cells`     | `cells`, `offset` (cells)                              |
 
-## Lua
+## Lua {#world-partition-lua}
 
 `scene.is_world_cell_loaded(x, y, z)`, `scene.get_loaded_world_cells()` (the count) and `scene.set_world_streaming(enabled)`
 (off unloads every cell): see the [Lua API](lua-api-scene.md). The Engine Demo far orbit streams debris cells along its

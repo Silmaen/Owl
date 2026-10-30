@@ -5,7 +5,7 @@
 A **planet** is a sphere of terrain with an atmosphere, drawn from the ground to orbit by a `RendererPlanet` layer of the
 render stack. Design notes and what is planned: [Large worlds](design/large-worlds.md).
 
-## Set up the layer
+## Set up the layer {#planets-set-up-the-layer}
 
 Put a `RendererPlanet` layer in the project stack (Project Settings, or `project.add_render_layer`), after the world
 layers it composes with and before the HUD layers:
@@ -25,7 +25,7 @@ chunks are drawn through `Renderer3D` as meshes lit by the `Light` components of
 over them. The **Planet** entry of the Effects menu of the Scene Hierarchy (`entity.create_planet`) appends such a layer
 to the project stack when it has none.
 
-## Planet component
+## Planet component {#planets-planet-component}
 
 YAML key `Planet`. The centre of the planet is the world position of the entity: its `WorldPosition` for a root entity
 ([World positions](scene.md#world-positions)). The settings are written flat in the component.
@@ -41,7 +41,7 @@ YAML key `Planet`. The centre of the planet is the world position of the entity:
 
 Heights below `seaLevel` are flattened to it and drawn as sea.
 
-## Terrain
+## Terrain {#planets-terrain}
 
 The sphere is a cube projected onto a sphere: six faces, each the root of a quadtree. A chunk splits while the eye is
 nearer than `lodFactor` times its size, down to `maxLevel`. Chunks are built on the workers of the task scheduler and
@@ -51,7 +51,7 @@ hide the cracks between levels, and chunks hidden behind the horizon are not dra
 The heights come from a height map sampled on the sphere by a triplanar blend, plus a detail noise (`detailAmplitude`,
 `detailFrequency`) that adds relief finer than the map. Without a `graph` the planet is made of the noise alone.
 
-## Heights from a PCG graph
+## Heights from a PCG graph {#planets-heights-from-a-pcg-graph}
 
 The `Write Heights` node (`output.height`) of a [PCG graph](pcg_graphs.md) writes the height map: its field, clamped to
 0..1, evaluated on a `heightResolution` square from the `seed` of the component. A graph without that node, or one
@@ -59,7 +59,7 @@ that fails, gives no height map (the detail noise alone). The graph is read thro
 is made again when the graph, the seed, the resolution or a shape setting changes. The export packs the graph with the
 scene.
 
-## Atmosphere
+## Atmosphere {#planets-atmosphere}
 
 The atmosphere is a shell of `atmosphereHeight` metres above the sea surface, shaded by single scattering
 (`engine_assets/shaders/planet/planet_atmosphere.slang`): a Rayleigh term, whose optical depth per channel colours the
@@ -67,18 +67,18 @@ sky (Earth: 0.046, 0.108, 0.265), and a Mie term for the haze. The shell draws i
 its back faces seen from inside. `scatteringIntensity` scales the scattered sunlight; above 1 it stands in for the
 multiple scattering.
 
-## Scaled space
+## Scaled space {#planets-scaled-space}
 
 Beyond `scaledSpaceDistance` from its centre (at least twice the radius when set) the planet is drawn shrunk toward the
 camera, so that it keeps its angular size and stays within the depth range, with the level-0 chunks only. Nearer, it is
 drawn at full scale and the detail takes over as the eye approaches.
 
-## Precision
+## Precision {#planets-precision}
 
 Model matrices are in the float space of the scene: keep a floating origin ([World positions](scene.md#world-positions))
 when the planet is large or far from zero, so that the camera and the chunks stay near the origin.
 
-## In Owl Nest
+## In Owl Nest {#planets-in-owl-nest}
 
 - **Scene Hierarchy > Effects > Planet** creates the entity (`entity.create_planet`: `name`, `radius`, `graph`,
   `translation`, `parent`).
@@ -86,7 +86,7 @@ when the planet is large or far from zero, so that the camera and the chunks sta
   (a dropped `.owlpcg`), the **Seed** and the **Height Resolution**; every edit is an undo step.
 - A planet is picked in the viewport like a mesh.
 
-## Lua
+## Lua {#planets-lua}
 
 `scene.get_planet_altitude(planet_id, entity_id)` gives the height of an entity above the ground (the sea surface over
 the sea) of a planet, in metres ([Lua API](lua-api-scene.md)). The Engine Demo far orbit shows it in its HUD.
