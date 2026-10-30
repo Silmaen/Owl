@@ -16,6 +16,7 @@
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
 #include "document/ImageDocument.h"
+#include "document/DataTableDocument.h"
 #include "document/LocalisationDocument.h"
 #include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
@@ -675,6 +676,12 @@ void EditorLayer::onAttach() {
 	m_contentBrowser.setLocalisationOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openLocalisationFile(iPath); });
 	m_contentBrowser.setSoundOpenCallback([this](const std::filesystem::path& iPath) -> void { openSoundFile(iPath); });
+	m_contentBrowser.setDataTableOpenCallback(
+			[this](const std::filesystem::path& iPath) -> void { openDataTableFile(iPath); });
+	m_contentBrowser.setDataTableCreateCallback([this](const std::filesystem::path& iPath) -> void {
+		runCommandFromUi("table.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
+		openDataTableFile(iPath);
+	});
 	m_contentBrowser.setSoundCreateCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("sound.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 		openSoundFile(iPath);
@@ -907,6 +914,8 @@ auto consumeTabClose(Document* ioDocument) -> bool {
 			return consumeClose<SoundDocument>(ioDocument);
 		case DocumentType::Localisation:
 			return consumeClose<LocalisationDocument>(ioDocument);
+		case DocumentType::DataTable:
+			return consumeClose<DataTableDocument>(ioDocument);
 	}
 	return false;
 }

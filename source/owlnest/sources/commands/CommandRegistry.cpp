@@ -20,6 +20,8 @@
 #include "Macro.h"
 #include "PrefabCommands.h"
 #include "SceneSettingsCommands.h"
+#include "SplineCommands.h"
+#include "DataTableCommands.h"
 
 #include <app/EngineContext.h>
 #include <data/geometry/MeshLoader.h>
@@ -1809,6 +1811,8 @@ CommandRegistry::CommandRegistry() {
 		 .factory = {},
 		 .run = redoEdit});
 	addHudCommands(*this);
+	addSplineCommands(*this);
+	addDataTableCommands(*this);
 	addAssetCommands(*this);
 	addDocumentCommands(*this);
 	add(getMacroRunSpec());

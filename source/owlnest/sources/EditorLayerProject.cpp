@@ -13,6 +13,7 @@
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
 #include "document/ImageDocument.h"
+#include "document/DataTableDocument.h"
 #include "document/LocalisationDocument.h"
 #include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
@@ -87,6 +88,9 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 			return;
 		case AssetKind::Localisation:
 			openLocalisationFile(iPath);
+			return;
+		case AssetKind::DataTable:
+			openDataTableFile(iPath);
 			return;
 		case AssetKind::Macro:
 			runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
@@ -566,6 +570,37 @@ auto EditorLayer::openLocalisation(const std::filesystem::path& iPath) -> comman
 		return doc;
 	openLocalisationFile(path);
 	return findOpenDocument<LocalisationDocument>(m_documents, DocumentType::Localisation, path);
+}
+
+void EditorLayer::openDataTableFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::DataTable && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<DataTableDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open data table: {}.", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+auto EditorLayer::openDataTable(const std::filesystem::path& iPath) -> commands::DataTableEditor* {
+	const auto path = normalised(iPath);
+	if (auto* doc = findOpenDocument<DataTableDocument>(m_documents, DocumentType::DataTable, path); doc != nullptr)
+		return doc;
+	openDataTableFile(path);
+	return findOpenDocument<DataTableDocument>(m_documents, DocumentType::DataTable, path);
 }
 
 void EditorLayer::openLocalisationEditor() {

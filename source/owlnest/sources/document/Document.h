@@ -40,6 +40,7 @@ enum struct DocumentType : uint8_t {
 	Material,///< A `.owlmat` material asset, with its live preview.
 	Sound,///< A `.owlsound` sound cue: its takes, trim and loop points, volume and pitch.
 	Localisation,///< The `localisation.yml` of a project: its languages and string tables.
+	DataTable,///< A `.owltable` data table: typed records edited in a grid.
 };
 
 /**

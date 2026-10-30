@@ -160,6 +160,9 @@ auto EditorLayer::openDocumentForRecovery(const RecoveryEntry& iEntry) -> Docume
 		case DocumentType::Localisation:
 			openLocalisationFile(path);
 			break;
+		case DocumentType::DataTable:
+			openDataTableFile(path);
+			break;
 		case DocumentType::Scene:
 			break;
 	}

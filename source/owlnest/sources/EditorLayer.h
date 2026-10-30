@@ -298,6 +298,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Open a `.owltable` in a `DataTableDocument` (or switch to it).
+	 * @param[in] iPath The file.
+	 */
+	void openDataTableFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  The tab of a data table, for the `table.*` commands: switched to, opened when it is not.
+	 * @param[in] iPath The `.owltable` file.
+	 * @return Its document, or null when it cannot be opened.
+	 */
+	auto openDataTable(const std::filesystem::path& iPath) -> commands::DataTableEditor* override;
+
+	/**
+	 * @brief
 	 *  Open an `input_actions.yml` in an `ActionMapDocument` (or switch to it); a missing file starts from the built-in
 	 *  actions and is created by the first save.
 	 * @param[in] iPath Absolute path to the file.

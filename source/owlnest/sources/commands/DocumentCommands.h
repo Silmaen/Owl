@@ -22,6 +22,7 @@
 namespace owl::nest::commands {
 
 class CommandRegistry;
+class DataTableEditor;
 
 /**
  * @brief
@@ -261,6 +262,14 @@ public:
 	 * @return The editor of the localisation, or null when it cannot be opened.
 	 */
 	virtual auto openLocalisation(const std::filesystem::path& iPath) -> LocalisationEditor* = 0;
+
+	/**
+	 * @brief
+	 *  The tab of a data table, opened when it is not.
+	 * @param[in] iPath The `.owltable` file.
+	 * @return The editor of the table, or null when it cannot be opened.
+	 */
+	virtual auto openDataTable(const std::filesystem::path& iPath) -> DataTableEditor* = 0;
 };
 
 /**

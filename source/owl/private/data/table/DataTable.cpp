@@ -102,6 +102,17 @@ auto readColumn(const YAML::Node& iNode) -> Column {
 
 }// namespace
 
+auto getColumnTypeName(const ColumnType iType) -> std::string_view { return magic_enum::enum_name(iType); }
+
+auto parseColumnType(const std::string_view iName) -> std::optional<ColumnType> {
+	return magic_enum::enum_cast<ColumnType>(iName);
+}
+
+auto getColumnTypes() -> std::span<const ColumnType> {
+	static constexpr auto s_types = magic_enum::enum_values<ColumnType>();
+	return s_types;
+}
+
 auto getDefaultValue(const Column& iColumn) -> CellValue {
 	switch (iColumn.type) {
 		case ColumnType::Integer:

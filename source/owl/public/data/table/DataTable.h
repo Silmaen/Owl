@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -281,6 +282,29 @@ struct OWL_API DataTable {
 	 */
 	void normalise();
 };
+
+/**
+ * @brief
+ *  Name of a column type, as the files write it.
+ * @param[in] iType The type.
+ * @return Its name (`Integer`, `Float`...).
+ */
+[[nodiscard]] OWL_API auto getColumnTypeName(ColumnType iType) -> std::string_view;
+
+/**
+ * @brief
+ *  Read a column type from its name.
+ * @param[in] iName The name.
+ * @return The type, or nothing for an unknown name.
+ */
+[[nodiscard]] OWL_API auto parseColumnType(std::string_view iName) -> std::optional<ColumnType>;
+
+/**
+ * @brief
+ *  Every column type, in order.
+ * @return The types.
+ */
+[[nodiscard]] OWL_API auto getColumnTypes() -> std::span<const ColumnType>;
 
 /**
  * @brief

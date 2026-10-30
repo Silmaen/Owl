@@ -148,6 +148,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Build the Data Table tab: save and close the active data table document.
+	 */
+	void buildDataTableTab();
+
+	/**
+	 * @brief
 	 *  Build the contextual tab of an action map document (Save / Save As / Reset / Close).
 	 */
 	void buildActionMapTab();

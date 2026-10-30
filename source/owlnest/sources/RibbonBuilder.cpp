@@ -14,6 +14,7 @@
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/FontDocument.h"
+#include "document/DataTableDocument.h"
 #include "document/LocalisationDocument.h"
 #include "document/MaterialDocument.h"
 #include "document/NodeGraphDocument.h"
@@ -304,6 +305,9 @@ void RibbonBuilder::build() {
 			break;
 		case DocumentType::Localisation:
 			buildLocalisationTab();
+			break;
+		case DocumentType::DataTable:
+			buildDataTableTab();
 			break;
 		case DocumentType::Scene:
 			buildSceneTab();
@@ -812,6 +816,35 @@ void RibbonBuilder::buildMaterialTab() {
 							  .onClick = [activeMaterial]() -> void {
 								  if (auto* m = activeMaterial())
 									  std::ignore = m->save();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_close",
+							  .label = "Close",
+							  .tooltip = "Close the active document",
+							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
+							  .size = Size::Small});
+}
+
+void RibbonBuilder::buildDataTableTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto activeTable = [this]() -> DataTableDocument* {
+		auto* d = mp_editor->m_documents.getActive();
+		if (d != nullptr && d->type() == DocumentType::DataTable)
+			return static_cast<DataTableDocument*>(d);
+		return nullptr;
+	};
+	const auto tab = m_ribbon.addTab("Data Table");
+	const auto gFile = m_ribbon.addGroup(tab, "File");
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_save",
+							  .label = "Save",
+							  .tooltip = "Save the table; the scripts read it again (Ctrl+S)",
+							  .isEnabled = [activeTable]() -> bool { return activeTable() != nullptr; },
+							  .onClick = [activeTable]() -> void {
+								  if (auto* t = activeTable())
+									  std::ignore = t->save();
 							  },
 							  .size = Size::Large});
 	m_ribbon.addButton(tab, gFile,
