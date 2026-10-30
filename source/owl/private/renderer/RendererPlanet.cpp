@@ -180,7 +180,7 @@ void RendererPlanet::init() {
 	std::vector<uint32_t> indices;
 	const auto vertices = makeShell(indices);
 	g_data->indexCount = static_cast<uint32_t>(indices.size());
-	for (const auto [slot, cull]:
+	for (const auto& [slot, cull]:
 		 {std::pair{size_t{0}, gpu::CullMode::Back}, std::pair{size_t{1}, gpu::CullMode::Front}}) {
 		auto draw = gpu::DrawData::create();
 		auto copy = indices;
