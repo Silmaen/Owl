@@ -162,7 +162,7 @@ private:
 	 * @param[in] iArgs Its arguments.
 	 * @return True when it ran.
 	 */
-	auto runCommand(const std::string& iName, const commands::CommandArgs& iArgs) const -> bool;
+	[[nodiscard]] auto runCommand(const std::string& iName, const commands::CommandArgs& iArgs) const -> bool;
 
 	/**
 	 * @brief

@@ -96,8 +96,9 @@ auto viewChunk(const PlanetSettings& iSettings, const PlanetChunkKey& iKey, cons
 	return {.distance = distance, .hidden = hidden};
 }
 
+// NOLINTNEXTLINE(misc-no-recursion) a quadtree walk, at most `g_planetMaxLevel` deep
 void selectNode(const PlanetSettings& iSettings, const math::vec3d& iEye, const PlanetChunkKey& iKey,
-				std::vector<PlanetChunkKey>& oLeaves) {// NOLINT(misc-no-recursion)
+				std::vector<PlanetChunkKey>& oLeaves) {
 	const auto view = viewChunk(iSettings, iKey, iEye);
 	if (view.hidden)
 		return;

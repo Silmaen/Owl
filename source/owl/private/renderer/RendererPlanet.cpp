@@ -130,7 +130,7 @@ void queueAtmosphere(const PlanetDrawParams& iParams) {
 	const double scale = iParams.placement.scale;
 	const math::vec3d& center = iParams.placement.center;
 	const double radius = settings.radius * scale;
-	const double height = static_cast<double>(settings.atmosphereHeight);
+	const auto height = static_cast<double>(settings.atmosphereHeight);
 	const double shell = (settings.radius + height) * scale;
 	const double distance = center.norm();
 	const double rayleighHeight = height * g_rayleighScale;
