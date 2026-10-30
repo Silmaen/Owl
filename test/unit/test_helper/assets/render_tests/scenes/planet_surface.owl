@@ -39,7 +39,7 @@ Entities:
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 0}
   Planet:
-    graph: pcg/planet_heights.owlpcg
+    graph: pcg/render_planet_heights.owlpcg
     seed: 7
     heightResolution: 128
     radius: 1000
