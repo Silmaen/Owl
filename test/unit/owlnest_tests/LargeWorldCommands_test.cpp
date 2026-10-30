@@ -109,7 +109,7 @@ TEST_F(LargeWorldCommandTest, CellsAreAddedMovedRetargetedAndRemovedInGroups) {
 	EXPECT_NE(partition().findCell({0, 0, 0}), nullptr);
 }
 
-TEST_F(LargeWorldCommandTest, TheFirstPlanetPutsAPlanetLayerFirstInTheProject) {
+TEST_F(LargeWorldCommandTest, TheFirstPlanetAppendsAPlanetLayerToTheProject) {
 	if (!renderer::RenderLayerFactory::hasType("RendererPlanet"))
 		renderer::RenderLayerFactory::registerType(
 				"RendererPlanet",
@@ -119,7 +119,7 @@ TEST_F(LargeWorldCommandTest, TheFirstPlanetPutsAPlanetLayerFirstInTheProject) {
 	context.projectStack = &stack;
 	ASSERT_TRUE(m_registry.execute("entity.create_planet", {}, context));
 	ASSERT_EQ(stack.entries.size(), 2u);
-	EXPECT_EQ(stack.entries.front().typeKey, "RendererPlanet");
+	EXPECT_EQ(stack.entries.back().typeKey, "RendererPlanet");
 	ASSERT_TRUE(m_registry.execute("entity.create_planet", {}, context));
 	EXPECT_EQ(stack.entries.size(), 2u);
 }

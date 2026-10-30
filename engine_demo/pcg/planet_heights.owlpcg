@@ -1,0 +1,38 @@
+FormatVersion: 1
+PcgGraph:
+  nodes:
+    - id: 2001
+      type: source.noise
+      position: [0, 0]
+      values:
+        scale: 40
+        octaves: 5
+        persistence: 0.55
+        seed: 0
+    - id: 2002
+      type: source.noise
+      position: [0, 200]
+      values:
+        scale: 10
+        octaves: 2
+        persistence: 0.5
+        seed: 1
+    - id: 2003
+      type: field.combine
+      position: [240, 100]
+      values:
+        operation: average
+    - id: 2004
+      type: field.blur
+      position: [460, 100]
+      values:
+        radius: 1
+    - id: 2005
+      type: output.height
+      position: [680, 100]
+      values: {}
+  links:
+    - {from: 2001, fromPin: Field, to: 2003, toPin: A}
+    - {from: 2002, fromPin: Field, to: 2003, toPin: B}
+    - {from: 2003, fromPin: Field, to: 2004, toPin: Field}
+    - {from: 2004, fromPin: Field, to: 2005, toPin: Height}

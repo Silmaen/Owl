@@ -1133,9 +1133,8 @@ void ensureEffectLayers(const CommandContext& iContext) {
 	if (!registry.view<scene::component::ParticleEmitter>().empty() ||
 		!registry.view<scene::component::Trail>().empty())
 		ensureLayer(iContext, "RendererParticles", std::numeric_limits<int64_t>::max(), "particles");
-	// Planets go first: the meshes of the other 3D layers are drawn in front of their sky.
 	if (!registry.view<scene::component::Planet>().empty())
-		ensureLayer(iContext, "RendererPlanet", 0, "planets");
+		ensureLayer(iContext, "RendererPlanet", std::numeric_limits<int64_t>::max(), "planets");
 }
 
 auto saveScene(const CommandContext& iContext, const CommandArgs& iArgs) -> expected<CommandResult, CommandFailure> {
