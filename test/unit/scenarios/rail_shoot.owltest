@@ -1,0 +1,20 @@
+# Ring Runner with the mouse and the gamepad: the intro skipped with a click, the lasers fired with the left button
+# then the right trigger through the first rocks and the first squadron (rocks broken, fighters down, hits counted),
+# a barrel roll on the right bumper.
+scene: ../../../samples/rail_shooter/scenes/level.owl
+timestep_ms: 33.333
+steps:
+  - frames: 5
+  - input: {mouse: Left, frames: 2}
+  - frames: 3
+  - expect: {gamestate: rail_phase, equals: play}
+  - input: {mouse: Left, frames: 300}
+  - expect: {gamestate: rail_shots, greater: 60}
+  - expect: {gamestate: rail_rocks, greater: 2}
+  - input: {gamepad: {right_trigger: 1.0}, frames: 300}
+  - expect: {gamestate: rail_kills, greater: 1}
+  - expect: {gamestate: rail_hits, greater: 10}
+  - expect: {gamestate: rail_score, greater: 1000}
+  - input: {gamepad: {button: RightBumper}, frames: 2}
+  - frames: 2
+  - expect: {gamestate: rail_rolls, equals: 1}
