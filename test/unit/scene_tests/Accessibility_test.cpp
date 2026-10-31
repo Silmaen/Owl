@@ -22,7 +22,7 @@ using namespace owl;
 using renderer::ColorDeficiency;
 
 TEST(Accessibility, missingKeysKeepTheDefaults) {
-	scene::SettingsManager settings;
+	const scene::SettingsManager settings;
 	const auto read = scene::Accessibility::read(settings);
 	EXPECT_EQ(read.colorBlindMode, ColorDeficiency::None);
 	EXPECT_FLOAT_EQ(read.colorBlindStrength, 1.f);
