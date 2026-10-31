@@ -39,31 +39,35 @@ the sequence stops or ends, then `onFinished` is called. The export packs the `.
 
 ## Editing in Owl Nest {#sequences-editor}
 
-Create one with **New Sequence** in the Content Browser folder menu, open it with a double-click. The tab has a toolbar,
-a timeline and a top view; the **Tracks** and **Key** panels replace the Hierarchy and Properties panels while it is the
-active document.
+Create one with **New Sequence** in the Content Browser folder menu. The **Open** button of a `SequencePlayer` in the
+Inspector, or a double-click on the file, opens the **Sequencer**: a tab docked with the bottom panels, under the scene.
+It previews on a scene that plays the sequence: the selected player when it was opened from the Inspector, else the
+first open scene with a `SequencePlayer` of this file. The scene stays in the viewport and in the Hierarchy; the
+Properties panel shows the sequence while the Sequencer is the active tab, and a click in the viewport gives it back
+to the scene.
 
-- **Toolbar**: Play / Pause (`Space`), back to start, the playhead time, the **Duration**, **Add key** (`K`), **Remove
-  keys** (`Delete`), **Snap** to 0.1 s and the zoom in pixels per second.
+- **Toolbar**: Play / Pause (`Space`), back to start, the playhead time, the **Duration**, **Add a camera track**,
+  **Add an event track**, **Add key** (`K`), **Remove keys** (`Delete`), **Snap** to 0.1 s, the zoom in pixels per
+  second, **Look through** and the player and scene of the preview.
 - **Timeline**: a ruler, one row per camera track (diamond keys, the shot bar brighter while it is live), then the
   event tracks (round keys labelled with their function). Click selects a key (`Ctrl` adds), drag moves the selected
   keys, a click on an empty lane or on the ruler moves the playhead, a double-click adds a key. The context menu of a
-  row has **Add key at playhead**, **Mute** / **Unmute**, **Move up** / **Move down** and **Remove track**.
-- **Top view**: below the timeline, every camera path seen from above (X right, Z down), with the camera of the
-  playhead, its shot and its field of view.
-- **Tracks panel**: **Camera Track** and **Event Track** buttons and the list of tracks. A new camera track starts
-  where the previous shot ends.
-- **Key panel**: the name and **Muted** state of the track; for a camera key the **Time**, **Position**, **Rotation**
-  (degrees), **Field of view** (degrees), **Size** and **Easing**; for an event key the **Time** and **Function**.
+  row has **Add key at playhead**, **Mute** / **Unmute**, **Move up** / **Move down** and **Remove track**. A new
+  camera track starts where the previous shot ends.
+- **Properties panel**: the **Duration**, the **Preview** and the playback settings of its player; the name and
+  **Muted** state of the selected track; for a camera key the **Time**, **Position**, **Rotation** (degrees), **Field
+  of view** (degrees), **Size** and **Easing**; for an event key the **Time** and **Function**.
 - The ribbon tab **Sequence** has **Save**, **Close**, **Camera Track**, **Event Track**, **Add Key** and **Play**.
 - Every gesture is a `sequence.*` command ([Console](editor_console.md)): `create`, `set_duration`, `add_track`,
   `remove_track`, `set_track`, `move_track`, `add_key`, `set_key`, `remove_keys`, `move_keys`. Each is one undo step of
-  the tab, which has its own history and autosave. **Save** (`Ctrl+S`) writes the file and the next plays read it again.
+  the Sequencer, which has its own history and autosave. **Save** (`Ctrl+S`) writes the file and the next plays read it
+  again.
 
-In the scene viewport, the selected `SequencePlayer` draws the path of every camera track and a frustum at each key,
-including the unsaved edits of an open document. The **Key from view** button of the tools overlay adds a key at the
-pose of the viewport camera ([Sequences in the viewport](editor_viewport.md#viewport-sequences)). The Inspector of the
-component takes a dropped `.owlseq`, with **Open** and **Clear**.
+In the viewport of the preview scene, the player draws the path of every camera track, a frustum at each key and a
+larger white one at the playhead, unsaved edits included ([Sequences in the viewport](editor_viewport.md#viewport-sequences)).
+**Look through** shows the scene from the sequence camera at the playhead, following the scrub and the playback; turned
+off, the editor view stays at that pose. Move the view from there, then **Key from view** writes its pose at the
+playhead of the selected camera track: the key already at that time changes, else a key is added.
 
 ## Playing from Lua {#sequences-lua}
 

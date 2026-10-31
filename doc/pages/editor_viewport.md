@@ -117,11 +117,12 @@ Click elsewhere to drop the point selection and get the entity gizmo back. The i
 
 ### Sequences {#viewport-sequences}
 
-The selected entity with a **SequencePlayer** draws the path of each camera track (one colour per track, dimmed when
-muted) and a small frustum at every key; the edits of an open Sequence document show before they are saved. The tools
-overlay has a **Key from view** camera button: the pose of the viewport camera becomes a key one second after the end of
-the last shot, and the duration stretches to hold it (one `sequence.add_key`). See
-[Cutscene sequences](sequences.md#sequences-editor).
+The player previewed by an open **Sequencer** (else the selected entity with a **SequencePlayer**) draws the path of
+each camera track (one colour per track, dimmed when muted), a small frustum at every key and a larger white one at the
+playhead; the unsaved edits of the Sequencer show. The tools overlay has **Look through the sequence** (the view shows
+the sequence camera at the playhead and stays at that pose when turned off) and **Key from view**: the pose of the
+viewport camera becomes the key at the playhead of the selected camera track (`sequence.set_key` on a key already
+there, else `sequence.add_key`). See [Cutscene sequences](sequences.md#sequences-editor).
 
 The selected **Oscillator** shows its range and the selected **Patrol** its route: click a waypoint to move it with a
 translation gizmo.

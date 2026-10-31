@@ -46,7 +46,7 @@ ignores it.
 | Macro          | **Edit as Text**                                                                                |
 
 **New Material** creates `New Material.owlmat` in the folder shown and opens it in the material editor. **New Sequence** (`sequence.create`) creates `New Sequence.owlseq` and opens it in the
-[Sequence document](sequences.md#sequences-editor).
+[Sequencer](sequences.md#sequences-editor).
 
 ## Asset identity and import settings {#editor-asset-import}
 

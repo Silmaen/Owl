@@ -15,6 +15,7 @@
 #include "EditorLayer.h"
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
+#include "document/SequenceDocument.h"
 
 #include "../UndoManager.h"
 #include "../commands/ComponentCommands.h"
@@ -278,9 +279,9 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 										  .deadZone = static_cast<float>(settings.cameraDeadZone),
 										  .mouseLook = !m_parent->getVoxelBrush().active});
 		}
-		if (m_pilot.isActive())
+		if (const bool sequenceView = updateSequenceView(activeScene); !sequenceView && m_pilot.isActive())
 			updatePilot(activeScene, iTimeStep);
-		else if (isHovered())
+		else if (!sequenceView && isHovered())
 			m_editorCamera.onUpdate(iTimeStep);
 	}
 
@@ -1296,14 +1297,24 @@ void Viewport::renderOverlayToolbar() {
 				m_parent->renderSnapStepPopup();
 				ImGui::EndPopup();
 			}
+			auto* previewSequence = findPreviewSequence();
 			if (const auto selected = m_parent->getSelectedEntity();
-				selected && selected.hasComponent<scene::component::SequencePlayer>()) {
+				previewSequence != nullptr || (selected && selected.hasComponent<scene::component::SequencePlayer>())) {
 				overlaySeparator();
+				if (previewSequence != nullptr &&
+					iconButton("lookThrough",
+							   {.glyph = gui::icon::eye,
+								.tooltip = "Look through the sequence",
+								.description = "Show the sequence camera at the playhead of the Sequencer; turned off, "
+											   "the view stays there to be moved and keyed.",
+								.selected = previewSequence->isLookingThrough()}))
+					previewSequence->setLookingThrough(!previewSequence->isLookingThrough());
 				if (iconButton("keyFromView",
 							   {.glyph = gui::icon::camera,
 								.tooltip = "Key from view",
-								.description = "Add the pose of this view as a key at the end of the last shot of the "
-											   "selected sequence player."}))
+								.description = "Write the pose of this view as a key at the playhead of the "
+											   "Sequencer, on its selected camera track.",
+								.disabled = m_sequenceView}))
 					std::ignore = addSequenceKeyFromView();
 			}
 		}
@@ -1816,6 +1827,8 @@ void Viewport::resetView() {
 auto Viewport::getActiveCamera() const -> const renderer::Camera& {
 	if (m_isometric)
 		return m_isoCamera;
+	if (m_sequenceView)
+		return m_sequenceCamera;
 	if (m_pilot.isActive())
 		return m_pilotCamera;
 	return m_editorCamera;

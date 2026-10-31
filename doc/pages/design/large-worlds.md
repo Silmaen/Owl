@@ -165,7 +165,8 @@ User reference: [Cutscene sequences](../sequences.md), [SequencePlayer](../scene
 | `owl.sequences` runs in `PostPhysics`, after `follow_target`                                                                  | The cutscene pose wins over the camera followers                      |
 | `SequenceLibrary` in `app::EngineContext` caches each file, cleared when Owl Nest saves a sequence                            | No static state; the game and the editor see the saved keys           |
 | The export packs the `.owlseq` of every `SequencePlayer`                                                                      | A cutscene ships with the game                                        |
-| The document runs `sequence.*` commands on its own undo history; **Key from view** is a `sequence.add_key`                    | Every edit is undoable and reachable from the console, macros and MCP |
+| The Sequencer runs `sequence.*` commands on its own undo history; **Key from view** is a `sequence.set_key` or `add_key`      | Every edit is undoable and reachable from the console, macros and MCP |
+| The Sequencer docks under the scene and previews on one of its `SequencePlayer`s; the scene keeps the viewport and Hierarchy  | Keys are placed in 3D, in the space they play in                      |
 
 ## Delivery {#large-worlds-delivery}
 

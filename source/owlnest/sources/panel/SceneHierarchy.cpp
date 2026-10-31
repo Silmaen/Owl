@@ -361,6 +361,9 @@ auto componentIconName(const char* iCompName) -> const char* {
 
 void SceneHierarchy::setContext(const shared<scene::Scene>& iContext) {
 	m_inspector.flush(getCommandTarget());
+	// The same scene again (the sequencer taking the focus from it) keeps its selection.
+	if (iContext == m_context)
+		return;
 	m_context = iContext;
 	m_selection = {};
 }
@@ -375,13 +378,13 @@ auto SceneHierarchy::lastHoveredComponentName() -> const std::string& { return g
 
 // Function displaying the Hierarchy panel.
 void SceneHierarchy::renderHierarchy() {
-	const std::string title = panelWindow::title(gui::icon::listTree,
-												 mp_activeDocument != nullptr ? mp_activeDocument->hierarchyPanelTitle()
-																			  : std::string{"Scene Hierarchy"},
-												 panelWindow::hierarchy);
+	const bool overridden = mp_activeDocument != nullptr && mp_activeDocument->overridesHierarchyPanel();
+	const std::string title = panelWindow::title(
+			gui::icon::listTree, overridden ? mp_activeDocument->hierarchyPanelTitle() : std::string{"Scene Hierarchy"},
+			panelWindow::hierarchy);
 	ImGui::Begin(title.c_str());
 
-	if (mp_activeDocument != nullptr && mp_activeDocument->overridesGlobalPanels()) {
+	if (overridden) {
 		mp_activeDocument->renderHierarchyPanel();
 		ImGui::End();
 		return;

@@ -212,6 +212,14 @@ public:
 
 	/**
 	 * @brief
+	 *  When true, the global Scene Hierarchy panel delegates to `renderHierarchyPanel()` while this document is active.
+	 * @return `overridesGlobalPanels()` unless overridden: a document can keep the scene hierarchy and draw its own
+	 *         properties.
+	 */
+	[[nodiscard]] virtual auto overridesHierarchyPanel() const -> bool { return overridesGlobalPanels(); }
+
+	/**
+	 * @brief
 	 *  Whether the document's typed undo stack has at least one undoable command.
 	 * @return False unless overridden — base documents have no document-level undo.
 	 */

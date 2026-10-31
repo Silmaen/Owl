@@ -20,8 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest socket gizmo: click a socket marker (or select it in the inspector) and move it with the transform gizmo, one `entity.set_socket` per drag.
 - Engine Demo `character_yard` scene: a skinned mannequin walking with a lantern on its hand socket (**C** from the menu).
 - Cutscene sequences: `.owlseq` assets with camera tracks (shots, Smooth, Linear or Step keys) and event tracks, played by the `SequencePlayer` component (`owl.sequences`) and the Lua `sequence` table.
-- Owl Nest Sequence document: timeline, top view of the camera paths, key panel, `sequence.*` commands and a **New Sequence** entry in the Content Browser.
-- Owl Nest viewport draws the camera paths and key frustums of the selected `SequencePlayer`, and **Key from view** turns the viewport camera into a key.
+- Owl Nest Sequencer, docked under the scene it previews on: timeline, sequence, track and key settings in Properties, `sequence.*` commands and a **New Sequence** entry in the Content Browser.
+- Owl Nest viewport draws the camera paths, key frustums and playhead camera of the previewed sequence, **Look through** shows its camera and **Key from view** keys the view at the playhead.
 - Engine Demo tavern opens on an intro cutscene (`sequences/tavern_intro.owlseq`) that Space skips.
 
 - Asset GUIDs: every asset of a project opened in Owl Nest gets a `.owlmeta` sidecar, and `AssetRegistry` maps GUID and path.
