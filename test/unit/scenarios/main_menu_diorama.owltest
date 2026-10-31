@@ -1,4 +1,4 @@
-# The main menu is a live diorama: the 3D tavern behind (mesh layer), the 2D village in front (screen-space `ui` layer),
+# The main menu is a live diorama: the 3D tavern behind (mesh layer), the 2D village in front (screen-space `overlay` layer),
 # both under the hour of the `DayNightCycle` of MenuSky. At ten at night the lamps of the village light up; Start
 # leads to the world map, the only way into the demo.
 scene: ../../../engine_demo/scenes/main_menu.owl

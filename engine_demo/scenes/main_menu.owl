@@ -3,7 +3,7 @@ FormatVersion: 7
 EnabledRenderers:
   - Name: mesh_world
     Enabled: true
-  - Name: ui
+  - Name: overlay
     Enabled: true
     Overrides:
       Space: Screen
@@ -446,7 +446,7 @@ Entities:
     Tilemap:
       tilemapPath: gid:6934bd8f99936cd5:tilemaps/menu_village.owltilemap
     RendererTag:
-      Name: ui
+      Name: overlay
     Visibility:
       gameVisible: true
   - Entity: 2720930421051300026

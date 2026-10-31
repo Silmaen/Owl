@@ -1055,13 +1055,13 @@
     {
       "name": "sample/editor_update/main_menu",
       "items": 1,
-      "batch": 391,
+      "batch": 824,
       "samples": 15,
-      "median_ns": 30398.2,
-      "p25_ns": 30376.5,
-      "p75_ns": 30433.5,
-      "min_ns": 30348.3,
-      "max_ns": 30504.5
+      "median_ns": 39597.9,
+      "p25_ns": 38984.4,
+      "p75_ns": 39844.3,
+      "min_ns": 38750.5,
+      "max_ns": 40264.9
     },
     {
       "name": "sample/editor_update/platformer_house",
@@ -1099,13 +1099,13 @@
     {
       "name": "sample/editor_update/tavern",
       "items": 1,
-      "batch": 405,
+      "batch": 890,
       "samples": 15,
-      "median_ns": 30092.9,
-      "p25_ns": 30068.9,
-      "p75_ns": 30146.3,
-      "min_ns": 30035.1,
-      "max_ns": 30302.4
+      "median_ns": 36962.1,
+      "p25_ns": 36734.7,
+      "p75_ns": 37243.9,
+      "min_ns": 35955.1,
+      "max_ns": 43944.3
     },
     {
       "name": "sample/editor_update/victory",
@@ -1132,13 +1132,13 @@
     {
       "name": "sample/editor_update/world_map",
       "items": 1,
-      "batch": 141,
+      "batch": 277,
       "samples": 15,
-      "median_ns": 84229.3,
-      "p25_ns": 84207.5,
-      "p75_ns": 84299.8,
-      "min_ns": 84166.3,
-      "max_ns": 84514.6
+      "median_ns": 113278.5,
+      "p25_ns": 112453.7,
+      "p75_ns": 114014.7,
+      "min_ns": 110756.9,
+      "max_ns": 114731.8
     },
     {
       "name": "sample/load/game_over",
@@ -1167,11 +1167,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 314084.0,
-      "p25_ns": 311604.5,
-      "p75_ns": 323792.5,
-      "min_ns": 310941.0,
-      "max_ns": 330637.0
+      "median_ns": 691933.8,
+      "p25_ns": 686459.4,
+      "p75_ns": 714362.9,
+      "min_ns": 659540.8,
+      "max_ns": 759696.7
     },
     {
       "name": "sample/load/platformer_house",
@@ -1211,11 +1211,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1477949.0,
-      "p25_ns": 1127406.0,
-      "p75_ns": 1136276.5,
-      "min_ns": 1123215.0,
-      "max_ns": 1145635.0
+      "median_ns": 1971884.3,
+      "p25_ns": 1953258.1,
+      "p75_ns": 1987689.6,
+      "min_ns": 1925772.9,
+      "max_ns": 2058412.8
     },
     {
       "name": "sample/load/victory",
@@ -1244,11 +1244,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1048554.0,
-      "p25_ns": 1047680.0,
-      "p75_ns": 1055748.0,
-      "min_ns": 1045480.0,
-      "max_ns": 1080891.0
+      "median_ns": 1786398.8,
+      "p25_ns": 1733176.5,
+      "p75_ns": 1845210.7,
+      "min_ns": 1709033.3,
+      "max_ns": 1905254.5
     },
     {
       "name": "scene/copy/1000",
@@ -2267,22 +2267,22 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 241587.0,
-      "p25_ns": 240295.0,
-      "p75_ns": 248187.5,
-      "min_ns": 238514.0,
-      "max_ns": 256394.0
+      "median_ns": 227512.1,
+      "p25_ns": 226278.4,
+      "p75_ns": 233771.9,
+      "min_ns": 223036.2,
+      "max_ns": 270755.1
     },
     {
       "name": "sample/editor_update/tavern_cellar",
       "items": 1,
-      "batch": 761,
+      "batch": 1703,
       "samples": 15,
-      "median_ns": 15564.6,
-      "p25_ns": 15546.8,
-      "p75_ns": 15586.4,
-      "min_ns": 15461.7,
-      "max_ns": 15594.0
+      "median_ns": 18662.0,
+      "p25_ns": 18564.0,
+      "p75_ns": 18735.8,
+      "min_ns": 18315.7,
+      "max_ns": 19241.4
     },
     {
       "name": "sky/draw/256",
@@ -2476,22 +2476,22 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 208552.0,
-      "p25_ns": 206700.5,
-      "p75_ns": 218085.5,
-      "min_ns": 204780.0,
-      "max_ns": 241657.0
+      "median_ns": 230864.8,
+      "p25_ns": 224846.1,
+      "p75_ns": 253359.7,
+      "min_ns": 223063.3,
+      "max_ns": 273778.5
     },
     {
       "name": "sample/editor_update/far_orbit",
       "items": 1,
-      "batch": 934,
+      "batch": 1773,
       "samples": 15,
-      "median_ns": 12718.6,
-      "p25_ns": 12708.2,
-      "p75_ns": 12762.3,
-      "min_ns": 12678.3,
-      "max_ns": 12908.1
+      "median_ns": 15452.3,
+      "p25_ns": 15432.8,
+      "p75_ns": 15526.1,
+      "min_ns": 15114.3,
+      "max_ns": 16040.8
     },
     {
       "name": "particles/simulate_cpu/1000",
