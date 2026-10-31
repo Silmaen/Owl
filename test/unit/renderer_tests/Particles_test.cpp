@@ -398,6 +398,7 @@ TEST(RendererParticles, TheNullBackendSimulatesOnTheCpuAndRegistersTheLayer) {
 	EXPECT_NE(std::ranges::find(folders, "lens_flare"), folders.end());
 	EXPECT_NE(std::ranges::find(folders, "bitonic_sort"), folders.end());
 	Renderer::shutdown();
+	gpu::RenderCommand::invalidate();
 	RenderLayerFactory::clear();
 	core::Log::invalidate();
 }
