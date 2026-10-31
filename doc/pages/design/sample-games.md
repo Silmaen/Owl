@@ -438,18 +438,17 @@ Each change serves its game, not a feature list:
 The Engine Demo stays as small as possible and as complete as possible: every scene opens from the world map and
 returns to it, none is reached any other way.
 
-| Item        | Plan                                                                                                                         |
-|-------------|------------------------------------------------------------------------------------------------------------------------------|
-| World map   | The only way in: the main menu starts the hub, its shortcut keys to the scenes go                                            |
-| Doors       | One door script with properties (target scene, transition, completion key) for every place                                   |
-| Progress    | Six places: platformer, raycast, iso town, voxel, tavern (cellar included), observatory; the portal at six of six            |
-| Hub         | HUD markers on the places left, a minimap, day and night with 2D lights, a reverb cave and adaptive music, a new CC0 tileset |
-| Tavern      | Skinned actors: a barkeeper with a tankard on a socket, a server walking a spline between the tables, more dialogues         |
-| Observatory | Its telescope opens `far_orbit`; the objective: dock with a debris, then back to the hub                                     |
-| Main menu   | A live diorama mixing styles: the 2D village in front, the 3D tavern behind, day and night                                   |
-| Folded      | `sound_yard` into the hub, `character_yard` into the tavern; their scenarios follow                                          |
-| Scenarios   | Every scene played by a scenario, `far_orbit`, the settings, the victory and the game over included                          |
-| Later       | Each release puts its features in the existing places                                                                        |
+| Item        | What exists                                                                                                                                                  |
+|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| World map   | The only way in: the main menu starts the hub, no shortcut key leads to a scene                                                                              |
+| Doors       | One script, `scripts/hub/place_door.lua`, with properties (target scene, transition, completion key, entry values) for every place                           |
+| Progress    | Six places: platformer, raycast, iso town, voxel, tavern (cellar included), observatory; the portal wakes at six of six                                      |
+| Hub         | A `HudMarker` on each place left, a minimap, day and night with 2D lights, a reverb cave with adaptive music, Kenney Tiny Farm and Tiny Dungeon tiles        |
+| Tavern      | Kenney Mini Characters: a barkeeper with a tankard on a socket, a server walking a spline, two seated patrons, a dialogue each                               |
+| Observatory | Its telescope opens `far_orbit`; the objective is to dock with the debris, then back to the hub                                                              |
+| Main menu   | A live diorama mixing styles: the 2D village in front, the 3D tavern behind, day and night; Start is the only way in                                         |
+| Scenarios   | Every scene is played by a scenario, checked by `GameExportCoverage.EveryDemoSceneHasAScenario`                                                              |
+| Rule        | Each release puts its features in the existing places instead of adding isolated scenes                                                                      |
 
 ## Plans of pool games
 

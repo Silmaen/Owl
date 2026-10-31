@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Engine Demo: the world map is the only way into the scenes, the main menu shortcuts are gone and one door script (`place_door.lua`) opens every place.
+- Engine Demo: six places (platformer, raycast, iso town, voxel, tavern with its cellar, observatory), the portal wakes at six of six; the far orbit asks to dock with a debris, then returns to the hub.
+- Engine Demo hub: a `HudMarker` on each place left and a minimap with the hero and one dot per place left.
+- Engine Demo hub: day and night with an ambient tint and 2D lamp and window lights, and Kenney Tiny Farm and Tiny Dungeon art.
+- Engine Demo hub: the sound yard folded into a north-west cave with a reverb zone, torch, drips and the adaptive hub music; its scene is gone.
+- Engine Demo tavern: the character yard folded in, with a barkeeper holding a tankard on a socket, a server walking a spline, two seated patrons and four dialogues; its scene is gone.
+- Engine Demo main menu: a live diorama of a 3D tavern under a day and night sky with the 2D village in front.
+- Engine Demo: a scenario for every scene, checked by `GameExportCoverage.EveryDemoSceneHasAScenario`.
+
 - Skeletal animation: `MeshLoader` reads the first glTF skin, its clips and its `socket_*` nodes, drawn skinned on the GPU (`skinned3d.slang`).
 - `Animator` component: a state machine of clips with parameters, conditions, exit times and cross-fades, driven from Lua (`animator.*`).
 - Mesh levels of detail: built by the cook (`OWLM` container) from the `.owlmeta` settings and picked at runtime by screen size.
@@ -18,7 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest: skeleton, clip timeline and LOD views in the mesh document, Animator and socket inspectors, `entity.attach_socket` / `entity.detach_socket`.
 - `asset.set_import` and the Import panel set the levels of detail of a mesh.
 - Owl Nest socket gizmo: click a socket marker (or select it in the inspector) and move it with the transform gizmo, one `entity.set_socket` per drag.
-- Engine Demo `character_yard` scene: a skinned mannequin walking with a lantern on its hand socket (**C** from the menu).
 - Cutscene sequences: `.owlseq` assets with camera tracks (shots, Smooth, Linear or Step keys) and event tracks, played by the `SequencePlayer` component (`owl.sequences`) and the Lua `sequence` table.
 - Owl Nest Sequencer, docked under the scene it previews on: timeline, sequence, track and key settings in Properties, `sequence.*` commands and a **New Sequence** entry in the Content Browser.
 - Owl Nest viewport draws the camera paths, key frustums and playhead camera of the previewed sequence, **Look through** shows its camera and **Key from view** keys the view at the playhead.
@@ -29,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Subtitles: a **Subtitle** on a Sound Source is shown while the sound plays within hearing, `ui.show_subtitle` / `ui.clear_subtitles` show others, sized by `subtitle_scale` and turned off by `subtitles`.
 - `scene::Accessibility` reads the accessibility settings and registers their defaults.
 - Scenarios check a game setting with `expect: {setting: <key>, ...}`.
-- Engine Demo settings menu: colours, reduced motion and subtitles buttons; the sound yard radio and cart carry subtitles; the platformer camera stops shaking with reduced motion.
+- Engine Demo settings menu: colours, reduced motion and subtitles buttons; the platformer camera stops shaking with reduced motion.
 
 - Asset GUIDs: every asset of a project opened in Owl Nest gets a `.owlmeta` sidecar, and `AssetRegistry` maps GUID and path.
 - Asset references written by GUID (`gid:<guid>:<path hint>`): renaming or moving a file keeps every reference valid.
@@ -45,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A shift of the world origin carries the physics bodies, their interpolation and the behaviour rest positions along: a running scene goes on unbroken.
 - Owl Nest moves the world origin with an undoable `scene.set_world_origin` (viewport Camera menu, Scene Settings field), the view following it.
 - Lua `transform.get_world_position` / `set_world_position` in double and `scene.get_world_origin`.
-- Engine Demo far orbit (`far_orbit.owl`, **K** from the menu): a station one astronomical unit away, sharp to the centimetre.
+- Engine Demo far orbit (`far_orbit.owl`, reached from the hub observatory): a station one astronomical unit away, sharp to the centimetre.
 - Visual scripts (`.owlvs`): event graphs compiled to Lua at load, usable wherever a `.lua` script is, their variables as script properties.
 - Owl Nest visual script editor: Blueprint-style canvas with inline values, node library to drag from, variables and node details in the Graph panel, graph / split / coloured Lua views, two-tone icons of the value types and node families, copy / paste, undo.
 - Visual scripts: colour and vector values (`Color`, `Vector 2`, `Vector 3`), as variables, make / break nodes, and the `r g b a` / `x y z` parameters of a binding (also prefixed, `vx vy`, `cell_x cell_y`) as one pin that splits into its components; constants have only an output.
@@ -95,7 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AdaptiveMusic` component: synced looping layers, states fading them in and out with a stinger, driven by Lua or a game state key; its layers and stingers are referenced by GUID, so moving or renaming a music file keeps them.
 - Lua `sound` bus and music bindings: `set_bus_volume`, `set_bus_muted`, `play_music`, `stop_music`, `crossfade`, `set_music_state`.
 - Owl Nest Mixer panel (`scene.set_mixer`, `sound.set_live_bus` in Play), reverb zones drawn and sized in the viewport, inspectors for zones, filters and adaptive music; one undo step per bus edited.
-- Engine Demo sound yard (U from the main menu): a cave reverb, an underwater pool, a radio behind a wall, a passing cart and a music turning from calm to combat.
+- Engine Demo hub cave: a cave reverb, a torch and drips, with an adaptive music turning from calm by day to night and danger in the cave.
 - Engine Demo settings menu: a volume slider for each mixer bus (master, music, effects, ambient, voice).
 
 - GPU particles: `ParticleEmitter` simulated by a compute shader on OpenGL and Vulkan (CPU reference on the Null backend), up to 65536 particles per emitter.
@@ -173,6 +181,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HUD markers were mirrored vertically on Vulkan: `renderer::projectToViewport` takes the clip space of the active layer.
 - Node editors: a link routed backwards through waypoints crosses them towards where it goes instead of looping.
 - Content Browser: **Delete** and **Rename** open their confirmation again once the context menu has closed; `Delete` and `F2` are their shortcuts.
 - Mixer: drawn with the widget kit and the theme (property grid, sub-headers, themed mute / solo switches and meter), docked with Properties, and its ribbon button shows and hides it.

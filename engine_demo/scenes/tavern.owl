@@ -1630,3 +1630,15 @@ Entities:
       Name: mesh_world
     Visibility:
       gameVisible: true
+  - Entity: 3900000000000002300
+    Tag: {tag: ControlsHint}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    LuaScript:
+      scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.lua
+      properties:
+        - {name: hint, type: string, value: HudHint}
+        - {name: duration, type: float, value: 4.5}

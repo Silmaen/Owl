@@ -13,3 +13,6 @@ steps:
   - expect: {entity: Server, translation.z: {greater: 0.3}}
   - expect: {entity: ServerWalker, translation.x: {less: 2.5}}
   - expect: {gamestate: tavern_dish, equals: A bowl of stew}
+  # The controls show in a short hint only, never for good.
+  - frames: 300
+  - expect: {gamestate: controls_hint_shown, equals: false}
