@@ -482,6 +482,8 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 		if (!m_config.gamepadMappings.empty())
 			input::Input::loadGamepadMappings(iProject / m_config.gamepadMappings);
 		app::Application::get().getEngineContext().loadActionMap(iProject);
+		if (exists(iProject / data::localisation::Localisation::fileName))
+			std::ignore = app::Application::get().getEngineContext().loadLocalisation(iProject);
 	}
 	app::Application::get().getEngineContext().getSettings().setGameName(m_config.gameName);
 	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);
