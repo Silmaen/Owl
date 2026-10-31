@@ -1230,7 +1230,7 @@ in the file.
 #### HudMarker {#hudmarker}
 
 An icon and a label drawn over a world entity by the HUD pass, with an arrow on the screen edge when the entity is out
-of view (see [HUD system](design/hud-system.md#hud-markers)). It goes on a world entity, not in a canvas.
+of view (see [HUD system](design/hud-system.md#world-markers)). It goes on a world entity, not in a canvas.
 
 | Field                | Type      | Description                                                         |
 |----------------------|-----------|---------------------------------------------------------------------|

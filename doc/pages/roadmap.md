@@ -203,7 +203,7 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
 - ![Done][done] Dialogue system with a visual editor (`.owldlg`) ([Gameplay systems](design/gameplay-systems.md))
 - ![Done][done] Camera tracks in the sequencer, for cutscenes ([Large worlds](design/large-worlds.md#large-worlds-sequences))
 - ![Done][done] HUD markers anchored to world entities, with off-screen indicators
-  ([HUD system](design/hud-system.md#hud-markers))
+  ([HUD system](design/hud-system.md#world-markers))
 - ![Planned][planned] Accessibility: UI scale, colour-blind modes, subtitles, reduced motion
   ([Accessibility](design/accessibility.md))
 - ![Done][done] Settings, logs and caches stay in the application folder, with an import of the settings of a

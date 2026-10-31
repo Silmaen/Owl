@@ -334,7 +334,7 @@ A minimap is a second camera drawn off-screen and shown by a `UiImage`; nothing 
 - The voxel level (`scenes/voxel_terrain.owl`) holds the entity `MinimapCamera` and shows its image in
   `huds/voxel.owlhud`. See [Scene > RenderTarget](../scene.md#rendertarget).
 
-## World markers (HUD8, done) {#hud-markers}
+## World markers (HUD8, done) {#world-markers}
 
 A marker is an icon and a label drawn in pixels over a world entity, with an arrow on the screen edge when the entity
 is out of view; it needs no canvas.
