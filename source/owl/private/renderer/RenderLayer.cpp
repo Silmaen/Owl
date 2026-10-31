@@ -20,7 +20,7 @@ auto projectToViewport(const math::mat4& iViewProjection, const math::vec2ui& iV
 	const math::vec2 ndc{clip.x() / w, clip.y() / w};
 	return {.position = {(ndc.x() + 1.f) * 0.5f * static_cast<float>(iViewport.x()),
 						 (1.f - ndc.y()) * 0.5f * static_cast<float>(iViewport.y())},
-			.inFront = clip.w() > epsilon};
+			.ahead = clip.w() > epsilon};
 }
 
 RenderLayer::~RenderLayer() = default;

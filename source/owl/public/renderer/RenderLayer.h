@@ -37,11 +37,15 @@ namespace owl::renderer {
  *  Where a world point lands in the viewport, as a render layer draws it.
  */
 struct OWL_API ViewportPoint {
-	/// Position in viewport pixels, from the top-left corner, Y down. Mirrored towards the side to turn to when the
-	/// point is behind the camera.
+	/**
+	 * @brief
+	 *  Position in viewport pixels, from the top-left corner, Y down.
+	 *
+	 * Mirrored towards the side to turn to when the point is behind the camera.
+	 */
 	math::vec2 position{0.f, 0.f};
 	/// Whether the point lies in front of the camera.
-	bool inFront = true;
+	bool ahead = true;
 };
 
 /**

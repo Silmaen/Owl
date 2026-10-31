@@ -23,7 +23,7 @@ auto placeHudMarker(const renderer::ViewportPoint& iPoint, const math::vec2& iVi
 	const float angle = std::atan2(delta.y(), delta.x());
 	const bool inside = iPoint.position.x() >= 0.f && iPoint.position.x() <= iViewport.x() &&
 						iPoint.position.y() >= 0.f && iPoint.position.y() <= iViewport.y();
-	if (iPoint.inFront && inside)
+	if (iPoint.ahead && inside)
 		return {.position = iPoint.position, .onScreen = true, .angle = angle};
 	const math::vec2 half{std::max(0.f, centre.x() - iMargin), std::max(0.f, centre.y() - iMargin)};
 	constexpr float epsilon = 1e-6f;

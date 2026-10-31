@@ -179,7 +179,7 @@ auto RendererRaycastLayer::projectToViewport(const Camera& iCamera, const math::
 	const auto width = static_cast<float>(iViewport.x());
 	const auto height = static_cast<float>(iViewport.y());
 	return {.position = {width * 0.5f * (1.f + lateral / distance), height * 0.5f - iWorld.z() * height / distance},
-			.inFront = depth > epsilon};
+			.ahead = depth > epsilon};
 }
 
 }// namespace owl::renderer

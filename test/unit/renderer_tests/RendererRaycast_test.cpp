@@ -770,7 +770,7 @@ TEST(RendererRaycast, projectToViewportFollowsTheSpriteProjection) {
 	const CameraOrtho camera{-1.f, 1.f, -1.f, 1.f};
 	const math::vec2ui viewport{800, 600};
 	const auto ahead = layer->projectToViewport(camera, viewport, {0.f, 2.f, 0.f});
-	EXPECT_TRUE(ahead.inFront);
+	EXPECT_TRUE(ahead.ahead);
 	EXPECT_NEAR(ahead.position.x(), 400.f, 1e-3f);
 	EXPECT_NEAR(ahead.position.y(), 300.f, 1e-3f);
 	// Half a cell over the horizon at two cells: a quarter of the height above the middle, as a sprite.
@@ -780,7 +780,7 @@ TEST(RendererRaycast, projectToViewportFollowsTheSpriteProjection) {
 	const auto right = layer->projectToViewport(camera, viewport, {1.f, 2.f, 0.f});
 	EXPECT_NEAR(right.position.x(), 400.f * (1.f + 0.5f / halfTan), 1e-2f);
 	const auto behind = layer->projectToViewport(camera, viewport, {1.f, -2.f, 0.f});
-	EXPECT_FALSE(behind.inFront);
+	EXPECT_FALSE(behind.ahead);
 	EXPECT_GT(behind.position.x(), 400.f);
 	teardownRendererStack();
 }
