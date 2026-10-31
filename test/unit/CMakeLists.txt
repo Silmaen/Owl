@@ -219,8 +219,11 @@ if (TARGET ${CMAKE_PROJECT_NAME}Runner)
         if (scenarioHead STREQUAL "# slow")
             list(APPEND scenarioLabels slow)
         endif ()
+        # Each scenario has a user directory of its own: the saves and settings of scenarios run in parallel never mix.
+        set(scenarioEnvironment ${${PROJECT_PREFIX}_GAME_TEST_ENVIRONMENT}
+                "OWL_USER_DIR=${CMAKE_CURRENT_BINARY_DIR}/scenario_users/${scenarioName}")
         set_tests_properties(${PROJECT_PREFIX_LOWER}_scenario_${scenarioName} PROPERTIES LABELS "${scenarioLabels}"
-                TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT} ENVIRONMENT "${${PROJECT_PREFIX}_GAME_TEST_ENVIRONMENT}")
+                TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT} ENVIRONMENT "${scenarioEnvironment}")
     endforeach ()
 endif ()
 

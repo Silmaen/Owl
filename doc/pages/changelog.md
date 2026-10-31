@@ -174,6 +174,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A particle emitter that does not emit and whose particles all died is idle (`ParticleSystem::isIdle`): neither simulated nor drawn.
 - A glTF with one skin per mesh over the same joints (as Quaternius exports its characters) is skinned whole, not only its first mesh.
 - Scenario and frame-bench runs read the `localisation.yml` of their project: the texts show translated as in the game.
+- Each scenario test runs with a user directory of its own (`OWL_USER_DIR`): parallel scenarios no longer share saves and settings.
 - `mesh3d.slang` shares its surface shading with the new `skinned3d.slang` through `common/mesh_surface.slangh`; its output is unchanged.
 - Compute shaders resolve their `#include`s like the graphics shaders and the shader bake.
 - Roadmap: an Engine Demo revamp around the world map, 2D walkable areas, a rail shooter and a point-and-click sample in v0.6.0; every pool game possible at 1.0.
