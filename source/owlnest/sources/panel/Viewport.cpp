@@ -30,6 +30,7 @@
 #include <scene/component/ReverbZone.h>
 #include <scene/component/SequencePlayer.h>
 #include <scene/component/VoxelWorld.h>
+#include <scene/component/WalkArea.h>
 
 #include <data/geometry/MeshLoader.h>
 #include <gui/IconBank.h>
@@ -1190,14 +1191,29 @@ void Viewport::frameSelection() {
 	const scene::Entity selected = m_parent->getSelectedEntity();
 	if (!activeScene || !selected)
 		return;
-	const math::Transform world = activeScene->getWorldTransform(selected);
+	math::Transform world = activeScene->getWorldTransform(selected);
 	// A unit quad scaled by the transform: half its diagonal encloses it.
+	float radius = 0.5f * std::sqrt(world.scale().x() * world.scale().x() + world.scale().y() * world.scale().y());
+	// A walk area is framed on its floors, which lie anywhere around its entity.
+	if (selected.hasComponent<scene::component::WalkArea>()) {
+		const auto& vertices = selected.getComponent<scene::component::WalkArea>().getMesh().getVertices();
+		if (!vertices.empty()) {
+			math::vec2 low = vertices.front();
+			math::vec2 high = vertices.front();
+			for (const auto& vertex: vertices) {
+				low = {std::min(low.x(), vertex.x()), std::min(low.y(), vertex.y())};
+				high = {std::max(high.x(), vertex.x()), std::max(high.y(), vertex.y())};
+			}
+			const math::vec2 centre = (low + high) * 0.5f;
+			const math::vec4 point = world() * math::vec4{centre.x(), centre.y(), 0.f, 1.f};
+			world.translation() = {point.x(), point.y(), point.z()};
+			radius = 0.5f * (high - low).norm();
+		}
+	}
 	if (m_isometric) {
 		m_isoCamera.setTarget(world.translation());
 		return;
 	}
-	const float radius =
-			0.5f * std::sqrt(world.scale().x() * world.scale().x() + world.scale().y() * world.scale().y());
 	m_editorCamera.frame(world.translation(), radius);
 }
 
