@@ -904,7 +904,8 @@ auto Scene::projectToViewport(const Entity& iEntity, const math::vec3& iWorld, c
 		if (tag == nullptr ? index == 0 : layers[index]->getName() == tag->rendererName)
 			return layers[index]->projectToViewport(*mp_renderCamera, iViewport, iWorld);
 	}
-	return renderer::projectToViewport(mp_renderCamera->getViewProjection(), iViewport, iWorld);
+	return renderer::projectToViewport(mp_renderCamera->getViewProjection(), iViewport, iWorld,
+									   renderer::getActiveClipSpace());
 }
 
 auto Scene::getViewerPosition() const -> std::optional<math::vec3> {

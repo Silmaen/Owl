@@ -11,6 +11,7 @@
 #include <app/Application.h>
 #include <core/Log.h>
 #include <renderer/CameraOrtho.h>
+#include <renderer/ClipSpace.h>
 #include <renderer/RenderLayer.h>
 #include <renderer/Renderer.h>
 #include <renderer/Renderer2D.h>
@@ -35,6 +36,22 @@ TEST(HudMarkerProjection, aMatrixMapsClipSpaceToYDownPixels) {
 	const auto corner = renderer::projectToViewport(identity, viewport, {1.f, 1.f, 0.f});
 	EXPECT_NEAR(corner.position.x(), 800.f, 1e-4f);
 	EXPECT_NEAR(corner.position.y(), 0.f, 1e-4f);
+}
+
+TEST(HudMarkerProjection, aVulkanMatrixLandsOnTheSamePixelAsItsOpenGlTwin) {
+	// A perspective projection looking down -Z, and the same one flipped for Vulkan as its cameras are.
+	auto openGl = math::identity<float, 4>();
+	openGl(3, 2) = -1.f;
+	openGl(3, 3) = 0.f;
+	const auto vulkan = renderer::toClipSpace(openGl, renderer::ClipSpace::Vulkan);
+	const math::vec2ui viewport{800, 600};
+	const math::vec3 above{0.2f, 0.5f, -1.f};
+	const auto expected = renderer::projectToViewport(openGl, viewport, above, renderer::ClipSpace::OpenGl);
+	const auto flipped = renderer::projectToViewport(vulkan, viewport, above, renderer::ClipSpace::Vulkan);
+	EXPECT_NEAR(expected.position.y(), 150.f, 1e-4f);
+	EXPECT_NEAR(flipped.position.x(), expected.position.x(), 1e-4f);
+	EXPECT_NEAR(flipped.position.y(), expected.position.y(), 1e-4f);
+	EXPECT_TRUE(flipped.ahead);
 }
 
 TEST(HudMarkerProjection, aPointBehindAPerspectiveCameraStaysOnItsSide) {

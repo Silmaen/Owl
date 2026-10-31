@@ -346,9 +346,10 @@ is out of view; it needs no canvas.
 - **Off-screen indicator**: the marker slides to the screen edge with an arrow pointing at the entity; a point behind
   the camera goes to the edge on the side to turn to.
 - **Projection** goes through the render layer the entity is routed to (`RendererTag`, the first layer when untagged):
-  `RenderLayer::projectToViewport` projects through the effective view-projection (2D, isometric, voxel, 3D) and the
-  raycast layer overrides it with its sprite projection (X / Y on the map plane, Z as height above the horizon in
-  cells). `Scene::projectToViewport` is valid during a frame only; `scene::ui::placeHudMarker` computes the placement.
+  `RenderLayer::projectToViewport` projects through the effective view-projection (2D, isometric, voxel, 3D), in the
+  clip space of the backend (Y flipped on Vulkan), and the raycast layer overrides it with its sprite projection
+  (X / Y on the map plane, Z as height above the horizon in cells). `Scene::projectToViewport` is valid during a frame
+  only; `scene::ui::placeHudMarker` computes the placement.
 - Drawn by the HUD pass under every canvas, scaled like a default canvas (1280×720, scale with height, times the
   `ui_scale` setting), in the editor viewport too.
 - Lua: `entity.set_hud_marker_enabled`, `entity.is_hud_marker_enabled`, `entity.set_hud_marker_label`.

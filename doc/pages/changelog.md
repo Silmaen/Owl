@@ -194,6 +194,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `FramePacer.WaitSleepsOutThePeriod` measures from the start of the period: a late thread under QEMU no longer makes the wait look short.
 - The sanitizer presets give each test binary 30 minutes: the Tower Defence export end-to-end test outgrew 10 minutes under TSan.
 - `owl_bench --filter` measures `hud/frame/1000_row_list` and `scene/set_parent/wide10000_build` alone: the Bench confirmation rounds of these two re-measured nothing (or crashed) and kept the full-run median.
+- HUD markers on the Vulkan backend: drawn where their entity is, not mirrored across the middle of the screen (`renderer::projectToViewport` follows the clip space).
 
 ## [0.5.0] - 2026-10-25
 

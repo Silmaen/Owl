@@ -11,6 +11,7 @@
 #include "core/Macros.h"
 #include "math/vectors.h"
 #include "renderer/Camera.h"
+#include "renderer/ClipSpace.h"
 
 #include <string>
 
@@ -54,10 +55,13 @@ struct OWL_API ViewportPoint {
  * @param[in] iViewProjection The view-projection matrix.
  * @param[in] iViewport The viewport size in pixels.
  * @param[in] iWorld The world point.
+ * @param[in] iClipSpace The convention the matrix was built for: NDC Y up (`OpenGl`) or Y down (`Vulkan`, the
+ * cameras of the Vulkan backend).
  * @return Its place in the viewport.
  */
 [[nodiscard]] OWL_API auto projectToViewport(const math::mat4& iViewProjection, const math::vec2ui& iViewport,
-											 const math::vec3& iWorld) -> ViewportPoint;
+											 const math::vec3& iWorld, ClipSpace iClipSpace = ClipSpace::OpenGl)
+		-> ViewportPoint;
 
 /**
  * @brief
@@ -187,8 +191,8 @@ public:
 	 *  Where a world point of an entity routed to this layer lands in the viewport.
 	 *
 	 * Used by the HUD markers anchored to world entities. The default projects through `getEffectiveViewProjection`,
-	 * which holds for every layer drawing world coordinates through a matrix; a layer with its own projection (the
-	 * raycaster) overrides it.
+	 * built for the clip space of the active backend, which holds for every layer drawing world coordinates through a
+	 * matrix; a layer with its own projection (the raycaster) overrides it.
 	 * @param[in] iCamera The active scene camera.
 	 * @param[in] iViewport The viewport size in pixels.
 	 * @param[in] iWorld The world point.
@@ -196,7 +200,8 @@ public:
 	 */
 	[[nodiscard]] virtual auto projectToViewport(const Camera& iCamera, const math::vec2ui& iViewport,
 												 const math::vec3& iWorld) const -> ViewportPoint {
-		return renderer::projectToViewport(getEffectiveViewProjection(iCamera), iViewport, iWorld);
+		return renderer::projectToViewport(getEffectiveViewProjection(iCamera), iViewport, iWorld,
+										   getActiveClipSpace());
 	}
 
 	/**
