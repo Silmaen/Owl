@@ -117,16 +117,19 @@ User guide: [Renderer](../renderer.md), [Voxel Engine](../voxel.md).
 The seeded generation of a tilemap region is the first consumer of the [PCG graphs](pcg-graphs.md): the generator of a
 tilemap runs a graph from a seed, undoable, from the **Procedural** section of the tilemap editor.
 
-## Walkable areas (v0.6.0) {#walkable-areas-2d}
+## Walkable areas (v0.6.0, done) {#walkable-areas-2d}
 
-Free walking on a 2D floor for point-and-click and top-down games, beside the tile graphs above:
+Free walking on a 2D floor for point-and-click and top-down games, beside the tile graphs above
+([Walkable areas](../pathfinding.md#pathfinding-walk-areas)):
 
-- A walkable area: polygons with holes on the plane of a scene, the shortest path across them (A* on their
-  triangulation, then the corners pulled tight)
-- A scale by depth: an actor walking up the screen shrinks, two values at two heights
-- Walk-behind masks: parts of a backdrop drawn in front of an actor below a line
-- Lua queries and their editor overlay, as for the tile graphs; the polygons edited in the Owl Nest viewport (add,
-  move, delete vertices and holes, select-many), each gesture a command
+- `WalkArea`: polygons with holes on the plane of its entity, cut into triangles; the shortest path across them is A*
+  over the triangles, then the corridor pulled tight (funnel)
+- A scale by depth: two scales at two heights of the plane, and the Z of the agents from their height
+- `WalkBehind` masks: a sprite of the backdrop takes the Z of its baseline and hides the actors walking behind it, 2D
+  sprites and meshes alike
+- `WalkAgent` walks the path, turns and drives the speed of its `Animator`; Lua `walk.*`; the navigation overlay draws
+  the floors and the paths; the vertices and holes are edited in the Owl Nest viewport (select-many, move, insert,
+  delete, add a hole or a floor), each gesture a `walk.*` command
 
 ## Engine Demo demos (moved out of the engine)
 

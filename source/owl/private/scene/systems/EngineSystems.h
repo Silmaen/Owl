@@ -85,6 +85,15 @@ void updateSplineFollowers(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Walk the entities with a `WalkAgent` along their path, scale and sort them by depth, and set the Z of the
+ *  `WalkBehind` masks (`owl.walk_agents`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateWalkAgents(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Move the entities with a `Drift` (`owl.drift`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

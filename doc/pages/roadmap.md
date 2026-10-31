@@ -249,7 +249,7 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
 - ![Done][done] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
 - ![Done][done] Engine Demo revamp: every scene reached from the world map and back, the isolated scenes folded
   into the hub and the tavern, an observatory, a live main menu ([Engine Demo](design/sample-games.md#sample-games-demo-revamp))
-- ![Planned][planned] 2D walkable areas: polygons with holes, paths across them, scale by depth, edited in Owl Nest
+- ![Done][done] 2D walkable areas: polygons with holes, paths across them, scale by depth, edited in Owl Nest
   ([2D](design/2d-complete.md#walkable-areas-2d))
 - ![Done][done] Rail shooter sample game ([Rail shooter](design/sample-games.md#sample-games-rail-shooter))
 - ![Planned][planned] Point-and-click sample game ([Point-and-click](design/sample-games.md#sample-games-point-and-click))

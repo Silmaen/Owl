@@ -16,6 +16,7 @@
 #include "scene/TilemapAsset.h"
 #include "scene/TilemapTerrain.h"
 #include "scene/component/Tilemap.h"
+#include "scene/component/WalkArea.h"
 #include "scene/nav/NavWorld.h"
 
 #include <array>
@@ -242,6 +243,45 @@ void drawNavigationRoutes(Scene& ioScene) {
 								{.point1 = ring[i], .point2 = ring[(i + 1) % ring.size()], .color = color});
 				}
 			});
+}
+
+void drawWalkAreas(Scene& ioScene) {
+	constexpr math::vec4 borderColor{0.3f, 0.95f, 0.45f, 1.f};
+	constexpr math::vec4 triangleColor{0.3f, 0.95f, 0.45f, 0.25f};
+	constexpr math::vec4 pathColor{1.f, 0.85f, 0.2f, 1.f};
+	for (const auto view = ioScene.registry.view<component::WalkArea>(); const auto handle: view) {
+		const Entity entity{handle, &ioScene};
+		const math::mat4 world = ioScene.getWorldTransform(entity)();
+		const auto& mesh = view.get<component::WalkArea>(handle).getMesh();
+		const auto point = [&world, &mesh](const uint32_t iIndex) -> math::vec3 {
+			const auto& vertex = mesh.getVertices()[iIndex];
+			const math::vec4 transformed = world * math::vec4{vertex.x(), vertex.y(), 0.01f, 1.f};
+			return {transformed.x(), transformed.y(), transformed.z()};
+		};
+		for (const auto& triangle: mesh.getTriangles()) {
+			for (size_t edge = 0; edge < 3; ++edge) {
+				if (triangle.neighbours[edge] < 0)
+					continue;
+				renderer::Renderer2D::drawLine({.point1 = point(triangle.vertices[edge]),
+												.point2 = point(triangle.vertices[(edge + 1) % 3]),
+												.color = triangleColor});
+			}
+		}
+		for (const auto& [from, to]: mesh.getBorderEdges())
+			renderer::Renderer2D::drawLine({.point1 = point(from), .point2 = point(to), .color = borderColor});
+	}
+	for (const auto view = ioScene.registry.view<component::WalkAgent>(); const auto handle: view) {
+		const auto& agent = view.get<component::WalkAgent>(handle);
+		if (!agent.isMoving())
+			continue;
+		const math::mat4 world = ioScene.getWorldTransform(Entity{handle, &ioScene})();
+		math::vec3 previous{world(0, 3), world(1, 3), world(2, 3) + 0.01f};
+		for (size_t index = agent.m_next; index < agent.m_path.size(); ++index) {
+			const math::vec3 next{agent.m_path[index].x(), agent.m_path[index].y(), previous.z()};
+			renderer::Renderer2D::drawLine({.point1 = previous, .point2 = next, .color = pathColor});
+			previous = next;
+		}
+	}
 }
 
 }// namespace owl::scene::nav

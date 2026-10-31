@@ -144,6 +144,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Data tables (`.owltable`): typed columns (integer, float, bool, text, enum, asset, reference to a row of a table), read once per engine context (`DataTableLibrary`).
 - Owl Nest data table document: a grid to add, move, duplicate and remove rows and columns, typed cells, references picked from a list, through the `table.*` commands.
 - Lua `spline.*` (sample by distance, tangent, nearest distance, points, follower speed, lane and distance) and `datatable.*` (cells, rows, keys, columns, references, find).
+- Walkable areas: the `WalkArea` component holds 2D floors with holes, cut into triangles, and finds the shortest path across them (A* then funnel).
+- `WalkAgent` component (`owl.walk_agents`): an actor walks its path, scaled and sorted by depth, turned the way it walks and driving its `Animator` speed.
+- `WalkBehind` component: a sprite of the backdrop hides the actors behind its baseline, 2D sprites and meshes alike.
+- Lua `walk.*`: paths, inside test, nearest point, scale at a point, agents sent, stopped and polled.
+- The navigation overlay draws the walk areas and the paths of the walking agents.
+- Owl Nest walk area editing: vertices selected, Ctrl+click, group gizmo, Shift+click inserts, Alt+click adds a hole or a floor, Delete removes, and a Walk Area inspector.
+- `walk.add_polygon`, `add_hole`, `delete_ring`, `insert_vertex`, `move_vertices`, `set_vertex` and `delete_vertices` commands, one undo step each.
 - The export packs the tables a script names, the tables they reference and the assets of their cells.
 - Benchmarks `spline/rebuild`, `spline/sample_distance`, `spline/sample_lane` and `spline/nearest`.
 - Engine Demo: two barrel carts ride the lanes of a spline in the character yard, their speed, lane and cargo read from two linked data tables.

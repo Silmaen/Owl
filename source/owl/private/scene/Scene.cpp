@@ -2951,6 +2951,7 @@ void Scene::renderOverlays(const renderer::Camera& iCamera) {
 		renderer::Renderer2D::beginScene(isometricCamera.has_value() ? *isometricCamera : iCamera);
 		nav::drawNavigationGraph(*this);
 		nav::drawNavigationRoutes(*this);
+		nav::drawWalkAreas(*this);
 		renderer::Renderer2D::endScene();
 	}
 	if (!m_hasVoxelHighlight && !m_showCrosshair && !m_interactionHighlight)
@@ -4280,6 +4281,18 @@ template<>
 OWL_API void
 Scene::onComponentAdded<component::SequencePlayer>([[maybe_unused]] const Entity& iEntity,
 												   [[maybe_unused]] component::SequencePlayer& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::WalkArea>([[maybe_unused]] const Entity& iEntity,
+														  [[maybe_unused]] component::WalkArea& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::WalkAgent>([[maybe_unused]] const Entity& iEntity,
+														   [[maybe_unused]] component::WalkAgent& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::WalkBehind>([[maybe_unused]] const Entity& iEntity,
+															[[maybe_unused]] component::WalkBehind& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>([[maybe_unused]] const Entity& iEntity,

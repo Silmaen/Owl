@@ -5,7 +5,8 @@
 Vehicles of a Transport Tycoon-like game follow a graph of tiles (roads, tracks), not a navigation mesh. A `Tilemap`
 carries `navigation` options that turn one of its layers into a graph, the roads coming from the tileset; the engine searches shortest paths over it, spreads
 the long queries over frames, and updates the graph chunk by chunk when a tile changes. The code is `scene::nav`
-(`source/owl/public/scene/nav/`).
+(`source/owl/public/scene/nav/`). Point-and-click and top-down games walk freely on 2D floors instead: see
+[Walkable areas](#pathfinding-walk-areas).
 
 ```mermaid
 flowchart LR
@@ -178,3 +179,84 @@ undone with Ctrl+Z (clicks within a second merge into one step).
 Building the graph of the whole map takes 7 ms, a one-cell edit 5 µs, an edit followed by a hierarchical query
 0.43 ms. Hierarchical wins only on repeated queries over a sparse, maze-like network: that is why `Auto` rarely picks
 it, and why a long open-ground query (the walls case) stays a job for several frames.
+
+## Walkable areas {#pathfinding-walk-areas}
+
+A point-and-click room or a top-down plaza is not a graph of tiles: the actor walks anywhere on a floor, around the
+well and the table. A `WalkArea` component holds that floor as polygons with holes on the plane (x, y) of its entity
+(`scene::nav::WalkMesh`, `scene/component/WalkArea.h`); `WalkAgent` entities walk on it and `WalkBehind` masks hide
+them behind parts of the backdrop.
+
+```mermaid
+flowchart LR
+    P[WalkArea polygons<br/>outlines and holes] -->|holes bridged, ear clipping, on change| M[WalkMesh<br/>triangles and neighbours]
+    M -->|A* over the triangles,<br/>then the funnel| W[path: corners only]
+    W --> A[WalkAgent<br/>owl.walk_agents, PrePhysics]
+    A -->|scale and Z by height| T[Transform]
+    B[WalkBehind baseline] -->|Z by height| T
+    L[Lua walk.*] --> W
+```
+
+### The floor
+
+Each polygon is an outline and its holes, in either winding; polygons whose edges meet vertex to vertex join into one
+floor, two that do not touch are two floors no path crosses. The triangles are cut again the first time the area is
+read after an edit. A point off the floor (a click on a wall) is moved to the nearest point of its border, so
+`walk.go_to` always walks as close as it can.
+
+### Paths
+
+A* runs over the triangles, from the middle of an edge to the middle of the next, then the corridor of triangles is
+pulled tight (funnel algorithm): the path turns only at corners of the outline and of the holes, and is a straight line
+when nothing is in the way. The search runs at once when asked (`walk.go_to`, `walk.find_path`): a room has tens of
+triangles, not the thousands of cells of a tile graph.
+
+### Depth: scale, sort and walk-behind masks
+
+Walking up the plane moves an actor away from the viewer. With `depthScale` the area scales the agents from
+`nearScale` at `nearY` to `farScale` at `farY` (the scale the entity has at the start of Play is its scale at 1), and
+with `scaleSpeed` they walk slower far away. With `depthSort` it sets their Z from their height: `depthPerUnit` per unit
+walked down from `nearY`. A `WalkBehind` on a sprite cut from the backdrop (a pillar, a hedge) takes the Z of its
+`baseline`: an actor whose feet are above the line is drawn behind it, one below the line in front. Sprites of a 2D
+layer are drawn in the order of their Z; meshes of a mesh layer are hidden by the masks of a depth-tested 2D layer drawn
+after them (`DepthTest: true`, [Renderer stack](renderer.md#renderer-stack)), so 3D actors walk behind a 2D backdrop
+the same way.
+
+### Agents
+
+`walk.go_to(agent, x, y)` finds the path and the `owl.walk_agents` system walks it at `speed`: it places the entity
+(its origin is the feet of the actor), turns it (`facing`: `MirrorX` mirrors a sprite walking left, `TurnY` turns a mesh
+around Y, facing the viewer when walking down) and gives the speed to the `speedParameter` float of its `Animator` (or
+of its first child holding one), so an idle / walk state machine follows the steps. `walk.stop`, `walk.is_moving` and
+`walk.get_target` drive and poll it, `walk.set_area` moves it to another floor.
+
+```lua
+local hero = scene.find_entity("Hero")
+local floor = scene.find_entity("Floor")
+
+function on_click(x, y)                         -- a world point of the room
+    if walk.is_inside(floor, x, y) then
+        walk.go_to(hero, x, y)
+    end
+end
+
+function on_update()
+    if arrived and not walk.is_moving(hero) then
+        -- the hero stands at the hotspot: look, use, talk
+    end
+end
+
+local points = walk.find_path(floor, 1, 1, 9, 4)  -- {x1, y1, x2, y2, ...} or nil
+local scale = walk.get_scale_at(floor, 4, 6)      -- the size of an actor standing there
+```
+
+Every function is in the [Lua API reference](lua-api-isometric.md#walk). The `iso_town` plaza of the Engine Demo is
+walked by pedestrians this way, and the point-and-click sample game moves its hero with it.
+
+### Seeing and editing the floors
+
+The navigation overlay (`path.set_debug(true)`, **Show > Navigation graph and routes** in Owl Nest) draws every walk
+area, its borders and triangles, and the path left to each walking agent in yellow. In Owl Nest the selected walk area
+is edited in the viewport: vertices moved, inserted and deleted, holes and floors added, each gesture a `walk.*`
+command ([Walk areas in the viewport](editor_viewport.md#viewport-walk-areas)).
+
