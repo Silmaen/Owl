@@ -1,0 +1,14 @@
+# The tavern opens on its intro cutscene (sequences/tavern_intro.owlseq): the Room shot, a cut to the Hearth shot
+# called by the events of the sequence, then the end gives the camera back to the player.
+scene: ../../../engine_demo/scenes/tavern.owl
+project: ../../../engine_demo
+steps:
+  - frames: 10
+  - expect: {gamestate: tavern_intro, equals: 1}
+  - expect: {gamestate: tavern_intro_shot, equals: 1}
+  - expect: {entity: IntroCamera, translation.x: {greater: 3}}
+  - frames: 240
+  - expect: {gamestate: tavern_intro_shot, equals: 2}
+  - expect: {entity: IntroCamera, translation.x: {less: 0.5}}
+  - frames: 240
+  - expect: {gamestate: tavern_intro, equals: 0}
