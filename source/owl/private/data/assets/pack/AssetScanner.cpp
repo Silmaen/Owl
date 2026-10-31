@@ -756,8 +756,8 @@ void scanLocalisationFonts(const std::filesystem::path& iProjectDir, std::vector
 void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 				const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
 				std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
-	const auto addTextureField = [&](const YAML::Node& iComponent) -> void {
-		if (auto tex = iComponent["texture"]; tex) {
+	const auto addTextureField = [&](const YAML::Node& iComponent, const char* iField = "texture") -> void {
+		if (auto tex = iComponent[iField]; tex) {
 			const auto val = tex.as<std::string>();
 			if (auto ref = resolveTexture(val); ref) {
 				if (!hasAsset(ioAssets, ref->packPath))
@@ -775,6 +775,10 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 	for (const char* component: {"UiImage", "UiToolCursor"})
 		if (auto widget = iEntity[component]; widget)
 			addTextureField(widget);
+	if (auto marker = iEntity["HudMarker"]; marker) {
+		addTextureField(marker, "icon");
+		addTextureField(marker, "arrow");
+	}
 	scanFontsAndSounds(iEntity, iSceneName, ioAssets, ioWarnings);
 	if (auto meshRenderer = iEntity["MeshRenderer"]; meshRenderer)
 		scanMeshRenderer(meshRenderer, iSceneName, ioAssets, ioWarnings);

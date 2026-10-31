@@ -1771,6 +1771,7 @@ void EditorLayer::onContextualHelp() {
 			{"UiLayout", "editor_hud"},
 			{"UiTooltip", "editor_hud"},
 			{"UiToolCursor", "editor_hud"},
+			{"HudMarker", "editor_hud"},
 			{"UiFocus", "editor_hud"},
 			{"UiScrollView", "editor_hud"},
 			{"UiList", "editor_hud"},

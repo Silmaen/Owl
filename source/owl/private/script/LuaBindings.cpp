@@ -939,6 +939,8 @@ auto luaEntityHasComponent(lua_State* iState) -> int {
 		has = entity->hasComponent<scene::component::UiTooltip>();
 	else if (compName == "UiToolCursor")
 		has = entity->hasComponent<scene::component::UiToolCursor>();
+	else if (compName == "HudMarker")
+		has = entity->hasComponent<scene::component::HudMarker>();
 	else if (compName == "UiFocus")
 		has = entity->hasComponent<scene::component::UiFocus>();
 	else if (compName == "UiScrollView")
@@ -1521,6 +1523,18 @@ auto luaUiSetToolCursor(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiToolCursor>())
 		entity->getComponent<scene::component::UiToolCursor>().active = lua_toboolean(iState, 2) != 0;
 	return 0;
+}
+
+auto luaEntitySetHudMarkerLabel(lua_State* iState) -> int {
+	const std::string label = luaL_checkstring(iState, 2);
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::HudMarker>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::HudMarker>().label = label;
+	lua_pushboolean(iState, 1);
+	return 1;
 }
 
 auto luaUiGetSliderValue(lua_State* iState) -> int {
@@ -3356,6 +3370,17 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::Drift>>,
 		 .description = "Whether the entity's `Drift` moves it; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_hud_marker_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::HudMarker>>,
+		 .description = "Show or hide the entity's `HudMarker`, the HUD icon anchored to it; false when it has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_hud_marker_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::HudMarker>>,
+		 .description = "Whether the entity's `HudMarker` is drawn; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_hud_marker_label", .function = guarded<luaEntitySetHudMarkerLabel>,
+		 .description = "Set the label of the entity's `HudMarker`; false when it has none.",
+		 .params = {entityId, {"label", String}}, .returns = {{"done", Boolean}}},
 		{.table = "entity", .name = "set_follow_target_enabled",
 		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::FollowTarget>>,
 		 .description = "Switch the entity's `FollowTarget` on or off (it stays where it is while off); false when it "

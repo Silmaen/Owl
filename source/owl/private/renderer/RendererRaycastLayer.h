@@ -120,6 +120,19 @@ public:
 
 	/**
 	 * @brief
+	 *  Where a world point lands in the viewport, through the projection of the raycast sprites.
+	 *
+	 * X and Y are the map plane, Z the height above the horizon in cells (`RaycastSpriteData::worldZOffset`).
+	 * @param[in] iCamera The active scene camera.
+	 * @param[in] iViewport The viewport size in pixels.
+	 * @param[in] iWorld The world point.
+	 * @return Its place in the viewport.
+	 */
+	[[nodiscard]] auto projectToViewport(const Camera& iCamera, const math::vec2ui& iViewport,
+										 const math::vec3& iWorld) const -> ViewportPoint override;
+
+	/**
+	 * @brief
 	 *  Read-only access to the layer's current configuration.
 	 *
 	 * Used by `Scene::render` to drive the active `RendererRaycast::beginScene`

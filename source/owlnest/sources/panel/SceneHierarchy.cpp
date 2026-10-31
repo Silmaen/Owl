@@ -240,6 +240,8 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 		return {gui::icon::userRound, 0xe8c15a};
 	if (iEntity.hasComponent<Trigger>())
 		return {gui::icon::zap, 0xef8a3c};
+	if (iEntity.hasComponent<HudMarker>())
+		return {gui::icon::flag, 0x6fd6c0};
 	if (iEntity.hasComponent<SoundSource>())
 		return {gui::icon::volume2, 0x3faa72};
 	if (iEntity.hasComponent<LuaScript>())

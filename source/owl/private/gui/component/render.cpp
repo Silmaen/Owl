@@ -2533,6 +2533,33 @@ void renderProps(UiToolCursor& ioComponent) {
 	fieldTooltip("Drawn over the HUD in play; a script switches it with ui.set_tool_cursor.");
 }
 
+void renderProps(HudMarker& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Draw the marker; a script switches it with entity.set_hud_marker_enabled.");
+	widgets::textureField("Icon", ioComponent.icon);
+	fieldTooltip("Icon drawn over the entity; a diamond of the colour without one.");
+	prop::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));
+	fieldTooltip("Colour multiplied with the icon, also the colour of the edge arrow.");
+	prop::DragFloat2("Size", ioComponent.size.data(), 1.0f, 1.0f, 512.0f);
+	fieldTooltip("Size of the icon in reference pixels (1280x720, scaled with the screen height).");
+	prop::DragFloat3("Offset", &ioComponent.offset.x(), 0.05f, -10000.f, 10000.f, "%.2f");
+	fieldTooltip("Anchor relative to the entity origin, in world units: above the head of a character.");
+	prop::InputText("Label", &ioComponent.label);
+	fieldTooltip("Text drawn under the icon; empty draws none.");
+	prop::ColorEdit4("Label Color", reinterpret_cast<float*>(&ioComponent.labelColor));
+	prop::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 4.0f, 128.0f);
+	prop::Checkbox("Show Distance", &ioComponent.showDistance);
+	fieldTooltip("Append the distance to the player (the camera without a Player) to the label.");
+	prop::DragFloat("Max Distance", &ioComponent.maxDistance, 0.5f, 0.0f, 100000.f);
+	fieldTooltip("Hide the marker farther than this distance; 0 never hides it.");
+	prop::Checkbox("Off-screen Indicator", &ioComponent.offscreenIndicator);
+	fieldTooltip("Keep the marker on the screen edge with an arrow when the entity is out of view.");
+	prop::DragFloat("Edge Margin", &ioComponent.edgeMargin, 0.5f, 0.0f, 512.0f);
+	fieldTooltip("Distance between an edge marker and the screen border, in reference pixels.");
+	widgets::textureField("Arrow", ioComponent.arrow);
+	fieldTooltip("Sprite of the edge arrow, pointing right in the texture; a chevron of the colour without one.");
+}
+
 namespace {
 // A combo listing the UI entities of the scene by name, with a filter and a "none" entry.
 void uiEntityPicker(const char* iLabel, core::UUID& ioTarget, const Entity& iOwner) {

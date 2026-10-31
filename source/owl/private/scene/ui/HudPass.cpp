@@ -18,6 +18,7 @@
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 #include "scene/component/components.h"
+#include "scene/ui/HudMarkerPlacement.h"
 
 #include <algorithm>
 #include <array>
@@ -25,6 +26,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <numbers>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -535,6 +537,109 @@ void drawToolCursor(const Scene& iSurface, const entt::entity iEntity, const Sce
 									.entityId = -1});
 }
 
+// A quad of `iSize` pixels centred on a point of the Y-down layout, turned by `iAngle` (radians, Y down).
+auto turnedQuad(const math::vec2& iCentre, const math::vec2& iSize, const float iAngle, const float iHeight)
+		-> math::Transform {
+	math::Transform transform;
+	transform.translation() = {iCentre.x(), iHeight - iCentre.y(), 0.f};
+	transform.rotation() = {0.f, 0.f, -iAngle};
+	transform.scale() = {iSize.x(), iSize.y(), 1.f};
+	return transform;
+}
+
+// The arrow of an edge marker, between the icon and the border, pointing at the entity.
+void drawMarkerArrow(const component::HudMarker& iMarker, const HudMarkerPlacement& iPlacement, const float iIconSize,
+					 const float iHeight, const int iEntityId) {
+	const float length = iIconSize * 0.6f;
+	const math::vec2 direction{std::cos(iPlacement.angle), std::sin(iPlacement.angle)};
+	const math::vec2 centre = iPlacement.position + direction * (iIconSize * 0.5f + length * 0.6f);
+	if (iMarker.arrow) {
+		renderer::Renderer2D::drawQuad({.transform = turnedQuad(centre, {length, length}, iPlacement.angle, iHeight),
+										.color = iMarker.color,
+										.texture = iMarker.arrow,
+										.entityId = iEntityId});
+		return;
+	}
+	// A chevron: two bars meeting at the tip, each turned 135 degrees back from the direction.
+	const math::vec2 tip = centre + direction * (length * 0.5f);
+	const float arm = length * 0.7f;
+	for (const float side: {-1.f, 1.f}) {
+		const float angle = iPlacement.angle + side * std::numbers::pi_v<float> * 0.75f;
+		const math::vec2 back{std::cos(angle), std::sin(angle)};
+		renderer::Renderer2D::drawQuad(
+				{.transform = turnedQuad(tip + back * (arm * 0.5f), {arm, length * 0.22f}, angle, iHeight),
+				 .color = iMarker.color,
+				 .entityId = iEntityId});
+	}
+}
+
+// One marker: its icon (a diamond without one), its edge arrow when off-screen, its label under the icon.
+void drawMarker(const component::HudMarker& iMarker, const HudMarkerPlacement& iPlacement, const std::string& iLabel,
+				const float iScale, const float iHeight, const int iEntityId) {
+	const math::vec2 size = iMarker.size * iScale;
+	if (iMarker.icon)
+		renderer::Renderer2D::drawQuad({.transform = turnedQuad(iPlacement.position, size, 0.f, iHeight),
+										.color = iMarker.color,
+										.texture = iMarker.icon,
+										.entityId = iEntityId});
+	else
+		renderer::Renderer2D::drawQuad(
+				{.transform = turnedQuad(iPlacement.position, size / std::numbers::sqrt2_v<float>,
+										 std::numbers::pi_v<float> * 0.25f, iHeight),
+				 .color = iMarker.color,
+				 .entityId = iEntityId});
+	if (!iPlacement.onScreen)
+		drawMarkerArrow(iMarker, iPlacement, std::max(size.x(), size.y()), iHeight, iEntityId);
+	if (iLabel.empty())
+		return;
+	const float lineHeight = iMarker.fontSize * 1.4f * legibleTextScale(iScale, iMarker.fontSize);
+	const float width = std::max(200.f * iScale, size.x());
+	// Under the icon, or over it when the bottom border would cut the text.
+	float top = iPlacement.position.y() + size.y() * 0.5f;
+	if (top + lineHeight > iHeight)
+		top = iPlacement.position.y() - size.y() * 0.5f - lineHeight;
+	drawBoxedText({.position = {iPlacement.position.x() - width * 0.5f, top}, .size = {width, lineHeight}}, iScale,
+				  iHeight, iLabel, iMarker.labelColor, iMarker.fontSize, data::fonts::HorizontalAlignment::Center,
+				  iEntityId, 0.f);
+}
+
+// The markers of the world entities, under every canvas: projected through the layer of their entity.
+void drawMarkers(Scene& ioScene, const math::vec2ui& iViewport, const bool iEditorMode) {
+	const auto view = ioScene.registry.view<component::HudMarker>();
+	if (view.empty())
+		return;
+	const math::vec2 screen{static_cast<float>(iViewport.x()), static_cast<float>(iViewport.y())};
+	const float scale = component::Canvas{}.getScale(screen) * HudLayout::getUserScale(ioScene);
+	const auto viewer = ioScene.getViewerPosition();
+	bool open = false;
+	for (const auto entity: view) {
+		const auto& marker = view.get<component::HudMarker>(entity);
+		const Entity owner{entity, &ioScene};
+		if (!marker.enabled || !ioScene.isEffectivelyVisible(owner, iEditorMode))
+			continue;
+		const math::vec3 anchor = ioScene.getWorldTransform(owner).translation() + marker.offset;
+		const float distance = viewer ? (anchor - *viewer).norm() : 0.f;
+		if (marker.maxDistance > 0.f && distance > marker.maxDistance)
+			continue;
+		const auto point = ioScene.projectToViewport(owner, anchor, iViewport);
+		if (!point)
+			break;
+		const auto placement = placeHudMarker(*point, screen, marker.edgeMargin * scale);
+		if (!placement.onScreen && !marker.offscreenIndicator)
+			continue;
+		if (!open) {
+			renderer::Renderer2D::beginScene(pixelCamera(iViewport));
+			open = true;
+		}
+		std::string label = marker.label;
+		if (marker.showDistance && viewer)
+			label = std::format("{}{}{}m", label, label.empty() ? "" : " ", std::lround(distance));
+		drawMarker(marker, placement, label, scale, screen.y(), static_cast<int>(static_cast<uint32_t>(entity)));
+	}
+	if (open)
+		renderer::Renderer2D::endScene();
+}
+
 // The tooltip then the tool cursor, over every window of the scene and of its HUD.
 void drawOverlays(Scene& ioScene, Scene* iHud, const math::vec2ui& iViewport, const bool iEditorMode) {
 	const auto& state = ioScene.getUiInputState();
@@ -567,6 +672,7 @@ void drawOverlays(Scene& ioScene, Scene* iHud, const math::vec2ui& iViewport, co
 void HudPass::render(Scene& ioScene, const math::vec2ui& iViewport, const bool iEditorMode) {
 	OWL_PROFILE_FUNCTION()
 
+	drawMarkers(ioScene, iViewport, iEditorMode);
 	drawCanvases(ioScene, ioScene, iViewport, iEditorMode);
 	const auto hud = ioScene.getHud();
 	Scene* const hudScene = hud && hud.get() != &ioScene ? hud.get() : nullptr;
