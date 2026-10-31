@@ -1,0 +1,24 @@
+# The Moon Lantern, settings: the keyboard moves down the sliders to the language (English to French) and to the
+# subtitles (on to off); Escape saves them and goes back to the title.
+scene: ../../../samples/point_and_click/scenes/settings.owl
+steps:
+  - frames: 20
+  - expect: {setting: language, equals: en}
+  - expect: {setting: subtitles, equals: true}
+  - input: {key: Down, frames: 2}
+  - frames: 3
+  - input: {key: Down, frames: 2}
+  - frames: 3
+  - input: {key: Down, frames: 2}
+  - frames: 3
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - expect: {setting: language, equals: fr}
+  - input: {key: Down, frames: 2}
+  - frames: 3
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - expect: {setting: subtitles, equals: false}
+  - input: {key: Escape, frames: 2}
+  - frames: 60
+  - expect: {entity: NewButton, exists: true}

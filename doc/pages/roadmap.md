@@ -252,7 +252,7 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
 - ![Done][done] 2D walkable areas: polygons with holes, paths across them, scale by depth, edited in Owl Nest
   ([2D](design/2d-complete.md#walkable-areas-2d))
 - ![Done][done] Rail shooter sample game ([Rail shooter](design/sample-games.md#sample-games-rail-shooter))
-- ![Planned][planned] Point-and-click sample game ([Point-and-click](design/sample-games.md#sample-games-point-and-click))
+- ![Done][done] Point-and-click sample game ([Point-and-click](design/sample-games.md#sample-games-point-and-click))
 - ![Planned][planned] Earlier sample games on the new features: particles, mixer buses, data tables, dialogues, HUD
   markers, accessibility ([Improvements](design/sample-games.md#sample-games-improvements))
 - ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a Mini

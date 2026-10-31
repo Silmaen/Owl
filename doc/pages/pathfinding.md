@@ -251,7 +251,8 @@ local scale = walk.get_scale_at(floor, 4, 6)      -- the size of an actor standi
 ```
 
 Every function is in the [Lua API reference](lua-api-isometric.md#walk). The `iso_town` plaza of the Engine Demo is
-walked by pedestrians this way, and the point-and-click sample game moves its hero with it.
+walked by pedestrians this way (`scripts/iso/iso_town_walkers.lua`), and the point-and-click sample game The Moon
+Lantern moves its actors with it over 3D-on-2D rooms (`samples/point_and_click/`).
 
 ### Seeing and editing the floors
 

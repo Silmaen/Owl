@@ -1,0 +1,45 @@
+FormatVersion: 1
+# Actions of The Moon Lantern, on top of the built-in ones (`primary` / `secondary` are the mouse buttons, the `ui_*`
+# actions drive the menus). Read by scripts/game/adventure.lua.
+actions:
+  - name: cursor
+    type: vector
+    bindings:
+      - {key: Right, component: x}
+      - {key: Left, component: x, scale: -1}
+      - {key: Down, component: y}
+      - {key: Up, component: y, scale: -1}
+      - {gamepad_stick: left}
+  - name: act
+    type: button
+    bindings:
+      - {key: Enter}
+      - {key: Space}
+      - {gamepad_button: A}
+  - name: look
+    type: button
+    bindings:
+      - {key: L}
+      - {gamepad_button: X}
+  - name: next_hotspot
+    type: button
+    bindings:
+      - {key: Tab}
+      - {key: E}
+      - {gamepad_button: RightBumper}
+  - name: prev_hotspot
+    type: button
+    bindings:
+      - {key: Q}
+      - {gamepad_button: LeftBumper}
+  - name: inventory
+    type: button
+    bindings:
+      - {key: I}
+      - {gamepad_button: Y}
+  - name: pause
+    type: button
+    bindings:
+      - {key: Escape}
+      - {key: P}
+      - {gamepad_button: Start}

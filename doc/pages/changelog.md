@@ -151,6 +151,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The navigation overlay draws the walk areas and the paths of the walking agents.
 - Owl Nest walk area editing: vertices selected, Ctrl+click, group gizmo, Shift+click inserts, Alt+click adds a hole or a floor, Delete removes, and a Walk Area inspector.
 - `walk.add_polygon`, `add_hole`, `delete_ring`, `insert_vertex`, `move_vertices`, `set_vertex` and `delete_vertices` commands, one undo step each.
+- Engine Demo: five pedestrians stroll on the paved plaza of the iso town, a walk area following its buildings (`iso_town_walkers.lua`).
+- Point-and-click sample game The Moon Lantern (`samples/point_and_click/`): three rooms, 3D actors on pixel-art backdrops, a bag, two dialogues, an ending sequence, English and French.
+- Owl Nest: Frame on a selected walk area centres the view on its floors.
 - The export packs the tables a script names, the tables they reference and the assets of their cells.
 - Benchmarks `spline/rebuild`, `spline/sample_distance`, `spline/sample_lane` and `spline/nearest`.
 - Engine Demo: two barrel carts ride the lanes of a spline in the character yard, their speed, lane and cargo read from two linked data tables.
@@ -169,6 +172,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - A particle emitter that does not emit and whose particles all died is idle (`ParticleSystem::isIdle`): neither simulated nor drawn.
+- A glTF with one skin per mesh over the same joints (as Quaternius exports its characters) is skinned whole, not only its first mesh.
+- Scenario and frame-bench runs read the `localisation.yml` of their project: the texts show translated as in the game.
 - `mesh3d.slang` shares its surface shading with the new `skinned3d.slang` through `common/mesh_surface.slangh`; its output is unchanged.
 - Compute shaders resolve their `#include`s like the graphics shaders and the shader bake.
 - Roadmap: an Engine Demo revamp around the world map, 2D walkable areas, a rail shooter and a point-and-click sample in v0.6.0; every pool game possible at 1.0.

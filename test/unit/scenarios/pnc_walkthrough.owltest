@@ -1,0 +1,113 @@
+# The Moon Lantern played from the cottage to the ending: Barnaby tells where the moonstone went, the jar and the pie
+# crust are picked, the glade gives berries and a jar of fireflies, berries and crust make a pie, the pie pays the
+# troll's toll, his moonstone and the fireflies light the lantern. Mouse for the rooms, keyboard for the inventory
+# (I, Tab, Enter) and the dialogue (arrows, Enter). At 1600x960 a pixel (x, y) of a 320x180 backdrop is at the
+# viewport pixel (800 + 5.333 * (x - 160), 5.333 * y).
+scene: ../../../samples/point_and_click/scenes/cottage.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: room, equals: cottage}
+  # Barnaby: hello, "Where is its moonstone?", then "I will fix it!".
+  - input: {mouse: Left, mouse_pos: [1016, 531], frames: 2}
+  - frames: 240
+  - expect: {gamestate: talking, equals: true}
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - expect: {gamestate: flag_heard_troll, equals: true}
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - input: {key: Down, frames: 2}
+  - frames: 3
+  - input: {key: Down, frames: 2}
+  - frames: 3
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - expect: {gamestate: talking, equals: false}
+  # The jar and the crust.
+  - input: {mouse: Left, mouse_pos: [291, 237], frames: 2}
+  - frames: 300
+  - input: {mouse: Left, mouse_pos: [509, 680], frames: 2}
+  - frames: 300
+  - expect: {gamestate: inventory_count, equals: 2}
+  # To the glade.
+  - input: {mouse: Left, mouse_pos: [67, 397], frames: 2}
+  - frames: 360
+  - expect: {gamestate: room, equals: glade}
+  - input: {mouse: Left, mouse_pos: [248, 552], frames: 2}
+  - frames: 300
+  - expect: {gamestate: flag_berries_taken, equals: true}
+  # The jar (slot 1) on the fireflies.
+  - input: {key: I, frames: 2}
+  - frames: 3
+  - expect: {gamestate: inventory_open, equals: true}
+  - input: {key: Enter, frames: 2}
+  - frames: 3
+  - expect: {gamestate: held, equals: jar}
+  - input: {mouse: Left, mouse_pos: [1235, 461], frames: 2}
+  - frames: 420
+  - expect: {gamestate: held, equals: ''}
+  - expect: {gamestate: inventory, equals: 'crust,berries,firefly_jar'}
+  # The crust (slot 1) with the berries (slot 2): a pie.
+  - input: {key: I, frames: 2}
+  - frames: 3
+  - input: {key: Enter, frames: 2}
+  - frames: 3
+  - input: {key: I, frames: 2}
+  - frames: 3
+  - input: {key: Tab, frames: 2}
+  - frames: 3
+  - input: {key: Enter, frames: 2}
+  - frames: 10
+  - expect: {gamestate: inventory, equals: 'firefly_jar,pie'}
+  - input: {key: Escape, frames: 2}
+  - frames: 3
+  # To the bridge: the pie (slot 2) on the troll, then the moonstone.
+  - input: {mouse: Left, mouse_pos: [1584, 765], frames: 2}
+  - frames: 480
+  - expect: {gamestate: room, equals: bridge}
+  - input: {key: I, frames: 2}
+  - frames: 3
+  - input: {key: Tab, frames: 2}
+  - frames: 3
+  - input: {key: Enter, frames: 2}
+  - frames: 3
+  - expect: {gamestate: held, equals: pie}
+  - input: {mouse: Left, mouse_pos: [899, 579], frames: 2}
+  - frames: 480
+  - expect: {gamestate: flag_troll_paid, equals: true}
+  - input: {mouse: Left, mouse_pos: [888, 696], frames: 2}
+  - frames: 300
+  - expect: {gamestate: flag_moonstone_taken, equals: true}
+  - expect: {gamestate: inventory, equals: 'firefly_jar,moonstone'}
+  # Back to the cottage.
+  - input: {mouse: Left, mouse_pos: [19, 845], frames: 2}
+  - frames: 480
+  - expect: {gamestate: room, equals: glade}
+  - input: {mouse: Left, mouse_pos: [19, 765], frames: 2}
+  - frames: 600
+  - expect: {gamestate: room, equals: cottage}
+  # The moonstone (slot 2), then the fireflies (slot 1), in the lantern: the ending.
+  - input: {key: I, frames: 2}
+  - frames: 3
+  - input: {key: Tab, frames: 2}
+  - frames: 3
+  - input: {key: Enter, frames: 2}
+  - frames: 3
+  - input: {mouse: Left, mouse_pos: [1555, 429], frames: 2}
+  - frames: 600
+  - expect: {gamestate: flag_moonstone_set, equals: true}
+  - input: {key: I, frames: 2}
+  - frames: 3
+  - input: {key: Enter, frames: 2}
+  - frames: 3
+  - input: {mouse: Left, mouse_pos: [1555, 429], frames: 2}
+  - frames: 120
+  - expect: {gamestate: lantern_lit, equals: true}
+  - frames: 400
+  - expect: {gamestate: ending_line, greater: 0}
+  - frames: 1000
+  - expect: {gamestate: ending_done, equals: true}

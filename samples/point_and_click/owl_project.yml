@@ -1,0 +1,27 @@
+OwlProject:
+  name: OwlPointAndClick
+  firstScene: scenes/title.owl
+  author: Silmaen
+  description: The Moon Lantern, a point-and-click sample game of the Owl Engine
+  icon: logo/logo_owl.png
+  gamepadMappings: input/gamecontrollerdb.txt
+  window:
+    width: 1280
+    height: 720
+    fullscreen: false
+    resizable: true
+  RendererStack:
+    - Type: RendererMesh
+      Name: actors
+      DefaultConfig:
+        SunDirection: [-0.35, -0.55, -0.75]
+        Ambient: [1.25, 1.18, 1.1]
+    - Type: Renderer2D
+      Name: world
+      DefaultConfig:
+        DepthTest: true
+    - Type: Renderer2D
+      Name: cursor
+      DefaultConfig:
+        Space: Screen
+        ReferenceHeight: 720

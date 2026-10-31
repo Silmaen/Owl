@@ -1,0 +1,18 @@
+Sequence: ""
+FormatVersion: 1
+duration: 16
+cameraTracks:
+  - name: Close in
+    keys:
+      - {time: 0, position: [0, 0, 20.0], rotation: [0, 0, 0], fov: 0.785, size: 9, easing: Smooth}
+      - {time: 6, position: [3.5556, -0.325, 20.0], rotation: [0, 0, 0], fov: 0.785, size: 5, easing: Smooth}
+      - {time: 11, position: [3.5556, -0.325, 20.0], rotation: [0, 0, 0], fov: 0.785, size: 5, easing: Smooth}
+      - {time: 15, position: [0, 0, 20.0], rotation: [0, 0, 0], fov: 0.785, size: 9, easing: Smooth}
+eventTracks:
+  - name: Story
+    keys:
+      - {time: 0.5, function: on_ending_glow}
+      - {time: 1.5, function: on_ending_line_1}
+      - {time: 6, function: on_ending_line_2}
+      - {time: 10.5, function: on_ending_line_3}
+      - {time: 15.5, function: on_ending_dance}
