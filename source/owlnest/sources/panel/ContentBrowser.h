@@ -261,6 +261,25 @@ public:
 
 	/**
 	 * @brief
+	 *  Set a callback invoked when a sequence (`.owlseq`) is double-clicked.
+	 * @param[in] iCallback Function taking the sequence file path.
+	 */
+	void setSequenceOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_sequenceOpenCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
+	 *  Set the callback creating a sequence ("New Sequence" of the folder menu); it runs `sequence.create` and opens
+	 *  the file.
+	 * @param[in] iCallback Function taking the path of the file to create.
+	 */
+	void setSequenceCreateCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_sequenceCreateCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when the project's `localisation.yml` is double-clicked.
 	 * @param[in] iCallback Function taking the file path.
 	 */
@@ -485,6 +504,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Create a sequence in the current folder (`New Sequence.owlseq`, numbered when taken) and open it.
+	 */
+	void createSequence();
+
+	/**
+	 * @brief
 	 *  Create a starter visual script in the current folder and open it.
 	 */
 	void createVisualScript();
@@ -559,6 +584,10 @@ private:
 	std::function<void(const std::filesystem::path&)> m_dialogueOpenCallback;
 	/// Creates a dialogue ("New Dialogue").
 	std::function<void(const std::filesystem::path&)> m_dialogueCreateCallback;
+	/// Called on double-click of a `.owlseq` sequence.
+	std::function<void(const std::filesystem::path&)> m_sequenceOpenCallback;
+	/// Creates a sequence ("New Sequence").
+	std::function<void(const std::filesystem::path&)> m_sequenceCreateCallback;
 	/// Called on double-click of `localisation.yml`.
 	std::function<void(const std::filesystem::path&)> m_localisationOpenCallback;
 	/// Called when a macro (`.owlmacro`) is double-clicked or run from its context menu.

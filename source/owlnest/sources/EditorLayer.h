@@ -328,6 +328,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Open a `.owlseq` in a `SequenceDocument` (or switch to it).
+	 * @param[in] iPath The file.
+	 */
+	void openSequenceFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  The tab of a sequence, for the `sequence.*` commands: switched to, opened when it is not.
+	 * @param[in] iPath The `.owlseq` file.
+	 * @return Its document, or null when it cannot be opened.
+	 */
+	auto openSequence(const std::filesystem::path& iPath) -> commands::SequenceEditor* override;
+
+	/**
+	 * @brief
 	 *  Open an `input_actions.yml` in an `ActionMapDocument` (or switch to it); a missing file starts from the built-in
 	 *  actions and is created by the first save.
 	 * @param[in] iPath Absolute path to the file.
@@ -1066,6 +1081,12 @@ private:
 	 *  Give the Content Browser the dialogue actions: open a `.owldlg`, create one (`dialogue.create`).
 	 */
 	void bindDialogueCallbacks();
+
+	/**
+	 * @brief
+	 *  Give the Content Browser the sequence actions: open a `.owlseq`, create one (`sequence.create`).
+	 */
+	void bindSequenceCallbacks();
 
 	/**
 	 * @brief

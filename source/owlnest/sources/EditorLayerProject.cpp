@@ -20,6 +20,7 @@
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/PcgGraphDocument.h"
+#include "document/SequenceDocument.h"
 #include "document/SoundDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
@@ -95,6 +96,9 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 			return;
 		case AssetKind::Dialogue:
 			openDialogueFile(iPath);
+			return;
+		case AssetKind::Sequence:
+			openSequenceFile(iPath);
 			return;
 		case AssetKind::Macro:
 			runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
@@ -636,6 +640,37 @@ auto EditorLayer::openDialogue(const std::filesystem::path& iPath) -> commands::
 		return doc;
 	openDialogueFile(path);
 	return findOpenDocument<DialogueDocument>(m_documents, DocumentType::Dialogue, path);
+}
+
+void EditorLayer::openSequenceFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Sequence && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<SequenceDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open sequence: {}.", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+auto EditorLayer::openSequence(const std::filesystem::path& iPath) -> commands::SequenceEditor* {
+	const auto path = normalised(iPath);
+	if (auto* doc = findOpenDocument<SequenceDocument>(m_documents, DocumentType::Sequence, path); doc != nullptr)
+		return doc;
+	openSequenceFile(path);
+	return findOpenDocument<SequenceDocument>(m_documents, DocumentType::Sequence, path);
 }
 
 void EditorLayer::openLocalisationEditor() {

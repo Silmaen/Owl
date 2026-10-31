@@ -1,0 +1,10 @@
+# Space skips the intro cutscene of the tavern: the sequence stops and its end hands the camera back at once.
+scene: ../../../engine_demo/scenes/tavern.owl
+project: ../../../engine_demo
+steps:
+  - frames: 10
+  - expect: {gamestate: tavern_intro, equals: 1}
+  - input: {key: Space, frames: 3}
+  - frames: 5
+  - expect: {gamestate: tavern_intro, equals: 0}
+  - expect: {gamestate: tavern_intro_shot, equals: 1}

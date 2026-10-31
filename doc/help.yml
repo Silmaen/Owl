@@ -38,6 +38,7 @@ Groups:
       - doc/pages/languages.md
       - doc/pages/data_tables.md
       - doc/pages/dialogues.md
+      - doc/pages/sequences.md
       - doc/pages/pathfinding.md
       - doc/pages/pcg_graphs.md
   - title: Scripting
@@ -59,6 +60,7 @@ Groups:
       - doc/pages/lua-api-animation.md
       - doc/pages/lua-api-data.md
       - doc/pages/lua-api-dialogue.md
+      - doc/pages/lua-api-sequence.md
   - title: Engine for C++ developers
     pages:
       - doc/pages/guide_engine_developer.md

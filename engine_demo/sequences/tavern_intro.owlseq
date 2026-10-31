@@ -1,0 +1,20 @@
+Sequence: ""
+FormatVersion: 1
+duration: 7
+cameraTracks:
+  - name: Room
+    keys:
+      - {time: 0, position: [3.7, 2.5, 3.7], rotation: [-0.345, 0.651, 0], fov: 0.68, size: 8, easing: Smooth}
+      - {time: 1.8, position: [2.6, 2.2, 3.2], rotation: [-0.305, 0.576, 0], fov: 0.68, size: 8, easing: Smooth}
+      - {time: 3.5, position: [1.4, 1.9, 2.4], rotation: [-0.241, 0.514, 0], fov: 0.68, size: 8, easing: Smooth}
+  - name: Hearth
+    keys:
+      - {time: 3.6, position: [0.3, 1.2, -0.6], rotation: [-0.197, 0.644, 0], fov: 0.68, size: 8, easing: Smooth}
+      - {time: 5.2, position: [-0.3, 1.05, -1.2], rotation: [-0.297, 0.852, 0], fov: 0.68, size: 8, easing: Smooth}
+      - {time: 6.8, position: [-0.6, 1, -1.4], rotation: [-0.496, 1.297, 0], fov: 0.68, size: 8, easing: Smooth}
+eventTracks:
+  - name: Story
+    keys:
+      - {time: 0, function: on_intro_room}
+      - {time: 3.6, function: on_intro_hearth}
+      - {time: 5.6, function: on_intro_key}

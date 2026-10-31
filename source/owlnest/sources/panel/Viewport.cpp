@@ -27,6 +27,7 @@
 #include <scene/component/MeshRenderer.h>
 #include <scene/component/ReflectionProbe.h>
 #include <scene/component/ReverbZone.h>
+#include <scene/component/SequencePlayer.h>
 #include <scene/component/VoxelWorld.h>
 
 #include <data/geometry/MeshLoader.h>
@@ -795,6 +796,7 @@ void Viewport::renderOverlay() const {
 		}
 		renderBehaviourOverlays(activeScene);
 		renderSplineOverlay(activeScene);
+		renderSequenceOverlay(activeScene);
 		renderSkeletonMarkers(activeScene);
 		renderWorldCells(activeScene);
 
@@ -1293,6 +1295,16 @@ void Viewport::renderOverlayToolbar() {
 			if (ImGui::BeginPopup("##snapStep")) {
 				m_parent->renderSnapStepPopup();
 				ImGui::EndPopup();
+			}
+			if (const auto selected = m_parent->getSelectedEntity();
+				selected && selected.hasComponent<scene::component::SequencePlayer>()) {
+				overlaySeparator();
+				if (iconButton("keyFromView",
+							   {.glyph = gui::icon::camera,
+								.tooltip = "Key from view",
+								.description = "Add the pose of this view as a key at the end of the last shot of the "
+											   "selected sequence player."}))
+					std::ignore = addSequenceKeyFromView();
 			}
 		}
 		endOverlay();

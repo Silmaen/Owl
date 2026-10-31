@@ -4185,4 +4185,30 @@ void renderProps(SplineFollower& ioComponent) {
 	fieldTooltip("Face the direction of the curve: the -Z axis in 3D, the +X axis on a 2D path.");
 }
 
+void renderProps(SequencePlayer& ioComponent) {
+	if (assetPathRow("Sequence", ioComponent.sequence, "drop a .owlseq", "Open the sequence in its editor."))
+		ioComponent.sequence.clear();
+	if (std::filesystem::path dropped; extensionDropTarget({".owlseq"}, dropped))
+		ioComponent.sequence = dropped.generic_string();
+	fieldTooltip("Cutscene played: its camera tracks drive the camera, its events call Lua functions.");
+	auto camera = static_cast<uint64_t>(ioComponent.camera);
+	prop::row("Camera", [&](const char*) -> bool {
+		if (scriptEntityPicker(camera, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.camera = core::UUID{camera};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Entity holding the Camera driven while the sequence plays; none: this entity.");
+	prop::Checkbox("Play On Start", &ioComponent.playOnStart);
+	fieldTooltip("Start the sequence when the scene enters Play; otherwise Lua `sequence.play`.");
+	prop::Checkbox("Loop", &ioComponent.loop);
+	fieldTooltip("Start again at the end instead of giving the camera back.");
+	prop::DragFloat("Speed", &ioComponent.speed, 0.01f, 0.f, 10.f, "%.2f");
+	fieldTooltip("Playback speed: 1 real time, 0 paused.");
+	prop::InputText("On Finished", &ioComponent.onFinished);
+	fieldTooltip("Lua function called when the sequence ends or is stopped, in the script of this entity, else the "
+				 "scene script.");
+}
+
 }// namespace owl::gui::component

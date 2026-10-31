@@ -42,6 +42,7 @@ enum struct DocumentType : uint8_t {
 	Localisation,///< The `localisation.yml` of a project: its languages and string tables.
 	DataTable,///< A `.owltable` data table: typed records edited in a grid.
 	Dialogue,///< A `.owldlg` dialogue: a branching conversation edited as a graph.
+	Sequence,///< A `.owlseq` cutscene: camera and event tracks on a timeline.
 };
 
 /**

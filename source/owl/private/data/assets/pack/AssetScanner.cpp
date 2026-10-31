@@ -780,6 +780,8 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 		scanMeshRenderer(meshRenderer, iSceneName, ioAssets, ioWarnings);
 	if (auto environment = iEntity["Environment"]; environment && environment["hdri"])
 		scanDataFile(environment["hdri"].as<std::string>(), "Environment image", iSceneName, ioAssets, ioWarnings);
+	if (auto player = iEntity["SequencePlayer"]; player && player["sequence"])
+		scanDataFile(player["sequence"].as<std::string>(), "Sequence", iSceneName, ioAssets, ioWarnings);
 	if (auto camera = iEntity["Camera"]; camera && camera["camera"] && camera["camera"]["postProcess"]) {
 		if (const auto lut = camera["camera"]["postProcess"]["lut"]; lut && lut.IsScalar())
 			scanDataFile(lut.as<std::string>(), "Colour LUT", iSceneName, ioAssets, ioWarnings);

@@ -201,7 +201,7 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
 - ![Done][done] Audio effects (reverb zones, low / high-pass filters, Doppler) and adaptive music driven by game
   states ([Gameplay systems](design/gameplay-systems.md))
 - ![Done][done] Dialogue system with a visual editor (`.owldlg`) ([Gameplay systems](design/gameplay-systems.md))
-- ![Planned][planned] Camera tracks in the sequencer, for cutscenes ([Large worlds](design/large-worlds.md))
+- ![Done][done] Camera tracks in the sequencer, for cutscenes ([Large worlds](design/large-worlds.md#large-worlds-sequences))
 - ![Planned][planned] HUD markers anchored to world entities, with off-screen indicators
   ([HUD system](design/hud-system.md))
 - ![Planned][planned] Accessibility: UI scale, colour-blind modes, subtitles, reduced motion

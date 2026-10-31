@@ -36,6 +36,44 @@ Entities:
     FirstPersonController: {enabled: true, walkSpeed: 2.2, runSpeed: 4, lookSpeed: 1.8, mouseSensitivity: 0.0025, captureCursor: true, eyeHeight: 1.6, height: 1.75, radius: 0.25, stepHeight: 0.3, gravity: 9.81, jumpSpeed: 0}
     Visibility:
       gameVisible: true
+  - Entity: 3900000000000000990
+    Tag:
+      tag: IntroCamera
+    Transform:
+      translation: [3.7, 2.5, 3.7]
+      rotation: [-0.345, 0.651, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.68
+        perspectiveNear: 0.05
+        perspectiveFar: 60
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+        toneMapping: Aces
+        postProcess: {ev100: 4, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.08, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.4, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0], chromaticAberration: true, chromaticAberrationIntensity: 0.15, filmGrain: true, filmGrainIntensity: 0.08, lensFlare: true, lensFlareIntensity: 0.6, lensFlareGhosts: 3, lensFlareSpacing: 0.5, lensFlareHalo: 0.5, lensFlareSize: 0.08}
+      primary: false
+      fixedAspectRatio: false
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000000991
+    Tag:
+      tag: TavernIntro
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SequencePlayer:
+      sequence: gid:e0e296369f3632cf:sequences/tavern_intro.owlseq
+      camera: 3900000000000000990
+      playOnStart: false
+      loop: false
+      speed: 1
+      onFinished: on_intro_done
+    Visibility:
+      gameVisible: true
   - Entity: 3900000000000000002
     Tag:
       tag: Ambient

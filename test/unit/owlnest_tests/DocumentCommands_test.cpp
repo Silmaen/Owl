@@ -11,14 +11,18 @@
 #include "document/DataTableDocument.h"
 #include "document/DialogueDocument.h"
 #include "document/LocalisationDocument.h"
+#include "document/SequenceDocument.h"
 #include "document/SoundDocument.h"
 #include "testHelper.h"
 
 #include <core/Log.h>
+#include <core/Timestep.h>
 #include <data/dialogue/Dialogue.h>
+#include <data/sequence/Sequence.h>
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -54,10 +58,15 @@ public:
 		return iPath == dialogue.filePath() ? &dialogue : nullptr;
 	}
 
+	auto openSequence(const std::filesystem::path& iPath) -> SequenceEditor* override {
+		return iPath == sequence.filePath() ? &sequence : nullptr;
+	}
+
 	SoundDocument sound;
 	LocalisationDocument localisation;
 	DataTableDocument table;
 	DialogueDocument dialogue;
+	SequenceDocument sequence;
 };
 
 class DocumentCommandsTest : public ::testing::Test {
@@ -82,6 +91,9 @@ protected:
 		m_dialogue = m_root / "guard.owldlg";
 		ASSERT_TRUE(data::dialogue::Dialogue::makeDefault().saveToFile(m_dialogue));
 		ASSERT_TRUE(m_host.dialogue.loadFromFile(m_dialogue));
+		m_sequence = m_root / "intro.owlseq";
+		ASSERT_TRUE(data::sequence::Sequence::makeDefault().saveToFile(m_sequence));
+		ASSERT_TRUE(m_host.sequence.loadFromFile(m_sequence));
 	}
 
 	void TearDown() override {
@@ -89,6 +101,7 @@ protected:
 		m_host.localisation.onDetach();
 		m_host.table.onDetach();
 		m_host.dialogue.onDetach();
+		m_host.sequence.onDetach();
 		std::filesystem::remove_all(m_root);
 		core::Log::invalidate();
 	}
@@ -106,6 +119,7 @@ protected:
 	std::filesystem::path m_locale;
 	std::filesystem::path m_table;
 	std::filesystem::path m_dialogue;
+	std::filesystem::path m_sequence;
 	TestHost m_host;
 	CommandRegistry m_registry;
 };
@@ -328,4 +342,96 @@ TEST_F(DocumentCommandsTest, DialogueCreateWritesANewDialogue) {
 	EXPECT_TRUE(read->getProblems().empty());
 	EXPECT_FALSE(run("dialogue.create", {}, path));
 	EXPECT_FALSE(run("dialogue.create", {}, m_root / "new.txt"));
+}
+
+TEST_F(DocumentCommandsTest, SequenceCommandsEditTracksAndKeys) {
+	const auto& sequence = m_host.sequence.sequence();
+	ASSERT_EQ(sequence.cameraTracks.size(), 1u);
+	ASSERT_TRUE(run("sequence.set_duration", {{"duration", 8.0}}, m_sequence));
+	EXPECT_FLOAT_EQ(sequence.duration, 8.f);
+	const auto key =
+			run("sequence.add_key",
+				{{"track", int64_t{0}}, {"time", 2.5}, {"rotation", math::vec3{0.f, 90.f, 0.f}}, {"fov", 30.0}},
+				m_sequence);
+	ASSERT_TRUE(key);
+	EXPECT_EQ(std::get<int64_t>(key->data.at("key")), 1);
+	const auto& added = sequence.cameraTracks[0].keys[1];
+	EXPECT_FLOAT_EQ(added.time, 2.5f);
+	EXPECT_NEAR(added.rotation.y(), 1.5708f, 1e-4f);
+	EXPECT_NEAR(added.fov, 0.5236f, 1e-4f);
+	EXPECT_NEAR(added.position.z(), 7.5f, 1e-3f);// the pose of the track at 2.5 s, between z 10 and 5
+	const auto moved = run("sequence.set_key",
+						   {{"track", int64_t{0}}, {"key", int64_t{1}}, {"time", 6.0}, {"easing", "Step"}}, m_sequence);
+	ASSERT_TRUE(moved);
+	EXPECT_EQ(std::get<int64_t>(moved->data.at("key")), 2);
+	EXPECT_EQ(sequence.cameraTracks[0].keys[2].easing, data::sequence::Easing::Step);
+	ASSERT_TRUE(run("sequence.move_keys", {{"track", int64_t{0}}, {"keys", "0"}, {"offset", 1.0}}, m_sequence));
+	EXPECT_FLOAT_EQ(sequence.cameraTracks[0].keys[0].time, 1.f);
+	ASSERT_TRUE(run("sequence.move_keys", {{"track", int64_t{0}}, {"keys", "0"}, {"offset", -3.0}}, m_sequence));
+	EXPECT_FLOAT_EQ(sequence.cameraTracks[0].keys[0].time, 0.f);// never before 0
+	EXPECT_FALSE(run("sequence.move_keys", {{"track", int64_t{0}}, {"keys", "0"}, {"offset", -1.0}}, m_sequence));
+	EXPECT_FALSE(run("sequence.set_key", {{"track", int64_t{0}}, {"key", int64_t{9}}}, m_sequence));
+	EXPECT_FALSE(run("sequence.add_key", {{"track", int64_t{4}}}, m_sequence));
+
+	const auto events = run("sequence.add_track", {{"kind", "Event"}, {"name", "Cues"}}, m_sequence);
+	ASSERT_TRUE(events);
+	const auto eventTrack = std::get<int64_t>(events->data.at("track"));
+	ASSERT_TRUE(run("sequence.add_key", {{"kind", "Event"}, {"track", eventTrack}, {"time", 1.0}, {"function", "boom"}},
+					m_sequence));
+	ASSERT_TRUE(run("sequence.set_key",
+					{{"kind", "Event"}, {"track", eventTrack}, {"key", int64_t{0}}, {"function", "bang"}}, m_sequence));
+	EXPECT_EQ(sequence.eventTracks[static_cast<size_t>(eventTrack)].keys[0].function, "bang");
+	ASSERT_TRUE(run("sequence.set_track", {{"kind", "Event"}, {"track", eventTrack}, {"muted", true}}, m_sequence));
+	EXPECT_TRUE(sequence.eventTracks[static_cast<size_t>(eventTrack)].muted);
+	ASSERT_TRUE(run("sequence.remove_keys", {{"kind", "Event"}, {"track", eventTrack}, {"keys", "0"}}, m_sequence));
+	EXPECT_TRUE(sequence.eventTracks[static_cast<size_t>(eventTrack)].keys.empty());
+
+	ASSERT_TRUE(run("sequence.add_track", {}, m_sequence));
+	ASSERT_EQ(sequence.cameraTracks.size(), 2u);
+	EXPECT_EQ(sequence.cameraTracks[1].keys.size(), 2u);// starts where the previous shot ends
+	ASSERT_TRUE(run("sequence.move_track", {{"track", int64_t{1}}}, m_sequence));
+	EXPECT_EQ(sequence.cameraTracks[0].name, "Shot 2");
+	EXPECT_FALSE(run("sequence.move_track", {{"track", int64_t{0}}}, m_sequence));
+	ASSERT_TRUE(run("sequence.remove_track", {{"track", int64_t{0}}}, m_sequence));
+	EXPECT_EQ(sequence.cameraTracks.size(), 1u);
+	EXPECT_TRUE(m_host.sequence.isDirty());
+	m_host.sequence.performUndo();
+	EXPECT_EQ(sequence.cameraTracks.size(), 2u);
+	m_host.sequence.performRedo();
+	EXPECT_EQ(sequence.cameraTracks.size(), 1u);
+	ASSERT_TRUE(m_host.sequence.save());
+	EXPECT_EQ(*data::sequence::Sequence::loadFile(m_sequence), sequence);
+}
+
+TEST_F(DocumentCommandsTest, SequenceCreateWritesANewSequence) {
+	const auto path = m_root / "new.owlseq";
+	ASSERT_TRUE(run("sequence.create", {}, path));
+	EXPECT_TRUE(data::sequence::Sequence::loadFile(path).has_value());
+	EXPECT_FALSE(run("sequence.create", {}, path));
+	EXPECT_FALSE(run("sequence.create", {}, m_root / "new.txt"));
+	EXPECT_FALSE(run("sequence.set_duration", {{"duration", 1.0}}, m_root / "other.owlseq"));
+}
+
+TEST_F(DocumentCommandsTest, SequenceDocumentSelectionAndRecovery) {
+	auto& document = m_host.sequence;
+	document.setSelection({.camera = true, .track = 0, .keys = {1, 1, 7, 0}});
+	EXPECT_EQ(document.getSelection().keys, (std::vector<size_t>{0, 1}));
+	document.setSelection({.camera = false, .track = 3, .keys = {0}});
+	EXPECT_TRUE(document.getSelection().keys.empty());
+	document.setTime(99.f);
+	EXPECT_FLOAT_EQ(document.getTime(), document.sequence().duration);
+	document.setPlaying(true);
+	EXPECT_FLOAT_EQ(document.getTime(), 0.f);
+	core::Timestep step;
+	step.forceUpdate(std::chrono::milliseconds(500));
+	document.onUpdate(step);
+	EXPECT_NEAR(document.getTime(), 0.5f, 1e-4f);
+	EXPECT_FALSE(document.addKeyAtPlayhead());// no editor to run the command
+	const auto snapshot = document.recoverySnapshot();
+	ASSERT_TRUE(snapshot.has_value());
+	EXPECT_TRUE(document.restoreRecoverySnapshot(*snapshot));
+	EXPECT_TRUE(document.isDirty());
+	EXPECT_FALSE(document.restoreRecoverySnapshot("not: a sequence"));
+	EXPECT_EQ(document.title(), "intro");
+	EXPECT_EQ(document.type(), DocumentType::Sequence);
 }

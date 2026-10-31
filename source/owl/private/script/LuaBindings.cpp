@@ -34,6 +34,7 @@
 #include "scene/Scene.h"
 #include "scene/ScenePicking.h"
 #include "scene/ScreenTransition.h"
+#include "scene/SequencePlayback.h"
 #include "scene/SettingsManager.h"
 #include "scene/TilemapTerrain.h"
 #include "scene/UiInputSystem.h"
@@ -2901,6 +2902,73 @@ auto luaDialogueStop(lua_State* iState) -> int {
 	return 0;
 }
 
+auto sequencePlayerOf(const std::optional<scene::Entity>& iEntity) -> scene::component::SequencePlayer* {
+	if (iEntity && iEntity->hasComponent<scene::component::SequencePlayer>())
+		return &iEntity->getComponent<scene::component::SequencePlayer>();
+	return nullptr;
+}
+
+auto luaSequencePlay(lua_State* iState) -> int {
+	const auto from = static_cast<float>(luaL_optnumber(iState, 2, 0.0));
+	const auto entity = findEntity(iState);
+	lua_pushboolean(iState, entity && scene::playSequence(*entity, from) ? 1 : 0);
+	return 1;
+}
+
+auto luaSequenceStop(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	lua_pushboolean(iState, entity && scene::stopSequence(*entity) ? 1 : 0);
+	return 1;
+}
+
+auto luaSequenceSeek(lua_State* iState) -> int {
+	const auto time = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto entity = findEntity(iState);
+	lua_pushboolean(iState, entity && scene::seekSequence(*entity, time) ? 1 : 0);
+	return 1;
+}
+
+auto luaSequenceIsPlaying(lua_State* iState) -> int {
+	const auto* player = sequencePlayerOf(findEntity(iState));
+	if (player == nullptr)
+		return 0;
+	lua_pushboolean(iState, player->m_playing ? 1 : 0);
+	return 1;
+}
+
+auto luaSequenceGetTime(lua_State* iState) -> int {
+	const auto* player = sequencePlayerOf(findEntity(iState));
+	if (player == nullptr)
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(player->m_time));
+	return 1;
+}
+
+auto luaSequenceGetDuration(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	const auto* player = sequencePlayerOf(entity);
+	if (player == nullptr)
+		return 0;
+	auto sequence = player->m_sequence;
+	if (!sequence) {
+		if (auto* context = contextOf(iState); context != nullptr && !player->sequence.empty())
+			sequence = context->getSequences().get(player->sequence);
+	}
+	if (!sequence)
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(sequence->duration));
+	return 1;
+}
+
+auto luaSequenceSetSpeed(lua_State* iState) -> int {
+	const auto speed = static_cast<float>(luaL_checknumber(iState, 2));
+	auto* player = sequencePlayerOf(findEntity(iState));
+	if (player != nullptr)
+		player->speed = std::max(0.f, speed);
+	lua_pushboolean(iState, player != nullptr ? 1 : 0);
+	return 1;
+}
+
 using enum LuaType;
 
 OWL_DIAG_PUSH
@@ -3691,6 +3759,27 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .params = {{"conversation", Integer}}, .returns = {{"running", Boolean}}},
 		{.table = "dialogue", .name = "stop", .function = guarded<luaDialogueStop>,
 		 .description = "End a conversation where it is.", .params = {{"conversation", Integer}}, .returns = {}},
+		{.table = "sequence", .name = "play", .function = guarded<luaSequencePlay>,
+		 .description = "Play the `.owlseq` of the entity's `SequencePlayer` from a time (0 by default), its camera made primary; false when it has none or the sequence cannot be read.",
+		 .params = {entityId, {"from", Number, true}}, .returns = {{"done", Boolean}}},
+		{.table = "sequence", .name = "stop", .function = guarded<luaSequenceStop>,
+		 .description = "Stop the sequence of the entity's `SequencePlayer`: the cameras it replaced are primary again and its `onFinished` function is called; false when it does not play.",
+		 .params = {entityId}, .returns = {{"done", Boolean}}},
+		{.table = "sequence", .name = "seek", .function = guarded<luaSequenceSeek>,
+		 .description = "Move the playing sequence of the entity to a time, in seconds, without calling the events in between; false when it does not play.",
+		 .params = {entityId, {"time", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "sequence", .name = "is_playing", .function = guarded<luaSequenceIsPlaying>,
+		 .description = "Whether the entity's `SequencePlayer` plays; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"playing", Boolean}}},
+		{.table = "sequence", .name = "get_time", .function = guarded<luaSequenceGetTime>,
+		 .description = "Playback time of the entity's `SequencePlayer`, in seconds; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"time", Number}}},
+		{.table = "sequence", .name = "get_duration", .function = guarded<luaSequenceGetDuration>,
+		 .description = "Length of the sequence of the entity's `SequencePlayer`, in seconds; nothing when it has none or it cannot be read.",
+		 .params = {entityId}, .returns = {{"duration", Number}}},
+		{.table = "sequence", .name = "set_speed", .function = guarded<luaSequenceSetSpeed>,
+		 .description = "Set the playback speed of the entity's `SequencePlayer` (1: real time, 0: paused); false when it has none.",
+		 .params = {entityId, {"speed", Number}}, .returns = {{"done", Boolean}}},
 	};
 	// clang-format on
 }
@@ -3793,6 +3882,8 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			 .description = "Typed records of the `.owltable` data tables, by row key and column."},
 			{.name = "dialogue",
 			 .description = "Conversations over the `.owldlg` dialogues: lines, choices, Lua conditions and actions."},
+			{.name = "sequence",
+			 .description = "Cutscenes of the `.owlseq` sequences: play, stop and seek a `SequencePlayer`."},
 			{.name = "path",
 			 .description = "Shortest paths over the graph a tilemap's `navigation` rules describe (roads, tracks), "
 							"searched over several frames."},
@@ -3818,6 +3909,7 @@ auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 			{.file = "lua-api-animation.md", .title = "Animation and sockets", .tables = {"animator", "socket"}},
 			{.file = "lua-api-data.md", .title = "Splines and data tables", .tables = {"spline", "datatable"}},
 			{.file = "lua-api-dialogue.md", .title = "Dialogues", .tables = {"dialogue"}},
+			{.file = "lua-api-sequence.md", .title = "Cutscene sequences", .tables = {"sequence"}},
 	};
 	return s_pages;
 }
