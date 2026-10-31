@@ -1,0 +1,30 @@
+Prefab: EnemyBolt
+Version: 1
+Entities:
+  - Entity: 7711000000000000001
+    Tag:
+      tag: EnemyBolt
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:cb666b301c5c7243:models/enemy_bolt.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 30000}}
+    RendererTag:
+      Name: mesh_world
+    Trail:
+      enabled: true
+      lifetime: 0.15
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.3
+      color: [1, 0.5, 0.15, 1]
+      emissive: 12000
+      blend: Additive

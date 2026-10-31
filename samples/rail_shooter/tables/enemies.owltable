@@ -1,0 +1,27 @@
+DataTable: ''
+FormatVersion: 1
+columns:
+  - {name: prefab, type: Asset}
+  - {name: hp, type: Integer}
+  - {name: radius, type: Float}
+  - {name: points, type: Integer}
+  - {name: reload, type: Float}
+rows:
+  - key: fighter
+    prefab: prefabs/fighter.owlprefab
+    hp: 2
+    radius: 1.3
+    points: 200
+    reload: 3.4
+  - key: interceptor
+    prefab: prefabs/interceptor.owlprefab
+    hp: 5
+    radius: 1.5
+    points: 400
+    reload: 2
+  - key: boss
+    prefab: prefabs/boss.owlprefab
+    hp: 140
+    radius: 7.5
+    points: 5000
+    reload: 1.7

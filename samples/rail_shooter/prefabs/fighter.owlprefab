@@ -1,0 +1,85 @@
+Prefab: Fighter
+Version: 1
+Entities:
+  - Entity: 7712000000000000001
+    Tag:
+      tag: Fighter
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    HudMarker:
+      enabled: true
+      icon: nam:textures/hud/target.png
+      color: [1, 0.45, 0.35, 0.9]
+      size: [30, 30]
+      offset: [0, 0, 0]
+      label: ''
+      labelColor: [1, 0.85, 0.85, 1]
+      fontSize: 16
+      showDistance: false
+      maxDistance: 0
+      offscreenIndicator: false
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7712000000000000002
+    Tag:
+      tag: FighterModel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7712000000000000001
+    MeshRenderer:
+      mesh: gid:0a3254d67b5129dc:models/fighter.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7712000000000000003
+    Tag:
+      tag: FighterTrail
+    Transform:
+      translation: [-0.35, 0.1, 1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7712000000000000001
+    Trail:
+      enabled: true
+      lifetime: 0.3
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.3
+      color: [1, 0.45, 0.2, 0.8]
+      emissive: 5000
+      blend: Additive
+  - Entity: 7712000000000000004
+    Tag:
+      tag: FighterTrail
+    Transform:
+      translation: [0.35, 0.1, 1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7712000000000000001
+    Trail:
+      enabled: true
+      lifetime: 0.3
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.3
+      color: [1, 0.45, 0.2, 0.8]
+      emissive: 5000
+      blend: Additive

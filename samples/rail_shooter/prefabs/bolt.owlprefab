@@ -1,0 +1,30 @@
+Prefab: Bolt
+Version: 1
+Entities:
+  - Entity: 7710000000000000001
+    Tag:
+      tag: Bolt
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:ab0b8cf06d5a6509:models/bolt.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 30000}}
+    RendererTag:
+      Name: mesh_world
+    Trail:
+      enabled: true
+      lifetime: 0.12
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.22
+      color: [0.5, 0.95, 1, 1]
+      emissive: 12000
+      blend: Additive

@@ -1,0 +1,1400 @@
+Scene: settings
+FormatVersion: 7
+EnabledRenderers:
+  - {Name: world, Enabled: false}
+  - {Name: mesh_world, Enabled: true}
+  - {Name: planet_world, Enabled: true}
+  - {Name: particles, Enabled: true}
+  - {Name: ui, Enabled: false}
+FloatingOrigin:
+  enabled: true
+  shiftRadius: 1000
+  origin: [0, 0, 0]
+Entities:
+  - Entity: 7810000000000000001
+    Tag:
+      tag: MenuCamera
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.12, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.9
+        perspectiveNear: 0.1
+        perspectiveFar: 200000
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+        toneMapping: Aces
+        postProcess: {ev100: 10, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1.4, bloomKnee: 0.5, bloomIntensity: 0.12, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.35, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0.02]}
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 7810000000000000002
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.5, 0.5, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light: {type: Directional, enabled: true, color: [1, 0.96, 0.9], intensity: 3200, castShadows: false}
+  - Entity: 7810000000000000003
+    Tag:
+      tag: PlanetShine
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [1.3, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light: {type: Directional, enabled: true, color: [0.45, 0.65, 0.8], intensity: 700, castShadows: false}
+  - Entity: 7810000000000000004
+    Tag:
+      tag: Sky
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Environment: {hdri: textures/sky/starfield.hdr, ambient: [0.1, 0.1, 0.12], intensity: 14000, rotation: 0.6, showSky: true}
+  - Entity: 7810000000000000005
+    Tag:
+      tag: Planet
+    Transform:
+      translation: [1500, -31100, -2200]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    WorldPosition: {position: [1500, -31100, -2200]}
+    Planet:
+      graph: ''
+      seed: 7
+      heightResolution: 256
+      radius: 30000
+      heightScale: 600
+      seaLevel: 0.52
+      detailAmplitude: 0.35
+      detailFrequency: 6
+      maxLevel: 10
+      lodFactor: 2
+      chunkResolution: 16
+      seaColor: [0.06, 0.2, 0.42]
+      lowColor: [0.4, 0.54, 0.38]
+      highColor: [0.66, 0.6, 0.47]
+      peakColor: [0.9, 0.92, 0.96]
+      atmosphere: true
+      atmosphereHeight: 1800
+      rayleighDepth: [0.046, 0.108, 0.265]
+      mieDepth: 0.02
+      scatteringIntensity: 3
+      scaledSpaceDistance: 0
+  - Entity: 7810000000000000006
+    Tag:
+      tag: Backdrop
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    LuaScript:
+      scriptPath: gid:7fdcda9b19926b16:scripts/ui/backdrop.lua
+      properties:
+        - name: speed
+          type: float
+          value: 8.0
+  - Entity: 7810000000000000007
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-7.2971, -3.1683, -59.0342]
+      rotation: [-1.4905, -1.7267, -2.7856]
+      scale: [3.7932, 3.7932, 3.7932]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8915, 0.8648, 0.847, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000008
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-39.9899, 5.1541, -243.0641]
+      rotation: [-0.7676, 2.6143, 0.0124]
+      scale: [3.9829, 3.9829, 3.9829]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7536, 0.731, 0.7159, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000009
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-17.1045, 13.9554, -273.2475]
+      rotation: [-2.0131, -1.9354, -1.6164]
+      scale: [2.3674, 2.3674, 2.3674]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9036, 0.8765, 0.8584, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000010
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [10.2492, 1.305, -114.3105]
+      rotation: [2.9711, -0.3262, -0.512]
+      scale: [2.7008, 2.7008, 2.7008]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.774, 0.7507, 0.7353, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000011
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [32.4309, -3.3864, -294.4832]
+      rotation: [1.524, 1.2909, -0.2316]
+      scale: [4.359, 4.359, 4.359]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6145, 0.596, 0.5838, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000012
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-21.6405, 13.745, -155.2439]
+      rotation: [2.2971, 2.3982, -0.2339]
+      scale: [3.8766, 3.8766, 3.8766]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6916, 0.6708, 0.657, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000013
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [21.5179, -7.3457, -104.1535]
+      rotation: [2.4476, -1.3912, 2.4683]
+      scale: [3.3884, 3.3884, 3.3884]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6164, 0.5979, 0.5856, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000014
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [38.465, 7.1862, -156.2322]
+      rotation: [0.5277, -1.1289, -1.7531]
+      scale: [2.7157, 2.7157, 2.7157]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8106, 0.7862, 0.77, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000015
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [37.6296, 4.698, -31.8589]
+      rotation: [2.4459, -1.8516, 1.4687]
+      scale: [3.8355, 3.8355, 3.8355]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8404, 0.8152, 0.7984, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000016
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-13.8316, -7.2015, -263.8924]
+      rotation: [2.1237, -1.531, -1.7371]
+      scale: [1.1932, 1.1932, 1.1932]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7589, 0.7362, 0.721, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000017
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [36.3268, 8.7823, -26.471]
+      rotation: [-2.8593, -2.3087, -2.5952]
+      scale: [2.1328, 2.1328, 2.1328]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6498, 0.6303, 0.6173, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000018
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-17.4315, -10.1664, -281.4299]
+      rotation: [-2.9884, 0.5367, 1.7649]
+      scale: [3.5187, 3.5187, 3.5187]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7592, 0.7365, 0.7213, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000019
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-38.9494, -13.8741, -282.1546]
+      rotation: [-1.2838, -0.0674, -1.1497]
+      scale: [3.1227, 3.1227, 3.1227]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8491, 0.8236, 0.8066, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000020
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-36.4727, 8.6699, -260.1093]
+      rotation: [-1.6468, 0.965, -1.1022]
+      scale: [3.4098, 3.4098, 3.4098]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7391, 0.7169, 0.7022, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000021
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-20.1216, 12.2429, -46.9856]
+      rotation: [0.0888, -2.137, 2.7584]
+      scale: [2.9643, 2.9643, 2.9643]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7072, 0.686, 0.6718, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000022
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [25.8188, -1.4073, -15.2296]
+      rotation: [-2.6593, -2.7987, -2.033]
+      scale: [2.8644, 2.8644, 2.8644]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6062, 0.588, 0.5759, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000023
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [26.8627, 1.2478, -295.2052]
+      rotation: [-1.6052, -0.3318, -1.4953]
+      scale: [4.2563, 4.2563, 4.2563]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.9478, 0.9194, 0.9004, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000024
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-26.4699, 10.0062, -215.7545]
+      rotation: [0.1571, -2.9711, -2.787]
+      scale: [1.7495, 1.7495, 1.7495]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7192, 0.6976, 0.6832, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000025
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-8.0023, 7.7131, -79.851]
+      rotation: [-1.6108, -1.6959, 0.1244]
+      scale: [1.1692, 1.1692, 1.1692]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6227, 0.604, 0.5916, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000026
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [15.1501, 5.2528, -71.6104]
+      rotation: [1.3736, -0.3976, 0.069]
+      scale: [4.1543, 4.1543, 4.1543]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.9352, 0.9072, 0.8885, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000027
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-35.7317, 13.8664, -178.5889]
+      rotation: [-0.1212, -2.8831, 2.764]
+      scale: [4.2063, 4.2063, 4.2063]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8153, 0.7909, 0.7746, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000028
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [14.4249, 15.5056, -117.9457]
+      rotation: [-2.393, -1.1645, 2.0437]
+      scale: [0.8705, 0.8705, 0.8705]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8241, 0.7994, 0.7829, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000029
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-33.2342, -12.2003, -194.8155]
+      rotation: [0.6813, -2.968, -2.8551]
+      scale: [2.5144, 2.5144, 2.5144]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9058, 0.8786, 0.8605, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000030
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-11.89, 0.7134, -43.5728]
+      rotation: [-2.162, -0.9304, 2.3262]
+      scale: [2.1816, 2.1816, 2.1816]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8364, 0.8113, 0.7946, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000031
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-8.4265, 4.4962, -107.0001]
+      rotation: [-2.3676, 0.7091, -0.1778]
+      scale: [2.2471, 2.2471, 2.2471]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6348, 0.6158, 0.6031, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000032
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [14.4671, 14.788, -51.0253]
+      rotation: [2.1948, 1.3173, 1.3675]
+      scale: [2.1872, 2.1872, 2.1872]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7437, 0.7214, 0.7065, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000033
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [34.0962, -5.0971, -77.1719]
+      rotation: [-0.4341, 1.0748, 2.5115]
+      scale: [2.6085, 2.6085, 2.6085]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6538, 0.6341, 0.6211, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000034
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-6.5618, -8.716, -168.1266]
+      rotation: [1.7914, 2.4682, 1.0881]
+      scale: [3.7833, 3.7833, 3.7833]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.9093, 0.882, 0.8638, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000035
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-8.6265, -5.1085, -77.1929]
+      rotation: [-0.3669, 0.144, -2.3276]
+      scale: [3.2817, 3.2817, 3.2817]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8224, 0.7978, 0.7813, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000036
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [7.4616, 1.495, -217.4558]
+      rotation: [-0.2344, 1.2194, -0.575]
+      scale: [1.7519, 1.7519, 1.7519]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.908, 0.8807, 0.8626, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000037
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-20.7997, 7.5661, -244.8222]
+      rotation: [-0.6429, -2.6786, -1.3563]
+      scale: [2.218, 2.218, 2.218]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8447, 0.8194, 0.8025, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000038
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [29.3941, 0.175, -288.9734]
+      rotation: [0.9509, 1.5697, 2.1124]
+      scale: [2.0237, 2.0237, 2.0237]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8482, 0.8228, 0.8058, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000039
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-18.4981, 6.0092, -293.3979]
+      rotation: [-0.2127, 1.2695, 2.2993]
+      scale: [3.1489, 3.1489, 3.1489]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5546, 0.538, 0.5269, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000040
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-33.3785, -13.4859, -283.5366]
+      rotation: [2.4319, 2.3081, -2.3973]
+      scale: [3.499, 3.499, 3.499]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7926, 0.7688, 0.7529, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000041
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-13.8788, 13.6416, -178.2646]
+      rotation: [-2.9491, 1.0722, -0.1077]
+      scale: [2.6123, 2.6123, 2.6123]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7948, 0.7709, 0.755, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000042
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-20.8151, -7.8501, -290.3664]
+      rotation: [-0.0875, 2.0231, 0.9504]
+      scale: [1.0695, 1.0695, 1.0695]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5512, 0.5347, 0.5237, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000043
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [37.2977, 13.6675, -143.1986]
+      rotation: [2.9225, 0.6809, -0.9142]
+      scale: [4.0468, 4.0468, 4.0468]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7341, 0.7121, 0.6974, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000044
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [28.2998, 9.6227, -260.567]
+      rotation: [-0.71, -0.2121, -1.2311]
+      scale: [1.299, 1.299, 1.299]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.615, 0.5966, 0.5843, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000045
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [24.0672, 15.0074, -116.2733]
+      rotation: [-0.3432, 2.223, -1.1494]
+      scale: [2.7906, 2.7906, 2.7906]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7029, 0.6818, 0.6678, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000046
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-21.4163, 2.1571, -275.2639]
+      rotation: [-1.175, 0.8778, 1.775]
+      scale: [1.0838, 1.0838, 1.0838]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8797, 0.8534, 0.8358, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000047
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [22.651, 13.6149, -157.4532]
+      rotation: [2.0889, -2.1028, 0.028]
+      scale: [1.5793, 1.5793, 1.5793]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7885, 0.7648, 0.7491, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000048
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [5.475, 14.4874, -172.7778]
+      rotation: [-2.3285, 1.0523, 1.7243]
+      scale: [2.7337, 2.7337, 2.7337]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.5745, 0.5573, 0.5458, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000049
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-15.4621, -11.6784, -142.6403]
+      rotation: [-1.2481, 2.3674, 2.5305]
+      scale: [1.416, 1.416, 1.416]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7268, 0.705, 0.6905, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000050
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-37.4671, -4.2132, -38.8708]
+      rotation: [1.0708, -0.7573, -0.8634]
+      scale: [1.68, 1.68, 1.68]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6258, 0.607, 0.5945, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000051
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [-13.6709, 2.518, -119.6218]
+      rotation: [-1.3155, 1.3204, 0.5706]
+      scale: [3.7914, 3.7914, 3.7914]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8498, 0.8243, 0.8073, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000052
+    Tag:
+      tag: MenuRock
+    Transform:
+      translation: [30.7322, 8.5302, -262.0999]
+      rotation: [2.8744, -1.2504, 0.7349]
+      scale: [4.2616, 4.2616, 4.2616]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8514, 0.8259, 0.8088, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7810000000000000053
+    Tag:
+      tag: MenuMusic
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:bfa7ab733f28db04:sounds/music/menu.wav
+      category: Music
+      volume: 0.55
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1
+  - Entity: 7810000000000000054
+    Tag:
+      tag: SettingsCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
+    LuaScript:
+      scriptPath: gid:a6d92054bdd152d4:scripts/ui/settings.lua
+  - Entity: 7810000000000000055
+    Tag:
+      tag: SettingsList
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000054
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [0.9, 0.9]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0.05]
+      offsetUnit: [ScreenHeight, ScreenHeight]
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 5
+      padding: 4
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7810000000000000056
+    Tag:
+      tag: BackButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000055
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.085]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.03, 0.08, 0.16, 1]
+      hoverColor: [0.08, 0.22, 0.38, 1]
+      pressedColor: [0.12, 0.32, 0.5, 1]
+      disabledColor: [0.05, 0.06, 0.08, 0.6]
+      onClickCallback: go_back
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.06, 0.15, 1]
+      text: 'BACK'
+      color: [0.55, 0.92, 1, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBoldItalic
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.78, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7810000000000000057
+    Tag:
+      tag: BackButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000056
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:4677dd46ed5ab744:textures/ui/button_frame.png
+  - Entity: 7810000000000000058
+    Tag:
+      tag: ResetButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000055
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.085]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.03, 0.08, 0.16, 1]
+      hoverColor: [0.08, 0.22, 0.38, 1]
+      pressedColor: [0.12, 0.32, 0.5, 1]
+      disabledColor: [0.05, 0.06, 0.08, 0.6]
+      onClickCallback: on_reset_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.06, 0.15, 1]
+      text: 'RESET DEFAULTS'
+      color: [0.55, 0.92, 1, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBoldItalic
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.78, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7810000000000000059
+    Tag:
+      tag: ResetButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000058
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:4677dd46ed5ab744:textures/ui/button_frame.png
+  - Entity: 7810000000000000060
+    Tag:
+      tag: InvertButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000055
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.085]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.03, 0.08, 0.16, 1]
+      hoverColor: [0.08, 0.22, 0.38, 1]
+      pressedColor: [0.12, 0.32, 0.5, 1]
+      disabledColor: [0.05, 0.06, 0.08, 0.6]
+      onClickCallback: on_invert_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.06, 0.15, 1]
+      text: 'INVERT STEERING: OFF'
+      color: [0.55, 0.92, 1, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBoldItalic
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.78, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7810000000000000061
+    Tag:
+      tag: InvertButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000060
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:4677dd46ed5ab744:textures/ui/button_frame.png
+  - Entity: 7810000000000000062
+    Tag:
+      tag: UiScaleSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000055
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.03]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 0.2
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.05, 0.12, 0.2, 1]
+      fillColor: [0.4, 0.85, 1, 1]
+      handleColor: [1, 0.78, 0.3, 1]
+      onValueChangedCallback: on_ui_scale_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: 'on_slider_focused'
+      highlightColor: [1, 0.78, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7810000000000000063
+    Tag:
+      tag: UiScaleLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000055
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.065]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.06, 0.15, 1]
+      text: 'INTERFACE SIZE 100%'
+      color: [0.78, 0.86, 0.95, 0.95]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7810000000000000064
+    Tag:
+      tag: SfxVolSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000055
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.03]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 1
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.05, 0.12, 0.2, 1]
+      fillColor: [0.4, 0.85, 1, 1]
+      handleColor: [1, 0.78, 0.3, 1]
+      onValueChangedCallback: on_sfx_vol_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: 'on_slider_focused'
+      highlightColor: [1, 0.78, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7810000000000000065
+    Tag:
+      tag: SfxVolLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000055
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.065]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.06, 0.15, 1]
+      text: 'EFFECTS 100%'
+      color: [0.78, 0.86, 0.95, 0.95]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7810000000000000066
+    Tag:
+      tag: MusicVolSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000055
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.03]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 0.8
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.05, 0.12, 0.2, 1]
+      fillColor: [0.4, 0.85, 1, 1]
+      handleColor: [1, 0.78, 0.3, 1]
+      onValueChangedCallback: on_music_vol_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: 'on_slider_focused'
+      highlightColor: [1, 0.78, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7810000000000000067
+    Tag:
+      tag: MusicVolLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000055
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.065]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.06, 0.15, 1]
+      text: 'MUSIC 80%'
+      color: [0.78, 0.86, 0.95, 0.95]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7810000000000000068
+    Tag:
+      tag: MasterVolSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000055
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.03]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 1
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.05, 0.12, 0.2, 1]
+      fillColor: [0.4, 0.85, 1, 1]
+      handleColor: [1, 0.78, 0.3, 1]
+      onValueChangedCallback: on_master_vol_changed
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: 'on_slider_focused'
+      highlightColor: [1, 0.78, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7810000000000000069
+    Tag:
+      tag: MasterVolLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000055
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.065]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.06, 0.15, 1]
+      text: 'MASTER VOLUME 100%'
+      color: [0.78, 0.86, 0.95, 0.95]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7810000000000000070
+    Tag:
+      tag: TitleText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7810000000000000055
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.12]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.06, 0.15, 1]
+      text: 'SETTINGS'
+      color: [0.55, 0.92, 1, 1]
+      fontSize: 56
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBoldItalic

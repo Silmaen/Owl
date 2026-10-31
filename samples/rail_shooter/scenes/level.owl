@@ -1,0 +1,6353 @@
+Scene: level
+FormatVersion: 7
+Hud: gid:459d58803e259f24:huds/play.owlhud
+SceneScript:
+  scriptPath: gid:aa6cc3843d7c30af:scripts/game/rail.lua
+  properties:
+    - name: waves
+      type: string
+      value: tables/waves.owltable
+    - name: enemies
+      type: string
+      value: tables/enemies.owltable
+    - name: rail_speed
+      type: float
+      value: 20.0
+    - name: boss_speed
+      type: float
+      value: 7.0
+    - name: hull
+      type: float
+      value: 100.0
+EnabledRenderers:
+  - {Name: world, Enabled: false}
+  - {Name: mesh_world, Enabled: true}
+  - {Name: planet_world, Enabled: true}
+  - {Name: particles, Enabled: true}
+  - {Name: ui, Enabled: false}
+FloatingOrigin:
+  enabled: true
+  shiftRadius: 1000
+  origin: [0, 0, 0]
+Entities:
+  - Entity: 7700000000000000001
+    Tag:
+      tag: Rail
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Spline:
+      interpolation: CatmullRom
+      closed: false
+      resolution: 32
+      up: [0, 1, 0]
+      points:
+        - [0, 0, 0]
+        - [62.7225, 4.8453, -200]
+        - [106.9449, 5.0487, -400]
+        - [119.6238, 0.5826, -600]
+        - [97.0196, -7.9484, -800]
+        - [45.7993, -19.3898, -1000]
+        - [-18.9295, -32.1929, -1200]
+        - [-78.075, -44.6251, -1400]
+        - [-114.1922, -55.0035, -1600]
+        - [-116.6284, -61.9236, -1800]
+        - [-84.6648, -64.4488, -2000]
+        - [-27.7293, -62.2372, -2200]
+        - [37.385, -55.5883, -2400]
+        - [91.4725, -45.4018, -2600]
+        - [118.5802, -33.0566, -2800]
+        - [110.7125, -20.2234, -3000]
+        - [70.1901, -8.6392, -3200]
+        - [8.965, 0.1282, -3400]
+        - [-54.9043, 4.8921, -3600]
+        - [-102.5795, 5.0077, -3800]
+        - [-119.9988, 0.4595, -4000]
+      lanes: []
+  - Entity: 7700000000000000002
+    Tag:
+      tag: RailCarrier
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SplineFollower:
+      enabled: true
+      spline: 7700000000000000001
+      lane: ''
+      offset: 0
+      speed: 20
+      startDistance: 0
+      mode: Once
+      orient: true
+  - Entity: 7700000000000000003
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 1.3, 10]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000000002
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.9
+        perspectiveNear: 0.1
+        perspectiveFar: 200000
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+        toneMapping: Aces
+        postProcess: {ev100: 10, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1.4, bloomKnee: 0.5, bloomIntensity: 0.12, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.35, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0.02]}
+      primary: true
+      fixedAspectRatio: false
+    SoundListener:
+      primary: true
+  - Entity: 7700000000000000004
+    Tag:
+      tag: CutCamera
+    Transform:
+      translation: [0, 1.3, 10]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000000002
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.9
+        perspectiveNear: 0.1
+        perspectiveFar: 200000
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+        toneMapping: Aces
+        postProcess: {ev100: 10, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1.4, bloomKnee: 0.5, bloomIntensity: 0.12, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.35, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0.02]}
+      primary: false
+      fixedAspectRatio: false
+  - Entity: 7700000000000000005
+    Tag:
+      tag: Ship
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000000002
+  - Entity: 7700000000000000006
+    Tag:
+      tag: ShipModel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000000005
+    MeshRenderer:
+      mesh: gid:defb7597d1b61f0c:models/player.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000007
+    Tag:
+      tag: EngineTrailL
+    Transform:
+      translation: [-0.42, 0.05, 0.95]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000000005
+    Trail:
+      enabled: true
+      lifetime: 0.14
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.16
+      color: [0.4, 0.8, 1, 0.9]
+      emissive: 5000
+      blend: Additive
+  - Entity: 7700000000000000008
+    Tag:
+      tag: EngineTrailR
+    Transform:
+      translation: [0.42, 0.05, 0.95]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000000005
+    Trail:
+      enabled: true
+      lifetime: 0.14
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.16
+      color: [0.4, 0.8, 1, 0.9]
+      emissive: 5000
+      blend: Additive
+  - Entity: 7700000000000000009
+    Tag:
+      tag: Reticle
+    Transform:
+      translation: [0, 0, -40]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000000002
+    HudMarker:
+      enabled: true
+      icon: nam:textures/hud/reticle.png
+      color: [0.6, 0.95, 1, 0.95]
+      size: [56, 56]
+      offset: [0, 0, 0]
+      label: ''
+      labelColor: [1, 0.85, 0.85, 1]
+      fontSize: 16
+      showDistance: false
+      maxDistance: 0
+      offscreenIndicator: false
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000010
+    Tag:
+      tag: ReticleNear
+    Transform:
+      translation: [0, 0, -18]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000000002
+    HudMarker:
+      enabled: true
+      icon: nam:textures/hud/reticle_near.png
+      color: [0.6, 0.95, 1, 0.8]
+      size: [34, 34]
+      offset: [0, 0, 0]
+      label: ''
+      labelColor: [1, 0.85, 0.85, 1]
+      fontSize: 16
+      showDistance: false
+      maxDistance: 0
+      offscreenIndicator: false
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000011
+    Tag:
+      tag: IntroDirector
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000000002
+    SequencePlayer:
+      sequence: sequences/intro.owlseq
+      camera: 7700000000000000004
+      playOnStart: true
+      loop: false
+      speed: 1
+      onFinished: on_intro_finished
+  - Entity: 7700000000000000012
+    Tag:
+      tag: BossDirector
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000000002
+    SequencePlayer:
+      sequence: sequences/boss.owlseq
+      camera: 7700000000000000004
+      playOnStart: false
+      loop: false
+      speed: 1
+      onFinished: on_boss_intro_finished
+  - Entity: 7700000000000000013
+    Tag:
+      tag: EndDirector
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000000002
+    SequencePlayer:
+      sequence: sequences/outro.owlseq
+      camera: 7700000000000000004
+      playOnStart: false
+      loop: false
+      speed: 1
+      onFinished: on_outro_finished
+  - Entity: 7700000000000000014
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.5, 0.5, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light: {type: Directional, enabled: true, color: [1, 0.96, 0.9], intensity: 3200, castShadows: false}
+  - Entity: 7700000000000000015
+    Tag:
+      tag: PlanetShine
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [1.3, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light: {type: Directional, enabled: true, color: [0.45, 0.65, 0.8], intensity: 700, castShadows: false}
+  - Entity: 7700000000000000016
+    Tag:
+      tag: Sky
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Environment: {hdri: textures/sky/starfield.hdr, ambient: [0.1, 0.1, 0.12], intensity: 14000, rotation: 0.6, showSky: true}
+  - Entity: 7700000000000000017
+    Tag:
+      tag: Planet
+    Transform:
+      translation: [1500, -31100, -2200]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    WorldPosition: {position: [1500, -31100, -2200]}
+    Planet:
+      graph: ''
+      seed: 7
+      heightResolution: 256
+      radius: 30000
+      heightScale: 600
+      seaLevel: 0.52
+      detailAmplitude: 0.35
+      detailFrequency: 6
+      maxLevel: 10
+      lodFactor: 2
+      chunkResolution: 16
+      seaColor: [0.06, 0.2, 0.42]
+      lowColor: [0.4, 0.54, 0.38]
+      highColor: [0.66, 0.6, 0.47]
+      peakColor: [0.9, 0.92, 0.96]
+      atmosphere: true
+      atmosphereHeight: 1800
+      rayleighDepth: [0.046, 0.108, 0.265]
+      mieDepth: 0.02
+      scatteringIntensity: 3
+      scaledSpaceDistance: 0
+  - Entity: 7700000000000000018
+    Tag:
+      tag: Music
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:25651430778cfe31:sounds/music/flight.wav
+      category: Music
+      volume: 0.6
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1
+  - Entity: 7700000000000000019
+    Tag:
+      tag: Burst1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 160
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 1.1
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 4
+      speedMax: 14
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.45
+      sizeMax: 0.9
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.95, 0.7, 1], [0.35, 1, 0.55, 0.15, 0.9], [1, 0.6, 0.1, 0.02, 0]]
+      emissive: 9000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000020
+    Tag:
+      tag: Debris1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 120
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.6
+      lifetimeMax: 1.4
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 3
+      speedMax: 9
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.3
+      sizeMax: 0.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.75, 0.68, 0.6, 1], [1, 0.45, 0.4, 0.36, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7700000000000000021
+    Tag:
+      tag: Spark1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 40
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.15
+      lifetimeMax: 0.35
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 6
+      speedMax: 16
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.125
+      sizeMax: 0.25
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.7, 1, 1, 1], [1, 0.2, 0.5, 1, 0]]
+      emissive: 12000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000022
+    Tag:
+      tag: Burst2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 160
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 1.1
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 4
+      speedMax: 14
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.45
+      sizeMax: 0.9
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.95, 0.7, 1], [0.35, 1, 0.55, 0.15, 0.9], [1, 0.6, 0.1, 0.02, 0]]
+      emissive: 9000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000023
+    Tag:
+      tag: Debris2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 120
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.6
+      lifetimeMax: 1.4
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 3
+      speedMax: 9
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.3
+      sizeMax: 0.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.75, 0.68, 0.6, 1], [1, 0.45, 0.4, 0.36, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7700000000000000024
+    Tag:
+      tag: Spark2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 40
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.15
+      lifetimeMax: 0.35
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 6
+      speedMax: 16
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.125
+      sizeMax: 0.25
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.7, 1, 1, 1], [1, 0.2, 0.5, 1, 0]]
+      emissive: 12000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000025
+    Tag:
+      tag: Burst3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 160
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 1.1
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 4
+      speedMax: 14
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.45
+      sizeMax: 0.9
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.95, 0.7, 1], [0.35, 1, 0.55, 0.15, 0.9], [1, 0.6, 0.1, 0.02, 0]]
+      emissive: 9000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000026
+    Tag:
+      tag: Debris3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 120
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.6
+      lifetimeMax: 1.4
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 3
+      speedMax: 9
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.3
+      sizeMax: 0.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.75, 0.68, 0.6, 1], [1, 0.45, 0.4, 0.36, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7700000000000000027
+    Tag:
+      tag: Spark3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 40
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.15
+      lifetimeMax: 0.35
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 6
+      speedMax: 16
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.125
+      sizeMax: 0.25
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.7, 1, 1, 1], [1, 0.2, 0.5, 1, 0]]
+      emissive: 12000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000028
+    Tag:
+      tag: Burst4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 160
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 1.1
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 4
+      speedMax: 14
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.45
+      sizeMax: 0.9
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.95, 0.7, 1], [0.35, 1, 0.55, 0.15, 0.9], [1, 0.6, 0.1, 0.02, 0]]
+      emissive: 9000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000029
+    Tag:
+      tag: Debris4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 120
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.6
+      lifetimeMax: 1.4
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 3
+      speedMax: 9
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.3
+      sizeMax: 0.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.75, 0.68, 0.6, 1], [1, 0.45, 0.4, 0.36, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7700000000000000030
+    Tag:
+      tag: Spark4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 40
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.15
+      lifetimeMax: 0.35
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 6
+      speedMax: 16
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.125
+      sizeMax: 0.25
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.7, 1, 1, 1], [1, 0.2, 0.5, 1, 0]]
+      emissive: 12000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000031
+    Tag:
+      tag: Burst5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 160
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 1.1
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 4
+      speedMax: 14
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.45
+      sizeMax: 0.9
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.95, 0.7, 1], [0.35, 1, 0.55, 0.15, 0.9], [1, 0.6, 0.1, 0.02, 0]]
+      emissive: 9000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000032
+    Tag:
+      tag: Debris5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 120
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.6
+      lifetimeMax: 1.4
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 3
+      speedMax: 9
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.3
+      sizeMax: 0.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.75, 0.68, 0.6, 1], [1, 0.45, 0.4, 0.36, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7700000000000000033
+    Tag:
+      tag: Spark5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 40
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.15
+      lifetimeMax: 0.35
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 6
+      speedMax: 16
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.125
+      sizeMax: 0.25
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.7, 1, 1, 1], [1, 0.2, 0.5, 1, 0]]
+      emissive: 12000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000034
+    Tag:
+      tag: Burst6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 160
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 1.1
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 4
+      speedMax: 14
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.45
+      sizeMax: 0.9
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.95, 0.7, 1], [0.35, 1, 0.55, 0.15, 0.9], [1, 0.6, 0.1, 0.02, 0]]
+      emissive: 9000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000035
+    Tag:
+      tag: Debris6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 120
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.6
+      lifetimeMax: 1.4
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 3
+      speedMax: 9
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.3
+      sizeMax: 0.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.75, 0.68, 0.6, 1], [1, 0.45, 0.4, 0.36, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7700000000000000036
+    Tag:
+      tag: Spark6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 40
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.15
+      lifetimeMax: 0.35
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 6
+      speedMax: 16
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 0.125
+      sizeMax: 0.25
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.7, 1, 1, 1], [1, 0.2, 0.5, 1, 0]]
+      emissive: 12000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000037
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [54.14, 7.0857, -200.3541]
+      rotation: [2.4582, -1.7118, -2.4843]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8785, 0.7567, 0.7459, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000038
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [53.1338, 3.708, -202.169]
+      rotation: [0.498, -2.6288, 0.5132]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7762, 0.748, 0.6653, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000039
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [70.7451, 10.8315, -274.5893]
+      rotation: [0.3615, 1.092, -2.3817]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7177, 0.6566, 0.6079, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000040
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [83.0875, 6.2327, -292.5372]
+      rotation: [0.1903, 1.6634, -0.2064]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7757, 0.717, 0.6473, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000041
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [82.2094, 0.726, -301.9322]
+      rotation: [2.2508, 1.3767, -1.2724]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6476, 0.5951, 0.5436, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000042
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [86.7376, 9.3886, -303.4685]
+      rotation: [-2.5343, 0.3485, 1.7346]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9233, 0.8315, 0.8435, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000043
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [86.9659, 5.4832, -311.9259]
+      rotation: [-0.1554, 0.9849, -2.636]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7325, 0.6964, 0.667, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000044
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [93.8934, 8.2468, -317.9881]
+      rotation: [-2.8646, -0.2298, -1.9917]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6638, 0.595, 0.5733, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000045
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [88.2628, 2.3146, -333.0565]
+      rotation: [-2.5165, -0.3049, 0.2966]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.649, 0.5821, 0.5829, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000046
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [109.9653, 2.0242, -363.7336]
+      rotation: [-1.6155, -2.5021, -2.0922]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.9446, 0.8803, 0.7695, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000047
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [101.9342, 6.6485, -370.5999]
+      rotation: [0.6589, -1.0883, -2.2471]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6628, 0.5749, 0.5573, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000048
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [114.5794, 8.2683, -429.5092]
+      rotation: [1.7872, -0.6457, -0.6061]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9098, 0.8585, 0.8176, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000049
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [110.0118, -0.1681, -443.1445]
+      rotation: [-2.3857, 0.4007, 0.2197]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7263, 0.6269, 0.6189, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000050
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [104.0883, -0.2342, -462.792]
+      rotation: [-0.815, -2.2629, 2.0936]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6094, 0.5365, 0.4931, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000051
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [111.0449, -1.4409, -475.1984]
+      rotation: [-2.0314, -2.8614, 2.7059]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6871, 0.6058, 0.6121, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000052
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [120.8489, 9.9245, -483.6229]
+      rotation: [1.1772, -1.4333, -0.7998]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7612, 0.7364, 0.6827, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000053
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [110.3178, 4.1493, -493.1153]
+      rotation: [2.9096, 2.1158, 1.8365]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6819, 0.5978, 0.6055, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000054
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [112.0311, 3.1628, -519.8212]
+      rotation: [-0.1666, -1.8381, 0.6308]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8424, 0.8161, 0.745, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000055
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [129.5917, 9.9155, -531.1354]
+      rotation: [-0.9736, -0.1041, 2.9115]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5822, 0.502, 0.4832, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000056
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [119.4331, 3.8699, -568.0898]
+      rotation: [-0.6688, 1.269, -1.8041]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8073, 0.767, 0.6219, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000057
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [123.1901, -4.9625, -579.2214]
+      rotation: [1.3488, -1.98, -2.2378]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7083, 0.6362, 0.6453, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000058
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [118.8547, 3.0081, -597.3114]
+      rotation: [-0.8976, 0.292, -2.2141]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8806, 0.8521, 0.7588, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000059
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [123.8905, -6.3796, -629.4186]
+      rotation: [1.9569, -1.7337, -1.489]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9234, 0.833, 0.8294, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000060
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [123.9263, -3.5458, -643.5342]
+      rotation: [-0.8773, -0.251, 0.5001]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7176, 0.6213, 0.6492, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000061
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [126.8071, -1.3297, -654.874]
+      rotation: [1.659, 0.6513, 1.6562]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6107, 0.5565, 0.5487, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000062
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [115.8676, 1.8734, -657.9379]
+      rotation: [-0.1051, 1.6589, 2.2994]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5747, 0.5356, 0.4829, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000063
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [110.6875, 2.3535, -663.2453]
+      rotation: [-2.6198, -1.0463, 2.8402]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7309, 0.6237, 0.6592, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000064
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [119.3188, -3.0217, -678.2502]
+      rotation: [0.1393, 2.2559, 2.5669]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8729, 0.7952, 0.6915, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000065
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [102.461, -5.014, -721.1448]
+      rotation: [-1.5562, -2.5613, 1.0168]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5986, 0.5406, 0.4564, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000066
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [94.5801, -3.0914, -765.8487]
+      rotation: [-0.1936, 1.4801, -2.4352]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6965, 0.6132, 0.5386, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000067
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [106.211, -10.6385, -771.0191]
+      rotation: [-1.8255, -1.0888, 1.3329]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7226, 0.6589, 0.5836, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000068
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [99.824, -3.8505, -778.6491]
+      rotation: [-2.6143, 2.9105, 1.7302]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6826, 0.6313, 0.5714, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000069
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [95.0837, -0.8974, -779.7583]
+      rotation: [2.4685, 1.9139, -1.4483]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6582, 0.5697, 0.5409, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000070
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [98.1882, -7.8064, -795.5894]
+      rotation: [-0.4481, -2.5655, 2.6301]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5858, 0.502, 0.5079, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000071
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [91.8394, -6.1956, -796.3921]
+      rotation: [-0.9651, 0.3184, 2.56]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.5766, 0.5499, 0.477, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000072
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [83.0682, -5.644, -814.4012]
+      rotation: [2.5935, 0.772, 0.1865]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9377, 0.8265, 0.7321, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000073
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [92.5232, -13.9567, -822.8797]
+      rotation: [-2.8894, 0.0339, 2.8683]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8715, 0.8448, 0.6591, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000074
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [100.0305, -15.6952, -837.6387]
+      rotation: [2.3324, 2.8219, -1.1533]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.81, 0.7524, 0.6827, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000075
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [66.5535, -9.2463, -913.2986]
+      rotation: [2.8913, 2.0219, -2.9145]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8415, 0.7294, 0.7727, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000076
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [57.4918, -20.8086, -938.1313]
+      rotation: [2.8256, 0.5927, 1.1561]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8161, 0.731, 0.6823, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000077
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [51.8151, -17.2861, -949.5192]
+      rotation: [-1.0588, -2.7933, 2.2943]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6957, 0.6188, 0.6382, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000078
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [45.8033, -18.7575, -956.8798]
+      rotation: [1.6574, -2.4549, 1.9023]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6616, 0.6144, 0.5241, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000079
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [44.0144, -24.7266, -966.6199]
+      rotation: [2.1195, -2.0685, 2.3568]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8019, 0.6897, 0.7319, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000080
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [89.0391, 6.5027, -307.1054]
+      rotation: [-2.7373, 2.0117, 2.3517]
+      scale: [2.6, 2.6, 2.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6098, 0.5713, 0.524, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000081
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [119.6889, 2.0764, -564.6983]
+      rotation: [0.4109, 1.8774, -2.9035]
+      scale: [2.6, 2.6, 2.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7522, 0.7215, 0.6604, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000082
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [92.8309, -8.3164, -822.6295]
+      rotation: [-2.813, -2.2014, -0.8358]
+      scale: [2.6, 2.6, 2.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8232, 0.7682, 0.6495, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000083
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [50.2269, -24.9793, -980.5373]
+      rotation: [-2.9801, 1.7862, 1.4896]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8005, 0.7458, 0.667, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000084
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [36.0629, -19.0688, -998.4076]
+      rotation: [-1.4067, 1.376, -1.7687]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8447, 0.7436, 0.6442, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000085
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [41.7833, -14.8417, -1010.2811]
+      rotation: [0.7018, 0.8566, -2.5352]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7416, 0.6912, 0.6529, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000086
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [45.1676, -17.343, -1014.9767]
+      rotation: [-1.3874, 1.032, 1.1531]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7771, 0.6617, 0.5908, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000087
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [44.8174, -23.8036, -1020.8887]
+      rotation: [-1.8045, 2.8688, 2.6175]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7365, 0.6365, 0.6643, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000088
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [29.3416, -20.6776, -1019.5987]
+      rotation: [2.5832, -2.5523, -2.4582]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.9476, 0.8494, 0.8583, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000089
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [47.5478, -26.6794, -1031.9265]
+      rotation: [-0.8089, -0.0127, 2.2569]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8027, 0.7092, 0.6174, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000090
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [25.6321, -21.3163, -1025.6884]
+      rotation: [-0.7434, -2.2745, -1.0121]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7122, 0.6675, 0.5845, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000091
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [41.089, -27.6379, -1043.3985]
+      rotation: [-0.7667, -0.6426, 2.9928]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8352, 0.8003, 0.6676, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000092
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [42.6706, -18.1645, -1045.2604]
+      rotation: [-1.2863, 2.6135, -1.5041]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.5693, 0.4909, 0.5078, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000093
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [27.1408, -18.2162, -1045.7856]
+      rotation: [0.7854, 2.4805, 2.6442]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.9325, 0.8915, 0.8281, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000094
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [21.0949, -15.9414, -1046.1655]
+      rotation: [-1.2828, -2.7061, 2.5607]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7303, 0.6868, 0.6278, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000095
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [28.3959, -25.8022, -1049.6695]
+      rotation: [0.936, -1.195, 0.3439]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8456, 0.8178, 0.6716, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000096
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [33.3141, -28.9654, -1052.2739]
+      rotation: [2.4376, 2.9789, -0.3002]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9124, 0.8299, 0.7184, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000097
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [21.9565, -27.9128, -1056.2571]
+      rotation: [0.4177, 2.3235, 1.4979]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.5864, 0.5153, 0.4656, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000098
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [32.0384, -27.651, -1064.1851]
+      rotation: [2.8061, -2.2448, 0.0204]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6853, 0.5876, 0.5463, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000099
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [29.9774, -30.2759, -1078.3415]
+      rotation: [-1.1279, 1.886, 2.8082]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7038, 0.6528, 0.5795, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000100
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [26.4824, -18.2703, -1078.274]
+      rotation: [2.5814, 2.569, 0.1672]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9373, 0.8518, 0.7146, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000101
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [5.9074, -32.0511, -1104.9263]
+      rotation: [1.9524, 1.206, 2.0791]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6108, 0.5904, 0.4694, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000102
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [17.703, -33.713, -1109.6364]
+      rotation: [-1.1773, -2.2322, -1.4892]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.643, 0.6176, 0.5528, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000103
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [15.7145, -32.5671, -1114.5708]
+      rotation: [-1.6585, 0.6064, -2.9372]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7598, 0.699, 0.62, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000104
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-11.5385, -32.466, -1159.4557]
+      rotation: [-1.5176, 2.7637, 1.2279]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9035, 0.8195, 0.7137, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000105
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-13.7892, -23.9864, -1159.8104]
+      rotation: [2.551, -1.6393, -2.7954]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.718, 0.6325, 0.62, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000106
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-13.382, -32.0046, -1171.5873]
+      rotation: [-1.7687, 2.8192, -1.1297]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8688, 0.8156, 0.7262, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000107
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-17.4345, -26.6986, -1173.1292]
+      rotation: [2.3789, -0.0897, 2.4624]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5936, 0.549, 0.5068, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000108
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-27.2132, -33.8301, -1198.0594]
+      rotation: [1.2592, -1.8954, -0.3021]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5595, 0.5156, 0.4591, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000109
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-19.7592, -25.9662, -1221.3998]
+      rotation: [1.4779, -2.8086, 0.9866]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6817, 0.5946, 0.6197, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000110
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-18.8229, -35.2853, -1238.5644]
+      rotation: [2.7331, -2.2578, 2.7856]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5511, 0.487, 0.4463, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000111
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-25.0433, -37.5519, -1241.0224]
+      rotation: [-0.7637, 2.517, -1.8418]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.723, 0.6188, 0.6004, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000112
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-35.5231, -33.4557, -1250.7395]
+      rotation: [-2.7909, -2.6245, 2.5205]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8747, 0.824, 0.6621, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000113
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-45.5297, -33.9656, -1249.6134]
+      rotation: [-1.427, 1.2998, -1.1011]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6589, 0.6358, 0.5633, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000114
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-31.4188, -34.3113, -1257.4252]
+      rotation: [-1.5968, -0.1489, 2.7407]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8036, 0.774, 0.606, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000115
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [17.9543, -24.5459, -1091.895]
+      rotation: [2.5863, -1.1801, 1.1527]
+      scale: [2.6, 2.6, 2.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6031, 0.5486, 0.4532, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000116
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-47.1185, -39.8154, -1275.823]
+      rotation: [-0.6499, -2.0404, -0.5535]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8635, 0.7957, 0.7228, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000117
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-42.1431, -39.7573, -1277.9878]
+      rotation: [-2.4955, -2.4215, -0.0091]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.9034, 0.875, 0.7182, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000118
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-68.1273, -46.2308, -1332.2559]
+      rotation: [2.0819, 0.9866, -2.273]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7981, 0.743, 0.7001, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000119
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-60.7149, -42.9792, -1340.6461]
+      rotation: [-1.587, -1.3119, 2.4454]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6541, 0.5905, 0.5113, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000120
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-66.6075, -34.0906, -1346.3681]
+      rotation: [-0.2165, -2.7779, -2.973]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7605, 0.7057, 0.5834, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000121
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-62.3864, -50.1207, -1378.2312]
+      rotation: [1.9676, -1.835, -2.5493]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6432, 0.5506, 0.548, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000122
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-81.2538, -48.71, -1408.1252]
+      rotation: [1.2582, -0.9018, -2.7753]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8159, 0.6941, 0.7003, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000123
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-87.5612, -48.9258, -1409.2483]
+      rotation: [1.913, -0.546, -0.7691]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8429, 0.8089, 0.7489, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000124
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-89.0951, -41.1768, -1415.7607]
+      rotation: [0.9842, -2.0727, 0.204]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7434, 0.6683, 0.6581, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000125
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-78.1916, -47.1145, -1421.0143]
+      rotation: [1.472, 2.3022, -0.5155]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8171, 0.7355, 0.62, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000126
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-78.3746, -49.6218, -1454.8767]
+      rotation: [-0.395, -2.0606, -2.3188]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7063, 0.6347, 0.6428, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000127
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-82.8676, -48.6358, -1462.8145]
+      rotation: [1.8388, -0.6197, 0.4372]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.602, 0.5154, 0.4661, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000128
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-104.0459, -51.5152, -1481.0747]
+      rotation: [-0.0569, 1.8289, 2.8013]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7585, 0.7289, 0.5829, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000129
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-89.4816, -56.3905, -1489.7866]
+      rotation: [-2.4822, 1.2739, 1.1293]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6758, 0.6237, 0.58, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000130
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-92.262, -48.6248, -1506.9535]
+      rotation: [-1.6912, -0.6015, 0.1074]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8885, 0.8437, 0.694, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000131
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-110.3269, -43.767, -1511.4919]
+      rotation: [1.5448, -2.7712, 2.0292]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9089, 0.7771, 0.7686, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000132
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-104.4877, -46.0072, -1520.784]
+      rotation: [-0.4456, 0.9531, -0.3193]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6725, 0.6055, 0.571, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000133
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-115.7561, -44.118, -1522.3048]
+      rotation: [-0.2503, -1.9226, -0.1607]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6441, 0.6065, 0.5685, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000134
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-107.471, -53.4765, -1524.417]
+      rotation: [0.8186, -2.5066, 1.4009]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7268, 0.6623, 0.5501, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000135
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-116.6268, -51.9931, -1535.1658]
+      rotation: [-2.6017, 0.6847, 1.1553]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8111, 0.7658, 0.6119, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000136
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-95.1943, -52.3497, -1542.1672]
+      rotation: [2.5835, -2.6069, -0.8946]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9164, 0.7971, 0.8101, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000137
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-97.6244, -55.7396, -1544.5138]
+      rotation: [-0.1194, 0.5513, 0.6952]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7326, 0.645, 0.6695, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000138
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-118.9673, -57.4416, -1547.6994]
+      rotation: [-0.739, 1.7527, -1.414]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8046, 0.7108, 0.6483, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000139
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-99.6644, -45.7342, -1551.9457]
+      rotation: [-2.3723, 2.9577, 0.7787]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7721, 0.71, 0.6949, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000140
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-114.1822, -55.6304, -1572.001]
+      rotation: [-0.3463, -1.9395, 1.4616]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7809, 0.6976, 0.6872, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000141
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-111.4444, -56.8822, -1578.1931]
+      rotation: [-2.9893, -2.7972, -2.1038]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7843, 0.7292, 0.6299, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000142
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-115.6044, -56.8018, -1594.2463]
+      rotation: [-2.8663, -2.9843, -0.8702]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6028, 0.5288, 0.519, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000143
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-114.0082, -56.5966, -1606.8246]
+      rotation: [-0.1506, -2.1915, 2.6195]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7856, 0.687, 0.6726, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000144
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-117.6639, -62.6949, -1626.8487]
+      rotation: [-1.4146, -2.931, 0.8697]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8985, 0.8481, 0.7353, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000145
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-116.4043, -56.4624, -1664.4529]
+      rotation: [2.421, -2.736, 0.1892]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9249, 0.8675, 0.7327, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000146
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-126.9968, -51.598, -1667.6327]
+      rotation: [-2.1464, -1.8029, 0.6485]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5549, 0.5084, 0.505, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000147
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-121.4169, -56.7223, -1685.1009]
+      rotation: [2.3361, 1.6978, 1.2924]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6738, 0.597, 0.5109, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000148
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-121.0783, -52.5228, -1693.1122]
+      rotation: [-2.3683, -1.6062, -2.7671]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8467, 0.7657, 0.6675, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000149
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-109.4545, -53.3209, -1729.9615]
+      rotation: [-0.3837, 1.7307, 0.1395]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8347, 0.7361, 0.7046, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000150
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-109.2832, -54.2359, -1735.7146]
+      rotation: [-1.5833, 1.4633, 2.6682]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.902, 0.7684, 0.7164, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000151
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-125.4924, -63.0079, -1777.0959]
+      rotation: [1.1571, 0.9914, 2.8741]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6457, 0.6191, 0.5535, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000152
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-116.7684, -69.0169, -1787.1411]
+      rotation: [-1.1535, -1.7282, 0.7357]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7249, 0.6792, 0.6139, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000153
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-124.4092, -68.9566, -1801.6485]
+      rotation: [-2.149, -2.8276, -2.7501]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5927, 0.5698, 0.4792, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000154
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-126.036, -68.8206, -1819.2118]
+      rotation: [1.9054, 1.9174, 2.3477]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5763, 0.5307, 0.4678, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000155
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-105.1153, -59.869, -1852.6943]
+      rotation: [-2.7934, 2.0863, 1.8721]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5928, 0.5186, 0.4559, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000156
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-105.0271, -61.0807, -1854.1997]
+      rotation: [-1.77, -1.0852, -0.4574]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.59, 0.5084, 0.5184, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000157
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-99.8602, -69.9619, -1860.588]
+      rotation: [0.0224, 2.1083, 0.7097]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6972, 0.6195, 0.6372, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000158
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-117.4453, -63.3116, -1889.4873]
+      rotation: [-1.7006, 2.1734, -2.4547]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6887, 0.6436, 0.5795, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000159
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-117.6768, -68.1032, -1892.6381]
+      rotation: [-2.4259, 1.1712, 1.952]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8502, 0.7282, 0.6879, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000160
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-92.6019, -63.5996, -1903.7466]
+      rotation: [1.1969, -0.0101, -2.3405]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.9275, 0.82, 0.7295, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000161
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-99.3841, -56.7186, -1929.571]
+      rotation: [-0.5924, -0.6324, 2.3424]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8648, 0.8002, 0.7009, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000162
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-94.0365, -66.0855, -1937.767]
+      rotation: [-0.7242, 2.3039, -1.5985]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6553, 0.6279, 0.5473, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000163
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-94.824, -61.3448, -1940.255]
+      rotation: [-2.068, 2.0586, 0.9726]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8085, 0.7211, 0.6513, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000164
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-96.6636, -61.3966, -1947.2433]
+      rotation: [2.3108, -1.5724, -1.8506]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7817, 0.6762, 0.6476, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000165
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-71.4684, -43.0718, -1377.5326]
+      rotation: [0.6174, -0.9082, -1.5827]
+      scale: [2.6, 2.6, 2.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8393, 0.8116, 0.7327, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000166
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-117.628, -55.4741, -1632.7218]
+      rotation: [-1.8274, -2.0942, -2.1101]
+      scale: [2.6, 2.6, 2.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.948, 0.8245, 0.817, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000167
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-104.9984, -63.7779, -1891.6925]
+      rotation: [-1.7613, -0.67, -2.7964]
+      scale: [2.6, 2.6, 2.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6285, 0.5823, 0.4828, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000168
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-93.3487, -68.5155, -1966.8684]
+      rotation: [1.4294, -2.9669, -1.5463]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6685, 0.57, 0.5306, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000169
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-87.7329, -62.1872, -1976.0017]
+      rotation: [1.6443, 1.2005, 2.1147]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6414, 0.6008, 0.577, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000170
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-98.2639, -65.4133, -1979.9302]
+      rotation: [1.6943, 1.2789, 0.7777]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8013, 0.6905, 0.6581, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000171
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-86.5118, -71.6461, -1993.56]
+      rotation: [-1.9016, 0.9269, 1.6691]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7137, 0.6645, 0.6482, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000172
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-73.3096, -70.3552, -2005.786]
+      rotation: [2.6435, 0.1153, -2.3935]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7673, 0.6671, 0.6775, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000173
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-88.5948, -64.8123, -2014.5645]
+      rotation: [-0.5379, 2.6878, -1.7395]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8057, 0.765, 0.6757, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000174
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-80.9943, -57.9564, -2014.5008]
+      rotation: [-1.3539, -0.6019, -2.9201]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9438, 0.8425, 0.7169, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000175
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-73.4132, -61.7782, -2033.7993]
+      rotation: [2.6396, 0.1625, -1.6865]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6561, 0.5753, 0.5747, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000176
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-82.917, -57.941, -2041.5665]
+      rotation: [0.3723, -1.6441, 2.7832]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8738, 0.8093, 0.7251, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000177
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-65.1328, -59.9124, -2046.361]
+      rotation: [-2.249, 2.0025, -0.8715]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7372, 0.6527, 0.6216, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000178
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-74.9972, -68.0245, -2051.7124]
+      rotation: [1.7935, -0.8521, 0.9264]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8215, 0.7458, 0.7286, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000179
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-72.3773, -62.238, -2056.6157]
+      rotation: [-0.6893, -2.4883, 0.3875]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9088, 0.7891, 0.7284, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000180
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-75.6541, -59.2433, -2070.773]
+      rotation: [-2.568, -1.242, 0.6492]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.783, 0.7273, 0.6152, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000181
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-73.1484, -60.0591, -2071.4244]
+      rotation: [0.2071, 0.6571, 1.1282]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.864, 0.756, 0.7071, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000182
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-55.4042, -59.8097, -2075.9533]
+      rotation: [-2.5283, 2.0357, 1.0274]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6688, 0.6082, 0.5258, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000183
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-68.0457, -68.0585, -2086.6742]
+      rotation: [2.4328, 1.2025, -1.5206]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7393, 0.6778, 0.6153, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000184
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-52.4456, -71.4105, -2088.9094]
+      rotation: [-1.2191, -0.2054, -0.4451]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6783, 0.6332, 0.5661, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000185
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-57.4921, -61.9617, -2090.9645]
+      rotation: [2.9939, 1.8516, -2.4361]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.5582, 0.4776, 0.4886, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000186
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-49.9179, -70.9385, -2094.5824]
+      rotation: [0.9541, -0.9521, 1.6711]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7162, 0.6197, 0.5487, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000187
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-62.2555, -64.783, -2110.9634]
+      rotation: [-0.8689, -0.0376, -0.9977]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6506, 0.5572, 0.52, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000188
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-54.1917, -68.0402, -2126.5715]
+      rotation: [-1.2047, 0.5187, 0.8089]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8668, 0.7712, 0.6968, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000189
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-48.1593, -64.9447, -2129.1266]
+      rotation: [-1.8604, 2.5286, 0.6521]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5699, 0.5049, 0.428, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000190
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-49.2442, -62.8734, -2129.9674]
+      rotation: [0.5778, 1.0859, -1.725]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7967, 0.7371, 0.6918, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000191
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-43.92, -68.2984, -2137.1714]
+      rotation: [2.4845, 0.9343, -0.7868]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6225, 0.5319, 0.5489, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000192
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-41.5947, -66.8378, -2149.9002]
+      rotation: [0.398, 0.4697, 2.483]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6239, 0.5329, 0.4701, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000193
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-51.5135, -68.8098, -2160.3089]
+      rotation: [-2.5967, 1.0798, 0.5632]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7184, 0.6706, 0.5882, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000194
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-31.8304, -63.8001, -2188.6206]
+      rotation: [0.7614, -0.438, -2.944]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5832, 0.5287, 0.5262, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000195
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-20.2219, -68.6416, -2186.2886]
+      rotation: [0.4139, -0.2953, 1.4652]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5985, 0.5427, 0.4769, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000196
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-24.1889, -59.4658, -2191.2875]
+      rotation: [1.2554, -0.2365, 2.5941]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8419, 0.7241, 0.7214, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000197
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-34.0356, -68.9669, -2215.9442]
+      rotation: [-2.5219, -1.1336, 1.3767]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5559, 0.5159, 0.4942, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000198
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-8.1848, -59.6774, -2235.1377]
+      rotation: [1.0613, -2.1306, 1.7842]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.697, 0.6406, 0.5748, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000199
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-15.4679, -56.0945, -2264.4402]
+      rotation: [1.7077, 0.4009, -1.2457]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7043, 0.6651, 0.6414, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000200
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-1.8154, -55.8612, -2268.415]
+      rotation: [1.9877, 0.6068, -1.1484]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6828, 0.63, 0.6256, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000201
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-0.9999, -61.1249, -2301.2604]
+      rotation: [-1.3001, -2.9899, -1.4217]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7907, 0.7571, 0.7016, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000202
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [14.7356, -55.4426, -2297.2623]
+      rotation: [2.2032, 0.4314, -1.3569]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5669, 0.5386, 0.5034, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000203
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [17.7186, -61.3739, -2306.6214]
+      rotation: [1.7261, 1.3331, 2.8937]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.766, 0.6957, 0.6242, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000204
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [14.8108, -59.3389, -2315.7479]
+      rotation: [-0.6902, 0.2434, 0.2169]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9204, 0.8471, 0.6918, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000205
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [8.5792, -57.2054, -2330.7587]
+      rotation: [0.536, -1.8651, -1.8461]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.904, 0.825, 0.7513, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000206
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [-68.1797, -64.0639, -2067.7927]
+      rotation: [-1.5222, 2.5357, -0.0404]
+      scale: [2.6, 2.6, 2.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6936, 0.6544, 0.6212, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000207
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [9.9002, -58.9448, -2315.7288]
+      rotation: [-1.3167, 0.6428, -2.4355]
+      scale: [2.6, 2.6, 2.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5827, 0.5174, 0.44, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000208
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [52.7339, -54.7855, -2420.6725]
+      rotation: [-2.4174, -0.3188, 0.5587]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6354, 0.6107, 0.5068, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000209
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [57.4251, -58.4618, -2488.557]
+      rotation: [-2.7911, -0.7822, 1.2334]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9478, 0.8487, 0.7153, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000210
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [88.0364, -55.0769, -2541.1994]
+      rotation: [-2.4603, -1.0877, -1.6008]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8059, 0.7742, 0.7012, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000211
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [96.3503, -46.7597, -2603.5791]
+      rotation: [1.3243, -1.9673, 2.6503]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8899, 0.796, 0.703, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000212
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [93.8999, -52.1633, -2605.6261]
+      rotation: [1.5699, -0.0994, -2.3937]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6532, 0.5954, 0.572, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000213
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [108.2448, -40.8421, -2630.9824]
+      rotation: [-0.1756, -0.7699, -0.6597]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7859, 0.7096, 0.6766, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000214
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [92.4607, -46.6385, -2647.5799]
+      rotation: [2.4755, 1.7931, -2.0583]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9157, 0.8764, 0.7596, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000215
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [103.3572, -44.5267, -2647.163]
+      rotation: [2.5727, 2.0535, 0.7702]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6059, 0.5475, 0.4644, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000216
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [107.1464, -42.2237, -2719.1031]
+      rotation: [-2.6596, 1.2823, 0.3202]
+      scale: [0.7, 0.7, 0.7]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8013, 0.6948, 0.6311, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000217
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [104.3758, -38.7375, -2730.8209]
+      rotation: [-0.9929, -1.9932, -0.054]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6123, 0.5404, 0.5466, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000218
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [113.68, -41.935, -2742.2279]
+      rotation: [-1.733, -0.1353, -1.2826]
+      scale: [1.5, 1.5, 1.5]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.5727, 0.5483, 0.4946, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000219
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [127.9173, -35.9853, -2768.977]
+      rotation: [-1.2634, 2.3772, -2.6551]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.9492, 0.9122, 0.7277, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000220
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [111.2859, -27.995, -2846.307]
+      rotation: [-2.9885, 1.9935, 0.1595]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8728, 0.7776, 0.6754, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000221
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [108.8111, -30.8723, -2855.3661]
+      rotation: [1.6227, 1.2697, -1.8197]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7785, 0.6747, 0.6077, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000222
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [128.5676, -23.7552, -2890.6004]
+      rotation: [1.2465, 1.8695, 0.4976]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6596, 0.5769, 0.5633, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000223
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [123.8265, -26.9046, -2890.8714]
+      rotation: [-0.9887, 2.0514, 2.187]
+      scale: [2.8, 2.8, 2.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8387, 0.7184, 0.7446, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000224
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [116.9886, -23.1378, -2892.2904]
+      rotation: [1.9897, -0.7974, -2.0191]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8988, 0.7927, 0.7025, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000225
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [127.0146, -28.1144, -2910.2485]
+      rotation: [-1.5316, 1.9803, 2.4753]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.9375, 0.8049, 0.76, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000226
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [117.6502, -17.3954, -2949.794]
+      rotation: [0.0799, 0.1831, 0.224]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8991, 0.8672, 0.75, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000227
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [105.4973, -21.2171, -2954.6151]
+      rotation: [-2.8196, -2.4212, 1.1938]
+      scale: [0.8, 0.8, 0.8]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5911, 0.5202, 0.5254, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000228
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [122.8648, -20.5682, -2962.1982]
+      rotation: [2.2172, 1.3026, -2.729]
+      scale: [1.2, 1.2, 1.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7592, 0.7093, 0.5826, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000229
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [52.2869, -52.8613, -2449.0017]
+      rotation: [0.2496, -1.6354, -1.6378]
+      scale: [2.6, 2.6, 2.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.594, 0.5136, 0.5348, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000230
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [109.3966, -38.7735, -2701.9911]
+      rotation: [-0.6675, -0.4771, 2.0383]
+      scale: [2.6, 2.6, 2.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6157, 0.5844, 0.5599, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000231
+    Tag:
+      tag: Asteroid
+    Transform:
+      translation: [113.4761, -21.7239, -2960.6812]
+      rotation: [2.0314, 1.2932, 2.0582]
+      scale: [2.6, 2.6, 2.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5708, 0.51, 0.467, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000232
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [139.6236, 20.2104, -3240.328]
+      rotation: [-1.5043, -0.4672, 0.7961]
+      scale: [4.5355, 4.5355, 4.5355]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7569, 0.7304, 0.6879, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000233
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [84.7373, -0.7321, -436.2289]
+      rotation: [1.6595, 2.6216, 0.7993]
+      scale: [9.0477, 9.0477, 9.0477]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5583, 0.4839, 0.5108, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000234
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [124.0347, 13.471, -109.0623]
+      rotation: [-2.2698, -2.918, -1.5801]
+      scale: [10.2825, 10.2825, 10.2825]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8725, 0.7454, 0.6693, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000235
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [41.0464, -55.569, -1162.6903]
+      rotation: [-2.4932, 0.5415, 2.5916]
+      scale: [4.6034, 4.6034, 4.6034]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9336, 0.8968, 0.8433, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000236
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [35.114, 36.7328, -500.5287]
+      rotation: [-1.277, -0.2752, 1.169]
+      scale: [9.7734, 9.7734, 9.7734]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6596, 0.619, 0.5778, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000237
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [32.8758, -56.2207, -2609.4478]
+      rotation: [-2.8142, -0.998, -1.8672]
+      scale: [12.9181, 12.9181, 12.9181]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6715, 0.6093, 0.5971, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000238
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-82.0974, -63.402, -1531.545]
+      rotation: [-1.2911, 2.9251, -1.227]
+      scale: [12.6187, 12.6187, 12.6187]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6454, 0.5917, 0.538, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000239
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [54.9914, -12.8321, -632.0243]
+      rotation: [1.5771, 0.1256, 2.9358]
+      scale: [10.5772, 10.5772, 10.5772]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7568, 0.719, 0.6132, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000240
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [65.1604, -9.497, -2951.4015]
+      rotation: [2.0338, -2.4297, 2.1376]
+      scale: [5.4033, 5.4033, 5.4033]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.631, 0.5826, 0.5029, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000241
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-25.1866, -55.8814, -1058.9819]
+      rotation: [2.9575, -2.1022, 2.0997]
+      scale: [8.1042, 8.1042, 8.1042]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.77, 0.6653, 0.6295, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000242
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-65.5601, -1.0386, -3473.995]
+      rotation: [0.3321, -0.693, -1.068]
+      scale: [8.579, 8.579, 8.579]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8392, 0.7428, 0.6852, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000243
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [54.9985, -15.9152, -3413.2382]
+      rotation: [-1.6084, 1.9298, -1.0195]
+      scale: [9.3687, 9.3687, 9.3687]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8712, 0.786, 0.7092, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000244
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [57.8092, -7.4473, -3365.017]
+      rotation: [-0.016, 2.5219, 1.6409]
+      scale: [13.1057, 13.1057, 13.1057]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5543, 0.4743, 0.4689, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000245
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [114.8807, -50.6887, -2460.0936]
+      rotation: [-0.8934, 2.6874, 1.0589]
+      scale: [10.8523, 10.8523, 10.8523]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7058, 0.6302, 0.6007, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000246
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [114.0443, -22.592, -933.8579]
+      rotation: [-0.0797, -0.359, 0.7476]
+      scale: [9.6134, 9.6134, 9.6134]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7796, 0.745, 0.7125, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000247
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-102.3419, -57.3128, -1358.9543]
+      rotation: [2.3671, 1.1393, 1.9233]
+      scale: [13.7843, 13.7843, 13.7843]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8804, 0.8025, 0.6768, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000248
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [22.2034, 6.0291, -3568.5459]
+      rotation: [-2.639, 0.3897, -2.3603]
+      scale: [12.1616, 12.1616, 12.1616]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6331, 0.606, 0.5192, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000249
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-187.0534, -38.0168, -3969.0674]
+      rotation: [-0.6146, -2.409, -2.9074]
+      scale: [4.0278, 4.0278, 4.0278]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8343, 0.7645, 0.7557, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000250
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [171.6553, -2.1639, -804.8113]
+      rotation: [-1.8087, 0.6105, -2.1279]
+      scale: [12.7114, 12.7114, 12.7114]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.9082, 0.828, 0.7034, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000251
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [80.7841, -51.5341, -3039.7037]
+      rotation: [1.8018, 0.9006, 1.1074]
+      scale: [13.4784, 13.4784, 13.4784]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7462, 0.6761, 0.6143, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000252
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-90.0759, -64.192, -1272.7269]
+      rotation: [-0.9066, -0.301, -0.6861]
+      scale: [6.6661, 6.6661, 6.6661]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5898, 0.5653, 0.5007, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000253
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [137.0916, 24.1687, -902.4829]
+      rotation: [2.5849, 2.1283, -1.1112]
+      scale: [8.3964, 8.3964, 8.3964]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7981, 0.7022, 0.6045, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000254
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [60.3256, -33.3698, -1239.0505]
+      rotation: [-1.6716, -1.1451, 2.2518]
+      scale: [13.4971, 13.4971, 13.4971]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6472, 0.5804, 0.5644, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000255
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [2.2396, -23.9854, -96.8227]
+      rotation: [-0.8224, -0.9899, 2.2289]
+      scale: [7.7901, 7.7901, 7.7901]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.5531, 0.5286, 0.452, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000256
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-202.1192, -61.6429, -1602.0869]
+      rotation: [-0.9331, -0.3865, -1.3252]
+      scale: [13.1299, 13.1299, 13.1299]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7715, 0.6917, 0.6399, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000257
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-104.7441, -71.903, -1349.3272]
+      rotation: [-0.1977, 1.7696, -1.5589]
+      scale: [5.963, 5.963, 5.963]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7679, 0.7253, 0.6484, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000258
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-33.7992, -8.3979, -1419.7248]
+      rotation: [-0.2838, -2.2143, 1.2388]
+      scale: [6.0806, 6.0806, 6.0806]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9304, 0.8472, 0.7337, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000259
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [91.048, -66.9077, -2363.5489]
+      rotation: [-2.2633, 0.0782, 0.2556]
+      scale: [6.4625, 6.4625, 6.4625]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7933, 0.6945, 0.7126, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000260
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [140.1107, -6.212, -2946.3971]
+      rotation: [1.6568, -1.6106, -1.8701]
+      scale: [5.4507, 5.4507, 5.4507]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.556, 0.52, 0.4827, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000261
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [154.7884, 26.1117, -249.371]
+      rotation: [1.901, -0.6062, -0.8646]
+      scale: [5.9282, 5.9282, 5.9282]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8375, 0.7207, 0.6692, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000262
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [8.8031, -39.7847, -3087.6422]
+      rotation: [-2.8484, 1.2227, -0.2245]
+      scale: [7.6658, 7.6658, 7.6658]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8698, 0.8114, 0.7849, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000263
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-111.9703, -75.5653, -1394.0443]
+      rotation: [-2.76, -2.0279, -1.8115]
+      scale: [13.1269, 13.1269, 13.1269]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8436, 0.7892, 0.6385, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000264
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [59.1025, 10.0246, -623.852]
+      rotation: [0.1247, 2.5542, 1.0208]
+      scale: [13.4156, 13.4156, 13.4156]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7758, 0.6806, 0.6475, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000265
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-105.0096, -23.065, -1385.4264]
+      rotation: [1.176, 2.8448, 1.0864]
+      scale: [10.5542, 10.5542, 10.5542]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9104, 0.8695, 0.7734, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000266
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [4.9193, -22.5534, -3152.5501]
+      rotation: [0.692, -1.6752, 0.1639]
+      scale: [13.1365, 13.1365, 13.1365]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7169, 0.6734, 0.6593, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000267
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-47.9892, -7.576, -3790.0456]
+      rotation: [0.0519, 1.0595, -1.7642]
+      scale: [9.0307, 9.0307, 9.0307]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8254, 0.7846, 0.7069, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000268
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-125.21, -89.1777, -2066.4433]
+      rotation: [-2.0178, 1.6852, -1.584]
+      scale: [13.523, 13.523, 13.523]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8801, 0.8071, 0.6862, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000269
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [13.2458, -31.7279, -992.2313]
+      rotation: [-0.0813, -0.1033, 1.2337]
+      scale: [4.9254, 4.9254, 4.9254]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8046, 0.6972, 0.6973, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000270
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-38.1592, -52.9599, -2057.497]
+      rotation: [-1.5554, 0.7764, -2.2922]
+      scale: [10.9805, 10.9805, 10.9805]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6034, 0.5641, 0.5128, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000271
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [36.7061, -45.0012, -3036.1416]
+      rotation: [1.1408, -2.9258, -0.0803]
+      scale: [13.7931, 13.7931, 13.7931]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8858, 0.7961, 0.6954, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000272
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [113.846, -25.9181, -226.5469]
+      rotation: [0.4151, -1.263, 0.3452]
+      scale: [7.0892, 7.0892, 7.0892]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9352, 0.813, 0.7721, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000273
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [39.9534, 18.5224, -33.1254]
+      rotation: [-0.3946, -1.8611, 0.2584]
+      scale: [13.8022, 13.8022, 13.8022]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7755, 0.6693, 0.646, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000274
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-149.9212, -36.2527, -1418.3684]
+      rotation: [-2.1681, -2.834, 1.6466]
+      scale: [13.3525, 13.3525, 13.3525]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.811, 0.7139, 0.6422, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000275
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-97.2671, -29.1565, -1157.6965]
+      rotation: [-1.1379, 0.7008, -0.7237]
+      scale: [12.956, 12.956, 12.956]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8228, 0.7095, 0.7177, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000276
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [75.3869, -32.7347, -3316.2343]
+      rotation: [-2.3566, 1.8167, 2.5265]
+      scale: [13.1971, 13.1971, 13.1971]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8851, 0.7793, 0.6725, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000277
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-201.046, -55.8845, -1602.534]
+      rotation: [-2.5186, 1.1279, -2.0182]
+      scale: [8.9953, 8.9953, 8.9953]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.613, 0.5431, 0.5203, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000278
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [105.901, -85.3495, -2537.362]
+      rotation: [2.0449, 2.132, 1.7215]
+      scale: [8.395, 8.395, 8.395]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6263, 0.5867, 0.47, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000279
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [52.9513, 2.5946, -573.1495]
+      rotation: [1.9564, 2.424, -2.0132]
+      scale: [8.2121, 8.2121, 8.2121]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6855, 0.6187, 0.5917, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000280
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [62.8945, -2.0598, 2.3657]
+      rotation: [0.7543, -2.0738, -0.5918]
+      scale: [9.4272, 9.4272, 9.4272]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7567, 0.6821, 0.6363, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000281
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-8.3212, -65.5537, -2496.026]
+      rotation: [0.939, -2.1789, 2.1916]
+      scale: [10.5844, 10.5844, 10.5844]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.776, 0.6988, 0.6306, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000282
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-111.9541, -18.3224, -3513.2827]
+      rotation: [0.3293, 2.6591, -0.84]
+      scale: [11.3972, 11.3972, 11.3972]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8265, 0.7171, 0.7013, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000283
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [29.4804, -82.4898, -2248.0752]
+      rotation: [2.0239, 0.898, -1.8748]
+      scale: [13.6853, 13.6853, 13.6853]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6311, 0.5932, 0.4971, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000284
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [78.9243, -23.3137, -1020.0622]
+      rotation: [0.4012, 2.1092, 1.077]
+      scale: [9.4123, 9.4123, 9.4123]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8287, 0.7775, 0.7496, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000285
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [54.7599, 39.2762, -539.8321]
+      rotation: [2.8078, -1.8501, -0.1493]
+      scale: [9.1516, 9.1516, 9.1516]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.734, 0.6843, 0.6184, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000286
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [70.096, -34.0293, -547.1144]
+      rotation: [-2.2768, -2.1864, 2.4512]
+      scale: [4.4174, 4.4174, 4.4174]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8308, 0.8014, 0.688, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000287
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [2.9573, -18.4739, -2495.9057]
+      rotation: [1.5817, 1.0831, 1.9538]
+      scale: [12.7077, 12.7077, 12.7077]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6172, 0.5798, 0.4987, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000288
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [125.8948, -53.5051, -978.8898]
+      rotation: [-2.3222, 2.5521, 1.0513]
+      scale: [10.0379, 10.0379, 10.0379]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.5899, 0.5402, 0.5229, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000289
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-58.6981, -6.3011, -1419.9936]
+      rotation: [-1.4495, -2.0985, 2.5866]
+      scale: [8.3988, 8.3988, 8.3988]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8665, 0.7872, 0.6607, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000290
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [44.0065, -60.9363, -2685.3103]
+      rotation: [-2.8515, 2.9669, -0.077]
+      scale: [13.9727, 13.9727, 13.9727]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8546, 0.7539, 0.7054, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000291
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-46.166, 12.438, -3481.3913]
+      rotation: [1.1575, -0.3085, -1.6247]
+      scale: [10.4469, 10.4469, 10.4469]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.79, 0.7514, 0.7224, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000292
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-23.4926, -86.8776, -2060.418]
+      rotation: [-0.8341, -0.1934, 0.4623]
+      scale: [12.9398, 12.9398, 12.9398]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7857, 0.672, 0.6119, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000293
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-70.1258, 11.7748, -3749.403]
+      rotation: [-2.7277, -2.125, 1.0258]
+      scale: [7.3378, 7.3378, 7.3378]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.5582, 0.5052, 0.5123, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000294
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-160.6615, -70.8971, -1523.6488]
+      rotation: [-2.7953, 0.3638, 1.6255]
+      scale: [9.6896, 9.6896, 9.6896]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7613, 0.7345, 0.6993, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000295
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [47.6427, -31.5478, -3092.5949]
+      rotation: [-1.176, 1.58, 1.4372]
+      scale: [11.9532, 11.9532, 11.9532]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8991, 0.8655, 0.7785, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000296
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-38.6547, 4.6073, -3398.601]
+      rotation: [2.9305, -0.1112, -0.7963]
+      scale: [8.0596, 8.0596, 8.0596]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5742, 0.5113, 0.4622, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000297
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [89.9, -30.1678, -3250.3445]
+      rotation: [1.6341, 2.5769, 0.5208]
+      scale: [12.8877, 12.8877, 12.8877]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8186, 0.7356, 0.669, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000298
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [16.9743, -26.7306, -1216.3738]
+      rotation: [2.5487, 0.5095, -1.1746]
+      scale: [10.5886, 10.5886, 10.5886]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9363, 0.8041, 0.7325, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000299
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-28.8267, 17.0164, -3954.4436]
+      rotation: [-1.9486, 2.3864, 0.2789]
+      scale: [11.212, 11.212, 11.212]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9188, 0.8734, 0.739, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000300
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [0.2304, -73.2763, -2521.4798]
+      rotation: [0.8886, -1.8197, 1.4033]
+      scale: [7.9957, 7.9957, 7.9957]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6301, 0.5812, 0.5652, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000301
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [11.644, -30.2401, -2408.142]
+      rotation: [0.8549, -2.91, -1.0626]
+      scale: [9.7548, 9.7548, 9.7548]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8376, 0.7125, 0.6667, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000302
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [164.9218, -48.5694, -870.5955]
+      rotation: [2.1798, 1.7776, -2.4768]
+      scale: [8.8632, 8.8632, 8.8632]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7939, 0.7511, 0.619, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000303
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [25.3245, -48.6997, -1358.3321]
+      rotation: [0.9246, -1.1194, -0.5092]
+      scale: [13.4024, 13.4024, 13.4024]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8993, 0.7672, 0.7229, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000304
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [151.5091, -65.1978, -2901.1081]
+      rotation: [-0.8296, -0.9354, 1.0809]
+      scale: [6.1048, 6.1048, 6.1048]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7618, 0.7244, 0.6177, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000305
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [156.7264, 9.5638, -616.9625]
+      rotation: [0.9098, 0.297, 1.2382]
+      scale: [12.1345, 12.1345, 12.1345]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.741, 0.6327, 0.6373, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000306
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [39.4016, -65.8337, -1121.4192]
+      rotation: [2.9372, -1.631, 1.5395]
+      scale: [8.7576, 8.7576, 8.7576]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8121, 0.7658, 0.6592, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000307
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-121.241, 8.912, -3736.3587]
+      rotation: [1.4256, 2.4171, 2.225]
+      scale: [6.0494, 6.0494, 6.0494]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8609, 0.7586, 0.7344, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000308
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [18.8018, -84.2915, -2096.2901]
+      rotation: [1.8032, -0.2394, -1.057]
+      scale: [13.8233, 13.8233, 13.8233]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7496, 0.6944, 0.606, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000309
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [84.4336, 16.3325, -431.5197]
+      rotation: [-0.5404, 2.5148, 2.6697]
+      scale: [8.0185, 8.0185, 8.0185]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8956, 0.7677, 0.7576, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000310
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-41.4248, -17.5786, -3428.8511]
+      rotation: [0.8563, -1.2092, 2.9659]
+      scale: [8.3379, 8.3379, 8.3379]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6426, 0.5618, 0.5648, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000311
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-169.4243, 37.1582, -3920.7897]
+      rotation: [-2.4694, -2.9764, 2.2326]
+      scale: [11.692, 11.692, 11.692]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9317, 0.8072, 0.7463, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000312
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [153.6403, -36.9512, -650.0086]
+      rotation: [1.6436, -0.3655, -0.3911]
+      scale: [11.8217, 11.8217, 11.8217]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8905, 0.8356, 0.6749, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000313
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-50.0759, 25.3871, -3983.7619]
+      rotation: [0.0158, -0.8899, 1.5078]
+      scale: [5.5193, 5.5193, 5.5193]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9151, 0.7925, 0.7334, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000314
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [62.6141, -26.2788, -2733.1671]
+      rotation: [0.5116, -1.7917, 0.7641]
+      scale: [10.6535, 10.6535, 10.6535]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7087, 0.6309, 0.6393, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000315
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-10.7992, 19.7791, -165.626]
+      rotation: [-2.3379, 2.743, 2.8235]
+      scale: [11.285, 11.285, 11.285]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5693, 0.545, 0.4332, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000316
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-156.9835, -56.1915, -1713.7182]
+      rotation: [2.0374, 2.7434, -2.536]
+      scale: [10.332, 10.332, 10.332]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7682, 0.7446, 0.6454, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000317
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-63.5079, -17.6068, -3391.2684]
+      rotation: [0.0525, -0.5513, 0.3397]
+      scale: [5.7722, 5.7722, 5.7722]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6559, 0.5629, 0.4967, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000318
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [88.7504, -11.6124, -1093.0717]
+      rotation: [2.2444, 1.3066, -0.6043]
+      scale: [9.4397, 9.4397, 9.4397]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7695, 0.7178, 0.7057, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000319
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [45.119, -72.0203, -2136.9796]
+      rotation: [-2.9685, 0.647, 2.5577]
+      scale: [7.8541, 7.8541, 7.8541]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.714, 0.6191, 0.6567, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000320
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [205.8662, -8.8086, -2764.0529]
+      rotation: [1.2985, -0.5651, 0.3511]
+      scale: [10.6343, 10.6343, 10.6343]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5847, 0.5406, 0.4419, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000321
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [138.8768, -40.3044, -2568.3278]
+      rotation: [0.2771, -0.7206, 1.9499]
+      scale: [8.7347, 8.7347, 8.7347]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8089, 0.7333, 0.6538, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000322
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [50.9031, -6.0758, -3498.4917]
+      rotation: [0.7734, 0.2584, -1.6604]
+      scale: [9.2626, 9.2626, 9.2626]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7951, 0.7405, 0.6399, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000323
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [183.0252, -18.3759, -3080.6222]
+      rotation: [-2.1475, 2.564, 0.1725]
+      scale: [11.2156, 11.2156, 11.2156]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7588, 0.6884, 0.5977, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000324
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [16.746, -30.0792, -807.5533]
+      rotation: [1.9647, 2.3641, 2.2067]
+      scale: [5.7235, 5.7235, 5.7235]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8788, 0.7955, 0.7548, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000325
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [29.0713, -12.2049, -1309.345]
+      rotation: [-0.8601, 1.8193, 0.1281]
+      scale: [5.2303, 5.2303, 5.2303]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6115, 0.5383, 0.4693, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000326
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [147.747, -3.1115, -2633.7754]
+      rotation: [1.5528, -2.1007, 1.0811]
+      scale: [10.9502, 10.9502, 10.9502]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7297, 0.6622, 0.6463, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000327
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-156.343, -62.4436, -1972.4257]
+      rotation: [-1.442, 0.5435, -1.1608]
+      scale: [12.0156, 12.0156, 12.0156]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6511, 0.5969, 0.4884, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000328
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [51.7748, -44.4345, -1111.0131]
+      rotation: [-2.2302, 2.7502, -1.2573]
+      scale: [8.3807, 8.3807, 8.3807]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7601, 0.6911, 0.5815, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000329
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-29.8564, -31.1717, -3689.1923]
+      rotation: [-1.4593, -1.5682, 2.0982]
+      scale: [11.531, 11.531, 11.531]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9379, 0.8457, 0.8003, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000330
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-166.0526, 33.6635, -3672.7802]
+      rotation: [-2.5204, -0.3269, -0.6404]
+      scale: [9.8021, 9.8021, 9.8021]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.5753, 0.5031, 0.5156, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000331
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-115.3004, -59.3574, -1997.276]
+      rotation: [-1.9426, -2.6094, -0.6143]
+      scale: [13.3506, 13.3506, 13.3506]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.8304, 0.7493, 0.7632, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000332
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-137.2461, -45.0881, -2069.0441]
+      rotation: [1.6154, 1.6193, -2.2913]
+      scale: [8.0168, 8.0168, 8.0168]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5662, 0.5275, 0.478, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000333
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-16.3794, -33.0737, -3384.1946]
+      rotation: [1.2664, -0.1033, -2.6713]
+      scale: [11.5331, 11.5331, 11.5331]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7758, 0.6645, 0.6716, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000334
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [22.278, 4.7461, -2982.5758]
+      rotation: [-2.9638, 2.9321, -1.352]
+      scale: [12.7193, 12.7193, 12.7193]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6082, 0.5414, 0.5097, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000335
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [135.6251, 34.1788, -334.6373]
+      rotation: [-1.1731, 2.2007, 1.8118]
+      scale: [9.5569, 9.5569, 9.5569]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7544, 0.6793, 0.5724, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000336
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [7.2342, -44.679, -1020.7218]
+      rotation: [-2.1523, 2.5828, -0.9495]
+      scale: [10.5225, 10.5225, 10.5225]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.923, 0.8572, 0.8036, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000337
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-143.9824, -33.8469, -3654.6771]
+      rotation: [-1.6818, -0.3654, -1.7967]
+      scale: [4.6764, 4.6764, 4.6764]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9306, 0.8829, 0.7035, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000338
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [114.7813, 10.2548, -3225.6149]
+      rotation: [-2.2532, -2.178, 2.2796]
+      scale: [6.0386, 6.0386, 6.0386]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6313, 0.5502, 0.5656, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000339
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-168.9257, -59.5557, -2011.3369]
+      rotation: [-1.2306, -1.7338, 2.0298]
+      scale: [12.007, 12.007, 12.007]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7493, 0.6975, 0.6479, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000340
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [34.9045, -16.0841, -3102.2159]
+      rotation: [2.0014, 1.2373, -0.3456]
+      scale: [6.0163, 6.0163, 6.0163]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.5866, 0.5022, 0.4623, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000341
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [34.1863, -29.439, -616.1259]
+      rotation: [1.7832, 1.2417, 1.3161]
+      scale: [5.6014, 5.6014, 5.6014]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7285, 0.6855, 0.6547, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000342
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-9.561, -17.5242, -3658.6386]
+      rotation: [-1.0343, -2.0641, -1.2536]
+      scale: [13.4556, 13.4556, 13.4556]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8162, 0.7163, 0.7473, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000343
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-65.9754, -90.6321, -2196.2697]
+      rotation: [-0.8891, 0.945, -1.7372]
+      scale: [5.8395, 5.8395, 5.8395]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.6833, 0.6137, 0.517, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000344
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-134.6135, -6.7632, -3744.1072]
+      rotation: [-0.0915, 2.184, 0.5867]
+      scale: [11.5037, 11.5037, 11.5037]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.7486, 0.7199, 0.5733, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000345
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [75.5354, -36.7613, -3024.7576]
+      rotation: [-2.8056, 0.5928, 2.8041]
+      scale: [12.9306, 12.9306, 12.9306]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8882, 0.7792, 0.8057, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000346
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [34.8684, -43.0196, -768.9947]
+      rotation: [-1.9269, 1.7264, -1.2106]
+      scale: [7.3314, 7.3314, 7.3314]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7298, 0.642, 0.6395, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000347
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [147.5451, -22.7728, -2896.2284]
+      rotation: [0.0802, -2.4166, 0.8809]
+      scale: [11.8799, 11.8799, 11.8799]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7882, 0.7136, 0.5957, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000348
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-91.3421, -39.2622, -1661.5913]
+      rotation: [-2.9703, 0.8686, 2.0207]
+      scale: [11.3424, 11.3424, 11.3424]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6938, 0.6449, 0.531, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000349
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [90.4681, -20.2185, -595.8497]
+      rotation: [-1.5242, 0.4102, -2.7476]
+      scale: [5.5308, 5.5308, 5.5308]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.6582, 0.6022, 0.5299, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000350
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-132.7013, -43.736, -1454.5521]
+      rotation: [-1.5621, -2.43, -2.3655]
+      scale: [13.8804, 13.8804, 13.8804]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9134, 0.856, 0.7681, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000351
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-161.1104, -85.9641, -1971.5727]
+      rotation: [-0.6404, 0.1087, -1.2483]
+      scale: [11.5004, 11.5004, 11.5004]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6115, 0.5391, 0.4618, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000352
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [58.0286, 13.1231, -340.6441]
+      rotation: [0.5951, 2.8977, -2.7527]
+      scale: [11.8401, 11.8401, 11.8401]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.8343, 0.7154, 0.6606, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000353
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [18.7935, -27.0582, -3080.494]
+      rotation: [2.6418, -0.5282, -0.5574]
+      scale: [12.1055, 12.1055, 12.1055]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7347, 0.7057, 0.5524, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000354
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [10.7835, 3.4477, -3140.936]
+      rotation: [-1.6821, -1.0136, 2.8559]
+      scale: [5.5123, 5.5123, 5.5123]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6877, 0.5962, 0.539, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000355
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [101.4845, -8.1494, -3176.1608]
+      rotation: [2.1998, -2.6981, -0.8063]
+      scale: [7.3, 7.3, 7.3]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.5776, 0.5328, 0.4394, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000356
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [162.0977, 29.6135, -354.786]
+      rotation: [1.1621, -1.1822, -2.6833]
+      scale: [8.9256, 8.9256, 8.9256]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8588, 0.7811, 0.682, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000357
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-17.8575, 23.5244, -3314.657]
+      rotation: [0.19, 2.6756, -2.305]
+      scale: [11.8443, 11.8443, 11.8443]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8983, 0.7958, 0.8205, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000358
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [72.0017, -12.8637, -3000.7178]
+      rotation: [2.3372, -2.6988, 0.9817]
+      scale: [9.6161, 9.6161, 9.6161]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.901, 0.828, 0.8187, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000359
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [151.3202, -17.2431, -3197.8544]
+      rotation: [0.5692, 2.0178, 1.7577]
+      scale: [4.871, 4.871, 4.871]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.811, 0.7707, 0.6551, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000360
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-102.3784, -2.0184, -1176.4915]
+      rotation: [0.2724, -2.5014, -0.6368]
+      scale: [8.7538, 8.7538, 8.7538]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.7143, 0.6328, 0.5535, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000361
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [101.6807, -12.8569, -2458.9297]
+      rotation: [-1.5496, -1.7021, 0.7629]
+      scale: [5.8729, 5.8729, 5.8729]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9058, 0.8142, 0.7622, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000362
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-3.5689, -17.4606, -3280.2125]
+      rotation: [2.2918, 2.763, -1.1486]
+      scale: [5.509, 5.509, 5.509]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.617, 0.5504, 0.5483, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000363
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-184.9813, 42.2078, -3808.7902]
+      rotation: [-1.5248, 0.3916, 0.9429]
+      scale: [7.9094, 7.9094, 7.9094]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.5536, 0.5273, 0.425, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000364
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-165.9087, -26.1373, -1384.8992]
+      rotation: [-1.48, -0.5038, 0.0857]
+      scale: [11.5314, 11.5314, 11.5314]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.8164, 0.7072, 0.7169, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000365
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-71.496, -48.478, -1775.6408]
+      rotation: [2.4431, -0.0113, -0.8177]
+      scale: [10.3192, 10.3192, 10.3192]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.7003, 0.6392, 0.6058, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000366
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [11.0773, 0.9305, -238.9433]
+      rotation: [-2.7894, -1.0488, -2.178]
+      scale: [11.5107, 11.5107, 11.5107]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9064, 0.8498, 0.7954, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000367
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [30.0942, -24.8457, -577.4017]
+      rotation: [1.6373, -2.8452, 0.2893]
+      scale: [9.8957, 9.8957, 9.8957]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.9429, 0.8724, 0.7459, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000368
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [143.3594, -8.0239, -2576.8699]
+      rotation: [-0.0254, -2.7101, 0.1943]
+      scale: [7.6024, 7.6024, 7.6024]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.9111, 0.8099, 0.8125, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000369
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [62.8867, 10.6891, -802.7411]
+      rotation: [-0.7022, 2.8016, 2.7728]
+      scale: [5.7068, 5.7068, 5.7068]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.6748, 0.5779, 0.5402, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000370
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [50.8651, -39.4353, -1101.2522]
+      rotation: [-0.6869, 2.7816, -1.3989]
+      scale: [8.383, 8.383, 8.383]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.5934, 0.5229, 0.4848, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000371
+    Tag:
+      tag: FarRock
+    Transform:
+      translation: [-26.7595, -1.809, -3711.6892]
+      rotation: [0.2141, 0.9682, 2.0886]
+      scale: [5.5985, 5.5985, 5.5985]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.907, 0.7757, 0.7232, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world

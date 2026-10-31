@@ -1,0 +1,85 @@
+Prefab: Interceptor
+Version: 1
+Entities:
+  - Entity: 7712001000000000001
+    Tag:
+      tag: Interceptor
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    HudMarker:
+      enabled: true
+      icon: nam:textures/hud/target.png
+      color: [1, 0.45, 0.35, 0.9]
+      size: [38, 38]
+      offset: [0, 0, 0]
+      label: ''
+      labelColor: [1, 0.85, 0.85, 1]
+      fontSize: 16
+      showDistance: false
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7712001000000000002
+    Tag:
+      tag: InterceptorModel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7712001000000000001
+    MeshRenderer:
+      mesh: gid:c13fe4be2f31ee9a:models/interceptor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7712001000000000003
+    Tag:
+      tag: InterceptorTrail
+    Transform:
+      translation: [-0.35, 0.1, 1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7712001000000000001
+    Trail:
+      enabled: true
+      lifetime: 0.3
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.3
+      color: [1, 0.45, 0.2, 0.8]
+      emissive: 5000
+      blend: Additive
+  - Entity: 7712001000000000004
+    Tag:
+      tag: InterceptorTrail
+    Transform:
+      translation: [0.35, 0.1, 1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7712001000000000001
+    Trail:
+      enabled: true
+      lifetime: 0.3
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.3
+      color: [1, 0.45, 0.2, 0.8]
+      emissive: 5000
+      blend: Additive
