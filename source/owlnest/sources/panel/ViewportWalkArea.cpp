@@ -126,11 +126,14 @@ void Viewport::renderWalkAreaOverlay(const shared<scene::Scene>& iScene) const {
 			maxX = std::max(maxX, vertex.x());
 		}
 		for (const float height: {area.nearY, area.farY}) {
-			for (float x = minX; x < maxX; x += 0.5f)
+			const auto dashes = static_cast<int>(std::ceil((maxX - minX) / 0.5f));
+			for (int dash = 0; dash < dashes; ++dash) {
+				const float x = minX + static_cast<float>(dash) * 0.5f;
 				renderer::Renderer2D::drawLine({.point1 = toWorld(world, {x, height}),
 												.point2 = toWorld(world, {std::min(x + 0.25f, maxX), height}),
 												.color = {0.55f, 0.75f, 1.f, 0.8f},
 												.entityId = id});
+			}
 		}
 	}
 }

@@ -18,7 +18,9 @@
 #include <limits>
 #include <map>
 #include <queue>
+#include <ranges>
 #include <span>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -118,6 +120,144 @@ void WalkMesh::clear() {
 	m_triangles.clear();
 }
 
+namespace {
+
+using Ring = std::vector<uint32_t>;
+using Vertices = std::vector<math::vec2>;
+
+// The ring edge the ray from a point to +x meets first, and the x it meets it at.
+auto findHitEdge(const Vertices& iVertices, const Ring& iRing, const math::vec2& iStart)
+		-> std::optional<std::pair<size_t, float>> {
+	float hitX = std::numeric_limits<float>::max();
+	std::optional<size_t> hitEdge;
+	for (size_t index = 0; index < iRing.size(); ++index) {
+		const auto& a = iVertices[iRing[index]];
+		const auto& b = iVertices[iRing[(index + 1) % iRing.size()]];
+		if (std::abs(a.y() - b.y()) <= 0.f || iStart.y() < std::min(a.y(), b.y()) ||
+			iStart.y() > std::max(a.y(), b.y()))
+			continue;
+		const float x = a.x() + (iStart.y() - a.y()) * (b.x() - a.x()) / (b.y() - a.y());
+		if (x >= iStart.x() - g_weld && x < hitX) {
+			hitX = x;
+			hitEdge = index;
+		}
+	}
+	if (!hitEdge)
+		return std::nullopt;
+	return std::pair{*hitEdge, hitX};
+}
+
+// The ring vertex a hole vertex is bridged to: the end of the hit edge, or a reflex vertex hiding it.
+auto findBridge(const Vertices& iVertices, const Ring& iRing, const math::vec2& iStart, const size_t iHitEdge,
+				const float iHitX) -> size_t {
+	const size_t edgeEnd = (iHitEdge + 1) % iRing.size();
+	size_t bridge = iVertices[iRing[iHitEdge]].x() > iVertices[iRing[edgeEnd]].x() ? iHitEdge : edgeEnd;
+	const math::vec2 hit{iHitX, iStart.y()};
+	const math::vec2 candidate = iVertices[iRing[bridge]];
+	const uint32_t candidateVertex = iRing[bridge];
+	float bestAngle = std::numeric_limits<float>::max();
+	float bestDistance = std::numeric_limits<float>::max();
+	for (size_t index = 0; !isSame(hit, candidate) && index < iRing.size(); ++index) {
+		const auto& point = iVertices[iRing[index]];
+		const auto& previous = iVertices[iRing[(index + iRing.size() - 1) % iRing.size()]];
+		const auto& next = iVertices[iRing[(index + 1) % iRing.size()]];
+		if (iRing[index] == candidateVertex || cross(previous, point, next) >= 0.f ||
+			!isInAnyTriangle(iStart, hit, candidate, point))
+			continue;
+		const math::vec2 offset = point - iStart;
+		const float angle = std::atan2(std::abs(offset.y()), offset.x());
+		const float distance = offset.normSq();
+		if (angle < bestAngle || (angle <= bestAngle && distance < bestDistance)) {
+			bestAngle = angle;
+			bestDistance = distance;
+			bridge = index;
+		}
+	}
+	// A vertex met twice (an earlier bridge): the copy whose corner opens towards the hole.
+	for (size_t index = 0; index < iRing.size(); ++index) {
+		if (iRing[index] != iRing[bridge])
+			continue;
+		const auto& previous = iVertices[iRing[(index + iRing.size() - 1) % iRing.size()]];
+		const auto& next = iVertices[iRing[(index + 1) % iRing.size()]];
+		if (isInSector(previous, iVertices[iRing[index]], next, iStart))
+			return index;
+	}
+	return bridge;
+}
+
+// Splice a clockwise hole into a counter-clockwise ring through a bridge from its rightmost vertex.
+auto bridgeHole(const Vertices& iVertices, Ring& ioRing, const Ring& iHole) -> bool {
+	size_t holeStart = 0;
+	for (size_t index = 1; index < iHole.size(); ++index) {
+		if (iVertices[iHole[index]].x() > iVertices[iHole[holeStart]].x())
+			holeStart = index;
+	}
+	const math::vec2 start = iVertices[iHole[holeStart]];
+	const auto hit = findHitEdge(iVertices, ioRing, start);
+	if (!hit) {
+		OWL_CORE_WARN("WalkMesh: a hole lies outside its outline, skipped.")
+		return false;
+	}
+	const size_t bridge = findBridge(iVertices, ioRing, start, hit->first, hit->second);
+	Ring spliced;
+	spliced.reserve(ioRing.size() + iHole.size() + 2);
+	spliced.insert(spliced.end(), ioRing.begin(), ioRing.begin() + static_cast<std::ptrdiff_t>(bridge) + 1);
+	for (size_t step = 0; step <= iHole.size(); ++step) spliced.push_back(iHole[(holeStart + step) % iHole.size()]);
+	spliced.push_back(ioRing[bridge]);
+	spliced.insert(spliced.end(), ioRing.begin() + static_cast<std::ptrdiff_t>(bridge) + 1, ioRing.end());
+	ioRing = std::move(spliced);
+	return true;
+}
+
+// Whether the corner of a ring is an ear: convex, no other vertex in its triangle.
+auto isEar(const Vertices& iVertices, const Ring& iRing, const size_t iIndex) -> bool {
+	const size_t previous = (iIndex + iRing.size() - 1) % iRing.size();
+	const size_t next = (iIndex + 1) % iRing.size();
+	const auto& a = iVertices[iRing[previous]];
+	const auto& b = iVertices[iRing[iIndex]];
+	const auto& c = iVertices[iRing[next]];
+	if (cross(a, b, c) <= g_epsilon)
+		return false;
+	return std::ranges::none_of(iRing, [&](const uint32_t iOther) -> bool {
+		return iOther != iRing[previous] && iOther != iRing[iIndex] && iOther != iRing[next] &&
+			   isInTriangle(a, b, c, iVertices[iOther]);
+	});
+}
+
+// Cut a counter-clockwise ring into triangles, ear by ear.
+void clipEars(const Vertices& iVertices, Ring& ioRing, std::vector<WalkMesh::Triangle>& oTriangles) {
+	while (ioRing.size() > 3) {
+		const auto found =
+				std::ranges::find_if(std::views::iota(size_t{0}, ioRing.size()),
+									 [&](const size_t iIndex) -> bool { return isEar(iVertices, ioRing, iIndex); });
+		size_t index = 0;
+		if (found != std::views::iota(size_t{0}, ioRing.size()).end()) {
+			index = *found;
+			const size_t previous = (index + ioRing.size() - 1) % ioRing.size();
+			const size_t next = (index + 1) % ioRing.size();
+			oTriangles.push_back(
+					{.vertices = {ioRing[previous], ioRing[index], ioRing[next]}, .neighbours = {-1, -1, -1}});
+		} else {
+			// No ear left (a flat or crossing outline): drop the flattest corner.
+			float flatness = std::numeric_limits<float>::max();
+			for (size_t corner = 0; corner < ioRing.size(); ++corner) {
+				const float area =
+						std::abs(cross(iVertices[ioRing[(corner + ioRing.size() - 1) % ioRing.size()]],
+									   iVertices[ioRing[corner]], iVertices[ioRing[(corner + 1) % ioRing.size()]]));
+				if (area < flatness) {
+					flatness = area;
+					index = corner;
+				}
+			}
+		}
+		ioRing.erase(ioRing.begin() + static_cast<std::ptrdiff_t>(index));
+	}
+	if (ioRing.size() == 3 && cross(iVertices[ioRing[0]], iVertices[ioRing[1]], iVertices[ioRing[2]]) > g_epsilon)
+		oTriangles.push_back({.vertices = {ioRing[0], ioRing[1], ioRing[2]}, .neighbours = {-1, -1, -1}});
+}
+
+}// namespace
+
 void WalkMesh::build(const std::span<const WalkPolygon> iPolygons) {
 	clear();
 	for (const auto& polygon: iPolygons) {
@@ -148,122 +288,8 @@ void WalkMesh::build(const std::span<const WalkPolygon> iPolygons) {
 			return result;
 		};
 		std::ranges::sort(holes, std::greater{}, maxX);
-		for (const auto& hole: holes) {
-			// The rightmost vertex of the hole, bridged to the nearest visible vertex of the ring on its right.
-			size_t holeStart = 0;
-			for (size_t index = 1; index < hole.size(); ++index) {
-				if (m_vertices[hole[index]].x() > m_vertices[hole[holeStart]].x())
-					holeStart = index;
-			}
-			const math::vec2 start = m_vertices[hole[holeStart]];
-			float hitX = std::numeric_limits<float>::max();
-			std::optional<size_t> hitEdge;
-			for (size_t index = 0; index < ring.size(); ++index) {
-				const auto& a = m_vertices[ring[index]];
-				const auto& b = m_vertices[ring[(index + 1) % ring.size()]];
-				if (std::abs(a.y() - b.y()) <= 0.f || start.y() < std::min(a.y(), b.y()) ||
-					start.y() > std::max(a.y(), b.y()))
-					continue;
-				const float x = a.x() + (start.y() - a.y()) * (b.x() - a.x()) / (b.y() - a.y());
-				if (x >= start.x() - g_weld && x < hitX) {
-					hitX = x;
-					hitEdge = index;
-				}
-			}
-			if (!hitEdge) {
-				OWL_CORE_WARN("WalkMesh: a hole lies outside its outline, skipped.")
-				continue;
-			}
-			const size_t edgeEnd = (*hitEdge + 1) % ring.size();
-			size_t bridge = m_vertices[ring[*hitEdge]].x() > m_vertices[ring[edgeEnd]].x() ? *hitEdge : edgeEnd;
-			const math::vec2 hit{hitX, start.y()};
-			const math::vec2 candidate = m_vertices[ring[bridge]];
-			// A vertex of the ring inside (start, hit, candidate) hides the candidate: take the one closest in angle.
-			float bestAngle = std::numeric_limits<float>::max();
-			float bestDistance = std::numeric_limits<float>::max();
-			if (const uint32_t candidateVertex = ring[bridge]; !isSame(hit, candidate)) {
-				for (size_t index = 0; index < ring.size(); ++index) {
-					const auto& point = m_vertices[ring[index]];
-					const auto& previous = m_vertices[ring[(index + ring.size() - 1) % ring.size()]];
-					const auto& next = m_vertices[ring[(index + 1) % ring.size()]];
-					if (ring[index] == candidateVertex || cross(previous, point, next) >= 0.f ||
-						!isInAnyTriangle(start, hit, candidate, point))
-						continue;
-					const math::vec2 offset = point - start;
-					const float angle = std::atan2(std::abs(offset.y()), offset.x());
-					const float distance = offset.normSq();
-					if (angle < bestAngle || (angle <= bestAngle && distance < bestDistance)) {
-						bestAngle = angle;
-						bestDistance = distance;
-						bridge = index;
-					}
-				}
-			}
-			// A vertex met twice (an earlier bridge): the copy whose corner opens towards the hole.
-			for (size_t index = 0; index < ring.size(); ++index) {
-				if (ring[index] != ring[bridge])
-					continue;
-				const auto& previous = m_vertices[ring[(index + ring.size() - 1) % ring.size()]];
-				const auto& next = m_vertices[ring[(index + 1) % ring.size()]];
-				if (isInSector(previous, m_vertices[ring[index]], next, start)) {
-					bridge = index;
-					break;
-				}
-			}
-			std::vector<uint32_t> spliced;
-			spliced.reserve(ring.size() + hole.size() + 2);
-			spliced.insert(spliced.end(), ring.begin(), ring.begin() + static_cast<std::ptrdiff_t>(bridge) + 1);
-			for (size_t step = 0; step <= hole.size(); ++step)
-				spliced.push_back(hole[(holeStart + step) % hole.size()]);
-			spliced.push_back(ring[bridge]);
-			spliced.insert(spliced.end(), ring.begin() + static_cast<std::ptrdiff_t>(bridge) + 1, ring.end());
-			ring = std::move(spliced);
-		}
-		// Ear clipping of the counter-clockwise ring.
-		while (ring.size() > 3) {
-			bool clipped = false;
-			for (size_t index = 0; index < ring.size() && !clipped; ++index) {
-				const size_t previous = (index + ring.size() - 1) % ring.size();
-				const size_t next = (index + 1) % ring.size();
-				const auto& a = m_vertices[ring[previous]];
-				const auto& b = m_vertices[ring[index]];
-				const auto& c = m_vertices[ring[next]];
-				if (cross(a, b, c) <= g_epsilon)
-					continue;
-				bool isEar = true;
-				for (const auto other: ring) {
-					if (other == ring[previous] || other == ring[index] || other == ring[next])
-						continue;
-					if (isInTriangle(a, b, c, m_vertices[other])) {
-						isEar = false;
-						break;
-					}
-				}
-				if (!isEar)
-					continue;
-				m_triangles.push_back(
-						{.vertices = {ring[previous], ring[index], ring[next]}, .neighbours = {-1, -1, -1}});
-				ring.erase(ring.begin() + static_cast<std::ptrdiff_t>(index));
-				clipped = true;
-			}
-			if (clipped)
-				continue;
-			// No ear left (a flat or crossing outline): drop the flattest corner.
-			size_t flattest = 0;
-			float flatness = std::numeric_limits<float>::max();
-			for (size_t index = 0; index < ring.size(); ++index) {
-				const float area =
-						std::abs(cross(m_vertices[ring[(index + ring.size() - 1) % ring.size()]],
-									   m_vertices[ring[index]], m_vertices[ring[(index + 1) % ring.size()]]));
-				if (area < flatness) {
-					flatness = area;
-					flattest = index;
-				}
-			}
-			ring.erase(ring.begin() + static_cast<std::ptrdiff_t>(flattest));
-		}
-		if (ring.size() == 3 && cross(m_vertices[ring[0]], m_vertices[ring[1]], m_vertices[ring[2]]) > g_epsilon)
-			m_triangles.push_back({.vertices = {ring[0], ring[1], ring[2]}, .neighbours = {-1, -1, -1}});
+		for (const auto& hole: holes) std::ignore = bridgeHole(m_vertices, ring, hole);
+		clipEars(m_vertices, ring, m_triangles);
 	}
 	linkNeighbours();
 }
@@ -400,8 +426,7 @@ auto WalkMesh::findPath(const math::vec2& iFrom, const math::vec2& iTo, std::vec
 		return false;
 	}
 	std::vector<uint32_t> corridor;
-	for (int32_t triangle = static_cast<int32_t>(*goal); triangle >= 0;
-		 triangle = parent[static_cast<size_t>(triangle)])
+	for (auto triangle = static_cast<int32_t>(*goal); triangle >= 0; triangle = parent[static_cast<size_t>(triangle)])
 		corridor.push_back(static_cast<uint32_t>(triangle));
 	std::ranges::reverse(corridor);
 	// Portals as (left, right) seen when walking along the corridor.

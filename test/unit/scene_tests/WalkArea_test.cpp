@@ -84,7 +84,7 @@ TEST(WalkMesh, ConvexAndConcaveFloorsCoverTheirArea) {
 	EXPECT_EQ(square.getTriangles().size(), 2u);
 	EXPECT_NEAR(square.getArea(), 8.f, 1e-4f);
 	// An L, given clockwise: the winding does not matter.
-	std::vector<math::vec2> shape{{0.f, 0.f}, {0.f, 4.f}, {1.f, 4.f}, {1.f, 1.f}, {4.f, 1.f}, {4.f, 0.f}};
+	const std::vector<math::vec2> shape{{0.f, 0.f}, {0.f, 4.f}, {1.f, 4.f}, {1.f, 1.f}, {4.f, 1.f}, {4.f, 0.f}};
 	const auto ell = build({{.outline = shape, .holes = {}}});
 	EXPECT_EQ(ell.getTriangles().size(), 4u);
 	EXPECT_NEAR(ell.getArea(), 7.f, 1e-4f);
@@ -148,7 +148,7 @@ TEST(WalkMesh, ThePathTurnsAtTheCornersOfAHole) {
 }
 
 TEST(WalkMesh, ThePathRoundsTheInnerCornerOfAnEll) {
-	std::vector<math::vec2> shape{{0.f, 0.f}, {4.f, 0.f}, {4.f, 1.f}, {1.f, 1.f}, {1.f, 4.f}, {0.f, 4.f}};
+	const std::vector<math::vec2> shape{{0.f, 0.f}, {4.f, 0.f}, {4.f, 1.f}, {1.f, 1.f}, {1.f, 4.f}, {0.f, 4.f}};
 	const auto mesh = build({{.outline = shape, .holes = {}}});
 	std::vector<math::vec2> path;
 	ASSERT_TRUE(mesh.findPath({3.5f, 0.5f}, {0.5f, 3.5f}, path));
@@ -188,7 +188,7 @@ TEST(WalkMesh, RandomPathsStayOnAFloorWithHoles) {
 							  .holes = {rectangle(2.f, 2.f, 3.f, 7.f),
 										rectangle(5.f, 1.f, 6.f, 4.f),
 										{{5.f, 6.f}, {7.f, 7.f}, {5.5f, 8.5f}}}}});
-	std::mt19937 random{7};
+	std::mt19937 random{7};// NOLINT(bugprone-random-generator-seed): a fixed seed keeps the random paths reproducible
 	std::uniform_real_distribution<float> x{0.f, 12.f};
 	std::uniform_real_distribution<float> y{0.f, 10.f};
 	int found = 0;
