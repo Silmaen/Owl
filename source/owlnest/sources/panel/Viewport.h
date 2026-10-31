@@ -36,6 +36,7 @@ namespace owl::nest {
 
 class EditorLayer;
 class SceneDocument;
+class SequenceDocument;
 }// namespace owl::nest
 
 namespace owl::nest::panel {
@@ -550,19 +551,35 @@ private:
 
 	/**
 	 * @brief
-	 *  Draw the camera tracks of the selected `SequencePlayer`: the path of each shot and its keys, the open
-	 *  sequence document's edits included.
+	 *  Draw the camera tracks of the sequence previewed on this scene (else of the selected `SequencePlayer`): the
+	 *  path of each shot, its keys and the camera at the playhead of the sequencer.
 	 * @param[in] iScene The scene edited.
 	 */
 	void renderSequenceOverlay(const shared<scene::Scene>& iScene) const;
 
 	/**
 	 * @brief
-	 *  Add the pose of the viewport camera as a key at the end of the last camera track of the selected
-	 *  `SequencePlayer` (`sequence.add_key`), the duration stretched when needed.
-	 * @return False when the selection has no sequence or the command failed.
+	 *  The sequencer previewing on this viewport's scene document; the active one first.
+	 * @return The sequence document, or null.
+	 */
+	[[nodiscard]] auto findPreviewSequence() const -> SequenceDocument*;
+
+	/**
+	 * @brief
+	 *  Write the pose of the viewport camera as a key at the playhead of the sequencer (`sequence.add_key` or
+	 *  `sequence.set_key`); with no sequencer open, the one of the selected `SequencePlayer` opens.
+	 * @return False when there is no sequence or the command failed.
 	 */
 	auto addSequenceKeyFromView() -> bool;
+
+	/**
+	 * @brief
+	 *  Follow the sequence camera at the playhead while the sequencer looks through it; when it stops, the editor
+	 *  view stays at the last pose.
+	 * @param[in] iScene The scene edited.
+	 * @return True while the view looks through the sequence camera.
+	 */
+	auto updateSequenceView(const shared<scene::Scene>& iScene) -> bool;
 
 	/**
 	 * @brief
@@ -854,6 +871,10 @@ private:
 	CameraPilot m_pilot;
 	/// Copy of the piloted camera, sized to the viewport and placed at the entity: the camera the view renders with.
 	scene::SceneCamera m_pilotCamera;
+	/// Whether the view looks through the sequence camera of the sequencer.
+	bool m_sequenceView = false;
+	/// The sequence camera at the playhead, sized to the viewport: the camera the view renders with meanwhile.
+	scene::SceneCamera m_sequenceCamera;
 	/// Where the selected camera's view is drawn for the preview inset; made on the first preview.
 	shared<renderer::gpu::Framebuffer> m_previewFramebuffer;
 	/// Copy of the previewed camera, sized to the preview and placed at the entity.

@@ -9,11 +9,15 @@
 #pragma once
 
 #include "Document.h"
+#include "SequencePreview.h"
 #include "UndoManager.h"
 #include "commands/CommandRegistry.h"
 #include "commands/SequenceCommands.h"
 
+#include <core/UUID.h>
 #include <data/sequence/Sequence.h>
+#include <math/vectors.h>
+#include <scene/Entity.h>
 
 #include <cstddef>
 #include <filesystem>
@@ -24,6 +28,8 @@
 #include <vector>
 
 namespace owl::nest {
+
+class SceneDocument;
 
 /// Undo history of a sequence document.
 using SequenceUndoManager = UndoManager<data::sequence::Sequence>;
@@ -51,8 +57,10 @@ struct SequenceSelection {
 
 /**
  * @brief
- *  Tab editing a `.owlseq` cutscene: its tracks on a timeline, the keys in the properties panel and a top view of the
- *  camera path. Every edit runs a `sequence.*` command on the document's own history.
+ *  Sequencer of a `.owlseq` cutscene, docked under the scene: its tracks on a timeline, the sequence, track and key
+ *  settings in the properties panel. It previews on a scene document playing the sequence, whose viewport draws the
+ *  camera paths and can look through the sequence camera at the playhead. Every edit runs a `sequence.*` command on
+ *  the document's own history.
  */
 class SequenceDocument final : public Document, public commands::SequenceEditor {
 public:
@@ -141,36 +149,30 @@ public:
 
 	/**
 	 * @brief
-	 *  The document draws its own hierarchy and properties panels.
+	 *  The document draws its own properties panel.
 	 * @return True.
 	 */
 	[[nodiscard]] auto overridesGlobalPanels() const -> bool override { return true; }
 
 	/**
 	 * @brief
-	 *  Draw the track list.
+	 *  The hierarchy panel keeps showing the scene of the preview.
+	 * @return False.
 	 */
-	void renderHierarchyPanel() override;
+	[[nodiscard]] auto overridesHierarchyPanel() const -> bool override { return false; }
 
 	/**
 	 * @brief
-	 *  Draw the selected key or track.
+	 *  Draw the sequence, the selected track and the selected key.
 	 */
 	void renderPropertiesPanel() override;
 
 	/**
 	 * @brief
-	 *  Title of the hierarchy panel.
-	 * @return "Tracks".
-	 */
-	[[nodiscard]] auto hierarchyPanelTitle() const -> std::string override { return "Tracks"; }
-
-	/**
-	 * @brief
 	 *  Title of the properties panel.
-	 * @return "Key".
+	 * @return "Sequence".
 	 */
-	[[nodiscard]] auto propertiesPanelTitle() const -> std::string override { return "Key"; }
+	[[nodiscard]] auto propertiesPanelTitle() const -> std::string override { return "Sequence"; }
 
 	/**
 	 * @brief
@@ -335,6 +337,70 @@ public:
 	 */
 	auto addTrack(bool iCamera) -> bool;
 
+	// --- Preview -------------------------------------------------------------
+
+	/**
+	 * @brief
+	 *  Preview the sequence on a player of a scene document.
+	 * @param[in] iDocument Id of the scene document.
+	 * @param[in] iPlayer UUID of the entity whose `SequencePlayer` plays this file.
+	 */
+	void setPreview(core::UUID iDocument, core::UUID iPlayer);
+
+	/**
+	 * @brief
+	 *  Bind the preview to a player of this file when it has none: the preferred scene document first (its selected
+	 *  entity, then any player), then every other open scene document.
+	 * @param[in] iPreferred Scene document to look into first, may be null.
+	 * @param[in] iSelected Entity selected in it, may be invalid.
+	 */
+	void resolvePreview(SceneDocument* iPreferred, const scene::Entity& iSelected);
+
+	/**
+	 * @brief
+	 *  The scene document of the preview, when it is still open.
+	 * @return The document, or null.
+	 */
+	[[nodiscard]] auto getPreviewDocument() const -> SceneDocument*;
+
+	/**
+	 * @brief
+	 *  The player of the preview, when it still plays this file.
+	 * @return The entity, or an invalid entity.
+	 */
+	[[nodiscard]] auto getPreviewPlayer() const -> scene::Entity;
+
+	/**
+	 * @brief
+	 *  Whether the preview changed since the last call, so the editor panels follow it.
+	 * @return True once after a change.
+	 */
+	[[nodiscard]] auto consumePreviewChanged() -> bool { return std::exchange(m_previewChanged, false); }
+
+	/**
+	 * @brief
+	 *  Whether the viewport of the preview looks through the sequence camera at the playhead.
+	 * @return True while it does.
+	 */
+	[[nodiscard]] auto isLookingThrough() const -> bool { return m_lookThrough; }
+
+	/**
+	 * @brief
+	 *  Look through the sequence camera in the viewport of the preview, or give the view back.
+	 * @param[in] iLook Whether to look through it.
+	 */
+	void setLookingThrough(const bool iLook) { m_lookThrough = iLook; }
+
+	/**
+	 * @brief
+	 *  Write a pose as a key at the playhead of the selected camera track (a camera track is added when there is
+	 *  none): the key already there changes, else one is added.
+	 * @param[in] iPosition Position in the space of the keys.
+	 * @param[in] iRotation Rotation in the space of the keys, in radians.
+	 * @return True when the key is written.
+	 */
+	auto setKeyAtPlayhead(const math::vec3& iPosition, const math::vec3& iRotation) -> bool;
+
 	// --- Tab -----------------------------------------------------------------
 
 	/**
@@ -453,9 +519,9 @@ private:
 
 	/**
 	 * @brief
-	 *  Draw the top view of the camera path, the camera at the playhead.
+	 *  Draw the settings of the whole sequence: duration and preview.
 	 */
-	void renderPathView();
+	void renderSequenceSettings();
 
 	/**
 	 * @brief
@@ -530,6 +596,16 @@ private:
 	bool m_typing{false};
 	/// The duration field is being dragged: the next edit merges.
 	bool m_durationTyping{false};
+	/// Scene document of the preview.
+	core::UUID m_previewDocument{0};
+	/// Entity playing the sequence in it.
+	core::UUID m_previewPlayer{0};
+	/// The preview changed: the editor panels follow it.
+	bool m_previewChanged{false};
+	/// Whether the viewport of the preview looks through the sequence camera.
+	bool m_lookThrough{false};
+	/// Seconds before the next check of the preview.
+	float m_previewSearch{0.f};
 	/// Whether the tab is open.
 	bool m_pOpen{true};
 	/// Whether the tab had the focus last frame.

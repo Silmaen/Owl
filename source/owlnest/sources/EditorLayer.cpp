@@ -78,6 +78,9 @@ EditorLayer::EditorLayer() : Layer("EditorLayer"), m_cameraController{1280.0f / 
 
 auto EditorLayer::activeSceneDocument() const -> SceneDocument* {
 	auto* doc = m_documents.getActive();
+	// The sequencer previews on a scene, which keeps updating and drawing under it.
+	if (doc != nullptr && doc->type() == DocumentType::Sequence)
+		return static_cast<const SequenceDocument*>(doc)->getPreviewDocument();
 	if (doc == nullptr || doc->type() != DocumentType::Scene)
 		return nullptr;
 	return static_cast<SceneDocument*>(doc);
@@ -438,7 +441,7 @@ void EditorLayer::renderCloseDocumentModal() {
 }
 
 void EditorLayer::deleteSelection() {
-	if (getState() != State::Edit)
+	if (getState() != State::Edit || m_documents.getActive() != activeSceneDocument())
 		return;
 	const auto ent = getSelectedEntity();
 	if (!ent)
@@ -825,6 +828,9 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 		m_lastAutosave = std::chrono::steady_clock::now();
 
 	m_documents.updateSceneless(iTimeStep);
+	if (auto* active = m_documents.getActive(); active != nullptr && active->type() == DocumentType::Sequence &&
+												static_cast<SequenceDocument*>(active)->consumePreviewChanged())
+		syncActiveDocumentPanels();
 
 	// Queued MCP requests run here, on the main thread, before the scene of the frame updates.
 	updateMcp();
@@ -1568,7 +1574,7 @@ void EditorLayer::refreshWindowTitle() {
 
 void EditorLayer::onDuplicateEntity() {
 	auto* doc = activeSceneDocument();
-	if (doc == nullptr || doc->state() != SceneDocument::State::Edit)
+	if (doc == nullptr || doc != m_documents.getActive() || doc->state() != SceneDocument::State::Edit)
 		return;
 
 	if (const scene::Entity selectedEntity = m_sceneHierarchy.getSelectedEntity(); selectedEntity)

@@ -645,8 +645,11 @@ auto EditorLayer::openDialogue(const std::filesystem::path& iPath) -> commands::
 void EditorLayer::openSequenceFile(const std::filesystem::path& iPath) {
 	if (iPath.empty() || !exists(iPath))
 		return;
+	auto* sceneDocument = activeSceneDocument();
+	const scene::Entity selected = getSelectedEntity();
 	for (const auto& docPtr: m_documents.list()) {
 		if (docPtr && docPtr->type() == DocumentType::Sequence && docPtr->filePath() == iPath) {
+			static_cast<SequenceDocument*>(docPtr.get())->resolvePreview(sceneDocument, selected);
 			m_documents.setActive(docPtr.get());
 			docPtr->requestFocus();
 			syncActiveDocumentPanels();
@@ -660,6 +663,7 @@ void EditorLayer::openSequenceFile(const std::filesystem::path& iPath) {
 		doc->onDetach();
 		return;
 	}
+	doc->resolvePreview(sceneDocument, selected);
 	auto* raw = m_documents.add(std::move(doc));
 	m_documents.setActive(raw);
 	syncActiveDocumentPanels();
