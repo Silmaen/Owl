@@ -19,6 +19,7 @@
 #include "renderer/Renderer2D.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
+#include "scene/SequencePlayback.h"
 #include "scene/component/components.h"
 #include "scene/nav/NavWorld.h"
 #include "script/ScriptInstance.h"
@@ -165,6 +166,9 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.physics", SystemPhase::Physics, &updatePhysics, &tickPhysics);
 	add("owl.drift", SystemPhase::PostPhysics, &updateDrifts);
 	add("owl.follow_target", SystemPhase::PostPhysics, &updateFollowTargets);
+	add("owl.sequences", SystemPhase::PostPhysics, [](Scene& ioScene, const SystemContext& iContext) -> void {
+		updateSequencePlayers(ioScene, iContext.timeStep.getSeconds());
+	});
 	add("owl.animation", SystemPhase::PostPhysics, [](Scene& ioScene, const SystemContext& iContext) -> void {
 		ioScene.updateAnimators(iContext.timeStep.getSeconds(), false);
 	});

@@ -34,3 +34,4 @@ An `entity` is the integer UUID of an entity (`entity_id` in its own script, `sc
 | [Splines and data tables](lua-api-data.md)          | `spline`    | Splines sampled by distance, and the entities following them.                                                        |
 |                                                     | `datatable` | Typed records of the `.owltable` data tables, by row key and column.                                                 |
 | [Dialogues](lua-api-dialogue.md)                    | `dialogue`  | Conversations over the `.owldlg` dialogues: lines, choices, Lua conditions and actions.                              |
+| [Cutscene sequences](lua-api-sequence.md)           | `sequence`  | Cutscenes of the `.owlseq` sequences: play, stop and seek a `SequencePlayer`.                                        |

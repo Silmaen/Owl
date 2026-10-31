@@ -11,6 +11,7 @@
 #include "core/Core.h"
 #include "data/dialogue/DialogueLibrary.h"
 #include "data/localisation/Localisation.h"
+#include "data/sequence/SequenceLibrary.h"
 #include "data/table/DataTableLibrary.h"
 #include "input/ActionMap.h"
 #include "scene/SimulationClock.h"
@@ -173,6 +174,13 @@ public:
 
 	/**
 	 * @brief
+	 *  The `.owlseq` sequences read so far, shared by the sequence players of every scene.
+	 * @return The sequence library.
+	 */
+	[[nodiscard]] auto getSequences() -> data::sequence::SequenceLibrary& { return m_sequences; }
+
+	/**
+	 * @brief
 	 *  HUD asset of the scenes that name none (the project's `DefaultHud`).
 	 * @return The asset path, empty for no default HUD.
 	 */
@@ -274,6 +282,8 @@ private:
 	data::table::DataTableLibrary m_dataTables;
 	/// Dialogues and conversations of the scripts.
 	data::dialogue::DialogueLibrary m_dialogues;
+	/// Cutscene sequences of the players.
+	data::sequence::SequenceLibrary m_sequences;
 	/// Loaded HUD scenes (declared last: they hold GPU resources and are destroyed first).
 	uniq<scene::HudLibrary> mp_hudLibrary;
 };

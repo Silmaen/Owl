@@ -4191,6 +4191,11 @@ Scene::onComponentAdded<component::SplineFollower>([[maybe_unused]] const Entity
 												   [[maybe_unused]] component::SplineFollower& ioComponent) {}
 
 template<>
+OWL_API void
+Scene::onComponentAdded<component::SequencePlayer>([[maybe_unused]] const Entity& iEntity,
+												   [[maybe_unused]] component::SequencePlayer& ioComponent) {}
+
+template<>
 OWL_API void Scene::onComponentAdded<component::Drift>([[maybe_unused]] const Entity& iEntity,
 													   [[maybe_unused]] component::Drift& ioComponent) {}
 
