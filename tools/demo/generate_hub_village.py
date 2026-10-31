@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Build ``tilemaps/world_map.owltilemap``: the hub of the Engine Demo, a small RPG village of 64 x 40 cells.
+"""Build ``tilemaps/world_map.owltilemap``: the hub of the Engine Demo, a small RPG village of 64 x 40 cells, and
+``tilemaps/menu_village.owltilemap``, the strip of the village in front of the main menu.
 
 The map is centred on the entity ``WorldTilemap`` at (32, -20), so the cell (c, r) (column, row from the top) has its
 centre at the world position (c + 0.5, -r - 0.5). Layers: ``ground`` (grass, roads, plaza, fields, the river and its
@@ -358,17 +359,17 @@ def fnv1a(data: bytes) -> int:
     return value
 
 
-def write(ground: Grid, objects: Grid, walkable: Grid) -> None:
-    layers = (ground, objects, walkable)
+def write(name: str, layers: tuple[tuple[str, Grid, bool], ...], width: int = WIDTH, height: int = HEIGHT) -> None:
+    """Write ``tilemaps/<name>.owltilemap``: each layer is (name, grid, visible)."""
     body = b"OWLTCHNK" + struct.pack("<II", CHUNK, len(layers))
-    for layer in layers:
+    for _, layer, _ in layers:
         chunks = []
-        for cy in range((HEIGHT + CHUNK - 1) // CHUNK):
-            for cx in range((WIDTH + CHUNK - 1) // CHUNK):
+        for cy in range((height + CHUNK - 1) // CHUNK):
+            for cx in range((width + CHUNK - 1) // CHUNK):
                 terrain = []
                 for k in range(CHUNK * CHUNK):
                     c, r = cx * CHUNK + k % CHUNK, cy * CHUNK + k // CHUNK
-                    terrain.append(layer.get(c, r) if c < WIDTH and r < HEIGHT else EMPTY)
+                    terrain.append(layer.get(c, r) if c < width and r < height else EMPTY)
                 if all(tile == EMPTY for tile in terrain):
                     continue
                 chunks.append(struct.pack("<II", cx, cy) + struct.pack(f"<{CHUNK * CHUNK}H", *terrain)
@@ -376,10 +377,50 @@ def write(ground: Grid, objects: Grid, walkable: Grid) -> None:
         body += struct.pack("<I", len(chunks)) + b"".join(chunks)
     body += b"\x00"
     payload = body + struct.pack("<I", fnv1a(body))
-    header = (f"Tilemap: world_map\nFormatVersion: 3\ntilesetPath: tilesets/town_atlas.owltileset\nwidth: {WIDTH}\n"
-              f"height: {HEIGHT}\ncellSize: 1\nlayers:\n  - name: ground\n  - name: objects\n  - name: walkable\n"
-              f"    visible: false\npayloadBytes: {len(payload)}\n")
-    (PROJECT / "tilemaps" / "world_map.owltilemap").write_bytes(header.encode() + b"...\n" + payload)
+    names = "".join(f"  - name: {layer}\n" + ("" if visible else "    visible: false\n") for layer, _, visible in layers)
+    header = (f"Tilemap: {name}\nFormatVersion: 3\ntilesetPath: tilesets/town_atlas.owltileset\nwidth: {width}\n"
+              f"height: {height}\ncellSize: 1\nlayers:\n{names}payloadBytes: {len(payload)}\n")
+    (PROJECT / "tilemaps" / f"{name}.owltilemap").write_bytes(header.encode() + b"...\n" + payload)
+
+
+MENU_WIDTH, MENU_HEIGHT = 40, 4
+
+
+class Strip(Grid):
+    """A grid of the size of the village strip of the main menu."""
+
+    def __init__(self, fill: int) -> None:
+        self.cells = [[fill] * MENU_WIDTH for _ in range(MENU_HEIGHT)]
+
+    def put(self, c: int, r: int, tile: int) -> None:
+        if 0 <= c < MENU_WIDTH and 0 <= r < MENU_HEIGHT:
+            self.cells[r][c] = tile
+
+
+def menu_strip() -> tuple[Grid, Grid]:
+    """The village of the main menu, 40 x 4 cells: a row of houses, trees, lamps and the farm on a grassy street,
+    open on the sky above the roofs (the 3D tavern of the menu shows through)."""
+    rng = random.Random(7)
+    ground, objects = Strip(EMPTY), Strip(EMPTY)
+    for c in range(MENU_WIDTH):
+        ground.put(c, 3, rng.choices((GRASS, TUFTS, FLOWERS), (70, 24, 6))[0])
+        ground.put(c, 2, rng.choices((GRASS, TUFTS), (80, 20))[0])
+    houses = [rows for _, rows in HOUSES.values()] + [rows for _, rows in HOMES]
+    for index, c0 in enumerate((2, 8, 16, 22, 30, 35)):
+        rows = houses[index % len(houses)]
+        for dr, row in enumerate(rows):
+            for dc, tile in enumerate(row):
+                objects.put(c0 + dc, dr, tile)
+    for c in (1, 7, 15, 21, 29):
+        objects.put(c, 2, LAMP)
+    for c in (5, 6, 12, 26, 27, 39):
+        objects.put(c, 2, rng.choice(TREES))
+    for c, tile in ((11, FARM + 83), (13, FARM + 96), (14, FARM + 85), (19, FARM + 121), (20, FARM + 120),
+                    (25, FARM + 83), (33, SIGN), (34, FARM + 97), (0, FARM + 39)):
+        objects.put(c, 2, tile)
+    for c in range(11, 15):
+        objects.put(c, 3, FARM_CROPS["wheat" if c % 2 else "cabbage"])
+    return ground, objects
 
 
 def reachable(walkable: Grid, start: tuple[int, int]) -> set[tuple[int, int]]:
@@ -421,7 +462,9 @@ def main() -> None:
     edges = {(c, r) for c in range(WIDTH) for r in (0, HEIGHT - 1)} | {(c, r) for r in range(HEIGHT) for c in (0, WIDTH - 1)}
     open_edges = sorted(cell for cell in edges & reachable(passable, START_CELL) if ground.get(*cell) not in WATER)
     print(f"open map edges   {open_edges if open_edges else 'none'}")
-    write(ground, objects, walkable)
+    write("world_map", (("ground", ground, True), ("objects", objects, True), ("walkable", walkable, False)))
+    strip_ground, strip_objects = menu_strip()
+    write("menu_village", (("ground", strip_ground, True), ("objects", strip_objects, True)), MENU_WIDTH, MENU_HEIGHT)
 
 
 if __name__ == "__main__":

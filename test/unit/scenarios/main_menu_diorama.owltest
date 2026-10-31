@@ -1,0 +1,16 @@
+# The main menu is a live diorama: the 3D tavern behind (mesh layer), the 2D village in front (screen-space `ui` layer),
+# both under the hour of the `DayNightCycle` of MenuSky. At ten at night the lamps of the village light up; Start
+# leads to the world map, the only way into the demo.
+scene: ../../../engine_demo/scenes/main_menu.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: menu_night, equals: 0}
+  - expect: {entity: MenuVillage, exists: true}
+  - expect: {entity: TavernFront, exists: true}
+  - {command: component.set, args: {entity: MenuSky, component: DayNightCycle, values: {timeOfDay: 22.0}}}
+  - frames: 10
+  - expect: {gamestate: menu_night, equals: 1}
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 90
+  - expect: {entity: Player, exists: true}
+  - expect: {entity: MenuVillage, exists: false}

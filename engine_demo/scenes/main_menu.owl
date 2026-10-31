@@ -1,64 +1,562 @@
 Scene: untitled
 FormatVersion: 7
+EnabledRenderers:
+  - Name: mesh_world
+    Enabled: true
+  - Name: ui
+    Enabled: true
+    Overrides:
+      Space: Screen
+      ReferenceHeight: 720
+  - Name: world
+    Enabled: false
 Entities:
   - Entity: 2720930421051253109
     Tag:
       tag: MainCamera
     Transform:
-      translation: [0, 0, 5]
-      rotation: [0, 0, 0]
+      translation: [0.5, 2.2, 10.5]
+      rotation: [0.04, 0, 0]
       scale: [1, 1, 1]
     Camera:
       camera:
-        projectionType: Orthographic
-        perspectiveFOV: 0.7853982
-        perspectiveNear: 0.01
-        perspectiveFar: 1000
+        projectionType: Perspective
+        perspectiveFOV: 0.75
+        perspectiveNear: 0.1
+        perspectiveFar: 200
         orthographicSize: 10
         orthographicNear: -1
         orthographicFar: 10
+        toneMapping: Aces
+        postProcess: {ev100: 14, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.06, bloomScatter: 0.7}
       primary: true
       fixedAspectRatio: false
     Visibility:
       gameVisible: true
-  - Entity: 11802913991630649933
+  - Entity: 2720930421051300001
     Tag:
-      tag: Background
+      tag: MenuSun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.7, 0.6, 0]
+      scale: [1, 1, 1]
+    Light: {type: Directional, enabled: true, color: [1, 0.96, 0.9], intensity: 100000, castShadows: true, shadowDistance: 30, cascadeCount: 2, shadowResolution: 2048, shadowBias: 1.5}
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300002
+    Tag:
+      tag: MenuSky
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Environment: {hdri: "", ambient: [1, 1, 1], intensity: 9000, rotation: 0, showSky: true}
+    ProceduralSky: {enabled: true, sunDirection: [0.3, 0.8, -0.5], turbidity: 3, groundColor: [0.3, 0.34, 0.26], nightColor: [0.42, 0.48, 0.66], nightBrightness: 0.02, stars: 1, discSize: 2.5, resolution: 256}
+    DayNightCycle: {enabled: true, timeOfDay: 16.5, dayLength: 90, azimuth: 20, maxElevation: 50, sun: 2720930421051300001, sunIlluminance: 100000, sunColor: [1, 0.96, 0.9], sunsetColor: [1, 0.55, 0.3], moonIlluminance: 12000, moonColor: [0.62, 0.72, 1], nightExposure: 0}
+    Light2D: {type: Ambient, enabled: true, color: [1, 1, 1], intensity: 1, radius: 5, falloff: 2, height: 1, castShadows: false}
+    LuaScript:
+      scriptPath: gid:c8c56d3674c81cbd:scripts/hub/hub_daynight.lua
+      properties:
+        - {name: lights_prefix, type: string, value: MenuLight_}
+        - {name: mood_key, type: string, value: ''}
+        - {name: probe, type: string, value: menu}
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300003
+    Tag:
+      tag: MenuYard
     Transform:
       translation: [0, 0, -1]
       rotation: [0, 0, 0]
-      scale: [20, 15, 1]
-    BackgroundTexture:
-      mode: 0
-      type: 0
-      color: [0.078431375, 0.078431375, 0.18039216, 1]
-      topColor: [0.8, 0.9, 1, 1]
+      scale: [3, 1, 2]
+    MeshRenderer:
+      mesh: gid:8e225694fa77a686:meshes/tavern/floor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:b1ad9e8bd80c7116:materials/stone_floor.owlmat
+    RendererTag:
+      Name: mesh_world
     Visibility:
       gameVisible: true
-  - Entity: 2751552967090079597
+  - Entity: 2720930421051300004
     Tag:
-      tag: DecoCircle1
+      tag: TavernFront
     Transform:
-      translation: [-3, -1, 0]
+      translation: [0, 0, 0]
       rotation: [0, 0, 0]
-      scale: [3, 3, 1]
-    CircleRenderer:
-      color: [0.15, 0.25, 0.5, 0.4]
-      thickness: 0.2
-      fade: 0.05
+      scale: [1, 1.1, 1]
+    MeshRenderer:
+      mesh: gid:43efc39542b809f5:meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:8512b9bf427e808b:materials/plaster_wall.owlmat
+    RendererTag:
+      Name: mesh_world
     Visibility:
       gameVisible: true
-  - Entity: 3410311073425440625
+  - Entity: 2720930421051300005
     Tag:
-      tag: DecoCircle2
+      tag: TavernBack
     Transform:
-      translation: [4, 1.5, 0]
+      translation: [0, 0, -6]
       rotation: [0, 0, 0]
-      scale: [2, 2, 1]
-    CircleRenderer:
-      color: [0.4, 0.2, 0.5, 0.3]
-      thickness: 0.15
-      fade: 0.05
+      scale: [1, 1.1, 1]
+    MeshRenderer:
+      mesh: gid:43efc39542b809f5:meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:8512b9bf427e808b:materials/plaster_wall.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300006
+    Tag:
+      tag: TavernLeft
+    Transform:
+      translation: [-4.5, 0, -3]
+      rotation: [0, 1.5708, 0]
+      scale: [0.68, 1.1, 1]
+    MeshRenderer:
+      mesh: gid:43efc39542b809f5:meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:8512b9bf427e808b:materials/plaster_wall.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300007
+    Tag:
+      tag: TavernRight
+    Transform:
+      translation: [4.5, 0, -3]
+      rotation: [0, 1.5708, 0]
+      scale: [0.68, 1.1, 1]
+    MeshRenderer:
+      mesh: gid:43efc39542b809f5:meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:8512b9bf427e808b:materials/plaster_wall.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300008
+    Tag:
+      tag: RoofFront
+    Transform:
+      translation: [0, 3.2, -1.4]
+      rotation: [-0.95, 0, 0]
+      scale: [1.12, 1.15, 0.5]
+    MeshRenderer:
+      mesh: gid:43efc39542b809f5:meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300009
+    Tag:
+      tag: RoofBack
+    Transform:
+      translation: [0, 3.2, -4.6]
+      rotation: [0.95, 0, 0]
+      scale: [1.12, 1.15, 0.5]
+    MeshRenderer:
+      mesh: gid:43efc39542b809f5:meshes/tavern/wall.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300010
+    Tag:
+      tag: TavernPost0
+    Transform:
+      translation: [-4.4, 0, 0.25]
+      rotation: [0, 0, 0]
+      scale: [1, 1.1, 1]
+    MeshRenderer:
+      mesh: gid:16a8caccbc74c159:meshes/tavern/post.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300011
+    Tag:
+      tag: TavernPost1
+    Transform:
+      translation: [-1.4, 0, 0.25]
+      rotation: [0, 0, 0]
+      scale: [1, 1.1, 1]
+    MeshRenderer:
+      mesh: gid:16a8caccbc74c159:meshes/tavern/post.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300012
+    Tag:
+      tag: TavernPost2
+    Transform:
+      translation: [1.6, 0, 0.25]
+      rotation: [0, 0, 0]
+      scale: [1, 1.1, 1]
+    MeshRenderer:
+      mesh: gid:16a8caccbc74c159:meshes/tavern/post.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300013
+    Tag:
+      tag: TavernPost3
+    Transform:
+      translation: [4.4, 0, 0.25]
+      rotation: [0, 0, 0]
+      scale: [1, 1.1, 1]
+    MeshRenderer:
+      mesh: gid:16a8caccbc74c159:meshes/tavern/post.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300014
+    Tag:
+      tag: TavernWindow0
+    Transform:
+      translation: [-2.8, 1.7, 0.21]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:cfb07a7b6fae6234:meshes/tavern/window_frame.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300015
+    Tag:
+      tag: TavernPane0
+    Transform:
+      translation: [-2.8, 1.7, 0.22]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:b1fa8c89e4ab2fab:meshes/tavern/window_pane.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:361e4f4f87825ad7:materials/lit_window.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300016
+    Tag:
+      tag: TavernWindow1
+    Transform:
+      translation: [2.8, 1.7, 0.21]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:cfb07a7b6fae6234:meshes/tavern/window_frame.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300017
+    Tag:
+      tag: TavernPane1
+    Transform:
+      translation: [2.8, 1.7, 0.22]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:b1fa8c89e4ab2fab:meshes/tavern/window_pane.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:361e4f4f87825ad7:materials/lit_window.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300018
+    Tag:
+      tag: TavernDoor
+    Transform:
+      translation: [0.1, 1.05, 0.22]
+      rotation: [1.5708, 0, 0]
+      scale: [1.3, 1, 1.5]
+    MeshRenderer:
+      mesh: gid:4737c4c847bb73ad:meshes/tavern/trapdoor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300019
+    Tag:
+      tag: TavernSconce
+    Transform:
+      translation: [1.0, 2.0, 0.25]
+      rotation: [0, 1.5708, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:78bb303e4c2374f5:meshes/tavern/wall_sconce.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:f9f1a050f98c61fa:materials/wrought_iron.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300020
+    Tag:
+      tag: TavernLantern
+    Transform:
+      translation: [1.0, 2.1, 0.6]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.66, 0.34]
+      intensity: 5000
+      range: 8
+    LightFlicker:
+      style: Candle
+      amplitude: 0.12
+      seed: 4
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300021
+    Tag:
+      tag: TavernBarrel0
+    Transform:
+      translation: [-3.6, 0, 0.9]
+      rotation: [0, 0.0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:04dd2abdfcec9e7a:meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300022
+    Tag:
+      tag: TavernBarrel1
+    Transform:
+      translation: [-3.0, 0, 1.1]
+      rotation: [0, 0.7, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:04dd2abdfcec9e7a:meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300023
+    Tag:
+      tag: TavernBarrel2
+    Transform:
+      translation: [3.4, 0, 0.9]
+      rotation: [0, 1.4, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:04dd2abdfcec9e7a:meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300024
+    Tag:
+      tag: TavernLogs
+    Transform:
+      translation: [2.6, 0, 1.0]
+      rotation: [0, 0.3, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:f4c4425df21a866f:meshes/tavern/log_stack.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300025
+    Tag:
+      tag: MenuVillage
+    Transform:
+      translation: [640, 96, 0]
+      rotation: [0, 0, 0]
+      scale: [48, 48, 1]
+    Tilemap:
+      tilemapPath: gid:6934bd8f99936cd5:tilemaps/menu_village.owltilemap
+    RendererTag:
+      Name: ui
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300026
+    Tag:
+      tag: MenuLight_1
+    Transform:
+      translation: [-248.0, 91.19999999999999, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.1, radius: 150, falloff: 1.5, height: 1, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300027
+    Tag:
+      tag: MenuLight_2
+    Transform:
+      translation: [40.0, 91.19999999999999, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.1, radius: 150, falloff: 1.5, height: 1, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300028
+    Tag:
+      tag: MenuLight_3
+    Transform:
+      translation: [424.0, 91.19999999999999, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.1, radius: 150, falloff: 1.5, height: 1, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300029
+    Tag:
+      tag: MenuLight_4
+    Transform:
+      translation: [712.0, 91.19999999999999, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.1, radius: 150, falloff: 1.5, height: 1, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300030
+    Tag:
+      tag: MenuLight_5
+    Transform:
+      translation: [1096.0, 91.19999999999999, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.1, radius: 150, falloff: 1.5, height: 1, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300031
+    Tag:
+      tag: MenuLight_6
+    Transform:
+      translation: [-152.0, 67.19999999999999, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 90, falloff: 1.6, height: 1, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300032
+    Tag:
+      tag: MenuLight_7
+    Transform:
+      translation: [136.0, 67.19999999999999, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 90, falloff: 1.6, height: 1, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300033
+    Tag:
+      tag: MenuLight_8
+    Transform:
+      translation: [520.0, 67.19999999999999, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 90, falloff: 1.6, height: 1, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300034
+    Tag:
+      tag: MenuLight_9
+    Transform:
+      translation: [808.0, 67.19999999999999, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 90, falloff: 1.6, height: 1, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300035
+    Tag:
+      tag: MenuLight_10
+    Transform:
+      translation: [1192.0, 67.19999999999999, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 90, falloff: 1.6, height: 1, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 2720930421051300036
+    Tag:
+      tag: MenuLight_11
+    Transform:
+      translation: [1432.0, 67.19999999999999, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 90, falloff: 1.6, height: 1, castShadows: false}
     Visibility:
       gameVisible: true
   - Entity: 827593881302582438
@@ -92,9 +590,10 @@ Entities:
       anchorMin: [0, 1]
       anchorMax: [0, 1]
       pivot: [0, 1]
-      size: [0.32, 0.11]
+      size: [0.22, 0.11]
       sizeUnit: [ScreenWidth, ScreenHeight]
-      offset: [16, -16]
+      offset: [16, -0.28]
+      offsetUnit: [Pixels, ScreenHeight]
     UiLayout:
       arrangement: Column
       crossAlign: Start
@@ -119,7 +618,7 @@ Entities:
       offset: [0, 0]
     UiText:
       text: ''
-      color: [0.6, 0.6, 0.7, 0.8]
+      color: [1, 1, 1, 0.9]
       fontSize: 24
       horizontalAlignment: Left
       verticalAlignment: Middle

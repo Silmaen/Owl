@@ -1,10 +1,10 @@
 -- Day and night of the hub: the `DayNightCycle` of this entity keeps the hour (a whole day in `dayLength` seconds),
 -- this script turns it into 2D light. The `Ambient` `Light2D` of the entity tints the whole village, white by day,
 -- orange at dusk and dawn, a moonlit blue at night; the lamps and windows (`NightLight_<n>` point lights) are lit from
--- dusk to dawn. The adaptive music of the hub follows the `hub_mood` game state key: `calm` by day, `night` at night,
--- `danger` while the hero is in the cave.
+-- dusk to dawn. The adaptive music of the hub follows the `mood_key` game state key: `calm` by day, `night` at night,
+-- `danger` while the hero is in the cave. The village of the main menu runs the same script (no cave, no music).
 -- Demonstrates: entity.get_time_of_day, entity.set_light_color / set_light_intensity / set_light_enabled on Light2D,
--- an AdaptiveMusic state set from Lua through the game state, gamestate keys as probes (`hub_hour`, `hub_night`).
+-- an AdaptiveMusic state set from Lua through the game state, gamestate keys as probes (`<probe>_hour`, `<probe>_night`).
 
 properties = {
     { name = "lights_prefix", type = "string", default = "NightLight_" },
@@ -12,6 +12,8 @@ properties = {
     { name = "player", type = "string", default = "Player" },
     { name = "dusk", type = "float", default = 18.5, min = 0, max = 24 },  -- lamps lit from here...
     { name = "dawn", type = "float", default = 6.0, min = 0, max = 24 },   -- ...until here
+    { name = "mood_key", type = "string", default = "hub_mood" },  -- empty: no music state
+    { name = "probe", type = "string", default = "hub" },
 }
 
 -- Colour and intensity of the ambient light along the day: hour, r, g, b, intensity (linear between two keys).
@@ -45,7 +47,7 @@ local function ambient_at(hour)
 end
 
 local function in_cave()
-    if cave_id == 0 or player_id == 0 then
+    if cave_id == 0 or player_id == 0 then  -- a scene without them (the main menu)
         return false
     end
     local px, py = transform.get_position(player_id)
@@ -79,12 +81,15 @@ function on_update(_)
         for _, id in ipairs(lights) do
             entity.set_light_enabled(id, night)
         end
-        gamestate.set("hub_night", night)
+        gamestate.set(probe .. "_night", night)
     end
-    gamestate.set("hub_hour", math.floor(hour * 10) / 10)
+    gamestate.set(probe .. "_hour", math.floor(hour * 10) / 10)
+    if mood_key == "" then
+        return
+    end
     local wanted = in_cave() and "danger" or (night and "night" or "calm")
     if wanted ~= mood then
         mood = wanted
-        gamestate.set("hub_mood", mood)
+        gamestate.set(mood_key, mood)
     end
 end

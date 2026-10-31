@@ -596,6 +596,22 @@ INSTANTIATE_TEST_SUITE_P(Shipped, GameExportEndToEnd, testing::ValuesIn(shippedP
 							 return iInfo.param.filename().string();
 						 });
 
+TEST(GameExportCoverage, EveryDemoSceneHasAScenario) {
+	// Every scene of the Engine Demo (the world partition cells apart) is the `scene:` of at least one scenario.
+	const auto root = test::getRootPath();
+	std::string scenarios;
+	for (const auto& entry: std::filesystem::directory_iterator(root / "test" / "unit" / "scenarios")) {
+		if (entry.path().extension() == ".owltest")
+			scenarios += readFile(entry.path());
+	}
+	for (const auto& entry: std::filesystem::directory_iterator(root / "engine_demo" / "scenes")) {
+		if (entry.path().extension() != ".owl")
+			continue;
+		const auto line = std::format("scene: ../../../engine_demo/scenes/{}\n", entry.path().filename().string());
+		EXPECT_NE(scenarios.find(line), std::string::npos) << "no scenario starts on " << entry.path().filename();
+	}
+}
+
 TEST(GameExportCoverage, EverySampleGameHasAScenario) {
 	const auto root = test::getRootPath();
 	for (const auto& project: shippedProjects()) {
