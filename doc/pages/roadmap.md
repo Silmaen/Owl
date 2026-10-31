@@ -54,6 +54,8 @@ below, validated and proven through the hardening phase ([details](design/stable
 - ![Planned][planned] Linux, Windows, Android and the Web flawless, each exported from every Owl Nest host
 - ![Planned][planned] Zero known crash
 - ![Planned][planned] Performance budgets held on every target platform
+- ![Planned][planned] Every game of the sample-game pool possible with the engine, built or not
+  ([Pool](design/sample-games.md#sample-games-pool))
 
 ## v0.9.0 -- Expected 2026-12-15
 
@@ -154,7 +156,7 @@ deterministic simulation and replay, Jolt, gravity fields.
 - ![Planned][planned] 3D physics with Jolt on the shared physics interface ([Physics API](design/physics-api.md))
 - ![Planned][planned] Articulated bodies: compound bodies rebuilt at runtime, breakable joints, mass recomputed,
   sub-stepping ([Physics API](design/physics-api.md))
-- ![Planned][planned] Gravity fields (uniform, point, spherical) with trajectory prediction
+- ![Planned][planned] Gravity fields (uniform, point, spherical) in 2D and 3D, with trajectory prediction
   ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Time warp: scaled clock, bodies handed to analytic propagation and back
   ([Large worlds](design/large-worlds.md))
@@ -243,8 +245,16 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
 - ![Done][done] Mipmapped pixel-art atlases: sharp texels up close, filtered mips far away, no bleeding between tiles,
   for the voxel, raycast and tilemap atlases ([2D](design/2d-complete.md#pixel-art-atlases))
 - ![Done][done] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
+- ![Planned][planned] Engine Demo revamp: every scene reached from the world map and back, the isolated scenes folded
+  into the hub and the tavern, an observatory, a live main menu ([Engine Demo](design/sample-games.md#sample-games-demo-revamp))
+- ![Planned][planned] 2D walkable areas: polygons with holes, paths across them, scale by depth, edited in Owl Nest
+  ([2D](design/2d-complete.md#walkable-areas-2d))
+- ![Planned][planned] Rail shooter sample game ([Rail shooter](design/sample-games.md#sample-games-rail-shooter))
+- ![Planned][planned] Point-and-click sample game ([Point-and-click](design/sample-games.md#sample-games-point-and-click))
+- ![Planned][planned] Earlier sample games on the new features: particles, mixer buses, data tables, dialogues, HUD
+  markers, accessibility ([Improvements](design/sample-games.md#sample-games-improvements))
 - ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a Mini
-  Minecraft, combat in the Wolfenstein mini, a station trader, a rail shooter
+  Minecraft, combat in the Wolfenstein mini, a station trader
   ([Pool](design/sample-games.md#sample-games-pool))
 
 ## v0.5.0 -- 2026-10-25

@@ -47,5 +47,5 @@ reached through `PhysicCommand` with the scene.
     - Breakable joints with force and torque thresholds, an event when they break
     - Sub-stepping per scene for long chains of joints
     - Forces and torques applied at a point, from Lua and from systems
-- Gravity fields (uniform, point, spherical) summed per body, trajectory prediction, analytic propagation during
+- Gravity fields (uniform, point, spherical) summed per body, in 2D and 3D, trajectory prediction, analytic propagation during
   time warp ([Large worlds](large-worlds.md))

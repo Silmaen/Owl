@@ -61,7 +61,7 @@ The sockets are detailed in [Skeletal animation](skeletal-animation.md); the phy
 
 ## Gravity and time
 
-- Gravity fields: uniform, point and spherical sources, several summed, per-body opt-out
+- Gravity fields: uniform, point and spherical sources, several summed, per-body opt-out, on the 2D and the 3D physics
 - Trajectory prediction: the future path of a body under the fields, drawn by a debug view and readable from Lua
 - Time warp: the scene clock scaled; above a threshold, bodies leave the solver for analytic propagation
   (conic arcs around the dominant source) and come back when the warp drops
