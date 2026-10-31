@@ -128,7 +128,7 @@ struct OWL_API DialogueRoute {
 	/// Waypoints in canvas space, from the output to the next node.
 	std::vector<math::vec2f> points;
 	/// Colour name of the link in the editor (`Red`, `Green`...), empty for the default one.
-	std::string color{};
+	std::string color{};// NOLINT(readability-redundant-member-init) lets designated initializers omit it
 
 	/**
 	 * @brief

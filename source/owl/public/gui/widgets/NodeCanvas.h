@@ -63,7 +63,8 @@ struct Node {
 	std::vector<NodePin> outputs;///< Output pins (right side).
 	std::string customData;///< Opaque YAML blob owned by the caller.
 	math::vec4 titleColor{1.0f, 1.0f, 1.0f, 1.0f};///< Overlay colour for the title text (e.g. red for orphans).
-	std::string glyph{};///< `gui::icon` glyph drawn before the title, or empty.
+	/// `gui::icon` glyph drawn before the title, or empty.
+	std::string glyph{};// NOLINT(readability-redundant-member-init) lets designated initializers omit it
 	math::vec4 glyphColor{1.0f, 1.0f, 1.0f, 1.0f};///< Colour of the glyph (the kind of the node).
 };
 
@@ -76,7 +77,8 @@ struct Link {
 	core::UUID fromPin;///< Output pin on the source node.
 	core::UUID toPin;///< Input pin on the destination node.
 	std::vector<math::vec2f> waypoints;///< Points the link passes through, in canvas space, from output to input.
-	std::string color{};///< Name of a `getLinkColors` entry, or empty for the colour of its output pin.
+	/// Name of a `getLinkColors` entry, or empty for the colour of its output pin.
+	std::string color{};// NOLINT(readability-redundant-member-init) lets designated initializers omit it
 };
 
 /**

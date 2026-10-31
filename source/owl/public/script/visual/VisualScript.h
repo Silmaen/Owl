@@ -160,7 +160,7 @@ struct GraphLink {
 	/// Points the link passes through in the editor, canvas units, from the output to the input.
 	std::vector<std::array<float, 2>> waypoints;
 	/// Colour name of an execution link in the editor (`Red`, `Green`...), empty for the default one.
-	std::string color{};
+	std::string color{};// NOLINT(readability-redundant-member-init) lets designated initializers omit it
 
 	/**
 	 * @brief
