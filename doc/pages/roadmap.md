@@ -37,6 +37,8 @@ hold.
   ([Localisation](design/localisation.md))
 - ![To evaluate][evaluate] Hot reload of a C++ game module ([Content pipeline](design/content-pipeline.md#hot-reload))
 - ![To evaluate][evaluate] macOS (Metal) ([Modding and platforms](design/modding-platforms.md))
+- ![To evaluate][evaluate] Plugins: script plugins on every target, native plugins shipped built by their authors,
+  Owl Nest plugins ([Modding and platforms](design/modding-platforms.md#modding-plugins))
 
 ## v1.0.0 -- Expected 2026-12-31
 
@@ -126,14 +128,18 @@ the templates, the shaders per target, Android and the Web.
   ([Crash reporter](design/crash-reporter.md))
 - ![Planned][planned] Mod loading system (`.owlmod` packs, manifest, load order, asset overrides)
 - ![Planned][planned] Lua mod API (custom components, game event hooks, sandboxed)
+- ![Planned][planned] Luau in place of Lua 5.5, with the mod API, if the v0.7.0 evaluation holds
+  ([Visual scripting](design/visual-scripting.md#visual-scripting-luau))
 - ![Planned][planned] In-game mod manager (enable / disable / reorder, conflict detection)
 
 ## v0.7.0 -- Expected 2026-11-22
 
 **Goal:** Physics, simulation and AI — 2D and 3D physics and AI as optional modules outside `Scene`, on a
 deterministic simulation with input replay and rewind; articulated bodies, gravity and time warp for worlds of any
-scale ([details](design/gameplay-systems.md), [simulation](design/simulation-networking.md),
-[large worlds](design/large-worlds.md)). Critical path: the deterministic simulation and replay, Jolt, gravity fields.
+scale; material graphs compiled to Slang and the groundwork of typed scripting
+([details](design/gameplay-systems.md), [simulation](design/simulation-networking.md),
+[large worlds](design/large-worlds.md), [material graphs](design/material-graphs.md)). Critical path: the
+deterministic simulation and replay, Jolt, gravity fields.
 
 - ![Planned][planned] Deterministic simulation (seeded streams, cross-platform world-hash test) on the v0.4.0 fixed tick
 - ![Planned][planned] Bit-exact simulation on every target, always on: no FMA contraction, deterministic maths,
@@ -158,6 +164,14 @@ scale ([details](design/gameplay-systems.md), [simulation](design/simulation-net
 - ![Planned][planned] Behaviour trees with a visual editor (`.owlbt`)
 - ![Planned][planned] Steering behaviours and flocking, in 2D and in open 3D space (obstacle avoidance, formations)
 - ![Planned][planned] Engine Demo: enemies demo on the AI modules
+- ![Planned][planned] Material graphs: Slang written as a graph on the surface of the PBR materials, pre-coded and
+  custom Slang nodes, material functions and parameters ([Material graphs](design/material-graphs.md))
+- ![Planned][planned] Custom Lua node in visual scripts (title, typed pins, Lua body) and annotated Lua functions as
+  nodes ([Visual scripting](design/visual-scripting.md#visual-scripting-custom-lua))
+- ![Planned][planned] Entities handed to Lua as userdata instead of 64-bit integers
+  ([Visual scripting](design/visual-scripting.md#visual-scripting-luau))
+- ![To evaluate][evaluate] Luau in place of Lua 5.5: prototype, script benchmarks, types checked in the code editor
+  ([Visual scripting](design/visual-scripting.md#visual-scripting-luau))
 - ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a
   Zelda-like, a marble or kart game, a lunar lander, an asteroid dogfight, an orbital golf, a bridge builder
   ([Pool](design/sample-games.md#sample-games-pool))
@@ -223,8 +237,6 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
 - ![Done][done] Scene Flow view removed: it showed few of the scene links of a real project
 - ![Done][done] Script debugging aids (breakpoint markers, live watch)
 - ![Done][done] Lua editor scripts and interactive Lua console ([Editor scripting](design/editor-scripting.md))
-- ![To evaluate][evaluate] Lua to visual script: turn a Lua script into a graph
-  ([Visual scripting](design/visual-scripting.md#visual-scripting-lua-to-graph))
 - ![Done][done] Procedural generation graphs on `NodeCanvas`, first brick on tilemaps
   ([PCG graphs](design/pcg-graphs.md))
 - ![Done][done] Tileset editor: compose the atlas from source images ([2D](design/2d-complete.md))

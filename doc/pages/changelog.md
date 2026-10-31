@@ -141,6 +141,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `mesh3d.slang` shares its surface shading with the new `skinned3d.slang` through `common/mesh_surface.slangh`; its output is unchanged.
 - Compute shaders resolve their `#include`s like the graphics shaders and the shader bake.
+- Roadmap: material graphs, a custom Lua node, entities as Lua userdata and the evaluation of Luau in v0.7.0, Luau with the mod API in v0.8.0, plugins after 1.0.
 - Sample games are picked from the pool once the features of a release are done, none planned per release; hot reload of a C++ game module moves after 1.0.
 - `Light.castShadows`, `shadowResolution` and `shadowBias` apply to point and spot lights too; the 3D shadow cascades move to texture slots 16 to 19.
 - Shipped projects carry sidecars and GUID references; the Engine Demo PBR textures are cooked to ETC1S and UASTC.

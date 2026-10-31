@@ -22,6 +22,7 @@ in [Simulation and networking](simulation-networking.md)), summarised in the
     - Register custom components from Lua (on top of the open component registry, PR-37)
     - Hook into game events (on_scene_load, on_entity_spawn, etc.)
     - Sandboxed execution (no filesystem access by default)
+    - On Luau if its v0.7.0 evaluation holds ([Visual scripting](visual-scripting.md#visual-scripting-luau))
 - In-game mod manager
     - UI to enable/disable/reorder mods
     - Mod conflict detection
@@ -59,10 +60,30 @@ v0.9.0: besides MinGW (kept), a Windows build with the MSVC ABI so the SDK links
   Linux agents, `hecate` runs the tests
 - Real `cl.exe` only if a user needs it
 
+## Plugins (after 1.0) {#modding-plugins}
+
+Plugins extend the engine and Owl Nest; teams of developers and designers share them.
+
+| Kind      | What it adds                                                                     | Targets                          |
+|-----------|----------------------------------------------------------------------------------|----------------------------------|
+| Data      | Material nodes (Slang functions and their pins), script nodes, templates, assets | Every target                     |
+| Script    | Game rules, domain functions, components, in the scripting language              | Every target                     |
+| Native    | Engine functions, render layers, renderers, backends, in C++                     | The binaries its authors provide |
+| Owl Nest  | Panels, `CommandRegistry` commands, inspector drawers, document types, importers | The editor hosts                 |
+
+- A native plugin ships built for each platform by its authors, never built from its sources by Owl; a target without
+  its binary runs without it
+- MinGW, MSVC and Clang builds share no C++ ABI: native plugins talk to the engine over a versioned C interface, a thin
+  C++ header on top of it
+- One node registry: every plugin adds its nodes, each graph kind (visual scripts, materials, PCG, behaviour trees)
+  reads its own
+- Until then, new extension points are registries filled at runtime, not lists fixed at compile time
+
 ## After 1.0 (To evaluate)
 
 - ![To evaluate][evaluate] macOS (Metal backend) — the maintainer has no Mac
 - ![To evaluate][evaluate] WASM game modules and compiled mods
+- ![To evaluate][evaluate] Plugins: data, script, native and Owl Nest plugins ([Plugins](#modding-plugins))
 - ![To evaluate][evaluate] AAB for Google Play
 - ![To evaluate][evaluate] AppImage and Flatpak
 
