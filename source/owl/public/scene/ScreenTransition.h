@@ -214,7 +214,24 @@ public:
 	 */
 	void reset();
 
+	/**
+	 * @brief
+	 *  Draw the wipes as fades of the same coverage (the `reduced_motion` setting, given by
+	 *  `SettingsManager::applyBuiltins`).
+	 * @param[in] iReduced True to draw no sliding bar.
+	 */
+	void setReducedMotion(const bool iReduced) { m_reducedMotion = iReduced; }
+
+	/**
+	 * @brief
+	 *  Whether the wipes are drawn as fades.
+	 * @return True with the reduced motion.
+	 */
+	[[nodiscard]] auto isReducedMotion() const -> bool { return m_reducedMotion; }
+
 private:
+	/// Wipes drawn as fades.
+	bool m_reducedMotion{false};
 	/// Active overlay kind (also used during the OutAnim / InAnim phases).
 	Type m_type{Type::None};
 	/// Configured duration of the active overlay (seconds).

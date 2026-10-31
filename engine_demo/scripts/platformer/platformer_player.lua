@@ -117,6 +117,9 @@ end
 local function place_camera(dt)
     if camera_id == 0 then return end
     local ox, oy = 0.0, 0.0
+    if shake_left > 0 and settings.get("reduced_motion") == true then
+        shake_left = 0
+    end
     if shake_left > 0 then
         shake_left = math.max(0, shake_left - dt)
         local amount = k_shake_amount * (shake_left / k_shake_time)

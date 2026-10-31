@@ -10,6 +10,7 @@
 #include "gpu/Texture.h"
 #include "math/Curve.h"
 #include "math/matrices.h"
+#include "math/matrixCreation.h"
 #include "math/vectors.h"
 
 #include <array>

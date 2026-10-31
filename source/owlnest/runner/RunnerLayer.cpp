@@ -20,6 +20,7 @@
 #include <platform/FileWatcher.h>
 #include <renderer/TextureDecoder.h>
 #include <renderer/gpu/Framebuffer.h>
+#include <scene/Accessibility.h>
 #include <scene/LevelTransition.h>
 #include <scene/SaveManager.h>
 #include <scene/SceneSerializer.h>
@@ -251,6 +252,8 @@ void RunnerLayer::onAttach() {
 	app::Application::get().getEngineContext().getSettings().setDefault(scene::SettingsManager::KeyVolumeMusic, 1.0f);
 
 	app::Application::get().getEngineContext().getSettings().setDefault(scene::SettingsManager::KeyVolumeSfx, 1.0f);
+
+	scene::Accessibility::setDefaults(app::Application::get().getEngineContext().getSettings());
 	// Load game defaults from assets (game_settings.yml).
 	{
 		bool loaded = false;

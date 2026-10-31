@@ -120,7 +120,8 @@ void ColorEncoder::draw(const shared<gpu::Texture2D>& iSceneColor, const ToneMap
 	params.effects =
 			math::vec4{settings.chromaticAberration ? std::clamp(settings.chromaticAberrationIntensity, 0.f, 1.f) : 0.f,
 					   settings.filmGrain ? std::clamp(settings.filmGrainIntensity, 0.f, 1.f) : 0.f,
-					   std::clamp(settings.filmGrainSize, 1.f, 4.f), static_cast<float>(g_data->drawCount++ % 1024u)};
+					   std::clamp(settings.filmGrainSize, 1.f, 4.f),
+					   static_cast<float>(iPost.staticGrain ? 0u : g_data->drawCount++ % 1024u)};
 	g_data->uniformBuffer->setData(&params, sizeof(EncodeUbo), 0);
 	const std::array textures{iSceneColor, bloom ? iPost.bloom : iSceneColor, lut ? iPost.lut : iSceneColor,
 							  adapted ? iPost.exposure : iSceneColor};

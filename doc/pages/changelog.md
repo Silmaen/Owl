@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest Sequencer, docked under the scene it previews on: timeline, sequence, track and key settings in Properties, `sequence.*` commands and a **New Sequence** entry in the Content Browser.
 - Owl Nest viewport draws the camera paths, key frustums and playhead camera of the previewed sequence, **Look through** shows its camera and **Key from view** keys the view at the playhead.
 - Engine Demo tavern opens on an intro cutscene (`sequences/tavern_intro.owlseq`) that Space skips.
+- Colour-blind modes: the `color_blind_mode` and `color_blind_strength` settings correct the whole frame, HUD included, in a last `colour vision` pass (`renderer::ColorVision`).
+- Owl Nest viewport **Show > Colour vision preview** simulates protanopia, deuteranopia or tritanopia in Edit and in Play.
+- The `reduced_motion` setting turns the camera motion blur off, stills the film grain and draws the transition wipes as fades.
+- Subtitles: a **Subtitle** on a Sound Source is shown while the sound plays within hearing, `ui.show_subtitle` / `ui.clear_subtitles` show others, sized by `subtitle_scale` and turned off by `subtitles`.
+- `scene::Accessibility` reads the accessibility settings and registers their defaults.
+- Scenarios check a game setting with `expect: {setting: <key>, ...}`.
+- Engine Demo settings menu: colours, reduced motion and subtitles buttons; the sound yard radio and cart carry subtitles; the platformer camera stops shaking with reduced motion.
 
 - Asset GUIDs: every asset of a project opened in Owl Nest gets a `.owlmeta` sidecar, and `AssetRegistry` maps GUID and path.
 - Asset references written by GUID (`gid:<guid>:<path hint>`): renaming or moving a file keeps every reference valid.

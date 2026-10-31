@@ -38,6 +38,36 @@ strings:
   - key: settings.ui_scale
     table: settings
     values: {en: 'Interface Size: %d%%', fr: "Taille de l'interface : %d %%"}
+  - key: settings.color_blind
+    table: settings
+    values: {en: 'Colours: %s', fr: 'Couleurs : %s'}
+  - key: settings.color_blind.none
+    table: settings
+    values: {en: Typical, fr: standard}
+  - key: settings.color_blind.protanopia
+    table: settings
+    values: {en: Protanopia, fr: protanopie}
+  - key: settings.color_blind.deuteranopia
+    table: settings
+    values: {en: Deuteranopia, fr: deutéranopie}
+  - key: settings.color_blind.tritanopia
+    table: settings
+    values: {en: Tritanopia, fr: tritanopie}
+  - key: settings.reduced_motion
+    table: settings
+    values: {en: 'Reduced Motion: %s', fr: 'Mouvement réduit : %s'}
+  - key: settings.subtitles
+    table: settings
+    values: {en: 'Subtitles: %s', fr: 'Sous-titres : %s'}
+  - key: settings.on
+    table: settings
+    values: {en: 'On', fr: activé}
+  - key: settings.off
+    table: settings
+    values: {en: 'Off', fr: désactivé}
+  - key: settings.subtitle_sample
+    table: settings
+    values: {en: Subtitles appear here, fr: Les sous-titres s'affichent ici}
   - key: dialogue.wizard.name
     table: dialogue
     values: {en: 'Wizard', fr: 'Magicien'}
@@ -71,3 +101,9 @@ strings:
   - key: dialogue.wizard.next
     table: dialogue
     values: {en: 'Next', fr: 'Suite'}
+  - key: yard.subtitle.radio
+    table: yard
+    values: {en: '[Radio music behind the wall]', fr: '[Musique de radio derrière le mur]'}
+  - key: yard.subtitle.cart
+    table: yard
+    values: {en: '[Cart engine rumbling]', fr: '[Moteur du chariot qui gronde]'}

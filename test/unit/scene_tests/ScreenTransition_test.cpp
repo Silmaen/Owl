@@ -157,3 +157,16 @@ TEST_F(ScreenTransitionTest, pendingLoadPathNoneOutsideLoading) {
 	m_transition.play(ScreenTransition::Type::FadeOut, 0.5f, {});
 	EXPECT_FALSE(m_transition.pendingLoadPath().has_value());
 }
+
+TEST_F(ScreenTransitionTest, reducedMotionKeepsTheWipeTimeline) {
+	EXPECT_FALSE(m_transition.isReducedMotion());
+	m_transition.setReducedMotion(true);
+	EXPECT_TRUE(m_transition.isReducedMotion());
+	// The wipe still runs its course and is still reported as a wipe: only its drawing turns into a fade.
+	m_transition.start(ScreenTransition::Type::WipeLeft, 0.5f);
+	EXPECT_EQ(m_transition.getType(), ScreenTransition::Type::WipeLeft);
+	m_transition.update(0.25f);
+	EXPECT_NEAR(m_transition.getProgress(), 0.5f, 1e-5f);
+	m_transition.setReducedMotion(false);
+	EXPECT_FALSE(m_transition.isReducedMotion());
+}

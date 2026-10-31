@@ -9,6 +9,7 @@
 
 #include "SceneAudio.h"
 
+#include "app/EngineContext.h"
 #include "scene/Entity.h"
 #include "scene/component/AdaptiveMusic.h"
 #include "scene/component/ReverbZone.h"
@@ -136,6 +137,31 @@ void updateSceneAudio(Scene& ioScene, const float iSeconds) {
 	}
 	if (auto* mixer = sound::SoundCommand::getMixer(); mixer != nullptr)
 		followStateKeys(ioScene, *mixer);
+}
+
+void updateSubtitles(Scene& ioScene, const float iSeconds) {
+	OWL_PROFILE_FUNCTION()
+
+	auto& subtitles = ioScene.getSubtitles();
+	const auto listener = findListener(ioScene);
+	const auto* context = ioScene.getEngineContext();
+	for (const auto view = ioScene.registry.view<component::Transform, component::SoundSource>();
+		 const auto entity: view) {
+		const auto& [soundComp] = view.get<component::SoundSource>(entity);
+		if (soundComp.subtitle.empty() || soundComp.runtimeHandle == sound::invalidSoundHandle ||
+			!sound::SoundCommand::isPlaying(soundComp.runtimeHandle))
+			continue;
+		if (soundComp.spatial && listener) {
+			const math::vec3 offset =
+					ioScene.getWorldTransform(Entity{entity, &ioScene}).translation() - listener->second.position;
+			if (offset.normSq() > soundComp.maxDistance * soundComp.maxDistance)
+				continue;
+		}
+		subtitles.show(context != nullptr ? context->translate(soundComp.subtitle)
+										  : std::string_view{soundComp.subtitle},
+					   Subtitles::g_lingerSeconds);
+	}
+	subtitles.update(iSeconds);
 }
 
 auto Scene::setMusicState(const std::string_view iState) -> bool {

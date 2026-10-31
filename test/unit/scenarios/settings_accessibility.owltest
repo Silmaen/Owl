@@ -1,0 +1,29 @@
+# The accessibility row of the Engine Demo settings menu with actions only: `ui_down` from the Interface Size slider
+# reaches the row, `ui_accept` toggles the reduced motion, `ui_left` then `ui_accept` cycles the colour vision correction.
+scene: ../../../engine_demo/scenes/settings_menu.owl
+steps:
+  - frames: 10
+  - expect: {setting: reduced_motion, equals: false}
+  - expect: {setting: color_blind_mode, equals: none}
+  - actions: {ui_down: true, frames: 1}
+  - frames: 2
+  - actions: {ui_down: true, frames: 1}
+  - frames: 2
+  - actions: {ui_down: true, frames: 1}
+  - frames: 2
+  - actions: {ui_down: true, frames: 1}
+  - frames: 2
+  - actions: {ui_down: true, frames: 1}
+  - frames: 2
+  - actions: {ui_down: true, frames: 1}
+  - frames: 2
+  - actions: {ui_down: true, frames: 1}
+  - frames: 2
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 2
+  - expect: {setting: reduced_motion, equals: true}
+  - actions: {ui_left: true, frames: 1}
+  - frames: 2
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 2
+  - expect: {setting: color_blind_mode, equals: protanopia}

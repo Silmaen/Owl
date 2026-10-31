@@ -11,6 +11,7 @@
 
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/ColorEncoder.h"
+#include "renderer/ColorVision.h"
 #include "renderer/LensFlare.h"
 #include "renderer/OutlinePass.h"
 #include "renderer/PostProcess.h"
@@ -83,6 +84,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress, const Render
 		iProgress(4, 5, "background");
 	BackgroundRenderer::init();
 	ColorEncoder::init();
+	ColorVision::init();
 	OutlinePass::init();
 	PostProcess::init();
 	LensFlare::init();
@@ -133,6 +135,7 @@ void Renderer::shutdown() {
 	LensFlare::shutdown();
 	PostProcess::shutdown();
 	OutlinePass::shutdown();
+	ColorVision::shutdown();
 	ColorEncoder::shutdown();
 	BackgroundRenderer::shutdown();
 	Renderer2D::shutdown();

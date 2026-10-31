@@ -1703,6 +1703,20 @@ auto luaUiIsTransitionActive(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaUiShowSubtitle(lua_State* iState) -> int {
+	const char* text = luaL_checkstring(iState, 1);
+	const auto seconds = static_cast<float>(luaL_optnumber(iState, 2, 3.0));
+	if (auto* boundScene = getBoundScene(iState); boundScene != nullptr)
+		boundScene->getSubtitles().show(text, seconds);
+	return 0;
+}
+
+auto luaUiClearSubtitles(lua_State* iState) -> int {
+	if (auto* boundScene = getBoundScene(iState); boundScene != nullptr)
+		boundScene->getSubtitles().clear();
+	return 0;
+}
+
 auto luaUiIsMouseOverUi(lua_State* iState) -> int {
 	const auto* boundScene = getBoundScene(iState);
 	lua_pushboolean(iState, boundScene != nullptr && scene::UiInputSystem::isUIConsuming(*boundScene) ? 1 : 0);
@@ -3524,6 +3538,12 @@ auto declareBindings() -> std::vector<LuaBinding> {
 					{"b", Number, true}, {"a", Number, true}}},
 		{.table = "ui", .name = "is_transition_active", .function = guarded<luaUiIsTransitionActive>,
 		 .description = "Whether a screen transition is running.", .returns = {{"active", Boolean}}},
+		{.table = "ui", .name = "show_subtitle", .function = guarded<luaUiShowSubtitle>,
+		 .description = "Show a subtitle at the bottom of the screen for `seconds` (3 by default), when the player keeps the "
+						"`subtitles` setting on; the same text on screen is renewed.",
+		 .params = {{"text", String}, {"seconds", Number, true}}},
+		{.table = "ui", .name = "clear_subtitles", .function = guarded<luaUiClearSubtitles>,
+		 .description = "Remove every subtitle on screen."},
 		{.table = "ui", .name = "is_mouse_over_ui", .function = guarded<luaUiIsMouseOverUi>,
 		 .description = "Whether the mouse is over a HUD widget or window that takes it (a click there is not for the scene).",
 		 .returns = {{"over", Boolean}}},

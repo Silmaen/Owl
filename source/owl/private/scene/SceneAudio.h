@@ -30,4 +30,14 @@ OWL_API void startAdaptiveMusic(Scene& ioScene, sound::Mixer& ioMixer);
  */
 OWL_API void updateSceneAudio(Scene& ioScene, float iSeconds);
 
+/**
+ * @brief
+ *  One frame of the subtitles (the `owl.subtitles` system): the subtitle of every sound playing within hearing of the
+ *  primary listener (a sound that is not spatial, or nearer than its `maxDistance`, everywhere without a listener) is
+ *  renewed, translated, for `Subtitles::g_lingerSeconds`, then the lines count down.
+ * @param[in,out] ioScene The scene.
+ * @param[in] iSeconds Time since the last frame.
+ */
+OWL_API void updateSubtitles(Scene& ioScene, float iSeconds);
+
 }// namespace owl::scene

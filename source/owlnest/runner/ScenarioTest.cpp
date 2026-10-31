@@ -12,12 +12,15 @@
 #include "session/HeadlessSession.h"
 #include "session/HeldInput.h"
 
+#include <app/EngineContext.h>
 #include <input/ActionMap.h>
 #include <input/Gamepad.h>
 #include <input/Input.h>
 #include <input/InputNames.h>
 #include <input/KeyCodes.h>
 #include <scene/Entity.h>
+#include <scene/GameState.h>
+#include <scene/SettingsManager.h>
 #include <scene/component/components.h>
 
 #include <algorithm>
@@ -241,12 +244,20 @@ auto parseStep(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 		oStep.checks.push_back(std::move(check));
 		return "";
 	}
+	if (const auto setting = expect["setting"]; setting) {
+		oStep.setting = setting.as<std::string>();
+		ScenarioCheck check;
+		if (!parseCheck("value", expect, check))
+			return "a setting expectation needs `equals`, `greater` or `less`";
+		oStep.checks.push_back(std::move(check));
+		return "";
+	}
 	if (const auto entity = expect["entity"]; entity)
 		oStep.entity = entity.as<std::string>();
 	else if (const auto player = expect["player"]; player && player.as<bool>())
 		oStep.player = true;
 	else
-		return "an expectation names an `entity`, the `player` or a `gamestate` key";
+		return "an expectation names an `entity`, the `player`, a `gamestate` key or a `setting`";
 	for (const auto& item: expect) {
 		const auto field = item.first.as<std::string>();
 		if (field == "entity" || field == "player")
@@ -317,6 +328,29 @@ auto opName(const ScenarioCheck::Op iOp) -> std::string_view {
 	return "";
 }
 
+
+// A game-state or settings value against the one check of the step.
+auto checkValue(const ScenarioStep& iStep, const std::string_view iKind, const std::string& iKey,
+				const std::optional<scene::GameState::Value>& iValue) -> std::string {
+	const auto& check = iStep.checks.front();
+	if (!iValue)
+		return std::format("line {}: {} `{}` is not set", iStep.line, iKind, iKey);
+	if (const auto* text = std::get_if<std::string>(&*iValue); text != nullptr)
+		return check.text == *text ? ""
+								   : std::format("line {}: {} `{}` is '{}', expected '{}'", iStep.line, iKind, iKey,
+												 *text, check.text.value_or(""));
+	const double number = std::visit(
+			[](const auto& iItem) -> double {
+				if constexpr (std::is_same_v<std::decay_t<decltype(iItem)>, std::string>)
+					return 0.0;
+				else
+					return static_cast<double>(iItem);
+			},
+			*iValue);
+	return compare(check, number) ? ""
+								  : std::format("line {}: {} `{}` is {}, expected {} {}", iStep.line, iKind, iKey,
+												number, opName(check.op), check.number);
+}
 
 auto resolveActions(ScenarioStep& ioStep, const input::ActionMap& iMap) -> std::string {
 	session::HeldInput held{.keys = std::move(ioStep.keys),
@@ -434,26 +468,12 @@ auto ScenarioTest::runStep(const ScenarioStep& iStep, const shared<scene::Scene>
 }
 
 auto ScenarioTest::check(const ScenarioStep& iStep, const scene::Scene& iScene) -> std::string {
-	if (!iStep.gameState.empty()) {
-		const auto& check = iStep.checks.front();
-		const auto value = iScene.getGameState().get(iStep.gameState);
-		if (!value)
-			return std::format("line {}: game-state `{}` is not set", iStep.line, iStep.gameState);
-		if (const auto* text = std::get_if<std::string>(&*value); text != nullptr)
-			return check.text == *text ? ""
-									   : std::format("line {}: game-state `{}` is '{}', expected '{}'", iStep.line,
-													 iStep.gameState, *text, check.text.value_or(""));
-		const double number = std::visit(
-				[](const auto& iValue) -> double {
-					if constexpr (std::is_same_v<std::decay_t<decltype(iValue)>, std::string>)
-						return 0.0;
-					else
-						return static_cast<double>(iValue);
-				},
-				*value);
-		return compare(check, number) ? ""
-									  : std::format("line {}: game-state `{}` is {}, expected {} {}", iStep.line,
-													iStep.gameState, number, opName(check.op), check.number);
+	if (!iStep.gameState.empty())
+		return checkValue(iStep, "game-state", iStep.gameState, iScene.getGameState().get(iStep.gameState));
+	if (!iStep.setting.empty()) {
+		auto* context = iScene.getEngineContext();
+		return checkValue(iStep, "setting", iStep.setting,
+						  context != nullptr ? context->getSettings().get(iStep.setting) : std::nullopt);
 	}
 	const auto entity = findEntity(iStep, iScene);
 	const std::string who = iStep.player ? std::string{"the player"} : std::format("`{}`", iStep.entity);

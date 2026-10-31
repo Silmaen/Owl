@@ -67,6 +67,8 @@ public:
 
 	/// Asset path relative to asset directory.
 	std::string soundAsset;
+	/// Subtitle shown while the sound plays (a localisation key or the text itself), empty for none.
+	std::string subtitle;
 	/// Mixer bus the sound plays on.
 	Category category = Category::SFX;
 	/// Volume gain [0..∞).

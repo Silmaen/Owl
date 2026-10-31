@@ -145,8 +145,8 @@ steps:
 |           | a vector `[x, y]`; the first binding that can produce the value is injected (gamepad axes     |
 |           | with the inverse of their dead zone and curve); `frames` defaults to 1                        |
 | `expect`  | `entity: <tag>` or `player: true` with fields `translation.*`, `rotation.z`, `scale.*`,       |
-|           | `exists`; or `gamestate: <key>`. Each check is a value or `equals` / `greater` / `less`,      |
-|           | `tolerance` for a numeric `equals`                                                            |
+|           | `exists`; or `gamestate: <key>`, or `setting: <key>` (a game setting). Each check is a value  |
+|           | or `equals` / `greater` / `less`, `tolerance` for a numeric `equals`                          |
 | `command` | An editor command by name, its arguments under `args`:                                        |
 |           | `{command: entity.delete, args: {entity: Crate}}`; a vector or a colour is a list of numbers, |
 |           | a text argument may be a map (`component.set` values)                                         |

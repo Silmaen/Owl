@@ -185,6 +185,9 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.particles", SystemPhase::Late, &updateParticles);
 	add("owl.navigation", SystemPhase::Late, &updateNavigation);
 	add("owl.sound", SystemPhase::Late, &updateSound);
+	add("owl.subtitles", SystemPhase::Late, [](Scene& ioScene, const SystemContext& iContext) -> void {
+		updateSubtitles(ioScene, iContext.timeStep.getSeconds());
+	});
 	add("owl.sprite_animation", SystemPhase::Late, &updateAnimatedSprites);
 	add("owl.game_over", SystemPhase::Ended, &renderGameOver);
 }

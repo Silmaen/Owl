@@ -71,8 +71,13 @@ The scene then holds a `SoundSource:` block with the fields below.
 | rolloff     | float    | 1.0     | Distance attenuation factor (spatial only)        |
 | doppler     | bool     | true    | Pitch shift from the motion (spatial only)        |
 | filter      | Filter   | none    | `gain`, `gainLow`, `gainHigh`, written when set   |
+| subtitle    | string   | `""`    | Subtitle while it plays within hearing (a key)    |
 
 The internal `runtimeHandle` (not saved) holds the active `SoundHandle` during playback.
+
+A `subtitle` (a localisation key or the text itself) is drawn at the bottom of the screen while the sound plays within
+hearing of the primary listener, when the player keeps the `subtitles` setting on
+([Accessibility](design/accessibility.md#accessibility-subtitles)).
 
 ## SoundListener Component
 

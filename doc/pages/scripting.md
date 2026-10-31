@@ -460,6 +460,12 @@ project assets) overlaid with user overrides (`settings.yml` in user directory).
 | `volume_ambient`    | float | Ambient bus volume      |
 | `volume_voice`      | float | Voice bus volume        |
 
+The accessibility keys (`ui_scale`, `color_blind_mode`, `color_blind_strength`, `reduced_motion`, `subtitles`,
+`subtitle_scale`, `subtitle_background`) apply at the next frame without `settings.apply()`, but for the transition
+wipes of `reduced_motion`; a script with a camera shake of its own reads `settings.get("reduced_motion")`
+([Accessibility](design/accessibility.md)). `ui.show_subtitle(text, seconds)` shows a subtitle, `ui.clear_subtitles()`
+removes them.
+
 The `volume_*` keys are the player's volume of each mixer bus, multiplied by the designer mix of the scene
 ([Mixer](sound.md#sound-mixer)).
 

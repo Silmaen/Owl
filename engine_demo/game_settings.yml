@@ -29,6 +29,24 @@ GameSettings:
   - key: ui_scale
     type: float
     value: 1.0
+  - key: color_blind_mode
+    type: string
+    value: none
+  - key: color_blind_strength
+    type: float
+    value: 1.0
+  - key: reduced_motion
+    type: bool
+    value: false
+  - key: subtitles
+    type: bool
+    value: true
+  - key: subtitle_scale
+    type: float
+    value: 1.0
+  - key: subtitle_background
+    type: float
+    value: 0.6
   - key: player_speed
     type: float
     value: 8.0

@@ -14,6 +14,8 @@
 #include "core/FormatVersionYaml.h"
 #include "platform/AtomicFile.h"
 #include "platform/UserDirectory.h"
+#include "scene/Accessibility.h"
+#include "scene/ScreenTransition.h"
 #include "sound/Bus.h"
 #include "sound/SoundCommand.h"
 
@@ -209,6 +211,9 @@ void SettingsManager::applyBuiltins() const {
 
 	if (const auto language = getAs<std::string>(KeyLanguage); language.has_value())
 		app::Application::get().getEngineContext().setLanguage(language.value());
+
+	app::Application::get().getEngineContext().getScreenTransition().setReducedMotion(
+			Accessibility::read(*this).reducedMotion);
 }
 
 void SettingsManager::applyVolumes(sound::Mixer& ioMixer) const {

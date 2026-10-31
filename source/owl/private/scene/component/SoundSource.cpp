@@ -31,6 +31,8 @@ void SoundSource::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "maxDistance" << YAML::Value << sound.maxDistance;
 	iOut.getImpl()->emitter << YAML::Key << "rolloff" << YAML::Value << sound.rolloff;
 	iOut.getImpl()->emitter << YAML::Key << "doppler" << YAML::Value << sound.doppler;
+	if (!sound.subtitle.empty())
+		iOut.getImpl()->emitter << YAML::Key << "subtitle" << YAML::Value << sound.subtitle;
 	if (!sound.filter.isNeutral()) {
 		iOut.getImpl()->emitter << YAML::Key << "filter" << YAML::Value << YAML::Flow << YAML::BeginMap;
 		iOut.getImpl()->emitter << YAML::Key << "gain" << YAML::Value << sound.filter.gain;
@@ -62,6 +64,7 @@ void SoundSource::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["rolloff"])
 		sound.rolloff = iNode.getImpl()->node["rolloff"].as<float>();
 	sound.doppler = iNode.getImpl()->node["doppler"].as<bool>(true);
+	sound.subtitle = iNode.getImpl()->node["subtitle"].as<std::string>(std::string{});
 	sound.filter = {};
 	if (const auto filter = iNode.getImpl()->node["filter"]; filter.isMap())
 		sound.filter = sound::Filter{.gain = filter["gain"].as<float>(1.f),
