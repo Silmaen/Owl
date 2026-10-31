@@ -906,6 +906,27 @@ the curve: its -Z axis in 3D (a camera on a rail looks ahead), its +X axis on a 
 Lua reads and drives both: `spline.sample`, `spline.get_tangent`, `spline.get_nearest`, `spline.set_speed`,
 `spline.set_lane`, `spline.set_distance` ([reference](lua-api-data.md)).
 
+#### SequencePlayer {#sequence-player-component}
+
+YAML key: `SequencePlayer`, system `owl.sequences` (`PostPhysics`, after `follow_target`). Plays a `.owlseq` sequence:
+the camera tracks drive the entity `camera` (0 = the entity itself) and the event keys call Lua functions. The keys are
+in the space of the player entity (of its parent when it drives its own camera): moving the entity moves the cutscene.
+While it plays, the driven camera is made primary; the cameras it replaced are primary again when it stops or ends,
+then `onFinished` is called. An event key calls the function of that name in the script of the player entity, else in
+the scene script.
+
+| Field         | Type     | Default | Description                                                     |
+|---------------|----------|---------|-----------------------------------------------------------------|
+| `sequence`    | asset    | empty   | The `.owlseq` file                                              |
+| `camera`      | UUID     | `0`     | Entity driven, 0 for this entity                                |
+| `playOnStart` | `bool`   | `true`  | Play at the start of Play                                       |
+| `loop`        | `bool`   | `false` | Start again at the end                                          |
+| `speed`       | `float`  | `1`     | Playback speed, at least 0 (0 pauses)                           |
+| `onFinished`  | `string` | empty   | Lua function called when the sequence ends or is stopped        |
+
+Lua drives it with `sequence.play`, `stop`, `seek`, `is_playing`, `get_time`, `get_duration` and `set_speed`
+([reference](lua-api-sequence.md)); see [Cutscene sequences](sequences.md).
+
 #### Drift
 
 YAML key: `Drift`, system `owl.drift` (`PostPhysics`). Places the entity at `cameraFollow` times the position of the

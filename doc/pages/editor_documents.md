@@ -22,6 +22,7 @@ scene, its own Play state. The ribbon's last tab holds the commands of the activ
 | Localisation  | `localisation.yml`                          | [Localisation](languages.md)                                               |
 | Data table    | `.owltable`                                 | [Data tables](data_tables.md#data-tables-editor)                           |
 | Dialogue      | `.owldlg`                                   | [Dialogues](dialogues.md#dialogues-editor)                                 |
+| Sequence      | `.owlseq`                                   | [Cutscene sequences](sequences.md#sequences-editor)                        |
 | Image         | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | [Image viewer](#image-viewer)                                              |
 | Mesh          | `.gltf`, `.glb`, `.obj`                     | [Mesh viewer](#mesh-viewer)                                                |
 | Font          | `.ttf`, `.otf`, `.owlfont`                  | [Fonts](#fonts)                                                            |

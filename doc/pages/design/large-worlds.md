@@ -96,7 +96,7 @@ A renderer-stack layer, like the voxel and isometric ones, composing with the 3D
 - 3D steering in open space: obstacle avoidance between moving volumes, formations
 - Doppler effect and adaptive music driven by game states
 - Interest management for replication: relevance areas and priorities, so a client receives only what is near it
-- Camera tracks in the sequencer, for cutscenes
+- Camera tracks in the sequencer, for cutscenes ([below](#large-worlds-sequences))
 
 ## World partition {#world-partition}
 
@@ -147,6 +147,25 @@ User reference: [Data tables](../data_tables.md).
 | The export follows quoted `.owltable` paths in scripts, Reference tables and Asset cells                    | A table and what it names ship with the game                                      |
 | The grid document runs `table.*` commands on its own undo history, typing previewed then committed on leave | Same pattern as the sound cue and localisation documents                          |
 | Lua `datatable.*` (not `table`, the Lua library)                                                            | No clash with the standard `table` functions                                      |
+
+## Sequences {#large-worlds-sequences}
+
+User reference: [Cutscene sequences](../sequences.md), [SequencePlayer](../scene.md#sequence-player-component).
+
+| Decision                                                                                                                      | Why                                                                   |
+|-------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| A `.owlseq` YAML asset (format 1): a duration, camera tracks and event tracks of keys sorted by time                          | Diff-friendly; one file per cutscene                                  |
+| A camera track is a shot, live from its first to its last key; the last unmuted shot spanning a time drives the camera        | Cuts and overlaps without a separate edit list                        |
+| In a gap the shot that ended last holds its last key; before any shot the earliest holds its first                            | The camera is never left without a pose                               |
+| Easing per key: Smooth (Catmull-Rom through the neighbours, flat at the ends of a track), Linear, Step (cut)                  | Smooth moves and hard cuts in one track; rotations take the short way |
+| Rotations and fields of view stored in radians, shown in degrees in Owl Nest                                                  | Same units as the transform components                                |
+| Event keys call a Lua function by name in the script of the player entity, else the scene script; a seek calls none           | Cutscenes drive the story from scripts; scrubbing has no side effect  |
+| `SequencePlayer` keys are in the space of the player entity (of its parent when it drives its own camera)                     | Moving the entity moves the cutscene; prefabs carry theirs            |
+| The driven camera becomes primary while playing; the cameras it replaced are primary again at the end, then `onFinished` runs | The game camera comes back without script help                        |
+| `owl.sequences` runs in `PostPhysics`, after `follow_target`                                                                  | The cutscene pose wins over the camera followers                      |
+| `SequenceLibrary` in `app::EngineContext` caches each file, cleared when Owl Nest saves a sequence                            | No static state; the game and the editor see the saved keys           |
+| The export packs the `.owlseq` of every `SequencePlayer`                                                                      | A cutscene ships with the game                                        |
+| The document runs `sequence.*` commands on its own undo history; **Key from view** is a `sequence.add_key`                    | Every edit is undoable and reachable from the console, macros and MCP |
 
 ## Delivery {#large-worlds-delivery}
 

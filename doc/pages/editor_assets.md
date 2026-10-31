@@ -36,16 +36,17 @@ ignores it.
 
 ## Context menus
 
-| Where          | Entries                                                                       |
-|----------------|-------------------------------------------------------------------------------|
-| Background     | **Create Folder**, **New Material**, **Import File...**, **Import Folder...** |
-| File or folder | **Open**, **Rename**, **Delete**                                              |
-| Texture        | **Import Settings** (selects it in the Import panel), **Cook**                |
-| Folder         | **Cook Folder**                                                               |
-| Mesh           | **Open** (the mesh viewer), **Place in Scene**, **Import Settings** (LODs)    |
-| Macro          | **Edit as Text**                                                              |
+| Where          | Entries                                                                                         |
+|----------------|-------------------------------------------------------------------------------------------------|
+| Background     | **Create Folder**, **New Material**, **New Sequence**, **Import File...**, **Import Folder...** |
+| File or folder | **Open**, **Rename**, **Delete**                                                                |
+| Texture        | **Import Settings** (selects it in the Import panel), **Cook**                                  |
+| Folder         | **Cook Folder**                                                                                 |
+| Mesh           | **Open** (the mesh viewer), **Place in Scene**, **Import Settings** (LODs)                      |
+| Macro          | **Edit as Text**                                                                                |
 
-**New Material** creates `New Material.owlmat` in the folder shown and opens it in the material editor.
+**New Material** creates `New Material.owlmat` in the folder shown and opens it in the material editor. **New Sequence** (`sequence.create`) creates `New Sequence.owlseq` and opens it in the
+[Sequence document](sequences.md#sequences-editor).
 
 ## Asset identity and import settings {#editor-asset-import}
 
@@ -60,13 +61,13 @@ treats them as part of their file:
 
 The **Import** panel (docked with Properties) shows the selected asset:
 
-| Field                     | Content                                                                              |
-|---------------------------|--------------------------------------------------------------------------------------|
-| File, importer, GUID      | Name, importer of the file, GUID with a copy button                                  |
-| Pixel art                 | Nearest-texel filtering                                                              |
-| Pack storage              | `None` (source file), `Uastc` (quality) or `Etc1s` (size): KTX2 Basis Universal      |
-| Mipmaps                   | Mip chain built by the cook (compressed textures)                                    |
-| Cache state, **Cook Now** | Whether the cooked result is in the cache for the current bytes and settings         |
+| Field                     | Content                                                                         |
+|---------------------------|---------------------------------------------------------------------------------|
+| File, importer, GUID      | Name, importer of the file, GUID with a copy button                             |
+| Pixel art                 | Nearest-texel filtering                                                         |
+| Pack storage              | `None` (source file), `Uastc` (quality) or `Etc1s` (size): KTX2 Basis Universal |
+| Mipmaps                   | Mip chain built by the cook (compressed textures)                               |
+| Cache state, **Cook Now** | Whether the cooked result is in the cache for the current bytes and settings    |
 
 Each setting has a reset button; a change is one undo step (`asset.set_import`). **Apply to Folder** gives the
 settings to every texture of the folder shown.

@@ -115,6 +115,14 @@ the entity. A selected point of a Bezier spline shows its two handles: click one
 Click elsewhere to drop the point selection and get the entity gizmo back. The inspector lists the same points, with
 **Add Point**, **Insert After Selected** and **Delete Selected**, and the lanes.
 
+### Sequences {#viewport-sequences}
+
+The selected entity with a **SequencePlayer** draws the path of each camera track (one colour per track, dimmed when
+muted) and a small frustum at every key; the edits of an open Sequence document show before they are saved. The tools
+overlay has a **Key from view** camera button: the pose of the viewport camera becomes a key one second after the end of
+the last shot, and the duration stretches to hold it (one `sequence.add_key`). See
+[Cutscene sequences](sequences.md#sequences-editor).
+
 The selected **Oscillator** shows its range and the selected **Patrol** its route: click a waypoint to move it with a
 translation gizmo.
 
