@@ -272,7 +272,7 @@ def _character_frames(hero: Image.Image) -> tuple[Image.Image, Image.Image, Imag
 
 
 def _dome() -> list[Image.Image]:
-    """The dome of the observatory, 3x2 tiles: a copper half sphere with its shutter open and the telescope looking out."""
+    """The dome of the observatory, 3x2 tiles: a copper half sphere, its shutter open, the telescope looking out."""
     big = _canvas(48, 32)
     copper, copper_l, copper_d = (96, 170, 150, 255), (150, 214, 190, 255), (58, 118, 110, 255)
     cx, base, radius = 23.5, 30, 22.5
@@ -294,7 +294,7 @@ def _dome() -> list[Image.Image]:
     _rect(big, 22, 18, 25, 18, ORANGE)
     _rect(big, 0, base, 47, 31, OUT)  # the drum it turns on
     _rect(big, 1, base + 1, 46, 31, STONE_D)
-    return [big.crop((16 * k, 0, 16 * k + 16, 16)) for k in range(3)] + [big.crop((16 * k, 16, 16 * k + 16, 32)) for k in range(3)]
+    return [big.crop((16 * (k % 3), 16 * (k // 3), 16 * (k % 3) + 16, 16 * (k // 3) + 16)) for k in range(6)]
 
 
 def _telescope() -> Image.Image:
@@ -302,7 +302,8 @@ def _telescope() -> Image.Image:
     tile = _canvas()
     for x0, y0, x1, y1 in ((7, 9, 3, 15), (8, 9, 8, 15), (9, 9, 13, 15)):  # the legs
         steps = max(abs(x1 - x0), abs(y1 - y0))
-        _px(tile, [(round(x0 + (x1 - x0) * k / steps), round(y0 + (y1 - y0) * k / steps)) for k in range(steps + 1)], WOOD_D)
+        leg = [(round(x0 + (x1 - x0) * k / steps), round(y0 + (y1 - y0) * k / steps)) for k in range(steps + 1)]
+        _px(tile, leg, WOOD_D)
     for k in range(10):  # the tube, outlined
         x, y = 3 + k, 10 - k
         _px(tile, [(x, y - 1), (x + 1, y - 1), (x - 1, y), (x, y + 1)], OUT)

@@ -1,0 +1,39 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7200000000000000201
+    kind: Start
+    position: [0, 120]
+    next: 7200000000000000202
+  - id: 7200000000000000202
+    kind: Line
+    position: [260, 120]
+    speaker: {text: Traveller, key: dialogue.traveller.name}
+    text: {text: 'I walked from the iso town. The traffic there never stops!', key: dialogue.traveller.greeting}
+    next: 7200000000000000203
+  - id: 7200000000000000203
+    kind: Choice
+    position: [520, 120]
+    speaker: {text: Traveller, key: dialogue.traveller.name}
+    text: {text: 'And you, traveller?', key: dialogue.traveller.ask}
+    options:
+      - text: {text: 'Where are you going next?', key: dialogue.traveller.answer_where}
+        next: 7200000000000000204
+      - text: {text: 'Cheers!', key: dialogue.traveller.answer_cheers}
+        next: 7200000000000000205
+  - id: 7200000000000000204
+    kind: Line
+    position: [780, 120]
+    speaker: {text: Traveller, key: dialogue.traveller.name}
+    text: {text: 'To the cave behind the lava. They say the music grows darker in there.', key: dialogue.traveller.cave}
+    next: 7200000000000000206
+  - id: 7200000000000000205
+    kind: Line
+    position: [1040, 120]
+    speaker: {text: Traveller, key: dialogue.traveller.name}
+    text: {text: 'Cheers! To the six places of the village.', key: dialogue.traveller.cheers}
+    next: 7200000000000000206
+  - id: 7200000000000000206
+    kind: End
+    position: [1300, 120]
+routes: []

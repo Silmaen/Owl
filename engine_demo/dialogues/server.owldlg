@@ -1,0 +1,17 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7200000000000000301
+    kind: Start
+    position: [0, 120]
+    next: 7200000000000000302
+  - id: 7200000000000000302
+    kind: Line
+    position: [260, 120]
+    speaker: {text: Server, key: dialogue.server.name}
+    text: {text: 'Busy night! Ask the barkeeper for a drink.', key: dialogue.server.busy}
+    next: 7200000000000000303
+  - id: 7200000000000000303
+    kind: End
+    position: [520, 120]
+routes: []

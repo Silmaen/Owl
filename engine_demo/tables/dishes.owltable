@@ -1,0 +1,19 @@
+DataTable: ""
+FormatVersion: 1
+columns:
+  - {name: label, type: Text}
+  - {name: price, type: Integer}
+  - {name: hot, type: Bool}
+rows:
+  - key: stew
+    label: A bowl of stew
+    price: 6
+    hot: true
+  - key: cider
+    label: A tankard of cider
+    price: 3
+    hot: false
+  - key: bread
+    label: A loaf of bread
+    price: 2
+    hot: false

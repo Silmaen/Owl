@@ -1,0 +1,64 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7200000000000000001
+    kind: Start
+    position: [0, 120]
+    next: 7200000000000000002
+  - id: 7200000000000000002
+    kind: Line
+    position: [260, 120]
+    speaker: {text: Barkeeper, key: dialogue.barkeeper.name}
+    text: {text: 'Welcome to the Owl''s Rest! What will it be?', key: dialogue.barkeeper.greeting}
+    next: 7200000000000000003
+  - id: 7200000000000000003
+    kind: Choice
+    position: [520, 120]
+    speaker: {text: Barkeeper, key: dialogue.barkeeper.name}
+    text: {text: 'Thirsty, or curious?', key: dialogue.barkeeper.ask}
+    options:
+      - text: {text: 'A cider, please.', key: dialogue.barkeeper.answer_cider}
+        next: 7200000000000000004
+      - text: {text: 'Have you seen a key?', key: dialogue.barkeeper.answer_key}
+        next: 7200000000000000006
+      - text: {text: 'Goodbye.', key: dialogue.barkeeper.answer_bye}
+        next: 7200000000000000009
+  - id: 7200000000000000004
+    kind: Event
+    position: [780, 120]
+    function: serve_cider
+    next: 7200000000000000005
+  - id: 7200000000000000005
+    kind: Line
+    position: [1040, 120]
+    speaker: {text: Barkeeper, key: dialogue.barkeeper.name}
+    text: {text: 'Here you are, fresh from the cellar.', key: dialogue.barkeeper.cider}
+    next: 7200000000000000010
+  - id: 7200000000000000006
+    kind: Branch
+    position: [1300, 120]
+    function: has_cellar_key
+    next: 7200000000000000007
+    nextFalse: 7200000000000000008
+  - id: 7200000000000000007
+    kind: Line
+    position: [1560, 120]
+    speaker: {text: Barkeeper, key: dialogue.barkeeper.name}
+    text: {text: 'You found it already? Mind the cellar ladder.', key: dialogue.barkeeper.key_found}
+    next: 7200000000000000010
+  - id: 7200000000000000008
+    kind: Line
+    position: [1820, 120]
+    speaker: {text: Barkeeper, key: dialogue.barkeeper.name}
+    text: {text: 'I dropped the cellar key by the hearth... near the bucket, maybe.', key: dialogue.barkeeper.key_hint}
+    next: 7200000000000000010
+  - id: 7200000000000000009
+    kind: Line
+    position: [2080, 120]
+    speaker: {text: Barkeeper, key: dialogue.barkeeper.name}
+    text: {text: 'Come back soon!', key: dialogue.barkeeper.bye}
+    next: 7200000000000000010
+  - id: 7200000000000000010
+    kind: End
+    position: [2340, 120]
+routes: []

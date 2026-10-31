@@ -2494,28 +2494,6 @@
       "max_ns": 12908.1
     },
     {
-      "name": "sample/load/character_yard",
-      "items": 1,
-      "batch": 1,
-      "samples": 15,
-      "median_ns": 166157.0,
-      "p25_ns": 164061.5,
-      "p75_ns": 173245.5,
-      "min_ns": 162176.0,
-      "max_ns": 181731.0
-    },
-    {
-      "name": "sample/editor_update/character_yard",
-      "items": 1,
-      "batch": 877,
-      "samples": 15,
-      "median_ns": 13368.6,
-      "p25_ns": 13344.5,
-      "p75_ns": 13400.9,
-      "min_ns": 13279.3,
-      "max_ns": 13492.4
-    },
-    {
       "name": "particles/simulate_cpu/1000",
       "items": 1000,
       "batch": 709,
@@ -2646,28 +2624,6 @@
       "p75_ns": 1103419.6,
       "min_ns": 1099155.7,
       "max_ns": 1108382.0
-    },
-    {
-      "name": "sample/load/sound_yard",
-      "items": 1,
-      "batch": 1,
-      "samples": 15,
-      "median_ns": 180964.0,
-      "p25_ns": 179741.0,
-      "p75_ns": 187040.0,
-      "min_ns": 179427.0,
-      "max_ns": 206875.0
-    },
-    {
-      "name": "sample/editor_update/sound_yard",
-      "items": 1,
-      "batch": 1481,
-      "samples": 15,
-      "median_ns": 8031.3,
-      "p25_ns": 8022.7,
-      "p75_ns": 8085.0,
-      "min_ns": 7996.1,
-      "max_ns": 8100.1
     }
   ],
   "metrics": [

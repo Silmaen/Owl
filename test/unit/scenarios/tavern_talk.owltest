@@ -1,0 +1,35 @@
+# The conversations of the tavern (tavern_dialogues.lua): E on the barkeeper opens his dialogue tree and stops the
+# player; the answers are picked with the UI actions, "a cider" is an Event that plays his serve animation; Escape ends
+# a conversation without leaving the tavern.
+scene: ../../../engine_demo/scenes/tavern.owl
+steps:
+  - input: {key: Space, frames: 2}
+  - frames: 30
+  - expect: {gamestate: tavern_talks, equals: 0}
+  # The barkeeper is brought before the eye of the player (a first-person walker uses what it aims at).
+  - {command: entity.set_transform, args: {entity: Barkeeper, translation: [1.78, 0.3, 1.52], rotation: [0, 0.75, 0], scale: [2.2, 2.2, 2.2]}}
+  - frames: 5
+  - input: {key: E, frames: 3}
+  - frames: 5
+  - expect: {gamestate: tavern_talks, equals: 1}
+  - expect: {gamestate: dialogue_open, equals: 1}
+  - expect: {gamestate: tavern_choices, equals: 0}
+  - input: {key: E, frames: 3}
+  - frames: 5
+  - expect: {gamestate: tavern_choices, equals: 3}
+  # The first answer has the focus: a cider.
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 5
+  - expect: {gamestate: tavern_ciders, equals: 1}
+  - expect: {gamestate: tavern_choices, equals: 0}
+  - input: {key: E, frames: 3}
+  - frames: 5
+  - expect: {gamestate: dialogue_open, equals: 0}
+  # Again, and Escape: the conversation ends, the player stays in the tavern.
+  - input: {key: E, frames: 3}
+  - frames: 5
+  - expect: {gamestate: tavern_talks, equals: 2}
+  - input: {key: Escape, frames: 3}
+  - frames: 60
+  - expect: {gamestate: dialogue_open, equals: 0}
+  - expect: {entity: TavernCamera, exists: true}

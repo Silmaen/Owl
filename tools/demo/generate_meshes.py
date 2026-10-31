@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Generate the procedural meshes of the Engine Demo tavern (``engine_demo/meshes/tavern/*.glb``: room shell, hearth,
 mantel beam, fire grate, firewood, ember bed, flame cards, a candle, the cellar trapdoor, key, chest, barrel,
-ladder, a wall sconce and a window, in metres, UVs in world units so the tiled Poly
-Haven materials keep their scale) and the fire textures (``engine_demo/textures/fire/``)."""
+ladder, a wall sconce, a window, the bar counter, the step behind it and the tankard of the barkeeper, in metres, UVs in world units so
+the tiled Poly Haven materials keep their scale) and the fire textures (``engine_demo/textures/fire/``)."""
 
 import json
 import math
@@ -582,6 +582,26 @@ def window_pane(width: float = 0.88, height: float = 0.68) -> MeshBuilder:
     return box((0.0, 0.0, 0.005), (width, height, 0.01))
 
 
+def tankard(radius: float = 0.045, height: float = 0.12) -> MeshBuilder:
+    """A pewter tankard standing on the origin: a cylinder with a thicker foot and lip, its handle along +X."""
+    m = candle(radius, height, 18)
+    m.extend(box((0.0, 0.006, 0.0), (radius * 2.2, 0.012, radius * 2.2)))
+    m.extend(box((radius + 0.012, height * 0.85, 0.0), (0.03, 0.014, 0.014)))
+    m.extend(box((radius + 0.024, height * 0.5, 0.0), (0.014, height * 0.62, 0.014)))
+    m.extend(box((radius + 0.012, height * 0.2, 0.0), (0.03, 0.014, 0.014)))
+    return m
+
+
+def bar_counter(length: float = 2.4, height: float = 0.9, depth: float = 0.6) -> MeshBuilder:
+    """The bar of the tavern along Z, centred on the origin: a front panel, a thick top overhanging it, a foot rail."""
+    m = box((0.0, height / 2 - 0.03, 0.0), (depth - 0.08, height - 0.06, length - 0.08), tile=0.8)
+    m.extend(box((0.0, height - 0.03, 0.0), (depth, 0.06, length), tile=0.8))
+    m.extend(box((-depth / 2 + 0.02, 0.05, 0.0), (0.06, 0.1, length - 0.04), tile=0.8))
+    for z in (-length / 2 + 0.3, 0.0, length / 2 - 0.3):  # posts on the front panel
+        m.extend(box((-depth / 2 + 0.03, height / 2, z), (0.06, height - 0.1, 0.08), tile=0.8))
+    return m
+
+
 def main() -> None:
     """Write every procedural mesh and texture of the Engine Demo tavern."""
     OUT.mkdir(parents=True, exist_ok=True)
@@ -608,6 +628,9 @@ def main() -> None:
     write_glb(OUT / "wall_sconce.glb", wall_sconce(), "WallSconce", color=(0.1, 0.1, 0.1, 1.0))
     write_glb(OUT / "window_frame.glb", window_frame(), "WindowFrame")
     write_glb(OUT / "window_pane.glb", window_pane(), "WindowPane")
+    write_glb(OUT / "tankard.glb", tankard(), "Tankard", color=(0.62, 0.64, 0.66, 1.0))
+    write_glb(OUT / "bar_counter.glb", bar_counter(), "BarCounter")
+    write_glb(OUT / "bar_step.glb", box((0.0, 0.15, 0.0), (0.7, 0.3, 2.4), tile=0.8), "BarStep")
     flame_texture().save(TEXTURES / "flame.png")
     ember_texture().save(TEXTURES / "embers.png")
     print(f"Meshes written to {OUT}, textures to {TEXTURES}")

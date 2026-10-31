@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Generate the skinned meshes of the Engine Demo and of the mesh tests.
+"""Generate the skinned mesh fixture of the mesh tests.
 
-``engine_demo/meshes/characters/mannequin.glb``: a 1.8 m mannequin of 13 bones with the clips ``idle``, ``walk`` and
-``wave`` and a ``socket_hand_r`` node under its right hand; ``engine_demo/meshes/characters/lantern.glb``: the
-lantern it holds; ``test/unit/test_helper/assets/mesh_tests/skinned_arm.gltf``: a two-bone arm with one clip and one
-socket, the fixture of the skinning tests."""
+``test/unit/test_helper/assets/mesh_tests/skinned_arm.gltf``: a two-bone arm with one clip and one socket, the fixture
+of the skinning tests. The characters of the Engine Demo tavern are Kenney's Mini Characters (CC0)."""
 
 import base64
 import json
@@ -12,10 +10,9 @@ import math
 import struct
 from pathlib import Path
 
-from generate_meshes import MeshBuilder, box, normalize, write_glb
+from generate_meshes import MeshBuilder, normalize
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "engine_demo" / "meshes" / "characters"
 FIXTURE = ROOT / "test" / "unit" / "test_helper" / "assets" / "mesh_tests" / "skinned_arm.gltf"
 
 
@@ -64,16 +61,6 @@ def limb(top, size, rings: int = 4) -> MeshBuilder:
         else:
             m.quad(a, b, c, e)
     return m
-
-
-def blend_near_top(bone: int, parent: int, top_y: float, length: float):
-    """Weights of a limb: its bone, blended with the parent over the top fifth of the limb."""
-    def weights(p):
-        t = min(max((top_y - p[1]) / (0.2 * length), 0.0), 1.0)
-        if parent < 0 or t >= 1.0:
-            return [(bone, 1.0)]
-        return [(bone, 0.5 + 0.5 * t), (parent, 0.5 - 0.5 * t)]
-    return weights
 
 
 def quat_axis(axis, degrees: float):
@@ -176,77 +163,10 @@ def skinned_document(skinned: SkinnedBuilder, bones, clips, sockets, name: str, 
     return gltf, doc.blob
 
 
-def write_binary(path: Path, gltf: dict, blob: bytes) -> None:
-    """Write a ``.glb``."""
-    text = json.dumps(gltf, separators=(",", ":")).encode()
-    text += b" " * (-len(text) % 4)
-    body = struct.pack("<II", len(text), 0x4E4F534A) + text + struct.pack("<II", len(blob), 0x004E4942) + blob
-    path.write_bytes(struct.pack("<III", 0x46546C67, 2, 12 + len(body)) + body)
-
-
 def write_text(path: Path, gltf: dict, blob: bytes) -> None:
     """Write a ``.gltf`` with its buffer embedded as a data URI."""
     gltf["buffers"][0]["uri"] = "data:application/octet-stream;base64," + base64.b64encode(blob).decode()
     path.write_text(json.dumps(gltf, indent=1) + "\n")
-
-
-MANNEQUIN_BONES = [
-    ("hips", -1, (0.0, 0.95, 0.0)),
-    ("spine", 0, (0.0, 0.12, 0.0)),
-    ("head", 1, (0.0, 0.5, 0.0)),
-    ("upperarm_l", 1, (0.24, 0.42, 0.0)),
-    ("forearm_l", 3, (0.0, -0.3, 0.0)),
-    ("hand_l", 4, (0.0, -0.27, 0.0)),
-    ("upperarm_r", 1, (-0.24, 0.42, 0.0)),
-    ("forearm_r", 6, (0.0, -0.3, 0.0)),
-    ("hand_r", 7, (0.0, -0.27, 0.0)),
-    ("thigh_l", 0, (0.1, -0.05, 0.0)),
-    ("shin_l", 9, (0.0, -0.44, 0.0)),
-    ("thigh_r", 0, (-0.1, -0.05, 0.0)),
-    ("shin_r", 11, (0.0, -0.44, 0.0)),
-]
-
-
-def mannequin() -> tuple[dict, bytes]:
-    """The mannequin, its clips and its hand socket."""
-    world = []
-    for _, parent, local in MANNEQUIN_BONES:
-        origin = world[parent] if parent >= 0 else (0.0, 0.0, 0.0)
-        world.append(tuple(origin[k] + local[k] for k in range(3)))
-    skinned = SkinnedBuilder()
-    parts = [  # bone, top, (width, length, depth)
-        (0, (0.0, 1.07, 0.0), (0.32, 0.2, 0.2)),
-        (1, (0.0, 1.5, 0.0), (0.4, 0.44, 0.22)),
-        (2, (0.0, 1.8, 0.0), (0.2, 0.24, 0.22)),
-        (3, world[3], (0.1, 0.3, 0.1)), (4, world[4], (0.09, 0.27, 0.09)), (5, world[5], (0.08, 0.12, 0.05)),
-        (6, world[6], (0.1, 0.3, 0.1)), (7, world[7], (0.09, 0.27, 0.09)), (8, world[8], (0.08, 0.12, 0.05)),
-        (9, world[9], (0.13, 0.44, 0.14)), (10, world[10], (0.11, 0.44, 0.12)),
-        (11, world[11], (0.13, 0.44, 0.14)), (12, world[12], (0.11, 0.44, 0.12)),
-    ]
-    for bone, top, size in parts:
-        parent = MANNEQUIN_BONES[bone][1]
-        skinned.add_part(limb(top, size), blend_near_top(bone, parent if bone > 2 else -1, top[1], size[1]))
-    skinned.add_part(box((0.0, 0.9, 0.11), (0.06, 0.06, 0.06)), lambda p: [(0, 1.0)])
-
-    def swing(bone, axis, amplitude, period, phase=0.0, offset=0.0, keys=9):
-        times = [period * k / (keys - 1) for k in range(keys)]
-        values = [quat_axis(axis, offset + amplitude * math.sin(2 * math.pi * (t / period) + phase)) for t in times]
-        return (bone, "rotation", times, values)
-
-    rest = (0.0, 0.95, 0.0)
-    walk = [swing(9, (1, 0, 0), 30, 1.0), swing(11, (1, 0, 0), 30, 1.0, math.pi),
-            swing(10, (1, 0, 0), -20, 1.0, -math.pi / 2, -20), swing(12, (1, 0, 0), -20, 1.0, math.pi / 2, -20),
-            swing(3, (1, 0, 0), 25, 1.0, math.pi), swing(6, (1, 0, 0), 12, 1.0, 0.0),
-            swing(7, (1, 0, 0), -10, 1.0, 0.0, -35),
-            (0, "translation", [0.0, 0.25, 0.5, 0.75, 1.0],
-             [rest, (0.0, 0.92, 0.0), rest, (0.0, 0.92, 0.0), rest])]
-    idle = [swing(1, (1, 0, 0), 2.5, 2.0), swing(3, (0, 0, 1), 3, 2.0), swing(6, (0, 0, 1), -3, 2.0),
-            swing(7, (1, 0, 0), 2, 2.0, 0.0, -35)]
-    wave = [swing(3, (0, 0, 1), 0, 1.5, 0.0, 150), swing(4, (0, 0, 1), 25, 0.75, 0.0, 10, keys=9),
-            swing(7, (1, 0, 0), 2, 1.5, 0.0, -35)]
-    sockets = [("hand_r", 8, (0.0, -0.1, 0.03), quat_axis((1, 0, 0), 35))]
-    return skinned_document(skinned, MANNEQUIN_BONES, {"idle": idle, "walk": walk, "wave": wave}, sockets,
-                            "Mannequin", (0.72, 0.62, 0.5, 1.0))
 
 
 def skinned_arm() -> tuple[dict, bytes]:
@@ -262,20 +182,8 @@ def skinned_arm() -> tuple[dict, bytes]:
                             "Arm", (1.0, 1.0, 1.0, 1.0))
 
 
-def lantern() -> MeshBuilder:
-    """A small lantern hanging from its ring at the origin, 0.25 m tall."""
-    m = box((0.0, -0.02, 0.0), (0.03, 0.04, 0.03))
-    m.extend(box((0.0, -0.06, 0.0), (0.12, 0.02, 0.12)))
-    m.extend(box((0.0, -0.14, 0.0), (0.09, 0.14, 0.09)))
-    m.extend(box((0.0, -0.22, 0.0), (0.13, 0.03, 0.13)))
-    return m
-
-
 def main() -> None:
-    """Write the demo characters and the test fixture."""
-    OUT.mkdir(parents=True, exist_ok=True)
-    write_binary(OUT / "mannequin.glb", *mannequin())
-    write_glb(OUT / "lantern.glb", lantern(), "Lantern", (0.85, 0.62, 0.25, 1.0))
+    """Write the test fixture."""
     write_text(FIXTURE, *skinned_arm())
 
 

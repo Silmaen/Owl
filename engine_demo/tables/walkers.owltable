@@ -1,0 +1,13 @@
+DataTable: ""
+FormatVersion: 1
+columns:
+  - {name: speed, type: Float}
+  - {name: pace, type: Enum, choices: [stroll, hurry]}
+  - {name: dish, type: Reference, table: "gid:690ca68e9f195fec:tables/dishes.owltable"}
+  - {name: mesh, type: Asset}
+rows:
+  - key: ServerWalker
+    speed: 0.7
+    pace: stroll
+    dish: stew
+    mesh: "gid:8f0f0550b4240490:meshes/characters/server.glb"
