@@ -117,6 +117,17 @@ User guide: [Renderer](../renderer.md), [Voxel Engine](../voxel.md).
 The seeded generation of a tilemap region is the first consumer of the [PCG graphs](pcg-graphs.md): the generator of a
 tilemap runs a graph from a seed, undoable, from the **Procedural** section of the tilemap editor.
 
+## Walkable areas (v0.6.0) {#walkable-areas-2d}
+
+Free walking on a 2D floor for point-and-click and top-down games, beside the tile graphs above:
+
+- A walkable area: polygons with holes on the plane of a scene, the shortest path across them (A* on their
+  triangulation, then the corners pulled tight)
+- A scale by depth: an actor walking up the screen shrinks, two values at two heights
+- Walk-behind masks: parts of a backdrop drawn in front of an actor below a line
+- Lua queries and their editor overlay, as for the tile graphs; the polygons edited in the Owl Nest viewport (add,
+  move, delete vertices and holes, select-many), each gesture a command
+
 ## Engine Demo demos (moved out of the engine)
 
 - Inventory demo — done in v0.4.0 as the showcase of the new HUD widgets ([HUD system](hud-system.md))

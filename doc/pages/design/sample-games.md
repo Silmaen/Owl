@@ -25,12 +25,14 @@ Owl Engine ships two kinds of example content:
 
 ## Short list
 
-| Game                | Inspired by           | Exercises                                       | Possible from | done in |
-|---------------------|-----------------------|-------------------------------------------------|---------------|---------|
-| Breakout            | Breakout / Arkanoid   | 2D, physics, HUD, sound, gamepad                | v0.4.0        | v0.4.0  |
-| Sokoban             | Sokoban               | tilemap, undo, saves, level editing in Owl Nest | v0.4.0        | v0.4.0  |
-| Wolfenstein mini    | Wolfenstein 3D        | raycast, doors, pick-ups, HUD                   | v0.4.0        | v0.4.0  |
-| Tower defence       | Kingdom Rush          | 3D, billboards, waves, upgrades, world map      | v0.5.0        | v0.5.0  |
+| Game             | Inspired by         | Exercises                                         | Possible from | done in |
+|------------------|---------------------|---------------------------------------------------|---------------|---------|
+| Breakout         | Breakout / Arkanoid | 2D, physics, HUD, sound, gamepad                  | v0.4.0        | v0.4.0  |
+| Sokoban          | Sokoban             | tilemap, undo, saves, level editing in Owl Nest   | v0.4.0        | v0.4.0  |
+| Wolfenstein mini | Wolfenstein 3D      | raycast, doors, pick-ups, HUD                     | v0.4.0        | v0.4.0  |
+| Tower defence    | Kingdom Rush        | 3D, billboards, waves, upgrades, world map        | v0.5.0        | v0.5.0  |
+| Rail shooter     | Star Fox            | splines, 3D, planet, particles, HUD markers       | v0.6.0        |         |
+| Point-and-click  | Legend of Kyrandia  | 2D backdrops, 3D actors, walkable areas, dialogue | v0.6.0        |         |
 
 The two v1.0 showcase games (one 2D, one 3D) are picked from this list and from the
 [Pool](#sample-games-pool). The Lua gaps closed for the tower defence also serve Mini Transport Tycoon
@@ -40,23 +42,25 @@ The two v1.0 showcase games (one 2D, one 3D) are picked from this list and from 
 
 Ideas without commitment, planned in no release. A release picks its sample games from the pool once its features are
 done; a game it builds moves to the short list, the others stay in the pool or are dropped. "Possible from" is the
-first release whose engine features the game needs.
+first release whose engine features the game needs. Every game of the pool is possible with 1.0, built or not.
 
-| Game                    | Inspired by                       | Exercises                                          | Possible from |
-|-------------------------|-----------------------------------|----------------------------------------------------|---------------|
-| Mini Transport Tycoon   | Mini Motorways / TTD              | isometric, roads, pathfinding, management HUD      | v0.5.0        |
-| Mini Minecraft          | Minecraft                         | voxel, build and break, inventory                  | v0.4.0        |
-| Wolfenstein mini combat | Wolfenstein 3D                    | guards, weapons, raycast, HUD                      | v0.4.0        |
-| One-room Zelda-like     | The Legend of Zelda               | top-down, dialogue, enemy AI, 2D lights            | v0.7.0        |
-| Marble or mini kart     | Marble Madness / Kart             | 3D, Jolt physics, shadows                          | v0.7.0        |
-| Lunar lander            | Lunar Lander                      | 3D, thrust and gravity, planetary terrain, legs    | v0.7.0        |
-| Asteroid field          | Star Fox / X-Wing                 | 6DoF flight, 3D steering AI, trails, HUD marks     | v0.7.0        |
-| Networked Bomberman     | Bomberman                         | tilemap, deterministic simulation, multiplayer     | v0.9.0        |
-| Asteroids               | Asteroids                         | 2D inertia, screen wrap, particles                 | v0.4.0        |
-| Station trader          | Taipan! / Elite                   | data tables, economy on the fixed tick, trade HUD  | v0.6.0        |
-| Rail shooter            | Star Fox                          | splines, 3D, particles, HUD markers                | v0.6.0        |
-| Orbital golf            | Angry Birds Space / Gravitee Wars | 2D gravity fields, trajectory preview              | v0.7.0        |
-| Bridge builder          | Poly Bridge / Bad Piggies         | parts snapped on sockets, breakable joints, replay | v0.7.0        |
+| Game                    | Inspired by                       | Exercises                                                                          | Possible from |
+|-------------------------|-----------------------------------|------------------------------------------------------------------------------------|---------------|
+| Mini Transport Tycoon   | Mini Motorways / TTD              | isometric, roads, pathfinding, management HUD                                      | v0.5.0        |
+| Mini Minecraft          | Minecraft                         | voxel, build and break, inventory                                                  | v0.4.0        |
+| Wolfenstein mini combat | Wolfenstein 3D                    | guards, weapons, raycast, HUD                                                      | v0.4.0        |
+| One-room Zelda-like     | The Legend of Zelda               | top-down, dialogue, enemy AI, 2D lights                                            | v0.7.0        |
+| Marble or mini kart     | Marble Madness / Kart             | 3D, Jolt physics, shadows                                                          | v0.7.0        |
+| Lunar lander            | Lunar Lander                      | 3D, thrust and gravity, planetary terrain, legs                                    | v0.7.0        |
+| Asteroid field          | Star Fox / X-Wing                 | 6DoF flight, 3D steering AI, trails, HUD marks                                     | v0.7.0        |
+| Networked Bomberman     | Bomberman                         | tilemap, deterministic simulation, multiplayer                                     | v0.9.0        |
+| Asteroids               | Asteroids                         | 2D inertia, screen wrap, particles                                                 | v0.4.0        |
+| Station trader          | Taipan! / Elite                   | data tables, economy on the fixed tick, trade HUD                                  | v0.6.0        |
+| Orbital golf            | Angry Birds Space / Gravitee Wars | 2D gravity fields, trajectory preview                                              | v0.7.0        |
+| Bridge builder          | Poly Bridge / Bad Piggies         | parts snapped on sockets, breakable joints, replay                                 | v0.7.0        |
+| Visual-script puzzle    | Lemmings / pipe puzzles           | rules written only in visual scripts, tilemap, HUD                                 | v0.6.0        |
+| Mini roguelike          | Rogue / Spelunky                  | levels from PCG graphs, tilemap, saves                                             | v0.6.0        |
+| Mini launcher           | Model rocketry                    | parts on sockets, articulated bodies, gravity, orbit prediction, time warp, planet | v0.7.0        |
 
 ## v0.4.0 games
 
@@ -382,6 +386,70 @@ and the combat come in a later release, once their art exists.
 | 2    | Wolfenstein mini | v0.4.0  | Exploration without combat (score, items, secrets, map explored); combat once its art exists (G11) |
 | 3    | Sokoban          | v0.4.0  | No blocking gap; proves level editing in Owl Nest, undo and saves                                  |
 | 4    | Tower defence    | v0.5.0  | Waves spawned from prefabs (G1), pause (G8), the tile graph of the iso town; the Lua gaps closed   |
+| 5    | Rail shooter     | v0.6.0  | First game on the v0.6.0 content: splines, sequences, HUD markers, the planet layer                |
+| 6    | Point-and-click  | v0.6.0  | Dialogue, inventory, localisation and subtitles; 3D actors on 2D backdrops on 2D walkable areas    |
+
+## v0.6.0 games
+
+### Rail shooter {#sample-games-rail-shooter}
+
+| Item     | Plan                                                                                                                                                                                                           |
+|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Play     | One level of about 3 minutes on a rail through an asteroid field around a planet: asteroids, a squadron, a boss                                                                                                |
+| Win/lose | The boss destroyed / the hull at zero; score, hit ratio and a bronze, silver or gold medal, the best kept                                                                                                      |
+| Controls | Steer inside the frame (WASD, left stick), aim (mouse, right stick), fire (Space, left click, RT), barrel roll (Q / E, LB / RB), pause                                                                         |
+| Scenes   | `title`, `level`, `settings`, `victory` (stats with a small animation, medal), `game_over`                                                                                                                     |
+| Engine   | `Spline` and `SplineFollower` for the rail, mesh and planet layers, floating origin, particles and trails, bloom, HUD markers on the targets, sequences (intro, boss, end), mixer buses, waves in a data table |
+| Art      | CC0 3D ships and asteroids, the planet of the planet layer, home-made sounds and jingle                                                                                                                        |
+| Saves    | No slot: best score and medal through `settings.save`                                                                                                                                                          |
+| Size     | **M**                                                                                                                                                                                                          |
+
+### Point-and-click {#sample-games-point-and-click}
+
+| Item     | Plan                                                                                                                                                                           |
+|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Play     | A small fairy-tale adventure with a light humour: 3 or 4 rooms, one chain of puzzles, objects picked, combined and used                                                        |
+| Win/lose | The last puzzle solved, an ending cutscene; no death, no dead end                                                                                                              |
+| Controls | Mouse: walk, look, use, talk, the cursor shows the action under it; stick and pad buttons move the cursor and cycle the hotspots; an inventory key                             |
+| Scenes   | `title`, 3 or 4 rooms, `settings`, `ending`                                                                                                                                    |
+| Look     | Painted or pixel-art 2D backdrops, 3D skinned actors (idle, walk, talk, pick up) scaled by depth, walk-behind masks                                                            |
+| Engine   | 2D walkable areas ([2D](2d-complete.md#walkable-areas-2d)), dialogues with choices, sequences for the cutscenes, an inventory HUD, French and English string tables, subtitles |
+| Art      | CC0 backdrops and actors, home-made where none fits; home-made sounds and jingle                                                                                               |
+| Saves    | One slot through `save.*`: room, inventory, puzzles solved                                                                                                                     |
+| Size     | **M**                                                                                                                                                                          |
+
+### Improvements of the earlier games {#sample-games-improvements}
+
+Each change serves its game, not a feature list:
+
+- Every game: mixer buses for music and effects with their sliders in the settings (G9), `time.set_paused` for the
+  pause
+- Breakout: particles on the broken bricks and a trail on the ball in place of the pools of hidden entities, bloom and
+  2D lights for the neon
+- Sokoban: the level list in a data table, dust on a push and a sparkle on a crate set on a goal
+- Wolfenstein mini: HUD markers on the keys and the exit, an elevator cutscene at the end of a floor, particles on the
+  pick-ups, the accessibility settings
+- Tower defence: waves, towers and enemies in data tables, particles (arrows, fire, rain), the briefings as dialogues,
+  the enemy lanes on splines, mesh levels of detail, the accessibility settings; the enemies stay billboard sprites in
+  the 3D world
+
+## Engine Demo revamp (v0.6.0) {#sample-games-demo-revamp}
+
+The Engine Demo stays as small as possible and as complete as possible: every scene opens from the world map and
+returns to it, none is reached any other way.
+
+| Item        | Plan                                                                                                                         |
+|-------------|------------------------------------------------------------------------------------------------------------------------------|
+| World map   | The only way in: the main menu starts the hub, its shortcut keys to the scenes go                                            |
+| Doors       | One door script with properties (target scene, transition, completion key) for every place                                   |
+| Progress    | Six places: platformer, raycast, iso town, voxel, tavern (cellar included), observatory; the portal at six of six            |
+| Hub         | HUD markers on the places left, a minimap, day and night with 2D lights, a reverb cave and adaptive music, a new CC0 tileset |
+| Tavern      | Skinned actors: a barkeeper with a tankard on a socket, a server walking a spline between the tables, more dialogues         |
+| Observatory | Its telescope opens `far_orbit`; the objective: dock with a debris, then back to the hub                                     |
+| Main menu   | A live diorama mixing styles: the 2D village in front, the 3D tavern behind, day and night                                   |
+| Folded      | `sound_yard` into the hub, `character_yard` into the tavern; their scenarios follow                                          |
+| Scenarios   | Every scene played by a scenario, `far_orbit`, the settings, the victory and the game over included                          |
+| Later       | Each release puts its features in the existing places                                                                        |
 
 ## Plans of pool games
 
@@ -405,11 +473,20 @@ Not yet checked against the engine: a plan is refined when its game is picked by
 | Engine   | 6DoF flight on Jolt, 3D steering and formations, particle trails, emissive lights, HUD markers, Doppler |
 | Size     | **M**, once the v0.7.0 AI is in                                                                         |
 
+### Mini launcher
+
+| Item     | Plan                                                                                                        |
+|----------|-------------------------------------------------------------------------------------------------------------|
+| Play     | Assemble a rocket from parts snapped on sockets, launch it and reach a target orbit, then a moon            |
+| Win/lose | The target orbit reached / the rocket breaks apart or runs out of fuel                                      |
+| Engine   | Sockets, articulated bodies and breakable joints, gravity fields, orbit prediction, time warp, planet layer |
+| Size     | **L**, once the v0.7.0 physics and gravity are in                                                           |
+
 ## Layout
 
 ```
 samples/
-  breakout/  sokoban/  wolfenstein/  tower_defence/   (tycoon/ and minecraft/ if picked)
+  breakout/  sokoban/  wolfenstein/  tower_defence/  rail_shooter/  point_and_click/
     owl_project.yml  game_settings.yml  input_actions.yml  input/gamecontrollerdb.txt
     scenes/  huds/  prefabs/  tilesets/  tilemaps/  scripts/  textures/  sounds/
 tools/samples/<game>/                 art and sound generators (neither exported nor installed)
