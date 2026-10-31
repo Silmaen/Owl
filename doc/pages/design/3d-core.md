@@ -78,7 +78,7 @@ Pull requests 7 and 8 together: PBR materials, image-based lighting and the per-
 | Overrides       | A `MeshRenderer` slot overrides chosen fields of its material per entity; prefabs keep them as overrides                                                               |
 | Synchronisation | `MaterialLibrary` (engine context) shares one material per file; editing or reloading a `.owlmat` updates its instances and every entity using them                    |
 | Voxel worlds    | The default `Standard` material (no metal, roughness 0.5), no layers, the face occlusion as ambient occlusion                                                          |
-| Future          | A `Graph` kind of `.owlmat`, edited on `NodeCanvas` and compiled to Slang, beside the parameter kind                                                                   |
+| Future          | A `Graph` kind of `.owlmat`, edited on `NodeCanvas` and compiled to Slang ([Material graphs](material-graphs.md))                                                      |
 
 | Decision        | Choice                                                                                                                |
 |-----------------|-----------------------------------------------------------------------------------------------------------------------|

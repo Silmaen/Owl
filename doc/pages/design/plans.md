@@ -38,6 +38,7 @@ what is planned; what exists is in the guides ([contributors](../guide_contribut
 | [Editor console and scripting](editor-scripting.md)   | Scripting Owl Nest itself                                  |
 | [MCP server](mcp-server.md)                           | The editor command API and MCP                             |
 | [Visual scripting](visual-scripting.md)               | Blueprints-style visual scripting                          |
+| [Material graphs](material-graphs.md)                 | Materials written as Slang graphs                          |
 
 <!-- subpage: 2d-complete.md -->
 <!-- subpage: 3d-core.md -->
@@ -56,6 +57,7 @@ what is planned; what exists is in the guides ([contributors](../guide_contribut
 <!-- subpage: isometric.md -->
 <!-- subpage: large-worlds.md -->
 <!-- subpage: localisation.md -->
+<!-- subpage: material-graphs.md -->
 <!-- subpage: mcp-server.md -->
 <!-- subpage: modding-platforms.md -->
 <!-- subpage: nest-style-guide.md -->

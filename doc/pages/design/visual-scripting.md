@@ -37,11 +37,41 @@ Design page for the Blueprints-style visual scripting, summarised in the [Roadma
 
 User guide: [Visual scripts](../visual-scripts.md).
 
-### Lua to graph {#visual-scripting-lua-to-graph}
+## Custom Lua node (v0.7.0) {#visual-scripting-custom-lua}
 
-To evaluate after v0.6.0: build a graph from a Lua script, the reverse of the compiler. The subset to support (hooks,
-binding calls, `if`, numeric `for`, property reads and writes) and what to do with the rest (one Lua node holding the
-code, or a refusal) are the open questions.
+Designers and developers script the same game, each in text or in graphs: a graph calls a Lua function, a Lua script
+calls a graph function.
+
+- Custom node: its author gives the title, the typed input and output pins and the Lua code it runs; the compiler
+  inlines the code in the Lua of the graph
+- Library functions: a function of a `.lua` script, annotated with the types of its parameters and returns, shows in the
+  palette like a binding; its code stays text, diffed and reviewed as code
+- Owl Nest edits the title, the pins and the code of a custom node (inspector and code editor), one undo step each
+- Generic graphs wire events; state machines, behaviour trees, dialogues, sequences and PCG have their own graphs, and
+  algorithms stay in Lua
+
+## Luau (evaluation, v0.7.0) {#visual-scripting-luau}
+
+[Luau](https://luau.org) is the Lua dialect of Roblox (MIT, `luau` on ConanCenter), derived from Lua 5.1. Evaluated in
+v0.7.0 to replace Lua 5.5 in v0.8.0, with the mod API, so the scripting API freezes once at 1.0.
+
+| Gain     | What it brings to Owl                                                                                      |
+|----------|------------------------------------------------------------------------------------------------------------|
+| Types    | Gradual types (`--!strict` per file): typed pins of the custom nodes, completion and errors in the editor  |
+| Analysis | The type checker is an embeddable C++ library; type declarations generated from the binding registry       |
+| Sandbox  | Built for untrusted code: frozen tables, interrupt callback, memory per category, for the mods             |
+| Speed    | Faster interpreter than Lua 5.x, optional native code on x64 and arm64; the interpreter alone on the Web   |
+| Syntax   | Compound assignment, `continue`, `if` expressions, string interpolation, a native `vector` type            |
+
+| Cost        | What has to change                                                                                      |
+|-------------|---------------------------------------------------------------------------------------------------------|
+| Numbers     | Doubles only: entity UUIDs (64-bit integers in `LuaBindings.cpp`) become userdata first, in Lua 5.5     |
+| Debugger    | `lua_sethook` is absent: breakpoints on `lua_breakpoint` and single step, the watchdog on the interrupt |
+| Language    | Lua 5.1 base: no `goto`, no `__gc`, no bytecode loading; the Engine Demo scripts use none of them       |
+| Releases    | Numbered 0.6xx to 0.7xx without semantic versioning, pinned by `conan.lock`                             |
+
+The evaluation answers: the `script/*` benchmarks against Lua 5.5, the bindings ported on a prototype, the Analysis
+library in the Owl Nest code editor. Lua 5.5 and Luau never run side by side: one VM, one binding layer, one debugger.
 
 ## Node-graph link waypoints (v0.6.0)
 
