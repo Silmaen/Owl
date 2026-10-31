@@ -10,6 +10,7 @@
 
 #include <app/Application.h>
 #include <math/Transform.h>
+#include <math/trigonometry.h>
 #include <renderer/CameraOrtho.h>
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/Renderer.h>

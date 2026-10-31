@@ -11,12 +11,15 @@
 
 #include "app/Application.h"
 #include "math/YamlSerializers.h"
+#include "math/trigonometry.h"
 #include "renderer/RenderLayerFactory.h"
 #include "renderer/RenderStackYaml.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/utils/LayerTilemaps.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 
 namespace owl::renderer {
