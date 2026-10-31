@@ -24,6 +24,7 @@
 #include <scene/SceneCamera.h>
 #include <scene/component/Camera.h>
 #include <scene/nav/Pathfinder.h>
+#include <scene/nav/WalkMesh.h>
 #include <window/Window.h>
 
 #include <array>
@@ -616,6 +617,45 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the floors of the selected `WalkArea`: its outlines, its holes, its triangles and its vertices (the selected
+	 *  ones highlighted).
+	 * @param[in] iScene The scene edited.
+	 */
+	void renderWalkAreaOverlay(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
+	 *  Point of the plane of the selected `WalkArea` under the cursor, in the space of the entity.
+	 * @return The point, or nothing when the cursor misses the plane.
+	 */
+	[[nodiscard]] auto pickWalkAreaPoint() const -> std::optional<math::vec2>;
+
+	/**
+	 * @brief
+	 *  Vertex of the selected `WalkArea` under the cursor.
+	 * @return The vertex, or nothing.
+	 */
+	[[nodiscard]] auto pickWalkAreaVertex() const -> std::optional<gui::component::WalkAreaSelection::Vertex>;
+
+	/**
+	 * @brief
+	 *  Handle a left click on the selected `WalkArea`: a vertex selects it (Ctrl adds it), Shift on an edge inserts a
+	 *  vertex (`walk.insert_vertex`), Alt adds a hole inside a floor (`walk.add_hole`) or a floor outside
+	 *  (`walk.add_polygon`).
+	 * @return True when the click was used.
+	 */
+	auto onWalkAreaClick() -> bool;
+
+	/**
+	 * @brief
+	 *  Move the selected vertices of the selected `WalkArea` with a translation gizmo; the move is recorded as one
+	 *  `walk.move_vertices` command on release.
+	 * @return True when the walk area gizmo is shown (the entity gizmo is not).
+	 */
+	auto renderWalkAreaGizmo() -> bool;
+
+	/**
+	 * @brief
 	 *  Socket of the selected entity whose marker is under the cursor.
 	 * @return The socket name, nothing when the click misses every socket.
 	 */
@@ -939,6 +979,10 @@ private:
 	std::vector<math::SplinePoint> m_splineBefore;
 	/// Whether the spline gizmo was being used last frame.
 	bool m_splineWasUsing = false;
+	/// Floors of the selected `WalkArea` when the drag of its vertices began.
+	std::vector<scene::nav::WalkPolygon> m_walkBefore;
+	/// Whether the walk area gizmo was being used last frame.
+	bool m_walkWasUsing = false;
 	/// Offset of the selected socket when its drag began.
 	std::optional<math::Transform> m_socketBefore;
 	/// Whether the socket gizmo was being used last frame.

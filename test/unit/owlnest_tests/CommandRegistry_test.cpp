@@ -9,6 +9,7 @@
 #include "commands/CommandRegistry.h"
 #include "UndoManager.h"
 #include "commands/HudCommands.h"
+#include "commands/WalkAreaCommands.h"
 #include "testHelper.h"
 
 #include <core/SerializerImpl.h>
@@ -104,7 +105,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 124u);
+	EXPECT_EQ(m_registry.getCommands().size(), 131u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -298,7 +299,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 124u);
+	EXPECT_EQ(m_registry.getCommands().size(), 131u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -1256,6 +1257,82 @@ TEST_F(CommandRegistryTest, ChangesTheLiveMixerWithoutAnUndoEntry) {
 	EXPECT_FLOAT_EQ(mixer->getBusGain(sound::Bus::Music), 0.f);
 	EXPECT_EQ(m_scene->getMixSettings(), sound::MixSettings{});
 	sound::SoundCommand::invalidate();
+}
+
+TEST_F(CommandRegistryTest, WalkAreaCommandsEditTheFloorsAndUndo) {
+	m_undo.setMergeEnabled(false);
+	auto floor = m_scene->createEntity("Floor");
+	EXPECT_FALSE(run("walk.add_polygon", {{"entity", idOf(floor)}, {"position", math::vec3{0.f, 0.f, 0.f}}}));
+	floor.addComponent<scene::component::WalkArea>();
+	const auto areaOf = [&floor]() -> const scene::component::WalkArea& {
+		return floor.getComponent<scene::component::WalkArea>();
+	};
+	const auto added =
+			run("walk.add_polygon", {{"entity", idOf(floor)}, {"position", math::vec3{5.f, 5.f, 0.f}}, {"size", 10.0}});
+	ASSERT_TRUE(added);
+	EXPECT_EQ(std::get<int64_t>(added->data.at("polygon")), 0);
+	ASSERT_EQ(areaOf().polygons.size(), 1u);
+	EXPECT_NEAR(areaOf().getMesh().getArea(), 100.f, 1e-3f);
+	EXPECT_FALSE(run("walk.add_polygon",
+					 {{"entity", idOf(floor)}, {"position", math::vec3{0.f, 0.f, 0.f}}, {"size", -1.0}}));
+	const auto hole = run(
+			"walk.add_hole",
+			{{"entity", idOf(floor)}, {"polygon", int64_t{0}}, {"position", math::vec3{5.f, 5.f, 0.f}}, {"size", 2.0}});
+	ASSERT_TRUE(hole);
+	EXPECT_EQ(std::get<int64_t>(hole->data.at("ring")), 1);
+	EXPECT_NEAR(areaOf().getMesh().getArea(), 96.f, 1e-3f);
+	EXPECT_FALSE(run("walk.add_hole",
+					 {{"entity", idOf(floor)}, {"polygon", int64_t{3}}, {"position", math::vec3{0.f, 0.f, 0.f}}}));
+	ASSERT_TRUE(run("walk.insert_vertex", {{"entity", idOf(floor)},
+										   {"polygon", int64_t{0}},
+										   {"index", int64_t{1}},
+										   {"position", math::vec3{5.f, -2.f, 0.f}}}));
+	ASSERT_EQ(areaOf().polygons[0].outline.size(), 5u);
+	EXPECT_FLOAT_EQ(areaOf().polygons[0].outline[1].y(), -2.f);
+	EXPECT_FALSE(run("walk.insert_vertex", {{"entity", idOf(floor)},
+											{"polygon", int64_t{0}},
+											{"index", int64_t{9}},
+											{"position", math::vec3{0.f, 0.f, 0.f}}}));
+	ASSERT_TRUE(run("walk.move_vertices", {{"entity", idOf(floor)},
+										   {"vertices", std::string{"0:1:0,0:1:1"}},
+										   {"offset", math::vec3{0.f, -1.f, 0.f}}}));
+	EXPECT_FLOAT_EQ(areaOf().polygons[0].holes[0][0].y(), 3.f);
+	EXPECT_FALSE(
+			run("walk.move_vertices",
+				{{"entity", idOf(floor)}, {"vertices", std::string{"0:4:0"}}, {"offset", math::vec3{1.f, 0.f, 0.f}}}));
+	EXPECT_FALSE(
+			run("walk.move_vertices",
+				{{"entity", idOf(floor)}, {"vertices", std::string{"0:x"}}, {"offset", math::vec3{1.f, 0.f, 0.f}}}));
+	ASSERT_TRUE(run("walk.set_vertex", {{"entity", idOf(floor)},
+										{"polygon", int64_t{0}},
+										{"index", int64_t{1}},
+										{"position", math::vec3{5.f, -3.f, 0.f}}}));
+	EXPECT_FLOAT_EQ(areaOf().polygons[0].outline[1].y(), -3.f);
+	EXPECT_FALSE(run("walk.set_vertex", {{"entity", idOf(floor)},
+										 {"polygon", int64_t{0}},
+										 {"index", int64_t{1}},
+										 {"position", math::vec3{5.f, -3.f, 0.f}}}));
+	// Two vertices of the hole gone: the hole goes with them.
+	ASSERT_TRUE(run("walk.delete_vertices", {{"entity", idOf(floor)}, {"vertices", std::string{"0:1:0,0:1:2,0:0:1"}}}));
+	EXPECT_TRUE(areaOf().polygons[0].holes.empty());
+	EXPECT_EQ(areaOf().polygons[0].outline.size(), 4u);
+	ASSERT_TRUE(run("walk.add_polygon", {{"entity", idOf(floor)}, {"position", math::vec3{20.f, 0.f, 0.f}}}));
+	ASSERT_TRUE(run("walk.delete_ring", {{"entity", idOf(floor)}, {"polygon", int64_t{1}}}));
+	EXPECT_EQ(areaOf().polygons.size(), 1u);
+	EXPECT_FALSE(run("walk.delete_ring", {{"entity", idOf(floor)}, {"polygon", int64_t{0}}, {"ring", int64_t{2}}}));
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(areaOf().polygons.size(), 2u);
+	m_undo.undo(*m_scene);
+	m_undo.undo(*m_scene);
+	ASSERT_EQ(areaOf().polygons[0].holes.size(), 1u);
+	EXPECT_EQ(areaOf().polygons[0].outline.size(), 5u);
+	m_undo.redo(*m_scene);
+	EXPECT_TRUE(areaOf().polygons[0].holes.empty());
+	const auto vertices = commands::parseWalkVertices(" 0:1:2 , 1:0:3 ");
+	ASSERT_TRUE(vertices.has_value());
+	EXPECT_EQ(commands::formatWalkVertices(*vertices), "0:1:2,1:0:3");
+	EXPECT_FALSE(commands::parseWalkVertices("1:2").has_value());
+	EXPECT_FALSE(commands::parseWalkVertices("1:2:3:4").has_value());
 }
 
 TEST_F(CommandRegistryTest, SplineCommandsEditThePointsAndUndo) {

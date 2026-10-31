@@ -4466,6 +4466,227 @@ void renderProps(SplineFollower& ioComponent) {
 	fieldTooltip("Face the direction of the curve: the -Z axis in 3D, the +X axis on a 2D path.");
 }
 
+auto WalkAreaSelection::contains(const core::UUID iEntity, const Vertex& iVertex) const -> bool {
+	return entity == iEntity && entity != core::UUID{0} && std::ranges::binary_search(vertices, iVertex);
+}
+
+void WalkAreaSelection::select(const core::UUID iEntity, const Vertex& iVertex, const bool iAdd) {
+	if (entity != iEntity || !iAdd) {
+		entity = iEntity;
+		vertices.clear();
+	}
+	if (const auto found = std::ranges::lower_bound(vertices, iVertex); found != vertices.end() && *found == iVertex) {
+		if (iAdd)
+			vertices.erase(found);
+	} else {
+		vertices.insert(found, iVertex);
+	}
+}
+
+void WalkAreaSelection::clamp(const core::UUID iEntity, const WalkArea& iArea) {
+	if (entity != iEntity) {
+		clear();
+		return;
+	}
+	std::erase_if(vertices, [&iArea](const Vertex& iVertex) -> bool {
+		const auto* ring = iArea.getRing(iVertex.polygon, iVertex.ring);
+		return ring == nullptr || iVertex.index >= ring->size();
+	});
+}
+
+auto getWalkAreaSelection() -> WalkAreaSelection& {
+	static WalkAreaSelection s_selection;
+	return s_selection;
+}
+
+namespace {
+
+// A square ring of a side around a point.
+auto squareRing(const math::vec2& iCenter, const float iHalf) -> std::vector<math::vec2> {
+	return {iCenter + math::vec2{-iHalf, -iHalf}, iCenter + math::vec2{iHalf, -iHalf},
+			iCenter + math::vec2{iHalf, iHalf}, iCenter + math::vec2{-iHalf, iHalf}};
+}
+
+auto ringCenter(const std::vector<math::vec2>& iRing) -> math::vec2 {
+	math::vec2 sum{0.f, 0.f};
+	for (const auto& point: iRing) sum = sum + point;
+	return iRing.empty() ? sum : sum * (1.f / static_cast<float>(iRing.size()));
+}
+
+// The vertices of a ring, one row each (its select button, then its X and Y); returns true when one changed.
+auto renderWalkRing(std::vector<math::vec2>& ioRing, const core::UUID iOwner, const size_t iPolygon, const size_t iRing)
+		-> bool {
+	auto& selection = getWalkAreaSelection();
+	bool changed = false;
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < ioRing.size(); ++index) {
+		ImGui::PushID(static_cast<int>(index));
+		const WalkAreaSelection::Vertex vertex{.polygon = iPolygon, .ring = iRing, .index = index};
+		const bool picked = selection.contains(iOwner, vertex);
+		changed |= prop::row(std::format("Vertex {}", index).c_str(), [&](const char* iId) -> bool {
+			const float side = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.x;
+			if (widgets::iconButton("##pick", {.glyph = icon::circleDot,
+											   .tooltip = "Select the vertex",
+											   .description = "Ctrl adds it to the selection; the viewport gizmo "
+															  "moves the selected vertices.",
+											   .selected = picked}))
+				selection.select(iOwner, vertex, ImGui::GetIO().KeyCtrl || ImGui::GetIO().KeyShift);
+			ImGui::SameLine();
+			std::array values{ioRing[index].x(), ioRing[index].y()};
+			const bool edited =
+					widgets::vectorField(iId, values, 0.05f, "%.2f", ImGui::GetContentRegionAvail().x - side);
+			if (edited)
+				ioRing[index] = {values[0], values[1]};
+			ImGui::SameLine();
+			if (removeButton("Delete the vertex"))
+				removed = index;
+			return edited;
+		});
+		ImGui::PopID();
+	}
+	if (removed && ioRing.size() > 3) {
+		eraseAt(ioRing, removed);
+		selection.clear();
+		changed = true;
+	}
+	return changed;
+}
+
+void renderWalkPolygons(WalkArea& ioComponent, const scene::Entity& iOwner) {
+	auto& selection = getWalkAreaSelection();
+	const core::UUID owner = iOwner ? iOwner.getUUID() : core::UUID{0};
+	selection.clamp(owner, ioComponent);
+	std::optional<size_t> removedPolygon;
+	for (size_t polygon = 0; polygon < ioComponent.polygons.size(); ++polygon) {
+		auto& floor = ioComponent.polygons[polygon];
+		ImGui::PushID(static_cast<int>(polygon));
+		if (widgets::subHeader(std::format("Floor {}", polygon).c_str(), true)) {
+			std::ignore = renderWalkRing(floor.outline, owner, polygon, 0);
+			std::optional<size_t> removedHole;
+			for (size_t hole = 0; hole < floor.holes.size(); ++hole) {
+				ImGui::PushID(static_cast<int>(hole + 1));
+				std::ignore = prop::row(std::format("Hole {}", hole).c_str(), [&](const char*) -> bool {
+					if (widgets::button("##deleteHole", {.glyph = icon::trash2,
+														 .label = "Delete Hole",
+														 .tooltip = "Delete the hole",
+														 .description = "The floor is walkable there again."}))
+						removedHole = hole;
+					return false;
+				});
+				std::ignore = renderWalkRing(floor.holes[hole], owner, polygon, hole + 1);
+				ImGui::PopID();
+			}
+			if (removedHole) {
+				eraseAt(floor.holes, removedHole);
+				selection.clear();
+			}
+			std::ignore = prop::row("##floorActions", [&](const char*) -> bool {
+				if (widgets::button("##addHole", {.glyph = icon::plus,
+												  .label = "Add Hole",
+												  .tooltip = "Cut a hole in the floor",
+												  .description = "A small square in the middle of the floor; drag its "
+																 "vertices in the viewport (Alt + click inside a "
+																 "floor adds one there)."}))
+					floor.holes.push_back(squareRing(ringCenter(floor.outline), 0.5f));
+				ImGui::SameLine();
+				if (widgets::button("##deleteFloor", {.glyph = icon::trash2,
+													  .label = "Delete Floor",
+													  .tooltip = "Delete the floor and its holes"}))
+					removedPolygon = polygon;
+				return false;
+			});
+		}
+		ImGui::PopID();
+	}
+	if (removedPolygon) {
+		eraseAt(ioComponent.polygons, removedPolygon);
+		selection.clear();
+	}
+	if (widgets::button("##addFloor",
+						{
+								.glyph = icon::plus,
+								.label = "Add Floor",
+								.tooltip = "Add a floor",
+								.description = "A square of 4 by 4 units; Alt + click outside the floors in "
+											   "the viewport adds one there.",
+						})) {
+		const math::vec2 center = ioComponent.polygons.empty()
+										  ? math::vec2{0.f, 0.f}
+										  : ringCenter(ioComponent.polygons.back().outline) + math::vec2{5.f, 0.f};
+		ioComponent.polygons.push_back({.outline = squareRing(center, 2.f), .holes = {}});
+	}
+	fieldTooltip("In the viewport: click a vertex, Ctrl+click adds it to the selection, Shift+click on an edge inserts "
+				 "a vertex, Alt+click adds a hole inside a floor or a floor outside, Delete removes the selected "
+				 "vertices.");
+}
+
+}// namespace
+
+void renderProps(WalkArea& ioComponent, const scene::Entity& iOwner) {
+	const WalkArea defaults;
+	resetCheckbox("Scale By Depth", ioComponent.depthScale, defaults.depthScale);
+	fieldTooltip("Shrink the agents as they walk up the plane (away from the viewer).");
+	if (ioComponent.depthScale) {
+		resetFloat("Near Height", ioComponent.nearY, defaults.nearY, 0.05f, -1.e4f, 1.e4f, "%.2f");
+		fieldTooltip("Height on the plane (y, in the space of the entity) of the near scale.");
+		resetFloat("Near Scale", ioComponent.nearScale, defaults.nearScale, 0.01f, 0.01f, 100.f, "%.2f");
+		fieldTooltip("Scale of an agent at the near height.");
+		resetFloat("Far Height", ioComponent.farY, defaults.farY, 0.05f, -1.e4f, 1.e4f, "%.2f");
+		fieldTooltip("Height on the plane of the far scale.");
+		resetFloat("Far Scale", ioComponent.farScale, defaults.farScale, 0.01f, 0.01f, 100.f, "%.2f");
+		fieldTooltip("Scale of an agent at the far height; the scale goes on linearly beyond both heights.");
+	}
+	resetCheckbox("Sort By Depth", ioComponent.depthSort, defaults.depthSort);
+	fieldTooltip("Set the Z of the agents and of the Walk Behind masks from their height on the plane: what is lower "
+				 "on the plane is drawn in front.");
+	if (ioComponent.depthSort) {
+		resetFloat("Depth Per Unit", ioComponent.depthPerUnit, defaults.depthPerUnit, 0.005f, 0.f, 100.f, "%.3f");
+		fieldTooltip("Z gained for each unit walked down the plane, from the near height.");
+	}
+	const auto& mesh = ioComponent.getMesh();
+	ImGui::TextDisabled("%zu triangles, area %.2f", mesh.getTriangles().size(), static_cast<double>(mesh.getArea()));
+	if (widgets::subHeader("Floors", true))
+		renderWalkPolygons(ioComponent, iOwner);
+}
+
+void renderProps(WalkAgent& ioComponent) {
+	const WalkAgent defaults;
+	auto area = static_cast<uint64_t>(ioComponent.area);
+	prop::row("Area", [&](const char*) -> bool {
+		if (scriptEntityPicker(area, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.area = core::UUID{area};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Entity holding the Walk Area the agent walks on.");
+	resetFloat("Speed", ioComponent.speed, defaults.speed, 0.05f, 0.f, 1000.f, "%.2f");
+	fieldTooltip("Walking speed, in world units per second at a scale of 1.");
+	resetCheckbox("Scale Speed", ioComponent.scaleSpeed, defaults.scaleSpeed);
+	fieldTooltip("Walk slower far away, as the agent is scaled by depth.");
+	enumCombo("Facing", ioComponent.facing);
+	fieldTooltip("None: never turned. MirrorX: a sprite mirrored while walking left. TurnY: a mesh turned around Y, "
+				 "facing the viewer when walking down the plane.");
+	prop::InputText("Speed Parameter", &ioComponent.speedParameter);
+	fieldTooltip("Float parameter of the Animator (of the entity or of its first child that has one) set to the "
+				 "walking speed; empty for none.");
+}
+
+void renderProps(WalkBehind& ioComponent) {
+	auto area = static_cast<uint64_t>(ioComponent.area);
+	prop::row("Area", [&](const char*) -> bool {
+		if (scriptEntityPicker(area, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.area = core::UUID{area};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Entity holding the Walk Area whose depth sorts this mask (its Sort By Depth must be on).");
+	prop::DragFloat("Baseline", &ioComponent.baseline, 0.05f, -1.e4f, 1.e4f, "%.2f");
+	fieldTooltip("Height of the line on the plane of the area: an agent whose feet are above it walks behind the "
+				 "mask, one below it in front.");
+}
+
 void renderProps(SequencePlayer& ioComponent) {
 	if (assetPathRow("Sequence", ioComponent.sequence, "drop a .owlseq", "Open the sequence in its editor."))
 		ioComponent.sequence.clear();

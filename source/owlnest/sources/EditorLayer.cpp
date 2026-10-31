@@ -11,6 +11,7 @@
 #include "AssetKind.h"
 #include "EditorResources.h"
 #include "commands/Macro.h"
+#include "commands/WalkAreaCommands.h"
 #include "document/ActionMapDocument.h"
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
@@ -453,6 +454,14 @@ void EditorLayer::deleteSelection() {
 							  {{"entity", entity}, {"points", commands::formatIndices(points.points)}},
 							  commands::CommandSource::Gesture);
 		points.clear();
+		return;
+	}
+	if (auto& vertices = gui::component::getWalkAreaSelection();
+		vertices.entity == ent.getUUID() && !vertices.vertices.empty()) {
+		std::ignore = execute("walk.delete_vertices",
+							  {{"entity", entity}, {"vertices", commands::formatWalkVertices(vertices.vertices)}},
+							  commands::CommandSource::Gesture);
+		vertices.clear();
 		return;
 	}
 	setSelectedEntity({});

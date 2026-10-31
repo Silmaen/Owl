@@ -25,6 +25,7 @@
 #include "SceneSettingsCommands.h"
 #include "SequenceCommands.h"
 #include "SplineCommands.h"
+#include "WalkAreaCommands.h"
 
 #include <app/EngineContext.h>
 #include <data/geometry/MeshLoader.h>
@@ -1841,6 +1842,7 @@ CommandRegistry::CommandRegistry() {
 		 .run = redoEdit});
 	addHudCommands(*this);
 	addSplineCommands(*this);
+	addWalkAreaCommands(*this);
 	addDataTableCommands(*this);
 	addHudThemeCommands(*this);
 	addDialogueCommands(*this);

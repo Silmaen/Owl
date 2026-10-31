@@ -801,6 +801,7 @@ void Viewport::renderOverlay() const {
 		}
 		renderBehaviourOverlays(activeScene);
 		renderSplineOverlay(activeScene);
+		renderWalkAreaOverlay(activeScene);
 		renderSequenceOverlay(activeScene);
 		renderSkeletonMarkers(activeScene);
 		renderWorldCells(activeScene);
@@ -2042,6 +2043,7 @@ void Viewport::renderNavigationOverlay(const shared<scene::Scene>& iScene) const
 	constexpr math::vec4 pathColor{1.f, 0.95f, 0.20f, 1.f};
 	scene::nav::drawNavigationGraph(*iScene);
 	scene::nav::drawNavigationRoutes(*iScene);
+	scene::nav::drawWalkAreas(*iScene);
 	if (m_navTool.active && m_hoveredCell.has_value() && m_isometric)
 		scene::nav::drawNavigationCellEditor(*iScene, static_cast<uint64_t>(m_hoveredMapEntity), m_hoveredCell->x(),
 											 m_hoveredCell->y(), m_navSide);
@@ -2130,7 +2132,7 @@ void Viewport::renderGizmo() {
 	if (!activeScene)
 		return;
 
-	if (renderWaypointGizmo() || renderSocketGizmo() || renderSplineGizmo())
+	if (renderWaypointGizmo() || renderSocketGizmo() || renderSplineGizmo() || renderWalkAreaGizmo())
 		return;
 	if (const scene::Entity selectedEntity = m_parent->getSelectedEntity();
 		selectedEntity && m_gizmoType != gui::Guizmo::Type::None && !isPiloted(selectedEntity)) {
@@ -2410,6 +2412,8 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 			}
 			gui::component::getSocketSelection().clear();
 			if (onSplineClick())
+				return false;
+			if (onWalkAreaClick())
 				return false;
 			if (const int handle = pickPatrolWaypoint(); handle >= 0) {
 				m_patrolHandle = handle;

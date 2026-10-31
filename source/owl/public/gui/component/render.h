@@ -653,6 +653,100 @@ OWL_API void renderProps(scene::component::SplineFollower& ioComponent);
 
 /**
  * @brief
+ *  The vertices of a walk area picked in the inspector or the viewport, moved by the viewport gizmo of Owl Nest.
+ */
+struct OWL_API WalkAreaSelection {
+	/// A vertex of a ring of a polygon.
+	struct OWL_API Vertex {
+		/// Index of the polygon.
+		size_t polygon = 0;
+		/// 0 for the outline, `1 + n` for the hole `n`.
+		size_t ring = 0;
+		/// Index of the vertex in the ring.
+		size_t index = 0;
+
+		/**
+		 * @brief
+		 *  Order the vertices by polygon, ring then index.
+		 * @param[in] iOther The other vertex.
+		 * @return The order.
+		 */
+		auto operator<=>(const Vertex& iOther) const = default;
+	};
+
+	/// Entity owning the area, 0 for none.
+	core::UUID entity{0};
+	/// The selected vertices, in increasing order.
+	std::vector<Vertex> vertices;
+
+	/**
+	 * @brief
+	 *  Check if a vertex is selected.
+	 * @param[in] iEntity The entity owning the area.
+	 * @param[in] iVertex The vertex.
+	 * @return True when it is one of the selected vertices.
+	 */
+	[[nodiscard]] auto contains(core::UUID iEntity, const Vertex& iVertex) const -> bool;
+
+	/**
+	 * @brief
+	 *  Select a vertex.
+	 * @param[in] iEntity The entity owning the area.
+	 * @param[in] iVertex The vertex.
+	 * @param[in] iAdd Whether the vertex is toggled in the selection instead of replacing it.
+	 */
+	void select(core::UUID iEntity, const Vertex& iVertex, bool iAdd = false);
+
+	/**
+	 * @brief
+	 *  Forget the selected vertices the area no longer has, or all of them when they belong to another entity.
+	 * @param[in] iEntity The entity whose area is shown.
+	 * @param[in] iArea Its area.
+	 */
+	void clamp(core::UUID iEntity, const scene::component::WalkArea& iArea);
+
+	/**
+	 * @brief
+	 *  Forget the selection.
+	 */
+	void clear() {
+		entity = core::UUID{0};
+		vertices.clear();
+	}
+};
+
+/**
+ * @brief
+ *  Get the walk area vertex selection shared by the walk area inspector and the viewport.
+ * @return The selection.
+ */
+OWL_API auto getWalkAreaSelection() -> WalkAreaSelection&;
+
+/**
+ * @brief
+ *  Render a Gui for editing a walk area: the scale and the sort by depth, its floors, their holes and their vertices
+ *  (the ones picked in the viewport highlighted).
+ * @param ioComponent The component to edit.
+ * @param iOwner The entity holding it (the vertex selection is per entity).
+ */
+OWL_API void renderProps(scene::component::WalkArea& ioComponent, const scene::Entity& iOwner);
+
+/**
+ * @brief
+ *  Render a Gui for editing a walk agent: its area, speed, facing and animator parameter.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::WalkAgent& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing a walk-behind mask: its area and baseline.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::WalkBehind& ioComponent);
+
+/**
+ * @brief
  *  Render a Gui for editing a sequence player: the `.owlseq` played, the driven camera and the playback options.
  * @param ioComponent The component to edit.
  */
@@ -726,6 +820,7 @@ using DrawableComponents =
 				   scene::component::LightFlicker, scene::component::ParticleEmitter, scene::component::Trail,
 				   scene::component::Planet, scene::component::StreamingSource, scene::component::Oscillator,
 				   scene::component::Patrol, scene::component::Spline, scene::component::SplineFollower,
+				   scene::component::WalkArea, scene::component::WalkAgent, scene::component::WalkBehind,
 				   scene::component::SequencePlayer, scene::component::Drift, scene::component::FollowTarget,
 				   scene::component::RenderTarget, scene::component::ProceduralSky, scene::component::DayNightCycle,
 				   scene::component::ReflectionProbe, scene::component::FirstPersonController,
