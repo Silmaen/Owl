@@ -54,6 +54,11 @@ actions:
     bindings:
       - {key: Tab}
       - {gamepad_button: Y}
+  - name: objective
+    type: button
+    bindings:
+      - {key: F}
+      - {gamepad_button: Back}
   - name: quick_save
     type: button
     bindings:

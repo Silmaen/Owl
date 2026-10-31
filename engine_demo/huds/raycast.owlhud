@@ -52,7 +52,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
-    text: 'W / S: walk    A / D: turn    E: open, push    Tab / Y: inventory    Esc: pause'
+    text: 'W / S: walk    A / D: turn    E: open, push    Tab / Y: inventory    F / Back: exit    Esc: pause'
     color: [1, 1, 1, 0.85]
     fontSize: 24
     horizontalAlignment: Left
