@@ -158,6 +158,7 @@ struct UiScrollView;
 struct UiSlider;
 struct UiText;
 struct UiToolCursor;
+struct HudMarker;
 struct UiTooltip;
 struct UiWindow;
 struct Visibility;
@@ -654,6 +655,28 @@ public:
 	 * @return The layer, or null when the stack holds none with content.
 	 */
 	[[nodiscard]] auto getSelfDrawnLayer() const -> shared<renderer::RenderLayer>;
+
+	/**
+	 * @brief
+	 *  Where a world point of an entity lands in the viewport of the frame being drawn.
+	 *
+	 * Projects through the layer the entity is routed to (`RendererTag`, the first layer when untagged), so a point
+	 * of a raycast, isometric or 3D entity lands where that layer draws it. Only valid while the scene renders (the
+	 * HUD pass): outside a frame there is no camera.
+	 * @param[in] iEntity The entity whose layer projects the point.
+	 * @param[in] iWorld The world point.
+	 * @param[in] iViewport The viewport size in pixels.
+	 * @return Its place in the viewport, or nothing outside a frame.
+	 */
+	[[nodiscard]] auto projectToViewport(const Entity& iEntity, const math::vec3& iWorld,
+										 const math::vec2ui& iViewport) const -> std::optional<renderer::ViewportPoint>;
+
+	/**
+	 * @brief
+	 *  Point the HUD markers measure their distance from: the primary player, else the camera of the frame.
+	 * @return The world position, or nothing without a player outside a frame.
+	 */
+	[[nodiscard]] auto getViewerPosition() const -> std::optional<math::vec3>;
 
 	/**
 	 * @brief
@@ -2645,6 +2668,9 @@ OWL_API void Scene::onComponentAdded<component::UiTooltip>(const Entity& iEntity
 template<>
 OWL_API void Scene::onComponentAdded<component::UiToolCursor>(const Entity& iEntity,
 															  component::UiToolCursor& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::HudMarker>(const Entity& iEntity, component::HudMarker& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::UiFocus>(const Entity& iEntity, component::UiFocus& ioComponent);

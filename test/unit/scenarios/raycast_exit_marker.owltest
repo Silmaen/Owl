@@ -1,0 +1,17 @@
+# The raycast level: the exit marker (a `HudMarker` on the exit elevator, label and distance, an arrow on the screen
+# edge out of view) is off at first; the `objective` action (F, gamepad Back) shows it for five seconds.
+scene: ../../../engine_demo/scenes/raycast_demo.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: exit_marker, equals: 0}
+  - actions: {objective: true, frames: 1}
+  - frames: 3
+  - expect: {gamestate: exit_marker, equals: 1}
+  # Still shown four seconds later, gone after five.
+  - frames: 240
+  - expect: {gamestate: exit_marker, equals: 1}
+  - frames: 90
+  - expect: {gamestate: exit_marker, equals: 0}
+  - input: {gamepad: {button: Back}, frames: 1}
+  - frames: 3
+  - expect: {gamestate: exit_marker, equals: 1}

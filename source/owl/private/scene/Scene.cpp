@@ -892,6 +892,29 @@ auto Scene::getSelfDrawnLayer() const -> shared<renderer::RenderLayer> {
 	return nullptr;
 }
 
+auto Scene::projectToViewport(const Entity& iEntity, const math::vec3& iWorld, const math::vec2ui& iViewport) const
+		-> std::optional<renderer::ViewportPoint> {
+	if (mp_renderCamera == nullptr)
+		return std::nullopt;
+	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
+	const auto* tag =
+			iEntity.hasComponent<component::RendererTag>() ? &iEntity.getComponent<component::RendererTag>() : nullptr;
+	for (size_t index = 0; index < layers.size(); ++index) {
+		if (tag == nullptr ? index == 0 : layers[index]->getName() == tag->rendererName)
+			return layers[index]->projectToViewport(*mp_renderCamera, iViewport, iWorld);
+	}
+	return renderer::projectToViewport(mp_renderCamera->getViewProjection(), iViewport, iWorld);
+}
+
+auto Scene::getViewerPosition() const -> std::optional<math::vec3> {
+	if (const auto player = getPrimaryPlayer())
+		return getWorldTransform(player).translation();
+	if (mp_renderCamera == nullptr)
+		return std::nullopt;
+	const math::vec4 eye = math::inverse(mp_renderCamera->getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	return math::vec3{eye.x(), eye.y(), eye.z()};
+}
+
 auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) const -> bool {
 	OWL_PROFILE_FUNCTION()
 
@@ -4340,6 +4363,10 @@ OWL_API void Scene::onComponentAdded<component::UiTooltip>([[maybe_unused]] cons
 template<>
 OWL_API void Scene::onComponentAdded<component::UiToolCursor>([[maybe_unused]] const Entity& iEntity,
 															  [[maybe_unused]] component::UiToolCursor& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::HudMarker>([[maybe_unused]] const Entity& iEntity,
+														   [[maybe_unused]] component::HudMarker& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::UiFocus>([[maybe_unused]] const Entity& iEntity,

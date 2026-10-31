@@ -1346,3 +1346,28 @@ TEST(LuaBindings, sceneReadsTheWorldPartitionAndThePlanetAltitude) {
 	EXPECT_TRUE(scn->getWorldPartitionSettings().enabled);
 	core::Log::invalidate();
 }
+
+TEST(LuaBindings, hudMarkerSwitchAndLabel) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	auto waypoint = scn->createEntity("Waypoint");
+	auto& marker = waypoint.addComponent<scene::component::HudMarker>();
+	const std::string script = "has = false\n"
+							   "was = true\n"
+							   "function on_create()\n"
+							   "  has = entity.has_component(entity_id, 'HudMarker')\n"
+							   "  entity.set_hud_marker_enabled(entity_id, false)\n"
+							   "  was = entity.is_hud_marker_enabled(entity_id)\n"
+							   "  entity.set_hud_marker_label(entity_id, 'Exit')\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "hud_marker_test", static_cast<uint64_t>(waypoint.getUUID())));
+	inst.onCreate();
+	EXPECT_TRUE(inst.getPropertyBool("has").value_or(false));
+	EXPECT_FALSE(inst.getPropertyBool("was").value_or(true));
+	EXPECT_FALSE(marker.enabled);
+	EXPECT_EQ(marker.label, "Exit");
+	core::Log::invalidate();
+}

@@ -334,12 +334,36 @@ A minimap is a second camera drawn off-screen and shown by a `UiImage`; nothing 
 - The voxel level (`scenes/voxel_terrain.owl`) holds the entity `MinimapCamera` and shows its image in
   `huds/voxel.owlhud`. See [Scene > RenderTarget](../scene.md#rendertarget).
 
+## World markers (HUD8, done) {#world-markers}
+
+A marker is an icon and a label drawn in pixels over a world entity, with an arrow on the screen edge when the entity
+is out of view; it needs no canvas.
+
+- **`HudMarker`** on a world entity: `icon` (a diamond of `color` without one), `size` in reference pixels, world
+  `offset`, `label`, `labelColor`, `fontSize`, `showDistance` (distance to the primary `Player`, else the camera,
+  appended as `12m`), `maxDistance` (0 always shows), `offscreenIndicator`, `edgeMargin`, `arrow` (a chevron without a
+  texture). A marker hidden by its entity visibility is not drawn.
+- **Off-screen indicator**: the marker slides to the screen edge with an arrow pointing at the entity; a point behind
+  the camera goes to the edge on the side to turn to.
+- **Projection** goes through the render layer the entity is routed to (`RendererTag`, the first layer when untagged):
+  `RenderLayer::projectToViewport` projects through the effective view-projection (2D, isometric, voxel, 3D) and the
+  raycast layer overrides it with its sprite projection (X / Y on the map plane, Z as height above the horizon in
+  cells). `Scene::projectToViewport` is valid during a frame only; `scene::ui::placeHudMarker` computes the placement.
+- Drawn by the HUD pass under every canvas, scaled like a default canvas (1280×720, scale with height, times the
+  `ui_scale` setting), in the editor viewport too.
+- Lua: `entity.set_hud_marker_enabled`, `entity.is_hud_marker_enabled`, `entity.set_hud_marker_label`.
+- Owl Nest: inspector for every field, **HUD Marker** in Add Component, a flag icon in the Scene Hierarchy.
+- Engine Demo: the `ExitElevator` of `scenes/raycast_demo.owl` holds a disabled marker "Exit" with distance; the
+  `objective` action (**F** / gamepad Back) shows it for `objective_time` seconds
+  (`scripts/raycast/raycast_level.lua`); scenario `test/unit/scenarios/raycast_exit_marker.owltest`.
+  See [Scene > HudMarker](../scene.md#hudmarker).
+
 ## Tests
 
 Layout maths (anchors, pivot, nesting, scale modes), hit-testing and focus order, text layout (pen advance, wrap,
 shrink, constant glyph aspect), `.owlhud` round-trip and legacy fixture, sharing between two scenes and across a
 transition, Lua lookup, save and load, image tests of one HUD over 2D, raycast, voxel and isometric scenes at three
-resolutions, the HUD editor commands, and a bench at 500 widgets.
+resolutions, the HUD editor commands, a bench at 500 widgets, and the markers (projection per rendering style, edge placement, round-trip, Lua).
 
 ## Later
 

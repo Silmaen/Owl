@@ -10,6 +10,7 @@
 
 #include <app/Application.h>
 #include <math/Transform.h>
+#include <math/trigonometry.h>
 #include <renderer/CameraOrtho.h>
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/Renderer.h>
@@ -22,6 +23,7 @@
 #include "renderer/RendererRaycastLayer.h"
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <span>
 #include <utility>
@@ -755,5 +757,30 @@ TEST(RendererRaycast, backdropFallsBackToSolidWhenNoTexture) {
 	RendererRaycast::endScene();
 	const auto stats = RendererRaycast::getStats();
 	EXPECT_EQ(stats.backdropScanlineCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, projectToViewportFollowsTheSpriteProjection) {
+	bootRendererStack();
+	const auto layer = RenderLayerFactory::create("RendererRaycast", "world");
+	ASSERT_NE(layer, nullptr);
+	const auto* raycast = dynamic_cast<RendererRaycastLayer*>(layer.get());
+	ASSERT_NE(raycast, nullptr);
+	// Identity view: the camera stands on the origin and looks along +Y.
+	const CameraOrtho camera{-1.f, 1.f, -1.f, 1.f};
+	const math::vec2ui viewport{800, 600};
+	const auto ahead = layer->projectToViewport(camera, viewport, {0.f, 2.f, 0.f});
+	EXPECT_TRUE(ahead.ahead);
+	EXPECT_NEAR(ahead.position.x(), 400.f, 1e-3f);
+	EXPECT_NEAR(ahead.position.y(), 300.f, 1e-3f);
+	// Half a cell over the horizon at two cells: a quarter of the height above the middle, as a sprite.
+	const auto raised = layer->projectToViewport(camera, viewport, {0.f, 2.f, 0.5f});
+	EXPECT_NEAR(raised.position.y(), 150.f, 1e-3f);
+	const float halfTan = std::tan(math::radians(raycast->getConfig().fovDegrees) * 0.5f);
+	const auto right = layer->projectToViewport(camera, viewport, {1.f, 2.f, 0.f});
+	EXPECT_NEAR(right.position.x(), 400.f * (1.f + 0.5f / halfTan), 1e-2f);
+	const auto behind = layer->projectToViewport(camera, viewport, {1.f, -2.f, 0.f});
+	EXPECT_FALSE(behind.ahead);
+	EXPECT_GT(behind.position.x(), 400.f);
 	teardownRendererStack();
 }

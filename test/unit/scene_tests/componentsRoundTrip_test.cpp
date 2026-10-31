@@ -1055,3 +1055,36 @@ TEST(Outline, ASubtreeHoldsItsRootAndItsDescendantsOnly) {
 	app.reset();
 	core::Log::invalidate();
 }
+
+TEST(ComponentRoundTrip, HudMarker) {
+	roundTrip(
+			"HudMarker",
+			[](scene::Entity& iEnt) -> void {
+				auto& marker = iEnt.addComponent<scene::component::HudMarker>();
+				marker.enabled = false;
+				marker.color = {0.1f, 0.2f, 0.3f, 0.4f};
+				marker.size = {40.f, 20.f};
+				marker.offset = {0.f, 1.5f, 2.f};
+				marker.label = "Exit";
+				marker.labelColor = {0.5f, 0.6f, 0.7f, 1.f};
+				marker.fontSize = 18.f;
+				marker.showDistance = true;
+				marker.maxDistance = 50.f;
+				marker.offscreenIndicator = false;
+				marker.edgeMargin = 12.f;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				const auto& marker = iEnt.getComponent<scene::component::HudMarker>();
+				EXPECT_FALSE(marker.enabled);
+				EXPECT_NEAR(marker.color.z(), 0.3f, 1e-6f);
+				EXPECT_NEAR(marker.size.x(), 40.f, 1e-6f);
+				EXPECT_NEAR(marker.offset.z(), 2.f, 1e-6f);
+				EXPECT_EQ(marker.label, "Exit");
+				EXPECT_NEAR(marker.labelColor.y(), 0.6f, 1e-6f);
+				EXPECT_NEAR(marker.fontSize, 18.f, 1e-6f);
+				EXPECT_TRUE(marker.showDistance);
+				EXPECT_NEAR(marker.maxDistance, 50.f, 1e-6f);
+				EXPECT_FALSE(marker.offscreenIndicator);
+				EXPECT_NEAR(marker.edgeMargin, 12.f, 1e-6f);
+			});
+}

@@ -2621,6 +2621,18 @@ Entities:
       CallbackName: on_elevator_use
     Visibility:
       gameVisible: true
+    HudMarker:
+      enabled: false
+      color: [0.35, 0.95, 0.45, 1]
+      size: [22, 22]
+      offset: [0, 0, 0.3]
+      label: Exit
+      labelColor: [1, 1, 1, 1]
+      fontSize: 16
+      showDistance: true
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
     LuaScript:
       scriptPath: gid:c3fbe48f21296dde:scripts/raycast/raycast_exit.lua
       properties:

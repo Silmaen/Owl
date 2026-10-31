@@ -126,6 +126,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Engine Demo: two barrel carts ride the lanes of a spline in the character yard, their speed, lane and cargo read from two linked data tables.
 - Dialogue trees (`.owldlg`): lines, choices with Lua conditions, branches and events, a graph editor with a preview in Owl Nest (`dialogue.*` commands) and the `dialogue` Lua API; the wizard of the Engine Demo hub talks through one.
 - Owl Nest prepared for translation: stable window and tab IDs, system fallback fonts for CJK, Arabic, Hebrew, Devanagari and Thai, the ribbon scrolls sideways under the wheel instead of clipping.
+- `HudMarker` component: an icon and a label over a world entity with an off-screen edge arrow, projected through the render layer of the entity (2D, isometric, raycast, voxel, 3D), with its inspector.
+- Lua `entity.set_hud_marker_enabled`, `entity.is_hud_marker_enabled` and `entity.set_hud_marker_label`.
+- Engine Demo: **F** (gamepad Back) shows an "Exit" marker over the elevator of the raycast level.
 
 ### Changed
 

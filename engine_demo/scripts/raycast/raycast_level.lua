@@ -9,6 +9,10 @@
 -- and a dot this script moves to the player. The map is centred on its entity, three units per cell, and the
 -- world row is the map row seen from the top: tile = (x + 32, 32 - y).
 --
+-- The exit elevator carries a `HudMarker` (label "Exit" and the distance, an arrow on the screen edge when it is out of
+-- view), off at first: the `objective` action (F / gamepad Back) shows it for objective_time seconds
+-- (`entity.set_hud_marker_enabled`); `exit_marker` in gamestate mirrors it for the scenario test.
+--
 -- Sounds of the level: a door that starts to open and a push-wall that starts to slide make their noise (`door.get_state`
 -- and `pushwall.get_state` polled on every one; a state that changes from `idle` is the start), louder when the player is
 -- near; the exit elevator and the pick-ups sound in their own scripts.
@@ -32,6 +36,7 @@ properties = {
     { name = "fog_fov", type = "float", default = 80.0, min = 10, max = 170 },
     { name = "fog_range", type = "float", default = 14.0, min = 1 },
     { name = "fog_rows_per_frame", type = "int", default = 8, min = 1 },
+    { name = "objective_time", type = "float", default = 5.0, min = 0.5 },   -- seconds the exit marker stays shown
 }
 
 local SECRETS = { "Secret1", "Secret2", "Secret3", "Secret4", "Secret5" }
@@ -58,6 +63,8 @@ local blockers = {}       -- cell key -> {closed = boolean} for a door or a secr
 local seen = {}           -- cell key -> true once the player has seen the cell
 local bits = {}           -- the same as a "0" / "1" per cell, joined into `raycast_seen`
 local seen_count = 0
+local exit_id = 0
+local objective_clock = 0
 local dirty = false
 local save_clock = 0
 
@@ -204,6 +211,8 @@ function on_create()
     map_id = scene.find_entity("Minimap")
     dot_id = scene.find_entity("MinimapPlayer")
     facing_id = scene.find_entity("MinimapFacing")
+    exit_id = scene.find_entity("ExitElevator")
+    gamestate.set("exit_marker", 0)
     for i = 1, DOORS_NORTH + DOORS_WEST do
         local name = i <= DOORS_NORTH and ("Door_N_" .. i) or ("Door_W_" .. (i - DOORS_NORTH))
         local id = scene.find_entity(name)
@@ -241,7 +250,23 @@ local function play_near(path, id)
     end
 end
 
+-- The exit marker: shown by the `objective` action, hidden again objective_time seconds later.
+local function update_objective(dt)
+    if input.is_action_just_pressed("objective") then
+        objective_clock = objective_time
+        entity.set_hud_marker_enabled(exit_id, true)
+        gamestate.set("exit_marker", 1)
+    elseif objective_clock > 0 then
+        objective_clock = objective_clock - dt
+        if objective_clock <= 0 then
+            entity.set_hud_marker_enabled(exit_id, false)
+            gamestate.set("exit_marker", 0)
+        end
+    end
+end
+
 function on_update(dt)
+    update_objective(dt)
     for _, d in ipairs(doors) do
         local state = door.get_state(d.id)
         if state == "opening" and d.state ~= "opening" then

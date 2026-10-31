@@ -356,6 +356,13 @@ OWL_API void renderProps(scene::component::UiToolCursor& ioComponent);
 
 /**
  * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::HudMarker& ioComponent);
+
+/**
+ * @brief
  *  Render a Gui for editing the component; the neighbours are picked among the UI entities of the owner's scene.
  * @param ioComponent The component to edit.
  * @param[in] iOwner The entity holding the component.
@@ -706,12 +713,12 @@ using DrawableComponents =
 				   scene::component::SequencePlayer, scene::component::Drift, scene::component::FollowTarget,
 				   scene::component::RenderTarget, scene::component::ProceduralSky, scene::component::DayNightCycle,
 				   scene::component::ReflectionProbe, scene::component::FirstPersonController,
-				   scene::component::VoxelPlayer, scene::component::Canvas, scene::component::UiRect,
-				   scene::component::UiText, scene::component::UiImage, scene::component::UiPanel,
-				   scene::component::UiButton, scene::component::UiSlider, scene::component::UiProgressBar,
-				   scene::component::UiWindow, scene::component::UiLayout, scene::component::UiTooltip,
-				   scene::component::UiToolCursor, scene::component::UiFocus, scene::component::UiScrollView,
-				   scene::component::UiList>;
+				   scene::component::VoxelPlayer, scene::component::HudMarker, scene::component::Canvas,
+				   scene::component::UiRect, scene::component::UiText, scene::component::UiImage,
+				   scene::component::UiPanel, scene::component::UiButton, scene::component::UiSlider,
+				   scene::component::UiProgressBar, scene::component::UiWindow, scene::component::UiLayout,
+				   scene::component::UiTooltip, scene::component::UiToolCursor, scene::component::UiFocus,
+				   scene::component::UiScrollView, scene::component::UiList>;
 
 
 }// namespace owl::gui::component

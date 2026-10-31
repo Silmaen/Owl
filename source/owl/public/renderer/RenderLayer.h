@@ -34,6 +34,33 @@ class Scene;
 namespace owl::renderer {
 /**
  * @brief
+ *  Where a world point lands in the viewport, as a render layer draws it.
+ */
+struct OWL_API ViewportPoint {
+	/**
+	 * @brief
+	 *  Position in viewport pixels, from the top-left corner, Y down.
+	 *
+	 * Mirrored towards the side to turn to when the point is behind the camera.
+	 */
+	math::vec2 position{0.f, 0.f};
+	/// Whether the point lies in front of the camera.
+	bool ahead = true;
+};
+
+/**
+ * @brief
+ *  Project a world point through a view-projection matrix.
+ * @param[in] iViewProjection The view-projection matrix.
+ * @param[in] iViewport The viewport size in pixels.
+ * @param[in] iWorld The world point.
+ * @return Its place in the viewport.
+ */
+[[nodiscard]] OWL_API auto projectToViewport(const math::mat4& iViewProjection, const math::vec2ui& iViewport,
+											 const math::vec3& iWorld) -> ViewportPoint;
+
+/**
+ * @brief
  *  Abstract interface for a single renderer in a composable render stack.
  *
  * A `RenderLayer` represents one rendering pass in the project-level renderer stack
@@ -153,6 +180,23 @@ public:
 	 */
 	[[nodiscard]] virtual auto getEffectiveViewProjection(const Camera& iCamera) const -> math::mat4 {
 		return iCamera.getViewProjection();
+	}
+
+	/**
+	 * @brief
+	 *  Where a world point of an entity routed to this layer lands in the viewport.
+	 *
+	 * Used by the HUD markers anchored to world entities. The default projects through `getEffectiveViewProjection`,
+	 * which holds for every layer drawing world coordinates through a matrix; a layer with its own projection (the
+	 * raycaster) overrides it.
+	 * @param[in] iCamera The active scene camera.
+	 * @param[in] iViewport The viewport size in pixels.
+	 * @param[in] iWorld The world point.
+	 * @return Its place in the viewport.
+	 */
+	[[nodiscard]] virtual auto projectToViewport(const Camera& iCamera, const math::vec2ui& iViewport,
+												 const math::vec3& iWorld) const -> ViewportPoint {
+		return renderer::projectToViewport(getEffectiveViewProjection(iCamera), iViewport, iWorld);
 	}
 
 	/**

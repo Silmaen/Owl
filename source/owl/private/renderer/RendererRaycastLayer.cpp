@@ -11,12 +11,15 @@
 
 #include "app/Application.h"
 #include "math/YamlSerializers.h"
+#include "math/trigonometry.h"
 #include "renderer/RenderLayerFactory.h"
 #include "renderer/RenderStackYaml.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/utils/LayerTilemaps.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 
 namespace owl::renderer {
@@ -150,6 +153,33 @@ auto RendererRaycastLayer::getEffectiveViewProjection([[maybe_unused]] const Cam
 	const auto vh = static_cast<float>(m_viewport.y());
 	const CameraOrtho ortho(0.f, vw, 0.f, vh);
 	return ortho.getViewProjection();
+}
+
+auto RendererRaycastLayer::projectToViewport(const Camera& iCamera, const math::vec2ui& iViewport,
+											 const math::vec3& iWorld) const -> ViewportPoint {
+	// Same camera basis as `RendererRaycast::beginScene`: the camera's local +Y is the forward direction on the map.
+	const math::mat4 invView = inverse(iCamera.getView());
+	const math::vec4 eye = invView * math::vec4{0.f, 0.f, 0.f, 1.f};
+	const math::vec4 forward = invView * math::vec4{0.f, 1.f, 0.f, 0.f};
+	const math::vec4 right = invView * math::vec4{1.f, 0.f, 0.f, 0.f};
+	math::vec2 dir{forward.x(), forward.y()};
+	math::vec2 side{right.x(), right.y()};
+	constexpr float epsilon = 1e-5f;
+	if (dir.normSq() < epsilon)
+		dir = {0.f, 1.f};
+	if (side.normSq() < epsilon)
+		side = {1.f, 0.f};
+	dir.normalize();
+	side.normalize();
+	const math::vec2 delta{iWorld.x() - eye.x(), iWorld.y() - eye.y()};
+	const float depth = delta.x() * dir.x() + delta.y() * dir.y();
+	const float lateral =
+			(delta.x() * side.x() + delta.y() * side.y()) / std::tan(math::radians(m_config.fovDegrees) * 0.5f);
+	const float distance = std::max(std::abs(depth), epsilon);
+	const auto width = static_cast<float>(iViewport.x());
+	const auto height = static_cast<float>(iViewport.y());
+	return {.position = {width * 0.5f * (1.f + lateral / distance), height * 0.5f - iWorld.z() * height / distance},
+			.ahead = depth > epsilon};
 }
 
 }// namespace owl::renderer

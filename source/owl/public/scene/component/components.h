@@ -23,6 +23,7 @@
 #include "FlyCamera.h"
 #include "FollowTarget.h"
 #include "Hierarchy.h"
+#include "HudMarker.h"
 #include "ID.h"
 #include "IsometricObject.h"
 #include "Light.h"
@@ -117,11 +118,11 @@ concept isComponent =
 		std::is_same_v<Component, UiPanel> || std::is_same_v<Component, UiProgressBar> ||
 		std::is_same_v<Component, UiRect> || std::is_same_v<Component, UiSlider> || std::is_same_v<Component, UiText> ||
 		std::is_same_v<Component, UiLayout> || std::is_same_v<Component, UiToolCursor> ||
-		std::is_same_v<Component, UiFocus> || std::is_same_v<Component, UiTooltip> ||
-		std::is_same_v<Component, UiWindow> || std::is_same_v<Component, UiScrollView> ||
-		std::is_same_v<Component, UiList> || std::is_same_v<Component, Visibility> ||
-		std::is_same_v<Component, VoxelWorld> || std::is_same_v<Component, VoxelPlayer> ||
-		std::is_same_v<Component, WorldPosition>;
+		std::is_same_v<Component, HudMarker> || std::is_same_v<Component, UiFocus> ||
+		std::is_same_v<Component, UiTooltip> || std::is_same_v<Component, UiWindow> ||
+		std::is_same_v<Component, UiScrollView> || std::is_same_v<Component, UiList> ||
+		std::is_same_v<Component, Visibility> || std::is_same_v<Component, VoxelWorld> ||
+		std::is_same_v<Component, VoxelPlayer> || std::is_same_v<Component, WorldPosition>;
 
 /**
  * @brief
@@ -169,7 +170,7 @@ using CopiableComponents =
 				   StreamingSource, Oscillator, Patrol, Spline, SplineFollower, SequencePlayer, Drift, FollowTarget,
 				   RenderTarget, ProceduralSky, DayNightCycle, ReflectionProbe, FirstPersonController, UiButton,
 				   UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip,
-				   UiWindow, UiFocus, UiScrollView, UiList>;
+				   HudMarker, UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
  * @brief
@@ -185,7 +186,7 @@ using SerializableComponents =
 				   LightFlicker, ParticleEmitter, Trail, Planet, StreamingSource, Oscillator, Patrol, Spline,
 				   SplineFollower, SequencePlayer, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle,
 				   ReflectionProbe, FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider,
-				   UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView, UiList>;
+				   UiText, UiLayout, UiToolCursor, UiTooltip, HudMarker, UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
  * @brief
@@ -200,7 +201,7 @@ using OptionalComponents =
 				   VoxelWorld, VoxelPlayer, LightFlicker, ParticleEmitter, Trail, Planet, StreamingSource, Oscillator,
 				   Patrol, Spline, SplineFollower, SequencePlayer, Drift, FollowTarget, RenderTarget, ProceduralSky,
 				   DayNightCycle, ReflectionProbe, FirstPersonController, UiButton, UiImage, UiPanel, UiProgressBar,
-				   UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, UiWindow, UiFocus, UiScrollView,
-				   UiList>;
+				   UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, HudMarker, UiWindow, UiFocus,
+				   UiScrollView, UiList>;
 
 }// namespace owl::scene::component

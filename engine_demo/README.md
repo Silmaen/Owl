@@ -301,6 +301,8 @@ regression fixture (`coin.owlanim` and its 6×3 sheet) lives with the tests, in 
       clipped to the window, tooltip on hover); T (or gamepad X) toggles a `UiToolCursor` sprite following the mouse
 - [x] Inventory — pick-ups of the raycast level, a slotted inventory window driven by the keyboard or the
       gamepad through the HUD focus, state in gamestate (kept in saves); scenario `test/unit/scenarios/raycast_level.owltest`
+- [x] HUD marker — the raycast level's `ExitElevator` holds a `HudMarker` "Exit" with distance and an off-screen arrow,
+      shown by the `objective` action (F / gamepad Back); scenario `test/unit/scenarios/raycast_exit_marker.owltest`
 - [x] Level progression — victory objectives, `level_<name>_done` flags, hub counter and gated victory portal;
       scenario `test/unit/scenarios/hub_progress.owltest`
 - [x] BackgroundTexture (sky gradient on world map, dark gradient inside the house)
