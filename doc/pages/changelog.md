@@ -43,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scene::Accessibility` reads the accessibility settings and registers their defaults.
 - Scenarios check a game setting with `expect: {setting: <key>, ...}`.
 - Engine Demo settings menu: colours, reduced motion and subtitles buttons; the platformer camera stops shaking with reduced motion.
+- Ring Runner, the rail shooter sample game (`samples/rail_shooter/`): one lane on a spline through the asteroid ring of a planet, squadrons from a wave table, a boss, sequences, medals and the best score kept.
+- Ring Runner menus: live 3D backdrops flying through the ring, the cockpit look of the game, music and effects volumes on the mixer buses.
+- Scenarios `rail_title`, `rail_fly`, `rail_shoot`, `rail_settings`, `rail_game_over` and `rail_win` play Ring Runner with the keyboard, the mouse and the gamepad.
 
 - Asset GUIDs: every asset of a project opened in Owl Nest gets a `.owlmeta` sidecar, and `AssetRegistry` maps GUID and path.
 - Asset references written by GUID (`gid:<guid>:<path hint>`): renaming or moving a file keeps every reference valid.

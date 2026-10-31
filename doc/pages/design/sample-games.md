@@ -31,7 +31,7 @@ Owl Engine ships two kinds of example content:
 | Sokoban          | Sokoban             | tilemap, undo, saves, level editing in Owl Nest   | v0.4.0        | v0.4.0  |
 | Wolfenstein mini | Wolfenstein 3D      | raycast, doors, pick-ups, HUD                     | v0.4.0        | v0.4.0  |
 | Tower defence    | Kingdom Rush        | 3D, billboards, waves, upgrades, world map        | v0.5.0        | v0.5.0  |
-| Rail shooter     | Star Fox            | splines, 3D, planet, particles, HUD markers       | v0.6.0        |         |
+| Rail shooter     | Star Fox            | splines, 3D, planet, particles, HUD markers       | v0.6.0        | v0.6.0  |
 | Point-and-click  | Legend of Kyrandia  | 2D backdrops, 3D actors, walkable areas, dialogue | v0.6.0        |         |
 
 The two v1.0 showcase games (one 2D, one 3D) are picked from this list and from the
@@ -393,16 +393,29 @@ and the combat come in a later release, once their art exists.
 
 ### Rail shooter {#sample-games-rail-shooter}
 
-| Item     | Plan                                                                                                                                                                                                           |
-|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Play     | One level of about 3 minutes on a rail through an asteroid field around a planet: asteroids, a squadron, a boss                                                                                                |
-| Win/lose | The boss destroyed / the hull at zero; score, hit ratio and a bronze, silver or gold medal, the best kept                                                                                                      |
-| Controls | Steer inside the frame (WASD, left stick), aim (mouse, right stick), fire (Space, left click, RT), barrel roll (Q / E, LB / RB), pause                                                                         |
-| Scenes   | `title`, `level`, `settings`, `victory` (stats with a small animation, medal), `game_over`                                                                                                                     |
-| Engine   | `Spline` and `SplineFollower` for the rail, mesh and planet layers, floating origin, particles and trails, bloom, HUD markers on the targets, sequences (intro, boss, end), mixer buses, waves in a data table |
-| Art      | CC0 3D ships and asteroids, the planet of the planet layer, home-made sounds and jingle                                                                                                                        |
-| Saves    | No slot: best score and medal through `settings.save`                                                                                                                                                          |
-| Size     | **M**                                                                                                                                                                                                          |
+Done in v0.6.0: Ring Runner, `samples/rail_shooter/` (how to play: its `README.md`).
+
+| Item     | Done                                                                                                                                                 |
+|----------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Play     | One lane of about 3 minutes on a rail through the asteroid ring of a planet: 195 rocks in reach, 12 waves of fighters and interceptors, the Warden   |
+| Win/lose | The Warden destroyed / the hull at zero; score, hit ratio and a bronze, silver or gold medal, the best kept; the hull recharges when nothing hits it |
+| Controls | Steer inside the frame (WASD, left stick), aim (mouse, arrows, right stick), fire (Space, left click, RT), barrel roll (Q / E, LB / RB), pause       |
+| Scenes   | `title`, `level`, `settings`, `victory` (stats counted up line by line, the medal growing into place), `game_over`; live 3D backdrops in the menus   |
+| Engine   | `Spline`, `SplineFollower`, mesh, planet and particle layers, floating origin, trails, bloom, HUD markers, sequences, mixer buses, data tables       |
+| Art      | Kenney Space Kit ships and rocks (CC0, converted to GLB), a home-made starfield, HUD art, title, sounds, music and jingle                            |
+| Saves    | No slot: `rail_best`, `rail_best_medal`, `rail_invert_y` through `settings.save`                                                                     |
+
+- Rail coordinates: every rule works in (distance along the rail, across, up), placed through `spline.sample` and
+  `spline.get_tangent` each frame, so a shift of the floating origin changes nothing; enemies fly in the frame of the
+  carrier (ahead of it, across, up) and keep pace with the ship.
+- Aim assist: a shot close to the line of the reticles goes straight at the nearest target; enemy shots go wide in
+  a fixed pattern, so a run plays the same each time and a weaving ship dodges them.
+- Scenarios: `rail_title` (How to play, Launch), `rail_fly` (the frame edges, rolls, pause), `rail_shoot` (mouse
+  and gamepad fire, rocks and fighters down), `rail_settings` (music volume, inverted steering, with the gamepad),
+  `rail_game_over` (an idle ship loses, Retry), `rail_win` (the whole lane, the Warden, the victory tally).
+- Engine fix found on the way: the HUD markers were mirrored across the middle of the screen on Vulkan
+  (`renderer::projectToViewport` now follows the clip space of the backend).
+- Size: **M**.
 
 ### Point-and-click {#sample-games-point-and-click}
 
