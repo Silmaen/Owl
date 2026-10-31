@@ -1227,6 +1227,39 @@ in the file.
 | `onSelectCallback` | `string` | Lua function called when the selection changes (`_selected_index`)   |
 | `onBindCallback`   | `string` | Lua function called once for a row in view not filled (`_row_index`) |
 
+#### HudMarker {#hudmarker}
+
+An icon and a label drawn over a world entity by the HUD pass, with an arrow on the screen edge when the entity is out
+of view (see [HUD system](design/hud-system.md#hud-markers)). It goes on a world entity, not in a canvas.
+
+| Field                | Type      | Description                                                         |
+|----------------------|-----------|---------------------------------------------------------------------|
+| `enabled`            | `bool`    | Whether the marker is drawn                                         |
+| `icon`               | `texture` | Icon; a diamond of `color` when absent                              |
+| `color`              | `vec4`    | Colour multiplied with the icon, also the colour of the edge arrow  |
+| `size`               | `vec2`    | Size of the icon, in reference pixels                               |
+| `offset`             | `vec3`    | Anchor relative to the entity origin, in world units                |
+| `label`              | `string`  | Text under the icon                                                 |
+| `labelColor`         | `vec4`    | Colour of the label                                                 |
+| `fontSize`           | `float`   | Font size of the label, in reference pixels                         |
+| `showDistance`       | `bool`    | Append the distance to the player (else the camera), e.g. `12m`    |
+| `maxDistance`        | `float`   | Hide the marker farther than this distance; 0 never hides it        |
+| `offscreenIndicator` | `bool`    | Keep the marker on the screen edge with an arrow when out of view   |
+| `edgeMargin`         | `float`   | Distance between an edge marker and the border, in reference pixels |
+| `arrow`              | `texture` | Edge arrow sprite pointing right; a chevron of `color` when absent  |
+
+```yaml
+HudMarker:
+  enabled: false
+  color: [1, 0.8, 0.2, 1]
+  size: [24, 24]
+  offset: [0, 0, 1]
+  label: Exit
+  showDistance: true
+  offscreenIndicator: true
+  edgeMargin: 32
+```
+
 ### Prefab Components
 
 #### PrefabLink
