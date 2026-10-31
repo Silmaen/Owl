@@ -1088,13 +1088,13 @@
     {
       "name": "sample/editor_update/settings_menu",
       "items": 1,
-      "batch": 537,
+      "batch": 438,
       "samples": 15,
-      "median_ns": 22080.0,
-      "p25_ns": 22055.7,
-      "p75_ns": 22115.7,
-      "min_ns": 22011.1,
-      "max_ns": 22150.5
+      "median_ns": 27156.7,
+      "p25_ns": 27128.9,
+      "p75_ns": 27190.4,
+      "min_ns": 27014.4,
+      "max_ns": 27420.3
     },
     {
       "name": "sample/editor_update/tavern",
@@ -1200,11 +1200,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 311779.0,
-      "p25_ns": 310033.5,
-      "p75_ns": 322850.0,
-      "min_ns": 308497.0,
-      "max_ns": 336155.0
+      "median_ns": 368213.0,
+      "p25_ns": 365140.0,
+      "p75_ns": 374708.0,
+      "min_ns": 364232.0,
+      "max_ns": 379806.0
     },
     {
       "name": "sample/load/tavern",
@@ -2646,6 +2646,28 @@
       "p75_ns": 1103419.6,
       "min_ns": 1099155.7,
       "max_ns": 1108382.0
+    },
+    {
+      "name": "sample/load/sound_yard",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 180964.0,
+      "p25_ns": 179741.0,
+      "p75_ns": 187040.0,
+      "min_ns": 179427.0,
+      "max_ns": 206875.0
+    },
+    {
+      "name": "sample/editor_update/sound_yard",
+      "items": 1,
+      "batch": 1481,
+      "samples": 15,
+      "median_ns": 8031.3,
+      "p25_ns": 8022.7,
+      "p75_ns": 8085.0,
+      "min_ns": 7996.1,
+      "max_ns": 8100.1
     }
   ],
   "metrics": [
