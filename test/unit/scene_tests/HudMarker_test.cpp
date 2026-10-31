@@ -50,7 +50,8 @@ TEST(HudMarkerProjection, aPointBehindAPerspectiveCameraStaysOnItsSide) {
 }
 
 TEST(HudMarkerPlacement, aPointInViewStaysWhereItIs) {
-	const auto placement = scene::ui::placeHudMarker({.position = {100.f, 50.f}, .inFront = true}, {800.f, 600.f}, 10.f);
+	const auto placement =
+			scene::ui::placeHudMarker({.position = {100.f, 50.f}, .inFront = true}, {800.f, 600.f}, 10.f);
 	EXPECT_TRUE(placement.onScreen);
 	EXPECT_NEAR(placement.position.x(), 100.f, 1e-4f);
 	EXPECT_NEAR(placement.position.y(), 50.f, 1e-4f);
@@ -63,7 +64,8 @@ TEST(HudMarkerPlacement, anOffScreenPointSlidesToTheEdgeTowardsIt) {
 	EXPECT_NEAR(right.position.y(), 300.f, 1e-3f);
 	EXPECT_NEAR(right.angle, 0.f, 1e-5f);
 	// Along the diagonal the nearer border wins: the bottom one, 290 pixels under the centre.
-	const auto corner = scene::ui::placeHudMarker({.position = {1400.f, 1300.f}, .inFront = true}, {800.f, 600.f}, 10.f);
+	const auto corner =
+			scene::ui::placeHudMarker({.position = {1400.f, 1300.f}, .inFront = true}, {800.f, 600.f}, 10.f);
 	EXPECT_NEAR(corner.position.y(), 590.f, 1e-3f);
 	EXPECT_NEAR(corner.position.x(), 690.f, 1e-3f);
 	EXPECT_NEAR(corner.angle, std::numbers::pi_v<float> / 4.f, 1e-5f);
@@ -73,7 +75,8 @@ TEST(HudMarkerPlacement, aPointBehindGoesToTheEdgeEvenInsideTheRectangle) {
 	const auto behind = scene::ui::placeHudMarker({.position = {500.f, 300.f}, .inFront = false}, {800.f, 600.f}, 0.f);
 	EXPECT_FALSE(behind.onScreen);
 	EXPECT_NEAR(behind.position.x(), 800.f, 1e-3f);
-	const auto straight = scene::ui::placeHudMarker({.position = {400.f, 300.f}, .inFront = false}, {800.f, 600.f}, 0.f);
+	const auto straight =
+			scene::ui::placeHudMarker({.position = {400.f, 300.f}, .inFront = false}, {800.f, 600.f}, 0.f);
 	EXPECT_NEAR(straight.position.y(), 600.f, 1e-3f);
 }
 

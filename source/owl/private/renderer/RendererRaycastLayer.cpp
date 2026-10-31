@@ -170,8 +170,8 @@ auto RendererRaycastLayer::projectToViewport(const Camera& iCamera, const math::
 	side.normalize();
 	const math::vec2 delta{iWorld.x() - eye.x(), iWorld.y() - eye.y()};
 	const float depth = delta.x() * dir.x() + delta.y() * dir.y();
-	const float lateral = (delta.x() * side.x() + delta.y() * side.y()) /
-						  std::tan(math::radians(m_config.fovDegrees) * 0.5f);
+	const float lateral =
+			(delta.x() * side.x() + delta.y() * side.y()) / std::tan(math::radians(m_config.fovDegrees) * 0.5f);
 	const float distance = std::max(std::abs(depth), epsilon);
 	const auto width = static_cast<float>(iViewport.x());
 	const auto height = static_cast<float>(iViewport.y());

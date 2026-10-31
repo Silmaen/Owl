@@ -1352,15 +1352,14 @@ TEST(LuaBindings, hudMarkerSwitchAndLabel) {
 	auto scn = mkShared<scene::Scene>();
 	auto waypoint = scn->createEntity("Waypoint");
 	auto& marker = waypoint.addComponent<scene::component::HudMarker>();
-	const std::string script =
-			"has = false\n"
-			"was = true\n"
-			"function on_create()\n"
-			"  has = entity.has_component(entity_id, 'HudMarker')\n"
-			"  entity.set_hud_marker_enabled(entity_id, false)\n"
-			"  was = entity.is_hud_marker_enabled(entity_id)\n"
-			"  entity.set_hud_marker_label(entity_id, 'Exit')\n"
-			"end\n";
+	const std::string script = "has = false\n"
+							   "was = true\n"
+							   "function on_create()\n"
+							   "  has = entity.has_component(entity_id, 'HudMarker')\n"
+							   "  entity.set_hud_marker_enabled(entity_id, false)\n"
+							   "  was = entity.is_hud_marker_enabled(entity_id)\n"
+							   "  entity.set_hud_marker_label(entity_id, 'Exit')\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
 	inst.setScene(scn.get());

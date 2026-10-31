@@ -897,9 +897,8 @@ auto Scene::projectToViewport(const Entity& iEntity, const math::vec3& iWorld, c
 	if (mp_renderCamera == nullptr)
 		return std::nullopt;
 	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
-	const auto* tag = iEntity.hasComponent<component::RendererTag>()
-							  ? &iEntity.getComponent<component::RendererTag>()
-							  : nullptr;
+	const auto* tag =
+			iEntity.hasComponent<component::RendererTag>() ? &iEntity.getComponent<component::RendererTag>() : nullptr;
 	for (size_t index = 0; index < layers.size(); ++index) {
 		if (tag == nullptr ? index == 0 : layers[index]->getName() == tag->rendererName)
 			return layers[index]->projectToViewport(*mp_renderCamera, iViewport, iWorld);

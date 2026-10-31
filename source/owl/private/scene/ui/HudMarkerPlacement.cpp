@@ -29,9 +29,13 @@ auto placeHudMarker(const renderer::ViewportPoint& iPoint, const math::vec2& iVi
 	constexpr float epsilon = 1e-6f;
 	// Straight behind the camera the point sits on the centre: send it down, where a turn-around arrow reads best.
 	if (std::abs(delta.x()) < epsilon && std::abs(delta.y()) < epsilon)
-		return {.position = {centre.x(), centre.y() + half.y()}, .onScreen = false, .angle = std::numbers::pi_v<float> / 2.f};
-	const float scaleX = std::abs(delta.x()) > epsilon ? half.x() / std::abs(delta.x()) : std::numeric_limits<float>::max();
-	const float scaleY = std::abs(delta.y()) > epsilon ? half.y() / std::abs(delta.y()) : std::numeric_limits<float>::max();
+		return {.position = {centre.x(), centre.y() + half.y()},
+				.onScreen = false,
+				.angle = std::numbers::pi_v<float> / 2.f};
+	const float scaleX =
+			std::abs(delta.x()) > epsilon ? half.x() / std::abs(delta.x()) : std::numeric_limits<float>::max();
+	const float scaleY =
+			std::abs(delta.y()) > epsilon ? half.y() / std::abs(delta.y()) : std::numeric_limits<float>::max();
 	return {.position = centre + delta * std::min(scaleX, scaleY), .onScreen = false, .angle = angle};
 }
 
