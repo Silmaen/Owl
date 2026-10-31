@@ -137,7 +137,7 @@ protected:
 	}
 
 	// Quads drawn by one editor frame through a camera showing the world square [0, 10]².
-	auto drawnQuads() const -> uint32_t {
+	[[nodiscard]] auto drawnQuads() const -> uint32_t {
 		renderer::Renderer2D::resetStats();
 		const renderer::CameraOrtho camera{0.f, 10.f, 0.f, 10.f};
 		m_scene->onUpdateEditor(core::Timestep{}, camera);

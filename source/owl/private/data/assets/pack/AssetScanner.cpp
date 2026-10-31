@@ -772,13 +772,10 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 		addTextureField(anim);
 	if (auto bg = iEntity["BackgroundTexture"]; bg)
 		addTextureField(bg);
-	for (const char* component: {"UiImage", "UiToolCursor"})
-		if (auto widget = iEntity[component]; widget)
-			addTextureField(widget);
-	if (auto marker = iEntity["HudMarker"]; marker) {
-		addTextureField(marker, "icon");
-		addTextureField(marker, "arrow");
-	}
+	for (const auto& [component, field]: {std::pair{"UiImage", "texture"}, std::pair{"UiToolCursor", "texture"},
+										  std::pair{"HudMarker", "icon"}, std::pair{"HudMarker", "arrow"}})
+		if (auto node = iEntity[component]; node)
+			addTextureField(node, field);
 	scanFontsAndSounds(iEntity, iSceneName, ioAssets, ioWarnings);
 	if (auto meshRenderer = iEntity["MeshRenderer"]; meshRenderer)
 		scanMeshRenderer(meshRenderer, iSceneName, ioAssets, ioWarnings);
