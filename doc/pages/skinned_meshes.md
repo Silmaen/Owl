@@ -19,7 +19,9 @@ mesh for coarser copies when it covers little of the screen. Design and decision
 | Sockets  | The nodes named `socket_<name>`                                | `MeshSocket`: name, parent bone, offset         |
 
 Skinned primitives stay in bind space (glTF ignores the transform of their node); the static primitives of the file are
-placed by their node chain as before. Step keys hold, linear keys interpolate (rotations on the shortest arc), cubic
+placed by their node chain as before. A file with one skin per mesh (body, head, feet of a character) is skinned whole
+when every skin moves the joints of the first one in the same order with the same inverse binds; a mesh of a skin
+unlike the first one is drawn static, with a warning. Step keys hold, linear keys interpolate (rotations on the shortest arc), cubic
 spline keys are read as linear.
 
 ## Animator

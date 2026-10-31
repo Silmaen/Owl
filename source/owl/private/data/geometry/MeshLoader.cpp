@@ -718,8 +718,8 @@ auto buildGltf(const tinygltf::Model& iModel, const std::string& iName) -> Loade
 	build.skin.reserve(vertexCount);
 	for (const auto& instance: instances) {
 		// glTF ignores the transform of the node of a skinned mesh: its joints place it.
-		const bool skinned = skinImport.skeleton && instance.skin == 0;
-		if (instance.skin > 0)
+		const bool skinned = skinImport.isSkinned(instance.skin);
+		if (instance.skin > 0 && !skinned)
 			OWL_CORE_WARN("MeshLoader::loadGltf: Mesh of {} bound to skin {} drawn static (first skin only).", iName,
 						  instance.skin)
 		for (const auto& primitive: iModel.meshes[instance.mesh].primitives)

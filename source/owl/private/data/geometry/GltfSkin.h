@@ -32,6 +32,23 @@ struct SkinImport {
 	std::vector<uint16_t> jointToBone;
 	/// Bone index of each node, -1 for a node that is no bone.
 	std::vector<int32_t> nodeToBone;
+	/**
+	 * @brief
+	 *  For each skin of the file, whether it moves the same joints with the same bind pose as the first one (an
+	 *  exporter writing one skin per mesh of a character): its meshes are skinned by the skeleton too.
+	 */
+	std::vector<bool> sameAsFirst;
+
+	/**
+	 * @brief
+	 *  Check if the meshes bound to a skin are skinned by the skeleton.
+	 * @param[in] iSkin Index of the skin in the file.
+	 * @return True for the first skin and for those equal to it.
+	 */
+	[[nodiscard]] auto isSkinned(const int iSkin) const -> bool {
+		return skeleton && iSkin >= 0 && static_cast<size_t>(iSkin) < sameAsFirst.size() &&
+			   sameAsFirst[static_cast<size_t>(iSkin)];
+	}
 };
 
 /**
