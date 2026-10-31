@@ -66,7 +66,9 @@ open it.
   node with its glyph, and a search field. Drag a node onto the canvas to add it there; the canvas context menu adds
   one at the mouse too.
 - Drag from a pin to link; incompatible pins refuse the link. **Delete** removes the selected nodes and their links.
-- Right-click a link to add a waypoint there; drag a waypoint to steer the link, **Delete** over it removes it.
+- Right-click a link for its menu (**Add Waypoint**, **Delete Link**); drag a waypoint to steer the link, **Delete**
+  over it removes it. The links keep the colour of their type. The magnet of the toolbar snaps nodes and waypoints to
+  the grid.
 - **Alt**+click a link cuts it.
 - The **Graph** panel edits the parameters of the selected node and previews its output: a field in grey, points in
   white.

@@ -442,11 +442,11 @@ void FontDocument::onImGuiRender() {
 			if (isDirty())
 				ImGui::TextDisabled("Unsaved charset: save (Ctrl+S) to rebuild the atlas.");
 			if (ImGui::BeginTabBar("##fontTabs")) {
-				if (ImGui::BeginTabItem("Samples")) {
+				if (ImGui::BeginTabItem("Samples###samples")) {
 					drawSamplesTab(font);
 					ImGui::EndTabItem();
 				}
-				if (ImGui::BeginTabItem("Atlas")) {
+				if (ImGui::BeginTabItem("Atlas###atlas")) {
 					drawAtlasTab(font);
 					ImGui::EndTabItem();
 				}

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "data/dialogue/DialogueLibrary.h"
 #include "data/localisation/Localisation.h"
 #include "data/table/DataTableLibrary.h"
 #include "input/ActionMap.h"
@@ -165,6 +166,13 @@ public:
 
 	/**
 	 * @brief
+	 *  The `.owldlg` dialogues read so far and the conversations the scripts play, kept across scene transitions.
+	 * @return The dialogue library.
+	 */
+	[[nodiscard]] auto getDialogues() -> data::dialogue::DialogueLibrary& { return m_dialogues; }
+
+	/**
+	 * @brief
 	 *  HUD asset of the scenes that name none (the project's `DefaultHud`).
 	 * @return The asset path, empty for no default HUD.
 	 */
@@ -264,6 +272,8 @@ private:
 	uint64_t m_localisationGeneration{0};
 	/// Data tables read by the scripts.
 	data::table::DataTableLibrary m_dataTables;
+	/// Dialogues and conversations of the scripts.
+	data::dialogue::DialogueLibrary m_dialogues;
 	/// Loaded HUD scenes (declared last: they hold GPU resources and are destroyed first).
 	uniq<scene::HudLibrary> mp_hudLibrary;
 };

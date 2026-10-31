@@ -37,6 +37,7 @@ Groups:
       - doc/pages/sound.md
       - doc/pages/languages.md
       - doc/pages/data_tables.md
+      - doc/pages/dialogues.md
       - doc/pages/pathfinding.md
       - doc/pages/pcg_graphs.md
   - title: Scripting
@@ -57,6 +58,7 @@ Groups:
       - doc/pages/lua-api-isometric.md
       - doc/pages/lua-api-animation.md
       - doc/pages/lua-api-data.md
+      - doc/pages/lua-api-dialogue.md
   - title: Engine for C++ developers
     pages:
       - doc/pages/guide_engine_developer.md

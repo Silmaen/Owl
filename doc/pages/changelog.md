@@ -63,7 +63,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Area lights: `Light` types `Rectangle` and `Disc` shaded through linearly transformed cosines, `Sphere` through a representative point, with soft cube shadows (PCSS) and their Owl Nest markers.
 - Reflection probes: a `ReflectionProbe` component captures the scene into a prefiltered cube that replaces the environment reflections inside its box or sphere, with parallax, blending, realtime updates and its Owl Nest markers, inspector and commands.
 - Post-process: chromatic aberration, film grain, depth of field and camera motion blur in `PostProcessSettings`, edited in the camera inspector.
-- Node-graph link waypoints: right-click a link to add one, drag or delete it, **Alt**+click to cut the link, in visual scripts, PCG graphs and `NodeCanvas` graphs.
+- Node-graph link waypoints: added from the link menu (right-click a link), dragged or deleted, **Alt**+click to cut the link, in visual scripts, PCG graphs and `NodeCanvas` graphs.
+- Node editors: a link can be given a colour of a palette (its pins take it), except the typed links of PCG graphs and visual script data, kept with the graph.
+- Node editors: **Snap to Grid** (the magnet of the toolbars, **Snap** in the Scene Flow ribbon) lands moved nodes and waypoints on the grid.
+- Dialogue editor: chevron pins, and each node kind has the colour of its glyph in the graph and the Nodes panel.
 - Sound cues (`.owlsound`, `sound::SoundCue`): random weighted takes of one sound, trimmed and looped, with a volume and pitch varied at each play.
 - `sound.*` and `locale.*` editor commands: every edit of a sound cue or of the localisation is journaled and reachable from the Console, macros and MCP.
 - Owl Nest sound editor: takes on their waveform with draggable trim and loop markers, cue and take preview, `sound.create`, **New Sound Cue**, a double-click on an audio file.
@@ -117,6 +120,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The export packs the tables a script names, the tables they reference and the assets of their cells.
 - Benchmarks `spline/rebuild`, `spline/sample_distance`, `spline/sample_lane` and `spline/nearest`.
 - Engine Demo: two barrel carts ride the lanes of a spline in the character yard, their speed, lane and cargo read from two linked data tables.
+- Dialogue trees (`.owldlg`): lines, choices with Lua conditions, branches and events, a graph editor with a preview in Owl Nest (`dialogue.*` commands) and the `dialogue` Lua API; the wizard of the Engine Demo hub talks through one.
+- Owl Nest prepared for translation: stable window and tab IDs, system fallback fonts for CJK, Arabic, Hebrew, Devanagari and Thai, the ribbon scrolls sideways under the wheel instead of clipping.
 
 ### Changed
 
@@ -152,6 +157,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Node editors: a link routed backwards through waypoints crosses them towards where it goes instead of looping.
+- Content Browser: **Delete** and **Rename** open their confirmation again once the context menu has closed; `Delete` and `F2` are their shortcuts.
+- Mixer: drawn with the widget kit and the theme (property grid, sub-headers, themed mute / solo switches and meter), docked with Properties, and its ribbon button shows and hides it.
+- Data table editor: the remove button of a column stays inside the column, and the toolbar and column widths follow the font size.
 - The Owl Nest **Log** follows the new messages again, and its lines can be copied (right click) or selected as text.
 - `linux-clang-minimal` builds and passes again: shader baking and shader reload are tied to the render module, and the tests that need physics or the renderer skip without it.
 - The export tests play each game on lavapipe only when `OWL_RENDER_TESTS` is on: the emulated arm64 build no longer times out on the Tower Defence.

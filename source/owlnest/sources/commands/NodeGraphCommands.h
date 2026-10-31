@@ -286,6 +286,59 @@ private:
 };
 /**
  * @brief
+ *  Give a link another colour, found by its two pins so that it survives a link re-created by undo.
+ */
+class SetLinkColorCommand final : public NodeGraphUndoCommand {
+public:
+	/**
+	 * @brief
+	 *  Constructor.
+	 * @param[in] iLink The link with its colour after the change.
+	 * @param[in] iBefore Its colour name before the change.
+	 */
+	SetLinkColorCommand(const gui::widgets::Link& iLink, std::string iBefore);
+
+	/**
+	 * @brief
+	 *  Undo.
+	 * @param[in,out] ioTarget The node canvas the action is applied to.
+	 */
+	void undo(NodeCanvas& ioTarget) override;
+
+	/**
+	 * @brief
+	 *  Redo.
+	 * @param[in,out] ioTarget The node canvas the action is applied to.
+	 */
+	void redo(NodeCanvas& ioTarget) override;
+
+	/**
+	 * @brief
+	 *  Description.
+	 * @return Human-readable description for menus and tooltips.
+	 */
+	[[nodiscard]] auto description() const -> std::string override { return "Set Link Colour"; }
+
+private:
+	/**
+	 * @brief
+	 *  Set the colour of the link.
+	 * @param[in,out] ioTarget The node canvas.
+	 * @param[in] iColor The colour name.
+	 */
+	void apply(NodeCanvas& ioTarget, const std::string& iColor) const;
+
+	/// Source pin of the link.
+	core::UUID m_fromPin;
+	/// Destination pin of the link.
+	core::UUID m_toPin;
+	/// Colour before the change (restored on undo).
+	std::string m_before;
+	/// Colour after the change (restored on redo).
+	std::string m_after;
+};
+/**
+ * @brief
  *  Append an output pin to an existing node. Symmetric `RemoveOutputPinCommand` undoes it.
  */
 class AddOutputPinCommand final : public NodeGraphUndoCommand {

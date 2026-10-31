@@ -51,7 +51,19 @@ public:
 	 * @brief
 	 *  Show the panel.
 	 */
-	void open() { m_visible = true; }
+	void open() {
+		m_focus = !m_visible;
+		m_visible = true;
+	}
+
+	/**
+	 * @brief
+	 *  Show the panel when hidden, hide it when shown.
+	 */
+	void toggle() {
+		m_visible = !m_visible;
+		m_focus = m_visible;
+	}
 
 	/**
 	 * @brief
@@ -98,6 +110,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the Doppler factor row.
+	 * @param[in] iPlaying Whether the scene plays (the scene mix is read only then).
+	 */
+	void drawSpatial(bool iPlaying);
+
+	/**
+	 * @brief
 	 *  Run the command editing a bus.
 	 * @param[in] iBus The bus.
 	 * @param[in] iPlaying Whether the scene plays.
@@ -113,8 +132,12 @@ private:
 	const commands::CommandRegistry* mp_commands{nullptr};
 	/// Volume of the fader being dragged, committed when released.
 	std::optional<float> m_dragVolume;
+	/// Doppler factor being dragged, committed when released.
+	std::optional<float> m_dragDoppler;
 	/// Whether the panel is shown.
 	bool m_visible{false};
+	/// Whether the panel takes the focus on its next frame, in front of the tabs it is docked with.
+	bool m_focus{false};
 };
 
 }// namespace owl::nest::panel

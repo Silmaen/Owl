@@ -67,27 +67,46 @@ auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> 
 		return {rgb(0xc09a55), "Folder"};
 	if (iPath.filename() == input::ActionMap::fileName)
 		return {rgb(0x3fa8d8), "Input actions"};
-	static const std::unordered_map<std::string, KindInfo> kinds = {
-			{".owl", {rgb(0xd8a520), "Scene"}},          {".owlprefab", {rgb(0x4f8fe0), "Prefab"}},
-			{".owlhud", {rgb(0x2fa8b8), "HUD"}},         {".png", {rgb(0xe0534a), "Texture"}},
-			{".jpg", {rgb(0xe0534a), "Texture"}},        {".jpeg", {rgb(0xe0534a), "Texture"}},
-			{".svg", {rgb(0xe0534a), "Vector image"}},   {".owltileset", {rgb(0xe48a3a), "Tileset"}},
-			{".owltilemap", {rgb(0xd65fb8), "Tilemap"}}, {".wav", {rgb(0x3faa72), "Sound"}},
-			{".ogg", {rgb(0x3faa72), "Sound"}},          {".flac", {rgb(0x3faa72), "Sound"}},
-			{".mp3", {rgb(0x3faa72), "Sound"}},          {".lua", {rgb(0x2fb5a0), "Lua script"}},
-			{".py", {rgb(0x2fb5a0), "Python"}},          {".c", {rgb(0x5b8fd6), "C source"}},
-			{".cpp", {rgb(0x5b8fd6), "C++ source"}},     {".h", {rgb(0x5b8fd6), "Header"}},
-			{".hpp", {rgb(0x5b8fd6), "Header"}},         {".glsl", {rgb(0xa274e8), "Shader"}},
-			{".slang", {rgb(0xa274e8), "Shader"}},       {".ttf", {rgb(0x9a7ae0), "Font"}},
-			{".otf", {rgb(0x9a7ae0), "Font"}},           {".owlanim", {rgb(0xef6c8f), "Animation"}},
-			{".owlflow", {rgb(0x5aa2f0), "Node graph"}}, {".owlvs", {rgb(0xe8c547), "Visual script"}},
-			{".owlpcg", {rgb(0x7fd18b), "PCG graph"}},   {".obj", {rgb(0x7fb83e), "3D model"}},
-			{".fbx", {rgb(0x7fb83e), "3D model"}},       {".gltf", {rgb(0x7fb83e), "3D model"}},
-			{".glb", {rgb(0x7fb83e), "3D model"}},       {".yml", {rgb(0x8a929e), "Settings"}},
-			{".yaml", {rgb(0x8a929e), "Settings"}},      {".json", {rgb(0x8a929e), "Data"}},
-			{".md", {rgb(0x8a929e), "Document"}},        {".owlfont", {rgb(0x9a7ae0), "Font settings"}},
-			{".owlmat", {rgb(0xc77dff), "Material"}},    {".owlsound", {rgb(0x3faa72), "Sound cue"}},
-			{".owltable", {rgb(0x4fb3d9), "Data table"}}};
+	static const std::unordered_map<std::string, KindInfo> kinds = {{".owl", {rgb(0xd8a520), "Scene"}},
+																	{".owlprefab", {rgb(0x4f8fe0), "Prefab"}},
+																	{".owlhud", {rgb(0x2fa8b8), "HUD"}},
+																	{".png", {rgb(0xe0534a), "Texture"}},
+																	{".jpg", {rgb(0xe0534a), "Texture"}},
+																	{".jpeg", {rgb(0xe0534a), "Texture"}},
+																	{".svg", {rgb(0xe0534a), "Vector image"}},
+																	{".owltileset", {rgb(0xe48a3a), "Tileset"}},
+																	{".owltilemap", {rgb(0xd65fb8), "Tilemap"}},
+																	{".wav", {rgb(0x3faa72), "Sound"}},
+																	{".ogg", {rgb(0x3faa72), "Sound"}},
+																	{".flac", {rgb(0x3faa72), "Sound"}},
+																	{".mp3", {rgb(0x3faa72), "Sound"}},
+																	{".lua", {rgb(0x2fb5a0), "Lua script"}},
+																	{".py", {rgb(0x2fb5a0), "Python"}},
+																	{".c", {rgb(0x5b8fd6), "C source"}},
+																	{".cpp", {rgb(0x5b8fd6), "C++ source"}},
+																	{".h", {rgb(0x5b8fd6), "Header"}},
+																	{".hpp", {rgb(0x5b8fd6), "Header"}},
+																	{".glsl", {rgb(0xa274e8), "Shader"}},
+																	{".slang", {rgb(0xa274e8), "Shader"}},
+																	{".ttf", {rgb(0x9a7ae0), "Font"}},
+																	{".otf", {rgb(0x9a7ae0), "Font"}},
+																	{".owlanim", {rgb(0xef6c8f), "Animation"}},
+																	{".owlflow", {rgb(0x5aa2f0), "Node graph"}},
+																	{".owlvs", {rgb(0xe8c547), "Visual script"}},
+																	{".owlpcg", {rgb(0x7fd18b), "PCG graph"}},
+																	{".obj", {rgb(0x7fb83e), "3D model"}},
+																	{".fbx", {rgb(0x7fb83e), "3D model"}},
+																	{".gltf", {rgb(0x7fb83e), "3D model"}},
+																	{".glb", {rgb(0x7fb83e), "3D model"}},
+																	{".yml", {rgb(0x8a929e), "Settings"}},
+																	{".yaml", {rgb(0x8a929e), "Settings"}},
+																	{".json", {rgb(0x8a929e), "Data"}},
+																	{".md", {rgb(0x8a929e), "Document"}},
+																	{".owlfont", {rgb(0x9a7ae0), "Font settings"}},
+																	{".owlmat", {rgb(0xc77dff), "Material"}},
+																	{".owlsound", {rgb(0x3faa72), "Sound cue"}},
+																	{".owltable", {rgb(0x4fb3d9), "Data table"}},
+																	{".owldlg", {rgb(0xd98f4f), "Dialogue"}}};
 	if (const auto it = kinds.find(iPath.extension().string()); it != kinds.end())
 		return it->second;
 	return {rgb(0x8a929e), "File"};
@@ -401,6 +420,7 @@ void ContentBrowser::onImGuiRender() {
 	renderContent();
 	// In the child: the popup is opened from its tiles, and a popup id belongs to the window that opens it.
 	renderContextMenu();
+	renderItemDialogs();
 	ImGui::EndChild();
 
 	ImGui::End();
@@ -594,6 +614,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 		m_soundOpenCallback(path);
 	} else if (path.extension() == ".owltable" && m_dataTableOpenCallback) {
 		m_dataTableOpenCallback(path);
+	} else if (path.extension() == ".owldlg" && m_dialogueOpenCallback) {
+		m_dialogueOpenCallback(path);
 	} else if (path.filename() == data::localisation::Localisation::fileName && m_localisationOpenCallback) {
 		m_localisationOpenCallback(path);
 	} else if (path.extension() == ".owlmacro" && m_macroRunCallback) {
@@ -714,6 +736,8 @@ void ContentBrowser::renderCreateItems() {
 		createSoundCue();
 	if (m_dataTableCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::rows3, .label = "New Data Table"}))
 		createDataTable();
+	if (m_dialogueCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::bookOpen, .label = "New Dialogue"}))
+		createDialogue();
 	if (gui::widgets::menuItem({.glyph = gui::icon::workflow, .label = "New Visual Script"}))
 		createVisualScript();
 	if (gui::widgets::menuItem({.glyph = gui::icon::sparkles, .label = "New PCG Graph"}))
@@ -775,28 +799,30 @@ void ContentBrowser::renderContextMenu() {
 		ImGui::Separator();
 		renderCreateItems();
 	}
-
 	ImGui::EndPopup();
+}
 
-	// Rename dialog
-	if (m_renaming && !m_selectedPath.empty()) {
-		ImGui::OpenPopup("RenameItem");
+void ContentBrowser::renderItemDialogs() {
+	if (!m_selectedPath.empty() && !m_renaming && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+		!ImGui::IsAnyItemActive() && !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup)) {
+		if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+			m_pendingDelete = true;
+		if (ImGui::IsKeyPressed(ImGuiKey_F2, false)) {
+			m_renaming = true;
+			m_renameBuffer = m_selectedPath.filename().string();
+		}
 	}
-
+	if (m_renaming && !m_selectedPath.empty())
+		ImGui::OpenPopup("RenameItem");
 	if (ImGui::BeginPopupModal("RenameItem", &m_renaming, ImGuiWindowFlags_AlwaysAutoResize)) {
 		ImGui::Text("Rename: %s", m_selectedPath.filename().string().c_str());
-		const bool submitted =
-
-				ImGui::InputText("##rename", &m_renameBuffer, ImGuiInputTextFlags_EnterReturnsTrue);
-
+		const bool submitted = ImGui::InputText("##rename", &m_renameBuffer, ImGuiInputTextFlags_EnterReturnsTrue);
 		ImGui::SameLine();
 		const bool okClicked = gui::widgets::button("OK", {.glyph = gui::icon::check, .label = "OK", .primary = true});
-
 		ImGui::SameLine();
 		if (gui::widgets::button("Cancel", {.glyph = gui::icon::x, .label = "Cancel"})) {
 			m_renaming = false;
 			m_selectedPath.clear();
-
 			ImGui::CloseCurrentPopup();
 		}
 		if (submitted || okClicked) {
@@ -804,14 +830,10 @@ void ContentBrowser::renderContextMenu() {
 				std::ignore = runCommand("asset.rename", {{"path", m_selectedPath.string()}, {"name", m_renameBuffer}});
 			m_renaming = false;
 			m_selectedPath.clear();
-
 			ImGui::CloseCurrentPopup();
 		}
-
 		ImGui::EndPopup();
 	}
-
-	// Delete confirmation popup
 	if (m_pendingDelete && !m_selectedPath.empty()) {
 		ImGui::OpenPopup("ConfirmDelete");
 		m_pendingDelete = false;
@@ -819,29 +841,21 @@ void ContentBrowser::renderContextMenu() {
 	if (ImGui::BeginPopupModal("ConfirmDelete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 		ImGui::Text("Delete '%s'?", m_selectedPath.filename().string().c_str());
 		if (is_directory(m_selectedPath))
-
 			ImGui::TextColored({1.0f, 0.6f, 0.2f, 1.0f}, "This will delete all contents of the folder.");
-
 		ImGui::Separator();
 		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() +
-
 								  ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		const float totalWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
-
 		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
 		if (gui::widgets::button("Delete", {.glyph = gui::icon::trash2, .label = "Delete", .width = buttonWidth})) {
 			deleteSelected();
-
 			ImGui::CloseCurrentPopup();
 		}
-
 		ImGui::SameLine();
 		if (gui::widgets::button("Cancel", {.glyph = gui::icon::x, .label = "Cancel", .width = buttonWidth})) {
 			m_selectedPath.clear();
-
 			ImGui::CloseCurrentPopup();
 		}
-
 		ImGui::EndPopup();
 	}
 }
@@ -902,6 +916,14 @@ void ContentBrowser::createDataTable() {
 	for (uint32_t counter = 1; exists(tablePath); ++counter)
 		tablePath = m_currentPath / std::format("New Data Table {}.owltable", counter);
 	m_dataTableCreateCallback(tablePath);
+	m_rescanRequested = true;
+}
+
+void ContentBrowser::createDialogue() {
+	auto dialoguePath = m_currentPath / "New Dialogue.owldlg";
+	for (uint32_t counter = 1; exists(dialoguePath); ++counter)
+		dialoguePath = m_currentPath / std::format("New Dialogue {}.owldlg", counter);
+	m_dialogueCreateCallback(dialoguePath);
 	m_rescanRequested = true;
 }
 

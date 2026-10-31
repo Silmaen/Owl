@@ -228,6 +228,8 @@ void PcgGraphDocument::onAttach(EditorLayer* iEditor) {
 }
 
 void PcgGraphDocument::onCanvasReady() {
+	// The links of a PCG graph keep the colour of the type they carry.
+	m_canvas.setLinkColorsEnabled(false);
 	m_canvas.setLinkValidator([this](const core::UUID iFrom, const core::UUID iTo) -> bool {
 		const auto from = m_pins.find(iFrom);
 		const auto to = m_pins.find(iTo);
@@ -529,6 +531,7 @@ void PcgGraphDocument::onImGuiRender() {
 			m_canvas.requestFitToContent();
 			--m_fitFrames;
 		}
+		m_canvas.setSnapToGrid(isGraphSnapOn(mp_editorLayer));
 		m_canvas.onRender();
 		if (ImGui::BeginDragDropTargetCustom({ImGui::GetItemRectMin(), ImGui::GetItemRectMax()},
 											 ImGui::GetID("##pcgDrop"))) {
@@ -575,6 +578,8 @@ void PcgGraphDocument::renderToolbar() {
 												.description = "Show every node.",
 												.disabled = m_viewMode == PcgViewMode::Output}))
 		m_canvas.requestFitToContent();
+	ImGui::SameLine();
+	graphSnapButton(mp_editorLayer);
 	separator();
 	constexpr std::array modes{
 			std::tuple{PcgViewMode::Graph, gui::icon::workflow, "Graph", "The nodes only."},

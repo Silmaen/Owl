@@ -14,6 +14,7 @@
 #include "CommandJournal.h"
 #include "ComponentCommands.h"
 #include "DataTableCommands.h"
+#include "DialogueCommands.h"
 #include "DocumentCommands.h"
 #include "EntityCommands.h"
 #include "HierarchyCommands.h"
@@ -1813,6 +1814,7 @@ CommandRegistry::CommandRegistry() {
 	addHudCommands(*this);
 	addSplineCommands(*this);
 	addDataTableCommands(*this);
+	addDialogueCommands(*this);
 	addAssetCommands(*this);
 	addDocumentCommands(*this);
 	add(getMacroRunSpec());

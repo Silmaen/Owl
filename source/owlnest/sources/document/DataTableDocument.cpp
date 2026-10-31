@@ -516,13 +516,13 @@ void DataTableDocument::renderToolbar() {
 												  .disabled = none}))
 		std::ignore = runCommand("table.remove_rows", {{"keys", getKeys(m_selection)}});
 	ImGui::SameLine();
-	ImGui::TextDisabled("|");
+	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 	ImGui::SameLine();
-	ImGui::SetNextItemWidth(140.f);
+	ImGui::SetNextItemWidth(ImGui::GetFontSize() * 9.f);
 	const bool entered = ImGui::InputTextWithHint("##newColumn", "new column", &m_newColumnName,
 												  ImGuiInputTextFlags_EnterReturnsTrue);
 	ImGui::SameLine();
-	ImGui::SetNextItemWidth(110.f);
+	ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7.f);
 	if (gui::widgets::beginCombo("##newColumnType",
 								 std::string{data::table::getColumnTypeName(m_newColumnType)}.c_str())) {
 		for (const auto type: data::table::getColumnTypes())
@@ -543,7 +543,9 @@ void DataTableDocument::renderToolbar() {
 										{"choices", std::string{"a,b"}}}))
 		m_newColumnName.clear();
 	ImGui::SameLine();
-	ImGui::SetNextItemWidth(200.f);
+	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(ImGui::GetFontSize() * 13.f);
 	std::ignore = gui::widgets::searchField("##search", m_search, "Search keys and cells");
 	ImGui::SameLine();
 	ImGui::TextDisabled("%zu rows, %zu columns", m_table.rows.size(), m_table.columns.size());
@@ -554,9 +556,12 @@ void DataTableDocument::renderColumnHeader(const size_t iIndex) {
 	ImGui::PushID(static_cast<int>(iIndex));
 	auto edited = column;
 	std::optional<Column> changed;
-	ImGui::TextUnformatted(typeGlyph(column.type));
+	constexpr float buttonGap = 2.f;
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextDisabled("%s", typeGlyph(column.type));
 	ImGui::SameLine();
-	ImGui::SetNextItemWidth(-ImGui::GetFrameHeight() * 3.3f);
+	const float buttons = ImGui::GetFrameHeight() * 3.f + buttonGap * 2.f + ImGui::GetStyle().ItemSpacing.x;
+	ImGui::SetNextItemWidth(std::max(ImGui::GetFontSize() * 3.f, ImGui::GetContentRegionAvail().x - buttons));
 	if (ImGui::InputText("##name", &edited.name, ImGuiInputTextFlags_EnterReturnsTrue))
 		changed = edited;
 	gui::widgets::itemTooltip("Name of the column, read by `datatable.get`; Enter renames it.");
@@ -564,12 +569,12 @@ void DataTableDocument::renderColumnHeader(const size_t iIndex) {
 	if (gui::widgets::iconButton("##left",
 								 {.glyph = gui::icon::chevronLeft, .tooltip = "Move left", .disabled = iIndex == 0}))
 		std::ignore = runCommand("table.move_column", {{"column", column.name}, {"right", false}});
-	ImGui::SameLine();
+	ImGui::SameLine(0.f, buttonGap);
 	if (gui::widgets::iconButton("##right", {.glyph = gui::icon::chevronRight,
 											 .tooltip = "Move right",
 											 .disabled = iIndex + 1 >= m_table.columns.size()}))
 		std::ignore = runCommand("table.move_column", {{"column", column.name}, {"right", true}});
-	ImGui::SameLine();
+	ImGui::SameLine(0.f, buttonGap);
 	bool removed = false;
 	if (gui::widgets::iconButton("##removeColumn", {.glyph = gui::icon::x,
 													.tooltip = "Remove the column",
@@ -739,17 +744,17 @@ void DataTableDocument::renderGrid() {
 	}
 	const auto columns = static_cast<int>(m_table.columns.size()) + 1;
 	if (!ImGui::BeginTable("##grid", columns,
-						   ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
-								   ImGuiTableFlags_ScrollX | ImGuiTableFlags_Resizable))
+						   ImGuiTableFlags_BordersInner | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_RowBg |
+								   ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX | ImGuiTableFlags_Resizable))
 		return;
 	ImGui::TableSetupScrollFreeze(1, 1);
-	ImGui::TableSetupColumn("Key", ImGuiTableColumnFlags_WidthFixed, 160.f);
+	ImGui::TableSetupColumn("Key", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 10.f);
 	for (const auto& column: m_table.columns)
-		ImGui::TableSetupColumn(column.name.c_str(), ImGuiTableColumnFlags_WidthFixed, 190.f);
+		ImGui::TableSetupColumn(column.name.c_str(), ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 13.f);
 	ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
 	ImGui::TableNextColumn();
 	ImGui::AlignTextToFramePadding();
-	ImGui::TextUnformatted("key");
+	ImGui::TextUnformatted("Key");
 	gui::widgets::itemTooltip("Key of each row, read by `datatable.get` and named by the references.");
 	for (size_t column = 0; column < m_table.columns.size(); ++column) {
 		ImGui::TableNextColumn();

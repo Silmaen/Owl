@@ -10,6 +10,7 @@
 
 #include "app/Application.h"
 #include "data/assets/AssetReference.h"
+#include "data/dialogue/Dialogue.h"
 #include "data/fonts/FontLibrary.h"
 #include "data/fonts/FontSettings.h"
 #include "data/geometry/MeshLoader.h"
@@ -349,6 +350,32 @@ void followDataTable(const std::string& iName, const std::string& iSource,// NOL
 	}
 }
 
+auto isDialogueFile(const std::string& iName) -> bool {
+	return data::dialogue::Dialogue::isDialogue(std::filesystem::path(iName));
+}
+
+// A dialogue carries the voice lines and sounds of its nodes.
+void followDialogue(const std::string& iName, const std::string& iSource, std::vector<AssetReference>& ioAssets,
+					std::vector<std::string>* ioWarnings) {
+	auto ref = resolveDataAsset(iName);
+	if (!ref) {
+		pushWarning(ioWarnings, "Dialogue", iName, iSource);
+		return;
+	}
+	if (hasAsset(ioAssets, ref->packPath))
+		return;
+	ioAssets.push_back(*ref);
+	const auto dialogue = data::dialogue::Dialogue::loadFile(ref->diskPath);
+	if (!dialogue) {
+		pushWarning(ioWarnings, "Dialogue", std::format("{} (unreadable)", iName), iSource);
+		return;
+	}
+	const auto source = std::format("the dialogue {}", iName);
+	for (const auto& node: dialogue->nodes)
+		if (!node.sound.empty())
+			followSound(node.sound, source, ioAssets, ioWarnings);
+}
+
 auto isSoundFile(const std::string& iName) -> bool {
 	const auto ext = std::filesystem::path(iName).extension();
 	return ext == ".wav" || ext == ".ogg" || ext == ".mp3" || ext == ".flac" || ext == ".owlsound";
@@ -410,6 +437,9 @@ void scanLuaScript(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-re
 	static const std::regex tablePattern(R"(["']([^"'\s]+\.owltable)["'])");
 	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), tablePattern); it != end; ++it)
 		followDataTable((*it)[1].str(), source, ioAssets, ioWarnings);
+	static const std::regex dialoguePattern(R"(["']([^"'\s]+\.owldlg)["'])");
+	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), dialoguePattern); it != end; ++it)
+		followDialogue((*it)[1].str(), source, ioAssets, ioWarnings);
 	// The modules it requires (`require("scripts.game.towers")` reads `scripts/game/towers.lua`), scanned in turn.
 	static const std::regex requirePattern(R"(\brequire\s*\(?\s*["']([A-Za-z0-9_.]+)["'])");
 	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), requirePattern); it != end; ++it) {
@@ -456,6 +486,8 @@ void scanScriptProperties(const YAML::Node& iProperties,// NOLINT(misc-no-recurs
 				followSound(text, source, ioAssets, ioWarnings);
 			else if (isDataTableFile(text))
 				followDataTable(text, source, ioAssets, ioWarnings);
+			else if (isDialogueFile(text))
+				followDialogue(text, source, ioAssets, ioWarnings);
 		}
 	}
 }

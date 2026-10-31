@@ -242,6 +242,25 @@ public:
 
 	/**
 	 * @brief
+	 *  Set a callback invoked when a dialogue (`.owldlg`) is double-clicked.
+	 * @param[in] iCallback Function taking the dialogue file path.
+	 */
+	void setDialogueOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_dialogueOpenCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
+	 *  Set the callback creating a dialogue ("New Dialogue" of the folder menu); it runs `dialogue.create` and opens
+	 *  the file.
+	 * @param[in] iCallback Function taking the path of the file to create.
+	 */
+	void setDialogueCreateCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_dialogueCreateCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when the project's `localisation.yml` is double-clicked.
 	 * @param[in] iCallback Function taking the file path.
 	 */
@@ -424,6 +443,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Render the rename and delete confirmation popups of the selected item.
+	 */
+	void renderItemDialogs();
+
+	/**
+	 * @brief
 	 *  Delete the currently selected file or folder.
 	 */
 	void deleteSelected();
@@ -451,6 +476,12 @@ private:
 	 *  Ask for a new data table in the current directory (a free "New Data Table" name).
 	 */
 	void createDataTable();
+
+	/**
+	 * @brief
+	 *  Create a dialogue in the current folder (`New Dialogue.owldlg`, numbered when taken) and open it.
+	 */
+	void createDialogue();
 
 	/**
 	 * @brief
@@ -524,6 +555,10 @@ private:
 	std::function<void(const std::filesystem::path&)> m_dataTableOpenCallback;
 	/// Creates a data table ("New Data Table").
 	std::function<void(const std::filesystem::path&)> m_dataTableCreateCallback;
+	/// Called on double-click of a `.owldlg` dialogue.
+	std::function<void(const std::filesystem::path&)> m_dialogueOpenCallback;
+	/// Creates a dialogue ("New Dialogue").
+	std::function<void(const std::filesystem::path&)> m_dialogueCreateCallback;
 	/// Called on double-click of `localisation.yml`.
 	std::function<void(const std::filesystem::path&)> m_localisationOpenCallback;
 	/// Called when a macro (`.owlmacro`) is double-clicked or run from its context menu.

@@ -38,6 +38,7 @@ enum struct AssetKind : uint8_t {
 	Audio,///< `.wav`, `.ogg`, `.flac`, `.mp3`: opened in a sound document, its cue beside it or a new one.
 	Localisation,///< `localisation.yml`: opened in the localisation document.
 	DataTable,///< `.owltable`: opened in a data table document.
+	Dialogue,///< `.owldlg`: opened in a dialogue document.
 	Code,///< Script, source, data or markup text: opened in the code editor.
 	Unsupported///< Anything else.
 };

@@ -34,7 +34,8 @@ RemoveNodeCommand::RemoveNodeCommand(gui::widgets::Node iNode, std::vector<gui::
 
 void RemoveNodeCommand::undo(NodeCanvas& ioTarget) {
 	ioTarget.addNode(m_node);
-	for (const auto& link: m_attachedLinks) ioTarget.addLink(link.fromPin, link.toPin, link.waypoints);
+	for (const auto& link: m_attachedLinks)
+		std::ignore = ioTarget.setLinkColor(ioTarget.addLink(link.fromPin, link.toPin, link.waypoints), link.color);
 }
 
 void RemoveNodeCommand::redo(NodeCanvas& ioTarget) { ioTarget.removeNode(m_node.id); }
@@ -83,6 +84,7 @@ RemoveLinkCommand::RemoveLinkCommand(gui::widgets::Link iLink) : m_link{std::mov
 
 void RemoveLinkCommand::undo(NodeCanvas& ioTarget) {
 	m_link.id = ioTarget.addLink(m_link.fromPin, m_link.toPin, m_link.waypoints);
+	std::ignore = ioTarget.setLinkColor(m_link.id, m_link.color);
 }
 
 void RemoveLinkCommand::redo(NodeCanvas& ioTarget) { ioTarget.removeLink(m_link.id); }
@@ -99,6 +101,21 @@ void SetLinkWaypointsCommand::apply(NodeCanvas& ioTarget, const std::vector<math
 	for (const auto& link: ioTarget.links())
 		if (link.fromPin == m_fromPin && link.toPin == m_toPin) {
 			std::ignore = ioTarget.setLinkWaypoints(link.id, iWaypoints);
+			return;
+		}
+}
+
+SetLinkColorCommand::SetLinkColorCommand(const gui::widgets::Link& iLink, std::string iBefore)
+	: m_fromPin{iLink.fromPin}, m_toPin{iLink.toPin}, m_before{std::move(iBefore)}, m_after{iLink.color} {}
+
+void SetLinkColorCommand::undo(NodeCanvas& ioTarget) { apply(ioTarget, m_before); }
+
+void SetLinkColorCommand::redo(NodeCanvas& ioTarget) { apply(ioTarget, m_after); }
+
+void SetLinkColorCommand::apply(NodeCanvas& ioTarget, const std::string& iColor) const {
+	for (const auto& link: ioTarget.links())
+		if (link.fromPin == m_fromPin && link.toPin == m_toPin) {
+			std::ignore = ioTarget.setLinkColor(link.id, iColor);
 			return;
 		}
 }

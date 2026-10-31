@@ -44,6 +44,7 @@ struct NodePin {
 	std::string typeTag;///< Opaque type tag owned by the client.
 	PinKind kind{PinKind::Input};///< Input or output side.
 	math::vec4 labelColor{1.0f, 1.0f, 1.0f, 1.0f};///< RGBA colour used to render `label` (default white).
+	bool exec{false};///< Drawn as an execution chevron rather than a data circle.
 };
 
 /**
@@ -62,6 +63,9 @@ struct Node {
 	std::vector<NodePin> outputs;///< Output pins (right side).
 	std::string customData;///< Opaque YAML blob owned by the caller.
 	math::vec4 titleColor{1.0f, 1.0f, 1.0f, 1.0f};///< Overlay colour for the title text (e.g. red for orphans).
+	/// `gui::icon` glyph drawn before the title, or empty.
+	std::string glyph{};// NOLINT(readability-redundant-member-init) lets designated initializers omit it
+	math::vec4 glyphColor{1.0f, 1.0f, 1.0f, 1.0f};///< Colour of the glyph (the kind of the node).
 };
 
 /**
@@ -73,6 +77,8 @@ struct Link {
 	core::UUID fromPin;///< Output pin on the source node.
 	core::UUID toPin;///< Input pin on the destination node.
 	std::vector<math::vec2f> waypoints;///< Points the link passes through, in canvas space, from output to input.
+	/// Name of a `getLinkColors` entry, or empty for the colour of its output pin.
+	std::string color{};// NOLINT(readability-redundant-member-init) lets designated initializers omit it
 };
 
 /**
@@ -199,6 +205,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the colour of a link.
+	 * @param[in] iId Link identifier.
+	 * @param[in] iColor Name of a `getLinkColors` entry, or empty for the default colour.
+	 * @return False when no link has that identifier.
+	 */
+	auto setLinkColor(core::UUID iId, const std::string& iColor) -> bool;
+
+	/**
+	 * @brief
 	 *  Remove a link by id.
 	 * @param[in] iId UUID of the link to remove.
 	 */
@@ -307,12 +322,40 @@ public:
 	 * @brief
 	 *  Set the callback fired when the user inserts, moves or deletes a waypoint of a link.
 	 *
-	 * Right click on a link inserts one at the cursor, a left drag moves one, Delete over one removes it. The link
+	 * **Add Waypoint** of the link menu (right click on a link) inserts one at the cursor, a left drag moves one,
+	 * Delete over one removes it. The link
 	 * already holds its new waypoints when the callback runs; a move fires once, on release.
 	 * @param[in] iCb Callback `(iLinkId, iBefore) -> void`, with the waypoints before the gesture.
 	 */
 	void
 	setOnLinkWaypointsChanged(std::function<void(core::UUID iLinkId, const std::vector<math::vec2f>& iBefore)> iCb);
+
+	/**
+	 * @brief
+	 *  Let the link menu (right click on a link) give the links a colour of `getLinkColors`.
+	 *
+	 * A coloured link draws its pins in its colour; they take back their own colour once the link is gone.
+	 * @param[in] iEnabled Whether the menu offers the colours (off by default: links typed by their pins keep them).
+	 */
+	void setLinkColorsEnabled(bool iEnabled);
+
+	/**
+	 * @brief
+	 *  Snap the moved nodes and waypoints to the grid (`snapToNodeGrid`).
+	 *
+	 * The node under the mouse lands on the grid, the other selected nodes keep their place relative to it.
+	 * @param[in] iEnabled Whether the snap is on (off by default).
+	 */
+	void setSnapToGrid(bool iEnabled);
+
+	/**
+	 * @brief
+	 *  Set the callback fired when the user gives a link another colour.
+	 *
+	 * The link already holds its new colour when the callback runs.
+	 * @param[in] iCb Callback `(iLinkId, iBefore) -> void`, with the colour name before the change.
+	 */
+	void setOnLinkColorChanged(std::function<void(core::UUID iLinkId, const std::string& iBefore)> iCb);
 
 	/**
 	 * @brief

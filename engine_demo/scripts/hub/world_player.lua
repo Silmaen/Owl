@@ -100,8 +100,8 @@ function on_update(dt)
         return
     end
 
-    -- Still while the information board is open: the move keys scroll it (info_board.lua).
-    if gamestate.get("board_open", 0) == 1 then
+    -- Still while the information board (the move keys scroll it, info_board.lua) or a dialogue (hub_wizard.lua) is open.
+    if gamestate.get("board_open", 0) == 1 or gamestate.get("dialogue_open", 0) == 1 then
         physics.set_velocity(entity_id, 0, 0)
         return
     end

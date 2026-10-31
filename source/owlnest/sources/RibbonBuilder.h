@@ -154,6 +154,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Build the Dialogue tab: save and close the active dialogue, frame and duplicate its nodes, preview it.
+	 */
+	void buildDialogueTab();
+
+	/**
+	 * @brief
 	 *  Build the contextual tab of an action map document (Save / Save As / Reset / Close).
 	 */
 	void buildActionMapTab();

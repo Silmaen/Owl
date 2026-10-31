@@ -1556,10 +1556,9 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:5be0c27a91d4f368:scripts/hub/hub_wizard.lua
     properties:
-    - {name: speaker, type: string, value: "Wizard"}
-    - {name: lines, type: string, value: "The portal in the shrine sleeps until you have finished the five levels.|Platformer, raycast, isometric town, voxels, tavern: five houses, five worlds.|My spells are only a little Lua. The bell is not mine, though."}
+    - {name: dialogue_path, type: string, value: "dialogues/wizard.owldlg"}
     - {name: follow, type: string, value: "Wizard"}
 - Entity: 2000000000000000440
   Tag: {tag: Talk_Knight}

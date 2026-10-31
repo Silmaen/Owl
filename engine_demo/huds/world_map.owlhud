@@ -357,3 +357,184 @@ Entities:
     wrap: true
     kerning: 0
     lineSpacing: 0
+- Entity: 2000000000000000900
+  Tag: {tag: DialoguePanel}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: false}
+  Hierarchy: {parentId: 2000000000000000060}
+  UiRect:
+    anchorMin: [0.5, 1]
+    anchorMax: [0.5, 1]
+    pivot: [0.5, 1]
+    size: [1.3, 0.36]
+    sizeUnit: [ScreenHeight, ScreenHeight]
+    offset: [0, -16]
+  UiWindow: {title: Wizard, titleBarHeight: 36, titleFontSize: 26, closable: true, draggable: false, modal: true, onCloseCallback: on_wizard_closed}
+  UiLayout:
+    arrangement: Column
+    crossAlign: Center
+    spacing: 4
+    padding: 8
+    columns: 1
+    cellSize: [0, 0]
+- Entity: 2000000000000000902
+  Tag: {tag: DialogueText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000900}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.95, 0.26]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiText:
+    text: ''
+    color: [1, 1, 1, 1]
+    fontSize: 26
+    horizontalAlignment: Left
+    verticalAlignment: Middle
+    wrap: true
+    fit: Shrink
+    minFontSize: 14
+    kerning: 0
+    lineSpacing: 0
+- Entity: 2000000000000000903
+  Tag: {tag: DialogueAnswer1}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000900}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.95, 0.12]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.2, 0.3, 0.92]
+    hoverColor: [0.26, 0.34, 0.5, 0.95]
+    pressedColor: [0.1, 0.13, 0.2, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_wizard_answer_1
+  UiFocus: {focusable: true}
+  UiText:
+    text: ''
+    color: [1, 1, 1, 1]
+    fontSize: 24
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+    wrap: true
+    fit: Shrink
+    minFontSize: 14
+    kerning: 0
+    lineSpacing: 0
+- Entity: 2000000000000000904
+  Tag: {tag: DialogueAnswer2}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000900}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.95, 0.12]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.2, 0.3, 0.92]
+    hoverColor: [0.26, 0.34, 0.5, 0.95]
+    pressedColor: [0.1, 0.13, 0.2, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_wizard_answer_2
+  UiFocus: {focusable: true}
+  UiText:
+    text: ''
+    color: [1, 1, 1, 1]
+    fontSize: 24
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+    wrap: true
+    fit: Shrink
+    minFontSize: 14
+    kerning: 0
+    lineSpacing: 0
+- Entity: 2000000000000000905
+  Tag: {tag: DialogueAnswer3}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000900}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.95, 0.12]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.2, 0.3, 0.92]
+    hoverColor: [0.26, 0.34, 0.5, 0.95]
+    pressedColor: [0.1, 0.13, 0.2, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_wizard_answer_3
+  UiFocus: {focusable: true}
+  UiText:
+    text: ''
+    color: [1, 1, 1, 1]
+    fontSize: 24
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+    wrap: true
+    fit: Shrink
+    minFontSize: 14
+    kerning: 0
+    lineSpacing: 0
+- Entity: 2000000000000000906
+  Tag: {tag: DialogueNext}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 2000000000000000900}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [0.3, 0.12]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiButton:
+    normalColor: [0.16, 0.2, 0.3, 0.92]
+    hoverColor: [0.26, 0.34, 0.5, 0.95]
+    pressedColor: [0.1, 0.13, 0.2, 1]
+    disabledColor: [0.15, 0.15, 0.15, 0.5]
+    onClickCallback: on_wizard_next
+  UiFocus: {focusable: true}
+  UiText:
+    text: 'Next'
+    color: [1, 1, 1, 1]
+    fontSize: 24
+    horizontalAlignment: Center
+    verticalAlignment: Middle
+    wrap: true
+    fit: Shrink
+    minFontSize: 14
+    kerning: 0
+    lineSpacing: 0

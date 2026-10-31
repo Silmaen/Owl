@@ -464,7 +464,18 @@ void Ribbon::onRender() {
 	renderTabRow();
 	if (!m_collapsed && m_selected < m_tabs.size()) {
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2.f);
+		// Groups wider than the window (long labels, a narrow window) scroll sideways under the wheel, never clip.
+		ImGui::BeginChild("##ribbonContent", ImVec2{0.f, 0.f}, ImGuiChildFlags_None,
+						  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
+								  ImGuiWindowFlags_NoBackground);
 		renderTabContent(m_tabs[m_selected]);
+		if (ImGui::GetScrollMaxX() > 0.f && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows)) {
+			const auto& io = ImGui::GetIO();
+			const float wheel = io.MouseWheelH != 0.f ? io.MouseWheelH : io.MouseWheel;
+			if (wheel != 0.f)
+				ImGui::SetScrollX(ImGui::GetScrollX() - wheel * ImGui::GetFontSize() * 4.f);
+		}
+		ImGui::EndChild();
 	}
 	ImGui::EndChild();
 	ImGui::PopStyleColor();
