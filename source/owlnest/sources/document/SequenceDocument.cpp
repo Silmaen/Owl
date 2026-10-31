@@ -18,7 +18,11 @@
 #include <gui/Theme.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
+#include <gui/widgets/Combo.h>
+#include <gui/widgets/EmptyState.h>
 #include <gui/widgets/IconButton.h>
+#include <gui/widgets/PropertyGrid.h>
+#include <gui/widgets/SectionHeader.h>
 #include <math/trigonometry.h>
 #include <scene/Scene.h>
 #include <scene/component/SequencePlayer.h>
@@ -659,108 +663,149 @@ void SequenceDocument::renderTimelineRow(const bool iCamera, const size_t iTrack
 }
 
 void SequenceDocument::renderSequenceSettings() {
-	ImGui::SeparatorText("Sequence");
-	float duration = m_sequence.duration;
-	if (ImGui::DragFloat("Duration", &duration, 0.05f, 0.f, 3600.f, "%.2f s"))
-		std::ignore = sendCommand("sequence.set_duration",
-								  {{"duration", static_cast<double>(duration)}, {"merge", m_durationTyping}});
-	m_durationTyping = ImGui::IsItemActive();
-	const auto player = getPreviewPlayer();
-	const auto* document = getPreviewDocument();
-	ImGui::LabelText("Preview", "%s",
-					 document != nullptr && player
-							 ? std::format("{} in {}", player.getName(), document->title()).c_str()
-							 : "no open scene plays it");
-	ImGui::SetItemTooltip("The scene and the Sequence Player the viewport previews on; Open on a Sequence Player picks "
-						  "another one.");
-	if (player) {
-		const auto& component = player.getComponent<scene::component::SequencePlayer>();
-		ImGui::LabelText("Playback", "%s",
-						 std::format("{}{}, speed {:g}", component.playOnStart ? "on start" : "from Lua",
-									 component.loop ? ", loop" : "", component.speed)
-								 .c_str());
-		ImGui::SetItemTooltip("Set on the Sequence Player in the scene inspector.");
+	if (!gui::widgets::sectionHeader("Sequence", gui::icon::clapperboard, false).open)
+		return;
+	if (gui::widgets::beginProperties("##sequence")) {
+		float duration = m_sequence.duration;
+		if (gui::widgets::propertyFloat("Duration", duration, Sequence{}.duration, 0.05f, "%.2f s",
+										"Length of the cutscene; the player stops or loops there.")) {
+			std::ignore =
+					sendCommand("sequence.set_duration",
+								{{"duration", static_cast<double>(std::max(duration, 0.f))}, {"merge", m_typing}});
+			m_typing = true;
+		}
+		const auto player = getPreviewPlayer();
+		const auto* document = getPreviewDocument();
+		gui::widgets::propertyLabel("Preview", "The scene and the Sequence Player the viewport previews on; Open on a "
+											   "Sequence Player picks another one.");
+		ImGui::TextUnformatted(document != nullptr && player
+									   ? std::format("{} in {}", player.getName(), document->title()).c_str()
+									   : "No open scene plays it");
+		std::ignore = gui::widgets::propertyReset(false);
+		if (player) {
+			const auto& component = player.getComponent<scene::component::SequencePlayer>();
+			gui::widgets::propertyLabel("Playback", "Set on the Sequence Player, in the inspector of the scene.");
+			ImGui::TextDisabled("%s", std::format("{}{}, speed {:g}", component.playOnStart ? "On start" : "From Lua",
+												  component.loop ? ", loop" : "", component.speed)
+											  .c_str());
+			std::ignore = gui::widgets::propertyReset(false);
+		}
+		gui::widgets::endProperties();
 	}
+	gui::widgets::endSection();
+}
+
+void SequenceDocument::renderTrackSettings() {
+	const bool camera = m_selection.camera;
+	const char* icon = camera ? "comp_camera" : "comp_lua_script";
+	if (!gui::widgets::sectionHeader(camera ? "Camera Track" : "Event Track", icon, false).open)
+		return;
+	if (gui::widgets::beginProperties("##track")) {
+		std::string name = camera ? m_sequence.cameraTracks[m_selection.track].name
+								  : m_sequence.eventTracks[m_selection.track].name;
+		if (gui::widgets::propertyText("Name", name, "Track name")) {
+			auto args = trackArgs();
+			args.set("name", name);
+			args.set("merge", m_typing);
+			m_typing = true;
+			std::ignore = sendCommand("sequence.set_track", std::move(args));
+		}
+		bool muted = camera ? m_sequence.cameraTracks[m_selection.track].muted
+							: m_sequence.eventTracks[m_selection.track].muted;
+		if (gui::widgets::propertyBool("Muted", muted, false,
+									   camera ? "A muted shot never drives the camera."
+											  : "The functions of a muted track are not called.")) {
+			auto args = trackArgs();
+			args.set("muted", muted);
+			std::ignore = sendCommand("sequence.set_track", std::move(args));
+		}
+		gui::widgets::endProperties();
+	}
+	gui::widgets::endSection();
 }
 
 void SequenceDocument::renderPropertiesPanel() {
 	if (!ImGui::IsAnyItemActive())
 		m_typing = false;
+	gui::UiLayer::pushTextStyle(gui::TextStyle::Label);
 	renderSequenceSettings();
 	const bool hasTrack =
 			m_selection.track < (m_selection.camera ? m_sequence.cameraTracks.size() : m_sequence.eventTracks.size());
 	if (!hasTrack) {
-		ImGui::TextDisabled("Add a camera or an event track from the Sequencer toolbar.");
-		return;
+		std::ignore = gui::widgets::emptyState(gui::icon::film, "No track",
+											   "Add a camera or an event track from the Sequencer toolbar.");
+	} else {
+		renderTrackSettings();
+		if (m_selection.keys.size() != 1)
+			std::ignore = gui::widgets::emptyState(
+					gui::icon::mousePointerClick, m_selection.keys.empty() ? "No key selected" : "Several keys",
+					m_selection.keys.empty() ? "Click a key on the timeline to edit it here."
+											 : "Pick one key to edit it; drag moves them all.");
+		else if (m_selection.camera)
+			renderCameraKey(m_sequence.cameraTracks[m_selection.track].keys[m_selection.keys.front()]);
+		else
+			renderEventKey(m_sequence.eventTracks[m_selection.track].keys[m_selection.keys.front()]);
 	}
-	ImGui::SeparatorText("Track");
-	std::string name = m_selection.camera ? m_sequence.cameraTracks[m_selection.track].name
-										  : m_sequence.eventTracks[m_selection.track].name;
-	if (ImGui::InputText("Name", &name)) {
-		auto args = trackArgs();
-		args.set("name", name);
-		args.set("merge", m_typing);
-		m_typing = true;
-		std::ignore = sendCommand("sequence.set_track", std::move(args));
-	}
-	bool muted = m_selection.camera ? m_sequence.cameraTracks[m_selection.track].muted
-									: m_sequence.eventTracks[m_selection.track].muted;
-	if (ImGui::Checkbox("Muted", &muted)) {
-		auto args = trackArgs();
-		args.set("muted", muted);
-		std::ignore = sendCommand("sequence.set_track", std::move(args));
-	}
-	if (m_selection.keys.size() != 1) {
-		ImGui::TextDisabled(m_selection.keys.empty() ? "Click a key on the timeline to edit it."
-													 : "Several keys are selected.");
-		return;
-	}
-	ImGui::SeparatorText("Key");
-	const size_t key = m_selection.keys.front();
-	if (m_selection.camera)
-		renderCameraKey(m_sequence.cameraTracks[m_selection.track].keys[key]);
-	else
-		renderEventKey(m_sequence.eventTracks[m_selection.track].keys[key]);
+	gui::UiLayer::popTextStyle();
 }
 
 void SequenceDocument::renderCameraKey(const CameraKey& iKey) {
-	float time = iKey.time;
-	if (ImGui::DragFloat("Time", &time, 0.01f, 0.f, 3600.f, "%.2f s"))
-		setSelectedKey({{"time", static_cast<double>(time)}});
-	math::vec3 position = iKey.position;
-	if (ImGui::DragFloat3("Position", position.data(), 0.05f))
-		setSelectedKey({{"position", position}});
-	math::vec3 rotation = math::degrees(iKey.rotation);
-	if (ImGui::DragFloat3("Rotation", rotation.data(), 0.5f, 0.f, 0.f, "%.1f°"))
-		setSelectedKey({{"rotation", rotation}});
-	float fov = math::degrees(iKey.fov);
-	if (ImGui::DragFloat("Field of view", &fov, 0.2f, 1.f, 179.f, "%.1f°"))
-		setSelectedKey({{"fov", static_cast<double>(fov)}});
-	ImGui::SetItemTooltip("Vertical field of view of a perspective camera.");
-	float size = iKey.size;
-	if (ImGui::DragFloat("Size", &size, 0.05f, 0.01f, 1.e5f, "%.2f"))
-		setSelectedKey({{"size", static_cast<double>(size)}});
-	ImGui::SetItemTooltip("Size of an orthographic camera.");
-	if (ImGui::BeginCombo("Easing", std::string{data::sequence::getEasingName(iKey.easing)}.c_str())) {
-		for (const auto easing: data::sequence::getEasings()) {
-			const std::string label{data::sequence::getEasingName(easing)};
-			if (ImGui::Selectable(label.c_str(), easing == iKey.easing))
-				setSelectedKey({{"easing", label}});
+	if (!gui::widgets::sectionHeader("Camera Key", "comp_camera", false).open)
+		return;
+	const CameraKey defaults;
+	if (gui::widgets::beginProperties("##cameraKey")) {
+		float time = iKey.time;
+		if (gui::widgets::propertyFloat("Time", time, iKey.time, 0.01f, "%.2f s", "When the camera reaches this pose."))
+			setSelectedKey({{"time", static_cast<double>(std::max(time, 0.f))}});
+		math::vec3 position = iKey.position;
+		if (gui::widgets::propertyVec3("Position", position, defaults.position, 0.05f,
+									   "In the space of the Sequence Player (of its parent when it drives its own "
+									   "camera)."))
+			setSelectedKey({{"position", position}});
+		math::vec3 rotation = math::degrees(iKey.rotation);
+		if (gui::widgets::propertyVec3("Rotation", rotation, math::degrees(defaults.rotation), 0.5f,
+									   "Euler angles in degrees."))
+			setSelectedKey({{"rotation", rotation}});
+		float fov = math::degrees(iKey.fov);
+		if (gui::widgets::propertyFloat("Field of View", fov, math::degrees(defaults.fov), 0.2f, "%.1f°",
+										"Vertical field of view of a perspective camera."))
+			setSelectedKey({{"fov", static_cast<double>(std::clamp(fov, 1.f, 179.f))}});
+		float size = iKey.size;
+		if (gui::widgets::propertyFloat("Size", size, defaults.size, 0.05f, "%.2f",
+										"Visible height of an orthographic camera."))
+			setSelectedKey({{"size", static_cast<double>(std::max(size, 0.01f))}});
+		gui::widgets::propertyLabel("Easing", "How the camera moves to the next key: Smooth curve, Linear, or Step (a "
+											  "cut).");
+		if (gui::widgets::beginCombo("##easing", std::string{data::sequence::getEasingName(iKey.easing)}.c_str())) {
+			for (const auto easing: data::sequence::getEasings()) {
+				const std::string label{data::sequence::getEasingName(easing)};
+				if (ImGui::Selectable(label.c_str(), easing == iKey.easing))
+					setSelectedKey({{"easing", label}});
+			}
+			ImGui::EndCombo();
 		}
-		ImGui::EndCombo();
+		if (gui::widgets::propertyReset(iKey.easing != defaults.easing))
+			setSelectedKey({{"easing", std::string{data::sequence::getEasingName(defaults.easing)}}});
+		gui::widgets::endProperties();
 	}
-	ImGui::SetItemTooltip("How the camera moves to the next key: Smooth curve, Linear, or Step (a cut).");
+	gui::widgets::endSection();
 }
 
 void SequenceDocument::renderEventKey(const EventKey& iKey) {
-	float time = iKey.time;
-	if (ImGui::DragFloat("Time", &time, 0.01f, 0.f, 3600.f, "%.2f s"))
-		setSelectedKey({{"time", static_cast<double>(time)}});
-	std::string function = iKey.function;
-	if (ImGui::InputText("Function", &function))
-		setSelectedKey({{"function", function}});
-	ImGui::SetItemTooltip("Lua function called at this time, in the script of the playing entity, else the scene "
-						  "script.");
+	if (!gui::widgets::sectionHeader("Event Key", "comp_lua_script", false).open)
+		return;
+	if (gui::widgets::beginProperties("##eventKey")) {
+		float time = iKey.time;
+		if (gui::widgets::propertyFloat("Time", time, iKey.time, 0.01f, "%.2f s", "When the function is called."))
+			setSelectedKey({{"time", static_cast<double>(std::max(time, 0.f))}});
+		std::string function = iKey.function;
+		if (gui::widgets::propertyText("Function", function, "Function name",
+									   "Lua function called at this time, in the script of the playing entity, else "
+									   "the scene script."))
+			setSelectedKey({{"function", function}});
+		gui::widgets::endProperties();
+	}
+	gui::widgets::endSection();
 }
 
 void SequenceDocument::setSelectedKey(commands::CommandArgs iArgs) {

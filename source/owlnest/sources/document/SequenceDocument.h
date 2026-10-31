@@ -525,6 +525,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the settings of the selected track: name and muted state.
+	 */
+	void renderTrackSettings();
+
+	/**
+	 * @brief
 	 *  Draw the fields of a camera key.
 	 * @param[in] iKey The key.
 	 */
