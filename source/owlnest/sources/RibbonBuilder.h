@@ -160,6 +160,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Build the Sequence tab: save and close the active sequence, play it, add keys and tracks.
+	 */
+	void buildSequenceTab();
+
+	/**
+	 * @brief
 	 *  Build the contextual tab of an action map document (Save / Save As / Reset / Close).
 	 */
 	void buildActionMapTab();

@@ -24,6 +24,7 @@ namespace owl::nest::commands {
 class CommandRegistry;
 class DataTableEditor;
 class DialogueEditor;
+class SequenceEditor;
 
 /**
  * @brief
@@ -279,6 +280,14 @@ public:
 	 * @return The editor of the dialogue, or null when it cannot be opened.
 	 */
 	virtual auto openDialogue(const std::filesystem::path& iPath) -> DialogueEditor* = 0;
+
+	/**
+	 * @brief
+	 *  The tab of a sequence, opened when it is not.
+	 * @param[in] iPath The `.owlseq` file.
+	 * @return The editor of the sequence, or null when it cannot be opened.
+	 */
+	virtual auto openSequence(const std::filesystem::path& iPath) -> SequenceEditor* = 0;
 };
 
 /**

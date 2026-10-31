@@ -22,6 +22,7 @@
 #include "Macro.h"
 #include "PrefabCommands.h"
 #include "SceneSettingsCommands.h"
+#include "SequenceCommands.h"
 #include "SplineCommands.h"
 
 #include <app/EngineContext.h>
@@ -1815,6 +1816,7 @@ CommandRegistry::CommandRegistry() {
 	addSplineCommands(*this);
 	addDataTableCommands(*this);
 	addDialogueCommands(*this);
+	addSequenceCommands(*this);
 	addAssetCommands(*this);
 	addDocumentCommands(*this);
 	add(getMacroRunSpec());

@@ -115,6 +115,8 @@ auto typeShortName(const DocumentType iType) -> const char* {
 			return "Table";
 		case DocumentType::Dialogue:
 			return "Dialogue";
+		case DocumentType::Sequence:
+			return "Sequence";
 	}
 	return "Doc";
 }

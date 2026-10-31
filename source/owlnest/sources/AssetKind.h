@@ -39,6 +39,7 @@ enum struct AssetKind : uint8_t {
 	Localisation,///< `localisation.yml`: opened in the localisation document.
 	DataTable,///< `.owltable`: opened in a data table document.
 	Dialogue,///< `.owldlg`: opened in a dialogue document.
+	Sequence,///< `.owlseq`: opened in a sequence document.
 	Code,///< Script, source, data or markup text: opened in the code editor.
 	Unsupported///< Anything else.
 };

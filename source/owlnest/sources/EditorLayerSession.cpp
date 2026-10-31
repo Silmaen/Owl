@@ -166,6 +166,9 @@ auto EditorLayer::openDocumentForRecovery(const RecoveryEntry& iEntry) -> Docume
 		case DocumentType::Dialogue:
 			openDialogueFile(path);
 			break;
+		case DocumentType::Sequence:
+			openSequenceFile(path);
+			break;
 		case DocumentType::Scene:
 			break;
 	}

@@ -106,7 +106,8 @@ auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> 
 																	{".owlmat", {rgb(0xc77dff), "Material"}},
 																	{".owlsound", {rgb(0x3faa72), "Sound cue"}},
 																	{".owltable", {rgb(0x4fb3d9), "Data table"}},
-																	{".owldlg", {rgb(0xd98f4f), "Dialogue"}}};
+																	{".owldlg", {rgb(0xd98f4f), "Dialogue"}},
+																	{".owlseq", {rgb(0xd94f7a), "Sequence"}}};
 	if (const auto it = kinds.find(iPath.extension().string()); it != kinds.end())
 		return it->second;
 	return {rgb(0x8a929e), "File"};
@@ -616,6 +617,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 		m_dataTableOpenCallback(path);
 	} else if (path.extension() == ".owldlg" && m_dialogueOpenCallback) {
 		m_dialogueOpenCallback(path);
+	} else if (path.extension() == ".owlseq" && m_sequenceOpenCallback) {
+		m_sequenceOpenCallback(path);
 	} else if (path.filename() == data::localisation::Localisation::fileName && m_localisationOpenCallback) {
 		m_localisationOpenCallback(path);
 	} else if (path.extension() == ".owlmacro" && m_macroRunCallback) {
@@ -738,6 +741,8 @@ void ContentBrowser::renderCreateItems() {
 		createDataTable();
 	if (m_dialogueCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::bookOpen, .label = "New Dialogue"}))
 		createDialogue();
+	if (m_sequenceCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::clapperboard, .label = "New Sequence"}))
+		createSequence();
 	if (gui::widgets::menuItem({.glyph = gui::icon::workflow, .label = "New Visual Script"}))
 		createVisualScript();
 	if (gui::widgets::menuItem({.glyph = gui::icon::sparkles, .label = "New PCG Graph"}))
@@ -924,6 +929,14 @@ void ContentBrowser::createDialogue() {
 	for (uint32_t counter = 1; exists(dialoguePath); ++counter)
 		dialoguePath = m_currentPath / std::format("New Dialogue {}.owldlg", counter);
 	m_dialogueCreateCallback(dialoguePath);
+	m_rescanRequested = true;
+}
+
+void ContentBrowser::createSequence() {
+	auto sequencePath = m_currentPath / "New Sequence.owlseq";
+	for (uint32_t counter = 1; exists(sequencePath); ++counter)
+		sequencePath = m_currentPath / std::format("New Sequence {}.owlseq", counter);
+	m_sequenceCreateCallback(sequencePath);
 	m_rescanRequested = true;
 }
 

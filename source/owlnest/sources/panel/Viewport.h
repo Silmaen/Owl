@@ -550,6 +550,22 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the camera tracks of the selected `SequencePlayer`: the path of each shot and its keys, the open
+	 *  sequence document's edits included.
+	 * @param[in] iScene The scene edited.
+	 */
+	void renderSequenceOverlay(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
+	 *  Add the pose of the viewport camera as a key at the end of the last camera track of the selected
+	 *  `SequencePlayer` (`sequence.add_key`), the duration stretched when needed.
+	 * @return False when the selection has no sequence or the command failed.
+	 */
+	auto addSequenceKeyFromView() -> bool;
+
+	/**
+	 * @brief
 	 *  Point or Bezier handle of the selected `Spline` under the cursor.
 	 * @return The index of the point and the handle hit, or nothing.
 	 */

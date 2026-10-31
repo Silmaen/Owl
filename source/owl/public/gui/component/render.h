@@ -637,6 +637,13 @@ OWL_API void renderProps(scene::component::SplineFollower& ioComponent);
 
 /**
  * @brief
+ *  Render a Gui for editing a sequence player: the `.owlseq` played, the driven camera and the playback options.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::SequencePlayer& ioComponent);
+
+/**
+ * @brief
  *  Render a Gui for editing the component.
  * @param ioComponent The component to edit.
  */
@@ -696,14 +703,15 @@ using DrawableComponents =
 				   scene::component::LightFlicker, scene::component::ParticleEmitter, scene::component::Trail,
 				   scene::component::Planet, scene::component::StreamingSource, scene::component::Oscillator,
 				   scene::component::Patrol, scene::component::Spline, scene::component::SplineFollower,
-				   scene::component::Drift, scene::component::FollowTarget, scene::component::RenderTarget,
-				   scene::component::ProceduralSky, scene::component::DayNightCycle, scene::component::ReflectionProbe,
-				   scene::component::FirstPersonController, scene::component::VoxelPlayer, scene::component::Canvas,
-				   scene::component::UiRect, scene::component::UiText, scene::component::UiImage,
-				   scene::component::UiPanel, scene::component::UiButton, scene::component::UiSlider,
-				   scene::component::UiProgressBar, scene::component::UiWindow, scene::component::UiLayout,
-				   scene::component::UiTooltip, scene::component::UiToolCursor, scene::component::UiFocus,
-				   scene::component::UiScrollView, scene::component::UiList>;
+				   scene::component::SequencePlayer, scene::component::Drift, scene::component::FollowTarget,
+				   scene::component::RenderTarget, scene::component::ProceduralSky, scene::component::DayNightCycle,
+				   scene::component::ReflectionProbe, scene::component::FirstPersonController,
+				   scene::component::VoxelPlayer, scene::component::Canvas, scene::component::UiRect,
+				   scene::component::UiText, scene::component::UiImage, scene::component::UiPanel,
+				   scene::component::UiButton, scene::component::UiSlider, scene::component::UiProgressBar,
+				   scene::component::UiWindow, scene::component::UiLayout, scene::component::UiTooltip,
+				   scene::component::UiToolCursor, scene::component::UiFocus, scene::component::UiScrollView,
+				   scene::component::UiList>;
 
 
 }// namespace owl::gui::component

@@ -22,6 +22,7 @@
 #include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
+#include "document/SequenceDocument.h"
 #include "document/SoundDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
@@ -472,6 +473,15 @@ void EditorLayer::bindDialogueCallbacks() {
 	});
 }
 
+void EditorLayer::bindSequenceCallbacks() {
+	m_contentBrowser.setSequenceOpenCallback(
+			[this](const std::filesystem::path& iPath) -> void { openSequenceFile(iPath); });
+	m_contentBrowser.setSequenceCreateCallback([this](const std::filesystem::path& iPath) -> void {
+		runCommandFromUi("sequence.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
+		openSequenceFile(iPath);
+	});
+}
+
 void EditorLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
@@ -705,6 +715,7 @@ void EditorLayer::onAttach() {
 	m_contentBrowser.setSoundOpenCallback([this](const std::filesystem::path& iPath) -> void { openSoundFile(iPath); });
 	bindDataTableCallbacks();
 	bindDialogueCallbacks();
+	bindSequenceCallbacks();
 	m_contentBrowser.setSoundCreateCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("sound.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 		openSoundFile(iPath);
@@ -941,6 +952,8 @@ auto consumeTabClose(Document* ioDocument) -> bool {
 			return consumeClose<DataTableDocument>(ioDocument);
 		case DocumentType::Dialogue:
 			return consumeClose<DialogueDocument>(ioDocument);
+		case DocumentType::Sequence:
+			return consumeClose<SequenceDocument>(ioDocument);
 	}
 	return false;
 }

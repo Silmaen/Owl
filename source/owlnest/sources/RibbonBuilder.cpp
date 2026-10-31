@@ -19,6 +19,7 @@
 #include "document/LocalisationDocument.h"
 #include "document/MaterialDocument.h"
 #include "document/NodeGraphDocument.h"
+#include "document/SequenceDocument.h"
 #include "document/SoundDocument.h"
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
@@ -312,6 +313,9 @@ void RibbonBuilder::build() {
 			break;
 		case DocumentType::Dialogue:
 			buildDialogueTab();
+			break;
+		case DocumentType::Sequence:
+			buildSequenceTab();
 			break;
 		case DocumentType::Scene:
 			buildSceneTab();
@@ -927,6 +931,78 @@ void RibbonBuilder::buildDialogueTab() {
 							  .onClick = [activeDialogue]() -> void {
 								  if (auto* d = activeDialogue())
 									  d->setPreviewShown(!d->isPreviewShown());
+							  },
+							  .size = Size::Large});
+}
+
+void RibbonBuilder::buildSequenceTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto activeSequence = [this]() -> SequenceDocument* {
+		auto* d = mp_editor->m_documents.getActive();
+		if (d != nullptr && d->type() == DocumentType::Sequence)
+			return static_cast<SequenceDocument*>(d);
+		return nullptr;
+	};
+	const auto open = [activeSequence]() -> bool { return activeSequence() != nullptr; };
+	const auto tab = m_ribbon.addTab("Sequence");
+	const auto gFile = m_ribbon.addGroup(tab, "File");
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_save",
+							  .label = "Save",
+							  .tooltip = "Save the sequence; the next playbacks read it (Ctrl+S)",
+							  .isEnabled = open,
+							  .onClick = [activeSequence]() -> void {
+								  if (auto* d = activeSequence())
+									  std::ignore = d->save();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_close",
+							  .label = "Close",
+							  .tooltip = "Close the active document",
+							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
+							  .size = Size::Small});
+	const auto gTracks = m_ribbon.addGroup(tab, "Tracks");
+	m_ribbon.addButton(tab, gTracks,
+					   Button{.iconName = "ribbon_cameras",
+							  .label = "Camera Track",
+							  .tooltip = "Add a shot: its keys drive the camera between them",
+							  .isEnabled = open,
+							  .onClick = [activeSequence]() -> void {
+								  if (auto* d = activeSequence())
+									  std::ignore = d->addTrack(true);
+							  },
+							  .size = Size::Small});
+	m_ribbon.addButton(tab, gTracks,
+					   Button{.iconName = "ribbon_flow",
+							  .label = "Event Track",
+							  .tooltip = "Add a row of events calling Lua functions",
+							  .isEnabled = open,
+							  .onClick = [activeSequence]() -> void {
+								  if (auto* d = activeSequence())
+									  std::ignore = d->addTrack(false);
+							  },
+							  .size = Size::Small});
+	m_ribbon.addButton(tab, gTracks,
+					   Button{.iconName = "ribbon_new",
+							  .label = "Add Key",
+							  .tooltip = "Add a key at the playhead on the selected track (K)",
+							  .isEnabled = open,
+							  .onClick = [activeSequence]() -> void {
+								  if (auto* d = activeSequence())
+									  std::ignore = d->addKeyAtPlayhead();
+							  },
+							  .size = Size::Small});
+	const auto gPreview = m_ribbon.addGroup(tab, "Preview");
+	m_ribbon.addButton(tab, gPreview,
+					   Button{.iconName = "ribbon_play",
+							  .label = "Play",
+							  .tooltip = "Play or pause the sequence in the path view (Space)",
+							  .isEnabled = open,
+							  .onClick = [activeSequence]() -> void {
+								  if (auto* d = activeSequence())
+									  d->setPlaying(!d->isPlaying());
 							  },
 							  .size = Size::Large});
 }
