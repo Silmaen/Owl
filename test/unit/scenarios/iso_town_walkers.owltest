@@ -1,0 +1,20 @@
+# The pedestrians of the town plaza: five walkers stroll on its walk area (the paved plaza, round the buildings and a
+# lamp), each one waits, then walks to another point of the plaza, and never leaves it.
+scene: ../../../engine_demo/scenes/iso_town.owl
+steps:
+  - frames: 10
+  - expect: {entity: Plaza, exists: true}
+  - expect: {entity: Walker_5, exists: true}
+  - frames: 400
+  - expect: {gamestate: town_walks, greater: 6}
+  - expect: {entity: Walker_1, translation.x: {greater: 32.9}}
+  - expect: {entity: Walker_1, translation.x: {less: 44.1}}
+  - expect: {entity: Walker_1, translation.y: {greater: 20.9}}
+  - expect: {entity: Walker_1, translation.y: {less: 32.1}}
+  - expect: {entity: Walker_4, translation.x: {greater: 32.9}}
+  - expect: {entity: Walker_4, translation.y: {less: 32.1}}
+  # The floor is edited like in Owl Nest: a hole cut on the walkers' way is walked round.
+  - command: walk.add_hole
+    args: {entity: Plaza, polygon: 0, position: [36, 27, 0], size: 1.5}
+  - frames: 300
+  - expect: {gamestate: town_walks, greater: 10}
