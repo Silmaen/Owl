@@ -212,6 +212,24 @@ TEST_F(MeshRendererTest, anEditorViewRunsTheWorldThroughTheFrameGraph) {
 	EXPECT_GE(renderer::Renderer::getRenderGraph().getPooledTargetCount(), 1u);
 }
 
+TEST_F(MeshRendererTest, aColourVisionFilterIsTheLastPassOfTheFrame) {
+	useStack(false);
+	const auto sc = makeScene(true);
+	renderer::CameraEditor camera{45.f, 1.778f, 0.1f, 1000.f};
+	camera.setViewportSize({320, 180});
+	sc->onViewportResize({320, 180});
+	sc->setColorVisionPreview(
+			{.deficiency = renderer::ColorDeficiency::Tritanopia, .mode = renderer::ColorVisionMode::Simulate});
+	sc->renderEditorView(camera);
+	const auto passes = renderer::Renderer::getRenderGraph().getCompiledPasses();
+	ASSERT_GE(passes.size(), 5u);
+	EXPECT_EQ(passes[passes.size() - 2], "overlays and HUD");
+	EXPECT_EQ(passes.back(), "colour vision");
+	sc->setColorVisionPreview({});
+	sc->renderEditorView(camera);
+	EXPECT_EQ(renderer::Renderer::getRenderGraph().getCompiledPasses().back(), "overlays and HUD");
+}
+
 TEST_F(MeshRendererTest, occlusionCullingDrawsTheOccludersBeforeTheMeshLayer) {
 	const auto passesOf = [](const std::string& iConfig) -> std::vector<std::string> {
 		useStack(false, iConfig);

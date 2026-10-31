@@ -188,7 +188,8 @@ public:
 	 *  Apply built-in settings to engine subsystems (window, sound).
 	 *
 	 * Applies resolution, fullscreen, resizable to the window, the `volume_*` keys to the player's volume of the
-	 * mixer buses (applyVolumes), and the language to the engine context.
+	 * mixer buses (applyVolumes), the language to the engine context and the reduced motion (`Accessibility`) to its
+	 * screen transition.
 	 */
 	void applyBuiltins() const;
 

@@ -20,6 +20,7 @@
 #include "math/matrixCreation.h"
 #include "math/vectors.h"
 #include "renderer/Camera.h"
+#include "renderer/ColorVision.h"
 #include "renderer/LensFlare.h"
 #include "renderer/Lighting2D.h"
 #include "renderer/LocalShadows.h"
@@ -27,9 +28,11 @@
 #include "renderer/RenderStack.h"
 #include "renderer/Renderer3D.h"
 #include "renderer/ShadowCascades.h"
+#include "scene/Accessibility.h"
 #include "scene/FloatingOriginSettings.h"
 #include "scene/PhysicsSettings.h"
 #include "scene/SimulationClock.h"
+#include "scene/Subtitles.h"
 #include "scene/SystemSchedule.h"
 #include "scene/WorldPartitionSettings.h"
 #include "scene/component/LuaScript.h"
@@ -417,6 +420,52 @@ public:
 	 * @return True when the HUD is drawn in Edit mode.
 	 */
 	[[nodiscard]] auto isEditorHudVisible() const -> bool { return m_editorHudVisible; }
+
+	/**
+	 * @brief
+	 *  The accessibility settings of the player, from the settings of the scene's application.
+	 * @return The settings, the defaults without an engine context.
+	 */
+	[[nodiscard]] auto getAccessibility() const -> Accessibility;
+
+	/**
+	 * @brief
+	 *  The subtitles of the scene, drawn at the bottom of the screen in Play.
+	 * @return The subtitles.
+	 */
+	[[nodiscard]] auto getSubtitles() -> Subtitles& { return m_subtitles; }
+
+	/**
+	 * @brief
+	 *  The subtitles of the scene, drawn at the bottom of the screen in Play.
+	 * @return The subtitles.
+	 */
+	[[nodiscard]] auto getSubtitles() const -> const Subtitles& { return m_subtitles; }
+
+	/**
+	 * @brief
+	 *  Set the colour vision filter Owl Nest previews the frame through (a simulation for the designer), in Edit and
+	 *  in Play; an inactive filter gives the frame back to the player setting.
+	 * @param[in] iFilter The filter.
+	 */
+	void setColorVisionPreview(const renderer::ColorVisionFilter& iFilter) { m_colorVisionPreview = iFilter; }
+
+	/**
+	 * @brief
+	 *  The colour vision filter Owl Nest previews the frame through.
+	 * @return The filter, inactive by default.
+	 */
+	[[nodiscard]] auto getColorVisionPreview() const -> const renderer::ColorVisionFilter& {
+		return m_colorVisionPreview;
+	}
+
+	/**
+	 * @brief
+	 *  The colour vision filter of the final frame: the preview when active, else the correction of the
+	 *  `color_blind_mode` setting outside Edit mode.
+	 * @return The filter.
+	 */
+	[[nodiscard]] auto getColorVisionFilter() const -> renderer::ColorVisionFilter;
 
 	/**
 	 * @brief
@@ -2296,6 +2345,12 @@ private:
 	math::vec3 m_editorAmbient{0.f, 0.f, 0.f};
 	/// Whether the HUD is drawn in Edit mode.
 	bool m_editorHudVisible = true;
+	/// Colour vision filter previewed by Owl Nest, inactive by default.
+	renderer::ColorVisionFilter m_colorVisionPreview;
+	/// Accessibility settings of the frame being recorded.
+	Accessibility m_frameAccessibility;
+	/// Subtitles on screen.
+	Subtitles m_subtitles;
 	/// Targets the colour encode of the frame reads.
 	struct PostTargets {
 		/// The linear scene colour.

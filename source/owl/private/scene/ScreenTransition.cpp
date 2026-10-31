@@ -230,7 +230,9 @@ void ScreenTransition::render(const float iViewportWidth, const float iViewportH
 		case Phase::InAnim:
 			{
 				const float progress = std::clamp(m_elapsed / m_duration, 0.f, 1.f);
-				renderOverlay(m_type, progress, m_color, iViewportWidth, iViewportHeight);
+				// A wipe uncovers the screen as it progresses, as a fade in does.
+				const Type drawn = m_reducedMotion && isWipe(m_type) ? Type::FadeIn : m_type;
+				renderOverlay(drawn, progress, m_color, iViewportWidth, iViewportHeight);
 				break;
 			}
 		case Phase::Loading:

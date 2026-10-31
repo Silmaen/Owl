@@ -2,6 +2,7 @@
 -- Demonstrates: settings.get/set/save/load/apply/reset/reset_all, tr / locale.set_language (localisation.yml),
 --               ui.set_text, ui.set_slider_value, ui.get_slider_value,
 --               ui.get_focus, UiFocus callback, input.is_action_just_pressed("ui_cancel"),
+--               the accessibility settings (color_blind_mode, reduced_motion, subtitles) and ui.show_subtitle,
 --               scene.transition_to (engine-driven scene-load orchestration).
 
 properties = {
@@ -15,6 +16,29 @@ local vol_slider_id = 0
 local speed_slider_id = 0
 local ui_scale_label_id = 0
 local ui_scale_slider_id = 0
+local color_blind_id = 0
+local reduced_motion_id = 0
+local subtitles_id = 0
+
+-- The colour vision corrections of the `color_blind_mode` built-in setting, in the order the button cycles them.
+local color_blind_modes = { "none", "protanopia", "deuteranopia", "tritanopia" }
+
+local function on_off(flag)
+    return flag and tr("settings.on") or tr("settings.off")
+end
+
+local function update_accessibility_labels()
+    if color_blind_id ~= 0 then
+        local mode = settings.get("color_blind_mode", "none")
+        ui.set_text(color_blind_id, string.format(tr("settings.color_blind"), tr("settings.color_blind." .. mode)))
+    end
+    if reduced_motion_id ~= 0 then
+        ui.set_text(reduced_motion_id, string.format(tr("settings.reduced_motion"), on_off(settings.get("reduced_motion", false))))
+    end
+    if subtitles_id ~= 0 then
+        ui.set_text(subtitles_id, string.format(tr("settings.subtitles"), on_off(settings.get("subtitles", true))))
+    end
+end
 
 -- Volume of each mixer bus but Master: the `volume_<bus>` built-in setting, its slider and its label.
 local bus_volumes = {
@@ -58,6 +82,9 @@ function on_create()
     speed_slider_id = scene.find_entity("PlayerSpeedSlider")
     ui_scale_label_id = scene.find_entity("UiScaleLabel")
     ui_scale_slider_id = scene.find_entity("UiScaleSlider")
+    color_blind_id = scene.find_entity("ColorBlindButton")
+    reduced_motion_id = scene.find_entity("ReducedMotionButton")
+    subtitles_id = scene.find_entity("SubtitlesButton")
     for _, bus in ipairs(bus_volumes) do
         bus.slider_id = scene.find_entity(bus.slider)
         bus.label_id = scene.find_entity(bus.label)
@@ -99,6 +126,40 @@ function update_labels()
     for _, bus in ipairs(bus_volumes) do
         update_bus_label(bus)
     end
+    update_accessibility_labels()
+end
+
+-- Colours button: the next colour vision correction, applied to the whole frame at once.
+function on_color_blind_clicked()
+    local current = settings.get("color_blind_mode", "none")
+    local next_mode = color_blind_modes[1]
+    for index, mode in ipairs(color_blind_modes) do
+        if mode == current then
+            next_mode = color_blind_modes[index % #color_blind_modes + 1]
+            break
+        end
+    end
+    settings.set("color_blind_mode", next_mode)
+    update_accessibility_labels()
+end
+
+-- Reduced motion button: no camera shake, no motion blur, a still film grain, transitions as fades.
+function on_reduced_motion_clicked()
+    settings.set("reduced_motion", not settings.get("reduced_motion", false))
+    settings.apply()
+    update_accessibility_labels()
+end
+
+-- Subtitles button: a sample line shows them when they are turned on.
+function on_subtitles_clicked()
+    local shown = not settings.get("subtitles", true)
+    settings.set("subtitles", shown)
+    if shown then
+        ui.show_subtitle(tr("settings.subtitle_sample"), 3)
+    else
+        ui.clear_subtitles()
+    end
+    update_accessibility_labels()
 end
 
 local leaving = false

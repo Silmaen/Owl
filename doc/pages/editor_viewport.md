@@ -18,7 +18,9 @@ few translucent overlays. Scenes can sit side by side: drag a scene tab out of t
 **Show** toggles the grid, the camera, light and reflection probe markers (a probe: its capture point and its
 volume, brighter selected), the trigger icons, the camera preview, the HUD (Edit only,
 Play always draws it) and, in the isometric mode, the navigation graph (Shift-click tests a path); its **Editor ambient** slider (0 to 2) adds a grey light to
-the lit 3D surfaces in Edit only, never in Play.
+the lit 3D surfaces in Edit only, never in Play. **Colour vision preview** shows the whole frame, HUD included, as a
+player with protanopia, deuteranopia or tritanopia sees it, in Edit and in Play, for this session
+([Accessibility](design/accessibility.md#accessibility-colour-vision)).
 
 A viewport hidden behind another tab or collapsed does not draw its scene (a running one still steps), unless the MCP
 server is on: its captures read the viewport back.

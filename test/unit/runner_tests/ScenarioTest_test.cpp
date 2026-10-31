@@ -10,11 +10,13 @@
 
 #include "ScenarioTest.h"
 
+#include <app/EngineContext.h>
 #include <input/Gamepad.h>
 #include <input/KeyCodes.h>
 #include <input/MouseCode.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
+#include <scene/SettingsManager.h>
 #include <scene/component/components.h>
 
 #include <algorithm>
@@ -85,12 +87,13 @@ steps:
   - expect: {player: true, translation.x: {greater: 1.5}, exists: true}
   - expect: {entity: Coin, translation.y: {equals: 2, tolerance: 0.5}}
   - expect: {gamestate: level, equals: castle}
+  - expect: {setting: reduced_motion, equals: true}
 )"));
 	ASSERT_TRUE(scenario.has_value()) << scenario.error();
 	EXPECT_EQ(scenario->getScene().filename(), "level.owl");
 	EXPECT_NEAR(scenario->getTimeStep().getMilliseconds(), 10.0, 1e-3);
 	const auto& steps = scenario->getSteps();
-	ASSERT_EQ(steps.size(), 5u);
+	ASSERT_EQ(steps.size(), 6u);
 	EXPECT_EQ(steps[0].frames, 3u);
 	EXPECT_EQ(steps[1].frames, 2u);
 	EXPECT_EQ(steps[1].keys.size(), 2u);
@@ -102,6 +105,8 @@ steps:
 	EXPECT_NEAR(steps[3].checks.front().tolerance, 0.5, 1e-9);
 	EXPECT_EQ(steps[4].gameState, "level");
 	EXPECT_EQ(steps[4].checks.front().text, std::optional<std::string>{"castle"});
+	EXPECT_EQ(steps[5].setting, "reduced_motion");
+	EXPECT_NEAR(steps[5].checks.front().number, 1.0, 1e-9);
 }
 
 TEST_F(ScenarioFile, TakesAProjectAndAssetFoldersForAFixture) {
@@ -240,6 +245,23 @@ TEST(ScenarioTest, ChecksEntitiesAndGameState) {
 	EXPECT_NE(ScenarioTest::check(level, scn), "");
 	level.gameState = "unset";
 	EXPECT_NE(ScenarioTest::check(level, scn), "");
+	core::Log::invalidate();
+}
+
+TEST(ScenarioTest, ChecksTheSettingsOfTheEngineContext) {
+	core::Log::init(core::Log::Level::Off);
+	scene::Scene scn;
+	ScenarioStep mode;
+	mode.setting = "color_blind_mode";
+	mode.checks.push_back(makeCheck("value", ScenarioCheck::Op::Equals, 0.0));
+	mode.checks.front().text = "tritanopia";
+	EXPECT_NE(ScenarioTest::check(mode, scn).find("not set"), std::string::npos);
+	app::EngineContext context;
+	scn.setEngineContext(&context);
+	context.getSettings().set("color_blind_mode", std::string{"tritanopia"});
+	EXPECT_EQ(ScenarioTest::check(mode, scn), "");
+	context.getSettings().set("color_blind_mode", std::string{"none"});
+	EXPECT_NE(ScenarioTest::check(mode, scn), "");
 	core::Log::invalidate();
 }
 

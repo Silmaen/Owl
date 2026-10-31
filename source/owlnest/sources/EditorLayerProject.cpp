@@ -29,6 +29,7 @@
 #include <app/EngineContext.h>
 #include <gui/FontPreviewCache.h>
 #include <platform/AtomicFile.h>
+#include <scene/Accessibility.h>
 #include <scene/HudLibrary.h>
 #include <scene/SceneSerializer.h>
 #include <scene/ScreenTransition.h>
@@ -713,6 +714,7 @@ namespace {
 void loadGameSettings(const std::string& iGameName, const std::filesystem::path& iProjectDirectory) {
 	auto& settings = app::Application::get().getEngineContext().getSettings();
 	settings.setGameName(iGameName);
+	scene::Accessibility::setDefaults(settings);
 	if (const auto defaults = iProjectDirectory / "game_settings.yml"; exists(defaults))
 		settings.loadDefaults(defaults);
 	settings.loadUserSettings();

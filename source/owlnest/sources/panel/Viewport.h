@@ -17,6 +17,7 @@
 
 #include <gui/component/render.h>
 #include <math/SplineCurve.h>
+#include <renderer/ColorVision.h>
 #include <renderer/MeshCache.h>
 #include <renderer/Renderer3D.h>
 #include <renderer/RendererIsometric.h>
@@ -899,6 +900,8 @@ private:
 	core::UUID m_hoveredMapEntity{0};
 	/// Whether the navigation tool is on.
 	NavigationToolState m_navTool;
+	/// Deficiency the frame is simulated for, in Edit and Play (this session only).
+	renderer::ColorDeficiency m_colorVisionPreview = renderer::ColorDeficiency::None;
 	/// Side of the hovered cell the navigation tool would change.
 	std::optional<scene::nav::Direction> m_navSide;
 	/// Cell the navigation popup is about.

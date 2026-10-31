@@ -33,6 +33,8 @@ struct EncodePost {
 	math::vec2ui frameSize{1, 1};
 	/// The one-texel adapted EV100 of the automatic exposure, null for the manual `settings->ev100`.
 	shared<gpu::Texture2D> exposure;
+	/// Keep one film grain pattern from frame to frame (reduced motion).
+	bool staticGrain = false;
 };
 
 /**

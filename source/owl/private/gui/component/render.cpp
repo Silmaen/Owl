@@ -1769,6 +1769,10 @@ void renderProps(SoundSource& ioComponent) {
 	fieldTooltip("Enable 3D positional audio (mono sources only; stereo is not spatialized).");
 	prop::Checkbox("Play On Start", &ioComponent.sound.playOnStart);
 	fieldTooltip("Automatically start playback when the scene enters Play mode.");
+	prop::InputText("Subtitle", &ioComponent.sound.subtitle);
+	fieldTooltip(
+			"Shown at the bottom of the screen while the sound plays within hearing (Max Distance of a spatial "
+			"sound), when the player keeps the subtitles on: a localisation key or the text itself. Empty for none.");
 	if (ioComponent.sound.spatial) {
 		prop::DragFloat("Max Distance", &ioComponent.sound.maxDistance, 0.5f, 1.0f, 500.0f);
 		fieldTooltip("Maximum audible distance in world units.");

@@ -154,6 +154,7 @@ Entities:
       color: [0.6, 0.3, 0.2, 1]
     SoundSource:
       soundAsset: sounds/yard/radio.wav
+      subtitle: yard.subtitle.radio
       category: SFX
       volume: 0.8
       pitch: 1
@@ -182,6 +183,7 @@ Entities:
       period: 7
     SoundSource:
       soundAsset: sounds/yard/cart_engine.wav
+      subtitle: yard.subtitle.cart
       category: SFX
       volume: 0.9
       pitch: 1

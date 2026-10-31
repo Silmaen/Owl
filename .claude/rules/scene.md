@@ -94,8 +94,10 @@ Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `chi
   `Application::getEngineContext()`, two layers): defaults from `game_settings.yml` (project assets) + user
   overrides in `games/<game>/settings.yml` of the user directory.
 - Built-in keys auto-applied by `applyBuiltins()`: `resolution_width`, `resolution_height`, `fullscreen`,
-  `resizable`, `language` (the `EngineContext` language, `localisation.yml`), and `volume_master` / `volume_music` /
-  `volume_sfx` / `volume_ambient` / `volume_voice`, the player's volume of the mixer buses (`applyVolumes`).
+  `resizable`, `language` (the `EngineContext` language, `localisation.yml`), `volume_master` / `volume_music` /
+  `volume_sfx` / `volume_ambient` / `volume_voice`, the player's volume of the mixer buses (`applyVolumes`), and
+  `reduced_motion` to the screen transition. The accessibility keys are read each frame by `scene::Accessibility`
+  (`Scene::getAccessibility`), their defaults registered by `Accessibility::setDefaults`.
 - Runner order: `runner.yml` defaults → `game_settings.yml` → user `settings.yml` → `applyBuiltins()` →
   first scene load.
 

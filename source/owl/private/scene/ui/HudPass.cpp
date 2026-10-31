@@ -28,6 +28,7 @@
 #include <format>
 #include <numbers>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -640,6 +641,47 @@ void drawMarkers(Scene& ioScene, const math::vec2ui& iViewport, const bool iEdit
 		renderer::Renderer2D::endScene();
 }
 
+// Em height of a subtitle in reference pixels, before the HUD and subtitle scales.
+constexpr float g_subtitleFontSize = 28.f;
+
+// The subtitles in Play, centred at the bottom of the screen over every canvas, the newest line lowest.
+void drawSubtitles(const Scene& iScene, const math::vec2ui& iViewport) {
+	const auto lines = iScene.getSubtitles().getLines();
+	if (lines.empty() || iScene.status == Scene::Status::Editing)
+		return;
+	const auto settings = iScene.getAccessibility();
+	if (!settings.subtitles)
+		return;
+	const math::vec2 screen{static_cast<float>(iViewport.x()), static_cast<float>(iViewport.y())};
+	const float scale = component::Canvas{}.getScale(screen) * HudLayout::getUserScale(iScene) * settings.subtitleScale;
+	const float padding = g_subtitleFontSize * 0.3f;
+	const auto font = fontOrDefault(nullptr);
+	const data::fonts::TextLayout layout{.fontSize = g_subtitleFontSize,
+										 .boxSize = {screen.x() * 0.8f / scale, 0.f},
+										 .wrap = true};
+	float bottom = screen.y() * 0.06f;
+	renderer::Renderer2D::beginScene(pixelCamera(iViewport));
+	for (const auto& line: std::views::reverse(lines)) {
+		const float height = font ? measureTextLayout(*font, line.text, layout).diagonal().y() : g_subtitleFontSize;
+		const float boxHeight = (height + 2.f * padding) * scale;
+		math::Transform transform;
+		transform.translation() = {screen.x() * 0.5f, bottom + boxHeight * 0.5f, 0.f};
+		transform.scale() = {scale, scale, 1.f};
+		renderer::Renderer2D::drawString({.transform = transform,
+										  .text = line.text,
+										  .font = font,
+										  .color = math::vec4{1.f, 1.f, 1.f, 1.f},
+										  .layout = layout,
+										  .entityId = -1,
+										  .outlineColor = math::vec4{0.f, 0.f, 0.f, 1.f},
+										  .outlineWidth = g_subtitleFontSize * 0.06f,
+										  .backgroundColor = math::vec4{0.f, 0.f, 0.f, settings.subtitleBackground},
+										  .backgroundPadding = padding});
+		bottom += boxHeight + padding * scale;
+	}
+	renderer::Renderer2D::endScene();
+}
+
 // The tooltip then the tool cursor, over every window of the scene and of its HUD.
 void drawOverlays(Scene& ioScene, Scene* iHud, const math::vec2ui& iViewport, const bool iEditorMode) {
 	const auto& state = ioScene.getUiInputState();
@@ -678,6 +720,8 @@ void HudPass::render(Scene& ioScene, const math::vec2ui& iViewport, const bool i
 	Scene* const hudScene = hud && hud.get() != &ioScene ? hud.get() : nullptr;
 	if (hudScene != nullptr)
 		drawCanvases(*hudScene, ioScene, iViewport, iEditorMode);
+	if (!iEditorMode)
+		drawSubtitles(ioScene, iViewport);
 	drawOverlays(ioScene, hudScene, iViewport, iEditorMode);
 }
 

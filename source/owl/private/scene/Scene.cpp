@@ -19,6 +19,7 @@
 #include "renderer/CameraOrtho.h"
 #include "renderer/ClipSpace.h"
 #include "renderer/ColorEncoder.h"
+#include "renderer/ColorVision.h"
 #include "renderer/IsometricObjects.h"
 #include "renderer/MaterialLibrary.h"
 #include "renderer/MeshCache.h"
@@ -984,6 +985,20 @@ auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) 
 	return result;
 }
 
+auto Scene::getAccessibility() const -> Accessibility {
+	if (mp_engineContext == nullptr)
+		return {};
+	return Accessibility::read(mp_engineContext->getSettings());
+}
+
+auto Scene::getColorVisionFilter() const -> renderer::ColorVisionFilter {
+	if (m_colorVisionPreview.isActive())
+		return m_colorVisionPreview;
+	if (status == Status::Editing)
+		return {};
+	return getAccessibility().getColorVisionFilter();
+}
+
 void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
@@ -993,12 +1008,18 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	updateSpatialIndex();
 	renderer::RendererMesh::clearOcclusion();
 	mp_renderCamera = &iCamera;
+	m_frameAccessibility = getAccessibility();
 	prepareParticleRenderData();
 	preparePlanetRenderData();
 	using Graph = renderer::RenderGraph;
 	auto& graph = renderer::Renderer::getRenderGraph();
 	graph.reset();
-	const Graph::Resource target = graph.importTarget("target");
+	const Graph::Resource display = graph.importTarget("target");
+	const renderer::ColorVisionFilter vision =
+			m_drawingRenderTarget ? renderer::ColorVisionFilter{} : getColorVisionFilter();
+	// The colour vision filter reads the whole frame, HUD included: the frame is then drawn into a target of its own.
+	const Graph::Resource target =
+			vision.isActive() ? graph.createTarget("filtered frame", Graph::TargetFormat::Display) : display;
 	const Graph::Resource sceneColor = graph.createTarget("scene colour", Graph::TargetFormat::Linear);
 	// The first write of the scene colour clears it, even when no layer has anything to draw.
 	graph.addPass(
@@ -1041,7 +1062,8 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 						 .lut = lut.texture,
 						 .lutSize = lut.size,
 						 .frameSize = iContext.getSize(),
-						 .exposure = targets.exposure.isValid() ? iContext.getTexture(targets.exposure) : nullptr});
+						 .exposure = targets.exposure.isValid() ? iContext.getTexture(targets.exposure) : nullptr,
+						 .staticGrain = m_frameAccessibility.reducedMotion});
 			});
 	if (!m_drawingRenderTarget)
 		recordOutlinePasses(graph, target);
@@ -1065,6 +1087,23 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 					ui::HudPass::render(*this, m_viewportSize, status == Status::Editing);
 				renderToast();
 			});
+	if (vision.isActive()) {
+		graph.addPass(
+				"colour vision",
+				[target, display](Graph::PassBuilder& ioBuilder) -> void {
+					ioBuilder.read(target);
+					ioBuilder.write(display);
+				},
+				[target, display, vision](const Graph::PassContext& iContext) -> void {
+					renderer::ColorVision::draw(iContext.getTexture(target), vision, iContext.getSize());
+					auto* const source = iContext.getFramebuffer(target);
+					auto* const destination = iContext.getFramebuffer(display);
+					if (source == nullptr || destination == nullptr)
+						return;
+					source->copyAttachment(1, *destination);
+					source->copyAttachment(2, *destination);
+				});
+	}
 	if (graph.compile()) {
 		graph.execute(frameSize);
 	}
@@ -1372,7 +1411,7 @@ auto Scene::recordDepthEffects(renderer::RenderGraph& ioGraph, const renderer::R
 	const auto& post = camera.getPostProcess();
 	const bool tracked = status != Status::Editing && !m_drawingRenderTarget;
 	std::optional<math::mat4> reprojection;
-	if (tracked && post.motionBlur && m_previousView) {
+	if (tracked && post.motionBlur && !m_frameAccessibility.reducedMotion && m_previousView) {
 		const math::vec4 eye = inverse(camera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
 		const math::vec4 previousEye = inverse(m_previousView->view) * math::vec4{0.f, 0.f, 0.f, 1.f};
 		if ((eye - previousEye).normSq() < jump * jump)

@@ -835,6 +835,31 @@ TEST(LuaBindings, uiTransitionsAndIsActive) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, uiShowsAndClearsSubtitles) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	const std::string script = "function on_create()\n"
+							   "  ui.show_subtitle('[Thunder]')\n"
+							   "  ui.show_subtitle('Hello', 0.5)\n"
+							   "end\n"
+							   "function on_update(dt)\n"
+							   "  ui.clear_subtitles()\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "ui_subtitle_test", 1));
+	inst.onCreate();
+	const auto lines = scn->getSubtitles().getLines();
+	ASSERT_EQ(lines.size(), 2u);
+	EXPECT_EQ(lines[0].text, "[Thunder]");
+	EXPECT_FLOAT_EQ(lines[0].remaining, 3.f);
+	EXPECT_FLOAT_EQ(lines[1].remaining, 0.5f);
+	inst.onUpdate(0.016f);
+	EXPECT_TRUE(scn->getSubtitles().getLines().empty());
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, gamestateSetGetRemoveClear) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();

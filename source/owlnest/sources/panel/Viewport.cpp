@@ -319,6 +319,8 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
 	}
 
+	activeScene->setColorVisionPreview(
+			{.deficiency = m_colorVisionPreview, .mode = renderer::ColorVisionMode::Simulate, .strength = 1.f});
 	switch (mp_document->state()) {
 		case SceneDocument::State::Edit:
 			{
@@ -1750,7 +1752,9 @@ void Viewport::renderViewOverlay() {
 		if (iconButton("show",
 					   {.glyph = gui::icon::eye,
 						.tooltip = "Show",
-						.description = "Grid, camera markers, trigger icons, the HUD and the editor ambient light."}))
+						.description =
+								"Grid, camera markers, trigger icons, the HUD, the colour vision preview and the "
+								"editor ambient light."}))
 			ImGui::OpenPopup("##show");
 		if (ImGui::BeginPopup("##show")) {
 			const auto option = [](const char* iLabel, bool& ioFlag) -> void {
@@ -1767,6 +1771,17 @@ void Viewport::renderViewOverlay() {
 			option("Frame stats", settings.showFrameChip);
 			if (m_isometric)
 				option("Navigation graph and routes", settings.showNavGraph);
+			ImGui::Separator();
+			gui::widgets::menuHeader("Colour vision preview");
+			for (const auto& [deficiency, label]:
+				 {std::pair{renderer::ColorDeficiency::None, "Typical vision"},
+				  std::pair{renderer::ColorDeficiency::Protanopia, "Protanopia (no red cones)"},
+				  std::pair{renderer::ColorDeficiency::Deuteranopia, "Deuteranopia (no green cones)"},
+				  std::pair{renderer::ColorDeficiency::Tritanopia, "Tritanopia (no blue cones)"}}) {
+				if (gui::widgets::menuItem(
+							{.glyph = m_colorVisionPreview == deficiency ? gui::icon::check : nullptr, .label = label}))
+					m_colorVisionPreview = deficiency;
+			}
 			ImGui::Separator();
 			ImGui::SetNextItemWidth(160.f);
 			ImGui::SliderFloat("Editor ambient", &settings.editorAmbient, 0.f, 2.f, "%.2f");

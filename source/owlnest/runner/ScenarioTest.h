@@ -76,12 +76,14 @@ struct ScenarioStep {
 	std::vector<ScenarioActionHold> actions;
 	/// Gamepad held while the frames play, if set.
 	std::optional<ScenarioGamepad> gamepad;
-	/// Entity checked, by tag; empty with `player` or `gameState`.
+	/// Entity checked, by tag; empty with `player`, `gameState` or `setting`.
 	std::string entity;
 	/// Check the primary player instead of a named entity.
 	bool player{false};
 	/// Game-state key checked, empty for an entity check.
 	std::string gameState;
+	/// Settings key checked (the `SettingsManager` of the scene's engine context), empty for an entity check.
+	std::string setting;
 	/// Comparisons of an expectation.
 	std::vector<ScenarioCheck> checks;
 	/// Editor command run by the step (`command:`), empty otherwise.
