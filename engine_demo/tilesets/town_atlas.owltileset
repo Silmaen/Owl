@@ -4,7 +4,7 @@ texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
 tileWidth: 16
 tileHeight: 16
 columns: 12
-rows: 21
+rows: 38
 filterMode: Nearest
 tiles:
   - index: 0
@@ -463,3 +463,441 @@ tiles:
     name: character_extra_28
   - index: 247
     name: character_extra_29
+  - index: 252
+    name: farm_path_v_top
+  - index: 253
+    name: farm_path_v_top_b
+  - index: 254
+    collidable: true
+    name: farm_dead_tree_top
+  - index: 255
+    collidable: true
+    name: farm_pine_top
+  - index: 256
+    name: farm_sprout
+  - index: 257
+    name: farm_carrot_young
+  - index: 258
+    name: farm_carrot
+  - index: 260
+    name: farm_carrot_ripe
+  - index: 264
+    name: farm_path_v_0
+  - index: 265
+    name: farm_path_v_1
+  - index: 266
+    collidable: true
+    name: farm_dead_tree
+  - index: 267
+    collidable: true
+    name: farm_pine
+  - index: 269
+    name: farm_turnip_young
+  - index: 270
+    name: farm_turnip
+  - index: 272
+    name: farm_turnip_ripe
+  - index: 276
+    name: farm_path_v_2
+  - index: 277
+    name: farm_path_v_3
+  - index: 278
+    collidable: true
+    name: farm_dead_trunk
+  - index: 279
+    collidable: true
+    name: farm_pine_small
+  - index: 281
+    name: farm_corn_young
+  - index: 282
+    name: farm_corn
+  - index: 284
+    name: farm_corn_ripe
+  - index: 288
+    name: farm_path_v_4
+  - index: 289
+    name: farm_path_v_5
+  - index: 290
+    collidable: true
+    name: farm_dead_stump
+  - index: 291
+    collidable: true
+    name: farm_bush
+  - index: 293
+    name: farm_tomato_young
+  - index: 294
+    name: farm_tomato
+  - index: 296
+    name: farm_tomato_ripe
+  - index: 300
+    name: farm_path_h_0
+  - index: 301
+    name: farm_path_h_1
+  - index: 302
+    name: farm_path_h_2
+  - index: 303
+    name: farm_path_h_3
+  - index: 305
+    name: farm_cabbage_young
+  - index: 306
+    name: farm_cabbage
+  - index: 308
+    name: farm_cabbage_ripe
+  - index: 312
+    name: farm_path_h_b_0
+  - index: 313
+    name: farm_path_h_b_1
+  - index: 314
+    name: farm_path_h_b_2
+  - index: 315
+    name: farm_path_h_b_3
+  - index: 317
+    name: farm_leek
+  - index: 318
+    name: farm_wheat
+  - index: 319
+    name: farm_wheat_dry
+  - index: 320
+    name: farm_wheat_sheaf
+  - index: 324
+    collidable: true
+    name: farm_well_bucket
+  - index: 325
+    collidable: true
+    name: farm_water_bucket
+  - index: 326
+    name: farm_sack
+  - index: 327
+    name: farm_basket
+  - index: 328
+    collidable: true
+    name: farm_crate
+  - index: 329
+    name: farm_pebbles
+  - index: 330
+    collidable: true
+    name: farm_berry_bush
+  - index: 332
+    name: farm_weeds
+  - index: 333
+    name: farm_sapling
+  - index: 335
+    name: farm_sunflower
+  - index: 336
+    name: farm_watering_can
+  - index: 337
+    collidable: true
+    name: farm_barrel
+  - index: 338
+    name: farm_hammer
+  - index: 339
+    name: farm_axe
+  - index: 340
+    name: farm_sickle
+  - index: 341
+    collidable: true
+    name: farm_rock
+  - index: 342
+    collidable: true
+    name: farm_barn_0
+  - index: 343
+    collidable: true
+    name: farm_barn_1
+  - index: 344
+    collidable: true
+    name: farm_barn_2
+  - index: 345
+    collidable: true
+    name: farm_barn_roof_0
+  - index: 346
+    collidable: true
+    name: farm_barn_roof_1
+  - index: 347
+    collidable: true
+    name: farm_barn_roof_2
+  - index: 348
+    collidable: true
+    name: farm_hay_bale
+  - index: 349
+    collidable: true
+    name: farm_hay_bale_tied
+  - index: 350
+    collidable: true
+    name: farm_trough_l
+  - index: 351
+    collidable: true
+    name: farm_trough_r
+  - index: 352
+    collidable: true
+    name: farm_feeder_l
+  - index: 353
+    collidable: true
+    name: farm_feeder_r
+  - index: 354
+    collidable: true
+    name: farm_barn_3
+  - index: 355
+    collidable: true
+    name: farm_barn_4
+  - index: 356
+    collidable: true
+    name: farm_barn_5
+  - index: 357
+    collidable: true
+    name: farm_barn_roof_3
+  - index: 358
+    collidable: true
+    name: farm_barn_roof_4
+  - index: 359
+    collidable: true
+    name: farm_barn_roof_5
+  - index: 362
+    collidable: true
+    name: farm_water_trough_l
+  - index: 363
+    collidable: true
+    name: farm_water_trough_r
+  - index: 364
+    collidable: true
+    name: farm_grain_trough_l
+  - index: 365
+    collidable: true
+    name: farm_grain_trough_r
+  - index: 366
+    collidable: true
+    name: farm_barn_6
+  - index: 367
+    collidable: true
+    name: farm_barn_7
+  - index: 368
+    collidable: true
+    name: farm_barn_8
+  - index: 369
+    collidable: true
+    name: farm_barn_roof_6
+  - index: 370
+    collidable: true
+    name: farm_barn_roof_7
+  - index: 371
+    collidable: true
+    name: farm_barn_roof_8
+  - index: 372
+    collidable: true
+    name: farm_sheep
+  - index: 373
+    collidable: true
+    name: farm_cow
+  - index: 374
+    name: farm_chicken
+  - index: 375
+    name: farm_milk_can
+  - index: 376
+    name: farm_milk_pail
+  - index: 377
+    name: farm_egg
+  - index: 378
+    collidable: true
+    name: farm_barn_9
+  - index: 379
+    collidable: true
+    name: farm_barn_10
+  - index: 380
+    collidable: true
+    name: farm_barn_11
+  - index: 381
+    collidable: true
+    name: farm_barn_roof_9
+  - index: 382
+    collidable: true
+    name: farm_barn_roof_10
+  - index: 383
+    collidable: true
+    name: farm_barn_roof_11
+  - index: 384
+    name: cave_floor
+  - index: 385
+    name: cave_floor_b
+  - index: 386
+    collidable: true
+    name: cave_block_2
+  - index: 387
+    collidable: true
+    name: cave_block_3
+  - index: 388
+    collidable: true
+    name: cave_block_4
+  - index: 389
+    collidable: true
+    name: cave_block_5
+  - index: 390
+    collidable: true
+    name: cave_block_6
+  - index: 391
+    collidable: true
+    name: cave_block_7
+  - index: 392
+    collidable: true
+    name: cave_block_8
+  - index: 393
+    collidable: true
+    name: cave_block_9
+  - index: 394
+    collidable: true
+    name: cave_block_10
+  - index: 395
+    collidable: true
+    name: cave_block_11
+  - index: 396
+    name: cave_floor_pebbles
+  - index: 397
+    name: cave_floor_c
+  - index: 398
+    collidable: true
+    name: cave_block_14
+  - index: 399
+    collidable: true
+    name: cave_block_15
+  - index: 400
+    collidable: true
+    name: cave_block_16
+  - index: 401
+    collidable: true
+    name: cave_block_17
+  - index: 402
+    collidable: true
+    name: cave_block_18
+  - index: 403
+    collidable: true
+    name: cave_block_19
+  - index: 404
+    collidable: true
+    name: cave_block_20
+  - index: 405
+    collidable: true
+    name: cave_block_21
+  - index: 406
+    collidable: true
+    name: cave_block_22
+  - index: 407
+    collidable: true
+    name: cave_block_23
+  - index: 408
+    name: cave_floor_stones
+  - index: 409
+    name: cave_floor_d
+  - index: 410
+    collidable: true
+    name: cave_block_26
+  - index: 411
+    collidable: true
+    name: cave_block_27
+  - index: 412
+    collidable: true
+    name: cave_wall_grate
+  - index: 413
+    collidable: true
+    name: cave_wall_torch
+  - index: 414
+    collidable: true
+    name: cave_block_30
+  - index: 415
+    collidable: true
+    name: cave_block_31
+  - index: 416
+    collidable: true
+    name: cave_block_32
+  - index: 417
+    collidable: true
+    name: cave_block_33
+  - index: 418
+    collidable: true
+    name: cave_block_34
+  - index: 419
+    collidable: true
+    name: cave_block_35
+  - index: 420
+    collidable: true
+    name: cave_block_36
+  - index: 421
+    collidable: true
+    name: cave_block_37
+  - index: 422
+    collidable: true
+    name: cave_block_38
+  - index: 423
+    collidable: true
+    name: cave_block_39
+  - index: 424
+    collidable: true
+    name: cave_wall
+  - index: 425
+    collidable: true
+    name: cave_wall_carved
+  - index: 426
+    name: cave_rubble
+  - index: 427
+    collidable: true
+    name: cave_block_43
+  - index: 428
+    collidable: true
+    name: cave_block_44
+  - index: 429
+    collidable: true
+    name: cave_block_45
+  - index: 430
+    collidable: true
+    name: cave_block_46
+  - index: 431
+    collidable: true
+    name: cave_block_47
+  - index: 432
+    name: cave_sand_0
+  - index: 433
+    name: cave_sand_1
+  - index: 434
+    name: cave_sand_2
+  - index: 435
+    name: cave_sand_3
+  - index: 436
+    name: cave_sand_4
+  - index: 437
+    name: cave_sand_5
+  - index: 438
+    collidable: true
+    name: cave_block_54
+  - index: 439
+    collidable: true
+    name: cave_block_55
+  - index: 440
+    collidable: true
+    name: cave_block_56
+  - index: 441
+    collidable: true
+    name: cave_wall_b
+  - index: 442
+    collidable: true
+    name: cave_wall_c
+  - index: 443
+    collidable: true
+    name: cave_wall_d
+  - index: 444
+    collidable: true
+    name: observatory_dome_0
+  - index: 445
+    collidable: true
+    name: observatory_dome_1
+  - index: 446
+    collidable: true
+    name: observatory_dome_2
+  - index: 447
+    collidable: true
+    name: observatory_dome_3
+  - index: 448
+    collidable: true
+    name: observatory_dome_4
+  - index: 449
+    collidable: true
+    name: observatory_dome_5
+  - index: 450
+    collidable: true
+    name: telescope

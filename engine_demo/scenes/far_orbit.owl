@@ -84,6 +84,44 @@ Entities:
       transparent: false
     Visibility:
       gameVisible: true
+  - Entity: 4100000000000000050
+    Tag:
+      tag: Debris
+    Transform:
+      translation: [12, 3, 16]
+      rotation: [0.4, 1.1, 0.2]
+      scale: [0.03, 0.03, 0.03]
+    WorldPosition: {position: [149600000012, 3, 16]}
+    MeshRenderer:
+      mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
+      color: [0.8, 0.62, 0.45, 1]
+      transparent: false
+    HudMarker:
+      enabled: true
+      color: [1, 0.75, 0.3, 1]
+      size: [22, 22]
+      offset: [0, 0, 0]
+      label: Debris
+      labelColor: [1, 1, 1, 1]
+      fontSize: 20
+      showDistance: true
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 32
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000051
+    Tag: {tag: ControlsHint}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    LuaScript:
+      scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.lua
+      properties:
+        - {name: hint, type: string, value: HudHint}
+        - {name: duration, type: float, value: 4.5}
   - Entity: 4100000000000000005
     Tag:
       tag: Moon

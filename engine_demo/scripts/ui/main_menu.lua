@@ -11,7 +11,6 @@ local save_info_id = 0
 local delete_save_id = 0
 local continue_id = 0
 local mouse_label_id = 0
-local shortcut_requested = false
 
 function on_create()
     log.info("Main Menu loaded")
@@ -100,41 +99,6 @@ function on_update(dt)
             save.load_game(1)
             pending_load_save = false
         end
-        return
-    end
-
-    -- The `open_town` action (O, left bumper) opens the isometric town: build roads, watch the traffic.
-    if not shortcut_requested and input.is_action_pressed("open_town") then
-        shortcut_requested = true
-        scene.transition_to("scenes/iso_town.owl", "fade", 0.3)
-        return
-    end
-
-    -- The `open_gallery` action (G, right bumper) opens the tavern, the fifth level of the hub (find the key, open the cellar), straight from the menu.
-    if not shortcut_requested and input.is_action_pressed("open_gallery") then
-        shortcut_requested = true
-        scene.transition_to("scenes/tavern.owl", "fade", 0.3)
-        return
-    end
-
-    -- The `open_orbit` action (K) opens the far orbit: a station one astronomical unit away, kept sharp by the floating origin.
-    if not shortcut_requested and input.is_action_pressed("open_orbit") then
-        shortcut_requested = true
-        scene.transition_to("scenes/far_orbit.owl", "fade", 0.3)
-        return
-    end
-
-    -- The `open_character` action (C) opens the character yard: a skinned mannequin walking with a lantern in its hand.
-    if not shortcut_requested and input.is_action_pressed("open_character") then
-        shortcut_requested = true
-        scene.transition_to("scenes/character_yard.owl", "fade", 0.3)
-        return
-    end
-
-    -- The `open_yard` action (U) opens the sound yard: reverb zones, filters, Doppler and an adaptive music.
-    if not shortcut_requested and input.is_action_pressed("open_yard") then
-        shortcut_requested = true
-        scene.transition_to("scenes/sound_yard.owl", "fade", 0.3)
         return
     end
 

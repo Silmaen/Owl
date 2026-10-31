@@ -4,7 +4,8 @@ Rows 15 and up of ``town_atlas.png`` (12 tiles per row, tile ``180 + n``), see `
 the plaza cobbles, the shrine floor, crops and flower beds, a hay bale and a lamp post, the fountain (2x2, two phases of
 the water), the flags (two frames each), the butterflies, a sparrow, a hen and, for ten characters of Tiny Dungeon, three
 extra frames each: a second idle frame (the body one pixel lower, breathing), then the two walk frames. The water of
-the river has two more phases in the free tiles 137 and 138 of row 11.
+the river has two more phases in the free tiles 137 and 138 of row 11. Row 37 (tile ``444 + n``) holds the dome of the
+observatory (3x2 tiles, its shutter open on the sky) and the telescope on its tripod.
 """
 
 from __future__ import annotations
@@ -42,11 +43,13 @@ VILLAGE_LAYOUT = {
     "sparrow": 214,  # 214, 215: wings up, wings down
     "hen": 216,  # 216, 217: standing, pecking
     "water_c": 137, "water_d": 138,
+    "dome": 444,  # 444..449: top left, top, top right, bottom left, bottom, bottom right
+    "telescope": 450,
 }
 # Tiny Dungeon characters that get three extra frames (idle 2, walk A, walk B) from tile EXTRA_BASE + 3 * position.
 EXTRA_CHARACTERS = (144, 145, 146, 147, 148, 156, 157, 158, 159, 160)
 EXTRA_BASE = 218
-ROWS = 21
+ROWS = 38
 
 
 def extra_frames(character: int) -> tuple[int, int, int]:
@@ -268,6 +271,48 @@ def _character_frames(hero: Image.Image) -> tuple[Image.Image, Image.Image, Imag
     return idle, contact, passing
 
 
+def _dome() -> list[Image.Image]:
+    """The dome of the observatory, 3x2 tiles: a copper half sphere with its shutter open and the telescope looking out."""
+    big = _canvas(48, 32)
+    copper, copper_l, copper_d = (96, 170, 150, 255), (150, 214, 190, 255), (58, 118, 110, 255)
+    cx, base, radius = 23.5, 30, 22.5
+    for y in range(32):
+        for x in range(48):
+            dist = ((x - cx) ** 2 + ((y - base) * 1.25) ** 2) ** 0.5
+            if y <= base and dist <= radius:
+                shade = copper_l if x < cx - 6 and dist < radius - 4 else copper_d if x > cx + 9 else copper
+                big.putpixel((x, y), OUT if dist > radius - 1.3 else shade)
+    for y in range(4, base):  # the ribs of the dome
+        for rib in (-12, 12):
+            x = round(cx + rib * (1 - ((base - y) / 26) ** 2) ** 0.5)
+            if big.getpixel((x, y))[3] and big.getpixel((x, y)) != OUT:
+                big.putpixel((x, y), copper_d)
+    _rect(big, 20, 6, 27, base, OUT)  # the shutter, open on the night
+    _rect(big, 21, 7, 26, base, (40, 44, 78, 255))
+    _px(big, [(22, 9), (25, 12), (23, 16)], WHITE)
+    _rect(big, 22, 18, 25, 21, YELLOW)  # the end of the telescope in the opening
+    _rect(big, 22, 18, 25, 18, ORANGE)
+    _rect(big, 0, base, 47, 31, OUT)  # the drum it turns on
+    _rect(big, 1, base + 1, 46, 31, STONE_D)
+    return [big.crop((16 * k, 0, 16 * k + 16, 16)) for k in range(3)] + [big.crop((16 * k, 16, 16 * k + 16, 32)) for k in range(3)]
+
+
+def _telescope() -> Image.Image:
+    """A brass telescope on a wooden tripod, aimed at the sky to the upper right."""
+    tile = _canvas()
+    for x0, y0, x1, y1 in ((7, 9, 3, 15), (8, 9, 8, 15), (9, 9, 13, 15)):  # the legs
+        steps = max(abs(x1 - x0), abs(y1 - y0))
+        _px(tile, [(round(x0 + (x1 - x0) * k / steps), round(y0 + (y1 - y0) * k / steps)) for k in range(steps + 1)], WOOD_D)
+    for k in range(10):  # the tube, outlined
+        x, y = 3 + k, 10 - k
+        _px(tile, [(x, y - 1), (x + 1, y - 1), (x - 1, y), (x, y + 1)], OUT)
+        _px(tile, [(x, y)], YELLOW if k % 4 else ORANGE)
+        _px(tile, [(x + 1, y)], ORANGE)
+    _px(tile, [(13, 1), (14, 1), (14, 0), (13, 0)], STONE)  # the lens
+    _px(tile, [(2, 11), (2, 12)], OUT)  # the eyepiece
+    return tile
+
+
 def build_village_tiles(atlas: Image.Image) -> None:
     """Paste the village tiles into an atlas of 12 columns (tall enough for :data:`ROWS` rows)."""
 
@@ -302,6 +347,9 @@ def build_village_tiles(atlas: Image.Image) -> None:
     put(layout["sparrow"] + 1, _sparrow(False))
     put(layout["hen"], _hen(False))
     put(layout["hen"] + 1, _hen(True))
+    for offset, tile in enumerate(_dome()):
+        put(layout["dome"] + offset, tile)
+    put(layout["telescope"], _telescope())
     for position, character in enumerate(EXTRA_CHARACTERS):
         sprite = atlas.crop(((character % 12) * 16, (character // 12) * 16, (character % 12) * 16 + 16, (character // 12) * 16 + 16))
         for offset, frame in enumerate(_character_frames(sprite)):

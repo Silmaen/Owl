@@ -1,8 +1,20 @@
 Scene: untitled
 FormatVersion: 7
 Hud: gid:f3336c61a6af17b1:huds/world_map.owlhud
+Mixer:
+  dopplerFactor: 1
+  buses:
+    Master: {volume: 1, muted: false, solo: false}
+    Music: {volume: 0.7, muted: false, solo: false}
+    SFX: {volume: 1, muted: false, solo: false}
+    Ambient: {volume: 1, muted: false, solo: false}
+    Voice: {volume: 1, muted: false, solo: false}
 EnabledRenderers:
+- {Name: world, Enabled: true}
 - {Name: raycast_world, Enabled: false}
+- Name: overlay
+  Enabled: true
+  Overrides: {Space: Screen, ReferenceHeight: 720}
 Entities:
 - Entity: 9100000000000000001
   Tag: {tag: ControlsHint}
@@ -112,7 +124,7 @@ Entities:
     color: [1, 1, 1, 1]
     texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 148
     lastFrame: 148
     frameDuration: 0.1
@@ -127,7 +139,26 @@ Entities:
     scale: [1.6, 1.6, 1]
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/house_door.lua}
+  LuaScript:
+    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.lua
+    properties:
+    - {name: target_scene, type: string, value: scenes/platformer_house.owl}
+    - {name: transition, type: string, value: fade_out}
+    - {name: done_key, type: string, value: level_platformer_done}
+    - {name: on_enter, type: string, value: ''}
+    - {name: minimap_dot, type: string, value: MinimapPlace_platformer}
+  HudMarker:
+    enabled: true
+    color: [0.95, 0.75, 0.25, 1]
+    size: [18, 18]
+    offset: [0, 1.2, 0]
+    label: ''
+    labelColor: [1, 1, 1, 1]
+    fontSize: 18
+    showDistance: false
+    maxDistance: 0
+    offscreenIndicator: true
+    edgeMargin: 28
 - Entity: 15412943634275657565
   Tag: {tag: PannelPlatfom}
   Transform:
@@ -154,7 +185,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 200
     lastFrame: 201
     frameDuration: 0.4
@@ -199,9 +230,28 @@ Entities:
     translation: [20.5, -15.5, 0.6]
     rotation: [0, 0, 0]
     scale: [1.6, 1.6, 1]
-  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_raycast_door_interact}
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/raycast_house_door.lua}
+  LuaScript:
+    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.lua
+    properties:
+    - {name: target_scene, type: string, value: scenes/raycast_demo.owl}
+    - {name: transition, type: string, value: wipe_left}
+    - {name: done_key, type: string, value: level_raycast_done}
+    - {name: on_enter, type: string, value: ''}
+    - {name: minimap_dot, type: string, value: MinimapPlace_raycast}
+  HudMarker:
+    enabled: true
+    color: [0.85, 0.35, 0.3, 1]
+    size: [18, 18]
+    offset: [0, 1.2, 0]
+    label: ''
+    labelColor: [1, 1, 1, 1]
+    fontSize: 18
+    showDistance: false
+    maxDistance: 0
+    offscreenIndicator: true
+    edgeMargin: 28
 - Entity: 15322000123099125026
   Tag: {tag: PannelRayCasting}
   Transform:
@@ -228,7 +278,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 202
     lastFrame: 203
     frameDuration: 0.4
@@ -273,9 +323,28 @@ Entities:
     translation: [44.5, -15.5, 0.6]
     rotation: [0, 0, 0]
     scale: [1.6, 1.6, 1]
-  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_iso_door_interact}
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/iso_house_door.lua}
+  LuaScript:
+    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.lua
+    properties:
+    - {name: target_scene, type: string, value: scenes/iso_town.owl}
+    - {name: transition, type: string, value: fade}
+    - {name: done_key, type: string, value: level_iso_done}
+    - {name: on_enter, type: string, value: 'iso_return=scenes/world_map.owl'}
+    - {name: minimap_dot, type: string, value: MinimapPlace_iso}
+  HudMarker:
+    enabled: true
+    color: [0.4, 0.8, 0.45, 1]
+    size: [18, 18]
+    offset: [0, 1.2, 0]
+    label: ''
+    labelColor: [1, 1, 1, 1]
+    fontSize: 18
+    showDistance: false
+    maxDistance: 0
+    offscreenIndicator: true
+    edgeMargin: 28
 - Entity: 2000000000000000101
   Tag: {tag: PannelIsoTown}
   Transform:
@@ -302,7 +371,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 204
     lastFrame: 205
     frameDuration: 0.4
@@ -347,9 +416,28 @@ Entities:
     translation: [54.5, -15.5, 0.6]
     rotation: [0, 0, 0]
     scale: [1.6, 1.6, 1]
-  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_voxel_door_interact}
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/voxel_house_door.lua}
+  LuaScript:
+    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.lua
+    properties:
+    - {name: target_scene, type: string, value: scenes/voxel_terrain.owl}
+    - {name: transition, type: string, value: fade}
+    - {name: done_key, type: string, value: level_voxel_done}
+    - {name: on_enter, type: string, value: ''}
+    - {name: minimap_dot, type: string, value: MinimapPlace_voxel}
+  HudMarker:
+    enabled: true
+    color: [0.45, 0.7, 0.95, 1]
+    size: [18, 18]
+    offset: [0, 1.2, 0]
+    label: ''
+    labelColor: [1, 1, 1, 1]
+    fontSize: 18
+    showDistance: false
+    maxDistance: 0
+    offscreenIndicator: true
+    edgeMargin: 28
 - Entity: 1287632016040279254
   Tag: {tag: PannelVoxel}
   Transform:
@@ -376,7 +464,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 202
     lastFrame: 203
     frameDuration: 0.4
@@ -421,9 +509,28 @@ Entities:
     translation: [39.5, -14.5, 0.6]
     rotation: [0, 0, 0]
     scale: [1.6, 1.6, 1]
-  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_tavern_door_interact}
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/tavern_house_door.lua}
+  LuaScript:
+    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.lua
+    properties:
+    - {name: target_scene, type: string, value: scenes/tavern.owl}
+    - {name: transition, type: string, value: fade}
+    - {name: done_key, type: string, value: level_tavern_done}
+    - {name: on_enter, type: string, value: 'tavern_key=0;tavern_from_cellar=0'}
+    - {name: minimap_dot, type: string, value: MinimapPlace_tavern}
+  HudMarker:
+    enabled: true
+    color: [0.95, 0.55, 0.3, 1]
+    size: [18, 18]
+    offset: [0, 1.2, 0]
+    label: ''
+    labelColor: [1, 1, 1, 1]
+    fontSize: 18
+    showDistance: false
+    maxDistance: 0
+    offscreenIndicator: true
+    edgeMargin: 28
 - Entity: 2000000000000000601
   Tag: {tag: PannelTavern}
   Transform:
@@ -448,7 +555,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 202
     lastFrame: 203
     frameDuration: 0.4
@@ -511,7 +618,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 204
     lastFrame: 205
     frameDuration: 0.4
@@ -527,7 +634,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 200
     lastFrame: 201
     frameDuration: 0.4
@@ -543,7 +650,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 202
     lastFrame: 203
     frameDuration: 0.4
@@ -634,7 +741,7 @@ Entities:
     color: [1, 1, 1, 1]
     texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 83
     lastFrame: 83
     frameDuration: 0.1
@@ -652,7 +759,7 @@ Entities:
     color: [1, 1, 1, 1]
     texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 116
     lastFrame: 116
     frameDuration: 0.1
@@ -678,7 +785,7 @@ Entities:
     color: [1, 1, 1, 1]
     texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 81
     lastFrame: 81
     frameDuration: 0.1
@@ -701,7 +808,7 @@ Entities:
     color: [1, 1, 1, 1]
     texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 149
     lastFrame: 149
     frameDuration: 0.1
@@ -717,7 +824,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 159
     lastFrame: 159
     frameDuration: 0.1
@@ -743,7 +850,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 156
     lastFrame: 156
     frameDuration: 0.1
@@ -769,7 +876,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 144
     lastFrame: 144
     frameDuration: 0.1
@@ -802,7 +909,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 157
     lastFrame: 157
     frameDuration: 0.1
@@ -835,7 +942,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 145
     lastFrame: 145
     frameDuration: 0.1
@@ -868,7 +975,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 146
     lastFrame: 146
     frameDuration: 0.1
@@ -900,7 +1007,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 160
     lastFrame: 160
     frameDuration: 0.1
@@ -932,7 +1039,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 147
     lastFrame: 147
     frameDuration: 0.1
@@ -964,7 +1071,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 158
     lastFrame: 158
     frameDuration: 0.1
@@ -996,7 +1103,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 146
     lastFrame: 146
     frameDuration: 0.1
@@ -1028,7 +1135,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 216
     lastFrame: 216
     frameDuration: 0.1
@@ -1062,7 +1169,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 216
     lastFrame: 216
     frameDuration: 0.1
@@ -1096,7 +1203,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 216
     lastFrame: 216
     frameDuration: 0.1
@@ -1130,7 +1237,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 206
     lastFrame: 207
     frameDuration: 0.11
@@ -1146,7 +1253,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 208
     lastFrame: 209
     frameDuration: 0.11
@@ -1162,7 +1269,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 210
     lastFrame: 211
     frameDuration: 0.11
@@ -1178,7 +1285,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 212
     lastFrame: 213
     frameDuration: 0.11
@@ -1194,7 +1301,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 206
     lastFrame: 207
     frameDuration: 0.11
@@ -1210,7 +1317,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 208
     lastFrame: 209
     frameDuration: 0.11
@@ -1226,7 +1333,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 210
     lastFrame: 211
     frameDuration: 0.11
@@ -1242,7 +1349,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 212
     lastFrame: 213
     frameDuration: 0.11
@@ -1258,7 +1365,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 214
     lastFrame: 215
     frameDuration: 0.09
@@ -1274,7 +1381,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 214
     lastFrame: 215
     frameDuration: 0.09
@@ -1290,7 +1397,7 @@ Entities:
   AnimatedSpriteRenderer:
     color: [1, 1, 1, 1]
     columns: 12
-    rows: 21
+    rows: 38
     firstFrame: 214
     lastFrame: 215
     frameDuration: 0.09
@@ -1531,7 +1638,7 @@ Entities:
     scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Villager"}
-    - {name: lines, type: string, value: "Nice day for a walk. The five houses of the village are the levels.|I cross the village every day. Mind the fountain, the stones are slippery.|Have you seen the lever in the east meadow? It opens the old gate in the west grove."}
+    - {name: lines, type: string, value: "Nice day for a walk. Six places of the village wait for you, the markers show them.|I cross the village every day. Mind the fountain, the stones are slippery.|Have you seen the lever in the east meadow? It opens the old gate in the west grove."}
     - {name: follow, type: string, value: "Villager"}
 - Entity: 2000000000000000438
   Tag: {tag: Talk_Guard}
@@ -1545,7 +1652,7 @@ Entities:
     scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Guard"}
-    - {name: lines, type: string, value: "Halt! Ah, it is only you. Mind the lava in the north west forest, it is deadly.|All quiet on the square. When the five levels are done, the shrine will wake up.|The river stings. Cross it by the bridges."}
+    - {name: lines, type: string, value: "Halt! Ah, it is only you. Mind the lava in the north west forest, it is deadly.|All quiet on the square. When the six places are done, the shrine will wake up.|The river stings. Cross it by the bridges."}
     - {name: follow, type: string, value: "Guard"}
 - Entity: 2000000000000000439
   Tag: {tag: Talk_Wizard}
@@ -1628,7 +1735,7 @@ Entities:
     scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
     properties:
     - {name: speaker, type: string, value: "Merchant3"}
-    - {name: lines, type: string, value: "Cider of the village, stored since the last harvest.|They say the portal glows when the five levels are done."}
+    - {name: lines, type: string, value: "Cider of the village, stored since the last harvest.|They say the portal glows when the six places are done."}
     - {name: follow, type: string, value: "Merchant3"}
 - Entity: 2000000000000000445
   Tag: {tag: Talk_Priest}
@@ -1806,3 +1913,521 @@ Entities:
     scale: [1.0, 1.0, 1.0]
   Visibility: {gameVisible: true}
   LuaScript: {scriptPath: scripts/hub/hub_labels.lua}
+- Entity: 2100000000000000001
+  Tag: {tag: TelescopeDoor}
+  Transform:
+    translation: [50.5, -6.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.lua
+    properties:
+    - {name: target_scene, type: string, value: scenes/far_orbit.owl}
+    - {name: transition, type: string, value: fade}
+    - {name: done_key, type: string, value: level_orbit_done}
+    - {name: on_enter, type: string, value: ''}
+    - {name: minimap_dot, type: string, value: MinimapPlace_orbit}
+    - {name: door_sound, type: string, value: sounds/hub/lever.wav}
+  HudMarker:
+    enabled: true
+    color: [0.7, 0.55, 1, 1]
+    size: [18, 18]
+    offset: [0, 1.2, 0]
+    label: ''
+    labelColor: [1, 1, 1, 1]
+    fontSize: 18
+    showDistance: false
+    maxDistance: 0
+    offscreenIndicator: true
+    edgeMargin: 28
+- Entity: 2100000000000000002
+  Tag: {tag: PannelObservatory}
+  Transform:
+    translation: [47.5, -4.3, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.4, 0.6, 1]
+  TextRenderer:
+    color: [1, 1, 1, 1]
+    kerning: 0
+    lineSpacing: 0
+    outlineColor: [0, 0, 0, 1]
+    outlineWidth: 0.08
+    text: Observatory
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000003
+  Tag: {tag: Talk_Telescope}
+  Transform:
+    translation: [51.5, -8.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: ""}
+    - {name: lines, type: string, value: "The telescope of the observatory looks one astronomical unit away: E at it to fly there.|A debris drifts off the far station. Dock with it, then come back."}
+    - {name: follow, type: string, value: ""}
+- Entity: 2100000000000000004
+  Tag: {tag: Cave}
+  Transform:
+    translation: [14.5, -5.0, 0.0]
+    rotation: [0, 0, 0]
+    scale: [7.0, 6.0, 1]
+  ReverbZone:
+    shape: Box
+    extents: [0.5, 0.5, 8]
+    radius: 3
+    blendDistance: 1.5
+    preset: Cave
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000950
+  Tag: {tag: CaveShade}
+  Transform:
+    translation: [14.5, -5.0, 0.3]
+    rotation: [0, 0, 0]
+    scale: [9.0, 8.0, 1]
+  SpriteRenderer:
+    color: [0.04, 0.03, 0.08, 0.38]
+    lit: false
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000005
+  Tag: {tag: CaveDrips}
+  Transform:
+    translation: [15.5, -4.5, 0.5]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Visibility: {gameVisible: true}
+  SoundSource: {soundAsset: sounds/hub/drips.wav, category: Ambient, volume: 0.8, pitch: 1.0, loop: true, spatial: true, playOnStart: true,
+    maxDistance: 7.0, rolloff: 1.5}
+- Entity: 2100000000000000006
+  Tag: {tag: CaveTorch}
+  Transform:
+    translation: [14.5, -2.2, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: true, color: [1, 0.62, 0.3], intensity: 1.4, radius: 4.5, falloff: 1.5, height: 1, castShadows: false}
+  LightFlicker:
+    style: Candle
+    amplitude: 0.25
+    speed: 6
+    seed: 3
+    colorShift: [0, 0.1, 0.2]
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000007
+  Tag: {tag: Talk_Cave}
+  Transform:
+    translation: [11.5, -9.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.6, 1.6, 1]
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    properties:
+    - {name: speaker, type: string, value: ""}
+    - {name: lines, type: string, value: "The old cave. Listen: every drip rings off its walls.|The music of the village grows darker in there."}
+    - {name: follow, type: string, value: ""}
+- Entity: 2100000000000000008
+  Tag: {tag: HubMusic}
+  Transform:
+    translation: [32.5, -20.5, 0.0]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  AdaptiveMusic:
+    initialState: calm
+    stateKey: hub_mood
+    playOnStart: true
+    fadeSeconds: 3
+    layers:
+      - {name: pads, asset: sounds/hub/music_pads.wav, volume: 0.45}
+      - {name: pulse, asset: sounds/hub/music_pulse.wav, volume: 0.4}
+      - {name: drums, asset: sounds/hub/music_drums.wav, volume: 0.45}
+    states:
+      - name: calm
+        layers: [pads]
+        stinger: ""
+      - name: night
+        layers: [pads, pulse]
+        stinger: ""
+      - name: danger
+        layers: [pulse, drums]
+        stinger: sounds/hub/stinger_danger.wav
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000009
+  Tag: {tag: HubSky}
+  Transform:
+    translation: [32.5, -20.5, 0.0]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  DayNightCycle: {enabled: true, timeOfDay: 10, dayLength: 300, azimuth: 90, maxElevation: 60, sun: 0, sunIlluminance: 100000, sunColor: [1, 0.96, 0.9], sunsetColor: [1, 0.55, 0.3], moonIlluminance: 4000, moonColor: [0.62, 0.72, 1], nightExposure: 0}
+  Light2D: {type: Ambient, enabled: true, color: [1, 1, 1], intensity: 1, radius: 5, falloff: 2, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: gid:c8c56d3674c81cbd:scripts/hub/hub_daynight.lua
+- Entity: 2100000000000000010
+  Tag: {tag: NightLight_1}
+  Transform:
+    translation: [28.5, -17.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000011
+  Tag: {tag: NightLight_2}
+  Transform:
+    translation: [36.5, -17.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000012
+  Tag: {tag: NightLight_3}
+  Transform:
+    translation: [28.5, -19.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000013
+  Tag: {tag: NightLight_4}
+  Transform:
+    translation: [36.5, -19.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000014
+  Tag: {tag: NightLight_5}
+  Transform:
+    translation: [28.5, -24.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000015
+  Tag: {tag: NightLight_6}
+  Transform:
+    translation: [36.5, -24.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000016
+  Tag: {tag: NightLight_7}
+  Transform:
+    translation: [28.5, -25.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000017
+  Tag: {tag: NightLight_8}
+  Transform:
+    translation: [36.5, -25.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000018
+  Tag: {tag: NightLight_9}
+  Transform:
+    translation: [28.5, -13.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000019
+  Tag: {tag: NightLight_10}
+  Transform:
+    translation: [36.5, -13.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000020
+  Tag: {tag: NightLight_11}
+  Transform:
+    translation: [7.5, -16.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000021
+  Tag: {tag: NightLight_12}
+  Transform:
+    translation: [18.5, -16.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000022
+  Tag: {tag: NightLight_13}
+  Transform:
+    translation: [42.5, -16.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000023
+  Tag: {tag: NightLight_14}
+  Transform:
+    translation: [52.5, -16.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000024
+  Tag: {tag: NightLight_15}
+  Transform:
+    translation: [30.5, -38.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000025
+  Tag: {tag: NightLight_16}
+  Transform:
+    translation: [34.5, -38.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000026
+  Tag: {tag: NightLight_17}
+  Transform:
+    translation: [51.5, -8.3, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.78, 0.45], intensity: 1.0, radius: 3.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000027
+  Tag: {tag: NightLight_18}
+  Transform:
+    translation: [9.5, -15.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 2.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000028
+  Tag: {tag: NightLight_19}
+  Transform:
+    translation: [20.5, -15.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 2.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000029
+  Tag: {tag: NightLight_20}
+  Transform:
+    translation: [44.5, -15.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 2.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000030
+  Tag: {tag: NightLight_21}
+  Transform:
+    translation: [54.5, -15.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 2.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000031
+  Tag: {tag: NightLight_22}
+  Transform:
+    translation: [39.5, -14.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 2.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000032
+  Tag: {tag: NightLight_23}
+  Transform:
+    translation: [15.5, -15.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 2.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000033
+  Tag: {tag: NightLight_24}
+  Transform:
+    translation: [25.5, -14.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 2.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000034
+  Tag: {tag: NightLight_25}
+  Transform:
+    translation: [49.5, -15.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 2.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000035
+  Tag: {tag: NightLight_26}
+  Transform:
+    translation: [32.5, -12.5, 0.7]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1]
+  Light2D: {type: Point, enabled: false, color: [1, 0.7, 0.4], intensity: 0.8, radius: 2.2, falloff: 1.6, height: 1, castShadows: false}
+  Visibility: {gameVisible: true}
+- Entity: 2100000000000000036
+  Tag: {tag: MinimapFrameNorth}
+  Transform:
+    translation: [112.0, 137.5, 0.0]
+    rotation: [0, 0, 0]
+    scale: [198, 3, 1]
+  SpriteRenderer:
+    color: [0.85, 0.8, 0.6, 1]
+    lit: false
+  Visibility: {gameVisible: true}
+  RendererTag:
+    Name: overlay
+- Entity: 2100000000000000901
+  Tag: {tag: MinimapFrameSouth}
+  Transform:
+    translation: [112.0, 14.5, 0.0]
+    rotation: [0, 0, 0]
+    scale: [198, 3, 1]
+  SpriteRenderer:
+    color: [0.85, 0.8, 0.6, 1]
+    lit: false
+  Visibility: {gameVisible: true}
+  RendererTag:
+    Name: overlay
+- Entity: 2100000000000000902
+  Tag: {tag: MinimapFrameWest}
+  Transform:
+    translation: [14.5, 76.0, 0.0]
+    rotation: [0, 0, 0]
+    scale: [3, 120, 1]
+  SpriteRenderer:
+    color: [0.85, 0.8, 0.6, 1]
+    lit: false
+  Visibility: {gameVisible: true}
+  RendererTag:
+    Name: overlay
+- Entity: 2100000000000000903
+  Tag: {tag: MinimapFrameEast}
+  Transform:
+    translation: [209.5, 76.0, 0.0]
+    rotation: [0, 0, 0]
+    scale: [3, 120, 1]
+  SpriteRenderer:
+    color: [0.85, 0.8, 0.6, 1]
+    lit: false
+  Visibility: {gameVisible: true}
+  RendererTag:
+    Name: overlay
+- Entity: 2100000000000000037
+  Tag: {tag: Minimap}
+  Transform:
+    translation: [112, 76, 0.0]
+    rotation: [0, 0, 0]
+    scale: [3, 3, 1]
+  Tilemap:
+    tilemapPath: gid:c9887101a7a153d0:tilemaps/world_map.owltilemap
+  Visibility: {gameVisible: true}
+  RendererTag:
+    Name: overlay
+  LuaScript:
+    scriptPath: gid:c91123b60c76aeab:scripts/hub/hub_minimap.lua
+    properties:
+    - {name: origin_x, type: float, value: 16}
+    - {name: origin_y, type: float, value: 16}
+    - {name: scale, type: float, value: 3}
+- Entity: 2100000000000000038
+  Tag: {tag: MinimapPlayer}
+  Transform:
+    translation: [113.5, 26.5, 0.2]
+    rotation: [0, 0, 0]
+    scale: [9, 9, 1]
+  CircleRenderer:
+    color: [1, 0.95, 0.3, 1]
+    thickness: 1
+    fade: 0.05
+  Visibility: {gameVisible: true}
+  RendererTag:
+    Name: overlay
+- Entity: 2100000000000000039
+  Tag: {tag: MinimapPlace_platformer}
+  Transform:
+    translation: [44.5, 89.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [8, 8, 1]
+  CircleRenderer:
+    color: [0.95, 0.75, 0.25, 1]
+    thickness: 0.45
+    fade: 0.05
+  Visibility: {gameVisible: true}
+  RendererTag:
+    Name: overlay
+- Entity: 2100000000000000040
+  Tag: {tag: MinimapPlace_raycast}
+  Transform:
+    translation: [77.5, 89.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [8, 8, 1]
+  CircleRenderer:
+    color: [0.85, 0.35, 0.3, 1]
+    thickness: 0.45
+    fade: 0.05
+  Visibility: {gameVisible: true}
+  RendererTag:
+    Name: overlay
+- Entity: 2100000000000000041
+  Tag: {tag: MinimapPlace_iso}
+  Transform:
+    translation: [149.5, 89.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [8, 8, 1]
+  CircleRenderer:
+    color: [0.4, 0.8, 0.45, 1]
+    thickness: 0.45
+    fade: 0.05
+  Visibility: {gameVisible: true}
+  RendererTag:
+    Name: overlay
+- Entity: 2100000000000000042
+  Tag: {tag: MinimapPlace_voxel}
+  Transform:
+    translation: [179.5, 89.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [8, 8, 1]
+  CircleRenderer:
+    color: [0.45, 0.7, 0.95, 1]
+    thickness: 0.45
+    fade: 0.05
+  Visibility: {gameVisible: true}
+  RendererTag:
+    Name: overlay
+- Entity: 2100000000000000043
+  Tag: {tag: MinimapPlace_tavern}
+  Transform:
+    translation: [134.5, 92.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [8, 8, 1]
+  CircleRenderer:
+    color: [0.95, 0.55, 0.3, 1]
+    thickness: 0.45
+    fade: 0.05
+  Visibility: {gameVisible: true}
+  RendererTag:
+    Name: overlay
+- Entity: 2100000000000000044
+  Tag: {tag: MinimapPlace_orbit}
+  Transform:
+    translation: [167.5, 116.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [8, 8, 1]
+  CircleRenderer:
+    color: [0.7, 0.55, 1, 1]
+    thickness: 0.45
+    fade: 0.05
+  Visibility: {gameVisible: true}
+  RendererTag:
+    Name: overlay

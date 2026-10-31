@@ -26,7 +26,7 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [0.62, 0.22]
+    size: [0.62, 0.26]
     sizeUnit: [ScreenWidth, ScreenHeight]
     offset: [16, 16]
   UiLayout:
@@ -48,11 +48,11 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [1, 0.5]
+    size: [1, 0.3]
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
-    text: 'WASD: fly    arrows: look    Space / Shift: up / down    J: jump to the other site    Esc: menu'
+    text: 'WASD: fly    arrows: look    Space / Shift: up / down    J: jump to the other site    Esc: back to the hub'
     color: [1, 1, 1, 0.85]
     fontSize: 24
     horizontalAlignment: Left
@@ -61,6 +61,30 @@ Entities:
     fit: Shrink
     minFontSize: 12
 
+- Entity: 4110000000000000004
+  Tag: {tag: ObjectiveText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4110000000000000010}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [1, 0.2]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiText:
+    text: 'Objective: dock with the debris'
+    color: [1, 0.85, 0.3, 1]
+    fontSize: 28
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 12
 - Entity: 4110000000000000003
   Tag: {tag: WorldReadout}
   Transform:

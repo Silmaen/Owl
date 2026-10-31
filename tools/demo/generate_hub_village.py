@@ -6,10 +6,13 @@ centre at the world position (c + 0.5, -r - 0.5). Layers: ``ground`` (grass, roa
 bridges), ``objects`` (trees, houses, the church, stalls, fences, lamps: what the tileset marks collidable blocks the
 hero) and the hidden ``walkable`` layer, the navigation graph of the villagers (one cell wherever the hero can walk).
 
-Layout, north to south: the forest edge and the shrine of the victory portal (north east), the church at the end of
+Layout, north to south: the forest edge with the cave (north west, behind the crater of lava), the observatory and its
+telescope (north east) and the shrine of the victory portal, the church at the end of
 the avenue, the four level houses along the high street (platformer, raycast, iso town, voxel), the plaza with its
 fountain, the market (east) and the fields (west), the river with three bridges, the south meadow with the entrance, the
 information board, the lever (east) and the walled grove its gate opens (west).
+
+The cave and the observatory are carved after the forest is planted, so the trees elsewhere keep their places.
 
 Run with ``poetry run python`` from anywhere; ``engine_demo/textures/atlases/town_atlas.png`` must already carry the village
 tiles (``generate_kenney_atlases.py``). The cell constants below are the ones the scene and the scripts use.
@@ -72,6 +75,20 @@ GATE_CELL = (8, 34)
 CHEST_CELL = (8, 35)
 LAVA_RECT = (5, 3, 7, 5)
 FENCE = (80, 81, 82)  # left end, middle, right end of a fence (collidable)
+FARM = 252  # Tiny Farm tile i is FARM + i
+DUNGEON = 384  # Tiny Dungeon tile i (walls and floors) is DUNGEON + i
+CAVE = (10, 1, 18, 8)  # walls of the cave (first column, first row, last column, last row), its floor inside
+CAVE_DOOR = (12, 8)  # the gap in its south wall, a footpath from there down to the high street
+CAVE_FLOOR = (DUNGEON + 0,) * 10 + (DUNGEON + 12, DUNGEON + 24)
+CAVE_WALLS = (DUNGEON + 40, DUNGEON + 57, DUNGEON + 58, DUNGEON + 59)
+CAVE_TORCH = DUNGEON + 29
+ROCK, PEBBLES = FARM + 89, FARM + 77
+OBSERVATORY = (46, 5)  # top left cell of the dome (3x2), its wall and door below
+OBSERVATORY_PATH = 47  # column of its footpath, down to the high street
+TELESCOPE_CELL = (50, 6)
+DOME = 444
+TELESCOPE = 450
+FARM_CROPS = {"wheat": FARM + 66, "cabbage": FARM + 56, "carrots": FARM + 8, "corn": FARM + 32, "tomato": FARM + 44}
 GATE_FENCE = (30, 34)  # first and last column of the fence closing the entrance, on the last row
 
 
@@ -198,9 +215,9 @@ def build() -> tuple[Grid, Grid, Grid]:
 
     # The fields and the garden west of the plaza (fenced, a gap in the north fence).
     ground.rect(6, 24, 21, 28, SOIL)
-    ground.rect(7, 25, 11, 26, CROPS["wheat"])
-    ground.rect(12, 25, 16, 26, CROPS["cabbage"])
-    ground.rect(17, 25, 20, 26, CROPS["carrots"])
+    for (c0, c1), kind in (((7, 9), "wheat"), ((10, 11), "corn"), ((12, 14), "cabbage"), ((15, 16), "tomato"),
+                           ((17, 20), "carrots")):
+        objects.rect(c0, 25, c1, 26, FARM_CROPS[kind])
     for c in range(7, 21):
         ground.put(c, 27, BEDS[(c // 2) % 3])
     ground.rect(7, 28, 20, 28, GRASS)
@@ -278,8 +295,54 @@ def build() -> tuple[Grid, Grid, Grid]:
     for c in GATE_FENCE:
         objects.put(c, HEIGHT - 2, LAMP)
 
+    carve_places(ground, objects, rng)
     walkable = Grid(EMPTY)
     return ground, objects, walkable
+
+
+def carve_places(ground: Grid, objects: Grid, rng: random.Random) -> None:
+    """The cave (north west) and the observatory with its telescope (north east), carved out of the forest."""
+    c0, r0, c1, r1 = CAVE
+    for r in range(max(r0 - 1, 1), r1 + 2):  # a clearing round the rock, the edge of the map kept
+        for c in range(c0 - 1, c1 + 2):
+            if objects.get(c, r) in TREES + (SPROUT, MUSHROOMS):
+                objects.put(c, r, EMPTY)
+    for r in range(r0, r1 + 1):
+        for c in range(c0, c1 + 1):
+            if c in (c0, c1) or r in (r0, r1):
+                objects.put(c, r, rng.choice(CAVE_WALLS))
+            else:
+                ground.put(c, r, rng.choice(CAVE_FLOOR))
+    objects.put(*CAVE_DOOR, EMPTY)
+    ground.put(*CAVE_DOOR, CAVE_FLOOR[0])
+    objects.put(c0 + 4, r0, CAVE_TORCH)
+    for c, r in ((c0 + 2, r0 + 2), (c1 - 1, r1 - 1), (c1 - 2, r0 + 1)):
+        objects.put(c, r, PEBBLES)
+    objects.put(c0 + 5, r0 + 3, MUSHROOMS)
+    for c, r in ((c0 - 1, r1), (c0 + 4, r1 + 1), (c1 + 1, r0 + 2), (c1 + 1, r1 - 1), (c1, r1 + 1)):  # boulders outside
+        objects.put(c, r, ROCK)
+    for r in range(CAVE_DOOR[1] + 1, 21):
+        ground.put(CAVE_DOOR[0], r, STEPS)
+        if objects.get(CAVE_DOOR[0], r) != EMPTY:
+            objects.put(CAVE_DOOR[0], r, EMPTY)
+    # The observatory: a copper dome over a stone wall with its door, a paved terrace and the telescope.
+    oc, orow = OBSERVATORY
+    for r in range(orow - 1, orow + 5):
+        for c in range(oc - 1, TELESCOPE_CELL[0] + 2):
+            if objects.get(c, r) in TREES + (SPROUT, MUSHROOMS):
+                objects.put(c, r, EMPTY)
+    for k in range(6):
+        objects.put(oc + k % 3, orow + k // 3, DOME + k)
+    for dc, tile in enumerate((76, 89, 78)):
+        objects.put(oc + dc, orow + 2, tile)
+    ground.rect(oc + 3, orow, TELESCOPE_CELL[0] + 1, orow + 3, COBBLE, rng)
+    ground.rect(oc, orow + 3, oc + 2, orow + 3, COBBLE, rng)
+    objects.put(*TELESCOPE_CELL, TELESCOPE)
+    objects.put(TELESCOPE_CELL[0] + 1, orow + 3, LAMP)
+    for r in range(orow + 4, 21):
+        ground.put(OBSERVATORY_PATH, r, STEPS)
+        if objects.get(OBSERVATORY_PATH, r) != EMPTY:
+            objects.put(OBSERVATORY_PATH, r, EMPTY)
 
 
 def tile_flags() -> set[int]:
@@ -344,7 +407,8 @@ def main() -> None:
     goals = {f"{name} door": (c0 + 1, r0 + 3) for name, ((c0, r0), _) in HOUSES.items()}
     goals |= {"shrine": (PORTAL_CELL[0], PORTAL_CELL[1] + 1), "board": (BOARD_CELL[0], BOARD_CELL[1] + 1),
               "lever": (LEVER_CELL[0], LEVER_CELL[1] + 1), "gate": (GATE_CELL[0], GATE_CELL[1] - 1),
-              "church": (32, 14), "market": (47, 27), "well": (24, 25), "field": (14, 27), "woodcutter": (5, 10)}
+              "church": (32, 14), "market": (47, 27), "well": (24, 25), "field": (14, 27), "woodcutter": (5, 10),
+              "cave": (CAVE[0] + 4, CAVE[1] + 3), "telescope": (TELESCOPE_CELL[0], TELESCOPE_CELL[1] + 1)}
     for name, cell in goals.items():
         print(f"{name:16} {cell}: {'ok' if cell in flood else 'UNREACHABLE'}")
     # The hero must never walk off the map: every edge cell is blocked, or water (the river runs off both sides, the

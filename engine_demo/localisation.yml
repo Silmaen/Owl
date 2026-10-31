@@ -76,7 +76,7 @@ strings:
     values: {en: 'Greetings, traveller. Few come to talk to an old wizard.', fr: 'Salut à toi, voyageur. Rares sont ceux qui viennent parler à un vieux magicien.'}
   - key: dialogue.wizard.awake
     table: dialogue
-    values: {en: 'The five worlds are done and the portal is awake: go to the shrine!', fr: 'Les cinq mondes sont achevés et le portail est éveillé : va au sanctuaire !'}
+    values: {en: 'The six places are done and the portal is awake: go to the shrine!', fr: 'Les six lieux sont achevés et le portail est éveillé : va au sanctuaire !'}
   - key: dialogue.wizard.ask
     table: dialogue
     values: {en: 'What would you know?', fr: 'Que veux-tu savoir ?'}
@@ -91,7 +91,7 @@ strings:
     values: {en: 'Farewell.', fr: 'Adieu.'}
   - key: dialogue.wizard.portal
     table: dialogue
-    values: {en: 'Finish the five houses of the high street: platformer, raycast, iso town, voxels and tavern.', fr: 'Termine les cinq maisons de la grand-rue : plateforme, raycast, ville iso, voxels et taverne.'}
+    values: {en: 'Finish the six places of the village: the four houses of the high street, the tavern and the telescope of the observatory.', fr: 'Termine les six lieux du village : les quatre maisons de la grand-rue, la taverne et le télescope de l’observatoire.'}
   - key: dialogue.wizard.spell
     table: dialogue
     values: {en: 'There! Only a little Lua, but the bell of the church never fails to ring.', fr: 'Voilà ! Rien qu''un peu de Lua, mais la cloche de l''église sonne à tous les coups.'}

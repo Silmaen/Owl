@@ -1,0 +1,15 @@
+# The far orbit, opened by the telescope of the hub: fly to the debris off the station (D strafes right, W flies ahead)
+# and dock with it; the place is done and the scene goes back to the hub.
+scene: ../../../engine_demo/scenes/far_orbit.owl
+steps:
+  - frames: 20
+  - expect: {gamestate: orbit_docked, equals: 0}
+  - expect: {entity: Debris, exists: true}
+  - input: {key: D, frames: 18}
+  - input: {key: W, frames: 36}
+  - frames: 5
+  - expect: {gamestate: orbit_docked, equals: 1}
+  - expect: {gamestate: level_orbit_done, equals: 1}
+  - frames: 200
+  - expect: {entity: Player, exists: true}
+  - expect: {entity: OrbitCamera, exists: false}
