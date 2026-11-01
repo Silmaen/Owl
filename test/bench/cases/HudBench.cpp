@@ -38,7 +38,17 @@ auto addWidget(scene::Scene& ioScene, const scene::Entity& iParent, const scene:
 	return widget;
 }
 
-auto makeHudScene() -> shared<scene::Scene> {
+// The box of a themed widget: rounded corners, a gradient, a border and a soft shadow (the rounded-box shader).
+auto styledBox() -> scene::component::UiBox {
+	scene::component::UiBox box;
+	box.cornerRadius = 6.f;
+	box.bottomTint = {0.8f, 0.8f, 0.8f, 1.f};
+	box.borderWidth = 1.f;
+	box.shadowColor = {0.f, 0.f, 0.f, 0.4f};
+	return box;
+}
+
+auto makeHudScene(const bool iStyled = false) -> shared<scene::Scene> {
 	using Anchor = scene::component::UiRect::Anchor;
 	auto sc = mkShared<scene::Scene>();
 	auto canvas = sc->createEntity("Hud");
@@ -46,14 +56,21 @@ auto makeHudScene() -> shared<scene::Scene> {
 	for (uint32_t i = 0; i < g_windowCount; ++i) {
 		const math::vec2 corner{static_cast<float>(i % 10) * 125.f + 70.f, static_cast<float>(i / 10) * 70.f + 40.f};
 		auto window = addWidget(*sc, canvas, Anchor::TopLeft, {120.f, 64.f}, corner);
-		window.addComponent<scene::component::UiPanel>();
+		auto& panel = window.addComponent<scene::component::UiPanel>();
+		if (iStyled)
+			panel.box = styledBox();
 		addWidget(*sc, window, Anchor::TopCenter, {110.f, 14.f}, {0.f, 10.f})
 				.addComponent<scene::component::UiText>()
 				.text = std::format("Window {}", i);
-		addWidget(*sc, window, Anchor::Center, {60.f, 18.f}, {0.f, 4.f}).addComponent<scene::component::UiButton>();
-		addWidget(*sc, window, Anchor::BottomCenter, {100.f, 6.f}, {0.f, -6.f})
-				.addComponent<scene::component::UiProgressBar>()
-				.value = 0.5f;
+		auto& button = addWidget(*sc, window, Anchor::Center, {60.f, 18.f}, {0.f, 4.f})
+							   .addComponent<scene::component::UiButton>();
+		auto& bar = addWidget(*sc, window, Anchor::BottomCenter, {100.f, 6.f}, {0.f, -6.f})
+							.addComponent<scene::component::UiProgressBar>();
+		bar.value = 0.5f;
+		if (iStyled) {
+			button.box = styledBox();
+			bar.box = styledBox();
+		}
 		addWidget(*sc, window, Anchor::TopLeft, {12.f, 12.f}, {8.f, 8.f}).addComponent<scene::component::UiImage>();
 	}
 	sc->onViewportResize(g_viewport);
@@ -92,6 +109,15 @@ void runHudBenches(Runner& ioRunner) {
 						"draw calls (one frame)");
 		ioRunner.metric(std::format("hud/layout/{}_widgets_nodes", widgets),
 						static_cast<double>(layout.getNodes().size()), "widgets laid out");
+	}
+	const auto styled = makeHudScene(true);
+	const auto styledName = std::format("hud/frame/{}_styled_widgets", widgets);
+	ioRunner.measure(styledName, widgets, [&]() -> void { scene::ui::HudPass::render(*styled, g_viewport, false); });
+	if (ioRunner.wants(styledName)) {
+		renderer::Renderer2D::resetStats();
+		scene::ui::HudPass::render(*styled, g_viewport, false);
+		ioRunner.metric(styledName + "_draw_calls", static_cast<double>(renderer::Renderer2D::getStats().drawCalls),
+						"draw calls (one frame)");
 	}
 	constexpr uint32_t rows = 1000;
 	const auto listScene = makeListScene(rows);

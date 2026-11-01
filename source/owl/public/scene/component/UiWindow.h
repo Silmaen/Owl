@@ -9,8 +9,8 @@
 #pragma once
 
 #include "core/Serializer.h"
-#include "scene/component/UiStyle.h"
 #include "math/vectors.h"
+#include "scene/component/UiStyle.h"
 
 #include <string>
 

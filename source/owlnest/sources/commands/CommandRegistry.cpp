@@ -14,12 +14,12 @@
 #include "CommandJournal.h"
 #include "ComponentCommands.h"
 #include "DataTableCommands.h"
-#include "HudThemeCommands.h"
 #include "DialogueCommands.h"
 #include "DocumentCommands.h"
 #include "EntityCommands.h"
 #include "HierarchyCommands.h"
 #include "HudCommands.h"
+#include "HudThemeCommands.h"
 #include "Macro.h"
 #include "PrefabCommands.h"
 #include "SceneSettingsCommands.h"
@@ -33,9 +33,9 @@
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/RenderStack.h>
 #include <renderer/Renderer.h>
-#include <scene/HudTheme.h>
 #include <scene/ComponentRegistry.h>
 #include <scene/HudLibrary.h>
+#include <scene/HudTheme.h>
 #include <scene/PrefabSerializer.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>

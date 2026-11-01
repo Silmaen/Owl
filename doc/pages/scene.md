@@ -1031,6 +1031,59 @@ scripts start, so no `on_create` pays for its fonts against its time quota. The 
 the scene's own canvases; Lua `ui.find(name)` searches it first and `scene.find_entity` falls back to it. Saves keep
 its widget values. Design: [HUD system](design/hud-system.md).
 
+#### HUD themes and widget boxes {#hud-themes}
+
+The box of a `UiPanel`, `UiButton`, `UiSlider`, `UiProgressBar`, `UiList` (its rows) and `UiWindow` is a `UiBox`,
+written under a `Box:` map of the widget only when it is not a flat rectangle:
+
+| Field          | Type      | Description                                                                         |
+|----------------|-----------|-------------------------------------------------------------------------------------|
+| `cornerRadius` | `float`   | Radius of the rounded corners, in reference pixels (0: square)                      |
+| `bottomTint`   | `vec4`    | Multiplied with the fill colour at the bottom edge: a vertical gradient (white: flat) |
+| `borderWidth`  | `float`   | Border drawn inside the edge, in reference pixels (0: none)                         |
+| `borderColor`  | `vec4`    | Colour of the border                                                                |
+| `shadowColor`  | `vec4`    | Soft shadow outside the box (alpha 0: none)                                         |
+| `shadowOffset` | `vec2`    | Offset of the shadow, right and down                                                |
+| `shadowBlur`   | `float`   | Softness of the shadow edge                                                         |
+| `texture`      | `texture` | Nine-slice background tinted by the fill colour                                     |
+| `sliceInsets`  | `vec4`    | Borders of the texture kept unstretched, in texture pixels: left, top, right, bottom |
+
+A plain box is drawn as before, a flat quad; any of these fields draws it through the rounded-box shader
+(`Renderer2D::drawBox`, `renderer2D/box.slang`). A fill (slider, bar) and a window title bar lie inside the border.
+
+A HUD theme (`.owlhudtheme`, `scene::HudTheme`) holds named styles. Every widget above and `UiText` carry a `style`
+(and `styleOverrides`, a list of property names); each frame the HUD pass writes the properties the style defines into
+the widget (`scene::applyHudTheme`). **Precedence**: a property listed in `styleOverrides` keeps the widget's value;
+else the style's value wins when the style defines it; else the widget's own value stays. A scene or a `.owlhud` names
+its theme with a root `HudTheme:` key (nothing: the project's `DefaultHudTheme`; an empty value: none), read once by
+`app::EngineContext::getHudThemeLibrary()`. Without a theme, or for a widget naming no style, nothing changes.
+
+| Style key                          | Property       | Sets                                                                              |
+|------------------------------------|----------------|-----------------------------------------------------------------------------------|
+| `background`                       | `Background`   | Panel background, button normal colour, slider track, bar background, list row, window body |
+| `hover`, `pressed`, `disabled`     | same           | Button states; `hover` also the hovered list row                                  |
+| `accent`                           | `Accent`       | Slider and bar fill, selected list row, window title bar                          |
+| `secondary`                        | `Secondary`    | Slider handle, alternate list row                                                 |
+| `textColor`, `font`, `fontSize`    | same           | `UiText` (also list rows and window titles, but `font`)                           |
+| `outlineColor`, `outlineWidth`     | `Outline`      | Outline of a `UiText`                                                             |
+| `padding`                          | `Padding`      | `UiLayout` padding of a styled panel                                              |
+| `cornerRadius`, `bottomTint`, ...  | box properties | The `UiBox` fields above (`CornerRadius`, `Gradient`, `Border`, `Shadow`, `NineSlice`) |
+
+```yaml
+HudTheme: Engine Demo
+FormatVersion: 1
+Styles:
+  - name: button
+    background: [0.82, 0.56, 0.27, 1]
+    hover: [0.98, 0.74, 0.38, 1]
+    cornerRadius: 10
+    texture: gid:9bb9af1accef8dc0:textures/ui/skin_button.png
+    sliceInsets: [16, 16, 16, 16]
+```
+
+Lua `ui.set_style(id, name)` makes every widget of an entity follow a style. Owl Nest edits a theme in its own tab
+([HUD editor > Themes](editor_hud.md#editor-hud-themes)). Design: [HUD system](design/hud-system.md#hud-themes).
+
 #### Canvas
 
 | Field                 | Type   | YAML Key              | Description                                                       |
@@ -1094,6 +1147,8 @@ height of the font (before format 3 it filled the ink height of the string, so o
 |-------------------|--------|--------------------------------------------------|
 | `backgroundColor` | `vec4` | Background colour                                |
 | `clipChildren`    | `bool` | Cut the descendants at the panel edges (scissor) |
+| `Box`             | `map`  | Corners, gradient, border, shadow, nine-slice    |
+| `style`           | `str`  | Style of the HUD theme the panel follows         |
 
 #### UiButton
 

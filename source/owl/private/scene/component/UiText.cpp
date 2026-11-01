@@ -7,8 +7,8 @@
  */
 #include "owlpch.h"
 
-#include "app/Application.h"
 #include "UiStyleYaml.h"
+#include "app/Application.h"
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
 #include "scene/component/UiText.h"

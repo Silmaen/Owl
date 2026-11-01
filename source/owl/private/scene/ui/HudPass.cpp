@@ -165,8 +165,8 @@ void drawWindow(const component::UiWindow& iWindow, const HudNode& iNode, const 
 		return;
 	const component::UiRect::Bounds button{.position = {bar.position.x() + bar.size.x() - buttonSize, bar.position.y()},
 										   .size = {buttonSize, buttonSize}};
-	drawStyledBox(pixelTransform(button, iHeight), closeColor, iWindow.box, BoxPart::Inner, iNode.scale, iEntityId, iRank,
-				  ioOrder);
+	drawStyledBox(pixelTransform(button, iHeight), closeColor, iWindow.box, BoxPart::Inner, iNode.scale, iEntityId,
+				  iRank, ioOrder);
 	// U+00D7 MULTIPLICATION SIGN, in the Latin-1 range of the default charset.
 	drawBoxedText(button, iNode.scale, iHeight, "\xC3\x97", iWindow.titleTextColor, iWindow.titleFontSize * 1.3f,
 				  data::fonts::HorizontalAlignment::Center, iEntityId, iRank);
@@ -441,8 +441,8 @@ void drawCanvases(Scene& ioScene, const Scene& iWorld, const math::vec2ui& iView
 		while (!pendingBars.empty() && (iNext == nodes.size() || !isBelow(iNext, pendingBars.back()))) {
 			const auto& owner = nodes[pendingBars.back()];
 			setClip(ownClip(owner));
-			drawScrollBars(scrolls[owner.scroll], height, static_cast<int>(static_cast<entt::entity>(owner.entity)), rank,
-						   order);
+			drawScrollBars(scrolls[owner.scroll], height, static_cast<int>(static_cast<entt::entity>(owner.entity)),
+						   rank, order);
 			pendingBars.pop_back();
 		}
 	};
@@ -776,8 +776,8 @@ auto makeWidgetBox(const math::Transform& iTransform, const math::vec4& iColor, 
 	auto& data = result.box;
 	data.size = {std::abs(transform.scale().x()), std::abs(transform.scale().y())};
 	data.topColor = iColor;
-	data.bottomColor = {iColor.x() * box.bottomTint.x(), iColor.y() * box.bottomTint.y(), iColor.z() * box.bottomTint.z(),
-						iColor.w() * box.bottomTint.w()};
+	data.bottomColor = {iColor.x() * box.bottomTint.x(), iColor.y() * box.bottomTint.y(),
+						iColor.z() * box.bottomTint.z(), iColor.w() * box.bottomTint.w()};
 	data.cornerRadius = box.cornerRadius * iScale;
 	data.borderWidth = box.borderWidth * iScale;
 	data.borderColor = box.borderColor;

@@ -222,6 +222,8 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
   ([HUD system](design/hud-system.md#world-markers))
 - ![Done][done] Accessibility: UI scale, colour-blind modes, subtitles, reduced motion
   ([Accessibility](design/accessibility.md))
+- ![Done][done] HUD themes and skinned widgets: rounded corners, gradients, shadows, nine-slice, a skin for the Engine
+  Demo menus ([HUD system](design/hud-system.md#hud-themes))
 - ![Done][done] Settings, logs and caches stay in the application folder, with an import of the settings of a
   previous version ([User directory](architecture.md#architecture-user-directory))
 - ![Done][done] Advanced post-processing (chromatic aberration, film grain, motion blur, depth of field)

@@ -154,7 +154,9 @@ private:
 	 *  Amount of instances noted, every kind together.
 	 * @return The total.
 	 */
-	[[nodiscard]] auto total() const -> uint32_t { return m_totals[0] + m_totals[1] + m_totals[2] + m_totals[3] + m_totals[4]; }
+	[[nodiscard]] auto total() const -> uint32_t {
+		return m_totals[0] + m_totals[1] + m_totals[2] + m_totals[3] + m_totals[4];
+	}
 
 	/**
 	 * @brief

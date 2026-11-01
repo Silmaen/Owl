@@ -60,8 +60,8 @@ public:
 	 */
 	[[nodiscard]] static auto scanProject(const std::filesystem::path& iProjectDir, const std::string& iFirstScene,
 										  std::vector<std::string>* oWarnings = nullptr,
-										  const std::string& iDefaultHud = {},
-										  const std::string& iDefaultHudTheme = {}) -> std::vector<AssetReference>;
+										  const std::string& iDefaultHud = {}, const std::string& iDefaultHudTheme = {})
+			-> std::vector<AssetReference>;
 };
 
 }// namespace owl::data::assets::pack

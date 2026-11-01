@@ -149,6 +149,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `HudMarker` component: an icon and a label over a world entity with an off-screen edge arrow, projected through the render layer of the entity (2D, isometric, raycast, voxel, 3D), with its inspector.
 - Lua `entity.set_hud_marker_enabled`, `entity.is_hud_marker_enabled` and `entity.set_hud_marker_label`.
 - Engine Demo: **F** (gamepad Back) shows an "Exit" marker over the elevator of the raycast level.
+- HUD widget boxes (`UiBox`): rounded corners, vertical gradient, border, soft shadow and nine-slice texture on panels, buttons, sliders, bars, list rows and windows, drawn by one SDF rounded-box shader (`Renderer2D::drawBox`, `renderer2D/box.slang`).
+- HUD themes (`.owlhudtheme`, `scene::HudTheme`): named styles a widget follows by name, its own fields kept as overrides, chosen per scene or HUD (`HudTheme:`) or project-wide (`DefaultHudTheme`) and packed with their textures and fonts.
+- Owl Nest HUD theme document (`theme.*` commands), a **New HUD Theme** in the Content Browser, a style picker and a **Box** section in the widget inspectors, the theme in Scene Settings (`scene.set_hud_theme`) and the Project Settings, previewed live.
+- Lua `ui.set_style` makes the widgets of an entity follow a style.
+- Benchmark `hud/frame/500_styled_widgets`: the 500-widget HUD drawn through the rounded-box shader.
+- Engine Demo skin `huds/engine_demo.owlhudtheme` (warm wood and brass, nine-slice textures from `tools/demo/generate_ui_skin.py`), the project default, followed by every menu and HUD but the far-orbit cockpit.
 
 ### Changed
 
@@ -179,8 +185,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Null sound backend keeps the state of every source and of the listener, so the mixing logic is tested headless.
 - The roadmap page keeps the upcoming versions and the last release only; what earlier versions shipped is in the changelog.
 
+- The focus frame of a rounded button or slider follows its corners.
+
 ### Removed
 
+- The top-level `borderColor` / `borderWidth` keys of a `UiPanel`, which drew nothing: the border is `Box: borderWidth`.
 - CI: Windows GCC configuration, the `package-linux` and `package-linux-cross-arm64` presets (`cmake/CMakePresetsPackage.json`), the `release_preset` mechanism and the Windows-only coverage step.
 - Owl Nest: the Scene Flow view; the sample games chain their scenes from Lua, which it did not show.
 

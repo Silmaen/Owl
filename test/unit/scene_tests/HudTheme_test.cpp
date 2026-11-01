@@ -96,7 +96,8 @@ TEST_F(HudThemeTest, aStyleWritesOnlyThePropertiesItDefines) {
 }
 
 TEST_F(HudThemeTest, anUnversionedThemeLoadsAndANewerOneIsRefused) {
-	const auto unversioned = HudTheme::deserializeFromString("HudTheme: Old\nStyles:\n  - name: panel\n    cornerRadius: 4\n");
+	const auto unversioned =
+			HudTheme::deserializeFromString("HudTheme: Old\nStyles:\n  - name: panel\n    cornerRadius: 4\n");
 	ASSERT_TRUE(unversioned.has_value());
 	EXPECT_EQ(unversioned->name, "Old");
 	ASSERT_EQ(unversioned->styles.size(), 1u);

@@ -9,9 +9,9 @@
 #pragma once
 
 #include "core/Serializer.h"
-#include "scene/component/UiStyle.h"
 #include "data/fonts/Font.h"
 #include "data/fonts/TextLayout.h"
+#include "scene/component/UiStyle.h"
 
 #include <cstdint>
 #include <string>

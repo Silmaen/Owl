@@ -8,8 +8,8 @@
 #include "owlpch.h"
 
 #include "UiStyleYaml.h"
-#include "core/Macros.h"
 #include "Vec2Yaml.h"
+#include "core/Macros.h"
 #include "math/YamlSerializers.h"
 #include "scene/component/UiStyle.h"
 
@@ -31,8 +31,8 @@ const UiBox g_plainBox{};
 }// namespace
 
 auto UiBox::isPlain() const -> bool {
-	return cornerRadius <= 0.f && bottomTint == g_plainBox.bottomTint && borderWidth <= 0.f &&
-		   shadowColor.a() <= 0.f && !texture;
+	return cornerRadius <= 0.f && bottomTint == g_plainBox.bottomTint && borderWidth <= 0.f && shadowColor.a() <= 0.f &&
+		   !texture;
 }
 
 OWL_DIAG_PUSH
@@ -88,7 +88,8 @@ void readBoxFields(const core::YamlNode& iNode, UiBox& ioBox) {
 	readVec2(iNode, "shadowOffset", ioBox.shadowOffset);
 	ioBox.shadowBlur = iNode["shadowBlur"].as<float>(ioBox.shadowBlur);
 	if (iNode["texture"])
-		ioBox.texture = renderer::gpu::Texture2D::createFromSerializedForDeserialize(iNode["texture"].as<std::string>());
+		ioBox.texture =
+				renderer::gpu::Texture2D::createFromSerializedForDeserialize(iNode["texture"].as<std::string>());
 	if (iNode["sliceInsets"])
 		ioBox.sliceInsets = iNode["sliceInsets"].as<math::vec4>();
 }

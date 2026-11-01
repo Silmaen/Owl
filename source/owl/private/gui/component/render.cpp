@@ -136,9 +136,8 @@ auto DragInt(const char* iLabel, int* ioValue, const float iSpeed = 1.f, const i
 
 auto DragFloat4(const char* iLabel, float* ioValues, const float iSpeed = 1.f, const float iMin = 0.f,
 				const float iMax = 0.f, const char* iFormat = "%.3f") -> bool {
-	return row(iLabel, [&](const char* iId) -> bool {
-		return ImGui::DragFloat4(iId, ioValues, iSpeed, iMin, iMax, iFormat);
-	});
+	return row(iLabel,
+			   [&](const char* iId) -> bool { return ImGui::DragFloat4(iId, ioValues, iSpeed, iMin, iMax, iFormat); });
 }
 
 template<typename... Args>
@@ -2426,7 +2425,8 @@ void boxFields(UiBox& ioBox, const std::function<void(UiStyleProperty, const std
 	});
 	iField(NineSlice, [&ioBox]() -> void {
 		widgets::textureField("Nine-Slice", ioBox.texture);
-		fieldTooltip("Background texture tinted by the fill colour; its borders keep their size, the middle stretches.");
+		fieldTooltip(
+				"Background texture tinted by the fill colour; its borders keep their size, the middle stretches.");
 		if (ioBox.texture) {
 			prop::DragFloat4("Slice Insets", ioBox.sliceInsets.data(), 0.5f, 0.f, 4096.f, "%.0f");
 			fieldTooltip("Borders of the texture kept unstretched, in texture pixels: left, top, right, bottom.");
@@ -2532,7 +2532,8 @@ auto renderProps(HudStyle& ioStyle) -> bool {
 	if (widgets::subHeader("Colours", true)) {
 		field(Background, [&ioStyle]() -> void {
 			prop::ColorEdit4("Background", colorData(ioStyle.background));
-			fieldTooltip("Panel background, button normal colour, slider track, bar background, list row, window body.");
+			fieldTooltip(
+					"Panel background, button normal colour, slider track, bar background, list row, window body.");
 		});
 		field(Hover, [&ioStyle]() -> void { prop::ColorEdit4("Hover", colorData(ioStyle.hover)); });
 		field(Pressed, [&ioStyle]() -> void { prop::ColorEdit4("Pressed", colorData(ioStyle.pressed)); });
@@ -2558,9 +2559,8 @@ auto renderProps(HudStyle& ioStyle) -> bool {
 				ImGui::EndCombo();
 			}
 		});
-		field(FontSize, [&ioStyle]() -> void {
-			prop::DragFloat("Font Size", &ioStyle.fontSize, 0.5f, 1.f, 200.f, "%.1f");
-		});
+		field(FontSize,
+			  [&ioStyle]() -> void { prop::DragFloat("Font Size", &ioStyle.fontSize, 0.5f, 1.f, 200.f, "%.1f"); });
 		field(Outline, [&ioStyle]() -> void {
 			prop::DragFloat("Outline Width", &ioStyle.outlineWidth, 0.1f, 0.f, 20.f, "%.1f");
 			prop::ColorEdit4("Outline Color", colorData(ioStyle.outlineColor));
@@ -2618,11 +2618,9 @@ void renderProps(UiSlider& ioComponent) {
 	fieldTooltip("Maximum allowed value.");
 	auto widget = styledWidget(ioComponent.style);
 	stylePicker(widget);
-	styled(widget, Background,
-		   [&]() -> void { prop::ColorEdit4("Track Color", colorData(ioComponent.trackColor)); });
+	styled(widget, Background, [&]() -> void { prop::ColorEdit4("Track Color", colorData(ioComponent.trackColor)); });
 	styled(widget, Accent, [&]() -> void { prop::ColorEdit4("Fill Color", colorData(ioComponent.fillColor)); });
-	styled(widget, Secondary,
-		   [&]() -> void { prop::ColorEdit4("Handle Color", colorData(ioComponent.handleColor)); });
+	styled(widget, Secondary, [&]() -> void { prop::ColorEdit4("Handle Color", colorData(ioComponent.handleColor)); });
 	prop::DragFloat("Step", &ioComponent.step, 0.01f, 0.0f, 1000.0f);
 	fieldTooltip(
 			"Change of the value per ui_left / ui_right press on the focused slider. 0: a twentieth of the range.");
@@ -2648,9 +2646,8 @@ void renderProps(UiWindow& ioComponent) {
 	fieldTooltip("Height of the title bar in reference pixels; the children are laid out under it.");
 	auto widget = styledWidget(ioComponent.style);
 	stylePicker(widget);
-	styled(widget, FontSize, [&]() -> void {
-		prop::DragFloat("Title Font Size", &ioComponent.titleFontSize, 0.5f, 1.0f, 200.0f);
-	});
+	styled(widget, FontSize,
+		   [&]() -> void { prop::DragFloat("Title Font Size", &ioComponent.titleFontSize, 0.5f, 1.0f, 200.0f); });
 	styled(widget, Background, [&]() -> void { prop::ColorEdit4("Body Color", colorData(ioComponent.bodyColor)); });
 	styled(widget, Accent, [&]() -> void { prop::ColorEdit4("Title Color", colorData(ioComponent.titleColor)); });
 	styled(widget, TextColor,
@@ -2723,8 +2720,7 @@ void renderProps(UiList& ioComponent) {
 	styled(widget, Secondary,
 		   [&]() -> void { prop::ColorEdit4("Alternate Row Color", colorData(ioComponent.rowAltColor)); });
 	styled(widget, Hover, [&]() -> void { prop::ColorEdit4("Hover Color", colorData(ioComponent.hoverColor)); });
-	styled(widget, Accent,
-		   [&]() -> void { prop::ColorEdit4("Selected Color", colorData(ioComponent.selectedColor)); });
+	styled(widget, Accent, [&]() -> void { prop::ColorEdit4("Selected Color", colorData(ioComponent.selectedColor)); });
 	styled(widget, TextColor, [&]() -> void { prop::ColorEdit4("Text Color", colorData(ioComponent.textColor)); });
 	prop::Checkbox("Show Scroll Bar", &ioComponent.showScrollBar);
 	prop::DragFloat("Scroll Bar Width", &ioComponent.scrollBarWidth, 0.5f, 1.0f, 64.0f);

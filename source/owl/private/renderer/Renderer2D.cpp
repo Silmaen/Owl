@@ -905,23 +905,23 @@ void Renderer2D::drawBox(const BoxData& iBoxData) {
 							 std::max(iBoxData.shadowBlur, 0.f)
 				   : 0.f;
 	const float halfSide = std::min(iBoxData.size.x(), iBoxData.size.y()) * 0.5f;
-	g_Data->box.instances.push_back(
-			utils::BoxInstance{.worldIndex = allocateTransientWorld(iBoxData.transform(), utils::g_maxShapeTransientsPerBatch),
-							   .texIndex = textureIndex,
-							   .entityId = iBoxData.entityId,
-							   .cornerRadius = std::clamp(iBoxData.cornerRadius, 0.f, halfSide),
-							   .topColor = iBoxData.topColor,
-							   .bottomColor = iBoxData.bottomColor,
-							   .borderColor = iBoxData.borderColor,
-							   .shadowColor = shadow ? iBoxData.shadowColor : math::vec4{0.f, 0.f, 0.f, 0.f},
-							   .size = iBoxData.size,
-							   .shadowOffset = iBoxData.shadowOffset,
-							   .shadowBlur = std::max(iBoxData.shadowBlur, 0.f),
-							   .borderWidth = std::clamp(iBoxData.borderWidth, 0.f, halfSide),
-							   .margin = shadowReach + 1.f,
-							   ._pad0 = 0.f,
-							   .sliceInsets = iBoxData.sliceInsets,
-							   .sliceUv = iBoxData.sliceUv});
+	g_Data->box.instances.push_back(utils::BoxInstance{
+			.worldIndex = allocateTransientWorld(iBoxData.transform(), utils::g_maxShapeTransientsPerBatch),
+			.texIndex = textureIndex,
+			.entityId = iBoxData.entityId,
+			.cornerRadius = std::clamp(iBoxData.cornerRadius, 0.f, halfSide),
+			.topColor = iBoxData.topColor,
+			.bottomColor = iBoxData.bottomColor,
+			.borderColor = iBoxData.borderColor,
+			.shadowColor = shadow ? iBoxData.shadowColor : math::vec4{0.f, 0.f, 0.f, 0.f},
+			.size = iBoxData.size,
+			.shadowOffset = iBoxData.shadowOffset,
+			.shadowBlur = std::max(iBoxData.shadowBlur, 0.f),
+			.borderWidth = std::clamp(iBoxData.borderWidth, 0.f, halfSide),
+			.margin = shadowReach + 1.f,
+			._pad0 = 0.f,
+			.sliceInsets = iBoxData.sliceInsets,
+			.sliceUv = iBoxData.sliceUv});
 	g_Data->runs.note(utils::RunKind::Box, iBoxData.depth);
 	g_Data->stats.quadCount++;
 }

@@ -29,12 +29,12 @@ OWL_DIAG_POP
 #include <algorithm>
 #include <cfloat>
 #include <cstdint>
-#include <system_error>
-#include <tuple>
 #include <filesystem>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <system_error>
+#include <tuple>
 #include <utility>
 
 namespace owl::nest {
@@ -284,7 +284,8 @@ void HudThemeDocument::renderStyleList() {
 		std::ignore = runCommand("theme.remove_style", {{"name", selectedName}});
 	ImGui::EndDisabled();
 	if (m_theme.styles.empty())
-		std::ignore = gui::widgets::emptyState(gui::icon::palette, "No style", "Add a style, then name it in the Style field of the widgets.");
+		std::ignore = gui::widgets::emptyState(gui::icon::palette, "No style",
+											   "Add a style, then name it in the Style field of the widgets.");
 	const auto count = m_theme.styles.size();
 	for (size_t index = 0; index < count; ++index) {
 		ImGui::PushID(static_cast<int>(index));
@@ -302,7 +303,8 @@ void HudThemeDocument::renderStyleList() {
 
 void HudThemeDocument::renderStyleProperties() {
 	if (!m_selection || *m_selection >= m_theme.styles.size()) {
-		std::ignore = gui::widgets::emptyState(gui::icon::palette, "No style selected", "Select a style in the list to edit it.");
+		std::ignore = gui::widgets::emptyState(gui::icon::palette, "No style selected",
+											   "Select a style in the list to edit it.");
 		return;
 	}
 	if (!gui::widgets::sectionHeader("Style", gui::icon::paintbrush, false).open)

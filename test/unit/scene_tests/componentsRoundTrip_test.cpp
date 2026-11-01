@@ -270,8 +270,7 @@ TEST(ComponentRoundTrip, UiPanel) {
 				EXPECT_NEAR(p.box.shadowOffset.y(), 3.f, 0.01f);
 				EXPECT_NEAR(p.box.shadowBlur, 5.f, 0.01f);
 				EXPECT_EQ(p.style.name, "panel");
-				EXPECT_EQ(p.style.overrides,
-						  scene::component::styleBit(scene::component::UiStyleProperty::Shadow));
+				EXPECT_EQ(p.style.overrides, scene::component::styleBit(scene::component::UiStyleProperty::Shadow));
 				EXPECT_TRUE(p.clipChildren);
 			});
 }

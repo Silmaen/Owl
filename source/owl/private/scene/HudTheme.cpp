@@ -10,8 +10,8 @@
 #include "scene/HudTheme.h"
 
 #include "app/Application.h"
-#include "core/Macros.h"
 #include "core/FormatVersionYaml.h"
+#include "core/Macros.h"
 #include "core/YamlNode.h"
 #include "core/external/yaml.h"
 #include "data/assets/AssetSearchPaths.h"
@@ -30,11 +30,11 @@
 
 #include <array>
 #include <cstdint>
+#include <exception>
 #include <filesystem>
+#include <initializer_list>
 #include <optional>
 #include <string>
-#include <exception>
-#include <initializer_list>
 #include <string_view>
 #include <type_traits>
 #include <vector>
@@ -326,7 +326,7 @@ auto HudTheme::deserializeFromString(const std::string_view iYaml, const std::st
 		if (const auto upgraded = core::upgradeDocumentText(g_themeFormat, text, iSourceName); !upgraded) {
 			OWL_CORE_ERROR("HudTheme: Cannot read '{}': {}.", iSourceName, core::describe(upgraded.error()))
 			return unexpected{upgraded.error() == core::FormatError::InvalidVersion ? HudThemeError::Malformed
-																					 : HudThemeError::Unsupported};
+																					: HudThemeError::Unsupported};
 		}
 	}
 	try {

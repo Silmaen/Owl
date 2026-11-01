@@ -9,9 +9,9 @@
 #pragma once
 
 #include "core/Serializer.h"
-#include "scene/component/UiStyle.h"
 #include "math/vectors.h"
 #include "renderer/gpu/Texture.h"
+#include "scene/component/UiStyle.h"
 
 #include <cstddef>
 #include <cstdint>
