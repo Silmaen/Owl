@@ -24,6 +24,7 @@ M.state = {
     bolts = {}, enemy_bolts = {}, enemies = {}, asteroids = {}, rock_first = 1,
     wave_rows = {}, next_wave = 1, boss = nil, boss_distance = 3000.0, boss_dead = false, deflected = 0, speed = 0.0,
     bursts = {}, debris = {}, sparks = {}, bursts_next = 1, debris_next = 1, sparks_next = 1,
+    flares = {}, smokes = {}, embers = {}, flares_next = 1, smokes_next = 1, embers_next = 1, ship_model = 0,
     hud = {}, shown = {}, message_clock = 0.0, taken = {},
 }
 
@@ -95,7 +96,12 @@ function M.play(path)
     sound.play(path)
 end
 
--- A burst of particles from one of the pooled emitters of a kind (`bursts`, `debris`, `sparks`).
+-- The bursts asked this frame, emitted at the next one (`flush_bursts`).
+local pending, queued = {}, {}
+
+-- A burst of particles from one of the pooled emitters of a kind (`bursts`, `debris`, `sparks`, `flares`, `smokes`,
+-- `embers`). The emitter moves there now and bursts at the next frame: the spawns of a frame spread along the move of
+-- an emitter whose particles still live, a burst in the frame of the jump would draw a streak from where it was.
 function M.burst(kind, s, x, y, count)
     local S = M.state
     local pool = S[kind]
@@ -105,7 +111,16 @@ function M.burst(kind, s, x, y, count)
     S[key] = S[key] % #pool + 1
     local wx, wy, wz = M.to_scene(s, x, y)
     transform.set_position(id, wx, wy, wz)
-    entity.particles_emit(id, count)
+    queued[#queued + 1] = { id, count }
+end
+
+-- Emit the bursts asked at the frame before; called first in each frame of play.
+function M.flush_bursts()
+    pending, queued = queued, pending
+    for i, burst in ipairs(pending) do
+        entity.particles_emit(burst[1], burst[2])
+        pending[i] = nil
+    end
 end
 
 -- Damage to the hull (none during the cutscenes and after the run is over).
@@ -117,6 +132,9 @@ function M.hurt(amount, source)
     S.hurt_clock = 0.4
     M.burst("sparks", S.s, S.ship_x, S.ship_y, 20)
     M.play("sounds/game/hull_hit.wav")
+    local fx = require("scripts.game.rs.fx")
+    fx.flash(S.ship_model, 4.0, 1.6, 1.2)
+    fx.shake(0.35)
 end
 
 function M.add_score(points)

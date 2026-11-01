@@ -187,18 +187,29 @@ def burst(
     count: int,
     life: tuple[float, float],
     blend: str = "Additive",
+    end_size: float = 0.2,
+    drag: float = 1.2,
+    trail_length: int = 0,
 ) -> str:
-    """A ``ParticleEmitter`` that only bursts when the script asks (``entity.particles_emit``), in world space."""
+    """
+    A ``ParticleEmitter`` that only bursts when the script asks (``entity.particles_emit``), in world space.
+
+    ``end_size`` is the size at the end of a particle's life (1 its size at birth); with ``trail_length`` points, each
+    particle draws a streak behind it.
+    """
     gradient = ", ".join(y.vec(*c) for c in colours)
-    return (
+    out = (
         f"ParticleEmitter:\n  playOnStart: false\n  maxParticles: {count}\n  rate: 0\n  burst: 0\n  duration: 0\n"
         f"  loop: false\n  lifetimeMin: {y.num(life[0])}\n  lifetimeMax: {y.num(life[1])}\n  shape: Sphere\n"
         f"  shapeSize: [0.4, 0.4, 0.4]\n  speedMin: {y.num(speed[0])}\n  speedMax: {y.num(speed[1])}\n"
-        "  gravity: [0, 0, 0]\n  drag: 1.2\n"
+        f"  gravity: [0, 0, 0]\n  drag: {y.num(drag)}\n"
         f"  sizeMin: {y.num(size * 0.5)}\n  sizeMax: {y.num(size)}\n"
-        "  sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}\n  color: [1, 1, 1, 1]\n"
+        f"  sizeOverLife: {{interpolation: Linear, keys: [[0, 1], [1, {y.num(end_size)}]]}}\n  color: [1, 1, 1, 1]\n"
         f"  colorOverLife: [{gradient}]\n  emissive: {y.num(emissive)}\n  blend: {blend}\n  space: World\n"
     )
+    if trail_length > 0:
+        out += f"  trailLength: {trail_length}\n  trailInterval: 0.02\n  trailWidth: 0.6\n"
+    return out
 
 
 def hud_marker(
@@ -353,6 +364,75 @@ def _rock(
 # ----------------------------------------------------------------------------------------------------------- level
 
 
+FLASH = "Light:\n  type: Point\n  enabled: false\n  color: [1, 0.62, 0.3]\n  intensity: 0\n  range: 60\n"
+"""The point light an explosion lights up for a moment (`fx.lua` drives it)."""
+
+FIREBALL = burst(
+    [(0, 1, 0.92, 0.65, 1), (0.25, 1, 0.55, 0.12, 0.95), (0.7, 0.55, 0.12, 0.03, 0.6), (1, 0.2, 0.05, 0.02, 0)],
+    (4, 15),
+    3.4,
+    6000,
+    160,
+    (0.5, 1.2),
+    end_size=0.35,
+    drag=1.6,
+)
+"""The fireball of an explosion (the `Burst` emitters)."""
+
+EXPLOSION_EMITTERS = {
+    "Flare": burst([(0, 1, 0.97, 0.88, 1), (1, 1, 0.65, 0.25, 0)], (0, 2), 5.5, 12000, 32, (0.1, 0.24), end_size=1.6),
+    "Smoke": burst(
+        [(0, 0.3, 0.27, 0.25, 0.7), (0.4, 0.22, 0.2, 0.19, 0.45), (1, 0.12, 0.12, 0.12, 0)],
+        (2, 7),
+        3.6,
+        0,
+        90,
+        (1.2, 2.6),
+        "Alpha",
+        end_size=2.2,
+        drag=1.6,
+    ),
+    "Ember": burst(
+        [(0, 1, 0.9, 0.6, 1), (0.5, 1, 0.45, 0.1, 0.9), (1, 0.5, 0.1, 0.02, 0)],
+        (15, 40),
+        0.6,
+        20000,
+        100,
+        (0.5, 1.2),
+        end_size=0.4,
+        drag=0.7,
+        trail_length=8,
+    ),
+}
+"""The other emitters of an explosion: the hot core, the smoke and the embers streaking out."""
+
+
+def explosion_pools(entities: y.Entities) -> None:
+    """
+    The pooled pieces of the explosions, after the rocks (their ids stay put): the emitters, the light flash, the
+    shock wave ring, the hull shards and the chunks of rock.
+    """
+    for index in range(1, 5):
+        for tag, emitter in EXPLOSION_EMITTERS.items():
+            entities.add(f"{tag}{index}", [emitter])
+    for index in range(1, 4):
+        entities.add(f"Flash{index}", [FLASH])
+        entities.add(
+            f"Shockwave{index}",
+            [mesh("models/shockwave.glb", glow=12000).replace("transparent: false", "transparent: true")],
+            scale=(0.01, 0.01, 0.01),
+            visible=False,
+        )
+    for index in range(1, 19):
+        entities.add(f"Shard{index}", [mesh("models/shard.glb")], scale=(0.01, 0.01, 0.01), visible=False)
+        entities.add(
+            f"RockChunk{index}",
+            [mesh(f"models/asteroid_{'abc'[index % 3]}.glb", (0.78, 0.7, 0.64, 1))],
+            scale=(0.01, 0.01, 0.01),
+            visible=False,
+        )
+
+
 def level(rail: Rail) -> tuple[str, int]:
     """The level scene and the count of its playable rocks."""
     entities = y.Entities(7700000000000000000)
@@ -408,19 +488,7 @@ def level(rail: Rail) -> tuple[str, int]:
     ]
     entities.add("Music", [sound("sounds/music/flight.wav", "Music", 0.6)])
     for index in range(1, 7):
-        entities.add(
-            f"Burst{index}",
-            [
-                burst(
-                    [(0, 1, 0.95, 0.7, 1), (0.35, 1, 0.55, 0.15, 0.9), (1, 0.6, 0.1, 0.02, 0)],
-                    (4, 14),
-                    0.9,
-                    9000,
-                    160,
-                    (0.4, 1.1),
-                )
-            ],
-        )
+        entities.add(f"Burst{index}", [FIREBALL])
         entities.add(
             f"Debris{index}",
             [burst([(0, 0.75, 0.68, 0.6, 1), (1, 0.45, 0.4, 0.36, 0)], (3, 9), 0.6, 0, 120, (0.6, 1.4), "Alpha")],
@@ -429,6 +497,7 @@ def level(rail: Rail) -> tuple[str, int]:
             f"Spark{index}", [burst([(0, 0.7, 1, 1, 1), (1, 0.2, 0.5, 1, 0)], (6, 16), 0.25, 12000, 40, (0.15, 0.35))]
         )
     rocks = asteroid_field(entities, rail)
+    explosion_pools(entities)
     header = y.script("scripts/game/rail.lua", properties).replace("LuaScript:", "SceneScript:") + (
         "EnabledRenderers:\n  - {Name: world, Enabled: false}\n  - {Name: mesh_world, Enabled: true}\n"
         "  - {Name: planet_world, Enabled: true}\n  - {Name: particles, Enabled: true}\n"
@@ -461,8 +530,9 @@ def prefabs() -> dict[str, str]:
     ]
     for index, (key, tag, icon, size, label, offscreen) in enumerate(ships):
         ship = y.Entities(7712000000000000000 + index * 1000000000000)
-        root = ship.add(tag, [hud_marker(icon, size, (1, 0.45, 0.35, 0.9), label, offscreen)])
-        ship.add(f"{tag}Model", [mesh(f"models/{key}.glb")], parent=root)
+        # The model on the root itself: the script flashes it on a hit (`entity.set_tint` of the spawned id).
+        model = mesh(f"models/{key}.glb").replace(MESH, "")
+        root = ship.add(tag, [hud_marker(icon, size, (1, 0.45, 0.35, 0.9), label, offscreen), model])
         width = 0.3 if key != "boss" else 1.2
         for side in (-1, 1):
             back = 1.0 if key != "boss" else 8.0

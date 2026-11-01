@@ -7,7 +7,15 @@
 -- fired.
 
 local rs = require("scripts.game.rs.core")
+local fx = require("scripts.game.rs.fx")
 local S, C = rs.state, rs.cfg
+
+-- The explosion of each kind: its size (a fighter is 1) and the tint of its shards.
+local BLASTS = {
+    fighter = { size = 1.0, r = 0.8, g = 0.25, b = 0.22 },
+    interceptor = { size = 1.5, r = 0.9, g = 0.58, b = 0.2 },
+    boss = { size = 4.0, r = 0.6, g = 0.16, b = 0.22 },
+}
 
 local E = {}
 
@@ -40,7 +48,7 @@ local function spawn(row, index)
         id = id, kind = row.kind, pattern = row.pattern, index = index, count = row.count, t = 0.0,
         hp = kind.hp, max_hp = kind.hp, radius = kind.radius, points = kind.points, reload = kind.reload,
         fire_clock = kind.reload * (0.6 + 0.25 * (index % 3)), base_x = row.x, base_y = row.y,
-        dz = 200, x = row.x, y = row.y, roll = 0.0, alive = true,
+        dz = 200, x = row.x, y = row.y, roll = 0.0, alive = true, knock = 0.0, kick = { 0, 0, 0 },
     }
     S.enemies[#S.enemies + 1] = foe
     S.foes = S.foes + 1
@@ -122,17 +130,24 @@ function E.destroy(foe, by_player)
     if by_player then
         S.kills = S.kills + 1
         rs.add_score(foe.points)
-        rs.burst("bursts", S.s + foe.dz, foe.x, foe.y, foe.kind == "boss" and 160 or 60)
+        local blast = BLASTS[foe.kind] or BLASTS.fighter
+        fx.explode(S.s + foe.dz, foe.x, foe.y, blast.size, blast.r, blast.g, blast.b)
         rs.play(foe.kind == "boss" and "sounds/game/boss_explosion.wav" or "sounds/game/explosion.wav")
     end
 end
 
--- A bolt hit the enemy: true when it was destroyed.
-function E.hit(foe)
+-- A bolt hit the enemy at a point (rail coordinates), flying along (ds, dx, dy): true when it was destroyed. A hit
+-- that does not destroy it flashes it and knocks it back along the shot (for the eye only: its pattern goes on).
+function E.hit(foe, is, ix, iy, ds, dx, dy)
     foe.hp = foe.hp - 1
     if foe.hp > 0 then
-        rs.burst("sparks", S.s + foe.dz, foe.x, foe.y, 12)
+        rs.burst("sparks", is or S.s + foe.dz, ix or foe.x, iy or foe.y, 16)
         rs.play("sounds/game/hit.wav")
+        fx.flash(foe.id, 5.0, 4.4, 3.8)
+        local n = math.sqrt((ds or 1) ^ 2 + (dx or 0) ^ 2 + (dy or 0) ^ 2)
+        local push = foe.kind == "boss" and 0.25 or 0.7
+        foe.kick = { (ds or 1) / n * push, (dx or 0) / n * push, (dy or 0) / n * push }
+        foe.knock = 0.25
         return false
     end
     E.destroy(foe, true)
@@ -149,8 +164,16 @@ function E.update(dt, may_fire)
             if gone or dz < -12 then
                 E.destroy(foe, false)
             else
-                -- Nose towards the ship, banked by the pattern.
-                rs.place(foe.id, S.s + dz, x, y, -math.max(10, dz), S.ship_x - x, S.ship_y - y, roll)
+                -- Nose towards the ship, banked by the pattern; a knocked one jolts back along the shot and shakes.
+                local ks, kx, ky, jolt = 0, 0, 0, 0
+                if foe.knock > 0 then
+                    foe.knock = math.max(0, foe.knock - dt)
+                    local k = math.sin(foe.knock / 0.25 * math.pi)
+                    ks, kx, ky = foe.kick[1] * k, foe.kick[2] * k, foe.kick[3] * k
+                    jolt = math.sin(foe.knock * 90) * foe.knock * 0.8
+                end
+                rs.place(foe.id, S.s + dz + ks, x + kx, y + ky, -math.max(10, dz), S.ship_x - x, S.ship_y - y,
+                        roll + jolt)
                 foe.fire_clock = foe.fire_clock - dt
                 if may_fire and foe.fire_clock <= 0 and dz > 25 and dz < 115 then
                     foe.fire_clock = foe.reload

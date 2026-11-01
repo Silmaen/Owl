@@ -14,6 +14,9 @@ A shot close to the line of the reticles goes straight at the nearest target.
 - Small rocks break at the first hit (50 points), big ones take three (150); a fighter takes two (200), an interceptor
   five (400), the Warden 140 (5000). The hull left at the end is worth 30 points per percent.
 - The Warden slows the flight down and weaves ahead of the ship, firing spreads; destroying it clears the lane.
+- A hit flashes its target and knocks it back; ships blow up in fire, smoke, embers and shards behind a shock wave,
+  the big ones in a chain of blasts, and rocks break into tumbling chunks. The camera shakes at the blasts near the
+  ship and at the hits it takes, never with the `reduced_motion` setting.
 - The victory screen counts the score, the enemies down, the rocks, the hit ratio and the hull up one line after the
   other, then the medal: bronze, silver from 22 000 points, gold from 30 000. The best score and medal are kept.
 
@@ -41,7 +44,7 @@ steering.
 | `scenes/level.owl`       | The rail, the carrier (camera, ship, reticles, sequence players), the rocks, the planet      |
 | `scenes/`                | Also `title`, `settings`, `victory`, `game_over`: live 3D backdrops behind their canvases    |
 | `scripts/game/rail.lua`  | The scene script of the level: properties, hooks, sequence events, pause                     |
-| `scripts/game/rs/`       | `core` (state, rail coordinates), `field` (rocks), `foes` (waves, boss), `guns` (lasers)     |
+| `scripts/game/rs/`       | `core` (state, rail), `field` (rocks), `foes` (waves), `guns` (lasers), `fx` (hits, blasts)  |
 | `scripts/ui/`            | The menus; `backdrop.lua` flies their camera through the ring                                |
 | `tables/`                | `waves`: distance along the rail, kind, count, pattern, place; `enemies`: the kinds' stats   |
 | `sequences/`             | `intro`, `boss` (its arrival) and `outro`, played on the camera of the carrier               |
@@ -55,6 +58,7 @@ Owl Nest; the waves and the kinds of enemies are rows of the data tables. Set th
 stretch of the lane from where it starts (the waves left behind are skipped).
 
 The ships and the rocks are models of the Kenney Space Kit (CC0) converted by
-`tools/samples/rail_shooter/generate_models.py`; the sky, the HUD art, the title, the sounds, the music and the start
+`tools/samples/rail_shooter/generate_models.py`, which also makes the bolts, the shards and the shock wave ring of the
+explosions; the sky, the HUD art, the title, the sounds, the music and the start
 jingle are home-made by `generate_assets.py`; `generate_level.py` and `generate_menus.py` wrote the first layout of
 the scenes.

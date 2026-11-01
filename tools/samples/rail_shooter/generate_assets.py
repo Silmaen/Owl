@@ -407,6 +407,16 @@ def sounds() -> None:
         _fade_out(_mix((_noise(0.9, 4.5, 3, 0.93), 1.0), (_tone(0.6, lambda t: 90 - 50 * t, 5.0), 0.6)), 0.2),
         0.7,
     )
+    _write(
+        "game/pop.wav",
+        _mix((_noise(0.4, 9.0, 10, 0.9), 1.0), (_tone(0.3, lambda t: 140 - 80 * t, 12.0, 0.002), 0.7)),
+        0.55,
+    )
+    _write(
+        "game/rock_hit.wav",
+        _mix((_noise(0.14, 26.0, 11, 0.82), 1.0), (_tone(0.12, lambda t: 160 - 90 * t, 24.0, 0.001, (1.0, 0.4)), 0.8)),
+        0.5,
+    )
     _write("game/rock_break.wav", _mix((_noise(0.35, 11.0, 4, 0.88), 1.0), (_noise(0.08, 40.0, 5, 0.4), 0.4)), 0.55)
     _write(
         "game/hull_hit.wav",

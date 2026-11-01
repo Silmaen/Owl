@@ -4,7 +4,8 @@
 --   the camera, the ship and the two reticles. The ship steers inside the play frame (`frame_x`, `frame_y`) and can
 --   never leave it; the reticles show where the lasers go (mouse, or the aim stick around the nose of the ship).
 -- - The modules of `scripts/game/rs/` hold the rules: `core` (the run state, the rail coordinates), `field` (the
---   rocks of the scene), `foes` (the waves of `waves`, a data table, their patterns, the boss), `guns` (the lasers).
+--   rocks of the scene), `foes` (the waves of `waves`, a data table, their patterns, the boss), `guns` (the lasers),
+--   `fx` (the hit flashes, the explosions and the camera shake, cosmetic only).
 -- - The hull recharges by `shield_rate` per second once no hit came for `shield_delay` seconds.
 -- - A barrel roll (Q / E, pad LB / RB) dashes aside and turns the enemy shots away while it lasts.
 -- - Three sequences of the carrier: the intro (skipped with Fire), the boss arrival and the end. The boss slows the
@@ -49,6 +50,7 @@ local rs = require("scripts.game.rs.core")
 local field = require("scripts.game.rs.field")
 local foes = require("scripts.game.rs.foes")
 local guns = require("scripts.game.rs.guns")
+local fx = require("scripts.game.rs.fx")
 local S, C = rs.state, rs.cfg
 
 local CAMERA_Z, CAMERA_Y = 10.0, 1.3
@@ -119,6 +121,7 @@ function on_create()
     S.rail = scene.find_entity("Rail")
     S.carrier = scene.find_entity("RailCarrier")
     S.ship = scene.find_entity("Ship")
+    S.ship_model = scene.find_entity("ShipModel")
     S.camera = scene.find_entity("MainCamera")
     S.reticle = scene.find_entity("Reticle")
     S.reticle_near = scene.find_entity("ReticleNear")
@@ -140,6 +143,7 @@ function on_create()
     pause_id = hud("PauseWindow")
     resume_id = scene.find_entity("ResumeButton")
     field.load()
+    fx.load()
     foes.load(C.waves, C.enemies)
     set_reticles(false)
     gamestate.set("rail_won", false)
@@ -216,7 +220,7 @@ end
 
 local function lose()
     S.phase, S.phase_clock = "dead", 0.0
-    rs.burst("bursts", S.s, S.ship_x, S.ship_y, 160)
+    fx.explode(S.s, S.ship_x, S.ship_y, 2.0, 0.25, 0.45, 0.85)
     rs.play("sounds/game/boss_explosion.wav")
     ui.set_visible(S.ship, false)
     set_reticles(false)
@@ -288,8 +292,9 @@ local function pose_ship(dt)
     if S.phase == "outro" then z = -(S.phase_clock ^ 2) * 14 end
     transform.set_position(S.ship, S.ship_x, S.ship_y, z)
     transform.set_rotation(S.ship, pitch, yaw, roll)
-    local shake = S.hurt_clock > 0 and math.sin(S.clock * 90) * S.hurt_clock * 0.5 or 0
-    transform.set_position(S.camera, S.ship_x * 0.4 + shake, CAMERA_Y + S.ship_y * 0.4, CAMERA_Z)
+    local shake = S.hurt_clock > 0 and fx.may_shake() and math.sin(S.clock * 90) * S.hurt_clock * 0.5 or 0
+    local jx, jy = fx.camera_offset()
+    transform.set_position(S.camera, S.ship_x * 0.4 + shake + jx, CAMERA_Y + S.ship_y * 0.4 + jy, CAMERA_Z)
     transform.set_position(S.reticle, S.aim_x, S.aim_y, -C.reticle_depth)
     local near = 18 / C.reticle_depth
     transform.set_position(S.reticle_near, S.ship_x + (S.aim_x - S.ship_x) * near,
@@ -333,6 +338,7 @@ function on_update(dt)
         mirror()
         return
     end
+    rs.flush_bursts()
     S.clock = S.clock + dt
     S.phase_clock = S.phase_clock + dt
     S.s = spline.get_distance(S.carrier) or S.s
@@ -362,6 +368,7 @@ function on_update(dt)
     field.update(dt)
     foes.update(dt, S.phase == "play" or S.phase == "boss")
     guns.update(dt)
+    fx.update(dt)
     if S.boss_dead and (S.phase == "boss" or S.phase == "boss_intro") then win() end
     S.calm_clock = (S.calm_clock or 0) + dt
     if S.hurt_clock > 0 then S.calm_clock = 0 end

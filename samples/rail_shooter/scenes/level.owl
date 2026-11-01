@@ -414,20 +414,20 @@ Entities:
       burst: 0
       duration: 0
       loop: false
-      lifetimeMin: 0.4
-      lifetimeMax: 1.1
+      lifetimeMin: 0.5
+      lifetimeMax: 1.2
       shape: Sphere
       shapeSize: [0.4, 0.4, 0.4]
       speedMin: 4
-      speedMax: 14
+      speedMax: 15
       gravity: [0, 0, 0]
-      drag: 1.2
-      sizeMin: 0.45
-      sizeMax: 0.9
-      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      drag: 1.6
+      sizeMin: 1.7
+      sizeMax: 3.4
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
       color: [1, 1, 1, 1]
-      colorOverLife: [[0, 1, 0.95, 0.7, 1], [0.35, 1, 0.55, 0.15, 0.9], [1, 0.6, 0.1, 0.02, 0]]
-      emissive: 9000
+      colorOverLife: [[0, 1, 0.92, 0.65, 1], [0.25, 1, 0.55, 0.12, 0.95], [0.7, 0.55, 0.12, 0.03, 0.6], [1, 0.2, 0.05, 0.02, 0]]
+      emissive: 6000
       blend: Additive
       space: World
   - Entity: 7700000000000000020
@@ -513,20 +513,20 @@ Entities:
       burst: 0
       duration: 0
       loop: false
-      lifetimeMin: 0.4
-      lifetimeMax: 1.1
+      lifetimeMin: 0.5
+      lifetimeMax: 1.2
       shape: Sphere
       shapeSize: [0.4, 0.4, 0.4]
       speedMin: 4
-      speedMax: 14
+      speedMax: 15
       gravity: [0, 0, 0]
-      drag: 1.2
-      sizeMin: 0.45
-      sizeMax: 0.9
-      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      drag: 1.6
+      sizeMin: 1.7
+      sizeMax: 3.4
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
       color: [1, 1, 1, 1]
-      colorOverLife: [[0, 1, 0.95, 0.7, 1], [0.35, 1, 0.55, 0.15, 0.9], [1, 0.6, 0.1, 0.02, 0]]
-      emissive: 9000
+      colorOverLife: [[0, 1, 0.92, 0.65, 1], [0.25, 1, 0.55, 0.12, 0.95], [0.7, 0.55, 0.12, 0.03, 0.6], [1, 0.2, 0.05, 0.02, 0]]
+      emissive: 6000
       blend: Additive
       space: World
   - Entity: 7700000000000000023
@@ -612,20 +612,20 @@ Entities:
       burst: 0
       duration: 0
       loop: false
-      lifetimeMin: 0.4
-      lifetimeMax: 1.1
+      lifetimeMin: 0.5
+      lifetimeMax: 1.2
       shape: Sphere
       shapeSize: [0.4, 0.4, 0.4]
       speedMin: 4
-      speedMax: 14
+      speedMax: 15
       gravity: [0, 0, 0]
-      drag: 1.2
-      sizeMin: 0.45
-      sizeMax: 0.9
-      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      drag: 1.6
+      sizeMin: 1.7
+      sizeMax: 3.4
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
       color: [1, 1, 1, 1]
-      colorOverLife: [[0, 1, 0.95, 0.7, 1], [0.35, 1, 0.55, 0.15, 0.9], [1, 0.6, 0.1, 0.02, 0]]
-      emissive: 9000
+      colorOverLife: [[0, 1, 0.92, 0.65, 1], [0.25, 1, 0.55, 0.12, 0.95], [0.7, 0.55, 0.12, 0.03, 0.6], [1, 0.2, 0.05, 0.02, 0]]
+      emissive: 6000
       blend: Additive
       space: World
   - Entity: 7700000000000000026
@@ -711,20 +711,20 @@ Entities:
       burst: 0
       duration: 0
       loop: false
-      lifetimeMin: 0.4
-      lifetimeMax: 1.1
+      lifetimeMin: 0.5
+      lifetimeMax: 1.2
       shape: Sphere
       shapeSize: [0.4, 0.4, 0.4]
       speedMin: 4
-      speedMax: 14
+      speedMax: 15
       gravity: [0, 0, 0]
-      drag: 1.2
-      sizeMin: 0.45
-      sizeMax: 0.9
-      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      drag: 1.6
+      sizeMin: 1.7
+      sizeMax: 3.4
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
       color: [1, 1, 1, 1]
-      colorOverLife: [[0, 1, 0.95, 0.7, 1], [0.35, 1, 0.55, 0.15, 0.9], [1, 0.6, 0.1, 0.02, 0]]
-      emissive: 9000
+      colorOverLife: [[0, 1, 0.92, 0.65, 1], [0.25, 1, 0.55, 0.12, 0.95], [0.7, 0.55, 0.12, 0.03, 0.6], [1, 0.2, 0.05, 0.02, 0]]
+      emissive: 6000
       blend: Additive
       space: World
   - Entity: 7700000000000000029
@@ -810,20 +810,20 @@ Entities:
       burst: 0
       duration: 0
       loop: false
-      lifetimeMin: 0.4
-      lifetimeMax: 1.1
+      lifetimeMin: 0.5
+      lifetimeMax: 1.2
       shape: Sphere
       shapeSize: [0.4, 0.4, 0.4]
       speedMin: 4
-      speedMax: 14
+      speedMax: 15
       gravity: [0, 0, 0]
-      drag: 1.2
-      sizeMin: 0.45
-      sizeMax: 0.9
-      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      drag: 1.6
+      sizeMin: 1.7
+      sizeMax: 3.4
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
       color: [1, 1, 1, 1]
-      colorOverLife: [[0, 1, 0.95, 0.7, 1], [0.35, 1, 0.55, 0.15, 0.9], [1, 0.6, 0.1, 0.02, 0]]
-      emissive: 9000
+      colorOverLife: [[0, 1, 0.92, 0.65, 1], [0.25, 1, 0.55, 0.12, 0.95], [0.7, 0.55, 0.12, 0.03, 0.6], [1, 0.2, 0.05, 0.02, 0]]
+      emissive: 6000
       blend: Additive
       space: World
   - Entity: 7700000000000000032
@@ -909,20 +909,20 @@ Entities:
       burst: 0
       duration: 0
       loop: false
-      lifetimeMin: 0.4
-      lifetimeMax: 1.1
+      lifetimeMin: 0.5
+      lifetimeMax: 1.2
       shape: Sphere
       shapeSize: [0.4, 0.4, 0.4]
       speedMin: 4
-      speedMax: 14
+      speedMax: 15
       gravity: [0, 0, 0]
-      drag: 1.2
-      sizeMin: 0.45
-      sizeMax: 0.9
-      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      drag: 1.6
+      sizeMin: 1.7
+      sizeMax: 3.4
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
       color: [1, 1, 1, 1]
-      colorOverLife: [[0, 1, 0.95, 0.7, 1], [0.35, 1, 0.55, 0.15, 0.9], [1, 0.6, 0.1, 0.02, 0]]
-      emissive: 9000
+      colorOverLife: [[0, 1, 0.92, 0.65, 1], [0.25, 1, 0.55, 0.12, 0.95], [0.7, 0.55, 0.12, 0.03, 0.6], [1, 0.2, 0.05, 0.02, 0]]
+      emissive: 6000
       blend: Additive
       space: World
   - Entity: 7700000000000000035
@@ -6348,6 +6348,1092 @@ Entities:
     MeshRenderer:
       mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
       color: [0.907, 0.7757, 0.7232, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000372
+    Tag:
+      tag: Flare1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 32
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.1
+      lifetimeMax: 0.24
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 0
+      speedMax: 2
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 2.75
+      sizeMax: 5.5
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 1.6]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.97, 0.88, 1], [1, 1, 0.65, 0.25, 0]]
+      emissive: 12000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000373
+    Tag:
+      tag: Smoke1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 90
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 1.2
+      lifetimeMax: 2.6
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 2
+      speedMax: 7
+      gravity: [0, 0, 0]
+      drag: 1.6
+      sizeMin: 1.8
+      sizeMax: 3.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 2.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.3, 0.27, 0.25, 0.7], [0.4, 0.22, 0.2, 0.19, 0.45], [1, 0.12, 0.12, 0.12, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7700000000000000374
+    Tag:
+      tag: Ember1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 100
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.5
+      lifetimeMax: 1.2
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 15
+      speedMax: 40
+      gravity: [0, 0, 0]
+      drag: 0.7
+      sizeMin: 0.3
+      sizeMax: 0.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.4]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.9, 0.6, 1], [0.5, 1, 0.45, 0.1, 0.9], [1, 0.5, 0.1, 0.02, 0]]
+      emissive: 20000
+      blend: Additive
+      space: World
+      trailLength: 8
+      trailInterval: 0.02
+      trailWidth: 0.6
+  - Entity: 7700000000000000375
+    Tag:
+      tag: Flare2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 32
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.1
+      lifetimeMax: 0.24
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 0
+      speedMax: 2
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 2.75
+      sizeMax: 5.5
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 1.6]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.97, 0.88, 1], [1, 1, 0.65, 0.25, 0]]
+      emissive: 12000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000376
+    Tag:
+      tag: Smoke2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 90
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 1.2
+      lifetimeMax: 2.6
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 2
+      speedMax: 7
+      gravity: [0, 0, 0]
+      drag: 1.6
+      sizeMin: 1.8
+      sizeMax: 3.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 2.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.3, 0.27, 0.25, 0.7], [0.4, 0.22, 0.2, 0.19, 0.45], [1, 0.12, 0.12, 0.12, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7700000000000000377
+    Tag:
+      tag: Ember2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 100
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.5
+      lifetimeMax: 1.2
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 15
+      speedMax: 40
+      gravity: [0, 0, 0]
+      drag: 0.7
+      sizeMin: 0.3
+      sizeMax: 0.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.4]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.9, 0.6, 1], [0.5, 1, 0.45, 0.1, 0.9], [1, 0.5, 0.1, 0.02, 0]]
+      emissive: 20000
+      blend: Additive
+      space: World
+      trailLength: 8
+      trailInterval: 0.02
+      trailWidth: 0.6
+  - Entity: 7700000000000000378
+    Tag:
+      tag: Flare3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 32
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.1
+      lifetimeMax: 0.24
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 0
+      speedMax: 2
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 2.75
+      sizeMax: 5.5
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 1.6]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.97, 0.88, 1], [1, 1, 0.65, 0.25, 0]]
+      emissive: 12000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000379
+    Tag:
+      tag: Smoke3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 90
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 1.2
+      lifetimeMax: 2.6
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 2
+      speedMax: 7
+      gravity: [0, 0, 0]
+      drag: 1.6
+      sizeMin: 1.8
+      sizeMax: 3.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 2.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.3, 0.27, 0.25, 0.7], [0.4, 0.22, 0.2, 0.19, 0.45], [1, 0.12, 0.12, 0.12, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7700000000000000380
+    Tag:
+      tag: Ember3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 100
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.5
+      lifetimeMax: 1.2
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 15
+      speedMax: 40
+      gravity: [0, 0, 0]
+      drag: 0.7
+      sizeMin: 0.3
+      sizeMax: 0.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.4]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.9, 0.6, 1], [0.5, 1, 0.45, 0.1, 0.9], [1, 0.5, 0.1, 0.02, 0]]
+      emissive: 20000
+      blend: Additive
+      space: World
+      trailLength: 8
+      trailInterval: 0.02
+      trailWidth: 0.6
+  - Entity: 7700000000000000381
+    Tag:
+      tag: Flare4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 32
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.1
+      lifetimeMax: 0.24
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 0
+      speedMax: 2
+      gravity: [0, 0, 0]
+      drag: 1.2
+      sizeMin: 2.75
+      sizeMax: 5.5
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 1.6]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.97, 0.88, 1], [1, 1, 0.65, 0.25, 0]]
+      emissive: 12000
+      blend: Additive
+      space: World
+  - Entity: 7700000000000000382
+    Tag:
+      tag: Smoke4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 90
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 1.2
+      lifetimeMax: 2.6
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 2
+      speedMax: 7
+      gravity: [0, 0, 0]
+      drag: 1.6
+      sizeMin: 1.8
+      sizeMax: 3.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 2.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.3, 0.27, 0.25, 0.7], [0.4, 0.22, 0.2, 0.19, 0.45], [1, 0.12, 0.12, 0.12, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7700000000000000383
+    Tag:
+      tag: Ember4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 100
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.5
+      lifetimeMax: 1.2
+      shape: Sphere
+      shapeSize: [0.4, 0.4, 0.4]
+      speedMin: 15
+      speedMax: 40
+      gravity: [0, 0, 0]
+      drag: 0.7
+      sizeMin: 0.3
+      sizeMax: 0.6
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.4]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.9, 0.6, 1], [0.5, 1, 0.45, 0.1, 0.9], [1, 0.5, 0.1, 0.02, 0]]
+      emissive: 20000
+      blend: Additive
+      space: World
+      trailLength: 8
+      trailInterval: 0.02
+      trailWidth: 0.6
+  - Entity: 7700000000000000384
+    Tag:
+      tag: Flash1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light:
+      type: Point
+      enabled: false
+      color: [1, 0.62, 0.3]
+      intensity: 0
+      range: 60
+  - Entity: 7700000000000000385
+    Tag:
+      tag: Shockwave1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:0138e8e7dad30fe1:models/shockwave.glb
+      color: [1, 1, 1, 1]
+      transparent: true
+      materials:
+        - {overrides: {emissiveLuminance: 12000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000386
+    Tag:
+      tag: Flash2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light:
+      type: Point
+      enabled: false
+      color: [1, 0.62, 0.3]
+      intensity: 0
+      range: 60
+  - Entity: 7700000000000000387
+    Tag:
+      tag: Shockwave2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:0138e8e7dad30fe1:models/shockwave.glb
+      color: [1, 1, 1, 1]
+      transparent: true
+      materials:
+        - {overrides: {emissiveLuminance: 12000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000388
+    Tag:
+      tag: Flash3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light:
+      type: Point
+      enabled: false
+      color: [1, 0.62, 0.3]
+      intensity: 0
+      range: 60
+  - Entity: 7700000000000000389
+    Tag:
+      tag: Shockwave3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:0138e8e7dad30fe1:models/shockwave.glb
+      color: [1, 1, 1, 1]
+      transparent: true
+      materials:
+        - {overrides: {emissiveLuminance: 12000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000390
+    Tag:
+      tag: Shard1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000391
+    Tag:
+      tag: RockChunk1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000392
+    Tag:
+      tag: Shard2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000393
+    Tag:
+      tag: RockChunk2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000394
+    Tag:
+      tag: Shard3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000395
+    Tag:
+      tag: RockChunk3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000396
+    Tag:
+      tag: Shard4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000397
+    Tag:
+      tag: RockChunk4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000398
+    Tag:
+      tag: Shard5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000399
+    Tag:
+      tag: RockChunk5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000400
+    Tag:
+      tag: Shard6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000401
+    Tag:
+      tag: RockChunk6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000402
+    Tag:
+      tag: Shard7
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000403
+    Tag:
+      tag: RockChunk7
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000404
+    Tag:
+      tag: Shard8
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000405
+    Tag:
+      tag: RockChunk8
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000406
+    Tag:
+      tag: Shard9
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000407
+    Tag:
+      tag: RockChunk9
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000408
+    Tag:
+      tag: Shard10
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000409
+    Tag:
+      tag: RockChunk10
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000410
+    Tag:
+      tag: Shard11
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000411
+    Tag:
+      tag: RockChunk11
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000412
+    Tag:
+      tag: Shard12
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000413
+    Tag:
+      tag: RockChunk12
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000414
+    Tag:
+      tag: Shard13
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000415
+    Tag:
+      tag: RockChunk13
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000416
+    Tag:
+      tag: Shard14
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000417
+    Tag:
+      tag: RockChunk14
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000418
+    Tag:
+      tag: Shard15
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000419
+    Tag:
+      tag: RockChunk15
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000420
+    Tag:
+      tag: Shard16
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000421
+    Tag:
+      tag: RockChunk16
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:84c2f2ce2155f63d:models/asteroid_b.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000422
+    Tag:
+      tag: Shard17
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000423
+    Tag:
+      tag: RockChunk17
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1b8da4ed4c32dd07:models/asteroid_c.glb
+      color: [0.78, 0.7, 0.64, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000424
+    Tag:
+      tag: Shard18
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b606bd053de281d0:models/shard.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000000425
+    Tag:
+      tag: RockChunk18
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.01, 0.01, 0.01]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:89a236f0d9e8a09c:models/asteroid_a.glb
+      color: [0.78, 0.7, 0.64, 1]
       transparent: false
     RendererTag:
       Name: mesh_world

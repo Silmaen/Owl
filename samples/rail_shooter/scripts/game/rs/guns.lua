@@ -49,12 +49,23 @@ function G.fire()
     rs.play("sounds/game/laser.wav")
 end
 
+-- Where a bolt coming from (s0, x0, y0) meets the surface of a target of a radius around (ts, tx, ty).
+local function impact(s0, x0, y0, ts, tx, ty, radius)
+    local ds, dx, dy = s0 - ts, x0 - tx, y0 - ty
+    local n = math.sqrt(ds * ds + dx * dx + dy * dy)
+    if n < 1e-6 then return ts, tx, ty end
+    local k = radius * 0.8 / n
+    return ts + ds * k, tx + dx * k, ty + dy * k
+end
+
 local function strike(bolt, s0, x0, y0)
+    local vs, vx, vy = bolt.vs - S.speed, bolt.vx, bolt.vy
     for _, foe in ipairs(S.enemies) do
         if foe.alive then
             local fs = S.s + foe.dz
             if rs.segment_distance(s0, x0, y0, bolt.s, bolt.x, bolt.y, fs, foe.x, foe.y) < foe.radius then
-                foes.hit(foe)
+                local is, ix, iy = impact(s0, x0, y0, fs, foe.x, foe.y, foe.radius)
+                foes.hit(foe, is, ix, iy, vs, vx, vy)
                 return true
             end
         end
@@ -64,7 +75,8 @@ local function strike(bolt, s0, x0, y0)
         if rock.s + rock.radius < s0 then return true end
         if rock.s - rock.radius > bolt.s then return false end
         if rs.segment_distance(s0, x0, y0, bolt.s, bolt.x, bolt.y, rock.s, rock.x, rock.y) < rock.radius then
-            field.hit(rock)
+            local is, ix, iy = impact(s0, x0, y0, rock.s, rock.x, rock.y, rock.radius)
+            field.hit(rock, is, ix, iy, vs, vx, vy)
             struck = true
             return false
         end

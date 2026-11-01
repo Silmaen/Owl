@@ -3,13 +3,15 @@
 Write the 3D models of the Rail shooter sample game into ``samples/rail_shooter/models/`` as binary glTF.
 
 - Ships and asteroids: OBJ models of the Kenney Space Kit (CC0, https://opengameart.org/content/space-kit), one
-  primitive per material of their ``.mtl`` (flat colours), scaled to the size the game uses and turned so that their
-  nose points along -Z, the forward axis of the engine. The pack is read from the folder given on the command line
-  (the ``Models`` folder of the unpacked archive); nothing of it is copied but these conversions.
-- Bolts: the player's laser (a long cyan spindle) and the enemy shot (an orange gem), emissive, made here.
+  primitive per material of their ``.mtl`` (flat colours), scaled to the size the game uses, their nose kept along
+  -Z, the forward axis of the engine. The pack is read from the folder given on the command line (the ``Models``
+  folder of the unpacked archive); nothing of it is copied but these conversions.
+- Made here: the bolts (the player's laser, a long cyan spindle, and the enemy shot, an orange gem, emissive), the
+  shard of hull the explosions throw out and the glowing ring of their shock wave.
 
 Run from the repository root:
-``./docker_run.sh poetry run python -m tools.samples.rail_shooter.generate_models <Space Kit>/Models``.
+``./docker_run.sh poetry run python -m tools.samples.rail_shooter.generate_models [<Space Kit>/Models]``; without
+the pack, only the models made here are written.
 """
 
 from __future__ import annotations
@@ -54,7 +56,6 @@ class Conversion:
     target: str
     width: float
     tints: dict[str, Colour] = field(default_factory=dict)
-    turn: bool = True
 
 
 CONVERSIONS = [
@@ -82,10 +83,10 @@ CONVERSIONS = [
         22.0,
         {"metal": (0.55, 0.12, 0.2), "_defaultMat": (0.42, 0.42, 0.48), "pipe": (0.2, 0.2, 0.24)},
     ),
-    Conversion("meteorFull", "asteroid_a", 2.0, {"rock": (0.6, 0.5, 0.43)}, turn=False),
-    Conversion("meteorFullRound", "asteroid_b", 2.0, {"rock": (0.55, 0.52, 0.5)}, turn=False),
+    Conversion("meteorFull", "asteroid_a", 2.0, {"rock": (0.6, 0.5, 0.43)}),
+    Conversion("meteorFullRound", "asteroid_b", 2.0, {"rock": (0.55, 0.52, 0.5)}),
     Conversion(
-        "meteorHalf", "asteroid_c", 2.0, {"rock": (0.62, 0.55, 0.48), "_defaultMat": (0.45, 0.42, 0.4)}, turn=False
+        "meteorHalf", "asteroid_c", 2.0, {"rock": (0.62, 0.55, 0.48), "_defaultMat": (0.45, 0.42, 0.4)}
     ),
 ]
 """The models taken from the Space Kit; ``tints`` replace the colour of a material (sRGB)."""
@@ -119,7 +120,7 @@ def _index(token: str, count: int) -> int:
 
 
 def read_obj(path: Path, conversion: Conversion) -> Model:
-    """An OBJ model and its materials, fans of its polygons as triangles, scaled and turned as told."""
+    """An OBJ model and its materials, fans of its polygons as triangles, scaled as told."""
     colours = _read_mtl(path.with_suffix(".mtl"))
     positions: list[Vec3] = []
     normals: list[Vec3] = []
@@ -146,14 +147,10 @@ def read_obj(path: Path, conversion: Conversion) -> Model:
     high = [max(p[k] for p in positions) for k in range(3)]
     scale = conversion.width / (high[0] - low[0])
     centre = [(low[k] + high[k]) / 2 for k in range(3)]
-    sign = -1.0 if conversion.turn else 1.0
 
     def place(point: Vec3) -> Vec3:
         x, y, z = ((point[k] - centre[k]) * scale for k in range(3))
-        return sign * x, y, sign * z
-
-    def turn(normal: Vec3) -> Vec3:
-        return sign * normal[0], normal[1], sign * normal[2]
+        return x, y, z
 
     primitives = []
     for name, polygons in faces.items():
@@ -166,7 +163,7 @@ def read_obj(path: Path, conversion: Conversion) -> Model:
                 flat = _face_normal(points)
                 for point, (_, normal) in zip(points, triangle, strict=True):
                     primitive.positions.append(point)
-                    primitive.normals.append(turn(normals[normal]) if normal >= 0 else flat)
+                    primitive.normals.append(normals[normal] if normal >= 0 else flat)
         primitives.append(primitive)
     return Model(conversion.target, primitives)
 
@@ -197,6 +194,48 @@ def spindle(length: float, radius: float, sides: int, colour: Colour, glow: Colo
             primitive.positions += triangle
             primitive.normals += [normal] * 3
     return Model(name, [primitive])
+
+
+def _add_outward(primitive: Primitive, triangle: list[Vec3]) -> None:
+    """Add a flat triangle of a solid around the origin, turned so that it faces outwards."""
+    normal = _face_normal(triangle)
+    centre = [sum(p[k] for p in triangle) / 3 for k in range(3)]
+    if sum(normal[k] * centre[k] for k in range(3)) < 0:
+        triangle = [triangle[0], triangle[2], triangle[1]]
+        normal = _face_normal(triangle)
+    primitive.positions += triangle
+    primitive.normals += [normal] * 3
+
+
+def shard() -> Model:
+    """A chunk of hull about 1 across: an octahedron of uneven tips, flat shaded, light grey (the tint colours it)."""
+    primitive = Primitive((0.78, 0.78, 0.8))
+    tips: list[Vec3] = [(0.55, 0.05, 0.1), (-0.35, -0.1, 0.05), (0.05, 0.3, -0.1), (0.1, -0.25, 0.0)]
+    front: Vec3 = (0.0, 0.05, -0.5)
+    back: Vec3 = (-0.05, 0.0, 0.3)
+    for k in range(4):
+        a, b = tips[k], tips[(k + 1) % 4]
+        _add_outward(primitive, [front, a, b])
+        _add_outward(primitive, [back, b, a])
+    return Model("shard", [primitive])
+
+
+def shockwave(sides: int = 40, inner: float = 0.9) -> Model:
+    """A thin flat ring of radius 1 in the XY plane, seen from both sides, glowing: the shock wave of an explosion."""
+    primitive = Primitive((1.0, 0.8, 0.55), (1.0, 0.75, 0.45))
+    for k in range(sides):
+        angles = (2 * math.pi * k / sides, 2 * math.pi * (k + 1) / sides)
+        outer_a, outer_b = ((math.cos(a), math.sin(a), 0.0) for a in angles)
+        inner_a, inner_b = ((inner * math.cos(a), inner * math.sin(a), 0.0) for a in angles)
+        for triangle, normal in (
+            ([inner_a, outer_a, outer_b], (0.0, 0.0, 1.0)),
+            ([inner_a, outer_b, inner_b], (0.0, 0.0, 1.0)),
+            ([inner_a, outer_b, outer_a], (0.0, 0.0, -1.0)),
+            ([inner_a, inner_b, outer_b], (0.0, 0.0, -1.0)),
+        ):
+            primitive.positions += triangle
+            primitive.normals += [normal] * 3
+    return Model("shockwave", [primitive])
 
 
 def write_glb(path: Path, model: Model) -> None:
@@ -260,15 +299,18 @@ def write_glb(path: Path, model: Model) -> None:
 
 
 def main() -> None:
-    """Convert the Space Kit models named on the command line's folder and write the bolts."""
-    if len(sys.argv) != 2:
-        sys.exit("usage: generate_models <Space Kit>/Models")
-    pack = Path(sys.argv[1])
+    """Write the home-made models, then convert the Space Kit models of the folder named on the command line."""
+    if len(sys.argv) > 2:
+        sys.exit("usage: generate_models [<Space Kit>/Models]")
     ROOT.mkdir(parents=True, exist_ok=True)
-    for conversion in CONVERSIONS:
-        write_glb(ROOT / f"{conversion.target}.glb", read_obj(pack / f"{conversion.source}.obj", conversion))
     write_glb(ROOT / "bolt.glb", spindle(1.6, 0.09, 6, (0.6, 0.95, 1.0), (0.4, 0.9, 1.0), "bolt"))
     write_glb(ROOT / "enemy_bolt.glb", spindle(0.9, 0.22, 5, (1.0, 0.55, 0.2), (1.0, 0.45, 0.1), "enemy_bolt"))
+    write_glb(ROOT / "shard.glb", shard())
+    write_glb(ROOT / "shockwave.glb", shockwave())
+    if len(sys.argv) == 2:
+        pack = Path(sys.argv[1])
+        for conversion in CONVERSIONS:
+            write_glb(ROOT / f"{conversion.target}.glb", read_obj(pack / f"{conversion.source}.obj", conversion))
 
 
 if __name__ == "__main__":

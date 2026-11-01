@@ -26,24 +26,11 @@ Entities:
       edgeMargin: 40
     RendererTag:
       Name: mesh_world
-  - Entity: 7712000000000000002
-    Tag:
-      tag: FighterModel
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7712000000000000001
     MeshRenderer:
       mesh: gid:0a3254d67b5129dc:models/fighter.glb
       color: [1, 1, 1, 1]
       transparent: false
-    RendererTag:
-      Name: mesh_world
-  - Entity: 7712000000000000003
+  - Entity: 7712000000000000002
     Tag:
       tag: FighterTrail
     Transform:
@@ -63,7 +50,7 @@ Entities:
       color: [1, 0.45, 0.2, 0.8]
       emissive: 5000
       blend: Additive
-  - Entity: 7712000000000000004
+  - Entity: 7712000000000000003
     Tag:
       tag: FighterTrail
     Transform:
