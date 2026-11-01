@@ -18,6 +18,7 @@
 #include <scene/component/components.h>
 #include <scene/ui/HudPass.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <optional>

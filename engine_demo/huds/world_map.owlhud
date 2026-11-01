@@ -52,6 +52,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: heading
     text: ''
     color: [1, 1, 1, 1]
     fontSize: 28
@@ -79,6 +80,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: text
     text: ''
     color: [1, 1, 1, 1]
     fontSize: 28
@@ -131,6 +133,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiPanel:
+    style: hud
     backgroundColor: [0.08, 0.1, 0.15, 0.75]
     borderColor: [0.4, 0.45, 0.55, 0.6]
     borderWidth: 1
@@ -151,6 +154,7 @@ Entities:
     offset: [-0.02, 0]
     offsetUnit: [ParentWidth, ParentHeight]
   UiText:
+    style: heading
     text: 'Places done: 0 / 6'
     color: [1, 0.949999988, 0.550000012, 1]
     fontSize: 28
@@ -169,6 +173,7 @@ Entities:
   Visibility: {gameVisible: true}
   Hierarchy: {parentId: 2000000000000000082}
   UiProgressBar:
+    style: bar
     value: 1
     backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
     fillColor: [0.200000003, 0.850000024, 0.200000003, 1]
@@ -217,6 +222,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: text
     text: 'WASD: move    E: use or talk    Esc: pause'
     color: [1, 1, 1, 0.850000024]
     fontSize: 26
@@ -244,7 +250,7 @@ Entities:
     size: [1.1, 0.86]
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [0, 0]
-  UiWindow: {title: Information board, titleBarHeight: 40, titleFontSize: 28, closable: true, draggable: true, onCloseCallback: on_board_closed}
+  UiWindow: {style: window, title: Information board, titleBarHeight: 40, titleFontSize: 28, closable: true, draggable: true, onCloseCallback: on_board_closed}
   UiLayout:
     arrangement: Column
     crossAlign: Center
@@ -299,6 +305,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: text
     text: 'OWL ENGINE DEMO
 
       The hub leads to six places: four houses, the tavern and the observatory. Finish them all and the portal wakes up.
@@ -372,7 +379,7 @@ Entities:
     size: [1.3, 0.36]
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [0, -16]
-  UiWindow: {title: Wizard, titleBarHeight: 36, titleFontSize: 26, closable: true, draggable: false, modal: true, onCloseCallback: on_wizard_closed}
+  UiWindow: {style: window, title: Wizard, titleBarHeight: 36, titleFontSize: 26, closable: true, draggable: false, modal: true, onCloseCallback: on_wizard_closed}
   UiLayout:
     arrangement: Column
     crossAlign: Center
@@ -396,6 +403,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: text
     text: ''
     color: [1, 1, 1, 1]
     fontSize: 26
@@ -422,6 +430,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiButton:
+    style: button
     normalColor: [0.16, 0.2, 0.3, 0.92]
     hoverColor: [0.26, 0.34, 0.5, 0.95]
     pressedColor: [0.1, 0.13, 0.2, 1]
@@ -429,6 +438,7 @@ Entities:
     onClickCallback: on_wizard_answer_1
   UiFocus: {focusable: true}
   UiText:
+    style: label
     text: ''
     color: [1, 1, 1, 1]
     fontSize: 24
@@ -455,6 +465,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiButton:
+    style: button
     normalColor: [0.16, 0.2, 0.3, 0.92]
     hoverColor: [0.26, 0.34, 0.5, 0.95]
     pressedColor: [0.1, 0.13, 0.2, 1]
@@ -462,6 +473,7 @@ Entities:
     onClickCallback: on_wizard_answer_2
   UiFocus: {focusable: true}
   UiText:
+    style: label
     text: ''
     color: [1, 1, 1, 1]
     fontSize: 24
@@ -488,6 +500,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiButton:
+    style: button
     normalColor: [0.16, 0.2, 0.3, 0.92]
     hoverColor: [0.26, 0.34, 0.5, 0.95]
     pressedColor: [0.1, 0.13, 0.2, 1]
@@ -495,6 +508,7 @@ Entities:
     onClickCallback: on_wizard_answer_3
   UiFocus: {focusable: true}
   UiText:
+    style: label
     text: ''
     color: [1, 1, 1, 1]
     fontSize: 24
@@ -521,6 +535,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiButton:
+    style: button
     normalColor: [0.16, 0.2, 0.3, 0.92]
     hoverColor: [0.26, 0.34, 0.5, 0.95]
     pressedColor: [0.1, 0.13, 0.2, 1]
@@ -528,6 +543,7 @@ Entities:
     onClickCallback: on_wizard_next
   UiFocus: {focusable: true}
   UiText:
+    style: label
     text: 'Next'
     color: [1, 1, 1, 1]
     fontSize: 24

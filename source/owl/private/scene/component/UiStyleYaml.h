@@ -9,6 +9,8 @@
 #include "core/SerializerImpl.h"
 #include "scene/component/UiStyle.h"
 
+#include <cstdint>
+
 namespace owl::scene::component::utils {
 
 /**

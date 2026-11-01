@@ -32,6 +32,7 @@
 #include <ranges>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace owl::scene::ui {
@@ -73,54 +74,56 @@ enum struct HudLayer : uint8_t { Shape, Circle, Text };
 // Sort key of a HUD primitive: the rank of its window (a window covers those under it), then the layer.
 auto hudDepth(const float iRank, const HudLayer iLayer) -> float { return iRank * 4.f + static_cast<float>(iLayer); }
 
-// Depth of the shapes of a window: one step up each time the drawing switches between flat quads and rounded boxes,
-// which keeps the painter's order of a window across the two instance buffers (sorted by kind at equal depth). A
-// canvas holding a rounded box draws its flat shapes as boxes too, so its shapes stay one batch.
+// Painter's order of the shapes of a window across the quad and box buffers (design: hud-system.md#hud-themes).
 class ShapeOrder {
 public:
 	explicit ShapeOrder(const bool iBoxed) : m_boxed{iBoxed} {}
 
 	// A flat shape of the canvas: a square box in a boxed canvas (an untiled quad), else a quad.
-	void drawShape(const renderer::Quad2DData& iQuad, const float iRank) {
-		const auto untiled = [](const float iValue) -> bool { return std::abs(iValue - 1.f) < 1e-6f; };
-		if (m_boxed && iQuad.normalMap == nullptr && untiled(iQuad.tilingFactor.x()) &&
-			untiled(iQuad.tilingFactor.y())) {
-			const auto& low = iQuad.textureCoords[0];
-			const auto& high = iQuad.textureCoords[2];
+	void drawShape(renderer::Quad2DData&& ioQuad, const float iRank) {
+		if (m_boxed && isUntiled(ioQuad)) {
+			const auto& low = ioQuad.textureCoords[0];
+			const auto& high = ioQuad.textureCoords[2];
 			renderer::Renderer2D::drawBox(
-					{.transform = iQuad.transform,
-					 .size = {std::abs(iQuad.transform.scale().x()), std::abs(iQuad.transform.scale().y())},
-					 .topColor = iQuad.color,
-					 .bottomColor = iQuad.color,
-					 .texture = iQuad.texture,
+					{.transform = ioQuad.transform,
+					 .size = {std::abs(ioQuad.transform.scale().x()), std::abs(ioQuad.transform.scale().y())},
+					 .topColor = ioQuad.color,
+					 .bottomColor = ioQuad.color,
+					 .texture = std::move(ioQuad.texture),
 					 .uvRect = {low.x(), low.y(), high.x(), high.y()},
-					 .entityId = iQuad.entityId,
+					 .entityId = ioQuad.entityId,
 					 .depth = depth(iRank, true)});
 			return;
 		}
-		renderer::Quad2DData quad = iQuad;
-		quad.depth = depth(iRank, false);
-		renderer::Renderer2D::drawQuad(quad);
+		ioQuad.depth = depth(iRank, false);
+		renderer::Renderer2D::drawQuad(ioQuad);
 	}
 
 	auto depth(const float iRank, const bool iBox) -> float {
-		if (!(iRank < m_rank) && !(m_rank < iRank)) {
-			if (iBox != m_box && m_step < g_maxSteps) {
-				++m_step;
-				m_box = iBox;
-			}
-		} else {
+		if (iRank < m_rank || m_rank < iRank) {
 			m_rank = iRank;
 			m_step = 0;
 			m_box = iBox;
+			m_depth = hudDepth(iRank, HudLayer::Shape);
+		} else if (iBox != m_box && m_step < g_maxSteps) {
+			++m_step;
+			m_box = iBox;
+			m_depth =
+					hudDepth(iRank, HudLayer::Shape) + static_cast<float>(m_step) / static_cast<float>(g_maxSteps + 1);
 		}
-		return hudDepth(iRank, HudLayer::Shape) + static_cast<float>(m_step) / static_cast<float>(g_maxSteps + 1);
+		return m_depth;
 	}
 
 private:
 	static constexpr uint32_t g_maxSteps = 1023;
+	static auto isUntiled(const renderer::Quad2DData& iQuad) -> bool {
+		return iQuad.normalMap == nullptr && std::abs(iQuad.tilingFactor.x() - 1.f) < 1e-6f &&
+			   std::abs(iQuad.tilingFactor.y() - 1.f) < 1e-6f;
+	}
+
 	bool m_boxed = false;
 	float m_rank = -1.f;
+	float m_depth = 0.f;
 	uint32_t m_step = 0;
 	bool m_box = false;
 };
@@ -129,6 +132,10 @@ private:
 void drawStyledBox(const math::Transform& iTransform, const math::vec4& iColor, const component::UiBox& iBox,
 				   const BoxPart iPart, const float iScale, const int iEntityId, const float iRank,
 				   ShapeOrder& ioOrder) {
+	if (iBox.isPlain()) {
+		ioOrder.drawShape({.transform = iTransform, .color = iColor, .entityId = iEntityId}, iRank);
+		return;
+	}
 	auto data = makeWidgetBox(iTransform, iColor, iBox, iPart, iScale);
 	if (data.plain) {
 		ioOrder.drawShape({.transform = data.box.transform, .color = iColor, .entityId = iEntityId}, iRank);
@@ -249,12 +256,10 @@ void drawBar(const component::UiRect::Bounds& iTrack, const component::UiRect::B
 			 const float iHeight, const int iEntityId, const float iRank, ShapeOrder& ioOrder) {
 	if (iTrack.size.x() <= 0.f || iTrack.size.y() <= 0.f)
 		return;
-	ioOrder.drawShape({.transform = pixelTransform(iTrack, iHeight),
-									.color = iScroll.trackColor,
-									.entityId = iEntityId}, iRank);
-	ioOrder.drawShape({.transform = pixelTransform(iThumb, iHeight),
-									.color = iScroll.thumbColor,
-									.entityId = iEntityId}, iRank);
+	ioOrder.drawShape(
+			{.transform = pixelTransform(iTrack, iHeight), .color = iScroll.trackColor, .entityId = iEntityId}, iRank);
+	ioOrder.drawShape(
+			{.transform = pixelTransform(iThumb, iHeight), .color = iScroll.thumbColor, .entityId = iEntityId}, iRank);
 }
 
 void drawScrollBars(const HudScroll& iScroll, const float iHeight, const int iEntityId, const float iRank,
@@ -285,9 +290,10 @@ void drawListRow(const component::UiList& iList, const size_t iRow, const compon
 		const component::UiRect::Bounds iconBox{.position = {left, iRowBox.position.y() + 2.f * iScale},
 												.size = {side, side}};
 		ioOrder.drawShape({.transform = pixelTransform(iconBox, iHeight),
-										.color = {1.f, 1.f, 1.f, 1.f},
-										.texture = row->icon,
-										.entityId = iEntityId}, iRank);
+						   .color = {1.f, 1.f, 1.f, 1.f},
+						   .texture = row->icon,
+						   .entityId = iEntityId},
+						  iRank);
 		left += side + margin;
 	}
 	const float right = iRowBox.position.x() + iRowBox.size.x() - margin;
@@ -336,10 +342,11 @@ void drawWidget(const Scene& iWorld, const Entity& iEntity, const HudNode& iNode
 	if (iEntity.hasComponent<component::SpriteRenderer>()) {
 		const auto& sprite = iEntity.getComponent<component::SpriteRenderer>();
 		ioOrder.drawShape({.transform = iTransform,
-										.color = sprite.color,
-										.texture = sprite.texture,
-										.tilingFactor = sprite.tilingFactor,
-										.entityId = entityId}, iRank);
+						   .color = sprite.color,
+						   .texture = sprite.texture,
+						   .tilingFactor = sprite.tilingFactor,
+						   .entityId = entityId},
+						  iRank);
 	}
 	if (iEntity.hasComponent<component::Text>()) {
 		const auto& text = iEntity.getComponent<component::Text>();
@@ -378,7 +385,7 @@ void drawWidget(const Scene& iWorld, const Entity& iEntity, const HudNode& iNode
 								  .entityId = entityId};
 		if (!image.renderTarget.empty())
 			setRenderTargetImage(quad, iWorld, image.renderTarget);
-		ioOrder.drawShape(quad, iRank);
+		ioOrder.drawShape(std::move(quad), iRank);
 	}
 	if (iEntity.hasComponent<component::UiText>())
 		drawText(iEntity, iNode, iTransform, entityId, iRank);

@@ -617,6 +617,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: hint
       text: ''
       color: [1, 1, 1, 0.9]
       fontSize: 24
@@ -636,6 +637,7 @@ Entities:
     Visibility: {gameVisible: false}
     Hierarchy: {parentId: 700000000000000021}
     UiButton:
+      style: button.danger
       normalColor: [0.5, 0.15, 0.15, 0.8]
       hoverColor: [0.7, 0.2, 0.2, 1]
       pressedColor: [0.4, 0.1, 0.1, 1]
@@ -649,6 +651,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: label
       text: Delete Save
       color: [1, 1, 1, 0.9]
       fontSize: 26
@@ -697,6 +700,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: text
       text: Every rendering style of Owl Engine in one project
       color: [0.85, 0.85, 0.85, 0.85]
       fontSize: 26
@@ -723,6 +727,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: title
       text: Owl Engine Demo
       color: [1, 0.85, 0.2, 1]
       fontSize: 72
@@ -767,6 +772,7 @@ Entities:
       sizeUnit: [ScreenWidth, ScreenHeight]
       offset: [10, 10]
     UiText:
+      style: hint
       text: ''
       color: [0.4, 0.4, 0.5, 0.5]
       fontSize: 22
@@ -786,6 +792,7 @@ Entities:
     Visibility: {gameVisible: true}
     Hierarchy: {parentId: 827593881302582438}
     UiPanel:
+      style: panel
       backgroundColor: [0.1, 0.1, 0.15, 0.6]
       borderColor: [0.4, 0.4, 0.5, 0.4]
       borderWidth: 1
@@ -814,6 +821,7 @@ Entities:
     Visibility: {gameVisible: true}
     Hierarchy: {parentId: 700000000000000002}
     UiButton:
+      style: button.danger
       normalColor: [0.4, 0.15, 0.15, 1]
       hoverColor: [0.55, 0.2, 0.2, 1]
       pressedColor: [0.3, 0.1, 0.1, 1]
@@ -827,6 +835,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: label
       text: Quit
       color: [1, 1, 1, 1]
       fontSize: 32
@@ -846,6 +855,7 @@ Entities:
     Visibility: {gameVisible: true}
     Hierarchy: {parentId: 700000000000000002}
     UiButton:
+      style: button
       normalColor: [0.3, 0.3, 0.3, 1]
       hoverColor: [0.4, 0.4, 0.4, 1]
       pressedColor: [0.2, 0.2, 0.2, 1]
@@ -859,6 +869,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: label
       text: Settings
       color: [1, 1, 1, 1]
       fontSize: 32
@@ -878,6 +889,7 @@ Entities:
     Visibility: {gameVisible: true}
     Hierarchy: {parentId: 700000000000000002}
     UiButton:
+      style: button
       normalColor: [0.1, 0.45, 0.3, 1]
       hoverColor: [0.15, 0.55, 0.4, 1]
       pressedColor: [0.05, 0.35, 0.2, 1]
@@ -891,6 +903,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: label
       text: Continue
       color: [1, 1, 1, 1]
       fontSize: 32
@@ -910,6 +923,7 @@ Entities:
     Visibility: {gameVisible: true}
     Hierarchy: {parentId: 700000000000000002}
     UiButton:
+      style: button
       normalColor: [0.15, 0.35, 0.65, 1]
       hoverColor: [0.25, 0.45, 0.75, 1]
       pressedColor: [0.1, 0.25, 0.5, 1]
@@ -923,6 +937,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: label
       text: Play
       color: [1, 1, 1, 1]
       fontSize: 40
@@ -952,6 +967,7 @@ Entities:
     Visibility: {gameVisible: true}
     Hierarchy: {parentId: 827593881302582438}
     UiPanel:
+      style: card
       backgroundColor: [0.1, 0.1, 0.15, 0.6]
       borderColor: [0.4, 0.4, 0.5, 0.4]
       borderWidth: 1
@@ -987,6 +1003,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: text
       text: "Hub: WASD move, E use or talk\nPlatformer: A / D run, W / Space jump\nRaycast: W / S walk, A / D turn, E open, Tab inventory\nIso town: click builds, right click bulldozes, Q tool, WASD pan\nVoxel: WASD walk, mouse look, Space jump, Shift run\nTavern: WASD walk, mouse look, E use or talk\nFar orbit (the telescope): mouse steers, W / S thrust, A / D roll, Z assist, J jumps\nEsc pauses and comes back here: Continue resumes"
       color: [0.85, 0.85, 0.9, 0.9]
       fontSize: 24
@@ -1013,6 +1030,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: heading
       text: Controls
       color: [1, 0.85, 0.2, 1]
       fontSize: 30
@@ -1039,6 +1057,7 @@ Entities:
       sizeUnit: [ScreenWidth, ScreenHeight]
       offset: [-16, -16]
     UiText:
+      style: hint
       text: v
       color: [0.5, 0.5, 0.5, 0.7]
       fontSize: 24

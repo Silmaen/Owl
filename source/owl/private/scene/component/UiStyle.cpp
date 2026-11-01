@@ -30,11 +30,6 @@ const UiBox g_plainBox{};
 
 }// namespace
 
-auto UiBox::isPlain() const -> bool {
-	return cornerRadius <= 0.f && bottomTint == g_plainBox.bottomTint && borderWidth <= 0.f && shadowColor.a() <= 0.f &&
-		   !texture;
-}
-
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wfloat-equal")
 auto UiBox::operator==(const UiBox& iOther) const -> bool = default;

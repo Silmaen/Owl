@@ -1036,19 +1036,19 @@ its widget values. Design: [HUD system](design/hud-system.md).
 The box of a `UiPanel`, `UiButton`, `UiSlider`, `UiProgressBar`, `UiList` (its rows) and `UiWindow` is a `UiBox`,
 written under a `Box:` map of the widget only when it is not a flat rectangle:
 
-| Field          | Type      | Description                                                                         |
-|----------------|-----------|-------------------------------------------------------------------------------------|
-| `cornerRadius` | `float`   | Radius of the rounded corners, in reference pixels (0: square)                      |
+| Field          | Type      | Description                                                                           |
+|----------------|-----------|---------------------------------------------------------------------------------------|
+| `cornerRadius` | `float`   | Radius of the rounded corners, in reference pixels (0: square)                        |
 | `bottomTint`   | `vec4`    | Multiplied with the fill colour at the bottom edge: a vertical gradient (white: flat) |
-| `borderWidth`  | `float`   | Border drawn inside the edge, in reference pixels (0: none)                         |
-| `borderColor`  | `vec4`    | Colour of the border                                                                |
-| `shadowColor`  | `vec4`    | Soft shadow outside the box (alpha 0: none)                                         |
-| `shadowOffset` | `vec2`    | Offset of the shadow, right and down                                                |
-| `shadowBlur`   | `float`   | Softness of the shadow edge                                                         |
-| `texture`      | `texture` | Nine-slice background tinted by the fill colour                                     |
-| `sliceInsets`  | `vec4`    | Borders of the texture kept unstretched, in texture pixels: left, top, right, bottom |
+| `borderWidth`  | `float`   | Border drawn inside the edge, in reference pixels (0: none)                           |
+| `borderColor`  | `vec4`    | Colour of the border                                                                  |
+| `shadowColor`  | `vec4`    | Soft shadow outside the box (alpha 0: none)                                           |
+| `shadowOffset` | `vec2`    | Offset of the shadow, right and down                                                  |
+| `shadowBlur`   | `float`   | Softness of the shadow edge                                                           |
+| `texture`      | `texture` | Nine-slice background tinted by the fill colour                                       |
+| `sliceInsets`  | `vec4`    | Borders of the texture kept unstretched, in texture pixels: left, top, right, bottom  |
 
-A plain box is drawn as before, a flat quad; any of these fields draws it through the rounded-box shader
+A plain box is drawn as a flat quad; any of these fields draws it through the rounded-box shader
 (`Renderer2D::drawBox`, `renderer2D/box.slang`). A fill (slider, bar) and a window title bar lie inside the border.
 
 A HUD theme (`.owlhudtheme`, `scene::HudTheme`) holds named styles. Every widget above and `UiText` carry a `style`
@@ -1058,16 +1058,16 @@ else the style's value wins when the style defines it; else the widget's own val
 its theme with a root `HudTheme:` key (nothing: the project's `DefaultHudTheme`; an empty value: none), read once by
 `app::EngineContext::getHudThemeLibrary()`. Without a theme, or for a widget naming no style, nothing changes.
 
-| Style key                          | Property       | Sets                                                                              |
-|------------------------------------|----------------|-----------------------------------------------------------------------------------|
-| `background`                       | `Background`   | Panel background, button normal colour, slider track, bar background, list row, window body |
-| `hover`, `pressed`, `disabled`     | same           | Button states; `hover` also the hovered list row                                  |
-| `accent`                           | `Accent`       | Slider and bar fill, selected list row, window title bar                          |
-| `secondary`                        | `Secondary`    | Slider handle, alternate list row                                                 |
-| `textColor`, `font`, `fontSize`    | same           | `UiText` (also list rows and window titles, but `font`)                           |
-| `outlineColor`, `outlineWidth`     | `Outline`      | Outline of a `UiText`                                                             |
-| `padding`                          | `Padding`      | `UiLayout` padding of a styled panel                                              |
-| `cornerRadius`, `bottomTint`, ...  | box properties | The `UiBox` fields above (`CornerRadius`, `Gradient`, `Border`, `Shadow`, `NineSlice`) |
+| Style key                         | Property       | Sets                                                                                        |
+|-----------------------------------|----------------|---------------------------------------------------------------------------------------------|
+| `background`                      | `Background`   | Panel background, button normal colour, slider track, bar background, list row, window body |
+| `hover`, `pressed`, `disabled`    | same           | Button states; `hover` also the hovered list row                                            |
+| `accent`                          | `Accent`       | Slider and bar fill, selected list row, window title bar                                    |
+| `secondary`                       | `Secondary`    | Slider handle, alternate list row                                                           |
+| `textColor`, `font`, `fontSize`   | same           | `UiText` (also list rows and window titles, but `font`)                                     |
+| `outlineColor`, `outlineWidth`    | `Outline`      | Outline of a `UiText`                                                                       |
+| `padding`                         | `Padding`      | `UiLayout` padding of a styled panel                                                        |
+| `cornerRadius`, `bottomTint`, ... | box properties | The `UiBox` fields above (`CornerRadius`, `Gradient`, `Border`, `Shadow`, `NineSlice`)      |
 
 ```yaml
 HudTheme: Engine Demo

@@ -48,9 +48,12 @@ struct OWL_API UiBox {
 	/**
 	 * @brief
 	 *  Check whether the box is a flat rectangle.
-	 * @return True when no corner, gradient, border, shadow or texture is set.
+	 * @return True when no corner, gradient (a bottom tint below white), border, shadow or texture is set.
 	 */
-	[[nodiscard]] auto isPlain() const -> bool;
+	[[nodiscard]] auto isPlain() const -> bool {
+		return cornerRadius <= 0.f && borderWidth <= 0.f && shadowColor.a() <= 0.f && !texture &&
+			   bottomTint.x() >= 1.f && bottomTint.y() >= 1.f && bottomTint.z() >= 1.f && bottomTint.w() >= 1.f;
+	}
 
 	/**
 	 * @brief

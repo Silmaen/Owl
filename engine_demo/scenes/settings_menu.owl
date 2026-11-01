@@ -4,20 +4,6 @@ EnabledRenderers:
   - Name: raycast_world
     Enabled: false
 Entities:
-  - Entity: 11802913991630650001
-    Tag:
-      tag: Background
-    Transform:
-      translation: [0, 0, -1]
-      rotation: [0, 0, 0]
-      scale: [20, 15, 1]
-    BackgroundTexture:
-      mode: 0
-      type: 1
-      color: [0.05, 0.032, 0.022, 1]
-      topColor: [0.2, 0.125, 0.07, 1]
-    Visibility:
-      gameVisible: true
   - Entity: 1234567890123456789
     Tag:
       tag: SettingsCanvas
@@ -44,7 +30,7 @@ Entities:
       rotation: [0, 0, 0]
       scale: [20, 15, 1]
     SpriteRenderer:
-      color: [0.0599999987, 0.0599999987, 0.140000001, 1]
+      color: [0.1, 0.065, 0.045, 1]
     Visibility:
       gameVisible: true
   - Entity: 7823456789012345678

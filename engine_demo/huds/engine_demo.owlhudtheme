@@ -22,8 +22,8 @@ Styles:
     background: [0.1, 0.07, 0.045, 0.72]
     cornerRadius: 8
     bottomTint: [0.75, 0.72, 0.7, 1]
-    borderColor: [0.85, 0.64, 0.32, 0.55]
-    borderWidth: 1
+    borderColor: [0.85, 0.64, 0.32, 0.8]
+    borderWidth: 1.5
     shadowColor: [0, 0, 0, 0.35]
     shadowOffset: [0, 3]
     shadowBlur: 8
@@ -69,7 +69,9 @@ Styles:
     outlineColor: [0.08, 0.04, 0.015, 0.9]
     outlineWidth: 1.6
   - name: hint
-    textColor: [0.8, 0.7, 0.56, 0.92]
+    textColor: [0.86, 0.77, 0.62, 0.95]
+    outlineColor: [0.08, 0.04, 0.015, 0.85]
+    outlineWidth: 1.4
   - name: slider
     background: [0.12, 0.08, 0.05, 0.95]
     accent: [0.92, 0.64, 0.3, 1]

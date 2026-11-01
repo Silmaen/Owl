@@ -11,6 +11,7 @@
 #include "CommandRegistry.h"
 #include "DocumentCommands.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <format>
