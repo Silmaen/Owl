@@ -38,14 +38,14 @@ ignores it.
 
 ## Context menus
 
-| Where          | Entries                                                                                         |
-|----------------|-------------------------------------------------------------------------------------------------|
-| Background     | **Create Folder**, **New Material**, **New Sequence**, **Import File...**, **Import Folder...** |
-| File or folder | **Open**, **Rename**, **Delete**                                                                |
-| Texture        | **Import Settings** (selects it in the Import panel), **Cook**                                  |
-| Folder         | **Cook Folder**                                                                                 |
-| Mesh           | **Open** (the mesh viewer), **Place in Scene**, **Import Settings** (LODs)                      |
-| Macro          | **Edit as Text**                                                                                |
+| Where          | Entries                                                                                                                                                                                                                                   |
+|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Background     | **Create Folder**, **New Material**, **New Sound Cue**, **New Data Table**, **New HUD Theme**, **New Dialogue**, **New Sequence**, **New Lua Script**, **New Visual Script**, **New PCG Graph**, **Import File...**, **Import Folder...** |
+| File or folder | **Open**, **Rename**, **Delete**                                                                                                                                                                                                          |
+| Texture        | **Import Settings** (selects it in the Import panel), **Cook**                                                                                                                                                                            |
+| Folder         | **Cook Folder**                                                                                                                                                                                                                           |
+| Mesh           | **Open** (the mesh viewer), **Place in Scene**, **Import Settings** (LODs)                                                                                                                                                                |
+| Macro          | **Edit as Text**                                                                                                                                                                                                                          |
 
 **New Material** creates `New Material.owlmat` in the folder shown and opens it in the material editor. **New Sequence** (`sequence.create`) creates `New Sequence.owlseq` and opens it in the
 [Sequencer](sequences.md#sequences-editor).

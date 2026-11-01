@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project templates **2D platformer** (Box2D platforms, run and jump), **3D** (meshes, sun, procedural sky, first-person player) and **Isometric** (tilemap island and sprites), each with a scenario and a preview image.
 - Owl Nest **New Project** dialog: a grid of template cards (preview, name, description, style tags) filtered by tag and walked with the arrow keys, the details of the selected template, and a checked name and location (`panel::validateNewProject`).
 - `tools/demo/generate_templates.py` writes the meshes, the isometric atlas, tileset and map of the templates.
+- Owl Nest Content Browser **New Lua Script**: a starter script with one property and the lifecycle hooks, opened in the code editor.
 - Tutorial "Create a new game" (`tutorial-first-game.md`): a first game in Owl Nest from the Empty 2D template, from the project to the export.
 - Documentation reading levels: a `Level:` line under each page title (beginner, confirmed, expert) and three entry paths in the README.
 - Engine Demo: the world map is the only way into the scenes, the main menu shortcuts are gone and one door script (`place_door.lua`) opens every place.

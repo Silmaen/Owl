@@ -748,6 +748,8 @@ void ContentBrowser::renderCreateItems() {
 		createDialogue();
 	if (m_sequenceCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::clapperboard, .label = "New Sequence"}))
 		createSequence();
+	if (gui::widgets::menuItem({.glyph = gui::icon::fileCode2, .label = "New Lua Script"}))
+		createLuaScript();
 	if (gui::widgets::menuItem({.glyph = gui::icon::workflow, .label = "New Visual Script"}))
 		createVisualScript();
 	if (gui::widgets::menuItem({.glyph = gui::icon::sparkles, .label = "New PCG Graph"}))
@@ -951,6 +953,35 @@ void ContentBrowser::createSequence() {
 		sequencePath = m_currentPath / std::format("New Sequence {}.owlseq", counter);
 	m_sequenceCreateCallback(sequencePath);
 	m_rescanRequested = true;
+}
+
+auto ContentBrowser::starterLuaScript() -> std::string_view {
+	return R"(-- A script of an entity: its properties show in the inspector, the engine calls its functions.
+
+properties = {
+    { name = "speed", type = "float", default = 3.0 },
+}
+
+function on_create()
+end
+
+function on_update(dt)
+end
+)";
+}
+
+void ContentBrowser::createLuaScript() {
+	auto scriptPath = m_currentPath / "new_script.lua";
+	for (uint32_t counter = 1; exists(scriptPath); ++counter)
+		scriptPath = m_currentPath / std::format("new_script_{}.lua", counter);
+	const auto text = starterLuaScript();
+	if (!platform::writeFileAtomic(scriptPath, text)) {
+		OWL_ERROR("ContentBrowser: Cannot create the Lua script '{}'.", scriptPath.string())
+		return;
+	}
+	m_rescanRequested = true;
+	if (m_codeOpenCallback)
+		m_codeOpenCallback(scriptPath);
 }
 
 void ContentBrowser::createVisualScript() {

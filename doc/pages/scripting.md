@@ -55,8 +55,9 @@ flowchart LR
 
 ## Adding a Script to an Entity
 
-1. Create a `.lua` file in your project's asset directory (e.g. `scripts/player.lua`)
-2. In Owl Nest, select an entity and click **Add Component > Lua Script**
+1. In the Content Browser, right-click a folder and choose **New Lua Script** (a starter with one property and the
+   lifecycle hooks, opened in the code editor), or create a `.lua` file in the project (e.g. `scripts/player.lua`)
+2. In Owl Nest, select an entity and click **Add > Lua Script**
 3. Drop the script from the Content Browser on the **Script** field (it stores the relative path, e.g.
    `scripts/player.lua`); **Open** shows it in the code editor
 4. The exposed properties appear under **Properties**; they are read again when the file changes, values already set
