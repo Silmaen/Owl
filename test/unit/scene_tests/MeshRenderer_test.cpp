@@ -306,3 +306,51 @@ TEST_F(MeshRendererTest, theMotionBlurFollowsTheCameraInPlayOnly) {
 	EXPECT_EQ(passCount("post depth"), 1u);
 	sc->onEndRuntime();
 }
+
+TEST_F(MeshRendererTest, anActorOfADepthSortedWalkAreaIsDrawnFlatInDepth) {
+	const auto flatDraws = [](const bool iDepthSort, const bool iOnChild) -> uint32_t {
+		useStack(false);
+		const auto sc = makeScene(true);
+		auto floor = sc->createEntity("Floor");
+		floor.addComponent<scene::component::WalkArea>().depthSort = iDepthSort;
+		auto actor = sc->createEntity("Actor");
+		actor.addComponent<scene::component::WalkAgent>().area = floor.getUUID();
+		auto body = iOnChild ? sc->createEntity("Body") : actor;
+		if (iOnChild)
+			sc->setParent(body, actor);
+		body.addComponent<scene::component::RendererTag>().rendererName = "mesh_world";
+		body.addComponent<scene::component::MeshRenderer>().setMeshPath(cubePath());
+		sc->onRenderRuntime();
+		return renderer::RendererMesh::getStatistics().flatDrawCount;
+	};
+	EXPECT_EQ(flatDraws(true, false), cubeParts());
+	EXPECT_EQ(flatDraws(true, true), cubeParts());
+	EXPECT_EQ(flatDraws(false, false), 0u);
+}
+
+TEST_F(MeshRendererTest, aPixelArtLayerIsDrawnSmallThenCompositedInPlay) {
+	useStack(false, "PixelHeight: 90\nPixelColorLevels: 6\nPixelOutline: [0, 0, 0, 1]");
+	const auto layer = renderer::Renderer::getRenderStack().findByName("mesh_world");
+	ASSERT_NE(layer, nullptr);
+	EXPECT_EQ(layer->getPixelArt().height, 90u);
+	EXPECT_EQ(layer->getPixelArt().colorLevels, 6u);
+	const auto sc = makeScene(true);
+	sc->onStartRuntime();
+	sc->onRenderRuntime();
+	const auto passes = renderer::Renderer::getRenderGraph().getCompiledPasses();
+	const auto meshes = std::ranges::find(passes, "mesh_world");
+	const auto depth = std::ranges::find(passes, "pixel art depth");
+	const auto composite = std::ranges::find(passes, "pixel art composite");
+	ASSERT_NE(meshes, passes.end());
+	ASSERT_NE(depth, passes.end());
+	ASSERT_NE(composite, passes.end());
+	EXPECT_LT(meshes, composite);
+	EXPECT_LT(depth, composite);
+	sc->onEndRuntime();
+	// While editing the layer is drawn at full resolution, so that its entities stay pickable.
+	renderer::CameraEditor camera{45.f, 1.778f, 0.1f, 1000.f};
+	camera.setViewportSize({320, 180});
+	sc->renderEditorView(camera);
+	const auto edited = renderer::Renderer::getRenderGraph().getCompiledPasses();
+	EXPECT_EQ(std::ranges::find(edited, "pixel art composite"), edited.end());
+}

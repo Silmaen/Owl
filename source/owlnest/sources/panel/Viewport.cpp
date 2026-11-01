@@ -313,13 +313,13 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	// Clear our entity ID attachment to -1
 	m_framebuffer->clearAttachment(1, -1);
 
-	// Never leave the cursor captured outside Play (e.g. after Stop), or it would be stuck hidden in the editor.
-	if (mp_document->state() != SceneDocument::State::Play)
+	// Never leave the cursor captured or hidden outside Play (e.g. after Stop), or it would be stuck in the editor.
+	if (mp_document->state() != SceneDocument::State::Play) {
 		m_cursorCapture.reset();
-	if (mp_document->state() != SceneDocument::State::Play &&
-		app::Application::get().getWindow().getCursorMode() == window::CursorMode::Disabled) {
-		app::Application::get().getWindow().setCursorMode(window::CursorMode::Normal);
-		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
+		if (app::Application::get().getWindow().getCursorMode() != window::CursorMode::Normal) {
+			app::Application::get().getWindow().setCursorMode(window::CursorMode::Normal);
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
+		}
 	}
 
 	activeScene->setColorVisionPreview(
@@ -343,13 +343,14 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				// Click to capture the cursor (hidden/locked), Esc to free; no focus/hover release (the captured cursor's unbounded virtual position would read as "left the viewport" and cancel capture every frame). NoMouseCursorChange stops ImGui from re-showing the cursor while captured.
 				auto& window = app::Application::get().getWindow();
 				const auto cursorMode = window.getCursorMode();
-				// A scene that stops wanting capture (level change, voxel player gone) gives the cursor back too.
+				// Capture ends when the scene stops wanting it; the game cursor hides the system one on the game only.
 				const auto nextMode = m_cursorCapture.next(cursorMode, activeScene->wantsCursorCapture(),
 														   m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left),
-														   input::Input::isKeyPressed(input::key::Escape));
+														   input::Input::isKeyPressed(input::key::Escape),
+														   m_hovered && activeScene->wantsCursorHidden());
 				if (nextMode != cursorMode) {
 					window.setCursorMode(nextMode);
-					if (nextMode == window::CursorMode::Disabled)
+					if (nextMode != window::CursorMode::Normal)
 						ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
 					else
 						ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;

@@ -741,6 +741,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Whether this scene draws its own cursor, so the system one is hidden over the game (`input.set_cursor_visible`).
+	 * @return True while a script hides the system cursor; false otherwise (the default, and after Stop).
+	 */
+	[[nodiscard]] auto wantsCursorHidden() const -> bool { return m_cursorHidden; }
+
+	/**
+	 * @brief
+	 *  Hide or show the system cursor over the game (the runner and the Owl Nest viewport apply it in play).
+	 * @param[in] iHidden True when the game draws its own cursor.
+	 */
+	void setCursorHidden(const bool iHidden) { m_cursorHidden = iHidden; }
+
+	/**
+	 * @brief
 	 *  Set the targeted-block highlight of the voxel HUD for this frame.
 	 *
 	 * In Play the `owl.voxel_players` system sets it from the player's target; in the editor there is no
@@ -2157,6 +2171,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Declare the reads of a pass drawing a 3D layer: the shadow maps, the reflection probes and the occlusion.
+	 * @param[in,out] ioBuilder The builder of the pass.
+	 */
+	void readWorldInputs(renderer::RenderGraph::PassBuilder& ioBuilder) const;
+
+	/**
+	 * @brief
 	 *  Add the depth of field and the motion blur of the render camera after the world passes, with the depth of the
 	 *  3D layers they read.
 	 * @param[in,out] ioGraph The frame graph.
@@ -2209,6 +2230,24 @@ private:
 	 * @param[in] iMeshesOnly Whether only the mesh layers draw (an outline mask), the voxel worlds left out.
 	 */
 	void renderShadowCasters(const renderer::Camera& iCamera, bool iMeshesOnly = false);
+
+	/**
+	 * @brief
+	 *  Add a 3D layer drawn as pixel art to a frame graph: its colour and its depth at the low resolution of its
+	 *  `PixelArtSettings`, then their composite over the scene colour.
+	 * @param[in,out] ioGraph The graph of the frame.
+	 * @param[in] iIndex Index of the layer in the stack.
+	 * @param[in] iSceneColor The linear scene colour.
+	 */
+	void recordPixelArtPasses(renderer::RenderGraph& ioGraph, size_t iIndex,
+							  renderer::RenderGraph::Resource iSceneColor);
+
+	/**
+	 * @brief
+	 *  Draw the opaque meshes of one layer of the stack as depth (a shadow pass with the current camera).
+	 * @param[in] iIndex Index of the layer in the stack.
+	 */
+	void renderLayerDepth(size_t iIndex);
 
 	/**
 	 * @brief
@@ -2380,6 +2419,8 @@ private:
 	math::vec3 m_editorAmbient{0.f, 0.f, 0.f};
 	/// Whether the HUD is drawn in Edit mode.
 	bool m_editorHudVisible = true;
+	/// Whether a script hides the system cursor over the game.
+	bool m_cursorHidden = false;
 	/// Colour vision filter previewed by Owl Nest, inactive by default.
 	renderer::ColorVisionFilter m_colorVisionPreview;
 	/// Accessibility settings of the frame being recorded.
@@ -2397,6 +2438,18 @@ private:
 	};
 	/// Post-process targets of the frame being recorded.
 	PostTargets m_postTargets;
+	/**
+	 * @brief
+	 *  Low-resolution targets of a layer drawn as pixel art in the frame being recorded.
+	 */
+	struct PixelArtTargets {
+		/// Colour of the layer.
+		renderer::RenderGraph::Resource color;
+		/// Depth of the layer.
+		renderer::RenderGraph::Resource depth;
+	};
+	/// Pixel-art targets of the frame being recorded, by index of the layer in the stack.
+	std::vector<PixelArtTargets> m_pixelArtTargets;
 	/// Depth of the 3D layers the depth of field and the motion blur read this frame, invalid without them.
 	renderer::RenderGraph::Resource m_postDepth{};
 	/// Lights flaring in the frame being recorded, the brightest first.

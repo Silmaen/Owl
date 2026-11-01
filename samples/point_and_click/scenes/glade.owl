@@ -153,6 +153,24 @@ Entities:
       mesh: gid:20cc1b9fee86132d:meshes/hero.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
     Animator:
       playing: true
       speed: 1

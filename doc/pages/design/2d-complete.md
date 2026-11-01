@@ -127,6 +127,9 @@ Free walking on a 2D floor for point-and-click and top-down games, beside the ti
 - A scale by depth: two scales at two heights of the plane, and the Z of the agents from their height
 - `WalkBehind` masks: a sprite of the backdrop takes the Z of its baseline and hides the actors walking behind it, 2D
   sprites and meshes alike
+- One depth per actor: a mesh actor of a depth-sorted area is drawn flat at the depth of its feet, so a mask or
+  another actor hides all of it or none of it, never a leg in front and the body behind
+  ([Static meshes](../renderer.md#renderer-meshes))
 - `WalkAgent` walks the path, turns and drives the speed of its `Animator`; Lua `walk.*`; the navigation overlay draws
   the floors and the paths; the vertices and holes are edited in the Owl Nest viewport (select-many, move, insert,
   delete, add a hole or a floor), each gesture a `walk.*` command

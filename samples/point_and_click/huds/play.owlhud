@@ -191,17 +191,11 @@ Entities:
       size: [0.6, 0.16]
       sizeUnit: [ParentWidth, ScreenHeight]
       offset: [0, -12]
-    UiWindow:
-      title: ''
-      titleBarHeight: 0
-      titleFontSize: 1
-      bodyColor: [0.07, 0.06, 0.12, 0.86]
-      titleColor: [0.07, 0.06, 0.12, 0.86]
-      titleTextColor: [0.96, 0.9, 0.74, 1]
-      draggable: false
-      closable: false
-      modal: true
-      onCloseCallback: ''
+    UiPanel:
+      backgroundColor: [0.07, 0.06, 0.12, 0.86]
+      borderColor: [0.97, 0.78, 0.36, 1]
+      borderWidth: 2
+      clipChildren: false
     UiLayout:
       arrangement: Row
       crossAlign: Center
@@ -908,6 +902,108 @@ Entities:
       font: MedievalSharp
   - Entity: 9300000000000000030
     Tag:
+      tag: Held_jar
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9300000000000000001
+    UiToolCursor:
+      texture: gid:8a59627fc3144d12:textures/items/jar.png
+      tint: [1, 1, 1, 1]
+      size: [56, 56]
+      hotspot: [0.5, 0.5]
+      active: false
+  - Entity: 9300000000000000031
+    Tag:
+      tag: Held_firefly_jar
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9300000000000000001
+    UiToolCursor:
+      texture: gid:fdb05ed35df34b62:textures/items/firefly_jar.png
+      tint: [1, 1, 1, 1]
+      size: [56, 56]
+      hotspot: [0.5, 0.5]
+      active: false
+  - Entity: 9300000000000000032
+    Tag:
+      tag: Held_berries
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9300000000000000001
+    UiToolCursor:
+      texture: gid:2461a795f8d47550:textures/items/berries.png
+      tint: [1, 1, 1, 1]
+      size: [56, 56]
+      hotspot: [0.5, 0.5]
+      active: false
+  - Entity: 9300000000000000033
+    Tag:
+      tag: Held_crust
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9300000000000000001
+    UiToolCursor:
+      texture: gid:78966b0259ef4d4e:textures/items/crust.png
+      tint: [1, 1, 1, 1]
+      size: [56, 56]
+      hotspot: [0.5, 0.5]
+      active: false
+  - Entity: 9300000000000000034
+    Tag:
+      tag: Held_pie
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9300000000000000001
+    UiToolCursor:
+      texture: gid:2775b5ebf8d4a08e:textures/items/pie.png
+      tint: [1, 1, 1, 1]
+      size: [56, 56]
+      hotspot: [0.5, 0.5]
+      active: false
+  - Entity: 9300000000000000035
+    Tag:
+      tag: Held_moonstone
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9300000000000000001
+    UiToolCursor:
+      texture: gid:2a60298fa0b32ff5:textures/items/moonstone.png
+      tint: [1, 1, 1, 1]
+      size: [56, 56]
+      hotspot: [0.5, 0.5]
+      active: false
+  - Entity: 9300000000000000036
+    Tag:
       tag: PauseWindow
     Transform:
       translation: [0, 0, 0]
@@ -942,7 +1038,7 @@ Entities:
       padding: 12
       columns: 1
       cellSize: [0, 0]
-  - Entity: 9300000000000000031
+  - Entity: 9300000000000000037
     Tag:
       tag: PauseQuit
     Transform:
@@ -952,7 +1048,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 9300000000000000030
+      parentId: 9300000000000000036
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -987,7 +1083,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.78, 0.36, 1]
       highlightThickness: 3
-  - Entity: 9300000000000000032
+  - Entity: 9300000000000000038
     Tag:
       tag: PauseSave
     Transform:
@@ -997,7 +1093,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 9300000000000000030
+      parentId: 9300000000000000036
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1032,7 +1128,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.78, 0.36, 1]
       highlightThickness: 3
-  - Entity: 9300000000000000033
+  - Entity: 9300000000000000039
     Tag:
       tag: PauseResume
     Transform:
@@ -1042,7 +1138,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 9300000000000000030
+      parentId: 9300000000000000036
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]

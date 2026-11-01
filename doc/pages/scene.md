@@ -1263,7 +1263,10 @@ seconds; hidden while the button is pressed. Sized to its text, kept inside the 
 #### UiToolCursor
 
 A sprite following the mouse over the HUD while a construction tool is active, pairing with the tile highlight of the
-isometric layer. It needs no `UiRect`; the first active one is drawn last, in play only. Lua `ui.set_tool_cursor`.
+isometric layer, or the object in hand of an adventure game. It needs no `UiRect`; the first active one is drawn last,
+in play only. Lua `ui.set_tool_cursor`; `input.set_cursor_visible(false)` hides the system cursor under it
+(`window::CursorMode::Hidden`, `Scene::wantsCursorHidden`), in Owl Nest only while the mouse is over the game viewport,
+shown again when the play stops.
 
 | Field     | Type      | Description                                                           |
 |-----------|-----------|-----------------------------------------------------------------------|

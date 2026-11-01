@@ -785,6 +785,21 @@ The `RendererMesh` layer reads these keys (editable in the Owl Nest Scene Settin
 |--------------------|---------|--------------------------------------------------------------------------------------------------------|
 | `OcclusionCulling` | `false` | Hi-Z occlusion culling of the opaque instances (Owl Nest: **Occlusion Culling**)                       |
 | `OcclusionScale`   | `1`     | Occluder depth resolution, 0.125 to 1, as a share of the view size (Owl Nest: **Occluder Resolution**) |
+| `PixelHeight`      | `0`     | Draw the layer as pixel art, this many texels high (0: at the frame resolution; **Pixel Height**)      |
+| `PixelColorLevels` | `0`     | Pixel art: brightness levels kept, hues unchanged (0: every level; **Colour Levels**)                  |
+| `PixelOutline`     | none    | Pixel art: sRGB colour of the one-texel outline round the silhouettes, alpha 0 for none                |
+
+- **Pixel art** (`renderer::PixelArtSettings`, `RenderLayer::getPixelArt`): in Play, a mesh layer with a `PixelHeight`
+  is drawn into a `Linear` target that many texels high (the width of the frame's aspect), its depth drawn beside it
+  in shadow mode, then `PixelArtPass` (`pixel_art/pixel_art.slang`) composites both over the scene colour texel by texel
+  (nearest), with the brightness levels and the outline, and writes the depth of each texel: the 2D layers drawn after
+  it with `DepthTest` hide its meshes as they hide full-resolution ones. The entity id of its pixels is -1, so the
+  Owl Nest editor draws the layer at full resolution while editing, where its entities stay pickable. 180 matches a
+  320 x 180 pixel-art backdrop; the Toon shading model of the materials gives the flat bands that go with it.
+- **Flat in depth** (`MeshDrawParams::flatDepth`): the meshes of a `WalkAgent` on a `WalkArea` with `depthSort` (or
+  of a child of it) take the depth of their origin, plus a thousandth of their own depth offset, in every pass: an
+  actor is whole in front of or behind a walk-behind mask or another actor, never cut through
+  (`RendererMesh::Statistics::flatDrawCount`).
 - **Packs**: `AssetScanner` adds the mesh file of every `MeshRenderer`, the buffers and images a `.gltf` names, the
   texture override and the materials of the slots.
 

@@ -8,15 +8,19 @@
 --             hotspot is the entity `Hotspot_<id>` (its position and scale are the rectangle, edited in Owl Nest) and
 --             its child `Stand_<id>`, where the hero stands to act on it;
 --   act       function(id, verb, item) of the room, called once the hero stands there: true when it handled the
---             action (an unhandled look says `look.<room>.<id>`, anything else a polite refusal).
+--             action (an unhandled look says `look.<room>.<id>`, anything else a polite refusal);
+--   highlights  optional {id = entity name}: the sprite glowing under the cursor when it is not `Prop_<id>`.
 -- The room calls `adventure.update(dt)` from `on_update`. The rest of the game reads and changes the state through
 -- `adventure.has`, `give`, `take`, `flag`, `set_flag`, `say`, `talk`, `go` (all in `gamestate`, so a save keeps them).
 --
 -- Controls: the mouse moves the cursor, the left button does the action the cursor shows (walk, look, pick, use,
 -- talk, go), the right button looks. The keyboard (arrows) and the left stick move the cursor too; Tab / E and Q, pad
 -- RB and LB jump it from hotspot to hotspot; Enter or pad A acts, L or pad X looks. I, pad Y or the bag button open the
--- inventory: click an object to take it in hand, then click another object to combine them or a hotspot to use it
--- there; the right button or Escape puts it back. Escape, P or pad Start pause.
+-- inventory: click an object to take it in hand (it becomes the cursor, the bag stays open), click another object of
+-- the bag to combine them (the result appears in the bag) or a hotspot of the room to use it there (a click on the
+-- room closes the bag); the right button puts it back, I, Escape or the bag button close the bag. Escape, P or pad
+-- Start pause. A hotspot whose sprite is in the room (`Prop_<id>`, or the `highlights` of the room) glows under the
+-- cursor. The system cursor is hidden while the game draws its own.
 
 local A = {}
 
@@ -42,6 +46,8 @@ local last_mouse_x, last_mouse_y = -1, -1
 local hover = nil
 local busy_timer = 0              -- seconds left of an animation that holds the controls
 local after_busy = nil
+local glow = { entity = 0, r = 1, g = 1, b = 1, a = 1, clock = 0 } -- the sprite under the cursor and its own tint
+local cursor_hidden = false
 
 -- -----------------------------------------------------------------------------------------------------------------
 -- State kept in gamestate.
@@ -170,26 +176,26 @@ local function combine(a, b)
             A.give(recipe[3])
             sound.play("sounds/combine.wav")
             ui.show_subtitle(tr("subtitle.pie"), 1.5)
-            A.say(recipe[4])
             hold(nil)
+            A.say(recipe[4])
             return
         end
     end
     A.say("say.combine.no")
 end
 
+-- An object of the bag clicked: taken in hand, combined with the one in hand, or put back; the bag stays open.
 local function click_slot(slot)
     local item = inventory()[slot]
     if item == nil then return end
     sound.play("sounds/click.wav")
     if held ~= nil and held ~= item then
         combine(held, item)
+        A.refresh_inventory()
     elseif held == item then
         hold(nil)
     else
         hold(item)
-        set_inventory(false)
-        A.say("say.hold", item_name(item))
     end
 end
 
@@ -304,8 +310,10 @@ local function parse(lines)
         if entity ~= 0 then
             -- The target of an exit names a string property of the room holding the scene path (packed by the export).
             local target = words[3] and (_G[words[3]] or words[3])
+            local glows = (room.highlights or {})[id] or ("Prop_" .. id)
             out[#out + 1] = { id = id, verb = words[2] or "look", target = target, entity = entity,
-                              stand = scene.find_entity("Stand_" .. id), enabled = true }
+                              stand = scene.find_entity("Stand_" .. id), prop = scene.find_entity(glows),
+                              enabled = true }
         end
     end
     return out
@@ -355,25 +363,61 @@ local function verb_of(hotspot)
     return hotspot.verb
 end
 
-local function update_cursor()
+-- The sprite of a hotspot glows while the cursor is over it; the one it left gets its own tint back.
+local function set_glow(hotspot, dt)
+    local target = hotspot and hotspot.prop or 0
+    if target ~= glow.entity then
+        if glow.entity ~= 0 then entity.set_tint(glow.entity, glow.r, glow.g, glow.b, glow.a) end
+        glow.entity = target
+        glow.clock = 0
+        if target ~= 0 then glow.r, glow.g, glow.b, glow.a = entity.get_tint(target) end
+        if glow.r == nil then glow.entity, glow.r, glow.g, glow.b, glow.a = 0, 1, 1, 1, 1 end
+    end
+    target = glow.entity
+    if target == 0 then return end
+    glow.clock = glow.clock + dt
+    local boost = 1.45 + 0.15 * math.sin(glow.clock * 5)
+    entity.set_tint(target, glow.r * boost, glow.g * boost, glow.b * boost * 0.9, glow.a)
+end
+
+-- The object in hand is the cursor: the HUD tool cursor of its picture (over the bag too) with the mouse, the item
+-- sprite at the pointer with the keyboard and the gamepad.
+local function show_held(active)
+    for _, item in ipairs(ITEMS) do
+        local cursor = ids["Held_" .. item]
+        if cursor ~= nil and cursor ~= 0 then ui.set_tool_cursor(cursor, active and item == held and not gamepad_mode) end
+    end
+end
+
+local function update_cursor(dt)
     local vw, vh = scene.get_viewport_size()
     if vh <= 0 then return end
     local scale = 720 / vh
     local sx, sy = cursor_px * scale, (vh - cursor_py) * scale
     ui.set_visible(ids.BagButton, not paused and conversation == nil)
     local blocked = paused or conversation ~= nil or inventory_open or ui.is_mouse_over_ui()
+    local holding = held ~= nil and not paused and conversation == nil
+    show_held(holding)
     ui.set_visible(ids.Cursor, not blocked and held == nil)
-    ui.set_visible(ids.ItemCursor, not blocked and held ~= nil)
+    ui.set_visible(ids.ItemCursor, not blocked and held ~= nil and gamepad_mode)
     ui.set_visible(ids.Pointer, gamepad_mode and not blocked)
+    -- The system cursor shows only where the game draws none of its own (a menu, a button without an object in hand).
+    local hide = holding or gamepad_mode or not blocked
+    if hide ~= cursor_hidden then
+        cursor_hidden = hide
+        input.set_cursor_visible(not hide)
+    end
     transform.set_position(ids.Pointer, sx + CURSOR_SIZE / 2, sy - CURSOR_SIZE / 2, 0.2)
     transform.set_position(ids.Cursor, sx + CURSOR_SIZE * 1.1, sy - CURSOR_SIZE * 1.1, 0.1)
     transform.set_position(ids.ItemCursor, sx + CURSOR_SIZE * 1.1, sy - CURSOR_SIZE * 1.1, 0.1)
     if blocked then
-        ui.set_text(ids.HoverLabel, "")
+        set_glow(nil, dt)
+        ui.set_text(ids.HoverLabel, (inventory_open and held ~= nil) and item_name(held) or "")
         return
     end
     local wx, wy = to_world(cursor_px, cursor_py)
     hover = hotspot_at(wx, wy)
+    set_glow(hover, dt)
     local verb = verb_of(hover)
     isometric.set_sprite_frame(ids.Cursor, FRAMES[verb])
     if held ~= nil then
@@ -530,12 +574,23 @@ local function read_input(dt)
             inventory_focus = ((inventory_focus - 1 + step) % count) + 1
             ui.set_focus(ids["Slot" .. inventory_focus])
         end
-        if input.is_action_just_pressed("secondary") then set_inventory(false) end
-        return
+        if input.is_action_just_pressed("secondary") then
+            if held ~= nil then hold(nil) else set_inventory(false) end
+            return
+        end
+        -- A click on the room closes the bag; on a hotspot it also does what the cursor shows (use the object in hand).
+        if not (input.is_action_just_pressed("primary") and not ui.is_mouse_over_ui()) then return end
+        set_inventory(false)
+        gamepad_mode = false
+        move_cursor(dt)
+        if hotspot_at(to_world(cursor_px, cursor_py)) == nil then
+            update_cursor(dt)
+            return
+        end
     end
     move_cursor(dt)
     -- The hotspot under the cursor where it is now, not where it was last frame.
-    update_cursor()
+    update_cursor(dt)
     if busy_timer > 0 then return end
     local over_ui = ui.is_mouse_over_ui() and not gamepad_mode
     if speech_timer > 0 and (input.is_action_just_pressed("primary") or input.is_action_just_pressed("act")) and hover == nil then
@@ -555,7 +610,7 @@ end
 
 function A.update(dt)
     read_input(dt)
-    update_cursor()
+    update_cursor(0)
     if speech_timer > 0 then
         speech_timer = speech_timer - dt
         if speech_timer <= 0 then hush() end
@@ -598,6 +653,11 @@ function A.start(config)
         ids[name] = ui.find(name)
         if ids[name] == 0 then ids[name] = scene.find_entity(name) end
     end
+    for _, item in ipairs(ITEMS) do
+        ids["Held_" .. item] = ui.find("Held_" .. item)
+    end
+    glow.entity = 0
+    cursor_hidden = false
     for slot = 1, SLOTS do
         ids["Slot" .. slot] = ui.find("Slot" .. slot)
         ids["SlotIcon" .. slot] = ui.find("SlotIcon" .. slot)

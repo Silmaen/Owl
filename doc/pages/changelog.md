@@ -168,10 +168,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `ui.set_style` makes the widgets of an entity follow a style.
 - Benchmark `hud/frame/500_styled_widgets`: the 500-widget HUD drawn through the rounded-box shader.
 - Engine Demo skin `huds/engine_demo.owlhudtheme` (warm wood and brass, nine-slice textures from `tools/demo/generate_ui_skin.py`), the project default, followed by every menu and HUD but the far-orbit cockpit.
+- Pixel-art mesh layers: `PixelHeight`, `PixelColorLevels` and `PixelOutline` draw a `RendererMesh` layer at a low resolution, composited with its depth by `PixelArtPass`, set from Owl Nest Scene Settings.
+- Engine Demo tavern: a pixel-art mannequin stands in the room (`mesh_pixel` layer).
+- `window::CursorMode::Hidden` and Lua `input.set_cursor_visible` / `input.is_cursor_visible`: a game drawing its own cursor hides the system one, in Owl Nest only over the game viewport.
 
 ### Changed
 
 - A particle emitter that does not emit and whose particles all died is idle (`ParticleSystem::isIdle`): neither simulated nor drawn.
+- The Moon Lantern: the bag stays open with an object in hand and after a combination, a click on the room closes it, and the object in hand is the cursor.
+- The Moon Lantern: the actors are drawn as toon-shaded pixel art with an outline, matching the backdrops, and the objects to pick are lighter, outlined and glow under the cursor.
 - A glTF with one skin per mesh over the same joints (as Quaternius exports its characters) is skinned whole, not only its first mesh.
 - Scenario and frame-bench runs read the `localisation.yml` of their project: the texts show translated as in the game.
 - Each scenario test runs with a user directory of its own (`OWL_USER_DIR`): parallel scenarios no longer share saves and settings.
@@ -215,6 +220,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A scene that gave the mouse back by itself, a dialogue pausing the walker, captures it again when it ends, in Play and in the runner; Escape still waits for a click.
 - HUD markers were mirrored vertically on Vulkan: `renderer::projectToViewport` takes the clip space of the active layer.
 - `entity.particles_emit` (`ParticleSystem::emit`) bursts an emitter that never played (no play on start), which spawned nothing, and an emitter moved while idle bursts where it is instead of along a streak from where it was.
+- Walk-behind: a mesh actor of a depth-sorted `WalkArea` is drawn flat at the depth of its feet, so a mask or another actor never hides one limb and not the rest.
+- The Moon Lantern: the pie crust is drawn over the table it lies on instead of sharing its depth.
 - Node editors: a link routed backwards through waypoints crosses them towards where it goes instead of looping.
 - Content Browser: **Delete** and **Rename** open their confirmation again once the context menu has closed; `Delete` and `F2` are their shortcuts.
 - Mixer: drawn with the widget kit and the theme (property grid, sub-headers, themed mute / solo switches and meter), docked with Properties, and its ribbon button shows and hides it.

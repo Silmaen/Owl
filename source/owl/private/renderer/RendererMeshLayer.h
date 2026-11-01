@@ -93,6 +93,13 @@ public:
 	 */
 	[[nodiscard]] auto getConfig() const -> const MeshLayerConfig& { return m_config; }
 
+	/**
+	 * @brief
+	 *  Get the pixel-art look of the layer (`PixelHeight`, `PixelColorLevels`, `PixelOutline`).
+	 * @return The settings of the configuration.
+	 */
+	[[nodiscard]] auto getPixelArt() const -> PixelArtSettings override { return m_config.pixelArt; }
+
 private:
 	/// Instance name from the project stack.
 	std::string m_name;

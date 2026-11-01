@@ -6,7 +6,8 @@ Paint the pictures and synthesise the sounds of The Moon Lantern, the point-and-
 - ``textures/rooms/<room>.png``: the 320 x 180 pixel-art backdrop of each room (``rooms.py``), and for each
   walk-behind mask and prop of the room its own picture (``<room>_<name>.png``), cut from the same painting so that a
   sprite laid over the backdrop at its rectangle fits exactly; a prop with several frames is a sheet of one row;
-- ``textures/items.png``: the icons of the inventory (``rooms.ITEMS``, 24 x 24 each, one row);
+- ``textures/items.png``: the icons of the inventory (``rooms.ITEMS``, 24 x 24 each, one row), and each of them alone
+  in ``textures/items/<item>.png`` (the object in hand, drawn as the cursor);
 - ``textures/cursors.png``: the action cursors (walk, look, use, talk, pick, exit left, exit right, pointer; 16 x 16);
 - ``textures/ui/``: the inventory slot and the title vignette.
 
@@ -281,15 +282,19 @@ def paint_cottage() -> dict[str, Image.Image]:
     table.glow(130, 124, 60, (255, 170, 90), 0.3)
     back.paste(table)
     # Props.
+    # The objects to pick are lighter than what is round them and outlined in ink, like the icons of the bag.
     jar = Canvas(15, 15, 17)
-    jar.rect(3, 4, 11, 13, (150, 190, 200, 170))
-    jar.frame(3, 4, 11, 13, (210, 230, 236))
-    jar.rect(4, 1, 10, 3, WOOD[2])
-    jar.line([(5, 6), (5, 11)], (240, 250, 255))
+    jar.rect(3, 4, 11, 13, (176, 214, 224, 220))
+    jar.frame(3, 4, 11, 13, (236, 246, 250))
+    jar.rect(4, 1, 10, 3, GOLD[1])
+    jar.line([(5, 6), (5, 11)], (255, 255, 255))
+    jar.outline_alpha(INK)
     crust = Canvas(25, 13, 19)
-    crust.ellipse(1, 3, 23, 12, (200, 150, 80), INK)
-    crust.ellipse(4, 5, 20, 10, (226, 186, 110))
-    crust.ellipse(7, 6, 17, 9, (150, 104, 56))
+    crust.ellipse(1, 2, 23, 11, (236, 186, 98), INK)
+    crust.ellipse(4, 4, 20, 9, (252, 222, 150))
+    crust.ellipse(8, 5, 16, 8, (176, 116, 54))
+    crust.line([(6, 3), (12, 3)], (255, 244, 200))
+    crust.outline_alpha(INK)
     fire_frames = []
     for frame in range(3):
         fire = Canvas(39, 31, 40 + frame)
@@ -373,8 +378,9 @@ def paint_glade(title: bool = False) -> dict[str, Image.Image]:
     rng = random.Random(9)
     for _ in range(16):
         x, y = rng.randint(3, 41), rng.randint(3, 21)
-        berries.ellipse(x - 1, y - 1, x + 1, y + 1, (130, 40, 110))
-        berries.put(x - 1, y - 1, (220, 120, 200))
+        berries.ellipse(x - 1, y - 1, x + 1, y + 1, (186, 56, 150))
+        berries.put(x - 1, y - 1, (250, 170, 232))
+    berries.outline_alpha(INK)
     firefly_frames = []
     for frame in range(4):
         flies = Canvas(59, 37, 50 + frame)
@@ -471,7 +477,7 @@ def paint_bridge() -> dict[str, Image.Image]:
 # --- icons ---------------------------------------------------------------------------------------------------------
 
 
-def paint_items() -> Image.Image:
+def paint_items() -> list[Image.Image]:
     """The inventory icons, 24 x 24 each: jar, jar of fireflies, berries, pie crust, berry pie, moonstone."""
     icons = []
     for item in rooms.ITEMS:
@@ -505,7 +511,7 @@ def paint_items() -> Image.Image:
             icon.put(9, 7, (255, 255, 255))
         icon.outline_alpha(INK)
         icons.append(icon.image)
-    return sheet(icons)
+    return icons
 
 
 def paint_cursors() -> Image.Image:
@@ -718,7 +724,10 @@ def main() -> None:
     for pictures in (paint_cottage(), paint_glade(), paint_glade(title=True), paint_bridge(), paint_ui()):
         for name, picture in pictures.items():
             save(picture, f"textures/{name if name.startswith('ui/') else 'rooms/' + name}.png")
-    save(paint_items(), "textures/items.png")
+    icons = paint_items()
+    save(sheet(icons), "textures/items.png")
+    for item, icon in zip(rooms.ITEMS, icons, strict=True):
+        save(icon, f"textures/items/{item}.png")
     save(paint_cursors(), "textures/cursors.png")
     write_sounds()
 

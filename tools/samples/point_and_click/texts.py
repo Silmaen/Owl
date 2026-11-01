@@ -164,7 +164,6 @@ STRINGS: dict[str, dict[str, tuple[str, str]]] = {
     "remarks": {
         "say.no": ("I would rather not.", "Je préfère éviter."),
         "say.use_no": ("Using %s here would not help.", "Utiliser %s ici ne servirait à rien."),
-        "say.hold": ("I take %s.", "Je prends %s."),
         "say.saved": ("The game is saved.", "Partie sauvegardée."),
         "say.combine.no": ("These two do not go together.", "Ces deux-là ne vont pas ensemble."),
         "say.combine.pie": (

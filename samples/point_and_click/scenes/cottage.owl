@@ -137,7 +137,7 @@ Entities:
       Name: world
     WalkBehind:
       area: 9100000000000000004
-      baseline: -2.5
+      baseline: -2.5125
   - Entity: 9100000000000000008
     Tag:
       tag: Prop_lantern
@@ -196,6 +196,24 @@ Entities:
       mesh: gid:20cc1b9fee86132d:meshes/hero.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
     Animator:
       playing: true
       speed: 1
@@ -258,6 +276,13 @@ Entities:
       mesh: gid:2d65cb2a7f21f336:meshes/wizard.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
     Animator:
       playing: true
       speed: 1

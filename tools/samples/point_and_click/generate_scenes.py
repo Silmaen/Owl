@@ -54,6 +54,10 @@ HERO_MESH = "meshes/hero.glb"
 HERO_SCALE = 2.2
 WIZARD_SCALE = 1.15
 TROLL_SCALE = 1.6
+MESH_PARTS = {"meshes/hero.glb": 17, "meshes/wizard.glb": 6, "meshes/troll.glb": 1}
+"""Submeshes of each character: one material slot each, all drawn with the toon shading."""
+TOON = "{shadingModel: Toon, toonBands: 3, toonRim: 0.2}"
+"""Material override of the characters: flat bands of light, like the painted backdrops."""
 HERO = "CharacterArmature|"
 ENEMY = "EnemyArmature|EnemyArmature|EnemyArmature|"
 
@@ -155,14 +159,15 @@ def walk_agent(area: int, speed: float, facing: str = "TurnY") -> str:
     )
 
 
-def walk_behind(area: int, baseline: int) -> str:
+def walk_behind(area: int, baseline: float) -> str:
     """A walk-behind mask whose baseline is a row of the backdrop."""
     return f"WalkBehind:\n  area: {area}\n  baseline: {y.num(rooms.world_y(baseline))}\n"
 
 
 def mesh(path: str) -> str:
-    """A mesh of the project."""
-    return f"MeshRenderer:\n  mesh: {ref(path)}\n  color: [1, 1, 1, 1]\n  transparent: false\n"
+    """A character mesh of the project, every part toon shaded."""
+    slots = "".join(f"    - overrides: {TOON}\n" for _ in range(MESH_PARTS[path]))
+    return f"MeshRenderer:\n  mesh: {ref(path)}\n  color: [1, 1, 1, 1]\n  transparent: false\n  materials:\n{slots}"
 
 
 def animator(idle: str, walk: str | None, extra: dict[str, tuple[str, bool]]) -> str:
@@ -314,7 +319,8 @@ def props(entities: y.Entities, room: Room, area: int, on_table: tuple[str, ...]
             component = frames(texture, prop.frames)
         else:
             component = sprite(texture)
-        extra = [walk_behind(area, room.masks[0].baseline)] if prop.name in on_table else []
+        # A quarter of a row in front of the mask it lies on: drawn over it, never at the same depth.
+        extra = [walk_behind(area, room.masks[0].baseline + 0.25)] if prop.name in on_table else []
         entities.add(
             f"Prop_{prop.name}", [component, layer("world"), *extra], position=(*centre, PROP_Z), scale=(*size, 1)
         )
@@ -427,8 +433,9 @@ def modal(body: y.Colour = NIGHT_PANEL) -> str:
 
 
 def play_hud() -> str:
-    """The HUD of the rooms: the name under the cursor and the remarks at the top, the bag button; the bag, the
-    dialogue and the pause are modal windows."""
+    """The HUD of the rooms: the name under the cursor and the remarks at the top, the bag button and the bag (a panel
+    that leaves the room clickable), the object in hand as a tool cursor; the dialogue and the pause are modal
+    windows."""
     entities = y.Entities(9300000000000000000)
     root = entities.add("PlayCanvas", [y.canvas()])
     top = entities.add(
@@ -453,7 +460,7 @@ def play_hud() -> str:
     )
     inventory = entities.add(
         "InventoryPanel",
-        [y.rect((0.5, 1), (0.6, 0.16), (0, -12), WIDE), modal(), y.layout("Row", 4, 6)],
+        [y.rect((0.5, 1), (0.6, 0.16), (0, -12), WIDE), y.panel(NIGHT_PANEL, GOLD, 2), y.layout("Row", 4, 6)],
         parent=root,
         visible=False,
     )
@@ -484,6 +491,15 @@ def play_hud() -> str:
     button(entities, talk, "DialogueNext", "hud.next", "on_dialogue_next", (0.3, 0.12), font_size=26)
     entities.add("DialogueText", [y.child_rect((0.95, 0.24)), text("", 28, PARCHMENT, "Left", True)], parent=talk)
     entities.add("DialogueSpeaker", [y.child_rect((0.95, 0.1)), text("", 30, GOLD, "Left")], parent=talk)
+    for item in rooms.ITEMS:
+        entities.add(
+            f"Held_{item}",
+            [
+                f"UiToolCursor:\n  texture: {ref(f'textures/items/{item}.png')}\n  tint: [1, 1, 1, 1]\n"
+                "  size: [56, 56]\n  hotspot: [0.5, 0.5]\n  active: false\n"
+            ],
+            parent=root,
+        )
     pause = entities.add(
         "PauseWindow",
         [

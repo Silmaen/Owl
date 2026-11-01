@@ -393,6 +393,18 @@ auto luaInputGetMouseWheel(lua_State* iState) -> int {
 	return 2;
 }
 
+auto luaInputSetCursorVisible(lua_State* iState) -> int {
+	if (auto* activeScene = getBoundScene(iState); activeScene != nullptr)
+		activeScene->setCursorHidden(lua_toboolean(iState, 1) == 0);
+	return 0;
+}
+
+auto luaInputIsCursorVisible(lua_State* iState) -> int {
+	const auto* activeScene = getBoundScene(iState);
+	lua_pushboolean(iState, activeScene == nullptr || !activeScene->wantsCursorHidden() ? 1 : 0);
+	return 1;
+}
+
 auto checkGamepadSlot(lua_State* iState, const int iArg) -> std::size_t {
 	const auto pad = luaL_checkinteger(iState, iArg);
 	return pad >= 0 && pad < static_cast<lua_Integer>(input::g_GamepadCount) ? static_cast<std::size_t>(pad)
@@ -3286,6 +3298,13 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "input", .name = "get_mouse_wheel", .function = guarded<luaInputGetMouseWheel>,
 		 .description = "Wheel offset scrolled since the previous tick or frame (horizontal, vertical).",
 		 .returns = {{"dx", Number}, {"dy", Number}}},
+		{.table = "input", .name = "set_cursor_visible", .function = guarded<luaInputSetCursorVisible>,
+		 .description = "Show or hide the system cursor over the game, for a game drawing its own (an action icon, the "
+						"object in hand); shown again when the play stops.",
+		 .params = {{"visible", Boolean}}},
+		{.table = "input", .name = "is_cursor_visible", .function = guarded<luaInputIsCursorVisible>,
+		 .description = "Whether the system cursor is shown over the game (`input.set_cursor_visible`).",
+		 .returns = {{"visible", Boolean}}},
 		{.table = "input", .name = "is_gamepad_connected", .function = guarded<luaInputIsGamepadConnected>,
 		 .description = "Whether a gamepad is connected in a slot (0 to 15).",
 		 .params = {{"pad", Integer}}, .returns = {{"connected", Boolean}}},

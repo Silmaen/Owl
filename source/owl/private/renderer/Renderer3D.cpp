@@ -60,6 +60,8 @@ struct SceneUbo {
 	std::array<int32_t, 4> ids{-1, 0, 0, -1};
 	// xyz: eye, origin of the camera-relative space of the shaders; w: -1 when the projection winds faces backwards.
 	math::vec4 origin{0.f, 0.f, 0.f, 1.f};
+	// x: 1 when the draw is flat in depth (`MeshDrawParams::flatDepth`).
+	std::array<int32_t, 4> flags{0, 0, 0, 0};
 };
 
 // One local shadow as the shaders read it (LocalShadow in pbr.slangh).
@@ -81,7 +83,7 @@ struct ProbeUbo {
 	math::vec4 params{0.f, 0.f, 0.f, 0.f};
 };
 
-static_assert(sizeof(SceneUbo) == 208, "SceneUbo must match the std140 layout of Scene3D in the renderer3D shaders.");
+static_assert(sizeof(SceneUbo) == 224, "SceneUbo must match the std140 layout of Scene3D in the renderer3D shaders.");
 
 struct LightingUbo {
 	// x: light count (0 lights with the sun of the layer), y: cascade count, z: index of the shadowed light.
@@ -322,6 +324,7 @@ void setDrawParams(const math::mat4& iModel, const MeshDrawParams& iParams, cons
 	g_Data->scene.tint = iParams.tint;
 	g_Data->scene.ids[0] = iParams.entityId;
 	g_Data->scene.ids[2] = g_Data->shadowPass ? 1 : 0;
+	g_Data->scene.flags[0] = iParams.flatDepth ? 1 : 0;
 	g_Data->lightBuffer->bind();
 	g_Data->scene.ids[1] = gpu::Framebuffer::isLinearTargetBound() ? 1 : 0;
 	g_Data->sceneUniformBuffer->setData(&g_Data->scene, sizeof(SceneUbo), 0);

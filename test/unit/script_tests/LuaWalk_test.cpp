@@ -99,3 +99,23 @@ TEST(LuaBindings, walkAreaQueriesAndAgents) {
 	EXPECT_EQ(agent.area, other.getUUID());
 	core::Log::invalidate();
 }
+
+TEST(LuaBindings, theGameHidesTheSystemCursor) {
+	core::Log::init(core::Log::Level::Off);
+	const auto scn = mkShared<scene::Scene>();
+	auto host = scn->createEntity("Host");
+	const std::string script = std::string{"function on_create()\n"
+										   "  shown_first = input.is_cursor_visible()\n"
+										   "  input.set_cursor_visible(false)\n"
+										   "  shown_after = input.is_cursor_visible()\n"
+										   "end\n"};
+	const ScriptInstance inst;
+	ASSERT_TRUE(runScript(scn, script, static_cast<uint64_t>(host.getUUID()), inst));
+	EXPECT_TRUE(inst.getPropertyBool("shown_first").value_or(false));
+	EXPECT_FALSE(inst.getPropertyBool("shown_after").value_or(true));
+	EXPECT_TRUE(scn->wantsCursorHidden());
+	scn->onStartRuntime();
+	scn->onEndRuntime();
+	EXPECT_FALSE(scn->wantsCursorHidden());
+	core::Log::invalidate();
+}

@@ -37,6 +37,10 @@ TEST(Window, creation) {
 	wnd->wakeUp();
 	wnd->setLowLatencyPresent(true);
 	EXPECT_FALSE(wnd->isVSync());
+	wnd->setCursorMode(CursorMode::Hidden);
+	EXPECT_EQ(wnd->getCursorMode(), CursorMode::Hidden);
+	wnd->setCursorMode(CursorMode::Normal);
+	EXPECT_EQ(wnd->getCursorMode(), CursorMode::Normal);
 	owl::core::Log::invalidate();
 }
 
@@ -76,4 +80,18 @@ TEST(Window, cursorCaptureResetForgetsTheResume) {
 	EXPECT_EQ(capture.next(CursorMode::Disabled, false, false, false), CursorMode::Normal);
 	capture.reset();
 	EXPECT_EQ(capture.next(CursorMode::Normal, true, false, false), CursorMode::Normal);
+}
+
+TEST(Window, cursorModeHiddenWhileTheSceneDrawsItsOwn) {
+	EXPECT_EQ(nextCursorMode(CursorMode::Normal, false, false, false, true), CursorMode::Hidden);
+	EXPECT_EQ(nextCursorMode(CursorMode::Hidden, false, true, false, false), CursorMode::Normal);
+	EXPECT_EQ(nextCursorMode(CursorMode::Hidden, true, true, false, true), CursorMode::Disabled);
+	EXPECT_EQ(nextCursorMode(CursorMode::Disabled, true, false, true, true), CursorMode::Hidden);
+}
+
+TEST(Window, cursorCaptureResumesOverAHiddenCursor) {
+	CursorCapture capture;
+	EXPECT_EQ(capture.next(CursorMode::Disabled, false, false, false, true), CursorMode::Hidden);
+	EXPECT_TRUE(capture.resume);
+	EXPECT_EQ(capture.next(CursorMode::Hidden, true, false, false, true), CursorMode::Disabled);
 }

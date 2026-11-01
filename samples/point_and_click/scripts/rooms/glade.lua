@@ -63,7 +63,7 @@ function on_create()
     adventure = require("scripts.game.adventure")
     ids.berries = scene.find_entity("Prop_berries")
     ids.fireflies = scene.find_entity("Prop_fireflies")
-    adventure.start({ name = "glade", hotspots = hotspots, act = act })
+    adventure.start({ name = "glade", hotspots = hotspots, act = act, highlights = { bush = "Prop_berries" } })
     refresh()
 end
 

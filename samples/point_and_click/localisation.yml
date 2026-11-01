@@ -263,9 +263,6 @@ strings:
   - key: say.use_no
     table: remarks
     values: {en: 'Using %s here would not help.', fr: 'Utiliser %s ici ne servirait à rien.'}
-  - key: say.hold
-    table: remarks
-    values: {en: 'I take %s.', fr: 'Je prends %s.'}
   - key: say.saved
     table: remarks
     values: {en: 'The game is saved.', fr: 'Partie sauvegardée.'}

@@ -24,6 +24,7 @@
 #include "renderer/MaterialLibrary.h"
 #include "renderer/MeshCache.h"
 #include "renderer/OutlinePass.h"
+#include "renderer/PixelArt.h"
 #include "renderer/PostProcess.h"
 #include "renderer/ProceduralSky.h"
 #include "renderer/ReflectionProbes.h"
@@ -574,6 +575,7 @@ void Scene::onEndRuntime() {
 
 	flushPendingDestructions();
 	disconnectRuntimeHooks(registry);
+	m_cursorHidden = false;
 	// Stop all active sounds (both component-based and Lua-created).
 	sound::SoundCommand::stopAll();
 	for (auto&& [entity, music]: registry.view<component::AdaptiveMusic>().each()) music.runtimePlayer.reset();
@@ -2117,18 +2119,22 @@ void Scene::renderShadowCasters(const renderer::Camera& iCamera, const bool iMes
 	renderer::Renderer3D::setShadowPass(false);
 }
 
+void Scene::readWorldInputs(renderer::RenderGraph::PassBuilder& ioBuilder) const {
+	readShadowTargets(ioBuilder);
+	for (const auto& capture: m_probeCaptures) {
+		ioBuilder.read(capture.chainTargets.front());
+		for (const auto& target: capture.filterTargets) ioBuilder.read(target);
+	}
+	if (m_occlusionToken.isValid())
+		ioBuilder.read(m_occlusionToken);
+}
+
 void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::RenderGraph::Resource iSceneColor) {
 	using Graph = renderer::RenderGraph;
 	const auto writeScene = [iSceneColor](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(iSceneColor); };
 	const auto writeSceneReadShadows = [this, iSceneColor](Graph::PassBuilder& ioBuilder) -> void {
 		ioBuilder.write(iSceneColor);
-		readShadowTargets(ioBuilder);
-		for (const auto& capture: m_probeCaptures) {
-			ioBuilder.read(capture.chainTargets.front());
-			for (const auto& target: capture.filterTargets) ioBuilder.read(target);
-		}
-		if (m_occlusionToken.isValid())
-			ioBuilder.read(m_occlusionToken);
+		readWorldInputs(ioBuilder);
 	};
 	const auto& layers = renderer::Renderer::getRenderStack().getLayers();
 	const bool editorMode = status == Status::Editing;
@@ -2210,11 +2216,84 @@ void Scene::recordWorldPasses(renderer::RenderGraph& ioGraph, const renderer::Re
 			m_currentLayerIsFirst = true;
 			mp_currentLayer = nullptr;
 		};
-		if (threeD)
+		if (threeD && !editorMode && layer->getPixelArt().isActive())
+			recordPixelArtPasses(ioGraph, index, iSceneColor);
+		else if (threeD)
 			ioGraph.addPass(layer->getName(), writeSceneReadShadows, body);
 		else
 			ioGraph.addPass(layer->getName(), writeScene, body);
 	}
+}
+
+void Scene::recordPixelArtPasses(renderer::RenderGraph& ioGraph, const size_t iIndex,
+								 const renderer::RenderGraph::Resource iSceneColor) {
+	using Graph = renderer::RenderGraph;
+	const auto& layer = renderer::Renderer::getRenderStack().getLayers()[iIndex];
+	const auto* const bound = renderer::gpu::Framebuffer::getBound();
+	const math::vec2ui frameSize = bound != nullptr ? bound->getSpecification().size : m_viewportSize;
+	const math::vec2ui size = layer->getPixelArt().getTargetSize(frameSize);
+	if (m_pixelArtTargets.size() <= iIndex)
+		m_pixelArtTargets.resize(iIndex + 1);
+	auto& targets = m_pixelArtTargets[iIndex];
+	targets.color = ioGraph.createTarget("pixel art colour", Graph::TargetFormat::Linear, size);
+	targets.depth = ioGraph.createTarget("pixel art depth", Graph::TargetFormat::Depth, size);
+	ioGraph.addPass(
+			layer->getName(),
+			[this, iIndex](Graph::PassBuilder& ioBuilder) -> void {
+				ioBuilder.write(m_pixelArtTargets[iIndex].color);
+				readWorldInputs(ioBuilder);
+			},
+			[this, iIndex](const Graph::PassContext& iContext) -> void {
+				const auto& stackLayer = renderer::Renderer::getRenderStack().getLayers()[iIndex];
+				useShadowMaps(iContext);
+				stackLayer->setViewport(m_viewportSize);
+				stackLayer->onBeginFrame(*mp_renderCamera);
+				m_currentLayerName = stackLayer->getName();
+				m_currentLayerIsFirst = iIndex == 0;
+				mp_currentLayer = stackLayer.get();
+				stackLayer->onRender(*this);
+				if (!stackLayer->drawsOwnEntities())
+					render();
+				stackLayer->onEndFrame();
+				m_currentLayerName.clear();
+				m_currentLayerIsFirst = true;
+				mp_currentLayer = nullptr;
+			});
+	ioGraph.addPass(
+			"pixel art depth",
+			[this, iIndex](Graph::PassBuilder& ioBuilder) -> void { ioBuilder.write(m_pixelArtTargets[iIndex].depth); },
+			[this, iIndex](const Graph::PassContext&) -> void { renderLayerDepth(iIndex); });
+	ioGraph.addPass(
+			"pixel art composite",
+			[this, iIndex, iSceneColor](Graph::PassBuilder& ioBuilder) -> void {
+				ioBuilder.read(m_pixelArtTargets[iIndex].color);
+				ioBuilder.read(m_pixelArtTargets[iIndex].depth);
+				ioBuilder.write(iSceneColor);
+			},
+			[this, iIndex](const Graph::PassContext& iContext) -> void {
+				const auto settings = renderer::Renderer::getRenderStack().getLayers()[iIndex]->getPixelArt();
+				const auto& layerTargets = m_pixelArtTargets[iIndex];
+				renderer::PixelArtPass::draw({.color = iContext.getTexture(layerTargets.color),
+											  .depth = iContext.getTexture(layerTargets.depth),
+											  .size = settings.getTargetSize(iContext.getSize()),
+											  .frameSize = iContext.getSize(),
+											  .settings = settings});
+			});
+}
+
+void Scene::renderLayerDepth(const size_t iIndex) {
+	const auto& layer = renderer::Renderer::getRenderStack().getLayers()[iIndex];
+	renderer::Renderer3D::setShadowPass(true);
+	layer->onBeginFrame(*mp_renderCamera);
+	m_currentLayerName = layer->getName();
+	m_currentLayerIsFirst = iIndex == 0;
+	mp_currentLayer = layer.get();
+	renderMeshes(status == Status::Editing);
+	layer->onEndFrame();
+	m_currentLayerName.clear();
+	m_currentLayerIsFirst = true;
+	mp_currentLayer = nullptr;
+	renderer::Renderer3D::setShadowPass(false);
 }
 
 void Scene::renderHud(const math::vec2ui& iViewport, const bool iEditorMode) {
@@ -2783,6 +2862,21 @@ void Scene::renderMeshes(const bool iEditorMode) {
 	if (!renderer::Renderer3D::isShadowPass())
 		m_lodViewProjection = renderer::Renderer3D::getViewProjection();
 	m_cullingStats.meshesInFrustum = markVisible(m_meshIndex, renderer::Renderer3D::getViewProjection(), m_meshVisible);
+	// An agent of a depth-sorted area (or its child) is drawn flat at the depth of its feet: hidden whole or not at all.
+	const auto flatInDepth = [this](const entt::entity iEntity) -> bool {
+		const auto* agent = registry.try_get<component::WalkAgent>(iEntity);
+		if (agent == nullptr) {
+			const auto* hierarchy = registry.try_get<component::Hierarchy>(iEntity);
+			if (hierarchy == nullptr || hierarchy->parentId == core::UUID{0})
+				return false;
+			const Entity parent = findEntityByUUID(hierarchy->parentId);
+			agent = parent ? registry.try_get<component::WalkAgent>(static_cast<entt::entity>(parent)) : nullptr;
+		}
+		if (agent == nullptr)
+			return false;
+		const Entity area = findEntityByUUID(agent->area);
+		return area && area.hasComponent<component::WalkArea>() && area.getComponent<component::WalkArea>().depthSort;
+	};
 	for (const auto view = registry.view<component::Transform, component::MeshRenderer>(); const auto entity: view) {
 		if (!isMarkedVisible(m_meshVisible, entity))
 			continue;
@@ -2801,6 +2895,7 @@ void Scene::renderMeshes(const bool iEditorMode) {
 		const bool skinned =
 				mesh.isSkinned() && animator != nullptr && animator->hasPose(mesh.getSkeleton()->getBoneCount());
 		const uint32_t firstMatrix = skinned ? renderer::RendererMesh::pushSkin(animator->skinMatrices) : 0;
+		const bool flat = flatInDepth(entity);
 		const auto submeshCount = std::min(mesh.getSubmeshes().size(), meshRenderer.materials.size());
 		for (size_t index = 0; index < submeshCount; ++index) {
 			const auto& slot = meshRenderer.materials[index];
@@ -2808,7 +2903,8 @@ void Scene::renderMeshes(const bool iEditorMode) {
 				continue;
 			const renderer::MeshDrawParams params{.tint = meshRenderer.color,
 												  .entityId = static_cast<int>(entity),
-												  .material = slot.resolved.get()};
+												  .material = slot.resolved.get(),
+												  .flatDepth = flat};
 			if (skinned)
 				renderer::RendererMesh::drawSkinnedSubmesh(mesh, index, lod, model, firstMatrix, params);
 			else

@@ -63,6 +63,7 @@ void RendererMeshLayer::applyConfig(const std::string& iConfig) {
 		m_config.occlusionCulling = occlusion.as<bool>();
 	if (const auto scale = config["OcclusionScale"]; scale)
 		m_config.occlusionScale = std::clamp(scale.as<float>(), 0.125f, 1.f);
+	m_config.pixelArt = PixelArtSettings::fromConfig(iConfig, m_config.pixelArt);
 }
 
 }// namespace owl::renderer

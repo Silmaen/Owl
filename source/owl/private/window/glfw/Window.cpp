@@ -423,7 +423,12 @@ void Window::setCursorMode(const window::CursorMode iMode) {
 	if (mp_glfwWindow == nullptr)
 		return;
 	const bool disabled = iMode == window::CursorMode::Disabled;
-	glfwSetInputMode(mp_glfwWindow, GLFW_CURSOR, disabled ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+	int glfwMode = GLFW_CURSOR_NORMAL;
+	if (disabled)
+		glfwMode = GLFW_CURSOR_DISABLED;
+	else if (iMode == window::CursorMode::Hidden)
+		glfwMode = GLFW_CURSOR_HIDDEN;
+	glfwSetInputMode(mp_glfwWindow, GLFW_CURSOR, glfwMode);
 	if (disabled && glfwRawMouseMotionSupported() == GLFW_TRUE)
 		glfwSetInputMode(mp_glfwWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 }

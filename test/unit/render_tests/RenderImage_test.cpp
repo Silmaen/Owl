@@ -342,6 +342,17 @@ INSTANTIATE_TEST_SUITE_P(Mesh, RenderImage, testing::Values(RenderCase{"mesh", "
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });
 
+// Actors of a depth-sorted walk area, drawn flat in depth: the orange cube, nearer, hides all of the blue one although
+// their volumes cross; the green cube of the pixel-art layer (180 texels high, outlined) hides the full-resolution
+// white one behind it.
+INSTANTIATE_TEST_SUITE_P(WalkActors, RenderImage,
+						 testing::Values(RenderCase{"walk_actors", "vulkan", {640, 360}},
+										 RenderCase{"walk_actors", "opengl", {640, 360}}),
+						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
+							 return std::format("{}_{}_{}x{}", iInfo.param.scene, iInfo.param.backend,
+												iInfo.param.size.x(), iInfo.param.size.y());
+						 });
+
 // Skinned meshes of the mesh layer: an arm in its bind pose, the same arm held bent by its `Animator`, and a cube snapped
 // on the socket at the tip of the bent arm.
 INSTANTIATE_TEST_SUITE_P(Skinned, RenderImage,

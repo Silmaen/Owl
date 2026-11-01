@@ -14,6 +14,7 @@
 #include "renderer/ColorVision.h"
 #include "renderer/LensFlare.h"
 #include "renderer/OutlinePass.h"
+#include "renderer/PixelArt.h"
 #include "renderer/PostProcess.h"
 #include "renderer/ReflectionProbes.h"
 #include "renderer/Renderer2D.h"
@@ -86,6 +87,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress, const Render
 	ColorEncoder::init();
 	ColorVision::init();
 	OutlinePass::init();
+	PixelArtPass::init();
 	PostProcess::init();
 	LensFlare::init();
 	RendererParticles::init();
@@ -134,6 +136,7 @@ void Renderer::shutdown() {
 	RendererParticles::shutdown();
 	LensFlare::shutdown();
 	PostProcess::shutdown();
+	PixelArtPass::shutdown();
 	OutlinePass::shutdown();
 	ColorVision::shutdown();
 	ColorEncoder::shutdown();

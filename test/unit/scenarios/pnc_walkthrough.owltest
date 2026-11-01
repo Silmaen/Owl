@@ -47,24 +47,30 @@ steps:
   - input: {key: Enter, frames: 2}
   - frames: 3
   - expect: {gamestate: held, equals: jar}
+  # A click on the room closes the bag and uses the jar there.
   - input: {mouse: Left, mouse_pos: [1235, 461], frames: 2}
+  - frames: 3
+  - expect: {gamestate: inventory_open, equals: false}
   - frames: 420
   - expect: {gamestate: held, equals: ''}
   - expect: {gamestate: inventory, equals: 'crust,berries,firefly_jar'}
-  # The crust (slot 1) with the berries (slot 2): a pie.
+  # The crust (slot 1) in hand, the bag still open, with the berries (slot 2): a pie, shown in the bag still open.
   - input: {key: I, frames: 2}
   - frames: 3
   - input: {key: Enter, frames: 2}
   - frames: 3
-  - input: {key: I, frames: 2}
-  - frames: 3
+  - expect: {gamestate: held, equals: crust}
+  - expect: {gamestate: inventory_open, equals: true}
   - input: {key: Tab, frames: 2}
   - frames: 3
   - input: {key: Enter, frames: 2}
   - frames: 10
   - expect: {gamestate: inventory, equals: 'firefly_jar,pie'}
+  - expect: {gamestate: held, equals: ''}
+  - expect: {gamestate: inventory_open, equals: true}
   - input: {key: Escape, frames: 2}
   - frames: 3
+  - expect: {gamestate: inventory_open, equals: false}
   # To the bridge: the pie (slot 2) on the troll, then the moonstone.
   - input: {mouse: Left, mouse_pos: [1584, 765], frames: 2}
   - frames: 480

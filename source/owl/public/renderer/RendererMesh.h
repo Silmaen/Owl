@@ -13,6 +13,7 @@
 #include "math/vectors.h"
 #include "renderer/Camera.h"
 #include "renderer/MeshCache.h"
+#include "renderer/PixelArt.h"
 #include "renderer/Renderer3D.h"
 
 #include <cstddef>
@@ -38,6 +39,8 @@ struct MeshLayerConfig {
 	bool occlusionCulling = false;
 	/// Resolution of the occluder depth, relative to the frame (1 is exact; lower is cheaper, small gaps may hide).
 	float occlusionScale = 1.f;
+	/// Pixel-art look of the layer (low resolution, colour levels, outline); inactive by default.
+	PixelArtSettings pixelArt{};
 };
 
 /**
@@ -69,6 +72,8 @@ public:
 		uint32_t skinnedDrawCount = 0;
 		/// Submeshes drawn at a reduced level of detail.
 		uint32_t lodDrawCount = 0;
+		/// Submeshes drawn flat in depth (`MeshDrawParams::flatDepth`).
+		uint32_t flatDrawCount = 0;
 	};
 
 	/**
