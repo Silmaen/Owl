@@ -1,0 +1,10 @@
+Template:
+  name: Isometric
+  description: An isometric island of tiles and sprites, with a flag walked around by a Lua script.
+  order: 4
+  tags: [Iso, 2D]
+  contents:
+    - Isometric tilemap (tilemaps/island.owltilemap) over a flat tileset with normal and depth atlases
+    - Tree and lamp sprites standing on the map
+    - Player flag moved along the screen axes (scripts/player.lua), camera attached to it
+    - 2D sky gradient behind, HUD with the controls

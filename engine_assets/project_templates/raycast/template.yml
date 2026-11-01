@@ -1,4 +1,9 @@
 Template:
   name: Raycast
   description: A first-person raycast room (tilemap walls, W/S to move, A/D to turn) under a 2D HUD.
-  order: 2
+  order: 5
+  tags: [Raycast]
+  contents:
+    - Raycast layer over a tilemap room (tilemaps/room.owltilemap, tilesets/walls.owltileset)
+    - Player with a Box2D body and a Lua controller (scripts/player.lua)
+    - HUD with the controls

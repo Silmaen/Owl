@@ -1,0 +1,10 @@
+# The Empty 2D template: the player sprite slides right then up with the built-in move action.
+scene: ../../../engine_assets/project_templates/empty_2d/scenes/main.owl
+project: ../../../engine_assets/project_templates/empty_2d
+steps:
+  - frames: 10
+  - expect: {entity: Player, translation.x: {equals: 0.0, tolerance: 0.01}}
+  - actions: {move: [1, 0], frames: 30}
+  - expect: {entity: Player, translation.x: {greater: 0.5}}
+  - actions: {move: [0, -1], frames: 30}
+  - expect: {entity: Player, translation.y: {greater: -1.5}}

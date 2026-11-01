@@ -1,4 +1,11 @@
 Template:
   name: Mixed styles
-  description: Every renderer in one stack (2D, raycast, voxel, HUD); a raycast room under a 2D HUD and a voxel terrain.
-  order: 4
+  description: One frame mixing styles - a 3D yard of meshes, 2D billboard trees among them and a 2D minimap on top.
+  order: 7
+  tags: [Mixed, 3D, 2D, Raycast, Voxel]
+  contents:
+    - "scenes/main.owl: 3D meshes and sky, depth-tested 2D billboards, a screen-space 2D minimap and the HUD"
+    - First-person player (FirstPersonController), tracked on the minimap by scripts/minimap.lua
+    - "scenes/room.owl: a raycast room under a 2D HUD"
+    - "scenes/terrain.owl: a procedural voxel terrain"
+    - Every layer in one stack (2D, raycast, voxel, mesh, billboards, minimap, ui)

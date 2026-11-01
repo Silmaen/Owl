@@ -1,14 +1,43 @@
 Scene: Main
+FormatVersion: 7
+Hud: gid:5eaca95e0aa5ecde:huds/gameplay.owlhud
 EnabledRenderers:
   - Name: voxel_world
     Enabled: true
+  - Name: ui
+    Enabled: true
 Entities:
+  - Entity: 7300000000000000003
+    Tag:
+      tag: Sky
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Environment: {hdri: "", ambient: [1, 1, 1], intensity: 12000, rotation: 0, showSky: true}
+    ProceduralSky: {enabled: true, sunDirection: [0.45, 0.72, -0.53], turbidity: 3, groundColor: [0.38, 0.36, 0.33], nightColor: [0.42, 0.48, 0.66], nightBrightness: 0.015, stars: 1, discSize: 2.5, resolution: 256}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7300000000000000004
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.8, 0.6, 0]
+      scale: [1, 1, 1]
+    Light: {type: Directional, enabled: true, color: [1, 0.96, 0.9], intensity: 100000, castShadows: true, shadowDistance: 80, cascadeCount: 4, shadowResolution: 2048, shadowBias: 1.5}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
   - Entity: 7300000000000000001
     Tag:
       tag: Player
     Transform:
       translation: [8, 40, 8]
-      rotation: [0, 0, 0]
+      rotation: [-0.3, 0.6, 0]
       scale: [1, 1, 1]
     Camera:
       camera:
@@ -19,6 +48,7 @@ Entities:
         orthographicSize: 8
         orthographicNear: -1
         orthographicFar: 10
+        toneMapping: PbrNeutral
       primary: true
       fixedAspectRatio: false
     Visibility:

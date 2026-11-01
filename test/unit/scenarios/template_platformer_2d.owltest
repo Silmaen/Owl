@@ -1,0 +1,11 @@
+# The 2D platformer template: the player lands on the ground, runs right and jumps.
+scene: ../../../engine_assets/project_templates/platformer_2d/scenes/main.owl
+project: ../../../engine_assets/project_templates/platformer_2d
+steps:
+  - frames: 60
+  - expect: {entity: Player, translation.y: {equals: -2.0, tolerance: 0.1}}
+  - actions: {move: [1, 0], frames: 30}
+  - expect: {entity: Player, translation.x: {greater: 1.0}}
+  - actions: {jump: true, frames: 2}
+  - frames: 8
+  - expect: {entity: Player, translation.y: {greater: -1.5}}

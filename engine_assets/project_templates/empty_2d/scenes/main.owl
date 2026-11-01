@@ -48,6 +48,12 @@ Entities:
       scale: [1, 1, 1]
     SpriteRenderer:
       color: [0.95, 0.6, 0.2, 1]
+    LuaScript:
+      scriptPath: gid:be2dff51a0fc0310:scripts/player.lua
+      properties:
+        - name: speed
+          type: float
+          value: 4
     Visibility:
       gameVisible: true
     Hierarchy:

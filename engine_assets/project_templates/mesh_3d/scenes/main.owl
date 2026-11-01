@@ -1,0 +1,142 @@
+Scene: Main
+FormatVersion: 7
+Hud: gid:b88ba1622b4f153e:huds/gameplay.owlhud
+EnabledRenderers:
+  - Name: mesh_world
+    Enabled: true
+Entities:
+  - Entity: 7500000000000000001
+    Tag:
+      tag: Player
+    Transform:
+      translation: [0, 1.6, 6]
+      rotation: [-0.1, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 1.1
+        perspectiveNear: 0.05
+        perspectiveFar: 200
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+        toneMapping: Aces
+        postProcess: {ev100: 15, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.04, bloomScatter: 0.7}
+      primary: true
+      fixedAspectRatio: false
+    FirstPersonController: {enabled: true, walkSpeed: 3, runSpeed: 6, lookSpeed: 1.8, mouseSensitivity: 0.0025, captureCursor: true, eyeHeight: 1.6, height: 1.75, radius: 0.25, stepHeight: 0.35, gravity: 9.81, jumpSpeed: 3.5}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7500000000000000002
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.8, 0.6, 0]
+      scale: [1, 1, 1]
+    Light: {type: Directional, enabled: true, color: [1, 0.96, 0.9], intensity: 100000, castShadows: true, shadowDistance: 30, cascadeCount: 2, shadowResolution: 2048, shadowBias: 1.5}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7500000000000000003
+    Tag:
+      tag: Sky
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Environment: {hdri: "", ambient: [1, 1, 1], intensity: 9000, rotation: 0, showSky: true}
+    ProceduralSky: {enabled: true, sunDirection: [0.45, 0.72, -0.53], turbidity: 3, groundColor: [0.3, 0.34, 0.26], nightColor: [0.42, 0.48, 0.66], nightBrightness: 0.02, stars: 1, discSize: 2.5, resolution: 256}
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7500000000000000010
+    Tag:
+      tag: Ground
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:750787e287113b0c:meshes/ground.glb
+      color: [0.5, 0.62, 0.42, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7500000000000000011
+    Tag:
+      tag: Crate
+    Transform:
+      translation: [-2, 0, 0]
+      rotation: [0, 0.4, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:bf7aee657b091241:meshes/crate.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7500000000000000012
+    Tag:
+      tag: CrateStack
+    Transform:
+      translation: [-2.1, 1, 0.1]
+      rotation: [0, -0.2, 0]
+      scale: [0.8, 0.8, 0.8]
+    MeshRenderer:
+      mesh: gid:bf7aee657b091241:meshes/crate.glb
+      color: [0.9, 0.85, 0.75, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7500000000000000013
+    Tag:
+      tag: BlueCrate
+    Transform:
+      translation: [2.5, 0, -1.5]
+      rotation: [0, -0.5, 0]
+      scale: [1.5, 1.5, 1.5]
+    MeshRenderer:
+      mesh: gid:bf7aee657b091241:meshes/crate.glb
+      color: [0.45, 0.6, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7500000000000000014
+    Tag:
+      tag: Pillar
+    Transform:
+      translation: [0, 0, -5]
+      rotation: [0, 0, 0]
+      scale: [1, 4, 1]
+    MeshRenderer:
+      mesh: gid:bf7aee657b091241:meshes/crate.glb
+      color: [0.75, 0.75, 0.78, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0

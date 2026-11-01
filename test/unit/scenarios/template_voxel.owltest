@@ -1,0 +1,8 @@
+# The voxel template: the player falls onto the streamed terrain and walks forward.
+scene: ../../../engine_assets/project_templates/voxel/scenes/main.owl
+project: ../../../engine_assets/project_templates/voxel
+steps:
+  - frames: 120
+  - expect: {entity: Player, translation.y: {less: 39.0}}
+  - actions: {move: [0, -1], frames: 60}
+  - expect: {entity: Player, translation.z: {less: 7.5}}

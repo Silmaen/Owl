@@ -8,6 +8,12 @@ EnabledRenderers:
     Enabled: true
   - Name: ui
     Enabled: false
+  - Name: mesh_world
+    Enabled: false
+  - Name: billboards
+    Enabled: false
+  - Name: minimap
+    Enabled: false
 Entities:
   - Entity: 7500000000000000001
     Tag:

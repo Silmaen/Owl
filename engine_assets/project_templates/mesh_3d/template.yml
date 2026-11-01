@@ -1,0 +1,10 @@
+Template:
+  name: 3D
+  description: A lit 3D yard of meshes under a procedural sky, walked through in first person.
+  order: 3
+  tags: [3D]
+  contents:
+    - First-person player (FirstPersonController, WASD to walk, arrows or mouse to look)
+    - Sun with shadows, procedural sky and sky ambient light
+    - Ground slab and crates (meshes/*.glb)
+    - HUD with the controls

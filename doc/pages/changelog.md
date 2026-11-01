@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest viewport: a fly speed button and a **Fly Speed** camera setting, kept across sessions and followed by the wheel during a flight.
 - `CameraEditor::Navigation::leftDrag`: orbit, look around (flying with the keys) or pan on a left drag without modifier.
 - Editor manual: a *Navigating the scene* section with every mouse and key gesture, per mode and per rendering style.
+- Project templates **2D platformer** (Box2D platforms, run and jump), **3D** (meshes, sun, procedural sky, first-person player) and **Isometric** (tilemap island and sprites), each with a scenario and a preview image.
+- Owl Nest **New Project** dialog: a grid of template cards (preview, name, description, style tags) filtered by tag and walked with the arrow keys, the details of the selected template, and a checked name and location (`panel::validateNewProject`).
+- `tools/demo/generate_templates.py` writes the meshes, the isometric atlas, tileset and map of the templates.
 - Engine Demo: the world map is the only way into the scenes, the main menu shortcuts are gone and one door script (`place_door.lua`) opens every place.
 - Engine Demo: six places (platformer, raycast, iso town, voxel, tavern with its cellar, observatory), the portal wakes at six of six; the far orbit asks to dock with a debris, then returns to the hub.
 - Engine Demo hub: a `HudMarker` on each place left and a minimap with the hero and one dot per place left.
@@ -200,6 +203,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sokoban: the levels are the rows of the data table `tables/levels.owltable`, read by the title, the level select, the levels and the victory screen; the pause stops the scene clock (`time.set_paused`).
 - Tower defence: the towers, the enemies and the waves of each level are data tables (`samples/tower_defence/tables/`) with the same values, editable in the Owl Nest grid.
 - Tower defence: the roads are `Linear` splines with seven lanes (`Road`, `Road B`) in place of the waypoint entities, and the trees, rocks, towers and keep draw a level of detail when small.
+- Project template **Mixed styles** opens on a 3D yard with depth-tested 2D billboard trees and a 2D minimap in one frame; its raycast room is `scenes/room.owl`.
+- Project templates: the Empty 2D player moves with WASD and the Voxel template has a sky, a sun and a HUD; `template.yml` lists tags and contents, and `preview.png` stays out of the new project.
+- The export end-to-end test plays every project template from its export folder.
 - A particle emitter that does not emit and whose particles all died is idle (`ParticleSystem::isIdle`): neither simulated nor drawn.
 - The Moon Lantern: the bag stays open with an object in hand and after a combination, a click on the room closes it, and the object in hand is the cursor.
 - The Moon Lantern: the actors are drawn as toon-shaded pixel art with an outline, matching the backdrops, and the objects to pick are lighter, outlined and glow under the cursor.

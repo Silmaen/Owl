@@ -1,0 +1,42 @@
+Tileset: iso_ground
+FormatVersion: 1
+texture: gid:66943722e53db235:textures/iso_tiles.png
+tileWidth: 64
+tileHeight: 48
+columns: 16
+rows: 1
+filterMode: Nearest
+kind: Isometric
+tiles:
+  - index: 0
+    name: grass
+  - index: 1
+    name: sand
+  - index: 2
+    name: water
+  - index: 3
+    name: road
+  - index: 4
+    name: dirt
+  - index: 5
+    name: pavement
+  - index: 6
+    name: dark grass
+  - index: 7
+    name: flowers
+  - index: 8
+    name: rock
+  - index: 9
+    name: snow
+  - index: 10
+    name: rail
+  - index: 11
+    name: road y
+  - index: 12
+    name: road alone
+  - index: 13
+    name: road end n
+  - index: 14
+    name: road end e
+  - index: 15
+    name: road end s

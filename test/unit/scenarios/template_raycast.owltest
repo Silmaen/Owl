@@ -1,0 +1,8 @@
+# The raycast template: the player walks forward in the room with the built-in move action.
+scene: ../../../engine_assets/project_templates/raycast/scenes/main.owl
+project: ../../../engine_assets/project_templates/raycast
+steps:
+  - frames: 10
+  - expect: {entity: Player, translation.y: {equals: 0.5, tolerance: 0.05}}
+  - actions: {move: [0, -1], frames: 30}
+  - expect: {entity: Player, translation.y: {greater: 0.7}}

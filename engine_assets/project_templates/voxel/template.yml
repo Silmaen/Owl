@@ -1,4 +1,9 @@
 Template:
   name: Voxel
   description: A procedural voxel terrain streamed around a first-person player (WASD, space to jump).
-  order: 3
+  order: 6
+  tags: [Voxel, 3D]
+  contents:
+    - Procedural voxel terrain streamed around the player (VoxelWorld)
+    - First-person voxel player (VoxelPlayer, WASD, space to jump)
+    - Block tileset (tilesets/blocks.owltileset)

@@ -100,6 +100,31 @@ SHOTS: list[Shot] = [
         steps=[("click", 32, 18), ("wait", 2)],
         crop=(0, 0, 1140, 460),
     ),
+    # File screen > New project: the template cards, the details of the selection and the project fields.
+    Shot(
+        "new_project",
+        documents=["scenes/iso_town.owl"],
+        steps=[("click", 32, 18), ("wait", 3), ("click", 82, 67), ("wait", 4)],
+        settle=25.0,
+        proof=True,
+    ),
+    # The arrow keys walk the cards: two to the right, one down.
+    Shot(
+        "new_project_keys",
+        documents=["scenes/iso_town.owl"],
+        steps=[
+            ("click", 32, 18),
+            ("wait", 3),
+            ("click", 82, 67),
+            ("wait", 4),
+            ("key", "Right"),
+            ("key", "Right"),
+            ("key", "Down"),
+            ("wait", 2),
+        ],
+        settle=25.0,
+        proof=True,
+    ),
     Shot("tilemap_editor", documents=["tilemaps/iso_town.owltilemap"]),
     # The walk area of the town plaza selected: its floor, holes, triangles and vertex handles in the viewport.
     Shot(

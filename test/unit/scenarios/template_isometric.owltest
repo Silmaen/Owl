@@ -1,0 +1,10 @@
+# The isometric template: the flag walks to the screen right and stays on the island.
+scene: ../../../engine_assets/project_templates/isometric/scenes/main.owl
+project: ../../../engine_assets/project_templates/isometric
+steps:
+  - frames: 10
+  - actions: {move: [1, 0], frames: 30}
+  - expect: {entity: Player, translation.x: {greater: 5.5}}
+  - expect: {entity: Player, translation.y: {less: 6.5}}
+  - actions: {move: [1, 0], frames: 300}
+  - expect: {entity: Player, translation.x: {less: 10.6}}
