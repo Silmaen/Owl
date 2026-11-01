@@ -289,6 +289,7 @@ void RunnerLayer::onAttach() {
 	if (!m_config.gameName.empty())
 		window.setTitle(m_config.gameName);
 
+	app::Application::get().getEngineContext().getSettings().setWindowOwned(true);
 	app::Application::get().getEngineContext().getSettings().applyBuiltins();
 
 	m_viewportSize = window.getSize();

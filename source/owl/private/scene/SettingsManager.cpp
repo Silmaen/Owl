@@ -193,18 +193,8 @@ auto SettingsManager::keys() const -> std::vector<std::string> {
 void SettingsManager::applyBuiltins() const {
 	if (!app::Application::instanced())
 		return;
-	auto& window = app::Application::get().getWindow();
-
-	// Window settings.
-	const auto width = getAs<int64_t>(KeyResolutionWidth);
-	if (const auto height = getAs<int64_t>(KeyResolutionHeight); width.has_value() && height.has_value())
-		window.setSize(static_cast<uint32_t>(width.value()), static_cast<uint32_t>(height.value()));
-
-	if (const auto fs = getAs<bool>(KeyFullscreen); fs.has_value())
-		window.setFullscreen(fs.value());
-
-	if (const auto rs = getAs<bool>(KeyResizable); rs.has_value())
-		window.setResizable(rs.value());
+	if (m_windowOwned)
+		applyWindow();
 
 	if (auto* mixer = sound::SoundCommand::getMixer(); mixer != nullptr)
 		applyVolumes(*mixer);
@@ -214,6 +204,23 @@ void SettingsManager::applyBuiltins() const {
 
 	app::Application::get().getEngineContext().getScreenTransition().setReducedMotion(
 			Accessibility::read(*this).reducedMotion);
+}
+
+void SettingsManager::applyWindow() const {
+	const WindowSettings wanted{.width = getAs<int64_t>(KeyResolutionWidth),
+								.height = getAs<int64_t>(KeyResolutionHeight),
+								.fullscreen = getAs<bool>(KeyFullscreen),
+								.resizable = getAs<bool>(KeyResizable)};
+	const WindowSettings applied = m_appliedWindow.value_or(WindowSettings{});
+	const bool first = !m_appliedWindow.has_value();
+	auto& window = app::Application::get().getWindow();
+	if (wanted.width && wanted.height && (first || wanted.width != applied.width || wanted.height != applied.height))
+		window.setSize(static_cast<uint32_t>(*wanted.width), static_cast<uint32_t>(*wanted.height));
+	if (wanted.fullscreen && (first || wanted.fullscreen != applied.fullscreen))
+		window.setFullscreen(*wanted.fullscreen);
+	if (wanted.resizable && (first || wanted.resizable != applied.resizable))
+		window.setResizable(*wanted.resizable);
+	m_appliedWindow = wanted;
 }
 
 void SettingsManager::applyVolumes(sound::Mixer& ioMixer) const {
@@ -230,6 +237,7 @@ void SettingsManager::clear() {
 	m_defaults.clear();
 	m_overrides.clear();
 	m_gameName.clear();
+	m_appliedWindow.reset();
 }
 
 }// namespace owl::scene

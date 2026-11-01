@@ -189,9 +189,29 @@ public:
 	 *
 	 * Applies resolution, fullscreen, resizable to the window, the `volume_*` keys to the player's volume of the
 	 * mixer buses (applyVolumes), the language to the engine context and the reduced motion (`Accessibility`) to its
-	 * screen transition.
+	 * screen transition. The window settings reach the window only when the game owns it (`setWindowOwned`, the
+	 * runner) and only when they changed since the last application: an editor window is never resized, and changing
+	 * another setting keeps a window the player resized.
 	 */
 	void applyBuiltins() const;
+
+	/**
+	 * @brief
+	 *  Set whether the game owns the application window, so the window settings apply to it (the runner); Owl Nest
+	 *  keeps its own window.
+	 * @param[in] iOwned True when the window is the game's.
+	 */
+	void setWindowOwned(const bool iOwned) {
+		m_windowOwned = iOwned;
+		m_appliedWindow.reset();
+	}
+
+	/**
+	 * @brief
+	 *  Whether the game owns the application window.
+	 * @return True when the window settings apply to the window.
+	 */
+	[[nodiscard]] auto isWindowOwned() const -> bool { return m_windowOwned; }
 
 	/**
 	 * @brief
@@ -229,12 +249,40 @@ public:
 	static constexpr auto KeyLanguage = "language";
 
 private:
+	/**
+	 * @brief
+	 *  Apply the window settings that changed since the last application (all of them the first time).
+	 */
+	void applyWindow() const;
+
 	/// Game name for directory path.
 	std::string m_gameName;
 	/// Game defaults (from game_settings.yml).
 	std::unordered_map<std::string, Value> m_defaults;
 	/// User overrides (from settings.yml).
 	std::unordered_map<std::string, Value> m_overrides;
+	/// Window settings as last applied to the window.
+	struct WindowSettings {
+		/// Resolution width, if set.
+		std::optional<int64_t> width;
+		/// Resolution height, if set.
+		std::optional<int64_t> height;
+		/// Fullscreen, if set.
+		std::optional<bool> fullscreen;
+		/// Resizable, if set.
+		std::optional<bool> resizable;
+		/**
+		 * @brief
+		 *  Compare two window settings.
+		 * @param[in] iOther The other settings.
+		 * @return True when equal.
+		 */
+		auto operator==(const WindowSettings& iOther) const -> bool = default;
+	};
+	/// Whether the window settings apply to the application window.
+	bool m_windowOwned = false;
+	/// Window settings of the last application, empty before the first one.
+	mutable std::optional<WindowSettings> m_appliedWindow;
 };
 
 }// namespace owl::scene
