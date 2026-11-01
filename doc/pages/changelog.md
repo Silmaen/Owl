@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Engine Demo tavern: the character yard folded in, with a barkeeper holding a tankard on a socket, a server walking a spline, two seated patrons and four dialogues; its scene is gone.
 - Engine Demo main menu: a live diorama of a 3D tavern under a day and night sky with the 2D village in front.
 - Engine Demo: a scenario for every scene, checked by `GameExportCoverage.EveryDemoSceneHasAScenario`.
+- `ShipController` component (`owl.ships`): assisted inertial spaceflight, mouse pitch and yaw, roll, thrust, strafe and a flight assist toggle, moving a `WorldPosition` in double, with its Owl Nest inspector and `entity.*_ship_*` Lua bindings.
+- Built-in actions `ship_thrust`, `ship_roll`, `ship_strafe` and `ship_assist`, with keyboard and gamepad bindings, in the action map and the project templates.
+- Engine Demo far orbit: flown from a cockpit HUD (canopy frame, reticle, speed, throttle, flight assist, dock distance) with a `ShipController`.
+- Engine Demo far orbit: a star field sky, a sun with a lens flare, a closer planet, a lit station with solar wings and beacons, faceted debris rocks and space dust.
+- Engine Demo far orbit: the precision gauge is a ruler of glowing beads 20 cm apart by the debris, labelled by a `HudMarker`.
 
 - Skeletal animation: `MeshLoader` reads the first glTF skin, its clips and its `socket_*` nodes, drawn skinned on the GPU (`skinned3d.slang`).
 - `Animator` component: a state machine of clips with parameters, conditions, exit times and cross-fades, driven from Lua (`animator.*`).

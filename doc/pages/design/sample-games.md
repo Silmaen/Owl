@@ -445,7 +445,7 @@ returns to it, none is reached any other way.
 | Progress    | Six places: platformer, raycast, iso town, voxel, tavern (cellar included), observatory; the portal wakes at six of six                                      |
 | Hub         | A `HudMarker` on each place left, a minimap, day and night with 2D lights, a reverb cave with adaptive music, Kenney Tiny Farm and Tiny Dungeon tiles        |
 | Tavern      | Kenney Mini Characters: a barkeeper with a tankard on a socket, a server walking a spline, two seated patrons, a dialogue each                               |
-| Observatory | Its telescope opens `far_orbit`; the objective is to dock with the debris, then back to the hub                                                              |
+| Observatory | Its telescope opens `far_orbit`, flown from a cockpit HUD with a `ShipController`; the objective is to dock with the debris, then back to the hub            |
 | Main menu   | A live diorama mixing styles: the 2D village in front, the 3D tavern behind, day and night; Start is the only way in                                         |
 | Scenarios   | Every scene is played by a scenario, checked by `GameExportCoverage.EveryDemoSceneHasAScenario`                                                              |
 | Rule        | Each release puts its features in the existing places instead of adding isolated scenes                                                                      |

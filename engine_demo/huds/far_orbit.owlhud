@@ -14,8 +14,8 @@ Entities:
     scaleMode: ScaleWithHeight
   Visibility: {gameVisible: true}
   Hierarchy: {}
-- Entity: 4110000000000000010
-  Tag: {tag: HudTopLeft}
+- Entity: 4110000000000000020
+  Tag: {tag: CockpitFrame}
   Transform:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
@@ -26,41 +26,52 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [0.62, 0.26]
+    size: [1, 1]
     sizeUnit: [ScreenWidth, ScreenHeight]
-    offset: [16, 16]
-  UiLayout:
-    arrangement: Column
-    crossAlign: Start
-    spacing: 0
-    padding: 0
-    columns: 1
-    cellSize: [0, 0]
-- Entity: 4110000000000000002
-  Tag: {tag: HudHint}
+    offset: [0, 0]
+  UiImage:
+    tint: [1, 1, 1, 1]
+    texture: gid:f1e7863b1e6afaad:textures/ui/cockpit_frame.png
+- Entity: 4110000000000000021
+  Tag: {tag: Reticle}
   Transform:
     translation: [0, 0, 0]
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   Visibility: {gameVisible: true}
-  Hierarchy: {parentId: 4110000000000000010}
+  Hierarchy: {parentId: 4110000000000000001}
   UiRect:
-    anchorMin: [0, 0]
-    anchorMax: [0, 0]
-    pivot: [0, 0]
-    size: [1, 0.3]
-    sizeUnit: [ParentWidth, ParentHeight]
+    anchorMin: [0.5, 0.5]
+    anchorMax: [0.5, 0.5]
+    pivot: [0.5, 0.5]
+    size: [64, 64]
+    sizeUnit: [Pixels, Pixels]
     offset: [0, 0]
-  UiText:
-    text: 'WASD: fly    arrows: look    Space / Shift: up / down    J: jump to the other site    Esc: back to the hub'
-    color: [1, 1, 1, 0.85]
-    fontSize: 24
-    horizontalAlignment: Left
-    verticalAlignment: Top
-    wrap: true
-    fit: Shrink
-    minFontSize: 12
-
+  UiImage:
+    tint: [0.6, 1, 0.9, 0.85]
+    texture: gid:7cb89c96dea1cb3f:textures/ui/cockpit_reticle.png
+- Entity: 4110000000000000010
+  Tag: {tag: HudTop}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4110000000000000001}
+  UiRect:
+    anchorMin: [0.5, 0]
+    anchorMax: [0.5, 0]
+    pivot: [0.5, 0]
+    size: [0.56, 0.22]
+    sizeUnit: [ScreenWidth, ScreenHeight]
+    offset: [0, 50]
+  UiLayout:
+    arrangement: Column
+    crossAlign: Center
+    spacing: 2
+    padding: 0
+    columns: 1
+    cellSize: [0, 0]
 - Entity: 4110000000000000004
   Tag: {tag: ObjectiveText}
   Transform:
@@ -73,18 +84,20 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [1, 0.2]
+    size: [1, 0.24]
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
     text: 'Objective: dock with the debris'
     color: [1, 0.85, 0.3, 1]
-    fontSize: 28
-    horizontalAlignment: Left
+    fontSize: 24
+    horizontalAlignment: Center
     verticalAlignment: Top
     wrap: true
     fit: Shrink
-    minFontSize: 12
+    minFontSize: 10
+    outlineColor: [0, 0, 0, 0.8]
+    outlineWidth: 1
 - Entity: 4110000000000000003
   Tag: {tag: WorldReadout}
   Transform:
@@ -97,15 +110,182 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [1, 0.45]
+    size: [1, 0.36]
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
     text: ''
-    color: [1, 0.95, 0.55, 1]
-    fontSize: 26
+    color: [0.75, 0.9, 0.95, 0.85]
+    fontSize: 16
+    horizontalAlignment: Center
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 10
+    outlineColor: [0, 0, 0, 0.8]
+    outlineWidth: 1
+- Entity: 4110000000000000002
+  Tag: {tag: HudHint}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4110000000000000010}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [1, 0.4]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiText:
+    text: 'Mouse: pitch / yaw    A / D: roll    W / S: thrust    Q / E, Space / Ctrl: slide    Z: flight assist    J: jump to the other site    Esc: back to the hub'
+    color: [1, 1, 1, 0.85]
+    fontSize: 18
+    horizontalAlignment: Center
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 10
+    outlineColor: [0, 0, 0, 0.8]
+    outlineWidth: 1
+- Entity: 4110000000000000030
+  Tag: {tag: SpeedText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4110000000000000001}
+  UiRect:
+    anchorMin: [0.5, 1]
+    anchorMax: [0.5, 1]
+    pivot: [0, 0]
+    size: [184, 40]
+    sizeUnit: [Pixels, Pixels]
+    offset: [-280, -94]
+  UiText:
+    text: '0 m/s'
+    color: [0.55, 0.95, 1, 1]
+    fontSize: 30
     horizontalAlignment: Left
     verticalAlignment: Top
     wrap: true
     fit: Shrink
-    minFontSize: 12
+    minFontSize: 10
+- Entity: 4110000000000000031
+  Tag: {tag: AssistOn}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4110000000000000001}
+  UiRect:
+    anchorMin: [0.5, 1]
+    anchorMax: [0.5, 1]
+    pivot: [0, 0]
+    size: [184, 26]
+    sizeUnit: [Pixels, Pixels]
+    offset: [-280, -48]
+  UiText:
+    text: 'FLIGHT ASSIST ON'
+    color: [0.45, 1, 0.55, 0.95]
+    fontSize: 16
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 10
+- Entity: 4110000000000000032
+  Tag: {tag: AssistOff}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4110000000000000001}
+  UiRect:
+    anchorMin: [0.5, 1]
+    anchorMax: [0.5, 1]
+    pivot: [0, 0]
+    size: [184, 26]
+    sizeUnit: [Pixels, Pixels]
+    offset: [-280, -48]
+  UiText:
+    text: 'FLIGHT ASSIST OFF'
+    color: [1, 0.62, 0.25, 1]
+    fontSize: 16
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 10
+- Entity: 4110000000000000033
+  Tag: {tag: DockText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4110000000000000001}
+  UiRect:
+    anchorMin: [0.5, 1]
+    anchorMax: [0.5, 1]
+    pivot: [0, 0]
+    size: [184, 40]
+    sizeUnit: [Pixels, Pixels]
+    offset: [96, -94]
+  UiText:
+    text: ''
+    color: [0.55, 0.95, 1, 1]
+    fontSize: 30
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 10
+- Entity: 4110000000000000034
+  Tag: {tag: TargetText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4110000000000000001}
+  UiRect:
+    anchorMin: [0.5, 1]
+    anchorMax: [0.5, 1]
+    pivot: [0, 0]
+    size: [184, 26]
+    sizeUnit: [Pixels, Pixels]
+    offset: [96, -48]
+  UiText:
+    text: 'TARGET: DEBRIS'
+    color: [0.55, 0.95, 1, 0.7]
+    fontSize: 16
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 10
+- Entity: 4110000000000000035
+  Tag: {tag: ThrottleBar}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4110000000000000001}
+  UiRect:
+    anchorMin: [0.5, 1]
+    anchorMax: [0.5, 1]
+    pivot: [0, 0]
+    size: [104, 10]
+    sizeUnit: [Pixels, Pixels]
+    offset: [-52, -92]
+  UiProgressBar:
+    value: 0
+    backgroundColor: [0, 0, 0, 0]
+    fillColor: [0.55, 0.95, 1, 0.8]

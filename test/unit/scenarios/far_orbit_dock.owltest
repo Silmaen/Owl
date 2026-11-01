@@ -1,13 +1,16 @@
-# The far orbit, opened by the telescope of the hub: fly to the debris off the station (D strafes right, W flies ahead)
-# and dock with it; the place is done and the scene goes back to the hub.
+# The far orbit, opened by the telescope of the hub: the camera is the cockpit of a ship. Turn right towards the debris
+# past the station (the right arrow yaws), thrust ahead (W) and let the flight assist slow the ship down: it docks, the
+# place is done and the scene goes back to the hub.
 scene: ../../../engine_demo/scenes/far_orbit.owl
 steps:
   - frames: 20
   - expect: {gamestate: orbit_docked, equals: 0}
   - expect: {entity: Debris, exists: true}
-  - input: {key: D, frames: 18}
-  - input: {key: W, frames: 36}
-  - frames: 5
+  - input: {key: Right, frames: 23}
+  - frames: 20
+  - expect: {entity: OrbitCamera, rotation.y: {less: -0.3}}
+  - input: {key: W, frames: 150}
+  - frames: 90
   - expect: {gamestate: orbit_docked, equals: 1}
   - expect: {gamestate: level_orbit_done, equals: 1}
   - frames: 200

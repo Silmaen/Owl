@@ -355,7 +355,8 @@ def ember_texture(size: int = 256) -> Image.Image:
     return img.filter(ImageFilter.GaussianBlur(0.8))
 
 
-def write_glb(path: Path, mesh: MeshBuilder, name: str, color=(1.0, 1.0, 1.0, 1.0)) -> None:
+def write_glb(path: Path, mesh: MeshBuilder, name: str, color=(1.0, 1.0, 1.0, 1.0), metallic: float = 0.0,
+              roughness: float = 0.8) -> None:
     """Write one mesh as a binary glTF 2.0 file of one primitive with a plain material."""
     count = len(mesh.vertices)
     chunks = [b"".join(struct.pack("<3f", *v[0]) for v in mesh.vertices),
@@ -376,8 +377,8 @@ def write_glb(path: Path, mesh: MeshBuilder, name: str, color=(1.0, 1.0, 1.0, 1.
         "nodes": [{"mesh": 0, "name": name}],
         "meshes": [{"name": name, "primitives": [{"attributes": {"POSITION": 0, "NORMAL": 1, "TEXCOORD_0": 2},
                                                   "indices": 3, "material": 0}]}],
-        "materials": [{"name": name, "pbrMetallicRoughness": {"baseColorFactor": list(color), "metallicFactor": 0.0,
-                                                               "roughnessFactor": 0.8}}],
+        "materials": [{"name": name, "pbrMetallicRoughness": {"baseColorFactor": list(color), "metallicFactor": metallic,
+                                                               "roughnessFactor": roughness}}],
         "accessors": [
             {"bufferView": 0, "componentType": 5126, "count": count, "type": "VEC3", "min": lo, "max": hi},
             {"bufferView": 1, "componentType": 5126, "count": count, "type": "VEC3"},

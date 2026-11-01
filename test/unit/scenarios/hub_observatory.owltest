@@ -14,9 +14,11 @@ steps:
   - input: {key: E, frames: 3}
   - frames: 90
   - expect: {entity: OrbitCamera, exists: true}
-  - input: {key: D, frames: 18}
-  - input: {key: W, frames: 36}
-  - frames: 5
+  # The cockpit of the far orbit: yaw right towards the debris, thrust, let the flight assist slow down.
+  - input: {key: Right, frames: 23}
+  - frames: 20
+  - input: {key: W, frames: 150}
+  - frames: 90
   - expect: {gamestate: level_orbit_done, equals: 1}
   - frames: 200
   - expect: {entity: TelescopeDoor, exists: true}

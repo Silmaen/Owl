@@ -2476,22 +2476,22 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 230864.8,
-      "p25_ns": 224846.1,
-      "p75_ns": 253359.7,
-      "min_ns": 223063.3,
-      "max_ns": 273778.5
+      "median_ns": 1007609.0,
+      "p25_ns": 996619.0,
+      "p75_ns": 1038185.0,
+      "min_ns": 978777.0,
+      "max_ns": 1105836.0
     },
     {
       "name": "sample/editor_update/far_orbit",
       "items": 1,
-      "batch": 1773,
+      "batch": 573,
       "samples": 15,
-      "median_ns": 15452.3,
-      "p25_ns": 15432.8,
-      "p75_ns": 15526.1,
-      "min_ns": 15114.3,
-      "max_ns": 16040.8
+      "median_ns": 20532.4,
+      "p25_ns": 20330.1,
+      "p75_ns": 20567.8,
+      "min_ns": 20013.3,
+      "max_ns": 22015.5
     },
     {
       "name": "particles/simulate_cpu/1000",
