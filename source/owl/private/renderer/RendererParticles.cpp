@@ -247,7 +247,7 @@ void RendererParticles::prepare(ParticleSystem& ioSystem, const ParticleEmitterS
 		gpu::RenderCommand::storageBufferMemoryBarrier();
 		++g_data->stats.steps;
 	}
-	if (iSettings.blend != ParticleBlend::Alpha || !g_data->sortKeys || !g_data->sort)
+	if (ioSystem.isIdle() || iSettings.blend != ParticleBlend::Alpha || !g_data->sortKeys || !g_data->sort)
 		return;
 	const math::mat4 toWorld = inverse(iCamera.getView());
 	SortParams params{.eye = math::vec4{toWorld(0, 3), toWorld(1, 3), toWorld(2, 3), 1.f},
@@ -304,7 +304,7 @@ void RendererParticles::drawSystem(const ParticleSystem& iSystem, const Particle
 								   const int32_t iEntityId) {
 	OWL_PROFILE_FUNCTION()
 
-	if (!g_data || !g_data->sceneOpen)
+	if (!g_data || !g_data->sceneOpen || iSystem.isIdle())
 		return;
 	const auto& state = iSystem.getGpuState();
 	if (!state || state->capacity == 0)

@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <limits>
 #include <numbers>
 #include <span>
 
@@ -356,13 +357,19 @@ void ParticleSystem::restart() {
 	m_head = 0;
 	m_requested = 0;
 	m_spawned = 0;
+	m_quiet = std::numeric_limits<float>::max();
 	m_emitCarry = 0.f;
 	m_emitTime = 0.f;
 	m_shift = {0.f, 0.f, 0.f};
 	for (auto& particle: m_particles) particle = GpuParticle{};
 }
 
-void ParticleSystem::emit(const uint32_t iCount) { m_requested = std::min(m_requested + iCount, g_maxParticles); }
+void ParticleSystem::emit(const uint32_t iCount) {
+	// A system never started (an emitter without play on start) runs for the burst, its emission still off.
+	if (!m_playing && !m_emitting && m_spawned == 0)
+		m_playing = true;
+	m_requested = std::min(m_requested + iCount, g_maxParticles);
+}
 
 auto ParticleSystem::getAliveCount() const -> uint32_t {
 	return static_cast<uint32_t>(std::ranges::count_if(
@@ -457,9 +464,17 @@ void ParticleSystem::advance(const ParticleEmitterSettings& iSettings, const flo
 	const bool shifted = m_shift.x() != 0.f || m_shift.y() != 0.f || m_shift.z() != 0.f;
 	if (!m_playing && !shifted && !m_reset)
 		return;
+	m_idle = !m_emitting && m_requested == 0 && (!m_reset || m_spawned == 0) &&
+			 m_quiet >= std::max(iSettings.lifetimeMax, iSettings.lifetimeMin);
+	if (m_idle) {
+		m_hasEmitter = false;
+		m_shift = {0.f, 0.f, 0.f};
+		return;
+	}
 	const float seconds = m_playing ? std::max(iSeconds, 0.f) : 0.f;
 	const uint32_t spawns = m_playing ? countSpawns(iSettings, seconds) : 0u;
 	recordStep(iSettings, seconds, iEmitter, spawns);
+	m_quiet = spawns > 0 ? 0.f : m_quiet + seconds;
 	if (m_path == Path::Gpu) {
 		m_pending = true;
 		return;
