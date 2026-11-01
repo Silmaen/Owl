@@ -7,7 +7,9 @@ Draw the menu art and synthesise the menu sounds of the Wolfenstein mini sample 
 Menus (``textures/ui/``): the title, engraved in a riveted steel plate with a red band, and the steel plate of a
 button, a little see-through so that the button colour (red when hovered) shows in it. Sounds (``sounds/ui/``), mono
 16 bit at 22.05 kHz: ``start.wav``, a short low brass call over a snare roll, and the three sounds of the tally
-(``tally_tick.wav`` while a ratio counts up, ``tally_line.wav`` when a line is done, ``tally_total.wav`` at the end).
+(``tally_tick.wav`` while a ratio counts up, ``tally_line.wav`` when a line is done, ``tally_total.wav`` at the end);
+the two music loops (``sounds/music/``): ``floor.wav`` under the floors and ``menu.wav`` under the menus, slow horn
+chords in a minor march.
 
 Run from the repository root: ``./docker_run.sh poetry run python -m tools.samples.wolfenstein.generate_assets``.
 """
@@ -176,8 +178,74 @@ def total() -> list[float]:
     return _mix(_brass(0.25, 293.7), _brass(0.7, 440.0, 0.2), _brass(0.7, 587.3, 0.2))
 
 
+def _add(out: list[float], track: list[float], start: float, gain: float) -> None:
+    """Add ``track`` into ``out`` from ``start`` seconds, wrapped around the end so that a loop stays seamless."""
+    offset = round(start * RATE)
+    for i, value in enumerate(track):
+        out[(offset + i) % len(out)] += value * gain
+
+
+def _drum(seconds: float, seed: int) -> list[float]:
+    """A muffled field drum: a low thump under a short, low-passed noise burst."""
+    rng = random.Random(seed)
+    out = []
+    smooth = 0.0
+    for i in range(round(seconds * RATE)):
+        t = i / RATE
+        smooth += (rng.uniform(-1.0, 1.0) - smooth) * 0.25
+        thump = math.sin(2 * math.pi * (110.0 - 50.0 * t) * t) * math.exp(-t * 18.0)
+        out.append(thump + smooth * 0.6 * math.exp(-t * 30.0))
+    return out
+
+
+# Note frequencies of the music, in hertz.
+D2, F2, G2, A2, BB1, A1 = 73.42, 87.31, 98.0, 110.0, 58.27, 55.0
+D3, F3, G3, A3, BB3, C4, D4, E3, CS4 = 146.83, 174.61, 196.0, 220.0, 233.08, 261.63, 293.66, 164.81, 277.18
+CHORDS = [
+    (D2, [D3, F3, A3]),  # D minor
+    (BB1, [D3, F3, BB3]),  # B flat
+    (G2, [D3, G3, BB3]),  # G minor
+    (A1, [E3, A3, CS4]),  # A major, back to D
+]
+"""Bass and chord of each bar of the music, in a slow minor march."""
+
+
+def music_floor() -> list[float]:
+    """The music of the floors, a 32 second loop at 60 beats a minute: low horn chords, a bass on every beat and a
+    soft drum on the last beat of each bar, quiet enough to hear the doors under it."""
+    bar = 4.0
+    out = [0.0] * round(8 * bar * RATE)
+    for index in range(8):
+        bass, chord = CHORDS[index % len(CHORDS)]
+        start = index * bar
+        for note in chord:
+            _add(out, _brass(bar * 0.95, note), start, 0.18)
+        for beat in range(4):
+            _add(out, _brass(0.7, bass), start + beat, 0.55 if beat == 0 else 0.35)
+        _add(out, _drum(0.5, 20 + index), start + 3.0, 0.4)
+        _add(out, _drum(0.5, 40 + index), start + 3.5, 0.25)
+    return out
+
+
+def music_menu() -> list[float]:
+    """The music of the menus, a 16 second loop: the chords of the floors held, the call of the jingle over the first
+    bar, no drum."""
+    bar = 4.0
+    out = [0.0] * round(4 * bar * RATE)
+    for index, (bass, chord) in enumerate(CHORDS):
+        start = index * bar
+        for note in chord:
+            _add(out, _brass(bar * 0.98, note), start, 0.16)
+        _add(out, _brass(bar * 0.98, bass), start, 0.4)
+    for start, note in ((0.5, D4), (1.0, A3), (1.5, D4), (8.5, C4), (9.0, BB3), (9.5, A3)):
+        _add(out, _brass(0.45, note), start, 0.22)
+    return out
+
+
 def sounds() -> None:
     """Every sound written by this script."""
+    _write("music/floor.wav", music_floor(), 0.5)
+    _write("music/menu.wav", music_menu(), 0.45)
     _write("ui/start.wav", jingle(), 0.5)
     _write("ui/tally_tick.wav", tick(), 0.3)
     _write("ui/tally_line.wav", line_done(), 0.55)

@@ -116,7 +116,8 @@ undo step.
 The overrides per layer type: **Renderer2D** `Space` (`World`, or `Screen` for overlays the camera never moves) and
 `ReferenceHeight`; **RendererRaycast** field of view, distance, rays, ceiling and floor colours or tiles, fog;
 **RendererIsometric** tile size, `ZStep` and the zoom of Play; **RendererMesh** occlusion culling and lighting;
-**RendererVoxel** sun, ambient and their intensities. The layers themselves are described in
+**RendererVoxel** sun, ambient and their intensities; **RendererParticles** the projection (`Scene`, or `Raycast` over a
+raycast layer) and its field of view. The layers themselves are described in
 [Renderer](renderer.md#renderer-stack).
 
 ## Mixer

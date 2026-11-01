@@ -985,6 +985,10 @@ equirectangular Radiance `.hdr` image (`EnvironmentMap`, `Equirectangular`).
   or `Alpha`.
 - **Emissive.** The colour is decoded from sRGB and multiplied by `1 + emissive · exposure` on a linear target only, so
   the display-space path (previews) keeps the authored colour.
+- **Raycast projection.** With `Projection: Raycast` the layer draws with `RendererParticlesLayer::makeRaycastCamera`: a
+  reversed-Z perspective whose horizontal field of view is the layer's `Fov` and whose vertical half-angle has a tangent
+  of 0.5 (a wall one unit high at one unit fills the screen height), the eye on the map plane at the camera position,
+  world Z up. A point lands on the same pixel as with `RendererRaycastLayer::projectToViewport`.
 
 ## Post-process {#renderer-post-process}
 

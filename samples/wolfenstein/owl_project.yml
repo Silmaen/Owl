@@ -20,5 +20,10 @@ OwlProject:
         MaxDistance: 32.0
         CeilingColor: [0.2, 0.2, 0.21, 1.0]
         FloorColor: [0.44, 0.44, 0.42, 1.0]
+    - Type: RendererParticles
+      Name: raycast_fx
+      DefaultConfig:
+        Projection: Raycast
+        Fov: 75.0
     - Type: Renderer2D
       Name: overlay

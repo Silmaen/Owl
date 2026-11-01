@@ -74,6 +74,18 @@ ITEMS: dict[str, tuple[str, str]] = {
     "b": ("BlueKey", "key_blue"),
 }
 """Pick-up characters: tag (also the `item` of `pickup.lua`) and sprite."""
+KEY_MARKERS: dict[str, tuple[str, tuple[float, float, float]]] = {
+    "GoldKey": ("Gold key", (1.0, 0.82, 0.25)),
+    "BlueKey": ("Blue key", (0.4, 0.65, 1.0)),
+}
+"""HUD marker of each key: label and colour, shown once the key was seen (`explore.lua`)."""
+EXIT_MARKER = ("Exit", (0.35, 0.95, 0.45))
+"""HUD marker of the elevator switch, shown once it was seen."""
+SPARKLES: dict[str, tuple[tuple[float, float, float], tuple[float, float, float]]] = {
+    "GoldSparkle": ((1.0, 0.92, 0.55), (1.0, 0.6, 0.12)),
+    "BlueSparkle": ((0.75, 0.88, 1.0), (0.25, 0.45, 1.0)),
+}
+"""Particle bursts of the pick-ups (`pickup.lua`): the colour at birth and the colour they fade out with."""
 
 PROPS: dict[str, tuple[str, str, bool]] = {
     "a": ("Armor", "armor", True),
@@ -382,6 +394,29 @@ def sprite(texture: str) -> str:
     )
 
 
+def hud_marker(label: str, colour: tuple[float, float, float]) -> str:
+    """HudMarker block, off until its entity was seen: a label, the distance and an arrow on the screen edge."""
+    return (
+        f"HudMarker:\n  enabled: false\n  color: {vec(*colour, 1)}\n  size: [20, 20]\n  offset: [0, 0, -0.15]\n"
+        f"  label: {label}\n  labelColor: [1, 1, 1, 1]\n  fontSize: 16\n  showDistance: true\n  maxDistance: 0\n"
+        "  offscreenIndicator: true\n  edgeMargin: 40"
+    )
+
+
+def sparkle(birth: tuple[float, float, float], death: tuple[float, float, float]) -> str:
+    """ParticleEmitter block of a pick-up burst: idle until `entity.particles_emit`, small additive sparks that spread
+    then drift up and fade in the raycast view (world Z is the height above the eye, the floor at -0.5)."""
+    return (
+        "ParticleEmitter:\n  playOnStart: false\n  maxParticles: 96\n  rate: 0\n  burst: 0\n  duration: 0\n"
+        "  loop: false\n  lifetimeMin: 0.4\n  lifetimeMax: 0.8\n  shape: Sphere\n  shapeSize: [0.18, 0.18, 0.12]\n"
+        "  speedMin: 0.3\n  speedMax: 0.9\n  gravity: [0, 0, 0.8]\n  drag: 3\n  sizeMin: 0.018\n"
+        "  sizeMax: 0.04\n  sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.3]]}\n  color: [1, 1, 1, 1]\n"
+        f"  colorOverLife: [[0, {fmt(birth[0])}, {fmt(birth[1])}, {fmt(birth[2])}, 1], "
+        f"[1, {fmt(death[0])}, {fmt(death[1])}, {fmt(death[2])}, 0]]\n"
+        "  emissive: 0\n  blend: Additive\n  space: World"
+    )
+
+
 def static_body(size: float) -> str:
     """PhysicBody block of a prop the player bumps into."""
     return (
@@ -393,6 +428,8 @@ def static_body(size: float) -> str:
 def scene(level: Level) -> None:
     """Write the scene of a floor."""
     out = SceneWriter(1000 + level.number)
+    # The music, the sparkles and the elevator ride draw their ids from a stream of their own, apart from the others.
+    extra = random.Random(9000 + level.number)
     next_scene = f"scenes/level_{level.number + 1}.owl" if level.number < len(LEVELS) else "scenes/victory.owl"
     fc, cc = level.floor_color, level.ceiling_color
     head = [
@@ -407,6 +444,8 @@ def scene(level: Level) -> None:
         "    Overrides:",
         f"      FloorColor: {vec(*fc, 1)}",
         f"      CeilingColor: {vec(*cc, 1)}",
+        "  - Name: raycast_fx",
+        "    Enabled: true",
         "  - Name: overlay",
         "    Enabled: true",
         "    Overrides:",
@@ -457,6 +496,18 @@ def scene(level: Level) -> None:
             "  maxDistance: 50\n  rolloff: 1",
         ],
     )
+    out.entity(
+        "Music",
+        uuid=extra.getrandbits(63),
+        components=[
+            visible(),
+            "SoundSource:\n  soundAsset: sounds/music/floor.wav\n  category: Music\n"
+            "  volume: 0.6\n  pitch: 1\n  loop: true\n  spatial: false\n  playOnStart: true\n"
+            "  maxDistance: 50\n  rolloff: 1",
+        ],
+    )
+    for tag, (birth, death) in SPARKLES.items():
+        out.entity(tag, [visible(), sparkle(birth, death), tag_for("raycast_fx")], uuid=extra.getrandbits(63))
     out.entity(
         "Minimap",
         [
@@ -534,12 +585,14 @@ def scene(level: Level) -> None:
                 continue
             tag, texture = ITEMS[char]
             wx, wy = world(x, y)
+            marker = [hud_marker(*KEY_MARKERS[tag])] if tag in KEY_MARKERS else []
             out.entity(
                 tag,
                 [
                     sprite(texture),
                     "Trigger:\n  Type: LuaCallback\n  CallbackName: on_pickup",
                     visible(),
+                    *marker,
                     child_of(items),
                     script("scripts/game/pickup.lua", [("item", "string", tag)]),
                     tag_for("raycast_world"),
@@ -565,11 +618,38 @@ def scene(level: Level) -> None:
         [
             "Trigger:\n  Type: Interaction\n  InteractionRange: 1.5\n  CallbackName: on_elevator_use",
             visible(),
+            hud_marker(*EXIT_MARKER),
             script("scripts/game/exit.lua", [("next_scene", "string", next_scene)]),
+            tag_for("raycast_world"),
         ],
         x=wx,
         y=wy,
         scale=(3, 3),
+    )
+    camera = out.entity(
+        "ElevatorCamera",
+        uuid=extra.getrandbits(63),
+        components=[
+            "Camera:\n  camera:\n    projectionType: Orthographic\n    perspectiveFOV: 0.7853982\n"
+            "    perspectiveNear: 0.01\n    perspectiveFar: 1000\n    orthographicSize: 8\n"
+            "    orthographicNear: -1\n    orthographicFar: 10\n  primary: false\n  fixedAspectRatio: false",
+            visible(),
+        ],
+        x=wx,
+        y=wy,
+        z=0.5,
+    )
+    out.entity(
+        "ElevatorRide",
+        uuid=extra.getrandbits(63),
+        components=[
+            visible(),
+            script("scripts/game/elevator.lua"),
+            f"SequencePlayer:\n  sequence: sequences/elevator.owlseq\n  camera: {camera}\n  playOnStart: false\n"
+            "  loop: false\n  speed: 1\n  onFinished: on_ride_finished",
+        ],
+        x=wx,
+        y=wy,
     )
     folder = ROOT / "scenes"
     folder.mkdir(parents=True, exist_ok=True)

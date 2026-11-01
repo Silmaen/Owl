@@ -50,6 +50,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Breakout: broken bricks burst into sparks of their colour with a flash of light, the ball leaves a neon trail and lights the field, bloom on the levels.
 - Sokoban: a push raises dust behind the crate and a crate set on a goal sparkles.
 - Scenarios `breakout_settings`, `sokoban_settings` and `sokoban_pause`; `breakout_serve` and `sokoban_push` check the bursts and the sparkles.
+- `RendererParticles` layer `Projection: Raycast` (with its `Fov`): particles drawn in the first-person view of a raycast layer, edited in the Scene Settings overrides of Owl Nest.
+- Wolfenstein mini: home-made music in the menus and on the floors, with music and effects volume sliders on the mixer buses beside the master volume.
+- Wolfenstein mini: the pause stops the scene clock (`time.set_paused`).
+- Wolfenstein mini: HUD markers on the keys and the elevator switch once they were seen, hidden for the ride.
+- Wolfenstein mini: an elevator ride cutscene (`sequences/elevator.owlseq`) between the switch and the tally, skipped with use, accept or pause.
+- Wolfenstein mini: gold and blue sparks burst ahead of the view on every pick-up.
+- Wolfenstein mini settings: colour vision correction, reduced motion (still title view, no turn in the ride) and subtitles (the secret walls and the ride).
+- Scenarios `wolf_markers` and `wolf_settings`; `wolf_exit`, `wolf_tally` and `wolf_pickup` follow the ride and the sparks.
 
 - Asset GUIDs: every asset of a project opened in Owl Nest gets a `.owlmeta` sidecar, and `AssetRegistry` maps GUID and path.
 - Asset references written by GUID (`gid:<guid>:<path hint>`): renaming or moving a file keeps every reference valid.

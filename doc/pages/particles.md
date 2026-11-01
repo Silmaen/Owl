@@ -21,6 +21,20 @@ RendererStack:
 ```
 
 An emitter or a trail is drawn by the layer its `RendererTag` names; untagged, by the first particle layer of the stack.
+
+Over a raycast layer, the scene camera is the top-down camera of the map: set `Projection: Raycast` on the particle layer,
+with the `Fov` of the raycast layer, and the particles are drawn in its first-person view. The eye stands on the map
+plane at the camera position and looks along the camera's local +Y; the world Z is the height above the eye, the floor
+at -0.5 and the ceiling at 0.5, as for the raycast sprites and the HUD markers. The walls do not hide the particles.
+
+```yaml
+  - Type: RendererRaycast
+    Name: raycast_world
+    DefaultConfig: {Fov: 75}
+  - Type: RendererParticles
+    Name: raycast_fx
+    DefaultConfig: {Projection: Raycast, Fov: 75}
+```
 When an edit leaves particles or trails in a scene whose project stack has no particle layer, Owl Nest appends one at
 the end of the stack. In Edit mode the viewport draws a sparkle at every emitter, which selects it on a click.
 

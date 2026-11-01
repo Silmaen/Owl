@@ -1,5 +1,6 @@
-# Wolfenstein mini: the elevator ends floor 1 (exit.lua): the tally screen opens with the ratios of the floor and its
-# bonus, counted up, and its button leads to floor 2, which starts with fresh counters.
+# Wolfenstein mini: the elevator ends floor 1 (exit.lua): its marker shows once the switch is in sight, the elevator
+# ride plays (elevator.lua: the view turns round, the markers are hidden), then the tally screen opens with the ratios
+# of the floor and its bonus, counted up, and its button leads to floor 2, which starts with fresh counters.
 scene: ../../../samples/wolfenstein/scenes/level_1.owl
 project: ../../../samples/wolfenstein
 steps:
@@ -7,8 +8,15 @@ steps:
   # The elevator is far from the start: its switch is brought next to the player (a physics body cannot be teleported).
   - {command: entity.set_transform, args: {entity: ExitElevator, translation: [-12.5, -11.5, 0]}}
   - frames: 5
+  - expect: {gamestate: wolf_markers, greater: 0}
   - input: {key: E, frames: 3}
-  - frames: 90
+  # The player faced east (-pi / 2): the ride turns the view round, to the west.
+  - frames: 75
+  - expect: {gamestate: wolf_ride, equals: 2}
+  - expect: {gamestate: wolf_markers, greater: 0}
+  - expect: {entity: Player, exists: true}
+  - expect: {entity: ElevatorCamera, rotation.z: {equals: 1.5708, tolerance: 0.05}}
+  - frames: 150
   - expect: {entity: TallyTitle, exists: true}
   - expect: {entity: Player, exists: false}
   - expect: {gamestate: wolf_tally_level, equals: 1}

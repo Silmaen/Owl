@@ -1201,3 +1201,23 @@ Entities:
       wrap: true
       fit: Shrink
       minFontSize: 12
+  - Entity: 3300000000000000054
+    Tag:
+      tag: MenuMusic
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:3e882114cb53d4d0:sounds/music/menu.wav
+      category: Music
+      volume: 0.6
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1

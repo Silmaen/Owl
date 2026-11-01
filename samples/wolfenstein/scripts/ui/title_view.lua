@@ -1,5 +1,6 @@
 -- The raycast view behind the title of Wolfenstein mini (script of the `TitleCamera` entity): the camera stands in the
--- courtyard of floor 3 and turns slowly, a sentry looking around. Nothing here reads the input.
+-- courtyard of floor 3 and turns slowly, a sentry looking around; it stands still with the `reduced_motion` setting.
+-- Nothing here reads the input.
 
 properties = {
     { name = "turn_speed", type = "float", default = 0.12 }, -- radians per second
@@ -13,6 +14,9 @@ function on_create()
 end
 
 function on_update(dt)
+    if settings.get("reduced_motion", false) then
+        return
+    end
     yaw = (yaw + (turn_speed or 0.12) * dt) % (2 * math.pi)
     transform.set_rotation(entity_id, 0, 0, yaw)
 end

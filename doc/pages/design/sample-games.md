@@ -331,18 +331,18 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
 Shipped in `samples/wolfenstein/` (how to play: its `README.md`). An exploration game first: the guards, the weapons
 and the combat come in a later release, once their art exists.
 
-| Item     | As shipped                                                                                                                                                              |
-|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Play     | 3 floors of 32×32 (cellars, prison, headquarters): treasure, food, gold and blue keys with their locked doors, 3 secret walls each, an exit elevator                    |
-| Win      | The elevator of floor 3; after each floor a tally counted up line by line (skippable): items, secrets and map explored in %, 10 points per percent as a bonus           |
-| Controls | `walk`, `turn`, `run`, `interact` (doors, secret walls, elevator), `map` (Tab, pad Y: large map); keyboard, mouse (right button turns, left opens) and gamepad          |
-| Scenes   | `title`, `level_1` to `level_3` (`RendererRaycast` + a `Space: Screen` `Renderer2D` for the minimap), `tally`, `settings`, `victory`                                    |
-| Entities | Player (`PhysicBody`, `Camera`), wall `Tilemap`, `RaycastDoor` (locked: empty `interactionAction`, `door.activate` with the key), `RaycastPushWall`, pick-ups, props    |
-| Lua      | `player.lua`, `pickup.lua`, `locked_door.lua`, `secret.lua` (counts each wall once), `explore.lua` (fog, minimap, cells seen over floor cells), `level.lua`, `exit.lua` |
-| HUD      | `huds/play.owlhud`: floor, score, keys, messages, a pause window with the controls (no ratio during play); the minimap is a tilemap of the overlay layer                |
-| Menus    | Dark stone and steel (`generate_menus.py`): a raycast view turning behind the title, steel plate title and buttons, red fades                                           |
-| Art      | The walls and props of `textures/wolf3d/`, reworked by the maintainer; the sounds of `sounds/raycast/` of the Engine Demo; guards and the weapon view later (G11)       |
-| Saves    | Autosave in slot 1 at each floor start, F6 / F9 in slot 2, Continue loads the newer; best ratios per floor and best score in the settings                               |
+| Item     | As shipped                                                                                                                                                                                                                                                                                     |
+|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Play     | 3 floors of 32×32 (cellars, prison, headquarters): treasure, food, gold and blue keys with their locked doors, 3 secret walls each, an exit elevator                                                                                                                                           |
+| Win      | The elevator of floor 3; after each floor a tally counted up line by line (skippable): items, secrets and map explored in %, 10 points per percent as a bonus                                                                                                                                  |
+| Controls | `walk`, `turn`, `run`, `interact` (doors, secret walls, elevator), `map` (Tab, pad Y: large map); keyboard, mouse (right button turns, left opens) and gamepad                                                                                                                                 |
+| Scenes   | `title`, `level_1` to `level_3` (`RendererRaycast` + a `Space: Screen` `Renderer2D` for the minimap), `tally`, `settings`, `victory`                                                                                                                                                           |
+| Entities | Player (`PhysicBody`, `Camera`), wall `Tilemap`, `RaycastDoor` (locked: empty `interactionAction`, `door.activate` with the key), `RaycastPushWall`, pick-ups, props                                                                                                                           |
+| Lua      | `player.lua`, `pickup.lua` (sparks), `locked_door.lua`, `secret.lua` (counts each wall once), `explore.lua` (fog, minimap, markers, cells seen over floor cells), `level.lua` (pause through `time.set_paused`), `exit.lua`, `elevator.lua` (the ride, `sequences/elevator.owlseq`, skippable) |
+| HUD      | `huds/play.owlhud`: floor, score, keys, messages, a pause window with the controls (no ratio during play); the minimap is a tilemap of the overlay layer; markers on the keys and the switch once seen                                                                                         |
+| Menus    | Dark stone and steel (`generate_menus.py`): a raycast view turning behind the title, steel plate title and buttons, red fades; settings with master, music and effects volumes (mixer buses), mouse turn, interface size, colour vision, reduced motion, subtitles                             |
+| Art      | The walls and props of `textures/wolf3d/`, reworked by the maintainer; the sounds of `sounds/raycast/` of the Engine Demo, home-made music; guards and the weapon view later (G11)                                                                                                             |
+| Saves    | Autosave in slot 1 at each floor start, F6 / F9 in slot 2, Continue loads the newer; best ratios per floor and best score in the settings                                                                                                                                                      |
 
 - Floors carved by `tools/samples/wolfenstein/generate_levels.py`, which refuses a floor with a cell out of reach (so
   100 % is always possible; a slid secret wall counts as a wall where it stops, which cut off a room of floors 2 and
@@ -355,13 +355,18 @@ and the combat come in a later release, once their art exists.
   `scripts/raycast/raycast_exit.lua`, `tilesets/raycast_w3d_walls.owltileset`, `tilesets/minimap.owltileset`,
   `sounds/raycast/`; the menus, built from the Engine Demo ones, have a look of their own, and the ratios show
   on the tally, not on the play HUD.
-- Gaps: G9, G17; G16 fixed (the `next_scene` property of `exit.lua` names the next floor). Later, with combat: G11
+- Pick-up sparks: a `RendererParticles` layer with `Projection: Raycast` (`raycast_fx`) draws them in the first-person
+  view, the raycast sprites' convention (world Z above the eye).
+- Gaps: G17; G9 and G16 fixed (the music and effects sliders; the `next_scene` property of `exit.lua` names the next
+  floor). Later, with combat: G11
   (art), G10 (line of sight), G7 (weapon view frames), G1 (dropped ammo).
 - Scenarios: `wolf_pickup` (walk onto a cross, `wolf_items` and `wolf_score` rise), `wolf_locked_door` (closed without
   the key, opens with it), `wolf_secret` (push a secret wall, `wolf_secrets` equals 1), `wolf_explore` (`wolf_seen`
   and `wolf_explored` rise while turning, Tab enlarges the map), `wolf_exit` (the tally scene opens, counts up,
-  then floor 2), `wolf_tally` (accept during the count shows every line at once, the next accept leaves), `wolf_pause`
-  (Escape opens the pause window, the player stands still, a door in reach stays closed, Resume closes it).
+  then floor 2, after the elevator ride), `wolf_tally` (a second E skips the ride, accept during the count shows every
+  line at once, the next accept leaves), `wolf_pause` (Escape opens the pause window, the player stands still, a door
+  in reach stays closed, Resume closes it), `wolf_markers` (the key's marker once seen, the sparks of its pick-up),
+  `wolf_settings` (music and effects sliders, reduced motion and colour vision with the gamepad).
 
 ### Mini Minecraft
 
