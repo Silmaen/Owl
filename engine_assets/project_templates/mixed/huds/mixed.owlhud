@@ -35,7 +35,7 @@ Entities:
     size: [1000, 32]
     offset: [0, -16]
   UiText:
-    text: "3D meshes, 2D billboards and a 2D minimap in one frame - WASD walk, mouse look"
+    text: "3D meshes, 2D billboards and a 2D minimap in one frame - WASD walk, mouse look, 1/2/3 scenes"
     color: [1, 1, 1, 1]
     fontSize: 24
     horizontalAlignment: Center

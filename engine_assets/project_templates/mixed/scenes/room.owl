@@ -1,5 +1,7 @@
 Scene: Room
 Hud: gid:3997b47d88c6b6bc:huds/gameplay.owlhud
+SceneScript:
+  scriptPath: gid:0d9095b4a2f33f5a:scripts/scene_switch.lua
 EnabledRenderers:
   - Name: world
     Enabled: false

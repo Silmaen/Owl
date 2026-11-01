@@ -1,6 +1,8 @@
 Scene: Main
 FormatVersion: 7
 Hud: gid:88441c8dfa049f2b:huds/mixed.owlhud
+SceneScript:
+  scriptPath: gid:0d9095b4a2f33f5a:scripts/scene_switch.lua
 EnabledRenderers:
   - Name: world
     Enabled: false
