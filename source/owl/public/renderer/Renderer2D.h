@@ -277,6 +277,8 @@ struct OWL_API BoxData {
 	math::vec4 sliceInsets{0.f, 0.f, 0.f, 0.f};
 	/// The same borders as fractions of the texture: left, top, right, bottom.
 	math::vec4 sliceUv{0.f, 0.f, 0.f, 0.f};
+	/// Texture coordinates of the bottom-left (xy) and top-right (zw) corners of the box (a sprite-sheet frame).
+	math::vec4 uvRect{0.f, 0.f, 1.f, 1.f};
 	/// unique ID for the entity.
 	int entityId = -1;
 	/// Sort key (as the other primitives).

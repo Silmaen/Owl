@@ -37,6 +37,7 @@ struct BoxInstance {
 	float pad0;
 	float4 sliceInsets;// left, top, right, bottom, frame units.
 	float4 sliceUv;    // the same borders as fractions of the texture.
+	float4 uvRect;     // texture coordinates of the bottom-left (xy) and top-right (zw) corners.
 };
 
 [[vk::binding(2)]]
@@ -75,6 +76,7 @@ struct FragmentInput {
 	[[vk::location(8)]] nointerpolation float4 sliceUv : TEXCOORD3;
 	[[vk::location(9)]] nointerpolation int texIndex : TEXCOORD4;
 	[[vk::location(10)]] nointerpolation int entityID : TEXCOORD5;
+	[[vk::location(11)]] nointerpolation float4 uvRect : TEXCOORD6;
 };
 
 struct FragmentOutput {
@@ -141,6 +143,7 @@ VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	output.frag.shape = float4(inst.cornerRadius, inst.shadowBlur, inst.borderWidth, 0.0f);
 	output.frag.sliceInsets = inst.sliceInsets;
 	output.frag.sliceUv = inst.sliceUv;
+	output.frag.uvRect = inst.uvRect;
 	output.frag.texIndex = int(inst.texIndex);
 	output.frag.entityID = inst.entityId;
 	return output;
@@ -165,7 +168,8 @@ FragmentOutput fragmentMain(FragmentInput input) {
 						input.sliceUv.z);
 	float v = sliceAxis(halfSize.y - p.y, size.y, input.sliceInsets.y, input.sliceInsets.w, input.sliceUv.y,
 						input.sliceUv.w);
-	fill *= gTextures[NonUniformResourceIndex(input.texIndex)].SampleLevel(saturate(float2(u, 1.0f - v)), 0.0f);
+	fill *= gTextures[NonUniformResourceIndex(input.texIndex)].SampleLevel(
+			lerp(input.uvRect.xy, input.uvRect.zw, saturate(float2(u, 1.0f - v))), 0.0f);
 	if (borderWidth > 0.0f) {
 		float border = saturate(0.5f + (distance + borderWidth) / pixel);
 		fill = lerp(fill, input.borderColor, border * input.borderColor.a);

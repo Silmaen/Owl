@@ -135,8 +135,9 @@ struct BoxInstance {
 	float _pad0;
 	math::vec4 sliceInsets;
 	math::vec4 sliceUv;
+	math::vec4 uvRect;
 };
-static_assert(sizeof(BoxInstance) == 144, "BoxInstance must match shader std430 layout");
+static_assert(sizeof(BoxInstance) == 160, "BoxInstance must match shader std430 layout");
 
 // Glyphs of a string laid out in its frame, kept while its font, text and layout stay the same.
 struct ShapedText {
@@ -921,7 +922,8 @@ void Renderer2D::drawBox(const BoxData& iBoxData) {
 			.margin = shadowReach + 1.f,
 			._pad0 = 0.f,
 			.sliceInsets = iBoxData.sliceInsets,
-			.sliceUv = iBoxData.sliceUv});
+			.sliceUv = iBoxData.sliceUv,
+			.uvRect = iBoxData.uvRect});
 	g_Data->runs.note(utils::RunKind::Box, iBoxData.depth);
 	g_Data->stats.quadCount++;
 }
