@@ -419,7 +419,7 @@ Done in v0.6.0: Ring Runner, `samples/rail_shooter/` (how to play: its `README.m
 
 ### Point-and-click {#sample-games-point-and-click}
 
-The Moon Lantern (`samples/point_and_click/`, [README](../../../samples/point_and_click/README.md)):
+The Moon Lantern, `samples/point_and_click/` (how to play: its `README.md`):
 
 | Item     | What exists                                                                                                                                                                             |
 |----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
