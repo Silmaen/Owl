@@ -1,6 +1,6 @@
 # The people of the tavern: the barkeeper holds his tankard on the `hand_r` socket of his skinned mesh (a socket of the
-# Mesh Sockets component on the `arm-right` bone, above the bar), the server walks her spline between the bar and the
-# tables.
+# Mesh Sockets component on the `arm-right` bone, above the bar), the server walks her spline from the end of the bar
+# towards the patrons' table.
 scene: ../../../engine_demo/scenes/tavern.owl
 steps:
   - input: {key: Space, frames: 2}
@@ -10,10 +10,11 @@ steps:
   - expect: {entity: Tankard, translation.y: {greater: 0.9}}
   - expect: {entity: Tankard, translation.y: {less: 1.3}}
   - expect: {entity: Tankard, translation.x: {less: 3.7}}
-  - expect: {entity: Server, translation.z: {less: 0.0}}
+  - expect: {entity: Server, translation.x: {greater: 2.4}}
+  - expect: {entity: Server, translation.z: {less: 1.0}}
   - frames: 120
-  - expect: {entity: Server, translation.z: {greater: 0.3}}
-  - expect: {entity: ServerWalker, translation.x: {less: 2.5}}
+  - expect: {entity: Server, translation.z: {greater: 1.05}}
+  - expect: {entity: ServerWalker, translation.x: {less: 1.7}}
   - expect: {gamestate: tavern_dish, equals: A bowl of stew}
   # The controls show in a short hint only, never for good.
   - frames: 300

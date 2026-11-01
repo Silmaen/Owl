@@ -218,6 +218,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `settings.apply()` resizes the window only in the runner and only for a window setting that changed: changing the language or the subtitles in Play no longer resizes Owl Nest, nor a game window the player resized.
+- Engine Demo tavern: the two patrons sit on their stools instead of through them, and the server's `ServerRoute` loops between the bar and the patrons' table around the furniture, the trapdoor and the player's spawn.
 - A scene that gave the mouse back by itself, a dialogue pausing the walker, captures it again when it ends, in Play and in the runner; Escape still waits for a click.
 - HUD markers were mirrored vertically on Vulkan: `renderer::projectToViewport` takes the clip space of the active layer.
 - `entity.particles_emit` (`ParticleSystem::emit`) bursts an emitter that never played (no play on start), which spawned nothing, and an emitter moved while idle bursts where it is instead of along a streak from where it was.
