@@ -157,6 +157,7 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.patrols", SystemPhase::PrePhysics, &updatePatrols);
 	add("owl.spline_followers", SystemPhase::PrePhysics, &updateSplineFollowers);
 	add("owl.fly_cameras", SystemPhase::PrePhysics, &updateFlyCameras);
+	add("owl.ships", SystemPhase::PrePhysics, &updateShips);
 	add("owl.voxel_players", SystemPhase::PrePhysics, &updateVoxelPlayers);
 	add("owl.first_person", SystemPhase::PrePhysics, &updateFirstPersonControllers);
 	add("owl.raycast_walls", SystemPhase::PrePhysics, [](Scene& ioScene, const SystemContext& iContext) -> void {

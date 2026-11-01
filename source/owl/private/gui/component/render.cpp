@@ -3562,6 +3562,32 @@ void renderProps(FirstPersonController& ioComponent) {
 				 "action.");
 }
 
+void renderProps(ShipController& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Fly the entity; off leaves it to scripts.");
+	prop::Checkbox("Flight Assist", &ioComponent.flightAssist);
+	fieldTooltip("Dampers stop the drift and the spin once the controls are released; the ship_assist action (Z) "
+				 "toggles it in Play.");
+	prop::DragFloat("Thrust", &ioComponent.thrust, 0.1f, 0.f, 10000.f, "%.1f m/s2");
+	fieldTooltip("Acceleration of the main engine along the nose (ship_thrust: W / S, the triggers).");
+	prop::DragFloat("Strafe Thrust", &ioComponent.strafeThrust, 0.1f, 0.f, 10000.f, "%.1f m/s2");
+	fieldTooltip("Acceleration of the side thrusters (ship_strafe: Q / E, Space / Left-Ctrl, the d-pad).");
+	prop::DragFloat("Max Speed", &ioComponent.maxSpeed, 1.f, 0.f, 1.e6f, "%.0f m/s");
+	fieldTooltip("Top speed; 0 for none.");
+	prop::DragFloat("Turn Rate", &ioComponent.turnRate, 0.01f, 0.f, 20.f, "%.2f rad/s");
+	fieldTooltip("Pitch and yaw rate of the look action (arrow keys, right stick) at full deflection.");
+	prop::DragFloat("Roll Rate", &ioComponent.rollRate, 0.01f, 0.f, 20.f, "%.2f rad/s");
+	fieldTooltip("Roll rate of the ship_roll action (A / D, the bumpers) at full deflection.");
+	prop::DragFloat("Mouse Sensitivity", &ioComponent.mouseSensitivity, 0.0001f, 0.0001f, 0.05f, "%.4f");
+	fieldTooltip("Radians of pitch and yaw per pixel while the cursor is captured.");
+	prop::DragFloat("Angular Response", &ioComponent.angularResponse, 0.05f, 0.1f, 100.f, "%.2f /s");
+	fieldTooltip("How fast the rotation rate follows the controls: higher is snappier.");
+	prop::DragFloat("Assist Damping", &ioComponent.assistDamping, 0.01f, 0.f, 100.f, "%.2f /s");
+	fieldTooltip("Strength of the dampers of the flight assist on the velocity no thruster pushes.");
+	prop::Checkbox("Capture Cursor", &ioComponent.captureCursor);
+	fieldTooltip("Clicking the view hides and locks the cursor for mouse steering (Esc frees it).");
+}
+
 void renderProps(DayNightCycle& ioComponent) {
 	prop::Checkbox("Enabled", &ioComponent.enabled);
 	fieldTooltip("Advance the hours in Play; off freezes the time of day, the lighting still follows it.");

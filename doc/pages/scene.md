@@ -705,6 +705,34 @@ transform) within `reach`, before any other mesh; while aimed at, the silhouette
 aiming crosshair of the voxel player shows, and the view is read from the `Transform` each frame, so a script or Owl
 Nest can turn the walker.
 
+
+#### ShipController {#shipcontroller-component}
+
+| Field              | Type    | Default | Description                                                                |
+|--------------------|---------|---------|----------------------------------------------------------------------------|
+| `enabled`          | `bool`  | `true`  | Off leaves the entity to scripts; Lua `entity.set_ship_enabled`            |
+| `thrust`           | `float` | `12`    | Acceleration of the main engine along the nose, in units per second²       |
+| `strafeThrust`     | `float` | `6`     | Acceleration of the side thrusters (`ship_strafe`)                         |
+| `maxSpeed`         | `float` | `150`   | Top speed, in units per second; 0 for none                                 |
+| `turnRate`         | `float` | `1.2`   | Pitch and yaw rate of the `look` action at full deflection, in rad/s       |
+| `rollRate`         | `float` | `1.6`   | Roll rate of `ship_roll` at full deflection, in rad/s                      |
+| `mouseSensitivity` | `float` | `0.002` | Radians of pitch and yaw per pixel while the cursor is captured            |
+| `angularResponse`  | `float` | `6`     | How fast the rotation rate follows the controls, per second                |
+| `assistDamping`    | `float` | `1.2`   | Strength of the flight assist dampers on the velocity no thruster pushes   |
+| `flightAssist`     | `bool`  | `true`  | Whether the flight assist stabilises the ship; `ship_assist` toggles it    |
+| `captureCursor`    | `bool`  | `true`  | Clicking the view captures the cursor for mouse steering                   |
+
+YAML key: `ShipController`, system `owl.ships` (`PrePhysics`). Flies the entity (its camera is the cockpit) with
+inertia: `ship_thrust` pushes along the nose, `ship_strafe` slides sideways and up or down, `ship_roll` rolls, `look`
+and the captured mouse pitch and yaw about the body axes, and `ship_assist` toggles the flight assist. The velocity is
+kept from frame to frame; with the assist on, dampers remove the motion along every body axis no thruster pushes and
+the rotation once the controls are released, so the ship flies where it points; with the assist off it drifts and
+spins on. The rotation of the `Transform` is the attitude: a script or the editor turning the entity turns the ship.
+A root entity with a [`WorldPosition`](#world-positions) moves in double precision: its float translation is
+placed again from the double position each frame, never accumulated, so the floating origin follows it without drift.
+Lua: `entity.get_ship_velocity`, `entity.get_ship_speed`, `entity.get_ship_throttle`, `entity.set_ship_assist`,
+`entity.is_ship_assist_on` ([Lua API](lua-api.md)).
+
 #### PhysicBody
 
 `type` (`Static`, `Dynamic`, `Kinematic`), `fixedRotation`, `colliderSize`, `density`, `restitution`, `friction`.
@@ -1365,7 +1393,8 @@ A shift keeps the running simulation going where it was:
 
 Scripts read and place an entity in the world in double with `transform.get_world_position` and
 `transform.set_world_position`, and read the origin with `scene.get_world_origin` ([Lua API](lua-api.md)). The
-Engine Demo far orbit (`far_orbit.owl`) shows a station one astronomical unit away, sharp to the centimetre.
+Engine Demo far orbit (`far_orbit.owl`) shows a station one astronomical unit away, flown with a `ShipController`, and a
+ruler of beads 20 cm apart by the debris.
 
 ### Physics and Hierarchy
 

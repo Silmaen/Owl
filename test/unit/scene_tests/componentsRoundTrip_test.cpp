@@ -627,6 +627,42 @@ TEST(ComponentRoundTrip, FlyCamera) {
 			});
 }
 
+TEST(ComponentRoundTrip, ShipController) {
+	roundTrip(
+			"ShipController",
+			[](scene::Entity& iEnt) -> void {
+				auto& ship = iEnt.addComponent<scene::component::ShipController>();
+				ship.enabled = false;
+				ship.thrust = 20.5f;
+				ship.strafeThrust = 4.25f;
+				ship.maxSpeed = 80.f;
+				ship.turnRate = 0.9f;
+				ship.rollRate = 2.f;
+				ship.mouseSensitivity = 0.003f;
+				ship.angularResponse = 4.f;
+				ship.assistDamping = 0.75f;
+				ship.flightAssist = false;
+				ship.captureCursor = false;
+				ship.m_velocity = {1.f, 2.f, 3.f};
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::ShipController>());
+				const auto& ship = iEnt.getComponent<scene::component::ShipController>();
+				EXPECT_FALSE(ship.enabled);
+				EXPECT_FLOAT_EQ(ship.thrust, 20.5f);
+				EXPECT_FLOAT_EQ(ship.strafeThrust, 4.25f);
+				EXPECT_FLOAT_EQ(ship.maxSpeed, 80.f);
+				EXPECT_FLOAT_EQ(ship.turnRate, 0.9f);
+				EXPECT_FLOAT_EQ(ship.rollRate, 2.f);
+				EXPECT_FLOAT_EQ(ship.mouseSensitivity, 0.003f);
+				EXPECT_FLOAT_EQ(ship.angularResponse, 4.f);
+				EXPECT_FLOAT_EQ(ship.assistDamping, 0.75f);
+				EXPECT_FALSE(ship.flightAssist);
+				EXPECT_FALSE(ship.captureCursor);
+				EXPECT_FLOAT_EQ(ship.getSpeed(), 0.f);
+			});
+}
+
 TEST(ComponentRoundTrip, LightFlicker) {
 	roundTrip(
 			"LightFlicker",

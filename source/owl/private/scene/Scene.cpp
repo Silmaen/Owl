@@ -3887,13 +3887,19 @@ void Scene::setEditorVoxelHighlight(const bool iShow, const math::vec3i& iBlock,
 auto Scene::wantsCursorCapture() const -> bool {
 	const auto view = registry.view<component::VoxelPlayer>();
 	const auto walkers = registry.view<component::FirstPersonController>();
+	const auto ships = registry.view<component::ShipController>();
 	return std::ranges::any_of(view,
 							   [&](const auto iEntity) -> bool {
 								   return view.get<component::VoxelPlayer>(iEntity).captureCursor;
 							   }) ||
-		   std::ranges::any_of(walkers, [&](const auto iEntity) -> bool {
-			   const auto& walker = walkers.get<component::FirstPersonController>(iEntity);
-			   return walker.enabled && walker.captureCursor;
+		   std::ranges::any_of(walkers,
+							   [&](const auto iEntity) -> bool {
+								   const auto& walker = walkers.get<component::FirstPersonController>(iEntity);
+								   return walker.enabled && walker.captureCursor;
+							   }) ||
+		   std::ranges::any_of(ships, [&](const auto iEntity) -> bool {
+			   const auto& ship = ships.get<component::ShipController>(iEntity);
+			   return ship.enabled && ship.captureCursor;
 		   });
 }
 
@@ -4461,6 +4467,11 @@ OWL_API void Scene::onComponentAdded<component::VoxelWorld>([[maybe_unused]] con
 template<>
 OWL_API void Scene::onComponentAdded<component::FlyCamera>([[maybe_unused]] const Entity& iEntity,
 														   [[maybe_unused]] component::FlyCamera& ioComponent) {}
+
+template<>
+OWL_API void
+Scene::onComponentAdded<component::ShipController>([[maybe_unused]] const Entity& iEntity,
+												   [[maybe_unused]] component::ShipController& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::VoxelPlayer>([[maybe_unused]] const Entity& iEntity,

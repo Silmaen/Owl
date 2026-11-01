@@ -1213,6 +1213,55 @@ auto luaEntityGetTimeOfDay(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaEntityGetShipVelocity(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::ShipController>())
+		return 0;
+	const auto& velocity = entity->getComponent<scene::component::ShipController>().m_velocity;
+	lua_pushnumber(iState, static_cast<lua_Number>(velocity.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(velocity.y()));
+	lua_pushnumber(iState, static_cast<lua_Number>(velocity.z()));
+	return 3;
+}
+
+auto luaEntityGetShipSpeed(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::ShipController>())
+		return 0;
+	lua_pushnumber(iState,
+				   static_cast<lua_Number>(entity->getComponent<scene::component::ShipController>().getSpeed()));
+	return 1;
+}
+
+auto luaEntityGetShipThrottle(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::ShipController>())
+		return 0;
+	lua_pushnumber(iState,
+				   static_cast<lua_Number>(entity->getComponent<scene::component::ShipController>().m_throttle));
+	return 1;
+}
+
+auto luaEntitySetShipAssist(lua_State* iState) -> int {
+	const bool assist = lua_toboolean(iState, 2) != 0;
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::ShipController>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::ShipController>().flightAssist = assist;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaEntityIsShipAssistOn(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::ShipController>())
+		return 0;
+	lua_pushboolean(iState, entity->getComponent<scene::component::ShipController>().flightAssist ? 1 : 0);
+	return 1;
+}
+
 // `animator.set_float` / `set_bool`: a parameter of the machine of the entity's `Animator`.
 auto setAnimatorParameter(lua_State* iState, const std::string_view iName, const float iValue) -> int {
 	const auto entity = findEntity(iState);
@@ -3428,6 +3477,33 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::FirstPersonController>>,
 		 .description = "Whether the entity's `FirstPersonController` walks it; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_ship_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::ShipController>>,
+		 .description = "Switch the entity's `ShipController` on or off (scripts move it while off); false when it has "
+						"none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_ship_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::ShipController>>,
+		 .description = "Whether the entity's `ShipController` flies it; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "get_ship_velocity", .function = guarded<luaEntityGetShipVelocity>,
+		 .description = "Velocity of the entity's `ShipController` in world space, in metres per second; nothing when "
+						"it has none.",
+		 .params = {entityId}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "entity", .name = "get_ship_speed", .function = guarded<luaEntityGetShipSpeed>,
+		 .description = "Speed of the entity's `ShipController`, in metres per second; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"speed", Number}}},
+		{.table = "entity", .name = "get_ship_throttle", .function = guarded<luaEntityGetShipThrottle>,
+		 .description = "Thrust input of the entity's `ShipController` this frame, from -1 (reverse) to 1 (full ahead); "
+						"nothing when it has none.",
+		 .params = {entityId}, .returns = {{"throttle", Number}}},
+		{.table = "entity", .name = "set_ship_assist", .function = guarded<luaEntitySetShipAssist>,
+		 .description = "Switch the flight assist of the entity's `ShipController` on or off; false when it has none.",
+		 .params = {entityId, {"assist", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_ship_assist_on", .function = guarded<luaEntityIsShipAssistOn>,
+		 .description = "Whether the flight assist of the entity's `ShipController` stabilises it; nothing when it has "
+						"none.",
+		 .params = {entityId}, .returns = {{"assist", Boolean}}},
 		{.table = "entity", .name = "set_render_target_enabled",
 		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::RenderTarget>>,
 		 .description = "Switch the entity's `RenderTarget` on or off (its image keeps the last frame while off); "

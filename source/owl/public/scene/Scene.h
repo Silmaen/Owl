@@ -130,6 +130,7 @@ struct ProceduralSky;
 struct DayNightCycle;
 struct ReflectionProbe;
 struct FirstPersonController;
+struct ShipController;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
@@ -2774,6 +2775,10 @@ OWL_API void Scene::onComponentAdded<component::FlyCamera>(const Entity& iEntity
 template<>
 OWL_API void Scene::onComponentAdded<component::VoxelPlayer>(const Entity& iEntity,
 															 component::VoxelPlayer& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::ShipController>(const Entity& iEntity,
+																component::ShipController& ioComponent);
 /// @endcond
 
 }// namespace owl::scene

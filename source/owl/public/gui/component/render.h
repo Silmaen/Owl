@@ -679,6 +679,13 @@ OWL_API void renderProps(scene::component::FirstPersonController& ioComponent);
 
 /**
  * @brief
+ *  Render the properties of a ship controller.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::ShipController& ioComponent);
+
+/**
+ * @brief
  *  Render a Gui for editing the voxel player (speeds, gravity, collision box).
  * @param ioComponent The component to edit.
  */
@@ -713,12 +720,12 @@ using DrawableComponents =
 				   scene::component::SequencePlayer, scene::component::Drift, scene::component::FollowTarget,
 				   scene::component::RenderTarget, scene::component::ProceduralSky, scene::component::DayNightCycle,
 				   scene::component::ReflectionProbe, scene::component::FirstPersonController,
-				   scene::component::VoxelPlayer, scene::component::HudMarker, scene::component::Canvas,
-				   scene::component::UiRect, scene::component::UiText, scene::component::UiImage,
-				   scene::component::UiPanel, scene::component::UiButton, scene::component::UiSlider,
-				   scene::component::UiProgressBar, scene::component::UiWindow, scene::component::UiLayout,
-				   scene::component::UiTooltip, scene::component::UiToolCursor, scene::component::UiFocus,
-				   scene::component::UiScrollView, scene::component::UiList>;
+				   scene::component::ShipController, scene::component::VoxelPlayer, scene::component::HudMarker,
+				   scene::component::Canvas, scene::component::UiRect, scene::component::UiText,
+				   scene::component::UiImage, scene::component::UiPanel, scene::component::UiButton,
+				   scene::component::UiSlider, scene::component::UiProgressBar, scene::component::UiWindow,
+				   scene::component::UiLayout, scene::component::UiTooltip, scene::component::UiToolCursor,
+				   scene::component::UiFocus, scene::component::UiScrollView, scene::component::UiList>;
 
 
 }// namespace owl::gui::component
