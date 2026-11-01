@@ -235,7 +235,7 @@ def settings() -> str:
     root = entities.add("SettingsCanvas", [y.canvas(), y.script("scripts/ui/settings.lua")])
     panel = entities.add(
         "SettingsList",
-        [y.rect((0.5, 0), (1.5, 0.9), (0, 0.02), SCREEN, SCREEN), board(), y.layout("Column", 4, 8)],
+        [y.rect((0.5, 0), (1.3, 0.9), (0, 0.02), SCREEN, SCREEN), board(), y.layout("Column", 4, 8)],
         parent=root,
     )
 

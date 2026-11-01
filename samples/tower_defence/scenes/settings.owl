@@ -423,7 +423,7 @@ Entities:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [1.5, 0.9]
+      size: [1.3, 0.9]
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [0, 0.02]
       offsetUnit: [ScreenHeight, ScreenHeight]
