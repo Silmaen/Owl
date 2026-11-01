@@ -228,32 +228,36 @@ def level_select() -> str:
 
 
 def settings() -> str:
-    """Settings: master volume, interface size, reset of the progress, Back (saves)."""
+    """Settings: master, music and effects volumes, interface size, reset of the progress, Back (saves)."""
     entities = y.Entities(7320000000000000000)
     _world(entities, "stacked")
     root = entities.add("SettingsCanvas", [y.canvas(), y.script("scripts/ui/settings.lua")])
     board = entities.add(
         "SettingsList",
-        [y.rect((0.5, 0), (0.95, 0.78), (0, 0.03), SCREEN, SCREEN), _board(), y.layout("Column", 6, 10)],
+        [y.rect((0.5, 0), (0.95, 0.88), (0, 0.03), SCREEN, SCREEN), _board(), y.layout("Column", 6, 10)],
         parent=root,
     )
     slider_focus = "on_slider_focused"
 
     def slider(callback: str, value: float, initial: bool) -> list[str]:
         bar = y.slider(callback, value, (0.1, 0.06, 0.03, 1), (0.95, 0.7, 0.25, 1), CREAM)
-        return [y.child_rect((0.86, 0.05)), bar, y.focus(initial, True, slider_focus, AMBER, 3)]
+        return [y.child_rect((0.86, 0.034)), bar, y.focus(initial, True, slider_focus, AMBER, 3)]
 
     rows: list[tuple[str, list[str]]] = [
-        ("TitleText", [y.child_rect((0.9, 0.13)), label("Settings", 56, AMBER, font=HEADING)]),
-        ("MasterVolLabel", [y.child_rect((0.9, 0.08)), label("Master Volume: 100%", 28, SOFT)]),
+        ("TitleText", [y.child_rect((0.9, 0.11)), label("Settings", 56, AMBER, font=HEADING)]),
+        ("MasterVolLabel", [y.child_rect((0.9, 0.052)), label("Master Volume: 100%", 28, SOFT)]),
         ("MasterVolSlider", slider("on_master_vol_changed", 1.0, True)),
-        ("UiScaleLabel", [y.child_rect((0.9, 0.08)), label("Interface Size: 100%", 28, SOFT)]),
+        ("MusicVolLabel", [y.child_rect((0.9, 0.052)), label("Music: 80%", 28, SOFT)]),
+        ("MusicVolSlider", slider("on_music_vol_changed", 0.8, False)),
+        ("SfxVolLabel", [y.child_rect((0.9, 0.052)), label("Effects: 100%", 28, SOFT)]),
+        ("SfxVolSlider", slider("on_sfx_vol_changed", 1.0, False)),
+        ("UiScaleLabel", [y.child_rect((0.9, 0.052)), label("Interface Size: 100%", 28, SOFT)]),
         ("UiScaleSlider", slider("on_ui_scale_changed", 0.2, False)),
-        ("ProgressLabel", [y.child_rect((0.9, 0.08)), label("Levels done: 0 / 10", 28)]),
+        ("ProgressLabel", [y.child_rect((0.9, 0.052)), label("Levels done: 0 / 10", 28)]),
     ]
-    button(entities, board, "BackButton", "Back", "go_back", (0.6, 0.1), False)
-    button(entities, board, "ResetButton", "Reset defaults", "on_reset_clicked", (0.6, 0.1), False)
-    button(entities, board, "ResetProgressButton", "Reset progress", "on_reset_progress_clicked", (0.6, 0.1), False)
+    button(entities, board, "BackButton", "Back", "go_back", (0.6, 0.074), False)
+    button(entities, board, "ResetButton", "Reset defaults", "on_reset_clicked", (0.6, 0.074), False)
+    button(entities, board, "ResetProgressButton", "Reset progress", "on_reset_progress_clicked", (0.6, 0.074), False)
     for tag, components in reversed(rows):
         entities.add(tag, components, parent=board)
     return y.scene("settings", entities)

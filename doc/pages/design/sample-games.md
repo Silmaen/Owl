@@ -98,22 +98,25 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Menus    | Arcade neon (`generate_menus.py`): a brick wall lit in a wave, an attract ball, neon buttons, magenta wipes      |
 | Entities | `Paddle` and `PaddleWide` (Kinematic), `Ball` (Dynamic, restitution 1, friction 0), three `Wall` (Static)        |
 | Bricks   | Instances of `prefabs/brick.owlprefab` (Static body, `SpriteRenderer`, `brick.lua` with its properties)          |
-| Lua      | `game.lua` (rules, pools, pause), `paddle.lua`, `ball.lua` (speed kept with `physics.set_velocity`), `brick.lua` |
+| Lua      | `game.lua` (rules, spawns, pause), `paddle.lua`, `ball.lua` (speed set with `physics.set_velocity`), `brick.lua` |
 | HUD      | `huds/play.owlhud`: score, level, lives, a message line, the pause window (Resume, Restart, Quit, controls)      |
 | Art      | Home-made bricks, paddle, ball, capsules, walls and backdrop, chip sounds and music (`tools/samples/breakout/`)  |
+| Effects  | Sparks and a flash of light per broken brick (prefab), a neon trail and a 2D light on the ball, bloom            |
 | Saves    | No slot; best score and levels cleared with their best through `settings.save` (`breakout_best`, `_done_N`)      |
 
 - Reuse: the menus, built from the Engine Demo ones, have a
   look of their own. A broken brick is destroyed at once (a popping brick
-  would keep its body), its burst shown from a pool instead of the pop of `coin.lua`.
-- Gaps met: G5 (the paddle follows the mouse motion, `breakout_mouse_speed` setting), G1 (pools of hidden entities:
-  power-ups, bursts, and a second paddle for the wide one, a body cannot be resized from Lua), G14 (one scene per
-  level), G9 (master volume only), G8 (the pause stops the scene clock, `time.set_paused`). Each level names the next
+  would keep its body); its burst (`prefabs/brick_burst.owlprefab`, tinted with `entity.set_tint`) and the power-up
+  capsules are prefabs spawned with `scene.spawn_prefab` and destroyed when done.
+- Gaps met: G5 (the paddle follows the mouse motion, `breakout_mouse_speed` setting), a second paddle for the wide one
+  (a body cannot be resized from Lua), G14 (one scene per level). The music and the effects have their volumes on the
+  mixer buses (G9 closed), the pause stops the scene clock (`time.set_paused`). Each level names the next
   one in the `next_scene` property of its `Game` script (G16 fixed): a new level is a duplicated scene in Owl Nest.
 - Scenarios: `breakout_serve` (serve, 300 frames, `breakout_bricks` below 40), `breakout_lose` (no input at all:
   the automatic serve, `breakout_lives` below 3), `breakout_gamepad` (dead zone, the stick moves the paddle, A serves),
   `breakout_level_select` (down selects level 2, accept starts a fresh run there), `breakout_how_to` (the How to play
-  window opens and closes with the keyboard focus).
+  window opens and closes with the keyboard focus), `breakout_pause` (no serve while paused), `breakout_settings`
+  (music and effects sliders with the D-pad); `breakout_serve` also counts the bursts.
 - The levels were first laid out by `tools/samples/breakout/generate_levels.py` (text grids) and are edited in Owl Nest
   from then on; `tools/tests/test_breakout_levels.py` checks the grids.
 
@@ -128,29 +131,34 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Scenes   | `title`, `level_select` (`UiList` with done marks), `level_01` to `level_10`, `settings`, `victory`           |
 | Tilemap  | One `.owltilemap` per level: layer 0 floor and walls, 1 goals, 2 crates and the hero tile of the start        |
 | Entities | `Level` (`Tilemap`), player (`AnimatedSpriteRenderer`, `isometric.set_sprite_frame`), `MovingBox`, music      |
-| Lua      | `sokoban.lua` (rules on `isometric.get_cell`, undo stack in a Lua table, win), `level_select.lua`, menus      |
+| Lua      | `sokoban.lua` (rules on `isometric.get_cell`, undo stack in a Lua table, win), `levels.lua`, menus            |
+| Levels   | `tables/levels.owltable`: the scene and the name of each level, in play order                                 |
+| Effects  | Dust behind a pushed crate (`PushDust`), a sparkle on a crate set on a goal (`GoalSparkle`)                   |
 | HUD      | `huds/level.owlhud`: level, moves and pushes, best, Undo / Restart / Menu buttons, pause window with controls |
 | Menus    | Wooden warehouse (`generate_menus.py`): crate letters, plank buttons, a progress log, an animated corridor    |
 | Art      | `sokoban_tiles.png`: Tiny Dungeon floor, wall and hero (walk and push frames), home-made goal mark and crates |
 | Saves    | No slot: `sokoban_done_NN` and `sokoban_best_NN` settings saved at once; Continue starts the first level left |
 
 - Level editing in Owl Nest: paint the three layers in the tilemap editor (the hero tile of layer 2 places the player);
-  for a new level, duplicate a level scene, point its `Level` at a new tilemap, set the `level`, `level_name` and
-  `next_scene` properties of its `Game` script (and `next_scene` of the level before), then add the scene to
-  `LEVEL_SCENES` of `title.lua` and `level_select.lua`, which list every level for the progress and the level select.
-  `sokoban.lua` warns when crates and goals do not match.
+  for a new level, duplicate a level scene, point its `Level` at a new tilemap, set the `level` property of its `Game`
+  script, then add its row (scene, name) to `tables/levels.owltable` in the data table editor: the title, the level
+  select, the victory screen and the level before it follow the table. `sokoban.lua` warns when crates and goals do not
+  match.
 - Generators in `tools/samples/sokoban/`: `generate_assets.py` (tile sheet, sounds), `generate_levels.py` (tileset,
   tilemaps, level scenes, HUD, from the texts of `levels.py`), `generate_menus.py`; `tools/tests/test_sokoban_levels.py`
   replays a stored solution of each level text.
 - Reuse: the walk frames of `tools/demo/generate_kenney_atlases.py`, `scripts/hub/hub_water.lua` (`get_cell` /
   `set_cell` on a 2D tilemap), the journal list of `scripts/raycast/inventory.lua`; the menus, first copied from the
   Engine Demo, have a look of their own since the first playthrough.
-- Gaps: G6 (tile bindings named `isometric`), G14 (one scene per level), G9 (master volume only). Lua had no way to
+- Gaps: G6 (tile bindings named `isometric`), G14 (one scene per level); the music and the effects have their volumes
+  on the mixer buses (G9 closed), the pause stops the scene clock (`time.set_paused`). Lua had no way to
   read the size of a tilemap: `isometric.get_size` was added for it (width, height, cell size).
 - Scenarios: `sokoban_push` (`sokoban_on_goal` grows), `sokoban_undo` (undo and restart put back crate and counters),
   `sokoban_wall` (no step into a wall nor a blocked crate), `sokoban_win` (level 1 solved, `sokoban_done_01` set, level
   2
-  opens), `sokoban_gamepad` (D-pad, B, stick dead zone), `sokoban_level_select` (`ui_down`, `ui_accept`).
+  opens), `sokoban_gamepad` (D-pad, B, stick dead zone), `sokoban_level_select` (`ui_down`, `ui_accept`),
+  `sokoban_pause` (no step while paused), `sokoban_settings` (music and effects sliders); `sokoban_push` also counts
+  the sparkles.
 - Size: **S**, done.
 
 ### Tower defence {#sample-games-tower-defence}

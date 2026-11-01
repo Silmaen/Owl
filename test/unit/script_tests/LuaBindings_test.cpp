@@ -455,6 +455,34 @@ TEST(LuaBindings, entityParticles) {
 	core::Log::invalidate();
 }
 
+TEST(LuaBindings, entityTintReachesAParticleEmitter) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	auto burst = scn->createEntity("Burst");
+	burst.addComponent<scene::component::ParticleEmitter>();
+
+	const std::string script = std::format("function on_create()\n"
+										   "tinted = entity.set_tint({0}, 0.9, 0.3, 0.1)\n"
+										   "r, g, b, a = entity.get_tint({0})\n"
+										   "end\n",
+										   static_cast<int64_t>(static_cast<uint64_t>(burst.getUUID())));
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(scn.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "particle_tint_test", static_cast<uint64_t>(burst.getUUID())));
+	inst.onCreate();
+
+	EXPECT_TRUE(inst.getPropertyBool("tinted").value_or(false));
+	EXPECT_NEAR(inst.getPropertyFloat("r").value_or(0.f), 0.9f, 1e-5f);
+	EXPECT_NEAR(inst.getPropertyFloat("b").value_or(0.f), 0.1f, 1e-5f);
+	EXPECT_NEAR(inst.getPropertyFloat("a").value_or(0.f), 1.f, 1e-5f);
+	const auto& color = burst.getComponent<scene::component::ParticleEmitter>().settings.color;
+	EXPECT_NEAR(color.x(), 0.9f, 1e-5f);
+	EXPECT_NEAR(color.y(), 0.3f, 1e-5f);
+
+	core::Log::invalidate();
+}
+
 TEST(LuaBindings, entityLight2DSharesTheLightBindings) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();

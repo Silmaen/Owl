@@ -79,4 +79,5 @@ editor) and shared by the scenes. Reference: [Splines and data tables](lua-api-d
 ## Export
 
 A table named in a script (a quoted `.owltable` path) or in a string property of a script is packed with the game,
-with the tables its `Reference` columns point into and the assets of its `Asset` cells.
+with the tables its `Reference` columns point into and the assets of its `Asset` cells; a scene in an `Asset` cell is
+scanned in turn, like a scene named in a script (a list of levels in play order).

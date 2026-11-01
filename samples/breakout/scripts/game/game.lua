@@ -2,15 +2,15 @@
 --
 -- - Score, lives and level live in `gamestate` (`breakout_score`, `breakout_lives`, `breakout_level`), kept across
 --   the levels; `breakout_bricks` counts the bricks left in this one.
--- - Every brick broken: a burst and maybe a power-up, read from the `breakout_events` queue the bricks fill. The bursts
---   and the falling power-ups are authored entities shown and hidden from pools (gap G1): `BreakFx1..`,
---   `PowerWide1..`, `PowerSlow1..`.
+-- - Every brick broken: a burst of sparks in its colour with a flash of light (`prefabs/brick_burst.owlprefab`) and maybe
+--   a falling power-up (`prefabs/power_wide.owlprefab`, `prefabs/power_slow.owlprefab`), read from the
+--   `breakout_events` queue the bricks fill; each is spawned where the brick was and destroyed when done.
 -- - Power-ups caught with the paddle: wide paddle (`breakout_wide`) or slow ball (`breakout_speed_factor`), for a time.
 -- - No brick left: the scene of the `next_scene` property (the next level, the victory after the last one), kept in
 --   `breakout_scene` for the restart of the pause window (the menus set it for the first level played); the level is
 --   marked cleared, with its best score, for the level select. No life left: game over.
--- - The `pause` action (Esc, P, Start) stops the ball and the paddle (gap G8: Lua stops the bodies by hand) and opens
---   the pause window of `huds/play.owlhud`, which shows the controls (never shown during play).
+-- - The `pause` action (Esc, P, Start) stops the scene clock (`time.set_paused`: bodies, sparks and trail freeze) and
+--   opens the pause window of `huds/play.owlhud`, which shows the controls (never shown during play).
 
 properties = {
     { name = "level", type = "int", default = 1 },
@@ -20,8 +20,8 @@ properties = {
     { name = "power_fall", type = "float", default = 3.0 },   -- units per second
     { name = "power_points", type = "int", default = 50 },
     { name = "slow_factor", type = "float", default = 0.65 },
-    { name = "fx_time", type = "float", default = 0.3 },
-    { name = "park_y", type = "float", default = -30.0 },
+    { name = "burst_time", type = "float", default = 0.9, min = 0.1 },   -- seconds a burst lives, its light fading
+    { name = "burst_sparks", type = "int", default = 36, min = 1 },
     { name = "wipe_color", type = "color", default = { 0.45, 0.05, 0.55, 1 } },  -- the magenta of every Breakout screen change
     { name = "wide_time", type = "float", default = 15.0, min = 0 },
     { name = "slow_time", type = "float", default = 12.0, min = 0 },
@@ -31,29 +31,20 @@ properties = {
 
 local FIRST_LEVEL = "scenes/level_1.owl"
 
-local PADDLE_Y, PADDLE_HALF_HEIGHT, POWER_FALL, POWER_POINTS, SLOW_FACTOR, FX_TIME, PARK_Y    -- set from the properties in on_create
+local PADDLE_Y, PADDLE_HALF_HEIGHT, POWER_FALL, POWER_POINTS, SLOW_FACTOR    -- set from the properties in on_create
 local POWER_HALF_W, POWER_HALF_H = 0.6, 0.26
+local BURST_PREFAB = "prefabs/brick_burst.owlprefab"
+local POWER_PREFABS = { wide = "prefabs/power_wide.owlprefab", slow = "prefabs/power_slow.owlprefab" }
 
 local hud = {}
-local pools = { wide = {}, slow = {}, fx = {} }
+local bursts = {}             -- { id, clock, intensity }
+local powers = {}             -- { id, kind, x, y }
 local paused = false
 local ending = nil            -- nil, "clear" or "over"
 local end_clock = 0.0
 local wide_clock, slow_clock = 0.0, 0.0
 local message_clock = 0.0
 local shown = {}
-
-local function pool(prefix)
-    local items = {}
-    local i = 1
-    while true do
-        local id = scene.find_entity(prefix .. i)
-        if id == 0 then break end
-        items[#items + 1] = { id = id, active = false, x = 0.0, y = 0.0, clock = 0.0 }
-        i = i + 1
-    end
-    return items
-end
 
 local function set_text(key, text)
     if hud[key] ~= 0 and shown[key] ~= text then
@@ -74,8 +65,6 @@ function on_create()
     POWER_FALL = power_fall
     POWER_POINTS = power_points
     SLOW_FACTOR = slow_factor
-    FX_TIME = fx_time
-    PARK_Y = park_y
     if not ui.is_transition_active() then ui.transition_fade_in(0.4) end
     hud.score = ui.find("ScoreText")
     hud.level = ui.find("LevelText")
@@ -83,9 +72,6 @@ function on_create()
     hud.message = ui.find("MessageText")
     hud.pause = ui.find("PauseWindow")
     hud.resume = ui.find("ResumeButton")
-    pools.wide = pool("PowerWide")
-    pools.slow = pool("PowerSlow")
-    pools.fx = pool("BreakFx")
 
     if gamestate.get("breakout_lives", 0) <= 0 then gamestate.set("breakout_lives", 3) end
     gamestate.set("breakout_score", gamestate.get("breakout_score", 0))
@@ -94,6 +80,7 @@ function on_create()
     gamestate.set("breakout_bricks", #scene.find_entities("Brick"))
     gamestate.set("breakout_events", "")
     gamestate.set("breakout_serves", 0)
+    gamestate.set("breakout_bursts", 0)
     gamestate.set("breakout_paused", false)
     gamestate.set("breakout_frozen", false)
     gamestate.set("breakout_wide", false)
@@ -104,22 +91,19 @@ end
 
 -- Bursts and power-ups ----------------------------------------------------------------------------------------------
 
-local function spawn(items, x, y)
-    for _, item in ipairs(items) do
-        if not item.active then
-            item.active, item.x, item.y, item.clock = true, x, y, 0.0
-            transform.set_position(item.id, x, y, 0.2)
-            ui.set_visible(item.id, true)
-            return item
-        end
-    end
-    return nil
+local function burst(x, y, r, g, b)
+    local id = scene.spawn_prefab(BURST_PREFAB, x, y, 0.3)
+    if id == 0 then return end
+    entity.set_tint(id, r, g, b, 1.0)
+    entity.set_light_color(id, r, g, b)
+    entity.particles_emit(id, burst_sparks)
+    bursts[#bursts + 1] = { id = id, clock = 0.0, intensity = entity.get_light_intensity(id) or 1.0 }
+    gamestate.set("breakout_bursts", gamestate.get("breakout_bursts", 0) + 1)
 end
 
-local function retire(item)
-    item.active = false
-    ui.set_visible(item.id, false)
-    transform.set_position(item.id, 0.0, PARK_Y, 0.0)
+local function drop_power(kind, x, y)
+    local id = scene.spawn_prefab(POWER_PREFABS[kind], x, y, 0.2)
+    if id ~= 0 then powers[#powers + 1] = { id = id, kind = kind, x = x, y = y } end
 end
 
 local function read_events()
@@ -129,23 +113,23 @@ local function read_events()
     for kind, x, y, r, g, b in string.gmatch(queue, "(%a+) (%S+) (%S+) (%S+) (%S+) (%S+);") do
         x, y = tonumber(x), tonumber(y)
         if kind == "break" then
-            local fx = spawn(pools.fx, x, y)
-            if fx then entity.set_tint(fx.id, tonumber(r), tonumber(g), tonumber(b), 1.0) end
-        elseif kind == "wide" or kind == "slow" then
-            spawn(pools[kind], x, y)
+            burst(x, y, tonumber(r), tonumber(g), tonumber(b))
+        elseif POWER_PREFABS[kind] then
+            drop_power(kind, x, y)
         end
     end
 end
 
-local function update_fx(dt)
-    for _, fx in ipairs(pools.fx) do
-        if fx.active then
-            fx.clock = fx.clock + dt
-            local t = math.min(1.0, fx.clock / FX_TIME)
-            transform.set_scale(fx.id, 1.5 * (1.0 + 0.6 * t), 0.5 * (1.0 + 0.6 * t), 1.0)
-            local r, g, b = entity.get_tint(fx.id)
-            entity.set_tint(fx.id, r, g, b, 1.0 - t)
-            if t >= 1.0 then retire(fx) end
+-- The light of a burst fades out with its sparks, then the burst goes.
+local function update_bursts(dt)
+    for i = #bursts, 1, -1 do
+        local item = bursts[i]
+        item.clock = item.clock + dt
+        local t = math.min(1.0, item.clock / burst_time)
+        entity.set_light_intensity(item.id, item.intensity * (1.0 - t) * (1.0 - t))
+        if t >= 1.0 then
+            scene.destroy_entity(item.id)
+            table.remove(bursts, i)
         end
     end
 end
@@ -167,20 +151,17 @@ end
 local function update_power_ups(dt)
     local px = gamestate.get("breakout_paddle_x", 0.0)
     local half = gamestate.get("breakout_paddle_half", 1.2)
-    for kind, items in pairs({ wide = pools.wide, slow = pools.slow }) do
-        for _, item in ipairs(items) do
-            if item.active then
-                item.y = item.y - POWER_FALL * dt
-                transform.set_position(item.id, item.x, item.y, 0.2)
-                local touches = math.abs(item.x - px) < half + POWER_HALF_W and
-                        math.abs(item.y - PADDLE_Y) < PADDLE_HALF_HEIGHT + POWER_HALF_H
-                if touches and gamestate.get("breakout_ball_state", "") ~= "out" then
-                    retire(item)
-                    catch(kind)
-                elseif item.y < -9.0 then
-                    retire(item)
-                end
-            end
+    for i = #powers, 1, -1 do
+        local item = powers[i]
+        item.y = item.y - POWER_FALL * dt
+        transform.set_position(item.id, item.x, item.y, 0.2)
+        local touches = math.abs(item.x - px) < half + POWER_HALF_W and
+                math.abs(item.y - PADDLE_Y) < PADDLE_HALF_HEIGHT + POWER_HALF_H
+        local caught = touches and gamestate.get("breakout_ball_state", "") ~= "out"
+        if caught or item.y < -9.0 then
+            scene.destroy_entity(item.id)
+            table.remove(powers, i)
+            if caught then catch(item.kind) end
         end
     end
 end
@@ -286,7 +267,7 @@ function on_update(dt)
     update_hud()
     if paused then return end
     read_events()
-    update_fx(dt)
+    update_bursts(dt)
     update_power_ups(dt)
     update_timers(dt)
     check_end(dt)

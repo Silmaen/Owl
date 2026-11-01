@@ -13,6 +13,8 @@ OwlProject:
   RendererStack:
     - Type: Renderer2D
       Name: world
+    - Type: RendererParticles
+      Name: particles
     - Type: Renderer2D
       Name: ui
     - Type: Renderer2D

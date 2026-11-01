@@ -549,6 +549,47 @@ TEST_F(AssetScannerTest, ScanScriptPropertiesFollowsScenesRecursively) {
 	EXPECT_TRUE(warnings.empty());
 }
 
+TEST_F(AssetScannerTest, ScanDataTableFollowsTheScenesOfItsAssetCells) {
+	const auto scriptPath = m_tempDir / "scripts" / "level.lua";
+	writeFile(scriptPath, "function on_create() end\n");
+	const auto secondPath = m_tempDir / "scenes" / "level_2.owl";
+	writeFile(secondPath, "Scene: level_2\nEntities:\n"
+						  "  - Entity: 2\n"
+						  "    LuaScript:\n"
+						  "      scriptPath: " +
+								  scriptPath.generic_string() + "\n");
+	const auto tablePath = m_tempDir / "tables" / "levels.owltable";
+	writeFile(tablePath, "DataTable: ''\nFormatVersion: 1\ncolumns:\n"
+						 "  - {name: scene, type: Asset}\n"
+						 "rows:\n"
+						 "  - key: level_2\n"
+						 "    scene: " +
+								 secondPath.generic_string() + "\n");
+	const auto scenePath = m_tempDir / "scenes" / "level_1.owl";
+	writeFile(scenePath, "Scene: level_1\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    LuaScript:\n"
+						 "      scriptPath: \"\"\n"
+						 "      properties:\n"
+						 "        - name: levels\n"
+						 "          type: string\n"
+						 "          value: " +
+								 tablePath.generic_string() + "\n");
+
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(scenePath, &warnings);
+	const auto has = [&assets](const AssetType iType, const std::filesystem::path& iPath) -> bool {
+		return std::ranges::any_of(assets, [&](const AssetReference& iRef) -> bool {
+			return iRef.assetType == iType && iRef.diskPath == iPath;
+		});
+	};
+	EXPECT_TRUE(has(AssetType::Other, tablePath));
+	EXPECT_TRUE(has(AssetType::Scene, secondPath));
+	EXPECT_TRUE(std::ranges::any_of(
+			assets, [&scriptPath](const AssetReference& iRef) -> bool { return iRef.diskPath == scriptPath; }));
+	EXPECT_TRUE(warnings.empty());
+}
+
 TEST_F(AssetScannerTest, ScanScriptPropertiesFollowsTheScenesOfAList) {
 	const auto first = m_tempDir / "scenes" / "level_a.owl";
 	const auto second = m_tempDir / "scenes" / "level_b.owl";

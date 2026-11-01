@@ -1,59 +1,62 @@
--- Settings of Sokoban, after the Engine Demo settings menu (scripts/ui/settings_menu.lua): master volume and interface
--- size; Reset progress forgets the levels done and the best moves; Back (or Esc, pad B) saves and returns to the title.
--- Music and effects share the master volume: a looping SoundSource has no volume of its own yet (gap G9).
+-- Settings of Sokoban: the master, music and effects volumes (the `volume_*` settings the mixer buses follow) and the
+-- interface size; Reset progress forgets the levels done and the best moves; Back (or Esc, pad B) saves and returns to
+-- the title.
 
 properties = {
     { name = "ui_scale_min", type = "float", default = 0.75, min = 0.1 },
     { name = "ui_scale_max", type = "float", default = 2.0, min = 0.1 },
 }
 
-local LEVEL_COUNT = 10
-local vol_label_id, vol_slider_id = 0, 0
-local ui_scale_label_id, ui_scale_slider_id = 0, 0
-local progress_id = 0
+local VOLUMES = {
+    { setting = "volume_master", slider = "MasterVolSlider", label = "MasterVolLabel", text = "Master Volume" },
+    { setting = "volume_music", slider = "MusicVolSlider", label = "MusicVolLabel", text = "Music" },
+    { setting = "volume_sfx", slider = "SfxVolSlider", label = "SfxVolLabel", text = "Effects" },
+}
+
+local levels = nil              -- scripts/game/levels.lua, required in on_create
+local ids = {}
 local leaving = false
+
+local function percent(value)
+    return math.floor(value * 100 + 0.5)
+end
+
+local function set_text(tag, text)
+    if ids[tag] ~= 0 then ui.set_text(ids[tag], text) end
+end
+
+local function set_slider(tag, value)
+    if ids[tag] ~= 0 then ui.set_slider_value(ids[tag], value) end
+end
 
 local function levels_done()
     local done = 0
-    for i = 1, LEVEL_COUNT do
-        if settings.get(string.format("sokoban_done_%02d", i), false) then done = done + 1 end
+    for i = 1, levels.count() do
+        if levels.done(i) then done = done + 1 end
     end
     return done
 end
 
-local function update_labels()
-    if vol_label_id ~= 0 then
-        local vol = settings.get("volume_master", 1.0)
-        ui.set_text(vol_label_id, string.format("Master Volume: %d%%", math.floor(vol * 100 + 0.5)))
+local function refresh()
+    for _, row in ipairs(VOLUMES) do
+        local value = settings.get(row.setting, 1.0)
+        set_slider(row.slider, value)
+        set_text(row.label, string.format("%s: %d%%", row.text, percent(value)))
     end
-    if ui_scale_label_id ~= 0 then
-        local scale = settings.get("ui_scale", 1.0)
-        ui.set_text(ui_scale_label_id, string.format("Interface Size: %d%%", math.floor(scale * 100 + 0.5)))
-    end
-    if progress_id ~= 0 then
-        ui.set_text(progress_id, "Levels done: " .. levels_done() .. " / " .. LEVEL_COUNT)
-    end
-end
-
-local function update_sliders()
-    if vol_slider_id ~= 0 then
-        ui.set_slider_value(vol_slider_id, settings.get("volume_master", 1.0))
-    end
-    if ui_scale_slider_id ~= 0 then
-        local scale = settings.get("ui_scale", 1.0)
-        ui.set_slider_value(ui_scale_slider_id, (scale - ui_scale_min) / (ui_scale_max - ui_scale_min))
-    end
+    local scale = settings.get("ui_scale", 1.0)
+    set_slider("UiScaleSlider", (scale - ui_scale_min) / (ui_scale_max - ui_scale_min))
+    set_text("UiScaleLabel", string.format("Interface Size: %d%%", percent(scale)))
+    set_text("ProgressLabel", "Levels done: " .. levels_done() .. " / " .. levels.count())
 end
 
 function on_create()
     if not ui.is_transition_active() then ui.transition_play("wipe_left", 0.4, 0.2, 0.12, 0.05) end
-    vol_label_id = scene.find_entity("MasterVolLabel")
-    vol_slider_id = scene.find_entity("MasterVolSlider")
-    ui_scale_label_id = scene.find_entity("UiScaleLabel")
-    ui_scale_slider_id = scene.find_entity("UiScaleSlider")
-    progress_id = scene.find_entity("ProgressLabel")
-    update_sliders()
-    update_labels()
+    levels = require("scripts.game.levels")
+    for _, tag in ipairs({ "MasterVolSlider", "MasterVolLabel", "MusicVolSlider", "MusicVolLabel", "SfxVolSlider",
+                           "SfxVolLabel", "UiScaleSlider", "UiScaleLabel", "ProgressLabel" }) do
+        ids[tag] = scene.find_entity(tag)
+    end
+    refresh()
 end
 
 function on_update(dt)
@@ -65,35 +68,48 @@ end
 function on_slider_focused()
 end
 
-function on_master_vol_changed()
-    settings.set("volume_master", _slider_value or 1.0)
+local function set_volume(setting)
+    settings.set(setting, _slider_value or 1.0)
     settings.apply()
-    update_labels()
+    refresh()
+end
+
+function on_master_vol_changed()
+    set_volume("volume_master")
+end
+
+function on_music_vol_changed()
+    set_volume("volume_music")
+end
+
+-- A crate push at the new level of the effects.
+function on_sfx_vol_changed()
+    set_volume("volume_sfx")
+    sound.play("sounds/game/push.wav")
 end
 
 function on_ui_scale_changed()
-    local value = _slider_value or 0.2
-    settings.set("ui_scale", ui_scale_min + value * (ui_scale_max - ui_scale_min))
-    update_labels()
+    settings.set("ui_scale", ui_scale_min + (_slider_value or 0.2) * (ui_scale_max - ui_scale_min))
+    refresh()
 end
 
 -- Reset progress: every level back to not done, the best moves forgotten.
 function on_reset_progress_clicked()
-    for i = 1, LEVEL_COUNT do
-        settings.reset(string.format("sokoban_done_%02d", i))
-        settings.reset(string.format("sokoban_best_%02d", i))
+    for i = 1, levels.count() do
+        settings.reset(levels.done_key(i))
+        settings.reset(levels.best_key(i))
     end
     settings.save()
-    update_labels()
+    refresh()
 end
 
--- Reset defaults: volume and interface size back to game_settings.yml, the progress kept.
+-- Reset defaults: volumes and interface size back to game_settings.yml, the progress kept.
 function on_reset_clicked()
-    settings.reset("volume_master")
-    settings.reset("ui_scale")
+    for _, key in ipairs({ "volume_master", "volume_music", "volume_sfx", "ui_scale" }) do
+        settings.reset(key)
+    end
     settings.apply()
-    update_sliders()
-    update_labels()
+    refresh()
 end
 
 function go_back()

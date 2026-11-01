@@ -316,9 +316,10 @@ void scanDataFile(const std::string& iPath, const char* iKind, const std::string
 
 auto isSoundFile(const std::string& iName) -> bool;
 
-// A data table carries the tables its Reference columns point into and the assets of its Asset cells.
+// A data table carries the tables its Reference columns point into and the assets of its Asset cells, scenes scanned.
 void followDataTable(const std::string& iName, const std::string& iSource,// NOLINT(misc-no-recursion)
-					 std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+					 std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
+					 std::vector<std::string>* ioWarnings) {
 	auto ref = resolveDataAsset(iName);
 	if (!ref) {
 		pushWarning(ioWarnings, "Data table", iName, iSource);
@@ -336,7 +337,7 @@ void followDataTable(const std::string& iName, const std::string& iSource,// NOL
 	for (size_t column = 0; column < table->columns.size(); ++column) {
 		const auto& definition = table->columns[column];
 		if (definition.type == data::table::ColumnType::Reference && !definition.table.empty())
-			followDataTable(definition.table, source, ioAssets, ioWarnings);
+			followDataTable(definition.table, source, ioVisitedScenes, ioAssets, ioWarnings);
 		if (definition.type != data::table::ColumnType::Asset)
 			continue;
 		for (const auto& row: table->rows) {
@@ -344,7 +345,9 @@ void followDataTable(const std::string& iName, const std::string& iSource,// NOL
 			if (asset.empty())
 				continue;
 			if (isDataTableFile(asset))
-				followDataTable(asset, source, ioAssets, ioWarnings);
+				followDataTable(asset, source, ioVisitedScenes, ioAssets, ioWarnings);
+			else if (std::filesystem::path(asset).extension() == ".owl")
+				followScene(asset, source, ioVisitedScenes, ioAssets, ioWarnings);
 			else if (isSoundFile(asset))
 				followSound(asset, source, ioAssets, ioWarnings);
 			else
@@ -439,7 +442,7 @@ void scanLuaScript(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-re
 		followTexture((*it)[1].str(), source, ioAssets, ioWarnings);
 	static const std::regex tablePattern(R"(["']([^"'\s]+\.owltable)["'])");
 	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), tablePattern); it != end; ++it)
-		followDataTable((*it)[1].str(), source, ioAssets, ioWarnings);
+		followDataTable((*it)[1].str(), source, ioVisitedScenes, ioAssets, ioWarnings);
 	static const std::regex dialoguePattern(R"(["']([^"'\s]+\.owldlg)["'])");
 	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), dialoguePattern); it != end; ++it)
 		followDialogue((*it)[1].str(), source, ioAssets, ioWarnings);
@@ -488,7 +491,7 @@ void scanScriptProperties(const YAML::Node& iProperties,// NOLINT(misc-no-recurs
 			else if (isSoundFile(text))
 				followSound(text, source, ioAssets, ioWarnings);
 			else if (isDataTableFile(text))
-				followDataTable(text, source, ioAssets, ioWarnings);
+				followDataTable(text, source, ioVisitedScenes, ioAssets, ioWarnings);
 			else if (isDialogueFile(text))
 				followDialogue(text, source, ioAssets, ioWarnings);
 		}

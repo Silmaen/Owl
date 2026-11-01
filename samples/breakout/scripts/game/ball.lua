@@ -5,6 +5,8 @@
 -- Serve: the ball rides on the paddle until the `serve` action (Space, pad A, left click), or by itself after
 -- `auto_serve` seconds. A ball below the field costs a life (`breakout_lives`). The speed grows a little at each
 -- paddle bounce up to `max_speed`, and follows `breakout_speed_factor` (the slow power-up).
+-- The neon trail of the ball (`Trail`) is on while the ball is in play only, so a lost ball does not streak back to
+-- the paddle; its `Light2D` lights the bricks and the backdrop around it.
 
 properties = {
     { name = "speed", type = "float", default = 7.5 },
@@ -49,6 +51,7 @@ local function launch()
     local s = current_speed * gamestate.get("breakout_speed_factor", 1.0)
     physics.set_velocity(entity_id, math.sin(angle) * s, math.cos(angle) * s)
     sound.play("sounds/game/serve.wav")
+    entity.set_trail_enabled(entity_id, true)
     set_state("play")
 end
 
@@ -66,6 +69,7 @@ end
 
 local function lose_ball()
     sound.play("sounds/game/lose.wav")
+    entity.set_trail_enabled(entity_id, false)
     local lives = gamestate.get("breakout_lives", 3) - 1
     gamestate.set("breakout_lives", lives)
     gamestate.set("breakout_wide", false)

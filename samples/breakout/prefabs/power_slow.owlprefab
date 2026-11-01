@@ -1,0 +1,18 @@
+Prefab: PowerSlow
+Version: 1
+Entities:
+  - Entity: 7000000000000000301
+    Tag:
+      tag: PowerSlow
+    Transform:
+      translation: [0, 0, 0.2]
+      rotation: [0, 0, 0]
+      scale: [1.2, 0.525, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: gid:27a2b97c236ba1aa:textures/power_slow.png
+    Light2D: {type: Point, enabled: true, color: [0.35, 0.75, 1], intensity: 0.8, radius: 2.2, falloff: 2, height: 1, castShadows: false}

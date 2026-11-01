@@ -1,0 +1,23 @@
+# Breakout settings: the music and effects sliders turned down with the D-pad (the Music and SFX buses follow
+# `volume_music` and `volume_sfx`), then Back with pad B saves and returns to the title.
+scene: ../../../samples/breakout/scenes/settings.owl
+steps:
+  - frames: 10
+  - expect: {setting: volume_music, equals: 0.8, tolerance: 0.001}
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadLeft}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadLeft}, frames: 2}
+  - frames: 1
+  - expect: {setting: volume_music, less: 0.8}
+  - expect: {setting: volume_sfx, equals: 1.0, tolerance: 0.001}
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadLeft}, frames: 2}
+  - frames: 1
+  - expect: {setting: volume_sfx, less: 1.0}
+  - expect: {setting: volume_master, equals: 1.0, tolerance: 0.001}
+  - input: {gamepad: {button: B}, frames: 2}
+  - frames: 60
+  - expect: {entity: MenuCanvas, exists: true}

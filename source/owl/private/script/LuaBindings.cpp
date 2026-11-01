@@ -1013,6 +1013,8 @@ auto luaEntitySetTint(lua_State* iState) -> int {
 		entity->getComponent<scene::component::SpriteRenderer>().color = tint;
 	else if (entity && entity->hasComponent<scene::component::MeshRenderer>())
 		entity->getComponent<scene::component::MeshRenderer>().color = tint;
+	else if (entity && entity->hasComponent<scene::component::ParticleEmitter>())
+		entity->getComponent<scene::component::ParticleEmitter>().settings.color = tint;
 	else {
 		lua_pushboolean(iState, 0);
 		return 1;
@@ -1032,6 +1034,8 @@ auto luaEntityGetTint(lua_State* iState) -> int {
 		tint = entity->getComponent<scene::component::SpriteRenderer>().color;
 	else if (entity->hasComponent<scene::component::MeshRenderer>())
 		tint = entity->getComponent<scene::component::MeshRenderer>().color;
+	else if (entity->hasComponent<scene::component::ParticleEmitter>())
+		tint = entity->getComponent<scene::component::ParticleEmitter>().settings.color;
 	else
 		return 0;
 	lua_pushnumber(iState, static_cast<lua_Number>(tint.x()));
@@ -3477,13 +3481,14 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Entity an `EntityLink` of this entity points at (0 when it has none or the target is missing).",
 		 .params = {entityId}, .returns = {{"linked_id", Entity}}},
 		{.table = "entity", .name = "set_tint", .function = guarded<luaEntitySetTint>,
-		 .description = "Set the colour multiplied into a `SpriteRenderer`, `AnimatedSpriteRenderer` or `MeshRenderer` "
-						"(hit flash, fade); false when the entity has none of them. `a` is 1 when omitted.",
+		 .description = "Set the colour multiplied into a `SpriteRenderer`, `AnimatedSpriteRenderer`, `MeshRenderer` or "
+						"`ParticleEmitter` (hit flash, fade, a burst in the colour of what broke); false when the entity "
+						"has none of them. `a` is 1 when omitted.",
 		 .params = {entityId, {"r", Number}, {"g", Number}, {"b", Number}, {"a", Number, true}},
 		 .returns = {{"done", Boolean}}},
 		{.table = "entity", .name = "get_tint", .function = guarded<luaEntityGetTint>,
-		 .description = "Colour multiplied into a `SpriteRenderer`, `AnimatedSpriteRenderer` or `MeshRenderer`; nothing "
-						"when the entity has none of them.",
+		 .description = "Colour multiplied into a `SpriteRenderer`, `AnimatedSpriteRenderer`, `MeshRenderer` or "
+						"`ParticleEmitter`; nothing when the entity has none of them.",
 		 .params = {entityId},
 		 .returns = {{"r", Number}, {"g", Number}, {"b", Number}, {"a", Number}}},
 		{.table = "entity", .name = "set_mesh", .function = guarded<luaEntitySetMesh>,

@@ -46,6 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ring Runner, the rail shooter sample game (`samples/rail_shooter/`): one lane on a spline through the asteroid ring of a planet, squadrons from a wave table, a boss, sequences, medals and the best score kept; hits flash and knock their target, explosions throw fire, smoke, embers, shards and a shock wave (chained pops on the big ones), rocks break into tumbling chunks.
 - Ring Runner menus: live 3D backdrops flying through the ring, the cockpit look of the game, music and effects volumes on the mixer buses.
 - Scenarios `rail_title`, `rail_fly`, `rail_shoot`, `rail_settings`, `rail_game_over` and `rail_win` play Ring Runner with the keyboard, the mouse and the gamepad.
+- Breakout and Sokoban settings: music and effects volume sliders on the mixer buses (`volume_music`, `volume_sfx`).
+- Breakout: broken bricks burst into sparks of their colour with a flash of light, the ball leaves a neon trail and lights the field, bloom on the levels.
+- Sokoban: a push raises dust behind the crate and a crate set on a goal sparkles.
+- Scenarios `breakout_settings`, `sokoban_settings` and `sokoban_pause`; `breakout_serve` and `sokoban_push` check the bursts and the sparkles.
 
 - Asset GUIDs: every asset of a project opened in Owl Nest gets a `.owlmeta` sidecar, and `AssetRegistry` maps GUID and path.
 - Asset references written by GUID (`gid:<guid>:<path hint>`): renaming or moving a file keeps every reference valid.
@@ -174,6 +178,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `entity.set_tint` and `entity.get_tint` also reach the colour of a `ParticleEmitter`.
+- Breakout: the power-ups and the bursts are prefabs spawned and destroyed by `game.lua`, no longer pools of hidden entities.
+- Sokoban: the levels are the rows of the data table `tables/levels.owltable`, read by the title, the level select, the levels and the victory screen; the pause stops the scene clock (`time.set_paused`).
 - A particle emitter that does not emit and whose particles all died is idle (`ParticleSystem::isIdle`): neither simulated nor drawn.
 - The Moon Lantern: the bag stays open with an object in hand and after a combination, a click on the room closes it, and the object in hand is the cursor.
 - The Moon Lantern: the actors are drawn as toon-shaded pixel art with an outline, matching the backdrops, and the objects to pick are lighter, outlined and glow under the cursor.
@@ -219,6 +226,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `settings.apply()` resizes the window only in the runner and only for a window setting that changed: changing the language or the subtitles in Play no longer resizes Owl Nest, nor a game window the player resized.
 - Engine Demo tavern: the two patrons sit on their stools instead of through them, and the server's `ServerRoute` loops between the bar and the patrons' table around the furniture, the trapdoor and the player's spawn.
+- The export scans the scenes named in the `Asset` cells of a data table, with their scripts and assets.
 - A scene that gave the mouse back by itself, a dialogue pausing the walker, captures it again when it ends, in Play and in the runner; Escape still waits for a click.
 - HUD markers were mirrored vertically on Vulkan: `renderer::projectToViewport` takes the clip space of the active layer.
 - `entity.particles_emit` (`ParticleSystem::emit`) bursts an emitter that never played (no play on start), which spawned nothing, and an emitter moved while idle bursts where it is instead of along a streak from where it was.

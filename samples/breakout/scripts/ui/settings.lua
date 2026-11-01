@@ -1,7 +1,6 @@
--- Settings of Breakout, after the Engine Demo settings menu (scripts/ui/settings_menu.lua): master volume,
--- mouse speed of the paddle and interface size; Back (or Esc, pad B) saves them and returns to the title (a magenta
+-- Settings of Breakout: the master, music and effects volumes (the `volume_*` settings the mixer buses follow), the
+-- mouse speed of the paddle and the interface size; Back (or Esc, pad B) saves them and returns to the title (a magenta
 -- wipe, like every Breakout screen).
--- Music and effects share the master volume: a looping SoundSource has no volume of its own yet (gap G9).
 
 properties = {
     { name = "ui_scale_min", type = "float", default = 0.75, min = 0.1 },
@@ -10,53 +9,48 @@ properties = {
     { name = "mouse_max", type = "float", default = 3.0, min = 0.01 },
 }
 
-local vol_label_id = 0
-local vol_slider_id = 0
-local mouse_label_id = 0
-local mouse_slider_id = 0
-local ui_scale_label_id = 0
-local ui_scale_slider_id = 0
+local VOLUMES = {
+    { setting = "volume_master", slider = "MasterVolSlider", label = "MasterVolLabel", text = "Master Volume" },
+    { setting = "volume_music", slider = "MusicVolSlider", label = "MusicVolLabel", text = "Music" },
+    { setting = "volume_sfx", slider = "SfxVolSlider", label = "SfxVolLabel", text = "Effects" },
+}
+
+local ids = {}
 local leaving = false
 
-local function update_labels()
-    if vol_label_id ~= 0 then
-        local vol = settings.get("volume_master", 1.0)
-        ui.set_text(vol_label_id, string.format("Master Volume: %d%%", math.floor(vol * 100 + 0.5)))
-    end
-    if mouse_label_id ~= 0 then
-        local speed = settings.get("breakout_mouse_speed", 1.0)
-        ui.set_text(mouse_label_id, string.format("Mouse Speed: %d%%", math.floor(speed * 100 + 0.5)))
-    end
-    if ui_scale_label_id ~= 0 then
-        local scale = settings.get("ui_scale", 1.0)
-        ui.set_text(ui_scale_label_id, string.format("Interface Size: %d%%", math.floor(scale * 100 + 0.5)))
-    end
+local function percent(value)
+    return math.floor(value * 100 + 0.5)
 end
 
-local function update_sliders()
-    if vol_slider_id ~= 0 then
-        ui.set_slider_value(vol_slider_id, settings.get("volume_master", 1.0))
+local function set_text(tag, text)
+    if ids[tag] ~= 0 then ui.set_text(ids[tag], text) end
+end
+
+local function set_slider(tag, value)
+    if ids[tag] ~= 0 then ui.set_slider_value(ids[tag], value) end
+end
+
+local function refresh()
+    for _, row in ipairs(VOLUMES) do
+        local value = settings.get(row.setting, 1.0)
+        set_slider(row.slider, value)
+        set_text(row.label, string.format("%s: %d%%", row.text, percent(value)))
     end
-    if mouse_slider_id ~= 0 then
-        local speed = settings.get("breakout_mouse_speed", 1.0)
-        ui.set_slider_value(mouse_slider_id, (speed - mouse_min) / (mouse_max - mouse_min))
-    end
-    if ui_scale_slider_id ~= 0 then
-        local scale = settings.get("ui_scale", 1.0)
-        ui.set_slider_value(ui_scale_slider_id, (scale - ui_scale_min) / (ui_scale_max - ui_scale_min))
-    end
+    local speed = settings.get("breakout_mouse_speed", 1.0)
+    set_slider("MouseSpeedSlider", (speed - mouse_min) / (mouse_max - mouse_min))
+    set_text("MouseSpeedLabel", string.format("Mouse Speed: %d%%", percent(speed)))
+    local scale = settings.get("ui_scale", 1.0)
+    set_slider("UiScaleSlider", (scale - ui_scale_min) / (ui_scale_max - ui_scale_min))
+    set_text("UiScaleLabel", string.format("Interface Size: %d%%", percent(scale)))
 end
 
 function on_create()
     if not ui.is_transition_active() then ui.transition_play("wipe_up", 0.4, 0.45, 0.05, 0.55) end
-    vol_label_id = scene.find_entity("MasterVolLabel")
-    vol_slider_id = scene.find_entity("MasterVolSlider")
-    mouse_label_id = scene.find_entity("MouseSpeedLabel")
-    mouse_slider_id = scene.find_entity("MouseSpeedSlider")
-    ui_scale_label_id = scene.find_entity("UiScaleLabel")
-    ui_scale_slider_id = scene.find_entity("UiScaleSlider")
-    update_sliders()
-    update_labels()
+    for _, tag in ipairs({ "MasterVolSlider", "MasterVolLabel", "MusicVolSlider", "MusicVolLabel", "SfxVolSlider",
+                           "SfxVolLabel", "MouseSpeedSlider", "MouseSpeedLabel", "UiScaleSlider", "UiScaleLabel" }) do
+        ids[tag] = scene.find_entity(tag)
+    end
+    refresh()
 end
 
 function on_update(dt)
@@ -68,32 +62,43 @@ end
 function on_slider_focused()
 end
 
-function on_master_vol_changed()
-    settings.set("volume_master", _slider_value or 1.0)
+local function set_volume(setting)
+    settings.set(setting, _slider_value or 1.0)
     settings.apply()
-    update_labels()
+    refresh()
+end
+
+function on_master_vol_changed()
+    set_volume("volume_master")
+end
+
+function on_music_vol_changed()
+    set_volume("volume_music")
+end
+
+-- A paddle blip at the new level of the effects.
+function on_sfx_vol_changed()
+    set_volume("volume_sfx")
+    sound.play("sounds/game/paddle.wav")
 end
 
 function on_mouse_speed_changed()
-    local value = _slider_value or 0.27
-    settings.set("breakout_mouse_speed", mouse_min + value * (mouse_max - mouse_min))
-    update_labels()
+    settings.set("breakout_mouse_speed", mouse_min + (_slider_value or 0.27) * (mouse_max - mouse_min))
+    refresh()
 end
 
 function on_ui_scale_changed()
-    local value = _slider_value or 0.2
-    settings.set("ui_scale", ui_scale_min + value * (ui_scale_max - ui_scale_min))
-    update_labels()
+    settings.set("ui_scale", ui_scale_min + (_slider_value or 0.2) * (ui_scale_max - ui_scale_min))
+    refresh()
 end
 
--- Reset: volume, mouse speed and interface size back to game_settings.yml, the scores and the levels cleared kept.
+-- Reset: volumes, mouse speed and interface size back to game_settings.yml, the scores and the levels cleared kept.
 function on_reset_clicked()
-    settings.reset("volume_master")
-    settings.reset("breakout_mouse_speed")
-    settings.reset("ui_scale")
+    for _, key in ipairs({ "volume_master", "volume_music", "volume_sfx", "breakout_mouse_speed", "ui_scale" }) do
+        settings.reset(key)
+    end
     settings.apply()
-    update_sliders()
-    update_labels()
+    refresh()
 end
 
 function go_back()

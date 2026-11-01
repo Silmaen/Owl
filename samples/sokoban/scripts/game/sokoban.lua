@@ -6,21 +6,20 @@
 -- tilemap editor of Owl Nest by painting those three layers; on_create checks that crates and goals match.
 --
 -- - One step per press of a `step_*` action (keys, D-pad) or a push of the left stick (`step_stick`), repeated while
---   held. The player and a pushed crate slide to their cell (`MovingBox` carries the crate during the slide).
+--   held. The player and a pushed crate slide to their cell (`MovingBox` carries the crate during the slide); a push
+--   raises dust behind the crate (`PushDust`), a crate set on a goal sparkles (`GoalSparkle`).
 -- - Every step goes on an undo stack (a Lua table): `undo` (Z, U, Backspace, pad B) takes back the last one, `restart`
 --   (R, pad Y) takes them all back. Moves and pushes count in the HUD.
 -- - Every crate on a goal: the level is done. `sokoban_done_NN` and `sokoban_best_NN` (fewest moves) are kept as
---   settings (saved at once), then the scene of the `next_scene` property: the next level, or the victory screen after
---   the last one. `level_name` is shown when the level opens; the level select keeps its own list of the levels.
--- - `pause` (Esc, P, Start) opens the pause window of `huds/level.owlhud`; the HUD buttons Undo / Restart / Menu do the
---   same with the mouse.
+--   settings (saved at once), then the next level of `tables/levels.owltable` (scripts/game/levels.lua), or the
+--   victory screen after the last one. The level is the row `level` of that table, its name shown when it opens.
+-- - `pause` (Esc, P, Start) stops the scene clock (`time.set_paused`) and opens the pause window of
+--   `huds/level.owlhud`; the HUD buttons Undo / Restart / Menu do the same with the mouse.
 -- - The state is mirrored into `gamestate` for the scenarios: `sokoban_level`, `sokoban_moves`, `sokoban_pushes`,
 --   `sokoban_boxes`, `sokoban_goals`, `sokoban_on_goal`, `sokoban_player_x` / `_y`, `sokoban_won`, `sokoban_done_NN`.
 
 properties = {
     { name = "level", type = "int", default = 1 },
-    { name = "level_name", type = "string", default = "" },
-    { name = "next_scene", type = "string", default = "scenes/victory.owl" },
     { name = "slide_time", type = "float", default = 0.08 },   -- seconds to slide one cell
     { name = "repeat_delay", type = "float", default = 0.25 },   -- a held direction repeats after this
     { name = "repeat_time", type = "float", default = 0.11 },   -- then one step every this
@@ -31,6 +30,8 @@ properties = {
     { name = "frame_push", type = "int", default = 13, min = 0 },
     { name = "stick_on", type = "float", default = 0.6, min = 0, max = 1 },
     { name = "stick_off", type = "float", default = 0.35, min = 0, max = 1 },
+    { name = "dust_puffs", type = "int", default = 10, min = 1 },
+    { name = "goal_sparks", type = "int", default = 22, min = 1 },
 }
 
 local FLOOR, GOALS, BOXES = 0, 1, 2
@@ -47,7 +48,9 @@ local DIRECTIONS = {
     step_down = { 0, 1 },
 }
 
+local levels = nil                 -- scripts/game/levels.lua, required in on_create
 local map_id, player_id, box_id = 0, 0, 0
+local dust_id, sparkle_id = 0, 0
 local hud = {}
 local width, height, cell_size = 0, 0, 1.0
 local origin_x, origin_y = 0.0, 0.0
@@ -129,11 +132,11 @@ local function show_message(text, seconds)
 end
 
 local function best_key()
-    return string.format("sokoban_best_%02d", level)
+    return levels.best_key(level)
 end
 
 local function done_key()
-    return string.format("sokoban_done_%02d", level)
+    return levels.done_key(level)
 end
 
 local function update_hud()
@@ -153,6 +156,16 @@ local function publish()
     update_hud()
 end
 
+-- Effects -------------------------------------------------------------------------------------------------------------
+
+-- A burst of the emitter `id` on cell (x, y), `lift` world units up from its centre.
+local function puff(id, count, x, y, lift)
+    if id == 0 then return end
+    local wx, wy = cell_to_world(x, y)
+    transform.set_position(id, wx, wy + lift, 0.12)
+    entity.particles_emit(id, count)
+end
+
 -- Player --------------------------------------------------------------------------------------------------------------
 
 local function place_player(frame)
@@ -167,7 +180,11 @@ local function finish_slide()
     if slide.box then
         put_box(slide.box.cx, slide.box.cy, true)
         ui.set_visible(box_id, false)
-        if is_goal(slide.box.cx, slide.box.cy) then sound.play("sounds/game/goal.wav") end
+        if is_goal(slide.box.cx, slide.box.cy) then
+            sound.play("sounds/game/goal.wav")
+            puff(sparkle_id, goal_sparks, slide.box.cx, slide.box.cy, 0.0)
+            gamestate.set("sokoban_sparkles", gamestate.get("sokoban_sparkles", 0) + 1)
+        end
     end
     slide = nil
     place_player(frame_idle)
@@ -220,6 +237,7 @@ local function step(dx, dy)
         ui.set_visible(box_id, true)
         pushes = pushes + 1
         sound.play("sounds/game/push.wav")
+        puff(dust_id, dust_puffs, nx, ny, -0.3)
     else
         sound.play("sounds/game/step.wav")
     end
@@ -295,6 +313,7 @@ end
 local function set_paused(value)
     paused = value
     gamestate.set("sokoban_paused", value)
+    time.set_paused(value)
     if hud.pause ~= 0 then ui.set_visible(hud.pause, value) end
     if value and hud.pause ~= 0 then ui.raise_window(hud.pause) end
     if value and hud.resume ~= 0 then ui.set_focus(hud.resume) end
@@ -304,6 +323,7 @@ end
 local function leave(path)
     if leaving then return end
     leaving = true
+    time.set_paused(false)
     -- A wipe in the brown of the crates, as every change of screen of Sokoban.
     scene.transition_to(path, "wipe_left", 0.3, 0.2, 0.12, 0.05)
 end
@@ -345,9 +365,12 @@ function on_create()
     REPEAT_TIME = repeat_time
     WIN_DELAY = win_delay
     if not ui.is_transition_active() then ui.transition_fade_in(0.4) end
+    levels = require("scripts.game.levels")
     map_id = scene.find_entity("Level")
     player_id = scene.find_entity("Player")
     box_id = scene.find_entity("MovingBox")
+    dust_id = scene.find_entity("PushDust")
+    sparkle_id = scene.find_entity("GoalSparkle")
     hud.level = ui.find("LevelText")
     hud.moves = ui.find("MovesText")
     hud.best = ui.find("BestText")
@@ -388,9 +411,10 @@ function on_create()
     gamestate.set("sokoban_boxes", boxes)
     gamestate.set("sokoban_goals", goal_count)
     gamestate.set("sokoban_paused", false)
+    gamestate.set("sokoban_sparkles", 0)
     gamestate.set(done_key(), settings.get(done_key(), false))
     publish()
-    show_message("Level " .. level .. ": " .. (level_name or ""), 1.8)
+    show_message("Level " .. level .. ": " .. levels.name(level), 1.8)
 end
 
 local function read_direction()
@@ -465,7 +489,7 @@ function on_update(dt)
     if won then
         win_clock = win_clock + dt
         if win_clock >= WIN_DELAY then
-            leave((next_scene ~= nil and next_scene ~= "") and next_scene or "scenes/victory.owl")
+            leave(levels.next_scene(level))
         end
         return
     end

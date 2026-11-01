@@ -26,21 +26,26 @@ pause window, never during play.
 | Pause  | Escape, P             |              | Start             |
 | Menus  | Arrows, Enter, Escape | Point, click | D-pad, A, B       |
 
-The mouse moves the paddle by its motion; its speed is a setting, with the master volume and the interface size.
+The mouse moves the paddle by its motion; its speed is a setting, with the master, music and effects volumes and the
+interface size.
 
 ## Inside
 
-| Path                      | Content                                                                             |
-|---------------------------|-------------------------------------------------------------------------------------|
-| `scenes/`                 | `title`, `level_select`, `level_1` to `level_5`, `settings`, `victory`, `game_over` |
-| `scripts/game/`           | `game.lua` (rules, power-ups, pause, saves), `paddle.lua`, `ball.lua`, `brick.lua`  |
-| `scripts/ui/`             | The neon menus; `neon_bricks.lua` lights the brick wall behind them                 |
-| `prefabs/brick.owlprefab` | A brick: static body, sprite, script; the levels hold its instances                 |
-| `huds/play.owlhud`        | Score, level, lives, messages and the pause window (with the controls)              |
+| Path                            | Content                                                                             |
+|---------------------------------|-------------------------------------------------------------------------------------|
+| `scenes/`                       | `title`, `level_select`, `level_1` to `level_5`, `settings`, `victory`, `game_over` |
+| `scripts/game/`                 | `game.lua` (rules, power-ups, bursts, saves), `paddle.lua`, `ball.lua`, `brick.lua` |
+| `scripts/ui/`                   | The neon menus; `neon_bricks.lua` lights the brick wall behind them                 |
+| `prefabs/brick.owlprefab`       | A brick: static body, sprite, script; the levels hold its instances                 |
+| `prefabs/brick_burst.owlprefab` | The sparks and the flash of light of a broken brick, tinted in its colour           |
+| `prefabs/power_*.owlprefab`     | The falling capsules of the power-ups, with their glow                              |
+| `huds/play.owlhud`              | Score, level, lives, messages and the pause window (with the controls)              |
 
 The art, the sounds and the first layout of the levels come from `tools/samples/breakout/` (`generate_assets.py`,
 `generate_levels.py`, `generate_menus.py`); edit the levels in Owl Nest afterwards (move, add or delete bricks, change
 their properties). The menus are arcade neon: a wall of bricks lit in a wave, a ball and a paddle playing by themselves
-on the title, neon buttons and magenta wipes between the screens.
+on the title, neon buttons and magenta wipes between the screens. In play the ball leaves a neon trail and lights the
+bricks around it (2D lights), the paddle glows, a broken brick bursts into sparks of its colour, and the camera
+blooms the bright parts.
 The `next_scene` property of the `Game` entity names the level that follows (`scenes/victory.owl` after the last one):
 to add a level, duplicate a level scene, set its `level` and `next_scene`, and point the level before at it.
