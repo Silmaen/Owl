@@ -69,7 +69,7 @@ The widgets, their fields and their Lua side: [Scene and components](scene.md#co
 
 A HUD theme (`.owlhudtheme`) gives the widgets of every HUD and menu of a project one look: named styles of colours
 per state, rounded corners, a gradient, a border, a soft shadow, a nine-slice texture, a font, a font size and an
-outline ([Scene > HUD themes](scene.md#hud-themes)).
+outline ([Scene > HUD themes](scene.md#scene-hud-themes)).
 
 - **New HUD Theme** in the Content Browser folder menu writes a theme holding a starting set of styles (panel, button,
   title, text, slider, bar, list, window) and opens it; a double-click opens an existing one.

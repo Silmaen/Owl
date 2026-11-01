@@ -1031,7 +1031,7 @@ scripts start, so no `on_create` pays for its fonts against its time quota. The 
 the scene's own canvases; Lua `ui.find(name)` searches it first and `scene.find_entity` falls back to it. Saves keep
 its widget values. Design: [HUD system](design/hud-system.md).
 
-#### HUD themes and widget boxes {#hud-themes}
+#### HUD themes and widget boxes {#scene-hud-themes}
 
 The box of a `UiPanel`, `UiButton`, `UiSlider`, `UiProgressBar`, `UiList` (its rows) and `UiWindow` is a `UiBox`,
 written under a `Box:` map of the widget only when it is not a flat rectangle:
