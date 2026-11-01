@@ -1,0 +1,153 @@
+DataTable: ''
+FormatVersion: 1
+columns:
+  - {name: name, type: Text}
+  - {name: hint, type: Text}
+  - {name: hp, type: Float}
+  - {name: speed, type: Float}
+  - {name: gold, type: Integer}
+  - {name: arrow, type: Float}
+  - {name: lives, type: Integer}
+  - {name: boss, type: Bool}
+  - {name: ability, type: Enum, choices: [none, regen, ward, blast, rage, rally]}
+  - {name: power, type: Float}
+  - {name: radius, type: Float}
+  - {name: every, type: Float}
+  - {name: bar_height, type: Float}
+  - {name: shadow_size, type: Float}
+rows:
+  - key: goblin
+    name: Goblins
+    hint: 'quick and frail: archers'
+    hp: 34
+    speed: 1.6
+    gold: 9
+    arrow: 1
+    lives: 1
+    boss: false
+    ability: none
+    power: 0
+    radius: 0
+    every: 0
+    bar_height: 0.62
+    shadow_size: 0.45
+  - key: grunt
+    name: Orc grunts
+    hint: 'sturdy: any tower'
+    hp: 92
+    speed: 1
+    gold: 15
+    arrow: 1
+    lives: 1
+    boss: false
+    ability: none
+    power: 0
+    radius: 0
+    every: 0
+    bar_height: 0.86
+    shadow_size: 0.6
+  - key: ogre
+    name: Ogres
+    hint: 'arrows glance off them: cannons and frost'
+    hp: 300
+    speed: 0.65
+    gold: 36
+    arrow: 0.4
+    lives: 1
+    boss: false
+    ability: none
+    power: 0
+    radius: 0
+    every: 0
+    bar_height: 1.12
+    shadow_size: 0.9
+  - key: wolf
+    name: Wolf riders
+    hint: 'very fast: frost towers slow them'
+    hp: 50
+    speed: 2.1
+    gold: 9
+    arrow: 1
+    lives: 1
+    boss: false
+    ability: none
+    power: 0
+    radius: 0
+    every: 0
+    bar_height: 0.82
+    shadow_size: 0.8
+  - key: troll
+    name: Trolls
+    hint: 'they heal: burst them with cannons, fire stops the healing'
+    hp: 130
+    speed: 1.05
+    gold: 18
+    arrow: 1
+    lives: 1
+    boss: false
+    ability: regen
+    power: 7
+    radius: 0
+    every: 0
+    bar_height: 0.98
+    shadow_size: 0.6
+  - key: ogre_mage
+    name: Ogre mages
+    hint: 'they ward the Horde around them: kill them first, fire burns through wards'
+    hp: 160
+    speed: 0.8
+    gold: 26
+    arrow: 1
+    lives: 1
+    boss: false
+    ability: ward
+    power: 45
+    radius: 1.6
+    every: 6
+    bar_height: 1.1
+    shadow_size: 0.85
+  - key: sapper
+    name: Goblin sappers
+    hint: 'a keg blows 3 lives at the keep: shoot them early, their blast hurts the Horde'
+    hp: 42
+    speed: 1.75
+    gold: 12
+    arrow: 1
+    lives: 3
+    boss: false
+    ability: blast
+    power: 40
+    radius: 1.2
+    every: 0
+    bar_height: 0.66
+    shadow_size: 0.45
+  - key: berserker
+    name: Orc berserkers
+    hint: 'the more they bleed, the faster they run: frost, then finish them fast'
+    hp: 120
+    speed: 1.05
+    gold: 16
+    arrow: 1
+    lives: 1
+    boss: false
+    ability: rage
+    power: 0.9
+    radius: 0
+    every: 0
+    bar_height: 0.9
+    shadow_size: 0.6
+  - key: chieftain
+    name: The orc chieftain
+    hint: 'armoured, rallies the Horde, 10 lives: cannons and the vulnerability aura'
+    hp: 2000
+    speed: 0.5
+    gold: 200
+    arrow: 0.5
+    lives: 10
+    boss: true
+    ability: rally
+    power: 1.25
+    radius: 2
+    every: 0
+    bar_height: 1.5
+    shadow_size: 1.1

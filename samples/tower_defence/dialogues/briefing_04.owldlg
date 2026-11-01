@@ -1,0 +1,27 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7800000000000000401
+    kind: Start
+    position: [0, 120]
+    next: 7800000000000000402
+  - id: 7800000000000000402
+    kind: Choice
+    position: [260, 120]
+    speaker: {text: 'Captain of the keep'}
+    text: {text: 'Fog on the marsh, four bridges, and goblin sappers with their kegs. Shoot them before the walls.'}
+    options:
+      - text: {text: 'To arms!'}
+        next: 7800000000000000404
+      - text: {text: 'Skip tutorial'}
+        condition: tutorial_offered
+        next: 7800000000000000403
+  - id: 7800000000000000403
+    kind: Event
+    position: [560, 240]
+    function: skip_tutorial
+    next: 7800000000000000404
+  - id: 7800000000000000404
+    kind: End
+    position: [820, 120]
+routes: []

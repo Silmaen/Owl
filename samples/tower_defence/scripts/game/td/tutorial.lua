@@ -156,7 +156,7 @@ local function place()
     local length = math.max(1.0, math.sqrt(dx * dx + dy * dy))
     local ux, uy = dx / length, dy / length
     local edge = math.min(half_w / math.max(math.abs(ux), 1e-3), half_h / math.max(math.abs(uy), 1e-3))
-    local tip = edge + 8 + 6 * (1.0 + math.sin(Tut.clock * 6.0))
+    local tip = edge + 8 + (S.still and 6 or 6 * (1.0 + math.sin(Tut.clock * 6.0)))
     local ax, ay = tx - ux * (tip + ARROW * 0.5), ty - uy * (tip + ARROW * 0.5)
     transform.set_position(Tut.ids.arrow, at(ax, ay, -0.2))
     transform.set_scale(Tut.ids.arrow, ARROW * unit, ARROW * unit, 1.0)
@@ -167,7 +167,7 @@ local function place()
     UI.show(Tut.ids.glow, in_world)
     if in_world and pad ~= nil then
         transform.set_position(Tut.ids.glow, pad.x, pad.y + 0.04, pad.z)
-        local size = 1.3 + 0.12 * math.sin(Tut.clock * 5.0)
+        local size = S.still and 1.3 or 1.3 + 0.12 * math.sin(Tut.clock * 5.0)
         transform.set_scale(Tut.ids.glow, size, size, 1.0)
     end
 end

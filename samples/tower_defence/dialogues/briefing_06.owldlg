@@ -1,0 +1,27 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7800000000000000601
+    kind: Start
+    position: [0, 120]
+    next: 7800000000000000602
+  - id: 7800000000000000602
+    kind: Choice
+    position: [260, 120]
+    speaker: {text: 'Captain of the keep'}
+    text: {text: 'The gale sweeps the cliff and its two ramps. Berserkers run faster the more they bleed.'}
+    options:
+      - text: {text: 'To arms!'}
+        next: 7800000000000000604
+      - text: {text: 'Skip tutorial'}
+        condition: tutorial_offered
+        next: 7800000000000000603
+  - id: 7800000000000000603
+    kind: Event
+    position: [560, 240]
+    function: skip_tutorial
+    next: 7800000000000000604
+  - id: 7800000000000000604
+    kind: End
+    position: [820, 120]
+routes: []

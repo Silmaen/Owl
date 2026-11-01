@@ -172,22 +172,23 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
 | ![The briefing card of Greenmarch Ford](../../images/showcase/tower_briefing.png)               | ![Wolf riders crossing the bridges of Frostmere](../../images/showcase/tower_frostmere.png) |
 | ![Sunscorch Flats: towers on the plateaus, the keep at the end of the road](../../images/showcase/tower_sunscorch.png) |                                                                                   |
 
-| Item      | Plan                                                                                                                               |                                                                                         |
-|-----------|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
-| Play      | 10 levels of 8 to 12 waves, on 3D terrain with relief, between visits to a world map and its upgrades screen                       |                                                                                         |
-| Win/lose  | Every wave held with a life left / the 20 lives lost; 3, 2 or 1 stars for 18, 10 or fewer lives kept                               |                                                                                         |
-| Waves     | Timed, called early for gold; the `night_waves` of a level are fought at night, dusk or dawn announced between two waves           |                                                                                         |
-| Day/night | `time_effects` of `defence.lua`: a bonus or a malus by day and by night for every tower and enemy kind                             | Sun or moon on the HUD, legend in the pause window                                      |
-| Modifiers | Per level (`modifiers`): fog, blizzard, blood moon, drought, gale, plunder, long night, effects of the same form                   | Briefing, world map panel, pause window                                                 |
-| Briefing  | A modal window before the first wave: a line and an icon per night, modifier and new enemy (its portrait)                          | Time paused; Skip tutorial on level 1                                                   |
-| Tutorial  | Level 1, skippable: build on a glowing pad, call a wave, raise, sell, read day and night; hints by the targets                     | `tower_tutorial` setting, Reset tutorial in Settings                                    |
-| Towers    | Archer, cannon, frost on build pads; levels 1, 2, 3, then one power-up of two; sold for half of what was spent                     |                                                                                         |
-| Enemies   | `Renderer2D` `sprites`: billboards, depth test                                                                                     | 8 directions x 9 frames (walk, attack, death), lit like the 3D scene; hit flash, sparks |
-| Relief    | Plateaus, ramps, rivers and bridges; a pad on high ground gives its tower +15 % range per height step                              |                                                                                         |
-| Controls  | As in the first map (mouse, keyboard cursor, gamepad), plus Z / C or pad LB, D-pad up / down turn the view by 45°, the wheel zooms |                                                                                         |
-| Scenes    | `title`, `world_map`, `upgrades`, `level_01` to `level_10`, `settings`, `victory` (stats, stars credited, unlock), `game_over`     |                                                                                         |
-| Saves     | No slot: `tower_done_NN`, `tower_stars_NN` (best), `tower_best_NN`, `tower_up_<family>` settings; unlocks follow from the wins     |                                                                                         |
-| Scripts   | `defence.lua` holds the properties and the hooks; the rules are the modules of `scripts/game/td/` (`require`)                      |                                                                                         |
+| Item      | Plan                                                                                                                                       |                                                                                            |
+|-----------|--------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| Play      | 10 levels of 8 to 12 waves, on 3D terrain with relief, between visits to a world map and its upgrades screen                               |                                                                                            |
+| Win/lose  | Every wave held with a life left / the 20 lives lost; 3, 2 or 1 stars for 18, 10 or fewer lives kept                                       |                                                                                            |
+| Waves     | Timed, called early for gold; a data table per level (`waves_NN.owltable`), its night waves fought at night                                | Dusk or dawn announced between two waves                                                   |
+| Day/night | `time_effects` of `defence.lua`: a bonus or a malus by day and by night for every tower and enemy kind                                     | Sun or moon on the HUD, legend in the pause window                                         |
+| Modifiers | Per level (`modifiers`): fog, blizzard, blood moon, drought, gale, plunder, long night, effects of the same form                           | Briefing, world map panel, pause window                                                    |
+| Briefing  | A modal window before the first wave: the captain speaks (a `.owldlg` dialogue), then a line and an icon per night, modifier and new enemy | Time paused; its answers are the buttons, Skip tutorial on level 1                         |
+| Tutorial  | Level 1, skippable: build on a glowing pad, call a wave, raise, sell, read day and night; hints by the targets                             | `tower_tutorial` setting, Reset tutorial in Settings                                       |
+| Towers    | Archer, cannon, frost on build pads; levels 1, 2, 3, then one power-up of two; sold for half of what was spent                             |                                                                                            |
+| Enemies   | `Renderer2D` `sprites`: billboards, depth test, walking the lanes of the road splines                                                      | 8 directions x 9 frames (walk, attack, death), lit like the 3D scene; hit flash, particles |
+| Relief    | Plateaus, ramps, rivers and bridges; a pad on high ground gives its tower +15 % range per height step                                      |                                                                                            |
+| Controls  | As in the first map (mouse, keyboard cursor, gamepad), plus Z / C or pad LB, D-pad up / down turn the view by 45°, the wheel zooms         |                                                                                            |
+| Scenes    | `title`, `world_map`, `upgrades`, `level_01` to `level_10`, `settings`, `victory` (stats, stars credited, unlock), `game_over`             |                                                                                            |
+| Saves     | No slot: `tower_done_NN`, `tower_stars_NN` (best), `tower_best_NN`, `tower_up_<family>` settings; unlocks follow from the wins             |                                                                                            |
+| Scripts   | `defence.lua` holds the properties and the hooks; the rules are the modules of `scripts/game/td/` (`require`)                              | Towers and enemies in data tables                                                          |
+| Sound     | Music and effects on their mixer buses, their volumes in Settings, subtitles of the sounds that tell something                             | Accessibility: colour vision, reduced motion, subtitles                                    |
 
 | #  | Level           | Terrain                                                    | Theme | Nights             | Modifiers           | New                    |
 |----|-----------------|------------------------------------------------------------|-------|--------------------|---------------------|------------------------|
@@ -281,9 +282,10 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
   following the light and exposure of the 3D scene; `scene.pick_entity` with a tag returns the tagged ancestor of the
   mesh hit and sees billboards as drawn; `ui.set_text` writes a world `TextRenderer`; shared materials instanced.
 - Data-driven levels: `tools/samples/tower_defence/maps.py` holds per level a height grid, the road, the river, the
-  pads, the decor, the waves and `night_from`; `generate_maps.py` writes one scene per level, editable in Owl Nest:
-  terrain cells are mesh entities, the roads are the `Waypoint NN` and `Waypoint B NN` entities the enemies walk, pads
-  are `Pad` entities.
+  pads, the decor, the waves, the nights and the briefing; `generate_maps.py` writes one scene per level, its waves
+  table and its briefing dialogue, editable in Owl Nest: terrain cells are mesh entities, the roads are the `Linear`
+  splines of the `Road` and `Road B` entities the enemies walk in seven lanes, pads are `Pad` entities; the towers and
+  the enemies are the rows of `tables/towers.owltable` and `tables/enemies.owltable`.
 - Scenarios: `tower_build` (mouse, wheel), `tower_upgrade` (archer to level 3, power-up), `tower_wave`,
   `tower_call_early`, `tower_defend` (gamepad), `tower_fast_forward`, `tower_rotate` (the enemy frames follow the view),
   `tower_build_only` (towers never raised lose level 1), `tower_win` (raised towers hold it, night, stars),
@@ -292,7 +294,8 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
   `tower_level_wolves` (level 2), `tower_level_roads` (level 3, both roads), `tower_level_frostmere` (sappers, a mage's
   wards), `tower_level_black_gate`, `tower_night_and_fog` (briefing shown and dismissed, the fog and the night effects
   on the range of an archer and the speed of a goblin), `tower_drought` (a cheaper cannon), `tower_tutorial` (each step
-  of the tutorial in turn, then done), `tower_tutorial_skip` (skipped and remembered on a restart).
+  of the tutorial in turn, then done), `tower_tutorial_skip` (the answers of the briefing dialogue, skipped and
+  remembered on a restart), `tower_settings` (the music volume and the accessibility settings, reset).
 - Size: **M–L**.
 - Done: the ten levels in 3D with relief (grass, marsh, snow, sand and ash themes), the Horde of nine kinds in 8
   directions with walk, attack and death frames introduced across the campaign with their counters, tower upgrades and

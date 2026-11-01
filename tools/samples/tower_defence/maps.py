@@ -42,6 +42,8 @@ class LevelData:
     """Number of the level, from 1 (``level_01``)."""
     name: str
     """Name shown on the world map, the HUD and the tally."""
+    briefing: str
+    """What the captain of the keep says on the briefing card of the level (its dialogue)."""
     layout: tuple[str, ...]
     """Rows of layout characters, from the north."""
     heights: tuple[str, ...]
@@ -141,6 +143,7 @@ def road_cells(level: LevelData) -> set[Cell]:
 GREENMARCH_FORD = LevelData(
     number=1,
     name="Greenmarch Ford",
+    briefing="Scouts saw goblins at the ford this morning. Build by the road and hold them before the keep.",
     layout=(
         "TT.T.T..T~..T..TT.",
         "T....rT..~r..Tr..T",
@@ -190,6 +193,7 @@ GREENMARCH_FORD = LevelData(
 THORNWOOD_PASS = LevelData(
     number=2,
     name="Thornwood Pass",
+    briefing="The pass runs between two plateaus, and the fog hides it. Wolf riders come fast: slow them down.",
     layout=(
         "....P...TT...T...T..",
         ".G#####......TTT.T..",
@@ -243,6 +247,7 @@ THORNWOOD_PASS = LevelData(
 STONEBRIDGE = LevelData(
     number=3,
     name="Stonebridge",
+    briefing="Two gates open on the long bridge. Trolls heal as they march: strike them hard and all at once.",
     layout=(
         ".....TT...~~.....T..",
         "...P....h.~~.rT.....",
@@ -297,6 +302,7 @@ STONEBRIDGE = LevelData(
 FROSTMERE = LevelData(
     number=5,
     name="Frostmere",
+    briefing="The lake is frozen and the blizzard bites. Ogre mages ward the Horde: kill them first.",
     layout=(
         "TT.T..T..T.~~..TT.TT",
         ".G#####....~~.T....T",
@@ -353,6 +359,7 @@ FROSTMERE = LevelData(
 THE_BLACK_GATE = LevelData(
     number=10,
     name="The Black Gate",
+    briefing="The chieftain himself marches with the Horde. Hold the Black Gate, and the realm is safe.",
     layout=(
         "rr.T..r...T..r..T.rr",
         ".G######...r.P...r..",
@@ -411,6 +418,7 @@ THE_BLACK_GATE = LevelData(
 MIREFEN_MARSH = LevelData(
     number=4,
     name="Mirefen Marsh",
+    briefing="Fog on the marsh, four bridges, and goblin sappers with their kegs. Shoot them before the walls.",
     layout=(
         "......~......~......",
         "T.P...~.P....~T.....",
@@ -467,6 +475,7 @@ MIREFEN_MARSH = LevelData(
 HIGHPEAK_WATCH = LevelData(
     number=6,
     name="Highpeak Watch",
+    briefing="The gale sweeps the cliff and its two ramps. Berserkers run faster the more they bleed.",
     layout=(
         "T.......T..........T",
         ".G#######.....r....T",
@@ -524,6 +533,7 @@ HIGHPEAK_WATCH = LevelData(
 SUNSCORCH_FLATS = LevelData(
     number=7,
     name="Sunscorch Flats",
+    briefing="No rain for a month: the wells are low and the Horde is thirsty. Hold both gates.",
     layout=(
         "......r.r...........",
         ".r........r.........",
@@ -580,6 +590,7 @@ SUNSCORCH_FLATS = LevelData(
 ASHFALL_RIDGE = LevelData(
     number=8,
     name="Ashfall Ridge",
+    briefing="A blood moon rises over the ash. The nights are many, and the Horde is fierce under it.",
     layout=(
         ".........T..........",
         ".....T.r............",
@@ -637,6 +648,7 @@ ASHFALL_RIDGE = LevelData(
 RAVENHOLD = LevelData(
     number=9,
     name="Ravenhold",
+    briefing="Two winding roads and a long night. The Horde plunders what it passes: hold it on both.",
     layout=(
         ".G.T...T.P.........r",
         ".#.T...######.......",

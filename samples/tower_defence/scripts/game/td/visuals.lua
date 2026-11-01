@@ -1,4 +1,4 @@
--- Puffs, rings, fire and sparks.
+-- Puffs, rings, fire and the bursts of the pooled particle emitters.
 
 local td = require("scripts.game.td.core")
 local S, C = td.state, td.data
@@ -26,53 +26,33 @@ function Vis.spawn_fire(x, y, z, radius)
                               radius = radius }
 end
 
--- Sparks: a pool of small glowing sprites for trails and impacts, reused rather than spawned each time.
-function Vis.emit(x, y, z, count, speed, r, g, b, size, life, rise)
-    for _ = 1, count do
-        local spark = nil
-        for _, candidate in ipairs(S.sparks) do
-            if not candidate.active then
-                spark = candidate
-                break
-            end
+-- The pooled particle emitters of the level, `Fx<Kind>1`, `Fx<Kind>2`... (blood, blast, dust, embers, splinters, frost,
+-- shield, rain), taken in turn: two bursts of a kind in a frame come from two emitters.
+Vis.KINDS = { "Blood", "Blast", "Dust", "Embers", "Splinters", "Frost", "Shield", "Rain" }
+
+Vis.pools, Vis.next = {}, {}
+
+function Vis.find_pools()
+    for _, kind in ipairs(Vis.KINDS) do
+        local pool = {}
+        for index = 1, 8 do
+            local id = scene.find_entity("Fx" .. kind .. index)
+            if id == 0 then break end
+            pool[#pool + 1] = id
         end
-        if spark == nil and #S.sparks < C.MAX_SPARKS then
-            local id = scene.spawn_prefab("prefabs/spark.owlprefab", x, y, z)
-            if id ~= 0 then
-                spark = { id = id }
-                S.sparks[#S.sparks + 1] = spark
-            end
-        end
-        if spark == nil then return end
-        local a, e = math.random() * 2.0 * math.pi, math.random() * 0.8 + 0.2
-        spark.active, spark.t, spark.life, spark.size = true, 0.0, life * (0.7 + math.random() * 0.6), size
-        spark.x, spark.y, spark.z = x, y, z
-        spark.vx, spark.vy, spark.vz = math.cos(a) * speed * e, (rise or 0.0) + speed * (math.random() - 0.3),
-                math.sin(a) * speed * e
-        spark.r, spark.g, spark.b = r, g, b
-        UI.show(spark.id, true)
-        entity.set_tint(spark.id, r, g, b, 1.0)
+        Vis.pools[kind], Vis.next[kind] = pool, 1
     end
 end
 
-function Vis.update_sparks(dt)
-    for _, spark in ipairs(S.sparks) do
-        if spark.active then
-            spark.t = spark.t + dt
-            local t = spark.t / spark.life
-            if t >= 1.0 then
-                spark.active = false
-                UI.show(spark.id, false)
-            else
-                spark.vy = spark.vy - 3.0 * dt
-                spark.x, spark.y, spark.z = spark.x + spark.vx * dt, spark.y + spark.vy * dt, spark.z + spark.vz * dt
-                transform.set_position(spark.id, spark.x, spark.y, spark.z)
-                local size = spark.size * (1.0 - 0.6 * t)
-                transform.set_scale(spark.id, size, size, 1.0)
-                entity.set_tint(spark.id, spark.r, spark.g, spark.b, 1.0 - t)
-            end
-        end
-    end
+-- A burst of `count` particles of a kind at a point.
+function Vis.burst(kind, x, y, z, count)
+    local pool = Vis.pools[kind]
+    if pool == nil or #pool == 0 then return end
+    local id = pool[Vis.next[kind]]
+    Vis.next[kind] = Vis.next[kind] % #pool + 1
+    transform.set_position(id, x, y, z)
+    entity.particles_emit(id, count)
+    S.bursts_fired = S.bursts_fired + 1
 end
 
 function Vis.update_effects(dt)

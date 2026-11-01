@@ -6,6 +6,7 @@ EnabledRenderers:
 - {Name: mesh_world, Enabled: true}
 - {Name: ground, Enabled: true}
 - {Name: sprites, Enabled: true}
+- {Name: particles, Enabled: true}
 - {Name: marks, Enabled: true}
 - {Name: ui, Enabled: false}
 - {Name: overlay, Enabled: false}
@@ -19945,7 +19946,7 @@ Entities:
       Name: mesh_world
   - Entity: 7500000000001001175
     Tag:
-      tag: Route
+      tag: Road
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -19953,161 +19954,35 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy: {}
+    Spline:
+      interpolation: Linear
+      closed: false
+      resolution: 16
+      up: [0, 1, 0]
+      points:
+        - [1, 1, 2]
+        - [3, 1, 2]
+        - [3, 1, 5]
+        - [3, 0.8, 6]
+        - [3, 0.4, 7]
+        - [3, 0.2, 8]
+        - [3, 0.2, 9]
+        - [8, 0.2, 9]
+        - [9, 0.4, 9]
+        - [10, 0.2, 9]
+        - [11, 0.2, 9]
+        - [11, 0.2, 4]
+        - [14, 0.2, 4]
+        - [14.6, 0.2, 4]
+      lanes:
+        - {name: lane_1, offset: -0.14, height: 0}
+        - {name: lane_2, offset: -0.0933, height: 0}
+        - {name: lane_3, offset: -0.0467, height: 0}
+        - {name: lane_4, offset: 0, height: 0}
+        - {name: lane_5, offset: 0.0467, height: 0}
+        - {name: lane_6, offset: 0.0933, height: 0}
+        - {name: lane_7, offset: 0.14, height: 0}
   - Entity: 7500000000001001176
-    Tag:
-      tag: Waypoint 01
-    Transform:
-      translation: [1, 1, 2]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001177
-    Tag:
-      tag: Waypoint 02
-    Transform:
-      translation: [3, 1, 2]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001178
-    Tag:
-      tag: Waypoint 03
-    Transform:
-      translation: [3, 1, 5]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001179
-    Tag:
-      tag: Waypoint 04
-    Transform:
-      translation: [3, 0.8, 6]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001180
-    Tag:
-      tag: Waypoint 05
-    Transform:
-      translation: [3, 0.4, 7]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001181
-    Tag:
-      tag: Waypoint 06
-    Transform:
-      translation: [3, 0.2, 8]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001182
-    Tag:
-      tag: Waypoint 07
-    Transform:
-      translation: [3, 0.2, 9]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001183
-    Tag:
-      tag: Waypoint 08
-    Transform:
-      translation: [8, 0.2, 9]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001184
-    Tag:
-      tag: Waypoint 09
-    Transform:
-      translation: [9, 0.4, 9]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001185
-    Tag:
-      tag: Waypoint 10
-    Transform:
-      translation: [10, 0.2, 9]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001186
-    Tag:
-      tag: Waypoint 11
-    Transform:
-      translation: [11, 0.2, 9]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001187
-    Tag:
-      tag: Waypoint 12
-    Transform:
-      translation: [11, 0.2, 4]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001188
-    Tag:
-      tag: Waypoint 13
-    Transform:
-      translation: [14, 0.2, 4]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001189
-    Tag:
-      tag: Waypoint 14
-    Transform:
-      translation: [14.6, 0.2, 4]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7500000000001001175
-  - Entity: 7500000000001001190
     Tag:
       tag: Torch
     Transform:
@@ -20124,7 +19999,7 @@ Entities:
       seed: 27
       colorShift: [0, 0.05, 0.03]
       positionJitter: [0.02, 0.03, 0.02]
-  - Entity: 7500000000001001191
+  - Entity: 7500000000001001177
     Tag:
       tag: TorchFlame
     Transform:
@@ -20134,7 +20009,7 @@ Entities:
     Visibility:
       gameVisible: false
     Hierarchy:
-      parentId: 7500000000001001190
+      parentId: 7500000000001001176
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
       texture: gid:8921f86c3605ff50:textures/fx/fire.png
@@ -20147,7 +20022,7 @@ Entities:
       lit: false
     RendererTag:
       Name: sprites
-  - Entity: 7500000000001001192
+  - Entity: 7500000000001001178
     Tag:
       tag: TorchGlow
     Transform:
@@ -20157,9 +20032,44 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7500000000001001190
+      parentId: 7500000000001001176
     Light2D: {type: Point, enabled: false, color: [1, 0.6, 0.3], intensity: 1.4, radius: 3, falloff: 1.2, height: 1, castShadows: false}
-  - Entity: 7500000000001001193
+  - Entity: 7500000000001001179
+    Tag:
+      tag: TorchEmbers
+    Transform:
+      translation: [0, 0.1, 0]
+      rotation: [0, 0, 0]
+      scale: [0.4, 1, 0.4]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001176
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 64
+      rate: 9
+      burst: 0
+      duration: 0
+      loop: true
+      lifetimeMin: 0.4
+      lifetimeMax: 0.8
+      shape: Box
+      shapeSize: [0.35, 0.05, 0.35]
+      speedMin: 0.1
+      speedMax: 0.3
+      velocity: [0, 0.9, 0]
+      gravity: [0, 0.4, 0]
+      drag: 0.5
+      sizeMin: 0.12
+      sizeMax: 0.24
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.85, 0.4, 1], [0.5, 1, 0.45, 0.1, 0.9], [1, 0.4, 0.1, 0.05, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001180
     Tag:
       tag: TorchPost
     Transform:
@@ -20175,7 +20085,7 @@ Entities:
       transparent: false
     RendererTag:
       Name: mesh_world
-  - Entity: 7500000000001001194
+  - Entity: 7500000000001001181
     Tag:
       tag: Torch
     Transform:
@@ -20192,7 +20102,7 @@ Entities:
       seed: 58
       colorShift: [0, 0.05, 0.03]
       positionJitter: [0.02, 0.03, 0.02]
-  - Entity: 7500000000001001195
+  - Entity: 7500000000001001182
     Tag:
       tag: TorchFlame
     Transform:
@@ -20202,7 +20112,7 @@ Entities:
     Visibility:
       gameVisible: false
     Hierarchy:
-      parentId: 7500000000001001194
+      parentId: 7500000000001001181
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
       texture: gid:8921f86c3605ff50:textures/fx/fire.png
@@ -20215,7 +20125,7 @@ Entities:
       lit: false
     RendererTag:
       Name: sprites
-  - Entity: 7500000000001001196
+  - Entity: 7500000000001001183
     Tag:
       tag: TorchGlow
     Transform:
@@ -20225,9 +20135,44 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7500000000001001194
+      parentId: 7500000000001001181
     Light2D: {type: Point, enabled: false, color: [1, 0.6, 0.3], intensity: 1.4, radius: 3, falloff: 1.2, height: 1, castShadows: false}
-  - Entity: 7500000000001001197
+  - Entity: 7500000000001001184
+    Tag:
+      tag: TorchEmbers
+    Transform:
+      translation: [0, 0.1, 0]
+      rotation: [0, 0, 0]
+      scale: [0.4, 1, 0.4]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001181
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 64
+      rate: 9
+      burst: 0
+      duration: 0
+      loop: true
+      lifetimeMin: 0.4
+      lifetimeMax: 0.8
+      shape: Box
+      shapeSize: [0.35, 0.05, 0.35]
+      speedMin: 0.1
+      speedMax: 0.3
+      velocity: [0, 0.9, 0]
+      gravity: [0, 0.4, 0]
+      drag: 0.5
+      sizeMin: 0.12
+      sizeMax: 0.24
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.85, 0.4, 1], [0.5, 1, 0.45, 0.1, 0.9], [1, 0.4, 0.1, 0.05, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001185
     Tag:
       tag: TorchPost
     Transform:
@@ -20243,7 +20188,7 @@ Entities:
       transparent: false
     RendererTag:
       Name: mesh_world
-  - Entity: 7500000000001001198
+  - Entity: 7500000000001001186
     Tag:
       tag: Torch
     Transform:
@@ -20260,7 +20205,7 @@ Entities:
       seed: 84
       colorShift: [0, 0.05, 0.03]
       positionJitter: [0.02, 0.03, 0.02]
-  - Entity: 7500000000001001199
+  - Entity: 7500000000001001187
     Tag:
       tag: TorchFlame
     Transform:
@@ -20270,7 +20215,7 @@ Entities:
     Visibility:
       gameVisible: false
     Hierarchy:
-      parentId: 7500000000001001198
+      parentId: 7500000000001001186
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
       texture: gid:8921f86c3605ff50:textures/fx/fire.png
@@ -20283,7 +20228,7 @@ Entities:
       lit: false
     RendererTag:
       Name: sprites
-  - Entity: 7500000000001001200
+  - Entity: 7500000000001001188
     Tag:
       tag: TorchGlow
     Transform:
@@ -20293,9 +20238,44 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7500000000001001198
+      parentId: 7500000000001001186
     Light2D: {type: Point, enabled: false, color: [1, 0.6, 0.3], intensity: 1.4, radius: 3, falloff: 1.2, height: 1, castShadows: false}
-  - Entity: 7500000000001001201
+  - Entity: 7500000000001001189
+    Tag:
+      tag: TorchEmbers
+    Transform:
+      translation: [0, 0.1, 0]
+      rotation: [0, 0, 0]
+      scale: [0.4, 1, 0.4]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001186
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 64
+      rate: 9
+      burst: 0
+      duration: 0
+      loop: true
+      lifetimeMin: 0.4
+      lifetimeMax: 0.8
+      shape: Box
+      shapeSize: [0.35, 0.05, 0.35]
+      speedMin: 0.1
+      speedMax: 0.3
+      velocity: [0, 0.9, 0]
+      gravity: [0, 0.4, 0]
+      drag: 0.5
+      sizeMin: 0.12
+      sizeMax: 0.24
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.85, 0.4, 1], [0.5, 1, 0.45, 0.1, 0.9], [1, 0.4, 0.1, 0.05, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001190
     Tag:
       tag: TorchPost
     Transform:
@@ -20311,7 +20291,7 @@ Entities:
       transparent: false
     RendererTag:
       Name: mesh_world
-  - Entity: 7500000000001001202
+  - Entity: 7500000000001001191
     Tag:
       tag: Torch
     Transform:
@@ -20328,7 +20308,7 @@ Entities:
       seed: 102
       colorShift: [0, 0.05, 0.03]
       positionJitter: [0.02, 0.03, 0.02]
-  - Entity: 7500000000001001203
+  - Entity: 7500000000001001192
     Tag:
       tag: TorchFlame
     Transform:
@@ -20338,7 +20318,7 @@ Entities:
     Visibility:
       gameVisible: false
     Hierarchy:
-      parentId: 7500000000001001202
+      parentId: 7500000000001001191
     AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
       texture: gid:8921f86c3605ff50:textures/fx/fire.png
@@ -20351,7 +20331,7 @@ Entities:
       lit: false
     RendererTag:
       Name: sprites
-  - Entity: 7500000000001001204
+  - Entity: 7500000000001001193
     Tag:
       tag: TorchGlow
     Transform:
@@ -20361,9 +20341,44 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7500000000001001202
+      parentId: 7500000000001001191
     Light2D: {type: Point, enabled: false, color: [1, 0.6, 0.3], intensity: 1.4, radius: 3, falloff: 1.2, height: 1, castShadows: false}
-  - Entity: 7500000000001001205
+  - Entity: 7500000000001001194
+    Tag:
+      tag: TorchEmbers
+    Transform:
+      translation: [0, 0.1, 0]
+      rotation: [0, 0, 0]
+      scale: [0.4, 1, 0.4]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001191
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 64
+      rate: 9
+      burst: 0
+      duration: 0
+      loop: true
+      lifetimeMin: 0.4
+      lifetimeMax: 0.8
+      shape: Box
+      shapeSize: [0.35, 0.05, 0.35]
+      speedMin: 0.1
+      speedMax: 0.3
+      velocity: [0, 0.9, 0]
+      gravity: [0, 0.4, 0]
+      drag: 0.5
+      sizeMin: 0.12
+      sizeMax: 0.24
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.85, 0.4, 1], [0.5, 1, 0.45, 0.1, 0.9], [1, 0.4, 0.1, 0.05, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001195
     Tag:
       tag: TorchPost
     Transform:
@@ -20379,7 +20394,7 @@ Entities:
       transparent: false
     RendererTag:
       Name: mesh_world
-  - Entity: 7500000000001001206
+  - Entity: 7500000000001001196
     Tag:
       tag: Cursor
     Transform:
@@ -20396,7 +20411,7 @@ Entities:
       texture: gid:4d9243c2e2a326b7:textures/fx/cursor.png
     RendererTag:
       Name: ground
-  - Entity: 7500000000001001207
+  - Entity: 7500000000001001197
     Tag:
       tag: RangeRing
     Transform:
@@ -20413,7 +20428,7 @@ Entities:
       texture: gid:7ab27ea1f33c136c:textures/fx/ring.png
     RendererTag:
       Name: ground
-  - Entity: 7500000000001001208
+  - Entity: 7500000000001001198
     Tag:
       tag: Wheel
     Transform:
@@ -20430,7 +20445,7 @@ Entities:
       texture: gid:b441596e4adf17e6:textures/ui/wheel.png
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001209
+  - Entity: 7500000000001001199
     Tag:
       tag: WheelPlaque
     Transform:
@@ -20447,7 +20462,7 @@ Entities:
       texture: gid:fbfe5135e3857a3f:textures/ui/plaque.png
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001210
+  - Entity: 7500000000001001200
     Tag:
       tag: BuildChoice
     Transform:
@@ -20469,7 +20484,7 @@ Entities:
       lit: false
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001211
+  - Entity: 7500000000001001201
     Tag:
       tag: ChoiceCost
     Transform:
@@ -20489,7 +20504,7 @@ Entities:
       font: MedievalSharp
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001212
+  - Entity: 7500000000001001202
     Tag:
       tag: BuildChoice
     Transform:
@@ -20511,7 +20526,7 @@ Entities:
       lit: false
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001213
+  - Entity: 7500000000001001203
     Tag:
       tag: ChoiceCost
     Transform:
@@ -20531,7 +20546,7 @@ Entities:
       font: MedievalSharp
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001214
+  - Entity: 7500000000001001204
     Tag:
       tag: BuildChoice
     Transform:
@@ -20553,7 +20568,7 @@ Entities:
       lit: false
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001215
+  - Entity: 7500000000001001205
     Tag:
       tag: ChoiceCost
     Transform:
@@ -20573,7 +20588,7 @@ Entities:
       font: MedievalSharp
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001216
+  - Entity: 7500000000001001206
     Tag:
       tag: BuildChoice
     Transform:
@@ -20595,7 +20610,7 @@ Entities:
       lit: false
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001217
+  - Entity: 7500000000001001207
     Tag:
       tag: ChoiceCost
     Transform:
@@ -20615,7 +20630,7 @@ Entities:
       font: MedievalSharp
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001218
+  - Entity: 7500000000001001208
     Tag:
       tag: WheelTitle
     Transform:
@@ -20633,7 +20648,7 @@ Entities:
       font: Cinzel
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001219
+  - Entity: 7500000000001001209
     Tag:
       tag: WheelText
     Transform:
@@ -20651,7 +20666,7 @@ Entities:
       font: MedievalSharp
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001220
+  - Entity: 7500000000001001210
     Tag:
       tag: TutorialPlaque
     Transform:
@@ -20668,7 +20683,7 @@ Entities:
       texture: gid:fbfe5135e3857a3f:textures/ui/plaque.png
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001221
+  - Entity: 7500000000001001211
     Tag:
       tag: TutorialTitle
     Transform:
@@ -20686,7 +20701,7 @@ Entities:
       font: Cinzel
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001222
+  - Entity: 7500000000001001212
     Tag:
       tag: TutorialText
     Transform:
@@ -20704,7 +20719,7 @@ Entities:
       font: MedievalSharp
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001223
+  - Entity: 7500000000001001213
     Tag:
       tag: TutorialArrow
     Transform:
@@ -20721,7 +20736,7 @@ Entities:
       texture: gid:f2ffab8500e863aa:textures/ui/hint_arrow.png
     RendererTag:
       Name: marks
-  - Entity: 7500000000001001224
+  - Entity: 7500000000001001214
     Tag:
       tag: TutorialGlow
     Transform:
@@ -20738,7 +20753,7 @@ Entities:
       texture: gid:7ab27ea1f33c136c:textures/fx/ring.png
     RendererTag:
       Name: ground
-  - Entity: 7500000000001001225
+  - Entity: 7500000000001001215
     Tag:
       tag: Game
     Transform:
@@ -20763,20 +20778,12 @@ Entities:
         - name: next_scene
           type: string
           value: scenes/victory.owl
-        - name: waves
-          type: strings
-          value:
-            - 'goblin 8 0.9'
-            - 'goblin 6 0.8; grunt 3 1.6'
-            - 'grunt 6 1.3'
-            - 'goblin 12 0.6; grunt 2 1.5'
-            - 'grunt 6 1.1; ogre 1 2'
-            - 'goblin 10 0.5; grunt 6 1.0'
-            - 'ogre 3 2.6; grunt 8 0.9'
-            - 'goblin 16 0.4; grunt 10 0.8; ogre 5 2.2'
-        - name: night_waves
+        - name: waves_table
           type: string
-          value: '4 8'
+          value: tables/waves_01.owltable
+        - name: briefing_dialogue
+          type: string
+          value: dialogues/briefing_01.owldlg
         - name: new_enemies
           type: string
           value: 'goblin,grunt,ogre'
@@ -20798,3 +20805,1019 @@ Entities:
         - name: map_depth
           type: int
           value: 14
+  - Entity: 7500000000001001216
+    Tag:
+      tag: Effects
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 7500000000001001217
+    Tag:
+      tag: FxBlood1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 48
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.3
+      lifetimeMax: 0.55
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.6
+      speedMax: 1.6
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.12
+      sizeMax: 0.2
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.75, 0.15, 0.1, 1], [1, 0.4, 0.06, 0.05, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001218
+    Tag:
+      tag: FxBlood2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 48
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.3
+      lifetimeMax: 0.55
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.6
+      speedMax: 1.6
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.12
+      sizeMax: 0.2
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.75, 0.15, 0.1, 1], [1, 0.4, 0.06, 0.05, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001219
+    Tag:
+      tag: FxBlood3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 48
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.3
+      lifetimeMax: 0.55
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.6
+      speedMax: 1.6
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.12
+      sizeMax: 0.2
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.75, 0.15, 0.1, 1], [1, 0.4, 0.06, 0.05, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001220
+    Tag:
+      tag: FxBlood4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 48
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.3
+      lifetimeMax: 0.55
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.6
+      speedMax: 1.6
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.12
+      sizeMax: 0.2
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.75, 0.15, 0.1, 1], [1, 0.4, 0.06, 0.05, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001221
+    Tag:
+      tag: FxBlast1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 64
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.3
+      lifetimeMax: 0.6
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 1.2
+      speedMax: 2.6
+      velocity: [0, 0, 0]
+      gravity: [0, -2, 0]
+      drag: 0.8
+      sizeMin: 0.192
+      sizeMax: 0.32
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.85, 0.45, 1], [0.4, 1, 0.5, 0.12, 0.9], [1, 0.3, 0.1, 0.05, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001222
+    Tag:
+      tag: FxBlast2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 64
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.3
+      lifetimeMax: 0.6
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 1.2
+      speedMax: 2.6
+      velocity: [0, 0, 0]
+      gravity: [0, -2, 0]
+      drag: 0.8
+      sizeMin: 0.192
+      sizeMax: 0.32
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.85, 0.45, 1], [0.4, 1, 0.5, 0.12, 0.9], [1, 0.3, 0.1, 0.05, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001223
+    Tag:
+      tag: FxDust1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 64
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 0.8
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.6
+      speedMax: 2
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.18
+      sizeMax: 0.3
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.55, 0.46, 0.36, 0.9], [1, 0.45, 0.4, 0.34, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001224
+    Tag:
+      tag: FxDust2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 64
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 0.8
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.6
+      speedMax: 2
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.18
+      sizeMax: 0.3
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.55, 0.46, 0.36, 0.9], [1, 0.45, 0.4, 0.34, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001225
+    Tag:
+      tag: FxDust3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 64
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 0.8
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.6
+      speedMax: 2
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.18
+      sizeMax: 0.3
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.55, 0.46, 0.36, 0.9], [1, 0.45, 0.4, 0.34, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001226
+    Tag:
+      tag: FxDust4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 64
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 0.8
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.6
+      speedMax: 2
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.18
+      sizeMax: 0.3
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.55, 0.46, 0.36, 0.9], [1, 0.45, 0.4, 0.34, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001227
+    Tag:
+      tag: FxEmbers1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 48
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.2
+      lifetimeMax: 0.45
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 1
+      speedMax: 2.2
+      velocity: [0, 0, 0]
+      gravity: [0, -4, 0]
+      drag: 0.8
+      sizeMin: 0.084
+      sizeMax: 0.14
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.8, 0.35, 1], [1, 1, 0.35, 0.1, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001228
+    Tag:
+      tag: FxEmbers2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 48
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.2
+      lifetimeMax: 0.45
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 1
+      speedMax: 2.2
+      velocity: [0, 0, 0]
+      gravity: [0, -4, 0]
+      drag: 0.8
+      sizeMin: 0.084
+      sizeMax: 0.14
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.8, 0.35, 1], [1, 1, 0.35, 0.1, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001229
+    Tag:
+      tag: FxEmbers3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 48
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.2
+      lifetimeMax: 0.45
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 1
+      speedMax: 2.2
+      velocity: [0, 0, 0]
+      gravity: [0, -4, 0]
+      drag: 0.8
+      sizeMin: 0.084
+      sizeMax: 0.14
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.8, 0.35, 1], [1, 1, 0.35, 0.1, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001230
+    Tag:
+      tag: FxEmbers4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 48
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.2
+      lifetimeMax: 0.45
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 1
+      speedMax: 2.2
+      velocity: [0, 0, 0]
+      gravity: [0, -4, 0]
+      drag: 0.8
+      sizeMin: 0.084
+      sizeMax: 0.14
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.8, 0.35, 1], [1, 1, 0.35, 0.1, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001231
+    Tag:
+      tag: FxSplinters1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 24
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.15
+      lifetimeMax: 0.3
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.5
+      speedMax: 1.2
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.072
+      sizeMax: 0.12
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.95, 0.85, 0.6, 1], [1, 0.7, 0.6, 0.4, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001232
+    Tag:
+      tag: FxSplinters2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 24
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.15
+      lifetimeMax: 0.3
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.5
+      speedMax: 1.2
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.072
+      sizeMax: 0.12
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.95, 0.85, 0.6, 1], [1, 0.7, 0.6, 0.4, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001233
+    Tag:
+      tag: FxSplinters3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 24
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.15
+      lifetimeMax: 0.3
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.5
+      speedMax: 1.2
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.072
+      sizeMax: 0.12
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.95, 0.85, 0.6, 1], [1, 0.7, 0.6, 0.4, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001234
+    Tag:
+      tag: FxSplinters4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 24
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.15
+      lifetimeMax: 0.3
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.5
+      speedMax: 1.2
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.072
+      sizeMax: 0.12
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.95, 0.85, 0.6, 1], [1, 0.7, 0.6, 0.4, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001235
+    Tag:
+      tag: FxSplinters5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 24
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.15
+      lifetimeMax: 0.3
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.5
+      speedMax: 1.2
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.072
+      sizeMax: 0.12
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.95, 0.85, 0.6, 1], [1, 0.7, 0.6, 0.4, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001236
+    Tag:
+      tag: FxSplinters6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 24
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.15
+      lifetimeMax: 0.3
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.5
+      speedMax: 1.2
+      velocity: [0, 0, 0]
+      gravity: [0, -3, 0]
+      drag: 0.8
+      sizeMin: 0.072
+      sizeMax: 0.12
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.95, 0.85, 0.6, 1], [1, 0.7, 0.6, 0.4, 0]]
+      emissive: 0
+      blend: Alpha
+      space: World
+  - Entity: 7500000000001001237
+    Tag:
+      tag: FxFrost1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 32
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.3
+      lifetimeMax: 0.5
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.4
+      speedMax: 1.2
+      velocity: [0, 0, 0]
+      gravity: [0, -1, 0]
+      drag: 0.8
+      sizeMin: 0.096
+      sizeMax: 0.16
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.85, 0.96, 1, 1], [1, 0.6, 0.85, 1, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001238
+    Tag:
+      tag: FxFrost2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 32
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.3
+      lifetimeMax: 0.5
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.4
+      speedMax: 1.2
+      velocity: [0, 0, 0]
+      gravity: [0, -1, 0]
+      drag: 0.8
+      sizeMin: 0.096
+      sizeMax: 0.16
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.85, 0.96, 1, 1], [1, 0.6, 0.85, 1, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001239
+    Tag:
+      tag: FxFrost3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 32
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.3
+      lifetimeMax: 0.5
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.4
+      speedMax: 1.2
+      velocity: [0, 0, 0]
+      gravity: [0, -1, 0]
+      drag: 0.8
+      sizeMin: 0.096
+      sizeMax: 0.16
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.85, 0.96, 1, 1], [1, 0.6, 0.85, 1, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001240
+    Tag:
+      tag: FxFrost4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 32
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.3
+      lifetimeMax: 0.5
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.4
+      speedMax: 1.2
+      velocity: [0, 0, 0]
+      gravity: [0, -1, 0]
+      drag: 0.8
+      sizeMin: 0.096
+      sizeMax: 0.16
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.85, 0.96, 1, 1], [1, 0.6, 0.85, 1, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001241
+    Tag:
+      tag: FxShield1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 48
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 0.7
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.8
+      speedMax: 1.6
+      velocity: [0, 0, 0]
+      gravity: [0, 1, 0]
+      drag: 0.8
+      sizeMin: 0.132
+      sizeMax: 0.22
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.9, 0.45, 1], [1, 1, 0.7, 0.2, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001242
+    Tag:
+      tag: FxShield2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 48
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 0.7
+      shape: Sphere
+      shapeSize: [0.12, 0.12, 0.12]
+      speedMin: 0.8
+      speedMax: 1.6
+      velocity: [0, 0, 0]
+      gravity: [0, 1, 0]
+      drag: 0.8
+      sizeMin: 0.132
+      sizeMax: 0.22
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.9, 0.45, 1], [1, 1, 0.7, 0.2, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+  - Entity: 7500000000001001243
+    Tag:
+      tag: FxRain1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 48
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.24
+      lifetimeMax: 0.3
+      shape: Box
+      shapeSize: [1.4, 0.3, 1.4]
+      speedMin: 0
+      speedMax: 0.2
+      velocity: [0, -9, 0]
+      gravity: [0, 0, 0]
+      drag: 0.8
+      sizeMin: 0.054
+      sizeMax: 0.09
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.95, 0.9, 0.75, 1], [1, 0.8, 0.7, 0.5, 0.8]]
+      emissive: 0
+      blend: Additive
+      space: World
+      trailLength: 6
+      trailInterval: 0.02
+      trailWidth: 0.5
+  - Entity: 7500000000001001244
+    Tag:
+      tag: FxRain2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000001001216
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 48
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.24
+      lifetimeMax: 0.3
+      shape: Box
+      shapeSize: [1.4, 0.3, 1.4]
+      speedMin: 0
+      speedMax: 0.2
+      velocity: [0, -9, 0]
+      gravity: [0, 0, 0]
+      drag: 0.8
+      sizeMin: 0.054
+      sizeMax: 0.09
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.95, 0.9, 0.75, 1], [1, 0.8, 0.7, 0.5, 0.8]]
+      emissive: 0
+      blend: Additive
+      space: World
+      trailLength: 6
+      trailInterval: 0.02
+      trailWidth: 0.5
+  - Entity: 7500000000001001245
+    Tag:
+      tag: Music
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:ad32e5f7740bcad1:sounds/music/battle.wav
+      category: Music
+      volume: 0.6
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1

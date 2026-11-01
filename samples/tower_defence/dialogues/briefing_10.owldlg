@@ -1,0 +1,27 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7800000000000001001
+    kind: Start
+    position: [0, 120]
+    next: 7800000000000001002
+  - id: 7800000000000001002
+    kind: Choice
+    position: [260, 120]
+    speaker: {text: 'Captain of the keep'}
+    text: {text: 'The chieftain himself marches with the Horde. Hold the Black Gate, and the realm is safe.'}
+    options:
+      - text: {text: 'To arms!'}
+        next: 7800000000000001004
+      - text: {text: 'Skip tutorial'}
+        condition: tutorial_offered
+        next: 7800000000000001003
+  - id: 7800000000000001003
+    kind: Event
+    position: [560, 240]
+    function: skip_tutorial
+    next: 7800000000000001004
+  - id: 7800000000000001004
+    kind: End
+    position: [820, 120]
+routes: []

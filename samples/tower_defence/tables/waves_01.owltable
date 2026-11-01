@@ -1,0 +1,30 @@
+DataTable: ''
+FormatVersion: 1
+columns:
+  - {name: groups, type: Text}
+  - {name: night, type: Bool}
+rows:
+  - key: wave_01
+    groups: 'goblin 8 0.9'
+    night: false
+  - key: wave_02
+    groups: 'goblin 6 0.8; grunt 3 1.6'
+    night: false
+  - key: wave_03
+    groups: 'grunt 6 1.3'
+    night: false
+  - key: wave_04
+    groups: 'goblin 12 0.6; grunt 2 1.5'
+    night: true
+  - key: wave_05
+    groups: 'grunt 6 1.1; ogre 1 2'
+    night: false
+  - key: wave_06
+    groups: 'goblin 10 0.5; grunt 6 1.0'
+    night: false
+  - key: wave_07
+    groups: 'ogre 3 2.6; grunt 8 0.9'
+    night: false
+  - key: wave_08
+    groups: 'goblin 16 0.4; grunt 10 0.8; ogre 5 2.2'
+    night: true

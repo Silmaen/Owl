@@ -1,0 +1,27 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7800000000000000101
+    kind: Start
+    position: [0, 120]
+    next: 7800000000000000102
+  - id: 7800000000000000102
+    kind: Choice
+    position: [260, 120]
+    speaker: {text: 'Captain of the keep'}
+    text: {text: 'Scouts saw goblins at the ford this morning. Build by the road and hold them before the keep.'}
+    options:
+      - text: {text: 'To arms!'}
+        next: 7800000000000000104
+      - text: {text: 'Skip tutorial'}
+        condition: tutorial_offered
+        next: 7800000000000000103
+  - id: 7800000000000000103
+    kind: Event
+    position: [560, 240]
+    function: skip_tutorial
+    next: 7800000000000000104
+  - id: 7800000000000000104
+    kind: End
+    position: [820, 120]
+routes: []

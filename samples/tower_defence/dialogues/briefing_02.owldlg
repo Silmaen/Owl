@@ -1,0 +1,27 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7800000000000000201
+    kind: Start
+    position: [0, 120]
+    next: 7800000000000000202
+  - id: 7800000000000000202
+    kind: Choice
+    position: [260, 120]
+    speaker: {text: 'Captain of the keep'}
+    text: {text: 'The pass runs between two plateaus, and the fog hides it. Wolf riders come fast: slow them down.'}
+    options:
+      - text: {text: 'To arms!'}
+        next: 7800000000000000204
+      - text: {text: 'Skip tutorial'}
+        condition: tutorial_offered
+        next: 7800000000000000203
+  - id: 7800000000000000203
+    kind: Event
+    position: [560, 240]
+    function: skip_tutorial
+    next: 7800000000000000204
+  - id: 7800000000000000204
+    kind: End
+    position: [820, 120]
+routes: []

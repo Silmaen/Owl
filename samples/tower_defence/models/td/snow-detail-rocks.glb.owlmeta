@@ -1,3 +1,7 @@
 FormatVersion: 1
 Guid: b55b9c5614976d4a
 Importer: Mesh
+Settings:
+  Lods: 1
+  LodReduction: 0.5
+  LodScreenSize: 0.03

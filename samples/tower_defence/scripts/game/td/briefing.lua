@@ -1,4 +1,5 @@
--- The briefing card of a level (a modal window, icons by line) and the legend of the pause window.
+-- The briefing card of a level (a modal window, the words of its dialogue, icons by line) and the legend of the pause
+-- window.
 
 local td = require("scripts.game.td.core")
 local S, C = td.state, td.data
@@ -9,7 +10,7 @@ Brief.open = false
 -- The kinds of the Horde the waves of this level send, in order of first appearance.
 function Brief.level_kinds()
     local seen, out = {}, {}
-    for _, text in ipairs(waves) do
+    for _, text in ipairs(S.waves) do
         for kind in string.gmatch(text, "([%a_]+)%s+%d") do
             if not seen[kind] and S.stats[kind] ~= nil then
                 seen[kind] = true
@@ -51,7 +52,7 @@ function Brief.night_list()
 end
 
 -- Frames of `textures/ui/briefing_icons.png` (6 x 3): the moon and the sun, the modifiers, then the Horde.
-local CARD_HEIGHT, BODY_HEIGHT = 0.8, 0.68   -- the sizes of the card in the scene, with every line
+local CARD_HEIGHT, BODY_HEIGHT = 0.96, 0.84   -- the sizes of the card in the scene, with every line
 local ICONS = { moon = 0, sun = 1, fog = 2, blizzard = 3, blood_moon = 4, drought = 5, gale = 6, plunder = 7,
                 long_night = 8, goblin = 9, grunt = 10, ogre = 11, wolf = 12, troll = 13, ogre_mage = 14, sapper = 15,
                 berserker = 16, chieftain = 17 }
@@ -76,9 +77,43 @@ function Brief.lines()
     return out
 end
 
--- The briefing card, a modal window: the level, its nights, its modifiers and the enemies it brings first, a row each.
+-- The words of the captain and the answers, from the briefing dialogue of the level: a Choice whose answers are the
+-- buttons of the card (To arms!, and Skip tutorial while the tutorial is offered).
+function Brief.show_dialogue()
+    local line = Brief.conversation and dialogue.get_line(Brief.conversation)
+    Brief.answers = line and line.choices or {}
+    UI.show(S.hud.briefing_speech, line ~= nil)
+    UI.show(S.hud.briefing_speaker, line ~= nil)
+    if line == nil then return end
+    if S.hud.briefing_speaker ~= 0 then ui.set_text(S.hud.briefing_speaker, line.speaker or "") end
+    if S.hud.briefing_speech ~= 0 then ui.set_text(S.hud.briefing_speech, line.text or "") end
+    for index, id in ipairs({ S.hud.briefing_button, S.hud.briefing_skip }) do
+        if Brief.answers[index] ~= nil and id ~= 0 then ui.set_text(id, Brief.answers[index]) end
+    end
+    gamestate.set("tower_briefing_speaker", line.speaker or "")
+    gamestate.set("tower_briefing_answers", #Brief.answers)
+end
+
+-- An answer of the briefing: 1 starts the level, 2 skips the tutorial too (the dialogue calls `skip_tutorial`); the
+-- conversation ends and the card closes.
+function Brief.answer(index)
+    if not Brief.open then return end
+    if Brief.conversation ~= nil and dialogue.is_running(Brief.conversation) then
+        dialogue.choose(Brief.conversation, math.min(index, math.max(1, #Brief.answers)))
+        if dialogue.is_running(Brief.conversation) then dialogue.stop(Brief.conversation) end
+    elseif index == 2 then
+        td.tutorial.skip()
+    end
+    Brief.conversation = nil
+    Brief.close_briefing()
+end
+
+-- The briefing card, a modal window: the level, the words of the captain, its nights, its modifiers and the enemies
+-- it brings first, a row each.
 function Brief.open_briefing()
     if S.hud.briefing == 0 then return end
+    Brief.conversation = dialogue.start(briefing_dialogue)
+    Brief.show_dialogue()
     local lines = Brief.lines()
     for index, row in ipairs(S.hud.briefing_rows) do
         local line = lines[index]
@@ -90,7 +125,7 @@ function Brief.open_briefing()
     end
     if S.hud.briefing_title ~= 0 then ui.set_text(S.hud.briefing_title, level_name) end
     -- One button is centred alone in the row; with Skip tutorial both share it.
-    local offered = td.tutorial.offered()
+    local offered = td.tutorial.offered() and (Brief.conversation == nil or #Brief.answers >= 2)
     UI.show(S.hud.briefing_skip, offered)
     ui.set_size(S.hud.briefing_buttons, offered and 0.9 or 0.42, 0.08)
     ui.set_size(S.hud.briefing_button, offered and 0.4 or 0.9, 0.9)
@@ -131,6 +166,10 @@ end
 function Brief.close_briefing()
     if not Brief.open then return end
     Brief.open = false
+    if Brief.conversation ~= nil then
+        dialogue.stop(Brief.conversation)
+        Brief.conversation = nil
+    end
     time.set_paused(false)
     UI.show(S.hud.briefing, false)
     gamestate.set("tower_briefing", false)

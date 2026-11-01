@@ -3,12 +3,13 @@
 -- - This script holds the properties and the hooks the engine calls (`on_create`, `on_update`, the HUD callbacks);
 --   the rules live in the modules of `scripts/game/td/`, one per subject (`towers`, `enemies`, `waves`, `effects`,
 --   `wheel`, `briefing`, `tutorial`...), sharing the level state (`td.state`) and the constants (`td.data`).
--- - The level gives its waves, its gold and its lives as properties (`waves`: one string per wave, groups
---   "kind count gap" separated by ";"); the pads are the `Pad` entities, the road is the `Waypoint NN` entities in
---   the order of their numbers, from the gate to the keep. A new level is a duplicated scene: move the tiles, the
---   pads and the waypoints in Owl Nest, edit the waves.
--- - The values of the towers and of the enemies are properties of this script, the same for every level unless a
---   level overrides one in the inspector. A pad on high ground gives its tower `height_bonus` more range per step.
+-- - The level gives its gold and its lives as properties and its waves as a data table (`waves_table`: a row per
+--   wave, its groups "kind count gap [road]" separated by ";" and whether it is fought at night); the pads are the
+--   `Pad` entities, the road is the `Spline` of the `Road` entity (`Road B` for a second gate) from the gate to the
+--   keep, the Horde walking in its seven lanes. A new level is a duplicated scene: move the tiles, the pads and the
+--   points of the road in Owl Nest, give it its own waves table.
+-- - The values of the towers and of the enemies are the rows of two data tables (`towers_table`, `enemies_table`),
+--   the same for every level. A pad on high ground gives its tower `height_bonus` more range per step.
 -- - Towers go from level 1 to 3, then take one power-up of two; the second power-up of each tower is unlocked by
 --   winning the first level (`tower_done_01`). The upgrades bought with the stars (`tower_up_<family>` settings, the
 --   upgrades screen) raise the towers, the spells and the treasury of every level.
@@ -17,15 +18,20 @@
 --   orc berserkers (faster as they bleed) and the chieftain (armoured, rallies the Horde, half slowed and never frozen,
 --   10 lives). The first one of a kind a level brings (`new_enemies`) shows its name and how to beat it.
 -- - Waves are timed: a countdown before each one; calling it early (Space, pad Y, the HUD button) pays
---   `early_bonus` gold per second left. Every enemy reaching the keep costs a life. The waves of `night_waves` are
+--   `early_bonus` gold per second left. Every enemy reaching the keep costs a life. The night waves of the table are
 --   fought at night: between two waves the sky turns to dusk or to dawn, announced, and the torches are lit by night.
 -- - Day and night change the towers and the Horde (`time_effects`: "subject phase stat factor", the subject a tower or
 --   enemy kind, `towers` or `horde`, the phase `day`, `night` or `any`); the level `modifiers` (fog, blizzard, blood
 --   moon...) and the unlocks add effects of the same form. The info scroll of a tower, the first sight of an enemy and
 --   the pause window show them; the HUD shows a sun or a moon.
--- - A briefing card opens the level (its name, modifiers, new enemies and nights); a click, Enter or pad A starts it.
--- - Enemies, towers, projectiles, effects and health bars are prefabs spawned at runtime (`scene.spawn_prefab`); the
---   enemies are billboards whose frame (8 directions x 4 walk frames) follows their heading and the view.
+-- - A briefing card opens the level (its name, modifiers, new enemies and nights) with the words of the captain, the
+--   dialogue `briefing_dialogue`: its answers are the buttons, To arms! (a click, Enter or pad A) starts the level,
+--   Skip tutorial (offered by `tutorial_offered`) calls `skip_tutorial`.
+-- - Enemies, towers, projectiles (with their trails), fire and health bars are prefabs spawned at runtime
+--   (`scene.spawn_prefab`); the enemies are billboards whose frame (8 directions x 4 walk frames) follows their
+--   heading and the view. Sparks, dust, blood and the rain of arrows are pooled particle emitters of the level.
+-- - The music plays on the Music bus, the effects on the SFX bus (their volumes are in the settings); the horn, the
+--   blows at the keep and the defeat show a subtitle, and with the `reduced_motion` setting the camera turns at once.
 -- - A click on a pad or a tower opens its build ring (badges over it, the range ring of the choice, the info panel
 --   of the HUD); the right button, Backspace or pad B closes it. The keyboard and the gamepad move a cursor from pad
 --   to pad (Q / E, Tab, the D-pad), Enter or pad A opens the ring and picks, 1 to 3 pick a badge, X sells.
@@ -42,9 +48,11 @@ properties = {
     { name = "level_name", type = "string", default = "Greenmarch Ford" },
     { name = "scene_path", type = "string", default = "scenes/level_01.owl" },
     { name = "next_scene", type = "string", default = "scenes/victory.owl" },
-    { name = "waves", type = "strings", default = { "goblin 6 1.0" } },
+    { name = "waves_table", type = "string", default = "tables/waves_01.owltable" },
+    { name = "towers_table", type = "string", default = "tables/towers.owltable" },
+    { name = "enemies_table", type = "string", default = "tables/enemies.owltable" },
+    { name = "briefing_dialogue", type = "string", default = "dialogues/briefing_01.owldlg" },
     { name = "start_towers", type = "strings", default = {} },
-    { name = "night_waves", type = "string", default = "" },
     { name = "modifiers", type = "strings", default = {} },
     { name = "new_enemies", type = "string", default = "" },
     { name = "briefing", type = "bool", default = true },
@@ -80,21 +88,6 @@ properties = {
     { name = "upgrade_2_share", type = "float", default = 0.8, min = 0 },
     { name = "upgrade_3_share", type = "float", default = 1.2, min = 0 },
     { name = "power_share", type = "float", default = 1.5, min = 0 },
-    { name = "archer_cost", type = "int", default = 70 },
-    { name = "archer_range", type = "float", default = 3.0 },
-    { name = "archer_damage", type = "float", default = 9.0 },
-    { name = "archer_reload", type = "float", default = 0.65 },
-    { name = "cannon_cost", type = "int", default = 110 },
-    { name = "cannon_range", type = "float", default = 2.8 },
-    { name = "cannon_damage", type = "float", default = 24.0 },
-    { name = "cannon_reload", type = "float", default = 1.7 },
-    { name = "cannon_splash", type = "float", default = 1.1 },
-    { name = "frost_cost", type = "int", default = 90 },
-    { name = "frost_range", type = "float", default = 2.6 },
-    { name = "frost_damage", type = "float", default = 3.0 },
-    { name = "frost_reload", type = "float", default = 1.0 },
-    { name = "frost_slow", type = "float", default = 0.5, min = 0.05, max = 1 },
-    { name = "frost_time", type = "float", default = 1.8, min = 0 },
     { name = "fire_time", type = "float", default = 3.0, min = 0 },
     { name = "fire_damage", type = "float", default = 7.0, min = 0 },
     { name = "shock_push", type = "float", default = 0.8, min = 0 },
@@ -108,46 +101,6 @@ properties = {
     { name = "shield_cooldown", type = "float", default = 60.0, min = 0 },
     { name = "treasury_gold", type = "int", default = 60, min = 0 },
     { name = "walls_lives", type = "int", default = 5, min = 0 },
-    { name = "goblin_hp", type = "float", default = 34.0 },
-    { name = "goblin_speed", type = "float", default = 1.6 },
-    { name = "goblin_gold", type = "int", default = 9 },
-    { name = "grunt_hp", type = "float", default = 92.0 },
-    { name = "grunt_speed", type = "float", default = 1.0 },
-    { name = "grunt_gold", type = "int", default = 15 },
-    { name = "ogre_hp", type = "float", default = 300.0 },
-    { name = "ogre_speed", type = "float", default = 0.65 },
-    { name = "ogre_gold", type = "int", default = 36 },
-    { name = "ogre_arrow", type = "float", default = 0.4, min = 0, max = 1 },
-    { name = "wolf_hp", type = "float", default = 50.0 },
-    { name = "wolf_speed", type = "float", default = 2.1 },
-    { name = "wolf_gold", type = "int", default = 9 },
-    { name = "troll_hp", type = "float", default = 130.0 },
-    { name = "troll_speed", type = "float", default = 1.05 },
-    { name = "troll_gold", type = "int", default = 18 },
-    { name = "troll_regen", type = "float", default = 7.0, min = 0 },
-    { name = "mage_hp", type = "float", default = 160.0 },
-    { name = "mage_speed", type = "float", default = 0.8 },
-    { name = "mage_gold", type = "int", default = 26 },
-    { name = "mage_ward", type = "float", default = 45.0, min = 0 },
-    { name = "mage_ward_every", type = "float", default = 6.0, min = 0.5 },
-    { name = "mage_ward_radius", type = "float", default = 1.6, min = 0 },
-    { name = "sapper_hp", type = "float", default = 42.0 },
-    { name = "sapper_speed", type = "float", default = 1.75 },
-    { name = "sapper_gold", type = "int", default = 12 },
-    { name = "sapper_lives", type = "int", default = 3, min = 1 },
-    { name = "sapper_blast", type = "float", default = 40.0, min = 0 },
-    { name = "sapper_blast_radius", type = "float", default = 1.2, min = 0 },
-    { name = "berserker_hp", type = "float", default = 120.0 },
-    { name = "berserker_speed", type = "float", default = 1.05 },
-    { name = "berserker_gold", type = "int", default = 16 },
-    { name = "berserker_rage", type = "float", default = 0.9, min = 0 },
-    { name = "chieftain_hp", type = "float", default = 2000.0 },
-    { name = "chieftain_speed", type = "float", default = 0.5 },
-    { name = "chieftain_gold", type = "int", default = 200 },
-    { name = "chieftain_lives", type = "int", default = 10, min = 1 },
-    { name = "chieftain_arrow", type = "float", default = 0.5, min = 0, max = 1 },
-    { name = "chieftain_rally", type = "float", default = 1.25, min = 1 },
-    { name = "chieftain_rally_radius", type = "float", default = 2.0, min = 0 },
     { name = "arrow_speed", type = "float", default = 9.0, min = 0.1 },
     { name = "ball_flight", type = "float", default = 0.8, min = 0.1 },
     { name = "camera_pitch", type = "float", default = -0.75, min = -1.5, max = -0.2 },
@@ -212,14 +165,18 @@ function on_create()
                   costs = scene.find_entities("ChoiceCost") }
     for _, id in ipairs(scene.find_entities("Torch")) do S.torch_ids[#S.torch_ids + 1] = { light = id } end
     local flames, glows = scene.find_entities("TorchFlame"), scene.find_entities("TorchGlow")
+    local embers = scene.find_entities("TorchEmbers")
     for index, torch in ipairs(S.torch_ids) do
         torch.flame = flames[index] or 0
         torch.glow = glows[index] or 0
+        torch.embers = embers[index] or 0
     end
+    S.still = settings.get("reduced_motion", false) == true
     for _, name in ipairs({ "gold", "lives", "wave", "message", "call", "speed", "pause", "resume", "rain", "shield",
                             "rain_label", "shield_label", "phase", "phase_icon", "effects", "briefing",
                             "briefing_title", "briefing_button", "briefing_skip", "skip_tutorial",
-                            "briefing_body", "briefing_buttons", "phase_bar" }) do
+                            "briefing_body", "briefing_buttons", "phase_bar", "briefing_speech",
+                            "briefing_speaker" }) do
         S.hud[name] = 0
     end
     S.hud.gold = ui.find("GoldText")
@@ -236,6 +193,7 @@ function on_create()
     S.hud.skip_tutorial = ui.find("SkipTutorialButton")
     S.hud.briefing_body, S.hud.briefing_buttons = ui.find("BriefingBody"), ui.find("BriefingButtons")
     S.hud.phase_bar = ui.find("PhaseBar")
+    S.hud.briefing_speech, S.hud.briefing_speaker = ui.find("BriefingSpeech"), ui.find("BriefingSpeaker")
     S.hud.briefing_rows = {}
     for index = 1, 6 do
         local row = ui.find("BriefingRow" .. index)
@@ -253,6 +211,7 @@ function on_create()
     UI.show(S.ring_id, false)
     World.find_pads()
     World.find_route()
+    Vis.find_pools()
     S.view.x, S.view.z = (map_width - 1) * 0.5, (map_depth - 1) * 0.5
     S.view.distance = camera_distance
     Cam.place_camera()
@@ -279,7 +238,7 @@ function on_create()
     local masons = Eco.tier("treasury", 3) and 2 or 0
     S.gold, S.lives_left = start_gold + bonus_gold + chest, lives + masons + guard + (all_stars and walls_lives or 0)
     gamestate.set("tower_start_gold", S.gold)
-    S.wave_count = #waves
+    S.wave_count = #S.waves
     S.countdown = first_wave_delay
     S.hours, S.hours_goal = start_hour, start_hour
     if Fx.nights[1] then S.hours, S.hours_goal = night_hour, night_hour end
@@ -357,8 +316,19 @@ local function check_end()
     end
 end
 
+-- To arms!, the first answer of the briefing dialogue.
 function on_briefing_closed()
-    Brief.close_briefing()
+    Brief.answer(1)
+end
+
+-- The condition of the Skip tutorial answer of the briefing dialogue.
+function tutorial_offered()
+    return Tut.offered()
+end
+
+-- The event of the Skip tutorial answer of the briefing dialogue.
+function skip_tutorial()
+    Tut.skip()
 end
 
 local function set_paused(value)
@@ -377,8 +347,11 @@ end
 
 -- Skip tutorial, on the briefing (pad B, Backspace) and in the pause window: never shown again.
 function on_tutorial_skipped()
-    Tut.skip()
-    if Brief.open then Brief.close_briefing() end
+    if Brief.open then
+        Brief.answer(Tut.offered() and 2 or 1)
+    else
+        Tut.skip()
+    end
     if S.paused then set_paused(false) end
 end
 
@@ -463,7 +436,6 @@ function on_update(dt)
     Vis.update_effects(dt)
     Spells.update_spells(dt)
     Foes.update_corpses(dt)
-    Vis.update_sparks(dt)
     if S.ending == nil then check_end() end
     if S.paused then
         -- Measured from the end of the frame the pause was asked in: the clock stops from the next one.

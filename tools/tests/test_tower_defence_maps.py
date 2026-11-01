@@ -2,7 +2,8 @@
 Tests of the Tower defence levels and of their scene writer: every level passes the generator's checks, its road is
 one walk along the axes from the gate to the keep, its ramps climb, every pad is beside the road and every wave names
 known enemies, each level after the first bringing a new one; the road tiles turn to their neighbours, the theme of a
-level picks models that exist and the waypoints follow the road heights; the world map lists every level. The written
+level picks models that exist and the road spline follows the road heights with its seven lanes, the waves table and the
+briefing dialogue follow the level, every effect has its pooled emitters; the world map lists every level. The written
 files are not compared with the generator: they are edited in Owl Nest afterwards.
 """
 
@@ -57,11 +58,12 @@ def test_road_tiles_turn_to_their_neighbours() -> None:
     assert gen.turned(gen.S, 1) == gen.E
 
 
-def test_the_scene_has_its_waypoints_pads_and_towers() -> None:
+def test_the_scene_has_its_road_pads_and_towers() -> None:
     level = mp.LEVELS[0]
     text = gen.level_scene(level)
     assert text.count("tag: Pad\n") == len(level.cells("P"))
-    assert "tag: Waypoint 01\n" in text
+    assert "tag: Road\n" in text and "interpolation: Linear" in text
+    assert text.count("{name: lane_") == gen.LANES
     assert "scripts/game/defence.lua" in text
     prefabs = gen.prefabs()
     for kind in ("archer", "cannon", "frost"):
@@ -70,13 +72,52 @@ def test_the_scene_has_its_waypoints_pads_and_towers() -> None:
     assert all(f"enemy_{kind}" in prefabs for kind in creatures.CREATURES)
 
 
+@pytest.mark.parametrize("level", mp.LEVELS, ids=lambda level: f"level_{level.number:02d}")
+def test_the_road_points_follow_the_road_heights(level: mp.LevelData) -> None:
+    road = gen.check(level)[0]
+    points = gen.road_points(level, road)
+    assert points[0] == (road[0][0], gen.road_height(level, road[0]), road[0][1])
+    for a, b in zip(points, points[1:], strict=False):
+        assert a[0] == b[0] or a[2] == b[2], "a road segment runs along an axis"
+
+
+@pytest.mark.parametrize("level", mp.LEVELS, ids=lambda level: f"level_{level.number:02d}")
+def test_the_waves_table_and_the_briefing_follow_the_level(level: mp.LevelData) -> None:
+    table = gen.waves_table(level)
+    assert table.count("  - key: wave_") == len(level.waves)
+    assert table.count("night: true") == len(level.nights)
+    for wave in level.waves:
+        assert f"groups: {gen.y.quote(wave)}\n" in table
+    dialogue = gen.briefing_dialogue(level)
+    assert level.briefing and gen.y.quote(level.briefing) in dialogue
+    assert "kind: Choice" in dialogue and "condition: tutorial_offered" in dialogue
+    assert "function: skip_tutorial" in dialogue
+    scene = gen.level_scene(level)
+    assert f"tables/waves_{level.number:02d}.owltable" in scene
+    assert f"dialogues/briefing_{level.number:02d}.owldlg" in scene
+
+
+def test_every_effect_has_its_pooled_emitters_and_the_projectiles_their_trail() -> None:
+    text = gen.level_scene(mp.LEVELS[0])
+    visuals = (gen.ROOT / "scripts" / "game" / "td" / "visuals.lua").read_text()
+    for name, (count, _) in gen.FX.items():
+        assert f'"{name}"' in visuals, name
+        for index in range(1, count + 1):
+            assert f"tag: Fx{name}{index}\n" in text
+    prefabs = gen.prefabs()
+    for kind in ("arrow", "ball", "fireball", "shard"):
+        assert "Trail:" in prefabs[f"projectile_{kind}"]
+    assert "ParticleEmitter:" in prefabs["fire"]
+    assert "- Type: RendererParticles" in gen.PROJECT
+
+
 def test_two_gates_make_two_roads_meeting_before_the_keep() -> None:
     level = mp.LEVELS[2]
     roads = mp.routes(level)
     assert len(roads) == 2
     assert roads[0][0] != roads[1][0]
     assert roads[0][-1] == roads[1][-1]
-    assert "tag: Waypoint B 01" in gen.level_scene(level)
+    assert "tag: Road B\n" in gen.level_scene(level)
 
 
 def test_the_horde_is_introduced_across_the_campaign() -> None:

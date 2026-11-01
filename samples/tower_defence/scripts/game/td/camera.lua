@@ -76,7 +76,7 @@ function Cam.update_camera(real_dt)
     S.view.distance = math.max(zoom_min, math.min(zoom_max, S.view.distance + zoom))
     if math.abs(S.view.yaw_goal - S.view.yaw) > 1e-4 then
         local delta = S.view.yaw_goal - S.view.yaw
-        local turn = math.min(1.0, real_dt * 8.0)
+        local turn = S.still and 1.0 or math.min(1.0, real_dt * 8.0)
         S.view.yaw = math.abs(delta) < 0.002 and S.view.yaw_goal or S.view.yaw + delta * turn
     end
     Cam.update_basis()

@@ -1,0 +1,27 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7800000000000000901
+    kind: Start
+    position: [0, 120]
+    next: 7800000000000000902
+  - id: 7800000000000000902
+    kind: Choice
+    position: [260, 120]
+    speaker: {text: 'Captain of the keep'}
+    text: {text: 'Two winding roads and a long night. The Horde plunders what it passes: hold it on both.'}
+    options:
+      - text: {text: 'To arms!'}
+        next: 7800000000000000904
+      - text: {text: 'Skip tutorial'}
+        condition: tutorial_offered
+        next: 7800000000000000903
+  - id: 7800000000000000903
+    kind: Event
+    position: [560, 240]
+    function: skip_tutorial
+    next: 7800000000000000904
+  - id: 7800000000000000904
+    kind: End
+    position: [820, 120]
+routes: []

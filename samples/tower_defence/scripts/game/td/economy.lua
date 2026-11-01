@@ -43,13 +43,9 @@ function Eco.read_stats()
             Fx.add_effects(unlock[2], "unlock")
         end
     end
-    Fx.nights = {}
-    for number in string.gmatch(night_waves or "", "%d+") do Fx.nights[tonumber(number)] = true end
-    S.stats.archer = { cost = archer_cost, range = archer_range, damage = archer_damage, reload = archer_reload }
-    S.stats.cannon = { cost = cannon_cost, range = cannon_range, damage = cannon_damage, reload = cannon_reload,
-                     splash = cannon_splash }
-    S.stats.frost = { cost = frost_cost, range = frost_range, damage = frost_damage, reload = frost_reload,
-                    slow = frost_slow, time = frost_time }
+    Eco.read_waves()
+    Eco.read_towers()
+    Eco.read_enemies()
     local a, c, f = S.stats.archer, S.stats.cannon, S.stats.frost
     if Eco.tier("archer", 1) then a.damage = a.damage * 1.15 end
     if Eco.tier("archer", 2) then a.range = a.range * 1.12 end
@@ -63,25 +59,53 @@ function Eco.read_stats()
     if Eco.tier("archer", 4) then a.range = a.range * 1.1 end
     if Eco.tier("cannon", 4) then c.reload = c.reload * 0.85 end
     if Eco.tier("frost", 4) then f.damage = f.damage * 1.2 end
-    S.stats.goblin = { hp = goblin_hp, speed = goblin_speed, gold = goblin_gold, arrow = 1.0 }
-    S.stats.grunt = { hp = grunt_hp, speed = grunt_speed, gold = grunt_gold, arrow = 1.0 }
-    S.stats.ogre = { hp = ogre_hp, speed = ogre_speed, gold = ogre_gold, arrow = ogre_arrow }
-    S.stats.wolf = { hp = wolf_hp, speed = wolf_speed, gold = wolf_gold, arrow = 1.0 }
-    S.stats.troll = { hp = troll_hp, speed = troll_speed, gold = troll_gold, arrow = 1.0, regen = troll_regen }
-    S.stats.ogre_mage = { hp = mage_hp, speed = mage_speed, gold = mage_gold, arrow = 1.0, ward = mage_ward }
-    S.stats.sapper = { hp = sapper_hp, speed = sapper_speed, gold = sapper_gold, arrow = 1.0, lives = sapper_lives,
-                     blast = sapper_blast }
-    S.stats.berserker = { hp = berserker_hp, speed = berserker_speed, gold = berserker_gold, arrow = 1.0,
-                        rage = berserker_rage }
-    S.stats.chieftain = { hp = chieftain_hp, speed = chieftain_speed, gold = chieftain_gold, arrow = chieftain_arrow,
-                        lives = chieftain_lives, boss = true, scale = 1.35 }
     for _, kind in ipairs(C.KINDS) do
         S.stats[kind].cost = math.floor(S.stats[kind].cost * Fx.factor_of(kind, true, "cost", "any") + 0.5)
     end
     local bounty = Eco.tier("treasury", 2) and 1.1 or 1.0
-    for _, kind in ipairs({ "goblin", "grunt", "ogre", "wolf", "troll", "ogre_mage", "sapper", "berserker",
-                            "chieftain" }) do
+    for _, kind in ipairs(C.FOE_KINDS) do
         S.stats[kind].gold = math.floor(S.stats[kind].gold * bounty + 0.5)
+    end
+end
+
+-- The waves of the level, a row of `waves_table` each: its groups ("kind count gap [road]" separated by ";") and
+-- whether it is fought at night.
+function Eco.read_waves()
+    S.waves, Fx.nights = {}, {}
+    for _, key in ipairs(datatable.get_keys(waves_table) or {}) do
+        local row = datatable.get_row(waves_table, key)
+        S.waves[#S.waves + 1] = row.groups or ""
+        if row.night == true then Fx.nights[#S.waves] = true end
+    end
+    if #S.waves == 0 then log.warn("Tower defence: no wave in '" .. tostring(waves_table) .. "'.") end
+end
+
+-- The towers, a row of `towers_table` each: name, blurb, price and the values of a level 1 tower (a value only a
+-- kind has is 0 for the others).
+function Eco.read_towers()
+    for _, kind in ipairs(C.KINDS) do
+        local row = datatable.get_row(towers_table, kind) or {}
+        local function only(value) return (value or 0) > 0 and value or nil end
+        S.stats[kind] = { cost = row.cost or 0, range = row.range or 1, damage = row.damage or 0,
+                          reload = row.reload or 1, splash = only(row.splash), slow = only(row.slow),
+                          time = only(row.time) }
+        C.NAMES[kind], C.BLURBS[kind] = row.name or kind, row.blurb or ""
+    end
+end
+
+-- The Horde, a row of `enemies_table` each: name and how to beat it, health, speed, bounty, the share of an arrow it
+-- takes, the lives it costs at the keep, its ability (`regen`, `ward`, `blast`, `rage`, `rally`) with its power,
+-- radius and period, the height of its health bar and the size of its shadow.
+function Eco.read_enemies()
+    C.FOE_KINDS = datatable.get_keys(enemies_table) or {}
+    for _, kind in ipairs(C.FOE_KINDS) do
+        local row = datatable.get_row(enemies_table, kind)
+        local stats = { hp = row.hp, speed = row.speed, gold = row.gold, arrow = row.arrow, lives = row.lives,
+                        boss = row.boss == true, radius = row.radius, every = row.every }
+        if row.ability ~= nil and row.ability ~= "none" then stats[row.ability] = row.power end
+        S.stats[kind] = stats
+        C.FOES[kind] = { row.name or kind, row.hint or "" }
+        C.BAR_HEIGHT[kind], C.SHADOW_SIZE[kind] = row.bar_height or 0.8, row.shadow_size or 0.5
     end
 end
 

@@ -23,3 +23,23 @@ Entities:
     RendererTag:
       Name: sprites
     Light2D: {type: Point, enabled: true, color: [1, 0.55, 0.2], intensity: 0.9, radius: 2.2, falloff: 1.4, height: 1, castShadows: false}
+  - Entity: 7600000000001842002
+    Tag:
+      tag: ProjectileTrail
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001842001
+    Trail:
+      enabled: true
+      lifetime: 0.25
+      minDistance: 0.05
+      maxPoints: 32
+      width: 0.2
+      color: [1, 0.55, 0.2, 1]
+      emissive: 0
+      blend: Additive

@@ -5,17 +5,21 @@ Write the project files, the level scenes, the prefabs and the play HUD of the T
 
 A level is a scene of 3D tiles of the Kenney Tower Defense Kit (``models/td/``): one ``Terrain`` entity per cell (and
 a stretched slab under the raised ones), the road tiles turned after their neighbours, the river and its bridge, the
-decor, the ``Pad`` entities the towers are built on, the ``Waypoint NN`` entities the enemies walk from the ``Gate``
-to the ``Keep`` (Kenney Castle Kit, ``models/castle/``), the sun, the sky and its day-night cycle, the torches lit at
-night, the minimap camera, the hidden sprites of the build ring and the ``Game`` entity running
-``scripts/game/defence.lua`` with the waves of the level. Every one of them is edited in Owl Nest afterwards.
+decor, the ``Pad`` entities the towers are built on, the ``Road`` spline the enemies walk from the ``Gate`` to the
+``Keep`` (Kenney Castle Kit, ``models/castle/``) in one of its lanes, the sun, the sky and its day-night cycle, the
+torches lit at night, the minimap camera, the hidden sprites of the build ring, the pooled particle emitters of the
+effects, the music and the ``Game`` entity running ``scripts/game/defence.lua``. Every one of them is edited in Owl
+Nest afterwards. The waves of a level are its data table (``tables/waves_NN.owltable``), its briefing a dialogue
+(``dialogues/briefing_NN.owldlg``).
 
 Render stack of a level: ``mesh_world`` (terrain, towers, keep), ``ground`` (flat sprites on the terrain, depth
 tested: range ring, cursor, shadows), ``sprites`` (billboards facing the camera, depth tested: enemies, projectiles,
-effects, health bars) and ``marks`` (billboards over everything: the badges of the build ring).
+effects, health bars), ``particles`` (sparks, dust, fire, the rain of arrows, the trails of the projectiles) and
+``marks`` (billboards over everything: the badges of the build ring).
 
 The prefabs are the enemies (8 directions x 4 walk frames), the towers (one prefab per level and power-up, a root
-tagged ``Tower`` holding its meshes), the projectiles, the effects and the health bar the script spawns.
+tagged ``Tower`` holding its meshes), the projectiles with their trails, the effects and the health bar the script
+spawns.
 
 Run from the repository root: ``./docker_run.sh poetry run python -m tools.samples.tower_defence.generate_maps``.
 """
@@ -307,8 +311,8 @@ def keep(entities: y.Entities, level: mp.LevelData) -> None:
 
 
 def torches(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell]) -> None:
-    """Torches lit at night: a point light (terrain, meshes) and a 2D light (sprites) on posts along the road and
-    beside the keep gate, hidden by day."""
+    """Torches lit at night: a point light (terrain, meshes), a 2D light (sprites) and rising embers on posts along
+    the road and beside the keep gate, hidden by day."""
     picks = [road[len(road) * k // 4] for k in (1, 2, 3)] + [road[-1]]
     for x, z in picks:
         side = 0.55
@@ -328,35 +332,50 @@ def torches(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell]) -> N
         )
         glow = light2d("Point", (1, 0.6, 0.3), 1.4, 3, 1.2, enabled=False)
         entities.add("TorchGlow", [glow], position=(0, 0, 0), parent=torch)
+        entities.add("TorchEmbers", [flames(9)], position=(0, 0.1, 0), scale=(0.4, 1, 0.4), parent=torch)
         post = (position[0], position[1] - 0.95, position[2])
         entities.add("TorchPost", [mesh(f"{CASTLE}/wall-stud.glb")], position=post, scale=(0.5, 0.8, 0.5))
 
 
-def waypoints(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell], letter: str) -> None:
-    """The ``Waypoint NN`` entities of a road (``Waypoint B NN`` for the second gate) under a ``Route`` parent.
+LANES = 7
+"""Lanes of a road: the enemies walk beside its middle, ``LANE_WIDTH`` across from the leftmost to the rightmost."""
+LANE_WIDTH = 0.28
 
-    Numbered without a gap (the script stops at the first number missing): the corners, the cells around a ramp or a
-    bridge (their height changes), and a last one in the gate of the keep.
-    """
-    route = entities.add(f"Route {letter}".strip(), [])
+
+def road_points(level: mp.LevelData, road: list[mp.Cell]) -> list[tuple[float, float, float]]:
+    """The points of a road from its gate to the keep: the corners, the cells around a ramp or a bridge (their height
+    changes), and a last one in the gate of the keep."""
+    points = []
     previous_direction = None
-    number = 0
     for index, cell in enumerate(road):
         nxt = road[index + 1] if index + 1 < len(road) else None
         direction = (nxt[0] - cell[0], nxt[1] - cell[1]) if nxt else None
-        height = road_height(level, cell)
         changes = level.at(cell) in "/=" or (nxt is not None and level.at(nxt) in "/=")
         changes = changes or (index > 0 and level.at(road[index - 1]) in "/=")
         if index == 0 or nxt is None or direction != previous_direction or changes:
-            number += 1
-            entities.add(f"Waypoint {letter}{number:02d}", [], position=(cell[0], height, cell[1]), parent=route)
+            points.append((float(cell[0]), road_height(level, cell), float(cell[1])))
         previous_direction = direction
     end = road[-1]
     toward = sides(level, end, "K")
     dx = 0.6 if toward & E else (-0.6 if toward & W else 0.0)
     dz = 0.6 if toward & S else (-0.6 if toward & N else 0.0)
-    position = (end[0] + dx, road_height(level, end), end[1] + dz)
-    entities.add(f"Waypoint {letter}{number + 1:02d}", [], position=position, parent=route)
+    points.append((end[0] + dx, road_height(level, end), end[1] + dz))
+    return points
+
+
+def road_spline(entities: y.Entities, level: mp.LevelData, road: list[mp.Cell], letter: str) -> None:
+    """The ``Road`` entity of a road (``Road B`` for the second gate): a ``Linear`` spline through its points (the
+    tiles turn square), with ``LANES`` lanes named ``lane_1`` to ``lane_7`` from its left to its right."""
+    lines = "".join(f"    - {y.vec(*point)}\n" for point in road_points(level, road))
+    lanes = "".join(
+        f"    - {{name: lane_{index + 1}, offset: {y.num(LANE_WIDTH * (index / (LANES - 1) - 0.5))}, height: 0}}\n"
+        for index in range(LANES)
+    )
+    spline = (
+        "Spline:\n  interpolation: Linear\n  closed: false\n  resolution: 16\n  up: [0, 1, 0]\n"
+        f"  points:\n{lines}  lanes:\n{lanes}"
+    )
+    entities.add(f"Road {letter}".strip(), [spline])
 
 
 def unlit_sprite(texture: str, colour: y.Colour = (1, 1, 1, 1)) -> str:
@@ -421,7 +440,8 @@ def level_scene(level: mp.LevelData) -> str:
     entities = y.Entities(7500000000000000000 + level.number * 1000000)
     header = (
         "EnabledRenderers:\n- {Name: world, Enabled: false}\n- {Name: mesh_world, Enabled: true}\n"
-        "- {Name: ground, Enabled: true}\n- {Name: sprites, Enabled: true}\n- {Name: marks, Enabled: true}\n"
+        "- {Name: ground, Enabled: true}\n- {Name: sprites, Enabled: true}\n- {Name: particles, Enabled: true}\n"
+        "- {Name: marks, Enabled: true}\n"
         "- {Name: ui, Enabled: false}\n- {Name: overlay, Enabled: false}\n"
     )
     cx, cz = (level.width - 1) / 2, (level.depth - 1) / 2
@@ -485,7 +505,7 @@ def level_scene(level: mp.LevelData) -> str:
         pad = mesh(f"{TD}/tower-round-base.glb", (0.92, 0.9, 0.86, 1))
         entities.add("Pad", [pad], position=(cell[0], top, cell[1]), scale=(0.82, 1, 0.82), parent=pads)
     for letter, path in zip(("", "B "), roads, strict=False):
-        waypoints(entities, level, path, letter)
+        road_spline(entities, level, path, letter)
     torches(entities, level, road)
     cursor = y.sprite("textures/fx/cursor.png", (1, 0.9, 0.5, 0.9)).replace(
         "tilingFactor", "lit: false\n  tilingFactor"
@@ -498,7 +518,6 @@ def level_scene(level: mp.LevelData) -> str:
         tutorial_hint(entities)
     name = f"level_{level.number:02d}"
     next_scene = "scenes/victory.owl"
-    waves = "".join(f"\n        - {y.quote(wave)}" for wave in level.waves)
     modifiers_block = ""
     if level.modifiers:
         listed = "".join(f"\n        - {y.quote(key)}" for key in level.modifiers)
@@ -509,8 +528,9 @@ def level_scene(level: mp.LevelData) -> str:
         f"    - name: level_name\n      type: string\n      value: {y.quote(level.name)}\n"
         f"    - name: scene_path\n      type: string\n      value: scenes/{name}.owl\n"
         f"    - name: next_scene\n      type: string\n      value: {next_scene}\n"
-        f"    - name: waves\n      type: strings\n      value:{waves}\n"
-        f"    - name: night_waves\n      type: string\n      value: {y.quote(' '.join(map(str, level.nights)))}\n"
+        f"    - name: waves_table\n      type: string\n      value: tables/waves_{level.number:02d}.owltable\n"
+        "    - name: briefing_dialogue\n      type: string\n"
+        f"      value: dialogues/briefing_{level.number:02d}.owldlg\n"
         f"    - name: new_enemies\n      type: string\n      value: {y.quote(','.join(new_enemies(level)))}\n"
         f"    - name: tutorial\n      type: bool\n      value: {'true' if level.number == 1 else 'false'}\n"
         + modifiers_block
@@ -521,7 +541,167 @@ def level_scene(level: mp.LevelData) -> str:
         f"    - name: map_depth\n      type: int\n      value: {level.depth}\n"
     )
     entities.add("Game", [properties])
+    effects(entities)
+    entities.add("Music", [y.music("sounds/music/battle.wav", 0.6)])
     return y.scene(name, entities, hud="huds/play.owlhud", header=header)
+
+
+def waves_table(level: mp.LevelData) -> str:
+    """The data table of the waves of a level: a row per wave (``wave_01``...), its groups (``"kind count gap
+    [road]"`` separated by ``;``) and whether it is fought at night."""
+    rows = "".join(
+        f"  - key: wave_{index:02d}\n    groups: {y.quote(wave)}\n"
+        f"    night: {'true' if index in level.nights else 'false'}\n"
+        for index, wave in enumerate(level.waves, start=1)
+    )
+    return (
+        "DataTable: ''\nFormatVersion: 1\ncolumns:\n  - {name: groups, type: Text}\n  - {name: night, type: Bool}\n"
+        f"rows:\n{rows}"
+    )
+
+
+CAPTAIN = "Captain of the keep"
+"""Who speaks the briefings."""
+
+
+def briefing_dialogue(level: mp.LevelData) -> str:
+    """The briefing of a level as a dialogue: the captain of the keep says the line of the level, then the player
+    answers To arms! (the level starts) or, while the tutorial is offered (``tutorial_offered``), Skip tutorial
+    (``skip_tutorial``)."""
+    base = 7800000000000000000 + level.number * 100
+    start, choice, skip, end = base + 1, base + 2, base + 3, base + 4
+    return (
+        'Dialogue: ""\nFormatVersion: 1\nnodes:\n'
+        f"  - id: {start}\n    kind: Start\n    position: [0, 120]\n    next: {choice}\n"
+        f"  - id: {choice}\n    kind: Choice\n    position: [260, 120]\n"
+        f"    speaker: {{text: {y.quote(CAPTAIN)}}}\n    text: {{text: {y.quote(level.briefing)}}}\n"
+        "    options:\n"
+        f"      - text: {{text: 'To arms!'}}\n        next: {end}\n"
+        f"      - text: {{text: 'Skip tutorial'}}\n        condition: tutorial_offered\n        next: {skip}\n"
+        f"  - id: {skip}\n    kind: Event\n    position: [560, 240]\n    function: skip_tutorial\n    next: {end}\n"
+        f"  - id: {end}\n    kind: End\n    position: [820, 120]\n"
+        "routes: []\n"
+    )
+
+
+def burst(
+    colours: list[tuple[float, float, float, float, float]],
+    speed: tuple[float, float],
+    size: float,
+    count: int,
+    life: tuple[float, float],
+    blend: str = "Alpha",
+    gravity: float = -3.0,
+    shape: tuple[str, tuple[float, float, float]] = ("Sphere", (0.12, 0.12, 0.12)),
+    velocity: tuple[float, float, float] = (0, 0, 0),
+    trail: int = 0,
+) -> str:
+    """A ``ParticleEmitter`` that only bursts when the script asks (``entity.particles_emit``), in world space: the
+    colours over its life (``[t, r, g, b, a]``), shrinking to a third of its size."""
+    gradient = ", ".join(y.vec(*c) for c in colours)
+    out = (
+        f"ParticleEmitter:\n  playOnStart: false\n  maxParticles: {count}\n  rate: 0\n  burst: 0\n  duration: 0\n"
+        f"  loop: false\n  lifetimeMin: {y.num(life[0])}\n  lifetimeMax: {y.num(life[1])}\n  shape: {shape[0]}\n"
+        f"  shapeSize: {y.vec(*shape[1])}\n  speedMin: {y.num(speed[0])}\n  speedMax: {y.num(speed[1])}\n"
+        f"  velocity: {y.vec(*velocity)}\n  gravity: [0, {y.num(gravity)}, 0]\n  drag: 0.8\n"
+        f"  sizeMin: {y.num(size * 0.6)}\n  sizeMax: {y.num(size)}\n"
+        "  sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.35]]}\n  color: [1, 1, 1, 1]\n"
+        f"  colorOverLife: [{gradient}]\n  emissive: 0\n  blend: {blend}\n  space: World\n"
+    )
+    if trail > 0:
+        out += f"  trailLength: {trail}\n  trailInterval: 0.02\n  trailWidth: 0.5\n"
+    return out
+
+
+FX: dict[str, tuple[int, str]] = {
+    "Blood": (4, burst([(0, 0.75, 0.15, 0.1, 1), (1, 0.4, 0.06, 0.05, 0)], (0.6, 1.6), 0.2, 48, (0.3, 0.55))),
+    "Blast": (
+        2,
+        burst(
+            [(0, 1, 0.85, 0.45, 1), (0.4, 1, 0.5, 0.12, 0.9), (1, 0.3, 0.1, 0.05, 0)],
+            (1.2, 2.6),
+            0.32,
+            64,
+            (0.3, 0.6),
+            "Additive",
+            -2.0,
+        ),
+    ),
+    "Dust": (4, burst([(0, 0.55, 0.46, 0.36, 0.9), (1, 0.45, 0.4, 0.34, 0)], (0.6, 2.0), 0.3, 64, (0.4, 0.8))),
+    "Embers": (
+        4,
+        burst([(0, 1, 0.8, 0.35, 1), (1, 1, 0.35, 0.1, 0)], (1.0, 2.2), 0.14, 48, (0.2, 0.45), "Additive", -4.0),
+    ),
+    "Splinters": (6, burst([(0, 0.95, 0.85, 0.6, 1), (1, 0.7, 0.6, 0.4, 0)], (0.5, 1.2), 0.12, 24, (0.15, 0.3))),
+    "Frost": (
+        4,
+        burst([(0, 0.85, 0.96, 1, 1), (1, 0.6, 0.85, 1, 0)], (0.4, 1.2), 0.16, 32, (0.3, 0.5), "Additive", -1.0),
+    ),
+    "Shield": (
+        2,
+        burst([(0, 1, 0.9, 0.45, 1), (1, 1, 0.7, 0.2, 0)], (0.8, 1.6), 0.22, 48, (0.4, 0.7), "Additive", 1.0),
+    ),
+    "Rain": (
+        2,
+        burst(
+            [(0, 0.95, 0.9, 0.75, 1), (1, 0.8, 0.7, 0.5, 0.8)],
+            (0.0, 0.2),
+            0.09,
+            48,
+            (0.24, 0.3),
+            "Additive",
+            0.0,
+            ("Box", (1.4, 0.3, 1.4)),
+            (0, -9, 0),
+            6,
+        ),
+    ),
+}
+"""The pooled emitters of the effects of a level (``Fx<Name>1``, ``Fx<Name>2``...): how many, and the emitter. Blood
+on a kill, the blast of a keg, the dust of a shell or of a blow at the keep, the embers of a shell, the splinters of an
+arrow, the ice of a frost shard, the gold of the shield wall and the arrows falling from the sky."""
+
+
+def flames(rate: float, duration: float = 0.0) -> str:
+    """A ``ParticleEmitter`` of flames and embers rising from the ground: with a ``duration``, it plays once from the
+    start (a burning shell), else it loops when the script plays it (a torch at night)."""
+    once = duration > 0
+    return (
+        f"ParticleEmitter:\n  playOnStart: {'true' if once else 'false'}\n  maxParticles: 64\n  rate: {y.num(rate)}\n"
+        f"  burst: 0\n  duration: {y.num(duration)}\n  loop: {'false' if once else 'true'}\n"
+        "  lifetimeMin: 0.4\n  lifetimeMax: 0.8\n  shape: Box\n"
+        "  shapeSize: [0.35, 0.05, 0.35]\n  speedMin: 0.1\n  speedMax: 0.3\n  velocity: [0, 0.9, 0]\n"
+        "  gravity: [0, 0.4, 0]\n  drag: 0.5\n  sizeMin: 0.12\n  sizeMax: 0.24\n"
+        "  sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}\n  color: [1, 1, 1, 1]\n"
+        "  colorOverLife: [[0, 1, 0.85, 0.4, 1], [0.5, 1, 0.45, 0.1, 0.9], [1, 0.4, 0.1, 0.05, 0]]\n  emissive: 0\n"
+        "  blend: Additive\n  space: World\n"
+    )
+
+
+def trail(colour: y.Colour, width: float, lifetime: float, blend: str) -> str:
+    """A ``Trail`` behind a projectile, tapering and fading."""
+    return (
+        f"Trail:\n  enabled: true\n  lifetime: {y.num(lifetime)}\n  minDistance: 0.05\n  maxPoints: 32\n"
+        f"  width: {y.num(width)}\n  color: {y.vec(*colour)}\n  emissive: 0\n  blend: {blend}\n"
+    )
+
+
+PROJECTILE_TRAILS = {
+    "arrow": trail((1, 0.95, 0.85, 0.7), 0.07, 0.12, "Alpha"),
+    "ball": trail((0.5, 0.48, 0.45, 0.6), 0.14, 0.3, "Alpha"),
+    "fireball": trail((1, 0.55, 0.2, 1), 0.2, 0.25, "Additive"),
+    "shard": trail((0.7, 0.9, 1, 0.9), 0.1, 0.15, "Additive"),
+}
+"""The trail of each projectile, on a child entity (the sprite of the projectile is drawn by the ``sprites`` layer,
+the trail by the ``particles`` layer)."""
+
+
+def effects(entities: y.Entities) -> None:
+    """The pooled emitters of the effects, under an ``Effects`` parent; the script moves one there and bursts it."""
+    root = entities.add("Effects", [])
+    for name, (count, emitter) in FX.items():
+        for index in range(1, count + 1):
+            entities.add(f"Fx{name}{index}", [emitter], parent=root)
 
 
 def prefab(name: str, entities: y.Entities) -> str:
@@ -667,19 +847,24 @@ def prefabs() -> dict[str, str]:
         components = [sheet]
         if kind == "fireball":
             components.append(light2d("Point", (1, 0.55, 0.2), 0.9, 2.2, 1.4))
-        out[f"projectile_{kind}"] = single(f"Projectile{kind.title()}", "Projectile", components, (0.32, 0.32, 1))
+        name = f"Projectile{kind.title()}"
+        entities = y.Entities(7600000000000000000 + sum(map(ord, name)) * 1000)
+        root = entities.add("Projectile", components, scale=(0.32, 0.32, 1))
+        entities.add("ProjectileTrail", [PROJECTILE_TRAILS[kind]], parent=root)
+        out[f"projectile_{kind}"] = prefab(name, entities)
     bar = unlit_sprite("textures/bar.png", (0.3, 0.9, 0.3, 1)) + SPRITES
     out["health_bar"] = single("HealthBar", "HealthBar", [bar], (0.5, 0.07, 1))
     shadow = y.sprite("textures/fx/shadow.png", (1, 1, 1, 0.6)) + GROUND
     out["shadow"] = single("Shadow", "Shadow", [shadow], (0.5, 0.35, 1))
     puff = unlit_sprite("textures/puff.png", (1, 1, 1, 0.8)) + SPRITES
     out["puff"] = single("Puff", "Puff", [puff], (0.6, 0.6, 1))
-    spark = unlit_sprite("textures/puff.png") + SPRITES
-    out["spark"] = single("Spark", "Spark", [spark], (0.1, 0.1, 1))
     flame = y.frames("textures/fx/fire.png", 4, 1, 0).replace("loop: false", "loop: true\n  lit: false")
     flame = flame.replace("lastFrame: 0", "lastFrame: 3").replace("frameDuration: 0.1", "frameDuration: 0.08") + SPRITES
     glow = light2d("Point", (1, 0.5, 0.2), 1.2, 2, 1.3)
-    out["fire"] = single("Fire", "Fire", [flame, glow], (0.55, 0.6, 1))
+    entities = y.Entities(7600000000000000000 + sum(map(ord, "Fire")) * 1000)
+    root = entities.add("Fire", [flame, glow], scale=(0.55, 0.6, 1))
+    entities.add("FireEmbers", [flames(28, 2.3)], position=(0, -0.3, 0), parent=root)
+    out["fire"] = prefab("Fire", entities)
     wave = y.sprite("textures/fx/ring.png", (1, 0.85, 0.6, 0.8)) + GROUND
     out["shock_ring"] = single("ShockRing", "ShockRing", [wave], (1, 1, 1))
     return out
@@ -687,16 +872,17 @@ def prefabs() -> dict[str, str]:
 
 BRIEFING_ROWS = 6
 """Lines of the briefing card at most (nights, modifiers, new enemies), an icon of ``briefing_icons.png`` each."""
-BRIEFING_BODY = 0.68
+BRIEFING_BODY = 0.84
 """Height of the content of the briefing card with every line, in screen heights (the script fits it to its lines)."""
-BRIEFING_CARD = (1.16, 0.8)
+BRIEFING_CARD = (1.16, 0.96)
 """Size of the briefing card with every line, in screen heights."""
 
 
 def briefing_card(entities: y.Entities, root: int) -> None:
     """The briefing card opening a level: a modal parchment window, the level name in gold ``Cinzel`` on a wooden
-    plank like the buttons, a line per night, modifier and new enemy with its icon or portrait, To arms! and Skip
-    tutorial; the script fits its height to its lines."""
+    plank like the buttons, the speaker and the words of the briefing dialogue, a line per night, modifier and new
+    enemy with its icon or portrait, the answers To arms! and Skip tutorial; the script fits its height to its
+    lines."""
     window = y.window("", (0.88, 0.79, 0.6, 1), (0.3, 0.18, 0.09, 1), menus.GOLD, 10, 1).replace(
         "closable: false", "closable: false\n  modal: true"
     )
@@ -732,6 +918,10 @@ def briefing_card(entities: y.Entities, root: int) -> None:
         entities.add(f"BriefingLine{index}", [y.child_rect((0.84, 0.95)), line], parent=row)
         icon = y.image("textures/ui/briefing_icons.png") + "  columns: 6\n  rows: 3\n  frame: 0\n"
         entities.add(f"BriefingIcon{index}", [y.child_rect((0.08, 0.95)), icon], parent=row)
+    speech = y.text("", 22, "Left", (0.3, 0.12, 0.05, 1), wrap=True, line_spacing=0.08, outline_width=0)
+    entities.add("BriefingSpeech", [y.rect((0, 0), (0.98, 0.1), units=tall), speech], parent=body)
+    speaker = y.text("", 19, "Left", (0.48, 0.1, 0.05, 1), font=menus.HEADING, outline_width=0)
+    entities.add("BriefingSpeaker", [y.rect((0, 0), (0.98, 0.04), units=tall), speaker], parent=body)
     title = menus.label("", 44, menus.GOLD, font=menus.HEADING)
     plank = y.image("textures/ui/banner.png", (0.55, 0.36, 0.2, 1))
     entities.add("BriefingTitle", [y.rect((0, 0), (0.98, 0.1), units=tall), plank, title], parent=body)
@@ -841,6 +1031,8 @@ PROJECT = """OwlProject:
       DefaultConfig:
         Billboard: Full
         DepthTest: true
+    - Type: RendererParticles
+      Name: particles
     - Type: Renderer2D
       Name: marks
       DefaultConfig:
@@ -868,6 +1060,21 @@ SETTINGS = """GameSettings:
   - key: volume_master
     type: float
     value: 1.0
+  - key: volume_music
+    type: float
+    value: 0.7
+  - key: volume_sfx
+    type: float
+    value: 1.0
+  - key: color_blind_mode
+    type: string
+    value: none
+  - key: reduced_motion
+    type: bool
+    value: false
+  - key: subtitles
+    type: bool
+    value: true
   - key: ui_scale
     type: float
     value: 1.0
@@ -977,7 +1184,7 @@ actions:
 
 def main() -> None:
     """Write every generated file of the levels."""
-    for folder in ("scenes", "huds", "prefabs", "input"):
+    for folder in ("scenes", "huds", "prefabs", "input", "tables", "dialogues"):
         (ROOT / folder).mkdir(parents=True, exist_ok=True)
     (ROOT / "owl_project.yml").write_text(PROJECT)
     (ROOT / "game_settings.yml").write_text(SETTINGS)
@@ -990,6 +1197,8 @@ def main() -> None:
         (ROOT / "prefabs" / f"{name}.owlprefab").write_text(text)
     for level in mp.LEVELS:
         (ROOT / "scenes" / f"level_{level.number:02d}.owl").write_text(level_scene(level))
+        (ROOT / "tables" / f"waves_{level.number:02d}.owltable").write_text(waves_table(level))
+        (ROOT / "dialogues" / f"briefing_{level.number:02d}.owldlg").write_text(briefing_dialogue(level))
     models = {
         line.split("mesh: ", 1)[1]
         for path in ROOT.glob("**/*.ow*")

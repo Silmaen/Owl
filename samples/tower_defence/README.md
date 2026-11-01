@@ -7,8 +7,9 @@ in real 3D with relief, between visits to a hand-inked world map. Open `samples/
 ## How to play
 
 The world map traces the road from the capital to the next level: choose an open site and march, or spend the stars
-won in the upgrades. A briefing card opens each level, a line and an icon for its nights, its modifiers and the
-enemies it brings first (their portrait and how to beat them): a click, Enter or pad A starts it. The Horde comes out
+won in the upgrades. A briefing card opens each level: the captain of the keep says what comes, then a line and an
+icon for its nights, its modifiers and the enemies it brings first (their portrait and how to beat them); its answer
+**To arms!** (a click, Enter or pad A) starts it. The Horde comes out
 of its gate and walks the road to the keep. Build towers on the stone pads beside it: click a pad and choose a badge
 of the wheel that opens beside it.
 
@@ -128,6 +129,15 @@ The spells are raised once a level has unlocked them.
 
 The controls are shown in the **How to play** window of the title and in the pause window, never during play.
 
+## Settings
+
+The **Settings** screen sets the master, music and effects volumes (the Music and SFX buses of the mixer, the
+`volume_*` settings), the interface size, and the accessibility: the colour vision correction (red-, green- or
+blue-blind, the whole frame), the reduced motion (the view turns at once, the hints and the sites of the map stay
+still, the wipes become fades) and the subtitles of the horn, the blows at the keep, the coins and the defeat bells.
+**Reset tutorial** offers the tutorial again, **Reset progress** forgets the levels, stars and upgrades, **Reset
+defaults** puts the volumes, the size and the accessibility back.
+
 ## Inside
 
 | Path                           | Content                                                                                                      |
@@ -135,7 +145,10 @@ The controls are shown in the **How to play** window of the title and in the pau
 | `scenes/`                      | `title`, `world_map`, `upgrades`, `level_01` to `level_10`, `settings`, `victory`, `game_over`               |
 | `models/td/`, `models/castle/` | Tiles (green and snow), towers and weapons of the Tower Defense Kit, keep of the Castle Kit (Kenney, CC0)    |
 | `fonts/`                       | `Cinzel` (titles) and `MedievalSharp` (labels), OFL                                                          |
-| `prefabs/`                     | Enemies, towers (one per level and power-up), projectiles, effects, spawned by the script                    |
+| `prefabs/`                     | Enemies, towers (one per level and power-up), projectiles with their trails, fire, spawned by the script     |
+| `tables/`                      | `towers` and `enemies` (the values of each kind), `waves_01` to `waves_10` (a row per wave): data tables     |
+| `dialogues/`                   | `briefing_01` to `briefing_10`: the words of the captain and the answers of each briefing                    |
+| `sounds/`                      | Effects (`game/`, `ui/`) and the two music loops (`music/`), home-made                                       |
 | `scripts/game/defence.lua`     | The properties and the hooks of a level: it requires the rules of `scripts/game/td/`                         |
 | `scripts/game/td/`             | The rules by subject: `towers`, `enemies`, `waves`, `effects`, `wheel`, `briefing`, `tutorial`, `economy`... |
 | `scripts/ui/`                  | The menus, `world_map.lua`, `upgrades.lua`; `parade.lua` marches the Horde under the menus                   |
@@ -144,26 +157,30 @@ The controls are shown in the **How to play** window of the title and in the pau
 A level mixes the rendering styles of the engine: the terrain, the towers and the keep are 3D meshes lit by the sun
 of a `DayNightCycle` under a `ProceduralSky`, with shadows; the Horde, the projectiles and the effects are 2D sprites
 in a billboard layer (`sprites`, depth tested, following the light of the scene, 2D lights for torches and fire), the
-range ring and the cursor lie on the ground (`ground`), the build wheel floats over everything (`marks`), the minimap
+sparks, dust, blood, embers, the falling arrows of the rain and the trails of the projectiles are particles of their
+own layer (`particles`, pooled emitters burst by the script), the trees, rocks, towers and keep draw a reduced level of
+detail when they are small on the screen, the range ring and the cursor lie on the ground (`ground`), the build wheel
+floats over everything (`marks`), the minimap
 is a `RenderTarget`, and the world map is a 2D scene: an inked map at 80 pixels per unit (pixel for pixel on a
 2560 x 1440 screen, scaled down to fit a narrower one), with waving banners, drifting clouds and glints of the sea.
 
 ## Making a level
 
 Duplicate `scenes/level_01.owl` in Owl Nest. Move or replace the tiles of `Terrain` (models of `models/td/`), the
-`Pad` entities under `Pads`, the `Gate` and the `Keep`, and the `Waypoint NN` entities under `Route` (`Waypoint B NN`
-under `Route B` for a second gate): the enemies walk from waypoint to waypoint in the order of their numbers, at their
-height. On the `Game` entity set `level_number`, `level_name`, `scene_path`, `night_waves` (the waves fought at night,
-`"3 6 9 10"`), `modifiers` (keys of `defence.lua`: `fog`, `blizzard`, `blood_moon`, `drought`, `gale`, `plunder`,
-`long_night`), `new_enemies` (named in the briefing) and edit the `waves` list: one string per wave, groups
-`kind count gap [road]` separated by `;` (`"goblin 8 0.8; grunt 2 1.5 b"`). The day and night effects are the
-`time_effects` list of `defence.lua` (`"archer night range 0.85"`: subject, phase, stat, factor).
-`start_towers` lists the towers standing at the start (`"pad kind level [power]"`, pads counted row by row from the
-north-west). The values of the towers and of the enemies are properties of `defence.lua`, the same for every level
-unless one overrides them. Add the level to the `levels` and `level_scenes` lists of the `MapCanvas` script of
-`scenes/world_map.owl`.
+`Pad` entities under `Pads`, the `Gate` and the `Keep`, and the points of the `Road` spline (`Road B` for a second
+gate): the enemies walk it from the gate to the keep, at its height, in its seven lanes. Duplicate a waves table of
+`tables/` (a row per wave: its groups `kind count gap [road]` separated by `;`, `"goblin 8 0.8; grunt 2 1.5 b"`, and
+whether it is fought at night) and a briefing of `dialogues/` (the words of the captain; keep the two answers). On the
+`Game` entity set `level_number`, `level_name`, `scene_path`, `waves_table`, `briefing_dialogue`, `modifiers` (keys of
+`defence.lua`: `fog`, `blizzard`, `blood_moon`, `drought`, `gale`, `plunder`, `long_night`) and `new_enemies` (named in
+the briefing). The day and night effects are the `time_effects` list of `defence.lua` (`"archer night range 0.85"`:
+subject, phase, stat, factor). `start_towers` lists the towers standing at the start (`"pad kind level [power]"`, pads
+counted row by row from the north-west). The values of the towers and of the enemies are the rows of
+`tables/towers.owltable` and `tables/enemies.owltable`, the same for every level. Add the level to the `levels` and
+`level_scenes` lists of the `MapCanvas` script of `scenes/world_map.owl`.
 
 The art, the sounds, the levels and the menus come from `tools/samples/tower_defence/` (`generate_assets.py` with the
 Horde of `creatures.py`, the parchment of `medieval_ui.py`, the world map of `world_map_art.py` and the menu scenery
-of `scenery.py`, `generate_maps.py` from the level grids and themes of `maps.py`, `generate_menus.py` with the world
-map and the upgrades screen): running a generator again overwrites the edits made in Owl Nest.
+of `scenery.py`, `generate_maps.py` from the level grids, themes, waves and briefings of `maps.py`, `generate_menus.py`
+with the world map and the upgrades screen): running a generator again overwrites the edits made in Owl Nest. The
+`towers` and `enemies` tables are edited in Owl Nest only.

@@ -1,0 +1,36 @@
+DataTable: ''
+FormatVersion: 1
+columns:
+  - {name: groups, type: Text}
+  - {name: night, type: Bool}
+rows:
+  - key: wave_01
+    groups: 'goblin 10 0.7 a; wolf 6 0.8 b'
+    night: false
+  - key: wave_02
+    groups: 'grunt 6 1.1; sapper 3 1.5 b'
+    night: false
+  - key: wave_03
+    groups: 'ogre_mage 1 2; grunt 8 0.9'
+    night: true
+  - key: wave_04
+    groups: 'wolf 10 0.5 a; troll 4 1.2 b'
+    night: false
+  - key: wave_05
+    groups: 'sapper 6 0.9; goblin 12 0.45'
+    night: false
+  - key: wave_06
+    groups: 'ogre_mage 2 2.5; ogre 2 2.5; grunt 8 0.8'
+    night: true
+  - key: wave_07
+    groups: 'troll 8 0.9 a; wolf 10 0.5 b'
+    night: false
+  - key: wave_08
+    groups: 'ogre_mage 3 2; troll 6 1.0; sapper 6 0.8'
+    night: false
+  - key: wave_09
+    groups: 'ogre 4 2.0; grunt 12 0.6; wolf 10 0.5'
+    night: true
+  - key: wave_10
+    groups: 'ogre_mage 4 1.8; ogre 4 2.0; troll 8 0.8; sapper 8 0.7'
+    night: true

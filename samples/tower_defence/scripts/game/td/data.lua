@@ -6,16 +6,13 @@ local S, C = td.state, td.data
 -- Names, badges (frames of `textures/icons.png`) and texts of the towers, their levels and power-ups.
 C.KINDS = { "archer", "cannon", "frost" }
 
-C.NAMES = { archer = "Archer tower", cannon = "Cannon tower", frost = "Frost tower" }
+-- The name and the blurb of each tower, from `tables/towers.owltable` (`economy.read_towers`).
+C.NAMES = {}
+
+C.BLURBS = {}
 
 C.ICON = { archer = 0, cannon = 1, frost = 2, sell = 3, upgrade = 4, locked = 5, pierce = 6, double = 7,
                fire = 8, shock = 9, freeze = 10, aura = 11 }
-
-C.BLURBS = {
-    archer = "Fast arrows at one enemy. Ogres shrug most of them off.",
-    cannon = "Slow shells bursting on a group, aimed where it will be.",
-    frost = "Chills an enemy: slower for a while, a little damage.",
-}
 
 C.LEVEL_TEXT = {
     archer = { "", "Level 2: heavier arrows, longer range.", "Level 3: faster, heavier volleys." },
@@ -54,6 +51,14 @@ C.PROJECTILE = { archer = "prefabs/projectile_arrow.owlprefab", cannon = "prefab
 C.SHOT_SOUND = { archer = "sounds/game/arrow.wav", cannon = "sounds/game/cannon.wav",
                      frost = "sounds/game/frost.wav" }
 
+-- The subtitles of the sounds that tell something (`ui.show_subtitle`, shown while the `subtitles` setting is on).
+C.CAPTIONS = {
+    ["sounds/game/horn.wav"] = "[A war horn sounds]",
+    ["sounds/game/leak.wav"] = "[Blows on the keep gate]",
+    ["sounds/game/defeat.wav"] = "[The bells of the keep toll]",
+    ["sounds/game/coins.wav"] = "[Coins jingle]",
+}
+
 C.SHOT_HEIGHT = { 1.15, 1.6, 2.05 }   -- height of the weapon over the pad, by tower level
 
 C.PAD_TOP = 0.21                      -- height of a pad over the grass
@@ -65,31 +70,20 @@ C.FOOT_SHARE = 34.0 / 96.0
 
 C.TOWARD_VIEW = 0.25                  -- billboards come this far toward the camera, off the ground they stand on
 
-C.BAR_HEIGHT = { goblin = 0.62, grunt = 0.86, ogre = 1.12, wolf = 0.82, troll = 0.98, ogre_mage = 1.1,
-                     sapper = 0.66, berserker = 0.9, chieftain = 1.5 }
+-- The Horde, from `tables/enemies.owltable` (`economy.read_enemies`): the kinds in the order of the table, the name of
+-- each and how to beat it (shown the first time it marches in a level), the height of its health bar, its shadow.
+C.FOE_KINDS = {}
 
-C.SHADOW_SIZE = { goblin = 0.45, grunt = 0.6, ogre = 0.9, wolf = 0.8, troll = 0.6, ogre_mage = 0.85, sapper = 0.45,
-                      berserker = 0.6, chieftain = 1.1 }
+C.FOES = {}
 
--- The name of each kind of the Horde and how to beat it, shown the first time it marches in a level.
-C.FOES = {
-    goblin = { "Goblins", "quick and frail: archers" },
-    grunt = { "Orc grunts", "sturdy: any tower" },
-    ogre = { "Ogres", "arrows glance off them: cannons and frost" },
-    wolf = { "Wolf riders", "very fast: frost towers slow them" },
-    troll = { "Trolls", "they heal: burst them with cannons, fire stops the healing" },
-    ogre_mage = { "Ogre mages", "they ward the Horde around them: kill them first, fire burns through wards" },
-    berserker = { "Orc berserkers", "the more they bleed, the faster they run: frost, then finish them fast" },
-    sapper = { "Goblin sappers", "a keg blows 3 lives at the keep: shoot them early, their blast hurts the Horde" },
-    chieftain = { "The orc chieftain", "armoured, rallies the Horde, 10 lives: cannons and the vulnerability aura" },
-}
+C.BAR_HEIGHT = {}
+
+C.SHADOW_SIZE = {}
 
 -- Upgrades bought with the stars on the upgrades screen: the tier of each family (`tower_up_<family>` settings).
 C.UPGRADE_FAMILIES = { "archer", "cannon", "frost", "rain", "shield", "treasury" }
 
 C.DIRECTIONS = 8
-
-C.MAX_SPARKS = 90
 
 C.ATTACK_ROW, C.DEATH_ROW = 4, 6       -- rows of the enemy sheets after the 4 of the walk
 

@@ -58,6 +58,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wolfenstein mini: gold and blue sparks burst ahead of the view on every pick-up.
 - Wolfenstein mini settings: colour vision correction, reduced motion (still title view, no turn in the ride) and subtitles (the secret walls and the ride).
 - Scenarios `wolf_markers` and `wolf_settings`; `wolf_exit`, `wolf_tally` and `wolf_pickup` follow the ride and the sparks.
+- Tower defence: home-made music for the menus and the levels on the Music bus, and the master, music and effects volumes in its settings.
+- Tower defence: the accessibility settings (colour vision correction, reduced motion, subtitles of the horn, the blows at the keep, the coins and the defeat bells).
+- Tower defence: particles for blood, blasts, dust, embers, splinters, frost, the shield wall and the rain of arrows from pooled emitters, trails behind the projectiles, embers on the burning ground and the torches at night.
+- Tower defence: the briefing of each level is a dialogue (`dialogues/briefing_NN.owldlg`): the captain of the keep speaks, its answers are the To arms! and Skip tutorial buttons.
+- Scenario `tower_settings` (music volume and accessibility); `tower_defend` and `tower_tutorial_skip` also check the particles, the subtitles and the briefing answers.
 
 - Asset GUIDs: every asset of a project opened in Owl Nest gets a `.owlmeta` sidecar, and `AssetRegistry` maps GUID and path.
 - Asset references written by GUID (`gid:<guid>:<path hint>`): renaming or moving a file keeps every reference valid.
@@ -189,6 +194,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `entity.set_tint` and `entity.get_tint` also reach the colour of a `ParticleEmitter`.
 - Breakout: the power-ups and the bursts are prefabs spawned and destroyed by `game.lua`, no longer pools of hidden entities.
 - Sokoban: the levels are the rows of the data table `tables/levels.owltable`, read by the title, the level select, the levels and the victory screen; the pause stops the scene clock (`time.set_paused`).
+- Tower defence: the towers, the enemies and the waves of each level are data tables (`samples/tower_defence/tables/`) with the same values, editable in the Owl Nest grid.
+- Tower defence: the roads are `Linear` splines with seven lanes (`Road`, `Road B`) in place of the waypoint entities, and the trees, rocks, towers and keep draw a level of detail when small.
 - A particle emitter that does not emit and whose particles all died is idle (`ParticleSystem::isIdle`): neither simulated nor drawn.
 - The Moon Lantern: the bag stays open with an object in hand and after a combination, a click on the room closes it, and the object in hand is the cursor.
 - The Moon Lantern: the actors are drawn as toon-shaded pixel art with an outline, matching the backdrops, and the objects to pick are lighter, outlined and glow under the cursor.

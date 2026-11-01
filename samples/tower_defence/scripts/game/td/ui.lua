@@ -24,6 +24,11 @@ end
 
 function UI.play(path)
     sound.play(path)
+    local caption = C.CAPTIONS[path]
+    if caption ~= nil then
+        ui.show_subtitle(caption, 2.0)
+        S.captions = S.captions + 1
+    end
 end
 
 function UI.mirror()
@@ -36,6 +41,8 @@ function UI.mirror()
     gamestate.set("tower_kills", S.kills)
     gamestate.set("tower_leaks", S.leaks)
     gamestate.set("tower_spawned", S.spawned)
+    gamestate.set("tower_bursts", S.bursts_fired)
+    gamestate.set("tower_captions", S.captions)
     gamestate.set("tower_alive", #S.enemies)
     gamestate.set("tower_ring", S.ring == nil and 0 or (S.ring.pad.tower ~= nil and 2 or 1))
     gamestate.set("tower_hover", S.hover)
