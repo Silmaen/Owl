@@ -169,7 +169,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Benchmark `hud/frame/500_styled_widgets`: the 500-widget HUD drawn through the rounded-box shader.
 - Engine Demo skin `huds/engine_demo.owlhudtheme` (warm wood and brass, nine-slice textures from `tools/demo/generate_ui_skin.py`), the project default, followed by every menu and HUD but the far-orbit cockpit.
 - Pixel-art mesh layers: `PixelHeight`, `PixelColorLevels` and `PixelOutline` draw a `RendererMesh` layer at a low resolution, composited with its depth by `PixelArtPass`, set from Owl Nest Scene Settings.
-- Engine Demo tavern: a pixel-art mannequin stands in the room (`mesh_pixel` layer).
+- Engine Demo tavern: a pixel-art patron stands in the room (`mesh_pixel` layer).
 - `window::CursorMode::Hidden` and Lua `input.set_cursor_visible` / `input.is_cursor_visible`: a game drawing its own cursor hides the system one, in Owl Nest only over the game viewport.
 
 ### Changed

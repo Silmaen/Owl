@@ -248,7 +248,7 @@ regression fixture (`coin.owlanim` and its 6×3 sheet) lives with the tests, in 
 - [x] Tilemap navigation: `connections` mode with per-cell exceptions (a one-way street and a slow road in `iso_town.owl`) and `cells` mode on a hidden `walkable` layer of the hub tilemap (the villager)
 - [x] Walkable areas: the plaza of `iso_town.owl`, a `WalkArea` with a hole walked by five `WalkAgent` pedestrians
 - [x] Renderer stack mixing: the raycast level composes its `raycast_world` layer with a `Space: Screen` `ui` Renderer2D layer drawing a minimap (a Tilemap and a dot)
-- [x] Pixel-art mesh layer: the mannequin of the tavern is drawn by `mesh_pixel` (`PixelHeight`, `PixelColorLevels`,
+- [x] Pixel-art mesh layer: a patron of the tavern is drawn by `mesh_pixel` (`PixelHeight`, `PixelColorLevels`,
   `PixelOutline`), low resolution with an outline, next to the full-resolution people of `mesh_world`.
 - [x] UiList (the journal of the inventory window: a model grown by the script, only the rows in view bound with `onBindCallback` and `ui.list_set_row`, `onSelectCallback`, wheel and bar)
 

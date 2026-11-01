@@ -15,29 +15,6 @@ EnabledRenderers:
   - Name: ui
     Enabled: false
 Entities:
-  - Entity: 3900000000000000995
-    Tag:
-      tag: PixelMannequin
-    Transform:
-      translation: [1.4, 0, -1.2]
-      rotation: [0, 0.6, 0]
-      scale: [1, 1, 1]
-    MeshRenderer:
-      mesh: gid:c6e2b208c9bbd12c:meshes/characters/mannequin.glb
-      color: [1, 1, 1, 1]
-      transparent: false
-    Animator:
-      playing: true
-      speed: 1
-      entry: idle
-      parameters: []
-      states:
-        - {name: idle, clip: idle, speed: 1, loop: true}
-      transitions: []
-    RendererTag:
-      Name: mesh_pixel
-    Visibility:
-      gameVisible: true
   - Entity: 3900000000000000001
     Tag:
       tag: TavernCamera
@@ -1667,3 +1644,26 @@ Entities:
       properties:
         - {name: hint, type: string, value: HudHint}
         - {name: duration, type: float, value: 4.5}
+  - Entity: 3900000000000000995
+    Tag:
+      tag: PixelPatron
+    Transform:
+      translation: [1.4, 0, -1.2]
+      rotation: [0, 0.6, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:0fcc95d871feb418:meshes/characters/patron_traveller.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Animator:
+      playing: true
+      speed: 1
+      entry: idle
+      parameters: []
+      states:
+        - {name: idle, clip: idle, speed: 1, loop: true}
+      transitions: []
+    RendererTag:
+      Name: mesh_pixel
+    Visibility:
+      gameVisible: true
