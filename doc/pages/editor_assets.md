@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [The Owl Nest window](editor.md).
+
 The **Content Browser** (bottom strip) shows the files of the asset folders: the project, the application and the
 engine. It opens them, places them in the scene and takes files dropped from the desktop.
 

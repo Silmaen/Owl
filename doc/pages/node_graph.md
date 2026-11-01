@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Architecture Overview](architecture.md).
+
 This page documents Owl Engine's generic node-graph widget and the editor subsystems built on top of it. The framework is
 designed to be **reusable**: visual scripts and [PCG graphs](pcg_graphs.md) are consumers; future releases reuse the
 same canvas for animation graphs, behaviour trees and dialogue trees.

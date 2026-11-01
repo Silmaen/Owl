@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [The Owl Nest window](editor.md).
+
 Every file you open is a document: a tab in the centre with its own undo history, its unsaved-changes dot and, for a
 scene, its own Play state. The ribbon's last tab holds the commands of the active document.
 

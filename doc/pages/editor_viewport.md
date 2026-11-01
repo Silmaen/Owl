@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Beginner. **Read first:** [The Owl Nest window](editor.md).
+
 Each scene tab is a viewport: the scene drawn by the engine, with the editor camera, the gizmo of the selection and a
 few translucent overlays. Scenes can sit side by side: drag a scene tab out of the tab row.
 

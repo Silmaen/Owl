@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [The Owl Nest window](editor.md).
+
 **View > Settings > Editor** (or **Editor settings** in the File screen) opens the editor settings, one tab per
 topic; each row has a reset button once it differs from its default. They are saved in `OwlNest_settings.yml`, with
 the recent projects and their sessions, in the `user/` folder beside Owl Nest

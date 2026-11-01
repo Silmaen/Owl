@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [Scene and Components](scene.md).
+
 A game ships its texts in several languages, authored in Owl Nest. Plan and decisions:
 [Localisation design](design/localisation.md).
 

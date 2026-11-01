@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Architecture Overview](architecture.md).
+
 How Owl Nest is built, for those who change it. The user side of each part is in the editor pages
 ([The Owl Nest window](editor.md) and the pages after it). Sources: `source/owlnest/sources/`; the rules every panel
 follows are in the [Owl Nest style guide](design/nest-style-guide.md).

@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [The Owl Nest window](editor.md).
+
 This page documents the Entity-Component-System (ECS), scene lifecycle, component
 reference, and serialization.
 

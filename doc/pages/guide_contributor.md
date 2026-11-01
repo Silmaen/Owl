@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Building from Source](building.md).
+
 The pages for people who build Owl, change it or follow where it goes. The rules are in
 [Contributing](contributing.md); the plans live in the design pages.
 

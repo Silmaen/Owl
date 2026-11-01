@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [Scene and Components](scene.md).
+
 A glTF file can carry a skeleton, its animations and named attachment points besides its geometry. Owl draws such a
 mesh skinned on the GPU, plays its clips through a state machine, snaps other entities on its sockets, and swaps any
 mesh for coarser copies when it covers little of the screen. Design and decisions:

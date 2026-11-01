@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Architecture Overview](architecture.md).
+
 This page documents Owl Engine's rendering system: the 2D batch renderer, texture and shader
 management, cameras, framebuffers, and backend abstraction.
 

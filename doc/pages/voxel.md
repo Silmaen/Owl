@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Renderer](renderer.md).
+
 The voxel engine is a block-based world subsystem in the `owl::data::voxel` module. This page
 documents the data model (block types, chunks, the world store), then the meshing, the renderer, the procedural terrain
 and the editing tools built on it.

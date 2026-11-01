@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Beginner. **Read first:** [The Owl Nest window](editor.md).
+
 The right column edits the active scene: the **Scene Hierarchy** lists its entities, **Properties** shows the
 components of the selection, **Scene Settings** holds what belongs to the scene as a whole. Every change is an undo
 step.

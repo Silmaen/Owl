@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Architecture Overview](../architecture.md).
+
 One page per work item of the [roadmap](../roadmap.md): its plan, its decisions and its status. The pages describe
 what is planned; what exists is in the guides ([contributors](../guide_contributor.md)).
 

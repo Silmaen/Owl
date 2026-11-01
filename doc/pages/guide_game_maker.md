@@ -2,12 +2,15 @@
 
 [TOC]
 
+**Level:** Beginner. **Read first:** [Getting Started](getting_started.md).
+
 The pages for people who make a game with Owl Nest and Lua, without touching the engine's C++. Start with
-[Getting Started](getting_started.md), then follow the path below.
+[Getting Started](getting_started.md) and the [tutorial](tutorial-first-game.md), then follow the path below.
 
 ```mermaid
 flowchart LR
-    G[Getting Started] --> E[The Owl Nest window]
+    G[Getting Started] --> T[Tutorial: first game]
+    T --> E[The Owl Nest window]
     E --> S[Scene and components]
     S --> L[Scripting games in Lua]
     L --> P[Pack the game]
@@ -15,13 +18,14 @@ flowchart LR
 
 ## Core path
 
-| Page                                   | What you learn                                                       |
-|----------------------------------------|----------------------------------------------------------------------|
-| [Getting Started](getting_started.md)  | Run Owl Nest, open the Engine Demo and the sample games, ship a game |
-| [The Owl Nest window](editor.md)       | The editor, then one page per part: viewport, inspector, documents   |
-| [Scene and Components](scene.md)       | Entities, hierarchy, every component, HUD, triggers, serialization   |
-| [Scripting Games in Lua](scripting.md) | Scripts on entities, lifecycle, properties, sandbox                  |
-| [Lua API Reference](lua-api.md)        | Every Lua table and function, one page per theme (generated)         |
+| Page                                           | What you learn                                                       |
+|------------------------------------------------|----------------------------------------------------------------------|
+| [Getting Started](getting_started.md)          | Run Owl Nest, open the Engine Demo and the sample games, ship a game |
+| [Tutorial: first game](tutorial-first-game.md) | A moving square and a score, played and exported in 30 minutes       |
+| [The Owl Nest window](editor.md)               | The editor, then one page per part: viewport, inspector, documents   |
+| [Scene and Components](scene.md)               | Entities, hierarchy, every component, HUD, triggers, serialization   |
+| [Scripting Games in Lua](scripting.md)         | Scripts on entities, lifecycle, properties, sandbox                  |
+| [Lua API Reference](lua-api.md)                | Every Lua table and function, one page per theme (generated)         |
 
 ## Gameplay systems
 

@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [Scene and Components](scene.md).
+
 A sequence is a short film made of the game's own camera: shots that move the camera along a path and event keys that
 call Lua functions at given times. It is a `.owlseq` asset, edited on a timeline in Owl Nest and played by a
 `SequencePlayer` component or from Lua. Plan: [Large worlds](design/large-worlds.md#large-worlds-sequences).

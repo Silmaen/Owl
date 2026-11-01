@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [The Owl Nest window](editor.md).
+
 Owl Nest embeds a [Model Context Protocol](https://modelcontextprotocol.io) server: a local AI agent (Claude Code, or
 any MCP client) lists the scene, edits it through the editor commands, runs Play for a number of frames and gets the
 viewport back as an image. Everything it changes goes through the undo history, so one `Ctrl+Z` in the editor

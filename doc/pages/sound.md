@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [Scene and Components](scene.md).
+
 This page describes the Owl Engine sound system: audio in scenes, spatial sound, the mixer buses, reverb zones and
 filters, the Doppler effect, adaptive music and sounds from gameplay code.
 

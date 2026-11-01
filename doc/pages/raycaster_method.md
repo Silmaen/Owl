@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Renderer](renderer.md).
+
 This page describes **exactly** the algorithm used by `RendererRaycast` — math, data flow, conventions, and
 the known limitations of the current implementation. It is intentionally low-level so the rendering path can be reasoned
 about, debugged, and replaced piece by piece.

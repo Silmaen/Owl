@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Beginner. **Read first:** [Getting Started](getting_started.md).
+
 This page describes the Owl Engine Lua scripting system: how to attach scripts to entities,
 write Lua callbacks, use the engine API from Lua, and manage script properties. Graphs edited in Owl Nest compile to
 the same Lua: see [Visual scripts](visual-scripts.md).

@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Beginner.
+
 Welcome to **Owl Engine**, a C++23 game engine with a scene editor (Owl Nest), Lua scripting,
 rendering styles mixed in one game (2D, raycast, voxel, isometric, 3D), physics, audio, packaging, and more.
 
@@ -87,6 +89,7 @@ driven by the day-night cycle over the voxel terrain.*
 
 ## Where to Go Next
 
+- Make a first game in 30 minutes: [Tutorial: Create a New Game](tutorial-first-game.md)
 - Build a game: [The Owl Nest window](editor.md) and the editor pages after it, then
   [Scripting Games in Lua](scripting.md)
 - Every page by audience: [game makers](guide_game_maker.md), [C++ engine developers](guide_engine_developer.md),

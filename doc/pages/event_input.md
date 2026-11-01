@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [Scene and Components](scene.md).
+
 This page covers the Owl Engine event system, input polling, and editor keybindings.
 
 ## Overview

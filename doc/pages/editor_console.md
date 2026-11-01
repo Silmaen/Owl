@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [The Owl Nest window](editor.md).
+
 Every change Owl Nest makes to a scene is a named **command**: a gizmo drag, an inspector edit, a hierarchy drop as
 well as a line typed in the Console, a macro or a request of an [MCP](mcp.md) client. They all go to the same undo
 history and to the session journal, which the Console shows.
