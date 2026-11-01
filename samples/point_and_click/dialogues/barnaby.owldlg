@@ -7,21 +7,21 @@ nodes:
     next: 9500000000000000002
   - id: 9500000000000000002
     kind: Line
-    position: [240, 120]
-    speaker: {text: 'Barnaby', key: dialogue.barnaby.name}
-    text: {text: 'Ah, Wren! The Moon Lantern has gone dark. Without it the fairies will never find the valley tonight.', key: dialogue.barnaby.hello}
+    position: [195.38565, 120]
+    speaker: {text: Barnaby, key: dialogue.barnaby.name}
+    text: {text: "Ah, Wren! The Moon Lantern has gone dark. Without it the fairies will never find the valley tonight.", key: dialogue.barnaby.hello}
     next: 9500000000000000003
   - id: 9500000000000000003
     kind: Choice
     position: [520, 120]
-    speaker: {text: 'Barnaby', key: dialogue.barnaby.name}
-    text: {text: 'What troubles you, my boy?', key: dialogue.barnaby.ask}
+    speaker: {text: Barnaby, key: dialogue.barnaby.name}
+    text: {text: "What troubles you, my boy?", key: dialogue.barnaby.ask}
     options:
-      - text: {text: 'Where is its moonstone?', key: dialogue.barnaby.answer_stone}
+      - text: {text: "Where is its moonstone?", key: dialogue.barnaby.answer_stone}
         next: 9500000000000000004
-      - text: {text: 'What else does it need?', key: dialogue.barnaby.answer_help}
+      - text: {text: "What else does it need?", key: dialogue.barnaby.answer_help}
         next: 9500000000000000006
-      - text: {text: 'I will fix it!', key: dialogue.barnaby.answer_bye}
+      - text: {text: I will fix it!, key: dialogue.barnaby.answer_bye}
         next: 9500000000000000009
   - id: 9500000000000000004
     kind: Event
@@ -31,8 +31,8 @@ nodes:
   - id: 9500000000000000005
     kind: Line
     position: [1080, 0]
-    speaker: {text: 'Barnaby', key: dialogue.barnaby.name}
-    text: {text: 'The bridge troll took it. He sits on everything shiny. And he has a terrible sweet tooth.', key: dialogue.barnaby.stone}
+    speaker: {text: Barnaby, key: dialogue.barnaby.name}
+    text: {text: The bridge troll took it. He sits on everything shiny. And he has a terrible sweet tooth., key: dialogue.barnaby.stone}
     next: 9500000000000000003
   - id: 9500000000000000006
     kind: Branch
@@ -49,21 +49,24 @@ nodes:
   - id: 9500000000000000008
     kind: Line
     position: [1340, 240]
-    speaker: {text: 'Barnaby', key: dialogue.barnaby.name}
-    text: {text: 'A moonstone sleeps without a spark. Fireflies make lovely sparks, if you can keep them in something.', key: dialogue.barnaby.spark}
+    speaker: {text: Barnaby, key: dialogue.barnaby.name}
+    text: {text: "A moonstone sleeps without a spark. Fireflies make lovely sparks, if you can keep them in something.", key: dialogue.barnaby.spark}
     next: 9500000000000000003
   - id: 9500000000000000009
     kind: Line
     position: [820, 400]
-    speaker: {text: 'Barnaby', key: dialogue.barnaby.name}
-    text: {text: 'Mind the troll''s manners. And yours.', key: dialogue.barnaby.bye}
+    speaker: {text: Barnaby, key: dialogue.barnaby.name}
+    text: {text: Mind the troll's manners. And yours., key: dialogue.barnaby.bye}
     next: 9500000000000000011
   - id: 9500000000000000010
     kind: Line
     position: [1340, 100]
-    speaker: {text: 'Barnaby', key: dialogue.barnaby.name}
-    text: {text: 'You have all it needs! Set it all in the lantern, quick.', key: dialogue.barnaby.ready}
+    speaker: {text: Barnaby, key: dialogue.barnaby.name}
+    text: {text: "You have all it needs! Set it all in the lantern, quick.", key: dialogue.barnaby.ready}
     next: 9500000000000000011
   - id: 9500000000000000011
     kind: End
-    position: [1600, 400]
+    position: [1659.4858, 356.62494]
+routes:
+  - {node: 9500000000000000008, output: 0, points: [[1568, 352], [528, 352]]}
+  - {node: 9500000000000000005, output: 0, points: [[1296, -32], [512, -32]]}
