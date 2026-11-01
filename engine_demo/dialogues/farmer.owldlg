@@ -1,0 +1,23 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7200000000000000101
+    kind: Start
+    position: [0, 120]
+    next: 7200000000000000102
+  - id: 7200000000000000102
+    kind: Line
+    position: [260, 120]
+    speaker: {text: Farmer, key: dialogue.farmer.name}
+    text: {text: 'The telescope of the observatory looks at a station far, far away.', key: dialogue.farmer.observatory}
+    next: 7200000000000000103
+  - id: 7200000000000000103
+    kind: Line
+    position: [520, 120]
+    speaker: {text: Farmer, key: dialogue.farmer.name}
+    text: {text: 'A debris drifts off it, they say. It waits for a pilot to dock.', key: dialogue.farmer.debris}
+    next: 7200000000000000104
+  - id: 7200000000000000104
+    kind: End
+    position: [780, 120]
+routes: []

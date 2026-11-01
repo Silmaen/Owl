@@ -1,0 +1,27 @@
+# The observatory of the hub: E at its telescope opens the far orbit; docking with the debris there marks the place
+# done and comes back to the hub, where the marker of the telescope goes out.
+scene: ../../../engine_demo/scenes/world_map.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: marked_level_orbit_done, equals: 1}
+  # North up the avenue to the high street, east to the footpath of the observatory, north to the terrace.
+  - input: {key: W, frames: 168}
+  - input: {key: D, frames: 180}
+  - input: {key: W, frames: 168}
+  - input: {key: D, frames: 36}
+  - input: {key: W, frames: 20}
+  - expect: {player: true, translation.y: {greater: -8.0}}
+  - input: {key: E, frames: 3}
+  - frames: 90
+  - expect: {entity: OrbitCamera, exists: true}
+  # The cockpit of the far orbit: yaw right towards the debris, thrust, let the flight assist slow down.
+  - input: {key: Right, frames: 23}
+  - frames: 20
+  - input: {key: W, frames: 150}
+  - frames: 90
+  - expect: {gamestate: level_orbit_done, equals: 1}
+  - frames: 200
+  - expect: {entity: TelescopeDoor, exists: true}
+  - expect: {gamestate: marked_level_orbit_done, equals: 0}
+  - expect: {gamestate: levels_done, equals: 1}
+  - expect: {player: true, translation.x: {greater: 49.0}}

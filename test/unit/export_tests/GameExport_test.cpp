@@ -182,6 +182,7 @@ protected:
 				.description = "A # tricky: description",
 				.icon = "logo/icon.png",
 				.defaultHud = {},
+				.defaultHudTheme = {},
 				.gamepadMappings = "input/gamecontrollerdb.txt",
 				.projectDirectory = m_project,
 				.outputDirectory = m_root / "out",
@@ -539,7 +540,7 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 			 {"tilesets/voxel_blocks.owltileset", "textures/atlases/voxel_blocks.png",
 			  "tilesets/raycast_w3d_walls.owltileset", "tilemaps/world_map.owltilemap", "sounds/hub/birds_4.wav",
 			  "sounds/hub/wind_3.wav", "sounds/hub/steps.owlsound", "sounds/hub/step_2.wav", "sounds/hub/wade_4.wav",
-			  "tables/carts.owltable", "tables/cargo.owltable"})
+			  "tables/walkers.owltable", "tables/dishes.owltable"})
 			EXPECT_TRUE(reader.contains(entry)) << entry;
 	}
 	reader.close();
@@ -595,6 +596,22 @@ INSTANTIATE_TEST_SUITE_P(Shipped, GameExportEndToEnd, testing::ValuesIn(shippedP
 						 [](const testing::TestParamInfo<std::filesystem::path>& iInfo) -> std::string {
 							 return iInfo.param.filename().string();
 						 });
+
+TEST(GameExportCoverage, EveryDemoSceneHasAScenario) {
+	// Every scene of the Engine Demo (the world partition cells apart) is the `scene:` of at least one scenario.
+	const auto root = test::getRootPath();
+	std::string scenarios;
+	for (const auto& entry: std::filesystem::directory_iterator(root / "test" / "unit" / "scenarios")) {
+		if (entry.path().extension() == ".owltest")
+			scenarios += readFile(entry.path());
+	}
+	for (const auto& entry: std::filesystem::directory_iterator(root / "engine_demo" / "scenes")) {
+		if (entry.path().extension() != ".owl")
+			continue;
+		const auto line = std::format("scene: ../../../engine_demo/scenes/{}\n", entry.path().filename().string());
+		EXPECT_NE(scenarios.find(line), std::string::npos) << "no scenario starts on " << entry.path().filename();
+	}
+}
 
 TEST(GameExportCoverage, EverySampleGameHasAScenario) {
 	const auto root = test::getRootPath();

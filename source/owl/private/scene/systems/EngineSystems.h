@@ -169,6 +169,14 @@ void updateFlyCameras(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Fly the `ShipController` entities with inertia and the flight assist (`owl.ships`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The frame context.
+ */
+void updateShips(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Drive `VoxelPlayer` entities: look, modes, block edits, gravity, jump and collision (`owl.voxel_players`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

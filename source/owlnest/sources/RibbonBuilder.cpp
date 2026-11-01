@@ -16,6 +16,7 @@
 #include "document/DataTableDocument.h"
 #include "document/DialogueDocument.h"
 #include "document/FontDocument.h"
+#include "document/HudThemeDocument.h"
 #include "document/LocalisationDocument.h"
 #include "document/MaterialDocument.h"
 #include "document/NodeGraphDocument.h"
@@ -316,6 +317,9 @@ void RibbonBuilder::build() {
 			break;
 		case DocumentType::Sequence:
 			buildSequenceTab();
+			break;
+		case DocumentType::HudTheme:
+			buildHudThemeTab();
 			break;
 		case DocumentType::Scene:
 			buildSceneTab();
@@ -862,6 +866,35 @@ void RibbonBuilder::buildDataTableTab() {
 							  .isEnabled = [activeTable]() -> bool { return activeTable() != nullptr; },
 							  .onClick = [activeTable]() -> void {
 								  if (auto* t = activeTable())
+									  std::ignore = t->save();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_close",
+							  .label = "Close",
+							  .tooltip = "Close the active document",
+							  .onClick = [this]() -> void { mp_editor->requestCloseActiveDocument(); },
+							  .size = Size::Small});
+}
+
+void RibbonBuilder::buildHudThemeTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto activeTheme = [this]() -> HudThemeDocument* {
+		auto* d = mp_editor->m_documents.getActive();
+		if (d != nullptr && d->type() == DocumentType::HudTheme)
+			return static_cast<HudThemeDocument*>(d);
+		return nullptr;
+	};
+	const auto tab = m_ribbon.addTab("HUD Theme");
+	const auto gFile = m_ribbon.addGroup(tab, "File");
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "ribbon_save",
+							  .label = "Save",
+							  .tooltip = "Save the theme; the HUDs following it read it again (Ctrl+S)",
+							  .isEnabled = [activeTheme]() -> bool { return activeTheme() != nullptr; },
+							  .onClick = [activeTheme]() -> void {
+								  if (auto* t = activeTheme())
 									  std::ignore = t->save();
 							  },
 							  .size = Size::Large});

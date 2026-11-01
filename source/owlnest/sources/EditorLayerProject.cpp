@@ -14,6 +14,7 @@
 #include "document/DataTableDocument.h"
 #include "document/DialogueDocument.h"
 #include "document/FontDocument.h"
+#include "document/HudThemeDocument.h"
 #include "document/ImageDocument.h"
 #include "document/LocalisationDocument.h"
 #include "document/MaterialDocument.h"
@@ -94,6 +95,9 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 			return;
 		case AssetKind::DataTable:
 			openDataTableFile(iPath);
+			return;
+		case AssetKind::HudTheme:
+			openHudThemeFile(iPath);
 			return;
 		case AssetKind::Dialogue:
 			openDialogueFile(iPath);
@@ -612,6 +616,37 @@ auto EditorLayer::openDataTable(const std::filesystem::path& iPath) -> commands:
 	return findOpenDocument<DataTableDocument>(m_documents, DocumentType::DataTable, path);
 }
 
+void EditorLayer::openHudThemeFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::HudTheme && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<HudThemeDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open HUD theme: {}.", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+auto EditorLayer::openHudTheme(const std::filesystem::path& iPath) -> commands::HudThemeEditor* {
+	const auto path = normalised(iPath);
+	if (auto* doc = findOpenDocument<HudThemeDocument>(m_documents, DocumentType::HudTheme, path); doc != nullptr)
+		return doc;
+	openHudThemeFile(path);
+	return findOpenDocument<HudThemeDocument>(m_documents, DocumentType::HudTheme, path);
+}
+
 void EditorLayer::openDialogueFile(const std::filesystem::path& iPath) {
 	if (iPath.empty() || !exists(iPath))
 		return;
@@ -950,6 +985,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	std::ignore = app::Application::get().getEngineContext().loadActionMap(m_project.projectDirectory);
 	std::ignore = app::Application::get().getEngineContext().loadLocalisation(m_project.projectDirectory);
 	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
+	app::Application::get().getEngineContext().setDefaultHudTheme(m_project.defaultHudTheme);
 	loadGameSettings(m_project.name, m_project.projectDirectory);
 	std::ignore = m_project.loadGamepadMappings();
 	m_contentBrowser.attach();
@@ -1033,6 +1069,7 @@ void EditorLayer::closeProject() {
 	std::ignore = app.getEngineContext().loadActionMap({});
 	app.getEngineContext().setLocalisation({});
 	app.getEngineContext().setDefaultHud(m_project.defaultHud);
+	app.getEngineContext().setDefaultHudTheme(m_project.defaultHudTheme);
 	loadGameSettings(m_project.name, m_project.projectDirectory);
 	newScene();
 	m_contentBrowser.attach();

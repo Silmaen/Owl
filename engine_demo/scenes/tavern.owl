@@ -30,7 +30,7 @@ Entities:
         orthographicNear: -1
         orthographicFar: 10
         toneMapping: Aces
-        postProcess: {ev100: 4, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.08, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.4, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0], chromaticAberration: true, chromaticAberrationIntensity: 0.15, filmGrain: true, filmGrainIntensity: 0.08, lensFlare: true, lensFlareIntensity: 0.6, lensFlareGhosts: 3, lensFlareSpacing: 0.5, lensFlareHalo: 0.5, lensFlareSize: 0.08}
+        postProcess: {ev100: 3.3, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.08, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.25, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0], chromaticAberration: true, chromaticAberrationIntensity: 0.05, filmGrain: true, filmGrainIntensity: 0.03, lensFlare: true, lensFlareIntensity: 0.3, lensFlareGhosts: 3, lensFlareSpacing: 0.5, lensFlareHalo: 0.5, lensFlareSize: 0.08}
       primary: true
       fixedAspectRatio: false
     FirstPersonController: {enabled: true, walkSpeed: 2.2, runSpeed: 4, lookSpeed: 1.8, mouseSensitivity: 0.0025, captureCursor: true, eyeHeight: 1.6, height: 1.75, radius: 0.25, stepHeight: 0.3, gravity: 9.81, jumpSpeed: 0}
@@ -53,7 +53,7 @@ Entities:
         orthographicNear: -1
         orthographicFar: 10
         toneMapping: Aces
-        postProcess: {ev100: 4, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.08, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.4, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0], chromaticAberration: true, chromaticAberrationIntensity: 0.15, filmGrain: true, filmGrainIntensity: 0.08, lensFlare: true, lensFlareIntensity: 0.6, lensFlareGhosts: 3, lensFlareSpacing: 0.5, lensFlareHalo: 0.5, lensFlareSize: 0.08}
+        postProcess: {ev100: 3.3, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.08, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.25, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0], chromaticAberration: true, chromaticAberrationIntensity: 0.05, filmGrain: true, filmGrainIntensity: 0.03, lensFlare: true, lensFlareIntensity: 0.3, lensFlareGhosts: 3, lensFlareSpacing: 0.5, lensFlareHalo: 0.5, lensFlareSize: 0.08}
       primary: false
       fixedAspectRatio: false
     Visibility:
@@ -81,7 +81,7 @@ Entities:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Environment: {hdri: "", ambient: [0.65, 0.42, 0.26], intensity: 2.5, rotation: 0, showSky: false}
+    Environment: {hdri: "", ambient: [0.65, 0.42, 0.26], intensity: 3, rotation: 0, showSky: false}
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000003
@@ -1252,3 +1252,393 @@ Entities:
       realtime: false
     Visibility:
       gameVisible: true
+  - Entity: 3900000000000002001
+    Tag:
+      tag: BarCounter
+    Transform:
+      translation: [3.35, 0, -1.2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:376f79504b114ebf:meshes/tavern/bar_counter.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002002
+    Tag:
+      tag: Barkeeper
+    Transform:
+      translation: [3.8, 0.3, -1.0]
+      rotation: [0, -1.5708, 0]
+      scale: [2.2, 2.2, 2.2]
+    MeshRenderer:
+      mesh: gid:cc61530350699b89:meshes/characters/barkeeper.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    Animator:
+      playing: true
+      speed: 1
+      entry: hold
+      parameters:
+        - {name: nod, type: Trigger, value: 0}
+        - {name: serve, type: Trigger, value: 0}
+      states:
+        - {name: hold, clip: holding-right, speed: 1, loop: true}
+        - {name: serve, clip: interact-right, speed: 1, loop: false}
+        - {name: nod, clip: emote-yes, speed: 1, loop: false}
+      transitions:
+        - from: "*"
+          to: serve
+          duration: 0.2
+          exitTime: -1
+          conditions:
+            - {parameter: serve, op: IsTrue, threshold: 0}
+        - from: "serve"
+          to: hold
+          duration: 0.2
+          exitTime: 1
+          conditions: []
+        - from: "*"
+          to: nod
+          duration: 0.2
+          exitTime: -1
+          conditions:
+            - {parameter: nod, op: IsTrue, threshold: 0}
+        - from: "nod"
+          to: hold
+          duration: 0.2
+          exitTime: 1
+          conditions: []
+    MeshSockets:
+      sockets:
+        - name: hand_r
+          bone: arm-right
+          translation: [-0.27, 0.05, 0.02]
+          rotation: [0, 0, 0]
+          scale: [0.5, 0.5, 0.5]
+    Trigger: {Type: Interaction, CallbackName: on_talk}
+    LuaScript:
+      scriptPath: gid:f77328372cd37ad7:scripts/tavern/tavern_patron.lua
+      properties:
+        - {name: dialogue_path, type: string, value: dialogues/barkeeper.owldlg}
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002003
+    Tag:
+      tag: Tankard
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000002002}
+    MeshRenderer:
+      mesh: gid:8d9360e1e841cb04:meshes/tavern/tankard.glb
+      color: [0.62, 0.64, 0.66, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    SocketAttachment:
+      socket: hand_r
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002004
+    Tag:
+      tag: TableB
+    Transform:
+      translation: [-0.7, 0, 2.2]
+      rotation: [0, 1.5708, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:ea34c77ce5dfb5a1:meshes/tavern/wooden_table_02/wooden_table_02.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/wooden_table_02/textures/wooden_table_02_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002005
+    Tag:
+      tag: StoolB1
+    Transform:
+      translation: [-0.7, 0, 2.95]
+      rotation: [0, 0.2, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:6e052359171a021f:meshes/tavern/folding_wooden_stool/folding_wooden_stool.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/folding_wooden_stool/textures/folding_wooden_stool_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002006
+    Tag:
+      tag: StoolB2
+    Transform:
+      translation: [-0.7, 0, 1.45]
+      rotation: [0, -0.15, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:6e052359171a021f:meshes/tavern/folding_wooden_stool/folding_wooden_stool.gltf
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {occlusionMap: nam:meshes/tavern/folding_wooden_stool/textures/folding_wooden_stool_arm_1k.jpg}}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002007
+    Tag:
+      tag: Farmer
+    Transform:
+      translation: [-0.7, 0.12, 3.0]
+      rotation: [0, 3.1416, 0]
+      scale: [2.2, 2.2, 2.2]
+    MeshRenderer:
+      mesh: gid:ec8e5bbd9f12e64a:meshes/characters/patron_farmer.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    Animator:
+      playing: true
+      speed: 1
+      entry: sit
+      parameters: []
+      states:
+        - {name: sit, clip: sit, speed: 1, loop: true}
+      transitions: []
+    Trigger: {Type: Interaction, CallbackName: on_talk}
+    LuaScript:
+      scriptPath: gid:f77328372cd37ad7:scripts/tavern/tavern_patron.lua
+      properties:
+        - {name: dialogue_path, type: string, value: dialogues/farmer.owldlg}
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002008
+    Tag:
+      tag: Traveller
+    Transform:
+      translation: [-0.7, 0.12, 1.4]
+      rotation: [0, 0, 0]
+      scale: [2.2, 2.2, 2.2]
+    MeshRenderer:
+      mesh: gid:0fcc95d871feb418:meshes/characters/patron_traveller.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    Animator:
+      playing: true
+      speed: 1
+      entry: sit
+      parameters: []
+      states:
+        - {name: sit, clip: sit, speed: 1, loop: true}
+      transitions: []
+    Trigger: {Type: Interaction, CallbackName: on_talk}
+    LuaScript:
+      scriptPath: gid:f77328372cd37ad7:scripts/tavern/tavern_patron.lua
+      properties:
+        - {name: dialogue_path, type: string, value: dialogues/traveller.owldlg}
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002009
+    Tag:
+      tag: ServerRoute
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Spline:
+      interpolation: CatmullRom
+      closed: true
+      resolution: 16
+      up: [0, 1, 0]
+      points:
+        - [2.55, 0, -0.9]
+        - [2.3, 0, 0.9]
+        - [0.9, 0, 1.6]
+        - [0.3, 0, 3.0]
+        - [-1.8, 0, 2.4]
+        - [-1.2, 0, 0.8]
+        - [0.4, 0, 0.6]
+        - [1.6, 0, -1.4]
+      lanes: []
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002010
+    Tag:
+      tag: ServerWalker
+    Transform:
+      translation: [2.55, 0, -0.9]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SplineFollower:
+      enabled: true
+      spline: 3900000000000002009
+      lane: ""
+      offset: 0
+      speed: 0.7
+      startDistance: 0
+      mode: Loop
+      orient: true
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002011
+    Tag:
+      tag: Server
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 3.1416, 0]
+      scale: [2.2, 2.2, 2.2]
+    Hierarchy: {parentId: 3900000000000002010}
+    MeshRenderer:
+      mesh: gid:8f0f0550b4240490:meshes/characters/server.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    Animator:
+      playing: true
+      speed: 1
+      entry: walk
+      parameters: []
+      states:
+        - {name: walk, clip: walk, speed: 1, loop: true}
+      transitions: []
+    Trigger: {Type: Interaction, CallbackName: on_talk}
+    LuaScript:
+      scriptPath: gid:f77328372cd37ad7:scripts/tavern/tavern_patron.lua
+      properties:
+        - {name: dialogue_path, type: string, value: dialogues/server.owldlg}
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002012
+    Tag:
+      tag: TavernTalk
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    LuaScript:
+      scriptPath: gid:d459a1ed859625e7:scripts/tavern/tavern_dialogues.lua
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002101
+    Tag:
+      tag: BarWallLantern
+    Transform:
+      translation: [3.8, 2.02, -2.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.62, 0.3]
+      intensity: 650
+      range: 6
+    LightFlicker:
+      style: Candle
+      amplitude: 0.12
+      seed: 33
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002102
+    Tag:
+      tag: BarWallSconce
+    Transform:
+      translation: [3.99, 1.75, -2.1]
+      rotation: [0, -1.5708, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:78bb303e4c2374f5:meshes/tavern/wall_sconce.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:f9f1a050f98c61fa:materials/wrought_iron.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002103
+    Tag:
+      tag: BarSconceCandle
+    Transform:
+      translation: [3.81, 1.836, -2.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:6287d04c2c0ec73b:meshes/tavern/candle.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:63797bca55b45210:materials/candle_wax.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002104
+    Tag:
+      tag: BarSconceFlame
+    Transform:
+      translation: [3.81, 2.004, -2.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:70bab3bc30e6e6f3:meshes/tavern/candle_flame.glb
+      color: [1, 1, 1, 1]
+      transparent: true
+      materials:
+        - material: gid:3345176051c32741:materials/candle_flame.owlmat
+    RendererTag:
+      Name: mesh_world
+    LightFlicker:
+      style: Candle
+      amplitude: 0
+      follow: 3900000000000000114
+      positionJitter: [0.002, 0, 0.002]
+      scaleResponse: [0.1, 0.35, 0.1]
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002200
+    Tag:
+      tag: BarStep
+    Transform:
+      translation: [3.85, 0, -1.2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:9443dd08b67d3a45:meshes/tavern/bar_step.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002300
+    Tag: {tag: ControlsHint}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    LuaScript:
+      scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.lua
+      properties:
+        - {name: hint, type: string, value: HudHint}
+        - {name: duration, type: float, value: 4.5}

@@ -11,6 +11,7 @@
 #include "core/Serializer.h"
 #include "data/fonts/Font.h"
 #include "data/fonts/TextLayout.h"
+#include "scene/component/UiStyle.h"
 
 #include <cstdint>
 #include <string>
@@ -56,6 +57,8 @@ struct OWL_API UiText {
 	math::vec4 backgroundColor{0.f, 0.f, 0.f, 0.f};
 	/// Margin between the text block and its background box, in reference pixels.
 	float backgroundPadding = 4.f;
+	/// Style of the HUD theme the text follows (colour, font, size, outline).
+	UiStyleRef style;
 
 	/**
 	 * @brief

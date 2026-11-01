@@ -5,7 +5,9 @@
   same palette (four phases of water, lava, bridge; Tiny Town has none), then the Tiny Dungeon characters (rows 12-13)
   and the four walk frames of the hero (row 14, tiles 168-171: the pack has none, they are drawn from the idle sprite),
   then the village tiles of ``generate_village_tiles.py`` (rows 15-20: plaza, crops, fountain, flags, butterflies, a
-  sparrow, a hen, idle and walk frames of ten characters).
+  sparrow, a hen, idle and walk frames of ten characters), the Tiny Farm packed sheet (rows 21-31, tile ``252 + i``),
+  the walls and floors of Tiny Dungeon (its rows 0-4 as rows 32-36, tile ``384 + i``) and row 37 of the village tiles
+  (the observatory dome, its telescope).
 * ``platformer_atlas.png`` 360x288: Pixel Platformer's packed tiles (18 px grid, rows 0-8) and its characters
   (24 px grid, from row 9 of 24 px, i.e. y = 216). 288 is a multiple of 18 and of 24, so the one texture reads as an
   18 px tile grid (20x16) and as a 24 px sprite grid (15x12).
@@ -67,6 +69,8 @@ def _extra_tiles() -> Image.Image:
 
 HERO_TILE = (4, 12)  # column, row of the hero in the atlas
 WALK_ROW = 14
+FARM_ROW = 21  # Tiny Farm: tile 252 + i
+DUNGEON_ROW = 32  # walls and floors of Tiny Dungeon: tile 384 + i
 
 
 def _hero_walk_frames(hero: Image.Image) -> list[Image.Image]:
@@ -96,8 +100,11 @@ def _hero_walk_frames(hero: Image.Image) -> list[Image.Image]:
 def build_town() -> None:
     town = Image.open(SHEETS / "tiny_town.png").convert("RGBA")
     dungeon = Image.open(SHEETS / "tiny_dungeon.png").convert("RGBA")
+    farm = Image.open(SHEETS / "tiny_farm.png").convert("RGBA")
     atlas = Image.new("RGBA", (192, ROWS * 16), (0, 0, 0, 0))
     atlas.paste(town, (0, 0))
+    atlas.paste(farm, (0, FARM_ROW * 16))
+    atlas.paste(dungeon.crop((0, 0, 192, 5 * 16)), (0, DUNGEON_ROW * 16))
     atlas.paste(_extra_tiles(), (0, 11 * 16))
     atlas.paste(dungeon.crop((0, 7 * 16, 192, 9 * 16)), (0, 12 * 16))
     hero_x, hero_y = HERO_TILE[0] * 16, HERO_TILE[1] * 16

@@ -1035,7 +1035,7 @@
       "items": 1,
       "batch": 1223,
       "samples": 15,
-      "median_ns": 9692.8,
+      "median_ns": 11470.0,
       "p25_ns": 9665.9,
       "p75_ns": 9715.2,
       "min_ns": 9639.7,
@@ -1055,13 +1055,13 @@
     {
       "name": "sample/editor_update/main_menu",
       "items": 1,
-      "batch": 391,
+      "batch": 824,
       "samples": 15,
-      "median_ns": 30398.2,
-      "p25_ns": 30376.5,
-      "p75_ns": 30433.5,
-      "min_ns": 30348.3,
-      "max_ns": 30504.5
+      "median_ns": 39597.9,
+      "p25_ns": 38984.4,
+      "p75_ns": 39844.3,
+      "min_ns": 38750.5,
+      "max_ns": 40264.9
     },
     {
       "name": "sample/editor_update/platformer_house",
@@ -1099,20 +1099,20 @@
     {
       "name": "sample/editor_update/tavern",
       "items": 1,
-      "batch": 405,
+      "batch": 890,
       "samples": 15,
-      "median_ns": 30092.9,
-      "p25_ns": 30068.9,
-      "p75_ns": 30146.3,
-      "min_ns": 30035.1,
-      "max_ns": 30302.4
+      "median_ns": 36962.1,
+      "p25_ns": 36734.7,
+      "p75_ns": 37243.9,
+      "min_ns": 35955.1,
+      "max_ns": 43944.3
     },
     {
       "name": "sample/editor_update/victory",
       "items": 1,
       "batch": 1275,
       "samples": 15,
-      "median_ns": 9317.3,
+      "median_ns": 10998.0,
       "p25_ns": 9289.0,
       "p75_ns": 9336.5,
       "min_ns": 9259.1,
@@ -1132,13 +1132,13 @@
     {
       "name": "sample/editor_update/world_map",
       "items": 1,
-      "batch": 141,
+      "batch": 277,
       "samples": 15,
-      "median_ns": 84229.3,
-      "p25_ns": 84207.5,
-      "p75_ns": 84299.8,
-      "min_ns": 84166.3,
-      "max_ns": 84514.6
+      "median_ns": 113278.5,
+      "p25_ns": 112453.7,
+      "p75_ns": 114014.7,
+      "min_ns": 110756.9,
+      "max_ns": 114731.8
     },
     {
       "name": "sample/load/game_over",
@@ -1167,11 +1167,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 314084.0,
-      "p25_ns": 311604.5,
-      "p75_ns": 323792.5,
-      "min_ns": 310941.0,
-      "max_ns": 330637.0
+      "median_ns": 691933.8,
+      "p25_ns": 686459.4,
+      "p75_ns": 714362.9,
+      "min_ns": 659540.8,
+      "max_ns": 759696.7
     },
     {
       "name": "sample/load/platformer_house",
@@ -1211,11 +1211,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1477949.0,
-      "p25_ns": 1127406.0,
-      "p75_ns": 1136276.5,
-      "min_ns": 1123215.0,
-      "max_ns": 1145635.0
+      "median_ns": 1971884.3,
+      "p25_ns": 1953258.1,
+      "p75_ns": 1987689.6,
+      "min_ns": 1925772.9,
+      "max_ns": 2058412.8
     },
     {
       "name": "sample/load/victory",
@@ -1244,11 +1244,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1048554.0,
-      "p25_ns": 1047680.0,
-      "p75_ns": 1055748.0,
-      "min_ns": 1045480.0,
-      "max_ns": 1080891.0
+      "median_ns": 1786398.8,
+      "p25_ns": 1733176.5,
+      "p75_ns": 1845210.7,
+      "min_ns": 1709033.3,
+      "max_ns": 1905254.5
     },
     {
       "name": "scene/copy/1000",
@@ -1728,7 +1728,7 @@
       "items": 31,
       "batch": 1,
       "samples": 15,
-      "median_ns": 806689808.0,
+      "median_ns": 1007696800.0,
       "p25_ns": 806470500.0,
       "p75_ns": 806814826.0,
       "min_ns": 806158650.0,
@@ -2267,22 +2267,22 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 241587.0,
-      "p25_ns": 240295.0,
-      "p75_ns": 248187.5,
-      "min_ns": 238514.0,
-      "max_ns": 256394.0
+      "median_ns": 227512.1,
+      "p25_ns": 226278.4,
+      "p75_ns": 233771.9,
+      "min_ns": 223036.2,
+      "max_ns": 270755.1
     },
     {
       "name": "sample/editor_update/tavern_cellar",
       "items": 1,
-      "batch": 761,
+      "batch": 1703,
       "samples": 15,
-      "median_ns": 15564.6,
-      "p25_ns": 15546.8,
-      "p75_ns": 15586.4,
-      "min_ns": 15461.7,
-      "max_ns": 15594.0
+      "median_ns": 22733.0,
+      "p25_ns": 18564.0,
+      "p75_ns": 18735.8,
+      "min_ns": 18315.7,
+      "max_ns": 19241.4
     },
     {
       "name": "sky/draw/256",
@@ -2476,44 +2476,22 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 208552.0,
-      "p25_ns": 206700.5,
-      "p75_ns": 218085.5,
-      "min_ns": 204780.0,
-      "max_ns": 241657.0
+      "median_ns": 1007609.0,
+      "p25_ns": 996619.0,
+      "p75_ns": 1038185.0,
+      "min_ns": 978777.0,
+      "max_ns": 1105836.0
     },
     {
       "name": "sample/editor_update/far_orbit",
       "items": 1,
-      "batch": 934,
+      "batch": 573,
       "samples": 15,
-      "median_ns": 12718.6,
-      "p25_ns": 12708.2,
-      "p75_ns": 12762.3,
-      "min_ns": 12678.3,
-      "max_ns": 12908.1
-    },
-    {
-      "name": "sample/load/character_yard",
-      "items": 1,
-      "batch": 1,
-      "samples": 15,
-      "median_ns": 166157.0,
-      "p25_ns": 164061.5,
-      "p75_ns": 173245.5,
-      "min_ns": 162176.0,
-      "max_ns": 181731.0
-    },
-    {
-      "name": "sample/editor_update/character_yard",
-      "items": 1,
-      "batch": 877,
-      "samples": 15,
-      "median_ns": 13368.6,
-      "p25_ns": 13344.5,
-      "p75_ns": 13400.9,
-      "min_ns": 13279.3,
-      "max_ns": 13492.4
+      "median_ns": 36510.0,
+      "p25_ns": 20330.1,
+      "p75_ns": 20567.8,
+      "min_ns": 20013.3,
+      "max_ns": 22015.5
     },
     {
       "name": "particles/simulate_cpu/1000",
@@ -2646,28 +2624,6 @@
       "p75_ns": 1103419.6,
       "min_ns": 1099155.7,
       "max_ns": 1108382.0
-    },
-    {
-      "name": "sample/load/sound_yard",
-      "items": 1,
-      "batch": 1,
-      "samples": 15,
-      "median_ns": 180964.0,
-      "p25_ns": 179741.0,
-      "p75_ns": 187040.0,
-      "min_ns": 179427.0,
-      "max_ns": 206875.0
-    },
-    {
-      "name": "sample/editor_update/sound_yard",
-      "items": 1,
-      "batch": 1481,
-      "samples": 15,
-      "median_ns": 8031.3,
-      "p25_ns": 8022.7,
-      "p75_ns": 8085.0,
-      "min_ns": 7996.1,
-      "max_ns": 8100.1
     }
   ],
   "metrics": [

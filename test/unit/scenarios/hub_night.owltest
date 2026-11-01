@@ -1,0 +1,16 @@
+# Day and night of the hub: the hour of the `DayNightCycle` of HubSky drives the ambient `Light2D`, the lamps and the
+# music. Set to ten at night, the lamps light up and the music turns to its night state; back to noon, they go out.
+scene: ../../../engine_demo/scenes/world_map.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: hub_night, equals: 0}
+  - expect: {gamestate: hub_mood, equals: calm}
+  - {command: component.set, args: {entity: HubSky, component: DayNightCycle, values: {timeOfDay: 22.0}}}
+  - frames: 10
+  - expect: {gamestate: hub_night, equals: 1}
+  - expect: {gamestate: hub_mood, equals: night}
+  - expect: {gamestate: hub_hour, greater: 21.9}
+  - {command: component.set, args: {entity: HubSky, component: DayNightCycle, values: {timeOfDay: 12.0}}}
+  - frames: 10
+  - expect: {gamestate: hub_night, equals: 0}
+  - expect: {gamestate: hub_mood, equals: calm}

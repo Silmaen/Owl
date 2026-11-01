@@ -96,6 +96,8 @@ private:
 	std::vector<std::string> m_availableScenes;
 	/// `.owlhud` files of the project, relative to its folder.
 	std::vector<std::string> m_availableHuds;
+	/// HUD themes of the project (`.owlhudtheme`), relative to an asset folder.
+	std::vector<std::string> m_availableHudThemes;
 	/// Whether the popup should be opened on the next render call.
 	bool m_pendingOpen = false;
 	/// Whether a result is ready to be consumed.

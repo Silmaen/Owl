@@ -15,6 +15,7 @@
 #include <owl.h>
 #include <scene/SceneSerializer.h>
 #include <scene/SimulationClock.h>
+#include <window/Window.h>
 
 #include <atomic>
 #include <cstddef>
@@ -43,6 +44,8 @@ struct RunnerConfig {
 	std::string gamepadMappings;
 	/// HUD asset of the scenes that name none (`DefaultHud`); empty for none.
 	std::string defaultHud;
+	/// HUD theme of the scenes and HUDs that name none (`DefaultHudTheme`); empty for none.
+	std::string defaultHudTheme;
 	/// Window width in pixels.
 	uint32_t windowWidth{1280};
 	/// Window height in pixels.
@@ -341,6 +344,8 @@ private:
 	uint32_t m_hotReloadListener = 0;
 	math::vec2ui m_viewportSize = {0, 0};
 	RunnerConfig m_config;
+	/// Cursor capture of the running scene.
+	window::CursorCapture m_cursorCapture;
 	/// If true, need to apply velocity after physics init on next frame.
 	bool m_pendingTeleportVelocity = false;
 	/// Stored velocity to apply after cross-level teleport physics init.

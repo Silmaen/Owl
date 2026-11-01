@@ -64,3 +64,22 @@ The inspector edits each widget:
 
 The widgets, their fields and their Lua side: [Scene and components](scene.md#components) and
 [Scripting](scripting.md).
+
+## Themes {#editor-hud-themes}
+
+A HUD theme (`.owlhudtheme`) gives the widgets of every HUD and menu of a project one look: named styles of colours
+per state, rounded corners, a gradient, a border, a soft shadow, a nine-slice texture, a font, a font size and an
+outline ([Scene > HUD themes](scene.md#scene-hud-themes)).
+
+- **New HUD Theme** in the Content Browser folder menu writes a theme holding a starting set of styles (panel, button,
+  title, text, slider, bar, list, window) and opens it; a double-click opens an existing one.
+- The theme tab lists its styles on the left (add, duplicate, move up or down, delete) and the properties of the
+  selected one on the right, each behind a box telling whether the style sets it. Every edit is one undo step
+  (`theme.*` commands); a dragged value shows live and is committed when released.
+- The HUDs and scenes following the theme show its edits live in their own tabs, before it is saved.
+- The theme of a scene or an `.owlhud` is chosen in [Scene Settings](editor_scene.md#scene-settings) (HUD section,
+  **Theme**: project default, none or a file, also by drop); the project default in the
+  [Project Settings](editor_projects.md#project-settings) (**Default HUD Theme**).
+- In the inspector, each widget has a **Style** field listing the styles of its scene's theme. A property the style
+  sets is read only, its value the style's, until the box before it is ticked: the widget then keeps its own value
+  (an override). A **Box** sub-section edits the corners, gradient, border, shadow and nine-slice of the widget itself.

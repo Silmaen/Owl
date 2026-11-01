@@ -10,6 +10,7 @@
 
 #include "core/Serializer.h"
 #include "math/vectors.h"
+#include "scene/component/UiStyle.h"
 
 #include <cstdint>
 #include <string>
@@ -39,6 +40,10 @@ struct OWL_API UiButton {
 	math::vec4 pressedColor{0.2f, 0.2f, 0.2f, 1.f};
 	/// Colour when disabled.
 	math::vec4 disabledColor{0.15f, 0.15f, 0.15f, 0.5f};
+	/// Look of the box: rounded corners, gradient, border, shadow, nine-slice texture.
+	UiBox box;
+	/// Style of the HUD theme the widget follows.
+	UiStyleRef style;
 	/// Name of the Lua callback function (called on click).
 	std::string onClickCallback;
 

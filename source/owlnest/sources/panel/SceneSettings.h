@@ -173,6 +173,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Render the theme choice of the HUD section: the `.owlhudtheme` of the scene's widgets (project default, none or
+	 *  a file), chosen through the undoable `scene.set_hud_theme` command.
+	 */
+	void renderHudThemeChoice();
+
+	/**
+	 * @brief
 	 *  Render the Script section: the script the scene owns, with its hooks and properties, edited through the
 	 *  undoable `scene.set_script` command.
 	 */
@@ -186,6 +193,10 @@ private:
 	std::vector<std::string> m_hudFiles;
 	/// Whether the HUD choice was open on the last frame (the list is read again when it opens).
 	bool m_hudChoiceOpen = false;
+	/// `.owlhudtheme` files offered by the theme choice, listed when it opens.
+	std::vector<std::string> m_themeFiles;
+	/// Whether the theme choice was open on the last frame.
+	bool m_themeChoiceOpen = false;
 	/// Copy of the scene script the inspector widgets edit (kept between frames: they remember it by address).
 	scene::component::LuaScript m_scriptEdit;
 	/// Cells selected in the world partition table.

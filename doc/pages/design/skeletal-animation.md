@@ -34,7 +34,7 @@ flowchart LR
 | 7. Sockets        | `MeshSockets`, `SocketAttachment`, `Scene::attachToSocket`, the `owl.sockets` system              | Done   |
 | 8. Lua            | `animator.*` and `socket.*` tables                                                                | Done   |
 | 9. Owl Nest       | Skeleton view, clip timeline, LOD preview, inspectors, socket gizmo (`entity.set_socket`)         | Done   |
-| 10. Engine Demo   | `character_yard` scene: a walking mannequin holding a lantern on its hand socket                  | Done   |
+| 10. Engine Demo   | Tavern: a barkeeper holding a tankard on a hand socket, a server walking a spline                 | Done   |
 
 ## Decisions
 

@@ -6,6 +6,7 @@ properties = {
     { name = "hum_period", type = "float", default = 2.2 },  -- the hum clip lasts a little more, so each one fades into the next
     { name = "hum_range", type = "float", default = 16.0 },
     { name = "hum_volume", type = "float", default = 0.9, min = 0, max = 1 },
+    { name = "places", type = "int", default = 6, min = 1 },  -- places of the hub to finish before it wakes
 }
 
 local clock = 0
@@ -17,7 +18,7 @@ function on_create()
 end
 
 function on_update(dt)
-    if gamestate.get("levels_done", 0) < 5 then
+    if gamestate.get("levels_done", 0) < places then
         return  -- asleep: no hum
     end
     clock = clock - dt
@@ -41,7 +42,7 @@ end
 
 -- Bound by Trigger.Type=Interaction with CallbackName=on_teleporter_enter.
 function on_teleporter_enter(player_id)
-    if gamestate.get("levels_done", 0) < 5 then
+    if gamestate.get("levels_done", 0) < places then
         return  -- the portal is asleep until every level is done
     end
     log.info("Teleporter activated! Loading victory scene.")

@@ -117,6 +117,8 @@ auto typeShortName(const DocumentType iType) -> const char* {
 			return "Dialogue";
 		case DocumentType::Sequence:
 			return "Sequence";
+		case DocumentType::HudTheme:
+			return "Theme";
 	}
 	return "Doc";
 }

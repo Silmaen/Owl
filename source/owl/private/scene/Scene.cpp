@@ -63,6 +63,8 @@
 #include "input/Input.h"
 #include "physics/PhysicCommand.h"
 #include "scene/HudLibrary.h"
+#include "scene/HudTheme.h"
+#include "scene/HudThemeLibrary.h"
 #include "scene/ScreenTransition.h"
 #include "scene/component/components.h"
 #include "scene/ui/HudPass.h"
@@ -324,6 +326,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_worldPartitionSettings = iOther->m_worldPartitionSettings;
 	newScene->m_worldOrigin = iOther->m_worldOrigin;
 	newScene->m_hudPath = iOther->m_hudPath;
+	newScene->m_hudThemePath = iOther->m_hudThemePath;
 	newScene->m_sceneScript = iOther->m_sceneScript;
 	newScene->m_documentKind = iOther->m_documentKind;
 	newScene->m_simulationClock.setSettings(iOther->m_simulationClock.getSettings());
@@ -367,6 +370,20 @@ auto Scene::getHud() const -> shared<Scene> {
 		return nullptr;
 	const auto& path = getEffectiveHudPath();
 	return path.empty() ? nullptr : mp_engineContext->getHudLibrary().get(path);
+}
+
+auto Scene::getEffectiveHudThemePath() const -> const std::string& {
+	static const std::string noTheme;
+	if (m_hudThemePath)
+		return *m_hudThemePath;
+	return mp_engineContext != nullptr ? mp_engineContext->getDefaultHudTheme() : noTheme;
+}
+
+auto Scene::getHudTheme() const -> shared<const HudTheme> {
+	if (mp_engineContext == nullptr)
+		return nullptr;
+	const auto& path = getEffectiveHudThemePath();
+	return path.empty() ? nullptr : mp_engineContext->getHudThemeLibrary().get(path);
 }
 
 auto Scene::createEntity(const std::string& iName) -> Entity { return createEntityWithUUID(core::UUID(), iName); }
@@ -904,7 +921,8 @@ auto Scene::projectToViewport(const Entity& iEntity, const math::vec3& iWorld, c
 		if (tag == nullptr ? index == 0 : layers[index]->getName() == tag->rendererName)
 			return layers[index]->projectToViewport(*mp_renderCamera, iViewport, iWorld);
 	}
-	return renderer::projectToViewport(mp_renderCamera->getViewProjection(), iViewport, iWorld);
+	return renderer::projectToViewport(mp_renderCamera->getViewProjection(), iViewport, iWorld,
+									   renderer::getActiveClipSpace());
 }
 
 auto Scene::getViewerPosition() const -> std::optional<math::vec3> {
@@ -3886,13 +3904,19 @@ void Scene::setEditorVoxelHighlight(const bool iShow, const math::vec3i& iBlock,
 auto Scene::wantsCursorCapture() const -> bool {
 	const auto view = registry.view<component::VoxelPlayer>();
 	const auto walkers = registry.view<component::FirstPersonController>();
+	const auto ships = registry.view<component::ShipController>();
 	return std::ranges::any_of(view,
 							   [&](const auto iEntity) -> bool {
 								   return view.get<component::VoxelPlayer>(iEntity).captureCursor;
 							   }) ||
-		   std::ranges::any_of(walkers, [&](const auto iEntity) -> bool {
-			   const auto& walker = walkers.get<component::FirstPersonController>(iEntity);
-			   return walker.enabled && walker.captureCursor;
+		   std::ranges::any_of(walkers,
+							   [&](const auto iEntity) -> bool {
+								   const auto& walker = walkers.get<component::FirstPersonController>(iEntity);
+								   return walker.enabled && walker.captureCursor;
+							   }) ||
+		   std::ranges::any_of(ships, [&](const auto iEntity) -> bool {
+			   const auto& ship = ships.get<component::ShipController>(iEntity);
+			   return ship.enabled && ship.captureCursor;
 		   });
 }
 
@@ -4460,6 +4484,11 @@ OWL_API void Scene::onComponentAdded<component::VoxelWorld>([[maybe_unused]] con
 template<>
 OWL_API void Scene::onComponentAdded<component::FlyCamera>([[maybe_unused]] const Entity& iEntity,
 														   [[maybe_unused]] component::FlyCamera& ioComponent) {}
+
+template<>
+OWL_API void
+Scene::onComponentAdded<component::ShipController>([[maybe_unused]] const Entity& iEntity,
+												   [[maybe_unused]] component::ShipController& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::VoxelPlayer>([[maybe_unused]] const Entity& iEntity,

@@ -110,6 +110,9 @@ void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName,
 void scanHud(const std::string& iHudPath, const std::string& iSource, std::set<std::string>& ioVisitedScenes,
 			 std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings);
 
+void scanHudTheme(const std::string& iThemePath, const std::string& iSource, std::vector<AssetReference>& ioAssets,
+				  std::vector<std::string>* ioWarnings);
+
 auto resolveTexturePath(const std::string& iSerialized) -> std::optional<AssetReference> {
 	if (iSerialized.size() < 4)
 		return std::nullopt;
@@ -520,6 +523,8 @@ void scanSceneRecursive(const std::filesystem::path& iSceneFile,// NOLINT(misc-n
 	const auto sceneName = iSceneFile.filename().string();
 	if (const auto hud = data["Hud"]; hud && hud.IsScalar())
 		scanHud(hud.as<std::string>(), sceneName, ioVisitedScenes, ioAssets, ioWarnings);
+	if (const auto theme = data["HudTheme"]; theme && theme.IsScalar())
+		scanHudTheme(theme.as<std::string>(), sceneName, ioAssets, ioWarnings);
 
 	if (const auto sceneScript = data["SceneScript"]; sceneScript && sceneScript.IsMap()) {
 		YAML::Node holder;
@@ -753,6 +758,14 @@ void scanLocalisationFonts(const std::filesystem::path& iProjectDir, std::vector
 	}
 }
 
+// The nine-slice textures of the boxes of the widgets of an entity.
+void scanWidgetBoxes(const YAML::Node& iEntity, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
+					 std::vector<std::string>* ioWarnings) {
+	for (const char* widget: {"UiPanel", "UiButton", "UiSlider", "UiProgressBar", "UiList", "UiWindow"})
+		if (const auto node = iEntity[widget]; node && node["Box"] && node["Box"]["texture"])
+			followTexture(node["Box"]["texture"].as<std::string>(), iSceneName, ioAssets, ioWarnings);
+}
+
 void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 				const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
 				std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
@@ -776,6 +789,7 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 										  std::pair{"HudMarker", "icon"}, std::pair{"HudMarker", "arrow"}})
 		if (auto node = iEntity[component]; node)
 			addTextureField(node, field);
+	scanWidgetBoxes(iEntity, iSceneName, ioAssets, ioWarnings);
 	scanFontsAndSounds(iEntity, iSceneName, ioAssets, ioWarnings);
 	if (auto meshRenderer = iEntity["MeshRenderer"]; meshRenderer)
 		scanMeshRenderer(meshRenderer, iSceneName, ioAssets, ioWarnings);
@@ -857,12 +871,51 @@ void scanHud(const std::string& iHudPath, const std::string& iSource, std::set<s
 	if (!data["Hud"] || !entities)
 		return;
 	const auto hudName = hudRef->diskPath.filename().string();
+	if (const auto theme = data["HudTheme"]; theme && theme.IsScalar())
+		scanHudTheme(theme.as<std::string>(), hudName, ioAssets, ioWarnings);
 	if (const auto hudScript = data["SceneScript"]; hudScript && hudScript.IsMap()) {
 		YAML::Node holder;
 		holder["LuaScript"] = hudScript;
 		scanEntity(holder, hudName, ioVisitedScenes, ioAssets, ioWarnings);
 	}
 	for (auto entity: entities) scanEntity(entity, hudName, ioVisitedScenes, ioAssets, ioWarnings);
+}
+
+// A theme carries the nine-slice textures and the fonts of its styles.
+void scanHudTheme(const std::string& iThemePath, const std::string& iSource, std::vector<AssetReference>& ioAssets,
+				  std::vector<std::string>* ioWarnings) {
+	if (iThemePath.empty())
+		return;
+	const auto themeRef = resolveDataAsset(iThemePath);
+	if (!themeRef) {
+		pushWarning(ioWarnings, "HUD theme", iThemePath, iSource);
+		return;
+	}
+	if (hasAsset(ioAssets, themeRef->packPath))
+		return;
+	ioAssets.push_back(*themeRef);
+	YAML::Node data;
+	try {
+		data = YAML::LoadFile(themeRef->diskPath.string());
+	} catch (...) {
+		pushWarning(ioWarnings, "HUD theme", iThemePath, iSource);
+		return;
+	}
+	const auto themeName = themeRef->diskPath.filename().string();
+	for (const auto style: data["Styles"]) {
+		if (const auto texture = style["texture"]; texture && texture.IsScalar() && !texture.as<std::string>().empty())
+			followTexture(texture.as<std::string>(), themeName, ioAssets, ioWarnings);
+		const auto font = style["font"];
+		if (!font || !font.IsScalar() || font.as<std::string>().empty())
+			continue;
+		if (auto ref = resolveFont(font.as<std::string>()); ref) {
+			if (!hasAsset(ioAssets, ref->packPath))
+				ioAssets.push_back(*ref);
+			addFontSidecar(ioAssets, *ref);
+		} else {
+			pushWarning(ioWarnings, "Font", font.as<std::string>(), themeName);
+		}
+	}
 }
 
 void collectEngineAssets(std::vector<AssetReference>& ioAssets) {
@@ -899,8 +952,8 @@ auto AssetScanner::scanScene(const std::filesystem::path& iSceneFile, std::vecto
 }
 
 auto AssetScanner::scanProject(const std::filesystem::path& iProjectDir, const std::string& iFirstScene,
-							   std::vector<std::string>* oWarnings, const std::string& iDefaultHud)
-		-> std::vector<AssetReference> {
+							   std::vector<std::string>* oWarnings, const std::string& iDefaultHud,
+							   const std::string& iDefaultHudTheme) -> std::vector<AssetReference> {
 	// Resolve the first scene path.
 	std::filesystem::path firstScenePath;
 	std::string resolvedName = iFirstScene;
@@ -936,6 +989,7 @@ auto AssetScanner::scanProject(const std::filesystem::path& iProjectDir, const s
 	auto assets = scanScene(firstScenePath, oWarnings);
 	std::set<std::string> visited;
 	scanHud(iDefaultHud, "the project's DefaultHud", visited, assets, oWarnings);
+	scanHudTheme(iDefaultHudTheme, "the project's DefaultHudTheme", assets, oWarnings);
 	scanLocalisationFonts(iProjectDir, assets, oWarnings);
 	return assets;
 }

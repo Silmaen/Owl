@@ -350,6 +350,8 @@ void writeRunnerConfig(const ExportSettings& iSettings, const std::filesystem::p
 	out << YAML::Key << "Resizable" << YAML::Value << iSettings.resizable;
 	if (!iSettings.defaultHud.empty())
 		out << YAML::Key << "DefaultHud" << YAML::Value << iSettings.defaultHud;
+	if (!iSettings.defaultHudTheme.empty())
+		out << YAML::Key << "DefaultHudTheme" << YAML::Value << iSettings.defaultHudTheme;
 	out << YAML::Key << "TickRate" << YAML::Value << iSettings.tickRate;
 	out << YAML::Key << "MaxTicksPerFrame" << YAML::Value << iSettings.maxTicksPerFrame;
 	if (!iSettings.rendererStackYaml.empty())
@@ -485,7 +487,7 @@ auto GameExporter::validate(const ExportSettings& iSettings, std::vector<AssetRe
 		-> std::vector<std::string> {
 	std::vector<std::string> warnings;
 	oAssets = AssetScanner::scanProject(iSettings.projectDirectory, iSettings.firstScene, &warnings,
-										iSettings.defaultHud);
+										iSettings.defaultHud, iSettings.defaultHudTheme);
 	if (oAssets.empty())
 		warnings.emplace_back("No assets to pack — check firstScene and its references");
 	if (!findRunner(iSettings.runnerDirectory))
@@ -507,7 +509,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 	if (assets.empty()) {
 		report(iProgress, 0.f, "Scanning assets...");
 		assets = AssetScanner::scanProject(iSettings.projectDirectory, iSettings.firstScene, nullptr,
-										   iSettings.defaultHud);
+										   iSettings.defaultHud, iSettings.defaultHudTheme);
 	}
 	if (assets.empty()) {
 		OWL_CORE_ERROR("GameExporter: No asset found to pack for first scene '{}'.", iSettings.firstScene)

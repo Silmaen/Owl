@@ -19,6 +19,7 @@
 #include "EntityCommands.h"
 #include "HierarchyCommands.h"
 #include "HudCommands.h"
+#include "HudThemeCommands.h"
 #include "Macro.h"
 #include "PrefabCommands.h"
 #include "SceneSettingsCommands.h"
@@ -34,6 +35,7 @@
 #include <renderer/Renderer.h>
 #include <scene/ComponentRegistry.h>
 #include <scene/HudLibrary.h>
+#include <scene/HudTheme.h>
 #include <scene/PrefabSerializer.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
@@ -729,6 +731,18 @@ auto setSceneHud(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) 
 	if (path == ioScene->getHudPath())
 		return fail(CommandError::NotApplicable, "the scene already has this HUD");
 	return PreparedCommand{.command = mkUniq<SetSceneHudCommand>(ioScene->getHudPath(), path), .applied = false};
+}
+
+auto setSceneHudTheme(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	std::optional<std::string> path;
+	if (!iArgs.getBool("use_default"))
+		path = iArgs.getText("path");
+	if (path && !path->empty() && !scene::HudTheme::isTheme(*path))
+		return fail(CommandError::InvalidArgument, std::format("`{}` is not an `.owlhudtheme` file", *path));
+	if (path == ioScene->getHudThemePath())
+		return fail(CommandError::NotApplicable, "the scene already has this HUD theme");
+	return PreparedCommand{.command = mkUniq<SetSceneHudThemeCommand>(ioScene->getHudThemePath(), path),
+						   .applied = false};
 }
 
 auto setSceneRenderers(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
@@ -1635,6 +1649,19 @@ CommandRegistry::CommandRegistry() {
 				   .description = "Use the project's `DefaultHud` (the scene then names no HUD).",
 				   .defaultValue = false}},
 		 .factory = setSceneHud});
+	add({.name = "scene.set_hud_theme",
+		 .description = "Choose the HUD theme (`.owlhudtheme`) of the widgets of the scene or HUD: a path, none, or "
+						"the project's default theme.",
+		 .args = {{.name = "path",
+				   .type = ArgType::Text,
+				   .description = "Theme asset, relative to an asset folder; empty for no theme.",
+				   .defaultValue = std::string{},
+				   .projectPath = true},
+				  {.name = "use_default",
+				   .type = ArgType::Bool,
+				   .description = "Use the project's `DefaultHudTheme` (the scene then names no theme).",
+				   .defaultValue = false}},
+		 .factory = setSceneHudTheme});
 	add({.name = "scene.set_renderers",
 		 .description = "Replace the renderer-stack overrides of the scene (layer order, enabled flags, per-layer "
 						"settings) by a YAML configuration; empty follows the project stack.",
@@ -1815,6 +1842,7 @@ CommandRegistry::CommandRegistry() {
 	addHudCommands(*this);
 	addSplineCommands(*this);
 	addDataTableCommands(*this);
+	addHudThemeCommands(*this);
 	addDialogueCommands(*this);
 	addSequenceCommands(*this);
 	addAssetCommands(*this);

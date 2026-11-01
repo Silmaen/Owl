@@ -28,7 +28,9 @@ enum struct RunKind : uint8_t {
 	/// Line segment.
 	Line,
 	/// Glyph of a string.
-	Text
+	Text,
+	/// Rounded box of a widget (`Renderer2D::drawBox`).
+	Box
 };
 
 /**
@@ -152,7 +154,9 @@ private:
 	 *  Amount of instances noted, every kind together.
 	 * @return The total.
 	 */
-	[[nodiscard]] auto total() const -> uint32_t { return m_totals[0] + m_totals[1] + m_totals[2] + m_totals[3]; }
+	[[nodiscard]] auto total() const -> uint32_t {
+		return m_totals[0] + m_totals[1] + m_totals[2] + m_totals[3] + m_totals[4];
+	}
 
 	/**
 	 * @brief
@@ -195,7 +199,7 @@ private:
 	/// Runs in submission order (empty in single-depth mode).
 	std::vector<DrawRun> m_runs;
 	/// Instances noted per kind.
-	std::array<uint32_t, 4> m_totals{};
+	std::array<uint32_t, 5> m_totals{};
 	/// Depth shared by every primitive in single-depth mode.
 	float m_depth = 0.f;
 	/// True while every primitive shares one depth.

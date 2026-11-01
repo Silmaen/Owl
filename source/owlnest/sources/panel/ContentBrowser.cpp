@@ -106,6 +106,7 @@ auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> 
 																	{".owlmat", {rgb(0xc77dff), "Material"}},
 																	{".owlsound", {rgb(0x3faa72), "Sound cue"}},
 																	{".owltable", {rgb(0x4fb3d9), "Data table"}},
+																	{".owlhudtheme", {rgb(0xe0b04f), "HUD theme"}},
 																	{".owldlg", {rgb(0xd98f4f), "Dialogue"}},
 																	{".owlseq", {rgb(0xd94f7a), "Sequence"}}};
 	if (const auto it = kinds.find(iPath.extension().string()); it != kinds.end())
@@ -615,6 +616,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 		m_soundOpenCallback(path);
 	} else if (path.extension() == ".owltable" && m_dataTableOpenCallback) {
 		m_dataTableOpenCallback(path);
+	} else if (path.extension() == ".owlhudtheme" && m_hudThemeOpenCallback) {
+		m_hudThemeOpenCallback(path);
 	} else if (path.extension() == ".owldlg" && m_dialogueOpenCallback) {
 		m_dialogueOpenCallback(path);
 	} else if (path.extension() == ".owlseq" && m_sequenceOpenCallback) {
@@ -739,6 +742,8 @@ void ContentBrowser::renderCreateItems() {
 		createSoundCue();
 	if (m_dataTableCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::rows3, .label = "New Data Table"}))
 		createDataTable();
+	if (m_hudThemeCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::palette, .label = "New HUD Theme"}))
+		createHudTheme();
 	if (m_dialogueCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::bookOpen, .label = "New Dialogue"}))
 		createDialogue();
 	if (m_sequenceCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::clapperboard, .label = "New Sequence"}))
@@ -921,6 +926,14 @@ void ContentBrowser::createDataTable() {
 	for (uint32_t counter = 1; exists(tablePath); ++counter)
 		tablePath = m_currentPath / std::format("New Data Table {}.owltable", counter);
 	m_dataTableCreateCallback(tablePath);
+	m_rescanRequested = true;
+}
+
+void ContentBrowser::createHudTheme() {
+	auto themePath = m_currentPath / "New HUD Theme.owlhudtheme";
+	for (uint32_t counter = 1; exists(themePath); ++counter)
+		themePath = m_currentPath / std::format("New HUD Theme {}.owlhudtheme", counter);
+	m_hudThemeCreateCallback(themePath);
 	m_rescanRequested = true;
 }
 

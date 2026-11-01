@@ -346,9 +346,10 @@ is out of view; it needs no canvas.
 - **Off-screen indicator**: the marker slides to the screen edge with an arrow pointing at the entity; a point behind
   the camera goes to the edge on the side to turn to.
 - **Projection** goes through the render layer the entity is routed to (`RendererTag`, the first layer when untagged):
-  `RenderLayer::projectToViewport` projects through the effective view-projection (2D, isometric, voxel, 3D) and the
-  raycast layer overrides it with its sprite projection (X / Y on the map plane, Z as height above the horizon in
-  cells). `Scene::projectToViewport` is valid during a frame only; `scene::ui::placeHudMarker` computes the placement.
+  `RenderLayer::projectToViewport` projects through the effective view-projection (2D, isometric, voxel, 3D), in the
+  clip space of the backend (Y flipped on Vulkan), and the raycast layer overrides it with its sprite projection
+  (X / Y on the map plane, Z as height above the horizon in cells). `Scene::projectToViewport` is valid during a frame
+  only; `scene::ui::placeHudMarker` computes the placement.
 - Drawn by the HUD pass under every canvas, scaled like a default canvas (1280×720, scale with height, times the
   `ui_scale` setting), in the editor viewport too.
 - Lua: `entity.set_hud_marker_enabled`, `entity.is_hud_marker_enabled`, `entity.set_hud_marker_label`.
@@ -358,12 +359,91 @@ is out of view; it needs no canvas.
   (`scripts/raycast/raycast_level.lua`); scenario `test/unit/scenarios/raycast_exit_marker.owltest`.
   See [Scene > HudMarker](../scene.md#hudmarker).
 
+## Themes and widget looks (HUD9, done) {#hud-themes}
+
+A theme gives every HUD and menu of a project one skin, authored in one file.
+
+### Box of a widget
+
+- `component::UiBox` (`scene/component/UiStyle.h`) on `UiPanel`, `UiButton`, `UiSlider`, `UiProgressBar`, `UiList`
+  (rows) and `UiWindow`: corner radius, bottom tint (vertical gradient multiplied with the fill), inner border, soft
+  shadow (colour, offset, blur), nine-slice texture and insets. Written under `Box:` only when not plain.
+- A plain box keeps the flat quad of the quad batch: a HUD without box fields keeps its pixels, and the 500-widget bench
+  keeps its path. The top-level `borderColor` / `borderWidth` keys of a `UiPanel` file are ignored (they draw
+  nothing); the border is the box's.
+- Any other box is one instance of `Renderer2D::drawBox`: `renderer2D/box.slang`, an SDF rounded rectangle in frame
+  units (pixels for the HUD), the quad grown by the shadow reach plus one pixel. Fill, gradient, border, nine-slice
+  (`SampleLevel` 0, borders kept, middle stretched, insets scaled down when the box is smaller than them) and shadow
+  (outside the box only, `smoothstep` over the blur) in one fragment; antialiasing from `fwidth` of the distance.
+  Instance data lives in its own storage buffer (`BoxInstance`, 144 bytes), its fragment inputs are flat varyings: no
+  new binding, the Renderer2D block is unchanged. Null backend: the batch is counted, nothing drawn.
+- Draw order: a box is a fifth run kind (`RunKind::Box`). Equal depths sort by kind, so the HUD pass raises the depth
+  of the shapes of a window one step (1/1024 of the layer) each time it switches between flat quads and boxes
+  (`ShapeOrder`): the painter's order of a window holds across the two buffers. A canvas holding any rounded box
+  draws its flat shapes (plain boxes, images, render targets, scroll bars, list icons; tiled sprites excepted) as
+  square boxes (`BoxData::uvRect` carries the frame of a sprite sheet), so its shapes stay one batch.
+- A fill (slider, bar) and a title bar lie inside the border, corners following the inner edge; list rows and slider
+  handles cast no shadow. The focus frame of a rounded button or slider is a rounded border box.
+
+### Theme asset
+
+- `.owlhudtheme`, root `HudTheme: <name>`, `FormatVersion` 1 (`HudTheme::format()`), `Styles:` a list of maps, each
+  holding only the properties it defines. Read with `HudTheme::load` (pack, asset folders, disk), cached by
+  `HudThemeLibrary` in the `EngineContext`; Owl Nest replaces the cached theme with the edited one (`set`) for the
+  live preview.
+- A scene or an `.owlhud` names its theme with a root `HudTheme:` key (an asset reference); nothing falls back to
+  the project's `DefaultHudTheme` (`owl_project.yml`, forwarded to `runner.yml`). The exporter packs the theme, its
+  nine-slice textures and its fonts (`AssetScanner::scanHudTheme`).
+- Widgets reference a style by name (`UiStyleRef`: `style`, `styleOverrides`). Each frame, before the layout, the HUD
+  pass writes the defined properties of the style into the widget (`applyHudTheme`): **an override of the widget
+  keeps its field; else the style's value wins when the style defines it; else the widget's field stays.** A runtime
+  look change goes through `ui.set_style` (a hover state is the style's `hover`), never by writing a styled colour.
+
+| Decision             | Choice                                                                                 |
+|----------------------|----------------------------------------------------------------------------------------|
+| Where the look lives | On each widget (`UiBox`), so a widget can be rounded without a theme                   |
+| Style resolution     | Written into the widget fields each frame: layout, inspector and saves see the values  |
+| Precedence           | Override flag > style (when defined) > widget field                                    |
+| Style reference      | Per widget component (a button entity names its `UiButton` and its `UiText` styles)    |
+| Gradient             | A bottom tint multiplied with the state colour, so hover and press keep their gradient |
+| Nine-slice           | In the same shader, tinted by the fill colour; the texture's borders in texture pixels |
+
+### Owl Nest
+
+- `HudThemeDocument`: style list and properties (`gui::component::renderProps(HudStyle&)`, each property behind a
+  "defined" box), its own undo history, every edit a `theme.*` command (`theme.create`, `add_style`, `remove_style`,
+  `rename_style`, `move_style`, `set_style`, `set_name`) through `DocumentHost::openHudTheme`.
+- Widget inspectors: a **Style** picker (styles of the inspected scene's theme), the fields the style sets read only
+  behind an override box, a **Box** sub-section. Scene Settings: the theme of the scene or HUD (`scene.set_hud_theme`).
+  Project Settings: **Default HUD Theme**. Content Browser: **New HUD Theme**.
+
+### Engine Demo skin
+
+`huds/engine_demo.owlhudtheme`, the project default: warm wood and brass. `panel` (nine-slice board in a brass frame,
+`textures/ui/skin_panel.png`), `card` and `hud` (dark translucent, brass border), `button` and `button.danger`
+(nine-slice bevelled plaque tinted amber or red, `skin_button.png`), `slot`, `slider`, `bar`, `list`, `window`, and the
+text styles `title`, `heading`, `label`, `text`, `hint`. The textures are drawn by `tools/demo/generate_ui_skin.py`.
+Every menu (`main_menu`, `settings_menu`, `game_over`, `victory`) and every HUD but `far_orbit.owlhud` follow it; the
+sample games name no style: their widgets keep their own look.
+
+### Measures
+
+Release, i9-13950HX, one pinned core, same build options, against the base branch: `hud/frame/500_widgets` (plain
+boxes, the quad path) 78.4 to 80.0 µs before, 83.0 to 85.3 µs after (+6 %, within the 15 % gate: the per-shape depth
+of `ShapeOrder` and the box test); `hud/frame/500_styled_widgets` (every panel, button and bar rounded, bordered,
+shadowed) 86 to 89 µs, **2 draw calls** like the plain HUD (a canvas holding a rounded box draws its flat shapes as
+boxes too, one batch); `hud/frame/1000_row_list` 5.0 µs before, 5.3 to 5.9 µs after.
+
 ## Tests
 
 Layout maths (anchors, pivot, nesting, scale modes), hit-testing and focus order, text layout (pen advance, wrap,
 shrink, constant glyph aspect), `.owlhud` round-trip and legacy fixture, sharing between two scenes and across a
 transition, Lua lookup, save and load, image tests of one HUD over 2D, raycast, voxel and isometric scenes at three
 resolutions, the HUD editor commands, a bench at 500 widgets, and the markers (projection per rendering style, edge placement, round-trip, Lua).
+Themes (`HudTheme_test`): file round-trip, unversioned and newer formats, style serialization, precedence on every
+widget kind, the theme of a scene and its library, the `HudTheme:` key, the box data (scaled lengths, flipped shadow,
+inner fill); `theme.*` and `scene.set_hud_theme` commands, `ui.set_style`, the bench at 500 styled widgets, and the
+image tests of the iso town HUD (Vulkan, OpenGL).
 
 ## Later
 

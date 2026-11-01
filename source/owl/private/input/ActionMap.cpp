@@ -240,12 +240,13 @@ auto mouseBind(const MouseCode iButton) -> ActionBinding {
 	return {.source = BindingSource::MouseButton, .code = iButton};
 }
 
-auto padButtonBind(const GamepadButton iButton) -> ActionBinding {
-	return {.source = BindingSource::GamepadButton, .code = iButton};
+auto padButtonBind(const GamepadButton iButton, const BindingComponent iComponent = BindingComponent::Both,
+				   const float iScale = 1.f) -> ActionBinding {
+	return {.source = BindingSource::GamepadButton, .code = iButton, .component = iComponent, .scale = iScale};
 }
 
-auto padAxisBind(const GamepadAxis iAxis) -> ActionBinding {
-	return {.source = BindingSource::GamepadAxis, .code = iAxis};
+auto padAxisBind(const GamepadAxis iAxis, const float iScale = 1.f) -> ActionBinding {
+	return {.source = BindingSource::GamepadAxis, .code = iAxis, .scale = iScale};
 }
 
 auto padStickBind(const gamepad::Stick iStick) -> ActionBinding {
@@ -272,6 +273,20 @@ auto ActionMap::createDefault() -> ActionMap {
 			{"descend", ActionKind::Button, {keyBind(key::LeftShift), padButtonBind(gamepad::LeftBumper)}},
 			{"sprint", ActionKind::Button, {keyBind(key::LeftShift), padButtonBind(gamepad::LeftThumb)}},
 			{"boost", ActionKind::Button, {keyBind(key::J), padButtonBind(gamepad::Y)}},
+			{"ship_thrust",
+			 ActionKind::Axis,
+			 {keyBind(key::W), keyBind(key::S, Both, -1.f), padAxisBind(gamepad::RightTrigger),
+			  padAxisBind(gamepad::LeftTrigger, -1.f)}},
+			{"ship_roll",
+			 ActionKind::Axis,
+			 {keyBind(key::D), keyBind(key::A, Both, -1.f), padButtonBind(gamepad::RightBumper),
+			  padButtonBind(gamepad::LeftBumper, Both, -1.f)}},
+			{"ship_strafe",
+			 ActionKind::Vector,
+			 {keyBind(key::E, X), keyBind(key::Q, X, -1.f), keyBind(key::Space, Y), keyBind(key::LeftControl, Y, -1.f),
+			  padButtonBind(gamepad::DpadRight, X), padButtonBind(gamepad::DpadLeft, X, -1.f),
+			  padButtonBind(gamepad::DpadUp, Y), padButtonBind(gamepad::DpadDown, Y, -1.f)}},
+			{"ship_assist", ActionKind::Button, {keyBind(key::Z), padButtonBind(gamepad::RightThumb)}},
 			{"interact", ActionKind::Button, {keyBind(key::E), padButtonBind(gamepad::X)}},
 			{"primary", ActionKind::Button, {mouseBind(mouse::ButtonLeft), padAxisBind(gamepad::RightTrigger)}},
 			{"secondary", ActionKind::Button, {mouseBind(mouse::ButtonRight), padAxisBind(gamepad::LeftTrigger)}},

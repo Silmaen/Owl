@@ -36,6 +36,36 @@ actions:
     bindings:
       - {key: J}
       - {gamepad_button: Y}
+  - name: ship_thrust
+    type: axis
+    bindings:
+      - {key: W}
+      - {key: S, scale: -1}
+      - {gamepad_axis: right_trigger}
+      - {gamepad_axis: left_trigger, scale: -1}
+  - name: ship_roll
+    type: axis
+    bindings:
+      - {key: D}
+      - {key: A, scale: -1}
+      - {gamepad_button: RightBumper}
+      - {gamepad_button: LeftBumper, scale: -1}
+  - name: ship_strafe
+    type: vector
+    bindings:
+      - {key: E, component: x}
+      - {key: Q, component: x, scale: -1}
+      - {key: Space, component: y}
+      - {key: LeftControl, component: y, scale: -1}
+      - {gamepad_button: DpadRight, component: x}
+      - {gamepad_button: DpadLeft, component: x, scale: -1}
+      - {gamepad_button: DpadUp, component: y}
+      - {gamepad_button: DpadDown, component: y, scale: -1}
+  - name: ship_assist
+    type: button
+    bindings:
+      - {key: Z}
+      - {gamepad_button: RightThumb}
   - name: interact
     type: button
     bindings:

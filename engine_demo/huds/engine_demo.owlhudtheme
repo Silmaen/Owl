@@ -1,0 +1,113 @@
+HudTheme: Engine Demo
+FormatVersion: 1
+Styles:
+  - name: panel
+    background: [1, 1, 1, 0.97]
+    cornerRadius: 12
+    shadowColor: [0, 0, 0, 0.55]
+    shadowOffset: [0, 6]
+    shadowBlur: 14
+    texture: gid:4161f050f02d2ee9:textures/ui/skin_panel.png
+    sliceInsets: [24, 24, 24, 24]
+  - name: card
+    background: [0.15, 0.1, 0.065, 0.9]
+    cornerRadius: 9
+    bottomTint: [0.72, 0.68, 0.64, 1]
+    borderColor: [0.85, 0.64, 0.32, 0.75]
+    borderWidth: 1.5
+    shadowColor: [0, 0, 0, 0.45]
+    shadowOffset: [0, 4]
+    shadowBlur: 10
+  - name: hud
+    background: [0.1, 0.07, 0.045, 0.72]
+    cornerRadius: 8
+    bottomTint: [0.75, 0.72, 0.7, 1]
+    borderColor: [0.85, 0.64, 0.32, 0.8]
+    borderWidth: 1.5
+    shadowColor: [0, 0, 0, 0.35]
+    shadowOffset: [0, 3]
+    shadowBlur: 8
+  - name: button
+    background: [0.82, 0.56, 0.27, 1]
+    hover: [0.98, 0.74, 0.38, 1]
+    pressed: [0.6, 0.38, 0.18, 1]
+    disabled: [0.42, 0.37, 0.32, 0.65]
+    cornerRadius: 10
+    shadowColor: [0, 0, 0, 0.5]
+    shadowOffset: [0, 3]
+    shadowBlur: 6
+    texture: gid:9bb9af1accef8dc0:textures/ui/skin_button.png
+    sliceInsets: [16, 16, 16, 16]
+  - name: button.danger
+    background: [0.72, 0.24, 0.17, 1]
+    hover: [0.88, 0.33, 0.24, 1]
+    pressed: [0.52, 0.15, 0.1, 1]
+    disabled: [0.42, 0.37, 0.32, 0.65]
+    cornerRadius: 10
+    shadowColor: [0, 0, 0, 0.5]
+    shadowOffset: [0, 3]
+    shadowBlur: 6
+    texture: gid:9bb9af1accef8dc0:textures/ui/skin_button.png
+    sliceInsets: [16, 16, 16, 16]
+  - name: title
+    textColor: [1, 0.83, 0.4, 1]
+    font: OpenSans-Bold
+    outlineColor: [0.2, 0.09, 0.03, 1]
+    outlineWidth: 2.5
+  - name: heading
+    textColor: [1, 0.8, 0.42, 1]
+    font: OpenSans-SemiBold
+    outlineColor: [0.12, 0.05, 0.015, 0.95]
+    outlineWidth: 2
+  - name: label
+    textColor: [1, 0.96, 0.88, 1]
+    font: OpenSans-SemiBold
+    outlineColor: [0.22, 0.11, 0.04, 0.95]
+    outlineWidth: 1.4
+  - name: text
+    textColor: [0.97, 0.91, 0.8, 1]
+    outlineColor: [0.08, 0.04, 0.015, 0.9]
+    outlineWidth: 1.6
+  - name: hint
+    textColor: [0.86, 0.77, 0.62, 0.95]
+    outlineColor: [0.08, 0.04, 0.015, 0.85]
+    outlineWidth: 1.4
+  - name: slider
+    background: [0.12, 0.08, 0.05, 0.95]
+    accent: [0.92, 0.64, 0.3, 1]
+    secondary: [1, 0.93, 0.78, 1]
+    cornerRadius: 7
+    borderColor: [0.85, 0.64, 0.32, 0.8]
+    borderWidth: 1
+  - name: bar
+    background: [0.1, 0.07, 0.045, 0.85]
+    cornerRadius: 6
+    bottomTint: [0.78, 0.74, 0.7, 1]
+    borderColor: [0.85, 0.64, 0.32, 0.7]
+    borderWidth: 1
+  - name: list
+    background: [0.16, 0.11, 0.07, 0.92]
+    secondary: [0.2, 0.14, 0.09, 0.92]
+    hover: [0.36, 0.25, 0.14, 1]
+    accent: [0.62, 0.42, 0.2, 1]
+    textColor: [0.96, 0.9, 0.78, 1]
+    cornerRadius: 5
+  - name: window
+    background: [0.15, 0.1, 0.065, 0.96]
+    accent: [0.46, 0.29, 0.14, 1]
+    textColor: [1, 0.9, 0.7, 1]
+    cornerRadius: 9
+    borderColor: [0.85, 0.64, 0.32, 0.85]
+    borderWidth: 1.5
+    shadowColor: [0, 0, 0, 0.5]
+    shadowOffset: [0, 6]
+    shadowBlur: 14
+  - name: slot
+    background: [0.2, 0.135, 0.085, 0.95]
+    hover: [0.36, 0.24, 0.13, 1]
+    pressed: [0.12, 0.08, 0.05, 1]
+    disabled: [0.2, 0.18, 0.16, 0.6]
+    cornerRadius: 6
+    bottomTint: [0.7, 0.66, 0.62, 1]
+    borderColor: [0.85, 0.64, 0.32, 0.7]
+    borderWidth: 1

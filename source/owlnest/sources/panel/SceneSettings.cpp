@@ -726,7 +726,39 @@ void SceneSettings::renderHudSection() {
 	if (std::filesystem::path dropped; gui::widgets::assetDropTarget(gui::widgets::AssetKind::Hud, dropped))
 		choose({{"path", dropped.generic_string()}});
 	ImGui::TextDisabled("Drawn over the scene in pixels, shared by the scenes naming the same file.");
+	renderHudThemeChoice();
 	gui::widgets::endSection();
+}
+
+void SceneSettings::renderHudThemeChoice() {
+	const auto& own = m_scene->getHudThemePath();
+	const std::string& projectDefault = mp_project->defaultHudTheme;
+	const auto choose = [this](const commands::CommandArgs& iArgs) -> void {
+		const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
+		std::ignore = target.execute("scene.set_hud_theme", iArgs);
+	};
+	std::string preview = std::format("Project default ({})", projectDefault.empty() ? "none" : projectDefault);
+	if (own)
+		preview = own->empty() ? "None" : *own;
+	ImGui::TextUnformatted("Theme");
+	const bool open = gui::widgets::beginCombo("##hudTheme", preview.c_str());
+	if (open) {
+		if (!m_themeChoiceOpen)
+			m_themeFiles = listAssets(mp_project->projectDirectory, ".owlhudtheme");
+		if (ImGui::Selectable("Project default", !own))
+			choose({{"use_default", true}});
+		if (ImGui::Selectable("None", own && own->empty()))
+			choose({{"path", std::string{}}});
+		for (const auto& file: m_themeFiles) {
+			if (ImGui::Selectable(file.c_str(), own && *own == file))
+				choose({{"path", file}});
+		}
+		ImGui::EndCombo();
+	}
+	m_themeChoiceOpen = open;
+	if (std::filesystem::path dropped; gui::widgets::assetDropTarget(gui::widgets::AssetKind::HudTheme, dropped))
+		choose({{"path", dropped.generic_string()}});
+	ImGui::TextDisabled("Styles the widgets naming a style; the project's default theme when none is chosen.");
 }
 
 void SceneSettings::onImGuiRender() {

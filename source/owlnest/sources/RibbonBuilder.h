@@ -154,6 +154,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Build the HUD Theme tab: save and close the active theme.
+	 */
+	void buildHudThemeTab();
+
+	/**
+	 * @brief
 	 *  Build the Dialogue tab: save and close the active dialogue, frame and duplicate its nodes, preview it.
 	 */
 	void buildDialogueTab();

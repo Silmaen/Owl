@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "UiStyleYaml.h"
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
 #include "scene/component/UiSlider.h"
@@ -24,6 +25,8 @@ void UiSlider::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "handleColor" << YAML::Value << handleColor;
 	iOut.getImpl()->emitter << YAML::Key << "step" << YAML::Value << step;
 	iOut.getImpl()->emitter << YAML::Key << "onValueChangedCallback" << YAML::Value << onValueChangedCallback;
+	utils::emitBox(iOut.getImpl()->emitter, box);
+	utils::emitStyleRef(iOut.getImpl()->emitter, style);
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
@@ -44,6 +47,8 @@ void UiSlider::deserialize(const core::Serializer& iNode) {
 		step = iNode.getImpl()->node["step"].as<float>();
 	if (iNode.getImpl()->node["onValueChangedCallback"])
 		onValueChangedCallback = iNode.getImpl()->node["onValueChangedCallback"].as<std::string>();
+	utils::readBox(iNode.getImpl()->node, box);
+	utils::readStyleRef(iNode.getImpl()->node, style);
 }
 
 }// namespace owl::scene::component

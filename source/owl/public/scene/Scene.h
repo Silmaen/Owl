@@ -88,6 +88,7 @@ class WorldStreamer;
 namespace owl::scene {
 
 class Entity;
+class HudTheme;
 class ScriptableEntity;
 namespace nav {
 class NavWorld;
@@ -130,6 +131,7 @@ struct ProceduralSky;
 struct DayNightCycle;
 struct ReflectionProbe;
 struct FirstPersonController;
+struct ShipController;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
@@ -1454,6 +1456,34 @@ public:
 
 	/**
 	 * @brief
+	 *  HUD theme the scene (or HUD) asks for: its `HudTheme:` key.
+	 * @return The asset path; an empty path means no theme, nothing means the project's default theme.
+	 */
+	[[nodiscard]] auto getHudThemePath() const -> const std::optional<std::string>& { return m_hudThemePath; }
+
+	/**
+	 * @brief
+	 *  Choose the HUD theme of the scene's widgets.
+	 * @param[in] iPath The asset path, an empty path for no theme, nothing for the project's default theme.
+	 */
+	void setHudThemePath(std::optional<std::string> iPath) { m_hudThemePath = std::move(iPath); }
+
+	/**
+	 * @brief
+	 *  Path of the HUD theme of the scene's widgets: its own `HudTheme:` key, else the project's `DefaultHudTheme`.
+	 * @return The asset path, empty when the scene follows no theme.
+	 */
+	[[nodiscard]] auto getEffectiveHudThemePath() const -> const std::string&;
+
+	/**
+	 * @brief
+	 *  The HUD theme of the scene's widgets, read once by the engine context's `HudThemeLibrary`.
+	 * @return The theme, or null without theme, engine context, or a readable file.
+	 */
+	[[nodiscard]] auto getHudTheme() const -> shared<const HudTheme>;
+
+	/**
+	 * @brief
 	 *  Seconds of simulated time since Play started: the sum of the frame durations the runtime update has run.
 	 * @return The time, 0 outside Play.
 	 */
@@ -1608,6 +1638,8 @@ private:
 	uint32_t m_prefabVersion = 1;
 	/// HUD asset asked by the scene (nothing: the project's default HUD, empty: none).
 	std::optional<std::string> m_hudPath;
+	/// HUD theme asked by the scene (nothing: the project's default theme, empty: none).
+	std::optional<std::string> m_hudThemePath;
 	/// Seconds of simulated time since Play started.
 	double m_runtimeSeconds = 0.0;
 	/// Speed of the scene clock (`setTimeScale`).
@@ -2774,6 +2806,10 @@ OWL_API void Scene::onComponentAdded<component::FlyCamera>(const Entity& iEntity
 template<>
 OWL_API void Scene::onComponentAdded<component::VoxelPlayer>(const Entity& iEntity,
 															 component::VoxelPlayer& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::ShipController>(const Entity& iEntity,
+																component::ShipController& ioComponent);
 /// @endcond
 
 }// namespace owl::scene

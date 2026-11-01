@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Engine Demo: the world map is the only way into the scenes, the main menu shortcuts are gone and one door script (`place_door.lua`) opens every place.
+- Engine Demo: six places (platformer, raycast, iso town, voxel, tavern with its cellar, observatory), the portal wakes at six of six; the far orbit asks to dock with a debris, then returns to the hub.
+- Engine Demo hub: a `HudMarker` on each place left and a minimap with the hero and one dot per place left.
+- Engine Demo hub: day and night with an ambient tint and 2D lamp and window lights, and Kenney Tiny Farm and Tiny Dungeon art.
+- Engine Demo hub: the sound yard folded into a north-west cave with a reverb zone, torch, drips and the adaptive hub music; its scene is gone.
+- Engine Demo tavern: the character yard folded in, with a barkeeper holding a tankard on a socket, a server walking a spline, two seated patrons and four dialogues; its scene is gone.
+- Engine Demo main menu: a live diorama of a 3D tavern under a day and night sky with the 2D village in front.
+- Engine Demo: a scenario for every scene, checked by `GameExportCoverage.EveryDemoSceneHasAScenario`.
+- `ShipController` component (`owl.ships`): assisted inertial spaceflight, mouse pitch and yaw, roll, thrust, strafe and a flight assist toggle, moving a `WorldPosition` in double, with its Owl Nest inspector and `entity.*_ship_*` Lua bindings.
+- Built-in actions `ship_thrust`, `ship_roll`, `ship_strafe` and `ship_assist`, with keyboard and gamepad bindings, in the action map and the project templates.
+- Engine Demo far orbit: flown from a cockpit HUD (canopy frame, reticle, speed, throttle, flight assist, dock distance) with a `ShipController`.
+- Engine Demo far orbit: a star field sky, a sun with a lens flare, a closer planet, a lit station with solar wings and beacons, faceted debris rocks and space dust.
+- Engine Demo far orbit: the precision gauge is a ruler of glowing beads 20 cm apart by the debris, labelled by a `HudMarker`.
+
 - Skeletal animation: `MeshLoader` reads the first glTF skin, its clips and its `socket_*` nodes, drawn skinned on the GPU (`skinned3d.slang`).
 - `Animator` component: a state machine of clips with parameters, conditions, exit times and cross-fades, driven from Lua (`animator.*`).
 - Mesh levels of detail: built by the cook (`OWLM` container) from the `.owlmeta` settings and picked at runtime by screen size.
@@ -18,7 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest: skeleton, clip timeline and LOD views in the mesh document, Animator and socket inspectors, `entity.attach_socket` / `entity.detach_socket`.
 - `asset.set_import` and the Import panel set the levels of detail of a mesh.
 - Owl Nest socket gizmo: click a socket marker (or select it in the inspector) and move it with the transform gizmo, one `entity.set_socket` per drag.
-- Engine Demo `character_yard` scene: a skinned mannequin walking with a lantern on its hand socket (**C** from the menu).
 - Cutscene sequences: `.owlseq` assets with camera tracks (shots, Smooth, Linear or Step keys) and event tracks, played by the `SequencePlayer` component (`owl.sequences`) and the Lua `sequence` table.
 - Owl Nest Sequencer, docked under the scene it previews on: timeline, sequence, track and key settings in Properties, `sequence.*` commands and a **New Sequence** entry in the Content Browser.
 - Owl Nest viewport draws the camera paths, key frustums and playhead camera of the previewed sequence, **Look through** shows its camera and **Key from view** keys the view at the playhead.
@@ -29,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Subtitles: a **Subtitle** on a Sound Source is shown while the sound plays within hearing, `ui.show_subtitle` / `ui.clear_subtitles` show others, sized by `subtitle_scale` and turned off by `subtitles`.
 - `scene::Accessibility` reads the accessibility settings and registers their defaults.
 - Scenarios check a game setting with `expect: {setting: <key>, ...}`.
-- Engine Demo settings menu: colours, reduced motion and subtitles buttons; the sound yard radio and cart carry subtitles; the platformer camera stops shaking with reduced motion.
+- Engine Demo settings menu: colours, reduced motion and subtitles buttons; the platformer camera stops shaking with reduced motion.
 
 - Asset GUIDs: every asset of a project opened in Owl Nest gets a `.owlmeta` sidecar, and `AssetRegistry` maps GUID and path.
 - Asset references written by GUID (`gid:<guid>:<path hint>`): renaming or moving a file keeps every reference valid.
@@ -45,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A shift of the world origin carries the physics bodies, their interpolation and the behaviour rest positions along: a running scene goes on unbroken.
 - Owl Nest moves the world origin with an undoable `scene.set_world_origin` (viewport Camera menu, Scene Settings field), the view following it.
 - Lua `transform.get_world_position` / `set_world_position` in double and `scene.get_world_origin`.
-- Engine Demo far orbit (`far_orbit.owl`, **K** from the menu): a station one astronomical unit away, sharp to the centimetre.
+- Engine Demo far orbit (`far_orbit.owl`, reached from the hub observatory): a station one astronomical unit away, sharp to the centimetre.
 - Visual scripts (`.owlvs`): event graphs compiled to Lua at load, usable wherever a `.lua` script is, their variables as script properties.
 - Owl Nest visual script editor: Blueprint-style canvas with inline values, node library to drag from, variables and node details in the Graph panel, graph / split / coloured Lua views, two-tone icons of the value types and node families, copy / paste, undo.
 - Visual scripts: colour and vector values (`Color`, `Vector 2`, `Vector 3`), as variables, make / break nodes, and the `r g b a` / `x y z` parameters of a binding (also prefixed, `vx vy`, `cell_x cell_y`) as one pin that splits into its components; constants have only an output.
@@ -95,7 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AdaptiveMusic` component: synced looping layers, states fading them in and out with a stinger, driven by Lua or a game state key; its layers and stingers are referenced by GUID, so moving or renaming a music file keeps them.
 - Lua `sound` bus and music bindings: `set_bus_volume`, `set_bus_muted`, `play_music`, `stop_music`, `crossfade`, `set_music_state`.
 - Owl Nest Mixer panel (`scene.set_mixer`, `sound.set_live_bus` in Play), reverb zones drawn and sized in the viewport, inspectors for zones, filters and adaptive music; one undo step per bus edited.
-- Engine Demo sound yard (U from the main menu): a cave reverb, an underwater pool, a radio behind a wall, a passing cart and a music turning from calm to combat.
+- Engine Demo hub cave: a cave reverb, a torch and drips, with an adaptive music turning from calm by day to night and danger in the cave.
 - Engine Demo settings menu: a volume slider for each mixer bus (master, music, effects, ambient, voice).
 
 - GPU particles: `ParticleEmitter` simulated by a compute shader on OpenGL and Vulkan (CPU reference on the Null backend), up to 65536 particles per emitter.
@@ -136,6 +149,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `HudMarker` component: an icon and a label over a world entity with an off-screen edge arrow, projected through the render layer of the entity (2D, isometric, raycast, voxel, 3D), with its inspector.
 - Lua `entity.set_hud_marker_enabled`, `entity.is_hud_marker_enabled` and `entity.set_hud_marker_label`.
 - Engine Demo: **F** (gamepad Back) shows an "Exit" marker over the elevator of the raycast level.
+- HUD widget boxes (`UiBox`): rounded corners, vertical gradient, border, soft shadow and nine-slice texture on panels, buttons, sliders, bars, list rows and windows, drawn by one SDF rounded-box shader (`Renderer2D::drawBox`, `renderer2D/box.slang`).
+- HUD themes (`.owlhudtheme`, `scene::HudTheme`): named styles a widget follows by name, its own fields kept as overrides, chosen per scene or HUD (`HudTheme:`) or project-wide (`DefaultHudTheme`) and packed with their textures and fonts.
+- Owl Nest HUD theme document (`theme.*` commands), a **New HUD Theme** in the Content Browser, a style picker and a **Box** section in the widget inspectors, the theme in Scene Settings (`scene.set_hud_theme`) and the Project Settings, previewed live.
+- Lua `ui.set_style` makes the widgets of an entity follow a style.
+- Benchmark `hud/frame/500_styled_widgets`: the 500-widget HUD drawn through the rounded-box shader.
+- Engine Demo skin `huds/engine_demo.owlhudtheme` (warm wood and brass, nine-slice textures from `tools/demo/generate_ui_skin.py`), the project default, followed by every menu and HUD but the far-orbit cockpit.
 
 ### Changed
 
@@ -166,13 +185,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Null sound backend keeps the state of every source and of the listener, so the mixing logic is tested headless.
 - The roadmap page keeps the upcoming versions and the last release only; what earlier versions shipped is in the changelog.
 
+- The focus frame of a rounded button or slider follows its corners.
+
 ### Removed
 
+- The top-level `borderColor` / `borderWidth` keys of a `UiPanel`, which drew nothing: the border is `Box: borderWidth`.
 - CI: Windows GCC configuration, the `package-linux` and `package-linux-cross-arm64` presets (`cmake/CMakePresetsPackage.json`), the `release_preset` mechanism and the Windows-only coverage step.
 - Owl Nest: the Scene Flow view; the sample games chain their scenes from Lua, which it did not show.
 
 ### Fixed
 
+- A scene that gave the mouse back by itself, a dialogue pausing the walker, captures it again when it ends, in Play and in the runner; Escape still waits for a click.
+- HUD markers were mirrored vertically on Vulkan: `renderer::projectToViewport` takes the clip space of the active layer.
 - Node editors: a link routed backwards through waypoints crosses them towards where it goes instead of looping.
 - Content Browser: **Delete** and **Rename** open their confirmation again once the context menu has closed; `Delete` and `F2` are their shortcuts.
 - Mixer: drawn with the widget kit and the theme (property grid, sub-headers, themed mute / solo switches and meter), docked with Properties, and its ribbon button shows and hides it.
@@ -194,6 +218,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `FramePacer.WaitSleepsOutThePeriod` measures from the start of the period: a late thread under QEMU no longer makes the wait look short.
 - The sanitizer presets give each test binary 30 minutes: the Tower Defence export end-to-end test outgrew 10 minutes under TSan.
 - `owl_bench --filter` measures `hud/frame/1000_row_list` and `scene/set_parent/wide10000_build` alone: the Bench confirmation rounds of these two re-measured nothing (or crashed) and kept the full-run median.
+- HUD markers on the Vulkan backend: drawn where their entity is, not mirrored across the middle of the screen (`renderer::projectToViewport` follows the clip space).
 
 ## [0.5.0] - 2026-10-25
 

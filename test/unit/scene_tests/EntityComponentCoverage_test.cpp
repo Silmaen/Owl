@@ -358,9 +358,9 @@ TEST(EntityComponentCoverage, UiPanel) {
 
 	EXPECT_FALSE(ent.hasComponent<component::UiPanel>());
 	auto& panel = ent.addComponent<component::UiPanel>();
-	panel.borderWidth = 2.f;
+	panel.box.borderWidth = 2.f;
 	EXPECT_TRUE(ent.hasComponent<component::UiPanel>());
-	EXPECT_NEAR(ent.getComponent<component::UiPanel>().borderWidth, 2.f, 0.01f);
+	EXPECT_NEAR(ent.getComponent<component::UiPanel>().box.borderWidth, 2.f, 0.01f);
 	ent.removeComponent<component::UiPanel>();
 	EXPECT_FALSE(ent.hasComponent<component::UiPanel>());
 

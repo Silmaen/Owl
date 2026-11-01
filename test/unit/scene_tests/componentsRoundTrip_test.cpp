@@ -247,15 +247,30 @@ TEST(ComponentRoundTrip, UiPanel) {
 			[](scene::Entity& iEnt) -> void {
 				auto& p = iEnt.addComponent<scene::component::UiPanel>();
 				p.backgroundColor = {0.4f, 0.4f, 0.4f, 0.9f};
-				p.borderColor = {1.f, 0.8f, 0.f, 1.f};
-				p.borderWidth = 2.5f;
+				p.box.borderColor = {1.f, 0.8f, 0.f, 1.f};
+				p.box.borderWidth = 2.5f;
+				p.box.cornerRadius = 6.f;
+				p.box.bottomTint = {0.5f, 0.5f, 0.5f, 1.f};
+				p.box.shadowColor = {0.f, 0.f, 0.f, 0.5f};
+				p.box.shadowOffset = {1.f, 3.f};
+				p.box.shadowBlur = 5.f;
+				p.box.sliceInsets = {1.f, 2.f, 3.f, 4.f};
+				p.style.name = "panel";
+				p.style.overrides = scene::component::styleBit(scene::component::UiStyleProperty::Shadow);
 				p.clipChildren = true;
 			},
 			[](const scene::Entity& iEnt) -> void {
 				const auto& p = iEnt.getComponent<scene::component::UiPanel>();
 				EXPECT_NEAR(p.backgroundColor.w(), 0.9f, 0.01f);
-				EXPECT_NEAR(p.borderColor.y(), 0.8f, 0.01f);
-				EXPECT_NEAR(p.borderWidth, 2.5f, 0.01f);
+				EXPECT_NEAR(p.box.borderColor.y(), 0.8f, 0.01f);
+				EXPECT_NEAR(p.box.borderWidth, 2.5f, 0.01f);
+				EXPECT_NEAR(p.box.cornerRadius, 6.f, 0.01f);
+				EXPECT_NEAR(p.box.bottomTint.x(), 0.5f, 0.01f);
+				EXPECT_NEAR(p.box.shadowColor.w(), 0.5f, 0.01f);
+				EXPECT_NEAR(p.box.shadowOffset.y(), 3.f, 0.01f);
+				EXPECT_NEAR(p.box.shadowBlur, 5.f, 0.01f);
+				EXPECT_EQ(p.style.name, "panel");
+				EXPECT_EQ(p.style.overrides, scene::component::styleBit(scene::component::UiStyleProperty::Shadow));
 				EXPECT_TRUE(p.clipChildren);
 			});
 }
@@ -624,6 +639,42 @@ TEST(ComponentRoundTrip, FlyCamera) {
 				const auto& fly = iEnt.getComponent<scene::component::FlyCamera>();
 				EXPECT_FLOAT_EQ(fly.moveSpeed, 12.5f);
 				EXPECT_FLOAT_EQ(fly.lookSpeed, 2.25f);
+			});
+}
+
+TEST(ComponentRoundTrip, ShipController) {
+	roundTrip(
+			"ShipController",
+			[](scene::Entity& iEnt) -> void {
+				auto& ship = iEnt.addComponent<scene::component::ShipController>();
+				ship.enabled = false;
+				ship.thrust = 20.5f;
+				ship.strafeThrust = 4.25f;
+				ship.maxSpeed = 80.f;
+				ship.turnRate = 0.9f;
+				ship.rollRate = 2.f;
+				ship.mouseSensitivity = 0.003f;
+				ship.angularResponse = 4.f;
+				ship.assistDamping = 0.75f;
+				ship.flightAssist = false;
+				ship.captureCursor = false;
+				ship.m_velocity = {1.f, 2.f, 3.f};
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::ShipController>());
+				const auto& ship = iEnt.getComponent<scene::component::ShipController>();
+				EXPECT_FALSE(ship.enabled);
+				EXPECT_FLOAT_EQ(ship.thrust, 20.5f);
+				EXPECT_FLOAT_EQ(ship.strafeThrust, 4.25f);
+				EXPECT_FLOAT_EQ(ship.maxSpeed, 80.f);
+				EXPECT_FLOAT_EQ(ship.turnRate, 0.9f);
+				EXPECT_FLOAT_EQ(ship.rollRate, 2.f);
+				EXPECT_FLOAT_EQ(ship.mouseSensitivity, 0.003f);
+				EXPECT_FLOAT_EQ(ship.angularResponse, 4.f);
+				EXPECT_FLOAT_EQ(ship.assistDamping, 0.75f);
+				EXPECT_FALSE(ship.flightAssist);
+				EXPECT_FALSE(ship.captureCursor);
+				EXPECT_FLOAT_EQ(ship.getSpeed(), 0.f);
 			});
 }
 

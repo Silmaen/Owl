@@ -22,7 +22,7 @@ nodes:
     kind: Line
     position: [820, 0]
     speaker: {text: Wizard, key: dialogue.wizard.name}
-    text: {text: "The five worlds are done and the portal is awake: go to the shrine!", key: dialogue.wizard.awake}
+    text: {text: "The six places are done and the portal is awake: go to the shrine!", key: dialogue.wizard.awake}
     next: 7100000000000000010
   - id: 7100000000000000005
     kind: Choice
@@ -41,7 +41,7 @@ nodes:
     kind: Line
     position: [1120, 120]
     speaker: {text: Wizard, key: dialogue.wizard.name}
-    text: {text: "Finish the five houses of the high street: platformer, raycast, iso town, voxels and tavern.", key: dialogue.wizard.portal}
+    text: {text: "Finish the six places of the village: the four houses of the high street, the tavern and the telescope of the observatory.", key: dialogue.wizard.portal}
     next: 7100000000000000005
   - id: 7100000000000000007
     kind: Event

@@ -45,9 +45,41 @@ Entities:
         orthographicNear: -1
         orthographicFar: 10
         toneMapping: Aces
+        postProcess: {ev100: 14.5, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.06, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.2, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0], chromaticAberration: false, chromaticAberrationIntensity: 0, filmGrain: false, filmGrainIntensity: 0, lensFlare: true, lensFlareIntensity: 0.35, lensFlareGhosts: 4, lensFlareSpacing: 0.45, lensFlareHalo: 0.15, lensFlareSize: 0.08}
       primary: true
       fixedAspectRatio: false
-    FlyCamera: {MoveSpeed: 40, LookSpeed: 1.2}
+    ShipController: {enabled: true, thrust: 15, strafeThrust: 6, maxSpeed: 80, turnRate: 1.2, rollRate: 1.6, mouseSensitivity: 0.002, angularResponse: 6, assistDamping: 1.2, flightAssist: true, captureCursor: true}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000060
+    Tag:
+      tag: SpaceDust
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 4100000000000000001}
+    ParticleEmitter:
+      playOnStart: true
+      maxParticles: 400
+      rate: 60
+      lifetimeMin: 5
+      lifetimeMax: 7
+      shape: Box
+      shapeSize: [30, 30, 30]
+      speedMin: 0
+      speedMax: 0.05
+      gravity: [0, 0, 0]
+      drag: 0
+      sizeMin: 0.02
+      sizeMax: 0.05
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 1]]}
+      color: [0.75, 0.78, 0.85, 1]
+      colorOverLife: [[0, 1, 1, 1, 0], [0.2, 1, 1, 1, 0.6], [0.8, 1, 1, 1, 0.6], [1, 1, 1, 1, 0]]
+      emissive: 6000
+      blend: Additive
+      space: World
+      seed: 31
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000002
@@ -55,9 +87,19 @@ Entities:
       tag: Sun
     Transform:
       translation: [0, 0, 0]
-      rotation: [-0.6, 0.8, 0]
+      rotation: [-0.349, 2.181, 0]
       scale: [1, 1, 1]
-    Light: {type: Directional, enabled: true, color: [1, 0.97, 0.92], intensity: 100000, castShadows: false}
+    Light: {type: Directional, enabled: true, color: [1, 0.97, 0.92], intensity: 100000, castShadows: false, angularRadius: 0.0047, flare: 1}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000006
+    Tag:
+      tag: PlanetShine
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [1.25, 0, 0]
+      scale: [1, 1, 1]
+    Light: {type: Directional, enabled: true, color: [0.55, 0.68, 0.9], intensity: 12000, castShadows: false}
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000003
@@ -67,7 +109,7 @@ Entities:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Environment: {hdri: "", ambient: [0.3, 0.32, 0.4], intensity: 1, rotation: 0, showSky: false}
+    Environment: {hdri: gid:b3d0b2cba5cbe25a:textures/hdri/starfield.hdr, intensity: 20000, rotation: 0, showSky: true}
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000004
@@ -84,6 +126,128 @@ Entities:
       transparent: false
     Visibility:
       gameVisible: true
+  - Entity: 4100000000000000070
+    Tag:
+      tag: StationPanels
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 4100000000000000004}
+    MeshRenderer:
+      mesh: gid:a51274002249ff2e:meshes/orbit/station_panels.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000071
+    Tag:
+      tag: StationWindows
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 4100000000000000004}
+    MeshRenderer:
+      mesh: gid:f0b8f53c84cfd358:meshes/orbit/station_windows.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.85, 0.6], emissiveLuminance: 60000}}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000072
+    Tag:
+      tag: BeaconPort
+    Transform:
+      translation: [-36.5, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 3, 3]
+    Hierarchy: {parentId: 4100000000000000004}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 0.2, 0.15, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.15, 0.1], emissiveLuminance: 200000}}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000073
+    Tag:
+      tag: BeaconStarboard
+    Transform:
+      translation: [36.5, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 3, 3]
+    Hierarchy: {parentId: 4100000000000000004}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [0.2, 1, 0.3, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissive: [0.15, 1, 0.3], emissiveLuminance: 200000}}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000074
+    Tag:
+      tag: StationFlood0
+    Transform:
+      translation: [0, 4, 24]
+      rotation: [-0.1, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 4100000000000000004}
+    Light: {type: Spot, enabled: true, color: [1, 0.9, 0.75], intensity: 12000000, range: 60, innerAngle: 0.5, outerAngle: 0.8, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000075
+    Tag:
+      tag: StationFlood1
+    Transform:
+      translation: [14, -4, 18]
+      rotation: [0.15, 0.5, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 4100000000000000004}
+    Light: {type: Spot, enabled: true, color: [1, 0.9, 0.75], intensity: 12000000, range: 60, innerAngle: 0.5, outerAngle: 0.8, castShadows: false}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000050
+    Tag:
+      tag: Debris
+    Transform:
+      translation: [30, 4, -20]
+      rotation: [0.4, 1.1, 0.2]
+      scale: [1.8, 1.8, 1.8]
+    WorldPosition: {position: [149600000030, 4, -20]}
+    MeshRenderer:
+      mesh: gid:2db3eabb42e96f46:meshes/orbit/rock_a.glb
+      color: [0.95, 0.85, 0.75, 1]
+      transparent: false
+    HudMarker:
+      enabled: true
+      color: [1, 0.75, 0.3, 1]
+      size: [22, 22]
+      offset: [0, 0, 0]
+      label: Debris
+      labelColor: [1, 1, 1, 1]
+      fontSize: 20
+      showDistance: true
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 32
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000051
+    Tag: {tag: ControlsHint}
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility: {gameVisible: true}
+    LuaScript:
+      scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.lua
+      properties:
+        - {name: hint, type: string, value: HudHint}
+        - {name: duration, type: float, value: 4.5}
   - Entity: 4100000000000000005
     Tag:
       tag: Moon
@@ -100,142 +264,190 @@ Entities:
       gameVisible: true
   - Entity: 4100000000000000010
     Tag:
-      tag: GaugeBead0
+      tag: RulerBead0
     Transform:
-      translation: [-0.045, 1.93, 39.7]
+      translation: [29.464, 4.8046, -16.6919]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    WorldPosition: {position: [149599999999.955, 1.93, 39.7]}
+    WorldPosition: {position: [149600000029.464, 4.8046, -16.6919]}
     MeshRenderer:
       mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.8, 0.3], emissiveLuminance: 160000}}
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000011
     Tag:
-      tag: GaugeBead1
+      tag: RulerBead1
     Transform:
-      translation: [-0.035, 1.93, 39.7]
+      translation: [29.2851, 4.8046, -16.7813]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    WorldPosition: {position: [149599999999.965, 1.93, 39.7]}
+    WorldPosition: {position: [149600000029.2851, 4.8046, -16.7813]}
     MeshRenderer:
       mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.8, 0.3], emissiveLuminance: 80000}}
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000012
     Tag:
-      tag: GaugeBead2
+      tag: RulerBead2
     Transform:
-      translation: [-0.025, 1.93, 39.7]
+      translation: [29.1062, 4.8046, -16.8708]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    WorldPosition: {position: [149599999999.975, 1.93, 39.7]}
+    WorldPosition: {position: [149600000029.1062, 4.8046, -16.8708]}
     MeshRenderer:
       mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.8, 0.3], emissiveLuminance: 80000}}
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000013
     Tag:
-      tag: GaugeBead3
+      tag: RulerBead3
     Transform:
-      translation: [-0.015, 1.93, 39.7]
+      translation: [28.9273, 4.8046, -16.9602]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    WorldPosition: {position: [149599999999.985, 1.93, 39.7]}
+    WorldPosition: {position: [149600000028.9273, 4.8046, -16.9602]}
     MeshRenderer:
       mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.8, 0.3], emissiveLuminance: 80000}}
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000014
     Tag:
-      tag: GaugeBead4
+      tag: RulerBead4
     Transform:
-      translation: [-0.005, 1.93, 39.7]
+      translation: [28.7484, 4.8046, -17.0497]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    WorldPosition: {position: [149599999999.995, 1.93, 39.7]}
+    WorldPosition: {position: [149600000028.7484, 4.8046, -17.0497]}
     MeshRenderer:
       mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.8, 0.3], emissiveLuminance: 80000}}
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000015
     Tag:
-      tag: GaugeBead5
+      tag: RulerBead5
     Transform:
-      translation: [0.005, 1.93, 39.7]
+      translation: [28.5696, 4.8046, -17.1391]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    WorldPosition: {position: [149600000000.005, 1.93, 39.7]}
+    WorldPosition: {position: [149600000028.5696, 4.8046, -17.1391]}
     MeshRenderer:
       mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.8, 0.3], emissiveLuminance: 160000}}
+    HudMarker:
+      enabled: true
+      color: [1, 0.82, 0.25, 0]
+      size: [8, 8]
+      offset: [0, 0.5, 0]
+      label: Beads 20 cm apart, 1 AU from the world's zero
+      labelColor: [1, 0.9, 0.6, 0.9]
+      fontSize: 16
+      showDistance: false
+      maxDistance: 40
+      offscreenIndicator: false
+      edgeMargin: 32
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000016
     Tag:
-      tag: GaugeBead6
+      tag: RulerBead6
     Transform:
-      translation: [0.015, 1.93, 39.7]
+      translation: [28.3907, 4.8046, -17.2285]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    WorldPosition: {position: [149600000000.015, 1.93, 39.7]}
+    WorldPosition: {position: [149600000028.3907, 4.8046, -17.2285]}
     MeshRenderer:
       mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.8, 0.3], emissiveLuminance: 80000}}
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000017
     Tag:
-      tag: GaugeBead7
+      tag: RulerBead7
     Transform:
-      translation: [0.025, 1.93, 39.7]
+      translation: [28.2118, 4.8046, -17.318]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    WorldPosition: {position: [149600000000.025, 1.93, 39.7]}
+    WorldPosition: {position: [149600000028.2118, 4.8046, -17.318]}
     MeshRenderer:
       mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.8, 0.3], emissiveLuminance: 80000}}
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000018
     Tag:
-      tag: GaugeBead8
+      tag: RulerBead8
     Transform:
-      translation: [0.035, 1.93, 39.7]
+      translation: [28.0329, 4.8046, -17.4074]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    WorldPosition: {position: [149600000000.035, 1.93, 39.7]}
+    WorldPosition: {position: [149600000028.0329, 4.8046, -17.4074]}
     MeshRenderer:
       mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.8, 0.3], emissiveLuminance: 80000}}
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000019
     Tag:
-      tag: GaugeBead9
+      tag: RulerBead9
     Transform:
-      translation: [0.045, 1.93, 39.7]
+      translation: [27.854, 4.8046, -17.4969]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    WorldPosition: {position: [149600000000.045, 1.93, 39.7]}
+    WorldPosition: {position: [149600000027.854, 4.8046, -17.4969]}
     MeshRenderer:
       mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
       color: [1, 1, 1, 1]
       transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.8, 0.3], emissiveLuminance: 80000}}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000020
+    Tag:
+      tag: RulerBead10
+    Transform:
+      translation: [27.6751, 4.8046, -17.5863]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    WorldPosition: {position: [149600000027.6751, 4.8046, -17.5863]}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.8, 0.3], emissiveLuminance: 160000}}
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000030
@@ -270,10 +482,10 @@ Entities:
     Tag:
       tag: Cinder
     Transform:
-      translation: [0, -40000, -150000]
+      translation: [0, -36000, -75000]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    WorldPosition: {position: [149600000000, -40000, -150000]}
+    WorldPosition: {position: [149600000000, -36000, -75000]}
     Planet:
       graph: gid:3841b47d8b9a3652:pcg/planet_heights.owlpcg
       seed: 42

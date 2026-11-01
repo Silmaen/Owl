@@ -52,11 +52,13 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiPanel:
+    style: hud
     backgroundColor: [0.05, 0.07, 0.12, 0.78]
     borderColor: [0.45, 0.5, 0.6, 0.6]
     borderWidth: 1
     clipChildren: false
   UiText:
+    style: text
     text: "  Click: build road (hold to drag)    Right click: bulldoze    Q: switch tool    WASD / arrows: pan    Esc: menu\n  Keyboard cursor: I J K L, then B / X    Pad: left stick pans, right stick + A / X, RB switches tool"
     color: [1, 1, 1, 0.95]
     fontSize: 24
@@ -81,6 +83,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: heading
     text: ''
     color: [1, 0.95, 0.55, 1]
     fontSize: 28
@@ -126,6 +129,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiButton:
+    style: button
     normalColor: [0.16, 0.2, 0.3, 0.92]
     hoverColor: [0.26, 0.34, 0.5, 0.95]
     pressedColor: [0.1, 0.13, 0.2, 1]
@@ -133,6 +137,7 @@ Entities:
     onClickCallback: on_tool_bulldoze
   UiFocus: {focusable: false}
   UiText:
+    style: label
     text: Bulldoze
     color: [1, 1, 1, 1]
     fontSize: 30
@@ -156,6 +161,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiButton:
+    style: button
     normalColor: [0.16, 0.2, 0.3, 0.92]
     hoverColor: [0.26, 0.34, 0.5, 0.95]
     pressedColor: [0.1, 0.13, 0.2, 1]
@@ -163,6 +169,7 @@ Entities:
     onClickCallback: on_tool_road
   UiFocus: {focusable: false}
   UiText:
+    style: label
     text: '[Road]'
     color: [1, 1, 1, 1]
     fontSize: 30
@@ -208,6 +215,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: heading
     text: 'Objective: 0 / 20 trips made by the vehicles'
     color: [1, 0.95, 0.55, 1]
     fontSize: 24
@@ -232,6 +240,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiPanel:
+    style: hud
     backgroundColor: [0.08, 0.1, 0.15, 0.7]
     borderColor: [0.4, 0.45, 0.55, 0.5]
     borderWidth: 1
@@ -258,6 +267,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: text
     text: 'Roads built: 0'
     color: [0.85, 0.9, 1, 1]
     fontSize: 26
@@ -281,6 +291,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: heading
     text: 'Funds: 1000'
     color: [1, 0.92, 0.5, 1]
     fontSize: 34

@@ -242,6 +242,25 @@ public:
 
 	/**
 	 * @brief
+	 *  Set a callback invoked when a HUD theme (`.owlhudtheme`) is double-clicked.
+	 * @param[in] iCallback Function taking the theme file path.
+	 */
+	void setHudThemeOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_hudThemeOpenCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
+	 *  Set the callback creating a HUD theme ("New HUD Theme" of the folder menu); it runs `theme.create` and opens
+	 *  the file.
+	 * @param[in] iCallback Function taking the path of the file to create.
+	 */
+	void setHudThemeCreateCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_hudThemeCreateCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when a dialogue (`.owldlg`) is double-clicked.
 	 * @param[in] iCallback Function taking the dialogue file path.
 	 */
@@ -498,6 +517,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Create `New HUD Theme.owlhudtheme` in the current folder (a number added when taken) through the callback.
+	 */
+	void createHudTheme();
+
+	/**
+	 * @brief
 	 *  Create a dialogue in the current folder (`New Dialogue.owldlg`, numbered when taken) and open it.
 	 */
 	void createDialogue();
@@ -580,6 +605,10 @@ private:
 	std::function<void(const std::filesystem::path&)> m_dataTableOpenCallback;
 	/// Creates a data table ("New Data Table").
 	std::function<void(const std::filesystem::path&)> m_dataTableCreateCallback;
+	/// Callback opening a HUD theme.
+	std::function<void(const std::filesystem::path&)> m_hudThemeOpenCallback;
+	/// Callback creating a HUD theme.
+	std::function<void(const std::filesystem::path&)> m_hudThemeCreateCallback;
 	/// Called on double-click of a `.owldlg` dialogue.
 	std::function<void(const std::filesystem::path&)> m_dialogueOpenCallback;
 	/// Creates a dialogue ("New Dialogue").

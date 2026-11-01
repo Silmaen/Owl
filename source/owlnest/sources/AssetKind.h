@@ -31,6 +31,7 @@ enum struct AssetKind : uint8_t {
 	Prefab,///< `.owlprefab`: instantiated in the active scene.
 	Mesh,///< `.gltf`, `.glb`, `.obj`: placed in the active scene as a `MeshRenderer` entity.
 	Hud,///< `.owlhud`: opened in a scene document (the HUD is a scene of widgets).
+	HudTheme,///< `.owlhudtheme`: opened in a HUD theme document.
 	Macro,///< `.owlmacro`: replayed on the active scene (one undo step).
 	ActionMap,///< `input_actions.yml`: opened in the action map document.
 	Material,///< `.owlmat`: opened in a material document.

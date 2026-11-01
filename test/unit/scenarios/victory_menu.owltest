@@ -1,0 +1,10 @@
+# The victory screen, reached through the portal of the hub: its Menu button holds the focus, `ui_accept` goes back to
+# the main menu.
+scene: ../../../engine_demo/scenes/victory.owl
+steps:
+  - frames: 30
+  - expect: {entity: VictoryTitle, exists: true}
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 90
+  - expect: {entity: PlayButton, exists: true}
+  - expect: {entity: VictoryTitle, exists: false}

@@ -39,6 +39,8 @@ struct OWL_API ExportSettings {
 	std::string icon;
 	/// HUD asset of the scenes that name none (`DefaultHud`), relative to an asset directory, forwarded to `runner.yml`.
 	std::string defaultHud;
+	/// HUD theme of the scenes and HUDs that name none (`DefaultHudTheme`), forwarded to `runner.yml`.
+	std::string defaultHudTheme;
 	/// Gamepad mapping file, relative to the project directory, packed and named in `runner.yml`; empty for none.
 	std::string gamepadMappings;
 	/// Project root directory (holds `game_settings.yml`).

@@ -342,10 +342,14 @@ with them (`ActionMap::withDefaults`) and an action of the same name replaces th
 | Action                                                              | Kind     | Default bindings                         | Read by                                   |
 |---------------------------------------------------------------------|----------|------------------------------------------|-------------------------------------------|
 | `move`                                                              | `vector` | W A S D, left stick                      | `Player`, `VoxelPlayer`                   |
-| `look`                                                              | `vector` | arrows, right stick                      | `VoxelPlayer`                             |
+| `look`                                                              | `vector` | arrows, right stick                      | `VoxelPlayer`, `ShipController`           |
 | `jump`                                                              | `button` | Space, gamepad A                         | `Player`, `VoxelPlayer` (double tap: fly) |
 | `descend`, `sprint`                                                 | `button` | Left Shift, left bumper / left thumb     | `VoxelPlayer`                             |
 | `boost`                                                             | `button` | J, gamepad Y                             | `VoxelPlayer` (super speed in fly mode)   |
+| `ship_thrust`                                                       | `axis`   | W / S, right / left trigger              | `ShipController` (main engine)            |
+| `ship_roll`                                                         | `axis`   | D / A, right / left bumper               | `ShipController`                          |
+| `ship_strafe`                                                       | `vector` | Q / E, Space / Left Ctrl, D-pad          | `ShipController` (side thrusters)         |
+| `ship_assist`                                                       | `button` | Z, right stick click                     | `ShipController` (flight assist toggle)   |
 | `interact`                                                          | `button` | E, gamepad X                             | Interaction triggers, doors, pushwalls    |
 | `primary`, `secondary`                                              | `button` | left / right mouse, right / left trigger | `VoxelPlayer` (break, place)              |
 | `ui_up`, `ui_down`, `ui_left`, `ui_right`, `ui_accept`, `ui_cancel` | `button` | arrows, Enter, Escape, D-pad, A, B       | UI navigation (HUD5)                      |

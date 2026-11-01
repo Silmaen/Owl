@@ -63,7 +63,7 @@ User guide: [Sound](../sound.md).
 | Mixer buses, volumes, mute, solo, crossfades, `volume_*` settings, Mixer panel | Done   |
 | Reverb zones, source and zone filters, Doppler from world motion               | Done   |
 | Adaptive music: layers, states, stingers, game state key, Lua                  | Done   |
-| Engine Demo sound yard                                                         | Done   |
+| Engine Demo hub: a reverb cave, adaptive music by day, night and cave          | Done   |
 
 ## Narrative
 

@@ -36,7 +36,7 @@ end
 
 -- Condition of the Branch: true once every level is done.
 function is_portal_awake()
-    return gamestate.get("levels_done", 0) >= 5
+    return gamestate.get("levels_done", 0) >= 6
 end
 
 -- Condition of the "Show me a spell" answer: offered from the second conversation on.

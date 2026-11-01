@@ -170,8 +170,10 @@ TEST_F(ActionMapTest, EditsInPlace) {
 
 TEST_F(ActionMapTest, DefaultsHoldTheEngineActions) {
 	const auto defaults = ActionMap::createDefault();
-	for (const auto* name: {"move", "look", "jump", "descend", "sprint", "boost", "interact", "primary", "secondary",
-							"ui_up", "ui_down", "ui_left", "ui_right", "ui_accept", "ui_cancel", "ui_scroll"})
+	for (const auto* name:
+		 {"move",      "look",      "jump",        "descend",   "sprint",      "boost",      "interact",
+		  "primary",   "secondary", "ui_up",       "ui_down",   "ui_left",     "ui_right",   "ui_accept",
+		  "ui_cancel", "ui_scroll", "ship_thrust", "ship_roll", "ship_strafe", "ship_assist"})
 		EXPECT_NE(defaults.find(name), nullptr) << name;
 	EXPECT_EQ(defaults.find("move")->kind, ActionKind::Vector);
 	EXPECT_EQ(ActionMap::getDefault()->size(), defaults.size());

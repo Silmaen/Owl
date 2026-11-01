@@ -16,6 +16,7 @@
 #include "renderer/MeshCache.h"
 #include "renderer/RendererVoxel.h"
 #include "scene/HudLibrary.h"
+#include "scene/HudThemeLibrary.h"
 #include "scene/ScreenTransition.h"
 #include "scene/SettingsManager.h"
 
@@ -29,7 +30,8 @@ namespace owl::app {
 EngineContext::EngineContext()
 	: mp_screenTransition{mkUniq<scene::ScreenTransition>()}, mp_settings{mkUniq<scene::SettingsManager>()},
 	  mp_meshCache{mkUniq<renderer::MeshCache>()}, mp_materialLibrary{mkUniq<renderer::MaterialLibrary>()},
-	  mp_voxelMeshCache{mkUniq<renderer::VoxelMeshCache>()}, mp_hudLibrary{mkUniq<scene::HudLibrary>(this)} {}
+	  mp_voxelMeshCache{mkUniq<renderer::VoxelMeshCache>()}, mp_hudThemeLibrary{mkUniq<scene::HudThemeLibrary>()},
+	  mp_hudLibrary{mkUniq<scene::HudLibrary>(this)} {}
 
 EngineContext::~EngineContext() = default;
 

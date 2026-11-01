@@ -76,7 +76,7 @@ strings:
     values: {en: 'Greetings, traveller. Few come to talk to an old wizard.', fr: 'Salut à toi, voyageur. Rares sont ceux qui viennent parler à un vieux magicien.'}
   - key: dialogue.wizard.awake
     table: dialogue
-    values: {en: 'The five worlds are done and the portal is awake: go to the shrine!', fr: 'Les cinq mondes sont achevés et le portail est éveillé : va au sanctuaire !'}
+    values: {en: 'The six places are done and the portal is awake: go to the shrine!', fr: 'Les six lieux sont achevés et le portail est éveillé : va au sanctuaire !'}
   - key: dialogue.wizard.ask
     table: dialogue
     values: {en: 'What would you know?', fr: 'Que veux-tu savoir ?'}
@@ -91,7 +91,7 @@ strings:
     values: {en: 'Farewell.', fr: 'Adieu.'}
   - key: dialogue.wizard.portal
     table: dialogue
-    values: {en: 'Finish the five houses of the high street: platformer, raycast, iso town, voxels and tavern.', fr: 'Termine les cinq maisons de la grand-rue : plateforme, raycast, ville iso, voxels et taverne.'}
+    values: {en: 'Finish the six places of the village: the four houses of the high street, the tavern and the telescope of the observatory.', fr: 'Termine les six lieux du village : les quatre maisons de la grand-rue, la taverne et le télescope de l’observatoire.'}
   - key: dialogue.wizard.spell
     table: dialogue
     values: {en: 'There! Only a little Lua, but the bell of the church never fails to ring.', fr: 'Voilà ! Rien qu''un peu de Lua, mais la cloche de l''église sonne à tous les coups.'}
@@ -101,9 +101,69 @@ strings:
   - key: dialogue.wizard.next
     table: dialogue
     values: {en: 'Next', fr: 'Suite'}
-  - key: yard.subtitle.radio
-    table: yard
-    values: {en: '[Radio music behind the wall]', fr: '[Musique de radio derrière le mur]'}
-  - key: yard.subtitle.cart
-    table: yard
-    values: {en: '[Cart engine rumbling]', fr: '[Moteur du chariot qui gronde]'}
+  - key: dialogue.barkeeper.name
+    table: dialogue
+    values: {en: 'Barkeeper', fr: 'Tavernier'}
+  - key: dialogue.barkeeper.greeting
+    table: dialogue
+    values: {en: 'Welcome to the Owl''s Rest! What will it be?', fr: 'Bienvenue au Repos de la Chouette ! Qu''est-ce que ce sera ?'}
+  - key: dialogue.barkeeper.ask
+    table: dialogue
+    values: {en: 'Thirsty, or curious?', fr: 'Assoiffé, ou curieux ?'}
+  - key: dialogue.barkeeper.answer_cider
+    table: dialogue
+    values: {en: 'A cider, please.', fr: 'Un cidre, s''il vous plaît.'}
+  - key: dialogue.barkeeper.answer_key
+    table: dialogue
+    values: {en: 'Have you seen a key?', fr: 'Avez-vous vu une clé ?'}
+  - key: dialogue.barkeeper.answer_bye
+    table: dialogue
+    values: {en: 'Goodbye.', fr: 'Au revoir.'}
+  - key: dialogue.barkeeper.cider
+    table: dialogue
+    values: {en: 'Here you are, fresh from the cellar.', fr: 'Et voilà, tout frais de la cave.'}
+  - key: dialogue.barkeeper.key_found
+    table: dialogue
+    values: {en: 'You found it already? Mind the cellar ladder.', fr: 'Tu l''as déjà trouvée ? Attention à l''échelle de la cave.'}
+  - key: dialogue.barkeeper.key_hint
+    table: dialogue
+    values: {en: 'I dropped the cellar key by the hearth... near the bucket, maybe.', fr: 'J''ai fait tomber la clé de la cave près de l''âtre... vers le seau, peut-être.'}
+  - key: dialogue.barkeeper.bye
+    table: dialogue
+    values: {en: 'Come back soon!', fr: 'Reviens vite !'}
+  - key: dialogue.farmer.name
+    table: dialogue
+    values: {en: 'Farmer', fr: 'Fermier'}
+  - key: dialogue.farmer.observatory
+    table: dialogue
+    values: {en: 'The telescope of the observatory looks at a station far, far away.', fr: 'Le télescope de l''observatoire regarde une station très, très lointaine.'}
+  - key: dialogue.farmer.debris
+    table: dialogue
+    values: {en: 'A debris drifts off it, they say. It waits for a pilot to dock.', fr: 'Un débris dérive à côté, dit-on. Il attend qu''un pilote s''y amarre.'}
+  - key: dialogue.traveller.name
+    table: dialogue
+    values: {en: 'Traveller', fr: 'Voyageuse'}
+  - key: dialogue.traveller.greeting
+    table: dialogue
+    values: {en: 'I walked from the iso town. The traffic there never stops!', fr: 'J''arrive de la ville iso. La circulation ne s''y arrête jamais !'}
+  - key: dialogue.traveller.ask
+    table: dialogue
+    values: {en: 'And you, traveller?', fr: 'Et toi, voyageur ?'}
+  - key: dialogue.traveller.answer_where
+    table: dialogue
+    values: {en: 'Where are you going next?', fr: 'Où vas-tu ensuite ?'}
+  - key: dialogue.traveller.answer_cheers
+    table: dialogue
+    values: {en: 'Cheers!', fr: 'Santé !'}
+  - key: dialogue.traveller.cave
+    table: dialogue
+    values: {en: 'To the cave behind the lava. They say the music grows darker in there.', fr: 'À la grotte derrière la lave. On dit que la musique s''y assombrit.'}
+  - key: dialogue.traveller.cheers
+    table: dialogue
+    values: {en: 'Cheers! To the six places of the village.', fr: 'Santé ! Aux six lieux du village.'}
+  - key: dialogue.server.name
+    table: dialogue
+    values: {en: 'Server', fr: 'Serveuse'}
+  - key: dialogue.server.busy
+    table: dialogue
+    values: {en: 'Busy night! Ask the barkeeper for a drink.', fr: 'Quelle soirée ! Demande donc un verre au tavernier.'}

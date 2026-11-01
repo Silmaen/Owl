@@ -222,6 +222,8 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
   ([HUD system](design/hud-system.md#world-markers))
 - ![Done][done] Accessibility: UI scale, colour-blind modes, subtitles, reduced motion
   ([Accessibility](design/accessibility.md))
+- ![Done][done] HUD themes and skinned widgets: rounded corners, gradients, shadows, nine-slice, a skin for the Engine
+  Demo menus ([HUD system](design/hud-system.md#hud-themes))
 - ![Done][done] Settings, logs and caches stay in the application folder, with an import of the settings of a
   previous version ([User directory](architecture.md#architecture-user-directory))
 - ![Done][done] Advanced post-processing (chromatic aberration, film grain, motion blur, depth of field)
@@ -245,7 +247,7 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
 - ![Done][done] Mipmapped pixel-art atlases: sharp texels up close, filtered mips far away, no bleeding between tiles,
   for the voxel, raycast and tilemap atlases ([2D](design/2d-complete.md#pixel-art-atlases))
 - ![Done][done] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
-- ![Planned][planned] Engine Demo revamp: every scene reached from the world map and back, the isolated scenes folded
+- ![Done][done] Engine Demo revamp: every scene reached from the world map and back, the isolated scenes folded
   into the hub and the tavern, an observatory, a live main menu ([Engine Demo](design/sample-games.md#sample-games-demo-revamp))
 - ![Planned][planned] 2D walkable areas: polygons with holes, paths across them, scale by depth, edited in Owl Nest
   ([2D](design/2d-complete.md#walkable-areas-2d))

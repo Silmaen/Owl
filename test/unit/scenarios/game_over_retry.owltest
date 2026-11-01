@@ -1,0 +1,10 @@
+# The game over screen (the lava of the hub, or no health left in the platformer): Retry holds the focus and starts a
+# new run on the world map.
+scene: ../../../engine_demo/scenes/game_over.owl
+steps:
+  - frames: 30
+  - expect: {entity: GameOverTitle, exists: true}
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 90
+  - expect: {entity: Player, exists: true}
+  - expect: {gamestate: levels_done, equals: 0}

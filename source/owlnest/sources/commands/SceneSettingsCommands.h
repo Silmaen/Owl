@@ -549,6 +549,69 @@ private:
 
 /**
  * @brief
+ *  Undoable choice of the HUD theme (`.owlhudtheme`) of a scene or a HUD (its `HudTheme:` key).
+ */
+class SetSceneHudThemeCommand final : public SceneUndoCommand {
+public:
+	SetSceneHudThemeCommand(const SetSceneHudThemeCommand&) = delete;
+
+	SetSceneHudThemeCommand(SetSceneHudThemeCommand&&) = default;
+
+	auto operator=(const SetSceneHudThemeCommand&) -> SetSceneHudThemeCommand& = delete;
+
+	auto operator=(SetSceneHudThemeCommand&&) -> SetSceneHudThemeCommand& = default;
+
+	/**
+	 * @brief
+	 *  Construct from the theme path before and after the change.
+	 * @param[in] iBefore Path before (nothing: the project's default theme, empty: none).
+	 * @param[in] iAfter Path after.
+	 */
+	SetSceneHudThemeCommand(std::optional<std::string> iBefore, std::optional<std::string> iAfter);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~SetSceneHudThemeCommand() override;
+
+	/**
+	 * @brief
+	 *  Restore the previous theme.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void undo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Choose the new theme again.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void redo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Description.
+	 * @return Human-readable description for menus and tooltips.
+	 */
+	[[nodiscard]] auto description() const -> std::string override;
+
+	/**
+	 * @brief
+	 *  Stable identifier of the command type for merge compatibility checks.
+	 * @return The command type id.
+	 */
+	[[nodiscard]] auto typeId() const -> size_t override;
+
+private:
+	/// Theme path before the change.
+	std::optional<std::string> m_before;
+	/// Theme path after the change.
+	std::optional<std::string> m_after;
+};
+
+/**
+ * @brief
  *  Undoable choice of the script a scene owns (its `SceneScript:` key): the path and the property values.
  *
  * Consecutive edits within the merge window of the undo manager collapse into one step.

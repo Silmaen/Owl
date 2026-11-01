@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -42,6 +43,7 @@ constexpr uint32_t g_maxQuadsPerBatch = 20000;
 constexpr uint32_t g_maxCirclesPerBatch = 20000;
 constexpr uint32_t g_maxLinesPerBatch = 20000;
 constexpr uint32_t g_maxTextGlyphsPerBatch = 20000;
+constexpr uint32_t g_maxBoxesPerBatch = 4096;
 constexpr uint32_t g_maxTransientWorldsPerBatch = 20000;
 // A run costs a draw: a batch with this many runs is drawn before it grows more.
 constexpr uint32_t g_maxRunsPerBatch = 4096;
@@ -115,6 +117,28 @@ struct TextInstance {
 };
 static_assert(sizeof(TextInstance) == 96, "TextInstance must match shader std430 layout");
 
+struct BoxInstance {
+	int32_t worldIndex;
+	uint32_t texIndex;
+	int32_t entityId;
+	float cornerRadius;
+	math::vec4 topColor;
+	math::vec4 bottomColor;
+	math::vec4 borderColor;
+	math::vec4 shadowColor;
+	math::vec2 size;
+	math::vec2 shadowOffset;
+	float shadowBlur;
+	float borderWidth;
+	// Grow of the drawn quad past each edge of the box, room for the shadow and the antialiasing.
+	float margin;
+	float _pad0;
+	math::vec4 sliceInsets;
+	math::vec4 sliceUv;
+	math::vec4 uvRect;
+};
+static_assert(sizeof(BoxInstance) == 160, "BoxInstance must match shader std430 layout");
+
 // Glyphs of a string laid out in its frame, kept while its font, text and layout stay the same.
 struct ShapedText {
 	shared<data::fonts::Font> font;
@@ -163,6 +187,7 @@ struct InternalData {
 	BatchData<CircleInstance> circle;
 	BatchData<LineInstance> line;
 	BatchData<TextInstance> text;
+	BatchData<BoxInstance> box;
 	// Draw order of the batch: sorted by key at flush only when a key went backwards.
 	DrawRuns runs;
 	Renderer2D::Statistics stats;
@@ -284,6 +309,9 @@ void drawRun(const utils::RunKind iKind, const uint32_t iBegin, const uint32_t i
 			break;
 		case utils::RunKind::Text:
 			drawRange(g_Data->text, iBegin, iCount, 6u);
+			break;
+		case utils::RunKind::Box:
+			drawRange(g_Data->box, iBegin, iCount, 6u);
 			break;
 	}
 }
@@ -449,6 +477,8 @@ void Renderer2D::init() {
 	g_Data->circle.depthDrawData = setupCornerVbo("circle", depthTested);
 	g_Data->text.drawData = setupCornerVbo("text", {});
 	g_Data->text.depthDrawData = setupCornerVbo("text", depthTested);
+	g_Data->box.drawData = setupCornerVbo("box", {});
+	g_Data->box.depthDrawData = setupCornerVbo("box", depthTested);
 	g_Data->line.drawData = setupLineVbo({.topology = gpu::PrimitiveTopology::Lines});
 	g_Data->line.depthDrawData =
 			setupLineVbo({.topology = gpu::PrimitiveTopology::Lines, .depthTest = true, .depthWrite = false});
@@ -474,6 +504,8 @@ void Renderer2D::init() {
 			gpu::StorageBuffer::create(utils::g_maxLinesPerBatch * sizeof(utils::LineInstance), 2, "Renderer2D");
 	g_Data->text.ssbo =
 			gpu::StorageBuffer::create(utils::g_maxTextGlyphsPerBatch * sizeof(utils::TextInstance), 2, "Renderer2D");
+	g_Data->box.ssbo =
+			gpu::StorageBuffer::create(utils::g_maxBoxesPerBatch * sizeof(utils::BoxInstance), 2, "Renderer2D");
 
 	g_Data->sceneWorldsFallback =
 			gpu::StorageBuffer::create(static_cast<uint32_t>(sizeof(math::mat4)), 3, "Renderer2D");
@@ -513,6 +545,7 @@ void Renderer2D::shutdown() {
 	g_Data->circle = utils::BatchData<utils::CircleInstance>{};
 	g_Data->line = utils::BatchData<utils::LineInstance>{};
 	g_Data->text = utils::BatchData<utils::TextInstance>{};
+	g_Data->box = utils::BatchData<utils::BoxInstance>{};
 	g_Data->sceneWorlds.clear();
 	g_Data->sceneWorldsSsbo.reset();
 	g_Data->sceneWorldsFallback.reset();
@@ -676,6 +709,7 @@ void Renderer2D::startBatch() {
 	utils::resetBatch(g_Data->circle, utils::g_maxCirclesPerBatch);
 	utils::resetBatch(g_Data->line, utils::g_maxLinesPerBatch);
 	utils::resetBatch(g_Data->text, utils::g_maxTextGlyphsPerBatch);
+	utils::resetBatch(g_Data->box, utils::g_maxBoxesPerBatch);
 	g_Data->runs.clear();
 	g_Data->textureSlotIndex = 1;
 	forgetTextureSlots();
@@ -855,6 +889,43 @@ void Renderer2D::drawString(const StringData& iStringData) {
 		g_Data->stats.quadCount++;
 	};
 	for (const auto& glyph: shapedGlyphs(iStringData)) emitGlyph(glyph);
+}
+
+void Renderer2D::drawBox(const BoxData& iBoxData) {
+	if (iBoxData.size.x() <= 0.f || iBoxData.size.y() <= 0.f)
+		return;
+	if (g_Data->box.instances.size() >= utils::g_maxBoxesPerBatch || g_Data->runs.size() >= utils::g_maxRunsPerBatch)
+		nextBatch();
+	// Room for the world first: binding the texture may start a batch, which empties the transient worlds.
+	if (g_Data->transientWorlds.size() >= utils::g_maxShapeTransientsPerBatch)
+		nextBatch();
+	const uint32_t textureIndex = iBoxData.texture == nullptr ? 0 : textureSlotOf(iBoxData.texture);
+	const bool shadow = iBoxData.shadowColor.a() > 0.f;
+	const float shadowReach =
+			shadow ? std::max(std::abs(iBoxData.shadowOffset.x()), std::abs(iBoxData.shadowOffset.y())) +
+							 std::max(iBoxData.shadowBlur, 0.f)
+				   : 0.f;
+	const float halfSide = std::min(iBoxData.size.x(), iBoxData.size.y()) * 0.5f;
+	g_Data->box.instances.push_back(utils::BoxInstance{
+			.worldIndex = allocateTransientWorld(iBoxData.transform(), utils::g_maxShapeTransientsPerBatch),
+			.texIndex = textureIndex,
+			.entityId = iBoxData.entityId,
+			.cornerRadius = std::clamp(iBoxData.cornerRadius, 0.f, halfSide),
+			.topColor = iBoxData.topColor,
+			.bottomColor = iBoxData.bottomColor,
+			.borderColor = iBoxData.borderColor,
+			.shadowColor = shadow ? iBoxData.shadowColor : math::vec4{0.f, 0.f, 0.f, 0.f},
+			.size = iBoxData.size,
+			.shadowOffset = iBoxData.shadowOffset,
+			.shadowBlur = std::max(iBoxData.shadowBlur, 0.f),
+			.borderWidth = std::clamp(iBoxData.borderWidth, 0.f, halfSide),
+			.margin = shadowReach + 1.f,
+			._pad0 = 0.f,
+			.sliceInsets = iBoxData.sliceInsets,
+			.sliceUv = iBoxData.sliceUv,
+			.uvRect = iBoxData.uvRect});
+	g_Data->runs.note(utils::RunKind::Box, iBoxData.depth);
+	g_Data->stats.quadCount++;
 }
 
 void Renderer2D::resetStats() {

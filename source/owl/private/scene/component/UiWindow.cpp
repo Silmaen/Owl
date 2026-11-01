@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "UiStyleYaml.h"
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
 #include "scene/component/UiWindow.h"
@@ -27,6 +28,8 @@ void UiWindow::serialize(const core::Serializer& iOut) const {
 	emitter << YAML::Key << "closable" << YAML::Value << closable;
 	emitter << YAML::Key << "modal" << YAML::Value << modal;
 	emitter << YAML::Key << "onCloseCallback" << YAML::Value << onCloseCallback;
+	utils::emitBox(iOut.getImpl()->emitter, box);
+	utils::emitStyleRef(iOut.getImpl()->emitter, style);
 	emitter << YAML::EndMap;
 }
 
@@ -52,6 +55,8 @@ void UiWindow::deserialize(const core::Serializer& iNode) {
 		modal = node["modal"].as<bool>();
 	if (node["onCloseCallback"])
 		onCloseCallback = node["onCloseCallback"].as<std::string>();
+	utils::readBox(iNode.getImpl()->node, box);
+	utils::readStyleRef(iNode.getImpl()->node, style);
 }
 
 }// namespace owl::scene::component
