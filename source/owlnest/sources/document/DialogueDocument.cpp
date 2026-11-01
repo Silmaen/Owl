@@ -242,7 +242,9 @@ void DialogueDocument::onCanvasReady() {
 	m_canvas.setOnLinkWaypointsChanged([this](const core::UUID iLink, const std::vector<math::vec2f>&) -> void {
 		m_linkEdited = true;
 		const auto* link = m_canvas.findLink(iLink);
-		const auto pin = link != nullptr ? m_pins.find(link->fromPin) : m_pins.end();
+		if (link == nullptr)
+			return;
+		const auto pin = m_pins.find(link->fromPin);
 		if (pin == m_pins.end() || !pin->second.output)
 			return;
 		std::string points;
@@ -255,7 +257,9 @@ void DialogueDocument::onCanvasReady() {
 	m_canvas.setOnLinkColorChanged([this](const core::UUID iLink, const std::string&) -> void {
 		m_linkEdited = true;
 		const auto* link = m_canvas.findLink(iLink);
-		const auto pin = link != nullptr ? m_pins.find(link->fromPin) : m_pins.end();
+		if (link == nullptr)
+			return;
+		const auto pin = m_pins.find(link->fromPin);
 		if (pin == m_pins.end() || !pin->second.output)
 			return;
 		std::ignore = sendCommand("dialogue.set_link_color", {{"node", formatId(pin->second.node)},
