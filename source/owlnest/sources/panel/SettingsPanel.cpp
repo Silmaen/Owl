@@ -160,6 +160,11 @@ void SettingsPanel::renderCameraSection(EditorSettings& ioSettings) {
 	std::ignore = settingInt("Dead Zone", ioSettings.cameraDeadZone, 0, 20, defaults.cameraDeadZone, "%d px",
 							 "Distance the cursor travels before a camera drag moves the view, so a shaky click does "
 							 "not nudge it.");
+	if (gui::widgets::propertyFloat("Fly Speed", ioSettings.cameraFlySpeed, defaults.cameraFlySpeed, 0.1f,
+									"%.1f units/s",
+									"Speed of W A S D, Q and E while a drag looks around; the wheel changes it "
+									"during the flight."))
+		ioSettings.cameraFlySpeed = std::clamp(ioSettings.cameraFlySpeed, 0.1f, 100.f);
 	gui::widgets::endProperties();
 }
 

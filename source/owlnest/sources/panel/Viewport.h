@@ -10,10 +10,12 @@
 
 #include <owlgui.h>
 
+#include "../EditorSettings.h"
 #include "../UndoManager.h"
 #include "CameraPilot.h"
 #include "NavigationToolState.h"
 #include "PlayOverlay.h"
+#include "ViewNavigation.h"
 
 #include <gui/component/render.h>
 #include <math/SplineCurve.h>
@@ -863,6 +865,26 @@ private:
 
 	/**
 	 * @brief
+	 *  Select what is under the cursor, as a left click does: a socket, a spline point, a patrol waypoint, a marker or
+	 *  an entity.
+	 */
+	void pickAtCursor();
+
+	/**
+	 * @brief
+	 *  End the left press of a navigation mode: a release without drag selects.
+	 */
+	void handleNavigationRelease();
+
+	/**
+	 * @brief
+	 *  Draw the navigation mode buttons of the view overlay and the fly speed popup.
+	 * @param[in,out] ioSettings The editor settings holding the mode and the speed.
+	 */
+	void renderNavigationButtons(EditorSettings& ioSettings);
+
+	/**
+	 * @brief
 	 *  Ray of the viewport camera through the cursor.
 	 * @return The origin and the normalized direction, in world space; nothing for an empty viewport.
 	 */
@@ -941,6 +963,8 @@ private:
 	core::UUID m_hoveredMapEntity{0};
 	/// Whether the navigation tool is on.
 	NavigationToolState m_navTool;
+	/// Navigation mode of the left drag and the state of the left press.
+	ViewNavigation m_viewNav;
 	/// Deficiency the frame is simulated for, in Edit and Play (this session only).
 	renderer::ColorDeficiency m_colorVisionPreview = renderer::ColorDeficiency::None;
 	/// Side of the hovered cell the navigation tool would change.

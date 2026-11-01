@@ -14,7 +14,7 @@ at the first start, takes them from the folder of a previous version and applies
 |------------|----------------------------------------------------------------------------------------------------------------------------------------|
 | General    | Stats panel, text size (75 to 150 %, at once), UI and code font sizes (next start), autosave interval, frame pacing (below)            |
 | Gizmo Snap | Snap to grid, snap step, step from tilemap and its cell multiplier, rotation step ([snapping](editor_viewport.md#gizmos-and-snapping)) |
-| Camera     | Orbit, pan and zoom speeds (10 to 300 %), invert vertical, dead zone                                                                   |
+| Camera     | Orbit, pan and zoom speeds (10 to 300 %), invert vertical, dead zone, fly speed (0.1 to 100 units/s)                                   |
 | Appearance | Theme: **Owl Dark** or **Owl Light**, applied at once (also **View > Appearance**)                                                     |
 | Shortcuts  | Every action and its key ([below](#rebinding))                                                                                         |
 | MCP Server | Enabled (off by default), port (47800), status, endpoint and token file (a click copies), **Regenerate Token**                         |
@@ -66,8 +66,10 @@ The factory keys; every one can change in **Settings > Shortcuts**.
 | Text Size: Larger / Smaller / Reset            | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` |
 
 Without a factory key, reachable from the command palette and bindable: the axis views, **Camera: Selected
-Viewpoint**, **Camera: Pilot Selected Camera**, **Toggle 2D / 3D View**, **Reset Layout**. The gizmo letters act
-while the viewport is hovered and nothing is being dragged; `Shift` twice opens the palette outside a text field only.
+Viewpoint**, **Camera: Pilot Selected Camera**, **Toggle 2D / 3D View**, the navigation modes (**Navigation: Select**,
+**Orbit**, **Fly**, **Pan**, see [Navigating the scene](editor_viewport.md#viewport-navigation)), **Reset Layout**.
+The gizmo letters act while the viewport is hovered and nothing is being dragged; `Shift` twice opens the palette
+outside a text field only.
 
 ## Rebinding
 

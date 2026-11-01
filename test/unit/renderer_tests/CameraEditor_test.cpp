@@ -305,6 +305,68 @@ TEST(CameraEditor, RightButtonFliesWithTheLetterKeys) {
 	owl::input::Input::invalidate();
 }
 
+TEST(CameraEditor, LeftDragFollowsTheNavigationMode) {
+	owl::input::Input::init(owl::window::Type::Null);
+	owl::core::Timestep ts;
+	using LeftDrag = CameraEditor::LeftDrag;
+	const auto drag = [&ts](CameraEditor& ioCam, const LeftDrag iMode) -> void {
+		ioCam.setNavigation({.leftDrag = iMode});
+		owl::input::Input::injectMouseButton(owl::input::mouse::ButtonLeft);
+		owl::input::Input::injectMousePos({0.f, 0.f});
+		ts.update();
+		ioCam.onUpdate(ts);
+		owl::input::Input::injectMousePos({12.f, 6.f});
+		ts.update();
+		ioCam.onUpdate(ts);
+		// The injection toggles: release the button for the next drag.
+		owl::input::Input::injectMouseButton(owl::input::mouse::ButtonLeft);
+		owl::input::Input::injectMousePos({0.f, 0.f});
+	};
+	CameraEditor orbit(45, 1.5f, 0.1f, 100);
+	const auto focal = orbit.getFocalPoint();
+	drag(orbit, LeftDrag::Orbit);
+	EXPECT_NE(orbit.getYaw(), 0.f);
+	EXPECT_FLOAT_EQ((orbit.getFocalPoint() - focal).norm(), 0.f);
+
+	CameraEditor look(45, 1.5f, 0.1f, 100);
+	const auto eye = look.getPosition();
+	drag(look, LeftDrag::Look);
+	EXPECT_NE(look.getYaw(), 0.f);
+	EXPECT_NEAR((look.getPosition() - eye).norm(), 0.f, 1e-4f);
+
+	CameraEditor pan(45, 1.5f, 0.1f, 100);
+	drag(pan, LeftDrag::Pan);
+	EXPECT_FLOAT_EQ(pan.getYaw(), 0.f);
+	EXPECT_GT((pan.getFocalPoint() - focal).norm(), 0.f);
+
+	// The orthographic view cannot turn: every mode pans it.
+	CameraEditor flat(45, 1.5f, 0.1f, 100);
+	flat.setProjection(CameraEditor::Projection::Orthographic);
+	drag(flat, LeftDrag::Orbit);
+	EXPECT_FLOAT_EQ(flat.getYaw(), 0.f);
+	EXPECT_GT((flat.getFocalPoint() - focal).norm(), 0.f);
+	owl::input::Input::invalidate();
+}
+
+TEST(CameraEditor, LeftLookFliesWithTheLetterKeys) {
+	owl::input::Input::init(owl::window::Type::Null);
+	CameraEditor cam(45, 1.5f, 0.1f, 100);
+	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonLeft);
+	EXPECT_FALSE(cam.isFlying());
+	cam.setNavigation({.leftDrag = CameraEditor::LeftDrag::Look});
+	EXPECT_TRUE(cam.isFlying());
+	owl::input::Input::injectKey(owl::input::key::E);
+	owl::core::Timestep ts;
+	ts.forceUpdate(std::chrono::milliseconds{100});
+	const auto focal = cam.getFocalPoint();
+	cam.onUpdate(ts);
+	EXPECT_NEAR(cam.getFocalPoint().y() - focal.y(), cam.getFlySpeed() * 0.1f, 1e-3f);
+	owl::input::Input::injectKey(owl::input::key::E);
+	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonLeft);
+	EXPECT_FALSE(cam.isFlying());
+	owl::input::Input::invalidate();
+}
+
 TEST(CameraEditor, WheelWhileFlyingSetsTheSpeed) {
 	owl::input::Input::init(owl::window::Type::Null);
 	CameraEditor cam(45, 1.5f, 0.1f, 100);

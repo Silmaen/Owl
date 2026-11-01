@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Owl Nest viewport: **Select**, **Orbit**, **Fly** and **Pan** navigation modes in the view overlay choose what the left drag does, kept in the editor settings, with a click still selecting.
+- Owl Nest viewport: a fly speed button and a **Fly Speed** camera setting, kept across sessions and followed by the wheel during a flight.
+- `CameraEditor::Navigation::leftDrag`: orbit, look around (flying with the keys) or pan on a left drag without modifier.
+- Editor manual: a *Navigating the scene* section with every mouse and key gesture, per mode and per rendering style.
 - Engine Demo: the world map is the only way into the scenes, the main menu shortcuts are gone and one door script (`place_door.lua`) opens every place.
 - Engine Demo: six places (platformer, raycast, iso town, voxel, tavern with its cellar, observatory), the portal wakes at six of six; the far orbit asks to dock with a debris, then returns to the hub.
 - Engine Demo hub: a `HudMarker` on each place left and a minimap with the hero and one dot per place left.

@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "panel/ViewNavigation.h"
+
 #include <owlgui.h>
 
 #include <cstddef>
@@ -118,6 +120,10 @@ struct EditorSettings {
 	bool cameraInvertY = false;
 	/// Pixels the cursor travels before a camera drag moves the view (0 to 20).
 	int cameraDeadZone = 0;
+	/// Speed of the fly keys of the editor camera, in world units per second (0.1 to 100).
+	float cameraFlySpeed = 5.f;
+	/// What the left drag does in the viewport when it does not start on the gizmo.
+	panel::ViewNavigationMode viewNavigation = panel::ViewNavigationMode::Select;
 	/// Seconds between two autosaves of the modified documents (crash recovery); 0 disables the autosave.
 	int autosaveIntervalSeconds = 60;
 	/// Most frames per second while the editor has the focus (0: the display rate, 1 to 1000).

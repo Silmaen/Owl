@@ -42,12 +42,13 @@ void CameraEditor::onUpdate(const core::Timestep& iTimeStep) {
 	const bool rmb = input::Input::isMouseButtonPressed(input::mouse::ButtonRight);
 	const bool mmb = input::Input::isMouseButtonPressed(input::mouse::ButtonMiddle);
 	const bool freeLook = !alt && !ctrl && m_navigation.mouseLook && (rmb || mmb);
-	if (!(alt || ctrl || freeLook) || !(lmb || rmb || mmb)) {
+	const bool leftNavigation = !alt && !ctrl && lmb && m_navigation.leftDrag != LeftDrag::None;
+	if (!(alt || ctrl || freeLook || leftNavigation) || !(lmb || rmb || mmb)) {
 		m_dragTravel = 0.f;
 		updateView();
 		return;
 	}
-	if (freeLook && rmb)
+	if ((freeLook && rmb) || (leftNavigation && m_navigation.leftDrag == LeftDrag::Look))
 		fly(iTimeStep.getSeconds());
 	// The drag moves nothing until the cursor has left the dead zone around where it started.
 	const bool inDeadZone = m_dragTravel < m_navigation.deadZone;
@@ -70,12 +71,34 @@ void CameraEditor::onUpdate(const core::Timestep& iTimeStep) {
 			mouseRotate(delta);
 		else if (rmb || mmb)
 			mousePan(delta);
-	} else if (rmb) {
+	} else if (freeLook && rmb) {
 		rotateInPlace(delta);
-	} else {
+	} else if (freeLook) {
 		mousePan(delta);
+	} else {
+		dragLeft(delta);
 	}
 	updateView();
+}
+
+void CameraEditor::dragLeft(const math::vec2& iDelta) {
+	if (m_projectionMode == Projection::Orthographic) {
+		mousePan(iDelta);
+		return;
+	}
+	switch (m_navigation.leftDrag) {
+		case LeftDrag::None:
+			break;
+		case LeftDrag::Orbit:
+			mouseRotate(iDelta);
+			break;
+		case LeftDrag::Look:
+			rotateInPlace(iDelta);
+			break;
+		case LeftDrag::Pan:
+			mousePan(iDelta);
+			break;
+	}
 }
 
 void CameraEditor::onEvent(event::Event& ioEvent) {
@@ -126,8 +149,10 @@ void CameraEditor::updateView() {
 }
 
 auto CameraEditor::isFlying() const -> bool {
-	return m_navigation.mouseLook && input::Input::isMouseButtonPressed(input::mouse::ButtonRight) &&
-		   !input::Input::isKeyPressed(input::key::LeftAlt) && !input::Input::isKeyPressed(input::key::LeftControl);
+	if (input::Input::isKeyPressed(input::key::LeftAlt) || input::Input::isKeyPressed(input::key::LeftControl))
+		return false;
+	return (m_navigation.mouseLook && input::Input::isMouseButtonPressed(input::mouse::ButtonRight)) ||
+		   (m_navigation.leftDrag == LeftDrag::Look && input::Input::isMouseButtonPressed(input::mouse::ButtonLeft));
 }
 
 void CameraEditor::setFlySpeed(const float iSpeed) { m_flySpeed = std::clamp(iSpeed, 0.1f, 100.f); }

@@ -280,6 +280,9 @@ void EditorLayer::registerCameraActions() {
 	for (const auto& [axis, id, label]: views)
 		m_actionRegistry.registerAction(
 				id, label, {}, onViewport([axis](panel::Viewport& ioViewport) -> void { ioViewport.viewAlong(axis); }));
+	for (const auto mode: panel::g_viewNavigationModes)
+		m_actionRegistry.registerAction(panel::getActionId(mode), std::format("Navigation: {}", panel::getName(mode)),
+										{}, [this, mode]() -> void { m_settings.viewNavigation = mode; });
 }
 
 void EditorLayer::registerTextScaleActions() {
