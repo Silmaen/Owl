@@ -43,8 +43,8 @@ Every entity is a name plus components; this one draws a coloured square. See [S
 ## 3. Add an entity
 
 1. Right-click the background of the **Scene Hierarchy** and choose **Create Root Entity**; name it `Coin` in the
-   name field at the top of **Properties**.
-2. In **Properties**, click **Add Component** and choose **Sprite Renderer**. Set its colour to yellow.
+   **Entity name** field at the top of **Properties**.
+2. Next to that field, click **Add** and choose **Sprite Renderer**. Set its colour to yellow.
 3. In its **Transform**, set the translation to `3, -2, 0.1` (x, y, z). The yellow square sits right of the player.
 4. Press `Ctrl+S` to save the scene.
 
@@ -54,9 +54,12 @@ The template ships the built-in input actions of
 [`input_actions.yml`](editor_documents.md#editor-action-map): `move` is `W A S D` or the left stick, `jump` is
 `Space` or the pad button A.
 
-1. In the file manager of your system, create the empty file `scripts/player.lua` in the project folder. It shows in
-   the **Content Browser** at the bottom of Owl Nest; double-click it to open it in the code editor.
-2. Type this and press `Ctrl+S`:
+1. In the **Content Browser** at the bottom of Owl Nest, right-click the background and choose **Create Folder**;
+   press `F2` and name it `scripts`. Double-click it to enter it.
+2. Right-click the background again and choose **New Lua Script**: `new_script.lua` appears and opens in the code
+   editor with a property and two empty functions. Back in the Content Browser, press `F2` on it and name it
+   `player.lua`.
+3. Replace its text with this and press `Ctrl+S`:
 
 ```lua
 properties = {
@@ -82,10 +85,10 @@ function on_update(dt)
 end
 ```
 
-3. Select `Player`, click **Add Component** and choose **Lua Script**. Drag `scripts/player.lua` from the Content
+4. Select `Player`, click **Add** and choose **Lua Script**. Drag `scripts/player.lua` from the Content
    Browser onto its **Script** field. The **Hooks** list shows `on_create` and `on_update` with an **Open** button,
    and a `speed` property appears: change it in the inspector, no code edit needed.
-4. Save the scene with `Ctrl+S`.
+5. Save the scene with `Ctrl+S`.
 
 Every function and table used here is listed in the [Lua API reference](lua-api.md); the callbacks and the
 properties are explained in [Scripting Games in Lua](scripting.md). If you prefer graphs to text, right-click a
@@ -116,7 +119,7 @@ Play does in [Play mode](editor_play.md).
 
 1. Press `Ctrl+S` on every tab you changed.
 2. Choose **Home > Project > Pack Game**. Owl Nest lists the missing references, if any (fix them, or pack anyway),
-   then asks for an **Output folder** (**Browse...**).
+   then asks for the **Output folder** (**Browse...**).
 3. Open `<output>/MyGame/`: it holds the game executable, the shared libraries, `MyGame.owlpack` with every asset and
    `launch.sh` on Linux. Run the game from there; copy the whole folder to give it away.
 

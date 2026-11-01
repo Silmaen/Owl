@@ -29,7 +29,7 @@ Three reading levels; every page states its level under its title.
 | Expert    | Build Owl from source              | [Building from source](doc/pages/building.md)                    |
 | Expert    | Contribute a change                | [Contributing](doc/pages/contributing.md)                        |
 
-Beginner: no code, Owl Nest only. Confirmed: the systems, the components and the Lua API. Expert: C++, the renderers,
+Beginner: Owl Nest only, a few lines of Lua at most. Confirmed: the systems, the components and the Lua API. Expert: C++, the renderers,
 the build and the plans ([contributors](doc/pages/guide_contributor.md)).
 What is planned and what shipped: [Roadmap](doc/pages/roadmap.md) and [Changelog](doc/pages/changelog.md)
 (one-glance versions: `ROADMAP.md`, `CHANGELOG.md`).
