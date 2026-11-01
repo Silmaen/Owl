@@ -176,7 +176,7 @@ auto HudThemeDocument::getAssetPath() const -> std::string {
 	if (mp_editorLayer != nullptr && mp_editorLayer->getProject().isLoaded()) {
 		std::error_code error;
 		const auto relative = std::filesystem::relative(m_path, mp_editorLayer->getProject().projectDirectory, error);
-		if (!error && !relative.empty() && !relative.native().starts_with(".."))
+		if (!error && !relative.empty() && !relative.generic_string().starts_with(".."))
 			return relative.generic_string();
 	}
 	return m_path.generic_string();
