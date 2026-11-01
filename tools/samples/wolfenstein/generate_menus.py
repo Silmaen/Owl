@@ -214,7 +214,11 @@ def settings() -> str:
     entities.add("MenuMusic", [y.music("sounds/music/menu.wav", 0.6)])
     board = entities.add(
         "SettingsList",
-        [y.rect((0.5, 0.5), (1.7, 0.86)), _dossier(), y.layout("Column", 8, 14)],
+        [
+            y.rect((0.5, 0.5), (0.94, 0.86), units=("ScreenWidth", "ScreenHeight")),
+            _dossier(),
+            y.layout("Column", 8, 14),
+        ],
         parent=root,
     )
 
@@ -228,7 +232,7 @@ def settings() -> str:
     buttons = entities.add("SettingsButtons", [y.child_rect((0.9, 0.11)), y.layout("Row", 16)], parent=board)
     back = button(entities, buttons, "BackButton", "Back", "go_back", (0.42, 1))
     reset = button(entities, buttons, "ResetButton", "Reset defaults", "on_reset_clicked", (0.42, 1))
-    columns = entities.add("SettingsColumns", [y.child_rect((1, 0.66)), y.layout("Row", 16)], parent=board)
+    columns = entities.add("SettingsColumns", [y.child_rect((0.96, 0.66)), y.layout("Row", 16)], parent=board)
     right = entities.add("DisplayColumn", [y.child_rect((0.48, 1)), y.layout("Column", 6)], parent=columns)
     left = entities.add("SoundColumn", [y.child_rect((0.48, 1)), y.layout("Column", 6)], parent=columns)
     left_rows: list[tuple[str, list[str]]] = [

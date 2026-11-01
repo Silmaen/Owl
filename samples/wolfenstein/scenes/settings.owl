@@ -89,8 +89,8 @@ Entities:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
       pivot: [0.5, 0.5]
-      size: [1.7, 0.86]
-      sizeUnit: [ScreenHeight, ScreenHeight]
+      size: [0.94, 0.86]
+      sizeUnit: [ScreenWidth, ScreenHeight]
       offset: [0, 0]
     UiPanel:
       backgroundColor: [0.05, 0.05, 0.06, 0.88]
@@ -278,7 +278,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.66]
+      size: [0.96, 0.66]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiLayout:
