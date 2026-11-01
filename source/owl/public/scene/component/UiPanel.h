@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Serializer.h"
+#include "scene/component/UiStyle.h"
 #include "math/vectors.h"
 
 #include <cstdint>
@@ -24,10 +25,10 @@ namespace owl::scene::component {
 struct OWL_API UiPanel {
 	/// Background colour.
 	math::vec4 backgroundColor{0.2f, 0.2f, 0.2f, 0.8f};
-	/// Border colour.
-	math::vec4 borderColor{1.0f, 1.0f, 1.0f, 1.0f};
-	/// Border width in pixels (0 = no border).
-	float borderWidth = 0.f;
+	/// Look of the box: rounded corners, gradient, border, shadow, nine-slice texture.
+	UiBox box;
+	/// Style of the HUD theme the widget follows.
+	UiStyleRef style;
 	/// Whether the children are cut at the panel edges (scissor).
 	bool clipChildren = false;
 

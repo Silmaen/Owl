@@ -103,3 +103,27 @@ TEST(LuaHud, sceneFindEntityFallsBackToTheHud) {
 	EXPECT_EQ(inst.getPropertyString("both_text").value_or(""), "scene");
 	core::Log::invalidate();
 }
+
+TEST(LuaHud, uiSetStyleNamesTheStyleOfEveryWidgetOfTheEntity) {
+	core::Log::init(core::Log::Level::Off);
+	const HudSceneFixture fixture;
+	auto button = fixture.world->createEntity("Styled");
+	button.addComponent<scene::component::UiButton>();
+	button.addComponent<scene::component::UiText>();
+	fixture.world->createEntity("Bare");
+	const std::string script = "styled = false\nbare = true\n"
+							   "function on_create()\n"
+							   "  styled = ui.set_style(scene.find_entity('Styled'), 'button')\n"
+							   "  bare = ui.set_style(scene.find_entity('Bare'), 'button')\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setScene(fixture.world.get());
+	ASSERT_TRUE(inst.createFromBuffer(data, "set_style_test", 1));
+	inst.onCreate();
+	EXPECT_TRUE(inst.getPropertyBool("styled").value_or(false));
+	EXPECT_FALSE(inst.getPropertyBool("bare").value_or(true));
+	EXPECT_EQ(button.getComponent<scene::component::UiButton>().style.name, "button");
+	EXPECT_EQ(button.getComponent<scene::component::UiText>().style.name, "button");
+	core::Log::invalidate();
+}

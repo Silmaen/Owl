@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Serializer.h"
+#include "scene/component/UiStyle.h"
 #include "math/vectors.h"
 
 namespace owl::scene::component {
@@ -25,6 +26,10 @@ struct OWL_API UiProgressBar {
 	math::vec4 backgroundColor{0.2f, 0.2f, 0.2f, 1.f};
 	/// Fill colour.
 	math::vec4 fillColor{0.3f, 0.7f, 0.3f, 1.f};
+	/// Look of the box: rounded corners, gradient, border, shadow, nine-slice texture.
+	UiBox box;
+	/// Style of the HUD theme the widget follows.
+	UiStyleRef style;
 
 	/**
 	 * @brief

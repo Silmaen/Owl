@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "UiStyleYaml.h"
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
 #include "scene/component/UiPanel.h"
@@ -14,24 +15,25 @@
 namespace owl::scene::component {
 
 void UiPanel::serialize(const core::Serializer& iOut) const {
-	iOut.getImpl()->emitter << YAML::Key << key();
-	iOut.getImpl()->emitter << YAML::BeginMap;
-	iOut.getImpl()->emitter << YAML::Key << "backgroundColor" << YAML::Value << backgroundColor;
-	iOut.getImpl()->emitter << YAML::Key << "borderColor" << YAML::Value << borderColor;
-	iOut.getImpl()->emitter << YAML::Key << "borderWidth" << YAML::Value << borderWidth;
-	iOut.getImpl()->emitter << YAML::Key << "clipChildren" << YAML::Value << clipChildren;
-	iOut.getImpl()->emitter << YAML::EndMap;
+	auto& emitter = iOut.getImpl()->emitter;
+	emitter << YAML::Key << key();
+	emitter << YAML::BeginMap;
+	emitter << YAML::Key << "backgroundColor" << YAML::Value << backgroundColor;
+	emitter << YAML::Key << "clipChildren" << YAML::Value << clipChildren;
+	utils::emitBox(emitter, box);
+	utils::emitStyleRef(emitter, style);
+	emitter << YAML::EndMap;
 }
 
+// Top-level `borderColor` / `borderWidth` keys are ignored: the border drawn is the one of the box.
 void UiPanel::deserialize(const core::Serializer& iNode) {
-	if (iNode.getImpl()->node["backgroundColor"])
-		backgroundColor = iNode.getImpl()->node["backgroundColor"].as<math::vec4>();
-	if (iNode.getImpl()->node["borderColor"])
-		borderColor = iNode.getImpl()->node["borderColor"].as<math::vec4>();
-	if (iNode.getImpl()->node["borderWidth"])
-		borderWidth = iNode.getImpl()->node["borderWidth"].as<float>();
-	if (iNode.getImpl()->node["clipChildren"])
-		clipChildren = iNode.getImpl()->node["clipChildren"].as<bool>();
+	const auto& node = iNode.getImpl()->node;
+	if (node["backgroundColor"])
+		backgroundColor = node["backgroundColor"].as<math::vec4>();
+	if (node["clipChildren"])
+		clipChildren = node["clipChildren"].as<bool>();
+	utils::readBox(node, box);
+	utils::readStyleRef(node, style);
 }
 
 }// namespace owl::scene::component

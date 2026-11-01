@@ -169,6 +169,9 @@ auto EditorLayer::openDocumentForRecovery(const RecoveryEntry& iEntry) -> Docume
 		case DocumentType::Sequence:
 			openSequenceFile(path);
 			break;
+		case DocumentType::HudTheme:
+			openHudThemeFile(path);
+			break;
 		case DocumentType::Scene:
 			break;
 	}

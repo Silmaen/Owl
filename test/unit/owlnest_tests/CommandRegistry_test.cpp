@@ -104,7 +104,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 116u);
+	EXPECT_EQ(m_registry.getCommands().size(), 124u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -298,7 +298,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 116u);
+	EXPECT_EQ(m_registry.getCommands().size(), 124u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -1321,4 +1321,25 @@ TEST_F(CommandRegistryTest, SplineAddPointSmoothensABezierPoint) {
 	const auto& points = rail.getComponent<scene::component::Spline>().curve.getPoints();
 	EXPECT_NEAR(points[1].tangentOut.x(), 1.f, 1e-4f);
 	EXPECT_NEAR(points[1].tangentIn.x(), -1.f, 1e-4f);
+}
+
+TEST_F(CommandRegistryTest, SetHudThemeChoosesTheThemeOfTheSceneAndUndoes) {
+	ASSERT_NE(m_registry.find("scene.set_hud_theme"), nullptr);
+	for (const auto* name: {"theme.create", "theme.add_style", "theme.remove_style", "theme.rename_style",
+							"theme.move_style", "theme.set_style", "theme.set_name"})
+		EXPECT_NE(m_registry.find(name), nullptr) << name;
+	EXPECT_FALSE(m_scene->getHudThemePath().has_value());
+	ASSERT_TRUE(run("scene.set_hud_theme", {{"path", std::string{"huds/demo.owlhudtheme"}}}).has_value());
+	ASSERT_TRUE(m_scene->getHudThemePath().has_value());
+	EXPECT_EQ(*m_scene->getHudThemePath(), "huds/demo.owlhudtheme");
+	EXPECT_FALSE(run("scene.set_hud_theme", {{"path", std::string{"huds/demo.owlhudtheme"}}}).has_value());
+	EXPECT_FALSE(run("scene.set_hud_theme", {{"path", std::string{"huds/demo.owlhud"}}}).has_value());
+	ASSERT_TRUE(run("scene.set_hud_theme", {{"path", std::string{}}}).has_value());
+	EXPECT_EQ(*m_scene->getHudThemePath(), "");
+	ASSERT_TRUE(run("scene.set_hud_theme", {{"use_default", true}}).has_value());
+	EXPECT_FALSE(m_scene->getHudThemePath().has_value());
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(*m_scene->getHudThemePath(), "");
+	m_undo.undo(*m_scene);
+	EXPECT_EQ(*m_scene->getHudThemePath(), "huds/demo.owlhudtheme");
 }

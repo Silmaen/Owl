@@ -43,6 +43,7 @@ enum struct DocumentType : uint8_t {
 	DataTable,///< A `.owltable` data table: typed records edited in a grid.
 	Dialogue,///< A `.owldlg` dialogue: a branching conversation edited as a graph.
 	Sequence,///< A `.owlseq` cutscene: camera and event tracks on a timeline.
+	HudTheme,///< A `.owlhudtheme` HUD theme: the named styles of the widgets.
 };
 
 /**

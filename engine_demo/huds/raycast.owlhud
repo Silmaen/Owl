@@ -52,6 +52,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: text
     text: 'W / S: walk    A / D: turn    E: use    Tab / Y: inventory    F: exit    Esc: pause'
     color: [1, 1, 1, 0.85]
     fontSize: 24
@@ -76,6 +77,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: text
     text: 'Treasure: 0 / 11    Secrets: 0 / 5'
     color: [1, 1, 1, 0.85]
     fontSize: 24
@@ -100,6 +102,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: heading
     text: 'Objective: find the elevator that leaves E1M1'
     color: [1, 0.95, 0.55, 1]
     fontSize: 26
@@ -124,6 +127,7 @@ Entities:
     sizeUnit: [ScreenWidth, ScreenHeight]
     offset: [0, -16]
   UiText:
+    style: heading
     text: ''
     color: [1, 0.95, 0.55, 1]
     fontSize: 28
@@ -146,7 +150,7 @@ Entities:
     size: [0.62, 0.9]
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [-16, 0]
-  UiWindow: {title: Inventory, titleBarHeight: 30, titleFontSize: 24, closable: true, draggable: true, onCloseCallback: on_inventory_closed}
+  UiWindow: {style: window, title: Inventory, titleBarHeight: 30, titleFontSize: 24, closable: true, draggable: true, onCloseCallback: on_inventory_closed}
   UiLayout:
     arrangement: Column
     crossAlign: Center
@@ -169,7 +173,7 @@ Entities:
     size: [0.94, 0.2]
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
-  UiList: {itemCount: 0, rowHeight: 30, rowSpacing: 2, selectedIndex: -1, scrollOffset: 0, wheelStep: 60, fontSize: 24, onSelectCallback: on_log_selected, onBindCallback: on_log_bind}
+  UiList: {style: list, itemCount: 0, rowHeight: 30, rowSpacing: 2, selectedIndex: -1, scrollOffset: 0, wheelStep: 60, fontSize: 24, onSelectCallback: on_log_selected, onBindCallback: on_log_bind}
   UiTooltip: {text: 'Journal: what happened, newest last.
 
       Wheel or ui_scroll to scroll.', fontSize: 22}
@@ -189,6 +193,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: text
     text: Select a slot.
     color: [1, 1, 1, 1]
     fontSize: 24
@@ -235,6 +240,7 @@ Entities:
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [0, 0]
   UiButton:
+    style: slot
     normalColor: [0.16, 0.18, 0.24, 1]
     hoverColor: [0.26, 0.3, 0.4, 1]
     pressedColor: [0.1, 0.12, 0.18, 1]
@@ -260,6 +266,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [-4, -2]
   UiText:
+    style: label
     text: x0
     color: [1, 1, 1, 1]
     fontSize: 24
@@ -300,6 +307,7 @@ Entities:
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [0, 0]
   UiButton:
+    style: slot
     normalColor: [0.16, 0.18, 0.24, 1]
     hoverColor: [0.26, 0.3, 0.4, 1]
     pressedColor: [0.1, 0.12, 0.18, 1]
@@ -325,6 +333,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [-4, -2]
   UiText:
+    style: label
     text: x0
     color: [1, 1, 1, 1]
     fontSize: 24
@@ -365,6 +374,7 @@ Entities:
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [0, 0]
   UiButton:
+    style: slot
     normalColor: [0.16, 0.18, 0.24, 1]
     hoverColor: [0.26, 0.3, 0.4, 1]
     pressedColor: [0.1, 0.12, 0.18, 1]
@@ -390,6 +400,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [-4, -2]
   UiText:
+    style: label
     text: x0
     color: [1, 1, 1, 1]
     fontSize: 24
@@ -430,6 +441,7 @@ Entities:
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [0, 0]
   UiButton:
+    style: slot
     normalColor: [0.16, 0.18, 0.24, 1]
     hoverColor: [0.26, 0.3, 0.4, 1]
     pressedColor: [0.1, 0.12, 0.18, 1]
@@ -455,6 +467,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [-4, -2]
   UiText:
+    style: label
     text: x0
     color: [1, 1, 1, 1]
     fontSize: 24
@@ -495,6 +508,7 @@ Entities:
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [0, 0]
   UiButton:
+    style: slot
     normalColor: [0.16, 0.18, 0.24, 1]
     hoverColor: [0.26, 0.3, 0.4, 1]
     pressedColor: [0.1, 0.12, 0.18, 1]
@@ -520,6 +534,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [-4, -2]
   UiText:
+    style: label
     text: x0
     color: [1, 1, 1, 1]
     fontSize: 24
@@ -560,6 +575,7 @@ Entities:
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [0, 0]
   UiButton:
+    style: slot
     normalColor: [0.16, 0.18, 0.24, 1]
     hoverColor: [0.26, 0.3, 0.4, 1]
     pressedColor: [0.1, 0.12, 0.18, 1]
@@ -585,6 +601,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [-4, -2]
   UiText:
+    style: label
     text: x0
     color: [1, 1, 1, 1]
     fontSize: 24
@@ -625,6 +642,7 @@ Entities:
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [0, 0]
   UiButton:
+    style: slot
     normalColor: [0.16, 0.18, 0.24, 1]
     hoverColor: [0.26, 0.3, 0.4, 1]
     pressedColor: [0.1, 0.12, 0.18, 1]
@@ -650,6 +668,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [-4, -2]
   UiText:
+    style: label
     text: x0
     color: [1, 1, 1, 1]
     fontSize: 24
@@ -690,6 +709,7 @@ Entities:
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [0, 0]
   UiButton:
+    style: slot
     normalColor: [0.16, 0.18, 0.24, 1]
     hoverColor: [0.26, 0.3, 0.4, 1]
     pressedColor: [0.1, 0.12, 0.18, 1]
@@ -715,6 +735,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [-4, -2]
   UiText:
+    style: label
     text: x0
     color: [1, 1, 1, 1]
     fontSize: 24
@@ -755,6 +776,7 @@ Entities:
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [0, 0]
   UiButton:
+    style: slot
     normalColor: [0.16, 0.18, 0.24, 1]
     hoverColor: [0.26, 0.3, 0.4, 1]
     pressedColor: [0.1, 0.12, 0.18, 1]
@@ -780,6 +802,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [-4, -2]
   UiText:
+    style: label
     text: x0
     color: [1, 1, 1, 1]
     fontSize: 24

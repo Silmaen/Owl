@@ -10,6 +10,7 @@
 #include "commands/CommandRegistry.h"
 #include "document/DataTableDocument.h"
 #include "document/DialogueDocument.h"
+#include "document/HudThemeDocument.h"
 #include "document/LocalisationDocument.h"
 #include "document/SequenceDocument.h"
 #include "document/SoundDocument.h"
@@ -19,6 +20,7 @@
 #include <core/Timestep.h>
 #include <data/dialogue/Dialogue.h>
 #include <data/sequence/Sequence.h>
+#include <scene/HudTheme.h>
 
 #include <gtest/gtest.h>
 
@@ -62,11 +64,16 @@ public:
 		return iPath == sequence.filePath() ? &sequence : nullptr;
 	}
 
+	auto openHudTheme(const std::filesystem::path& iPath) -> HudThemeEditor* override {
+		return iPath == theme.filePath() ? &theme : nullptr;
+	}
+
 	SoundDocument sound;
 	LocalisationDocument localisation;
 	DataTableDocument table;
 	DialogueDocument dialogue;
 	SequenceDocument sequence;
+	HudThemeDocument theme;
 };
 
 class DocumentCommandsTest : public ::testing::Test {
@@ -94,6 +101,9 @@ protected:
 		m_sequence = m_root / "intro.owlseq";
 		ASSERT_TRUE(data::sequence::Sequence::makeDefault().saveToFile(m_sequence));
 		ASSERT_TRUE(m_host.sequence.loadFromFile(m_sequence));
+		m_theme = m_root / "demo.owlhudtheme";
+		ASSERT_TRUE(scene::HudTheme::makeDefault().saveToFile(m_theme));
+		ASSERT_TRUE(m_host.theme.loadFromFile(m_theme));
 	}
 
 	void TearDown() override {
@@ -102,6 +112,7 @@ protected:
 		m_host.table.onDetach();
 		m_host.dialogue.onDetach();
 		m_host.sequence.onDetach();
+		m_host.theme.onDetach();
 		std::filesystem::remove_all(m_root);
 		core::Log::invalidate();
 	}
@@ -120,6 +131,7 @@ protected:
 	std::filesystem::path m_table;
 	std::filesystem::path m_dialogue;
 	std::filesystem::path m_sequence;
+	std::filesystem::path m_theme;
 	TestHost m_host;
 	CommandRegistry m_registry;
 };
@@ -155,6 +167,54 @@ TEST_F(DocumentCommandsTest, SoundCommandsEditTheOpenCueThroughItsHistory) {
 	EXPECT_EQ(m_host.sound.cue().variants.size(), 2u);
 	m_host.sound.performUndo();
 	EXPECT_EQ(m_host.sound.cue().variants.size(), 4u);
+}
+
+TEST_F(DocumentCommandsTest, ThemeCommandsEditTheOpenThemeThroughItsHistory) {
+	const auto count = m_host.theme.theme().styles.size();
+	ASSERT_TRUE(run("theme.add_style", {{"name", "card"}}, m_theme));
+	ASSERT_TRUE(run("theme.add_style", {{"name", "button"}, {"from", "button"}}, m_theme));
+	EXPECT_NE(m_host.theme.theme().findStyle("button 2"), nullptr);
+	EXPECT_FALSE(run("theme.add_style", {{"from", "missing"}}, m_theme));
+	ASSERT_TRUE(run("theme.rename_style", {{"name", "card"}, {"new_name", "frame"}}, m_theme));
+	EXPECT_FALSE(run("theme.rename_style", {{"name", "frame"}, {"new_name", "panel"}}, m_theme));
+	ASSERT_TRUE(run("theme.set_style", {{"name", "frame"}, {"style", "{cornerRadius: 12, background: [1, 0, 0, 1]}"}},
+					m_theme));
+	const auto* frame = m_host.theme.theme().findStyle("frame");
+	ASSERT_NE(frame, nullptr);
+	EXPECT_FLOAT_EQ(frame->box.cornerRadius, 12.f);
+	EXPECT_TRUE(frame->defines(scene::component::UiStyleProperty::Background));
+	EXPECT_FALSE(frame->defines(scene::component::UiStyleProperty::Hover));
+	EXPECT_FALSE(run("theme.set_style", {{"name", "frame"}, {"style", "[1, 2]"}}, m_theme));
+	ASSERT_TRUE(run("theme.move_style", {{"name", "frame"}}, m_theme));
+	EXPECT_EQ(m_host.theme.theme().findStyleIndex("frame"), count - 1);
+	EXPECT_FALSE(run("theme.move_style", {{"name", "panel"}}, m_theme));
+	ASSERT_TRUE(run("theme.set_name", {{"theme_name", "Warm"}}, m_theme));
+	EXPECT_EQ(m_host.theme.theme().name, "Warm");
+	ASSERT_TRUE(run("theme.remove_style", {{"name", "frame"}}, m_theme));
+	EXPECT_EQ(m_host.theme.theme().styles.size(), count + 1);
+	EXPECT_TRUE(m_host.theme.isDirty());
+	m_host.theme.performUndo();
+	EXPECT_NE(m_host.theme.theme().findStyle("frame"), nullptr);
+	m_host.theme.performRedo();
+	EXPECT_EQ(m_host.theme.theme().findStyle("frame"), nullptr);
+	ASSERT_TRUE(m_host.theme.save());
+	const auto saved = scene::HudTheme::load(m_theme);
+	ASSERT_TRUE(saved.has_value());
+	EXPECT_EQ(saved->name, "Warm");
+	EXPECT_FALSE(m_host.theme.isDirty());
+	EXPECT_FALSE(run("theme.add_style", {{"name", "x"}}, m_root / "other.owlhudtheme"));
+	EXPECT_FALSE(run("theme.add_style", {{"name", "x"}}, m_cue));
+}
+
+TEST_F(DocumentCommandsTest, ThemeCreateWritesTheStartingStyles) {
+	const auto path = m_root / "new.owlhudtheme";
+	ASSERT_TRUE(run("theme.create", {}, path));
+	const auto created = scene::HudTheme::load(path);
+	ASSERT_TRUE(created.has_value());
+	EXPECT_EQ(created->name, "new");
+	EXPECT_NE(created->findStyle("button"), nullptr);
+	EXPECT_FALSE(run("theme.create", {}, path));
+	EXPECT_FALSE(run("theme.create", {}, m_root / "new.txt"));
 }
 
 TEST_F(DocumentCommandsTest, SoundCommandsNeedAnOpenCue) {

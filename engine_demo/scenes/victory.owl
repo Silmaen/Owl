@@ -109,6 +109,7 @@ Entities:
     Visibility: {gameVisible: true}
     Hierarchy: {parentId: 200000000000000011}
     UiButton:
+      style: button
       normalColor: [0.150000006, 0.349999994, 0.649999976, 1]
       hoverColor: [0.25, 0.449999988, 0.75, 1]
       pressedColor: [0.100000001, 0.25, 0.5, 1]
@@ -123,6 +124,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: label
       text: Main Menu
       color: [1, 1, 1, 1]
       fontSize: 32
@@ -148,6 +150,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: heading
       text: 'Final Score: 0'
       color: [1, 1, 1, 1]
       fontSize: 36
@@ -173,6 +176,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: title
       text: Victory!
       color: [0.200000003, 1, 0.200000003, 1]
       fontSize: 72

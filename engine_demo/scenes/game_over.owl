@@ -109,6 +109,7 @@ Entities:
     Visibility: {gameVisible: true}
     Hierarchy: {parentId: 300000000000000011}
     UiButton:
+      style: button
       normalColor: [0.300000012, 0.300000012, 0.300000012, 1]
       hoverColor: [0.400000006, 0.400000006, 0.400000006, 1]
       pressedColor: [0.200000003, 0.200000003, 0.200000003, 1]
@@ -122,6 +123,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: label
       text: Main Menu
       color: [1, 1, 1, 1]
       fontSize: 32
@@ -140,6 +142,7 @@ Entities:
     Visibility: {gameVisible: true}
     Hierarchy: {parentId: 300000000000000011}
     UiButton:
+      style: button
       normalColor: [0.600000024, 0.300000012, 0.100000001, 1]
       hoverColor: [0.75, 0.400000006, 0.200000003, 1]
       pressedColor: [0.449999988, 0.200000003, 0.0500000007, 1]
@@ -154,6 +157,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: label
       text: Retry
       color: [1, 1, 1, 1]
       fontSize: 32
@@ -179,6 +183,7 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: heading
       text: 'Score: 0'
       color: [1, 1, 1, 1]
       fontSize: 36
@@ -204,6 +209,8 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
+      style: title
+      styleOverrides: [TextColor]
       text: Game Over
       color: [1, 0.200000003, 0.200000003, 1]
       fontSize: 72

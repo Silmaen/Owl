@@ -125,8 +125,9 @@ const std::map<std::string, std::set<std::string>> g_notDrawn{
 		  "doubleTapTimer", "hasTarget", "targetBlock"}},// runtime: the controller state of the player
 };
 
-// Components without an inspector section: C++ only, never authored in a scene.
-const std::set<std::string> g_noInspector{"NativeScript"};
+// Headers without an inspector section: `NativeScript` is C++ only, never authored in a scene; `UiStyle` holds the box
+// and the style reference of the widgets, drawn in the section of each widget.
+const std::set<std::string> g_noInspector{"NativeScript", "UiStyle"};
 
 }// namespace
 

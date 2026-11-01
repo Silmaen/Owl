@@ -52,6 +52,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: text
     text: 'WASD: walk    mouse: look    Shift: run    E: use    Esc: back to the hub'
     color: [1, 1, 1, 0.85]
     fontSize: 24
@@ -77,6 +78,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: heading
     text: 'Objective: find the key of the cellar'
     color: [1, 0.95, 0.55, 1]
     fontSize: 26

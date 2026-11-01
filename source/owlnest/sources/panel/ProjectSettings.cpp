@@ -116,20 +116,21 @@ void drawSimulationSettings(scene::SimulationSettings& ioSimulation) {
 	ioSimulation = ioSimulation.clamped();
 }
 
-// The row choosing the HUD of the scenes that name none.
-void drawDefaultHud(std::string& ioDefaultHud, const std::vector<std::string>& iAvailable) {
-	gui::widgets::propertyLabel("Default HUD", "HUD of the scenes that name none (their `Hud:` key).");
-	if (gui::widgets::beginCombo("##defaultHud", ioDefaultHud.empty() ? "(none)" : ioDefaultHud.c_str())) {
-		if (ImGui::Selectable("(none)", ioDefaultHud.empty()))
-			ioDefaultHud.clear();
-		for (const auto& hud: iAvailable) {
-			if (ImGui::Selectable(hud.c_str(), ioDefaultHud == hud))
-				ioDefaultHud = hud;
+// A row choosing a project-wide asset (default HUD, default HUD theme) among the files of the project.
+void drawDefaultAsset(const char* iLabel, const char* iTooltip, const char* iId, std::string& ioPath,
+					  const std::vector<std::string>& iAvailable) {
+	gui::widgets::propertyLabel(iLabel, iTooltip);
+	if (gui::widgets::beginCombo(iId, ioPath.empty() ? "(none)" : ioPath.c_str())) {
+		if (ImGui::Selectable("(none)", ioPath.empty()))
+			ioPath.clear();
+		for (const auto& asset: iAvailable) {
+			if (ImGui::Selectable(asset.c_str(), ioPath == asset))
+				ioPath = asset;
 		}
 		ImGui::EndCombo();
 	}
-	if (gui::widgets::propertyReset(!ioDefaultHud.empty()))
-		ioDefaultHud.clear();
+	if (gui::widgets::propertyReset(!ioPath.empty()))
+		ioPath.clear();
 }
 
 }// namespace
@@ -144,6 +145,7 @@ void ProjectSettings::open(const Project& iProject) {
 	m_gamepadMappingsBuffer = iProject.gamepadMappings;
 	m_hasResult = false;
 	m_availableHuds = listAssets(iProject.projectDirectory, ".owlhud");
+	m_availableHudThemes = listAssets(iProject.projectDirectory, ".owlhudtheme");
 	scanScenes();
 	m_selectedSceneIndex = -1;
 	for (int i = 0; i < static_cast<int>(m_availableScenes.size()); ++i) {
@@ -204,7 +206,11 @@ void ProjectSettings::onImGuiRender() {
 					ImGui::EndCombo();
 				}
 				std::ignore = gui::widgets::propertyReset(false);
-				drawDefaultHud(m_localProject.defaultHud, m_availableHuds);
+				drawDefaultAsset("Default HUD", "HUD of the scenes that name none (their `Hud:` key).", "##defaultHud",
+								 m_localProject.defaultHud, m_availableHuds);
+				drawDefaultAsset("Default HUD Theme",
+								 "Theme of the widgets of the scenes and HUDs that name none (their `HudTheme:` key).",
+								 "##defaultHudTheme", m_localProject.defaultHudTheme, m_availableHudThemes);
 				const auto engineVersion = getVersionString();
 				std::ignore = gui::widgets::propertyText("Version", m_versionBuffer, engineVersion.c_str(),
 														 "Version of the game; empty, it follows the engine version.");

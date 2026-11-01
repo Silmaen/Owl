@@ -24,6 +24,7 @@ namespace owl::nest::commands {
 class CommandRegistry;
 class DataTableEditor;
 class DialogueEditor;
+class HudThemeEditor;
 class SequenceEditor;
 
 /**
@@ -288,6 +289,14 @@ public:
 	 * @return The editor of the sequence, or null when it cannot be opened.
 	 */
 	virtual auto openSequence(const std::filesystem::path& iPath) -> SequenceEditor* = 0;
+
+	/**
+	 * @brief
+	 *  The tab of a HUD theme, opened when it is not.
+	 * @param[in] iPath The `.owlhudtheme` file.
+	 * @return Its editor, or null when the file cannot be opened.
+	 */
+	virtual auto openHudTheme(const std::filesystem::path& iPath) -> HudThemeEditor* = 0;
 };
 
 /**

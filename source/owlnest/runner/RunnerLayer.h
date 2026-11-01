@@ -44,6 +44,8 @@ struct RunnerConfig {
 	std::string gamepadMappings;
 	/// HUD asset of the scenes that name none (`DefaultHud`); empty for none.
 	std::string defaultHud;
+	/// HUD theme of the scenes and HUDs that name none (`DefaultHudTheme`); empty for none.
+	std::string defaultHudTheme;
 	/// Window width in pixels.
 	uint32_t windowWidth{1280};
 	/// Window height in pixels.

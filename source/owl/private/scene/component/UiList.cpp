@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "UiStyleYaml.h"
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
 #include "scene/component/UiList.h"
@@ -78,6 +79,8 @@ void UiList::serialize(const core::Serializer& iOut) const {
 	emitter << YAML::Key << "thumbColor" << YAML::Value << thumbColor;
 	emitter << YAML::Key << "onSelectCallback" << YAML::Value << onSelectCallback;
 	emitter << YAML::Key << "onBindCallback" << YAML::Value << onBindCallback;
+	utils::emitBox(iOut.getImpl()->emitter, box);
+	utils::emitStyleRef(iOut.getImpl()->emitter, style);
 	emitter << YAML::EndMap;
 }
 
@@ -114,6 +117,8 @@ void UiList::deserialize(const core::Serializer& iNode) {
 	rows.clear();
 	if (selectedIndex >= static_cast<int32_t>(std::min<uint32_t>(itemCount, std::numeric_limits<int32_t>::max())))
 		selectedIndex = -1;
+	utils::readBox(iNode.getImpl()->node, box);
+	utils::readStyleRef(iNode.getImpl()->node, style);
 }
 
 }// namespace owl::scene::component

@@ -182,6 +182,7 @@ protected:
 				.description = "A # tricky: description",
 				.icon = "logo/icon.png",
 				.defaultHud = {},
+				.defaultHudTheme = {},
 				.gamepadMappings = "input/gamecontrollerdb.txt",
 				.projectDirectory = m_project,
 				.outputDirectory = m_root / "out",

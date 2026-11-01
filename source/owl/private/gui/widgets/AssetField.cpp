@@ -69,6 +69,8 @@ auto isPathOfKind(const std::filesystem::path& iPath, const AssetKind iKind) -> 
 			return ext == ".owlprefab";
 		case AssetKind::Hud:
 			return ext == ".owlhud";
+		case AssetKind::HudTheme:
+			return ext == ".owlhudtheme";
 		case AssetKind::Tileset:
 			return ext == ".owltileset";
 		case AssetKind::Tilemap:

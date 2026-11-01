@@ -64,7 +64,7 @@ TEST(UiPanel, legacyLayoutKeysAreIgnored) {
 	const auto entities = scn->getAllEntities();
 	ASSERT_EQ(entities.size(), 1u);
 	ASSERT_TRUE(entities.front().hasComponent<component::UiPanel>());
-	EXPECT_NEAR(entities.front().getComponent<component::UiPanel>().borderWidth, 2.f, 0.01f);
+	EXPECT_NEAR(entities.front().getComponent<component::UiPanel>().box.borderWidth, 0.f, 0.01f);
 	EXPECT_TRUE(entities.front().getComponent<component::UiPanel>().clipChildren);
 	const auto saved = SceneSerializer(scn).serializeToString();
 	EXPECT_EQ(saved.find("spacing"), std::string::npos);
@@ -78,7 +78,7 @@ TEST(UiPanel, createAndDefaults) {
 	auto& panel = entity.addComponent<component::UiPanel>();
 
 	EXPECT_NEAR(panel.backgroundColor.w(), 0.8f, 0.01f);
-	EXPECT_NEAR(panel.borderWidth, 0.f, 0.01f);
+	EXPECT_TRUE(panel.box.isPlain());
 	EXPECT_FALSE(panel.clipChildren);
 
 	core::Log::invalidate();
@@ -113,7 +113,7 @@ TEST(UiWidgets, serializeDeserializeViaScene) {
 		auto panelEnt = scn->createEntity("Panel");
 		panelEnt.addComponent<component::UiRect>();
 		auto& panel = panelEnt.addComponent<component::UiPanel>();
-		panel.borderWidth = 3.f;
+		panel.box.borderWidth = 3.f;
 		panel.clipChildren = true;
 		scn->setParent(panelEnt, canvas);
 
@@ -143,7 +143,7 @@ TEST(UiWidgets, serializeDeserializeViaScene) {
 			}
 			if (entity.hasComponent<component::UiPanel>()) {
 				const auto& panel = entity.getComponent<component::UiPanel>();
-				EXPECT_NEAR(panel.borderWidth, 3.f, 0.01f);
+				EXPECT_NEAR(panel.box.borderWidth, 3.f, 0.01f);
 				EXPECT_TRUE(panel.clipChildren);
 				foundPanel = true;
 			}

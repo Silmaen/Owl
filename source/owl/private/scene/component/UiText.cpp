@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "app/Application.h"
+#include "UiStyleYaml.h"
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
 #include "scene/component/UiText.h"
@@ -71,6 +72,7 @@ void UiText::serialize(const core::Serializer& iOut) const {
 	}
 	if (font && !font->isDefault())
 		emitter << YAML::Key << "font" << YAML::Value << font->getName();
+	utils::emitStyleRef(iOut.getImpl()->emitter, style);
 	emitter << YAML::EndMap;
 }
 
@@ -103,6 +105,7 @@ void UiText::deserialize(const core::Serializer& iNode) {
 		else
 			font = lib.getDefaultFont();
 	}
+	utils::readStyleRef(iNode.getImpl()->node, style);
 }
 
 }// namespace owl::scene::component

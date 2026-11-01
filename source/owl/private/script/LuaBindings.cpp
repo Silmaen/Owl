@@ -1562,6 +1562,31 @@ auto luaUiSetWindowTitle(lua_State* iState) -> int {
 	return 0;
 }
 
+// Every widget component of the entity follows the style; true when it holds at least one.
+auto luaUiSetStyle(lua_State* iState) -> int {
+	const std::string name = luaL_checkstring(iState, 2);
+	bool styled = false;
+	if (const auto entity = findEntity(iState); entity) {
+		const auto setStyle = [&styled]<typename Widget>(Widget* ioWidget, const std::string& iName) -> void {
+			if (ioWidget == nullptr)
+				return;
+			ioWidget->style.name = iName;
+			styled = true;
+		};
+		auto& registry = entity->getScene()->registry;
+		const auto handle = static_cast<entt::entity>(*entity);
+		setStyle(registry.try_get<scene::component::UiPanel>(handle), name);
+		setStyle(registry.try_get<scene::component::UiButton>(handle), name);
+		setStyle(registry.try_get<scene::component::UiText>(handle), name);
+		setStyle(registry.try_get<scene::component::UiSlider>(handle), name);
+		setStyle(registry.try_get<scene::component::UiProgressBar>(handle), name);
+		setStyle(registry.try_get<scene::component::UiList>(handle), name);
+		setStyle(registry.try_get<scene::component::UiWindow>(handle), name);
+	}
+	lua_pushboolean(iState, styled ? 1 : 0);
+	return 1;
+}
+
 auto luaUiSetTooltip(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiTooltip>())
 		entity->getComponent<scene::component::UiTooltip>().text = luaL_checkstring(iState, 2);
@@ -3555,6 +3580,10 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Draw a `UiWindow` over its siblings (a click on it does the same).", .params = {entityId}},
 		{.table = "ui", .name = "set_window_title", .function = guarded<luaUiSetWindowTitle>,
 		 .description = "Set the title of a `UiWindow`.", .params = {entityId, {"title", String}}},
+		{.table = "ui", .name = "set_style", .function = guarded<luaUiSetStyle>,
+		 .description = "Make every widget of an entity follow a style of the HUD theme (empty: none); false when the "
+						"entity has no widget. The style applies from the next frame, its overrides kept.",
+		 .params = {entityId, {"style", String}}, .returns = {{"styled", Boolean}}},
 		{.table = "ui", .name = "set_tooltip", .function = guarded<luaUiSetTooltip>,
 		 .description = "Set the text of a `UiTooltip`.", .params = {entityId, {"text", String}}},
 		{.table = "ui", .name = "set_tool_cursor", .function = guarded<luaUiSetToolCursor>,

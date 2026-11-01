@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Serializer.h"
+#include "scene/component/UiStyle.h"
 #include "math/vectors.h"
 
 #include <string>
@@ -37,6 +38,10 @@ struct OWL_API UiWindow {
 	math::vec4 titleColor{0.20f, 0.30f, 0.50f, 1.f};
 	/// Colour of the title text and of the close mark.
 	math::vec4 titleTextColor{1.f, 1.f, 1.f, 1.f};
+	/// Look of the box: rounded corners, gradient, border, shadow, nine-slice texture.
+	UiBox box;
+	/// Style of the HUD theme the widget follows.
+	UiStyleRef style;
 	/// Whether the title bar drags the window.
 	bool draggable = true;
 	/// Whether the title bar shows a close button.

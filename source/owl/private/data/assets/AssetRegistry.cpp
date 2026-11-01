@@ -84,7 +84,7 @@ auto moveOnDisk(const std::filesystem::path& iFrom, const std::filesystem::path&
 }
 
 // Keys whose value is an asset reference in an Owl document.
-constexpr std::array<std::string_view, 25> g_ReferenceKeys{"texture",        "normalTexture", "roughnessTexture",
+constexpr std::array<std::string_view, 26> g_ReferenceKeys{"texture",        "normalTexture", "roughnessTexture",
 														   "opacityTexture", "baseColorMap",  "metallicMap",
 														   "roughnessMap",   "normalMap",     "occlusionMap",
 														   "emissiveMap",    "mesh",          "material",
@@ -92,7 +92,7 @@ constexpr std::array<std::string_view, 25> g_ReferenceKeys{"texture",        "no
 														   "tilesetPath",    "tilemapPath",   "prefabAssetPath",
 														   "atlasPath",      "soundAsset",    "asset",
 														   "stinger",        "LevelName",     "Hud",
-														   "Tileset"};
+														   "Tileset",        "HudTheme"};
 
 auto isReferenceKey(const std::string_view iKey) -> bool {
 	return std::ranges::find(g_ReferenceKeys, iKey) != g_ReferenceKeys.end();

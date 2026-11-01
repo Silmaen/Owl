@@ -117,6 +117,7 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 		get(appConfig, "Icon", icon);
 		get(appConfig, "GamepadMappings", gamepadMappings);
 		get(appConfig, "DefaultHud", defaultHud);
+		get(appConfig, "DefaultHudTheme", defaultHudTheme);
 		get(appConfig, "WindowWidth", windowWidth);
 		get(appConfig, "WindowHeight", windowHeight);
 		get(appConfig, "Fullscreen", fullscreen);
@@ -169,6 +170,8 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 		out << YAML::Key << "GamepadMappings" << YAML::Value << gamepadMappings;
 	if (!defaultHud.empty())
 		out << YAML::Key << "DefaultHud" << YAML::Value << defaultHud;
+	if (!defaultHudTheme.empty())
+		out << YAML::Key << "DefaultHudTheme" << YAML::Value << defaultHudTheme;
 	out << YAML::Key << "WindowWidth" << YAML::Value << windowWidth;
 	out << YAML::Key << "WindowHeight" << YAML::Value << windowHeight;
 	out << YAML::Key << "Fullscreen" << YAML::Value << fullscreen;
@@ -225,6 +228,7 @@ void RunnerLayer::onAttach() {
 	}
 	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);
 	app::Application::get().getEngineContext().setDefaultHud(m_config.defaultHud);
+	app::Application::get().getEngineContext().setDefaultHudTheme(m_config.defaultHudTheme);
 
 	// Initialize settings system.
 	if (!m_config.gameName.empty()) {
@@ -468,6 +472,7 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 				}
 				get(project, "gamepadMappings", m_config.gamepadMappings);
 				get(project, "DefaultHud", m_config.defaultHud);
+				get(project, "DefaultHudTheme", m_config.defaultHudTheme);
 			}
 		} catch (const std::exception& iEx) {
 			OWL_WARN("{}: Cannot read {}/owl_project.yml ({}).", iMode, iProject.string(), iEx.what())
@@ -481,6 +486,7 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 	app::Application::get().getEngineContext().getSettings().setGameName(m_config.gameName);
 	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);
 	app::Application::get().getEngineContext().setDefaultHud(m_config.defaultHud);
+	app::Application::get().getEngineContext().setDefaultHudTheme(m_config.defaultHudTheme);
 	m_viewportSize = app.getWindow().getSize();
 	m_activeScene = mkShared<scene::Scene>();
 	if (const scene::SceneSerializer sc(m_activeScene); !sc.deserialize(iScene)) {

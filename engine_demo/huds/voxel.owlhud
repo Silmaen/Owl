@@ -52,6 +52,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: text
     text: 'WASD: walk    mouse: look    Space: jump    Shift: run    Esc: back to the hub'
     color: [1, 1, 1, 0.85]
     fontSize: 24
@@ -77,6 +78,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
+    style: heading
     text: 'Objective: explore the terrain, 0 / 100 blocks from the landing point'
     color: [1, 0.95, 0.55, 1]
     fontSize: 26
@@ -101,6 +103,7 @@ Entities:
     sizeUnit: [ScreenHeight, ScreenHeight]
     offset: [-16, 16]
   UiPanel:
+    style: hud
     backgroundColor: [0.05, 0.07, 0.1, 0.85]
     borderColor: [0.85, 0.8, 0.6, 1]
     borderWidth: 3

@@ -6,6 +6,7 @@ OwlProject:
   description: ho ho ho
   icon: logo/logo_owl.png
   gamepadMappings: input/gamecontrollerdb.txt
+  DefaultHudTheme: huds/engine_demo.owlhudtheme
   window:
     width: 1280
     height: 720

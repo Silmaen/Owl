@@ -103,6 +103,26 @@ auto SetSceneHudCommand::typeId() const -> size_t {
 	return kTypeHash;
 }
 
+SetSceneHudThemeCommand::SetSceneHudThemeCommand(std::optional<std::string> iBefore, std::optional<std::string> iAfter)
+	: m_before{std::move(iBefore)}, m_after{std::move(iAfter)} {}
+
+SetSceneHudThemeCommand::~SetSceneHudThemeCommand() = default;
+
+void SetSceneHudThemeCommand::undo(scene::Scene& ioScene) { ioScene.setHudThemePath(m_before); }
+
+void SetSceneHudThemeCommand::redo(scene::Scene& ioScene) { ioScene.setHudThemePath(m_after); }
+
+auto SetSceneHudThemeCommand::description() const -> std::string {
+	if (!m_after)
+		return "Use the default HUD theme";
+	return m_after->empty() ? "Remove the HUD theme" : "Set the HUD theme";
+}
+
+auto SetSceneHudThemeCommand::typeId() const -> size_t {
+	constexpr size_t kTypeHash = 0x5365745468656dULL;// "SetThem"
+	return kTypeHash;
+}
+
 namespace {
 
 auto getTouchedParts(const sound::MixSettings& iBefore, const sound::MixSettings& iAfter) -> uint32_t {

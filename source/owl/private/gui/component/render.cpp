@@ -31,6 +31,7 @@
 #include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
 #include "renderer/RendererParticles.h"
+#include "scene/HudTheme.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
 #include "scene/ui/HudLayout.h"
@@ -130,6 +131,13 @@ auto DragInt(const char* iLabel, int* ioValue, const float iSpeed = 1.f, const i
 			 const char* iFormat = "%d", const ImGuiSliderFlags iFlags = 0) -> bool {
 	return row(iLabel, [&](const char* iId) -> bool {
 		return ImGui::DragInt(iId, ioValue, iSpeed, iMin, iMax, iFormat, iFlags);
+	});
+}
+
+auto DragFloat4(const char* iLabel, float* ioValues, const float iSpeed = 1.f, const float iMin = 0.f,
+				const float iMax = 0.f, const char* iFormat = "%.3f") -> bool {
+	return row(iLabel, [&](const char* iId) -> bool {
+		return ImGui::DragFloat4(iId, ioValues, iSpeed, iMin, iMax, iFormat);
 	});
 }
 
@@ -2327,14 +2335,130 @@ void textKeyPicker(std::string& ioKey) {
 
 }// namespace
 
+namespace {
+
+using enum UiStyleProperty;
+
+// A widget being inspected and the style of the inspected scene's theme it follows.
+struct StyledWidget {
+	UiStyleRef& ref;
+	shared<const HudTheme> theme;
+	const HudStyle* style = nullptr;
+};
+
+auto styledWidget(UiStyleRef& ioRef) -> StyledWidget {
+	const Scene* scene = inspectedScene();
+	StyledWidget widget{.ref = ioRef, .theme = scene != nullptr ? scene->getHudTheme() : nullptr, .style = nullptr};
+	if (widget.theme && !ioRef.name.empty())
+		widget.style = widget.theme->findStyle(ioRef.name);
+	return widget;
+}
+
+auto colorData(math::vec4& ioColor) -> float* { return ioColor.data(); }
+
+// The style picker of a widget: the styles of the theme of the inspected scene.
+void stylePicker(StyledWidget& ioWidget) {
+	auto& name = ioWidget.ref.name;
+	if (prop::BeginCombo("Style", name.empty() ? "(none)" : name.c_str())) {
+		if (ImGui::Selectable("(none)", name.empty()))
+			name.clear();
+		if (ioWidget.theme)
+			for (const auto& style: ioWidget.theme->styles)
+				if (ImGui::Selectable(style.name.c_str(), style.name == name))
+					name = style.name;
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Style of the HUD theme the widget follows (Scene Settings, else the project's default theme). A "
+				 "property the style sets is read only here until its box is ticked to override it.");
+	if (name.empty())
+		return;
+	if (!ioWidget.theme)
+		ImGui::TextDisabled("No HUD theme: choose one in Scene Settings or Project Settings.");
+	else if (ioWidget.theme->findStyle(name) == nullptr)
+		ImGui::TextDisabled("The theme has no style '%s': the widget keeps its own values.", name.c_str());
+}
+
+// A field the style may set: an override box before it, the field read only while the style's value applies.
+template<typename Draw>
+void styled(StyledWidget& ioWidget, const UiStyleProperty iProperty, Draw&& iDraw) {
+	if (ioWidget.style == nullptr || !ioWidget.style->defines(iProperty)) {
+		std::forward<Draw>(iDraw)();
+		return;
+	}
+	ImGui::PushID(static_cast<int>(iProperty));
+	bool overridden = (ioWidget.ref.overrides & styleBit(iProperty)) != 0;
+	if (ImGui::Checkbox("##override", &overridden)) {
+		if (overridden)
+			ioWidget.ref.overrides |= styleBit(iProperty);
+		else
+			ioWidget.ref.overrides &= ~styleBit(iProperty);
+	}
+	fieldTooltip("Override the style: unticked, the theme's value applies.");
+	ImGui::SameLine();
+	ImGui::BeginGroup();
+	ImGui::BeginDisabled(!overridden);
+	std::forward<Draw>(iDraw)();
+	ImGui::EndDisabled();
+	ImGui::EndGroup();
+	ImGui::PopID();
+}
+
+void boxFields(UiBox& ioBox, const std::function<void(UiStyleProperty, const std::function<void()>&)>& iField) {
+	iField(CornerRadius, [&ioBox]() -> void {
+		prop::DragFloat("Corner Radius", &ioBox.cornerRadius, 0.5f, 0.f, 500.f, "%.1f");
+		fieldTooltip("Radius of the rounded corners, in reference pixels (0: square).");
+	});
+	iField(Gradient, [&ioBox]() -> void {
+		prop::ColorEdit4("Bottom Tint", colorData(ioBox.bottomTint));
+		fieldTooltip("Multiplied with the fill colour at the bottom edge: a vertical gradient (white: flat).");
+	});
+	iField(Border, [&ioBox]() -> void {
+		prop::DragFloat("Border Width", &ioBox.borderWidth, 0.1f, 0.f, 50.f, "%.1f");
+		fieldTooltip("Border drawn inside the edge, in reference pixels (0: none).");
+		prop::ColorEdit4("Border Color", colorData(ioBox.borderColor));
+	});
+	iField(Shadow, [&ioBox]() -> void {
+		prop::ColorEdit4("Shadow Color", colorData(ioBox.shadowColor));
+		fieldTooltip("Soft shadow drawn outside the box; a zero alpha draws none.");
+		prop::DragFloat2("Shadow Offset", ioBox.shadowOffset.data(), 0.25f, -100.f, 100.f, "%.1f");
+		fieldTooltip("Offset of the shadow, right and down, in reference pixels.");
+		prop::DragFloat("Shadow Blur", &ioBox.shadowBlur, 0.25f, 0.f, 100.f, "%.1f");
+	});
+	iField(NineSlice, [&ioBox]() -> void {
+		widgets::textureField("Nine-Slice", ioBox.texture);
+		fieldTooltip("Background texture tinted by the fill colour; its borders keep their size, the middle stretches.");
+		if (ioBox.texture) {
+			prop::DragFloat4("Slice Insets", ioBox.sliceInsets.data(), 0.5f, 0.f, 4096.f, "%.0f");
+			fieldTooltip("Borders of the texture kept unstretched, in texture pixels: left, top, right, bottom.");
+		}
+	});
+}
+
+// The Box sub-section of a widget, each field behind the override box of its property.
+void boxProps(StyledWidget& ioWidget, UiBox& ioBox) {
+	if (!widgets::subHeader("Box"))
+		return;
+	boxFields(ioBox, [&ioWidget](const UiStyleProperty iProperty, const std::function<void()>& iDraw) -> void {
+		styled(ioWidget, iProperty, iDraw);
+	});
+}
+
+}// namespace
+
 void renderProps(UiText& ioComponent) {
+	auto widget = styledWidget(ioComponent.style);
+	stylePicker(widget);
 	textKeyPicker(ioComponent.textKey);
 	prop::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
-	prop::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));
-	fontPicker(ioComponent.font);
-	fieldTooltip("Font of the text; the default font when none is chosen.");
-	prop::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
-	fieldTooltip("Ascender-to-descender height of the font, in pixels. Glyphs keep the font aspect ratio.");
+	styled(widget, TextColor, [&]() -> void { prop::ColorEdit4("Color", colorData(ioComponent.color)); });
+	styled(widget, Font, [&]() -> void {
+		fontPicker(ioComponent.font);
+		fieldTooltip("Font of the text; the default font when none is chosen.");
+	});
+	styled(widget, FontSize, [&]() -> void {
+		prop::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
+		fieldTooltip("Ascender-to-descender height of the font, in pixels. Glyphs keep the font aspect ratio.");
+	});
 	enumCombo("Horizontal", ioComponent.horizontalAlignment);
 	fieldTooltip("Placement of each line in the rectangle.");
 	enumCombo("Vertical", ioComponent.verticalAlignment);
@@ -2350,11 +2474,13 @@ void renderProps(UiText& ioComponent) {
 	}
 	prop::DragFloat("Kerning", &ioComponent.kerning, 0.01f);
 	prop::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.01f);
-	prop::DragFloat("Outline Width", &ioComponent.outlineWidth, 0.1f, 0.0f, 20.0f);
-	fieldTooltip("Outline around the glyphs, in reference pixels; 0 draws none. Keeps white text readable on a light "
-				 "background.");
-	if (ioComponent.outlineWidth > 0.f)
-		prop::ColorEdit4("Outline Color", reinterpret_cast<float*>(&ioComponent.outlineColor));
+	styled(widget, Outline, [&]() -> void {
+		prop::DragFloat("Outline Width", &ioComponent.outlineWidth, 0.1f, 0.0f, 20.0f);
+		fieldTooltip("Outline around the glyphs, in reference pixels; 0 draws none. Keeps white text readable on a "
+					 "light background.");
+		if (ioComponent.outlineWidth > 0.f)
+			prop::ColorEdit4("Outline Color", colorData(ioComponent.outlineColor));
+	});
 	prop::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
 	fieldTooltip("Box behind the text block; a zero alpha draws none.");
 	if (ioComponent.backgroundColor.a() > 0.f) {
@@ -2384,25 +2510,103 @@ void renderProps(UiImage& ioComponent) {
 	fieldTooltip("Frame of the grid shown, row-major from the top left (Lua: ui.set_image_frame).");
 }
 
+auto renderProps(HudStyle& ioStyle) -> bool {
+	const HudStyle before = ioStyle;
+	prop::InputText("Name", &ioStyle.name);
+	fieldTooltip("Name the widgets give in their Style field.");
+	// Each property behind a box: ticked, the style sets it on the widgets that follow it.
+	const auto field = [&ioStyle](const UiStyleProperty iProperty, const std::function<void()>& iDraw) -> void {
+		ImGui::PushID(static_cast<int>(iProperty));
+		bool defined = ioStyle.defines(iProperty);
+		if (ImGui::Checkbox("##defined", &defined))
+			ioStyle.setDefined(iProperty, defined);
+		fieldTooltip("Ticked, the style sets this property on its widgets; unticked, the widgets keep their own.");
+		ImGui::SameLine();
+		ImGui::BeginGroup();
+		ImGui::BeginDisabled(!defined);
+		iDraw();
+		ImGui::EndDisabled();
+		ImGui::EndGroup();
+		ImGui::PopID();
+	};
+	if (widgets::subHeader("Colours", true)) {
+		field(Background, [&ioStyle]() -> void {
+			prop::ColorEdit4("Background", colorData(ioStyle.background));
+			fieldTooltip("Panel background, button normal colour, slider track, bar background, list row, window body.");
+		});
+		field(Hover, [&ioStyle]() -> void { prop::ColorEdit4("Hover", colorData(ioStyle.hover)); });
+		field(Pressed, [&ioStyle]() -> void { prop::ColorEdit4("Pressed", colorData(ioStyle.pressed)); });
+		field(Disabled, [&ioStyle]() -> void { prop::ColorEdit4("Disabled", colorData(ioStyle.disabled)); });
+		field(Accent, [&ioStyle]() -> void {
+			prop::ColorEdit4("Accent", colorData(ioStyle.accent));
+			fieldTooltip("Slider and bar fill, selected list row, window title bar.");
+		});
+		field(Secondary, [&ioStyle]() -> void {
+			prop::ColorEdit4("Secondary", colorData(ioStyle.secondary));
+			fieldTooltip("Slider handle, alternate list row.");
+		});
+	}
+	if (widgets::subHeader("Text", true)) {
+		field(TextColor, [&ioStyle]() -> void { prop::ColorEdit4("Text Color", colorData(ioStyle.textColor)); });
+		field(Font, [&ioStyle]() -> void {
+			if (prop::BeginCombo("Font", ioStyle.font.empty() ? "(default)" : ioStyle.font.c_str())) {
+				if (ImGui::Selectable("(default)", ioStyle.font.empty()))
+					ioStyle.font.clear();
+				for (const auto& font: data::fonts::FontLibrary::getFoundFontNames())
+					if (ImGui::Selectable(font.c_str(), font == ioStyle.font))
+						ioStyle.font = font;
+				ImGui::EndCombo();
+			}
+		});
+		field(FontSize, [&ioStyle]() -> void {
+			prop::DragFloat("Font Size", &ioStyle.fontSize, 0.5f, 1.f, 200.f, "%.1f");
+		});
+		field(Outline, [&ioStyle]() -> void {
+			prop::DragFloat("Outline Width", &ioStyle.outlineWidth, 0.1f, 0.f, 20.f, "%.1f");
+			prop::ColorEdit4("Outline Color", colorData(ioStyle.outlineColor));
+		});
+		field(Padding, [&ioStyle]() -> void {
+			prop::DragFloat("Padding", &ioStyle.padding, 0.5f, 0.f, 200.f, "%.1f");
+			fieldTooltip("Padding of the UiLayout of a panel following the style.");
+		});
+	}
+	if (widgets::subHeader("Box", true))
+		boxFields(ioStyle.box, field);
+	return !(ioStyle == before);
+}
+
 void renderProps(UiPanel& ioComponent) {
-	prop::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
-	prop::ColorEdit4("Border Color", reinterpret_cast<float*>(&ioComponent.borderColor));
-	prop::DragFloat("Border Width", &ioComponent.borderWidth, 0.5f, 0.0f, 20.0f);
+	auto widget = styledWidget(ioComponent.style);
+	stylePicker(widget);
+	styled(widget, Background,
+		   [&]() -> void { prop::ColorEdit4("Background", colorData(ioComponent.backgroundColor)); });
 	prop::Checkbox("Clip Children", &ioComponent.clipChildren);
 	fieldTooltip("Cut the children at the panel edges (scissor).");
+	boxProps(widget, ioComponent.box);
 }
 
 void renderProps(UiButton& ioComponent) {
-	prop::ColorEdit4("Normal Color", reinterpret_cast<float*>(&ioComponent.normalColor));
-	fieldTooltip("Button background color in the default (not hovered, not pressed) state.");
-	prop::ColorEdit4("Hover Color", reinterpret_cast<float*>(&ioComponent.hoverColor));
-	fieldTooltip("Button background color when the mouse is hovering over it.");
-	prop::ColorEdit4("Pressed Color", reinterpret_cast<float*>(&ioComponent.pressedColor));
-	fieldTooltip("Button background color while the mouse button is held down.");
-	prop::ColorEdit4("Disabled Color", reinterpret_cast<float*>(&ioComponent.disabledColor));
-	fieldTooltip("Button background color when disabled (cannot be clicked).");
+	auto widget = styledWidget(ioComponent.style);
+	stylePicker(widget);
+	styled(widget, Background, [&]() -> void {
+		prop::ColorEdit4("Normal Color", colorData(ioComponent.normalColor));
+		fieldTooltip("Button background color in the default (not hovered, not pressed) state.");
+	});
+	styled(widget, Hover, [&]() -> void {
+		prop::ColorEdit4("Hover Color", colorData(ioComponent.hoverColor));
+		fieldTooltip("Button background color when the mouse is hovering over it.");
+	});
+	styled(widget, Pressed, [&]() -> void {
+		prop::ColorEdit4("Pressed Color", colorData(ioComponent.pressedColor));
+		fieldTooltip("Button background color while the mouse button is held down.");
+	});
+	styled(widget, Disabled, [&]() -> void {
+		prop::ColorEdit4("Disabled Color", colorData(ioComponent.disabledColor));
+		fieldTooltip("Button background color when disabled (cannot be clicked).");
+	});
 	handlerRow("On Click Callback", ioComponent.onClickCallback, nullptr,
 			   "Lua function name to call when the button is clicked (e.g. on_play_clicked).");
+	boxProps(widget, ioComponent.box);
 }
 
 void renderProps(UiSlider& ioComponent) {
@@ -2412,20 +2616,29 @@ void renderProps(UiSlider& ioComponent) {
 	fieldTooltip("Minimum allowed value.");
 	prop::DragFloat("Max", &ioComponent.maxValue, 0.1f);
 	fieldTooltip("Maximum allowed value.");
-	prop::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));
-	prop::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));
-	prop::ColorEdit4("Handle Color", reinterpret_cast<float*>(&ioComponent.handleColor));
+	auto widget = styledWidget(ioComponent.style);
+	stylePicker(widget);
+	styled(widget, Background,
+		   [&]() -> void { prop::ColorEdit4("Track Color", colorData(ioComponent.trackColor)); });
+	styled(widget, Accent, [&]() -> void { prop::ColorEdit4("Fill Color", colorData(ioComponent.fillColor)); });
+	styled(widget, Secondary,
+		   [&]() -> void { prop::ColorEdit4("Handle Color", colorData(ioComponent.handleColor)); });
 	prop::DragFloat("Step", &ioComponent.step, 0.01f, 0.0f, 1000.0f);
 	fieldTooltip(
 			"Change of the value per ui_left / ui_right press on the focused slider. 0: a twentieth of the range.");
 	handlerRow("On Value Changed", ioComponent.onValueChangedCallback, nullptr,
 			   "Lua function called when the value changes. Receives the new value in _slider_value.");
+	boxProps(widget, ioComponent.box);
 }
 
 void renderProps(UiProgressBar& ioComponent) {
+	auto widget = styledWidget(ioComponent.style);
+	stylePicker(widget);
 	prop::DragFloat("Value", &ioComponent.value, 0.01f, 0.0f, 1.0f);
-	prop::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
-	prop::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));
+	styled(widget, Background,
+		   [&]() -> void { prop::ColorEdit4("Background", colorData(ioComponent.backgroundColor)); });
+	styled(widget, Accent, [&]() -> void { prop::ColorEdit4("Fill Color", colorData(ioComponent.fillColor)); });
+	boxProps(widget, ioComponent.box);
 }
 
 void renderProps(UiWindow& ioComponent) {
@@ -2433,10 +2646,15 @@ void renderProps(UiWindow& ioComponent) {
 	fieldTooltip("Text of the title bar.");
 	prop::DragFloat("Title Bar Height", &ioComponent.titleBarHeight, 0.5f, 0.0f, 200.0f);
 	fieldTooltip("Height of the title bar in reference pixels; the children are laid out under it.");
-	prop::DragFloat("Title Font Size", &ioComponent.titleFontSize, 0.5f, 1.0f, 200.0f);
-	prop::ColorEdit4("Body Color", reinterpret_cast<float*>(&ioComponent.bodyColor));
-	prop::ColorEdit4("Title Color", reinterpret_cast<float*>(&ioComponent.titleColor));
-	prop::ColorEdit4("Title Text Color", reinterpret_cast<float*>(&ioComponent.titleTextColor));
+	auto widget = styledWidget(ioComponent.style);
+	stylePicker(widget);
+	styled(widget, FontSize, [&]() -> void {
+		prop::DragFloat("Title Font Size", &ioComponent.titleFontSize, 0.5f, 1.0f, 200.0f);
+	});
+	styled(widget, Background, [&]() -> void { prop::ColorEdit4("Body Color", colorData(ioComponent.bodyColor)); });
+	styled(widget, Accent, [&]() -> void { prop::ColorEdit4("Title Color", colorData(ioComponent.titleColor)); });
+	styled(widget, TextColor,
+		   [&]() -> void { prop::ColorEdit4("Title Text Color", colorData(ioComponent.titleTextColor)); });
 	prop::Checkbox("Draggable", &ioComponent.draggable);
 	fieldTooltip("The title bar drags the window; it stays inside the screen.");
 	prop::Checkbox("Closable", &ioComponent.closable);
@@ -2445,6 +2663,7 @@ void renderProps(UiWindow& ioComponent) {
 	fieldTooltip("While shown, the window keeps the focus and the mouse reaches nothing outside it (a dialog).");
 	handlerRow("On Close Callback", ioComponent.onCloseCallback, nullptr,
 			   "Lua function called when the close button is pressed.");
+	boxProps(widget, ioComponent.box);
 }
 
 void renderProps(UiLayout& ioComponent) {
@@ -2496,12 +2715,17 @@ void renderProps(UiList& ioComponent) {
 	prop::DragFloat("Scroll Offset", &ioComponent.scrollOffset, 1.0f, 0.0f, 10000000.0f);
 	fieldTooltip("Distance the rows are scrolled by, in reference pixels; kept inside the content.");
 	prop::DragFloat("Wheel Step", &ioComponent.wheelStep, 0.5f, 1.0f, 1000.0f);
-	prop::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
-	prop::ColorEdit4("Row Color", reinterpret_cast<float*>(&ioComponent.rowColor));
-	prop::ColorEdit4("Alternate Row Color", reinterpret_cast<float*>(&ioComponent.rowAltColor));
-	prop::ColorEdit4("Hover Color", reinterpret_cast<float*>(&ioComponent.hoverColor));
-	prop::ColorEdit4("Selected Color", reinterpret_cast<float*>(&ioComponent.selectedColor));
-	prop::ColorEdit4("Text Color", reinterpret_cast<float*>(&ioComponent.textColor));
+	auto widget = styledWidget(ioComponent.style);
+	stylePicker(widget);
+	styled(widget, FontSize,
+		   [&]() -> void { prop::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f); });
+	styled(widget, Background, [&]() -> void { prop::ColorEdit4("Row Color", colorData(ioComponent.rowColor)); });
+	styled(widget, Secondary,
+		   [&]() -> void { prop::ColorEdit4("Alternate Row Color", colorData(ioComponent.rowAltColor)); });
+	styled(widget, Hover, [&]() -> void { prop::ColorEdit4("Hover Color", colorData(ioComponent.hoverColor)); });
+	styled(widget, Accent,
+		   [&]() -> void { prop::ColorEdit4("Selected Color", colorData(ioComponent.selectedColor)); });
+	styled(widget, TextColor, [&]() -> void { prop::ColorEdit4("Text Color", colorData(ioComponent.textColor)); });
 	prop::Checkbox("Show Scroll Bar", &ioComponent.showScrollBar);
 	prop::DragFloat("Scroll Bar Width", &ioComponent.scrollBarWidth, 0.5f, 1.0f, 64.0f);
 	prop::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));
@@ -2511,6 +2735,7 @@ void renderProps(UiList& ioComponent) {
 	handlerRow("On Bind", ioComponent.onBindCallback, nullptr,
 			   "Lua function called once for a row in view nobody filled. Reads _list_entity and _row_index "
 			   "(1-based); it fills the row with ui.list_set_row. A row not filled shows Item N.");
+	boxProps(widget, ioComponent.box);
 }
 
 void renderProps(UiTooltip& ioComponent) {

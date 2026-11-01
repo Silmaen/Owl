@@ -33,6 +33,7 @@ enum struct AssetKind : uint8_t {
 	Scene,///< Scene file (`.owl`).
 	Prefab,///< Prefab file (`.owlprefab`).
 	Hud,///< HUD asset (`.owlhud`).
+	HudTheme,///< HUD theme (`.owlhudtheme`).
 	Tileset,///< Tileset asset (`.owltileset`).
 	Tilemap,///< Tilemap asset (`.owltilemap`).
 	ObjectSheet,///< Isometric object sheet description (`.json`).

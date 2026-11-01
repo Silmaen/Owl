@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "UiStyleYaml.h"
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
 #include "scene/component/UiButton.h"
@@ -21,6 +22,8 @@ void UiButton::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "pressedColor" << YAML::Value << pressedColor;
 	iOut.getImpl()->emitter << YAML::Key << "disabledColor" << YAML::Value << disabledColor;
 	iOut.getImpl()->emitter << YAML::Key << "onClickCallback" << YAML::Value << onClickCallback;
+	utils::emitBox(iOut.getImpl()->emitter, box);
+	utils::emitStyleRef(iOut.getImpl()->emitter, style);
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
@@ -36,6 +39,8 @@ void UiButton::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["onClickCallback"])
 		onClickCallback = iNode.getImpl()->node["onClickCallback"].as<std::string>();
 	state = State::Normal;
+	utils::readBox(iNode.getImpl()->node, box);
+	utils::readStyleRef(iNode.getImpl()->node, style);
 }
 
 }// namespace owl::scene::component

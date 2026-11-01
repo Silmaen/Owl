@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Serializer.h"
+#include "scene/component/UiStyle.h"
 #include "math/vectors.h"
 #include "renderer/gpu/Texture.h"
 
@@ -70,6 +71,10 @@ struct OWL_API UiList {
 	math::vec4 selectedColor{0.20f, 0.36f, 0.62f, 1.f};
 	/// Colour of the texts.
 	math::vec4 textColor{1.f, 1.f, 1.f, 1.f};
+	/// Look of the box: rounded corners, gradient, border, shadow, nine-slice texture.
+	UiBox box;
+	/// Style of the HUD theme the widget follows.
+	UiStyleRef style;
 	/// Whether the bar is drawn (and takes room) when the rows overflow.
 	bool showScrollBar = true;
 	/// Thickness of the bar, in reference pixels.

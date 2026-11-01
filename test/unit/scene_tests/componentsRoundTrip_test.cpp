@@ -247,15 +247,31 @@ TEST(ComponentRoundTrip, UiPanel) {
 			[](scene::Entity& iEnt) -> void {
 				auto& p = iEnt.addComponent<scene::component::UiPanel>();
 				p.backgroundColor = {0.4f, 0.4f, 0.4f, 0.9f};
-				p.borderColor = {1.f, 0.8f, 0.f, 1.f};
-				p.borderWidth = 2.5f;
+				p.box.borderColor = {1.f, 0.8f, 0.f, 1.f};
+				p.box.borderWidth = 2.5f;
+				p.box.cornerRadius = 6.f;
+				p.box.bottomTint = {0.5f, 0.5f, 0.5f, 1.f};
+				p.box.shadowColor = {0.f, 0.f, 0.f, 0.5f};
+				p.box.shadowOffset = {1.f, 3.f};
+				p.box.shadowBlur = 5.f;
+				p.box.sliceInsets = {1.f, 2.f, 3.f, 4.f};
+				p.style.name = "panel";
+				p.style.overrides = scene::component::styleBit(scene::component::UiStyleProperty::Shadow);
 				p.clipChildren = true;
 			},
 			[](const scene::Entity& iEnt) -> void {
 				const auto& p = iEnt.getComponent<scene::component::UiPanel>();
 				EXPECT_NEAR(p.backgroundColor.w(), 0.9f, 0.01f);
-				EXPECT_NEAR(p.borderColor.y(), 0.8f, 0.01f);
-				EXPECT_NEAR(p.borderWidth, 2.5f, 0.01f);
+				EXPECT_NEAR(p.box.borderColor.y(), 0.8f, 0.01f);
+				EXPECT_NEAR(p.box.borderWidth, 2.5f, 0.01f);
+				EXPECT_NEAR(p.box.cornerRadius, 6.f, 0.01f);
+				EXPECT_NEAR(p.box.bottomTint.x(), 0.5f, 0.01f);
+				EXPECT_NEAR(p.box.shadowColor.w(), 0.5f, 0.01f);
+				EXPECT_NEAR(p.box.shadowOffset.y(), 3.f, 0.01f);
+				EXPECT_NEAR(p.box.shadowBlur, 5.f, 0.01f);
+				EXPECT_EQ(p.style.name, "panel");
+				EXPECT_EQ(p.style.overrides,
+						  scene::component::styleBit(scene::component::UiStyleProperty::Shadow));
 				EXPECT_TRUE(p.clipChildren);
 			});
 }

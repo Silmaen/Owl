@@ -30,6 +30,7 @@ class VoxelMeshCache;
 
 namespace owl::scene {
 class HudLibrary;
+class HudThemeLibrary;
 class ScreenTransition;
 class SettingsManager;
 }// namespace owl::scene
@@ -195,6 +196,27 @@ public:
 
 	/**
 	 * @brief
+	 *  HUD theme of the scenes and HUDs that name none (the project's `DefaultHudTheme`).
+	 * @return The asset path, empty for no default theme.
+	 */
+	[[nodiscard]] auto getDefaultHudTheme() const -> const std::string& { return m_defaultHudTheme; }
+
+	/**
+	 * @brief
+	 *  Set the HUD theme of the scenes and HUDs that name none.
+	 * @param[in] iPath The asset path, empty for none.
+	 */
+	void setDefaultHudTheme(const std::string& iPath) { m_defaultHudTheme = iPath; }
+
+	/**
+	 * @brief
+	 *  The `.owlhudtheme` files read so far, shared by the scenes and HUDs.
+	 * @return The theme library.
+	 */
+	[[nodiscard]] auto getHudThemeLibrary() -> scene::HudThemeLibrary& { return *mp_hudThemeLibrary; }
+
+	/**
+	 * @brief
 	 *  Localisation of the game: its languages and string tables.
 	 * @return The localisation, empty when the project has none.
 	 */
@@ -268,6 +290,10 @@ private:
 	shared<const input::ActionMap> m_actionMap = input::ActionMap::getDefault();
 	/// HUD asset of the scenes that name none.
 	std::string m_defaultHud;
+	/// HUD theme of the scenes and HUDs that name none.
+	std::string m_defaultHudTheme;
+	/// Loaded HUD themes.
+	uniq<scene::HudThemeLibrary> mp_hudThemeLibrary;
 	/// Languages and string tables of the game.
 	data::localisation::Localisation m_localisation;
 	/// Code of the current language.

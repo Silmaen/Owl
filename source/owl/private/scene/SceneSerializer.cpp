@@ -470,6 +470,8 @@ auto SceneSerializer::serializeToString() const -> std::string {
 		serializeMix(sOut.getImpl()->emitter, mp_scene->getMixSettings());
 		serializeWorldPartition(sOut.getImpl()->emitter, *mp_scene);
 	}
+	if (const auto& themePath = mp_scene->getHudThemePath(); m_kind != DocumentKind::Prefab && themePath)
+		sOut.getImpl()->emitter << YAML::Key << "HudTheme" << YAML::Value << data::assets::toAssetReference(*themePath);
 	if (m_kind != DocumentKind::Prefab)
 		if (const auto& sceneScript = mp_scene->getSceneScript(); !sceneScript.scriptPath.empty())
 			sceneScript.serializeAs(sOut, "SceneScript");
@@ -583,6 +585,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	const auto previousPartition = mp_scene->getWorldPartitionSettings();
 	const auto previousWorldOrigin = mp_scene->getWorldOrigin();
 	const auto previousHud = mp_scene->getHudPath();
+	const auto previousHudTheme = mp_scene->getHudThemePath();
 	const auto previousSceneScript = mp_scene->getSceneScript();
 	const bool isScene = iParsed.kind == DocumentKind::Scene;
 	const auto& source = iParsed.sourceName.empty() ? iParsed.sceneName : iParsed.sourceName;
@@ -602,6 +605,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 		mp_scene->getWorldPartitionSettings() = previousPartition;
 		mp_scene->shiftWorldOrigin(previousWorldOrigin);
 		mp_scene->setHudPath(previousHud);
+		mp_scene->setHudThemePath(previousHudTheme);
 		mp_scene->getSceneScript() = previousSceneScript;
 		return unexpected{SceneLoadError::InvalidEntity};
 	};
@@ -623,6 +627,8 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 			mp_scene->getMixSettings() = deserializeMix(root["Mixer"]);
 			deserializeWorldPartition(*mp_scene, root["WorldPartition"]);
 		}
+		if (const auto theme = root["HudTheme"]; iParsed.kind != DocumentKind::Prefab && theme.isScalar())
+			mp_scene->setHudThemePath(data::assets::toAssetPath(theme.as<std::string>()));
 		mp_scene->getSceneScript() = component::LuaScript{};
 		if (const auto script = root["SceneScript"]; iParsed.kind != DocumentKind::Prefab && script.isMap()) {
 			const core::Serializer scriptNode;

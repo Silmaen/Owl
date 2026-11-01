@@ -244,6 +244,47 @@ struct OWL_API StringData {
 
 /**
  * @brief
+ *  Data for drawing a rounded box: a signed-distance rectangle with a gradient, a border, a soft shadow and an
+ *  optional nine-slice texture, in one quad.
+ *
+ * `transform` maps the unit quad onto the box, whose size is `size` in frame units (pixels for the HUD); the other
+ * lengths are in the same units, the Y axis up.
+ */
+struct OWL_API BoxData {
+	/// Transformation of the box (the unit quad scaled to `size`).
+	math::Transform transform;
+	/// Size of the box in frame units.
+	math::vec2 size{1.f, 1.f};
+	/// Fill colour at the top edge.
+	math::vec4 topColor = math::vec4{1.f, 1.f, 1.f, 1.f};
+	/// Fill colour at the bottom edge.
+	math::vec4 bottomColor = math::vec4{1.f, 1.f, 1.f, 1.f};
+	/// Radius of the corners, clamped to half the shorter side.
+	float cornerRadius = 0.f;
+	/// Width of the border drawn inside the edge (0 = none).
+	float borderWidth = 0.f;
+	/// Colour of the border.
+	math::vec4 borderColor = math::vec4{1.f, 1.f, 1.f, 1.f};
+	/// Colour of the shadow drawn outside the box (a zero alpha draws none).
+	math::vec4 shadowColor = math::vec4{0.f, 0.f, 0.f, 0.f};
+	/// Offset of the shadow (Y up).
+	math::vec2 shadowOffset{0.f, 0.f};
+	/// Softness of the shadow edge.
+	float shadowBlur = 0.f;
+	/// Nine-slice texture multiplied with the fill (plain fill when null).
+	shared<gpu::Texture> texture = nullptr;
+	/// Borders of the texture kept unstretched, in frame units: left, top, right, bottom.
+	math::vec4 sliceInsets{0.f, 0.f, 0.f, 0.f};
+	/// The same borders as fractions of the texture: left, top, right, bottom.
+	math::vec4 sliceUv{0.f, 0.f, 0.f, 0.f};
+	/// unique ID for the entity.
+	int entityId = -1;
+	/// Sort key (as the other primitives).
+	float depth = 0.f;
+};
+
+/**
+ * @brief
  *  Class Renderer2D.
  */
 class OWL_API Renderer2D {
@@ -408,6 +449,13 @@ public:
 	 * @param[in] iStringData String's properties.
 	 */
 	static void drawString(const StringData& iStringData);
+
+	/**
+	 * @brief
+	 *  Draws a rounded box (corners, gradient, border, shadow, nine-slice) in one instanced quad.
+	 * @param[in] iBoxData Box properties.
+	 */
+	static void drawBox(const BoxData& iBoxData);
 
 	/**
 	 * @brief

@@ -22,6 +22,7 @@
 
 namespace owl::scene {
 class Scene;
+struct HudStyle;
 }// namespace owl::scene
 
 /**
@@ -290,6 +291,14 @@ OWL_API void renderProps(scene::component::UiImage& ioComponent);
  * @param ioComponent The component to edit.
  */
 OWL_API void renderProps(scene::component::UiPanel& ioComponent);
+
+/**
+ * @brief
+ *  Draw the properties of a style of a HUD theme, each behind the box telling whether the style sets it.
+ * @param[in,out] ioStyle The style.
+ * @return True when the style changed this frame.
+ */
+OWL_API auto renderProps(scene::HudStyle& ioStyle) -> bool;
 
 /**
  * @brief

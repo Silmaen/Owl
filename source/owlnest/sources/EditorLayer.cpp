@@ -15,6 +15,7 @@
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/DataTableDocument.h"
+#include "document/HudThemeDocument.h"
 #include "document/DialogueDocument.h"
 #include "document/FontDocument.h"
 #include "document/ImageDocument.h"
@@ -467,6 +468,15 @@ void EditorLayer::bindDataTableCallbacks() {
 	});
 }
 
+void EditorLayer::bindHudThemeCallbacks() {
+	m_contentBrowser.setHudThemeOpenCallback(
+			[this](const std::filesystem::path& iPath) -> void { openHudThemeFile(iPath); });
+	m_contentBrowser.setHudThemeCreateCallback([this](const std::filesystem::path& iPath) -> void {
+		runCommandFromUi("theme.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
+		openHudThemeFile(iPath);
+	});
+}
+
 void EditorLayer::bindDialogueCallbacks() {
 	m_contentBrowser.setDialogueOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openDialogueFile(iPath); });
@@ -717,6 +727,7 @@ void EditorLayer::onAttach() {
 			[this](const std::filesystem::path& iPath) -> void { openLocalisationFile(iPath); });
 	m_contentBrowser.setSoundOpenCallback([this](const std::filesystem::path& iPath) -> void { openSoundFile(iPath); });
 	bindDataTableCallbacks();
+	bindHudThemeCallbacks();
 	bindDialogueCallbacks();
 	bindSequenceCallbacks();
 	m_contentBrowser.setSoundCreateCallback([this](const std::filesystem::path& iPath) -> void {
@@ -960,6 +971,8 @@ auto consumeTabClose(Document* ioDocument) -> bool {
 			return consumeClose<DialogueDocument>(ioDocument);
 		case DocumentType::Sequence:
 			return consumeClose<SequenceDocument>(ioDocument);
+		case DocumentType::HudTheme:
+			return consumeClose<HudThemeDocument>(ioDocument);
 	}
 	return false;
 }
@@ -1041,6 +1054,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		m_project = m_projectSettings.consumeResult();
 		app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 		app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
+		app::Application::get().getEngineContext().setDefaultHudTheme(m_project.defaultHudTheme);
 		if (m_project.gamepadMappings != previousMappings)
 			std::ignore = m_project.loadGamepadMappings();
 
