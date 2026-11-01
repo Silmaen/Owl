@@ -9,3 +9,4 @@ Template:
     - "scenes/room.owl: a raycast room under a 2D HUD"
     - "scenes/terrain.owl: a procedural voxel terrain"
     - Every layer in one stack (2D, raycast, voxel, mesh, billboards, minimap, ui)
+    - Keys 1, 2 and 3 switch between the three scenes (scripts/scene_switch.lua)

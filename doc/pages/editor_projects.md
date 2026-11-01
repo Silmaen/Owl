@@ -27,7 +27,7 @@ opens one project at a time and exports it as a game folder players can run with
 | Isometric     | Iso, 2D          | `world`, `iso_world`, `ui`                | Tilemap island, tree and lamp sprites, Lua flag (WASD), camera on it                 |
 | Raycast       | Raycast          | `raycast_world`, `ui`                     | Tilemap room, Lua first-person player (W/S, A/D), HUD hint                           |
 | Voxel         | Voxel, 3D        | `voxel_world`, `ui`                       | Procedural streamed terrain, sky, sun, voxel player (WASD, space)                    |
-| Mixed styles  | Mixed, 3D, 2D... | all of the above, `billboards`, `minimap` | 3D yard, 2D billboard trees and a 2D minimap in one frame; `room.owl`, `terrain.owl` |
+| Mixed styles  | Mixed, 3D, 2D... | all of the above, `billboards`, `minimap` | 3D yard, 2D billboards, 2D minimap in one frame; keys 1-3: `room.owl`, `terrain.owl` |
 
 Every template opens on a playable scene moved with the built-in `move` action, ships an `input_actions.yml` with the
 built-in [input actions](editor_documents.md#editor-action-map) and has a scenario (`test/unit/scenarios/template_*`).
