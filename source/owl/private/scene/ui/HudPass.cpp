@@ -428,10 +428,10 @@ auto pixelCamera(const math::vec2ui& iViewport) -> renderer::CameraOrtho {
 // Whether a widget of the scene draws a rounded box (corners, gradient, border, shadow or nine-slice).
 auto hasRoundedBox(const Scene& iScene) -> bool {
 	const auto any = [&iScene]<typename Widget>() -> bool {
-		for (const auto view = iScene.registry.view<const Widget>(); const auto entity: view)
-			if (!view.template get<const Widget>(entity).box.isPlain())
-				return true;
-		return false;
+		const auto view = iScene.registry.view<const Widget>();
+		return std::ranges::any_of(view, [&view](const entt::entity iEntity) -> bool {
+			return !view.template get<const Widget>(iEntity).box.isPlain();
+		});
 	};
 	return any.template operator()<component::UiPanel>() || any.template operator()<component::UiButton>() ||
 		   any.template operator()<component::UiSlider>() || any.template operator()<component::UiProgressBar>() ||
@@ -825,8 +825,8 @@ auto makeWidgetBox(const math::Transform& iTransform, const math::vec4& iColor, 
 	data.shadowBlur = box.shadowBlur * iScale;
 	if (box.texture && box.texture->isLoaded()) {
 		const auto textureSize = box.texture->getSize();
-		const float width = static_cast<float>(textureSize.x());
-		const float height = static_cast<float>(textureSize.y());
+		const auto width = static_cast<float>(textureSize.x());
+		const auto height = static_cast<float>(textureSize.y());
 		data.texture = box.texture;
 		data.sliceInsets = box.sliceInsets * iScale;
 		data.sliceUv = {box.sliceInsets.x() / width, box.sliceInsets.y() / height, box.sliceInsets.z() / width,

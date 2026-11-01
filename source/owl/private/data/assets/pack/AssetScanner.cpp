@@ -758,6 +758,14 @@ void scanLocalisationFonts(const std::filesystem::path& iProjectDir, std::vector
 	}
 }
 
+// The nine-slice textures of the boxes of the widgets of an entity.
+void scanWidgetBoxes(const YAML::Node& iEntity, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
+					 std::vector<std::string>* ioWarnings) {
+	for (const char* widget: {"UiPanel", "UiButton", "UiSlider", "UiProgressBar", "UiList", "UiWindow"})
+		if (const auto node = iEntity[widget]; node && node["Box"] && node["Box"]["texture"])
+			followTexture(node["Box"]["texture"].as<std::string>(), iSceneName, ioAssets, ioWarnings);
+}
+
 void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 				const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
 				std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
@@ -781,9 +789,7 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 										  std::pair{"HudMarker", "icon"}, std::pair{"HudMarker", "arrow"}})
 		if (auto node = iEntity[component]; node)
 			addTextureField(node, field);
-	for (const char* widget: {"UiPanel", "UiButton", "UiSlider", "UiProgressBar", "UiList", "UiWindow"})
-		if (auto node = iEntity[widget]; node && node["Box"])
-			addTextureField(node["Box"]);
+	scanWidgetBoxes(iEntity, iSceneName, ioAssets, ioWarnings);
 	scanFontsAndSounds(iEntity, iSceneName, ioAssets, ioWarnings);
 	if (auto meshRenderer = iEntity["MeshRenderer"]; meshRenderer)
 		scanMeshRenderer(meshRenderer, iSceneName, ioAssets, ioWarnings);
