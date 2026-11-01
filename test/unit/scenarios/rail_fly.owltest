@@ -1,0 +1,30 @@
+# Ring Runner: the intro skipped with Fire, then the ship steered hard to the right and down: it stops at the edge
+# of the play frame and never leaves it; a barrel roll each way, the lasers fired, the pause window opened and
+# closed (the carrier stands still while paused).
+scene: ../../../samples/rail_shooter/scenes/level.owl
+steps:
+  - frames: 10
+  - input: {key: Space, frames: 2}
+  - frames: 5
+  - expect: {gamestate: rail_phase, equals: play}
+  - actions: {steer: [1, 1], frames: 120}
+  - expect: {gamestate: rail_ship_x, equals: 8}
+  - expect: {gamestate: rail_ship_y, equals: -4.5}
+  - input: {key: Q, frames: 2}
+  - frames: 80
+  - input: {key: E, frames: 2}
+  - frames: 60
+  - expect: {gamestate: rail_rolls, equals: 2}
+  - actions: {steer: [-1, -1], frames: 120}
+  - expect: {gamestate: rail_ship_x, equals: -8}
+  - expect: {gamestate: rail_ship_y, equals: 4.5}
+  - input: {key: Space, frames: 60}
+  - expect: {gamestate: rail_shots, greater: 5}
+  - input: {key: Escape, frames: 2}
+  - frames: 1
+  - expect: {gamestate: rail_paused, equals: true}
+  - frames: 30
+  - input: {key: Escape, frames: 2}
+  - frames: 2
+  - expect: {gamestate: rail_paused, equals: false}
+  - expect: {gamestate: rail_hull, greater: 0}

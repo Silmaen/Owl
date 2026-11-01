@@ -16,6 +16,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <vector>
 
@@ -354,6 +355,9 @@ public:
 	/**
 	 * @brief
 	 *  Spawn particles at the next step, whether the emission runs or not.
+	 *
+	 *  A system never started (an emitter without play on start) starts moving for them, its emission off; a system
+	 *  paused after it spawned particles spawns them when it resumes.
 	 * @param[in] iCount Number of particles.
 	 */
 	void emit(uint32_t iCount);
@@ -369,6 +373,15 @@ public:
 	 * @return True while emitting.
 	 */
 	[[nodiscard]] auto isEmitting() const -> bool { return m_emitting; }
+	/**
+	 * @brief
+	 *  Whether the last frame found nothing to do: no emission, no burst asked and every particle past its life.
+	 *
+	 *  An idle system is neither simulated nor drawn, and its next spawn starts where the emitter is then (a burst
+	 *  from an emitter moved while idle does not spread along the move).
+	 * @return True while idle.
+	 */
+	[[nodiscard]] auto isIdle() const -> bool { return m_idle; }
 
 	/**
 	 * @brief
@@ -498,6 +511,8 @@ private:
 	bool m_pending = false;
 	/// Whether the emitter matrix of the previous frame is known.
 	bool m_hasEmitter = false;
+	/// Whether the last frame had nothing to simulate (see `isIdle`).
+	bool m_idle = false;
 	/// Number of slots.
 	uint32_t m_capacity = 0;
 	/// Points per trail.
@@ -514,6 +529,8 @@ private:
 	float m_emitCarry = 0.f;
 	/// Seconds since the emission started (or looped).
 	float m_emitTime = 0.f;
+	/// Seconds simulated since the last spawn (the largest float before any).
+	float m_quiet = std::numeric_limits<float>::max();
 	/// Origin shift waiting for the next step.
 	math::vec3 m_shift{0.f, 0.f, 0.f};
 	/// World matrix of the emitter, last frame.

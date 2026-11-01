@@ -1,0 +1,160 @@
+# Ring Runner won: the whole lane flown weaving from corner to corner with the lasers held (the weave dodges the aimed
+# shots), the Warden destroyed, the end sequence, then the victory screen counts the stats up line by line and shows
+# the medal; the best score is kept in the settings.
+scene: ../../../samples/rail_shooter/scenes/level.owl
+timestep_ms: 33.333
+steps:
+  - frames: 2
+  - input: {key: Space, frames: 2}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - expect: {gamestate: rail_won, equals: true}
+  - expect: {gamestate: rail_lost, equals: false}
+  - expect: {gamestate: rail_boss_hp, equals: 0}
+  - expect: {gamestate: rail_result_medal, greater: 0}
+  - frames: 300
+  - expect: {entity: StatLine6, exists: true}
+  - expect: {gamestate: rail_tally_done, equals: true}
+  - expect: {setting: rail_best, greater: 10000}

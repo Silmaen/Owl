@@ -43,6 +43,8 @@ simulation runs on the CPU. An emitter keeps at most `maxParticles` particles: p
 - `blend: Additive` adds the particles to the scene in any order (fire, sparks, magic); `Alpha` blends them over it,
   sorted far to near on the GPU (smoke, dust), at most 1024 particles. Emitters are not sorted between them.
 - Without a texture a particle is a soft disc.
+- An emitter that does not emit, has no burst asked and whose particles all died is idle: neither simulated nor drawn.
+  A burst (`entity.particles_emit`) wakes it, even one that never played, and spawns where the emitter is then.
 - Particles and trails follow a shift of the floating origin.
 
 Presets: `Fire`, `Smoke`, `Sparks`, `Magic`, `Snow` (`renderer::makeParticlePreset`, Owl Nest **Create > Effects**).

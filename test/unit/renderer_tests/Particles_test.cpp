@@ -196,6 +196,73 @@ TEST(ParticleSystem, PauseFreezesStopEndsTheEmissionRestartClears) {
 	EXPECT_EQ(system.getSpawnedCount(), 1u);
 }
 
+TEST(ParticleSystem, EmitBurstsASystemNeverStartedWithoutStartingItsEmission) {
+	auto settings = still();
+	settings.rate = 60.f;
+	ParticleSystem system;
+	system.advance(settings, g_frame, at(0.f, 0.f, 0.f));
+	EXPECT_EQ(system.getSpawnedCount(), 0u);
+	system.emit(6);
+	system.advance(settings, g_frame, at(0.f, 0.f, 0.f));
+	EXPECT_EQ(system.getAliveCount(), 6u);
+	EXPECT_TRUE(system.isPlaying());
+	EXPECT_FALSE(system.isEmitting());
+	for (int frame = 0; frame < 10; ++frame) system.advance(settings, g_frame, at(0.f, 0.f, 0.f));
+	EXPECT_EQ(system.getSpawnedCount(), 6u);
+}
+
+TEST(ParticleSystem, IsIdleOnceItsLastParticleDiedWithoutEmission) {
+	auto settings = still();
+	settings.lifetimeMin = settings.lifetimeMax = 0.1f;
+	ParticleSystem system;
+	system.advance(settings, g_frame, at(0.f, 0.f, 0.f));
+	EXPECT_TRUE(system.isIdle());
+	system.play();
+	system.stop();
+	system.emit(3);
+	system.advance(settings, g_frame, at(0.f, 0.f, 0.f));
+	EXPECT_FALSE(system.isIdle());
+	EXPECT_EQ(system.getAliveCount(), 3u);
+	for (int frame = 0; frame < 10; ++frame) system.advance(settings, g_frame, at(0.f, 0.f, 0.f));
+	EXPECT_EQ(system.getAliveCount(), 0u);
+	EXPECT_TRUE(system.isIdle());
+	system.restart();
+	settings.rate = 60.f;
+	system.advance(settings, g_frame, at(0.f, 0.f, 0.f));
+	EXPECT_FALSE(system.isIdle());
+}
+
+TEST(ParticleSystem, ABurstAfterAMoveWhileIdleSpawnsWhereTheEmitterIs) {
+	auto settings = still();
+	settings.lifetimeMin = settings.lifetimeMax = 0.05f;
+	ParticleSystem system;
+	system.emit(1);
+	system.advance(settings, g_frame, at(0.f, 0.f, 0.f));
+	for (int frame = 0; frame < 5; ++frame) system.advance(settings, g_frame, at(0.f, 0.f, 0.f));
+	ASSERT_TRUE(system.isIdle());
+	system.advance(settings, g_frame, at(50.f, 0.f, 0.f));
+	system.emit(4);
+	system.advance(settings, g_frame, at(100.f, 0.f, 0.f));
+	const auto particles = alive(system);
+	ASSERT_EQ(particles.size(), 4u);
+	for (const auto& particle: particles) EXPECT_FLOAT_EQ(particle.position.x(), 100.f);
+}
+
+TEST(ParticleSystem, EmitIntoAPausedSystemWaitsForItsResume) {
+	auto settings = still();
+	ParticleSystem system;
+	system.play();
+	system.emit(2);
+	system.advance(settings, g_frame, at(0.f, 0.f, 0.f));
+	system.pause();
+	system.emit(3);
+	system.advance(settings, g_frame, at(0.f, 0.f, 0.f));
+	EXPECT_EQ(system.getSpawnedCount(), 2u);
+	system.play();
+	system.advance(settings, g_frame, at(0.f, 0.f, 0.f));
+	EXPECT_EQ(system.getSpawnedCount(), 5u);
+}
+
 TEST(ParticleSystem, WorldParticlesStayLocalOnesFollowTheEmitter) {
 	auto settings = still();
 	settings.burst = 1;

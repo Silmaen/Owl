@@ -1,0 +1,26 @@
+# Ring Runner settings: the music slider turned down with the D-pad (the Music bus follows `volume_music`), the
+# steering inverted with its button, then Back with pad B saves and returns to the title.
+scene: ../../../samples/rail_shooter/scenes/settings.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: rail_invert_y, equals: false}
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadLeft}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadLeft}, frames: 2}
+  - frames: 1
+  - expect: {setting: volume_music, less: 0.8}
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: A}, frames: 2}
+  - frames: 2
+  - expect: {gamestate: rail_invert_y, equals: true}
+  - expect: {setting: rail_invert_y, equals: true}
+  - input: {gamepad: {button: B}, frames: 2}
+  - frames: 60
+  - expect: {entity: TitleArt, exists: true}

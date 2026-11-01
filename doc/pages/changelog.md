@@ -43,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scene::Accessibility` reads the accessibility settings and registers their defaults.
 - Scenarios check a game setting with `expect: {setting: <key>, ...}`.
 - Engine Demo settings menu: colours, reduced motion and subtitles buttons; the platformer camera stops shaking with reduced motion.
+- Ring Runner, the rail shooter sample game (`samples/rail_shooter/`): one lane on a spline through the asteroid ring of a planet, squadrons from a wave table, a boss, sequences, medals and the best score kept; hits flash and knock their target, explosions throw fire, smoke, embers, shards and a shock wave (chained pops on the big ones), rocks break into tumbling chunks.
+- Ring Runner menus: live 3D backdrops flying through the ring, the cockpit look of the game, music and effects volumes on the mixer buses.
+- Scenarios `rail_title`, `rail_fly`, `rail_shoot`, `rail_settings`, `rail_game_over` and `rail_win` play Ring Runner with the keyboard, the mouse and the gamepad.
 
 - Asset GUIDs: every asset of a project opened in Owl Nest gets a `.owlmeta` sidecar, and `AssetRegistry` maps GUID and path.
 - Asset references written by GUID (`gid:<guid>:<path hint>`): renaming or moving a file keeps every reference valid.
@@ -158,6 +161,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- A particle emitter that does not emit and whose particles all died is idle (`ParticleSystem::isIdle`): neither simulated nor drawn.
 - `mesh3d.slang` shares its surface shading with the new `skinned3d.slang` through `common/mesh_surface.slangh`; its output is unchanged.
 - Compute shaders resolve their `#include`s like the graphics shaders and the shader bake.
 - Roadmap: an Engine Demo revamp around the world map, 2D walkable areas, a rail shooter and a point-and-click sample in v0.6.0; every pool game possible at 1.0.
@@ -197,6 +201,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A scene that gave the mouse back by itself, a dialogue pausing the walker, captures it again when it ends, in Play and in the runner; Escape still waits for a click.
 - HUD markers were mirrored vertically on Vulkan: `renderer::projectToViewport` takes the clip space of the active layer.
+- `entity.particles_emit` (`ParticleSystem::emit`) bursts an emitter that never played (no play on start), which spawned nothing, and an emitter moved while idle bursts where it is instead of along a streak from where it was.
 - Node editors: a link routed backwards through waypoints crosses them towards where it goes instead of looping.
 - Content Browser: **Delete** and **Rename** open their confirmation again once the context menu has closed; `Delete` and `F2` are their shortcuts.
 - Mixer: drawn with the widget kit and the theme (property grid, sub-headers, themed mute / solo switches and meter), docked with Properties, and its ribbon button shows and hides it.

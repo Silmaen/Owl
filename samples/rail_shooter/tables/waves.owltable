@@ -1,0 +1,101 @@
+DataTable: ''
+FormatVersion: 1
+columns:
+  - {name: distance, type: Float}
+  - {name: kind, type: Reference, table: tables/enemies.owltable}
+  - {name: count, type: Integer}
+  - {name: pattern, type: Enum, choices: [line, vee, swoop_left, swoop_right, hover, boss]}
+  - {name: x, type: Float}
+  - {name: y, type: Float}
+rows:
+  - key: w01
+    distance: 260
+    kind: fighter
+    count: 3
+    pattern: line
+    x: 0
+    y: 2
+  - key: w02
+    distance: 460
+    kind: fighter
+    count: 4
+    pattern: vee
+    x: 0
+    y: -1
+  - key: w03
+    distance: 680
+    kind: fighter
+    count: 3
+    pattern: swoop_left
+    x: 0
+    y: 1
+  - key: w04
+    distance: 860
+    kind: fighter
+    count: 3
+    pattern: swoop_right
+    x: 0
+    y: -1
+  - key: w05
+    distance: 1120
+    kind: interceptor
+    count: 2
+    pattern: hover
+    x: 0
+    y: 1
+  - key: w06
+    distance: 1380
+    kind: fighter
+    count: 5
+    pattern: vee
+    x: 0
+    y: 2
+  - key: w07
+    distance: 1620
+    kind: fighter
+    count: 3
+    pattern: swoop_left
+    x: 0
+    y: 2
+  - key: w08
+    distance: 1700
+    kind: fighter
+    count: 3
+    pattern: swoop_right
+    x: 0
+    y: -2
+  - key: w09
+    distance: 1960
+    kind: interceptor
+    count: 3
+    pattern: hover
+    x: 0
+    y: 0
+  - key: w10
+    distance: 2240
+    kind: fighter
+    count: 4
+    pattern: line
+    x: 0
+    y: -2
+  - key: w11
+    distance: 2500
+    kind: interceptor
+    count: 2
+    pattern: hover
+    x: 0
+    y: 2
+  - key: w12
+    distance: 2760
+    kind: fighter
+    count: 6
+    pattern: vee
+    x: 0
+    y: 0
+  - key: w13
+    distance: 3150
+    kind: boss
+    count: 1
+    pattern: boss
+    x: 0
+    y: 2

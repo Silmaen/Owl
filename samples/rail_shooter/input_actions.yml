@@ -1,0 +1,42 @@
+FormatVersion: 1
+# Actions of Ring Runner, on top of the built-in ones (the `ui_*` actions drive the menus). Read by
+# scripts/game/rail.lua.
+actions:
+  - name: steer
+    type: vector
+    bindings:
+      - {key: D, component: x}
+      - {key: A, component: x, scale: -1}
+      - {key: S, component: y}
+      - {key: W, component: y, scale: -1}
+      - {gamepad_stick: left}
+  - name: aim
+    type: vector
+    bindings:
+      - {key: Right, component: x}
+      - {key: Left, component: x, scale: -1}
+      - {key: Down, component: y}
+      - {key: Up, component: y, scale: -1}
+      - {gamepad_stick: right}
+  - name: fire
+    type: button
+    bindings:
+      - {key: Space}
+      - {mouse_button: Left}
+      - {gamepad_axis: right_trigger}
+  - name: roll_left
+    type: button
+    bindings:
+      - {key: Q}
+      - {gamepad_button: LeftBumper}
+  - name: roll_right
+    type: button
+    bindings:
+      - {key: E}
+      - {gamepad_button: RightBumper}
+  - name: pause
+    type: button
+    bindings:
+      - {key: Escape}
+      - {key: P}
+      - {gamepad_button: Start}

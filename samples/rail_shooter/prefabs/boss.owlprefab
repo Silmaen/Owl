@@ -1,0 +1,72 @@
+Prefab: Boss
+Version: 1
+Entities:
+  - Entity: 7712002000000000001
+    Tag:
+      tag: Boss
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    HudMarker:
+      enabled: true
+      icon: nam:textures/hud/boss_target.png
+      color: [1, 0.45, 0.35, 0.9]
+      size: [120, 120]
+      offset: [0, 0, 0]
+      label: 'WARDEN'
+      labelColor: [1, 0.85, 0.85, 1]
+      fontSize: 16
+      showDistance: false
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+    MeshRenderer:
+      mesh: gid:aad8ed6c4a30be1d:models/boss.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+  - Entity: 7712002000000000002
+    Tag:
+      tag: BossTrail
+    Transform:
+      translation: [-4.2, 0.1, 8]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7712002000000000001
+    Trail:
+      enabled: true
+      lifetime: 0.3
+      minDistance: 0.15
+      maxPoints: 48
+      width: 1.2
+      color: [1, 0.45, 0.2, 0.8]
+      emissive: 5000
+      blend: Additive
+  - Entity: 7712002000000000003
+    Tag:
+      tag: BossTrail
+    Transform:
+      translation: [4.2, 0.1, 8]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7712002000000000001
+    Trail:
+      enabled: true
+      lifetime: 0.3
+      minDistance: 0.15
+      maxPoints: 48
+      width: 1.2
+      color: [1, 0.45, 0.2, 0.8]
+      emissive: 5000
+      blend: Additive

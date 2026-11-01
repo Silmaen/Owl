@@ -1,0 +1,34 @@
+GameSettings:
+  - key: resolution_width
+    type: int
+    value: 1280
+  - key: resolution_height
+    type: int
+    value: 720
+  - key: fullscreen
+    type: bool
+    value: false
+  - key: resizable
+    type: bool
+    value: true
+  - key: volume_master
+    type: float
+    value: 1.0
+  - key: volume_music
+    type: float
+    value: 0.8
+  - key: volume_sfx
+    type: float
+    value: 1.0
+  - key: ui_scale
+    type: float
+    value: 1.0
+  - key: rail_invert_y
+    type: bool
+    value: false
+  - key: rail_best
+    type: int
+    value: 0
+  - key: rail_best_medal
+    type: int
+    value: 0
