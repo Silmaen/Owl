@@ -55,3 +55,25 @@ TEST(Window, cursorModeReleasedWhenSceneStopsWantingCapture) {
 	EXPECT_EQ(nextCursorMode(CursorMode::Disabled, false, false, false), CursorMode::Normal);
 	EXPECT_EQ(nextCursorMode(CursorMode::Disabled, false, true, false), CursorMode::Normal);
 }
+
+TEST(Window, cursorCaptureResumesAfterTheSceneGaveItBack) {
+	CursorCapture capture;
+	EXPECT_EQ(capture.next(CursorMode::Disabled, false, false, false), CursorMode::Normal);
+	EXPECT_EQ(capture.next(CursorMode::Normal, false, false, false), CursorMode::Normal);
+	EXPECT_EQ(capture.next(CursorMode::Normal, true, false, false), CursorMode::Disabled);
+	EXPECT_FALSE(capture.resume);
+}
+
+TEST(Window, cursorCaptureWaitsForAClickAfterEscape) {
+	CursorCapture capture;
+	EXPECT_EQ(capture.next(CursorMode::Disabled, true, false, true), CursorMode::Normal);
+	EXPECT_EQ(capture.next(CursorMode::Normal, true, false, false), CursorMode::Normal);
+	EXPECT_EQ(capture.next(CursorMode::Normal, true, true, false), CursorMode::Disabled);
+}
+
+TEST(Window, cursorCaptureResetForgetsTheResume) {
+	CursorCapture capture;
+	EXPECT_EQ(capture.next(CursorMode::Disabled, false, false, false), CursorMode::Normal);
+	capture.reset();
+	EXPECT_EQ(capture.next(CursorMode::Normal, true, false, false), CursorMode::Normal);
+}

@@ -63,6 +63,42 @@ enum struct CursorMode : uint8_t {
 
 /**
  * @brief
+ *  Cursor capture of a running scene that remembers why the cursor was given back: a cursor the scene gave back by
+ *  itself (a dialogue pausing the walker) is captured again as soon as the scene wants it, one the user freed with
+ *  Escape waits for a click.
+ */
+struct CursorCapture {
+	/// Whether the scene gave the cursor back by itself and takes it again without a click.
+	bool resume = false;
+
+	/**
+	 * @brief
+	 *  Next cursor mode, see `nextCursorMode`; a pending resume counts as a capture request.
+	 * @param[in] iCurrent Current cursor mode.
+	 * @param[in] iWantsCapture Whether the active scene wants the cursor captured.
+	 * @param[in] iCaptureRequested Whether the user asked to capture (a click on the game).
+	 * @param[in] iReleaseRequested Whether the user asked to release (Escape).
+	 * @return The cursor mode to apply.
+	 */
+	[[nodiscard]] constexpr auto next(const CursorMode iCurrent, const bool iWantsCapture, const bool iCaptureRequested,
+									  const bool iReleaseRequested) -> CursorMode {
+		const auto mode = nextCursorMode(iCurrent, iWantsCapture, iCaptureRequested || resume, iReleaseRequested);
+		if (iReleaseRequested || mode == CursorMode::Disabled)
+			resume = false;
+		else if (iCurrent == CursorMode::Disabled)
+			resume = true;
+		return mode;
+	}
+
+	/**
+	 * @brief
+	 *  Forget a pending resume (play stopped).
+	 */
+	constexpr void reset() { resume = false; }
+};
+
+/**
+ * @brief
  *  Native windowing platform (display server) used by the window manager.
  */
 enum struct Platform : uint8_t {

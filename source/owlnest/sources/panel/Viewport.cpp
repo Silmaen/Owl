@@ -313,6 +313,8 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	m_framebuffer->clearAttachment(1, -1);
 
 	// Never leave the cursor captured outside Play (e.g. after Stop), or it would be stuck hidden in the editor.
+	if (mp_document->state() != SceneDocument::State::Play)
+		m_cursorCapture.reset();
 	if (mp_document->state() != SceneDocument::State::Play &&
 		app::Application::get().getWindow().getCursorMode() == window::CursorMode::Disabled) {
 		app::Application::get().getWindow().setCursorMode(window::CursorMode::Normal);
@@ -341,9 +343,9 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				auto& window = app::Application::get().getWindow();
 				const auto cursorMode = window.getCursorMode();
 				// A scene that stops wanting capture (level change, voxel player gone) gives the cursor back too.
-				const auto nextMode = window::nextCursorMode(cursorMode, activeScene->wantsCursorCapture(),
-															 m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left),
-															 input::Input::isKeyPressed(input::key::Escape));
+				const auto nextMode = m_cursorCapture.next(cursorMode, activeScene->wantsCursorCapture(),
+														   m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left),
+														   input::Input::isKeyPressed(input::key::Escape));
 				if (nextMode != cursorMode) {
 					window.setCursorMode(nextMode);
 					if (nextMode == window::CursorMode::Disabled)

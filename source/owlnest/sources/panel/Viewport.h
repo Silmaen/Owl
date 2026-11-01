@@ -24,6 +24,7 @@
 #include <scene/SceneCamera.h>
 #include <scene/component/Camera.h>
 #include <scene/nav/Pathfinder.h>
+#include <window/Window.h>
 
 #include <array>
 #include <cstddef>
@@ -946,6 +947,8 @@ private:
 	PlayBanner m_playBanner;
 	/// Keeps the clicks on the overlay controls away from the game.
 	PlayInputGate m_playGate;
+	/// Cursor capture of the played scene.
+	window::CursorCapture m_cursorCapture;
 	/// Screen rectangles of the overlay controls drawn last frame.
 	std::array<OverlayRect, 8> m_overlayRects{};
 	/// Number of rectangles in use.
