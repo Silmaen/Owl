@@ -50,7 +50,7 @@ flowchart LR
     SE -->|quotas, properties| SI
     SI -->|wraps| LE
     LE -->|registers| LB
-    LB -->|exposes| API["17 tables: transform, physics, input, sound, scene, time, log, entity, ui,<br/>gamestate, save, settings, trigger, door, pushwall, isometric, path"]
+    LB -->|exposes| API["25 tables: transform, physics, input, sound, scene, engine, time, log, entity, ui, gamestate, save,<br/>settings, trigger, door, pushwall, isometric, path, animator, socket, spline, datatable,<br/>dialogue, locale, sequence"]
 ```
 
 ## Adding a Script to an Entity
