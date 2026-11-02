@@ -96,6 +96,7 @@ TEST_F(SplineTest, RoundTripsThroughTheSceneFile) {
 	follower.mode = component::SplineFollower::Mode::PingPong;
 	follower.orient = false;
 	follower.enabled = false;
+	follower.stops = {{.point = 1, .seconds = 2.5f}, {.point = 2, .seconds = 0.5f}};
 
 	const auto text = SceneSerializer(scene).serializeToString();
 	auto loaded = mkShared<Scene>();
@@ -118,6 +119,7 @@ TEST_F(SplineTest, RoundTripsThroughTheSceneFile) {
 	EXPECT_EQ(readFollower.mode, component::SplineFollower::Mode::PingPong);
 	EXPECT_FALSE(readFollower.orient);
 	EXPECT_FALSE(readFollower.enabled);
+	EXPECT_EQ(readFollower.stops, follower.stops);
 }
 
 TEST_F(SplineTest, AFollowerRidesItsLaneAndLoops) {
@@ -165,6 +167,44 @@ TEST_F(SplineTest, OnceStopsAtTheEndAndPingPongTurnsRound) {
 	EXPECT_NEAR(translationOf(once).y(), 5.f, 1e-3f);
 	// 12 units: to the end and 2 back.
 	EXPECT_NEAR(translationOf(bounce).x(), 8.f, 1e-2f);
+	scene->onEndRuntime();
+}
+
+TEST_F(SplineTest, AFollowerWaitsAtItsStops) {
+	auto scene = mkShared<Scene>();
+	auto rail = scene->createEntity("Rail");
+	auto& spline = rail.addComponent<component::Spline>();
+	spline.curve.setInterpolation(math::SplineInterpolation::Linear);
+	spline.curve.setClosed(true);
+	// A square loop of 4 units a side, 16 units long: the points sit at 0, 4, 8 and 12.
+	spline.curve.setPoints({{.position = {0.f, 0.f, 0.f}},
+							{.position = {4.f, 0.f, 0.f}},
+							{.position = {4.f, 0.f, 4.f}},
+							{.position = {0.f, 0.f, 4.f}}});
+	auto cart = scene->createEntity("Cart");
+	auto& follower = cart.addComponent<component::SplineFollower>();
+	follower.spline = rail.getUUID();
+	follower.speed = 10.f;
+	follower.orient = false;
+	follower.stops = {{.point = 1, .seconds = 0.45f}, {.point = 0, .seconds = 0.3f}};
+	scene->onStartRuntime();
+	// The first frame places the cart; the second runs 1 unit of 4 towards point 1.
+	run(*scene, 2);
+	EXPECT_FALSE(follower.isWaiting());
+	run(*scene, 3);
+	EXPECT_TRUE(follower.isWaiting());
+	EXPECT_NEAR(follower.m_distance, 4.f, 1e-3f);
+	run(*scene, 4);
+	EXPECT_TRUE(follower.isWaiting());
+	EXPECT_NEAR(translationOf(cart).x(), 4.f, 1e-3f);
+	run(*scene, 1);
+	EXPECT_FALSE(follower.isWaiting());
+	run(*scene, 1);
+	EXPECT_NEAR(follower.m_distance, 5.f, 1e-3f);
+	// The lap ends on point 0, across the end of the loop.
+	run(*scene, 11);
+	EXPECT_TRUE(follower.isWaiting());
+	EXPECT_NEAR(std::fmod(follower.m_distance, 16.f), 0.f, 1e-3f);
 	scene->onEndRuntime();
 }
 

@@ -52,6 +52,14 @@ void readLanes(const core::YamlNode& iList, std::vector<Spline::Lane>& oLanes) {
 						  .height = item["height"].as<float>(0.f)});
 }
 
+void readStops(const core::YamlNode& iList, std::vector<SplineFollower::Stop>& oStops) {
+	oStops.clear();
+	if (!iList.isSequence())
+		return;
+	for (const auto item: iList)
+		oStops.push_back({.point = item["point"].as<uint32_t>(0), .seconds = item["seconds"].as<float>(1.f)});
+}
+
 }// namespace
 
 void Spline::serialize(const core::Serializer& iOut) const {
@@ -146,6 +154,13 @@ void SplineFollower::serialize(const core::Serializer& iOut) const {
 	out << YAML::Key << "startDistance" << YAML::Value << startDistance;
 	out << YAML::Key << "mode" << YAML::Value << std::string(magic_enum::enum_name(mode));
 	out << YAML::Key << "orient" << YAML::Value << orient;
+	if (!stops.empty()) {
+		out << YAML::Key << "stops" << YAML::Value << YAML::BeginSeq;
+		for (const auto& [point, seconds]: stops)
+			out << YAML::Flow << YAML::BeginMap << YAML::Key << "point" << YAML::Value << point << YAML::Key
+				<< "seconds" << YAML::Value << seconds << YAML::EndMap;
+		out << YAML::EndSeq;
+	}
 	out << YAML::EndMap;// SplineFollower
 }
 
@@ -169,7 +184,9 @@ void SplineFollower::deserialize(const core::Serializer& iNode) {
 	}
 	if (node["orient"])
 		orient = node["orient"].as<bool>();
+	readStops(node["stops"], stops);
 	m_started = false;
+	m_wait = 0.f;
 }
 
 }// namespace owl::scene::component

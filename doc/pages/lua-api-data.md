@@ -21,6 +21,7 @@ Splines sampled by distance, and the entities following them.
 | `spline.set_distance(entity_id: entity, distance: number)`                             | `done: boolean`                       | Put the entity's `SplineFollower` at a distance along its spline (placed at the next frame); false when it has none.                               |
 | `spline.get_speed(entity_id: entity)`                                                  | `speed: number`                       | Speed of the entity's `SplineFollower`, in units of the spline per second; nothing when it has none.                                               |
 | `spline.set_speed(entity_id: entity, speed: number)`                                   | `done: boolean`                       | Set the speed of the entity's `SplineFollower` (negative goes backwards); false when it has none.                                                  |
+| `spline.is_waiting(entity_id: entity)`                                                 | `waiting: boolean`                    | Whether the entity's `SplineFollower` waits at one of its stops; nothing when it has none.                                                         |
 | `spline.set_lane(entity_id: entity, lane: string)`                                     | `done: boolean`                       | Move the entity's `SplineFollower` to a lane of its spline (empty: the curve itself); false when it has none.                                      |
 
 ## `datatable`

@@ -920,7 +920,9 @@ YAML key: `SplineFollower`, system `owl.spline_followers` (`PrePhysics`). Moves 
 entity `spline` at `speed` units of the spline per second, in the lane `lane` plus `offset`; the entity is placed in
 world space (a parent is taken into account). At the end of an open spline it stops (`Once`), starts again (`Loop`) or
 turns round (`PingPong`); on a closed spline it loops, and `Once` stops after one lap. With `orient` the entity faces
-the curve: its -Z axis in 3D (a camera on a rail looks ahead), its +X axis on a 2D path (`up` along Z).
+the curve: its -Z axis in 3D (a camera on a rail looks ahead), its +X axis on a 2D path (`up` along Z). Each of its
+`stops` holds it on a control point of the spline for some seconds each time it reaches that point (a bus stop, a table
+to serve); a stop under the entity when Play starts waits for the next pass.
 
 | Field           | Type     | Default | Description                                                   |
 |-----------------|----------|---------|---------------------------------------------------------------|
@@ -932,9 +934,10 @@ the curve: its -Z axis in 3D (a camera on a rail looks ahead), its +X axis on a 
 | `startDistance` | `float`  | `0`     | Distance along the curve at the start of Play                 |
 | `mode`          | enum     | `Loop`  | `Once`, `Loop` or `PingPong`                                  |
 | `orient`        | `bool`   | `true`  | Face the direction of the curve                               |
+| `stops`         | list     | empty   | `{point, seconds}`: control point index from 0, time waited   |
 
 Lua reads and drives both: `spline.sample`, `spline.get_tangent`, `spline.get_nearest`, `spline.set_speed`,
-`spline.set_lane`, `spline.set_distance` ([reference](lua-api-data.md)).
+`spline.set_lane`, `spline.set_distance`, `spline.is_waiting` ([reference](lua-api-data.md)).
 
 #### WalkArea, WalkAgent and WalkBehind {#walk-area-components}
 

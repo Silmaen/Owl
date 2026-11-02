@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Engine Demo hub: day and night with an ambient tint and 2D lamp and window lights, and Kenney Tiny Farm and Tiny Dungeon art.
 - Engine Demo hub: the sound yard folded into a north-west cave with a reverb zone, torch, drips and the adaptive hub music; its scene is gone.
 - Engine Demo tavern: the character yard folded in, with a barkeeper holding a tankard on a socket, a server walking a spline, two seated patrons and four dialogues; its scene is gone.
+- `SplineFollower` stops: the entity waits some seconds on chosen control points of its spline, edited in the inspector, read by Lua `spline.is_waiting`.
+- Engine Demo tavern: the server pauses at the patrons' table and by the bar, idle while she waits (`tavern_server.lua`).
 - Engine Demo main menu: a live diorama of a 3D tavern under a day and night sky with the 2D village in front.
 - Engine Demo: a scenario for every scene, checked by `GameExportCoverage.EveryDemoSceneHasAScenario`.
 - `ShipController` component (`owl.ships`): assisted inertial spaceflight, mouse pitch and yaw, roll, thrust, strafe and a flight assist toggle, moving a `WorldPosition` in double, with its Owl Nest inspector and `entity.*_ship_*` Lua bindings.

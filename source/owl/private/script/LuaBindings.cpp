@@ -2862,6 +2862,14 @@ auto luaSplineSetDistance(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaSplineIsWaiting(lua_State* iState) -> int {
+	const auto* follower = followerOf(iState);
+	if (follower == nullptr)
+		return 0;
+	lua_pushboolean(iState, follower->isWaiting() ? 1 : 0);
+	return 1;
+}
+
 auto luaSplineGetSpeed(lua_State* iState) -> int {
 	const auto* follower = followerOf(iState);
 	if (follower == nullptr)
@@ -4026,6 +4034,9 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "spline", .name = "set_speed", .function = guarded<luaSplineSetSpeed>,
 		 .description = "Set the speed of the entity's `SplineFollower` (negative goes backwards); false when it has none.",
 		 .params = {entityId, {"speed", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "spline", .name = "is_waiting", .function = guarded<luaSplineIsWaiting>,
+		 .description = "Whether the entity's `SplineFollower` waits at one of its stops; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"waiting", Boolean}}},
 		{.table = "spline", .name = "set_lane", .function = guarded<luaSplineSetLane>,
 		 .description = "Move the entity's `SplineFollower` to a lane of its spline (empty: the curve itself); false when it has none.",
 		 .params = {entityId, {"lane", String}}, .returns = {{"done", Boolean}}},

@@ -1498,6 +1498,11 @@ Entities:
       startDistance: 0
       mode: Loop
       orient: true
+      stops:
+        - {point: 4, seconds: 3}
+        - {point: 0, seconds: 2.5}
+    LuaScript:
+      scriptPath: gid:8468d8979b59a4f7:scripts/tavern/tavern_server.lua
     Visibility:
       gameVisible: true
   - Entity: 3900000000000002011
@@ -1521,6 +1526,7 @@ Entities:
       parameters: []
       states:
         - {name: walk, clip: walk, speed: 1, loop: true}
+        - {name: idle, clip: idle, speed: 1, loop: true}
       transitions: []
     Trigger: {Type: Interaction, CallbackName: on_talk}
     LuaScript:
