@@ -14,6 +14,7 @@
 #include "external/imgui_text_edit.h"
 
 #include <app/Application.h>
+#include <data/assets/AssetRegistry.h>
 #include <gui/UiLayer.h>
 #include <script/ScriptDebugger.h>
 
@@ -137,7 +138,12 @@ void CodeEditorDocument::onImGuiRender() {
 			if (windowFocused && ImGui::IsKeyPressed(ImGuiKey_F9, false))
 				toggleBreakpoint(static_cast<int>(mp_editor->GetMainCursorPosition().line) + 1);
 		}
+		const ImVec2 editorMin = ImGui::GetCursorScreenPos();
 		mp_editor->Render("##text_editor", ImVec2{editorW, bodyH});
+		if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) &&
+			ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
+			ImGui::IsMouseHoveringRect(editorMin, ImVec2{editorMin.x + editorW, editorMin.y + bodyH}))
+			openReferenceUnderCursor();
 		// Accept Content Browser drag-drops on the editor area (same dispatch as the Viewport).
 		if (mp_editorLayer != nullptr && ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
@@ -170,6 +176,21 @@ void CodeEditorDocument::onImGuiRender() {
 	ImGui::End();
 	if (codeFont != nullptr)
 		ImGui::PopFont();
+}
+
+void CodeEditorDocument::openReferenceUnderCursor() const {
+	if (!mp_editor || mp_editorLayer == nullptr)
+		return;
+	const auto pos = mp_editor->GetMainCursorPosition();
+	const auto guid = codeEditor::findAssetGuidAt(mp_editor->GetLineText(pos.line), pos.index);
+	if (!guid)
+		return;
+	const auto entry = app::Application::get().getAssetRegistry().find(*guid);
+	if (!entry || entry->root.empty()) {
+		OWL_CORE_WARN("CodeEditor: No asset of GUID {} in the asset directories.", data::assets::formatGuid(*guid))
+		return;
+	}
+	mp_editorLayer->requestDeferredOpen(entry->root / entry->path);
 }
 
 void CodeEditorDocument::toggleBreakpoint(const int iLine) const {

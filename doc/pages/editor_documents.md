@@ -41,8 +41,11 @@ scene, its own Play state. The ribbon's last tab holds the commands of the activ
 ## Code and text
 
 Text files open in a code editor with syntax colours for Lua, C, C++, Python, YAML, JSON, Markdown, XML / SVG and
-Slang. The footer gives the language, the cursor line and column and the insert mode. A Slang shader is checked
-when the engine loads it: its errors show in the Log.
+Slang (`.slang`, `.slangh`, `.hlsl`; `.glsl` opens with the C colours). The footer gives the language, the cursor line
+and column and the insert mode. A Slang shader is checked when the engine loads it: its errors show in the Log.
+
+A double click on an asset reference opens the asset it names: a `gid:<GUID>:<path>` reference of a scene, prefab or
+material opened as text, or the bare GUID of an `.owlmeta`.
 
 Markdown and SVG documents split into the source and a live preview, with a draggable splitter; **Text > Preview**
 hides the preview. The Markdown preview is the renderer of this help: headings, tables, lists, code, images and

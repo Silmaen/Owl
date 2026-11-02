@@ -52,6 +52,9 @@ TEST(AssetKind, ClassifiesImagesAndShaders) {
 	for (const auto* name: {"a.png", "b.jpg", "c.jpeg", "textures/d.bmp", "e.tga"})
 		EXPECT_EQ(classifyAsset(name), AssetKind::Image) << name;
 	EXPECT_EQ(classifyAsset("shaders/text.slang"), AssetKind::Code);
+	EXPECT_EQ(classifyAsset("shaders/common/pbr.slangh"), AssetKind::Code);
+	EXPECT_EQ(classifyAsset("shaders/blur.hlsl"), AssetKind::Code);
+	EXPECT_EQ(classifyAsset("shaders/blur.glsl"), AssetKind::Code);
 	EXPECT_EQ(classifyAsset("A.PNG"), AssetKind::Unsupported);
 }
 

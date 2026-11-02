@@ -8,7 +8,10 @@
 
 #pragma once
 
+#include <data/assets/AssetReference.h>
+
 #include <cstddef>
+#include <optional>
 #include <string_view>
 
 namespace owl::nest::codeEditor {
@@ -24,5 +27,16 @@ namespace owl::nest::codeEditor {
  * @return The zero-based visual column.
  */
 [[nodiscard]] auto visualColumn(std::string_view iLine, size_t iGlyphIndex, size_t iTabSize) -> size_t;
+
+/**
+ * @brief
+ *  GUID of the asset reference under a glyph of a line: a whole `gid:<16 hex digits>:<path hint>` reference, or
+ *  16 hex digits alone (the `Guid:` of an `.owlmeta`).
+ * @param[in] iLine The UTF-8 text of the line.
+ * @param[in] iGlyphIndex Zero-based glyph index in the line.
+ * @return The GUID, or nullopt when no reference is under the glyph.
+ */
+[[nodiscard]] auto findAssetGuidAt(std::string_view iLine, size_t iGlyphIndex)
+		-> std::optional<data::assets::AssetGuid>;
 
 }// namespace owl::nest::codeEditor

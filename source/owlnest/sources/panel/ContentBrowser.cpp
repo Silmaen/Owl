@@ -88,6 +88,8 @@ auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> 
 																	{".hpp", {rgb(0x5b8fd6), "Header"}},
 																	{".glsl", {rgb(0xa274e8), "Shader"}},
 																	{".slang", {rgb(0xa274e8), "Shader"}},
+																	{".slangh", {rgb(0xa274e8), "Shader"}},
+																	{".hlsl", {rgb(0xa274e8), "Shader"}},
 																	{".ttf", {rgb(0x9a7ae0), "Font"}},
 																	{".otf", {rgb(0x9a7ae0), "Font"}},
 																	{".owlanim", {rgb(0xef6c8f), "Animation"}},

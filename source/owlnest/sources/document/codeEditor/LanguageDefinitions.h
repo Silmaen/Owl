@@ -28,7 +28,7 @@ enum struct Language : uint8_t {
 	Json,
 	Markdown,
 	Xml,
-	Slang,///< Slang shaders (`.slang`): HLSL-like keywords, types, semantics, comments and preprocessor.
+	Slang,///< Slang shaders (`.slang`, `.slangh`) and HLSL: HLSL-like keywords, types, semantics, comments and preprocessor.
 	Bash,///< POSIX shell / bash scripts. Custom highlighter (no built-in in `imgui_color_text_edit`).
 };
 
