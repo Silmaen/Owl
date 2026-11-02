@@ -4249,6 +4249,7 @@ auto generateLuaReference() -> std::vector<LuaReferenceFile> {
 	std::vector<LuaReferenceFile> files;
 	const std::string index =
 			"# Lua API reference {#page-lua-api}\n\n[TOC]\n\n"
+			"**Level:** Confirmed. **Read first:** [Scripting Games in Lua](scripting.md).\n\n"
 			"Every table and function a script can call, one page per theme. These pages are generated from "
 			"the binding registry (`getLuaBindings()` in `source/owl/private/script/LuaBindings.cpp`): do "
 			"not edit them by hand. When a binding changes, `owl_script_tests_unit_test` fails and writes "

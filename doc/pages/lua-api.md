@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [Scripting Games in Lua](scripting.md).
+
 Every table and function a script can call, one page per theme. These pages are generated from the binding registry (`getLuaBindings()` in `source/owl/private/script/LuaBindings.cpp`): do not edit them by hand. When a binding changes, `owl_script_tests_unit_test` fails and writes the new pages to `lua-api/` in its working directory (the failure names the folder): copy them over `doc/pages/`. See [Lua scripting](scripting.md) for the callbacks, the properties and the sandbox.
 
 An `entity` is the integer UUID of an entity (`entity_id` in its own script, `scene.find_entity` for the others); `[name: type]` is optional.

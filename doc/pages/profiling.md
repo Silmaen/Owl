@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Architecture Overview](architecture.md).
+
 How to profile Owl Engine: the `OWL_PROFILE_*` macros, the Tracy backend behind them, GPU zones, allocations and logs.
 
 ## The macros are the only API

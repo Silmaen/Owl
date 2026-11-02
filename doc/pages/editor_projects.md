@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Beginner. **Read first:** [The Owl Nest window](editor.md).
+
 A project is a folder holding an `owl_project.yml` and its assets: scenes, scripts, textures, sounds, HUDs. Owl Nest
 opens one project at a time and exports it as a game folder players can run without the editor.
 

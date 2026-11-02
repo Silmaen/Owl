@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Building from Source](building.md).
+
 This page describes the high-level architecture of the Owl Engine.
 
 ## Engine Modules

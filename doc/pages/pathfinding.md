@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [Scene and Components](scene.md).
+
 Vehicles of a Transport Tycoon-like game follow a graph of tiles (roads, tracks), not a navigation mesh. A `Tilemap`
 carries `navigation` options that turn one of its layers into a graph, the roads coming from the tileset; the engine searches shortest paths over it, spreads
 the long queries over frames, and updates the graph chunk by chunk when a tile changes. The code is `scene::nav`

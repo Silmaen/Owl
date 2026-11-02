@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [The Owl Nest window](editor.md).
+
 A **tileset** (`.owltileset`) cuts a texture into tiles; a **tilemap** (`.owltilemap`) is a grid of layers painted
 with the tiles of one tileset. A scene shows a tilemap through a Tilemap component; **Open in Tilemap Editor** in the
 Scene Hierarchy menu opens its file.

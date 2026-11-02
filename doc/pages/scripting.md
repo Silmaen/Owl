@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Beginner. **Read first:** [Getting Started](getting_started.md).
+
 This page describes the Owl Engine Lua scripting system: how to attach scripts to entities,
 write Lua callbacks, use the engine API from Lua, and manage script properties. Graphs edited in Owl Nest compile to
 the same Lua: see [Visual scripts](visual-scripts.md).
@@ -48,13 +50,14 @@ flowchart LR
     SE -->|quotas, properties| SI
     SI -->|wraps| LE
     LE -->|registers| LB
-    LB -->|exposes| API["17 tables: transform, physics, input, sound, scene, time, log, entity, ui,<br/>gamestate, save, settings, trigger, door, pushwall, isometric, path"]
+    LB -->|exposes| API["25 tables: transform, physics, input, sound, scene, engine, time, log, entity, ui, gamestate, save,<br/>settings, trigger, door, pushwall, isometric, path, animator, socket, spline, datatable,<br/>dialogue, locale, sequence"]
 ```
 
 ## Adding a Script to an Entity
 
-1. Create a `.lua` file in your project's asset directory (e.g. `scripts/player.lua`)
-2. In Owl Nest, select an entity and click **Add Component > Lua Script**
+1. In the Content Browser, right-click a folder and choose **New Lua Script** (a starter with one property and the
+   lifecycle hooks, opened in the code editor), or create a `.lua` file in the project (e.g. `scripts/player.lua`)
+2. In Owl Nest, select an entity and click **Add > Lua Script**
 3. Drop the script from the Content Browser on the **Script** field (it stores the relative path, e.g.
    `scripts/player.lua`); **Open** shows it in the code editor
 4. The exposed properties appear under **Properties**; they are read again when the file changes, values already set

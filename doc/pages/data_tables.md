@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [Scene and Components](scene.md).
+
 A data table holds the typed records a game reads by key: the goods of a market, the items of a shop, the waves of a
 level, the stats of the enemies. It is a `.owltable` asset, edited in a grid in Owl Nest and read from Lua. Plan and
 decisions: [Large worlds](design/large-worlds.md#large-worlds-data-tables).

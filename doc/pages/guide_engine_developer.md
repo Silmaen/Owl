@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Building from Source](building.md).
+
 The pages for people who use or extend the engine in C++: the module layout, the renderers, the subsystems the
 scripts sit on. Build the engine first ([Building from Source](building.md)); the API reference is the generated
 Doxygen documentation of `source/owl/public/`.

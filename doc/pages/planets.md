@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Scene and Components](scene.md).
+
 A **planet** is a sphere of terrain with an atmosphere, drawn from the ground to orbit by a `RendererPlanet` layer of the
 render stack. Design notes and what is planned: [Large worlds](design/large-worlds.md).
 

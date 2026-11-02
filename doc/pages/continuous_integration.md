@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Contributing](contributing.md).
+
 This page documents the Owl Engine Continuous Integration pipeline: how TeamCity is
 configured, how builds get triggered, how the Kotlin DSL is structured, and
 how to extend or validate it. For local build instructions see

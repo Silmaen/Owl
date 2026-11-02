@@ -1,3 +1,5 @@
+# Reading levels: beginner (Getting started, the tutorial), confirmed (editor, making games, scripting), expert
+# (engine, contributing); each page carries a `**Level:**` line.
 # The pages of the Owl Nest help panel and of the Doxygen page tree, in reading order: the groups in sidebar order,
 # the pages in their order inside each group, paths from the repository root.
 # - cmake/HelpAssets.cmake bundles exactly these pages (every doc/pages/*.md must be listed) into index.yml;
@@ -9,6 +11,7 @@ Groups:
     pages:
       - doc/pages/nest_help.md
       - doc/pages/getting_started.md
+      - doc/pages/tutorial-first-game.md
       - README.md
   - title: The editor
     pages:

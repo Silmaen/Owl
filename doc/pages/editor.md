@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Beginner. **Read first:** [Getting Started](getting_started.md).
+
 Owl Nest opens on one window: the ribbon at the top, the open documents in the centre, the scene panels on the right,
 the asset and log panels at the bottom and a status bar. Every panel docks, tabs and floats; the layout is saved
 between runs.

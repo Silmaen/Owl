@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [Scene and Components](scene.md).
+
 A dialogue is a branching conversation: who speaks, what they say, the answers the player can pick, and the tests and
 actions a script runs on the way. It is a `.owldlg` asset, edited as a graph in Owl Nest and played from Lua; the game
 draws it with its own HUD. Plan: [Gameplay systems](design/gameplay-systems.md).

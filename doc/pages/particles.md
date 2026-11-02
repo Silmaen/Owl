@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [Scene and Components](scene.md).
+
 Particle emitters, ribbon trails, emissive effects and lens flares, in 2D and in 3D.
 
 ## Set up the layer

@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Beginner.
+
 Owl Nest is the editor of Owl Engine: you build a game in it, scene by scene, and play it in place. Scenes, tilemaps,
 HUDs, materials, animations and Lua scripts open as tabs; every change can be undone; **Play** runs the scene you are
 looking at, and **Pack Game** turns the project into a game folder you can hand to players.
@@ -20,7 +22,8 @@ looking at, and **Pack Game** turns the project into a game folder you can hand 
    back untouched.
 5. **Ship it.** **Home > Project > Pack Game** exports the project, see [Projects and export](editor_projects.md).
 
-A longer walk through the same steps: [Getting started](getting_started.md).
+A longer walk through the same steps: [Getting started](getting_started.md); a first game of your own:
+[Tutorial: Create a New Game](tutorial-first-game.md).
 
 ## Where things are
 

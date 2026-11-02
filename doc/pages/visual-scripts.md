@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Beginner. **Read first:** [Scripting Games in Lua](scripting.md).
+
 A visual script (`.owlvs`) is an event graph edited in Owl Nest. Owl compiles it to Lua when it loads. It goes
 wherever a `.lua` script goes: on a `LuaScript` component, as the scene script, in the pack of an exported game. Its
 variables are script properties, shown in the inspector and saved with the scene. The Lua side is described in

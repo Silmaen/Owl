@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Beginner. **Read first:** [The Owl Nest window](editor.md).
+
 **Play** runs the active scene inside the editor: scripts, physics, sound, HUD and scene transitions, as the exported
 game does. It plays a copy: **Stop** gives back the scene exactly as it was before Play.
 

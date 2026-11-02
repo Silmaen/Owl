@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [Scene and Components](scene.md).
+
 This page describes the Owl Engine physics system: rigid bodies, the scene lifecycle and gameplay code.
 
 ## Overview

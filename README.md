@@ -16,17 +16,21 @@ stacked under one HUD, in the editor and in game.**
 
 ## Where to start
 
-| You want to                     | Read                                                             |
-|---------------------------------|------------------------------------------------------------------|
-| Run the editor and open a game  | [Getting started](doc/pages/getting_started.md)                  |
-| Make a game in Owl Nest         | [Owl Nest help](doc/pages/nest_help.md)                          |
-| Script gameplay                 | [Scripting games in Lua](doc/pages/scripting.md)                 |
-| Understand or extend the engine | [Engine for C++ developers](doc/pages/guide_engine_developer.md) |
-| Build Owl from source           | [Building from source](doc/pages/building.md)                    |
-| Contribute a change             | [Contributing](doc/pages/contributing.md)                        |
+Three reading levels; every page states its level under its title.
 
-Every page, grouped by audience: [game makers](doc/pages/guide_game_maker.md),
-[C++ engine developers](doc/pages/guide_engine_developer.md) and [contributors](doc/pages/guide_contributor.md).
+| Level     | You want to                        | Read                                                             |
+|-----------|------------------------------------|------------------------------------------------------------------|
+| Beginner  | Run the editor and open a game     | [Getting started](doc/pages/getting_started.md)                  |
+| Beginner  | Make your first game, step by step | [Tutorial: create a new game](doc/pages/tutorial-first-game.md)  |
+| Beginner  | Find your way in Owl Nest          | [Owl Nest help](doc/pages/nest_help.md)                          |
+| Confirmed | Build a game: scenes, systems      | [Making games with Owl](doc/pages/guide_game_maker.md)           |
+| Confirmed | Script gameplay                    | [Scripting games in Lua](doc/pages/scripting.md)                 |
+| Expert    | Understand or extend the engine    | [Engine for C++ developers](doc/pages/guide_engine_developer.md) |
+| Expert    | Build Owl from source              | [Building from source](doc/pages/building.md)                    |
+| Expert    | Contribute a change                | [Contributing](doc/pages/contributing.md)                        |
+
+Beginner: Owl Nest only, a few lines of Lua at most. Confirmed: the systems, the components and the Lua API. Expert: C++, the renderers,
+the build and the plans ([contributors](doc/pages/guide_contributor.md)).
 What is planned and what shipped: [Roadmap](doc/pages/roadmap.md) and [Changelog](doc/pages/changelog.md)
 (one-glance versions: `ROADMAP.md`, `CHANGELOG.md`).
 

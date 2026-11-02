@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Confirmed. **Read first:** [The Owl Nest window](editor.md).
+
 A HUD is the screen layer of a game: scores, health bars, menus, dialogs. It is a tree of widgets under a
 **Canvas**, kept in an `.owlhud` file shared by several scenes, or inside a scene. The HUD editor lays it out in
 reference pixels, as the player will see it.

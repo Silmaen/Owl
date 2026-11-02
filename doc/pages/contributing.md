@@ -2,6 +2,8 @@
 
 [TOC]
 
+**Level:** Expert. **Read first:** [Building from Source](building.md).
+
 This page is the contributor guide: setup, conventions and the checks a change must pass. The root
 `CONTRIBUTING.md` only points here.
 

@@ -18,6 +18,7 @@
 #include <filesystem>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -29,6 +30,13 @@ namespace owl::nest::panel {
  */
 class ContentBrowser {
 public:
+	/**
+	 * @brief
+	 *  Text of the Lua script **New Lua Script** creates: one property and the lifecycle hooks.
+	 * @return The script text.
+	 */
+	[[nodiscard]] static auto starterLuaScript() -> std::string_view;
+
 	ContentBrowser(const ContentBrowser&) = delete;
 
 	ContentBrowser(ContentBrowser&&) = delete;
@@ -532,6 +540,12 @@ private:
 	 *  Create a sequence in the current folder (`New Sequence.owlseq`, numbered when taken) and open it.
 	 */
 	void createSequence();
+
+	/**
+	 * @brief
+	 *  Create a starter Lua script in the current folder and open it in the code editor.
+	 */
+	void createLuaScript();
 
 	/**
 	 * @brief
