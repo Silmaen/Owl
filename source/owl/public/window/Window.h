@@ -41,24 +41,29 @@ enum struct Type : uint8_t {
  */
 enum struct CursorMode : uint8_t {
 	Normal,///< Standard visible, free cursor.
-	Disabled///< Cursor hidden and locked to the window for mouse-look (motion reported as raw/virtual deltas).
+	Disabled,///< Cursor hidden and locked to the window for mouse-look (motion reported as raw/virtual deltas).
+	Hidden///< Cursor hidden over the window but free: the game draws its own (a held object, an action icon).
 };
 
 /**
  * @brief
- *  Next cursor mode of a scene that may capture the cursor: a captured cursor is given back as soon as the scene no
- *  longer wants capture (scene change, system stopped) or the user asks for it; a free one is captured only on request.
+ *  Next cursor mode of a scene that may capture or hide the cursor: a captured cursor is given back as soon as the
+ *  scene no longer wants capture (scene change, system stopped) or the user asks for it; a free one is captured only on
+ *  request. A cursor that is not captured is hidden while the scene draws its own.
  * @param[in] iCurrent Current cursor mode.
  * @param[in] iWantsCapture Whether the active scene wants the cursor captured.
  * @param[in] iCaptureRequested Whether the user asked to capture (a click on the game).
  * @param[in] iReleaseRequested Whether the user asked to release (Escape).
+ * @param[in] iWantsHidden Whether the active scene draws its own cursor (`Scene::wantsCursorHidden`).
  * @return The cursor mode to apply.
  */
 [[nodiscard]] constexpr auto nextCursorMode(const CursorMode iCurrent, const bool iWantsCapture,
-											const bool iCaptureRequested, const bool iReleaseRequested) -> CursorMode {
-	if (iCurrent == CursorMode::Disabled)
-		return iWantsCapture && !iReleaseRequested ? CursorMode::Disabled : CursorMode::Normal;
-	return iWantsCapture && iCaptureRequested ? CursorMode::Disabled : CursorMode::Normal;
+											const bool iCaptureRequested, const bool iReleaseRequested,
+											const bool iWantsHidden = false) -> CursorMode {
+	const bool captured = iCurrent == CursorMode::Disabled ? !iReleaseRequested : iCaptureRequested;
+	if (iWantsCapture && captured)
+		return CursorMode::Disabled;
+	return iWantsHidden ? CursorMode::Hidden : CursorMode::Normal;
 }
 
 /**
@@ -78,11 +83,13 @@ struct CursorCapture {
 	 * @param[in] iWantsCapture Whether the active scene wants the cursor captured.
 	 * @param[in] iCaptureRequested Whether the user asked to capture (a click on the game).
 	 * @param[in] iReleaseRequested Whether the user asked to release (Escape).
+	 * @param[in] iWantsHidden Whether the active scene draws its own cursor (`Scene::wantsCursorHidden`).
 	 * @return The cursor mode to apply.
 	 */
 	[[nodiscard]] constexpr auto next(const CursorMode iCurrent, const bool iWantsCapture, const bool iCaptureRequested,
-									  const bool iReleaseRequested) -> CursorMode {
-		const auto mode = nextCursorMode(iCurrent, iWantsCapture, iCaptureRequested || resume, iReleaseRequested);
+									  const bool iReleaseRequested, const bool iWantsHidden = false) -> CursorMode {
+		const auto mode =
+				nextCursorMode(iCurrent, iWantsCapture, iCaptureRequested || resume, iReleaseRequested, iWantsHidden);
 		if (iReleaseRequested || mode == CursorMode::Disabled)
 			resume = false;
 		else if (iCurrent == CursorMode::Disabled)

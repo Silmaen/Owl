@@ -1,0 +1,470 @@
+Scene: bridge
+FormatVersion: 7
+Hud: gid:378e3ea685c88ec3:huds/play.owlhud
+SceneScript:
+  scriptPath: gid:b09dddad22997020:scripts/rooms/bridge.lua
+EnabledRenderers:
+- {Name: actors, Enabled: true}
+- {Name: world, Enabled: true}
+- {Name: cursor, Enabled: true}
+Entities:
+  - Entity: 9120000000000000001
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 20]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.1
+        perspectiveFar: 200
+        orthographicSize: 9
+        orthographicNear: 0.1
+        orthographicFar: 100
+        toneMapping: None
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 9120000000000000002
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.6, 0.45, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light: {type: Directional, enabled: true, color: [1, 0.95, 0.88], intensity: 100000, castShadows: false}
+  - Entity: 9120000000000000003
+    Tag:
+      tag: Backdrop
+    Transform:
+      translation: [0, 0, -40]
+      rotation: [0, 0, 0]
+      scale: [16, 9, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: gid:0ca8650b11b8b60d:textures/rooms/bridge.png
+      lit: false
+    RendererTag:
+      Name: world
+  - Entity: 9120000000000000004
+    Tag:
+      tag: Floor
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    WalkArea:
+      polygons:
+        - outline: [[-7.9, -2.9], [-3, -2.9], [-2.8, -1.7], [3.8, -1.7], [3.8, -2.35], [-1.6, -2.35], [-1.4, -2.9], [0.25, -2.9], [0.25, -4.4], [-7.9, -4.4]]
+          holes: []
+      depthScale: true
+      nearY: -4.4
+      nearScale: 1
+      farY: -1.7
+      farScale: 0.76
+      depthSort: true
+      depthPerUnit: 3
+  - Entity: 9120000000000000005
+    Tag:
+      tag: Mask_parapet
+    Transform:
+      translation: [0.525, -2.625, 0]
+      rotation: [0, 0, 0]
+      scale: [7.25, 1.05, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: gid:84a5a1bc40ade93e:textures/rooms/bridge_parapet.png
+      lit: false
+    WalkBehind:
+      area: 9120000000000000004
+      baseline: -2.4
+    RendererTag:
+      Name: world
+  - Entity: 9120000000000000006
+    Tag:
+      tag: Prop_moonstone
+    Transform:
+      translation: [0.825, -2.025, -30]
+      rotation: [0, 0, 0]
+      scale: [0.85, 0.65, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: gid:7d5891cdbc7299ca:textures/rooms/bridge_moonstone.png
+      lit: false
+    RendererTag:
+      Name: world
+  - Entity: 9120000000000000007
+    Tag:
+      tag: Hero
+    Transform:
+      translation: [-7, -3.6, 0]
+      rotation: [0, 0.6, 0]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:20cc1b9fee86132d:meshes/hero.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+    Animator:
+      playing: true
+      speed: 1
+      entry: idle
+      parameters:
+        - {name: speed, type: Float, value: 0}
+        - {name: act, type: Trigger, value: 0}
+        - {name: talk, type: Trigger, value: 0}
+      states:
+        - {name: idle, clip: 'CharacterArmature|Idle', speed: 1, loop: true}
+        - {name: walk, clip: 'CharacterArmature|Walk', speed: 1.2, loop: true}
+        - {name: act, clip: 'CharacterArmature|Interact', speed: 1, loop: false}
+        - {name: talk, clip: 'CharacterArmature|Wave', speed: 1, loop: false}
+      transitions:
+        - {from: idle, to: walk, duration: 0.2, exitTime: -1, conditions: [{parameter: speed, op: Greater, threshold: 0.15}]}
+        - {from: walk, to: idle, duration: 0.2, exitTime: -1, conditions: [{parameter: speed, op: Less, threshold: 0.15}]}
+        - {from: '*', to: act, duration: 0.15, exitTime: -1, conditions: [{parameter: act, op: IsTrue, threshold: 0}]}
+        - {from: act, to: idle, duration: 0.25, exitTime: 1, conditions: []}
+        - {from: '*', to: talk, duration: 0.15, exitTime: -1, conditions: [{parameter: talk, op: IsTrue, threshold: 0}]}
+        - {from: talk, to: idle, duration: 0.25, exitTime: 1, conditions: []}
+    WalkAgent:
+      area: 9120000000000000004
+      speed: 2.4
+      scaleSpeed: true
+      facing: TurnY
+      speedParameter: speed
+    RendererTag:
+      Name: actors
+  - Entity: 9120000000000000008
+    Tag:
+      tag: Entry_glade
+    Transform:
+      translation: [-7, -3.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9120000000000000009
+    Tag:
+      tag: Troll
+    Transform:
+      translation: [0.8, -2.05, 0]
+      rotation: [0, -1, 0]
+      scale: [1.6, 1.6, 1.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:144a4966bd2f8430:meshes/troll.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+    Animator:
+      playing: true
+      speed: 1
+      entry: idle
+      parameters:
+        - {name: speed, type: Float, value: 0}
+        - {name: talk, type: Trigger, value: 0}
+      states:
+        - {name: idle, clip: 'EnemyArmature|EnemyArmature|EnemyArmature|Idle', speed: 1, loop: true}
+        - {name: walk, clip: 'EnemyArmature|EnemyArmature|EnemyArmature|Walk', speed: 1.2, loop: true}
+        - {name: talk, clip: 'EnemyArmature|EnemyArmature|EnemyArmature|Jump', speed: 1, loop: false}
+      transitions:
+        - {from: idle, to: walk, duration: 0.2, exitTime: -1, conditions: [{parameter: speed, op: Greater, threshold: 0.15}]}
+        - {from: walk, to: idle, duration: 0.2, exitTime: -1, conditions: [{parameter: speed, op: Less, threshold: 0.15}]}
+        - {from: '*', to: talk, duration: 0.15, exitTime: -1, conditions: [{parameter: talk, op: IsTrue, threshold: 0}]}
+        - {from: talk, to: idle, duration: 0.25, exitTime: 1, conditions: []}
+    WalkAgent:
+      area: 9120000000000000004
+      speed: 1.2
+      scaleSpeed: true
+      facing: TurnY
+      speedParameter: speed
+    RendererTag:
+      Name: actors
+  - Entity: 9120000000000000010
+    Tag:
+      tag: TrollAside
+    Transform:
+      translation: [3.3, -2, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9120000000000000011
+    Tag:
+      tag: Hotspot_moonstone
+    Transform:
+      translation: [0.825, -2.025, 0]
+      rotation: [0, 0, 0]
+      scale: [0.85, 0.65, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9120000000000000012
+    Tag:
+      tag: Stand_moonstone
+    Transform:
+      translation: [-1.0882, -0.1154, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9120000000000000011
+  - Entity: 9120000000000000013
+    Tag:
+      tag: Hotspot_troll
+    Transform:
+      translation: [0.925, -0.925, 0]
+      rotation: [0, 0, 0]
+      scale: [1.45, 2.65, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9120000000000000014
+    Tag:
+      tag: Stand_troll
+    Transform:
+      translation: [-0.9828, -0.4434, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9120000000000000013
+  - Entity: 9120000000000000015
+    Tag:
+      tag: Hotspot_sign
+    Transform:
+      translation: [-5.375, -1.775, 0]
+      rotation: [0, 0, 0]
+      scale: [1.45, 2.15, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9120000000000000016
+    Tag:
+      tag: Stand_sign
+    Transform:
+      translation: [0.1897, -0.7093, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9120000000000000015
+  - Entity: 9120000000000000017
+    Tag:
+      tag: Hotspot_garden
+    Transform:
+      translation: [6.025, -0.725, 0]
+      rotation: [0, 0, 0]
+      scale: [4.05, 1.85, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9120000000000000018
+    Tag:
+      tag: Stand_garden
+    Transform:
+      translation: [-0.6728, -0.6892, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9120000000000000017
+  - Entity: 9120000000000000019
+    Tag:
+      tag: Hotspot_stream
+    Transform:
+      translation: [4.175, -3.675, 0]
+      rotation: [0, 0, 0]
+      scale: [7.75, 1.75, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9120000000000000020
+    Tag:
+      tag: Stand_stream
+    Transform:
+      translation: [-0.6032, -0.0714, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9120000000000000019
+  - Entity: 9120000000000000021
+    Tag:
+      tag: Hotspot_to_glade
+    Transform:
+      translation: [-7.325, -3.425, 0]
+      rotation: [0, 0, 0]
+      scale: [1.35, 2.05, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9120000000000000022
+    Tag:
+      tag: Stand_to_glade
+    Transform:
+      translation: [-0.1296, -0.0854, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9120000000000000021
+  - Entity: 9120000000000000023
+    Tag:
+      tag: Cursor
+    Transform:
+      translation: [0, 0, 0.1]
+      rotation: [0, 0, 0]
+      scale: [32, 32, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:4eeba41c769d9ff6:textures/cursors.png
+      columns: 8
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+      lit: false
+    RendererTag:
+      Name: cursor
+  - Entity: 9120000000000000024
+    Tag:
+      tag: ItemCursor
+    Transform:
+      translation: [0, 0, 0.1]
+      rotation: [0, 0, 0]
+      scale: [40, 40, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:fb3064fb372cb52f:textures/items.png
+      columns: 6
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+      lit: false
+    RendererTag:
+      Name: cursor
+  - Entity: 9120000000000000025
+    Tag:
+      tag: Pointer
+    Transform:
+      translation: [0, 0, 0.2]
+      rotation: [0, 0, 0]
+      scale: [32, 32, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:4eeba41c769d9ff6:textures/cursors.png
+      columns: 8
+      rows: 1
+      firstFrame: 7
+      lastFrame: 7
+      frameDuration: 0.1
+      loop: false
+      lit: false
+    RendererTag:
+      Name: cursor
+  - Entity: 9120000000000000026
+    Tag:
+      tag: Music
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:f3df298c754cb076:sounds/music.wav
+      category: Music
+      volume: 0.45
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1
+  - Entity: 9120000000000000027
+    Tag:
+      tag: Ambience
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:12aa0d405742e606:sounds/stream.wav
+      category: Ambient
+      volume: 0.5
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1

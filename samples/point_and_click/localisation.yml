@@ -1,0 +1,412 @@
+Localisation: ''
+FormatVersion: 1
+fallback: en
+languages:
+  - {code: en, name: English, export: true}
+  - {code: fr, name: Français, export: true}
+strings:
+  - key: title.name
+    table: menu
+    values: {en: 'The Moon Lantern', fr: 'La Lanterne de Lune'}
+  - key: title.tagline
+    table: menu
+    values: {en: 'A small fairy tale, made with Owl Engine', fr: 'Un petit conte de fées, fait avec Owl Engine'}
+  - key: title.new
+    table: menu
+    values: {en: 'New game', fr: 'Nouvelle partie'}
+  - key: title.continue
+    table: menu
+    values: {en: 'Continue', fr: 'Continuer'}
+  - key: title.settings
+    table: menu
+    values: {en: 'Settings', fr: 'Réglages'}
+  - key: title.quit
+    table: menu
+    values: {en: 'Quit', fr: 'Quitter'}
+  - key: settings.title
+    table: menu
+    values: {en: 'Settings', fr: 'Réglages'}
+  - key: settings.master
+    table: menu
+    values: {en: 'Master volume: %d%%', fr: 'Volume général : %d %%'}
+  - key: settings.music
+    table: menu
+    values: {en: 'Music: %d%%', fr: 'Musique : %d %%'}
+  - key: settings.effects
+    table: menu
+    values: {en: 'Effects: %d%%', fr: 'Effets : %d %%'}
+  - key: settings.language
+    table: menu
+    values: {en: 'Language: English', fr: 'Langue : français'}
+  - key: settings.subtitles_on
+    table: menu
+    values: {en: 'Subtitles: on', fr: 'Sous-titres : oui'}
+  - key: settings.subtitles_off
+    table: menu
+    values: {en: 'Subtitles: off', fr: 'Sous-titres : non'}
+  - key: settings.reset
+    table: menu
+    values: {en: 'Reset defaults', fr: 'Réglages par défaut'}
+  - key: settings.back
+    table: menu
+    values: {en: 'Back', fr: 'Retour'}
+  - key: ending.line1
+    table: menu
+    values: {en: 'The moonstone wakes, the fireflies give it their spark...', fr: 'La pierre de lune s''éveille, les lucioles lui donnent leur étincelle...'}
+  - key: ending.line2
+    table: menu
+    values: {en: '...and the Moon Lantern shines over the whole valley again.', fr: '...et la Lanterne de Lune brille de nouveau sur toute la vallée.'}
+  - key: ending.line3
+    table: menu
+    values: {en: 'Tonight the fairies will find their way home. And Barnaby will finally find his slippers.', fr: 'Cette nuit, les fées retrouveront leur chemin. Et Barnaby retrouvera enfin ses pantoufles.'}
+  - key: ending.end
+    table: menu
+    values: {en: 'The End', fr: 'Fin'}
+  - key: ending.title
+    table: menu
+    values: {en: 'Back to the title', fr: 'Retour au titre'}
+  - key: hud.bag
+    table: hud
+    values: {en: 'Bag', fr: 'Sac'}
+  - key: hud.next
+    table: hud
+    values: {en: 'Next', fr: 'Suite'}
+  - key: pause.title
+    table: hud
+    values: {en: 'Pause', fr: 'Pause'}
+  - key: pause.resume
+    table: hud
+    values: {en: 'Resume', fr: 'Reprendre'}
+  - key: pause.save
+    table: hud
+    values: {en: 'Save', fr: 'Sauvegarder'}
+  - key: pause.quit
+    table: hud
+    values: {en: 'Title screen', fr: 'Écran titre'}
+  - key: verb.look
+    table: hud
+    values: {en: 'Look at %s', fr: 'Regarder %s'}
+  - key: verb.pick
+    table: hud
+    values: {en: 'Pick up %s', fr: 'Prendre %s'}
+  - key: verb.use
+    table: hud
+    values: {en: 'Use %s', fr: 'Utiliser %s'}
+  - key: verb.talk
+    table: hud
+    values: {en: 'Talk to %s', fr: 'Parler à %s'}
+  - key: verb.exit
+    table: hud
+    values: {en: 'Go to %s', fr: 'Aller vers %s'}
+  - key: verb.use_on
+    table: hud
+    values: {en: 'Use %s on %s', fr: 'Utiliser %s sur %s'}
+  - key: subtitle.door
+    table: hud
+    values: {en: '[the door creaks in three keys]', fr: '[la porte grince sur trois notes]'}
+  - key: subtitle.fireflies
+    table: hud
+    values: {en: '[the fireflies hum in the jar]', fr: '[les lucioles bourdonnent dans le bocal]'}
+  - key: subtitle.pie
+    table: hud
+    values: {en: '[a satisfied squelch]', fr: '[un floc satisfait]'}
+  - key: subtitle.munch
+    table: hud
+    values: {en: '[munch, munch, munch]', fr: '[miam, miam, miam]'}
+  - key: item.jar
+    table: items
+    values: {en: 'the empty jar', fr: 'le bocal vide'}
+  - key: item.firefly_jar
+    table: items
+    values: {en: 'the jar of fireflies', fr: 'le bocal de lucioles'}
+  - key: item.berries
+    table: items
+    values: {en: 'the moonberries', fr: 'les baies de lune'}
+  - key: item.crust
+    table: items
+    values: {en: 'the pie crust', fr: 'la pâte à tarte'}
+  - key: item.pie
+    table: items
+    values: {en: 'the moonberry pie', fr: 'la tarte aux baies de lune'}
+  - key: item.moonstone
+    table: items
+    values: {en: 'the moonstone', fr: 'la pierre de lune'}
+  - key: name.cottage.jar
+    table: rooms
+    values: {en: 'the jar', fr: 'le bocal'}
+  - key: name.cottage.crust
+    table: rooms
+    values: {en: 'the pie crust', fr: 'la pâte à tarte'}
+  - key: name.cottage.barnaby
+    table: rooms
+    values: {en: 'Barnaby', fr: 'Barnaby'}
+  - key: name.cottage.lantern
+    table: rooms
+    values: {en: 'the Moon Lantern', fr: 'la Lanterne de Lune'}
+  - key: name.cottage.door
+    table: rooms
+    values: {en: 'the glade', fr: 'la clairière'}
+  - key: name.cottage.window
+    table: rooms
+    values: {en: 'the window', fr: 'la fenêtre'}
+  - key: name.cottage.fireplace
+    table: rooms
+    values: {en: 'the fireplace', fr: 'la cheminée'}
+  - key: name.cottage.shelf
+    table: rooms
+    values: {en: 'the shelf', fr: 'l''étagère'}
+  - key: name.cottage.table
+    table: rooms
+    values: {en: 'the table', fr: 'la table'}
+  - key: look.cottage.jar
+    table: rooms
+    values: {en: 'An empty jar. Full of nothing, which is the best way to start.', fr: 'Un bocal vide. Plein de rien, ce qui est un bon début.'}
+  - key: look.cottage.crust
+    table: rooms
+    values: {en: 'A pie crust, waiting for a filling. It looks a little lonely.', fr: 'Une pâte à tarte qui attend sa garniture. Elle a l''air un peu seule.'}
+  - key: look.cottage.barnaby
+    table: rooms
+    values: {en: 'Barnaby, my master. A great wizard, if you do not count the spells.', fr: 'Barnaby, mon maître. Un grand magicien, sans compter les sortilèges.'}
+  - key: look.cottage.lantern
+    table: rooms
+    values: {en: 'The Moon Lantern. It should shine for the fairies tonight. It is as dark as a boot.', fr: 'La Lanterne de Lune. Elle devrait briller pour les fées ce soir. Elle est noire comme une botte.'}
+  - key: look.cottage.door
+    table: rooms
+    values: {en: 'The door to the glade. It creaks in three different keys.', fr: 'La porte de la clairière. Elle grince sur trois notes différentes.'}
+  - key: look.cottage.window
+    table: rooms
+    values: {en: 'A clear night. The moon is out, but the lantern is not.', fr: 'Une nuit claire. La lune est là, mais pas la lanterne.'}
+  - key: look.cottage.fireplace
+    table: rooms
+    values: {en: 'A cosy fire. Barnaby says it is magic. I saw him use matches.', fr: 'Un bon feu. Barnaby dit qu''il est magique. Je l''ai vu utiliser des allumettes.'}
+  - key: look.cottage.shelf
+    table: rooms
+    values: {en: 'Books of spells, a potion of hiccups and dust. Mostly dust.', fr: 'Des grimoires, une potion de hoquet et de la poussière. Surtout de la poussière.'}
+  - key: look.cottage.table
+    table: rooms
+    values: {en: 'Barnaby''s table. It has seen more spilled soup than spells.', fr: 'La table de Barnaby. Elle a vu plus de soupe renversée que de sortilèges.'}
+  - key: name.glade.fireflies
+    table: rooms
+    values: {en: 'the fireflies', fr: 'les lucioles'}
+  - key: name.glade.bush
+    table: rooms
+    values: {en: 'the berry bush', fr: 'le buisson de baies'}
+  - key: name.glade.mushrooms
+    table: rooms
+    values: {en: 'the mushroom ring', fr: 'le cercle de champignons'}
+  - key: name.glade.pond
+    table: rooms
+    values: {en: 'the pond', fr: 'la mare'}
+  - key: name.glade.to_cottage
+    table: rooms
+    values: {en: 'the cottage', fr: 'la chaumière'}
+  - key: name.glade.to_bridge
+    table: rooms
+    values: {en: 'the bridge', fr: 'le pont'}
+  - key: look.glade.fireflies
+    table: rooms
+    values: {en: 'Fireflies dancing over the pond. Tiny sparks with wings.', fr: 'Des lucioles qui dansent sur la mare. De minuscules étincelles avec des ailes.'}
+  - key: look.glade.bush
+    table: rooms
+    values: {en: 'A moonberry bush. Sweet, purple, and very fond of staining shirts.', fr: 'Un buisson de baies de lune. Sucrées, violettes, et très douées pour tacher les chemises.'}
+  - key: look.glade.mushrooms
+    table: rooms
+    values: {en: 'A fairy ring. Stepping inside makes you dance for a hundred years. I will pass.', fr: 'Un cercle de fées. Y entrer fait danser cent ans. Je vais m''abstenir.'}
+  - key: look.glade.pond
+    table: rooms
+    values: {en: 'The pond. A frog looks at me as if I owed it money.', fr: 'La mare. Une grenouille me regarde comme si je lui devais de l''argent.'}
+  - key: look.glade.to_cottage
+    table: rooms
+    values: {en: 'The way back to the cottage.', fr: 'Le chemin de la chaumière.'}
+  - key: look.glade.to_bridge
+    table: rooms
+    values: {en: 'The path to the troll bridge.', fr: 'Le sentier du pont du troll.'}
+  - key: name.bridge.moonstone
+    table: rooms
+    values: {en: 'the moonstone', fr: 'la pierre de lune'}
+  - key: name.bridge.troll
+    table: rooms
+    values: {en: 'the troll', fr: 'le troll'}
+  - key: name.bridge.sign
+    table: rooms
+    values: {en: 'the sign', fr: 'le panneau'}
+  - key: name.bridge.garden
+    table: rooms
+    values: {en: 'the garden', fr: 'le potager'}
+  - key: name.bridge.stream
+    table: rooms
+    values: {en: 'the stream', fr: 'le ruisseau'}
+  - key: name.bridge.to_glade
+    table: rooms
+    values: {en: 'the glade', fr: 'la clairière'}
+  - key: look.bridge.moonstone
+    table: rooms
+    values: {en: 'The moonstone! A little warm. I prefer not to know why.', fr: 'La pierre de lune ! Un peu tiède. Je préfère ne pas savoir pourquoi.'}
+  - key: look.bridge.troll
+    table: rooms
+    values: {en: 'The bridge troll. Big, green, and sitting on something shiny.', fr: 'Le troll du pont. Grand, vert, et assis sur quelque chose de brillant.'}
+  - key: look.bridge.sign
+    table: rooms
+    values: {en: 'A sign with a pie painted on it. With love, and very little talent.', fr: 'Un panneau avec une tarte peinte dessus. Avec amour, et très peu de talent.'}
+  - key: look.bridge.garden
+    table: rooms
+    values: {en: 'The troll''s garden: turnips in very straight rows. He must be proud.', fr: 'Le potager du troll : des navets en rangs très droits. Il doit être fier.'}
+  - key: look.bridge.stream
+    table: rooms
+    values: {en: 'The stream babbles. It has nothing much to say, but it says it well.', fr: 'Le ruisseau gazouille. Il n''a pas grand-chose à dire, mais il le dit bien.'}
+  - key: look.bridge.to_glade
+    table: rooms
+    values: {en: 'The path back to the glade.', fr: 'Le sentier de la clairière.'}
+  - key: say.no
+    table: remarks
+    values: {en: 'I would rather not.', fr: 'Je préfère éviter.'}
+  - key: say.use_no
+    table: remarks
+    values: {en: 'Using %s here would not help.', fr: 'Utiliser %s ici ne servirait à rien.'}
+  - key: say.saved
+    table: remarks
+    values: {en: 'The game is saved.', fr: 'Partie sauvegardée.'}
+  - key: say.combine.no
+    table: remarks
+    values: {en: 'These two do not go together.', fr: 'Ces deux-là ne vont pas ensemble.'}
+  - key: say.combine.pie
+    table: remarks
+    values: {en: 'Moonberries in the crust: a moonberry pie! My best cooking ever. My only one, too.', fr: 'Des baies de lune dans la pâte : une tarte ! Ma meilleure recette. La seule, aussi.'}
+  - key: say.cottage.intro
+    table: remarks
+    values: {en: 'The Moon Lantern has gone dark... I should ask Barnaby what happened.', fr: 'La Lanterne de Lune s''est éteinte... Je devrais demander à Barnaby.'}
+  - key: say.cottage.jar
+    table: remarks
+    values: {en: 'An empty jar. It could hold something small and bright.', fr: 'Un bocal vide. Il pourrait contenir quelque chose de petit et brillant.'}
+  - key: say.cottage.crust
+    table: remarks
+    values: {en: 'A pie crust. A pie without filling is just a sad plate.', fr: 'Une pâte à tarte. Une tarte sans garniture n''est qu''une assiette triste.'}
+  - key: say.cottage.barnaby_item
+    table: remarks
+    values: {en: 'Barnaby: "Keep it, my boy. I am on a diet of tea and mystery."', fr: 'Barnaby : « Garde-le, mon garçon. Je suis au régime thé et mystère. »'}
+  - key: say.cottage.lantern_needs_stone
+    table: remarks
+    values: {en: 'The lantern is empty: its moonstone is gone.', fr: 'La lanterne est vide : sa pierre de lune a disparu.'}
+  - key: say.cottage.lantern_needs_spark
+    table: remarks
+    values: {en: 'The moonstone is in place, but it sleeps. It needs a spark.', fr: 'La pierre de lune est en place, mais elle dort. Il lui faut une étincelle.'}
+  - key: say.cottage.lantern_item
+    table: remarks
+    values: {en: 'That will not light the lantern.', fr: 'Ça n''allumera pas la lanterne.'}
+  - key: say.cottage.lantern_stone
+    table: remarks
+    values: {en: 'The moonstone clicks into place. Now, a spark...', fr: 'La pierre de lune se met en place. Maintenant, une étincelle...'}
+  - key: say.cottage.lantern_stone_last
+    table: remarks
+    values: {en: 'The moonstone clicks into place, right above the fireflies...', fr: 'La pierre de lune se met en place, juste au-dessus des lucioles...'}
+  - key: say.cottage.lantern_spark
+    table: remarks
+    values: {en: 'The fireflies settle in the lantern. They wait for the moonstone.', fr: 'Les lucioles s''installent dans la lanterne. Elles attendent la pierre.'}
+  - key: say.cottage.lantern_spark_last
+    table: remarks
+    values: {en: 'The fireflies fly to the moonstone...', fr: 'Les lucioles volent vers la pierre de lune...'}
+  - key: say.glade.bush_item
+    table: remarks
+    values: {en: 'The bush does not need that.', fr: 'Le buisson n''en a pas besoin.'}
+  - key: say.glade.bush_empty
+    table: remarks
+    values: {en: 'Only leaves now. And a very disappointed beetle.', fr: 'Plus que des feuilles. Et un scarabée très déçu.'}
+  - key: say.glade.berries
+    table: remarks
+    values: {en: 'A handful of moonberries. Sweet enough for a troll?', fr: 'Une poignée de baies de lune. Assez sucrées pour un troll ?'}
+  - key: say.glade.fireflies_caught
+    table: remarks
+    values: {en: 'A jar full of sparks! They do not seem to mind. They like the view.', fr: 'Un bocal plein d''étincelles ! Elles ne s''en plaignent pas. Elles aiment la vue.'}
+  - key: say.glade.fireflies_enough
+    table: remarks
+    values: {en: 'I have enough fireflies. The others have families.', fr: 'J''ai assez de lucioles. Les autres ont de la famille.'}
+  - key: say.glade.fireflies_item
+    table: remarks
+    values: {en: 'The fireflies are not interested.', fr: 'Les lucioles ne sont pas intéressées.'}
+  - key: say.glade.fireflies_hands
+    table: remarks
+    values: {en: 'Too quick for bare hands. I need something to keep them in.', fr: 'Trop rapides pour mes mains. Il me faut de quoi les garder.'}
+  - key: say.glade.mushrooms_touch
+    table: remarks
+    values: {en: 'No dancing for a hundred years, thank you.', fr: 'Pas de danse pendant cent ans, merci.'}
+  - key: say.bridge.troll_full
+    table: remarks
+    values: {en: 'The troll: "Toll paid! Toll paid! Go away, I am digesting."', fr: 'Le troll : « Péage payé ! Péage payé ! Va-t''en, je digère. »'}
+  - key: say.bridge.troll_half
+    table: remarks
+    values: {en: 'The troll: "Half a pie is not a pie! Toll is a WHOLE sweet thing!"', fr: 'Le troll : « Une moitié de tarte n''est pas une tarte ! Le péage, c''est une chose sucrée ENTIÈRE ! »'}
+  - key: say.bridge.troll_item
+    table: remarks
+    values: {en: 'The troll sniffs it: "Not sweet! Not toll!"', fr: 'Le troll renifle : « Pas sucré ! Pas péage ! »'}
+  - key: say.bridge.troll_paid
+    table: remarks
+    values: {en: 'The troll: "Toll paid! Take the cold stone, it chilled my bottom anyway."', fr: 'Le troll : « Péage payé ! Prends la pierre froide, elle me gelait le derrière. »'}
+  - key: say.bridge.moonstone
+    table: remarks
+    values: {en: 'The moonstone! Now back to the lantern.', fr: 'La pierre de lune ! Retour à la lanterne.'}
+  - key: dialogue.barnaby.name
+    table: dialogue
+    values: {en: 'Barnaby', fr: 'Barnaby'}
+  - key: dialogue.barnaby.hello
+    table: dialogue
+    values: {en: 'Ah, Wren! The Moon Lantern has gone dark. Without it the fairies will never find the valley tonight.', fr: 'Ah, Wren ! La Lanterne de Lune s''est éteinte. Sans elle, les fées ne trouveront jamais la vallée cette nuit.'}
+  - key: dialogue.barnaby.ask
+    table: dialogue
+    values: {en: 'What troubles you, my boy?', fr: 'Qu''est-ce qui te tracasse, mon garçon ?'}
+  - key: dialogue.barnaby.answer_stone
+    table: dialogue
+    values: {en: 'Where is its moonstone?', fr: 'Où est sa pierre de lune ?'}
+  - key: dialogue.barnaby.answer_help
+    table: dialogue
+    values: {en: 'What else does it need?', fr: 'De quoi a-t-elle besoin d''autre ?'}
+  - key: dialogue.barnaby.answer_bye
+    table: dialogue
+    values: {en: 'I will fix it!', fr: 'Je vais la réparer !'}
+  - key: dialogue.barnaby.stone
+    table: dialogue
+    values: {en: 'The bridge troll took it. He sits on everything shiny. And he has a terrible sweet tooth.', fr: 'Le troll du pont l''a prise. Il s''assoit sur tout ce qui brille. Et il est terriblement gourmand.'}
+  - key: dialogue.barnaby.spark
+    table: dialogue
+    values: {en: 'A moonstone sleeps without a spark. Fireflies make lovely sparks, if you can keep them in something.', fr: 'Une pierre de lune dort sans étincelle. Les lucioles en font de très jolies, si on peut les garder dans quelque chose.'}
+  - key: dialogue.barnaby.ready
+    table: dialogue
+    values: {en: 'You have all it needs! Set it all in the lantern, quick.', fr: 'Tu as tout ce qu''il faut ! Mets tout ça dans la lanterne, vite.'}
+  - key: dialogue.barnaby.bye
+    table: dialogue
+    values: {en: 'Mind the troll''s manners. And yours.', fr: 'Attention aux manières du troll. Et aux tiennes.'}
+  - key: dialogue.wren.name
+    table: dialogue
+    values: {en: 'Wren', fr: 'Wren'}
+  - key: dialogue.troll.name
+    table: dialogue
+    values: {en: 'Troll', fr: 'Troll'}
+  - key: dialogue.troll.hello
+    table: dialogue
+    values: {en: 'TOLL! TOLL! Nobody crosses my bridge without paying the toll!', fr: 'PÉAGE ! PÉAGE ! Personne ne passe sur mon pont sans payer le péage !'}
+  - key: dialogue.troll.ask
+    table: dialogue
+    values: {en: 'Well? Toll?', fr: 'Alors ? Péage ?'}
+  - key: dialogue.troll.answer_toll
+    table: dialogue
+    values: {en: 'What is the toll?', fr: 'C''est quoi, le péage ?'}
+  - key: dialogue.troll.answer_stone
+    table: dialogue
+    values: {en: 'You are sitting on our moonstone.', fr: 'Vous êtes assis sur notre pierre de lune.'}
+  - key: dialogue.troll.answer_pie
+    table: dialogue
+    values: {en: 'Would a pie do?', fr: 'Une tarte, ça irait ?'}
+  - key: dialogue.troll.answer_bye
+    table: dialogue
+    values: {en: 'Never mind.', fr: 'Laissez tomber.'}
+  - key: dialogue.troll.toll
+    table: dialogue
+    values: {en: 'Something sweet. Very sweet. Sweeter than my mother''s turnips.', fr: 'Quelque chose de sucré. Très sucré. Plus sucré que les navets de ma mère.'}
+  - key: dialogue.troll.stone
+    table: dialogue
+    values: {en: 'This? A very comfortable stone. Nobody gets my comfortable stone without the toll.', fr: 'Ça ? Une pierre très confortable. Personne n''aura ma pierre confortable sans le péage.'}
+  - key: dialogue.troll.pie
+    table: dialogue
+    values: {en: 'A PIE? Give it! Give it now!', fr: 'Une TARTE ? Donne ! Donne tout de suite !'}
+  - key: dialogue.troll.bye
+    table: dialogue
+    values: {en: 'TOLL!', fr: 'PÉAGE !'}

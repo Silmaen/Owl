@@ -1,0 +1,38 @@
+# The Moon Lantern, the troll bridge: the hero walks onto the bridge deck, behind its parapet (a walk-behind mask, its
+# baseline at the front of the deck: the hero's depth goes below the mask's), and back onto the bank, in front of it;
+# the troll asks his toll and offers no pie answer without a pie. At 1600x960 a pixel (x, y) of the 320x180 backdrop
+# is at the viewport pixel (800 + 5.333 * (x - 160), 5.333 * y).
+scene: ../../../samples/point_and_click/scenes/bridge.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: room, equals: bridge}
+  - expect: {entity: Mask_parapet, translation.z: {less: -5.9}}
+  - expect: {entity: Mask_parapet, translation.z: {greater: -6.1}}
+  # Onto the deck, right of the troll.
+  - input: {mouse: Left, mouse_pos: [1077, 693], frames: 2}
+  - frames: 300
+  - expect: {entity: Hero, translation.y: {greater: -2.4}}
+  - expect: {entity: Hero, translation.z: {less: -6.5}}
+  # Back onto the bank, in front of the parapet.
+  - input: {mouse: Left, mouse_pos: [267, 880], frames: 2}
+  - frames: 300
+  - expect: {entity: Hero, translation.z: {greater: -3.0}}
+  # The troll: hello, then the choice (toll, stone, bye; no pie answer).
+  - input: {mouse: Left, mouse_pos: [899, 579], frames: 2}
+  - frames: 300
+  - expect: {gamestate: talking, equals: true}
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - input: {key: Down, frames: 2}
+  - frames: 3
+  - input: {key: Down, frames: 2}
+  - frames: 3
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - input: {key: Enter, frames: 2}
+  - frames: 5
+  - expect: {gamestate: talking, equals: false}

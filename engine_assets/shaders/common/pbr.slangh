@@ -10,6 +10,7 @@ struct Scene3D {
 	float4 tint;        // per-entity colour multiplied with the base colour.
 	int4 ids;           // x: entity id (-1 none); y: 1 when the target stores linear colour; z: 1 in a shadow pass; w: first visible instance (-1 for a single draw).
 	float4 origin;      // xyz: world position of the eye, origin of the camera-relative space of the shading; w: -1 when the projection winds the faces backwards.
+	int4 flags;         // x: 1 when the draw is flat in depth (flattenDepth); yzw unused.
 };
 
 struct MaterialData {
@@ -114,6 +115,19 @@ ConstantBuffer<MaterialData> gMaterial;
 float3 relativePosition(float4x4 model, float3 position) {
 	float3 translation = float3(model[0][3], model[1][3], model[2][3]) - gScene.origin.xyz;
 	return mul((float3x3) model, position) + translation;
+}
+
+// Share of its own depth a vertex keeps in a draw flat in depth.
+static const float FLAT_DEPTH_SCALE = 1.0f / 1024.0f;
+
+// A draw flat in depth (an actor on a depth-sorted walk area): every vertex takes the depth of the model origin (the
+// feet), plus a thousandth of its own offset from it, so that the whole draw is in front of or behind any other
+// surface while it still hides its own back.
+float4 flattenDepth(float4 clip, float4x4 model) {
+	float4 pivot = mul(gScene.viewProjection, float4(relativePosition(model, float3(0.0f, 0.0f, 0.0f)), 1.0f));
+	float pivotDepth = pivot.z / pivot.w;
+	clip.z = (pivotDepth + (clip.z / clip.w - pivotDepth) * FLAT_DEPTH_SCALE) * clip.w;
+	return clip;
 }
 
 // Texture slots: 0 white, 1-6 material maps, 7-12 prefiltered environment, 13 split-sum table, 14 LTC matrices,

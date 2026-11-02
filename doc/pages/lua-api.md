@@ -8,30 +8,31 @@ An `entity` is the integer UUID of an entity (`entity_id` in its own script, `sc
 
 ## Pages
 
-| Page                                                | Table       | Content                                                                                                              |
-|-----------------------------------------------------|-------------|----------------------------------------------------------------------------------------------------------------------|
-| [Entities and transforms](lua-api-entities.md)      | `entity`    | Entity queries.                                                                                                      |
-|                                                     | `transform` | Local transform of an entity.                                                                                        |
-| [Scene, engine and log](lua-api-scene.md)           | `scene`     | Entities of the running level and level changes.                                                                     |
-|                                                     | `engine`    | The engine running the game.                                                                                         |
-|                                                     | `log`       | Engine log.                                                                                                          |
-| [Input](lua-api-input.md)                           | `input`     | Actions of the game's input map, then the raw keyboard, mouse and gamepad state.                                     |
-| [Physics](lua-api-physics.md)                       | `physics`   | Box2D body of an entity.                                                                                             |
-| [Sound](lua-api-sound.md)                           | `sound`     | Sound playback by handle, the mixer buses and the music.                                                             |
-| [Time and timers](lua-api-time.md)                  | `time`      | Frame and fixed-tick time.                                                                                           |
-|                                                     | `trigger`   | Timer triggers.                                                                                                      |
-| [HUD](lua-api-ui.md)                                | `ui`        | HUD widgets and screen transitions.                                                                                  |
-| [Game state, saves and settings](lua-api-saves.md)  | `gamestate` | Values kept across levels and stored in saves.                                                                       |
-|                                                     | `save`      | Save slots (applied after the frame).                                                                                |
-|                                                     | `settings`  | Game settings: defaults from `game_settings.yml`, user overrides.                                                    |
-| [Localisation](lua-api-locale.md)                   | `locale`    | Texts of the game in its languages (`localisation.yml`).                                                             |
-| [Raycast doors and push-walls](lua-api-raycast.md)  | `door`      | Raycast doors.                                                                                                       |
-|                                                     | `pushwall`  | Raycast push-walls.                                                                                                  |
-| [Isometric terrain and paths](lua-api-isometric.md) | `isometric` | Terrain picking and tile editing of an isometric tilemap.                                                            |
-|                                                     | `path`      | Shortest paths over the graph a tilemap's `navigation` rules describe (roads, tracks), searched over several frames. |
-| [Animation and sockets](lua-api-animation.md)       | `animator`  | State machine of the `Animator` of a skinned mesh: parameters and states.                                            |
-|                                                     | `socket`    | Entities snapped on the sockets of a mesh or of an entity.                                                           |
-| [Splines and data tables](lua-api-data.md)          | `spline`    | Splines sampled by distance, and the entities following them.                                                        |
-|                                                     | `datatable` | Typed records of the `.owltable` data tables, by row key and column.                                                 |
-| [Dialogues](lua-api-dialogue.md)                    | `dialogue`  | Conversations over the `.owldlg` dialogues: lines, choices, Lua conditions and actions.                              |
-| [Cutscene sequences](lua-api-sequence.md)           | `sequence`  | Cutscenes of the `.owlseq` sequences: play, stop and seek a `SequencePlayer`.                                        |
+| Page                                                                | Table       | Content                                                                                                                |
+|---------------------------------------------------------------------|-------------|------------------------------------------------------------------------------------------------------------------------|
+| [Entities and transforms](lua-api-entities.md)                      | `entity`    | Entity queries.                                                                                                        |
+|                                                                     | `transform` | Local transform of an entity.                                                                                          |
+| [Scene, engine and log](lua-api-scene.md)                           | `scene`     | Entities of the running level and level changes.                                                                       |
+|                                                                     | `engine`    | The engine running the game.                                                                                           |
+|                                                                     | `log`       | Engine log.                                                                                                            |
+| [Input](lua-api-input.md)                                           | `input`     | Actions of the game's input map, then the raw keyboard, mouse and gamepad state.                                       |
+| [Physics](lua-api-physics.md)                                       | `physics`   | Box2D body of an entity.                                                                                               |
+| [Sound](lua-api-sound.md)                                           | `sound`     | Sound playback by handle, the mixer buses and the music.                                                               |
+| [Time and timers](lua-api-time.md)                                  | `time`      | Frame and fixed-tick time.                                                                                             |
+|                                                                     | `trigger`   | Timer triggers.                                                                                                        |
+| [HUD](lua-api-ui.md)                                                | `ui`        | HUD widgets and screen transitions.                                                                                    |
+| [Game state, saves and settings](lua-api-saves.md)                  | `gamestate` | Values kept across levels and stored in saves.                                                                         |
+|                                                                     | `save`      | Save slots (applied after the frame).                                                                                  |
+|                                                                     | `settings`  | Game settings: defaults from `game_settings.yml`, user overrides.                                                      |
+| [Localisation](lua-api-locale.md)                                   | `locale`    | Texts of the game in its languages (`localisation.yml`).                                                               |
+| [Raycast doors and push-walls](lua-api-raycast.md)                  | `door`      | Raycast doors.                                                                                                         |
+|                                                                     | `pushwall`  | Raycast push-walls.                                                                                                    |
+| [Isometric terrain, paths and walkable areas](lua-api-isometric.md) | `isometric` | Terrain picking and tile editing of an isometric tilemap.                                                              |
+|                                                                     | `path`      | Shortest paths over the graph a tilemap's `navigation` rules describe (roads, tracks), searched over several frames.   |
+|                                                                     | `walk`      | Free walking on the 2D floors of the `WalkArea`s: paths around the holes, the agents walking them, the scale by depth. |
+| [Animation and sockets](lua-api-animation.md)                       | `animator`  | State machine of the `Animator` of a skinned mesh: parameters and states.                                              |
+|                                                                     | `socket`    | Entities snapped on the sockets of a mesh or of an entity.                                                             |
+| [Splines and data tables](lua-api-data.md)                          | `spline`    | Splines sampled by distance, and the entities following them.                                                          |
+|                                                                     | `datatable` | Typed records of the `.owltable` data tables, by row key and column.                                                   |
+| [Dialogues](lua-api-dialogue.md)                                    | `dialogue`  | Conversations over the `.owldlg` dialogues: lines, choices, Lua conditions and actions.                                |
+| [Cutscene sequences](lua-api-sequence.md)                           | `sequence`  | Cutscenes of the `.owlseq` sequences: play, stop and seek a `SequencePlayer`.                                          |

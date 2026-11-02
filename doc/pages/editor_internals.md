@@ -108,8 +108,8 @@ setup and tools: [MCP server](mcp.md); design: [MCP server design](design/mcp-se
 
 ## Scripted headless runs (`--scenario`)
 
-`OwlRunner --scenario <file.owltest>` loads a scene straight from a source project (Null window, renderer, sound and
-input) and plays steps that inject inputs and check the world, at a fixed time step. Asynchronous work is finished
+`OwlRunner --scenario <file.owltest>` loads a scene straight from a source project (its game settings, input map and
+string tables; Null window, renderer, sound and input) and plays steps that inject inputs and check the world, at a fixed time step. Asynchronous work is finished
 before every frame, so a scenario counts frames, not seconds, and gives the same result on any machine. It exits
 with 0 when every expectation holds and no error was logged, 1 otherwise, 2 on a file it cannot read. A watchdog
 ends a run that plays no frame for 120 s (times `OWL_SCRIPT_TIME_SCALE`), or that does not exit as long after its

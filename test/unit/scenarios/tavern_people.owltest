@@ -5,6 +5,8 @@ scene: ../../../engine_demo/scenes/tavern.owl
 steps:
   - input: {key: Space, frames: 2}
   - frames: 30
+  # A pixel-art patron stands in the room, drawn by the `mesh_pixel` layer.
+  - expect: {entity: PixelPatron, exists: true}
   - expect: {entity: Tankard, translation.y: {greater: 0.9}}
   - expect: {entity: Tankard, translation.y: {less: 1.3}}
   - expect: {entity: Tankard, translation.x: {less: 3.7}}

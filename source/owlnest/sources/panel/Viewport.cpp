@@ -30,6 +30,7 @@
 #include <scene/component/ReverbZone.h>
 #include <scene/component/SequencePlayer.h>
 #include <scene/component/VoxelWorld.h>
+#include <scene/component/WalkArea.h>
 
 #include <data/geometry/MeshLoader.h>
 #include <gui/IconBank.h>
@@ -312,13 +313,13 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	// Clear our entity ID attachment to -1
 	m_framebuffer->clearAttachment(1, -1);
 
-	// Never leave the cursor captured outside Play (e.g. after Stop), or it would be stuck hidden in the editor.
-	if (mp_document->state() != SceneDocument::State::Play)
+	// Never leave the cursor captured or hidden outside Play (e.g. after Stop), or it would be stuck in the editor.
+	if (mp_document->state() != SceneDocument::State::Play) {
 		m_cursorCapture.reset();
-	if (mp_document->state() != SceneDocument::State::Play &&
-		app::Application::get().getWindow().getCursorMode() == window::CursorMode::Disabled) {
-		app::Application::get().getWindow().setCursorMode(window::CursorMode::Normal);
-		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
+		if (app::Application::get().getWindow().getCursorMode() != window::CursorMode::Normal) {
+			app::Application::get().getWindow().setCursorMode(window::CursorMode::Normal);
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
+		}
 	}
 
 	activeScene->setColorVisionPreview(
@@ -342,13 +343,14 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				// Click to capture the cursor (hidden/locked), Esc to free; no focus/hover release (the captured cursor's unbounded virtual position would read as "left the viewport" and cancel capture every frame). NoMouseCursorChange stops ImGui from re-showing the cursor while captured.
 				auto& window = app::Application::get().getWindow();
 				const auto cursorMode = window.getCursorMode();
-				// A scene that stops wanting capture (level change, voxel player gone) gives the cursor back too.
+				// Capture ends when the scene stops wanting it; the game cursor hides the system one on the game only.
 				const auto nextMode = m_cursorCapture.next(cursorMode, activeScene->wantsCursorCapture(),
 														   m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left),
-														   input::Input::isKeyPressed(input::key::Escape));
+														   input::Input::isKeyPressed(input::key::Escape),
+														   m_hovered && activeScene->wantsCursorHidden());
 				if (nextMode != cursorMode) {
 					window.setCursorMode(nextMode);
-					if (nextMode == window::CursorMode::Disabled)
+					if (nextMode != window::CursorMode::Normal)
 						ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
 					else
 						ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
@@ -801,6 +803,7 @@ void Viewport::renderOverlay() const {
 		}
 		renderBehaviourOverlays(activeScene);
 		renderSplineOverlay(activeScene);
+		renderWalkAreaOverlay(activeScene);
 		renderSequenceOverlay(activeScene);
 		renderSkeletonMarkers(activeScene);
 		renderWorldCells(activeScene);
@@ -1189,14 +1192,29 @@ void Viewport::frameSelection() {
 	const scene::Entity selected = m_parent->getSelectedEntity();
 	if (!activeScene || !selected)
 		return;
-	const math::Transform world = activeScene->getWorldTransform(selected);
+	math::Transform world = activeScene->getWorldTransform(selected);
 	// A unit quad scaled by the transform: half its diagonal encloses it.
+	float radius = 0.5f * std::sqrt(world.scale().x() * world.scale().x() + world.scale().y() * world.scale().y());
+	// A walk area is framed on its floors, which lie anywhere around its entity.
+	if (selected.hasComponent<scene::component::WalkArea>()) {
+		const auto& vertices = selected.getComponent<scene::component::WalkArea>().getMesh().getVertices();
+		if (!vertices.empty()) {
+			math::vec2 low = vertices.front();
+			math::vec2 high = vertices.front();
+			for (const auto& vertex: vertices) {
+				low = {std::min(low.x(), vertex.x()), std::min(low.y(), vertex.y())};
+				high = {std::max(high.x(), vertex.x()), std::max(high.y(), vertex.y())};
+			}
+			const math::vec2 centre = (low + high) * 0.5f;
+			const math::vec4 point = world() * math::vec4{centre.x(), centre.y(), 0.f, 1.f};
+			world.translation() = {point.x(), point.y(), point.z()};
+			radius = 0.5f * (high - low).norm();
+		}
+	}
 	if (m_isometric) {
 		m_isoCamera.setTarget(world.translation());
 		return;
 	}
-	const float radius =
-			0.5f * std::sqrt(world.scale().x() * world.scale().x() + world.scale().y() * world.scale().y());
 	m_editorCamera.frame(world.translation(), radius);
 }
 
@@ -2042,6 +2060,7 @@ void Viewport::renderNavigationOverlay(const shared<scene::Scene>& iScene) const
 	constexpr math::vec4 pathColor{1.f, 0.95f, 0.20f, 1.f};
 	scene::nav::drawNavigationGraph(*iScene);
 	scene::nav::drawNavigationRoutes(*iScene);
+	scene::nav::drawWalkAreas(*iScene);
 	if (m_navTool.active && m_hoveredCell.has_value() && m_isometric)
 		scene::nav::drawNavigationCellEditor(*iScene, static_cast<uint64_t>(m_hoveredMapEntity), m_hoveredCell->x(),
 											 m_hoveredCell->y(), m_navSide);
@@ -2130,7 +2149,7 @@ void Viewport::renderGizmo() {
 	if (!activeScene)
 		return;
 
-	if (renderWaypointGizmo() || renderSocketGizmo() || renderSplineGizmo())
+	if (renderWaypointGizmo() || renderSocketGizmo() || renderSplineGizmo() || renderWalkAreaGizmo())
 		return;
 	if (const scene::Entity selectedEntity = m_parent->getSelectedEntity();
 		selectedEntity && m_gizmoType != gui::Guizmo::Type::None && !isPiloted(selectedEntity)) {
@@ -2410,6 +2429,8 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 			}
 			gui::component::getSocketSelection().clear();
 			if (onSplineClick())
+				return false;
+			if (onWalkAreaClick())
 				return false;
 			if (const int handle = pickPatrolWaypoint(); handle >= 0) {
 				m_patrolHandle = handle;

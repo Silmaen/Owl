@@ -101,12 +101,13 @@ auto worldBox(const MeshResource& iMesh, const math::mat4& iModel) -> math::box3
 void queueOpaque(const Renderer3D::MeshHandle& iMesh, const MeshResource& iResource, const math::mat4& iModel,
 				 const shared<gpu::Texture2D>& iTexture, const MeshDrawParams& iParams) {
 	auto& data = frameData();
-	data.opaque.push_back(
-			OpaqueDraw{.mesh = iMesh,
-					   .material = iParams.material,
-					   .texture = iParams.material == nullptr ? iTexture : nullptr,
-					   .instance = {.model = iModel, .tint = iParams.tint, .ids = {iParams.entityId, 0, 0, 0}},
-					   .box = worldBox(iResource, iModel)});
+	data.opaque.push_back(OpaqueDraw{.mesh = iMesh,
+									 .material = iParams.material,
+									 .texture = iParams.material == nullptr ? iTexture : nullptr,
+									 .instance = {.model = iModel,
+												  .tint = iParams.tint,
+												  .ids = {iParams.entityId, iParams.flatDepth ? 1 : 0, 0, 0}},
+									 .box = worldBox(iResource, iModel)});
 }
 
 // Groups the queued opaque draws by mesh, material and texture, culls them and draws one instanced call per group.
@@ -334,6 +335,8 @@ void RendererMesh::drawSkinnedSubmesh(MeshResource& ioMesh, const size_t iSubmes
 	auto& data = frameData();
 	if (iLod > 0)
 		++data.stats.lodDrawCount;
+	if (iParams.flatDepth && !Renderer3D::isShadowPass())
+		++data.stats.flatDrawCount;
 	if (!blended) {
 		data.skinned.push_back({.mesh = mesh, .model = iModel, .params = iParams, .firstMatrix = iFirstMatrix});
 		return;
@@ -357,6 +360,8 @@ void RendererMesh::drawSubmesh(MeshResource& ioMesh, const size_t iSubmesh, cons
 	auto& data = frameData();
 	if (iLod > 0 && !Renderer3D::isShadowPass())
 		++data.stats.lodDrawCount;
+	if (iParams.flatDepth && !Renderer3D::isShadowPass())
+		++data.stats.flatDrawCount;
 	if (!blended) {
 		queueOpaque(mesh, ioMesh, iModel, nullptr, iParams);
 		if (!Renderer3D::isShadowPass())

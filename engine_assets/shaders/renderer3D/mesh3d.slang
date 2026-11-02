@@ -17,7 +17,7 @@ struct VertexInput {
 struct MeshInstance {
 	column_major float4x4 model;
 	float4 tint;
-	int4 ids;// x: entity id; yzw unused.
+	int4 ids;// x: entity id; y: 1 when the instance is flat in depth; zw unused.
 };
 
 // Index of a visible instance, wrapped in a struct of its own (one element type per storage buffer).
@@ -42,14 +42,18 @@ VertexOutput vertexMain(VertexInput input, uint instanceId : SV_InstanceID) {
 	float4x4 model = gScene.model;
 	output.frag.tint = gScene.tint;
 	output.frag.entityId = gScene.ids.x;
+	bool flat = gScene.flags.x != 0;
 	if (gScene.ids.w >= 0) {
 		const MeshInstance instance = gInstances[gVisible[uint(gScene.ids.w) + instanceId].index];
 		model = instance.model;
 		output.frag.tint = instance.tint;
 		output.frag.entityId = instance.ids.x;
+		flat = instance.ids.y != 0;
 	}
 	float3 position = relativePosition(model, input.position);
 	output.svPosition = mul(gScene.viewProjection, float4(position, 1.0f));
+	if (flat)
+		output.svPosition = flattenDepth(output.svPosition, model);
 	output.frag.position = position;
 	output.frag.clipDepth = output.svPosition.zw;
 	output.frag.normal = normalize(mul((float3x3) model, input.normal));

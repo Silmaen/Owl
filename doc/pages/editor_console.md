@@ -144,6 +144,13 @@ A refused command changes nothing and logs why (a bad argument, an edit during P
 | `spline.delete_points`            | `entity`, `points` (indices from 0, `0,2`)                                                              |
 | `spline.move_points`              | `entity`, `points`, `offset` (space of the entity)                                                      |
 | `spline.set_point`                | `entity`, `point`, `position`, `tangent_in`, `tangent_out` (Bezier handles, offsets from the point)     |
+| `walk.add_polygon`                | `entity`, `position` (space of the entity), `size` (side of the square floor, 4)                        |
+| `walk.add_hole`                   | `entity`, `polygon`, `position`, `size` (side of the square hole, 1)                                    |
+| `walk.delete_ring`                | `entity`, `polygon`, `ring` (0 the floor, 1 + n its hole n)                                             |
+| `walk.insert_vertex`              | `entity`, `polygon`, `ring`, `index` (of the new vertex), `position`                                    |
+| `walk.move_vertices`              | `entity`, `vertices` (`polygon:ring:index`, `0:0:2,0:1:0`), `offset`                                    |
+| `walk.set_vertex`                 | `entity`, `polygon`, `ring`, `index`, `position`                                                        |
+| `walk.delete_vertices`            | `entity`, `vertices`; a ring left with fewer than three goes                                            |
 | `material.assign`                 | `entity`, `slot` (from 0, -1 for every slot), `material` (empty for the file's own)                     |
 | `scene.save`                      | `path` (the scene file when absent)                                                                     |
 | `scene.capture_reflection_probes` | none: every probe is captured again (not an undo entry)                                                 |

@@ -15,6 +15,8 @@
 #include <data/geometry/MeshLod.h>
 #include <math/linAlgebra.h>
 
+#include <nlohmann/json.hpp>
+
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -23,6 +25,7 @@
 #include <iterator>
 #include <numbers>
 #include <span>
+#include <string>
 #include <vector>
 
 using namespace owl;
@@ -237,6 +240,44 @@ TEST(SkeletalAnimation, LoaderReadsTheSkinTheClipsAndTheSockets) {
 	loaded.skeleton->computeSkinMatrices(model, skin);
 	const math::vec4 tip = skin[1] * math::vec4{0.f, 2.f, 0.f, 1.f};
 	EXPECT_NEAR(tip.x(), -1.f, 1e-4f);
+}
+
+TEST(SkeletalAnimation, MeshesOfAnEqualSkinShareTheSkeleton) {
+	// One skin per mesh with the same joints, as some exporters write a character: both meshes are skinned. A skin
+	// with another bind pose still draws its mesh static.
+	std::ifstream source{armPath()};
+	const auto model = nlohmann::json::parse(source);
+	const auto write = [&model](const bool iSameBind) -> std::filesystem::path {
+		auto copy = model;
+		auto second = copy["skins"][0];
+		if (!iSameBind) {
+			copy["accessors"].push_back(copy["accessors"][second["inverseBindMatrices"].get<size_t>()]);
+			copy["accessors"].back()["byteOffset"] = 0;
+			copy["accessors"].back()["bufferView"] = copy["meshes"][0]["primitives"][0]["attributes"]["POSITION"];
+			second["inverseBindMatrices"] = copy["accessors"].size() - 1;
+		}
+		copy["skins"].push_back(second);
+		copy["nodes"].push_back({{"name", "Sleeve"}, {"mesh", 0}, {"skin", 1}});
+		copy["scenes"][0]["nodes"].push_back(copy["nodes"].size() - 1);
+		const auto path = std::filesystem::temp_directory_path() /
+						  (iSameBind ? "skinned_arm_twice.gltf" : "skinned_arm_other_bind.gltf");
+		std::ofstream{path} << copy.dump();
+		return path;
+	};
+	const auto single = MeshLoader::loadMesh(armPath());
+	const auto shared = MeshLoader::loadMesh(write(true));
+	ASSERT_TRUE(shared.isSkinned());
+	EXPECT_EQ(shared.mesh->getVertices().size(), 2 * single.mesh->getVertices().size());
+	EXPECT_EQ(shared.skin.size(), shared.mesh->getVertices().size());
+	size_t moved = 0;
+	for (const auto& skin: shared.skin) moved += skin.weights.x() + skin.weights.y() > 0.5f ? 1u : 0u;
+	EXPECT_EQ(moved, shared.skin.size());
+	const auto apart = MeshLoader::loadMesh(write(false));
+	ASSERT_TRUE(apart.isSkinned());
+	size_t still = 0;
+	for (const auto& skin: apart.skin)
+		still += skin.weights.x() + skin.weights.y() + skin.weights.z() + skin.weights.w() < 0.5f ? 1u : 0u;
+	EXPECT_EQ(still, single.mesh->getVertices().size());
 }
 
 TEST(SkeletalAnimation, StaticMeshHasNoSkin) {

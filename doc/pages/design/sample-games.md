@@ -32,7 +32,7 @@ Owl Engine ships two kinds of example content:
 | Wolfenstein mini | Wolfenstein 3D      | raycast, doors, pick-ups, HUD                     | v0.4.0        | v0.4.0  |
 | Tower defence    | Kingdom Rush        | 3D, billboards, waves, upgrades, world map        | v0.5.0        | v0.5.0  |
 | Rail shooter     | Star Fox            | splines, 3D, planet, particles, HUD markers       | v0.6.0        | v0.6.0  |
-| Point-and-click  | Legend of Kyrandia  | 2D backdrops, 3D actors, walkable areas, dialogue | v0.6.0        |         |
+| Point-and-click  | Legend of Kyrandia  | 2D backdrops, 3D actors, walkable areas, dialogue | v0.6.0        | v0.6.0  |
 
 The two v1.0 showcase games (one 2D, one 3D) are picked from this list and from the
 [Pool](#sample-games-pool). The Lua gaps closed for the tower defence also serve Mini Transport Tycoon
@@ -419,17 +419,19 @@ Done in v0.6.0: Ring Runner, `samples/rail_shooter/` (how to play: its `README.m
 
 ### Point-and-click {#sample-games-point-and-click}
 
-| Item     | Plan                                                                                                                                                                           |
-|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Play     | A small fairy-tale adventure with a light humour: 3 or 4 rooms, one chain of puzzles, objects picked, combined and used                                                        |
-| Win/lose | The last puzzle solved, an ending cutscene; no death, no dead end                                                                                                              |
-| Controls | Mouse: walk, look, use, talk, the cursor shows the action under it; stick and pad buttons move the cursor and cycle the hotspots; an inventory key                             |
-| Scenes   | `title`, 3 or 4 rooms, `settings`, `ending`                                                                                                                                    |
-| Look     | Painted or pixel-art 2D backdrops, 3D skinned actors (idle, walk, talk, pick up) scaled by depth, walk-behind masks                                                            |
-| Engine   | 2D walkable areas ([2D](2d-complete.md#walkable-areas-2d)), dialogues with choices, sequences for the cutscenes, an inventory HUD, French and English string tables, subtitles |
-| Art      | CC0 backdrops and actors, home-made where none fits; home-made sounds and jingle                                                                                               |
-| Saves    | One slot through `save.*`: room, inventory, puzzles solved                                                                                                                     |
-| Size     | **M**                                                                                                                                                                          |
+The Moon Lantern, `samples/point_and_click/` (how to play: its `README.md`):
+
+| Item     | What exists                                                                                                                                                                             |
+|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Play     | A fairy tale with a light humour: three rooms (cottage, glade, troll bridge), one chain of puzzles, six objects picked, combined (berries and crust make a pie) and used                 |
+| Win/lose | The Moon Lantern lit (moonstone and fireflies), an ending sequence; no death, no dead end: nothing is used up before its puzzle                                                          |
+| Controls | Mouse: the cursor shows its action (walk, look, pick, use, talk, go), the right button looks; arrows and left stick move it, Tab / Q and RB / LB jump between hotspots; I, pad Y: the bag |
+| Scenes   | `title`, `cottage`, `glade`, `bridge`, `settings`, `ending`                                                                                                                             |
+| Look     | 320 x 180 pixel-art backdrops, 3D skinned actors (idle, walk, reach out, wave) scaled by depth, walk-behind masks (table, oak, parapet)                                                  |
+| Engine   | Walkable areas, dialogues with choices and conditions, a sequence for the ending, the bag in the HUD, English and French string tables, subtitles of the one-shot sounds                |
+| Art      | Generated backdrops, props, icons and sounds (`tools/samples/point_and_click/`), Quaternius CC0 characters (adventurer, wizard, goblin)                                                 |
+| Saves    | One slot through `save.*`: saved on entering a room and from the pause window, the room, the bag and the puzzles in `gamestate`                                                          |
+| Size     | **M**                                                                                                                                                                                   |
 
 ### Improvements of the earlier games {#sample-games-improvements}
 

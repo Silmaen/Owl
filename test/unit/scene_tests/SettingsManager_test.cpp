@@ -8,7 +8,10 @@
 
 #include "testHelper.h"
 
+#include <app/Application.h>
+#include <core/Core.h>
 #include <core/Log.h>
+#include <math/vectors.h>
 #include <scene/SettingsManager.h>
 
 #include <gtest/gtest.h>
@@ -210,4 +213,61 @@ TEST(SettingsManager, EmptyGameNameFallback) {
 
 	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
+}
+
+namespace {
+auto makeWindowApp() -> shared<app::Application> {
+	core::Log::init(core::Log::Level::Off);
+	return mkShared<app::Application>(app::AppParams{.args = nullptr,
+													 .frameLogFrequency = 0,
+													 .name = "settingsWindow",
+													 .assetsPattern = "",
+													 .icon = "",
+													 .width = 0,
+													 .height = 0,
+													 .argCount = 0,
+													 .renderer = renderer::gpu::RenderAPI::Type::Null,
+													 .hasGui = false,
+													 .useDebugging = false,
+													 .isDummy = true});
+}
+
+void releaseWindowApp(shared<app::Application>& ioApp) {
+	app::Application::invalidate();
+	ioApp.reset();
+	core::Log::invalidate();
+}
+}// namespace
+
+TEST(SettingsManager, WindowSettingsLeaveAWindowTheGameDoesNotOwn) {
+	auto application = makeWindowApp();
+	SettingsGuard guard;
+	auto& window = app::Application::get().getWindow();
+	window.setSize(1600, 900);
+	guard.settings.setDefault(SettingsManager::KeyResolutionWidth, int64_t{640});
+	guard.settings.setDefault(SettingsManager::KeyResolutionHeight, int64_t{360});
+	guard.settings.applyBuiltins();
+	EXPECT_EQ(window.getSize(), (math::vec2ui{1600, 900}));
+	releaseWindowApp(application);
+}
+
+TEST(SettingsManager, WindowSettingsApplyOnlyWhenTheyChange) {
+	auto application = makeWindowApp();
+	SettingsGuard guard;
+	auto& window = app::Application::get().getWindow();
+	guard.settings.setWindowOwned(true);
+	EXPECT_TRUE(guard.settings.isWindowOwned());
+	guard.settings.setDefault(SettingsManager::KeyResolutionWidth, int64_t{640});
+	guard.settings.setDefault(SettingsManager::KeyResolutionHeight, int64_t{360});
+	guard.settings.applyBuiltins();
+	EXPECT_EQ(window.getSize(), (math::vec2ui{640, 360}));
+	// The player resizes the window, then changes another setting: the window keeps its size.
+	window.setSize(1000, 700);
+	guard.settings.set(SettingsManager::KeyLanguage, std::string{"fr"});
+	guard.settings.applyBuiltins();
+	EXPECT_EQ(window.getSize(), (math::vec2ui{1000, 700}));
+	guard.settings.set(SettingsManager::KeyResolutionWidth, int64_t{800});
+	guard.settings.applyBuiltins();
+	EXPECT_EQ(window.getSize(), (math::vec2ui{800, 360}));
+	releaseWindowApp(application);
 }

@@ -1,0 +1,25 @@
+# The Moon Lantern, the bag: an object taken from the bag stays in hand with the bag open; a click on the floor of the
+# room closes the bag and keeps the object in hand (the cursor shows it); Escape puts it back. At 1600x960 a pixel
+# (x, y) of the 320x180 backdrop is at the viewport pixel (800 + 5.333 * (x - 160), 5.333 * y).
+scene: ../../../samples/point_and_click/scenes/cottage.owl
+steps:
+  - frames: 10
+  - input: {mouse: Left, mouse_pos: [288, 235], frames: 2}
+  - frames: 300
+  - expect: {gamestate: inventory_count, equals: 1}
+  - input: {key: I, frames: 2}
+  - frames: 3
+  - expect: {gamestate: inventory_open, equals: true}
+  - input: {key: Enter, frames: 2}
+  - frames: 3
+  - expect: {gamestate: held, equals: jar}
+  - expect: {gamestate: inventory_open, equals: true}
+  # The floor by the lantern: no hotspot there.
+  - input: {mouse: Left, mouse_pos: [1500, 700], frames: 2}
+  - frames: 3
+  - expect: {gamestate: inventory_open, equals: false}
+  - expect: {gamestate: held, equals: jar}
+  - expect: {gamestate: cursor_verb, equals: item}
+  - input: {key: Escape, frames: 2}
+  - frames: 3
+  - expect: {gamestate: held, equals: ''}

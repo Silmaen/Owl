@@ -248,6 +248,8 @@ struct MeshDrawParams {
 	const Material* material = nullptr;
 	/// Without a material: blend with the base-colour alpha instead of drawing opaque.
 	bool blended = false;
+	/// Draw flat at the depth of the model origin: whole in front of or behind any other surface (a walking actor).
+	bool flatDepth = false;
 };
 
 /**
@@ -259,7 +261,7 @@ struct MeshInstance {
 	math::mat4 model = math::identity<float, 4>();
 	/// Colour multiplied with the base colour of the material.
 	math::vec4 tint{1.f, 1.f, 1.f, 1.f};
-	/// x: entity id written for picking (`-1` for none); yzw unused.
+	/// x: entity id written for picking (`-1` for none); y: 1 when flat in depth (`MeshDrawParams::flatDepth`).
 	std::array<int32_t, 4> ids{-1, 0, 0, 0};
 };
 

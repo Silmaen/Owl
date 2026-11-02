@@ -114,7 +114,7 @@ flowchart LR
 | Phase         | Engine systems                                                                                                                                     | Contract                                  |
 |---------------|----------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
 | `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)                                                                            | May move, create or destroy entities      |
-| `PrePhysics`  | `owl.oscillators`, `owl.patrols`, `owl.spline_followers`, `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input`          | Gameplay controllers before the step      |
+| `PrePhysics`  | `owl.oscillators`, `owl.patrols`, `owl.spline_followers`, `owl.walk_agents`, `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input` | Gameplay controllers before the step      |
 | `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                                                                                         | Owns the physics step                     |
 | `PostPhysics` | `owl.drift`, `owl.animation`, `owl.sockets`, `owl.light_flicker`, `owl.entity_links`, `owl.triggers`, `owl.floating_origin`, `owl.world_streaming` | Last phase allowed to change the world    |
 | `Late`        | `owl.navigation`, `owl.sound`, `owl.sprite_animation`                                                                                              | Reads the settled world (caches armed)    |
@@ -934,6 +934,37 @@ the curve: its -Z axis in 3D (a camera on a rail looks ahead), its +X axis on a 
 Lua reads and drives both: `spline.sample`, `spline.get_tangent`, `spline.get_nearest`, `spline.set_speed`,
 `spline.set_lane`, `spline.set_distance` ([reference](lua-api-data.md)).
 
+#### WalkArea, WalkAgent and WalkBehind {#walk-area-components}
+
+YAML keys: `WalkArea`, `WalkAgent`, `WalkBehind`, system `owl.walk_agents` (`PrePhysics`). A `WalkArea` is a 2D floor
+of polygons with holes on the plane (x, y) of its entity; a `WalkAgent` walks on it along the shortest path, scaled and
+sorted by its height on the plane; a `WalkBehind` mask is a part of the backdrop drawn over the agents behind its
+baseline. Guide: [Walkable areas](pathfinding.md#pathfinding-walk-areas).
+
+| `WalkArea` field | Type   | Default | Description                                                                   |
+|------------------|--------|---------|-------------------------------------------------------------------------------|
+| `polygons`       | list   | empty   | `{outline: [[x, y], ...], holes: [[[x, y], ...], ...]}`, entity space          |
+| `depthScale`     | `bool` | `false` | Scale the agents by their height on the plane                                 |
+| `nearY`          | float  | `0`     | Height of `nearScale`                                                         |
+| `nearScale`      | float  | `1`     | Scale at `nearY`                                                              |
+| `farY`           | float  | `10`    | Height of `farScale`                                                          |
+| `farScale`       | float  | `0.5`   | Scale at `farY` (linear between and beyond, never below 0.01)                 |
+| `depthSort`      | `bool` | `false` | Set the Z of the agents and masks: lower on the plane is nearer               |
+| `depthPerUnit`   | float  | `0.1`   | Z gained per unit walked down the plane, 0 at `nearY`                         |
+
+| `WalkAgent` field | Type     | Default | Description                                                                   |
+|-------------------|----------|---------|-------------------------------------------------------------------------------|
+| `area`            | UUID     | `0`     | Entity holding the `WalkArea`                                                 |
+| `speed`           | float    | `2`     | World units per second at a scale of 1                                        |
+| `scaleSpeed`      | `bool`   | `true`  | Slower far away, with the scale by depth                                      |
+| `facing`          | enum     | `None`  | `None`, `MirrorX` (a sprite), `TurnY` (a mesh facing +Z when walking down)    |
+| `speedParameter`  | `string` | `speed` | Float parameter of the `Animator` (own or first child's) set to the speed     |
+
+| `WalkBehind` field | Type  | Default | Description                                                                  |
+|--------------------|-------|---------|------------------------------------------------------------------------------|
+| `area`             | UUID  | `0`     | Entity holding the `WalkArea` (its `depthSort` on)                           |
+| `baseline`         | float | `0`     | Height of the line on the plane: agents above it are behind the mask         |
+
 #### SequencePlayer {#sequence-player-component}
 
 YAML key: `SequencePlayer`, system `owl.sequences` (`PostPhysics`, after `follow_target`). Plays a `.owlseq` sequence:
@@ -1232,7 +1263,10 @@ seconds; hidden while the button is pressed. Sized to its text, kept inside the 
 #### UiToolCursor
 
 A sprite following the mouse over the HUD while a construction tool is active, pairing with the tile highlight of the
-isometric layer. It needs no `UiRect`; the first active one is drawn last, in play only. Lua `ui.set_tool_cursor`.
+isometric layer, or the object in hand of an adventure game. It needs no `UiRect`; the first active one is drawn last,
+in play only. Lua `ui.set_tool_cursor`; `input.set_cursor_visible(false)` hides the system cursor under it
+(`window::CursorMode::Hidden`, `Scene::wantsCursorHidden`), in Owl Nest only while the mouse is over the game viewport,
+shown again when the play stops.
 
 | Field     | Type      | Description                                                           |
 |-----------|-----------|-----------------------------------------------------------------------|

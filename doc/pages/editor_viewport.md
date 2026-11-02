@@ -117,6 +117,19 @@ the entity. A selected point of a Bezier spline shows its two handles: click one
 Click elsewhere to drop the point selection and get the entity gizmo back. The inspector lists the same points, with
 **Add Point**, **Insert After Selected** and **Delete Selected**, and the lanes.
 
+### Walk areas {#viewport-walk-areas}
+
+The selected entity with a **Walk Area** shows its floors: the outlines in green, the holes in orange, the triangles in
+faint green and the vertices as squares (the dashed blue lines are the two heights of its scale by depth). Click a
+vertex to select it and move it with the gizmo; **Ctrl+click** adds or removes a vertex from the selection and the
+gizmo then moves the group (one `walk.move_vertices`). **Shift+click** on an edge inserts a vertex there
+(`walk.insert_vertex`), **Alt+click** inside a floor cuts a square hole there (`walk.add_hole`) and outside every floor
+adds a square floor (`walk.add_polygon`); **Delete** removes the selected vertices (`walk.delete_vertices`, a ring left
+with fewer than three goes with them) instead of the entity. Each gesture is one undo step. The inspector lists the
+same floors, holes and vertices, with **Add Floor**, **Add Hole**, **Delete Hole** and **Delete Floor**; see
+[Walkable areas](pathfinding.md#pathfinding-walk-areas). **Show > Navigation graph and routes** draws every walk area of
+the scene and the paths of the walking agents.
+
 ### Sequences {#viewport-sequences}
 
 The player previewed by an open **Sequencer** (else the selected entity with a **SequencePlayer**) draws the path of

@@ -144,6 +144,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Data tables (`.owltable`): typed columns (integer, float, bool, text, enum, asset, reference to a row of a table), read once per engine context (`DataTableLibrary`).
 - Owl Nest data table document: a grid to add, move, duplicate and remove rows and columns, typed cells, references picked from a list, through the `table.*` commands.
 - Lua `spline.*` (sample by distance, tangent, nearest distance, points, follower speed, lane and distance) and `datatable.*` (cells, rows, keys, columns, references, find).
+- Walkable areas: the `WalkArea` component holds 2D floors with holes, cut into triangles, and finds the shortest path across them (A* then funnel).
+- `WalkAgent` component (`owl.walk_agents`): an actor walks its path, scaled and sorted by depth, turned the way it walks and driving its `Animator` speed.
+- `WalkBehind` component: a sprite of the backdrop hides the actors behind its baseline, 2D sprites and meshes alike.
+- Lua `walk.*`: paths, inside test, nearest point, scale at a point, agents sent, stopped and polled.
+- The navigation overlay draws the walk areas and the paths of the walking agents.
+- Owl Nest walk area editing: vertices selected, Ctrl+click, group gizmo, Shift+click inserts, Alt+click adds a hole or a floor, Delete removes, and a Walk Area inspector.
+- `walk.add_polygon`, `add_hole`, `delete_ring`, `insert_vertex`, `move_vertices`, `set_vertex` and `delete_vertices` commands, one undo step each.
+- Engine Demo: five pedestrians stroll on the paved plaza of the iso town, a walk area following its buildings (`iso_town_walkers.lua`).
+- Point-and-click sample game The Moon Lantern (`samples/point_and_click/`): three rooms, 3D actors on pixel-art backdrops, a bag, two dialogues, an ending sequence, English and French.
+- Owl Nest: Frame on a selected walk area centres the view on its floors.
 - The export packs the tables a script names, the tables they reference and the assets of their cells.
 - Benchmarks `spline/rebuild`, `spline/sample_distance`, `spline/sample_lane` and `spline/nearest`.
 - Engine Demo: two barrel carts ride the lanes of a spline in the character yard, their speed, lane and cargo read from two linked data tables.
@@ -158,10 +168,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `ui.set_style` makes the widgets of an entity follow a style.
 - Benchmark `hud/frame/500_styled_widgets`: the 500-widget HUD drawn through the rounded-box shader.
 - Engine Demo skin `huds/engine_demo.owlhudtheme` (warm wood and brass, nine-slice textures from `tools/demo/generate_ui_skin.py`), the project default, followed by every menu and HUD but the far-orbit cockpit.
+- Pixel-art mesh layers: `PixelHeight`, `PixelColorLevels` and `PixelOutline` draw a `RendererMesh` layer at a low resolution, composited with its depth by `PixelArtPass`, set from Owl Nest Scene Settings.
+- Engine Demo tavern: a pixel-art patron stands in the room (`mesh_pixel` layer).
+- `window::CursorMode::Hidden` and Lua `input.set_cursor_visible` / `input.is_cursor_visible`: a game drawing its own cursor hides the system one, in Owl Nest only over the game viewport.
 
 ### Changed
 
 - A particle emitter that does not emit and whose particles all died is idle (`ParticleSystem::isIdle`): neither simulated nor drawn.
+- The Moon Lantern: the bag stays open with an object in hand and after a combination, a click on the room closes it, and the object in hand is the cursor.
+- The Moon Lantern: the actors are drawn as toon-shaded pixel art with an outline, matching the backdrops, and the objects to pick are lighter, outlined and glow under the cursor.
+- A glTF with one skin per mesh over the same joints (as Quaternius exports its characters) is skinned whole, not only its first mesh.
+- Scenario and frame-bench runs read the `localisation.yml` of their project: the texts show translated as in the game.
+- Each scenario test runs with a user directory of its own (`OWL_USER_DIR`): parallel scenarios no longer share saves and settings.
 - `mesh3d.slang` shares its surface shading with the new `skinned3d.slang` through `common/mesh_surface.slangh`; its output is unchanged.
 - Compute shaders resolve their `#include`s like the graphics shaders and the shader bake.
 - Roadmap: an Engine Demo revamp around the world map, 2D walkable areas, a rail shooter and a point-and-click sample in v0.6.0; every pool game possible at 1.0.
@@ -199,9 +217,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `settings.apply()` resizes the window only in the runner and only for a window setting that changed: changing the language or the subtitles in Play no longer resizes Owl Nest, nor a game window the player resized.
 - A scene that gave the mouse back by itself, a dialogue pausing the walker, captures it again when it ends, in Play and in the runner; Escape still waits for a click.
 - HUD markers were mirrored vertically on Vulkan: `renderer::projectToViewport` takes the clip space of the active layer.
 - `entity.particles_emit` (`ParticleSystem::emit`) bursts an emitter that never played (no play on start), which spawned nothing, and an emitter moved while idle bursts where it is instead of along a streak from where it was.
+- Walk-behind: a mesh actor of a depth-sorted `WalkArea` is drawn flat at the depth of its feet, so a mask or another actor never hides one limb and not the rest.
+- The Moon Lantern: the pie crust is drawn over the table it lies on instead of sharing its depth.
 - Node editors: a link routed backwards through waypoints crosses them towards where it goes instead of looping.
 - Content Browser: **Delete** and **Rename** open their confirmation again once the context menu has closed; `Delete` and `F2` are their shortcuts.
 - Mixer: drawn with the widget kit and the theme (property grid, sub-headers, themed mute / solo switches and meter), docked with Properties, and its ribbon button shows and hides it.

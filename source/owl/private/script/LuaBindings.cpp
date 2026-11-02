@@ -42,6 +42,7 @@
 #include "scene/component/components.h"
 #include "scene/nav/NavWorld.h"
 #include "scene/nav/Pathfinder.h"
+#include "scene/nav/WalkQueries.h"
 #include "scene/ui/HudLayout.h"
 #include "script/LuaEngine.h"
 #include "script/ScriptEngine.h"
@@ -390,6 +391,18 @@ auto luaInputGetMouseWheel(lua_State* iState) -> int {
 	lua_pushnumber(iState, static_cast<lua_Number>(wheel.x()));
 	lua_pushnumber(iState, static_cast<lua_Number>(wheel.y()));
 	return 2;
+}
+
+auto luaInputSetCursorVisible(lua_State* iState) -> int {
+	if (auto* activeScene = getBoundScene(iState); activeScene != nullptr)
+		activeScene->setCursorHidden(lua_toboolean(iState, 1) == 0);
+	return 0;
+}
+
+auto luaInputIsCursorVisible(lua_State* iState) -> int {
+	const auto* activeScene = getBoundScene(iState);
+	lua_pushboolean(iState, activeScene == nullptr || !activeScene->wantsCursorHidden() ? 1 : 0);
+	return 1;
 }
 
 auto checkGamepadSlot(lua_State* iState, const int iArg) -> std::size_t {
@@ -2595,6 +2608,120 @@ auto luaPathGetDebug(lua_State* iState) -> int {
 	return 1;
 }
 
+// The entity of the first argument when it holds a component.
+template<typename Component>
+auto entityWith(lua_State* iState) -> std::optional<scene::Entity> {
+	if (auto entity = findEntity(iState); entity && entity->hasComponent<Component>())
+		return entity;
+	return std::nullopt;
+}
+
+auto readPoint(lua_State* iState, const int iIndex) -> math::vec2 {
+	return {static_cast<float>(luaL_checknumber(iState, iIndex)),
+			static_cast<float>(luaL_checknumber(iState, iIndex + 1))};
+}
+
+auto luaWalkFindPath(lua_State* iState) -> int {
+	const auto from = readPoint(iState, 2);
+	const auto to = readPoint(iState, 4);
+	const auto area = entityWith<scene::component::WalkArea>(iState);
+	std::vector<math::vec2> path;
+	if (!area || !scene::nav::findWalkPath(*getBoundScene(iState), *area, from, to, path)) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	lua_createtable(iState, static_cast<int>(path.size() * 2), 0);
+	lua_Integer index = 1;
+	for (const auto& point: path) {
+		lua_pushnumber(iState, static_cast<lua_Number>(point.x()));
+		lua_rawseti(iState, -2, index++);
+		lua_pushnumber(iState, static_cast<lua_Number>(point.y()));
+		lua_rawseti(iState, -2, index++);
+	}
+	return 1;
+}
+
+auto luaWalkIsInside(lua_State* iState) -> int {
+	const auto point = readPoint(iState, 2);
+	const auto area = entityWith<scene::component::WalkArea>(iState);
+	lua_pushboolean(iState, area && scene::nav::isOnWalkArea(*getBoundScene(iState), *area, point) ? 1 : 0);
+	return 1;
+}
+
+auto luaWalkGetClosestPoint(lua_State* iState) -> int {
+	const auto point = readPoint(iState, 2);
+	const auto area = entityWith<scene::component::WalkArea>(iState);
+	if (!area)
+		return 0;
+	const auto closest = scene::nav::getWalkClosestPoint(*getBoundScene(iState), *area, point);
+	if (!closest)
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(closest->x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(closest->y()));
+	return 2;
+}
+
+auto luaWalkGetScaleAt(lua_State* iState) -> int {
+	const auto point = readPoint(iState, 2);
+	const auto area = entityWith<scene::component::WalkArea>(iState);
+	lua_pushnumber(iState, static_cast<lua_Number>(
+								   area ? scene::nav::getWalkScaleAt(*getBoundScene(iState), *area, point) : 1.f));
+	return 1;
+}
+
+auto luaWalkGoTo(lua_State* iState) -> int {
+	const auto target = readPoint(iState, 2);
+	const auto agent = entityWith<scene::component::WalkAgent>(iState);
+	lua_pushboolean(iState, agent && scene::nav::walkAgentTo(*getBoundScene(iState), *agent, target) ? 1 : 0);
+	return 1;
+}
+
+auto luaWalkStop(lua_State* iState) -> int {
+	if (const auto agent = entityWith<scene::component::WalkAgent>(iState); agent)
+		agent->getComponent<scene::component::WalkAgent>().stop();
+	return 0;
+}
+
+auto luaWalkIsMoving(lua_State* iState) -> int {
+	const auto agent = entityWith<scene::component::WalkAgent>(iState);
+	lua_pushboolean(iState, agent && agent->getComponent<scene::component::WalkAgent>().isMoving() ? 1 : 0);
+	return 1;
+}
+
+auto luaWalkGetTarget(lua_State* iState) -> int {
+	const auto agent = entityWith<scene::component::WalkAgent>(iState);
+	if (!agent)
+		return 0;
+	const auto& walker = agent->getComponent<scene::component::WalkAgent>();
+	if (!walker.isMoving())
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(walker.m_path.back().x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(walker.m_path.back().y()));
+	return 2;
+}
+
+auto luaWalkSetSpeed(lua_State* iState) -> int {
+	const auto speed = static_cast<float>(luaL_checknumber(iState, 2));
+	if (const auto agent = entityWith<scene::component::WalkAgent>(iState); agent)
+		agent->getComponent<scene::component::WalkAgent>().speed = std::max(0.f, speed);
+	return 0;
+}
+
+auto luaWalkSetArea(lua_State* iState) -> int {
+	const auto areaId = static_cast<uint64_t>(luaL_checkinteger(iState, 2));
+	const auto agent = entityWith<scene::component::WalkAgent>(iState);
+	const auto area = getBoundScene(iState)->findEntityByUUID(core::UUID{areaId});
+	if (!agent || !area || !area.hasComponent<scene::component::WalkArea>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	auto& walker = agent->getComponent<scene::component::WalkAgent>();
+	walker.area = area.getUUID();
+	walker.stop();
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
 auto splineEntity(lua_State* iState) -> std::optional<scene::Entity> {
 	if (auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Spline>())
 		return entity;
@@ -3171,6 +3298,13 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "input", .name = "get_mouse_wheel", .function = guarded<luaInputGetMouseWheel>,
 		 .description = "Wheel offset scrolled since the previous tick or frame (horizontal, vertical).",
 		 .returns = {{"dx", Number}, {"dy", Number}}},
+		{.table = "input", .name = "set_cursor_visible", .function = guarded<luaInputSetCursorVisible>,
+		 .description = "Show or hide the system cursor over the game, for a game drawing its own (an action icon, the "
+						"object in hand); shown again when the play stops.",
+		 .params = {{"visible", Boolean}}},
+		{.table = "input", .name = "is_cursor_visible", .function = guarded<luaInputIsCursorVisible>,
+		 .description = "Whether the system cursor is shown over the game (`input.set_cursor_visible`).",
+		 .returns = {{"visible", Boolean}}},
 		{.table = "input", .name = "is_gamepad_connected", .function = guarded<luaInputIsGamepadConnected>,
 		 .description = "Whether a gamepad is connected in a slot (0 to 15).",
 		 .params = {{"pad", Integer}}, .returns = {{"connected", Boolean}}},
@@ -3794,6 +3928,36 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "path", .name = "clear_routes", .function = guarded<luaPathClearRoutes>,
 		 .description = "Remove every route given to `path.show_route` for the tilemap.",
 		 .params = {entityId}},
+		{.table = "walk", .name = "find_path", .function = guarded<luaWalkFindPath>,
+		 .description = "Shortest path across the `WalkArea` of an entity between two world points (each moved onto the floor when outside): the corners as `{x1, y1, x2, y2, ...}`, start and goal included; nothing when they lie on floors that do not touch.",
+		 .params = {entityId, {"from_x", Number}, {"from_y", Number}, {"to_x", Number}, {"to_y", Number}},
+		 .returns = {{"points", Table}}},
+		{.table = "walk", .name = "is_inside", .function = guarded<luaWalkIsInside>,
+		 .description = "Whether a world point is on the floor of the `WalkArea` of an entity (outside its holes).",
+		 .params = {entityId, {"x", Number}, {"y", Number}}, .returns = {{"inside", Boolean}}},
+		{.table = "walk", .name = "get_closest_point", .function = guarded<luaWalkGetClosestPoint>,
+		 .description = "Point of the floor of the `WalkArea` nearest to a world point (the point itself when on the floor); nothing when the area has no floor.",
+		 .params = {entityId, {"x", Number}, {"y", Number}}, .returns = {{"x", Number}, {"y", Number}}},
+		{.table = "walk", .name = "get_scale_at", .function = guarded<luaWalkGetScaleAt>,
+		 .description = "Scale by depth the `WalkArea` gives to an actor standing at a world point (1 when the area does not scale).",
+		 .params = {entityId, {"x", Number}, {"y", Number}}, .returns = {{"scale", Number}}},
+		{.table = "walk", .name = "go_to", .function = guarded<luaWalkGoTo>,
+		 .description = "Send a `WalkAgent` to a world point of its area (moved onto the floor when outside): the path is found at once and walked over the next frames; false when no path joins them, the agent then stands still.",
+		 .params = {entityId, {"x", Number}, {"y", Number}}, .returns = {{"found", Boolean}}},
+		{.table = "walk", .name = "stop", .function = guarded<luaWalkStop>,
+		 .description = "Stop a `WalkAgent` where it stands.", .params = {entityId}},
+		{.table = "walk", .name = "is_moving", .function = guarded<luaWalkIsMoving>,
+		 .description = "Whether a `WalkAgent` still has a path to walk.",
+		 .params = {entityId}, .returns = {{"moving", Boolean}}},
+		{.table = "walk", .name = "get_target", .function = guarded<luaWalkGetTarget>,
+		 .description = "World point a walking `WalkAgent` goes to; nothing when it stands.",
+		 .params = {entityId}, .returns = {{"x", Number}, {"y", Number}}},
+		{.table = "walk", .name = "set_speed", .function = guarded<luaWalkSetSpeed>,
+		 .description = "Walking speed of a `WalkAgent`, in world units per second at a scale of 1.",
+		 .params = {entityId, {"speed", Number}}},
+		{.table = "walk", .name = "set_area", .function = guarded<luaWalkSetArea>,
+		 .description = "Put a `WalkAgent` on the `WalkArea` of another entity (it stops); false when that entity has no area.",
+		 .params = {entityId, {"area", Integer}}, .returns = {{"done", Boolean}}},
 		{.table = "animator", .name = "set_float", .function = guarded<luaAnimatorSetFloat>,
 		 .description = "Set a number parameter of the entity's `Animator` state machine; false when it has no such parameter.",
 		 .params = {entityId, {"name", String}, {"value", Number}}, .returns = {{"done", Boolean}}},
@@ -4037,6 +4201,9 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "path",
 			 .description = "Shortest paths over the graph a tilemap's `navigation` rules describe (roads, tracks), "
 							"searched over several frames."},
+			{.name = "walk",
+			 .description = "Free walking on the 2D floors of the `WalkArea`s: paths around the holes, the agents "
+							"walking them, the scale by depth."},
 	};
 	return s_tables;
 }
@@ -4055,7 +4222,9 @@ auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 			 .tables = {"gamestate", "save", "settings"}},
 			{.file = "lua-api-locale.md", .title = "Localisation", .tables = {"locale"}},
 			{.file = "lua-api-raycast.md", .title = "Raycast doors and push-walls", .tables = {"door", "pushwall"}},
-			{.file = "lua-api-isometric.md", .title = "Isometric terrain and paths", .tables = {"isometric", "path"}},
+			{.file = "lua-api-isometric.md",
+			 .title = "Isometric terrain, paths and walkable areas",
+			 .tables = {"isometric", "path", "walk"}},
 			{.file = "lua-api-animation.md", .title = "Animation and sockets", .tables = {"animator", "socket"}},
 			{.file = "lua-api-data.md", .title = "Splines and data tables", .tables = {"spline", "datatable"}},
 			{.file = "lua-api-dialogue.md", .title = "Dialogues", .tables = {"dialogue"}},

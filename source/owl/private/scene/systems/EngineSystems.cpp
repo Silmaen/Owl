@@ -156,6 +156,7 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.oscillators", SystemPhase::PrePhysics, &updateOscillators, &tickOscillators);
 	add("owl.patrols", SystemPhase::PrePhysics, &updatePatrols);
 	add("owl.spline_followers", SystemPhase::PrePhysics, &updateSplineFollowers);
+	add("owl.walk_agents", SystemPhase::PrePhysics, &updateWalkAgents);
 	add("owl.fly_cameras", SystemPhase::PrePhysics, &updateFlyCameras);
 	add("owl.ships", SystemPhase::PrePhysics, &updateShips);
 	add("owl.voxel_players", SystemPhase::PrePhysics, &updateVoxelPlayers);

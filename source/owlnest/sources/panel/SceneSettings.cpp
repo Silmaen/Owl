@@ -120,6 +120,32 @@ auto renderColorOverride(YAML::Node& ioOverrides, const char* iKey, const char* 
 	return changed;
 }
 
+auto renderIntOverride(YAML::Node& ioOverrides, const char* iKey, const char* iLabel, const int iMax,
+					   const char* iFormat, const char* iTooltip) -> bool {
+	int value = ioOverrides[iKey] ? ioOverrides[iKey].as<int>(0) : 0;
+	if (!gui::widgets::propertyInt(iLabel, value, 0, 0, iMax, iFormat, iTooltip))
+		return false;
+	if (value == 0)
+		ioOverrides.remove(iKey);
+	else
+		ioOverrides[iKey] = value;
+	return true;
+}
+
+// The pixel-art look of a mesh layer: the height of its low-resolution image, its colour levels and its outline.
+auto renderPixelArtOverrides(YAML::Node& ioOverrides) -> bool {
+	bool changed = renderIntOverride(ioOverrides, "PixelHeight", "Pixel Height", 4096, "%d texels",
+									 "Draw the layer as pixel art, this many texels high (the height of the "
+									 "backdrops in pixels), shown with nearest filtering; 0 draws it at the "
+									 "resolution of the frame. Play only: the editor shows it at full resolution.");
+	changed |= renderIntOverride(ioOverrides, "PixelColorLevels", "Colour Levels", 256, "%d per channel",
+								 "Pixel art: levels kept of each colour channel (0 keeps every colour).");
+	ImGui::PushID("pixelOutline");
+	changed |= renderColorOverride(ioOverrides, "PixelOutline", "Pixel Outline", {0.f, 0.f, 0.f, 0.f});
+	ImGui::PopID();
+	return changed;
+}
+
 auto renderTilesetOverride(YAML::Node& ioOverrides, const char* iKey, const char* iLabel) -> bool {
 	std::string path = ioOverrides[iKey] ? ioOverrides[iKey].as<std::string>("") : std::string{};
 	gui::widgets::propertyLabel(iLabel, "Tileset drawn as the texture of the plane; empty keeps the solid colour.");
@@ -334,6 +360,7 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 			changed = true;
 		}
 		changed |= renderLightingOverrides<renderer::MeshLayerConfig>(ioOverrides);
+		changed |= renderPixelArtOverrides(ioOverrides);
 	} else if (iTypeKey == "RendererVoxel") {
 		changed = renderLightingOverrides<renderer::VoxelConfig>(ioOverrides);
 	} else {

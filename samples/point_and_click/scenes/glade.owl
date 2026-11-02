@@ -1,0 +1,453 @@
+Scene: glade
+FormatVersion: 7
+Hud: gid:378e3ea685c88ec3:huds/play.owlhud
+SceneScript:
+  scriptPath: gid:a9f08abaa45f7f59:scripts/rooms/glade.lua
+EnabledRenderers:
+- {Name: actors, Enabled: true}
+- {Name: world, Enabled: true}
+- {Name: cursor, Enabled: true}
+Entities:
+  - Entity: 9110000000000000001
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 20]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.1
+        perspectiveFar: 200
+        orthographicSize: 9
+        orthographicNear: 0.1
+        orthographicFar: 100
+        toneMapping: None
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 9110000000000000002
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.6, 0.45, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light: {type: Directional, enabled: true, color: [1, 0.95, 0.88], intensity: 100000, castShadows: false}
+  - Entity: 9110000000000000003
+    Tag:
+      tag: Backdrop
+    Transform:
+      translation: [0, 0, -40]
+      rotation: [0, 0, 0]
+      scale: [16, 9, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: gid:2e45d843aa15888e:textures/rooms/glade.png
+      lit: false
+    RendererTag:
+      Name: world
+  - Entity: 9110000000000000004
+    Tag:
+      tag: Floor
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    WalkArea:
+      polygons:
+        - outline: [[-7.9, -1.8], [2, -1.6], [7.2, -1.9], [7.9, -1.9], [7.9, -4.4], [-7.9, -4.4]]
+          holes:
+            - [[-3.1, -3.7], [-1.7, -3.7], [-1.7, -4.25], [-3.1, -4.25]]
+      depthScale: true
+      nearY: -4.4
+      nearScale: 1
+      farY: -1.6
+      farScale: 0.72
+      depthSort: true
+      depthPerUnit: 3
+  - Entity: 9110000000000000005
+    Tag:
+      tag: Mask_trunk
+    Transform:
+      translation: [-2.375, 0.025, 0]
+      rotation: [0, 0, 0]
+      scale: [2.45, 8.95, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: gid:5d404bf874b8bbb3:textures/rooms/glade_trunk.png
+      lit: false
+    WalkBehind:
+      area: 9110000000000000004
+      baseline: -3.9
+    RendererTag:
+      Name: world
+  - Entity: 9110000000000000006
+    Tag:
+      tag: Prop_berries
+    Transform:
+      translation: [-5.175, -0.725, -30]
+      rotation: [0, 0, 0]
+      scale: [2.25, 1.25, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: gid:f50ba1f8fb1a5e43:textures/rooms/glade_berries.png
+      lit: false
+    RendererTag:
+      Name: world
+  - Entity: 9110000000000000007
+    Tag:
+      tag: Prop_fireflies
+    Transform:
+      translation: [4.075, 0.175, -30]
+      rotation: [0, 0, 0]
+      scale: [2.95, 1.85, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:3acbb4857ef3722e:textures/rooms/glade_fireflies.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+      lit: false
+    RendererTag:
+      Name: world
+  - Entity: 9110000000000000008
+    Tag:
+      tag: Hero
+    Transform:
+      translation: [-7, -3, 0]
+      rotation: [0, 0.6, 0]
+      scale: [2.2, 2.2, 2.2]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:20cc1b9fee86132d:meshes/hero.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+        - overrides: {shadingModel: Toon, toonBands: 3, toonRim: 0.2}
+    Animator:
+      playing: true
+      speed: 1
+      entry: idle
+      parameters:
+        - {name: speed, type: Float, value: 0}
+        - {name: act, type: Trigger, value: 0}
+        - {name: talk, type: Trigger, value: 0}
+      states:
+        - {name: idle, clip: 'CharacterArmature|Idle', speed: 1, loop: true}
+        - {name: walk, clip: 'CharacterArmature|Walk', speed: 1.2, loop: true}
+        - {name: act, clip: 'CharacterArmature|Interact', speed: 1, loop: false}
+        - {name: talk, clip: 'CharacterArmature|Wave', speed: 1, loop: false}
+      transitions:
+        - {from: idle, to: walk, duration: 0.2, exitTime: -1, conditions: [{parameter: speed, op: Greater, threshold: 0.15}]}
+        - {from: walk, to: idle, duration: 0.2, exitTime: -1, conditions: [{parameter: speed, op: Less, threshold: 0.15}]}
+        - {from: '*', to: act, duration: 0.15, exitTime: -1, conditions: [{parameter: act, op: IsTrue, threshold: 0}]}
+        - {from: act, to: idle, duration: 0.25, exitTime: 1, conditions: []}
+        - {from: '*', to: talk, duration: 0.15, exitTime: -1, conditions: [{parameter: talk, op: IsTrue, threshold: 0}]}
+        - {from: talk, to: idle, duration: 0.25, exitTime: 1, conditions: []}
+    WalkAgent:
+      area: 9110000000000000004
+      speed: 2.4
+      scaleSpeed: true
+      facing: TurnY
+      speedParameter: speed
+    RendererTag:
+      Name: actors
+  - Entity: 9110000000000000009
+    Tag:
+      tag: Entry_cottage
+    Transform:
+      translation: [-7, -3, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9110000000000000010
+    Tag:
+      tag: Entry_bridge
+    Transform:
+      translation: [7, -3, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9110000000000000011
+    Tag:
+      tag: Hotspot_fireflies
+    Transform:
+      translation: [4.075, 0.175, 0]
+      rotation: [0, 0, 0]
+      scale: [2.95, 1.85, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9110000000000000012
+    Tag:
+      tag: Stand_fireflies
+    Transform:
+      translation: [-0.0932, -1.2297, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9110000000000000011
+  - Entity: 9110000000000000013
+    Tag:
+      tag: Hotspot_bush
+    Transform:
+      translation: [-5.175, -0.675, 0]
+      rotation: [0, 0, 0]
+      scale: [3.05, 1.95, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9110000000000000014
+    Tag:
+      tag: Stand_bush
+    Transform:
+      translation: [0.0246, -0.7308, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9110000000000000013
+  - Entity: 9110000000000000015
+    Tag:
+      tag: Hotspot_mushrooms
+    Transform:
+      translation: [0.275, -1.525, 0]
+      rotation: [0, 0, 0]
+      scale: [2.15, 0.85, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9110000000000000016
+    Tag:
+      tag: Stand_mushrooms
+    Transform:
+      translation: [-0.0349, -1.0294, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9110000000000000015
+  - Entity: 9110000000000000017
+    Tag:
+      tag: Hotspot_pond
+    Transform:
+      translation: [4.675, -1.225, 0]
+      rotation: [0, 0, 0]
+      scale: [4.95, 1.05, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9110000000000000018
+    Tag:
+      tag: Stand_pond
+    Transform:
+      translation: [-0.0152, -0.9286, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9110000000000000017
+  - Entity: 9110000000000000019
+    Tag:
+      tag: Hotspot_to_cottage
+    Transform:
+      translation: [-7.325, -2.675, 0]
+      rotation: [0, 0, 0]
+      scale: [1.35, 3.55, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9110000000000000020
+    Tag:
+      tag: Stand_to_cottage
+    Transform:
+      translation: [-0.1296, -0.0915, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9110000000000000019
+  - Entity: 9110000000000000021
+    Tag:
+      tag: Hotspot_to_bridge
+    Transform:
+      translation: [7.35, -2.675, 0]
+      rotation: [0, 0, 0]
+      scale: [1.3, 3.55, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 9110000000000000022
+    Tag:
+      tag: Stand_to_bridge
+    Transform:
+      translation: [0.1923, -0.0915, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9110000000000000021
+  - Entity: 9110000000000000023
+    Tag:
+      tag: Cursor
+    Transform:
+      translation: [0, 0, 0.1]
+      rotation: [0, 0, 0]
+      scale: [32, 32, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:4eeba41c769d9ff6:textures/cursors.png
+      columns: 8
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+      lit: false
+    RendererTag:
+      Name: cursor
+  - Entity: 9110000000000000024
+    Tag:
+      tag: ItemCursor
+    Transform:
+      translation: [0, 0, 0.1]
+      rotation: [0, 0, 0]
+      scale: [40, 40, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:fb3064fb372cb52f:textures/items.png
+      columns: 6
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+      lit: false
+    RendererTag:
+      Name: cursor
+  - Entity: 9110000000000000025
+    Tag:
+      tag: Pointer
+    Transform:
+      translation: [0, 0, 0.2]
+      rotation: [0, 0, 0]
+      scale: [32, 32, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:4eeba41c769d9ff6:textures/cursors.png
+      columns: 8
+      rows: 1
+      firstFrame: 7
+      lastFrame: 7
+      frameDuration: 0.1
+      loop: false
+      lit: false
+    RendererTag:
+      Name: cursor
+  - Entity: 9110000000000000026
+    Tag:
+      tag: Music
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:f3df298c754cb076:sounds/music.wav
+      category: Music
+      volume: 0.45
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1
+  - Entity: 9110000000000000027
+    Tag:
+      tag: Ambience
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:9501d70d9b23b611:sounds/fireflies.wav
+      category: Ambient
+      volume: 0.5
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1

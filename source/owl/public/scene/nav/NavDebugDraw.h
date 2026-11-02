@@ -65,4 +65,12 @@ OWL_API void drawNavigationCellEditor(Scene& ioScene, uint64_t iEntityKey, uint3
  */
 OWL_API void drawNavigationRoutes(Scene& ioScene);
 
+/**
+ * @brief
+ *  Draw every `WalkArea` of the scene with the 2D line renderer (a scene must be begun): the borders of its floor in
+ *  green, its triangles in faint green, and the path left to each walking `WalkAgent` in yellow.
+ * @param[in,out] ioScene The scene.
+ */
+OWL_API void drawWalkAreas(Scene& ioScene);
+
 }// namespace owl::scene::nav

@@ -101,6 +101,17 @@ SHOTS: list[Shot] = [
         crop=(0, 0, 1140, 460),
     ),
     Shot("tilemap_editor", documents=["tilemaps/iso_town.owltilemap"]),
+    # The walk area of the town plaza selected: its floor, holes, triangles and vertex handles in the viewport.
+    Shot(
+        "walk_area",
+        documents=["scenes/iso_town.owl"],
+        selected=4300000000000000700,
+        steps=[("dclick", 1035, 905), ("wait", 3), ("dclick", 650, 900), ("wait", 10), ("click", 1720, 173),
+               ("type", "Plaza"), ("wait", 2), ("rclick", 720, 560), ("wait", 1), ("click", 760, 598), ("wait", 2),
+               ("click", 1720, 173), ("key", "ctrl+a"), ("type", "Plaz"), ("wait", 2), ("click", 1469, 208),
+               ("wait", 3)],
+        proof=True,
+    ),
     Shot("pcg_graph", documents=["pcg/caves.owlpcg"], steps=[("click", 230, 530), ("wait", 2)], proof=True),
     Shot("pcg_tilemap", documents=["tilemaps/pcg_caves.owltilemap"], proof=True),
     Shot(

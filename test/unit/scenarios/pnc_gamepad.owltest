@@ -1,0 +1,27 @@
+# The Moon Lantern with a gamepad, in the glade: RB jumps the cursor from hotspot to hotspot (left to right: the way
+# to the cottage, then the berry bush), A picks the berries; the left stick moves the cursor off the hotspots; Y opens
+# the bag and closes it again.
+scene: ../../../samples/point_and_click/scenes/glade.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: room, equals: glade}
+  - input: {gamepad: {pad: 0, button: RightBumper}, frames: 2}
+  - frames: 3
+  - expect: {gamestate: hover, equals: to_cottage}
+  - input: {gamepad: {pad: 0, button: RightBumper}, frames: 2}
+  - frames: 3
+  - expect: {gamestate: hover, equals: bush}
+  - expect: {gamestate: cursor_verb, equals: pick}
+  - input: {gamepad: {pad: 0, button: A}, frames: 2}
+  - frames: 300
+  - expect: {gamestate: flag_berries_taken, equals: true}
+  - expect: {gamestate: inventory, equals: berries}
+  - input: {gamepad: {pad: 0, left_y: -1.0}, frames: 40}
+  - frames: 3
+  - expect: {gamestate: hover, equals: ''}
+  - input: {gamepad: {pad: 0, button: Y}, frames: 2}
+  - frames: 3
+  - expect: {gamestate: inventory_open, equals: true}
+  - input: {gamepad: {pad: 0, button: Y}, frames: 2}
+  - frames: 3
+  - expect: {gamestate: inventory_open, equals: false}

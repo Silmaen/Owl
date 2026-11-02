@@ -32,6 +32,14 @@ OwlProject:
       DefaultConfig:
         SunDirection: [-0.4, -1.0, -0.6]
         Ambient: [0.4, 0.4, 0.45]
+    - Type: RendererMesh
+      Name: mesh_pixel
+      DefaultConfig:
+        SunDirection: [-0.4, -1.0, -0.6]
+        Ambient: [0.4, 0.4, 0.45]
+        PixelHeight: 180
+        PixelColorLevels: 8
+        PixelOutline: [0.08, 0.06, 0.1, 1]
     - Type: RendererPlanet
       Name: planet_world
       DefaultConfig:

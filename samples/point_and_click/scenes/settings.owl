@@ -1,0 +1,522 @@
+Scene: settings
+FormatVersion: 7
+SceneScript:
+  scriptPath: gid:87158c322b9e77cb:scripts/ui/settings.lua
+EnabledRenderers:
+- {Name: actors, Enabled: true}
+- {Name: world, Enabled: true}
+- {Name: cursor, Enabled: false}
+Entities:
+  - Entity: 9410000000000000001
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 20]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.1
+        perspectiveFar: 200
+        orthographicSize: 9
+        orthographicNear: 0.1
+        orthographicFar: 100
+        toneMapping: None
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 9410000000000000002
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.6, 0.45, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light: {type: Directional, enabled: true, color: [1, 0.95, 0.88], intensity: 100000, castShadows: false}
+  - Entity: 9410000000000000003
+    Tag:
+      tag: Backdrop
+    Transform:
+      translation: [0, 0, -40]
+      rotation: [0, 0, 0]
+      scale: [16, 9, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: gid:04aedd9eb894b56b:textures/rooms/title.png
+      lit: false
+    RendererTag:
+      Name: world
+  - Entity: 9410000000000000004
+    Tag:
+      tag: Dim
+    Transform:
+      translation: [0, 0, -5]
+      rotation: [0, 0, 0]
+      scale: [16.2, 9.2, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 0.85]
+      tilingFactor: 1
+      texture: gid:ec0d1fd59ef52673:textures/ui/vignette.png
+      lit: false
+  - Entity: 9410000000000000005
+    Tag:
+      tag: SettingsCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
+  - Entity: 9410000000000000006
+    Tag:
+      tag: SettingsList
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9410000000000000005
+    UiRect:
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [1, 0.9]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0]
+    UiPanel:
+      backgroundColor: [0.07, 0.06, 0.12, 0.86]
+      borderColor: [0.97, 0.78, 0.36, 1]
+      borderWidth: 2
+      clipChildren: false
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 6
+      padding: 14
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 9410000000000000007
+    Tag:
+      tag: BackButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9410000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.075]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.28, 0.17, 0.12, 1]
+      hoverColor: [0.62, 0.42, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.05, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: go_back
+    UiText:
+      textKey: settings.back
+      outlineWidth: 2
+      outlineColor: [0.12, 0.07, 0.05, 1]
+      text: 'Back'
+      color: [0.96, 0.9, 0.74, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.78, 0.36, 1]
+      highlightThickness: 3
+  - Entity: 9410000000000000008
+    Tag:
+      tag: ResetButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9410000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.075]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.28, 0.17, 0.12, 1]
+      hoverColor: [0.62, 0.42, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.05, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_reset_clicked
+    UiText:
+      textKey: settings.reset
+      outlineWidth: 2
+      outlineColor: [0.12, 0.07, 0.05, 1]
+      text: 'Reset defaults'
+      color: [0.96, 0.9, 0.74, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.78, 0.36, 1]
+      highlightThickness: 3
+  - Entity: 9410000000000000009
+    Tag:
+      tag: SubtitlesButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9410000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.075]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.28, 0.17, 0.12, 1]
+      hoverColor: [0.62, 0.42, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.05, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_subtitles_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.07, 0.05, 1]
+      text: ''
+      color: [0.96, 0.9, 0.74, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.78, 0.36, 1]
+      highlightThickness: 3
+  - Entity: 9410000000000000010
+    Tag:
+      tag: LanguageButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9410000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.6, 0.075]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.28, 0.17, 0.12, 1]
+      hoverColor: [0.62, 0.42, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.05, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_language_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.07, 0.05, 1]
+      text: ''
+      color: [0.96, 0.9, 0.74, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.78, 0.36, 1]
+      highlightThickness: 3
+  - Entity: 9410000000000000011
+    Tag:
+      tag: EffectsSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9410000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.84, 0.05]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 1
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.12, 0.08, 0.1, 1]
+      fillColor: [0.97, 0.78, 0.36, 1]
+      handleColor: [0.96, 0.9, 0.74, 1]
+      onValueChangedCallback: on_effects_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.78, 0.36, 1]
+      highlightThickness: 3
+  - Entity: 9410000000000000012
+    Tag:
+      tag: EffectsLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9410000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.07, 0.05, 1]
+      text: ''
+      color: [0.96, 0.9, 0.74, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 9410000000000000013
+    Tag:
+      tag: MusicSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9410000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.84, 0.05]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 1
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.12, 0.08, 0.1, 1]
+      fillColor: [0.97, 0.78, 0.36, 1]
+      handleColor: [0.96, 0.9, 0.74, 1]
+      onValueChangedCallback: on_music_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.78, 0.36, 1]
+      highlightThickness: 3
+  - Entity: 9410000000000000014
+    Tag:
+      tag: MusicLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9410000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.07, 0.05, 1]
+      text: ''
+      color: [0.96, 0.9, 0.74, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 9410000000000000015
+    Tag:
+      tag: MasterSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9410000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.84, 0.05]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 1
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.12, 0.08, 0.1, 1]
+      fillColor: [0.97, 0.78, 0.36, 1]
+      handleColor: [0.96, 0.9, 0.74, 1]
+      onValueChangedCallback: on_master_changed
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.78, 0.36, 1]
+      highlightThickness: 3
+  - Entity: 9410000000000000016
+    Tag:
+      tag: MasterLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9410000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.07, 0.05, 1]
+      text: ''
+      color: [0.96, 0.9, 0.74, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 9410000000000000017
+    Tag:
+      tag: SettingsTitle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9410000000000000006
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.12]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      textKey: settings.title
+      outlineWidth: 2
+      outlineColor: [0.12, 0.07, 0.05, 1]
+      text: 'Settings'
+      color: [0.97, 0.78, 0.36, 1]
+      fontSize: 54
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp

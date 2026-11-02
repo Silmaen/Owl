@@ -93,11 +93,11 @@ auto isSubdir(const std::filesystem::path& iFile, const std::filesystem::path& i
 	return std::nullopt;
 }
 
-void updateCursorCapture(window::CursorCapture& ioCapture, const bool iAllowed) {
+void updateCursorCapture(window::CursorCapture& ioCapture, const bool iAllowed, const bool iHidden) {
 	auto& window = app::Application::get().getWindow();
 	const auto current = window.getCursorMode();
 	const auto next = ioCapture.next(current, iAllowed, input::Input::isMouseButtonPressed(input::mouse::ButtonLeft),
-									 input::Input::isKeyPressed(input::key::Escape));
+									 input::Input::isKeyPressed(input::key::Escape), iHidden);
 	if (next != current)
 		window.setCursorMode(next);
 }
@@ -289,6 +289,7 @@ void RunnerLayer::onAttach() {
 	if (!m_config.gameName.empty())
 		window.setTitle(m_config.gameName);
 
+	app::Application::get().getEngineContext().getSettings().setWindowOwned(true);
 	app::Application::get().getEngineContext().getSettings().applyBuiltins();
 
 	m_viewportSize = window.getSize();
@@ -482,6 +483,8 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 		if (!m_config.gamepadMappings.empty())
 			input::Input::loadGamepadMappings(iProject / m_config.gamepadMappings);
 		app::Application::get().getEngineContext().loadActionMap(iProject);
+		if (exists(iProject / data::localisation::Localisation::fileName))
+			std::ignore = app::Application::get().getEngineContext().loadLocalisation(iProject);
 	}
 	app::Application::get().getEngineContext().getSettings().setGameName(m_config.gameName);
 	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);
@@ -630,7 +633,7 @@ auto RunnerLayer::stepFrameBench() -> bool {
 
 void RunnerLayer::updateSceneRuntime(const core::Timestep& iTimeStep) {
 	if (!m_frameBench && !m_scenario)
-		updateCursorCapture(m_cursorCapture, m_activeScene->wantsCursorCapture());
+		updateCursorCapture(m_cursorCapture, m_activeScene->wantsCursorCapture(), m_activeScene->wantsCursorHidden());
 	m_activeScene->onUpdateRuntime(iTimeStep);
 	if (m_frameBench)
 		m_frameBench->onSceneUpdated(m_activeScene->getLastRuntimeTimings());

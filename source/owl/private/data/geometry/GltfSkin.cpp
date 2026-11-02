@@ -190,8 +190,6 @@ auto importSkin(const tinygltf::Model& iModel, const std::string& iName) -> Skin
 	result.nodeToBone.assign(iModel.nodes.size(), -1);
 	if (iModel.skins.empty())
 		return result;
-	if (iModel.skins.size() > 1)
-		OWL_CORE_WARN("MeshLoader::loadGltf: {} has {} skins, only the first one is read.", iName, iModel.skins.size())
 	const auto& skin = iModel.skins.front();
 	std::vector<int32_t> joints;
 	for (const int joint: skin.joints) {
@@ -231,6 +229,27 @@ auto importSkin(const tinygltf::Model& iModel, const std::string& iName) -> Skin
 		return result;
 	}
 	const auto inverseBinds = readComponents<16>(iModel, skin.inverseBindMatrices, false);
+	// The other skins: the same joints in the same order with the same inverse binds share the skeleton.
+	result.sameAsFirst.assign(iModel.skins.size(), false);
+	result.sameAsFirst.front() = true;
+	size_t different = 0;
+	for (size_t other = 1; other < iModel.skins.size(); ++other) {
+		const auto& candidate = iModel.skins[other];
+		bool same = candidate.joints == skin.joints;
+		if (same) {
+			const auto binds = readComponents<16>(iModel, candidate.inverseBindMatrices, false);
+			same = binds.size() == inverseBinds.size();
+			for (size_t joint = 0; same && joint < binds.size(); ++joint) {
+				for (size_t value = 0; same && value < 16; ++value)
+					same = std::abs(binds[joint][value] - inverseBinds[joint][value]) <= 1e-4f;
+			}
+		}
+		result.sameAsFirst[other] = same;
+		different += same ? 0 : 1;
+	}
+	if (different > 0)
+		OWL_CORE_WARN("MeshLoader::loadGltf: {} has {} skins unlike the first one, only the first one is read.", iName,
+					  different)
 	result.jointToBone.resize(joints.size());
 	for (size_t bone = 0; bone < order.size(); ++bone) result.jointToBone[order[bone]] = static_cast<uint16_t>(bone);
 	std::vector<animation::Bone> bones;

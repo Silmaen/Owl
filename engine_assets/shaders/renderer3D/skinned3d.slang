@@ -48,6 +48,8 @@ VertexOutput vertexMain(VertexInput input) {
 	output.frag.entityId = gScene.ids.x;
 	float3 position = relativePosition(model, skinned.xyz);
 	output.svPosition = mul(gScene.viewProjection, float4(position, 1.0f));
+	if (gScene.flags.x != 0)
+		output.svPosition = flattenDepth(output.svPosition, model);
 	output.frag.position = position;
 	output.frag.clipDepth = output.svPosition.zw;
 	output.frag.normal = normalize(mul((float3x3) model, normal));

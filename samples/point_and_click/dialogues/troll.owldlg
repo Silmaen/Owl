@@ -1,0 +1,63 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 9510000000000000001
+    kind: Start
+    position: [0, 120]
+    next: 9510000000000000002
+  - id: 9510000000000000002
+    kind: Line
+    position: [240, 120]
+    speaker: {text: Troll, key: dialogue.troll.name}
+    text: {text: TOLL! TOLL! Nobody crosses my bridge without paying the toll!, key: dialogue.troll.hello}
+    next: 9510000000000000003
+  - id: 9510000000000000003
+    kind: Choice
+    position: [520, 120]
+    speaker: {text: Troll, key: dialogue.troll.name}
+    text: {text: "Well? Toll?", key: dialogue.troll.ask}
+    options:
+      - text: {text: "What is the toll?", key: dialogue.troll.answer_toll}
+        next: 9510000000000000004
+      - text: {text: You are sitting on our moonstone., key: dialogue.troll.answer_stone}
+        next: 9510000000000000005
+      - text: {text: "Would a pie do?", key: dialogue.troll.answer_pie}
+        condition: has_pie
+        next: 9510000000000000006
+      - text: {text: Never mind., key: dialogue.troll.answer_bye}
+        next: 9510000000000000007
+  - id: 9510000000000000004
+    kind: Line
+    position: [820, 0]
+    speaker: {text: Troll, key: dialogue.troll.name}
+    text: {text: Something sweet. Very sweet. Sweeter than my mother's turnips., key: dialogue.troll.toll}
+    next: 9510000000000000003
+  - id: 9510000000000000005
+    kind: Line
+    position: [896, 144]
+    speaker: {text: Troll, key: dialogue.troll.name}
+    text: {text: "This? A very comfortable stone. Nobody gets my comfortable stone without the toll.", key: dialogue.troll.stone}
+    next: 9510000000000000003
+  - id: 9510000000000000006
+    kind: Line
+    position: [896, 224]
+    speaker: {text: Troll, key: dialogue.troll.name}
+    text: {text: "A PIE? Give it! Give it now!", key: dialogue.troll.pie}
+    next: 9510000000000000008
+  - id: 9510000000000000007
+    kind: Line
+    position: [896, 352]
+    speaker: {text: Troll, key: dialogue.troll.name}
+    text: {text: TOLL!, key: dialogue.troll.bye}
+    next: 9510000000000000009
+  - id: 9510000000000000008
+    kind: Event
+    position: [1136, 224]
+    function: on_troll_wants_pie
+    next: 9510000000000000009
+  - id: 9510000000000000009
+    kind: End
+    position: [1344, 352]
+routes:
+  - {node: 9510000000000000004, output: 0, points: [[1040, -16], [528, -16]]}
+  - {node: 9510000000000000005, output: 0, points: [[1104, 80], [544, 80]]}

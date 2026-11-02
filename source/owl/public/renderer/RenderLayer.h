@@ -12,6 +12,7 @@
 #include "math/vectors.h"
 #include "renderer/Camera.h"
 #include "renderer/ClipSpace.h"
+#include "renderer/PixelArt.h"
 
 #include <string>
 
@@ -213,6 +214,17 @@ public:
 	 * @return True when the layer draws its entities itself.
 	 */
 	[[nodiscard]] virtual auto drawsOwnEntities() const -> bool { return false; }
+
+	/**
+	 * @brief
+	 *  Get how the layer is drawn as pixel art (a low-resolution image composited over the frame).
+	 *
+	 * The scene draws a layer whose settings are active into a target of `PixelArtSettings::getTargetSize` and its
+	 * depth beside it, then composites both with `PixelArtPass`. The default is inactive (the mesh layer reads it from
+	 * its configuration).
+	 * @return The settings of the layer.
+	 */
+	[[nodiscard]] virtual auto getPixelArt() const -> PixelArtSettings { return {}; }
 };
 
 }// namespace owl::renderer

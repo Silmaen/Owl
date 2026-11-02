@@ -1,0 +1,25 @@
+# The Moon Lantern, Barnaby's cottage: the hero walks round the table to the shelf and picks the jar, then picks the
+# pie crust on the table; looking at the window makes him say what he sees. At 1600x960 a pixel (x, y) of the 320x180
+# backdrop is at the viewport pixel (800 + 5.333 * (x - 160), 5.333 * y).
+scene: ../../../samples/point_and_click/scenes/cottage.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: room, equals: cottage}
+  - expect: {entity: Hero, exists: true}
+  # The cursor over the jar shows the pick action.
+  - input: {mouse_pos: [288, 235], frames: 3}
+  - expect: {gamestate: hover, equals: jar}
+  - expect: {gamestate: cursor_verb, equals: pick}
+  - input: {mouse: Left, mouse_pos: [288, 235], frames: 2}
+  - frames: 300
+  - expect: {gamestate: flag_jar_taken, equals: true}
+  - expect: {gamestate: inventory_count, equals: 1}
+  # The pie crust on the table, from in front of it.
+  - input: {mouse: Left, mouse_pos: [507, 677], frames: 2}
+  - frames: 300
+  - expect: {gamestate: flag_crust_taken, equals: true}
+  - expect: {gamestate: inventory_count, equals: 2}
+  # A right click looks.
+  - input: {mouse: Right, mouse_pos: [773, 293], frames: 2}
+  - frames: 200
+  - expect: {gamestate: last_remark, equals: look.cottage.window}
