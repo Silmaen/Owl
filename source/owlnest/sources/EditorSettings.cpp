@@ -155,6 +155,11 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 		readKey(config, "cameraInvertY", cameraInvertY);
 		if (config["cameraDeadZone"])
 			cameraDeadZone = std::clamp(config["cameraDeadZone"].as<int>(), 0, 20);
+		if (config["cameraFlySpeed"])
+			cameraFlySpeed = std::clamp(config["cameraFlySpeed"].as<float>(), 0.1f, 100.f);
+		if (config["viewNavigation"])
+			viewNavigation = panel::parseViewNavigationMode(config["viewNavigation"].as<std::string>())
+									 .value_or(panel::ViewNavigationMode::Select);
 		if (config["autosaveIntervalSeconds"])
 			autosaveIntervalSeconds = std::clamp(config["autosaveIntervalSeconds"].as<int>(), 0, 3600);
 		if (config["frameRateLimit"])
@@ -216,6 +221,8 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "cameraZoomPercent" << YAML::Value << cameraZoomPercent;
 	out << YAML::Key << "cameraInvertY" << YAML::Value << cameraInvertY;
 	out << YAML::Key << "cameraDeadZone" << YAML::Value << cameraDeadZone;
+	out << YAML::Key << "cameraFlySpeed" << YAML::Value << cameraFlySpeed;
+	out << YAML::Key << "viewNavigation" << YAML::Value << std::string{panel::getName(viewNavigation)};
 	out << YAML::Key << "autosaveIntervalSeconds" << YAML::Value << autosaveIntervalSeconds;
 	out << YAML::Key << "frameRateLimit" << YAML::Value << frameRateLimit;
 	out << YAML::Key << "backgroundFrameRateLimit" << YAML::Value << backgroundFrameRateLimit;

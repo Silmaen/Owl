@@ -18,13 +18,25 @@ OWL_DIAG_POP
 
 #include <algorithm>
 #include <exception>
+#include <string>
 #include <system_error>
+#include <vector>
 
 namespace owl::nest {
 
 namespace {
 constexpr const char* g_templateFile = "template.yml";
 constexpr const char* g_projectFile = "owl_project.yml";
+constexpr const char* g_previewFile = "preview.png";
+
+auto readStrings(const YAML::Node& iNode) -> std::vector<std::string> {
+	std::vector<std::string> values;
+	if (!iNode.IsSequence())
+		return values;
+	values.reserve(iNode.size());
+	for (const auto& item: iNode) values.push_back(item.as<std::string>());
+	return values;
+}
 }// namespace
 
 auto describe(const ProjectTemplateError iError) -> std::string_view {
@@ -52,11 +64,15 @@ auto listProjectTemplates(const std::filesystem::path& iRoot) -> std::vector<Pro
 			continue;
 		try {
 			const auto node = YAML::LoadFile((dir / g_templateFile).string())["Template"];
-			templates.push_back({.id = dir.filename().string(),
-								 .name = node["name"].as<std::string>(dir.filename().string()),
-								 .description = node["description"].as<std::string>(""),
-								 .order = node["order"].as<int>(0),
-								 .directory = dir});
+			templates.push_back(
+					{.id = dir.filename().string(),
+					 .name = node["name"].as<std::string>(dir.filename().string()),
+					 .description = node["description"].as<std::string>(""),
+					 .order = node["order"].as<int>(0),
+					 .directory = dir,
+					 .tags = readStrings(node["tags"]),
+					 .contents = readStrings(node["contents"]),
+					 .preview = exists(dir / g_previewFile, ec) ? dir / g_previewFile : std::filesystem::path{}});
 		} catch (const std::exception& iEx) {
 			OWL_WARN("Project templates: Cannot read '{}': {}.", (dir / g_templateFile).string(), iEx.what())
 		}
@@ -87,6 +103,7 @@ auto createProjectFromTemplate(const ProjectTemplate& iTemplate, const std::file
 		return unexpected{ProjectTemplateError::CopyFailed};
 	}
 	remove(iDestination / g_templateFile, ec);
+	remove(iDestination / g_previewFile, ec);
 	Project project;
 	if (!project.loadFromFile(iDestination / g_projectFile)) {
 		OWL_WARN("New Project: Cannot read the project file of template '{}'.", iTemplate.name)

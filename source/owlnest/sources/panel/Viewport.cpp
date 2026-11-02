@@ -262,6 +262,8 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	if (m_pilot.isActive() && (mp_document->state() != SceneDocument::State::Edit || m_isometric))
 		stopPiloting();
 	if (m_parent != nullptr)
+		m_viewNav.mode = m_parent->getSettings().viewNavigation;
+	if (m_parent != nullptr)
 		m_navTool.sync(m_parent->getSettings().showNavGraph,
 					   mp_document->state() == SceneDocument::State::Edit && m_isometric);
 	if (mp_document->state() == SceneDocument::State::Edit && m_isometric) {
@@ -278,12 +280,17 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 										  .zoom = static_cast<float>(settings.cameraZoomPercent) / 100.f,
 										  .invertY = settings.cameraInvertY,
 										  .deadZone = static_cast<float>(settings.cameraDeadZone),
-										  .mouseLook = !m_parent->getVoxelBrush().active});
+										  .mouseLook = !m_parent->getVoxelBrush().active,
+										  .leftDrag = m_viewNav.getActiveLeftDrag()});
+			m_editorCamera.setFlySpeed(settings.cameraFlySpeed);
 		}
 		if (const bool sequenceView = updateSequenceView(activeScene); !sequenceView && m_pilot.isActive())
 			updatePilot(activeScene, iTimeStep);
 		else if (!sequenceView && isHovered())
 			m_editorCamera.onUpdate(iTimeStep);
+		// The wheel sets the fly speed during a flight: the setting follows it.
+		if (m_parent != nullptr)
+			m_parent->getSettings().cameraFlySpeed = m_editorCamera.getFlySpeed();
 	}
 
 	// A viewport hidden behind another tab draws nothing; a running scene still steps.
@@ -475,6 +482,7 @@ void Viewport::onRenderInternal() {
 	renderOverlayToolbar();
 	renderCameraGizmo();
 	renderCameraPreviewInset();
+	handleNavigationRelease();
 	renderContextMenu();
 }
 
@@ -1751,15 +1759,16 @@ void Viewport::renderViewOverlay() {
 					 .label = "Iso",
 					 .tooltip = "Isometric view",
 					 .description = "The scene draws an isometric layer: the 2:1 dimetric view is locked. "
-									"Pan with the middle or right drag, zoom by powers of two with the "
-									"wheel.",
+									"Pan with the middle or right drag (or the left drag outside the Select "
+									"mode), zoom by powers of two with the wheel.",
 					 .disabled = true});
 		} else if (gui::widgets::button("projection",
 										{.glyph = ortho ? gui::icon::square : gui::icon::cuboid,
 										 .label = ortho ? "2D" : "3D",
 										 .tooltip = "View",
 										 .description = "2D: orthographic front view of the scene plane. 3D: "
-														"perspective, orbit with Ctrl + drag."}))
+														"perspective, orbit with Ctrl + left drag or the Orbit "
+														"mode."}))
 			ImGui::OpenPopup("##projection");
 		if (ImGui::BeginPopup("##projection")) {
 			if (gui::widgets::menuItem({.glyph = ortho ? gui::icon::check : nullptr, .label = "2D Orthographic"}))
@@ -1768,6 +1777,8 @@ void Viewport::renderViewOverlay() {
 				setViewProjection(Projection::Perspective);
 			ImGui::EndPopup();
 		}
+		ImGui::SameLine();
+		renderNavigationButtons(settings);
 		ImGui::SameLine();
 		if (iconButton("show",
 					   {.glyph = gui::icon::eye,
@@ -1850,6 +1861,52 @@ void Viewport::renderViewOverlay() {
 	endOverlay();
 }
 
+void Viewport::renderNavigationButtons(EditorSettings& ioSettings) {
+	struct ModeButton {
+		ViewNavigationMode mode;
+		const char* id;
+		const char* glyph;
+		const char* tooltip;
+	};
+	constexpr std::array buttons{
+			ModeButton{.mode = ViewNavigationMode::Select,
+					   .id = "navSelect",
+					   .glyph = gui::icon::mousePointer2,
+					   .tooltip = "Select navigation"},
+			ModeButton{.mode = ViewNavigationMode::Orbit,
+					   .id = "navOrbit",
+					   .glyph = gui::icon::orbit,
+					   .tooltip = "Orbit"},
+			ModeButton{.mode = ViewNavigationMode::Fly, .id = "navFly", .glyph = gui::icon::plane, .tooltip = "Fly"},
+			ModeButton{.mode = ViewNavigationMode::Pan, .id = "navPan", .glyph = gui::icon::hand, .tooltip = "Pan"}};
+	for (const auto& [mode, buttonId, glyph, tooltip]: buttons) {
+		const auto shortcut = m_parent->getActionShortcut(getActionId(mode));
+		if (gui::widgets::iconButton(buttonId, {.glyph = glyph,
+												.tooltip = tooltip,
+												.shortcut = shortcut.c_str(),
+												.description = getHelp(mode),
+												.selected = ioSettings.viewNavigation == mode}))
+			ioSettings.viewNavigation = mode;
+		ImGui::SameLine();
+	}
+	const bool canFly = !m_isometric && getViewProjection() == renderer::CameraEditor::Projection::Perspective;
+	if (gui::widgets::iconButton(
+				"flySpeed", {.glyph = gui::icon::rabbit,
+							 .tooltip = "Fly speed",
+							 .description = "Speed of W A S D, Q and E while a drag looks around (the wheel changes it "
+											"during the flight); Shift flies three times faster.",
+							 .disabled = !canFly}))
+		ImGui::OpenPopup("##flySpeed");
+	if (ImGui::BeginPopup("##flySpeed")) {
+		gui::widgets::menuHeader("Fly speed");
+		ImGui::SetNextItemWidth(180.f);
+		if (ImGui::SliderFloat("##speed", &ioSettings.cameraFlySpeed, 0.1f, 100.f, "%.1f units/s",
+							   ImGuiSliderFlags_Logarithmic))
+			ioSettings.cameraFlySpeed = std::clamp(ioSettings.cameraFlySpeed, 0.1f, 100.f);
+		ImGui::EndPopup();
+	}
+}
+
 void Viewport::resetView() {
 	if (m_isometric) {
 		m_isoCamera.setTarget({0.f, 0.f, 0.f});
@@ -1899,7 +1956,7 @@ void Viewport::handleIsometricInput() {
 	}
 	const bool drag = ImGui::IsMouseDragging(ImGuiMouseButton_Middle) ||
 					  ImGui::IsMouseDragging(ImGuiMouseButton_Right) ||
-					  (io.KeyAlt && ImGui::IsMouseDragging(ImGuiMouseButton_Left));
+					  ((io.KeyAlt || m_viewNav.leftDragNavigates) && ImGui::IsMouseDragging(ImGuiMouseButton_Left));
 	if (drag && !gui::Guizmo::isUsing())
 		m_isoCamera.pan({io.MouseDelta.x, io.MouseDelta.y});
 }
@@ -2411,37 +2468,47 @@ void Viewport::handleVoxelBrush(const shared<scene::Scene>& iScene) {
 }
 
 auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool {
-	if (mp_document == nullptr || mp_document->state() != SceneDocument::State::Edit)
+	if (mp_document == nullptr || mp_document->state() != SceneDocument::State::Edit || m_parent == nullptr ||
+		ioEvent.getMouseButton() != input::mouse::ButtonLeft)
 		return false;
-	// The voxel brush owns clicks when active; don't also change the entity selection.
-	if (m_parent != nullptr && m_parent->getVoxelBrush().active)
-		return false;
-	// So does the navigation tool of the isometric view.
-	if (m_navTool.active && m_isometric && m_parent != nullptr && m_parent->getSettings().showNavGraph)
-		return false;
-	if (ioEvent.getMouseButton() == input::mouse::ButtonLeft) {
-		if (isHovered() && !gui::Guizmo::isOver() && !input::Input::isKeyPressed(input::key::LeftAlt) &&
-			m_parent != nullptr) {
-			if (const auto socket = pickSocket(); socket) {
-				gui::component::getSocketSelection() = {.entity = m_parent->getSelectedEntity().getUUID(),
-														.socket = *socket};
-				return false;
-			}
-			gui::component::getSocketSelection().clear();
-			if (onSplineClick())
-				return false;
-			if (onWalkAreaClick())
-				return false;
-			if (const int handle = pickPatrolWaypoint(); handle >= 0) {
-				m_patrolHandle = handle;
-				return false;
-			}
-			m_patrolHandle = -1;
-			const auto camera = pickMarker();
-			m_parent->setSelectedEntity(camera ? camera : getHoveredEntity());
-		}
-	}
+	// The voxel brush and the navigation tool of the isometric view own the clicks when active.
+	const bool toolOwnsClicks = m_parent->getVoxelBrush().active ||
+								(m_navTool.active && m_isometric && m_parent->getSettings().showNavGraph);
+	const bool free = !toolOwnsClicks && isHovered() && !gui::Guizmo::isOver() &&
+					  !input::Input::isKeyPressed(input::key::LeftAlt);
+	// Ctrl + left drag orbits in every mode and Ctrl + click adds to a selection: the press picks at once.
+	const bool ctrl = input::Input::isKeyPressed(input::key::LeftControl);
+	if (m_viewNav.pressLeft(free && !ctrl) || (free && ctrl))
+		pickAtCursor();
 	return false;
+}
+
+void Viewport::pickAtCursor() {
+	if (const auto socket = pickSocket(); socket) {
+		gui::component::getSocketSelection() = {.entity = m_parent->getSelectedEntity().getUUID(), .socket = *socket};
+		return;
+	}
+	gui::component::getSocketSelection().clear();
+	if (onSplineClick())
+		return;
+	if (onWalkAreaClick())
+		return;
+	if (const int handle = pickPatrolWaypoint(); handle >= 0) {
+		m_patrolHandle = handle;
+		return;
+	}
+	m_patrolHandle = -1;
+	const auto camera = pickMarker();
+	m_parent->setSelectedEntity(camera ? camera : getHoveredEntity());
+}
+
+void Viewport::handleNavigationRelease() {
+	if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+		return;
+	const float travel = std::sqrt(ImGui::GetIO().MouseDragMaxDistanceSqr[ImGuiMouseButton_Left]);
+	if (m_viewNav.releaseLeft(travel) && m_hovered && m_parent != nullptr && mp_document != nullptr &&
+		mp_document->state() == SceneDocument::State::Edit)
+		pickAtCursor();
 }
 
 auto Viewport::pickCameraModel() const -> scene::Entity {

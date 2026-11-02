@@ -7,8 +7,8 @@ opens one project at a time and exports it as a game folder players can run with
 
 ## Opening and closing
 
-- **New project** (File screen) asks for a name, a location and a [template](#project-templates), creates
-  `<location>/<name>` and opens its first scene.
+- **New project** (File screen) asks for a [template](#project-templates), a name and a location in the
+  [New Project dialog](#new-project-dialog), creates `<location>/<name>` and opens its first scene.
 - **Open project** takes the folder or its `owl_project.yml`; the recent projects of the File screen reopen with a
   click. `OwlNest --project <folder or owl_project.yml>` opens one from the command line.
 - Opening a project closes the current one first: Play stops, the session is recorded, unsaved changes go to the
@@ -19,16 +19,40 @@ opens one project at a time and exports it as a game folder players can run with
 
 ## Project templates
 
-| Template     | Renderer stack           | Content                                                    |
-|--------------|--------------------------|------------------------------------------------------------|
-| Empty 2D     | `world` (2D), `ui`       | Camera, ground and player sprites, HUD title               |
-| Raycast      | `raycast_world`, `ui`    | Tilemap room, Lua first-person player (W/S, A/D), HUD hint |
-| Voxel        | `voxel_world`            | Procedural streamed terrain, voxel player (WASD, space)    |
-| Mixed styles | 2D, raycast, voxel, `ui` | Raycast room under a 2D HUD, voxel `terrain.owl`           |
+| Template      | Tags             | Renderer stack                            | Content                                                                              |
+|---------------|------------------|-------------------------------------------|--------------------------------------------------------------------------------------|
+| Empty 2D      | 2D               | `world` (2D), `ui`                        | Camera, ground, player sprite moved by Lua (WASD), HUD title                         |
+| 2D platformer | 2D               | `world` (2D), `ui`                        | Box2D ground and platforms, Lua player (A/D, space), camera on it                    |
+| 3D            | 3D               | `mesh_world`, `ui`                        | Ground and crate meshes, sun, procedural sky, `FirstPersonController`                |
+| Isometric     | Iso, 2D          | `world`, `iso_world`, `ui`                | Tilemap island, tree and lamp sprites, Lua flag (WASD), camera on it                 |
+| Raycast       | Raycast          | `raycast_world`, `ui`                     | Tilemap room, Lua first-person player (W/S, A/D), HUD hint                           |
+| Voxel         | Voxel, 3D        | `voxel_world`, `ui`                       | Procedural streamed terrain, sky, sun, voxel player (WASD, space)                    |
+| Mixed styles  | Mixed, 3D, 2D... | all of the above, `billboards`, `minimap` | 3D yard, 2D billboards, 2D minimap in one frame; keys 1-3: `room.owl`, `terrain.owl` |
 
-Every template ships an `input_actions.yml` with the built-in [input actions](editor_documents.md#editor-action-map).
-The templates are the folders of `engine_assets/project_templates/`: a new folder there with a `template.yml` (name,
-description, order) and an `owl_project.yml` is a template too.
+Every template opens on a playable scene moved with the built-in `move` action, ships an `input_actions.yml` with the
+built-in [input actions](editor_documents.md#editor-action-map) and has a scenario (`test/unit/scenarios/template_*`).
+The templates are the folders of `engine_assets/project_templates/`: a folder there with a `template.yml` and an
+`owl_project.yml` is a template too. `template.yml` holds the `name`, the one-line `description`, the `order` in the
+dialog, the style `tags` and the `contents` lines shown in the details; `preview.png` beside it (480 x 270, captured
+with `OwlRunner --frame-bench <scene> --project <template> --capture preview.png --size 480x270`) is its image. Neither
+file is copied into the new project. `tools/demo/generate_templates.py` writes the meshes and the isometric atlas,
+tileset and map of the templates.
+
+### New Project dialog
+
+**New project** (File screen) opens a dialog in three parts:
+
+- **Templates**: a card per template with its preview, name, description and tags; the chips above filter the cards by
+  tag (**All**, 2D, 3D, Iso, Raycast, Voxel, Mixed). Click a card to select it, double-click to create; the arrow keys
+  walk the cards.
+- **Details**: the larger preview, the tags, the description and the **Contents** of the selected template.
+- **Project**: the **Name** (also the folder name) and the **Location** (typed, or picked with the folder button). The
+  dialog checks them as you type: a name holding `/ \ : * ? " < > |` or a leading or trailing space or dot, a location
+  that is not a folder and a project folder that already holds files are refused with the reason, and **Create** stays
+  disabled; otherwise it shows the folder it creates. A free name (`MyGame`, `MyGame2`...) is proposed.
+
+**Create** (or Enter) copies the template into `<location>/<name>`, renames the project and opens its first scene;
+**Cancel** or Escape closes the dialog. Without any template installed, the project starts empty.
 
 ## Project Settings
 

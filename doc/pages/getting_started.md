@@ -16,6 +16,8 @@ ribbon button or `F1`.
 3. The editor opens with the scene viewport, content browser, hierarchy and inspector
    docked around a central area. All panels are detachable — drag the title bar to
    tear them out into a floating window.
+4. Move around a scene with the right drag (and `W` `A` `S` `D` to fly), the middle drag and the wheel; every gesture
+   and the navigation modes are in [Navigating the scene](editor_viewport.md#viewport-navigation).
 
 ![Owl Nest with the Engine Demo open](../images/nest/main_window.png)
 

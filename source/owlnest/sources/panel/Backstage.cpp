@@ -281,7 +281,7 @@ void Backstage::onImGuiRender(const BackstageContext& iContext) {
 		const float spacing = ImGui::GetStyle().ItemSpacing.x * 1.5f;
 		const float cards = iContext.sampleProject.empty() ? 3.f : 4.f;
 		const float cardWidth = std::floor((maxWidth - (cards - 1.f) * spacing) / cards);
-		if (card("ribbon_folder_new", "New project", "2D, raycast, voxel or empty template.", cardWidth))
+		if (card("ribbon_folder_new", "New project", "A template for every rendering style.", cardWidth))
 			run(iContext.newProject);
 		ImGui::SameLine(0.f, spacing);
 		if (card("ribbon_open", "Open project", "An owl_project.yml or its folder.", cardWidth))

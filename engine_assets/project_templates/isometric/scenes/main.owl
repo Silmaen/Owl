@@ -1,0 +1,161 @@
+Scene: Main
+FormatVersion: 7
+Hud: gid:2bf23c0895b572d7:huds/gameplay.owlhud
+EnabledRenderers:
+  - Name: world
+    Enabled: true
+  - Name: iso_world
+    Enabled: true
+Entities:
+  - Entity: 7600000000000000001
+    Tag:
+      tag: Player
+    Transform:
+      translation: [5, 7, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:6730146d5380d11e:textures/marker.png
+      tilingFactor: 1
+    LuaScript:
+      scriptPath: gid:e449d068c7ee4288:scripts/player.lua
+      properties:
+        - name: speed
+          type: float
+          value: 3
+        - name: margin
+          type: float
+          value: 1.5
+        - name: size
+          type: float
+          value: 12
+    RendererTag:
+      Name: iso_world
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7600000000000000002
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 10
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000000000001
+  - Entity: 7600000000000000003
+    Tag:
+      tag: Sky
+    Transform:
+      translation: [6, 6, -5]
+      rotation: [0, 0, 0]
+      scale: [80, 80, 1]
+    BackgroundTexture:
+      mode: 0
+      type: 1
+      color: [0.16, 0.22, 0.3, 1]
+      topColor: [0.45, 0.62, 0.82, 1]
+    RendererTag:
+      Name: world
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7600000000000000010
+    Tag:
+      tag: Island
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Tilemap:
+      tilemapPath: gid:e8e8f49829a4d39d:tilemaps/island.owltilemap
+    RendererTag:
+      Name: iso_world
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7600000000000000020
+    Tag:
+      tag: Oak
+    Transform:
+      translation: [3.5, 4.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:56bbcd00b9de707a:textures/oak.png
+      tilingFactor: 1
+    RendererTag:
+      Name: iso_world
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7600000000000000021
+    Tag:
+      tag: Pine
+    Transform:
+      translation: [8.5, 5.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:55b0dbdbed0c508f:textures/pine.png
+      tilingFactor: 1
+    RendererTag:
+      Name: iso_world
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7600000000000000022
+    Tag:
+      tag: PineSouth
+    Transform:
+      translation: [4.5, 8.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:55b0dbdbed0c508f:textures/pine.png
+      tilingFactor: 1
+    RendererTag:
+      Name: iso_world
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 7600000000000000023
+    Tag:
+      tag: Lamp
+    Transform:
+      translation: [6.5, 3.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1.5, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:fc1e0f2574dec304:textures/lamp.png
+      tilingFactor: 1
+    RendererTag:
+      Name: iso_world
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0

@@ -21,7 +21,8 @@ namespace owl::nest {
 /**
  * @brief
  *  A starting point for a new project: a folder of `engine_assets/project_templates/` holding a `template.yml`
- *  (name, description, order), an `owl_project.yml` and the scenes and assets the project starts with.
+ *  (name, description, order, tags, contents), an `owl_project.yml`, an optional `preview.png` and the scenes and
+ *  assets the project starts with.
  */
 struct ProjectTemplate {
 	/// Folder name, stable identifier of the template.
@@ -34,6 +35,12 @@ struct ProjectTemplate {
 	int order = 0;
 	/// Folder copied into the new project.
 	std::filesystem::path directory;
+	/// Rendering styles of the template (`2D`, `3D`, `Iso`, `Raycast`, `Voxel`, `Mixed`), shown as badges.
+	std::vector<std::string> tags;
+	/// What the project starts with, one line per item, shown in the details of the dialogue.
+	std::vector<std::string> contents;
+	/// Image of the first scene shown in the dialogue (`preview.png` of the folder), empty when there is none.
+	std::filesystem::path preview;
 };
 
 /**
@@ -65,7 +72,7 @@ enum struct ProjectTemplateError : uint8_t {
 
 /**
  * @brief
- *  Create a project by copying a template and renaming it.
+ *  Create a project by copying a template and renaming it; the `template.yml` and the `preview.png` stay behind.
  * @param[in] iTemplate The template.
  * @param[in] iDestination Folder of the new project; created, must be absent or empty.
  * @param[in] iName Name written in the new `owl_project.yml`.

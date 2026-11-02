@@ -463,18 +463,21 @@ TEST_F(GameExporterFixture, ExportFailures) {
 #ifdef OWL_PLATFORM_LINUX
 namespace {
 
-// The projects shipped with the editor: the Engine Demo, then every `samples/<game>/owl_project.yml`.
+// The projects shipped with the editor: the Engine Demo, every `samples/<game>/owl_project.yml`, then every project
+// template of `engine_assets/project_templates/`.
 auto shippedProjects() -> std::vector<std::filesystem::path> {
 	const auto root = test::getRootPath();
 	std::vector<std::filesystem::path> projects{root / "engine_demo"};
-	std::vector<std::filesystem::path> samples;
-	std::error_code ec;
-	for (const auto& entry: std::filesystem::directory_iterator(root / "samples", ec)) {
-		if (exists(entry.path() / "owl_project.yml"))
-			samples.push_back(entry.path());
+	for (const auto* folder: {"samples", "engine_assets/project_templates"}) {
+		std::vector<std::filesystem::path> found;
+		std::error_code ec;
+		for (const auto& entry: std::filesystem::directory_iterator(root / folder, ec)) {
+			if (exists(entry.path() / "owl_project.yml"))
+				found.push_back(entry.path());
+		}
+		std::ranges::sort(found);
+		projects.insert(projects.end(), found.begin(), found.end());
 	}
-	std::ranges::sort(samples);
-	projects.insert(projects.end(), samples.begin(), samples.end());
 	return projects;
 }
 
@@ -594,7 +597,9 @@ TEST_P(GameExportEndToEnd, PlaysFromItsExportFolder) {
 
 INSTANTIATE_TEST_SUITE_P(Shipped, GameExportEndToEnd, testing::ValuesIn(shippedProjects()),
 						 [](const testing::TestParamInfo<std::filesystem::path>& iInfo) -> std::string {
-							 return iInfo.param.filename().string();
+							 const auto name = iInfo.param.filename().string();
+							 return iInfo.param.parent_path().filename() == "project_templates" ? "template_" + name
+																								: name;
 						 });
 
 TEST(GameExportCoverage, EveryDemoSceneHasAScenario) {
@@ -616,7 +621,7 @@ TEST(GameExportCoverage, EveryDemoSceneHasAScenario) {
 TEST(GameExportCoverage, EverySampleGameHasAScenario) {
 	const auto root = test::getRootPath();
 	for (const auto& project: shippedProjects()) {
-		if (project.filename() == "engine_demo")
+		if (project.parent_path().filename() != "samples")
 			continue;
 		// A scenario of the game plays one of its scenes (`scene: ../../../samples/<game>/scenes/...`).
 		const auto scenes = std::format("samples/{}/scenes/", project.filename().string());

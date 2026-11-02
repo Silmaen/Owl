@@ -1,4 +1,6 @@
 Scene: Terrain
+SceneScript:
+  scriptPath: gid:0d9095b4a2f33f5a:scripts/scene_switch.lua
 EnabledRenderers:
   - Name: world
     Enabled: false
@@ -7,6 +9,12 @@ EnabledRenderers:
   - Name: voxel_world
     Enabled: true
   - Name: ui
+    Enabled: false
+  - Name: mesh_world
+    Enabled: false
+  - Name: billboards
+    Enabled: false
+  - Name: minimap
     Enabled: false
 Entities:
   - Entity: 7500000000000000001

@@ -1,0 +1,9 @@
+# The 3D template: the first-person player stands on the ground slab and walks forward.
+scene: ../../../engine_assets/project_templates/mesh_3d/scenes/main.owl
+project: ../../../engine_assets/project_templates/mesh_3d
+steps:
+  - frames: 60
+  - expect: {entity: Player, translation.y: {equals: 1.6, tolerance: 0.1}}
+  - actions: {move: [0, -1], frames: 60}
+  - expect: {entity: Player, translation.z: {less: 5.0}}
+  - expect: {entity: Player, translation.y: {equals: 1.6, tolerance: 0.1}}

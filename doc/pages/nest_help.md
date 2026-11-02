@@ -11,7 +11,9 @@ looking at, and **Pack Game** turns the project into a game folder you can hand 
 1. **Open something.** Without a project the **File** screen shows: **New project** (from a template), **Open
    project**, the **Engine Demo** and the sample games. Open the Engine Demo first: every engine feature is in it.
 2. **Look around a scene.** Double-click a scene (`.owl`) in the Content Browser at the bottom. Right drag in the
-   viewport looks around, the middle button pans, the wheel zooms; a click selects an entity.
+   viewport looks around (with `W` `A` `S` `D` to fly), the middle button pans, the wheel zooms, `F` frames the
+   selection; a click selects an entity. The **Orbit**, **Fly** and **Pan** buttons at the top right of the viewport
+   put the same moves on the left drag, see [Navigating the scene](editor_viewport.md#viewport-navigation).
 3. **Change it.** Move the selection with the gizmo (`W` move, `E` rotate, `R` scale), edit its fields in
    **Properties** on the right, add an entity from the **Scene Hierarchy**. `Ctrl+Z` undoes any step.
 4. **Play it.** `F5` (or the Play button over the viewport) plays a copy of the scene; `F7` stops and gives the scene

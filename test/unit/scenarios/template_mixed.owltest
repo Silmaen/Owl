@@ -1,0 +1,18 @@
+# The mixed template: the 3D player walks forward and its dot climbs the 2D minimap; keys 2 and 3 open the
+# raycast room and the voxel terrain.
+scene: ../../../engine_assets/project_templates/mixed/scenes/main.owl
+project: ../../../engine_assets/project_templates/mixed
+steps:
+  - frames: 60
+  - expect: {entity: MinimapPlayer, translation.y: {equals: 88.0, tolerance: 0.5}}
+  - actions: {move: [0, -1], frames: 60}
+  - expect: {entity: Player, translation.z: {less: 6.0}}
+  - expect: {entity: MinimapPlayer, translation.y: {greater: 92.0}}
+  - input: {key: D2, frames: 1}
+  - frames: 10
+  - expect: {entity: Walls, exists: true}
+  - expect: {entity: MinimapPlayer, exists: false}
+  - input: {key: D3, frames: 1}
+  - frames: 10
+  - expect: {entity: Terrain, exists: true}
+  - expect: {entity: Walls, exists: false}

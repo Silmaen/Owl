@@ -1,0 +1,9 @@
+Template:
+  name: 2D platformer
+  description: A side-scrolling 2D level with Box2D platforms and a player that runs and jumps.
+  order: 2
+  tags: [2D]
+  contents:
+    - Player with a dynamic Box2D body and a Lua controller (scripts/player.lua, A/D and space)
+    - Static ground and platforms, camera attached to the player
+    - Sky gradient behind, HUD with the controls

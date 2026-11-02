@@ -35,7 +35,7 @@ Entities:
     size: [600, 48]
     offset: [0, 24]
   UiText:
-    text: "Empty 2D project"
+    text: "Empty 2D project - WASD to move"
     color: [1, 1, 1, 1]
     fontSize: 32
     horizontalAlignment: Center

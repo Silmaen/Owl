@@ -1,0 +1,78 @@
+Scene: Room
+Hud: gid:3997b47d88c6b6bc:huds/gameplay.owlhud
+SceneScript:
+  scriptPath: gid:0d9095b4a2f33f5a:scripts/scene_switch.lua
+EnabledRenderers:
+  - Name: world
+    Enabled: false
+  - Name: raycast_world
+    Enabled: true
+  - Name: voxel_world
+    Enabled: false
+  - Name: ui
+    Enabled: true
+  - Name: mesh_world
+    Enabled: false
+  - Name: billboards
+    Enabled: false
+  - Name: minimap
+    Enabled: false
+Entities:
+  - Entity: 7400000000000000001
+    Tag:
+      tag: Player
+    Transform:
+      translation: [0.5, 0.5, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [0.4, 0.4, 1]
+      density: 1
+      restitution: 0
+      friction: 0.2
+    Player:
+      primary: true
+      linearImpulse: 0
+      jumpImpulse: 0
+      canJump: false
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+    LuaScript:
+      scriptPath: gid:e2e52280a7449b8e:scripts/player.lua
+      properties:
+        - name: speed
+          type: float
+          value: 3
+        - name: turn_speed
+          type: float
+          value: 1.8
+  - Entity: 7400000000000000002
+    Tag:
+      tag: Walls
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Tilemap:
+      tilemapPath: gid:62168c90727b024c:tilemaps/room.owltilemap
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+    RendererTag:
+      Name: raycast_world

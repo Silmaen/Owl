@@ -1,4 +1,9 @@
 Template:
   name: Empty 2D
-  description: A 2D world and a HUD layer, with a camera, a ground and a player sprite.
+  description: A 2D world and a HUD layer, with a camera, a ground and a player sprite moved with WASD.
   order: 1
+  tags: [2D]
+  contents:
+    - Orthographic camera on the 2D world layer
+    - Ground sprite and a player sprite moved by scripts/player.lua
+    - HUD title on the ui layer

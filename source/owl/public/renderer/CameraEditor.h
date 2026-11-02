@@ -142,6 +142,17 @@ public:
 
 	/**
 	 * @brief
+	 *  What a left drag without modifier does to the camera.
+	 */
+	enum struct LeftDrag : uint8_t {
+		None,///< Nothing: the left button selects and drives the gizmo.
+		Orbit,///< Orbit around the reference point.
+		Look,///< Look around from the eye; the fly keys move the camera as with the right drag.
+		Pan,///< Pan.
+	};
+
+	/**
+	 * @brief
 	 *  How mouse drags and the wheel move the camera.
 	 */
 	struct Navigation {
@@ -157,6 +168,8 @@ public:
 		float deadZone = 0.f;
 		/// Drags without modifier move the camera: right drag looks around, middle drag pans.
 		bool mouseLook = true;
+		/// What a left drag without modifier does; the orthographic projection pans for every mode but `None`.
+		LeftDrag leftDrag = LeftDrag::None;
 	};
 
 	/**
@@ -182,8 +195,9 @@ public:
 
 	/**
 	 * @brief
-	 *  Check whether the right button looks around: held without Alt nor Ctrl while the mouse look is on. W A S D
-	 *  (Z Q S D on an AZERTY keyboard) then fly the camera, Q and E move it down and up, the wheel sets the speed.
+	 *  Check whether a button looks around: the right one held without Alt nor Ctrl while the mouse look is on, or the
+	 *  left one when the left drag looks. W A S D (Z Q S D on an AZERTY keyboard) then fly the camera, Q and E move it
+	 *  down and up, the wheel sets the speed.
 	 * @return True while flying.
 	 */
 	[[nodiscard]] auto isFlying() const -> bool;
@@ -342,6 +356,13 @@ private:
 	 * @param[in] iDelta The X Y deltas.
 	 */
 	void rotateInPlace(const math::vec2& iDelta);
+
+	/**
+	 * @brief
+	 *  Move the camera as the left drag of the navigation does.
+	 * @param[in] iDelta The X Y deltas.
+	 */
+	void dragLeft(const math::vec2& iDelta);
 
 	/**
 	 * @brief
