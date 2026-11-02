@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Owl Nest viewport: **Select**, **Orbit**, **Fly** and **Pan** navigation modes in the view overlay choose what the left drag does, kept in the editor settings, with a click still selecting.
+- Owl Nest viewport: **Standard**, **Orbit**, **Fly** and **Pan** navigation modes in the view overlay choose what the left drag does, kept in the editor settings, with a click still selecting.
 - Owl Nest viewport: a fly speed button and a **Fly Speed** camera setting, kept across sessions and followed by the wheel during a flight.
 - `CameraEditor::Navigation::leftDrag`: orbit, look around (flying with the keys) or pan on a left drag without modifier.
 - Editor manual: a *Navigating the scene* section with every mouse and key gesture, per mode and per rendering style.

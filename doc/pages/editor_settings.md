@@ -68,7 +68,7 @@ The factory keys; every one can change in **Settings > Shortcuts**.
 | Text Size: Larger / Smaller / Reset            | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` |
 
 Without a factory key, reachable from the command palette and bindable: the axis views, **Camera: Selected
-Viewpoint**, **Camera: Pilot Selected Camera**, **Toggle 2D / 3D View**, the navigation modes (**Navigation: Select**,
+Viewpoint**, **Camera: Pilot Selected Camera**, **Toggle 2D / 3D View**, the navigation modes (**Navigation: Standard**,
 **Orbit**, **Fly**, **Pan**, see [Navigating the scene](editor_viewport.md#viewport-navigation)), **Reset Layout**.
 The gizmo letters act while the viewport is hovered and nothing is being dragged; `Shift` twice opens the palette
 outside a text field only.

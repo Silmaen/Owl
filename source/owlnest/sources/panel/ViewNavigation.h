@@ -25,14 +25,14 @@ namespace owl::nest::panel {
  * drags orbit, pan and dolly, the wheel zooms.
  */
 enum struct ViewNavigationMode : uint8_t {
-	Select,///< The left button selects and drives the gizmo, the view never moves with it.
+	Standard,///< The left button selects and drives the gizmo, the view never moves with it.
 	Orbit,///< The left drag orbits around the reference point.
 	Fly,///< The left drag looks around from the eye; W A S D, Q and E fly the camera while it is held.
 	Pan,///< The left drag pans, as a hand grabbing the scene.
 };
 
 /// Every navigation mode, in the order of the viewport buttons.
-constexpr std::array g_viewNavigationModes{ViewNavigationMode::Select, ViewNavigationMode::Orbit,
+constexpr std::array g_viewNavigationModes{ViewNavigationMode::Standard, ViewNavigationMode::Orbit,
 										   ViewNavigationMode::Fly, ViewNavigationMode::Pan};
 
 /**
@@ -79,7 +79,7 @@ constexpr std::array g_viewNavigationModes{ViewNavigationMode::Select, ViewNavig
  * @brief
  *  State of the left button of the viewport under a navigation mode.
  *
- * In the Select mode a press picks at once, as it always did. In the other modes a press off the gizmo moves the
+ * In the Standard mode a press picks at once, as it always did. In the other modes a press off the gizmo moves the
  * view while it drags; it picks on release when the cursor barely moved, so a click still selects.
  */
 struct ViewNavigation {
@@ -87,7 +87,7 @@ struct ViewNavigation {
 	static constexpr float clickTravel = 4.f;
 
 	/// The mode chosen with the viewport buttons.
-	ViewNavigationMode mode = ViewNavigationMode::Select;
+	ViewNavigationMode mode = ViewNavigationMode::Standard;
 	/// Whether the drag of the left button held now moves the view.
 	bool leftDragNavigates = false;
 	/// Whether the release of the left button held now picks.
@@ -97,7 +97,7 @@ struct ViewNavigation {
 	 * @brief
 	 *  The left button goes down.
 	 * @param[in] iFree Whether the press may pick: over the viewport, off the gizmo, with no tool owning the clicks.
-	 * @return True when the press picks now (the Select mode).
+	 * @return True when the press picks now (the Standard mode).
 	 */
 	auto pressLeft(bool iFree) -> bool;
 

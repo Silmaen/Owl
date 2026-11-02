@@ -159,7 +159,7 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			cameraFlySpeed = std::clamp(config["cameraFlySpeed"].as<float>(), 0.1f, 100.f);
 		if (config["viewNavigation"])
 			viewNavigation = panel::parseViewNavigationMode(config["viewNavigation"].as<std::string>())
-									 .value_or(panel::ViewNavigationMode::Select);
+									 .value_or(panel::ViewNavigationMode::Standard);
 		if (config["autosaveIntervalSeconds"])
 			autosaveIntervalSeconds = std::clamp(config["autosaveIntervalSeconds"].as<int>(), 0, 3600);
 		if (config["frameRateLimit"])
