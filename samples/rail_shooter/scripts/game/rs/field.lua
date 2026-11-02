@@ -1,4 +1,4 @@
--- The asteroid field: the `Asteroid` entities of the scene, read once in rail coordinates and sorted by distance.
+-- The asteroid field: the `Asteroid` entities of the scene, read in rail coordinates and sorted by distance.
 -- Only the rocks around the carrier are looked at each frame (from `rock_first`). A small rock breaks at the first
 -- hit, a big one (`big_rock` across and more) takes three; a rock the ship flies into breaks and costs hull. A hit
 -- flashes the rock and knocks it a little along the shot (for the eye only: its rail position does not move).
@@ -9,22 +9,36 @@ local S, C = rs.state, rs.cfg
 
 local F = {}
 
+-- The rocks are read a few per frame (`rocks_per_frame`), then sorted: the field holds no rock until then.
+local pending, loaded, next_pending = {}, {}, 1
+local rocks_per_frame = 24
+
 function F.load()
-    S.asteroids = {}
-    for _, id in ipairs(scene.find_entities("Asteroid")) do
+    S.asteroids, loaded = {}, {}
+    pending, next_pending = scene.find_entities("Asteroid"), 1
+    S.rock_first = 1
+end
+
+local function read_rocks()
+    local last = math.min(#pending, next_pending + rocks_per_frame - 1)
+    for index = next_pending, last do
+        local id = pending[index]
         local wx, wy, wz = transform.get_position(id)
         local s, x, y = rs.to_rail(wx, wy, wz)
         local scale = transform.get_scale(id)
         local radius = scale * 0.95
         local rx, ry, rz = transform.get_rotation(id)
-        S.asteroids[#S.asteroids + 1] = {
+        loaded[#loaded + 1] = {
             id = id, s = s, x = x, y = y, radius = radius, hp = radius >= C.big_rock and 3 or 1,
             big = radius >= C.big_rock, alive = true, rx = rx, ry = ry, rz = rz,
             spin = 0.2 + (id % 7) * 0.08, knock = 0.0, kick = { 0, 0, 0 },
         }
     end
-    table.sort(S.asteroids, function(a, b) return a.s < b.s end)
-    S.rock_first = 1
+    next_pending = last + 1
+    if next_pending > #pending then
+        table.sort(loaded, function(a, b) return a.s < b.s end)
+        S.asteroids, pending = loaded, {}
+    end
 end
 
 -- The rocks from just behind the ship to `range` ahead, through a callback; false from it stops the walk.
@@ -71,6 +85,7 @@ function F.hit(rock, is, ix, iy, ds, dx, dy)
 end
 
 function F.update(dt)
+    if next_pending <= #pending then read_rocks() end
     F.each_near(220, function(rock)
         -- The near rocks turn slowly on themselves.
         if rock.s < S.s + 120 then
