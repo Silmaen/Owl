@@ -401,7 +401,7 @@ it nothing.
 | `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/unit/render_tests`, label `render`)                                              |
 | `OWL_RENDER_TEST_SHARDS`                   | 6       | Parallel CTest entries the image tests are split into                                               |
 | `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, in seconds (`export_tests`: at least 1200)                           |
-| `OWL_SCRIPT_TIME_SCALE`                    | 1       | Lua quota multiplier, scenario and export tests (8 arm64 on QEMU, 4 sanitizers and coverage builds) |
+| `OWL_SCRIPT_TIME_SCALE`                    | 1       | Lua quota multiplier, scenario and export tests (8 arm64 on QEMU and sanitizers, 4 coverage builds) |
 | `OWL_CONAN_PROFILE`                        | (auto)  | Conan host profile, default `conan/profiles/<os>-<compiler>[-<arch>]`                               |
 | `OWL_CONAN_BUILD_PROFILE`                  | (auto)  | Conan build profile, default `conan/profiles/<os>-<compiler>`                                       |
 | `OWL_SYSROOT`                              | (auto)  | arm64 sysroot of the cross toolchain, default `/opt/sysroot/aarch64-linux-gnu`                      |
