@@ -714,6 +714,11 @@ void EditorLayer::onAttach() {
 		openAssetFromInspector(iPath, iLine);
 	});
 	m_contentBrowser.setSceneOpenCallback([this](const std::filesystem::path& iPath) -> void { openScene(iPath); });
+	m_contentBrowser.setPackageSettingsCallback([this]() -> std::optional<data::assets::pack::ExportSettings> {
+		if (!m_project.isLoaded())
+			return std::nullopt;
+		return m_project.makeExportSettings({}, app::Application::get().getWorkingDirectory());
+	});
 	m_contentBrowser.setCodeOpenCallback([this](const std::filesystem::path& iPath) -> void { openCodeFile(iPath); });
 	m_contentBrowser.setNodeGraphOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openNodeGraphFile(iPath); });
@@ -1056,6 +1061,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_consolePanel.onImGuiRender();
 	renderScriptDebug();
 	renderStats(iTimeStep);
+	m_contentBrowser.setShowAllFiles(m_settings.showAllFiles);
 	m_contentBrowser.onImGuiRender();
 	m_parameters.onImGuiRender();
 	m_projectSettings.onImGuiRender();

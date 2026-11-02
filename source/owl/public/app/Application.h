@@ -32,6 +32,7 @@
 #include <list>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 // Forward declaration of the program entry point (definition in EntryPoint.h).
@@ -323,6 +324,25 @@ public:
 
 	/**
 	 * @brief
+	 *  Where an asset directory comes from.
+	 */
+	enum struct AssetOrigin : uint8_t {
+		Project,///< Added by `addAssetDirectory`: a game project, a scenario folder.
+		Application,///< The assets of the application itself (`AppParams::assetsPattern`): its icons, its sounds.
+		WorkingDirectory,///< The `assets` folder of the working directory: the baked engine shaders.
+		Engine,///< The assets the engine ships (`engine_assets`).
+	};
+
+	/**
+	 * @brief
+	 *  Where an asset directory comes from.
+	 * @param[in] iPath The path of the asset directory.
+	 * @return Its origin; `Project` for a directory the application did not find by itself.
+	 */
+	[[nodiscard]] auto getAssetOrigin(const std::filesystem::path& iPath) const -> AssetOrigin;
+
+	/**
+	 * @brief
 	 *  Get the working directory.
 	 * @return The current working directory.
 	 */
@@ -555,6 +575,14 @@ private:
 
 	/**
 	 * @brief
+	 *  Add an asset directory the application found by itself, with its origin.
+	 * @param[in] iDir The asset directory.
+	 * @param[in] iOrigin Where it comes from.
+	 */
+	void addFoundAssetDirectory(const AssetDirectory& iDir, AssetOrigin iOrigin);
+
+	/**
+	 * @brief
 	 *  Create the main window for the current renderer and initialise the input for it.
 	 */
 	void createMainWindow();
@@ -616,6 +644,8 @@ private:
 	std::filesystem::path m_workingDirectory;
 	/// Base Path to the asset Directory.
 	std::list<AssetDirectory> m_assetDirectories;
+	/// Origin of the asset directories the application found by itself.
+	std::vector<std::pair<std::filesystem::path, AssetOrigin>> m_assetOrigins;
 	/// GUIDs of the assets of the asset directories.
 	data::assets::AssetRegistry m_assetRegistry;
 	/// Time steps management.

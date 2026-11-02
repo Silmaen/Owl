@@ -95,6 +95,10 @@ void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
 		return;
 	std::ignore = gui::widgets::propertyBool("Stats Panel", ioSettings.showStats, defaults.showStats,
 											 "Show the frame statistics panel.");
+	std::ignore = gui::widgets::propertyBool(
+			"Show All Files", ioSettings.showAllFiles, defaults.showAllFiles,
+			"List every file in the Content Browser: the compiled shaders (spirv folders, .spv and .spv.hash), "
+			"the engine logos and the assets of Owl Nest itself (App assets).");
 	std::ignore = settingInt("Text Size", ioSettings.textScalePercent, 75, 150, defaults.textScalePercent, "%d %%",
 							 "Scale of every text of the editor, applied at once (Ctrl+= / Ctrl+- / Ctrl+0).");
 	std::ignore = settingInt("UI Font Size", ioSettings.uiFontSize, 14, 24, defaults.uiFontSize, "%d px",

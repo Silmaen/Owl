@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project templates **2D platformer** (Box2D platforms, run and jump), **3D** (meshes, sun, procedural sky, first-person player) and **Isometric** (tilemap island and sprites), each with a scenario and a preview image.
 - Owl Nest **New Project** dialog: a grid of template cards (preview, name, description, style tags) filtered by tag and walked with the arrow keys, the details of the selected template, and a checked name and location (`panel::validateNewProject`).
 - `tools/demo/generate_templates.py` writes the meshes, the isometric atlas, tileset and map of the templates.
+- Owl Nest Content Browser **Packaged files**: only the files a game export packs, and the folders holding them.
+- Owl Nest **Settings > General > Show All Files**: the Content Browser hides the compiled shaders, the engine logos and the assets of Owl Nest unless it is on.
+- `Application::getAssetOrigin`: whether an asset directory is a project, the application's, the working directory's or the engine's.
 - Owl Nest code editor: a double click on a `gid:` reference or a bare GUID opens the asset it names.
 - Owl Nest Content Browser **New Lua Script**: a starter script with one property and the lifecycle hooks, opened in the code editor.
 - Tutorial "Create a new game" (`tutorial-first-game.md`): a first game in Owl Nest from the Empty 2D template, from the project to the export.

@@ -10,13 +10,16 @@
 
 #include "../commands/CommandRegistry.h"
 #include "AssetThumbnails.h"
+#include "BrowserFilter.h"
 
+#include <data/assets/pack/GameExporter.h>
 #include <owlgui.h>
 
 #include <atomic>
 #include <cstddef>
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -116,6 +119,22 @@ public:
 	 */
 	void setSceneOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
 		m_sceneOpenCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
+	 *  Show every file, the build products of the shaders, the engine logos and the assets of Owl Nest included.
+	 * @param[in] iShowAll The *Show All Files* editor setting.
+	 */
+	void setShowAllFiles(bool iShowAll);
+
+	/**
+	 * @brief
+	 *  Set the callback giving the export settings of the open project, read by the *Packaged* filter.
+	 * @param[in] iCallback Function returning the settings, nullopt without a project.
+	 */
+	void setPackageSettingsCallback(std::function<std::optional<data::assets::pack::ExportSettings>()> iCallback) {
+		m_packageSettingsCallback = std::move(iCallback);
 	}
 
 	/**
@@ -424,6 +443,43 @@ private:
 	std::unordered_map<std::string, std::vector<std::filesystem::path>> m_folderCache;
 	/// Folder the tree last expanded its ancestors for.
 	std::filesystem::path m_treeSyncedPath;
+	/// Show every file (the *Show All Files* editor setting).
+	bool m_showAllFiles = false;
+	/// Show only the files a game export packs, and the folders holding them.
+	bool m_packagedOnly = false;
+	/// The files a game export packs, from the last scan of the project.
+	PackagedFiles m_packaged;
+	/// Incoming packed files from a background scan of the project, consumed on the main thread.
+	shared<std::vector<std::filesystem::path>> m_pendingPackaged;
+	/// True while a background scan of the project is in progress.
+	std::atomic<bool> m_packScanInProgress = false;
+	/// Export settings of the open project (the *Packaged* filter).
+	std::function<std::optional<data::assets::pack::ExportSettings>()> m_packageSettingsCallback;
+
+	/**
+	 * @brief
+	 *  Where an asset root comes from.
+	 * @param[in] iRoot The asset root.
+	 * @return Its origin, `Project` for a folder that is no registered root.
+	 */
+	[[nodiscard]] static auto getOrigin(const std::filesystem::path& iRoot) -> AssetOrigin;
+
+	/**
+	 * @brief
+	 *  Whether a file or folder of an asset root is listed under the current settings and filters.
+	 * @param[in] iPath The file or folder.
+	 * @param[in] iRoot The asset root holding it.
+	 * @param[in] iDirectory Whether it is a folder.
+	 * @return True when it is listed.
+	 */
+	[[nodiscard]] auto isListed(const std::filesystem::path& iPath, const std::filesystem::path& iRoot,
+								bool iDirectory) const -> bool;
+
+	/**
+	 * @brief
+	 *  Scan the open project in the background for the files its export packs.
+	 */
+	void requestPackScan();
 
 	/**
 	 * @brief
@@ -459,9 +515,11 @@ private:
 	 * @brief
 	 *  Sub-folders of a folder, read once and cached until the next scan.
 	 * @param[in] iPath The folder.
+	 * @param[in] iRoot The asset root holding it.
 	 * @return The sub-folders, sorted, hidden ones left out.
 	 */
-	auto getSubFolders(const std::filesystem::path& iPath) -> const std::vector<std::filesystem::path>&;
+	auto getSubFolders(const std::filesystem::path& iPath, const std::filesystem::path& iRoot)
+			-> const std::vector<std::filesystem::path>&;
 
 	/**
 	 * @brief

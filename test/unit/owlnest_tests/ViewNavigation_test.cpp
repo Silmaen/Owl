@@ -76,10 +76,12 @@ TEST(ViewNavigation, SettingsKeepTheModeAndTheFlySpeed) {
 	owl::nest::EditorSettings saved;
 	saved.viewNavigation = ViewNavigationMode::Fly;
 	saved.cameraFlySpeed = 12.5f;
+	saved.showAllFiles = true;
 	saved.saveToFile(file);
 	owl::nest::EditorSettings loaded;
 	loaded.loadFromFile(file);
 	EXPECT_EQ(loaded.viewNavigation, ViewNavigationMode::Fly);
 	EXPECT_FLOAT_EQ(loaded.cameraFlySpeed, 12.5f);
+	EXPECT_TRUE(loaded.showAllFiles);
 	std::filesystem::remove(file);
 }

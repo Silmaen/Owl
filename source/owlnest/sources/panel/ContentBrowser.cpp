@@ -14,6 +14,7 @@
 #include "../document/VisualScriptDocument.h"
 
 #include <data/assets/AssetMeta.h>
+#include <data/assets/pack/AssetScanner.h>
 #include <data/localisation/Localisation.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
@@ -354,10 +355,59 @@ void ContentBrowser::reveal(const std::filesystem::path& iPath) {
 
 void ContentBrowser::attach() {
 	m_currentRootPath = app::Application::get().getAssetDirectories().front().assetsPath;
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		if (isBrowsedRoot(getOrigin(assetsPath), m_showAllFiles)) {
+			m_currentRootPath = assetsPath;
+			break;
+		}
+	}
 	m_currentPath = m_currentRootPath;
 	m_cachedEntries.clear();
 	m_cachedPath.clear();
 	requestScan(m_currentPath);
+}
+
+void ContentBrowser::setShowAllFiles(const bool iShowAll) {
+	if (iShowAll == m_showAllFiles)
+		return;
+	m_showAllFiles = iShowAll;
+	m_folderCache.clear();
+	m_rescanRequested = true;
+	if (!isBrowsedRoot(getOrigin(m_currentRootPath), m_showAllFiles))
+		attach();
+}
+
+auto ContentBrowser::getOrigin(const std::filesystem::path& iRoot) -> AssetOrigin {
+	return app::Application::get().getAssetOrigin(iRoot);
+}
+
+auto ContentBrowser::isListed(const std::filesystem::path& iPath, const std::filesystem::path& iRoot,
+							  const bool iDirectory) const -> bool {
+	if (!m_showAllFiles && isHiddenEntry(iPath, iRoot, getOrigin(iRoot)))
+		return false;
+	if (!m_packagedOnly)
+		return true;
+	return iDirectory ? m_packaged.holds(iPath) : m_packaged.contains(iPath);
+}
+
+void ContentBrowser::requestPackScan() {
+	if (m_packScanInProgress.load() || !m_packageSettingsCallback)
+		return;
+	const auto settings = m_packageSettingsCallback();
+	if (!settings)
+		return;
+	m_packScanInProgress.store(true);
+	m_pendingPackaged = mkShared<std::vector<std::filesystem::path>>();
+	auto buffer = m_pendingPackaged;
+	auto* flag = &m_packScanInProgress;
+	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
+			[buffer, settings]() -> void {
+				for (const auto& asset: data::assets::pack::AssetScanner::scanProject(
+							 settings->projectDirectory, settings->firstScene, nullptr, settings->defaultHud,
+							 settings->defaultHudTheme))
+					buffer->push_back(asset.diskPath);
+			},
+			[flag]() -> void { flag->store(false); }));
 }
 
 void ContentBrowser::requestScan(const std::filesystem::path& iPath) {
@@ -391,11 +441,20 @@ void ContentBrowser::onImGuiRender() {
 	ImGui::Begin(panelWindow::title(gui::icon::folderOpen, "Content Browser", panelWindow::contentBrowser).c_str());
 
 	// Swap in the latest background scan when it completes.
+	if (!m_packScanInProgress.load() && m_pendingPackaged) {
+		m_packaged.assign(*m_pendingPackaged);
+		m_pendingPackaged.reset();
+		m_folderCache.clear();
+		m_rescanRequested = true;
+	}
 	if (!m_scanInProgress.load() && m_pendingEntries) {
 		m_cachedEntries = std::move(*m_pendingEntries);
 		m_cachedPath = m_pendingScanPath;
 		m_pendingEntries.reset();
 		m_folderCache.clear();
+		std::erase_if(m_cachedEntries, [this](const std::filesystem::directory_entry& iEntry) -> bool {
+			return !isListed(iEntry.path(), m_currentRootPath, iEntry.is_directory());
+		});
 	}
 
 	// Navigation or external trigger may require a rescan.
@@ -430,14 +489,16 @@ void ContentBrowser::onImGuiRender() {
 	ImGui::End();
 }
 
-auto ContentBrowser::getSubFolders(const std::filesystem::path& iPath) -> const std::vector<std::filesystem::path>& {
+auto ContentBrowser::getSubFolders(const std::filesystem::path& iPath, const std::filesystem::path& iRoot)
+		-> const std::vector<std::filesystem::path>& {
 	const auto key = iPath.string();
 	if (const auto it = m_folderCache.find(key); it != m_folderCache.end())
 		return it->second;
 	std::vector<std::filesystem::path> folders;
 	std::error_code error;
 	for (const auto& entry: std::filesystem::directory_iterator(iPath, error)) {
-		if (entry.is_directory(error) && !entry.path().filename().string().starts_with('.'))
+		if (entry.is_directory(error) && !entry.path().filename().string().starts_with('.') &&
+			isListed(entry.path(), iRoot, true))
 			folders.push_back(entry.path());
 	}
 	std::ranges::sort(folders);
@@ -446,6 +507,8 @@ auto ContentBrowser::getSubFolders(const std::filesystem::path& iPath) -> const 
 
 void ContentBrowser::renderFolderTree() {
 	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		if (!isBrowsedRoot(getOrigin(assetsPath), m_showAllFiles))
+			continue;
 		ImGui::PushID(assetsPath.string().c_str());
 		renderFolderRow(assetsPath, assetsPath, title, true);
 		ImGui::PopID();
@@ -457,7 +520,7 @@ void ContentBrowser::renderFolderTree() {
 void ContentBrowser::renderFolderRow(const std::filesystem::path& iPath, const std::filesystem::path& iRoot,
 									 const std::string& iLabel, const bool iIsRoot) {
 	const auto& theme = gui::UiLayer::getTheme();
-	const auto& children = getSubFolders(iPath);
+	const auto& children = getSubFolders(iPath, iRoot);
 	const bool selected = iPath == m_currentPath;
 	// Unfold the ancestors of the current folder once each time it changes (breadcrumb, double-click).
 	if (m_treeSyncedPath != m_currentPath) {
@@ -523,8 +586,8 @@ void ContentBrowser::renderTopBand() {
 		ImGui::SameLine();
 	}
 	// Search field, three buttons and the size slider, with the gaps between them.
-	const float right = ImGui::GetFontSize() * 14.5f + ImGui::GetFrameHeight() * 3.f +
-						ImGui::GetStyle().ItemSpacing.x * 5.f + ImGui::GetStyle().WindowPadding.x;
+	const float right = ImGui::GetFontSize() * 14.5f + ImGui::GetFrameHeight() * 4.f +
+						ImGui::GetStyle().ItemSpacing.x * 6.f + ImGui::GetStyle().WindowPadding.x;
 	ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(), ImGui::GetWindowContentRegionMax().x - right));
 	ImGui::BeginChild("##cbSearchBox", {ImGui::GetFontSize() * 10.f, ImGui::GetFrameHeight()}, ImGuiChildFlags_None,
 					  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
@@ -537,6 +600,21 @@ void ContentBrowser::renderTopBand() {
 	ImGui::SameLine();
 	if (gui::widgets::iconButton("list", {.glyph = gui::icon::list, .tooltip = "List view", .selected = m_listView}))
 		m_listView = true;
+	ImGui::SameLine();
+	if (gui::widgets::iconButton(
+				"packaged",
+				{.glyph = gui::icon::packageCheck,
+				 .tooltip = "Packaged files",
+				 .description = "Show only the files a game export packs: the scenes reachable from the first scene "
+								"and everything they reference, with the engine shaders and fonts.",
+				 .selected = m_packagedOnly,
+				 .disabled = !m_packageSettingsCallback || !m_packageSettingsCallback().has_value()})) {
+		m_packagedOnly = !m_packagedOnly;
+		m_folderCache.clear();
+		m_rescanRequested = true;
+		if (m_packagedOnly)
+			requestPackScan();
+	}
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4.5f);
 	ImGui::BeginDisabled(m_listView);

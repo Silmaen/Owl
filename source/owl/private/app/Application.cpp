@@ -122,12 +122,14 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	// Lowest priority first: a development tree finds the engine and app assets above the working directory.
 	{
 		if (const auto engineAssets = searchAssets("engine_assets"); engineAssets.has_value())
-			m_assetDirectories.push_front({"Engine assets", engineAssets.value()});
+			addFoundAssetDirectory({.title = "Engine assets", .assetsPath = engineAssets.value()}, AssetOrigin::Engine);
 		if (exists(m_workingDirectory / "assets"))
-			m_assetDirectories.push_front({"working dir assets", m_workingDirectory / "assets"});
+			addFoundAssetDirectory({.title = "working dir assets", .assetsPath = m_workingDirectory / "assets"},
+								   AssetOrigin::WorkingDirectory);
 		if (!m_initParams.assetsPattern.empty()) {
 			if (const auto appAssets = searchAssets(m_initParams.assetsPattern); appAssets.has_value())
-				m_assetDirectories.push_front({"App assets", appAssets.value()});
+				addFoundAssetDirectory({.title = "App assets", .assetsPath = appAssets.value()},
+									   AssetOrigin::Application);
 		}
 		if (m_assetDirectories.empty() && !hasOpenPack())
 			OWL_CORE_ERROR("Application: No asset directory found from '{}'.", m_workingDirectory.string())
@@ -390,6 +392,16 @@ Application::~Application() {
 		std::signal(SIGTERM, SIG_DFL);
 	}
 	invalidate();
+}
+
+void Application::addFoundAssetDirectory(const AssetDirectory& iDir, const AssetOrigin iOrigin) {
+	m_assetOrigins.emplace_back(iDir.assetsPath, iOrigin);
+	m_assetDirectories.push_front(iDir);
+}
+
+auto Application::getAssetOrigin(const std::filesystem::path& iPath) const -> AssetOrigin {
+	const auto found = std::ranges::find(m_assetOrigins, iPath, &std::pair<std::filesystem::path, AssetOrigin>::first);
+	return found == m_assetOrigins.end() ? AssetOrigin::Project : found->second;
 }
 
 void Application::addAssetDirectory(const AssetDirectory& iDir, const bool iEditable) {

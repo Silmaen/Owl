@@ -4,15 +4,21 @@
 
 **Level:** Confirmed. **Read first:** [The Owl Nest window](editor.md).
 
-The **Content Browser** (bottom strip) shows the files of the asset folders: the project, the application and the
-engine. It opens them, places them in the scene and takes files dropped from the desktop.
+The **Content Browser** (bottom strip) shows the files of the asset folders: the project and the engine. It opens
+them, places them in the scene and takes files dropped from the desktop.
 
 ## Browsing
 
 - **Folder tree** (left, resizable): the asset roots and their folders, unfolded down to the folder shown.
-- **Toolbar**: parent folder, a clickable path, a name filter, grid or list, the thumbnail size and the style of the
-  mesh thumbnails (**Textured**, **Shaded**, **Flat**). Below, one chip per kind of file present (`All 14`,
-  `Texture 11`...) filters the view.
+- **Toolbar**: parent folder, a clickable path, a name filter, grid or list, **Packaged files**, the thumbnail size
+  and the style of the mesh thumbnails (**Textured**, **Shaded**, **Flat**). Below, one chip per kind of file present
+  (`All 14`, `Texture 11`...) filters the view.
+- **Packaged files** (with a project open) keeps the files a game export packs, and the folders holding them: the
+  scenes reachable from the first scene, everything they reference, the engine shaders and fonts. The list is read
+  when the button is turned on; turn it off and on to read it again.
+- **Hidden files**: the compiled shaders (`spirv` folders, `.spv` and `.spv.hash`, rebuilt from their `.slang`), the
+  engine logos and the assets of Owl Nest itself (**App assets**) stay out of the browser. **Settings > General >
+  Show All Files** lists them.
 - **Tiles**: images show themselves, tilesets their atlas, HUDs a render, scenes their primary camera, prefabs a
   framing of their entities, materials a sphere, meshes a render of their material, sounds their waveform; other
   files the icon of their kind. Each tile has a colour bar of its family, its kind and its extension. A preview is

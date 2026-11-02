@@ -51,6 +51,8 @@ TEST(Core, ApplicationBasic) {
 	auto app = owl::mkShared<Application>(params);
 	ASSERT_FALSE(app->getAssetDirectories().empty());
 	EXPECT_EQ(app->getAssetDirectories().front().assetsPath.filename(), "engine_assets");
+	EXPECT_EQ(app->getAssetOrigin(app->getAssetDirectories().front().assetsPath), Application::AssetOrigin::Engine);
+	EXPECT_EQ(app->getAssetOrigin(std::filesystem::temp_directory_path()), Application::AssetOrigin::Project);
 	EXPECT_FALSE(app->getWorkingDirectory().filename().string().empty());
 	EXPECT_EQ(app->getState(), Application::State::Running);
 	app->enableDocking();

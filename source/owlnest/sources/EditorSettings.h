@@ -68,6 +68,8 @@ struct EditorSettings {
 
 	/// Whether the stats panel is visible.
 	bool showStats = true;
+	/// Whether the Content Browser shows every file: the shader build products, the engine logos, the assets of Owl Nest.
+	bool showAllFiles = false;
 	/// Theme preset name (`gui::Theme::getPresetNames`); retired names are mapped on load.
 	std::string themePreset = "Owl Dark";
 	/// Font size (pixels) used inside the code editor tabs.
