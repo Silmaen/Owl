@@ -21,9 +21,10 @@ flowchart LR
 ## 1. Create the project
 
 1. Start **Owl Nest**. The **File** screen opens.
-2. Click **New project**. A **New Project** window asks for a **Name** (leave `MyGame`), a **Location** (a folder you
-   own) and a **Template**.
-3. Pick **Empty 2D** (a 2D world and a HUD layer, with a camera, a ground and a player sprite), then **Create**.
+2. Click **New project**. The **New Project** window shows a card per template; the chips above them filter by style.
+3. Click the **Empty 2D** card (a 2D world and a HUD layer, with a camera, a ground and a player sprite moved by a
+   script). Under **Project**, leave the **Name** `MyGame`, choose a **Location** (a folder you own) and click
+   **Create**.
 
 You now have the folder `<Location>/MyGame` with an `owl_project.yml`, and the first scene, `scenes/main.owl`, opens
 in a tab. The other templates are listed in [Projects and export](editor_projects.md#project-templates).
@@ -34,7 +35,7 @@ The viewport shows a green bar (the ground) and an orange square (the player). O
 the **Scene Hierarchy** lists three entities: `MainCamera`, `Ground` and `Player`.
 
 1. Click `Player` in the hierarchy: the square is outlined and its components show in **Properties** (Transform,
-   Sprite Renderer, Visibility, Hierarchy).
+   Sprite Renderer, Lua Script, Visibility, Hierarchy).
 2. Press `W` and drag the gizmo: the square moves. Press `Ctrl+Z`: it goes back.
 3. In **Properties**, change the colour of the **Sprite Renderer**: the square changes at once.
 
@@ -48,22 +49,20 @@ Every entity is a name plus components; this one draws a coloured square. See [S
 3. In its **Transform**, set the translation to `3, -2, 0.1` (x, y, z). The yellow square sits right of the player.
 4. Press `Ctrl+S` to save the scene.
 
-## 4. Move the player with a script
+## 4. Give the player a score
 
 The template ships the built-in input actions of
 [`input_actions.yml`](editor_documents.md#editor-action-map): `move` is `W A S D` or the left stick, `jump` is
-`Space` or the pad button A.
+`Space` or the pad button A. Its `Player` already runs `scripts/player.lua`, which moves it with `move`.
 
-1. In the **Content Browser** at the bottom of Owl Nest, right-click the background and choose **Create Folder**;
-   press `F2` and name it `scripts`. Double-click it to enter it.
-2. Right-click the background again and choose **New Lua Script**: `new_script.lua` appears and opens in the code
-   editor with a property and two empty functions. Back in the Content Browser, press `F2` on it and name it
-   `player.lua`.
-3. Replace its text with this and press `Ctrl+S`:
+1. Select `Player`. In its **Lua Script** component, the **Hooks** list shows `on_update`; click its **Open** button:
+   the script opens in the code editor at that function. The `speed` property above the hooks is the value the
+   script reads: change it in the inspector, no code edit needed.
+2. Replace the text of the script with this and press `Ctrl+S`:
 
 ```lua
 properties = {
-    { name = "speed", type = "float", default = 5.0 },
+    { name = "speed", type = "float", default = 4.0 },
 }
 
 local score = 0
@@ -85,10 +84,10 @@ function on_update(dt)
 end
 ```
 
-4. Select `Player`, click **Add** and choose **Lua Script**. Drag `scripts/player.lua` from the Content
-   Browser onto its **Script** field. The **Hooks** list shows `on_create` and `on_update` with an **Open** button,
-   and a `speed` property appears: change it in the inspector, no code edit needed.
-5. Save the scene with `Ctrl+S`.
+3. The **Hooks** list now shows `on_create` too. Save the scene with `Ctrl+S`.
+
+A script of your own starts from the Content Browser: right-click a folder, choose **New Lua Script**, then drag the
+file onto the **Script** field of a **Lua Script** component (**Add** > **Lua Script**).
 
 Every function and table used here is listed in the [Lua API reference](lua-api.md); the callbacks and the
 properties are explained in [Scripting Games in Lua](scripting.md). If you prefer graphs to text, right-click a
