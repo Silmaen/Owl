@@ -233,7 +233,7 @@ void Viewport::attach() {
 }
 
 void Viewport::detach() {
-	OWL_TRACE("Viewport: framebuffer freed.")
+	OWL_DEBUG("Viewport: framebuffer freed.")
 	m_framebuffer.reset();
 	m_previewFramebuffer.reset();
 }

@@ -27,16 +27,16 @@ namespace {
 									  [[maybe_unused]] int iLength, const char* iMessage, const void* iUserParam) {
 	switch (iSeverity) {
 		case GL_DEBUG_SEVERITY_HIGH:
-			OWL_CORE_CRITICAL("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
-			return;
-		case GL_DEBUG_SEVERITY_MEDIUM:
 			OWL_CORE_ERROR("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
 			return;
-		case GL_DEBUG_SEVERITY_LOW:
+		case GL_DEBUG_SEVERITY_MEDIUM:
 			OWL_CORE_WARN("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
 			return;
+		case GL_DEBUG_SEVERITY_LOW:
+			OWL_CORE_DEBUG("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
+			return;
 		case GL_DEBUG_SEVERITY_NOTIFICATION:
-			OWL_CORE_INFO("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
+			OWL_CORE_TRACE("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
 			return;
 		default:
 			OWL_CORE_TRACE("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
@@ -58,7 +58,7 @@ void RenderAPI::init() {
 
 	if (getState() != State::Created)
 		return;
-#ifdef OWL_DEBUG
+#ifdef OWL_DEBUG_BUILD
 	glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback(messageCallback, nullptr);
@@ -66,8 +66,8 @@ void RenderAPI::init() {
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
 #endif
 
-	OWL_CORE_INFO("OpenGL: Shaders loaded as {}.",
-				  getShaderFormat() == ShaderFormat::Spirv ? "SPIR-V" : "GLSL 4.50 (no GL_ARB_gl_spirv)")
+	OWL_CORE_DEBUG("OpenGL: Shaders loaded as {}.",
+				   getShaderFormat() == ShaderFormat::Spirv ? "SPIR-V" : "GLSL 4.50 (no GL_ARB_gl_spirv)")
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

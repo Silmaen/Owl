@@ -86,7 +86,7 @@ Texture2D::~Texture2D() {
 	if (m_textureId > 0)
 		internal::Descriptors::get().unregisterTexture(m_textureId);
 	else
-		OWL_CORE_WARN("Destroying text with null id.")
+		OWL_CORE_DEBUG("Vulkan Texture: Destroying a texture with a null id.")
 }
 
 auto Texture2D::operator==(const Texture& iOther) const -> bool {

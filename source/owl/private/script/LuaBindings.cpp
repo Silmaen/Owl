@@ -884,6 +884,12 @@ auto luaLogTrace(lua_State* iState) -> int {
 	return 0;
 }
 
+auto luaLogDebug(lua_State* iState) -> int {
+	const char* message = luaL_checkstring(iState, 1);
+	OWL_DEBUG("{}", message)
+	return 0;
+}
+
 auto luaLogInfo(lua_State* iState) -> int {
 	const char* message = luaL_checkstring(iState, 1);
 	OWL_INFO("{}", message)
@@ -3468,6 +3474,8 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .returns = {{"alpha", Number}}},
 		{.table = "log", .name = "trace", .function = guarded<luaLogTrace>,
 		 .description = "Log a message at trace level.", .params = {{"message", String}}},
+		{.table = "log", .name = "debug", .function = guarded<luaLogDebug>,
+		 .description = "Log a message at debug level.", .params = {{"message", String}}},
 		{.table = "log", .name = "info", .function = guarded<luaLogInfo>,
 		 .description = "Log a message at info level.", .params = {{"message", String}}},
 		{.table = "log", .name = "warn", .function = guarded<luaLogWarn>,

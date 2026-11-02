@@ -37,13 +37,13 @@ auto main(int iArgc, char* iArgv[]) -> int {
 		OWL_PROFILE_END_SESSION()
 		// runtime
 		OWL_PROFILE_BEGIN_SESSION("Runtime", "OwlProfile-runtime.json")
-		OWL_CORE_TRACE("run!")
+		OWL_CORE_DEBUG("run!")
 		app->run();
 		exitCode = app->getExitCode();
 		OWL_PROFILE_END_SESSION()
 		// Shutdown
 		OWL_PROFILE_BEGIN_SESSION("Shutdown", "OwlProfile-shutdown.json")
-		OWL_CORE_TRACE("Terminate application.")
+		OWL_CORE_DEBUG("Terminate application.")
 		app.reset();
 #if OWL_TRACKER_VERBOSITY >= 1
 		{

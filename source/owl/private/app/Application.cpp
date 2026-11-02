@@ -89,7 +89,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		m_workingDirectory = absolute(std::filesystem::current_path());
 
 		OWL_CORE_INFO("Application: {} on Owl Engine {}.", m_initParams.name, getVersionFullString())
-		OWL_CORE_INFO("Working directory: {}.", m_workingDirectory.string())
+		OWL_CORE_DEBUG("Working directory: {}.", m_workingDirectory.string())
 		OWL_CORE_INFO("User directory: {}.", platform::getUserDirectory().string())
 
 		// load config file if any
@@ -163,7 +163,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		// wait for all asynchronous tasks
 		m_scheduler.waitEmptyQueue();
 
-		OWL_CORE_TRACE("Renderer context initiated.")
+		OWL_CORE_DEBUG("Renderer context initiated.")
 	}
 
 	// set up the callbacks
@@ -186,7 +186,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		// wait for all asynchronous tasks
 		m_scheduler.waitEmptyQueue();
 
-		OWL_CORE_TRACE("GUI Layer created.")
+		OWL_CORE_DEBUG("GUI Layer created.")
 	}
 #else
 	if (m_initParams.hasGui)
@@ -227,7 +227,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 #if OWL_WITH_GUI
 		renderer::Renderer::initShaders(
 				[this](const uint32_t iCurrent, const uint32_t iTotal, const std::string& iName) -> void {
-					OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
+					OWL_CORE_DEBUG("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
 					// Render a loading frame if ImGui is available.
 					if (mp_imGuiLayer && mp_appWindow && !m_minimized) {
 						renderer::gpu::RenderCommand::beginFrame();
@@ -257,7 +257,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		renderer::Renderer::initShaders(
 				[]([[maybe_unused]] const uint32_t iCurrent, [[maybe_unused]] const uint32_t iTotal,
 				   [[maybe_unused]] const std::string& iName) -> void {
-					OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
+					OWL_CORE_DEBUG("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
 				},
 				m_initParams.renderers);
 #endif
@@ -274,7 +274,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 	setHotReloadEnabled(m_initParams.hotReload);
 
-	OWL_CORE_TRACE("Application creation done.")
+	OWL_CORE_DEBUG("Application creation done.")
 }
 
 void Application::createMainWindow() {
@@ -372,11 +372,11 @@ Application::~Application() {
 
 		renderer::gpu::RenderCommand::invalidate();
 
-		OWL_CORE_TRACE("Renderer shut down and invalidated.")
+		OWL_CORE_DEBUG("Renderer shut down and invalidated.")
 		// 4. Finally tear down the window (destroys GLFW window / terminates GLFW).
 		if (mp_appWindow) {
 			mp_appWindow->shutdown();
-			OWL_CORE_TRACE("Application window shut down.")
+			OWL_CORE_DEBUG("Application window shut down.")
 		}
 		mp_appWindow.reset();
 	}
@@ -385,7 +385,7 @@ Application::~Application() {
 
 		sound::SoundCommand::invalidate();
 
-		OWL_CORE_TRACE("Sound system shut down and invalidated.")
+		OWL_CORE_DEBUG("Sound system shut down and invalidated.")
 	}
 	if (!m_initParams.isDummy) {
 		std::signal(SIGINT, SIG_DFL);
@@ -436,14 +436,14 @@ auto Application::unloadAssetsFrom(const std::filesystem::path& iDirectory) -> s
 		mp_engineContext->getHudLibrary().clear();
 		mp_engineContext->getVoxelMeshCache().clear();
 	}
-	OWL_CORE_INFO("Application: Unloaded {} asset(s) of {}.", count, iDirectory.string())
+	OWL_CORE_DEBUG("Application: Unloaded {} asset(s) of {}.", count, iDirectory.string())
 	return count;
 }
 
 void Application::setHotReloadEnabled(const bool iEnabled) {
 	m_initParams.hotReload = iEnabled;
 	if (iEnabled && hasOpenPack()) {
-		OWL_CORE_INFO("Hot reload: Off, the assets come from a pack.")
+		OWL_CORE_DEBUG("Hot reload: Off, the assets come from a pack.")
 		m_hotReload.setEnabled(false);
 		return;
 	}
@@ -745,7 +745,7 @@ auto Application::openPack(const std::filesystem::path& iPackFile) -> bool {
 	OWL_CORE_INFO("Opened asset pack: {} ({} entries).", iPackFile.string(), m_packReader.getHeader().entryCount)
 	if (const auto index = m_packReader.readEntry(std::string{data::assets::pack::g_assetIndexEntry}); index) {
 		const auto count = m_assetRegistry.loadIndex(std::string(index->begin(), index->end()));
-		OWL_CORE_INFO("Pack: {} asset GUID(s) in the index.", count)
+		OWL_CORE_DEBUG("Pack: {} asset GUID(s) in the index.", count)
 	}
 	m_hotReload.setEnabled(false);
 	return true;

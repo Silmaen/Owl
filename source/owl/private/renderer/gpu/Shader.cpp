@@ -62,7 +62,7 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 				sources.push_back(f);
 			}
 			if (sources.empty()) {
-				OWL_CORE_WARN("Not able to find Shader {} in directory {}.", shad, iFile.string())
+				OWL_CORE_ERROR("Not able to find Shader {} in directory {}.", shad, iFile.string())
 				return nullptr;
 			}
 		} else {
@@ -74,7 +74,7 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 				}
 			}
 			if (sources.empty()) {
-				OWL_CORE_WARN("Not able to find Shader {} for {}.", shad, iFile.string())
+				OWL_CORE_ERROR("Not able to find Shader {} for {}.", shad, iFile.string())
 				return nullptr;
 			}
 		}

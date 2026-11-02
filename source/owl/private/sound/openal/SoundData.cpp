@@ -340,8 +340,8 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 	}
 	const auto numBytes = static_cast<ALsizei>(numFrames / splblockalign * byteblockalign);
 
-	OWL_CORE_INFO("SoundData: loading {} ({}, {}Hz).", m_specification.file.string(), alFormatName(format),
-				  sfInfo.samplerate)
+	OWL_CORE_DEBUG("SoundData: loading {} ({}, {}Hz).", m_specification.file.string(), alFormatName(format),
+				   sfInfo.samplerate)
 
 	m_buffer = 0;
 	// Drop an error left by an earlier call, so it is not read as the one of this buffer.

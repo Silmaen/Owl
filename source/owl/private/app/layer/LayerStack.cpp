@@ -26,7 +26,7 @@ void LayerStack::clear() {
 		auto name = layer->getName();
 		layer->onDetach();
 		layer.reset();
-		OWL_CORE_TRACE("Layer {} deleted.", name)
+		OWL_CORE_DEBUG("Layer {} deleted.", name)
 	}
 	m_layers.clear();
 	m_layerInsertIndex = 0;

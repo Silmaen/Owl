@@ -309,7 +309,7 @@ public:
 		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
 
 		const b2BodyId body = b2CreateBody(worldId, &bodyDef);
-		OWL_INFO("PhysicCommand: body created ({} {} {}).", body.index1, body.world0, body.generation)
+		OWL_TRACE("PhysicCommand: body created ({} {} {}).", body.index1, body.world0, body.generation)
 		sbody.bodyId = store(body, entity);
 		trackBody(iEntity, sbody.bodyId, body);
 
@@ -434,7 +434,7 @@ void PhysicCommand::init(scene::Scene& ioScene) {
 	if (isInitialized(ioScene))
 		destroy(ioScene);
 	if (isCpuUnsupported()) {
-		OWL_CORE_ERROR("Physic: Box2D is built with AVX2, which this CPU lacks; physics disabled.")
+		OWL_CORE_WARN("Physic: Box2D is built with AVX2, which this CPU lacks; physics disabled.")
 		return;
 	}
 	const auto world = mkShared<PhysicsWorld>();
@@ -452,7 +452,7 @@ void PhysicCommand::init(scene::Scene& ioScene) {
 	}
 	world->worldId = b2CreateWorld(&def);
 
-	OWL_INFO("Physic: World created ({} {}).", world->worldId.index1, world->worldId.generation)
+	OWL_DEBUG("Physic: World created ({} {}).", world->worldId.index1, world->worldId.generation)
 
 	// Add entities...
 	for (const auto e: ioScene.registry.view<scene::component::PhysicBody, scene::component::Transform>())

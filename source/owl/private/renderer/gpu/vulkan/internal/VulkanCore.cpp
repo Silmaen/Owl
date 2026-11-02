@@ -44,8 +44,8 @@ auto debugUtilsMessageCallback(const VkDebugUtilsMessageSeverityFlagBitsEXT iMes
 		OWL_CORE_TRACE("Vulkan fb({} {}): [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
 					   iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
 	} else if ((iMessageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0) {
-		OWL_CORE_INFO("Vulkan fb({} {}): [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
-					  iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
+		OWL_CORE_DEBUG("Vulkan fb({} {}): [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
+					   iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
 	} else if ((iMessageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0) {
 		OWL_CORE_WARN("Vulkan fb({} {}): [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
 					  iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
@@ -130,26 +130,26 @@ void VulkanCore::release() {
 	MemoryAllocator::get().release();
 	if (m_commandPool != nullptr) {
 		vkDestroyCommandPool(m_logicalDevice, m_commandPool, nullptr);
-		OWL_CORE_TRACE("Vulkan: commandPool destroyed.")
+		OWL_CORE_DEBUG("Vulkan: commandPool destroyed.")
 	}
 	if (m_logicalDevice != nullptr) {
 		vkDestroyDevice(m_logicalDevice, nullptr);
 		m_logicalDevice = nullptr;
-		OWL_CORE_TRACE("Vulkan: logicalDevice destroyed.")
+		OWL_CORE_DEBUG("Vulkan: logicalDevice destroyed.")
 	}
 	{
 		auto* const gc = dynamic_cast<GraphContext*>(app::Application::get().getWindow().getGraphContext());
 		gc->destroySurface(m_instance);
-		OWL_CORE_TRACE("Vulkan: Surface destroyed.")
+		OWL_CORE_DEBUG("Vulkan: Surface destroyed.")
 	}
 	if (m_debugUtilsMessenger != nullptr) {
 		g_VkDestroyDebugUtilsMessengerExt(m_instance, m_debugUtilsMessenger, nullptr);
 		m_debugUtilsMessenger = nullptr;
-		OWL_CORE_TRACE("Vulkan: debugUtilsMessenger destroyed.")
+		OWL_CORE_DEBUG("Vulkan: debugUtilsMessenger destroyed.")
 	}
 	vkDestroyInstance(m_instance, nullptr);
 	m_instance = nullptr;
-	OWL_CORE_TRACE("Vulkan: instance destroyed.")
+	OWL_CORE_DEBUG("Vulkan: instance destroyed.")
 	m_phyProps.reset();
 	m_instanceInfo.reset();
 }
@@ -234,7 +234,7 @@ void VulkanCore::createInstance() {
 	VkResult result = vkCreateInstance(&instanceCi, nullptr, &m_instance);
 	bool second = false;
 	if (result == VK_ERROR_LAYER_NOT_PRESENT) {
-		OWL_CORE_ERROR("Vulkan: Unable to create instance because a layer can't be loaded, Retry without layers.")
+		OWL_CORE_WARN("Vulkan: Unable to create instance because a layer can't be loaded, Retry without layers.")
 		second = true;
 		instanceCi.ppEnabledLayerNames = nullptr;
 		instanceCi.enabledLayerCount = 0;
@@ -259,8 +259,8 @@ void VulkanCore::selectPhysicalDevice() {
 	const auto devices = enumerateDevices(m_instance);
 	for (const auto& device: devices) {
 		if (const auto missing = getMissingRequirements(device.getSupport()); !missing.empty()) {
-			OWL_CORE_WARN("Vulkan: Device {} (Vulkan {}) skipped, missing: {}.", device.properties.deviceName,
-						  formatApiVersion(device.properties.apiVersion), joinList(missing))
+			OWL_CORE_DEBUG("Vulkan: Device {} (Vulkan {}) skipped, missing: {}.", device.properties.deviceName,
+						   formatApiVersion(device.properties.apiVersion), joinList(missing))
 			continue;
 		}
 		m_phyProps = mkUniq<PhysicalDeviceCapabilities>(device);
@@ -604,7 +604,7 @@ void VulkanCore::createCommandPool() {
 
 InstanceInformations::InstanceInformations() {
 	vkEnumerateInstanceVersion(&version);
-	OWL_CORE_INFO("Vulkan: Found API Version: {}.{}.", VK_API_VERSION_MAJOR(version), VK_API_VERSION_MINOR(version))
+	OWL_CORE_DEBUG("Vulkan: Found API Version: {}.{}.", VK_API_VERSION_MAJOR(version), VK_API_VERSION_MINOR(version))
 	// Get the list of available layers
 	{
 		supportedLayers.clear();

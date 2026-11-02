@@ -462,20 +462,20 @@ void Scene::onStartRuntime() {
 	const auto ms = [](const clk::duration iDur) -> double {
 		return std::chrono::duration<double, std::milli>{iDur}.count();
 	};
-	OWL_CORE_INFO("Scene::onStartRuntime: begin.")
+	OWL_CORE_DEBUG("Scene::onStartRuntime: begin.")
 
 	const auto tilesetStart = clk::now();
 	resolveAllTilemapAssets();
 	detachSharedTilemapAssets();
-	OWL_CORE_INFO("Scene::onStartRuntime: tileset resolve {:.1f} ms.", ms(clk::now() - tilesetStart))
+	OWL_CORE_DEBUG("Scene::onStartRuntime: tileset resolve {:.1f} ms.", ms(clk::now() - tilesetStart))
 
 	const auto linksStart = clk::now();
 	resolveAllEntityLinks();
-	OWL_CORE_INFO("Scene::onStartRuntime: entity-link resolve {:.1f} ms.", ms(clk::now() - linksStart))
+	OWL_CORE_DEBUG("Scene::onStartRuntime: entity-link resolve {:.1f} ms.", ms(clk::now() - linksStart))
 
 	const auto physicsStart = clk::now();
 	physics::PhysicCommand::init(*this);
-	OWL_CORE_INFO("Scene::onStartRuntime: physics init {:.1f} ms.", ms(clk::now() - physicsStart))
+	OWL_CORE_DEBUG("Scene::onStartRuntime: physics init {:.1f} ms.", ms(clk::now() - physicsStart))
 
 	const auto soundStart = clk::now();
 	// Initialize sound listener from primary SoundListener entity
@@ -508,13 +508,13 @@ void Scene::onStartRuntime() {
 		startAdaptiveMusic(*this, *mixer);
 	}
 
-	OWL_CORE_INFO("Scene::onStartRuntime: sound init {:.1f} ms.", ms(clk::now() - soundStart))
+	OWL_CORE_DEBUG("Scene::onStartRuntime: sound init {:.1f} ms.", ms(clk::now() - soundStart))
 
 	const auto hudStart = clk::now();
 	// Loaded before the scripts: its fonts would otherwise count against the time quota of the first one reaching it.
 	const auto hud = getHud();
 	if (hud)
-		OWL_CORE_INFO("Scene::onStartRuntime: hud load {:.1f} ms.", ms(clk::now() - hudStart))
+		OWL_CORE_DEBUG("Scene::onStartRuntime: hud load {:.1f} ms.", ms(clk::now() - hudStart))
 
 	const auto luaStart = clk::now();
 	size_t luaCount = 0;
@@ -543,8 +543,8 @@ void Scene::onStartRuntime() {
 			luaScript.instance->onCreate();
 		++luaCount;
 	}
-	OWL_CORE_INFO("Scene::onStartRuntime: lua compile + onCreate ({} scripts) {:.1f} ms.", luaCount,
-				  ms(clk::now() - luaStart))
+	OWL_CORE_DEBUG("Scene::onStartRuntime: lua compile + onCreate ({} scripts) {:.1f} ms.", luaCount,
+				   ms(clk::now() - luaStart))
 
 	// Reset animated sprites
 	for (const auto view = registry.view<component::AnimatedSpriteRenderer>(); const auto entity: view) {
@@ -567,7 +567,7 @@ void Scene::onStartRuntime() {
 	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view)
 		view.get<component::VoxelWorld>(entity).pendingChunks.clear();
 	connectRuntimeHooks(registry);
-	OWL_CORE_INFO("Scene::onStartRuntime: total {:.1f} ms.", ms(clk::now() - runtimeStart))
+	OWL_CORE_DEBUG("Scene::onStartRuntime: total {:.1f} ms.", ms(clk::now() - runtimeStart))
 }
 
 void Scene::onEndRuntime() {

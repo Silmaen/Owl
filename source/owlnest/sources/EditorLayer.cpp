@@ -793,7 +793,7 @@ void EditorLayer::onDetach() {
 	// Pending MCP requests get 503 and the token file goes before any document closes.
 	mp_mcp.reset();
 	m_contentBrowser.detach();
-	OWL_TRACE("EditorLayer: deleted editor FrameBuffer.")
+	OWL_DEBUG("EditorLayer: deleted editor FrameBuffer.")
 	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr) {
 		ui->setTopBarCallback({});
 		ui->setBottomBarCallback({});
@@ -804,7 +804,7 @@ void EditorLayer::onDetach() {
 	// Unsaved changes survive a quit too: Nest asks nothing on exit.
 	m_recovery.autosave(m_documents);
 	m_documents.clear();
-	OWL_TRACE("EditorLayer: closed all documents (and their viewports).")
+	OWL_DEBUG("EditorLayer: closed all documents (and their viewports).")
 
 	// Free the static IconBank's atlas while the device is still valid, else it outlives vkDestroyDevice and leaks.
 	gui::IconBank::instance().clear();

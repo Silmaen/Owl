@@ -134,13 +134,18 @@ See [Building](building.md) for the full build setup.
 
 Use the engine logging macros:
 
-| Level    | Engine Macro        | Client Macro   |
-|----------|---------------------|----------------|
-| Trace    | `OWL_CORE_TRACE`    | `OWL_TRACE`    |
-| Info     | `OWL_CORE_INFO`     | `OWL_INFO`     |
-| Warning  | `OWL_CORE_WARN`     | `OWL_WARN`     |
-| Error    | `OWL_CORE_ERROR`    | `OWL_ERROR`    |
-| Critical | `OWL_CORE_CRITICAL` | `OWL_CRITICAL` |
+| Level    | Engine Macro        | Client Macro   | For                                                              |
+|----------|---------------------|----------------|------------------------------------------------------------------|
+| Trace    | `OWL_CORE_TRACE`    | `OWL_TRACE`    | Per frame or per item: each draw, each entity, each file         |
+| Debug    | `OWL_CORE_DEBUG`    | `OWL_DEBUG`    | A developer's detail of one operation: a choice, a timing, count |
+| Info     | `OWL_CORE_INFO`     | `OWL_INFO`     | A milestone a user follows: renderer up, project opened, export  |
+| Warning  | `OWL_CORE_WARN`     | `OWL_WARN`     | Recovered failure, fallback taken                                |
+| Error    | `OWL_CORE_ERROR`    | `OWL_ERROR`    | The request could not be fulfilled                               |
+| Critical | `OWL_CORE_CRITICAL` | `OWL_CRITICAL` | The program cannot continue                                      |
+
+A program starts at **Info** in a release build and **Debug** in a debug build; the environment variable
+`OWL_LOG_VERBOSITY` (`trace`, `debug`, `info`, `warning`, `error`, `critical`, `off`) overrides both. Lua scripts log
+with `log.trace`, `log.debug`, `log.info`, `log.warn` and `log.error`.
 
 ## Bumping the version
 

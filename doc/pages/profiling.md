@@ -96,8 +96,10 @@ timing. Turn it on for a leak report at exit, the Owl Nest memory readout, or Tr
 ## Logs on hot paths
 
 - A message below the runtime verbosity (`Log::setVerbosityLevel`) evaluates neither its format nor its arguments.
+  A program starts at `Log::getDefaultLevel()`: Info in a release build, Debug in a debug build, or the level named by
+  the `OWL_LOG_VERBOSITY` environment variable.
 - `OWL_LOG_LEVEL` (`trace` by default) is the lowest level compiled in: `-DOWL_LOG_LEVEL=info` removes every
-  `OWL_*_TRACE` at compile time, arguments included.
+  `OWL_*_TRACE` and `OWL_*_DEBUG` at compile time, arguments included.
 - `OWL_CORE_FRAME_TRACE` is a trace sampled once every `Log::setFrameFrequency` frames (100 by default): the only
   log allowed in a per-frame path.
 - The log file is flushed on warnings and errors only, not on every displayed message.

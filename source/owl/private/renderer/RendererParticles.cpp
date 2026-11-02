@@ -212,7 +212,7 @@ void RendererParticles::init() {
 	g_data->sortKeys = gpu::ComputeShader::create("particle_sort_keys", g_rendererKey);
 	g_data->sort = gpu::ComputeShader::create("bitonic_sort", "bitonic_sort");
 	if (!g_data->simulate || !g_data->sortKeys || !g_data->sort)
-		OWL_CORE_ERROR("RendererParticles: Failed to create the compute shaders, the particles are not simulated.")
+		OWL_CORE_WARN("RendererParticles: Failed to create the compute shaders, the particles are not simulated.")
 }
 
 void RendererParticles::shutdown() {

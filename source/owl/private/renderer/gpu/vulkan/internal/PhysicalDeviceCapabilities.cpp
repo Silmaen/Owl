@@ -193,7 +193,7 @@ auto enumerateDevices(const VkInstance& iInstance) -> std::vector<PhysicalDevice
 				[](const PhysicalDeviceCapabilities& iFirst, const PhysicalDeviceCapabilities& iSecond) -> bool {
 					return iFirst.getScore() > iSecond.getScore();
 				});
-	OWL_CORE_TRACE("Vulkan: Found {} physical devices.", resultVec.size())
+	OWL_CORE_DEBUG("Vulkan: Found {} physical devices.", resultVec.size())
 	for (const auto& device: resultVec) {
 		OWL_CORE_TRACE("{}", device.getDetailedName())
 		OWL_CORE_TRACE("{}", device.getCapabilityString())

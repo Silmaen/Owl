@@ -187,7 +187,7 @@ Device::Device(std::string iFile) : video::Device{""}, m_file{std::move(iFile)} 
 Device::~Device() { close(); }
 
 void Device::open() {
-	OWL_CORE_INFO("Opening device ({}): {}.", m_file, m_name)
+	OWL_CORE_DEBUG("Opening device ({}): {}.", m_file, m_name)
 	close();
 	m_fileHandler = ::open(m_file.c_str(), O_RDWR | O_CLOEXEC);
 	if (m_fileHandler <= 0) {
@@ -224,8 +224,8 @@ void Device::open() {
 			return;
 		}
 
-		OWL_CORE_INFO("({}) Using size is {} x {}.", m_file, fmt.fmt.pix.width, fmt.fmt.pix.height)
-		OWL_CORE_INFO("({}) Using pixel format: {}.", m_file, getPixelFormatString(fmt.fmt.pix.pixelformat))
+		OWL_CORE_DEBUG("({}) Using size is {} x {}.", m_file, fmt.fmt.pix.width, fmt.fmt.pix.height)
+		OWL_CORE_DEBUG("({}) Using pixel format: {}.", m_file, getPixelFormatString(fmt.fmt.pix.pixelformat))
 		m_pixFormat = getDevicePixelFormat(fmt.fmt.pix.pixelformat);
 		m_size = {fmt.fmt.pix.width, fmt.fmt.pix.height};
 	}
@@ -261,7 +261,7 @@ void Device::open() {
 			return;
 		}
 
-		OWL_CORE_INFO("({}) Buffer info, length {} , offset {}.", m_file, m_bufferInfo.length, m_bufferInfo.m.offset)
+		OWL_CORE_DEBUG("({}) Buffer info, length {} , offset {}.", m_file, m_bufferInfo.length, m_bufferInfo.m.offset)
 		mp_buffer = mmap(nullptr, m_bufferInfo.length, PROT_READ | PROT_WRITE, MAP_SHARED, m_fileHandler,
 						 m_bufferInfo.m.offset);
 		if (mp_buffer == MAP_FAILED) {
@@ -400,8 +400,8 @@ void Device::printSupportedFormat() const {
 
 	// Boucle pour interroger chaque format de pixel
 	while (ioctl(fd, VIDIOC_ENUM_FMT, &formatDescription) == 0) {
-		OWL_CORE_INFO("({}) index {} format {}.", m_file, formatDescription.index,
-					  getPixelFormatString(formatDescription.pixelformat))
+		OWL_CORE_DEBUG("({}) index {} format {}.", m_file, formatDescription.index,
+					   getPixelFormatString(formatDescription.pixelformat))
 		// Incrémentation pour passer au format de pixel suivant
 		++formatDescription.index;
 	}

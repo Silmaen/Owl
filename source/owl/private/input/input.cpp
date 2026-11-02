@@ -155,7 +155,7 @@ auto Input::addGamepadMappings(const std::string_view iMappings) -> bool {
 		OWL_CORE_WARN("Input: The back-end refused {} gamepad mapping(s).", count)
 		return false;
 	}
-	OWL_CORE_INFO("Input: {} gamepad mapping(s) added.", count)
+	OWL_CORE_DEBUG("Input: {} gamepad mapping(s) added.", count)
 	return true;
 }
 

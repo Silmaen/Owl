@@ -205,7 +205,7 @@ void updateList(std::vector<shared<video::Device>>& ioList) {
 		for (uint32_t i = 0; i < count; ++i) devices.emplace_back(pDevices[i]);
 	}
 	if (devices.empty()) {
-		OWL_CORE_WARN("input::video::windows::updateList: No devices found.")
+		OWL_CORE_DEBUG("input::video::windows::updateList: No devices found.")
 		return;
 	}
 	// search for new devices.
@@ -256,7 +256,7 @@ Device::~Device() {
 }
 
 void Device::open() {
-	OWL_CORE_INFO("Opening device {}.", m_name)
+	OWL_CORE_DEBUG("Opening device {}.", m_name)
 	// Media source activation!
 	HRESULT hr = m_devActive->ActivateObject(IID_PPV_ARGS(m_mediaSource.addr()));
 	if (FAILED(hr)) {
@@ -294,10 +294,10 @@ void Device::open() {
 	uint64_t superSize = 0;
 	mediaType->GetUINT64(MF_MT_FRAME_SIZE, &superSize);
 	m_size = {static_cast<uint32_t>((superSize >> 32) & g_mask32), static_cast<uint32_t>(superSize & g_mask32)};
-	OWL_CORE_INFO("Device ({}): Frame size seen: {} {}.", m_name, m_size.x(), m_size.y())
+	OWL_CORE_DEBUG("Device ({}): Frame size seen: {} {}.", m_name, m_size.x(), m_size.y())
 	GUID format;
 	mediaType->GetGUID(MF_MT_SUBTYPE, &format);
-	OWL_CORE_INFO("Device ({}): Native media sub type: {}.", m_name, getPixelFormatString(format))
+	OWL_CORE_DEBUG("Device ({}): Native media sub type: {}.", m_name, getPixelFormatString(format))
 	m_pixFormat = getDevicePixelFormat(format);
 	mediaType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive);
 	mediaType->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE);

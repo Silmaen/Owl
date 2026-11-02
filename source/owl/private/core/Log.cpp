@@ -20,8 +20,16 @@ OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
 #include <spdlog/sinks/stdout_color_sinks.h>
 OWL_DIAG_POP
 
+#include <algorithm>
+#include <cctype>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <mutex>
+#include <optional>
+#include <print>
+#include <string>
+#include <string_view>
 
 namespace owl::core {
 
@@ -96,10 +104,44 @@ Log::Level Log::s_verbosity = Level::Info;
 uint64_t Log::s_frameCounter = 0;
 uint64_t Log::s_frequency = g_DefaultFrequency;
 
+auto Log::parseLevel(const std::string_view iName) -> std::optional<Level> {
+	std::string name{iName};
+	std::ranges::transform(name, name.begin(),
+						   [](const unsigned char iChar) -> char { return static_cast<char>(std::tolower(iChar)); });
+	if (name == "trace")
+		return Level::Trace;
+	if (name == "debug")
+		return Level::Debug;
+	if (name == "info")
+		return Level::Info;
+	if (name == "warning" || name == "warn")
+		return Level::Warning;
+	if (name == "error")
+		return Level::Error;
+	if (name == "critical")
+		return Level::Critical;
+	if (name == "off")
+		return Level::Off;
+	return std::nullopt;
+}
+
+auto Log::getDefaultLevel() -> Level {
+	if (const char* forced = std::getenv("OWL_LOG_VERBOSITY"); forced != nullptr) {
+		if (const auto level = parseLevel(forced); level.has_value())
+			return *level;
+		std::println(stderr, "Log: Unknown OWL_LOG_VERBOSITY '{}', the default level applies.", forced);
+	}
+#ifdef OWL_DEBUG_BUILD
+	return Level::Debug;
+#else
+	return Level::Info;
+#endif
+}
+
 void Log::init(const Level& iLevel, const uint64_t iFrequency) {
 	OWL_SCOPE_UNTRACK
 	if (g_CoreLogger != nullptr) {
-		OWL_CORE_INFO("Logger already initiated.")
+		OWL_CORE_DEBUG("Logger already initiated.")
 		return;
 	}
 	std::vector<spdlog::sink_ptr> logSinks;

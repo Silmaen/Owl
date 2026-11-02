@@ -78,11 +78,12 @@ void attachCornerData(StaticMesh& ioMesh, const CornerUvs& iUvs, const CornerNor
 
 void logCompleteness(const std::string& iLoader, const std::string& iName, const StaticMesh& iMesh, const bool iHasUv,
 					 const bool iHasNormals) {
-	OWL_CORE_INFO("MeshLoader::{}: Loaded mesh {} with {} vertices and {} triangles.", iLoader, iName,
-				  iMesh.getVertexCount(), iMesh.getTriangleCount())
-	OWL_CORE_INFO("MeshLoader::{}: Mesh has {} UV coordinates and {} normals.", iLoader,
-				  !iHasUv || iMesh.isExtraDataDefinedOnAllTriangles<TriangleUVCoordinate>() ? "complete" : "incomplete",
-				  !iHasNormals || iMesh.isExtraDataDefinedOnAllTriangles<TriangleNormals>() ? "complete" : "incomplete")
+	OWL_CORE_DEBUG("MeshLoader::{}: Loaded mesh {} with {} vertices and {} triangles.", iLoader, iName,
+				   iMesh.getVertexCount(), iMesh.getTriangleCount())
+	OWL_CORE_DEBUG(
+			"MeshLoader::{}: Mesh has {} UV coordinates and {} normals.", iLoader,
+			!iHasUv || iMesh.isExtraDataDefinedOnAllTriangles<TriangleUVCoordinate>() ? "complete" : "incomplete",
+			!iHasNormals || iMesh.isExtraDataDefinedOnAllTriangles<TriangleNormals>() ? "complete" : "incomplete")
 }
 
 // Marks a glTF image holding the KTX2 bytes of a cooked image instead of pixels.
@@ -626,7 +627,7 @@ void appendPrimitive(GltfBuild& ioBuild, const tinygltf::Primitive& iPrimitive, 
 	};
 	const auto positions = readFloats<3>(model, attribute("POSITION"));
 	if (positions.empty()) {
-		OWL_CORE_ERROR("MeshLoader::loadGltf: No POSITION attribute in a primitive of {}.", ioBuild.name)
+		OWL_CORE_WARN("MeshLoader::loadGltf: No POSITION attribute in a primitive of {}.", ioBuild.name)
 		return;
 	}
 	const auto uvs = readFloats<2>(model, attribute("TEXCOORD_0"));
@@ -955,7 +956,6 @@ auto MeshLoader::loadObj(const std::filesystem::path& iFilePath) -> shared<Stati
 }
 
 auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath) -> shared<StaticMesh> {
-	OWL_CORE_WARN("MeshLoader::loadFbx: FBX loading not implemented yet!")
 	shared<StaticMesh> mesh = mkShared<StaticMesh>();
 
 	constexpr ufbx_load_opts opts = {};
@@ -1042,12 +1042,12 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 	attachCornerData(*mesh, hasUv ? uvCoords : std::vector<std::array<vec2, 3>>{},
 					 hasNormals ? normals : std::vector<std::array<vec3, 3>>{});
 
-	OWL_CORE_INFO("MeshLoader::loadFbx: Loaded mesh {} with {} vertices and {} triangles.", iFilePath.string(),
-				  mesh->getVertexCount(), mesh->getTriangleCount())
-	OWL_CORE_INFO("MeshLoader::loadFbx: Mesh has {} UV coordinates and {} normals.",
-				  !hasUv || mesh->isExtraDataDefinedOnAllTriangles<TriangleUVCoordinate>() ? "complete" : "incomplete",
-				  !hasNormals || mesh->isExtraDataDefinedOnAllTriangles<TriangleNormals>() ? "complete" : "incomplete")
-	OWL_CORE_INFO("MeshLoader::loadFbx: All other mesh data are ignored.")
+	OWL_CORE_DEBUG("MeshLoader::loadFbx: Loaded mesh {} with {} vertices and {} triangles.", iFilePath.string(),
+				   mesh->getVertexCount(), mesh->getTriangleCount())
+	OWL_CORE_DEBUG("MeshLoader::loadFbx: Mesh has {} UV coordinates and {} normals.",
+				   !hasUv || mesh->isExtraDataDefinedOnAllTriangles<TriangleUVCoordinate>() ? "complete" : "incomplete",
+				   !hasNormals || mesh->isExtraDataDefinedOnAllTriangles<TriangleNormals>() ? "complete" : "incomplete")
+	OWL_CORE_DEBUG("MeshLoader::loadFbx: All other mesh data are ignored.")
 	return mesh;
 }
 

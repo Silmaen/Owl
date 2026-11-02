@@ -249,12 +249,12 @@ target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE "${PROJECT_PREFI
 target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_AUTHOR="Silmaen")
 
 if (${${PROJECT_PREFIX}_IS_GENERATOR_MULTI_CONFIG})
-    target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_$<IF:$<CONFIG:Debug>,DEBUG,RELEASE>)
+    target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_$<IF:$<CONFIG:Debug>,DEBUG_BUILD,RELEASE_BUILD>)
 else ()
     if (CMAKE_BUILD_TYPE MATCHES "Debug")
-        target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_DEBUG)
+        target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_DEBUG_BUILD)
     else ()
-        target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_RELEASE)
+        target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_RELEASE_BUILD)
     endif ()
 endif ()
 

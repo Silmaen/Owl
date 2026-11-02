@@ -101,7 +101,7 @@ public:
 	 */
 	auto load(const std::string& iName) -> shared<DataType> {
 		if (exists(iName)) {
-			OWL_CORE_WARN("AssetLibrary::load({}) already exists!", iName)
+			OWL_CORE_DEBUG("AssetLibrary::load({}) already exists!", iName)
 			return m_assets.at(iName).get();
 		}
 		shared<DataType> asset = nullptr;
@@ -133,7 +133,7 @@ public:
 	 */
 	auto load(const std::string& iName, const std::filesystem::path& iFile) -> shared<DataType> {
 		if (exists(iName)) {
-			OWL_CORE_WARN("AssetLibrary::load({}, {}) already exists!", iName, iFile.string())
+			OWL_CORE_DEBUG("AssetLibrary::load({}, {}) already exists!", iName, iFile.string())
 			return m_assets.at(iName).get();
 		}
 		if (!DataType::extension().empty()) {
@@ -161,7 +161,7 @@ public:
 	 */
 	auto load(const std::string& iName, const DataType::Specification& iSpec) -> shared<DataType> {
 		if (exists(iName)) {
-			OWL_CORE_WARN("AssetLibrary::load({}, <Specification>) already exists!", iName)
+			OWL_CORE_DEBUG("AssetLibrary::load({}, <Specification>) already exists!", iName)
 			return m_assets[iName].get();
 		}
 		auto asset = DataType::create(iSpec);

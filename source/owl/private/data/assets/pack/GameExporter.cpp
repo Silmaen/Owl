@@ -534,8 +534,8 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		return unexpected{shadersBaked.error()};
 	std::string rendererList{"Renderer2D"};
 	for (const auto& name: renderers.getNames()) rendererList += " + " + name;
-	OWL_CORE_INFO("GameExporter: Renderers {}, {} unused engine shader files left out, {} shader(s) baked.",
-				  rendererList, engineFilesSkipped, *shadersBaked)
+	OWL_CORE_DEBUG("GameExporter: Renderers {}, {} unused engine shader files left out, {} shader(s) baked.",
+				   rendererList, engineFilesSkipped, *shadersBaked)
 	const auto baseName = sanitizeFilename(iSettings.gameName);
 	ExportReport result;
 	result.renderers = renderers.getNames();
@@ -557,7 +557,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 	for (size_t index = 0; index < assets.size(); ++index) {
 		const auto& ref = assets[index];
 		if (isCancelled(iCancel)) {
-			OWL_CORE_WARN("GameExporter: Export cancelled.")
+			OWL_CORE_INFO("GameExporter: Export cancelled.")
 			return unexpected{ExportError::Cancelled};
 		}
 		report(iProgress, 0.05f + 0.15f * static_cast<float>(index) / static_cast<float>(assets.size()),
@@ -588,7 +588,8 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		writer.addData(*cooked, ref.packPath, ref.assetType);
 	}
 	std::ignore = cache.saveManifest();
-	OWL_CORE_INFO("GameExporter: {} font atlas(es) baked.", bakeFontAtlases(textFonts, writer))
+	const auto bakedFonts = bakeFontAtlases(textFonts, writer);
+	OWL_CORE_DEBUG("GameExporter: {} font atlas(es) baked.", bakedFonts)
 	result.cookedAssets = cache.getStats().cooked;
 	result.cacheHits = cache.getStats().hits;
 	if (app::Application::instanced()) {
@@ -630,7 +631,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 			iCancel);
 	if (!written) {
 		if (isCancelled(iCancel)) {
-			OWL_CORE_WARN("GameExporter: Export cancelled.")
+			OWL_CORE_INFO("GameExporter: Export cancelled.")
 			return unexpected{ExportError::Cancelled};
 		}
 		OWL_CORE_ERROR("GameExporter: Cannot write pack '{}'.", result.packFile.string())
@@ -655,7 +656,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 					  iconEntry, mappingsEntry, result.renderers);
 	writeMetadata(iSettings, result.gameDirectory);
 	if (isCancelled(iCancel)) {
-		OWL_CORE_WARN("GameExporter: Export cancelled.")
+		OWL_CORE_INFO("GameExporter: Export cancelled.")
 		return unexpected{ExportError::Cancelled};
 	}
 

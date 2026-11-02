@@ -54,7 +54,7 @@ void createCacheDirectoryIfNeeded(const std::string& iRenderer, const std::strin
 		!exists(cacheDirectory)) {
 		create_directories(cacheDirectory);
 		if (!exists(cacheDirectory))
-			OWL_CORE_ERROR("Cannot Create directory {}.", cacheDirectory.string())
+			OWL_CORE_WARN("Shader cache: Cannot create {}, the shaders are not cached.", cacheDirectory.string())
 	}
 }
 
@@ -122,8 +122,6 @@ auto writeCachedShader(const std::filesystem::path& iFile, const std::vector<uin
 	OWL_PROFILE_FUNCTION()
 
 	std::ofstream out(iFile, std::ios::out | std::ios::binary);
-	if (!exists(iFile.parent_path()))
-		OWL_CORE_WARN("Cache directory {} does not exists, creating.", iFile.parent_path().string())
 
 	if (out.is_open()) {
 		out.write(reinterpret_cast<const char*>(iData.data()), static_cast<int64_t>(iData.size() * sizeof(uint32_t)));
@@ -629,8 +627,8 @@ auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderNa
 						  stages.error().reason)
 			damaged = true;
 		} else if (stages.error().kind == StoredProblem::Kind::Outdated) {
-			OWL_CORE_INFO("Shader {}/{} ({}): stored SPIR-V outdated, {}.", iRenderer, iShaderName, api,
-						  stages.error().reason)
+			OWL_CORE_DEBUG("Shader {}/{} ({}): stored SPIR-V outdated, {}.", iRenderer, iShaderName, api,
+						   stages.error().reason)
 		}
 		return std::nullopt;
 	};
@@ -643,7 +641,7 @@ auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderNa
 					},
 					true);
 			loaded.has_value()) {
-			OWL_CORE_INFO("Using cached {} shader {}/{}.", api, iRenderer, iShaderName)
+			OWL_CORE_TRACE("Using cached {} shader {}/{}.", api, iRenderer, iShaderName)
 			return loaded;
 		}
 	}
@@ -654,7 +652,7 @@ auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderNa
 					},
 					false);
 			loaded.has_value()) {
-			OWL_CORE_INFO("Using precompiled {} shader {}/{} from the pack.", api, iRenderer, iShaderName)
+			OWL_CORE_TRACE("Using precompiled {} shader {}/{} from the pack.", api, iRenderer, iShaderName)
 			return loaded;
 		}
 	}
@@ -666,19 +664,19 @@ auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderNa
 					},
 					false);
 			loaded.has_value()) {
-			OWL_CORE_INFO("Using precompiled {} shader {}/{} from {}.", api, iRenderer, iShaderName, folder.string())
+			OWL_CORE_TRACE("Using precompiled {} shader {}/{} from {}.", api, iRenderer, iShaderName, folder.string())
 			return loaded;
 		}
 	}
 	if (!damaged) {
-		OWL_CORE_INFO("Compiling Slang shader {}/{} for {}.", iRenderer, iShaderName, api)
+		OWL_CORE_DEBUG("Compiling Slang shader {}/{} for {}.", iRenderer, iShaderName, api)
 		return compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
 	}
 	OWL_CORE_WARN("Shader {}/{} ({}): no usable stored SPIR-V, recompiling from the Slang source.", iRenderer,
 				  iShaderName, api)
 	auto loaded = compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
 	if (loaded.has_value())
-		OWL_CORE_WARN("Shader {}/{} ({}): recompiled, the cache now holds the new SPIR-V.", iRenderer, iShaderName, api)
+		OWL_CORE_INFO("Shader {}/{} ({}): recompiled, the cache now holds the new SPIR-V.", iRenderer, iShaderName, api)
 	return loaded;
 }
 
@@ -697,7 +695,7 @@ auto recompileSpirv(const std::string& iSource, const std::string& iShaderName, 
 				  iRenderer, iShaderName, api, iOrigin.string(), iReason)
 	auto loaded = compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
 	if (loaded.has_value())
-		OWL_CORE_WARN("Shader {}/{} ({}): recompiled, the cache now holds the new SPIR-V.", iRenderer, iShaderName, api)
+		OWL_CORE_INFO("Shader {}/{} ({}): recompiled, the cache now holds the new SPIR-V.", iRenderer, iShaderName, api)
 	return loaded;
 }
 

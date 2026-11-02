@@ -187,7 +187,7 @@ auto RenderStack::buildFromConfig(const RendererStackConfig& iProject, const Ena
 			iProject.isEmpty() ? RendererStackConfig::makeDefault() : RendererStackConfig{};
 	const RendererStackConfig& effective = iProject.isEmpty() ? fallback : iProject;
 	if (iProject.isEmpty()) {
-		OWL_CORE_WARN("RenderStack: empty project config — falling back to default Renderer2D.")
+		OWL_CORE_DEBUG("RenderStack: Empty project config, the default Renderer2D stack is used.")
 	}
 
 	const auto findProject = [&](const std::string& iName) -> const RendererStackEntry* {

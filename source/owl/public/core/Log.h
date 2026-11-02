@@ -11,6 +11,7 @@
 #include "core/Core.h"
 #include <cstdint>
 #include <format>
+#include <optional>
 #include <string_view>
 #include <utility>
 
@@ -51,11 +52,27 @@ public:
 
 	/**
 	 * @brief
+	 *  Verbosity a program starts with: the `OWL_LOG_VERBOSITY` environment variable (`trace`, `debug`, `info`,
+	 *  `warning`, `error`, `critical` or `off`) when set, else `Debug` in a debug build and `Info` in a release one.
+	 * @return The level.
+	 */
+	[[nodiscard]] static auto getDefaultLevel() -> Level;
+
+	/**
+	 * @brief
+	 *  Read a level name, as `OWL_LOG_VERBOSITY` takes it.
+	 * @param[in] iName The name, any case (`warn` is `warning`).
+	 * @return The level, nullopt for an unknown name.
+	 */
+	[[nodiscard]] static auto parseLevel(std::string_view iName) -> std::optional<Level>;
+
+	/**
+	 * @brief
 	 *  initialize the logging system.
 	 * @param[in] iLevel Verbosity level of the logger.
 	 * @param[in] iFrequency Frequency of frame output (number of frames).
 	 */
-	static void init(const Level& iLevel = Level::Trace, uint64_t iFrequency = g_DefaultFrequency);
+	static void init(const Level& iLevel = getDefaultLevel(), uint64_t iFrequency = g_DefaultFrequency);
 
 	/**
 	 * @brief
@@ -204,6 +221,8 @@ private:
 
 /// Log an engine trace message.
 #define OWL_CORE_TRACE(...) OWL_LOG_AT(logCore, Trace, __VA_ARGS__)
+/// Log an engine debug message.
+#define OWL_CORE_DEBUG(...) OWL_LOG_AT(logCore, Debug, __VA_ARGS__)
 /// Log an engine information message.
 #define OWL_CORE_INFO(...) OWL_LOG_AT(logCore, Info, __VA_ARGS__)
 /// Log an engine warning.
@@ -216,6 +235,8 @@ private:
 // Client log macros
 /// Log a client trace message.
 #define OWL_TRACE(...) OWL_LOG_AT(logClient, Trace, __VA_ARGS__)
+/// Log a client debug message.
+#define OWL_DEBUG(...) OWL_LOG_AT(logClient, Debug, __VA_ARGS__)
 /// Log a client information message.
 #define OWL_INFO(...) OWL_LOG_AT(logClient, Info, __VA_ARGS__)
 /// Log a client warning.

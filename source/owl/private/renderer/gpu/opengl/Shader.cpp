@@ -165,7 +165,7 @@ void Shader::compile(const std::string& iSlangSource) {
 	const auto timer = std::chrono::steady_clock::now() - start;
 	double duration =
 			static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(timer).count()) / 1000.0;
-	OWL_CORE_INFO("Compilation of shader {} in {} ms.", getName(), duration)
+	OWL_CORE_DEBUG("Compilation of shader {} in {} ms.", getName(), duration)
 }
 
 auto Shader::recompile(const std::string& iSlangSource) -> bool {

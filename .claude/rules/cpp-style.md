@@ -296,8 +296,9 @@ The Doxygen format used across the codebase:
 Use engine macros (never `std::cout`, `printf`, `std::cerr`). Before the logger exists (startup, fatal
 paths), use `std::println(stderr, ...)` from `<print>`:
 ```
-OWL_CORE_TRACE / OWL_TRACE       — verbose debug
-OWL_CORE_INFO / OWL_INFO         — informational
+OWL_CORE_TRACE / OWL_TRACE       — per-frame / per-item detail
+OWL_CORE_DEBUG / OWL_DEBUG       — developer detail of one operation
+OWL_CORE_INFO / OWL_INFO         — milestones a user follows
 OWL_CORE_WARN / OWL_WARN         — warnings
 OWL_CORE_ERROR / OWL_ERROR       — errors
 OWL_CORE_CRITICAL / OWL_CRITICAL — fatal
@@ -308,11 +309,16 @@ OWL_CORE_CRITICAL / OWL_CRITICAL — fatal
 
 | Level    | When to use                                                                                                       |
 |----------|-------------------------------------------------------------------------------------------------------------------|
-| TRACE    | Frame-level / instrumented diagnostics. Must be cheap (no allocations) and stripped at higher log levels.         |
-| INFO     | One-shot lifecycle events: subsystem initialised, project opened, pack written.                                   |
+| TRACE    | Per-frame or per-item diagnostics (each draw, each entity, each file of a scan). Cheap, no allocation.            |
+| DEBUG    | A developer's detail of one operation: a choice made (device, format, cache hit), a timing, a count, a step done. |
+| INFO     | A milestone a user follows: engine and renderer up, project or scene opened, pack or export written, server up.   |
 | WARN     | Recoverable failure or degraded operation: missing optional asset, fallback path taken, deprecated input.         |
 | ERROR    | The caller's request could not be fulfilled. Always paired with an early return or a state transition to `Error`. |
 | CRITICAL | The engine cannot continue: GPU init failure, OOM, corrupted state. Followed by abort/exit.                       |
+
+A program starts at `Log::getDefaultLevel()`: `Info` in a release build, `Debug` in a debug build, or the
+`OWL_LOG_VERBOSITY` environment variable. A release run must read as a short story: a few INFO lines per load, never
+one per asset; what a developer needs to see goes to DEBUG.
 
 ### Message format
 

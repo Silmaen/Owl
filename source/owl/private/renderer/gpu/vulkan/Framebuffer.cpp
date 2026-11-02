@@ -80,9 +80,9 @@ Framebuffer::Framebuffer(FramebufferSpecification iSpec) : m_specs{std::move(iSp
 		return;
 	}
 	if (isMainTarget()) {
-		OWL_CORE_INFO("Vulkan Framebuffer ({}): creation for swapchain use.", m_specs.debugName)
+		OWL_CORE_TRACE("Vulkan Framebuffer ({}): creation for swapchain use.", m_specs.debugName)
 	} else {
-		OWL_CORE_INFO("Vulkan Framebuffer ({}): creation for simple frame buffer use.", m_specs.debugName)
+		OWL_CORE_TRACE("Vulkan Framebuffer ({}): creation for simple frame buffer use.", m_specs.debugName)
 	}
 	createRenderPass();
 	invalidate();
@@ -434,8 +434,8 @@ void Framebuffer::createImages() {
 			m_images[ii].image = temp[ii];
 			m_images[ii].layout = VK_IMAGE_LAYOUT_UNDEFINED;
 		}
-		OWL_CORE_INFO("Vulkan Framebuffer ({}): Created {} images for swapchain.", m_specs.debugName,
-					  m_swapChainImageCount)
+		OWL_CORE_TRACE("Vulkan Framebuffer ({}): Created {} images for swapchain.", m_specs.debugName,
+					   m_swapChainImageCount)
 	} else
 		m_images.resize(m_specs.attachments.size());
 	// Create remaining Memory images

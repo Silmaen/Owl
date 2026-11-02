@@ -35,7 +35,7 @@ void VulkanHandler::initVulkan() {
 		createCore();
 		if (m_state != State::Uninitialized)
 			return;
-		OWL_CORE_TRACE("Vulkan: Core created.")
+		OWL_CORE_DEBUG("Vulkan: Core created.")
 	}
 	{
 		createFrames();
@@ -44,14 +44,14 @@ void VulkanHandler::initVulkan() {
 		createSwapChain();
 		if (m_state != State::Uninitialized)
 			return;
-		OWL_CORE_TRACE("Vulkan: Swap Chain created.")
+		OWL_CORE_DEBUG("Vulkan: Swap Chain created.")
 	}
 	{
 		auto& desc = Descriptors::get();
 		desc.createDescriptors();
 		if (m_state != State::Uninitialized)
 			return;
-		OWL_CORE_TRACE("Vulkan: Descriptor pool created.")
+		OWL_CORE_DEBUG("Vulkan: Descriptor pool created.")
 	}
 	GpuProfiler::init();
 	m_state = State::Running;
@@ -105,7 +105,7 @@ void VulkanHandler::release() {
 	m_ring.release();
 	releaseFrames();
 	core.release();
-	OWL_CORE_TRACE("Vulkan: core destroyed.")
+	OWL_CORE_DEBUG("Vulkan: core destroyed.")
 	m_state = State::Uninitialized;
 	m_releasing = false;
 }

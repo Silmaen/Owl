@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project templates **2D platformer** (Box2D platforms, run and jump), **3D** (meshes, sun, procedural sky, first-person player) and **Isometric** (tilemap island and sprites), each with a scenario and a preview image.
 - Owl Nest **New Project** dialog: a grid of template cards (preview, name, description, style tags) filtered by tag and walked with the arrow keys, the details of the selected template, and a checked name and location (`panel::validateNewProject`).
 - `tools/demo/generate_templates.py` writes the meshes, the isometric atlas, tileset and map of the templates.
+- `OWL_CORE_DEBUG` / `OWL_DEBUG` and Lua `log.debug`: the Debug level the Log panel filters on has its messages.
+- `OWL_LOG_VERBOSITY` environment variable: the log level a program starts at (`trace` to `off`).
 - Owl Nest Content Browser **Packaged files**: only the files a game export packs, and the folders holding them.
 - Owl Nest **Settings > General > Show All Files**: the Content Browser hides the compiled shaders, the engine logos and the assets of Owl Nest unless it is on.
 - `Application::getAssetOrigin`: whether an asset directory is a project, the application's, the working directory's or the engine's.
@@ -207,6 +209,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Logs: a release build starts at Info and a debug build at Debug instead of Trace; per-asset loads, timings and setup details moved to Debug or Trace, and the levels of warnings, errors and critical messages follow one rule.
+- The build-type definitions are `OWL_DEBUG_BUILD` and `OWL_RELEASE_BUILD`, freeing `OWL_DEBUG` for the debug log macro.
 - CI: the coverage presets `linux-gcc-debug` and `linux-clang-debug` give each test binary 1200 s, the image test shards ran up to 600 s on a loaded agent.
 - `entity.set_tint` and `entity.get_tint` also reach the colour of a `ParticleEmitter`.
 - Breakout: the power-ups and the bursts are prefabs spawned and destroyed by `game.lua`, no longer pools of hidden entities.

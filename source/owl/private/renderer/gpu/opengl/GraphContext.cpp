@@ -57,7 +57,7 @@ void GraphContext::init() {
 	OWL_CORE_INFO("  Version: {}", reinterpret_cast<const char*>(glGetString(GL_VERSION)))
 	int32_t textureUnits = 0;
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &textureUnits);
-	OWL_CORE_INFO(" Max texture slot per Shader: {}.", textureUnits)
+	OWL_CORE_DEBUG(" Max texture slot per Shader: {}.", textureUnits)
 	int32_t combinedTextureUnits = 0;
 	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &combinedTextureUnits);
 	int32_t vertexSsbo = 0;
@@ -66,9 +66,9 @@ void GraphContext::init() {
 	glGetIntegerv(GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS, &vertexSsbo);
 	glGetIntegerv(GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS, &fragmentSsbo);
 	glGetIntegerv(GL_MAX_COMBINED_SHADER_STORAGE_BLOCKS, &combinedSsbo);
-	OWL_CORE_INFO("  Combined texture image units: {}.", combinedTextureUnits)
-	OWL_CORE_INFO("  Shader storage blocks: vertex={}, fragment={}, combined={}.", vertexSsbo, fragmentSsbo,
-				  combinedSsbo)
+	OWL_CORE_DEBUG("  Combined texture image units: {}.", combinedTextureUnits)
+	OWL_CORE_DEBUG("  Shader storage blocks: vertex={}, fragment={}, combined={}.", vertexSsbo, fragmentSsbo,
+				   combinedSsbo)
 }
 
 void GraphContext::swapBuffers() {

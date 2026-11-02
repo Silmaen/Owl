@@ -127,10 +127,10 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 		simulation = simulation.clamped();
 		std::string sceneName;
 		get(appConfig, "FirstScene", sceneName);
-		OWL_CORE_INFO("FirstScene: {}", sceneName)
+		OWL_CORE_DEBUG("FirstScene: {}", sceneName)
 		// Try to resolve to a filesystem path.
 		for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
-			OWL_CORE_INFO("Checking: {}", (assetsPath / sceneName).string())
+			OWL_CORE_DEBUG("Checking: {}", (assetsPath / sceneName).string())
 			if (exists(assetsPath / sceneName)) {
 				firstScene = (assetsPath / sceneName).string();
 				break;
@@ -337,7 +337,7 @@ void RunnerLayer::loadActionMap() const {
 			return;
 		}
 	}
-	OWL_CORE_INFO("Runner: No {} found, the built-in actions are used.", input::ActionMap::fileName)
+	OWL_CORE_DEBUG("Runner: No {} found, the built-in actions are used.", input::ActionMap::fileName)
 }
 
 void RunnerLayer::loadLocalisation() const {
@@ -348,8 +348,8 @@ void RunnerLayer::loadLocalisation() const {
 			return;
 		}
 	if (!app.getEngineContext().loadLocalisation({}))
-		OWL_CORE_INFO("Runner: No {} found, the texts are shown as written.",
-					  data::localisation::Localisation::fileName)
+		OWL_CORE_DEBUG("Runner: No {} found, the texts are shown as written.",
+					   data::localisation::Localisation::fileName)
 }
 
 auto RunnerLayer::loadScene(const std::string& iSceneName) -> bool {
@@ -404,7 +404,7 @@ void RunnerLayer::onAssetFileChanged(const std::filesystem::path& iFile) {
 		return;
 	const auto previous = m_activeScene;
 	if (!loadScene(m_scenePath.string())) {
-		OWL_CORE_ERROR("Hot reload: Scene '{}' failed to load, the running one is kept.", m_scenePath.string())
+		OWL_CORE_WARN("Hot reload: Scene '{}' failed to load, the running one is kept.", m_scenePath.string())
 		m_activeScene = previous;
 		return;
 	}
@@ -657,7 +657,7 @@ void RunnerLayer::onDetach() {
 	// unload the active scene.
 	m_activeScene.reset();
 
-	OWL_TRACE("RunnerLayer: deleted activeScene.")
+	OWL_DEBUG("RunnerLayer: deleted activeScene.")
 }
 
 void RunnerLayer::applyPendingTeleport() {
@@ -778,9 +778,9 @@ void RunnerLayer::handleTeleportRequest() {
 					return;
 				}
 				transition->sourceName = source->sourceName;
-				OWL_CORE_INFO("RunnerLayer::teleport worker: file read '{}' {:.1f} ms ({} bytes).",
-							  transition->sourceName,
-							  std::chrono::duration<double, std::milli>{clk::now() - t0}.count(), source->bytes.size())
+				OWL_CORE_DEBUG("RunnerLayer::teleport worker: file read '{}' {:.1f} ms ({} bytes).",
+							   transition->sourceName,
+							   std::chrono::duration<double, std::milli>{clk::now() - t0}.count(), source->bytes.size())
 				transition->parsed = mkShared<scene::ParsedScene>(
 						scene::SceneSerializer::parseBuffer(source->bytes, transition->sourceName));
 			},
@@ -808,8 +808,8 @@ void RunnerLayer::finishTransition() {
 		return;
 	// The old level stops only once the new one loaded, so a failed teleport resumes the current level.
 	m_activeScene->onEndRuntime();
-	OWL_CORE_INFO("RunnerLayer::finishTransition: applyParsed '{}' {:.1f} ms.", transition->sourceName,
-				  std::chrono::duration<double, std::milli>{clk::now() - t0}.count())
+	OWL_CORE_DEBUG("RunnerLayer::finishTransition: applyParsed '{}' {:.1f} ms.", transition->sourceName,
+				   std::chrono::duration<double, std::milli>{clk::now() - t0}.count())
 	newScene->onViewportResize(m_viewportSize);
 
 	m_pendingTeleportVelocity = true;
@@ -837,7 +837,7 @@ void RunnerLayer::finishTransition() {
 				[&](const auto&, const scene::component::BackgroundTexture& iBt) -> void { countOne(iBt.texture); });
 		m_activeScene->registry.view<scene::component::UiImage>().each(
 				[&](const auto&, const scene::component::UiImage& iUi) -> void { countOne(iUi.texture); });
-		OWL_CORE_TRACE("Teleport finished: {} texture(s) still decoding on workers.", pending)
+		OWL_CORE_DEBUG("Teleport finished: {} texture(s) still decoding on workers.", pending)
 	}
 }
 

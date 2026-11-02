@@ -234,7 +234,7 @@ auto RecoveryManager::getPendingEntries() const -> std::vector<RecoveryEntry> {
 			if (!type || entry.dataFile.empty() || !exists(data, ec))
 				continue;
 			if (isStale(entry, data)) {
-				OWL_INFO("Recovery: Autosave of '{}' skipped, the file was saved after it.", entry.title)
+				OWL_DEBUG("Recovery: Autosave of '{}' skipped, the file was saved after it.", entry.title)
 				continue;
 			}
 			entries.push_back(std::move(entry));

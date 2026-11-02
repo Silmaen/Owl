@@ -111,7 +111,7 @@ void SoundAPI::init() {
 	OWL_PROFILE_FUNCTION()
 
 	if (g_Device.device != nullptr) {
-		OWL_CORE_WARN("SoundAPI(OpenAL): Device already initialized.")
+		OWL_CORE_DEBUG("SoundAPI(OpenAL): Device already initialized.")
 	} else {
 		g_Device.device = alcOpenDevice(nullptr);
 		if (g_Device.device == nullptr) {
@@ -123,7 +123,7 @@ void SoundAPI::init() {
 
 	// Context
 	if (g_Device.context != nullptr) {
-		OWL_CORE_WARN("SoundAPI(OpenAL): Context already initialized.")
+		OWL_CORE_DEBUG("SoundAPI(OpenAL): Context already initialized.")
 	} else {
 		g_Device.context = alcCreateContext(g_Device.device, nullptr);
 		if (g_Device.context == nullptr) {

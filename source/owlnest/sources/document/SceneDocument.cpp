@@ -159,8 +159,8 @@ auto SceneDocument::reloadFromDisk(const math::vec2ui& iViewportSize) -> bool {
 	if (const auto loaded = scene::SceneSerializer(fresh, m_editorScene->getDocumentKind())
 									.deserializeFromBuffer(bytes, m_scenePath.string());
 		!loaded) {
-		OWL_ERROR("Hot reload: Scene '{}' failed to load ({}), the open version is kept.", m_scenePath.string(),
-				  scene::describe(loaded.error()))
+		OWL_WARN("Hot reload: Scene '{}' failed to load ({}), the open version is kept.", m_scenePath.string(),
+				 scene::describe(loaded.error()))
 		return false;
 	}
 	applyLoadedScene(fresh, m_scenePath, iViewportSize);

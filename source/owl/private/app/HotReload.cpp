@@ -50,10 +50,10 @@ void HotReload::setEnabled(const bool iEnabled) {
 		return;
 	if (iEnabled) {
 		m_watcher.start();
-		OWL_CORE_INFO("Hot reload: Watching {} asset directories.", m_watcher.getDirectories().size())
+		OWL_CORE_DEBUG("Hot reload: Watching {} asset directories.", m_watcher.getDirectories().size())
 	} else {
 		m_watcher.stop();
-		OWL_CORE_INFO("Hot reload: Stopped.")
+		OWL_CORE_DEBUG("Hot reload: Stopped.")
 	}
 }
 

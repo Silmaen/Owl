@@ -94,7 +94,7 @@ auto Window::create(const Properties& iProps) -> uniq<Window> {
 			return mkUniq<glfw::Window>(iProps);
 #else
 			// GLFW not built (OWL_MODULE_RENDER=OFF): the engine runs headless.
-			OWL_CORE_WARN("Window: GLFW not built in (OWL_MODULE_RENDER=OFF), using the Null window.")
+			OWL_CORE_INFO("Window: GLFW not built in (OWL_MODULE_RENDER=OFF), using the Null window.")
 			return mkUniq<null::Window>(iProps);
 #endif
 		case Type::Null:

@@ -225,7 +225,7 @@ auto fallbackFontData() -> const std::vector<std::vector<uint8_t>>& {
 				std::vector<uint8_t> bytes{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
 				if (bytes.empty())
 					continue;
-				OWL_CORE_TRACE("UiLayer: Fallback font {}.", path.string())
+				OWL_CORE_DEBUG("UiLayer: Fallback font {}.", path.string())
 				found.push_back(std::move(bytes));
 				break;
 			}
@@ -341,7 +341,7 @@ void UiLayer::onAttach() {
 	io.ConfigDockingTransparentPayload = true;
 	// ViewPort configuration
 	if (m_withApp && app::Application::get().getWindow().getPlatform() == window::Platform::Wayland) {
-		OWL_CORE_INFO("UiLayer: Multi-viewports disabled under Wayland (GLFW cannot position windows).")
+		OWL_CORE_DEBUG("UiLayer: Multi-viewports disabled under Wayland (GLFW cannot position windows).")
 	} else {
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 	}
@@ -357,7 +357,7 @@ void UiLayer::onAttach() {
 	if (m_withApp) {
 		g_bodyFont = loadFont("fonts/Inter-Regular.ttf", uiSize);
 		if (g_bodyFont == nullptr) {
-			OWL_CORE_ERROR("UiLayer: could not load Inter-Regular.ttf from engine_assets/fonts/, using Roboto.")
+			OWL_CORE_WARN("UiLayer: could not load Inter-Regular.ttf from engine_assets/fonts/, using Roboto.")
 			g_bodyFont = loadFont("fonts/Roboto-Regular.ttf", uiSize);
 		}
 		if (g_bodyFont != nullptr) {
@@ -371,7 +371,7 @@ void UiLayer::onAttach() {
 		}
 		g_monoFont = loadFont("fonts/JetBrainsMono-Regular.ttf", g_codeFontSize);
 		if (g_monoFont == nullptr)
-			OWL_CORE_ERROR("UiLayer: could not load JetBrainsMono-Regular.ttf — code editor will fall back to UI font.")
+			OWL_CORE_WARN("UiLayer: could not load JetBrainsMono-Regular.ttf — code editor will fall back to UI font.")
 	}
 	if (g_bodyFont == nullptr)
 		g_bodyFont = io.Fonts->AddFontDefault();

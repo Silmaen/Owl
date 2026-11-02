@@ -564,8 +564,8 @@ auto SceneSerializer::parseBuffer(const std::vector<uint8_t>& iData, const std::
 		out.serializer.reset();
 	}
 	const auto dur = std::chrono::duration<double, std::milli>{clk::now() - t0}.count();
-	OWL_CORE_INFO("SceneSerializer::parseBuffer: '{}' {:.1f} ms ({} bytes, {}).", iSourceName, dur, iData.size(),
-				  out.valid ? "ok" : out.error)
+	OWL_CORE_DEBUG("SceneSerializer::parseBuffer: '{}' {:.1f} ms ({} bytes, {}).", iSourceName, dur, iData.size(),
+				   out.valid ? "ok" : out.error)
 	return out;
 }
 
@@ -576,7 +576,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 		OWL_CORE_ERROR("SceneSerializer: Cannot apply an invalid parsed scene ({}).", iParsed.error)
 		return unexpected{iParsed.valid ? SceneLoadError::InvalidYaml : iParsed.failure};
 	}
-	OWL_CORE_INFO("SceneSerializer::applyParsed: '{}' begin.", iParsed.sceneName)
+	OWL_CORE_DEBUG("SceneSerializer::applyParsed: '{}' begin.", iParsed.sceneName)
 	const auto& sData = *iParsed.serializer;
 	const auto previousRenderers = mp_scene->getEnabledRenderers();
 	const auto previousPhysics = mp_scene->getPhysicsSettings();
@@ -655,11 +655,11 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	}
 	const auto hierStart = clk::now();
 	mp_scene->rebuildHierarchyChildren();
-	OWL_CORE_INFO("SceneSerializer::applyParsed: rebuildHierarchyChildren {:.1f} ms.",
-				  std::chrono::duration<double, std::milli>{clk::now() - hierStart}.count())
+	OWL_CORE_DEBUG("SceneSerializer::applyParsed: rebuildHierarchyChildren {:.1f} ms.",
+				   std::chrono::duration<double, std::milli>{clk::now() - hierStart}.count())
 	mp_scene->setDocumentKind(iParsed.kind);
-	OWL_CORE_INFO("SceneSerializer::applyParsed: '{}' total {:.1f} ms ({} entities).", iParsed.sceneName,
-				  std::chrono::duration<double, std::milli>{clk::now() - t0}.count(), created.size())
+	OWL_CORE_DEBUG("SceneSerializer::applyParsed: '{}' total {:.1f} ms ({} entities).", iParsed.sceneName,
+				   std::chrono::duration<double, std::milli>{clk::now() - t0}.count(), created.size())
 	return {};
 }
 

@@ -362,7 +362,7 @@ void RendererTilemap::init() {
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	g_state->drawUbo = gpu::UniformBuffer::create(sizeof(DrawUbo), 0, g_rendererKey);
 	g_state->initialized = true;
-	OWL_CORE_TRACE("RendererTilemap: pipeline ready ({}² cells per chunk).", TilemapLayer::chunkSize)
+	OWL_CORE_DEBUG("RendererTilemap: pipeline ready ({}² cells per chunk).", TilemapLayer::chunkSize)
 }
 
 void RendererTilemap::shutdown() {
