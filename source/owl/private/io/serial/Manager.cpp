@@ -36,7 +36,7 @@ void enumerateSerialDevices(Manager::DeviceList& ioListToUpdate) {
 			0) {//QueryDosDevice returns zero if it didn't find an object
 			const std::string name{"usbserial"};
 			const std::string path{lpTargetPath};
-			OWL_CORE_TRACE("Serial Found: ({}) [{}]. ", comName.c_str(), path.c_str())
+			OWL_CORE_TRACE("Serial: Found port '{}' at '{}'.", comName.c_str(), path.c_str())
 			ioListToUpdate.emplace_back("COM" + std::to_string(i), name, path);
 		}
 		if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {}
@@ -48,12 +48,12 @@ void enumerateSerialDevices(Manager::DeviceList& ioListToUpdate) {
 				std::string port = std::filesystem::canonical(base / read_symlink(devLink)).string();
 				// todo: get device information
 				std::string name = "usbserial";
-				OWL_CORE_TRACE("Serial Found: ({}) [{}]. ", port.c_str(), name.c_str())
+				OWL_CORE_TRACE("Serial: Found port '{}' ('{}').", port.c_str(), name.c_str())
 				ioListToUpdate.emplace_back(std::move(port), std::move(name), "");
 			}
 		}
 	} else {
-		OWL_CORE_WARN("Unable to list serial devices by Id.")
+		OWL_CORE_WARN("Serial: Cannot list the serial devices by id.")
 	}
 #endif
 }

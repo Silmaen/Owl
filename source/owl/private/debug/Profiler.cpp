@@ -83,7 +83,8 @@ void Profiler::beginSession(const std::string& iName, const std::string& iFilepa
 	if (m_currentSession) {
 
 		if (core::Log::initiated()) {
-			OWL_CORE_WARN("Profiler::BeginSession('{}') when session '{}' already open.", iName, m_currentSession->name)
+			OWL_CORE_WARN("Profiler: Session '{}' begins while session '{}' is open, the open one ends.", iName,
+						  m_currentSession->name)
 		}
 		internalEndSession();
 	}

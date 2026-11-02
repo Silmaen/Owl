@@ -35,7 +35,7 @@ void openExternalUrl(const std::string_view iUrl) {
 	if (iUrl.empty())
 		return;
 	if (!isAllowedScheme(iUrl)) {
-		OWL_CORE_WARN("openExternalUrl: rejected URL with unsupported scheme: '{}'.", iUrl)
+		OWL_CORE_WARN("Platform: URL '{}' rejected, its scheme is not supported.", iUrl)
 		return;
 	}
 
@@ -43,7 +43,7 @@ void openExternalUrl(const std::string_view iUrl) {
 	const std::string urlCopy{iUrl};
 	const int wcLen = MultiByteToWideChar(CP_UTF8, 0, urlCopy.c_str(), -1, nullptr, 0);
 	if (wcLen <= 0) {
-		OWL_CORE_ERROR("openExternalUrl: failed to convert URL to UTF-16: '{}'.", iUrl)
+		OWL_CORE_ERROR("Platform: Cannot convert URL '{}' to UTF-16.", iUrl)
 		return;
 	}
 	std::wstring wurl(static_cast<size_t>(wcLen - 1), L'\0');
@@ -51,13 +51,13 @@ void openExternalUrl(const std::string_view iUrl) {
 	const auto result = ShellExecuteW(nullptr, L"open", wurl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 	// ShellExecuteW returns an HINSTANCE > 32 on success.
 	if (reinterpret_cast<INT_PTR>(result) <= 32)
-		OWL_CORE_ERROR("openExternalUrl: ShellExecuteW failed for URL '{}'.", iUrl)
+		OWL_CORE_ERROR("Platform: ShellExecuteW failed for URL '{}'.", iUrl)
 #else
 	// fork + execvp: avoids shell interpolation and is robust against URL contents.
 	const std::string urlCopy{iUrl};
 	const pid_t pid = fork();
 	if (pid < 0) {
-		OWL_CORE_ERROR("openExternalUrl: fork failed for URL '{}'.", iUrl)
+		OWL_CORE_ERROR("Platform: Fork failed for URL '{}'.", iUrl)
 		return;
 	}
 	if (pid == 0) {

@@ -462,20 +462,20 @@ void Scene::onStartRuntime() {
 	const auto ms = [](const clk::duration iDur) -> double {
 		return std::chrono::duration<double, std::milli>{iDur}.count();
 	};
-	OWL_CORE_DEBUG("Scene::onStartRuntime: begin.")
+	OWL_CORE_DEBUG("Scene: Runtime starting.")
 
 	const auto tilesetStart = clk::now();
 	resolveAllTilemapAssets();
 	detachSharedTilemapAssets();
-	OWL_CORE_DEBUG("Scene::onStartRuntime: tileset resolve {:.1f} ms.", ms(clk::now() - tilesetStart))
+	OWL_CORE_DEBUG("Scene: Runtime start, tilesets resolved in {:.1f} ms.", ms(clk::now() - tilesetStart))
 
 	const auto linksStart = clk::now();
 	resolveAllEntityLinks();
-	OWL_CORE_DEBUG("Scene::onStartRuntime: entity-link resolve {:.1f} ms.", ms(clk::now() - linksStart))
+	OWL_CORE_DEBUG("Scene: Runtime start, entity links resolved in {:.1f} ms.", ms(clk::now() - linksStart))
 
 	const auto physicsStart = clk::now();
 	physics::PhysicCommand::init(*this);
-	OWL_CORE_DEBUG("Scene::onStartRuntime: physics init {:.1f} ms.", ms(clk::now() - physicsStart))
+	OWL_CORE_DEBUG("Scene: Runtime start, physics initialized in {:.1f} ms.", ms(clk::now() - physicsStart))
 
 	const auto soundStart = clk::now();
 	// Initialize sound listener from primary SoundListener entity
@@ -508,13 +508,13 @@ void Scene::onStartRuntime() {
 		startAdaptiveMusic(*this, *mixer);
 	}
 
-	OWL_CORE_DEBUG("Scene::onStartRuntime: sound init {:.1f} ms.", ms(clk::now() - soundStart))
+	OWL_CORE_DEBUG("Scene: Runtime start, sound initialized in {:.1f} ms.", ms(clk::now() - soundStart))
 
 	const auto hudStart = clk::now();
 	// Loaded before the scripts: its fonts would otherwise count against the time quota of the first one reaching it.
 	const auto hud = getHud();
 	if (hud)
-		OWL_CORE_DEBUG("Scene::onStartRuntime: hud load {:.1f} ms.", ms(clk::now() - hudStart))
+		OWL_CORE_DEBUG("Scene: Runtime start, HUD loaded in {:.1f} ms.", ms(clk::now() - hudStart))
 
 	const auto luaStart = clk::now();
 	size_t luaCount = 0;
@@ -543,7 +543,7 @@ void Scene::onStartRuntime() {
 			luaScript.instance->onCreate();
 		++luaCount;
 	}
-	OWL_CORE_DEBUG("Scene::onStartRuntime: lua compile + onCreate ({} scripts) {:.1f} ms.", luaCount,
+	OWL_CORE_DEBUG("Scene: Runtime start, {} Lua scripts compiled and created in {:.1f} ms.", luaCount,
 				   ms(clk::now() - luaStart))
 
 	// Reset animated sprites
@@ -567,7 +567,7 @@ void Scene::onStartRuntime() {
 	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view)
 		view.get<component::VoxelWorld>(entity).pendingChunks.clear();
 	connectRuntimeHooks(registry);
-	OWL_CORE_DEBUG("Scene::onStartRuntime: total {:.1f} ms.", ms(clk::now() - runtimeStart))
+	OWL_CORE_DEBUG("Scene: Runtime started in {:.1f} ms.", ms(clk::now() - runtimeStart))
 }
 
 void Scene::onEndRuntime() {
@@ -3336,7 +3336,7 @@ void Scene::resolveAllTilemapAssets() {
 				[&](const std::string_view iYaml) -> bool { return resolved->deserializeFromString(iYaml); },
 				[&](const std::filesystem::path& iPath) -> bool { return resolved->loadFromFile(iPath); });
 		if (!loaded) {
-			OWL_CORE_WARN("Scene: Tilemap {} not found.", tilemapPath.generic_string())
+			OWL_CORE_WARN("Scene: Tilemap '{}' not found.", tilemapPath.generic_string())
 			continue;
 		}
 		tilemap.asset = std::move(resolved);
@@ -3354,7 +3354,7 @@ void Scene::resolveAllTilemapAssets() {
 				iPath, [&](const std::string_view iYaml) -> bool { return fresh->deserializeFromString(iYaml); },
 				[&](const std::filesystem::path& iFullPath) -> bool { return fresh->loadFromFile(iFullPath); });
 		if (!loaded) {
-			OWL_CORE_WARN("Scene: Tileset {} not found.", key)
+			OWL_CORE_WARN("Scene: Tileset '{}' not found.", key)
 			tilesetCache.emplace(key, nullptr);
 			return nullptr;
 		}
@@ -3385,7 +3385,7 @@ void Scene::resolveAllTilemapAssets() {
 			return parse(platform::fileToString(iFullPath));
 		});
 		if (!loaded)
-			OWL_CORE_WARN("Scene: Isometric object sheet {} not found or invalid.", key)
+			OWL_CORE_WARN("Scene: Isometric object sheet '{}' not found or invalid.", key)
 		else {
 			const std::filesystem::path texturePath = std::filesystem::path{iPath}.replace_extension(".png");
 			fresh->setTexture(renderer::gpu::Texture2D::createFromSerializedForDeserialize(
@@ -4056,13 +4056,13 @@ void Scene::setParent(const Entity& iChild, const Entity& iNewParent) const {
 	if (!iChild || !iNewParent)
 		return;
 	if (iChild == iNewParent) {
-		OWL_CORE_WARN("setParent: cannot parent entity to itself.")
+		OWL_CORE_WARN("Scene: Cannot parent an entity to itself.")
 		return;
 	}
 	const core::UUID childUuid = iChild.getUUID();
 	const auto newParentWorld = composeWorldMatrix(iNewParent, childUuid);
 	if (!newParentWorld.has_value()) {
-		OWL_CORE_WARN("setParent: circular hierarchy detected, refusing reparent.")
+		OWL_CORE_WARN("Scene: Circular hierarchy detected, reparenting refused.")
 		return;
 	}
 	const math::mat4 currentWorld =

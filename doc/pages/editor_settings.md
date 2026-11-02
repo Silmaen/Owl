@@ -18,6 +18,7 @@ at the first start, takes them from the folder of a previous version and applies
 | Gizmo Snap | Snap to grid, snap step, step from tilemap and its cell multiplier, rotation step ([snapping](editor_viewport.md#gizmos-and-snapping)) |
 | Camera     | Orbit, pan and zoom speeds (10 to 300 %), invert vertical, dead zone, fly speed (0.1 to 100 units/s)                                   |
 | Appearance | Theme: **Owl Dark** or **Owl Light**, applied at once (also **View > Appearance**)                                                     |
+| Log        | Level: lowest level recorded (Default, Trace to Off), applied at once, also in the **Log** panel toolbar                               |
 | Shortcuts  | Every action and its key ([below](#rebinding))                                                                                         |
 | MCP Server | Enabled (off by default), port (47800), status, endpoint and token file (a click copies), **Regenerate Token**                         |
 

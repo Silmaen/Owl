@@ -119,7 +119,7 @@ auto DrawData::createPipeline(VkDescriptorSetLayout iSetLayout) const -> int32_t
 			vkh.setState(internal::VulkanHandler::State::Running);
 			return createPipeline(iSetLayout);
 		}
-		OWL_CORE_WARN("Vulkan shader: Failed to register pipeline {}.", mp_shader->getName())
+		OWL_CORE_ERROR("Vulkan: Cannot register the pipeline of shader '{}'.", mp_shader->getName())
 		return -1;
 	}
 	return pipelineId;

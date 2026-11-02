@@ -56,7 +56,7 @@ VertexBuffer::~VertexBuffer() { release(); }
 
 void VertexBuffer::release() {
 	if (internal::VulkanHandler::get().getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_WARN("Vulkan vertex buffer: Trying to delete vertex buffer after VulkanHandler release...")
+		OWL_CORE_WARN("Vulkan: Vertex buffer released while the VulkanHandler is not running.")
 		return;
 	}
 	internal::releaseBuffer(m_buffer);
@@ -67,7 +67,7 @@ void VertexBuffer::bind() const { bindAtBinding(0); }
 void VertexBuffer::bindAtBinding(const uint32_t iBinding) const {
 	auto& vkh = internal::VulkanHandler::get();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_WARN("Vulkan vertex buffer: Trying to bind vertex buffer after VulkanHandler release...")
+		OWL_CORE_WARN("Vulkan: Vertex buffer bound while the VulkanHandler is not running.")
 		return;
 	}
 	const VkBuffer vertexBuffers[] = {m_buffer.buffer};
@@ -79,13 +79,13 @@ void VertexBuffer::unbind() const {}
 
 void VertexBuffer::setData(const void* iData, const uint32_t iSize) {
 	if (internal::VulkanHandler::get().getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_WARN("Vulkan vertex buffer: Trying to set vertex buffer data after VulkanHandler release...")
+		OWL_CORE_WARN("Vulkan: Vertex buffer data set while the VulkanHandler is not running.")
 		return;
 	}
 	if (iData == nullptr || iSize == 0)
 		return;
 	if (iSize > m_buffer.size) {
-		OWL_CORE_WARN("Vulkan vertex buffer: setData of {} bytes beyond the capacity of {}.", iSize, m_buffer.size)
+		OWL_CORE_WARN("Vulkan: Vertex buffer setData of {} bytes exceeds the capacity of {}.", iSize, m_buffer.size)
 		return;
 	}
 	internal::uploadToDeviceBuffer(m_buffer.buffer, iData, iSize);
@@ -118,7 +118,7 @@ auto VertexBuffer::getAttributeDescriptions(const uint32_t iBinding, const uint3
 
 void VertexBuffer::createBuffer(const float* iData, const uint32_t iSize) {
 	if (internal::VulkanHandler::get().getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_WARN("Vulkan vertex buffer: Trying to set vertex buffer data after VulkanHandler release...")
+		OWL_CORE_WARN("Vulkan: Vertex buffer created while the VulkanHandler is not running.")
 		return;
 	}
 	release();
@@ -129,7 +129,7 @@ void VertexBuffer::createBuffer(const float* iData, const uint32_t iSize) {
 
 IndexBuffer::IndexBuffer(const uint32_t* iIndices, const uint32_t iSize) : m_count(iSize) {
 	if (internal::VulkanHandler::get().getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_WARN("Vulkan index buffer: Trying to create index buffer data after VulkanHandler release...")
+		OWL_CORE_WARN("Vulkan: Index buffer created while the VulkanHandler is not running.")
 		return;
 	}
 	const VkDeviceSize bufferSize = sizeof(uint32_t) * iSize;
@@ -143,7 +143,7 @@ IndexBuffer::~IndexBuffer() { release(); }
 
 void IndexBuffer::release() {
 	if (internal::VulkanHandler::get().getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_WARN("Vulkan vertex buffer: Trying to delete vertex buffer after VulkanHandler release...")
+		OWL_CORE_WARN("Vulkan: Index buffer released while the VulkanHandler is not running.")
 		return;
 	}
 	internal::releaseBuffer(m_buffer);
@@ -153,7 +153,7 @@ void IndexBuffer::release() {
 void IndexBuffer::bind() const {
 	auto& vkh = internal::VulkanHandler::get();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_WARN("Vulkan vertex buffer: Trying to bind vertex buffer after VulkanHandler release...")
+		OWL_CORE_WARN("Vulkan: Index buffer bound while the VulkanHandler is not running.")
 		return;
 	}
 	vkCmdBindIndexBuffer(vkh.getCurrentCommandBuffer(), m_buffer.buffer, 0, VK_INDEX_TYPE_UINT32);

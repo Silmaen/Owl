@@ -36,7 +36,7 @@ auto UniformBuffer::create(uint32_t iSize, uint32_t iBinding, [[maybe_unused]] c
 			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
 #endif
 	}
-	OWL_CORE_ERROR("Unknown RendererAPI ({}).", static_cast<int>(api))
+	OWL_CORE_ERROR("UniformBuffer: Unknown render API ({}).", static_cast<int>(api))
 	return nullptr;
 }
 

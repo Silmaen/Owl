@@ -1912,16 +1912,16 @@ auto CommandRegistry::run(const std::string_view iName, const CommandArgs& iArgs
 		return fail(CommandError::UnknownCommand, std::format("unknown command `{}`", iName));
 	}
 	if (iContext.playing && !spec->allowedInPlay) {
-		OWL_WARN("Command: {} refused, the scene is playing.", spec->name)
+		OWL_WARN("Command: '{}' refused, the scene is playing.", spec->name)
 		return fail(CommandError::RefusedDuringPlay,
 					std::format("{}: the scene is playing, stop it to edit the scene", spec->name));
 	}
 	if (const auto failure = validate(*spec, iArgs); failure) {
-		OWL_WARN("Command: {}.", failure->message)
+		OWL_WARN("Command: Failed, {}.", failure->message)
 		return unexpected<CommandFailure>{*failure};
 	}
 	if (spec->needsScene && (!iContext.scene || iContext.undo == nullptr)) {
-		OWL_WARN("Command: {} needs a scene and its undo history.", spec->name)
+		OWL_WARN("Command: '{}' needs a scene and its undo history.", spec->name)
 		return fail(CommandError::NotApplicable, std::format("{}: no scene or undo history", spec->name));
 	}
 	CommandArgs args = iArgs;
@@ -1931,7 +1931,7 @@ auto CommandRegistry::run(const std::string_view iName, const CommandArgs& iArgs
 	}
 	const auto withPrefix = [&spec](CommandFailure iFailure) -> unexpected<CommandFailure> {
 		iFailure.message = std::format("{}: {}", spec->name, iFailure.message);
-		OWL_WARN("Command: {}.", iFailure.message)
+		OWL_WARN("Command: Failed, {}.", iFailure.message)
 		return unexpected<CommandFailure>{std::move(iFailure)};
 	};
 	if (!spec->factory) {
@@ -2037,7 +2037,7 @@ auto CommandRegistry::resolveEntity(const scene::Scene& iScene, const ArgValue& 
 auto CommandTarget::execute(const std::string_view iName, const CommandArgs& iArgs) const
 		-> expected<CommandResult, CommandFailure> {
 	if (!isValid()) {
-		OWL_WARN("Command: {} ignored, no scene or undo history to run it on.", iName)
+		OWL_WARN("Command: '{}' ignored, no scene or undo history to run it on.", iName)
 		return fail(CommandError::NotApplicable, std::format("{}: no scene or undo history", iName));
 	}
 	return registry->execute(iName, iArgs,

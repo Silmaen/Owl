@@ -348,7 +348,7 @@ void DialogueDocument::rebuildCanvas() {
 auto DialogueDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	auto loaded = Dialogue::loadFile(iPath);
 	if (!loaded) {
-		OWL_CORE_WARN("DialogueDocument: {} is not a dialogue.", iPath.string())
+		OWL_CORE_WARN("DialogueDocument: '{}' is not a dialogue.", iPath.string())
 		return false;
 	}
 	m_dialogue = std::move(*loaded);
@@ -495,7 +495,7 @@ void DialogueDocument::commitMoves() {
 auto DialogueDocument::sendCommand(const std::string_view iName, commands::CommandArgs iArgs)
 		-> std::optional<commands::CommandResult> {
 	if (mp_editorLayer == nullptr) {
-		OWL_WARN("DialogueDocument: {} ignored, no editor to run it.", iName)
+		OWL_WARN("DialogueDocument: '{}' ignored, no editor to run it.", iName)
 		return std::nullopt;
 	}
 	iArgs.set("path", m_path.generic_string());

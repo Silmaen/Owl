@@ -34,7 +34,7 @@ auto ComputeShader::create([[maybe_unused]] const std::string& iShaderName,
 			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
 #endif
 	}
-	OWL_CORE_ERROR("Unknown RendererAPI ({}).", static_cast<int>(api))
+	OWL_CORE_ERROR("ComputeShader: Unknown render API ({}).", static_cast<int>(api))
 	return nullptr;
 }
 

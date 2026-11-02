@@ -441,7 +441,7 @@ auto PostProcess::getLut(const std::filesystem::path& iAssetPath) -> const Lut& 
 	auto& lut = g_data->luts[key];
 	const auto parsed = readLut(iAssetPath);
 	if (!parsed) {
-		OWL_CORE_WARN("PostProcess: LUT {} cannot be read.", key)
+		OWL_CORE_WARN("PostProcess: LUT '{}' cannot be read.", key)
 		return lut;
 	}
 	const auto strip = parsed->toStrip();

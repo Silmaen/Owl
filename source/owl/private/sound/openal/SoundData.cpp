@@ -217,7 +217,7 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 	}
 	auto sampleFormat = sfFormatConvert(sfInfo.format);
 	if (sampleFormat == SoundDataType::Unsupported) {
-		OWL_CORE_WARN("SoundData: unable to load, Unsupported format...")
+		OWL_CORE_WARN("SoundData: Unable to load, unsupported format.")
 		sf_close(file);
 		return;
 	}
@@ -232,7 +232,7 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 	ALint splblockalign = 0;
 	if (sampleFormat == SoundDataType::Ima4 || sampleFormat == SoundDataType::MsAdpcm) {
 		if (sfInfo.channels > 2) {
-			OWL_CORE_WARN("SoundData: unable to load {} format only supports 2 channel max...",
+			OWL_CORE_WARN("SoundData: Unable to load the {} format, two channels at most.",
 						  magic_enum::enum_name(sampleFormat))
 			sf_close(file);
 			return;
@@ -340,7 +340,7 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 	}
 	const auto numBytes = static_cast<ALsizei>(numFrames / splblockalign * byteblockalign);
 
-	OWL_CORE_DEBUG("SoundData: loading {} ({}, {}Hz).", m_specification.file.string(), alFormatName(format),
+	OWL_CORE_DEBUG("SoundData: Loading '{}' ({}, {} Hz).", m_specification.file.string(), alFormatName(format),
 				   sfInfo.samplerate)
 
 	m_buffer = 0;

@@ -63,7 +63,7 @@ void StateMachinePlayer::reset(const StateMachine& iMachine, const std::span<con
 	for (const auto& state: iMachine.states) {
 		const int32_t clip = findClip(iClips, state.clip);
 		if (clip < 0 && !state.clip.empty())
-			OWL_CORE_WARN("Animator: Clip {} of state {} not found, the state holds the rest pose.", state.clip,
+			OWL_CORE_WARN("Animator: Clip '{}' of state '{}' not found, the state holds the rest pose.", state.clip,
 						  state.name)
 		m_stateClips.push_back(clip);
 	}
@@ -81,7 +81,7 @@ auto StateMachinePlayer::setParameter(const StateMachine& iMachine, const std::s
 		-> bool {
 	const auto index = iMachine.findParameter(iName);
 	if (!index || *index >= m_values.size()) {
-		OWL_CORE_WARN("Animator: No parameter {}.", iName)
+		OWL_CORE_WARN_ONCE("Animator: No parameter '{}'.", iName)
 		return false;
 	}
 	const bool flag = iMachine.parameters[*index].type != ParameterType::Float;
@@ -102,7 +102,7 @@ auto StateMachinePlayer::play(const StateMachine& iMachine, const std::string_vi
 		-> bool {
 	const auto state = iMachine.findState(iState);
 	if (!state) {
-		OWL_CORE_WARN("Animator: No state {}.", iState)
+		OWL_CORE_WARN("Animator: No state '{}'.", iState)
 		return false;
 	}
 	enter(*state, iDuration);

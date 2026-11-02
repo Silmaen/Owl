@@ -15,7 +15,7 @@ namespace owl::platform {
 
 auto fileToString(const std::filesystem::path& iFile) -> std::string {
 	if (!exists(iFile)) {
-		OWL_CORE_WARN("Shader file '{}' does not exist.", iFile.string())
+		OWL_CORE_WARN("FileUtils: File '{}' does not exist.", iFile.string())
 		return "";
 	}
 	std::ifstream t(iFile);

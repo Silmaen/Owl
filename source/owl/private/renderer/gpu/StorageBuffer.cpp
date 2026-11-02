@@ -36,7 +36,7 @@ auto StorageBuffer::create(const uint32_t iSize, const uint32_t iBinding, [[mayb
 			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
 #endif
 	}
-	OWL_CORE_ERROR("Unknown RendererAPI ({}).", static_cast<int>(api))
+	OWL_CORE_ERROR("StorageBuffer: Unknown render API ({}).", static_cast<int>(api))
 	return nullptr;
 }
 

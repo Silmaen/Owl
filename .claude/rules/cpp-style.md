@@ -334,7 +334,10 @@ OWL_CORE_ERROR("PackReader: corrupted TOC at offset {} (expected magic {:#x}).",
 - Sentences end with a period (`.`).
 - Subsystem prefix mandatory in infrastructure code (Vulkan, IO, script, sound, GPU); optional but encouraged elsewhere.
 - No trailing newline (the logger adds it).
-- Avoid emitting from hot loops (`onUpdate`, render passes). If you must, gate with `OWL_CORE_FRAME_TRACE` (sampled at the configured frame frequency).
+- Avoid emitting from hot loops (`onUpdate`, render passes). A trace there goes through `OWL_CORE_FRAME_TRACE` (sampled
+  at the configured frame frequency); a fault a frame loop repeats through `OWL_CORE_WARN_ONCE` / `OWL_CORE_ERROR_ONCE`
+  (client `OWL_WARN_ONCE`), logged the first time only.
+- Never put work with a side effect in the arguments: a message below the active level evaluates none of them.
 - A message below the verbosity evaluates neither its format nor its arguments; below `OWL_LOG_LEVEL` (compile
   time) it is not compiled. The macros are expressions: `if (c) OWL_CORE_WARN("…") else …` is safe.
 

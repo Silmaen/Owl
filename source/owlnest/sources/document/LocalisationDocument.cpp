@@ -125,7 +125,7 @@ void LocalisationDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {}
 auto LocalisationDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	auto loaded = Localisation::loadFile(iPath);
 	if (!loaded) {
-		OWL_CORE_WARN("LocalisationDocument: {} is not a localisation.", iPath.string())
+		OWL_CORE_WARN("LocalisationDocument: '{}' is not a localisation.", iPath.string())
 		return false;
 	}
 	m_localisation = std::move(*loaded);
@@ -241,7 +241,7 @@ auto LocalisationDocument::runCommand(const std::string_view iName, commands::Co
 
 auto LocalisationDocument::sendCommand(const std::string_view iName, commands::CommandArgs iArgs) const -> bool {
 	if (mp_editorLayer == nullptr) {
-		OWL_WARN("LocalisationDocument: {} ignored, no editor to run it.", iName)
+		OWL_WARN("LocalisationDocument: '{}' ignored, no editor to run it.", iName)
 		return false;
 	}
 	iArgs.set("path", m_path.generic_string());

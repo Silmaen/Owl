@@ -30,14 +30,14 @@
 #define OWL_ASSERT(x, ...)                                                                                             \
 	{                                                                                                                  \
 		if (!(x)) {                                                                                                    \
-			OWL_ERROR("Assertion Failed: {}.", __VA_ARGS__)                                                            \
+			OWL_ERROR("Assert: Assertion failed: {}.", __VA_ARGS__)                                                    \
 			OWL_DEBUG_BREAK();                                                                                         \
 		}                                                                                                              \
 	}
 #define OWL_CORE_ASSERT(x, ...)                                                                                        \
 	{                                                                                                                  \
 		if (!(x)) {                                                                                                    \
-			OWL_CORE_ERROR("Assertion Failed: {}.", __VA_ARGS__)                                                       \
+			OWL_CORE_ERROR("Assert: Assertion failed: {}.", __VA_ARGS__)                                               \
 			OWL_DEBUG_BREAK();                                                                                         \
 		}                                                                                                              \
 	}

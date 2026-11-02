@@ -42,10 +42,10 @@ auto isCpuUnsupported() -> bool {
 inline void logNotInitialized(const char* iFunc) {
 	if (isCpuUnsupported())
 		return;
-	OWL_CORE_WARN("Physic: {} called before initialisation; ignoring.", iFunc)
+	OWL_CORE_WARN("Physics: {} called before initialization, ignored.", iFunc)
 }
 
-inline void logNullEntity(const char* iFunc) { OWL_CORE_WARN("Physic: {} called with null entity; ignoring.", iFunc) }
+inline void logNullEntity(const char* iFunc) { OWL_CORE_WARN("Physics: {} called with a null entity, ignored.", iFunc) }
 
 }// namespace
 
@@ -309,7 +309,7 @@ public:
 		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
 
 		const b2BodyId body = b2CreateBody(worldId, &bodyDef);
-		OWL_TRACE("PhysicCommand: body created ({} {} {}).", body.index1, body.world0, body.generation)
+		OWL_CORE_TRACE("Physics: Body created ({} {} {}).", body.index1, body.world0, body.generation)
 		sbody.bodyId = store(body, entity);
 		trackBody(iEntity, sbody.bodyId, body);
 
@@ -434,7 +434,7 @@ void PhysicCommand::init(scene::Scene& ioScene) {
 	if (isInitialized(ioScene))
 		destroy(ioScene);
 	if (isCpuUnsupported()) {
-		OWL_CORE_WARN("Physic: Box2D is built with AVX2, which this CPU lacks; physics disabled.")
+		OWL_CORE_WARN("Physics: Box2D is built with AVX2, which this CPU lacks; physics disabled.")
 		return;
 	}
 	const auto world = mkShared<PhysicsWorld>();
@@ -452,7 +452,7 @@ void PhysicCommand::init(scene::Scene& ioScene) {
 	}
 	world->worldId = b2CreateWorld(&def);
 
-	OWL_DEBUG("Physic: World created ({} {}).", world->worldId.index1, world->worldId.generation)
+	OWL_CORE_DEBUG("Physics: World created ({} {}).", world->worldId.index1, world->worldId.generation)
 
 	// Add entities...
 	for (const auto e: ioScene.registry.view<scene::component::PhysicBody, scene::component::Transform>())

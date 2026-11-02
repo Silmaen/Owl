@@ -218,7 +218,7 @@ auto IconBank::buildTier(const uint32_t iSize, const IconThemeColors& iColors) c
 	for (const auto& [name, filePath]: m_iconList) {
 		if (!std::filesystem::exists(filePath)) {
 			if (iSize == m_cellSize)
-				OWL_CORE_WARN("IconBank: icon file not found: {}.", filePath.string())
+				OWL_CORE_WARN("IconBank: Icon file '{}' not found.", filePath.string())
 			++index;
 			continue;
 		}
@@ -239,7 +239,7 @@ auto IconBank::buildTier(const uint32_t iSize, const IconThemeColors& iColors) c
 		}
 		if (pixels.empty()) {
 			if (iSize == m_cellSize)
-				OWL_CORE_WARN("IconBank: failed to load icon: {}.", filePath.string())
+				OWL_CORE_WARN("IconBank: Cannot load the icon '{}'.", filePath.string())
 			++index;
 			continue;
 		}

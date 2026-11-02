@@ -22,7 +22,7 @@ namespace owl::nest::commands {
 namespace {
 
 auto macroFail(const MacroError iError, const size_t iLine, std::string iMessage) -> unexpected<MacroFailure> {
-	OWL_WARN("Macro: {}.", iMessage)
+	OWL_WARN("Macro: Failed, {}.", iMessage)
 	return unexpected<MacroFailure>{MacroFailure{.error = iError, .line = iLine, .message = std::move(iMessage)}};
 }
 

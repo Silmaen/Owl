@@ -181,7 +181,7 @@ auto BlockRegistry::deserializeFromString(const std::string_view iYaml) -> bool 
 	try {
 		root = YAML::Load(std::string{iYaml});
 	} catch (const YAML::Exception& e) {
-		OWL_CORE_ERROR("BlockRegistry: failed to parse YAML — {}.", e.what())
+		OWL_CORE_ERROR("BlockRegistry: Failed to parse YAML: {}.", e.what())
 		return false;
 	}
 	if (!root || !root.IsMap() || !root["BlockRegistry"])

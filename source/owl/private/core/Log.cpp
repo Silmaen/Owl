@@ -141,7 +141,7 @@ auto Log::getDefaultLevel() -> Level {
 void Log::init(const Level& iLevel, const uint64_t iFrequency) {
 	OWL_SCOPE_UNTRACK
 	if (g_CoreLogger != nullptr) {
-		OWL_CORE_DEBUG("Logger already initiated.")
+		OWL_CORE_DEBUG("Log: Logger already initialized.")
 		return;
 	}
 	std::vector<spdlog::sink_ptr> logSinks;

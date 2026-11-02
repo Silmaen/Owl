@@ -97,7 +97,7 @@ auto deserializeEntries(const YAML::Node& iNode) -> std::unordered_map<std::stri
 auto loadSettingsEntries(YAML::Node iRoot, const std::string_view iSection, const std::string_view iSourceName)
 		-> std::optional<std::unordered_map<std::string, SettingsManager::Value>> {
 	if (!core::upgradeYamlDocument(g_settingsFormat, iRoot, iSourceName)) {
-		OWL_CORE_WARN("SettingsManager: Ignoring settings from {}.", iSourceName)
+		OWL_CORE_WARN("SettingsManager: Ignoring settings from '{}'.", iSourceName)
 		return std::nullopt;
 	}
 	const auto entries = iRoot[std::string{iSection}];
@@ -116,14 +116,14 @@ void SettingsManager::loadDefaults(const std::filesystem::path& iPath) {
 	try {
 		if (auto entries = loadSettingsEntries(YAML::LoadFile(iPath.string()), "GameSettings", iPath.string()); entries)
 			m_defaults = std::move(*entries);
-	} catch (...) { OWL_CORE_WARN("Failed to load game settings from {}.", iPath.string()) }
+	} catch (...) { OWL_CORE_WARN("SettingsManager: Failed to load game settings from '{}'.", iPath.string()) }
 }
 
 void SettingsManager::loadDefaultsFromString(const std::string& iContent) {
 	try {
 		if (auto entries = loadSettingsEntries(YAML::Load(iContent), "GameSettings", "<buffer>"); entries)
 			m_defaults = std::move(*entries);
-	} catch (...) { OWL_CORE_WARN("Failed to parse game settings from string.") }
+	} catch (...) { OWL_CORE_WARN("SettingsManager: Failed to parse game settings from a string.") }
 }
 
 void SettingsManager::loadUserSettings() {
@@ -133,7 +133,7 @@ void SettingsManager::loadUserSettings() {
 	try {
 		if (auto entries = loadSettingsEntries(YAML::LoadFile(path.string()), "UserSettings", path.string()); entries)
 			m_overrides = std::move(*entries);
-	} catch (...) { OWL_CORE_WARN("Failed to load user settings from {}.", path.string()) }
+	} catch (...) { OWL_CORE_WARN("SettingsManager: Failed to load user settings from '{}'.", path.string()) }
 }
 
 auto SettingsManager::saveUserSettings() const -> bool {
@@ -148,7 +148,7 @@ auto SettingsManager::saveUserSettings() const -> bool {
 	out << YAML::EndSeq;
 	out << YAML::EndMap;
 	if (const auto written = platform::writeFileAtomic(path, out.c_str()); !written) {
-		OWL_CORE_ERROR("SettingsManager: Cannot save user settings to {}: {}.", path.string(),
+		OWL_CORE_ERROR("SettingsManager: Cannot save user settings to '{}': {}.", path.string(),
 					   describe(written.error()))
 		return false;
 	}

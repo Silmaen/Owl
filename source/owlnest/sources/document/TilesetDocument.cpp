@@ -286,14 +286,14 @@ auto TilesetDocument::save() -> bool {
 auto TilesetDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 	if (m_atlas && m_atlasHash != m_savedAtlasHash) {
 		if (!renderer::writeImagePng(m_atlasFile, m_atlas->getSize(), m_atlas->getPixels())) {
-			OWL_CORE_ERROR("TilesetDocument: failed to write the atlas '{}'.", m_atlasFile.string())
+			OWL_CORE_ERROR("TilesetDocument: Failed to write the atlas '{}'.", m_atlasFile.string())
 			return false;
 		}
 		m_savedAtlasHash = m_atlasHash;
 	}
 	const auto displayName = iPath.stem().string();
 	if (!m_tileset.saveToFile(iPath, displayName)) {
-		OWL_CORE_ERROR("TilesetDocument: failed to write '{}'.", iPath.string())
+		OWL_CORE_ERROR("TilesetDocument: Failed to write '{}'.", iPath.string())
 		return false;
 	}
 	m_path = iPath;
@@ -305,7 +305,7 @@ auto TilesetDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 
 auto TilesetDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	if (!m_tileset.loadFromFile(iPath)) {
-		OWL_CORE_ERROR("TilesetDocument: failed to load '{}'.", iPath.string())
+		OWL_CORE_ERROR("TilesetDocument: Failed to load '{}'.", iPath.string())
 		return false;
 	}
 	m_path = iPath;

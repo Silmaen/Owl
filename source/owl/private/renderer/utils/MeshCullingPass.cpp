@@ -133,8 +133,8 @@ auto MeshCullingPass::reserve(const uint32_t iItemCount, const uint32_t iGroupCo
 		m_groupCapacity = capacity;
 	}
 	if (!m_visible || !m_commands || (isGpu() && (!m_items || !m_groups))) {
-		OWL_CORE_ERROR("MeshCullingPass: Failed to grow the buffers to {} instances and {} groups.", iItemCount,
-					   iGroupCount)
+		OWL_CORE_ERROR_ONCE("MeshCullingPass: Cannot grow the buffers to {} instances and {} groups.", iItemCount,
+							iGroupCount)
 		m_itemCapacity = 0;
 		m_groupCapacity = 0;
 		return false;
@@ -219,7 +219,7 @@ void MeshCullingPass::buildPyramid(const shared<gpu::Texture2D>& iDepth, const m
 				gpu::StorageBuffer::create(texels * static_cast<uint32_t>(sizeof(float)), g_bindingPyramid, g_renderer);
 		m_pyramidCapacity = m_pyramid ? texels : 0;
 		if (!m_pyramid) {
-			OWL_CORE_ERROR("MeshCullingPass: Failed to create an occlusion pyramid of {} texels.", texels)
+			OWL_CORE_ERROR_ONCE("MeshCullingPass: Cannot create an occlusion pyramid of {} texels.", texels)
 			return;
 		}
 	}

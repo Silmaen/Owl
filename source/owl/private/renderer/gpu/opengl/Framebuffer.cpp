@@ -208,7 +208,7 @@ void Framebuffer::invalidate() {
 	const bool completeFramebuffer = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
 	OWL_CORE_ASSERT(completeFramebuffer, "Framebuffer is incomplete!")
 	if (!completeFramebuffer) {
-		OWL_CORE_WARN("Incomplete Framebuffer.")
+		OWL_CORE_WARN("OpenGL: Incomplete framebuffer.")
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -220,7 +220,7 @@ void Framebuffer::invalidate() {
 
 auto Framebuffer::getAttachmentTexture(const uint32_t iIndex) -> shared<renderer::gpu::Texture2D> {
 	if (iIndex >= m_colorAttachments.size()) {
-		OWL_CORE_WARN("OpenGL Framebuffer: No colour attachment {} to sample.", iIndex)
+		OWL_CORE_WARN_ONCE("OpenGL: Framebuffer has no colour attachment {} to sample.", iIndex)
 		return nullptr;
 	}
 	if (m_attachmentTextures.size() <= iIndex)
@@ -250,8 +250,8 @@ void Framebuffer::copyAttachment(const uint32_t iIndex, renderer::gpu::Framebuff
 	if (target == nullptr || target->m_specs.size != m_specs.size || iIndex >= target->m_specs.attachments.size() ||
 		iIndex >= m_specs.attachments.size() ||
 		target->m_specs.attachments[iIndex].format != m_specs.attachments[iIndex].format) {
-		OWL_CORE_WARN("OpenGL Framebuffer ({}): Cannot copy attachment {} to an unmatched framebuffer.",
-					  m_specs.debugName, iIndex)
+		OWL_CORE_WARN_ONCE("OpenGL: Framebuffer '{}' cannot copy attachment {} to an unmatched framebuffer.",
+						   m_specs.debugName, iIndex)
 		return;
 	}
 	const uint32_t source = getAttachmentName(iIndex);
@@ -269,7 +269,7 @@ auto Framebuffer::copyAttachmentToCube(const uint32_t iIndex, renderer::gpu::Tex
 	const uint32_t source = getAttachmentName(iIndex);
 	const auto destination = static_cast<uint32_t>(ioTarget.getRendererId());
 	if (source == 0 || destination == 0) {
-		OWL_CORE_WARN("OpenGL Framebuffer ({}): No texture to copy into the cube.", m_specs.debugName)
+		OWL_CORE_WARN("OpenGL: Framebuffer '{}' has no texture to copy into the cube.", m_specs.debugName)
 		return false;
 	}
 	const auto face = static_cast<GLsizei>(m_specs.size.x());
@@ -291,7 +291,7 @@ void Framebuffer::unbind() {
 
 void Framebuffer::resize(const math::vec2ui iSize) {
 	if (iSize.x() == 0 || iSize.y() == 0 || iSize.x() > g_maxFramebufferSize || iSize.y() > g_maxFramebufferSize) {
-		OWL_CORE_WARN("Attempt to resize frame buffer to {} {}.", iSize.x(), iSize.y())
+		OWL_CORE_WARN("OpenGL: Framebuffer resize to {}x{} ignored (invalid size).", iSize.x(), iSize.y())
 		return;
 	}
 	m_specs.size = iSize;
@@ -333,12 +333,12 @@ auto Framebuffer::readPixel(const uint32_t iAttachmentIndex, const int iX, const
 
 auto Framebuffer::readColorAttachment(const uint32_t iAttachmentIndex) -> std::vector<uint8_t> {
 	if (iAttachmentIndex >= m_colorAttachments.size()) {
-		OWL_CORE_WARN("OpenGL Framebuffer: No colour attachment {} to read back.", iAttachmentIndex)
+		OWL_CORE_WARN("OpenGL: Framebuffer has no colour attachment {} to read back.", iAttachmentIndex)
 		return {};
 	}
 	if (const auto format = m_colorAttachmentSpecifications[iAttachmentIndex].format;
 		format != AttachmentSpecification::Format::Surface && format != AttachmentSpecification::Format::Rgba8) {
-		OWL_CORE_WARN("OpenGL Framebuffer: Attachment {} is not an 8-bit colour attachment.", iAttachmentIndex)
+		OWL_CORE_WARN("OpenGL: Framebuffer attachment {} is not an 8-bit colour attachment.", iAttachmentIndex)
 		return {};
 	}
 	const auto width = static_cast<size_t>(m_specs.size.x());

@@ -350,7 +350,7 @@ void ContentBrowser::reveal(const std::filesystem::path& iPath) {
 		m_kindFilter.clear();
 		return;
 	}
-	OWL_WARN("ContentBrowser: {} is in no asset folder.", iPath.string())
+	OWL_WARN("ContentBrowser: '{}' is in no asset folder.", iPath.string())
 }
 
 void ContentBrowser::attach() {
@@ -961,7 +961,7 @@ void ContentBrowser::deleteSelected() {
 
 auto ContentBrowser::runCommand(const std::string& iName, const commands::CommandArgs& iArgs) -> bool {
 	if (!m_commandCallback) {
-		OWL_CORE_WARN("ContentBrowser: No command runner, {} ignored.", iName)
+		OWL_CORE_WARN("ContentBrowser: No command runner, '{}' ignored.", iName)
 		return false;
 	}
 	const bool done = m_commandCallback(iName, iArgs);
@@ -982,7 +982,7 @@ void ContentBrowser::createFolder() {
 	std::error_code ec;
 	std::filesystem::create_directory(folderPath, ec);
 	if (ec)
-		OWL_CORE_ERROR("Failed to create folder: {}.", ec.message())
+		OWL_CORE_ERROR("ContentBrowser: Cannot create the folder, {}.", ec.message())
 	else
 		m_rescanRequested = true;
 }
@@ -1099,7 +1099,7 @@ void ContentBrowser::importFiles() {
 	std::error_code ec;
 	std::filesystem::copy(file, destPath, std::filesystem::copy_options::overwrite_existing, ec);
 	if (ec)
-		OWL_CORE_ERROR("Failed to import '{}': {}.", file.filename().string(), ec.message())
+		OWL_CORE_ERROR("ContentBrowser: Cannot import '{}': {}.", file.filename().string(), ec.message())
 	else
 		m_rescanRequested = true;
 }
@@ -1113,7 +1113,7 @@ void ContentBrowser::importFolder() {
 	std::error_code ec;
 	std::filesystem::copy(folder, destPath, std::filesystem::copy_options::recursive, ec);
 	if (ec)
-		OWL_CORE_ERROR("Failed to import folder '{}': {}.", folder.filename().string(), ec.message())
+		OWL_CORE_ERROR("ContentBrowser: Cannot import the folder '{}': {}.", folder.filename().string(), ec.message())
 	else
 		m_rescanRequested = true;
 }
@@ -1131,7 +1131,8 @@ void ContentBrowser::handleFileDrop(const std::vector<std::filesystem::path>& iP
 			std::filesystem::copy(sourcePath, destPath, std::filesystem::copy_options::overwrite_existing, ec);
 		}
 		if (ec)
-			OWL_CORE_ERROR("Failed to import dropped file '{}': {}.", sourcePath.filename().string(), ec.message())
+			OWL_CORE_ERROR("ContentBrowser: Cannot import the dropped file '{}': {}.", sourcePath.filename().string(),
+						   ec.message())
 		else
 			m_rescanRequested = true;
 	}

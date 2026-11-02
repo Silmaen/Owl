@@ -55,7 +55,7 @@ void BackgroundRenderer::init() {
 	OWL_PROFILE_FUNCTION()
 
 	if (g_data) {
-		OWL_CORE_WARN("BackgroundRenderer already initiated.")
+		OWL_CORE_WARN("BackgroundRenderer: Already initiated.")
 		g_data.reset();
 	}
 	g_data = mkShared<InternalData>();
@@ -87,7 +87,7 @@ void BackgroundRenderer::shutdown() {
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_data) {
-		OWL_CORE_WARN("BackgroundRenderer already shutdown.")
+		OWL_CORE_WARN("BackgroundRenderer: Already shut down.")
 		return;
 	}
 	g_data->drawData.reset();

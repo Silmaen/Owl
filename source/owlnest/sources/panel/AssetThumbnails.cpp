@@ -314,7 +314,7 @@ auto AssetThumbnails::startJob() -> bool {
 			const auto asset = renderer::MaterialAsset::load(path);
 			const auto sphere = viewer::makePreviewShape(viewer::PreviewShape::Sphere);
 			if (!asset || !sphere) {
-				OWL_WARN("AssetThumbnails: {} could not be loaded, it keeps its icon.", path.string())
+				OWL_WARN("AssetThumbnails: '{}' cannot be loaded, it keeps its icon.", path.string())
 				entry.failed = true;
 				continue;
 			}
@@ -331,7 +331,7 @@ auto AssetThumbnails::startJob() -> bool {
 		if (getKind(path) == Kind::Mesh) {
 			const auto loadedMesh = data::geometry::MeshLoader::loadMesh(path);
 			if (!loadedMesh.mesh) {
-				OWL_WARN("AssetThumbnails: {} could not be loaded, it keeps its icon.", path.string())
+				OWL_WARN("AssetThumbnails: '{}' cannot be loaded, it keeps its icon.", path.string())
 				entry.failed = true;
 				continue;
 			}
@@ -353,7 +353,7 @@ auto AssetThumbnails::startJob() -> bool {
 			ok = static_cast<bool>(scene::PrefabSerializer::instantiate(path, loaded));
 		}
 		if (!ok) {
-			OWL_WARN("AssetThumbnails: {} could not be loaded, it keeps its icon.", path.string())
+			OWL_WARN("AssetThumbnails: '{}' cannot be loaded, it keeps its icon.", path.string())
 			entry.failed = true;
 			continue;
 		}

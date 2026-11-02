@@ -75,7 +75,7 @@ auto installDesktopEntry(const DesktopEntry& iEntry) -> bool {
 	}
 	const auto path = desktopEntryPath(iEntry.appId);
 	if (!path.has_value()) {
-		OWL_CORE_WARN("DesktopEntry: No user data directory for {}.", iEntry.appId)
+		OWL_CORE_WARN("DesktopEntry: No user data directory for '{}'.", iEntry.appId)
 		return false;
 	}
 	const auto text = desktopEntryText(iEntry);
@@ -85,11 +85,11 @@ auto installDesktopEntry(const DesktopEntry& iEntry) -> bool {
 	std::filesystem::create_directories(path->parent_path(), errorCode);
 	std::ofstream file(*path, std::ios::binary | std::ios::trunc);
 	if (!file.good()) {
-		OWL_CORE_WARN("DesktopEntry: Cannot write {}.", path->string())
+		OWL_CORE_WARN("DesktopEntry: Cannot write '{}'.", path->string())
 		return false;
 	}
 	file << text;
-	OWL_CORE_INFO("DesktopEntry: Wrote {}.", path->string())
+	OWL_CORE_INFO("DesktopEntry: Wrote '{}'.", path->string())
 	return true;
 }
 

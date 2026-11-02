@@ -67,7 +67,7 @@ auto FrameRing::allocate(const VkDeviceSize iSize, const VkDeviceSize iAlignment
 	auto& block = blocks.emplace_back(createBlock(std::max({g_initialBlockSize, previous * 2, alignUp(iSize, 256)})));
 	active = blocks.size() - 1;
 	if (block.buffer.mapped == nullptr) {
-		OWL_CORE_ERROR("Vulkan FrameRing: failed to grow the frame ring for {} bytes.", iSize)
+		OWL_CORE_ERROR("Vulkan: Cannot grow the frame ring for {} bytes.", iSize)
 		return {};
 	}
 	block.used = iSize;

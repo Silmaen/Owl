@@ -128,7 +128,7 @@ auto readComponents(const tinygltf::Model& iModel, const int iAccessor, const bo
 	if (componentSize <= 0 || stride <= 0 || accessor.count == 0 ||
 		start + static_cast<size_t>(stride) * (accessor.count - 1) + N * static_cast<size_t>(componentSize) >
 				buffer.data.size()) {
-		OWL_CORE_WARN("MeshLoader::loadGltf: Accessor {} overflows its buffer, ignored.", iAccessor)
+		OWL_CORE_WARN("MeshLoader: glTF accessor {} overflows its buffer, ignored.", iAccessor)
 		return {};
 	}
 	std::vector<std::array<float, N>> values(accessor.count);
@@ -152,8 +152,7 @@ auto readComponents(const tinygltf::Model& iModel, const int iAccessor, const bo
 						break;
 					}
 				default:
-					OWL_CORE_WARN("MeshLoader::loadGltf: Accessor {} has an unsupported component type, ignored.",
-								  iAccessor)
+					OWL_CORE_WARN("MeshLoader: glTF accessor {} has an unsupported component type, ignored.", iAccessor)
 					return {};
 			}
 			values[i][c] = value;
@@ -194,14 +193,14 @@ auto importSkin(const tinygltf::Model& iModel, const std::string& iName) -> Skin
 	std::vector<int32_t> joints;
 	for (const int joint: skin.joints) {
 		if (joint < 0 || static_cast<size_t>(joint) >= iModel.nodes.size()) {
-			OWL_CORE_WARN("MeshLoader::loadGltf: Skin of {} names an unknown node, skin ignored.", iName)
+			OWL_CORE_WARN("MeshLoader: Skin of '{}' names an unknown node, skin ignored.", iName)
 			return result;
 		}
 		joints.push_back(joint);
 	}
 	if (joints.empty() || joints.size() > animation::Skeleton::g_maxBones) {
-		OWL_CORE_WARN("MeshLoader::loadGltf: Skin of {} has {} joints (1 to {} drawn), skin ignored.", iName,
-					  joints.size(), animation::Skeleton::g_maxBones)
+		OWL_CORE_WARN("MeshLoader: Skin of '{}' has {} joints (1 to {} drawn), skin ignored.", iName, joints.size(),
+					  animation::Skeleton::g_maxBones)
 		return result;
 	}
 	const auto parents = parentsOf(iModel);
@@ -225,7 +224,7 @@ auto importSkin(const tinygltf::Model& iModel, const std::string& iName) -> Skin
 	std::vector<size_t> order;
 	orderBones(joints, parentJoint, order);
 	if (order.size() != joints.size()) {
-		OWL_CORE_WARN("MeshLoader::loadGltf: Skin of {} is not a tree, skin ignored.", iName)
+		OWL_CORE_WARN("MeshLoader: Skin of '{}' is not a tree, skin ignored.", iName)
 		return result;
 	}
 	const auto inverseBinds = readComponents<16>(iModel, skin.inverseBindMatrices, false);
@@ -248,7 +247,7 @@ auto importSkin(const tinygltf::Model& iModel, const std::string& iName) -> Skin
 		different += same ? 0 : 1;
 	}
 	if (different > 0)
-		OWL_CORE_WARN("MeshLoader::loadGltf: {} has {} skins unlike the first one, only the first one is read.", iName,
+		OWL_CORE_WARN("MeshLoader: '{}' has {} skins unlike the first one, only the first one is read.", iName,
 					  different)
 	result.jointToBone.resize(joints.size());
 	for (size_t bone = 0; bone < order.size(); ++bone) result.jointToBone[order[bone]] = static_cast<uint16_t>(bone);
@@ -284,7 +283,7 @@ auto readPrimitiveSkin(const tinygltf::Model& iModel, const tinygltf::Primitive&
 		return found == iPrimitive.attributes.end() ? -1 : found->second;
 	};
 	if (attribute("JOINTS_1") >= 0)
-		OWL_CORE_WARN("MeshLoader::loadGltf: JOINTS_1 ignored, four joints per vertex at most.")
+		OWL_CORE_WARN("MeshLoader: glTF attribute JOINTS_1 ignored, four joints per vertex at most.")
 	const auto joints = readComponents<4>(iModel, attribute("JOINTS_0"), false);
 	const auto weights = readComponents<4>(iModel, attribute("WEIGHTS_0"), true);
 	const size_t count = std::min({iVertexCount, joints.size(), weights.size()});
@@ -363,7 +362,7 @@ auto importClips(const tinygltf::Model& iModel, const SkinImport& iSkin, const s
 			}
 		}
 		if (clip.tracks.empty()) {
-			OWL_CORE_WARN("MeshLoader::loadGltf: Animation {} of {} moves no bone, ignored.", clip.name, iName)
+			OWL_CORE_WARN("MeshLoader: Animation '{}' of '{}' moves no bone, ignored.", clip.name, iName)
 			continue;
 		}
 		clips.push_back(std::move(clip));

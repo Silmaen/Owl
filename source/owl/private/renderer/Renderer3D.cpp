@@ -340,7 +340,7 @@ void Renderer3D::init() {
 	OWL_PROFILE_FUNCTION()
 
 	if (g_Data) {
-		OWL_CORE_WARN("Renderer3D already initiated.")
+		OWL_CORE_WARN("Renderer3D: Already initiated.")
 		g_Data.reset();
 	}
 	g_Data = mkShared<InternalData>();
@@ -440,7 +440,7 @@ void Renderer3D::shutdown() {
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_Data) {
-		OWL_CORE_WARN("Renderer3D already shutdown.")
+		OWL_CORE_WARN("Renderer3D: Already shut down.")
 		return;
 	}
 	g_Data->sceneUniformBuffer.reset();

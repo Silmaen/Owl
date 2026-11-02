@@ -231,8 +231,7 @@ auto upgradeReferences(const CommandContext& /*iContext*/, const CommandArgs& /*
 		if (rewritten == text)
 			continue;
 		if (const auto written = platform::writeFileAtomic(file, rewritten); !written) {
-			OWL_WARN("asset.upgrade_references: Cannot write '{}': {}.", file.string(),
-					 platform::describe(written.error()))
+			OWL_WARN("Upgrade: Cannot write '{}': {}.", file.string(), platform::describe(written.error()))
 			++failed;
 			continue;
 		}

@@ -55,7 +55,7 @@ auto AssetImport::run(const std::string& iName, commands::CommandArgs iArgs) con
 	const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
 	const auto result = target.execute(iName, iArgs);
 	if (!result)
-		OWL_WARN("Import settings: {} failed: {}.", iName, result.error().message)
+		OWL_WARN("Import settings: '{}' failed: {}.", iName, result.error().message)
 	return result.has_value();
 }
 

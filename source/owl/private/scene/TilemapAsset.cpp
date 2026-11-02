@@ -95,7 +95,7 @@ auto readLayerHeader(const YAML::Node& iNode, const math::vec2ui& iGridSize) -> 
 auto readPayload(const YAML::Node& iRoot, const codec::TilemapFileParts& iParts, const uint32_t iVersion,
 				 TilemapAsset& ioParsed) -> bool {
 	if (!iRoot[g_payloadBytesKey]) {
-		OWL_CORE_ERROR("TilemapAsset: Header has no `{}` (truncated file).", g_payloadBytesKey)
+		OWL_CORE_ERROR("TilemapAsset: Header has no '{}' (truncated file).", g_payloadBytesKey)
 		return false;
 	}
 	const auto expected = iRoot[g_payloadBytesKey].as<uint64_t>();
@@ -125,13 +125,13 @@ auto parseHeader(const YAML::Node& iRoot, TilemapAsset& oParsed) -> bool {
 	if (iRoot["cellSize"])
 		oParsed.cellSize = iRoot["cellSize"].as<float>();
 	if (oParsed.width > TilemapAsset::maxGridSide || oParsed.height > TilemapAsset::maxGridSide) {
-		OWL_CORE_ERROR("TilemapAsset: Grid of {}×{} cells exceeds the {} cells side limit.", oParsed.width,
+		OWL_CORE_ERROR("TilemapAsset: Grid of {}x{} cells exceeds the {} cells side limit.", oParsed.width,
 					   oParsed.height, TilemapAsset::maxGridSide)
 		return false;
 	}
 	if (const auto layerNodes = iRoot["layers"]; layerNodes) {
 		if (!layerNodes.IsSequence()) {
-			OWL_CORE_ERROR("TilemapAsset: `layers` is not a sequence.")
+			OWL_CORE_ERROR("TilemapAsset: 'layers' is not a sequence.")
 			return false;
 		}
 		const math::vec2ui gridSize{oParsed.width, oParsed.height};
@@ -485,7 +485,7 @@ auto TilemapAsset::deserializeFromString(const std::string_view iText) -> bool {
 	try {
 		root = YAML::Load(std::string{parts.header});
 	} catch (const YAML::Exception& e) {
-		OWL_CORE_ERROR("TilemapAsset: failed to parse YAML — {}.", e.what())
+		OWL_CORE_ERROR("TilemapAsset: Failed to parse YAML: {}.", e.what())
 		return false;
 	}
 	if (!root || !root.IsMap() || !root["Tilemap"]) {
@@ -502,7 +502,7 @@ auto TilemapAsset::deserializeFromString(const std::string_view iText) -> bool {
 		if (!parseHeader(root, parsed))
 			return false;
 	} catch (const YAML::Exception& e) {
-		OWL_CORE_ERROR("TilemapAsset: Invalid header value — {}.", e.what())
+		OWL_CORE_ERROR("TilemapAsset: Invalid header value: {}.", e.what())
 		return false;
 	}
 	if (*version >= 2 && !readPayload(root, parts, *version, parsed))
@@ -523,7 +523,7 @@ auto TilemapAsset::saveToFile(const std::filesystem::path& iPath, const std::str
 auto TilemapAsset::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	std::ifstream in(iPath, std::ios::binary);
 	if (!in.is_open()) {
-		OWL_CORE_ERROR("TilemapAsset: failed to open '{}' for reading.", iPath.string())
+		OWL_CORE_ERROR("TilemapAsset: Failed to open '{}' for reading.", iPath.string())
 		return false;
 	}
 	std::stringstream buffer;

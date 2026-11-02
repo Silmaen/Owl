@@ -74,7 +74,7 @@ auto PackReader::tryOpen(const std::filesystem::path& iPackFile) -> owl::expecte
 			close();
 		return result;
 	} catch (const std::exception& e) {
-		OWL_CORE_ERROR("Pack: exception while opening '{}': {}.", iPackFile.string(), e.what())
+		OWL_CORE_ERROR("Pack: Exception while opening '{}': {}.", iPackFile.string(), e.what())
 		close();
 		return owl::unexpected{PackOpenError::UnexpectedException};
 	}
@@ -85,7 +85,7 @@ auto PackReader::openImpl(const std::filesystem::path& iPackFile) -> owl::expect
 
 	m_fileStream.open(iPackFile, std::ios::binary);
 	if (!m_fileStream.is_open()) {
-		OWL_CORE_WARN("Pack: cannot open '{}' for reading.", iPackFile.string())
+		OWL_CORE_ERROR("Pack: Cannot open '{}' for reading.", iPackFile.string())
 		return owl::unexpected{PackOpenError::CannotOpenFile};
 	}
 	m_fileStream.seekg(0, std::ios::end);
@@ -99,17 +99,17 @@ auto PackReader::openImpl(const std::filesystem::path& iPackFile) -> owl::expect
 
 	m_fileStream.read(reinterpret_cast<char*>(&m_header), sizeof(PackHeader));
 	if (!m_fileStream.good()) {
-		OWL_CORE_ERROR("Pack: short read on '{}' header.", iPackFile.string())
+		OWL_CORE_ERROR("Pack: Short read on the header of '{}'.", iPackFile.string())
 		return owl::unexpected{PackOpenError::ShortHeader};
 	}
 
 	if (m_header.magic != g_packMagic) {
-		OWL_CORE_ERROR("Pack: '{}' has invalid magic header.", iPackFile.string())
+		OWL_CORE_ERROR("Pack: '{}' has an invalid magic header.", iPackFile.string())
 		return owl::unexpected{PackOpenError::InvalidMagic};
 	}
 
 	if (m_header.version != g_packVersion) {
-		OWL_CORE_ERROR("Pack: '{}' has unsupported version {} (current {}).", iPackFile.string(), m_header.version,
+		OWL_CORE_ERROR("Pack: '{}' has an unsupported version {} (current {}).", iPackFile.string(), m_header.version,
 					   g_packVersion)
 		return owl::unexpected{PackOpenError::UnsupportedVersion};
 	}
@@ -175,18 +175,18 @@ auto PackReader::openImpl(const std::filesystem::path& iPackFile) -> owl::expect
 
 auto PackReader::validateEntry(const TocEntry& iEntry) const -> owl::expected<void, PackOpenError> {
 	if (!isSafeEntryPath(iEntry.path)) {
-		OWL_CORE_ERROR("Pack: entry path '{}' is absolute or escapes the pack root.", iEntry.path)
+		OWL_CORE_ERROR("Pack: Entry path '{}' is absolute or escapes the pack root.", iEntry.path)
 		return owl::unexpected{PackOpenError::UnsafeEntryPath};
 	}
 	if (static_cast<uint8_t>(iEntry.assetType) > static_cast<uint8_t>(AssetType::Script)) {
-		OWL_CORE_ERROR("Pack: entry '{}' has unknown asset type {}.", iEntry.path,
+		OWL_CORE_ERROR("Pack: Entry '{}' has an unknown asset type {}.", iEntry.path,
 					   static_cast<uint8_t>(iEntry.assetType))
 		return owl::unexpected{PackOpenError::InvalidEntry};
 	}
 	// The writer lays data blocks out between the header and the TOC.
 	if (iEntry.dataOffset < sizeof(PackHeader) || iEntry.dataOffset > m_header.tocOffset ||
 		iEntry.dataSize > m_header.tocOffset - iEntry.dataOffset) {
-		OWL_CORE_ERROR("Pack: entry '{}' ({} bytes at {}) lies outside the data area.", iEntry.path, iEntry.dataSize,
+		OWL_CORE_ERROR("Pack: Entry '{}' ({} bytes at {}) lies outside the data area.", iEntry.path, iEntry.dataSize,
 					   iEntry.dataOffset)
 		return owl::unexpected{PackOpenError::EntryOutOfBounds};
 	}
@@ -194,7 +194,7 @@ auto PackReader::validateEntry(const TocEntry& iEntry) const -> owl::expected<vo
 	const bool sizesConsistent =
 			compressed ? (iEntry.dataSize == 0) == (iEntry.originalSize == 0) : iEntry.dataSize == iEntry.originalSize;
 	if (iEntry.originalSize > g_maxEntrySize || !sizesConsistent) {
-		OWL_CORE_ERROR("Pack: entry '{}' has inconsistent sizes ({} stored, {} original).", iEntry.path,
+		OWL_CORE_ERROR("Pack: Entry '{}' has inconsistent sizes ({} stored, {} original).", iEntry.path,
 					   iEntry.dataSize, iEntry.originalSize)
 		return owl::unexpected{PackOpenError::EntrySizeInvalid};
 	}
@@ -240,7 +240,7 @@ auto PackReader::readEntry(const std::string& iPath) const -> std::optional<std:
 			readSize = static_cast<uint64_t>(m_fileStream.gcount());
 		}
 		if (readSize != entry->dataSize) {
-			OWL_CORE_WARN("Pack: short read on entry '{}'.", iPath)
+			OWL_CORE_ERROR("Pack: Short read on entry '{}'.", iPath)
 			return std::nullopt;
 		}
 
@@ -253,12 +253,12 @@ auto PackReader::readEntry(const std::string& iPath) const -> std::optional<std:
 			return std::vector<uint8_t>{};
 		auto data = decompressBuffer(block, entry->originalSize);
 		if (data.empty()) {
-			OWL_CORE_WARN("Pack: decompression failed on entry '{}'.", iPath)
+			OWL_CORE_ERROR("Pack: Decompression failed on entry '{}'.", iPath)
 			return std::nullopt;
 		}
 		return data;
 	} catch (const std::exception& e) {
-		OWL_CORE_ERROR("Pack: exception while reading entry '{}': {}.", iPath, e.what())
+		OWL_CORE_ERROR("Pack: Exception while reading entry '{}': {}.", iPath, e.what())
 		return std::nullopt;
 	}
 }

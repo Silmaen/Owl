@@ -39,13 +39,13 @@ auto loadSlangSource(const std::string& iShaderName, const std::string& iRendere
 	const auto sourcePath =
 			Renderer::getTextureLibrary().find(relative.generic_string()).value_or(std::filesystem::path{});
 	if (sourcePath.empty()) {
-		OWL_CORE_ERROR("Vulkan compute shader: source not found for '{}' / '{}'.", iRenderer, iShaderName)
+		OWL_CORE_ERROR("Vulkan: No compute shader source for '{}/{}'.", iRenderer, iShaderName)
 		return {};
 	}
 	// Expanded like the graphics shaders and the bake: the includes resolved, the cache key of the same text.
 	auto source = renderer::utils::readShaderSource(sourcePath);
 	if (source.empty()) {
-		OWL_CORE_ERROR("Vulkan compute shader: cannot open '{}'.", sourcePath.string())
+		OWL_CORE_ERROR("Vulkan: Cannot open the compute shader '{}'.", sourcePath.string())
 		return {};
 	}
 	return source;
@@ -76,7 +76,7 @@ auto reflectBindings(const std::vector<uint32_t>& iSpirv) -> ReflectedBindings {
 ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& iRenderer)
 	: m_name{iShaderName + "@" + iRenderer} {
 	if (internal::VulkanHandler::get().getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_WARN("Vulkan compute shader: VulkanHandler not running for '{}'.", m_name)
+		OWL_CORE_WARN("Vulkan: The VulkanHandler is not running, compute shader '{}' not created.", m_name)
 		return;
 	}
 	const std::string source = loadSlangSource(iShaderName, iRenderer);
@@ -85,12 +85,12 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 	const auto compiled = renderer::utils::loadOrCompileSpirv(source, iShaderName, iRenderer, /*iForVulkan=*/true,
 															  {ShaderType::Compute});
 	if (!compiled.has_value()) {
-		OWL_CORE_ERROR("Vulkan compute shader: Slang compilation failed for '{}'.", m_name)
+		OWL_CORE_ERROR("Vulkan: Slang compilation of the compute shader '{}' failed.", m_name)
 		return;
 	}
 	const auto it = compiled->stages.find(ShaderType::Compute);
 	if (it == compiled->stages.end() || it->second.empty()) {
-		OWL_CORE_ERROR("Vulkan compute shader: no `computeMain` entry point in '{}'.", m_name)
+		OWL_CORE_ERROR("Vulkan: The compute shader '{}' has no 'computeMain' entry point.", m_name)
 		return;
 	}
 	const auto& spirv = it->second;
@@ -108,7 +108,7 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 	layoutInfo.setLayoutCount = 1;
 	layoutInfo.pSetLayouts = &m_descriptorLayout;
 	if (vkCreatePipelineLayout(device, &layoutInfo, nullptr, &m_layout) != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan compute shader: failed to create pipeline layout for '{}'.", m_name)
+		OWL_CORE_ERROR("Vulkan: Cannot create the pipeline layout of compute shader '{}'.", m_name)
 		return;
 	}
 
@@ -120,7 +120,7 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 										  ? &again->stages.at(ShaderType::Compute)
 										  : nullptr;
 		if (retry == nullptr || createPipeline(*retry).has_value()) {
-			OWL_CORE_ERROR("Vulkan compute shader: {} for '{}'.", *problem, m_name)
+			OWL_CORE_ERROR("Vulkan: {} for compute shader '{}'.", *problem, m_name)
 			return;
 		}
 	}
@@ -209,7 +209,7 @@ void ComputeShader::buildDescriptorSetLayout(const std::vector<uint32_t>& iBindi
 	info.pBindings = layoutBindings.empty() ? nullptr : layoutBindings.data();
 	auto* const device = internal::VulkanCore::get().getLogicalDevice();
 	if (vkCreateDescriptorSetLayout(device, &info, nullptr, &m_descriptorLayout) != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan compute shader: failed to create descriptor set layout for '{}'.", m_name)
+		OWL_CORE_ERROR("Vulkan: Cannot create the descriptor set layout of compute shader '{}'.", m_name)
 		m_descriptorLayout = nullptr;
 	}
 }
@@ -219,7 +219,7 @@ void ComputeShader::bindStorageBuffer(const uint32_t iBinding, const shared<rend
 		return;
 	const auto* vkBuf = dynamic_cast<const StorageBuffer*>(iBuffer.get());
 	if (vkBuf == nullptr) {
-		OWL_CORE_WARN("Vulkan compute shader: bindStorageBuffer with non-Vulkan SSBO on '{}'.", m_name)
+		OWL_CORE_WARN_ONCE("Vulkan: bindStorageBuffer called with a non-Vulkan SSBO on compute shader '{}'.", m_name)
 		return;
 	}
 	for (auto& [binding, buffer]: m_bound) {
@@ -235,7 +235,7 @@ void ComputeShader::bindTexture(const uint32_t iBinding, const shared<renderer::
 	if (!m_ready || !iTexture)
 		return;
 	if (dynamic_cast<const Texture2D*>(iTexture.get()) == nullptr) {
-		OWL_CORE_WARN("Vulkan compute shader: bindTexture with a non-Vulkan texture on '{}'.", m_name)
+		OWL_CORE_WARN_ONCE("Vulkan: bindTexture called with a non-Vulkan texture on compute shader '{}'.", m_name)
 		return;
 	}
 	for (auto& [binding, texture]: m_boundTextures) {

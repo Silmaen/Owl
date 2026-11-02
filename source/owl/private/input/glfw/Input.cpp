@@ -106,7 +106,7 @@ auto Input::getGamepadName_impl(const std::size_t iPad) -> std::string {
 
 auto Input::addGamepadMappings_impl(const std::string_view iMappings) -> bool {
 	if (getApplicationWindow() == nullptr) {
-		OWL_CORE_WARN("GLFW: No window, GLFW not initialised: gamepad mappings ignored.")
+		OWL_CORE_WARN("Input: No window, GLFW is not initialized, gamepad mappings ignored.")
 		return false;
 	}
 	const std::string text{iMappings};

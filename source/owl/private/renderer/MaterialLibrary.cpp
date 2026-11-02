@@ -66,7 +66,7 @@ auto MaterialLibrary::resolve(const std::filesystem::path& iAssetPath, const uin
 	auto [text, file] = readMaterialText(iAssetPath);
 	entry.file = std::move(file);
 	if (text.empty()) {
-		OWL_CORE_WARN("MaterialLibrary: {} not found.", key)
+		OWL_CORE_WARN("MaterialLibrary: '{}' not found.", key)
 		return m_entries[key] = std::move(entry);
 	}
 	entry.asset = MaterialAsset::fromYaml(text);
@@ -77,7 +77,7 @@ auto MaterialLibrary::resolve(const std::filesystem::path& iAssetPath, const uin
 		values = entry.asset->values;
 	} else {
 		if (iDepth >= g_maxParentDepth) {
-			OWL_CORE_WARN("MaterialLibrary: {} has a parent chain too long or cyclic.", key)
+			OWL_CORE_WARN("MaterialLibrary: '{}' has a parent chain too long or cyclic.", key)
 			return m_entries[key] = std::move(entry);
 		}
 		const auto parentKey = entry.asset->parent.generic_string();
@@ -85,7 +85,7 @@ auto MaterialLibrary::resolve(const std::filesystem::path& iAssetPath, const uin
 		m_entries[key] = Entry{};
 		const Entry& parent = resolve(entry.asset->parent, iDepth + 1);
 		if (!parent.material) {
-			OWL_CORE_WARN("MaterialLibrary: {} has no usable parent {}.", key, parentKey)
+			OWL_CORE_WARN("MaterialLibrary: '{}' has no usable parent '{}'.", key, parentKey)
 			return m_entries[key] = std::move(entry);
 		}
 		values = parent.material->getParameters();
@@ -118,7 +118,7 @@ auto MaterialLibrary::invalidate(const std::filesystem::path& iFile) -> uint32_t
 	}
 	for (const auto& key: dropped) m_entries.erase(key);
 	++m_generation;
-	OWL_CORE_INFO("MaterialLibrary: {} reloads ({} materials).", changed, dropped.size())
+	OWL_CORE_DEBUG("MaterialLibrary: '{}' reloads ({} materials).", changed, dropped.size())
 	return static_cast<uint32_t>(dropped.size());
 }
 

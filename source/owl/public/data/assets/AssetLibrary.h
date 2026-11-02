@@ -101,14 +101,14 @@ public:
 	 */
 	auto load(const std::string& iName) -> shared<DataType> {
 		if (exists(iName)) {
-			OWL_CORE_DEBUG("AssetLibrary::load({}) already exists!", iName)
+			OWL_CORE_DEBUG("AssetLibrary: '{}' already loaded.", iName)
 			return m_assets.at(iName).get();
 		}
 		shared<DataType> asset = nullptr;
 		if (!DataType::extension().empty()) {
 			auto assetFile = find(iName);
 			if (!assetFile.has_value()) {
-				OWL_CORE_WARN("AssetLibrary::load({}) does not exist in asset folders!", iName)
+				OWL_CORE_WARN("AssetLibrary: '{}' not found in the asset folders.", iName)
 				return nullptr;
 			}
 			asset = DataType::create(assetFile.value());
@@ -116,10 +116,10 @@ public:
 			asset = DataType::create(DataType::stringToSpecification(iName));
 		}
 		if (asset == nullptr) {
-			OWL_CORE_WARN("AssetLibrary::load({}) could not load asset!", iName)
+			OWL_CORE_WARN("AssetLibrary: Cannot load '{}'.", iName)
 			return nullptr;
 		}
-		OWL_CORE_TRACE("Asset {} Added.", iName)
+		OWL_CORE_TRACE("AssetLibrary: '{}' added.", iName)
 		add(iName, asset);
 		return asset;
 	}
@@ -133,21 +133,21 @@ public:
 	 */
 	auto load(const std::string& iName, const std::filesystem::path& iFile) -> shared<DataType> {
 		if (exists(iName)) {
-			OWL_CORE_DEBUG("AssetLibrary::load({}, {}) already exists!", iName, iFile.string())
+			OWL_CORE_DEBUG("AssetLibrary: '{}' already loaded, '{}' not read.", iName, iFile.string())
 			return m_assets.at(iName).get();
 		}
 		if (!DataType::extension().empty()) {
 			if (!std::filesystem::exists(iFile)) {
-				OWL_CORE_WARN("AssetLibrary::load({}, {}) file does not exist!", iName, iFile.string())
+				OWL_CORE_WARN("AssetLibrary: '{}' not loaded, file '{}' does not exist.", iName, iFile.string())
 				return nullptr;
 			}
 		}
 		auto asset = DataType::create(iFile);
 		if (asset == nullptr) {
-			OWL_CORE_WARN("AssetLibrary::load({}, {}) could not load asset!", iName, iFile.string())
+			OWL_CORE_WARN("AssetLibrary: Cannot load '{}' from '{}'.", iName, iFile.string())
 			return nullptr;
 		}
-		OWL_CORE_TRACE("Asset {} Added.", iName)
+		OWL_CORE_TRACE("AssetLibrary: '{}' added.", iName)
 		add(iName, asset);
 		return asset;
 	}
@@ -161,15 +161,15 @@ public:
 	 */
 	auto load(const std::string& iName, const DataType::Specification& iSpec) -> shared<DataType> {
 		if (exists(iName)) {
-			OWL_CORE_DEBUG("AssetLibrary::load({}, <Specification>) already exists!", iName)
+			OWL_CORE_DEBUG("AssetLibrary: '{}' already loaded.", iName)
 			return m_assets[iName].get();
 		}
 		auto asset = DataType::create(iSpec);
 		if (asset == nullptr) {
-			OWL_CORE_WARN("AssetLibrary::load({}, <Specification>) could not load asset!", iName)
+			OWL_CORE_WARN("AssetLibrary: Cannot load '{}' from its specification.", iName)
 			return nullptr;
 		}
-		OWL_CORE_TRACE("Asset {} Added.", iName)
+		OWL_CORE_TRACE("AssetLibrary: '{}' added.", iName)
 		add(iName, asset);
 		return asset;
 	}
@@ -182,7 +182,7 @@ public:
 	 */
 	auto get(const std::string& iName) -> shared<DataType> {
 		if (!exists(iName)) {
-			OWL_CORE_ERROR("Asset {} not found in library.", iName)
+			OWL_CORE_ERROR("AssetLibrary: Asset '{}' not found in the library.", iName)
 			return nullptr;
 		}
 		return m_assets.at(iName).get();

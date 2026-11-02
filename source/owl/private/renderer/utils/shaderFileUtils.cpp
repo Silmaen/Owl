@@ -54,7 +54,8 @@ void createCacheDirectoryIfNeeded(const std::string& iRenderer, const std::strin
 		!exists(cacheDirectory)) {
 		create_directories(cacheDirectory);
 		if (!exists(cacheDirectory))
-			OWL_CORE_WARN("Shader cache: Cannot create {}, the shaders are not cached.", cacheDirectory.string())
+			OWL_CORE_WARN("Shader: Cannot create the cache directory '{}', the shaders are not cached.",
+						  cacheDirectory.string())
 	}
 }
 
@@ -131,25 +132,25 @@ auto writeCachedShader(const std::filesystem::path& iFile, const std::vector<uin
 		g_inMemoryShaderCache.insert_or_assign(iFile.generic_string(), iData);
 		return true;
 	}
-	OWL_CORE_WARN("Cannot open file {} for writing.", iFile.string())
+	OWL_CORE_WARN("Shader: Cannot open '{}' for writing.", iFile.string())
 	return false;
 }
 
 auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
 				   const gpu::ShaderType iStage, const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData {
 	ShaderReflectionData result;
-	OWL_CORE_TRACE("gpu::Shader reflect - {0} : <assets>/{1}.", magic_enum::enum_name(iStage),
+	OWL_CORE_TRACE("Shader: Reflecting the {0} stage of '<assets>/{1}'.", magic_enum::enum_name(iStage),
 				   renderer::utils::getRelativeShaderPath(iShaderName, iRenderer, iRendererApi, iStage).string())
 	if (iShaderData.empty())
 		return result;
 	const spirv_cross::Compiler compiler(iShaderData);
 	const spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-	OWL_CORE_TRACE("    {} sampled images.", resources.sampled_images.size())
+	OWL_CORE_TRACE("Shader: {} sampled images.", resources.sampled_images.size())
 	for (const auto& resource: resources.uniform_buffers) {
 		const auto& bufferType = compiler.get_type(resource.base_type_id);
 		const auto binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 		const auto size = compiler.get_declared_struct_size(bufferType);
-		OWL_CORE_TRACE("  Uniform buffer: {} Size={} Binding={} Members={}.", resource.name, size, binding,
+		OWL_CORE_TRACE("Shader: Uniform buffer '{}' size={} binding={} members={}.", resource.name, size, binding,
 					   bufferType.member_types.size())
 		result.uniformBuffers.push_back({.name = resource.name,
 										 .binding = binding,
@@ -160,7 +161,7 @@ auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer,
 		const auto binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 		const auto& type = compiler.get_type(resource.type_id);
 		const uint32_t descriptorCount = type.array.empty() ? 1 : type.array[0];
-		OWL_CORE_TRACE("  Sampled image: {} Binding={} Count={}.", resource.name, binding, descriptorCount)
+		OWL_CORE_TRACE("Shader: Sampled image '{}' binding={} count={}.", resource.name, binding, descriptorCount)
 		result.sampledImages.push_back({.name = resource.name, .binding = binding, .descriptorCount = descriptorCount});
 	}
 	return result;
@@ -212,7 +213,7 @@ auto crossCompileToGlsl(const std::vector<uint32_t>& iSpirv, const std::string& 
 	OWL_PROFILE_FUNCTION()
 
 	if (iSpirv.empty()) {
-		OWL_CORE_ERROR("Shader {}: Empty SPIR-V, no GLSL to generate.", iName)
+		OWL_CORE_ERROR("Shader: '{}' has an empty SPIR-V, no GLSL to generate.", iName)
 		return std::nullopt;
 	}
 	std::string glsl;
@@ -229,7 +230,7 @@ auto crossCompileToGlsl(const std::vector<uint32_t>& iSpirv, const std::string& 
 			compiler.set_name(buffer.base_type_id, std::format("{}_block", compiler.get_name(buffer.id)));
 		glsl = compiler.compile();
 	} catch (const std::exception& iEx) {
-		OWL_CORE_ERROR("Shader {}: SPIR-V to GLSL translation failed ({}).", iName, iEx.what())
+		OWL_CORE_ERROR("Shader: SPIR-V to GLSL translation of '{}' failed ({}).", iName, iEx.what())
 		return std::nullopt;
 	}
 	// NonUniformResourceIndex maps to GL_NV_gpu_shader5; GL drivers without it index sampler arrays natively.
@@ -269,7 +270,7 @@ auto getOrCreateGlobalSession() -> Slang::ComPtr<slang::IGlobalSession> {
 	static Slang::ComPtr<slang::IGlobalSession> session;
 	if (session == nullptr) {
 		if (SLANG_FAILED(slang::createGlobalSession(session.writeRef()))) {
-			OWL_CORE_ERROR("Slang: Failed to create global session.")
+			OWL_CORE_ERROR("Slang: Cannot create the global session.")
 			return nullptr;
 		}
 	}
@@ -368,7 +369,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 	sessionDesc.preprocessorMacroCount = 1;
 	Slang::ComPtr<slang::ISession> session;
 	if (SLANG_FAILED(globalSession->createSession(sessionDesc, session.writeRef()))) {
-		OWL_CORE_ERROR("Slang: Failed to create session for module '{}'.", iModuleName)
+		OWL_CORE_ERROR("Slang: Cannot create a session for module '{}'.", iModuleName)
 		return result;
 	}
 
@@ -378,7 +379,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 	if (module == nullptr) {
 		if (diagnosticBlob != nullptr)
 
-			OWL_CORE_ERROR("Slang: Module load failed for '{}': {}.", iModuleName,
+			OWL_CORE_ERROR("Slang: Loading module '{}' failed: {}.", iModuleName,
 						   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
 		return result;
 	}
@@ -409,7 +410,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 		Slang::ComPtr<slang::IComponentType> composedProgram;
 		if (SLANG_FAILED(session->createCompositeComponentType(components, 2, composedProgram.writeRef(),
 															   diagnosticBlob.writeRef()))) {
-			OWL_CORE_ERROR("Slang: Failed to compose program for entry point '{}' in module '{}'.", name, iModuleName)
+			OWL_CORE_ERROR("Slang: Cannot compose the program of entry point '{}' in module '{}'.", name, iModuleName)
 			return result;
 		}
 
@@ -417,7 +418,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 		if (SLANG_FAILED(composedProgram->link(linkedProgram.writeRef(), diagnosticBlob.writeRef()))) {
 			if (diagnosticBlob != nullptr)
 
-				OWL_CORE_ERROR("Slang: Linking failed for '{}': {}.", name,
+				OWL_CORE_ERROR("Slang: Linking of '{}' failed: {}.", name,
 							   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
 			return result;
 		}
@@ -426,7 +427,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 		if (SLANG_FAILED(linkedProgram->getEntryPointCode(0, 0, spirvBlob.writeRef(), diagnosticBlob.writeRef()))) {
 			if (diagnosticBlob != nullptr)
 
-				OWL_CORE_ERROR("Slang: Code generation failed for '{}': {}.", name,
+				OWL_CORE_ERROR("Slang: Code generation of '{}' failed: {}.", name,
 							   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
 			return result;
 		}
@@ -584,7 +585,7 @@ auto compileAndCache(const std::string& iSource, const std::string& iShaderName,
 	const std::string api = iForVulkan ? "vulkan" : "opengl";
 	auto compiled = compileSlangToSpirv(iSource, iShaderName, iForVulkan);
 	if (!compiled.success) {
-		OWL_CORE_ERROR("Slang compilation failed for shader {}/{} ({}).", iRenderer, iShaderName, api)
+		OWL_CORE_ERROR("Slang: Compilation of shader '{}/{}' ({}) failed.", iRenderer, iShaderName, api)
 		return std::nullopt;
 	}
 	if (app::Application::instanced()) {
@@ -593,7 +594,7 @@ auto compileAndCache(const std::string& iSource, const std::string& iShaderName,
 		for (const auto& [stage, data]: compiled.spirvData) {
 			const auto cachedPath = getShaderCachedPath(iShaderName, iRenderer, api, stage);
 			if (!writeCachedShader(cachedPath, data))
-				OWL_CORE_WARN("Failed to write the compiled shader {}.", cachedPath.string())
+				OWL_CORE_WARN("Shader: Cannot write the compiled shader '{}'.", cachedPath.string())
 			writeShaderHash(cachedPath, cacheKey);
 		}
 	}
@@ -623,11 +624,11 @@ auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderNa
 			}
 		}
 		if (stages.error().kind == StoredProblem::Kind::Damaged) {
-			OWL_CORE_WARN("Shader {}/{} ({}): stored SPIR-V rejected, {}.", iRenderer, iShaderName, api,
+			OWL_CORE_WARN("Shader: Stored SPIR-V of '{}/{}' ({}) rejected, {}.", iRenderer, iShaderName, api,
 						  stages.error().reason)
 			damaged = true;
 		} else if (stages.error().kind == StoredProblem::Kind::Outdated) {
-			OWL_CORE_DEBUG("Shader {}/{} ({}): stored SPIR-V outdated, {}.", iRenderer, iShaderName, api,
+			OWL_CORE_DEBUG("Shader: Stored SPIR-V of '{}/{}' ({}) outdated, {}.", iRenderer, iShaderName, api,
 						   stages.error().reason)
 		}
 		return std::nullopt;
@@ -641,7 +642,7 @@ auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderNa
 					},
 					true);
 			loaded.has_value()) {
-			OWL_CORE_TRACE("Using cached {} shader {}/{}.", api, iRenderer, iShaderName)
+			OWL_CORE_TRACE("Shader: Using the cached {} shader '{}/{}'.", api, iRenderer, iShaderName)
 			return loaded;
 		}
 	}
@@ -652,7 +653,8 @@ auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderNa
 					},
 					false);
 			loaded.has_value()) {
-			OWL_CORE_TRACE("Using precompiled {} shader {}/{} from the pack.", api, iRenderer, iShaderName)
+			OWL_CORE_TRACE("Shader: Using the precompiled {} shader '{}/{}' from the pack.", api, iRenderer,
+						   iShaderName)
 			return loaded;
 		}
 	}
@@ -664,19 +666,20 @@ auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderNa
 					},
 					false);
 			loaded.has_value()) {
-			OWL_CORE_TRACE("Using precompiled {} shader {}/{} from {}.", api, iRenderer, iShaderName, folder.string())
+			OWL_CORE_TRACE("Shader: Using the precompiled {} shader '{}/{}' from '{}'.", api, iRenderer, iShaderName,
+						   folder.string())
 			return loaded;
 		}
 	}
 	if (!damaged) {
-		OWL_CORE_DEBUG("Compiling Slang shader {}/{} for {}.", iRenderer, iShaderName, api)
+		OWL_CORE_DEBUG("Slang: Compiling shader '{}/{}' for {}.", iRenderer, iShaderName, api)
 		return compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
 	}
-	OWL_CORE_WARN("Shader {}/{} ({}): no usable stored SPIR-V, recompiling from the Slang source.", iRenderer,
+	OWL_CORE_WARN("Shader: No usable stored SPIR-V for '{}/{}' ({}), recompiling from the Slang source.", iRenderer,
 				  iShaderName, api)
 	auto loaded = compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
 	if (loaded.has_value())
-		OWL_CORE_INFO("Shader {}/{} ({}): recompiled, the cache now holds the new SPIR-V.", iRenderer, iShaderName, api)
+		OWL_CORE_DEBUG("Shader: '{}/{}' ({}) recompiled, the cache holds the new SPIR-V.", iRenderer, iShaderName, api)
 	return loaded;
 }
 
@@ -687,15 +690,15 @@ auto recompileSpirv(const std::string& iSource, const std::string& iShaderName, 
 
 	const std::string api = iForVulkan ? "vulkan" : "opengl";
 	if (iOrigin.empty()) {
-		OWL_CORE_ERROR("Shader {}/{} ({}): SPIR-V just compiled from the Slang source rejected, {}.", iRenderer,
+		OWL_CORE_ERROR("Shader: SPIR-V of '{}/{}' ({}) just compiled from the Slang source rejected, {}.", iRenderer,
 					   iShaderName, api, iReason)
 		return std::nullopt;
 	}
-	OWL_CORE_WARN("Shader {}/{} ({}): stored SPIR-V from {} rejected, {}; recompiling from the Slang source.",
+	OWL_CORE_WARN("Shader: Stored SPIR-V of '{}/{}' ({}) from '{}' rejected, {}; recompiling from the Slang source.",
 				  iRenderer, iShaderName, api, iOrigin.string(), iReason)
 	auto loaded = compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
 	if (loaded.has_value())
-		OWL_CORE_INFO("Shader {}/{} ({}): recompiled, the cache now holds the new SPIR-V.", iRenderer, iShaderName, api)
+		OWL_CORE_DEBUG("Shader: '{}/{}' ({}) recompiled, the cache holds the new SPIR-V.", iRenderer, iShaderName, api)
 	return loaded;
 }
 

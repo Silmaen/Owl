@@ -305,7 +305,7 @@ void addExecPermission(const std::filesystem::path& iFile) {
 										 std::filesystem::perms::others_exec,
 								 std::filesystem::perm_options::add, ec);
 	if (ec)
-		OWL_CORE_WARN("GameExporter: Cannot set exec permissions on {}: {}.", iFile.string(), ec.message())
+		OWL_CORE_WARN("GameExporter: Cannot set the exec permissions of '{}': {}.", iFile.string(), ec.message())
 }
 #endif
 
@@ -323,7 +323,7 @@ void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem:
 		std::filesystem::remove(dest, copyEc);
 		std::filesystem::copy(entry.path(), dest, std::filesystem::copy_options::copy_symlinks, copyEc);
 		if (copyEc)
-			OWL_CORE_WARN("GameExporter: Cannot copy {}: {}.", entry.path().string(), copyEc.message())
+			OWL_CORE_WARN("GameExporter: Cannot copy '{}': {}.", entry.path().string(), copyEc.message())
 	}
 }
 
@@ -608,7 +608,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 			writer.addData(std::vector<uint8_t>(exported.begin(), exported.end()),
 						   std::string{localisation::Localisation::fileName}, AssetType::Other);
 		} else {
-			OWL_CORE_WARN("GameExporter: {} cannot be read, not packed.", localisationPath.string())
+			OWL_CORE_WARN("GameExporter: '{}' cannot be read, not packed.", localisationPath.string())
 		}
 	}
 	std::string mappingsEntry;
@@ -646,7 +646,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		std::filesystem::create_directories(iconDst.parent_path(), ec);
 		std::filesystem::copy_file(*iconSrc, iconDst, std::filesystem::copy_options::overwrite_existing, ec);
 		if (ec)
-			OWL_CORE_WARN("GameExporter: Cannot copy icon {}: {}.", iconSrc->string(), ec.message())
+			OWL_CORE_WARN("GameExporter: Cannot copy icon '{}': {}.", iconSrc->string(), ec.message())
 		else
 			iconEntry = iconOf(iSettings);
 	} else {
@@ -679,13 +679,13 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 #endif
 #ifdef OWL_PLATFORM_WINDOWS
 	if (!createZipArchive(result.gameDirectory, result.gameDirectory.parent_path() / (baseName + ".zip")))
-		OWL_CORE_WARN("GameExporter: Cannot create the zip archive of {}.", result.gameDirectory.string())
+		OWL_CORE_WARN("GameExporter: Cannot create the zip archive of '{}'.", result.gameDirectory.string())
 #endif
 	std::error_code sizeEc;
 	result.packBytes = std::filesystem::file_size(result.packFile, sizeEc);
 	report(iProgress, 1.f, "Done.");
 	const auto seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - startTime).count();
-	OWL_CORE_INFO("GameExporter: Exported {} ({} assets, {:.2f} MiB) to {} in {:.1f}s.", iSettings.gameName,
+	OWL_CORE_INFO("GameExporter: Exported '{}' ({} assets, {:.2f} MiB) to '{}' in {:.1f} s.", iSettings.gameName,
 				  result.assetCount, static_cast<double>(result.packBytes) / (1024.0 * 1024.0),
 				  result.gameDirectory.string(), seconds)
 	return result;

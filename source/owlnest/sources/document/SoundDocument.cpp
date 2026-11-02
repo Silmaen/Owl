@@ -198,7 +198,7 @@ void SoundDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {}
 auto SoundDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	auto loaded = sound::SoundCue::load(iPath);
 	if (!loaded) {
-		OWL_CORE_WARN("SoundDocument: {} is not a sound cue.", iPath.string())
+		OWL_CORE_WARN("SoundDocument: '{}' is not a sound cue.", iPath.string())
 		return false;
 	}
 	m_cue = std::move(*loaded);
@@ -292,7 +292,7 @@ void SoundDocument::runCommand(const std::string_view iName, commands::CommandAr
 
 void SoundDocument::sendCommand(const std::string_view iName, commands::CommandArgs iArgs) const {
 	if (mp_editorLayer == nullptr) {
-		OWL_WARN("SoundDocument: {} ignored, no editor to run it.", iName)
+		OWL_WARN("SoundDocument: '{}' ignored, no editor to run it.", iName)
 		return;
 	}
 	iArgs.set("path", m_path.generic_string());
@@ -345,7 +345,7 @@ auto SoundDocument::setProperties(const sound::SoundCue& iCue, const bool iMerge
 
 auto SoundDocument::addVariant(const std::string& iFile) -> bool {
 	if (iFile.empty() || !isAudioFile(iFile)) {
-		OWL_CORE_WARN("SoundDocument: {} is not an audio file.", iFile)
+		OWL_CORE_WARN("SoundDocument: '{}' is not an audio file.", iFile)
 		return false;
 	}
 	auto next = m_cue;
@@ -364,7 +364,7 @@ auto SoundDocument::setVariant(const size_t iIndex, const sound::SoundVariant& i
 		return false;
 	}
 	if (!iVariant.file.empty() && !isAudioFile(iVariant.file)) {
-		OWL_CORE_WARN("SoundDocument: {} is not an audio file.", iVariant.file)
+		OWL_CORE_WARN("SoundDocument: '{}' is not an audio file.", iVariant.file)
 		return false;
 	}
 	auto next = m_cue;

@@ -93,12 +93,12 @@ auto Scene::getSocketNames(const Entity& iOwner) const -> std::vector<std::strin
 auto Scene::attachToSocket(const Entity& iEntity, const Entity& iOwner, const std::string& iSocket) -> bool {
 	if (!iEntity || !iOwner || iEntity == iOwner ||
 		isInSubtree(static_cast<entt::entity>(iOwner), static_cast<entt::entity>(iEntity))) {
-		OWL_CORE_WARN("Scene: Cannot attach an entity to the socket {} of itself or of a child.", iSocket)
+		OWL_CORE_WARN("Scene: Cannot attach an entity to the socket '{}' of itself or of a child.", iSocket)
 		return false;
 	}
 	const auto socket = getSocketTransform(iOwner, iSocket);
 	if (!socket) {
-		OWL_CORE_WARN("Scene: Entity {} has no socket {}.", iOwner.getName(), iSocket)
+		OWL_CORE_WARN("Scene: Entity '{}' has no socket '{}'.", iOwner.getName(), iSocket)
 		return false;
 	}
 	if (iEntity.getComponent<component::Hierarchy>().parentId != iOwner.getUUID())

@@ -29,7 +29,7 @@ namespace owl::nest {
 namespace {
 
 auto failure(const session::SessionError iError, std::string iMessage) -> unexpected<session::SessionFailure> {
-	OWL_WARN("EditorSession: {}.", iMessage)
+	OWL_WARN("EditorSession: Failed, {}.", iMessage)
 	return unexpected<session::SessionFailure>{
 			session::SessionFailure{.error = iError, .message = std::move(iMessage)}};
 }

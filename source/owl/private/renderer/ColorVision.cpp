@@ -140,7 +140,7 @@ void ColorVision::init() {
 	OWL_PROFILE_FUNCTION()
 
 	if (g_data) {
-		OWL_CORE_WARN("ColorVision already initiated.")
+		OWL_CORE_WARN("ColorVision: Already initiated.")
 		g_data.reset();
 	}
 	g_data = mkShared<InternalData>();
@@ -170,7 +170,7 @@ void ColorVision::shutdown() {
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_data) {
-		OWL_CORE_WARN("ColorVision already shutdown.")
+		OWL_CORE_WARN("ColorVision: Already shut down.")
 		return;
 	}
 	g_data->drawData.reset();

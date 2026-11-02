@@ -57,7 +57,7 @@ auto cookMesh(const AssetMeta& iMeta, const std::span<const uint8_t> iSource, co
 	const auto loaded = geometry::MeshLoader::loadMeshFromMemory(iSource, name.extension().string(), std::string{iName},
 																 name.parent_path());
 	if (!loaded.mesh || loaded.mesh->getTriangleCount() == 0) {
-		OWL_CORE_WARN("Cook: Mesh {} cannot be read.", iName)
+		OWL_CORE_WARN("Cook: Mesh '{}' cannot be read.", iName)
 		return unexpected{CookError::InvalidSource};
 	}
 	const auto lods = geometry::buildMeshLods(loaded, {.levelCount = iMeta.mesh.lods,

@@ -29,7 +29,9 @@ between runs.
   holding a voxel world, in Edit.
 - The **Log** follows the new messages; scrolling up stops it, scrolling back to the bottom or the follow button
   resumes it. Its right click copies a line or every shown message; **Select text** shows them as plain text to select
-  and copy with `Ctrl+C`.
+  and copy with `Ctrl+C`. The level list of its toolbar (also **Settings > Log**) sets the lowest level recorded:
+  **Default** is Info in a release build and Debug in a debug build; a message below it is never written, to the panel
+  or to the log file. The level chips only filter what the panel shows.
 
 ## The ribbon
 

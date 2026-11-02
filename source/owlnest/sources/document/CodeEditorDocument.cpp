@@ -253,7 +253,7 @@ auto CodeEditorDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 		return false;
 	std::ofstream fileOut(iPath, std::ios::binary);
 	if (!fileOut.is_open()) {
-		OWL_CORE_ERROR("CodeEditor: failed to write '{}'.", iPath.string())
+		OWL_CORE_ERROR("CodeEditor: Failed to write '{}'.", iPath.string())
 		return false;
 	}
 	const auto txt = mp_editor->GetText();
@@ -274,7 +274,7 @@ auto CodeEditorDocument::loadFromFile(const std::filesystem::path& iPath) -> boo
 		return false;
 	std::ifstream fileIn(iPath, std::ios::binary);
 	if (!fileIn.is_open()) {
-		OWL_CORE_ERROR("CodeEditor: failed to open '{}'.", iPath.string())
+		OWL_CORE_ERROR("CodeEditor: Failed to open '{}'.", iPath.string())
 		return false;
 	}
 	std::stringstream buffer;

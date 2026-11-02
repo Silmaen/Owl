@@ -16,7 +16,7 @@ void PackWriter::addFile(const std::filesystem::path& iSourceFile, const std::st
 						 const AssetType iType) {
 	std::ifstream file(iSourceFile, std::ios::binary | std::ios::ate);
 	if (!file.is_open()) {
-		OWL_CORE_WARN("Pack: addFile cannot open '{}' (skipping).", iSourceFile.string())
+		OWL_CORE_WARN("Pack: Cannot open '{}', file skipped.", iSourceFile.string())
 		return;
 	}
 	const auto size = static_cast<size_t>(file.tellg());
@@ -24,7 +24,7 @@ void PackWriter::addFile(const std::filesystem::path& iSourceFile, const std::st
 	std::vector<uint8_t> data(size);
 	file.read(reinterpret_cast<char*>(data.data()), static_cast<std::streamsize>(size));
 	if (!file.good() && !file.eof()) {
-		OWL_CORE_WARN("Pack: addFile read failure on '{}' (skipping).", iSourceFile.string())
+		OWL_CORE_WARN("Pack: Cannot read '{}', file skipped.", iSourceFile.string())
 		return;
 	}
 	m_entries.push_back({iPackPath, std::move(data), iType});
@@ -38,18 +38,18 @@ auto PackWriter::write(const std::filesystem::path& iOutputFile, const PackFlags
 					   const ProgressCallback& iProgress, const CancelCheck& iCancelCheck) const -> bool {
 	for (const auto& entry: m_entries) {
 		if (!isSafeEntryPath(entry.packPath)) {
-			OWL_CORE_ERROR("Pack: entry path '{}' is absolute or escapes the pack root.", entry.packPath)
+			OWL_CORE_ERROR("Pack: Entry path '{}' is absolute or escapes the pack root.", entry.packPath)
 			return false;
 		}
 		if (entry.rawData.size() > g_maxEntrySize) {
-			OWL_CORE_ERROR("Pack: entry '{}' is {} bytes (limit {}).", entry.packPath, entry.rawData.size(),
+			OWL_CORE_ERROR("Pack: Entry '{}' is {} bytes (limit {}).", entry.packPath, entry.rawData.size(),
 						   g_maxEntrySize)
 			return false;
 		}
 	}
 	std::ofstream file(iOutputFile, std::ios::binary);
 	if (!file.is_open()) {
-		OWL_CORE_ERROR("Pack: cannot open '{}' for writing.", iOutputFile.string())
+		OWL_CORE_ERROR("Pack: Cannot open '{}' for writing.", iOutputFile.string())
 		return false;
 	}
 
@@ -84,7 +84,7 @@ auto PackWriter::write(const std::filesystem::path& iOutputFile, const PackFlags
 
 		auto block = compress ? compressBuffer(entry.rawData) : entry.rawData;
 		if (compress && block.empty() && !entry.rawData.empty()) {
-			OWL_CORE_ERROR("Pack: compression failed on entry '{}' ({} bytes).", entry.packPath, entry.rawData.size())
+			OWL_CORE_ERROR("Pack: Compression failed on entry '{}' ({} bytes).", entry.packPath, entry.rawData.size())
 			return false;
 		}
 

@@ -81,7 +81,7 @@ auto stackFromYaml(const YAML::Node& iNode) -> RendererStackConfig {
 	std::unordered_set<std::string> seenNames;
 	for (const auto& item: iNode) {
 		if (!item.IsMap()) {
-			OWL_CORE_WARN("RendererStackConfig: skipping non-map entry.")
+			OWL_CORE_WARN("RendererStackConfig: Non-map entry skipped.")
 			continue;
 		}
 		RendererStackEntry entry;
@@ -90,11 +90,11 @@ auto stackFromYaml(const YAML::Node& iNode) -> RendererStackConfig {
 		if (const auto n = item["Name"]; n && n.IsScalar())
 			entry.name = n.as<std::string>();
 		if (entry.typeKey.empty() || entry.name.empty()) {
-			OWL_CORE_WARN("RendererStackConfig: skipping entry with missing Type/Name.")
+			OWL_CORE_WARN("RendererStackConfig: Entry with a missing Type or Name skipped.")
 			continue;
 		}
 		if (!seenNames.insert(entry.name).second) {
-			OWL_CORE_WARN("RendererStackConfig: duplicate name '{}' — keeping first.", entry.name)
+			OWL_CORE_WARN("RendererStackConfig: Duplicate name '{}', the first entry is kept.", entry.name)
 			continue;
 		}
 		entry.defaultConfig = dumpYamlText(item["DefaultConfig"]);
@@ -205,8 +205,8 @@ auto RenderStack::buildFromConfig(const RendererStackConfig& iProject, const Ena
 			return;
 		auto layer = RenderLayerFactory::create(iProjectEntry.typeKey, iProjectEntry.name);
 		if (layer == nullptr) {
-			OWL_CORE_ERROR("RenderStack: failed to create layer '{}' (type '{}'), skipped.", iProjectEntry.name,
-						   iProjectEntry.typeKey)
+			OWL_CORE_WARN("RenderStack: Cannot create layer '{}' (type '{}'), skipped.", iProjectEntry.name,
+						  iProjectEntry.typeKey)
 			return;
 		}
 		YAML::Node merged = parseYamlText(iProjectEntry.defaultConfig);
@@ -223,7 +223,7 @@ auto RenderStack::buildFromConfig(const RendererStackConfig& iProject, const Ena
 			continue;// duplicate name in scene listing — first wins.
 		const auto* projectEntry = findProject(sceneEntry.name);
 		if (projectEntry == nullptr) {
-			OWL_CORE_WARN("RenderStack: scene references unknown layer '{}' — skipped.", sceneEntry.name)
+			OWL_CORE_WARN("RenderStack: The scene references unknown layer '{}', skipped.", sceneEntry.name)
 			continue;
 		}
 		emit(*projectEntry, &sceneEntry);

@@ -47,7 +47,7 @@ void GraphContext::waitIdle() {
 	const auto& vkh = internal::VulkanCore::get();
 	if (vkh.getLogicalDevice() == nullptr)
 		return;
-	OWL_CORE_TRACE("GraphContext Wait for Idle.")
+	OWL_CORE_TRACE("Vulkan: Waiting for the device to be idle.")
 	internal::FrameProfiler::get().deviceWaitIdle(vkh.getLogicalDevice());
 }
 

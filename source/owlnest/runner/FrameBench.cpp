@@ -282,7 +282,7 @@ void FrameBench::start() {
 		meshing.async = false;
 		renderer::RendererVoxel::setMeshingConfig(meshing);
 	}
-	OWL_INFO("FrameBench: {} on {} ({}, present {}), {} warm-up + {} measured frames.",
+	OWL_INFO("FrameBench: '{}' on {} ({}, present {}), {} warm-up and {} measured frames.",
 			 m_options.scene.filename().string(), backendName(m_options.backend), m_device, m_presentMode,
 			 m_options.warmup, m_options.frames)
 }
@@ -368,9 +368,9 @@ auto FrameBench::finish(const bool iInterrupted) -> int {
 		std::ofstream file(m_options.out);
 		if (file.good()) {
 			file << toJson();
-			OWL_INFO("FrameBench: Report written to {}.", m_options.out.string())
+			OWL_INFO("FrameBench: Report written to '{}'.", m_options.out.string())
 		} else {
-			OWL_ERROR("FrameBench: Cannot write the report {}.", m_options.out.string())
+			OWL_ERROR("FrameBench: Cannot write the report '{}'.", m_options.out.string())
 			code = 5;
 		}
 	}

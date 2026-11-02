@@ -27,19 +27,19 @@ namespace {
 									  [[maybe_unused]] int iLength, const char* iMessage, const void* iUserParam) {
 	switch (iSeverity) {
 		case GL_DEBUG_SEVERITY_HIGH:
-			OWL_CORE_ERROR("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
+			OWL_CORE_ERROR("OpenGL: {}({})-{}: {} ({})", iSource, iType, iId, iMessage, iUserParam)
 			return;
 		case GL_DEBUG_SEVERITY_MEDIUM:
-			OWL_CORE_WARN("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
+			OWL_CORE_WARN("OpenGL: {}({})-{}: {} ({})", iSource, iType, iId, iMessage, iUserParam)
 			return;
 		case GL_DEBUG_SEVERITY_LOW:
-			OWL_CORE_DEBUG("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
+			OWL_CORE_DEBUG("OpenGL: {}({})-{}: {} ({})", iSource, iType, iId, iMessage, iUserParam)
 			return;
 		case GL_DEBUG_SEVERITY_NOTIFICATION:
-			OWL_CORE_TRACE("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
+			OWL_CORE_TRACE("OpenGL: {}({})-{}: {} ({})", iSource, iType, iId, iMessage, iUserParam)
 			return;
 		default:
-			OWL_CORE_TRACE("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
+			OWL_CORE_TRACE("OpenGL: {}({})-{}: {} ({})", iSource, iType, iId, iMessage, iUserParam)
 	}
 
 	OWL_CORE_ASSERT(false, "Unknown severity level!")
@@ -52,8 +52,7 @@ void RenderAPI::init() {
 	auto [major, minor] = app::Application::get().getWindow().getGraphContext()->getVersion();
 	if (const bool goodVersion = major > 4 || (major == 4 && minor >= 5); !goodVersion) {
 		setState(State::Error);
-		OWL_CORE_ERROR("Owl Engine OpenGL Renderer requires at least OpenGL version 4.5 but version {}.{} found.",
-					   major, minor)
+		OWL_CORE_ERROR("OpenGL: The renderer needs OpenGL 4.5 or later, version {}.{} found.", major, minor)
 	}
 
 	if (getState() != State::Created)
@@ -222,7 +221,7 @@ void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData,
 	const auto* cmdSsbo = dynamic_cast<const StorageBuffer*>(iCommandBuffer.get());
 	const auto* countSsbo = dynamic_cast<const StorageBuffer*>(iCountBuffer.get());
 	if (cmdSsbo == nullptr || countSsbo == nullptr || cmdSsbo->getHandle() == 0 || countSsbo->getHandle() == 0) {
-		OWL_CORE_WARN_ONCE("OpenGL: drawIndexedIndirect with non-OpenGL or empty SSBOs.")
+		OWL_CORE_WARN_ONCE("OpenGL: drawIndexedIndirect called with non-OpenGL or empty SSBOs.")
 		return;
 	}
 	if (glad_glMultiDrawElementsIndirectCount == nullptr) {
@@ -245,7 +244,7 @@ void RenderAPI::drawIndexedIndirectAt(const shared<DrawData>& iData,
 		return;
 	const auto* cmdSsbo = dynamic_cast<const StorageBuffer*>(iCommandBuffer.get());
 	if (cmdSsbo == nullptr || cmdSsbo->getHandle() == 0) {
-		OWL_CORE_WARN_ONCE("OpenGL: drawIndexedIndirectAt with a non-OpenGL or empty SSBO.")
+		OWL_CORE_WARN_ONCE("OpenGL: drawIndexedIndirectAt called with a non-OpenGL or empty SSBO.")
 		return;
 	}
 	const auto mode = prepareDraw(iData);
@@ -278,7 +277,7 @@ void RenderAPI::setGpuTimestampsEnabled(const bool iEnabled) {
 		return;
 	}
 	if (!hasGpuTimestamps()) {
-		OWL_CORE_WARN("OpenGL: GPU timestamps not supported by the context.")
+		OWL_CORE_WARN("OpenGL: GPU timestamps are not supported by the context.")
 		return;
 	}
 	if (!m_queriesCreated) {

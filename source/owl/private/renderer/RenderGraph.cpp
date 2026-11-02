@@ -84,7 +84,7 @@ auto RenderGraph::PassContext::getTexture(const Resource iResource, const uint32
 		-> shared<gpu::Texture2D> {
 	auto* const framebuffer = getFramebuffer(iResource);
 	if (framebuffer == nullptr) {
-		OWL_CORE_WARN("RenderGraph: No framebuffer to sample for target {}.", iResource.index)
+		OWL_CORE_WARN_ONCE("RenderGraph: No framebuffer to sample for target {}.", iResource.index)
 		return nullptr;
 	}
 	return framebuffer->getAttachmentTexture(iAttachment);
@@ -150,13 +150,13 @@ auto RenderGraph::compile() -> bool {
 	scratch.written.assign(targetCount, 0);
 	for (const auto& pass: std::span{m_passes}.first(passCount)) {
 		if (!pass.write.isValid() || pass.write.index >= targetCount) {
-			OWL_CORE_WARN("RenderGraph: Pass '{}' writes no target.", pass.name)
+			OWL_CORE_WARN_ONCE("RenderGraph: Pass '{}' writes no target.", pass.name)
 			return false;
 		}
 		for (const uint32_t read: pass.reads) {
 			if (read >= targetCount || read == pass.write.index ||
 				(scratch.written[read] == 0 && !m_targets[read].imported)) {
-				OWL_CORE_WARN("RenderGraph: Pass '{}' reads a target no earlier pass writes.", pass.name)
+				OWL_CORE_WARN_ONCE("RenderGraph: Pass '{}' reads a target no earlier pass writes.", pass.name)
 				return false;
 			}
 		}
@@ -315,7 +315,7 @@ auto RenderGraph::acquire(const TargetFormat iFormat, const math::vec2ui& iSize)
 			 .swapChainTarget = false,
 			 .debugName = toName(iFormat)});
 	if (framebuffer == nullptr) {
-		OWL_CORE_ERROR("RenderGraph: Failed to create a transient target.")
+		OWL_CORE_ERROR_ONCE("RenderGraph: Cannot create a transient target.")
 		return nullptr;
 	}
 	m_pool.push_back({.framebuffer = std::move(framebuffer), .format = iFormat, .used = true, .idleRuns = 0});

@@ -37,7 +37,7 @@ auto RenderAPI::create(const Type& iType) -> uniq<RenderAPI> {
 #endif
 	}
 
-	OWL_CORE_ERROR("Unknown RendererAPI!")
+	OWL_CORE_ERROR("RenderAPI: Unknown render API type.")
 	return nullptr;
 }
 

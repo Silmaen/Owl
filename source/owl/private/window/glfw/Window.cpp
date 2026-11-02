@@ -53,7 +53,7 @@ void glfwErrorCallback(int iError, const char* iDescription) {
 		OWL_CORE_DEBUG("GLFW: Feature unavailable on this platform ({}).", iDescription)
 		return;
 	}
-	OWL_CORE_ERROR("GLFW Error ({}): {}.", iError, iDescription)
+	OWL_CORE_ERROR("GLFW: Error {}: {}.", iError, iDescription)
 }
 
 [[nodiscard]] auto toGlfwPlatform(const Platform iPlatform) -> int {
@@ -109,7 +109,7 @@ auto initGlfw(const Platform iRequested) -> bool {
 	hintWaylandDecorations(iRequested);
 	bool success = glfwInit() == GLFW_TRUE;
 	if (!success && hint != GLFW_ANY_PLATFORM) {
-		OWL_CORE_WARN("GLFW: Could not initialise the {} platform, falling back to auto.", platformName(iRequested))
+		OWL_CORE_WARN("GLFW: Cannot initialise the {} platform, falling back to auto.", platformName(iRequested))
 		glfwInitHint(GLFW_PLATFORM, GLFW_ANY_PLATFORM);
 		success = glfwInit() == GLFW_TRUE;
 	}
@@ -152,11 +152,11 @@ void Window::init(const Properties& iProps) {
 		m_windowData.title = iProps.title;
 		m_windowData.size = {iProps.width, iProps.height};
 
-		OWL_CORE_DEBUG("Creating window {} ({}, {}).", iProps.title, iProps.width, iProps.height)
+		OWL_CORE_DEBUG("GLFW: Creating window '{}' ({}x{}).", iProps.title, iProps.width, iProps.height)
 
 		if (g_GlfwWindowCount == 0) {
 			if (!initGlfw(iProps.platform)) {
-				OWL_CORE_ERROR("GLFW: Could not initialise any platform (no display?).")
+				OWL_CORE_ERROR("GLFW: Cannot initialise any platform (no display?).")
 				return;
 			}
 			OWL_CORE_DEBUG("GLFW: Using the {} platform (requested {}).", platformName(getPlatform()),
@@ -171,7 +171,7 @@ void Window::init(const Properties& iProps) {
 		const auto api = renderer::gpu::RenderCommand::getApi();
 		if (api == renderer::gpu::RenderAPI::Type::Vulkan) {
 			if (glfwVulkanSupported() == GLFW_FALSE) {
-				OWL_CORE_ERROR("No Vulkan support for glfw.")
+				OWL_CORE_ERROR("GLFW: No Vulkan support.")
 				return;
 			}
 		}
@@ -195,7 +195,7 @@ void Window::init(const Properties& iProps) {
 		}
 		++g_GlfwWindowCount;
 		const auto scale = getContentScale();
-		OWL_CORE_DEBUG("GLFW: Window created, app id {}, content scale {}x{}.", m_appId, scale.x(), scale.y())
+		OWL_CORE_DEBUG("GLFW: Window created, app id '{}', content scale {}x{}.", m_appId, scale.x(), scale.y())
 	}
 	initIcon(iProps);
 	// Graph context
@@ -331,7 +331,7 @@ void Window::initIcon(const Properties& iProps) {
 	std::error_code errorCode;
 	const auto executable = std::filesystem::read_symlink("/proc/self/exe", errorCode);
 	if (errorCode) {
-		OWL_CORE_WARN("GLFW: Cannot resolve the executable path, no desktop entry for {}.", m_appId)
+		OWL_CORE_WARN("GLFW: Cannot resolve the executable path, no desktop entry for '{}'.", m_appId)
 		return;
 	}
 	platform::installDesktopEntry({.appId = m_appId,
@@ -402,7 +402,7 @@ void Window::setIcon(const std::filesystem::path& iIconPath) {
 	if (getPlatform() == Platform::Wayland)
 		return;// Wayland compositor picks the icon from a .desktop file, not the app.
 	if (!exists(iIconPath)) {
-		OWL_CORE_WARN("Window icon not found: {}.", iIconPath.string())
+		OWL_CORE_WARN("GLFW: Window icon '{}' not found.", iIconPath.string())
 		return;
 	}
 	GLFWimage icon;
@@ -412,7 +412,7 @@ void Window::setIcon(const std::filesystem::path& iIconPath) {
 		glfwSetWindowIcon(mp_glfwWindow, 1, &icon);
 		stbi_image_free(icon.pixels);
 	} else {
-		OWL_CORE_WARN("Failed to load window icon: {}.", iIconPath.string())
+		OWL_CORE_WARN("GLFW: Cannot load the window icon '{}'.", iIconPath.string())
 	}
 }
 

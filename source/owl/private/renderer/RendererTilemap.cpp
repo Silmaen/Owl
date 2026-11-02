@@ -362,7 +362,7 @@ void RendererTilemap::init() {
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	g_state->drawUbo = gpu::UniformBuffer::create(sizeof(DrawUbo), 0, g_rendererKey);
 	g_state->initialized = true;
-	OWL_CORE_DEBUG("RendererTilemap: pipeline ready ({}² cells per chunk).", TilemapLayer::chunkSize)
+	OWL_CORE_DEBUG("RendererTilemap: Pipeline ready ({}² cells per chunk).", TilemapLayer::chunkSize)
 }
 
 void RendererTilemap::shutdown() {
@@ -428,7 +428,7 @@ void RendererTilemap::flushPending() {
 	for (const auto& pending: g_state->pending) {
 		if (const auto [atlas, opacity] = slotsFor(*pending.asset->tileset);
 			atlas < 0 || (opacity < 0 && pending.asset->tileset->opacityTexture))
-			OWL_CORE_FRAME_TRACE("RendererTilemap: more than {} distinct tilesets in one batch.", g_maxTextureSlots)
+			OWL_CORE_FRAME_TRACE("RendererTilemap: More than {} distinct tilesets in one batch.", g_maxTextureSlots)
 	}
 	gpu::RenderCommand::bindTextures(g_state->textureSlots);
 	if (const auto& lighting = utils::getLighting2DState();

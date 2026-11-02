@@ -113,7 +113,7 @@ auto TilemapDocument::save() -> bool {
 auto TilemapDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 	const auto displayName = iPath.stem().string();
 	if (!m_asset.saveToFile(iPath, displayName)) {
-		OWL_CORE_ERROR("TilemapDocument: failed to write '{}'.", iPath.string())
+		OWL_CORE_ERROR("TilemapDocument: Failed to write '{}'.", iPath.string())
 		return false;
 	}
 	m_path = iPath;
@@ -125,7 +125,7 @@ auto TilemapDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 
 auto TilemapDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	if (!m_asset.loadFromFile(iPath)) {
-		OWL_CORE_ERROR("TilemapDocument: failed to load '{}'.", iPath.string())
+		OWL_CORE_ERROR("TilemapDocument: Failed to load '{}'.", iPath.string())
 		return false;
 	}
 	m_path = iPath;

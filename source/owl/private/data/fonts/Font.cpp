@@ -217,17 +217,17 @@ Font::Font(std::filesystem::path iPath, const bool iIsDefault, FontSettings iSet
 	OWL_SCOPE_UNTRACK
 	const auto fontBytes = data::assets::readAssetBytes(m_path);
 	if (!fontBytes || fontBytes->empty()) {
-		OWL_CORE_ERROR("Font: Font file {} does not exist.", m_path.string())
+		OWL_CORE_ERROR("Font: Font file '{}' does not exist.", m_path.string())
 		return;
 	}
 	msdfgen::FreetypeHandle* ft = msdfgen::initializeFreetype();
 	if (ft == nullptr) {
-		OWL_CORE_ERROR("Font: Failed to initialize Freetype library.")
+		OWL_CORE_ERROR("Font: Failed to initialize the FreeType library.")
 		return;
 	}
 	msdfgen::FontHandle* font = loadFontData(ft, fontBytes->data(), static_cast<int>(fontBytes->size()));
 	if (font == nullptr) {
-		OWL_CORE_ERROR("Font: Failed to load font: {}.", m_path.string())
+		OWL_CORE_ERROR("Font: Failed to load font '{}'.", m_path.string())
 		deinitializeFreetype(ft);
 		return;
 	}
@@ -242,8 +242,7 @@ Font::Font(std::filesystem::path iPath, const bool iIsDefault, FontSettings iSet
 	const int glyphsLoaded = m_data->fontGeometry.loadCharset(font, fontScale, charset);
 	destroyFont(font);
 	deinitializeFreetype(ft);
-	OWL_CORE_DEBUG("Font {}: Loaded {} glyphs from font (out of {}).", m_path.stem().string(), glyphsLoaded,
-				   charset.size())
+	OWL_CORE_DEBUG("Font: '{}' has {} glyphs loaded out of {}.", m_path.stem().string(), glyphsLoaded, charset.size())
 
 	msdf_atlas::TightAtlasPacker atlasPacker;
 	atlasPacker.setPixelRange(g_pixelRange);
@@ -251,7 +250,7 @@ Font::Font(std::filesystem::path iPath, const bool iIsDefault, FontSettings iSet
 	atlasPacker.setScale(g_emSize);
 	if (const int remaining = atlasPacker.pack(m_data->glyphs.data(), static_cast<int>(m_data->glyphs.size()));
 		remaining != 0) {
-		OWL_CORE_WARN("Font: Failed packing {} glyphs of {}.", remaining, m_path.string())
+		OWL_CORE_WARN("Font: Failed to pack {} glyphs of '{}'.", remaining, m_path.string())
 	}
 	int width = 0;
 	int height = 0;
@@ -269,7 +268,8 @@ Font::Font(std::filesystem::path iPath, const bool iIsDefault, FontSettings iSet
 	if (!bitmap) {
 		bitmap = generateAtlas(m_data->glyphs, size);
 		if (fromPack)
-			OWL_CORE_WARN("Font {}: Atlas not baked in the pack, generated at start. Fix: pack the game again.", stem)
+			OWL_CORE_WARN("Font: Atlas of '{}' not baked in the pack, generated at start. Fix: pack the game again.",
+						  stem)
 		else
 			writeCachedAtlas(m_atlasCacheFile, stem, key, *bitmap);
 	}

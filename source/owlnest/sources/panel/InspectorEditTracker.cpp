@@ -60,7 +60,7 @@ auto componentFields(const std::string& iComponentYaml, const std::string& iComp
 		out << YAML::Flow << fields;
 		return out.c_str();
 	} catch (const YAML::Exception& iEx) {
-		OWL_WARN("Inspector: Component {} does not read back ({}).", iComponentKey, iEx.what())
+		OWL_WARN("Inspector: Component '{}' does not read back ({}).", iComponentKey, iEx.what())
 		return {};
 	}
 }
@@ -179,7 +179,7 @@ void InspectorEditTracker::commit(const std::string& iComponentKey, ComponentSta
 												{"values", values},
 												{"replace", true}});
 	if (!result) {
-		OWL_WARN("Inspector: Edit of {} not recorded ({}).", ioState.name, result.error().message)
+		OWL_WARN("Inspector: Edit of '{}' not recorded ({}).", ioState.name, result.error().message)
 		std::ignore = scene::SceneSerializer::applyEntityFromString(entity, afterYaml);
 	}
 }

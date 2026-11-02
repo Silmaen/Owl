@@ -81,25 +81,25 @@ auto decompressBuffer(const std::vector<uint8_t>& iCompressed, const uint64_t iO
 	if (iCompressed.empty() || iOriginalSize == 0)
 		return {};
 	if (iOriginalSize > g_maxEntrySize) {
-		OWL_CORE_WARN("Pack: refusing to decompress {} bytes (limit {}).", iOriginalSize, g_maxEntrySize)
+		OWL_CORE_WARN("Pack: Refusing to decompress {} bytes (limit {}).", iOriginalSize, g_maxEntrySize)
 		return {};
 	}
 	const auto frameSize = ZSTD_getFrameContentSize(iCompressed.data(), iCompressed.size());
 	if (frameSize == ZSTD_CONTENTSIZE_ERROR) {
-		OWL_CORE_WARN("Pack: block is not a zstd frame.")
+		OWL_CORE_WARN("Pack: The block is not a zstd frame.")
 		return {};
 	}
 	try {
 		if (frameSize != ZSTD_CONTENTSIZE_UNKNOWN) {
 			if (frameSize != iOriginalSize) {
-				OWL_CORE_WARN("Pack: zstd frame holds {} bytes, {} declared.", frameSize, iOriginalSize)
+				OWL_CORE_WARN("Pack: The zstd frame holds {} bytes, {} declared.", frameSize, iOriginalSize)
 				return {};
 			}
 			std::vector<uint8_t> decompressed(iOriginalSize);
 			const auto result =
 					ZSTD_decompress(decompressed.data(), decompressed.size(), iCompressed.data(), iCompressed.size());
 			if ((ZSTD_isError(result) != 0u) || result != iOriginalSize) {
-				OWL_CORE_WARN("Pack: zstd decompression failed.")
+				OWL_CORE_WARN("Pack: The zstd decompression failed.")
 				return {};
 			}
 			return decompressed;
@@ -107,7 +107,7 @@ auto decompressBuffer(const std::vector<uint8_t>& iCompressed, const uint64_t iO
 		// Frame without a recorded size: stream it so the output only grows with the bytes really produced.
 		const uniq<ZSTD_DStream, decltype(&ZSTD_freeDStream)> stream(ZSTD_createDStream(), &ZSTD_freeDStream);
 		if (stream == nullptr) {
-			OWL_CORE_WARN("Pack: cannot create a zstd stream.")
+			OWL_CORE_WARN("Pack: Cannot create a zstd stream.")
 			return {};
 		}
 		std::vector<uint8_t> decompressed(std::min<uint64_t>(iOriginalSize, ZSTD_DStreamOutSize()));
@@ -117,7 +117,7 @@ auto decompressBuffer(const std::vector<uint8_t>& iCompressed, const uint64_t iO
 		while (pending != 0) {
 			if (output.pos == output.size) {
 				if (output.size == iOriginalSize) {
-					OWL_CORE_WARN("Pack: zstd frame exceeds its declared {} bytes.", iOriginalSize)
+					OWL_CORE_WARN("Pack: The zstd frame exceeds its declared {} bytes.", iOriginalSize)
 					return {};
 				}
 				decompressed.resize(std::min<uint64_t>(iOriginalSize, decompressed.size() * 2));
@@ -126,21 +126,21 @@ auto decompressBuffer(const std::vector<uint8_t>& iCompressed, const uint64_t iO
 			}
 			pending = ZSTD_decompressStream(stream.get(), &output, &input);
 			if (ZSTD_isError(pending) != 0u) {
-				OWL_CORE_WARN("Pack: zstd stream decompression failed.")
+				OWL_CORE_WARN("Pack: The zstd stream decompression failed.")
 				return {};
 			}
 			if (pending != 0 && input.pos == input.size && output.pos < output.size) {
-				OWL_CORE_WARN("Pack: truncated zstd frame.")
+				OWL_CORE_WARN("Pack: The zstd frame is truncated.")
 				return {};
 			}
 		}
 		if (output.pos != iOriginalSize || input.pos != input.size) {
-			OWL_CORE_WARN("Pack: zstd frame holds {} bytes, {} declared.", output.pos, iOriginalSize)
+			OWL_CORE_WARN("Pack: The zstd frame holds {} bytes, {} declared.", output.pos, iOriginalSize)
 			return {};
 		}
 		return decompressed;
 	} catch (const std::bad_alloc&) {
-		OWL_CORE_WARN("Pack: out of memory decompressing {} bytes.", iOriginalSize)
+		OWL_CORE_WARN("Pack: Out of memory decompressing {} bytes.", iOriginalSize)
 		return {};
 	}
 }

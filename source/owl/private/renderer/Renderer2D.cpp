@@ -411,7 +411,7 @@ void Renderer2D::init() {
 	OWL_PROFILE_FUNCTION()
 
 	if (g_Data) {
-		OWL_CORE_WARN("Renderer2D already initiated.")
+		OWL_CORE_WARN("Renderer2D: Already initiated.")
 		g_Data.reset();
 	}
 	g_Data = mkShared<utils::InternalData>();
@@ -530,7 +530,7 @@ void Renderer2D::shutdown() {
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_Data) {
-		OWL_CORE_WARN("Renderer2D already shutdown.")
+		OWL_CORE_WARN("Renderer2D: Already shut down.")
 		return;
 	}
 
@@ -767,7 +767,8 @@ void Renderer2D::drawRect(const RectData& iRectData) {
 
 void Renderer2D::drawPolyLine(const PolyLineData& iLineData) {
 	if (iLineData.points.size() < 2) {
-		OWL_CORE_WARN("Too few points in the multiline with ID {}.", iLineData.entityId)
+		OWL_CORE_WARN_ONCE("Renderer2D: The polyline of entity {} has fewer than two points, not drawn.",
+						   iLineData.entityId)
 		return;
 	}
 	const math::mat4 trans = iLineData.transform();
@@ -840,7 +841,7 @@ void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 
 void Renderer2D::drawString(const StringData& iStringData) {
 	if (iStringData.font == nullptr) {
-		OWL_CORE_ERROR("Renderer2D::drawString: Font not set.")
+		OWL_CORE_ERROR_ONCE("Renderer2D: drawString called without a font.")
 		return;
 	}
 

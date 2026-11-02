@@ -233,7 +233,7 @@ void Viewport::attach() {
 }
 
 void Viewport::detach() {
-	OWL_DEBUG("Viewport: framebuffer freed.")
+	OWL_DEBUG("Viewport: Framebuffer released.")
 	m_framebuffer.reset();
 	m_previewFramebuffer.reset();
 }
@@ -1075,7 +1075,7 @@ void Viewport::renderCameraModels(const shared<scene::Scene>& iScene) const {
 		}
 		m_cameraModelMissing = !m_cameraModel;
 		if (m_cameraModelMissing)
-			OWL_WARN("Viewport: meshes/camera.glb not found in the editor assets, cameras show their frustum only.")
+			OWL_WARN("Viewport: 'meshes/camera.glb' not found in the editor assets, cameras show their frustum only.")
 	}
 	if (!m_upTriangle) {
 		const std::array<renderer::Mesh3DVertex, 3> vertices{

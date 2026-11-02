@@ -149,3 +149,14 @@ TEST(Log, debugMacrosReachTheBuffer) {
 	EXPECT_EQ(lastEntry().message, "Client debug 2.");
 	Log::invalidate();
 }
+
+TEST(Log, onceMacrosLogTheFirstTimeOnly) {
+	Log::init(Log::Level::Trace);
+	Log::getLogBuffer().clear();
+	for (int i = 0; i < 3; ++i) OWL_CORE_WARN_ONCE("Once {}.", i)
+	const auto entries = Log::getLogBuffer().getEntries();
+	ASSERT_EQ(entries.size(), 1u);
+	EXPECT_EQ(entries.front().message, "Once 0.");
+	EXPECT_EQ(entries.front().level, Log::Level::Warning);
+	Log::invalidate();
+}

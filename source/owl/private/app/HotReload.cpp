@@ -50,10 +50,10 @@ void HotReload::setEnabled(const bool iEnabled) {
 		return;
 	if (iEnabled) {
 		m_watcher.start();
-		OWL_CORE_DEBUG("Hot reload: Watching {} asset directories.", m_watcher.getDirectories().size())
+		OWL_CORE_DEBUG("HotReload: Watching {} asset directories.", m_watcher.getDirectories().size())
 	} else {
 		m_watcher.stop();
-		OWL_CORE_DEBUG("Hot reload: Stopped.")
+		OWL_CORE_DEBUG("HotReload: Stopped.")
 	}
 }
 
@@ -118,8 +118,8 @@ auto HotReload::reloadFile(const std::filesystem::path& iFile) -> Report {
 		report.reloaded += Application::get().getEngineContext().getMaterialLibrary().invalidate(iFile);
 	}
 	if (report.reloaded + report.failed > 0)
-		OWL_CORE_INFO("Hot reload: {} -> {} reloaded, {} kept the previous version.", iFile.string(), report.reloaded,
-					  report.failed)
+		OWL_CORE_INFO("HotReload: '{}' changed, {} asset(s) reloaded, {} kept the previous version.", iFile.string(),
+					  report.reloaded, report.failed)
 	// Copy: a listener may remove itself (a layer detached by a scene change).
 	const auto listeners = m_listeners;
 	for (const auto& [id, listener]: listeners) listener(iFile);

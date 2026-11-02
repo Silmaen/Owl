@@ -159,7 +159,7 @@ auto NodeGraphDocument::save() -> bool {
 
 auto NodeGraphDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 	if (!gui::widgets::NodeCanvasSerializer::serializeToFile(m_canvas, iPath)) {
-		OWL_CORE_ERROR("NodeGraphDocument: failed to write '{}'.", iPath.string())
+		OWL_CORE_ERROR("NodeGraphDocument: Failed to write '{}'.", iPath.string())
 		return false;
 	}
 	m_path = iPath;
@@ -169,7 +169,7 @@ auto NodeGraphDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 
 auto NodeGraphDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	if (!gui::widgets::NodeCanvasSerializer::deserializeFromFile(m_canvas, iPath)) {
-		OWL_CORE_ERROR("NodeGraphDocument: failed to load '{}'.", iPath.string())
+		OWL_CORE_ERROR("NodeGraphDocument: Failed to load '{}'.", iPath.string())
 		return false;
 	}
 	m_path = iPath;

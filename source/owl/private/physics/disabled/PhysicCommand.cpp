@@ -19,7 +19,7 @@ namespace owl::physics {
 void PhysicCommand::init([[maybe_unused]] scene::Scene& ioScene) {
 	static bool sWarned = false;
 	if (!sWarned) {
-		OWL_CORE_WARN("Physic: not built in (OWL_MODULE_PHYSICS=OFF), bodies stay where they are.")
+		OWL_CORE_WARN("Physics: Not built in (OWL_MODULE_PHYSICS=OFF), bodies stay where they are.")
 		sWarned = true;
 	}
 }

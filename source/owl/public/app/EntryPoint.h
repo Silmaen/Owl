@@ -37,30 +37,24 @@ auto main(int iArgc, char* iArgv[]) -> int {
 		OWL_PROFILE_END_SESSION()
 		// runtime
 		OWL_PROFILE_BEGIN_SESSION("Runtime", "OwlProfile-runtime.json")
-		OWL_CORE_DEBUG("run!")
+		OWL_CORE_DEBUG("Application: Running.")
 		app->run();
 		exitCode = app->getExitCode();
 		OWL_PROFILE_END_SESSION()
 		// Shutdown
 		OWL_PROFILE_BEGIN_SESSION("Shutdown", "OwlProfile-shutdown.json")
-		OWL_CORE_DEBUG("Terminate application.")
+		OWL_CORE_DEBUG("Application: Terminating.")
 		app.reset();
 #if OWL_TRACKER_VERBOSITY >= 1
 		{
 			OWL_SCOPE_UNTRACK
 			const auto& memState = owl::debug::TrackerAPI::checkState();
 			if (memState.allocationCalls > memState.deallocationCalls) {
-				OWL_CORE_TRACE("----------------------------------")
-				OWL_CORE_TRACE("Leak Detected during App release.")
-				OWL_CORE_TRACE("-----------------------------------")
-				OWL_CORE_TRACE("")
-				OWL_CORE_TRACE(" LEAK Amount: {} in {} Unallocated chunks.",
-							   owl::core::utils::sizeToString(memState.allocatedMemory), memState.allocs.size())
+				OWL_CORE_WARN("Memory: Leak at application release, {} in {} unreleased chunk(s).",
+							  owl::core::utils::sizeToString(memState.allocatedMemory), memState.allocs.size())
 #if OWL_TRACKER_VERBOSITY >= 2
-				for (const auto& chunk: memState.allocs) { OWL_CORE_TRACE(" ** {}", chunk.toStr()) }
+				for (const auto& chunk: memState.allocs) { OWL_CORE_DEBUG("Memory: Leaked chunk {}.", chunk.toStr()) }
 #endif
-				OWL_CORE_TRACE("----------------------------------")
-				OWL_CORE_TRACE("")
 			}
 		}
 #endif
@@ -70,27 +64,28 @@ auto main(int iArgc, char* iArgv[]) -> int {
 		OWL_SCOPE_UNTRACK
 		// ==================== Print Memory information ========================
 #if OWL_TRACKER_VERBOSITY >= 1
-		OWL_CORE_INFO("Memory State at the end of execution:")
+		OWL_CORE_DEBUG("Memory: State at the end of execution.")
 		const auto& memoryState = owl::debug::TrackerAPI::globals();
-		OWL_CORE_INFO("Residual memory          : {}.", owl::core::utils::sizeToString(memoryState.allocatedMemory))
-		OWL_CORE_INFO("Memory peek              : {}.", owl::core::utils::sizeToString(memoryState.memoryPeek))
-		OWL_CORE_INFO("Total Allocation calls   : {}.", memoryState.allocationCalls)
-		OWL_CORE_INFO("Total Deallocation calls : {}.", memoryState.deallocationCalls)
+		OWL_CORE_DEBUG("Memory: Residual memory {}.", owl::core::utils::sizeToString(memoryState.allocatedMemory))
+		OWL_CORE_DEBUG("Memory: Peak {}.", owl::core::utils::sizeToString(memoryState.memoryPeek))
+		OWL_CORE_DEBUG("Memory: {} allocation calls.", memoryState.allocationCalls)
+		OWL_CORE_DEBUG("Memory: {} deallocation calls.", memoryState.deallocationCalls)
 #endif
 #if OWL_TRACKER_VERBOSITY >= 2
 		if (memoryState.allocationCalls > memoryState.deallocationCalls) {
-			OWL_CORE_INFO("Remaining memory chunks  :", memoryState.allocationCalls)
+			OWL_CORE_WARN("Memory: Chunks remain at the end of execution ({} allocation calls).",
+						  memoryState.allocationCalls)
 			std::unordered_map<std::string, size_t> remainingThirdSize;
 			for (const auto& alloc: memoryState.allocs) {
 				if (auto libname = alloc.getLibName(); libname.empty() || libname == "owl" || libname == "unknown") {
-					OWL_CORE_INFO("* {}", alloc.toStr(false, false))
+					OWL_CORE_DEBUG("Memory: Remaining chunk {}.", alloc.toStr(false, false))
 				} else {
 					remainingThirdSize[libname] += alloc.size;
 				}
 			}
-			OWL_CORE_INFO("Remaining memory chunks from third party libraries:")
+			OWL_CORE_DEBUG("Memory: Remaining chunks of third-party libraries.")
 			for (const auto& [libname, size]: remainingThirdSize) {
-				OWL_CORE_INFO(" * {} : {}", libname, owl::core::utils::sizeToString(size))
+				OWL_CORE_DEBUG("Memory: Library '{}' keeps {}.", libname, owl::core::utils::sizeToString(size))
 			}
 		}
 #endif

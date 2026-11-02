@@ -194,8 +194,8 @@ auto luaTransformSetWorldPosition(lua_State* iState) -> int {
 		return 0;
 	if (entity->hasComponent<scene::component::Hierarchy>() &&
 		entity->getComponent<scene::component::Hierarchy>().parentId != core::UUID{0}) {
-		OWL_CORE_WARN("Script: transform.set_world_position ignores the child entity {}; a child follows its parent.",
-					  static_cast<uint64_t>(entity->getUUID()))
+		OWL_CORE_WARN_ONCE("Lua: transform.set_world_position ignores the child entity {}, a child follows its parent.",
+						   static_cast<uint64_t>(entity->getUUID()))
 		return 0;
 	}
 	if (!entity->hasComponent<scene::component::WorldPosition>())
@@ -655,7 +655,7 @@ auto luaSceneSpawnPrefab(lua_State* iState) -> int {
 	}
 	const auto text = data::assets::readAssetText(path);
 	if (!text) {
-		OWL_CORE_WARN("Script: Prefab '{}' not found, nothing spawned.", path)
+		OWL_CORE_WARN("Lua: Prefab '{}' not found, nothing spawned.", path)
 		lua_pushinteger(iState, 0);
 		return 1;
 	}
@@ -1836,7 +1836,7 @@ auto luaUiTransitionPlay(lua_State* iState) -> int {
 	}
 	const auto type = parseTransitionType(typeName);
 	if (type == scene::ScreenTransition::Type::None) {
-		OWL_CORE_WARN("Lua ui.transition_play: unknown transition type '{}'.", typeName)
+		OWL_CORE_WARN("Lua: Unknown transition type '{}' in ui.transition_play.", typeName)
 		return 0;
 	}
 	if (auto* transition = transitionOf(iState); transition != nullptr)

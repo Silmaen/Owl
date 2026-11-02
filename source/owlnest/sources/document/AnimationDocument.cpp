@@ -143,7 +143,7 @@ auto AnimationDocument::save() -> bool {
 auto AnimationDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 	const auto displayName = iPath.stem().string();
 	if (!m_clip.saveToFile(iPath, displayName)) {
-		OWL_CORE_ERROR("AnimationDocument: failed to write '{}'.", iPath.string())
+		OWL_CORE_ERROR("AnimationDocument: Failed to write '{}'.", iPath.string())
 		return false;
 	}
 	m_path = iPath;
@@ -153,7 +153,7 @@ auto AnimationDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 
 auto AnimationDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	if (!m_clip.loadFromFile(iPath)) {
-		OWL_CORE_ERROR("AnimationDocument: failed to load '{}'.", iPath.string())
+		OWL_CORE_ERROR("AnimationDocument: Failed to load '{}'.", iPath.string())
 		return false;
 	}
 	m_path = iPath;

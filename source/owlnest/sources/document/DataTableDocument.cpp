@@ -157,7 +157,7 @@ void DataTableDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {}
 auto DataTableDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	auto loaded = DataTable::loadFile(iPath);
 	if (!loaded) {
-		OWL_CORE_WARN("DataTableDocument: {} is not a data table.", iPath.string())
+		OWL_CORE_WARN("DataTableDocument: '{}' is not a data table.", iPath.string())
 		return false;
 	}
 	m_table = std::move(*loaded);
@@ -380,7 +380,7 @@ auto DataTableDocument::runCommand(const std::string_view iName, commands::Comma
 
 auto DataTableDocument::sendCommand(const std::string_view iName, commands::CommandArgs iArgs) const -> bool {
 	if (mp_editorLayer == nullptr) {
-		OWL_WARN("DataTableDocument: {} ignored, no editor to run it.", iName)
+		OWL_WARN("DataTableDocument: '{}' ignored, no editor to run it.", iName)
 		return false;
 	}
 	iArgs.set("path", m_path.generic_string());

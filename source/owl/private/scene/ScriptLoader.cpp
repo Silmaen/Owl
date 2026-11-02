@@ -71,7 +71,7 @@ auto loadScriptInstance(Scene& ioScene, const component::LuaScript& iScript, con
 	if (!loaded) {
 		if (!exists(std::filesystem::path{iScript.scriptPath})) {
 			OWL_CORE_ERROR("Scene: Cannot find script '{}' of '{}' ({}) in the pack or the asset folders. "
-						   "Fix: set the LuaScript path relative to the project folder (e.g. `scripts/player.lua`).",
+						   "Fix: set the LuaScript path relative to the project folder (e.g. 'scripts/player.lua').",
 						   iScript.scriptPath, iEntityName, iEntityId)
 			return nullptr;
 		}

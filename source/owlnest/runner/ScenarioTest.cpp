@@ -502,7 +502,7 @@ auto ScenarioTest::beginFrame(const shared<scene::Scene>& iScene) -> bool {
 		++m_checks;
 		if (const auto failure = runStep(step, iScene); !failure.empty()) {
 			++m_failures;
-			OWL_ERROR("Scenario: {}.", failure)
+			OWL_ERROR("Scenario: Step failed, {}.", failure)
 		}
 		++m_index;
 	}

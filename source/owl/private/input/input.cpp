@@ -161,7 +161,7 @@ auto Input::addGamepadMappings(const std::string_view iMappings) -> bool {
 
 auto Input::loadGamepadMappings(const std::filesystem::path& iFile) -> bool {
 	if (std::error_code errorCode; !is_regular_file(iFile, errorCode)) {
-		OWL_CORE_WARN("Input: Gamepad mapping file {} not found.", iFile.string())
+		OWL_CORE_WARN("Input: Gamepad mapping file '{}' not found.", iFile.string())
 		return false;
 	}
 	return addGamepadMappings(platform::fileToString(iFile));

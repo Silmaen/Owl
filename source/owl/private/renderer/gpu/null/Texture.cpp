@@ -26,7 +26,7 @@ void Texture2D::setData(void*, uint32_t) {}
 
 auto Texture2D::setLevels(const TextureLevels& iLevels) -> bool {
 	if (iLevels.levels.empty()) {
-		OWL_CORE_WARN("Null Texture: No level to set.")
+		OWL_CORE_WARN("Null: No level given to set on the texture.")
 		return false;
 	}
 	m_specification.size = iLevels.size;
@@ -48,7 +48,7 @@ void TextureCube::setData(void*, [[maybe_unused]] const uint32_t iSize) {
 
 auto TextureCube::setLevels(const TextureLevels& iLevels) -> bool {
 	if (iLevels.levels.empty() || iLevels.size != m_specification.size || iLevels.format != m_specification.format) {
-		OWL_CORE_WARN("Null TextureCube: Levels do not match the cube.")
+		OWL_CORE_WARN("Null: TextureCube levels do not match the cube.")
 		return false;
 	}
 	m_specification.levelCount = static_cast<uint32_t>(iLevels.levels.size());

@@ -35,7 +35,7 @@ auto registry() -> Registry& {
 
 auto ExtraDataRegistry::registerType(const std::type_index iType, const Creator iCreator) -> ExtraDataPid {
 	if (iCreator == nullptr) {
-		OWL_CORE_WARN("ExtraDataRegistry: No creator given for {}.", iType.name())
+		OWL_CORE_WARN("ExtraDataRegistry: No creator given for '{}'.", iType.name())
 		return g_invalidExtraDataPid;
 	}
 	auto& reg = registry();

@@ -50,7 +50,7 @@ auto Shader::recompile(const std::string& iSlangSource) -> bool {
 }
 #else
 auto Shader::recompile([[maybe_unused]] const std::string& iSlangSource) -> bool {
-	OWL_CORE_WARN("Null shader {}: no Slang compiler without the render module, reload refused.", getName())
+	OWL_CORE_WARN("Null: Shader '{}' cannot reload, there is no Slang compiler without the render module.", getName())
 	return false;
 }
 #endif

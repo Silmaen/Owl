@@ -152,7 +152,7 @@ void EditorLayer::openScene() {
 void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 	if (const auto extension = iScenePath.extension().string();
 		extension != ".owl" && extension != ".owlhud" && extension != ".owlprefab") {
-		OWL_CORE_WARN("Cannot Open file {}: not a scene, a HUD nor a prefab.", iScenePath.string())
+		OWL_CORE_ERROR("SceneDocument: Cannot open '{}', it is not a scene, a HUD or a prefab.", iScenePath.string())
 		return;
 	}
 
@@ -192,7 +192,7 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 				if (!parsed->valid) {
 					const auto message = std::format("Cannot open scene '{}': {}. Fix: {}.", scenePath.string(),
 													 parsed->error, scene::fixHint(parsed->failure));
-					OWL_ERROR("{}", message)
+					OWL_ERROR("SceneDocument: {}", message)
 					state->setError(message);
 					return;
 				}
@@ -244,7 +244,7 @@ void EditorLayer::openCodeFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<CodeEditorDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open code file: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the code file '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -274,7 +274,7 @@ void EditorLayer::openNodeGraphFile(const std::filesystem::path& iPath) {
 		doc = mkUniq<NodeGraphDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open node-graph file: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the node graph '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -297,7 +297,7 @@ void EditorLayer::openAnimationFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<AnimationDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open animation file: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the animation '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -328,7 +328,7 @@ void EditorLayer::openTilemapFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<TilemapDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open tilemap file: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the tilemap '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -364,7 +364,7 @@ void EditorLayer::openTilesetFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<TilesetDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open tileset file: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the tileset '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -379,7 +379,7 @@ void EditorLayer::openFontFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<FontDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open font file: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the font '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -411,7 +411,7 @@ void EditorLayer::openImageFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<ImageDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open image file: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the image '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -434,7 +434,7 @@ void EditorLayer::openMeshFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<MeshDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open mesh file: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the mesh '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -463,7 +463,7 @@ void EditorLayer::openSoundFile(const std::filesystem::path& iPath) {
 	if (audio && !exists(cuePath)) {
 		doc->startFromAudio(iPath);
 	} else if (!doc->loadFromFile(cuePath)) {
-		OWL_CORE_WARN("Failed to open sound file: {}.", cuePath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the sound cue '{}'.", cuePath.string())
 		doc->onDetach();
 		return;
 	}
@@ -486,7 +486,7 @@ void EditorLayer::openMaterialFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<MaterialDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open material file: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the material '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -510,7 +510,7 @@ void EditorLayer::openActionMapFile(const std::filesystem::path& iPath) {
 	doc->onAttach(this);
 	if (exists(iPath)) {
 		if (!doc->loadFromFile(iPath)) {
-			OWL_CORE_WARN("Failed to open action map: {}.", iPath.string())
+			OWL_CORE_ERROR("Editor: Cannot open the action map '{}'.", iPath.string())
 			doc->onDetach();
 			return;
 		}
@@ -537,7 +537,7 @@ void EditorLayer::openLocalisationFile(const std::filesystem::path& iPath) {
 	doc->onAttach(this);
 	if (exists(iPath)) {
 		if (!doc->loadFromFile(iPath)) {
-			OWL_CORE_WARN("Failed to open localisation: {}.", iPath.string())
+			OWL_CORE_ERROR("Editor: Cannot open the localisation '{}'.", iPath.string())
 			doc->onDetach();
 			return;
 		}
@@ -599,7 +599,7 @@ void EditorLayer::openDataTableFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<DataTableDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open data table: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the data table '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -630,7 +630,7 @@ void EditorLayer::openHudThemeFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<HudThemeDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open HUD theme: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the HUD theme '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -661,7 +661,7 @@ void EditorLayer::openDialogueFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<DialogueDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open dialogue: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the dialogue '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -695,7 +695,7 @@ void EditorLayer::openSequenceFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<SequenceDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open sequence: {}.", iPath.string())
+		OWL_CORE_ERROR("Editor: Cannot open the sequence '{}'.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -827,7 +827,7 @@ auto EditorLayer::loadOrOpenSceneDocument(const std::filesystem::path& iScenePat
 
 	std::ifstream file(iScenePath, std::ios::binary | std::ios::ate);
 	if (!file.is_open()) {
-		OWL_CORE_WARN("loadOrOpenSceneDocument: cannot open '{}'.", iScenePath.string())
+		OWL_CORE_WARN("SceneDocument: Cannot open '{}'.", iScenePath.string())
 		return nullptr;
 	}
 	const auto size = static_cast<size_t>(file.tellg());
@@ -837,7 +837,7 @@ auto EditorLayer::loadOrOpenSceneDocument(const std::filesystem::path& iScenePat
 	const auto newScene = mkShared<scene::Scene>();
 	const scene::SceneSerializer serializer(newScene, scene::documentKindOf(iScenePath));
 	if (const auto loaded = serializer.deserializeFromBuffer(bytes, iScenePath.string()); !loaded) {
-		OWL_CORE_WARN("loadOrOpenSceneDocument: Cannot open scene '{}': {}. Fix: {}.", iScenePath.string(),
+		OWL_CORE_WARN("SceneDocument: Cannot open scene '{}': {}. Fix: {}.", iScenePath.string(),
 					  scene::describe(loaded.error()), scene::fixHint(loaded.error()))
 		return nullptr;
 	}
@@ -889,7 +889,7 @@ void EditorLayer::saveSceneAs(const std::filesystem::path& iScenePath) {
 				}
 				state->progress.store(1.0f);
 				state->setMessage("Done!");
-				OWL_CORE_INFO("Scene saved to {}.", path.string())
+				OWL_CORE_INFO("SceneDocument: Scene saved to '{}'.", path.string())
 			},
 			[state, isHud = doc->getActiveScene()->getDocumentKind() == scene::DocumentKind::Hud]() -> void {
 				// The scenes drawing this HUD read it again from the file just written.
@@ -922,10 +922,10 @@ void EditorLayer::saveActiveDocument() {
 		if (codeDoc->filePath().empty())
 			return;
 		if (codeDoc->save()) {
-			OWL_INFO("Code editor: saved '{}'.", codeDoc->filePath().string())
+			OWL_INFO("CodeEditor: Saved '{}'.", codeDoc->filePath().string())
 			m_toasts.push(gui::widgets::ToastKind::Success, std::format("Saved {}", codeDoc->title()));
 		} else {
-			OWL_ERROR("Code editor: FAILED to save '{}'.", codeDoc->filePath().string())
+			OWL_ERROR("CodeEditor: Cannot save '{}'.", codeDoc->filePath().string())
 			m_toasts.push(gui::widgets::ToastKind::Error, std::format("Could not save {}", codeDoc->title()),
 						  "See the Log for the reason.");
 		}
@@ -968,7 +968,8 @@ void EditorLayer::requestProjectSwitch(const std::filesystem::path& iDir) { m_pe
 void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	const auto configFile = iDir / "owl_project.yml";
 	if (!exists(configFile)) {
-		OWL_CORE_WARN("No owl_project.yml found in {}.", iDir.string())
+		OWL_CORE_ERROR("Open Project: No 'owl_project.yml' in '{}', the folder leaves the recent projects.",
+					   iDir.string())
 		m_settings.removeRecentProject(iDir);
 		return;
 	}
@@ -976,7 +977,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 		closeProject();
 
 	if (!m_project.loadFromFile(configFile)) {
-		OWL_ERROR("Open Project: Cannot load {}.", configFile.string())
+		OWL_ERROR("Open Project: Cannot load '{}'.", configFile.string())
 		return;
 	}
 	app::Application::get().addAssetDirectory({std::format("Project: {}", m_project.name), m_project.projectDirectory},
@@ -1020,7 +1021,7 @@ void EditorLayer::saveProjectAs() {
 	if (dest.empty())
 		return;
 	if (std::filesystem::weakly_canonical(dest) == std::filesystem::weakly_canonical(m_project.projectDirectory)) {
-		OWL_CORE_WARN("Save Project As: destination is the current project directory — ignored.")
+		OWL_CORE_WARN("Save Project As: The destination is the current project folder, nothing is copied.")
 		return;
 	}
 	std::error_code ec;
@@ -1037,7 +1038,7 @@ void EditorLayer::saveProjectAs() {
 						  std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing,
 						  ec);
 	if (ec) {
-		OWL_CORE_ERROR("Save Project As: copy failed — {}.", ec.message())
+		OWL_CORE_ERROR("Save Project As: Copy failed, {}.", ec.message())
 		return;
 	}
 	requestProjectSwitch(dest);
@@ -1087,11 +1088,11 @@ void EditorLayer::importScene() {
 		create_directories(scenesDir);
 	const auto dest = scenesDir / filepath.filename();
 	if (exists(dest)) {
-		OWL_CORE_WARN("Scene '{}' already exists in project.", filepath.filename().string())
+		OWL_CORE_ERROR("Import Scene: Scene '{}' already exists in the project.", filepath.filename().string())
 		return;
 	}
 	std::filesystem::copy_file(filepath, dest);
-	OWL_CORE_INFO("Imported scene '{}' into project.", filepath.filename().string())
+	OWL_CORE_INFO("Import Scene: Scene '{}' imported into the project.", filepath.filename().string())
 }
 
 }// namespace owl::nest

@@ -123,7 +123,7 @@ void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture
 void RenderAPI::beginFrame() {
 	auto& vkh = internal::VulkanHandler::get();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_ERROR_ONCE("Vulkan is in error state ({}).", magic_enum::enum_name(vkh.getState()))
+		OWL_CORE_ERROR_ONCE("Vulkan: The handler is in error state ({}).", magic_enum::enum_name(vkh.getState()))
 		setState(State::Error);
 		return;
 	}
@@ -147,7 +147,7 @@ void RenderAPI::nextSubpass() {
 void RenderAPI::endFrame() {
 	auto& vkh = internal::VulkanHandler::get();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_ERROR_ONCE("Vulkan is in error state: ({}).", magic_enum::enum_name(vkh.getState()))
+		OWL_CORE_ERROR_ONCE("Vulkan: The handler is in error state ({}).", magic_enum::enum_name(vkh.getState()))
 		setState(State::Error);
 		return;
 	}
@@ -167,7 +167,7 @@ void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData, const shared<
 	auto* const cmdSsbo = dynamic_cast<StorageBuffer*>(iCommandBuffer.get());
 	auto* const countSsbo = dynamic_cast<StorageBuffer*>(iCountBuffer.get());
 	if (cmdSsbo == nullptr || countSsbo == nullptr) {
-		OWL_CORE_WARN_ONCE("Vulkan: drawIndexedIndirect with non-Vulkan SSBOs.")
+		OWL_CORE_WARN_ONCE("Vulkan: drawIndexedIndirect called with non-Vulkan SSBOs.")
 		return;
 	}
 	const auto commands = cmdSsbo->resolve();
@@ -190,7 +190,7 @@ void RenderAPI::drawIndexedIndirectAt(const shared<DrawData>& iData, const share
 		return;
 	auto* const cmdSsbo = dynamic_cast<StorageBuffer*>(iCommandBuffer.get());
 	if (cmdSsbo == nullptr) {
-		OWL_CORE_WARN_ONCE("Vulkan: drawIndexedIndirectAt with a non-Vulkan SSBO.")
+		OWL_CORE_WARN_ONCE("Vulkan: drawIndexedIndirectAt called with a non-Vulkan SSBO.")
 		return;
 	}
 	const auto commands = cmdSsbo->resolve();

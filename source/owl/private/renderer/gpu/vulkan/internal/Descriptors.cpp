@@ -68,7 +68,7 @@ void TextureData::createDescriptorSet() {
 	if (const auto result =
 				vkCreateDescriptorSetLayout(core.getLogicalDevice(), &layoutCi, nullptr, &textureDescriptorSetLayout);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Texture Descriptor: failed to create descriptor set layout ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the texture descriptor set layout ({}).", resultString(result))
 	}
 	core.setObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, std::bit_cast<uint64_t>(textureDescriptorSetLayout),
 					   "tex.layout:" + debugName);
@@ -79,7 +79,7 @@ void TextureData::createDescriptorSet() {
 												.pSetLayouts = &textureDescriptorSetLayout};
 	if (const auto result = vkAllocateDescriptorSets(core.getLogicalDevice(), &allocInfo, &textureDescriptorSet);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Texture Descriptor: failed to allocate descriptor sets ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot allocate the texture descriptor sets ({}).", resultString(result))
 	}
 	const VkDescriptorImageInfo info{.sampler = textureSampler,
 									 .imageView = textureImageView,
@@ -118,7 +118,7 @@ void TextureData::createView() {
 		});
 	if (const VkResult result = vkCreateImageView(vkc.getLogicalDevice(), &createInfo, nullptr, &textureImageView);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Texture: Error creating image views ({}).", internal::resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the texture image views ({}).", internal::resultString(result))
 	}
 	vkc.setObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, std::bit_cast<uint64_t>(textureImageView), "tex.view:" + debugName);
 }
@@ -152,7 +152,7 @@ void TextureData::createSampler() {
 		});
 	if (const VkResult result = vkCreateSampler(vkc.getLogicalDevice(), &samplerInfo, nullptr, &textureSampler);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Texture: Error creating texture sampler ({}).", internal::resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the texture sampler ({}).", internal::resultString(result))
 	}
 	vkc.setObjectName(VK_OBJECT_TYPE_SAMPLER, std::bit_cast<uint64_t>(textureSampler), "tex.sampler:" + debugName);
 }
@@ -195,7 +195,7 @@ void Descriptors::release() {
 	m_textureBind.shrink_to_fit();
 	if (!m_textures.empty()) {
 		for (auto& [id, tex]: m_textures) {
-			OWL_CORE_TRACE("Vulkan Descriptors: releasing texture id {}.", id)
+			OWL_CORE_TRACE("Vulkan: Releasing texture id {}.", id)
 			tex->freeTexture();
 			tex.reset();
 		}
@@ -244,7 +244,7 @@ void Descriptors::createDescriptors() {
 											  .pPoolSizes = poolSizes.data()};
 	if (const VkResult result = vkCreateDescriptorPool(core.getLogicalDevice(), &poolInfo, nullptr, &m_descriptorPool);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Descriptors: failed to create descriptor pool ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the descriptor pool ({}).", resultString(result))
 	}
 
 	constexpr VkDescriptorSetLayoutBinding uboLayoutBinding{.binding = 0,
@@ -273,7 +273,7 @@ void Descriptors::createDescriptors() {
 	if (const auto result =
 				vkCreateDescriptorSetLayout(core.getLogicalDevice(), &layoutInfo, nullptr, &m_descriptorSetLayout);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Descriptor: failed to create descriptor set layout ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the descriptor set layout ({}).", resultString(result))
 	}
 
 	// Descriptor sets
@@ -286,7 +286,7 @@ void Descriptors::createDescriptors() {
 	m_descriptorSets.resize(g_maxFrameInFlight);
 	if (const auto result = vkAllocateDescriptorSets(core.getLogicalDevice(), &allocInfo, m_descriptorSets.data());
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Descriptor: failed to allocate descriptor sets ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot allocate the descriptor sets ({}).", resultString(result))
 	}
 }
 
@@ -377,7 +377,7 @@ void Descriptors::setUniformData(const uint32_t iBinding, const void* iData, con
 	const auto& vkh = VulkanHandler::get();
 	const auto it = m_uniformBindings.find(iBinding);
 	if (it == m_uniformBindings.end()) {
-		OWL_CORE_WARN("Vulkan Descriptors: setUniformData on unregistered binding {}.", iBinding)
+		OWL_CORE_WARN_ONCE("Vulkan: setUniformData on unregistered binding {}.", iBinding)
 		return;
 	}
 	const auto frame = vkh.getCurrentFrameIndex();
@@ -436,7 +436,7 @@ void Descriptors::createImguiDescriptorPool() {
 	if (const VkResult result =
 				vkCreateDescriptorPool(core.getLogicalDevice(), &poolInfo, nullptr, &m_imguiDescriptorPool);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Descriptors: failed to create descriptor pool ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the descriptor pool ({}).", resultString(result))
 	}
 }
 
@@ -457,7 +457,7 @@ void Descriptors::createSingleImageDescriptorPool() {
 	if (const VkResult result =
 				vkCreateDescriptorPool(core.getLogicalDevice(), &poolInfo, nullptr, &m_singleImageDescriptorPool);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Descriptors: failed to create descriptor pool ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the descriptor pool ({}).", resultString(result))
 	}
 }
 

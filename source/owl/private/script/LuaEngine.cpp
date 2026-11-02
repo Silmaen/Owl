@@ -413,7 +413,7 @@ auto sandboxWrap(lua_State* iState) -> int {
 
 auto panicHandler(lua_State* iState) -> int {
 	const char* message = lua_tostring(iState, -1);
-	OWL_CORE_CRITICAL("LuaEngine: Unprotected Lua error: {}.", message != nullptr ? message : "(not a string)")
+	OWL_CORE_CRITICAL("Lua: Unprotected Lua error: {}.", message != nullptr ? message : "(not a string)")
 	return 0;
 }
 
@@ -425,8 +425,8 @@ void warningHandler(void* iUserData, const char* iMessage, const int iToBeContin
 		quota->warning += iMessage;
 		if (iToBeContinued != 0)
 			return;
-		OWL_CORE_WARN("LuaEngine: Script warning: {}.", quota->warning)
-	} catch (...) { OWL_CORE_WARN("LuaEngine: Script warning dropped.") }
+		OWL_CORE_WARN("Lua: Script warning: {}.", quota->warning)
+	} catch (...) { OWL_CORE_WARN("Lua: Script warning dropped.") }
 	quota->warning.clear();
 }
 
@@ -641,14 +641,14 @@ LuaEngine::LuaEngine(const ScriptQuotas& iQuotas)
 
 	setQuotas(iQuotas);
 	if (mp_state == nullptr) {
-		OWL_CORE_ERROR("LuaEngine: Failed to create Lua state.")
+		OWL_CORE_ERROR("Lua: Failed to create the Lua state.")
 		mp_quota->lastStatus = LuaStatus::Invalid;
 		return;
 	}
 	lua_atpanic(mp_state, panicHandler);
 	lua_setwarnf(mp_state, warningHandler, mp_quota.get());
 	openSandboxedLibraries(mp_state);
-	OWL_CORE_TRACE("LuaEngine: Lua state created successfully.")
+	OWL_CORE_TRACE("Lua: Lua state created.")
 }
 
 LuaEngine::~LuaEngine() {
@@ -810,14 +810,14 @@ void LuaEngine::reportError(const std::string_view iWhat, const std::string_view
 		mp_quota->lastError = key;
 		mp_quota->repeatsPending = 0;
 		mp_quota->lastReport = now;
-		OWL_CORE_ERROR("LuaEngine: Error in {}{}: {}. Fix: {}.", iWhat, errorContextOf(*mp_quota), iMessage,
+		OWL_CORE_ERROR("Lua: Error in {}{}: {}. Fix: {}.", iWhat, errorContextOf(*mp_quota), iMessage,
 					   fixHint(mp_quota->lastStatus))
 		return;
 	}
 	++mp_quota->repeatsPending;
 	++mp_quota->repeatsSuppressed;
 	if (now - mp_quota->lastReport >= std::chrono::seconds{1}) {
-		OWL_CORE_ERROR("LuaEngine: Error in {}{} repeated {} more times.", iWhat, errorContextOf(*mp_quota),
+		OWL_CORE_ERROR("Lua: Error in {}{} repeated {} more times.", iWhat, errorContextOf(*mp_quota),
 					   mp_quota->repeatsPending)
 		mp_quota->repeatsPending = 0;
 		mp_quota->lastReport = now;
@@ -834,7 +834,7 @@ auto LuaEngine::runLoadedChunk(const int iLoadResult, const std::string& iName) 
 	if (iLoadResult != LUA_OK) {
 		mp_quota->lastStatus = iLoadResult == LUA_ERRMEM ? LuaStatus::MemoryQuota : LuaStatus::LoadError;
 		const char* message = lua_tostring(mp_state, -1);
-		OWL_CORE_ERROR("LuaEngine: Error loading '{}'{}: {}. Fix: {}.", iName, errorContextOf(*mp_quota),
+		OWL_CORE_ERROR("Lua: Error loading '{}'{}: {}. Fix: {}.", iName, errorContextOf(*mp_quota),
 					   message != nullptr ? message : "(no message)", fixHint(mp_quota->lastStatus))
 		lua_pop(mp_state, 1);
 		return false;
@@ -848,7 +848,7 @@ auto LuaEngine::loadScript(const std::filesystem::path& iPath) const -> bool {
 	OWL_PROFILE_FUNCTION()
 
 	if (mp_state == nullptr) {
-		OWL_CORE_ERROR("LuaEngine: Cannot load script, Lua state is invalid.")
+		OWL_CORE_ERROR("Lua: Cannot load the script, the Lua state is invalid.")
 		return false;
 	}
 	if (visual::isVisualScriptPath(iPath.string())) {
@@ -865,7 +865,7 @@ auto LuaEngine::loadBuffer(const std::vector<uint8_t>& iData, const std::string&
 	OWL_PROFILE_FUNCTION()
 
 	if (mp_state == nullptr) {
-		OWL_CORE_ERROR("LuaEngine: Cannot load buffer, Lua state is invalid.")
+		OWL_CORE_ERROR("Lua: Cannot load the buffer, the Lua state is invalid.")
 		return false;
 	}
 	if (visual::isVisualScriptPath(iName)) {
@@ -873,7 +873,7 @@ auto LuaEngine::loadBuffer(const std::vector<uint8_t>& iData, const std::string&
 											 ScriptDebugger::isEnabled() ? visual::CompileMode::Debug
 																		 : visual::CompileMode::Game);
 		if (!lua.has_value()) {
-			OWL_CORE_ERROR("LuaEngine: Cannot compile the visual script '{}'.", iName)
+			OWL_CORE_ERROR("Lua: Cannot compile the visual script '{}'.", iName)
 			return false;
 		}
 		mp_quota->enforced = true;

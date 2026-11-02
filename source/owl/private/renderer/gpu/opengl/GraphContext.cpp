@@ -50,14 +50,14 @@ void GraphContext::init() {
 #endif
 	OWL_CORE_ASSERT(m_version, "Failed to initialize GLAD for OpenGL")
 	GpuProfiler::init();
-	OWL_CORE_INFO("OpenGL GraphContext Initiated.")
-	OWL_CORE_INFO("Device Info:")
-	OWL_CORE_INFO("  Vendor: {}", reinterpret_cast<const char*>(glGetString(GL_VENDOR)))
-	OWL_CORE_INFO("  Renderer: {}", reinterpret_cast<const char*>(glGetString(GL_RENDERER)))
-	OWL_CORE_INFO("  Version: {}", reinterpret_cast<const char*>(glGetString(GL_VERSION)))
+	OWL_CORE_DEBUG("OpenGL: Graphics context initiated.")
+	OWL_CORE_INFO("OpenGL: Device information.")
+	OWL_CORE_INFO("OpenGL: Vendor: {}.", reinterpret_cast<const char*>(glGetString(GL_VENDOR)))
+	OWL_CORE_INFO("OpenGL: Renderer: {}.", reinterpret_cast<const char*>(glGetString(GL_RENDERER)))
+	OWL_CORE_INFO("OpenGL: Version: {}.", reinterpret_cast<const char*>(glGetString(GL_VERSION)))
 	int32_t textureUnits = 0;
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &textureUnits);
-	OWL_CORE_DEBUG(" Max texture slot per Shader: {}.", textureUnits)
+	OWL_CORE_DEBUG("OpenGL: Max texture slots per shader: {}.", textureUnits)
 	int32_t combinedTextureUnits = 0;
 	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &combinedTextureUnits);
 	int32_t vertexSsbo = 0;
@@ -66,8 +66,8 @@ void GraphContext::init() {
 	glGetIntegerv(GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS, &vertexSsbo);
 	glGetIntegerv(GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS, &fragmentSsbo);
 	glGetIntegerv(GL_MAX_COMBINED_SHADER_STORAGE_BLOCKS, &combinedSsbo);
-	OWL_CORE_DEBUG("  Combined texture image units: {}.", combinedTextureUnits)
-	OWL_CORE_DEBUG("  Shader storage blocks: vertex={}, fragment={}, combined={}.", vertexSsbo, fragmentSsbo,
+	OWL_CORE_DEBUG("OpenGL: Combined texture image units: {}.", combinedTextureUnits)
+	OWL_CORE_DEBUG("OpenGL: Shader storage blocks: vertex={}, fragment={}, combined={}.", vertexSsbo, fragmentSsbo,
 				   combinedSsbo)
 }
 

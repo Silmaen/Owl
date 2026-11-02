@@ -406,7 +406,7 @@ void initSpritePath() {
 
 void RendererRaycast::init() {
 	if (g_state) {
-		OWL_CORE_WARN("RendererRaycast already initiated.")
+		OWL_CORE_WARN("RendererRaycast: Already initiated.")
 		g_state.reset();
 	}
 	g_state = mkShared<State>();
@@ -490,7 +490,7 @@ void RendererRaycast::beginScene(const Camera& iCamera, const math::vec2ui& iVie
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_state) {
-		OWL_CORE_ERROR("RendererRaycast::beginScene called before init.")
+		OWL_CORE_ERROR_ONCE("RendererRaycast: beginScene called before init.")
 		return;
 	}
 	g_state->viewport = (iViewport.x() == 0 || iViewport.y() == 0) ? math::vec2ui{1, 1} : iViewport;
@@ -666,23 +666,23 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_state || !g_state->sceneOpen) {
-		OWL_CORE_WARN_ONCE("RendererRaycast::drawTilemapWalls called outside beginScene/endScene.")
+		OWL_CORE_WARN_ONCE("RendererRaycast: drawTilemapWalls called outside beginScene/endScene.")
 		return;
 	}
 	if (!iTilemap.tileset) {
-		OWL_CORE_WARN_ONCE("RendererRaycast: tilemap has no tileset assigned — walls skipped.")
+		OWL_CORE_WARN_ONCE("RendererRaycast: The tilemap has no tileset, the walls are skipped.")
 		return;
 	}
 	if (!iTilemap.tileset->texture) {
 		OWL_CORE_WARN_ONCE(
-				"RendererRaycast: tilemap tileset has no texture — walls skipped (asset path resolution failed?).")
+				"RendererRaycast: The tileset has no texture, the walls are skipped (asset path not resolved?).")
 		return;
 	}
 	if (iTilemap.width == 0 || iTilemap.height == 0)
 		return;
 	const size_t layerIdx = pickActiveLayerIndex(iTilemap);
 	if (layerIdx >= iTilemap.layers.size()) {
-		OWL_CORE_WARN_ONCE("RendererRaycast: tilemap has no visible non-empty layer — walls skipped.")
+		OWL_CORE_WARN_ONCE("RendererRaycast: The tilemap has no visible non-empty layer, the walls are skipped.")
 		return;
 	}
 
@@ -875,7 +875,7 @@ void RendererRaycast::drawDynamicWalls(std::span<const RaycastDynamicWallData> i
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_state || !g_state->sceneOpen) {
-		OWL_CORE_WARN_ONCE("RendererRaycast::drawDynamicWalls called outside beginScene/endScene.")
+		OWL_CORE_WARN_ONCE("RendererRaycast: drawDynamicWalls called outside beginScene/endScene.")
 		return;
 	}
 	if (iWalls.empty())
@@ -1101,7 +1101,7 @@ void RendererRaycast::drawDoors(std::span<const RaycastDoorData> iDoors) {
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_state || !g_state->sceneOpen) {
-		OWL_CORE_WARN_ONCE("RendererRaycast::drawDoors called outside beginScene/endScene.")
+		OWL_CORE_WARN_ONCE("RendererRaycast: drawDoors called outside beginScene/endScene.")
 		return;
 	}
 	if (iDoors.empty())
@@ -1241,7 +1241,7 @@ void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_state || !g_state->sceneOpen) {
-		OWL_CORE_WARN_ONCE("RendererRaycast::drawSprites called outside beginScene/endScene.")
+		OWL_CORE_WARN_ONCE("RendererRaycast: drawSprites called outside beginScene/endScene.")
 		return;
 	}
 	if (iSprites.empty())

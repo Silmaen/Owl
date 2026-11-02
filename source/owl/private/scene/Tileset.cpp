@@ -261,7 +261,7 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 	try {
 		root = YAML::Load(std::string{iYaml});
 	} catch (const YAML::Exception& e) {
-		OWL_CORE_ERROR("Tileset: failed to parse YAML — {}.", e.what())
+		OWL_CORE_ERROR("Tileset: Failed to parse YAML: {}.", e.what())
 		return false;
 	}
 	if (!root || !root.IsMap() || !root["Tileset"]) {
@@ -338,7 +338,7 @@ auto Tileset::saveToFile(const std::filesystem::path& iPath, const std::string_v
 auto Tileset::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	std::ifstream in(iPath, std::ios::binary);
 	if (!in.is_open()) {
-		OWL_CORE_ERROR("Tileset: failed to open '{}' for reading.", iPath.string())
+		OWL_CORE_ERROR("Tileset: Failed to open '{}' for reading.", iPath.string())
 		return false;
 	}
 	std::stringstream buffer;

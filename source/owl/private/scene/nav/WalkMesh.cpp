@@ -195,7 +195,7 @@ auto bridgeHole(const Vertices& iVertices, Ring& ioRing, const Ring& iHole) -> b
 	const math::vec2 start = iVertices[iHole[holeStart]];
 	const auto hit = findHitEdge(iVertices, ioRing, start);
 	if (!hit) {
-		OWL_CORE_WARN("WalkMesh: a hole lies outside its outline, skipped.")
+		OWL_CORE_WARN("WalkMesh: A hole lies outside its outline, skipped.")
 		return false;
 	}
 	const size_t bridge = findBridge(iVertices, ioRing, start, hit->first, hit->second);
@@ -379,7 +379,7 @@ auto WalkMesh::findPath(const math::vec2& iFrom, const math::vec2& iTo, std::vec
 	const auto start = locate(from);
 	const auto goal = locate(to);
 	if (!start || !goal) {
-		OWL_CORE_WARN("WalkMesh: no floor to find a path on.")
+		OWL_CORE_WARN("WalkMesh: No floor to find a path on.")
 		return false;
 	}
 	if (*start == *goal) {
@@ -422,7 +422,7 @@ auto WalkMesh::findPath(const math::vec2& iFrom, const math::vec2& iTo, std::vec
 		}
 	}
 	if (!closed[*goal]) {
-		OWL_CORE_TRACE("WalkMesh: the goal lies on a floor the start does not reach.")
+		OWL_CORE_TRACE("WalkMesh: The goal lies on a floor the start does not reach.")
 		return false;
 	}
 	std::vector<uint32_t> corridor;
