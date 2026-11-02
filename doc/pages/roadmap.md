@@ -253,11 +253,11 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
   ([2D](design/2d-complete.md#walkable-areas-2d))
 - ![Done][done] Rail shooter sample game ([Rail shooter](design/sample-games.md#sample-games-rail-shooter))
 - ![Done][done] Point-and-click sample game ([Point-and-click](design/sample-games.md#sample-games-point-and-click))
-- ![Planned][planned] Earlier sample games on the new features: particles, mixer buses, data tables, dialogues, HUD
+- ![Done][done] Earlier sample games on the new features: particles, mixer buses, data tables, dialogues, HUD
   markers, accessibility ([Improvements](design/sample-games.md#sample-games-improvements))
-- ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a Mini
-  Minecraft, combat in the Wolfenstein mini, a station trader
-  ([Pool](design/sample-games.md#sample-games-pool))
+- ![Done][done] Sample games picked from the pool: Ring Runner, the rail shooter
+  ([Rail shooter](design/sample-games.md#sample-games-rail-shooter)), and The Moon Lantern, the point-and-click
+  ([Point-and-click](design/sample-games.md#sample-games-point-and-click))
 
 ## v0.5.0 -- 2026-10-25
 

@@ -89,11 +89,11 @@
       "items": 1000,
       "batch": 137,
       "samples": 15,
-      "median_ns": 86690.5,
-      "p25_ns": 86643.3,
-      "p75_ns": 86734.6,
-      "min_ns": 86607.9,
-      "max_ns": 86916.8
+      "median_ns": 100110.0,
+      "p25_ns": 99960.0,
+      "p75_ns": 100230.0,
+      "min_ns": 99900.0,
+      "max_ns": 101230.0
     },
     {
       "name": "frame/runtime_update/render_flat10000",

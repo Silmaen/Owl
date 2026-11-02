@@ -1,0 +1,43 @@
+DataTable: ''
+FormatVersion: 1
+columns:
+  - {name: name, type: Text}
+  - {name: blurb, type: Text}
+  - {name: cost, type: Integer}
+  - {name: range, type: Float}
+  - {name: damage, type: Float}
+  - {name: reload, type: Float}
+  - {name: splash, type: Float}
+  - {name: slow, type: Float}
+  - {name: time, type: Float}
+rows:
+  - key: archer
+    name: Archer tower
+    blurb: Fast arrows at one enemy. Ogres shrug most of them off.
+    cost: 70
+    range: 3
+    damage: 9
+    reload: 0.65
+    splash: 0
+    slow: 0
+    time: 0
+  - key: cannon
+    name: Cannon tower
+    blurb: Slow shells bursting on a group, aimed where it will be.
+    cost: 110
+    range: 2.8
+    damage: 24
+    reload: 1.7
+    splash: 1.1
+    slow: 0
+    time: 0
+  - key: frost
+    name: Frost tower
+    blurb: 'Chills an enemy: slower for a while, a little damage.'
+    cost: 90
+    range: 2.6
+    damage: 3
+    reload: 1
+    splash: 0
+    slow: 0.5
+    time: 1.8

@@ -101,8 +101,8 @@ function Towers.land(shot)
     if shot.kind == "cannon" then
         UI.play("sounds/game/boom.wav")
         Vis.spawn_puff(shot.tx, shot.ty, shot.tz, 1.0, 0.7, 0.35, 1.6, 0.4)
-        Vis.emit(shot.tx, shot.ty + 0.1, shot.tz, 10, 2.2, 0.45, 0.36, 0.26, 0.11, 0.6, 1.5)
-        Vis.emit(shot.tx, shot.ty + 0.15, shot.tz, 6, 1.6, 1.0, 0.7, 0.25, 0.1, 0.35, 1.0)
+        Vis.burst("Dust", shot.tx, shot.ty + 0.1, shot.tz, 16)
+        Vis.burst("Embers", shot.tx, shot.ty + 0.15, shot.tz, 12)
         local radius = s.splash
         local hit = {}
         for _, foe in ipairs(S.enemies) do
@@ -121,7 +121,7 @@ function Towers.land(shot)
     if foe == nil or foe.dead then return end
     if shot.kind == "archer" then
         UI.play("sounds/game/hit.wav")
-        Vis.emit(foe.x, foe.y + 0.35, foe.z, 3, 1.0, 0.95, 0.85, 0.6, 0.07, 0.25, 0.6)
+        Vis.burst("Splinters", foe.x, foe.y + 0.35, foe.z, 5)
         if shot.power == "pierce" then
             local behind = {}
             for _, other in ipairs(S.enemies) do
@@ -141,7 +141,7 @@ function Towers.land(shot)
             if foe.frost_hits % 3 == 0 then foe.frozen = freeze_time end
         end
         Vis.spawn_puff(foe.x, foe.y + 0.3, foe.z, 0.6, 0.85, 1.0, 0.7, 0.3)
-        Vis.emit(foe.x, foe.y + 0.35, foe.z, 5, 1.2, 0.75, 0.92, 1.0, 0.08, 0.4, 0.4)
+        Vis.burst("Frost", foe.x, foe.y + 0.35, foe.z, 10)
         Foes.hurt(foe, s.damage)
     end
 end
@@ -171,19 +171,6 @@ function Towers.update_projectiles(dt)
                 shot.x, shot.y, shot.z = shot.x + dx / distance * step, shot.y + dy / distance * step,
                         shot.z + dz / distance * step
                 if shot.kind == "archer" then transform.set_rotation(shot.id, 0.0, 0.0, Cam.screen_roll(dx, dy, dz)) end
-            end
-        end
-        shot.trail = (shot.trail or 0.0) - dt
-        if shot.trail <= 0.0 and not arrived then
-            shot.trail = 0.035
-            if shot.power == "fire" then
-                Vis.emit(shot.x, shot.y, shot.z, 1, 0.25, 1.0, 0.55, 0.15, 0.16, 0.35, 0.3)
-            elseif shot.kind == "frost" then
-                Vis.emit(shot.x, shot.y, shot.z, 1, 0.15, 0.7, 0.9, 1.0, 0.09, 0.3, 0.0)
-            elseif shot.kind == "cannon" then
-                Vis.emit(shot.x, shot.y, shot.z, 1, 0.1, 0.55, 0.55, 0.55, 0.12, 0.4, 0.2)
-            else
-                Vis.emit(shot.x, shot.y, shot.z, 1, 0.05, 0.95, 0.92, 0.8, 0.05, 0.18, 0.0)
             end
         end
         if arrived then

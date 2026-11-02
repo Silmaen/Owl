@@ -1,0 +1,27 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7800000000000000301
+    kind: Start
+    position: [0, 120]
+    next: 7800000000000000302
+  - id: 7800000000000000302
+    kind: Choice
+    position: [260, 120]
+    speaker: {text: 'Captain of the keep'}
+    text: {text: 'Two gates open on the long bridge. Trolls heal as they march: strike them hard and all at once.'}
+    options:
+      - text: {text: 'To arms!'}
+        next: 7800000000000000304
+      - text: {text: 'Skip tutorial'}
+        condition: tutorial_offered
+        next: 7800000000000000303
+  - id: 7800000000000000303
+    kind: Event
+    position: [560, 240]
+    function: skip_tutorial
+    next: 7800000000000000304
+  - id: 7800000000000000304
+    kind: End
+    position: [820, 120]
+routes: []

@@ -193,28 +193,30 @@ def level_select() -> str:
 
 
 def settings() -> str:
-    """Settings: master volume, mouse speed of the paddle, interface size, reset, Back (saves)."""
+    """Settings: master, music and effects volumes, mouse speed of the paddle, interface size, reset, Back (saves)."""
     entities = y.Entities(7220000000000000000)
     _world(entities, [5.9], attract=False)
     root = entities.add("SettingsCanvas", [y.canvas(), y.script("scripts/ui/settings.lua")])
     column = entities.add(
         "SettingsList",
-        [y.rect((0.5, 0), (0.9, 0.82), (0, 0.15), SCREEN, SCREEN), y.layout("Column", 6, 4)],
+        [y.rect((0.5, 0), (0.9, 0.86), (0, 0.08), SCREEN, SCREEN), y.layout("Column", 6, 4)],
         parent=root,
     )
     rows: list[tuple[str, str, str, float, str]] = [
         ("MasterVolLabel", "MasterVolSlider", "on_master_vol_changed", 1.0, "Master Volume: 100%"),
+        ("MusicVolLabel", "MusicVolSlider", "on_music_vol_changed", 0.8, "Music: 80%"),
+        ("SfxVolLabel", "SfxVolSlider", "on_sfx_vol_changed", 1.0, "Effects: 100%"),
         ("MouseSpeedLabel", "MouseSpeedSlider", "on_mouse_speed_changed", 0.27, "Mouse Speed: 100%"),
         ("UiScaleLabel", "UiScaleSlider", "on_ui_scale_changed", 0.2, "Interface Size: 100%"),
     ]
-    _button(entities, column, "BackButton", "BACK", "go_back", (0.6, 0.095), False)
-    _button(entities, column, "ResetButton", "RESET DEFAULTS", "on_reset_clicked", (0.6, 0.095), False)
+    _button(entities, column, "BackButton", "BACK", "go_back", (0.6, 0.07), False)
+    _button(entities, column, "ResetButton", "RESET DEFAULTS", "on_reset_clicked", (0.6, 0.07), False)
     for index, (label, slider, callback, value, initial_text) in reversed(list(enumerate(rows))):
         focus = y.focus(initial=index == 0, callback="on_slider_focused", colour=PINK, thickness=3)
         bar = y.slider(callback, value, (0.12, 0.05, 0.2, 1), (1, 0.3, 0.8, 1), CYAN)
-        entities.add(slider, [y.child_rect((0.9, 0.05)), bar, focus], parent=column)
-        entities.add(label, [y.child_rect((0.9, 0.085)), _label(initial_text, 28, SOFT)], parent=column)
-    entities.add("TitleText", [y.child_rect((0.9, 0.14)), _label("SETTINGS", 60, PINK)], parent=column)
+        entities.add(slider, [y.child_rect((0.9, 0.034)), bar, focus], parent=column)
+        entities.add(label, [y.child_rect((0.9, 0.055)), _label(initial_text, 28, SOFT)], parent=column)
+    entities.add("TitleText", [y.child_rect((0.9, 0.12)), _label("SETTINGS", 60, PINK)], parent=column)
     return y.scene("settings", entities)
 
 

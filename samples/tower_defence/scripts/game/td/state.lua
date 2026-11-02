@@ -27,19 +27,27 @@ S.hud = {}
 
 S.shown = {}
 
-S.stats = {}            -- tower stats by kind, enemy stats by kind, read from the properties
+S.stats = {}            -- tower stats by kind, enemy stats by kind, read from the data tables
+
+S.waves = {}            -- the groups of each wave of the level, read from its data table
 
 S.pads = {}             -- list of { id, x, y, z, level, tower }
 
 S.pad_by_id = {}
 
-S.route = nil           -- road A: the waypoints, with the distance walked at each one
+S.route = nil           -- road A: the entity of its spline, its length and its number of points
 
 S.routes = {}           -- road A, and road B of a level with two gates
 
 S.enemies, S.towers, S.projectiles, S.bursts = {}, {}, {}, {}
 
-S.corpses, S.sparks = {}, {}
+S.corpses = {}
+
+S.bursts_fired = 0      -- particle bursts of the effects, for the scenarios
+
+S.captions = 0          -- subtitles of the sounds asked, for the scenarios
+
+S.still = false         -- the `reduced_motion` setting: the camera turns at once, the hints do not bob
 
 S.gold, S.lives_left = 0, 0
 

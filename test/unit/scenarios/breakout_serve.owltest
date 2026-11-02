@@ -1,4 +1,5 @@
-# Breakout: the ball rides on the paddle until the serve (Space, pad A or a click), then breaks bricks of level 1.
+# Breakout: the ball rides on the paddle until the serve (Space, pad A or a click), then breaks bricks of level 1, each
+# one in a burst of sparks spawned from `prefabs/brick_burst.owlprefab`.
 scene: ../../../samples/breakout/scenes/level_1.owl
 steps:
   - frames: 30
@@ -10,3 +11,4 @@ steps:
   - expect: {gamestate: breakout_serves, equals: 1}
   - expect: {gamestate: breakout_bricks, less: 40}
   - expect: {gamestate: breakout_score, greater: 0}
+  - expect: {gamestate: breakout_bursts, greater: 0}

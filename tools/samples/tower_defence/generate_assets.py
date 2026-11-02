@@ -12,7 +12,8 @@ Draw the sprites and synthesise the sounds of the Tower defence sample game into
   (the Horde sheets and the keep, tower and road of ``scenery.py`` in ``textures/menu/``).
 
 Sounds: mono 16 bit at 22.05 kHz, short and neutral (build, sell, shots, hits, horn, coins, keep hit, start jingle);
-the victory jingle is copied from the Engine Demo.
+the victory jingle is copied from the Engine Demo. Music: two loops without a seam, a lute tune over a drone for the
+menus (``music/menu.wav``) and a frame drum under a lute ostinato for the levels (``music/battle.wav``).
 
 The 3D terrain, the towers and the keep are models of the Kenney Tower Defense Kit and Castle Kit (CC0), copied into
 ``models/td/`` and ``models/castle/``.
@@ -434,6 +435,116 @@ def sounds() -> None:
     shutil.copyfile(DEMO / "sounds" / "ui" / "victory.wav", SOUNDS / "ui" / "victory.wav")
 
 
+# Music ----------------------------------------------------------------------------------------------------------------
+
+
+def _note_hz(name: str) -> float:
+    """The frequency of a note written ``D3``, ``F#4``, ``Bb2``."""
+    steps = {"C": -9, "D": -7, "E": -5, "F": -4, "G": -2, "A": 0, "B": 2}[name[0]]
+    rest = name[1:]
+    if rest.startswith("#"):
+        steps, rest = steps + 1, rest[1:]
+    elif rest.startswith("b"):
+        steps, rest = steps - 1, rest[1:]
+    return 440.0 * 2.0 ** ((steps + 12 * (int(rest) - 4)) / 12.0)
+
+
+def _pluck(frequency: float, seconds: float, decay: float = 3.5) -> list[float]:
+    """A plucked string (a lute): a few harmonics, the high ones dying first."""
+    out = []
+    for i in range(round(seconds * RATE)):
+        t = i / RATE
+        value = sum(math.sin(2 * math.pi * frequency * k * t) * math.exp(-t * decay * k) / k for k in (1, 2, 3, 4))
+        out.append(value * min(1.0, t / 0.002))
+    return out
+
+
+def _drum(seconds: float, seed: int) -> list[float]:
+    """A frame drum: a low falling tone and a soft skin noise."""
+    body = _tone(seconds, lambda t: 95.0 - 40.0 * t, 14.0)
+    skin = _noise(seconds, 30.0, seed, smooth=0.85)
+    return [b + 0.5 * s for b, s in zip(body, skin, strict=True)]
+
+
+def _loop(length: float, events: list[tuple[float, list[float], float]]) -> list[float]:
+    """A loop of ``length`` seconds: each sound at its time with its gain, the tails past the end wrapped to the
+    start, so that the loop plays on without a seam."""
+    count = round(length * RATE)
+    out = [0.0] * count
+    for at, samples, gain in events:
+        start = round(at * RATE)
+        for i, value in enumerate(samples):
+            out[(start + i) % count] += value * gain
+    return out
+
+
+def _drone(length: float, notes: list[str], gain: float) -> list[float]:
+    """A steady drone of a few notes, each tuned to a whole number of periods in the loop (no click at its seam)."""
+    count = round(length * RATE)
+    tuned = [round(_note_hz(note) * length) / length for note in notes]
+    return [
+        gain * sum(math.sin(2 * math.pi * f * i / RATE) + 0.25 * math.sin(4 * math.pi * f * i / RATE) for f in tuned)
+        for i in range(count)
+    ]
+
+
+def _tune(step: float, line: str, decay: float, gain: float) -> list[tuple[float, list[float], float]]:
+    """The notes of a tune, ``"D4 . F4 G4 - A4"``: one step each, ``.`` a rest, ``-`` the note before held."""
+    events: list[tuple[float, list[float], float]] = []
+    tokens = line.split()
+    for index, token in enumerate(tokens):
+        if token in (".", "-"):
+            continue
+        held = 1
+        while index + held < len(tokens) and tokens[index + held] == "-":
+            held += 1
+        events.append((index * step, _pluck(_note_hz(token), step * held + 0.6, decay), gain))
+    return events
+
+
+def music_menu() -> list[float]:
+    """The music of the menus, 21 s: a lute tune in D dorian over a drone of D and A, slow and quiet."""
+    step = 1.0 / 3.0
+    tune = (
+        "D4 - F4 G4 A4 - G4 F4 E4 - D4 E4 F4 - . . "
+        "A4 - C5 B4 A4 - G4 A4 F4 - E4 F4 D4 - . . "
+        "F4 - G4 A4 C5 - A4 G4 F4 G4 A4 - G4 - . . "
+        "A4 G4 F4 E4 D4 - E4 C4 D4 - - - . . . ."
+    )
+    length = step * len(tune.split())
+    bass = _tune(step * 4, "D3 D3 C3 D3 D3 D3 F3 A2 F3 C3 F3 C3 D3 C3 D3 D3", 2.0, 0.5)
+    lute = _loop(length, _tune(step, tune, 3.0, 0.7) + bass)
+    drone = _drone(length, ["D2", "A2"], 0.12)
+    return [a + b for a, b in zip(lute, drone, strict=True)]
+
+
+def music_battle() -> list[float]:
+    """The music of a level, 16 s: a frame drum, a low ostinato on the lute and a call over it, in A minor."""
+    step = 0.25
+    bars = 8
+    drums = []
+    for bar in range(bars):
+        for beat, gain in ((0, 1.0), (4, 0.6), (6, 0.5), (7, 0.4)):
+            drums.append((bar * 2.0 + beat * step, _drum(0.35, bar * 8 + beat), gain))
+    ostinato = " ".join(
+        ["A2 A2 C3 A2 E3 A2 C3 A2"] * 4 + ["F2 F2 A2 F2 C3 F2 A2 F2"] * 2 + ["G2 G2 B2 G2 D3 G2 E3 G2"] * 2
+    )
+    call = (
+        "A4 - - - C5 - B4 A4 E4 - - - . . . . A4 - - - C5 - D5 C5 B4 - - - . . . . "
+        "F4 - - - A4 - G4 F4 E4 - - - . . . . G4 - - - B4 - C5 B4 A4 - - - . . . ."
+    )
+    length = step * len(call.split())
+    events = drums + _tune(step, ostinato, 6.0, 0.45) + _tune(step, call, 2.2, 0.35)
+    return _loop(length, events)
+
+
+def music() -> None:
+    """The two loops of the Music bus: the menus and the levels."""
+    _write("music/menu.wav", music_menu(), peak=0.45)
+    _write("music/battle.wav", music_battle(), peak=0.5)
+
+
 if __name__ == "__main__":
     textures()
     sounds()
+    music()

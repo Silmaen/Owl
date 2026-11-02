@@ -1,0 +1,27 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7800000000000000501
+    kind: Start
+    position: [0, 120]
+    next: 7800000000000000502
+  - id: 7800000000000000502
+    kind: Choice
+    position: [260, 120]
+    speaker: {text: 'Captain of the keep'}
+    text: {text: 'The lake is frozen and the blizzard bites. Ogre mages ward the Horde: kill them first.'}
+    options:
+      - text: {text: 'To arms!'}
+        next: 7800000000000000504
+      - text: {text: 'Skip tutorial'}
+        condition: tutorial_offered
+        next: 7800000000000000503
+  - id: 7800000000000000503
+    kind: Event
+    position: [560, 240]
+    function: skip_tutorial
+    next: 7800000000000000504
+  - id: 7800000000000000504
+    kind: End
+    position: [820, 120]
+routes: []

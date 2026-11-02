@@ -21,6 +21,7 @@ Entities:
         orthographicSize: 16
         orthographicNear: -1
         orthographicFar: 10
+        postProcess: {ev100: 10, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 0.7, bloomKnee: 0.5, bloomIntensity: 0.6, bloomScatter: 0.75}
       primary: true
       fixedAspectRatio: false
   - Entity: 7100000000001000002
@@ -38,6 +39,7 @@ Entities:
       type: 0
       color: [0.04, 0.04, 0.09, 1]
       topColor: [0.8, 0.9, 1, 1]
+    Light2D: {type: Ambient, enabled: true, color: [0.88, 0.85, 0.98], intensity: 1, radius: 5, falloff: 2, height: 1, castShadows: false}
   - Entity: 7100000000001000003
     Tag:
       tag: Backdrop
@@ -129,6 +131,8 @@ Entities:
       color: [1, 1, 1, 1]
       tilingFactor: 1
       texture: gid:a7746526d6cca35a:textures/paddle.png
+      lit: false
+    Light2D: {type: Point, enabled: true, color: [1, 0.3, 0.8], intensity: 1.6, radius: 3.5, falloff: 2, height: 1, castShadows: false}
     PhysicBody:
       type: Kinematic
       fixedRotation: true
@@ -162,6 +166,8 @@ Entities:
       color: [1, 1, 1, 1]
       tilingFactor: 1
       texture: gid:362cf100240ef014:textures/paddle_wide.png
+      lit: false
+    Light2D: {type: Point, enabled: true, color: [1, 0.3, 0.8], intensity: 1.6, radius: 3.5, falloff: 2, height: 1, castShadows: false}
     PhysicBody:
       type: Kinematic
       fixedRotation: true
@@ -183,6 +189,7 @@ Entities:
       color: [1, 1, 1, 1]
       tilingFactor: 1
       texture: gid:e29842660f453bf4:textures/ball.png
+      lit: false
     PhysicBody:
       type: Dynamic
       fixedRotation: true
@@ -190,6 +197,16 @@ Entities:
       density: 1
       restitution: 1
       friction: 0
+    Trail:
+      enabled: false
+      lifetime: 0.16
+      minDistance: 0.05
+      maxPoints: 40
+      width: 0.26
+      color: [0.6, 0.97, 1, 0.9]
+      emissive: 3000
+      blend: Additive
+    Light2D: {type: Point, enabled: true, color: [0.6, 0.97, 1], intensity: 2.2, radius: 4.5, falloff: 2, height: 1, castShadows: false}
     LuaScript:
       scriptPath: gid:10869270915e57f6:scripts/game/ball.lua
       properties:
@@ -241,146 +258,6 @@ Entities:
       playOnStart: true
       maxDistance: 50
       rolloff: 1
-  - Entity: 7100000000001000012
-    Tag:
-      tag: PowerWide1
-    Transform:
-      translation: [0, -30, 0.2]
-      rotation: [0, 0, 0]
-      scale: [1.2, 0.525, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy: {}
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: gid:c4446d3dc92ce61b:textures/power_wide.png
-  - Entity: 7100000000001000013
-    Tag:
-      tag: PowerWide2
-    Transform:
-      translation: [0, -30, 0.2]
-      rotation: [0, 0, 0]
-      scale: [1.2, 0.525, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy: {}
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: gid:c4446d3dc92ce61b:textures/power_wide.png
-  - Entity: 7100000000001000014
-    Tag:
-      tag: PowerSlow1
-    Transform:
-      translation: [0, -30, 0.2]
-      rotation: [0, 0, 0]
-      scale: [1.2, 0.525, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy: {}
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: gid:27a2b97c236ba1aa:textures/power_slow.png
-  - Entity: 7100000000001000015
-    Tag:
-      tag: PowerSlow2
-    Transform:
-      translation: [0, -30, 0.2]
-      rotation: [0, 0, 0]
-      scale: [1.2, 0.525, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy: {}
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: gid:27a2b97c236ba1aa:textures/power_slow.png
-  - Entity: 7100000000001000016
-    Tag:
-      tag: BreakFx1
-    Transform:
-      translation: [0, -30, 0.2]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy: {}
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7100000000001000017
-    Tag:
-      tag: BreakFx2
-    Transform:
-      translation: [0, -30, 0.2]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy: {}
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7100000000001000018
-    Tag:
-      tag: BreakFx3
-    Transform:
-      translation: [0, -30, 0.2]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy: {}
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7100000000001000019
-    Tag:
-      tag: BreakFx4
-    Transform:
-      translation: [0, -30, 0.2]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy: {}
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7100000000001000020
-    Tag:
-      tag: BreakFx5
-    Transform:
-      translation: [0, -30, 0.2]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy: {}
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7100000000001000021
-    Tag:
-      tag: BreakFx6
-    Transform:
-      translation: [0, -30, 0.2]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: false
-    Hierarchy: {}
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7100000000001000022
     Tag:
       tag: Brick

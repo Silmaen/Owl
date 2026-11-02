@@ -1,5 +1,6 @@
 # Wolfenstein mini: the tally of floor 1 (tally.lua) counts its lines up one after the other; accept during the count
-# shows them all at once without leaving, the next accept takes the elevator to floor 2.
+# shows them all at once without leaving, the next accept takes the elevator to floor 2. The elevator ride before it is
+# skipped with a second press of E.
 scene: ../../../samples/wolfenstein/scenes/level_1.owl
 project: ../../../samples/wolfenstein
 steps:
@@ -8,6 +9,10 @@ steps:
   - {command: entity.set_transform, args: {entity: ExitElevator, translation: [-12.5, -11.5, 0]}}
   - frames: 5
   - input: {key: E, frames: 3}
+  - frames: 30
+  - input: {key: E, frames: 3}
+  - frames: 3
+  - expect: {gamestate: wolf_ride_skipped, equals: 1}
   - frames: 120
   - expect: {entity: TallyTitle, exists: true}
   - expect: {gamestate: wolf_tally_step, less: 4}

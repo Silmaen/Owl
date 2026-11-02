@@ -20,12 +20,15 @@
 #include <scene/component/Tilemap.h>
 
 #include "core/external/yaml.h"
+#include "renderer/RendererParticlesLayer.h"
 #include "renderer/RendererRaycastLayer.h"
 
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <span>
+#include <tuple>
 #include <utility>
 
 using namespace owl;
@@ -34,6 +37,7 @@ using owl::renderer::RaycastConfig;
 using owl::renderer::RaycastDynamicWallData;
 using owl::renderer::RaycastSpriteData;
 using owl::renderer::Renderer;
+using owl::renderer::RendererParticlesLayer;
 using owl::renderer::RendererRaycast;
 using owl::renderer::RendererRaycastLayer;
 using owl::renderer::RenderLayerFactory;
@@ -782,5 +786,59 @@ TEST(RendererRaycast, projectToViewportFollowsTheSpriteProjection) {
 	const auto behind = layer->projectToViewport(camera, viewport, {1.f, -2.f, 0.f});
 	EXPECT_FALSE(behind.ahead);
 	EXPECT_GT(behind.position.x(), 400.f);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, particleLayerReadsItsProjection) {
+	bootRendererStack();
+	const auto layer = RenderLayerFactory::create("RendererParticles", "fx");
+	ASSERT_NE(layer, nullptr);
+	const auto* particles = dynamic_cast<RendererParticlesLayer*>(layer.get());
+	ASSERT_NE(particles, nullptr);
+	EXPECT_EQ(particles->getProjection(), RendererParticlesLayer::Projection::Scene);
+	EXPECT_FLOAT_EQ(particles->getFovDegrees(), 75.f);
+	layer->applyConfig("{Projection: raycast, Fov: 60}");
+	EXPECT_EQ(particles->getProjection(), RendererParticlesLayer::Projection::Raycast);
+	EXPECT_FLOAT_EQ(particles->getFovDegrees(), 60.f);
+	layer->applyConfig("{Projection: Scene}");
+	EXPECT_EQ(particles->getProjection(), RendererParticlesLayer::Projection::Scene);
+	// The scene projection keeps the camera's own view-projection.
+	CameraOrtho camera{-2.f, 2.f, -1.f, 1.f};
+	camera.setTransform(math::Transform{{1.f, 2.f, 0.5f}, {0.f, 0.f, 0.3f}}());
+	const auto viewProjection = layer->getEffectiveViewProjection(camera);
+	for (size_t row = 0; row < 4; ++row) {
+		for (size_t col = 0; col < 4; ++col)
+			EXPECT_FLOAT_EQ(viewProjection(row, col), camera.getViewProjection()(row, col));
+	}
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, particleLayerProjectsAsTheRaycaster) {
+	bootRendererStack();
+	const auto raycast = RenderLayerFactory::create("RendererRaycast", "world");
+	const auto particles = RenderLayerFactory::create("RendererParticles", "fx");
+	ASSERT_NE(raycast, nullptr);
+	ASSERT_NE(particles, nullptr);
+	raycast->applyConfig("{Fov: 66}");
+	particles->applyConfig("{Projection: Raycast, Fov: 66}");
+	// A player camera of the raycaster: on the map plane, turned, half a cell above the floor.
+	CameraOrtho camera{-1.f, 1.f, -1.f, 1.f};
+	camera.setTransform(math::Transform{{3.f, -2.f, 0.5f}, {0.f, 0.f, 0.7f}}());
+	const math::vec2ui viewport{960, 540};
+	const float forwardX = -std::sin(0.7f);
+	const float forwardY = std::cos(0.7f);
+	for (const auto& [ahead, side, height]: {std::tuple{2.f, 0.f, 0.f}, std::tuple{1.5f, 0.4f, -0.3f},
+											 std::tuple{4.f, -1.f, 0.45f}, std::tuple{0.6f, 0.1f, -0.2f}}) {
+		const math::vec3 point{3.f + forwardX * ahead + forwardY * side, -2.f + forwardY * ahead - forwardX * side,
+							   height};
+		const auto expected = raycast->projectToViewport(camera, viewport, point);
+		const auto actual = particles->projectToViewport(camera, viewport, point);
+		EXPECT_TRUE(actual.ahead);
+		EXPECT_NEAR(actual.position.x(), expected.position.x(), 0.05f);
+		EXPECT_NEAR(actual.position.y(), expected.position.y(), 0.05f);
+	}
+	// Behind the eye: not ahead, as for the raycaster.
+	const auto behind = particles->projectToViewport(camera, viewport, {3.f - forwardX, -2.f - forwardY, 0.f});
+	EXPECT_FALSE(behind.ahead);
 	teardownRendererStack();
 }

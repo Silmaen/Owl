@@ -16,6 +16,10 @@
 -- cells are kept as a string of 0 and 1 in `wolf_seen_map` of the gamestate (written at most twice a second) so that a
 -- save brings them back; level.lua clears it when a floor starts.
 --
+-- Markers: the keys and the elevator switch carry a `HudMarker` (label, distance, an arrow on the screen edge), off
+-- until the fog first reveals their cell; a key's marker goes with the key. They are hidden for the elevator ride.
+-- `wolf_markers` counts the markers shown.
+--
 -- The fog is set up a few rows per frame: reading and clearing every cell at once overruns the script time quota on
 -- slow machines (emulated arm64).
 
@@ -36,6 +40,7 @@ local SAVE_PERIOD, HEARING    -- set from the properties in on_create
 local SMALL = { scale = 5, x = 96, y = 96 }
 local LARGE = { scale = 11, x = 192, y = 192 }
 local DOOR_TAGS = { "Door", "GoldDoor", "BlueDoor", "ElevatorDoor" }
+local MARKER_TAGS = { "GoldKey", "BlueKey", "ExitElevator" }
 
 local player_id, dot_id, facing_id = 0, 0, 0
 local view = SMALL
@@ -50,6 +55,9 @@ local floor_seen = 0
 local dirty = false
 local save_clock = 0
 local fog_row = 0
+local markers = {}  -- {id, shown} of each entity with a marker
+local markers_shown = 0
+local markers_hidden = false
 
 local function cell_of(x, y)
     return math.floor(x + MAP_SIZE / 2), math.floor(MAP_SIZE / 2 - y)
@@ -212,7 +220,37 @@ function on_create()
     for _, id in ipairs(scene.find_entities("Secret")) do
         add_blocker(secrets, id, pushwall.get_state(id))
     end
+    for _, tag in ipairs(MARKER_TAGS) do
+        for _, id in ipairs(scene.find_entities(tag)) do
+            markers[#markers + 1] = { id = id, shown = false }
+        end
+    end
+    gamestate.set("wolf_markers", 0)
     place(SMALL.scale, SMALL.x, SMALL.y)
+end
+
+-- Shows the marker of every entity whose cell was seen; hides them all once the floor is left.
+local function update_markers()
+    if gamestate.get("wolf_leaving", 0) == 1 then
+        if not markers_hidden then
+            markers_hidden = true
+            for _, m in ipairs(markers) do
+                if m.shown and entity.has_component(m.id, "HudMarker") then
+                    entity.set_hud_marker_enabled(m.id, false)
+                end
+            end
+        end
+        return
+    end
+    for _, m in ipairs(markers) do
+        if not m.shown and entity.has_component(m.id, "HudMarker")
+                and seen[key_of(cell_of(transform.get_position(m.id)))] then
+            m.shown = true
+            entity.set_hud_marker_enabled(m.id, true)
+            markers_shown = markers_shown + 1
+            gamestate.set("wolf_markers", markers_shown)
+        end
+    end
 end
 
 -- Plays a sound at the position of an entity, softer the farther the player is.
@@ -272,6 +310,7 @@ function on_update(dt)
         return
     end
     update_fog(dt)
+    update_markers()
 
     if input.is_action_just_pressed("map") then
         local next_view = view.scale == SMALL.scale and LARGE or SMALL

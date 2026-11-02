@@ -1,0 +1,16 @@
+# Sokoban: the pause (Esc) stops the scene clock and the steps; after the resume a step moves the player again.
+scene: ../../../samples/sokoban/scenes/level_01.owl
+steps:
+  - frames: 30
+  - actions: {pause: true, frames: 1}
+  - frames: 5
+  - expect: {gamestate: sokoban_paused, equals: true}
+  - input: {key: Right, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_moves, equals: 0}
+  - actions: {pause: true, frames: 1}
+  - frames: 5
+  - expect: {gamestate: sokoban_paused, equals: false}
+  - input: {key: Right, frames: 2}
+  - frames: 12
+  - expect: {gamestate: sokoban_moves, equals: 1}

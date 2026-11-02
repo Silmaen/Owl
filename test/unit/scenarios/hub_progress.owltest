@@ -71,6 +71,9 @@ steps:
   - frames: 150
   - expect: {entity: TavernCamera, exists: true}
   - expect: {gamestate: tavern_key, equals: 0}
+  # The server's round passes by the trapdoor: park it behind the bar, out of the player's aim.
+  - {command: component.set, args: {entity: ServerWalker, component: SplineFollower, values: {enabled: false}}}
+  - {command: entity.set_transform, args: {entity: ServerWalker, translation: [3.0, 0, 0.8]}}
   - {command: entity.set_transform, args: {entity: CellarKey, translation: [1.915, 1.475, 1.693]}}
   - frames: 5
   - input: {key: E, frames: 3}

@@ -1,0 +1,37 @@
+Prefab: BrickBurst
+Version: 1
+Entities:
+  - Entity: 7000000000000000101
+    Tag:
+      tag: BrickBurst
+    Transform:
+      translation: [0, 0, 0.3]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 64
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.35
+      lifetimeMax: 0.8
+      shape: Box
+      shapeSize: [0.7, 0.2, 0]
+      speedMin: 2.5
+      speedMax: 7
+      gravity: [0, -9, 0]
+      drag: 1.5
+      sizeMin: 0.16
+      sizeMax: 0.34
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.3]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 1, 1, 1], [0.6, 1, 1, 1, 0.8], [1, 1, 1, 1, 0]]
+      emissive: 1500
+      blend: Additive
+      space: World
+    Light2D: {type: Point, enabled: true, color: [1, 1, 1], intensity: 2.4, radius: 4, falloff: 2, height: 1, castShadows: false}

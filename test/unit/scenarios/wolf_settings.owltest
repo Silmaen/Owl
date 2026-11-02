@@ -1,0 +1,44 @@
+# Wolfenstein mini settings with the gamepad: the music slider turned down (the Music bus follows `volume_music`), the
+# effects slider turned down (the SFX and Ambient buses), then the reduced motion and the colour vision correction
+# toggled in the right column, and Back with pad B saves and returns to the title.
+scene: ../../../samples/wolfenstein/scenes/settings.owl
+project: ../../../samples/wolfenstein
+steps:
+  - frames: 10
+  - expect: {setting: reduced_motion, equals: false}
+  - expect: {setting: color_blind_mode, equals: none}
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadLeft}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadLeft}, frames: 2}
+  - frames: 1
+  - expect: {setting: volume_music, less: 0.8}
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadLeft}, frames: 2}
+  - frames: 1
+  - expect: {setting: volume_sfx, less: 1}
+  - expect: {setting: volume_ambient, less: 1}
+  # Left and right move a slider: the right column is reached through the buttons below, Reset then Back.
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadRight}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadUp}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadUp}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: A}, frames: 2}
+  - frames: 2
+  - expect: {setting: reduced_motion, equals: true}
+  - input: {gamepad: {button: DpadUp}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: A}, frames: 2}
+  - frames: 2
+  - expect: {setting: color_blind_mode, equals: protanopia}
+  - input: {gamepad: {button: B}, frames: 2}
+  - frames: 60
+  - expect: {entity: TitleArt, exists: true}

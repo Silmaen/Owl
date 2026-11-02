@@ -1,6 +1,7 @@
 -- A secret wall of Wolfenstein mini (`RaycastPushWall`, tag `Secret`): `interact` next to it slides it (built in).
 -- The first time it leaves the `idle` state it counts as a found secret (`wolf_secrets`), once: the mark lives in the
--- gamestate (`wolf_secret_<entity id>`), so a loaded save does not count a moved wall again.
+-- gamestate (`wolf_secret_<entity id>`), so a loaded save does not count a moved wall again. The grinding sound has a
+-- subtitle (shown when the player keeps the `subtitles` setting on).
 
 local key = ""
 local counted = false
@@ -19,4 +20,5 @@ function on_update(dt)
     gamestate.set("wolf_secrets", gamestate.get("wolf_secrets", 0) + 1)
     gamestate.set("wolf_toast", "Secret found!")
     sound.play("sounds/game/pushwall.wav")
+    ui.show_subtitle("[Stone grinds: the wall slides away]", 2.5)
 end

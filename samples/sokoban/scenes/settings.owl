@@ -1241,7 +1241,7 @@ Entities:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [0.95, 0.78]
+      size: [0.95, 0.88]
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [0, 0.03]
       offsetUnit: [ScreenHeight, ScreenHeight]
@@ -1272,7 +1272,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.1]
+      size: [0.6, 0.074]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
@@ -1337,7 +1337,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.1]
+      size: [0.6, 0.074]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
@@ -1402,7 +1402,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.1]
+      size: [0.6, 0.074]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
@@ -1467,7 +1467,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.08]
+      size: [0.9, 0.052]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -1499,7 +1499,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.86, 0.05]
+      size: [0.86, 0.034]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiSlider:
@@ -1531,13 +1531,141 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.08]
+      size: [0.9, 0.052]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
       outlineWidth: 2
       outlineColor: [0.24, 0.13, 0.05, 1]
       text: 'Interface Size: 100%'
+      color: [0.9, 0.82, 0.68, 0.95]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-Bold
+  - Entity: 7320000000000000078
+    Tag:
+      tag: SfxVolSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000000000000063
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.034]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 1
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.1, 0.06, 0.03, 1]
+      fillColor: [0.95, 0.7, 0.25, 1]
+      handleColor: [1, 0.93, 0.78, 1]
+      onValueChangedCallback: on_sfx_vol_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: 'on_slider_focused'
+      highlightColor: [1, 0.72, 0.2, 1]
+      highlightThickness: 3
+  - Entity: 7320000000000000079
+    Tag:
+      tag: SfxVolLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000000000000063
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.052]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.24, 0.13, 0.05, 1]
+      text: 'Effects: 100%'
+      color: [0.9, 0.82, 0.68, 0.95]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-Bold
+  - Entity: 7320000000000000076
+    Tag:
+      tag: MusicVolSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000000000000063
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.034]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 0.8
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.1, 0.06, 0.03, 1]
+      fillColor: [0.95, 0.7, 0.25, 1]
+      handleColor: [1, 0.93, 0.78, 1]
+      onValueChangedCallback: on_music_vol_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: 'on_slider_focused'
+      highlightColor: [1, 0.72, 0.2, 1]
+      highlightThickness: 3
+  - Entity: 7320000000000000077
+    Tag:
+      tag: MusicVolLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000000000000063
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.052]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.24, 0.13, 0.05, 1]
+      text: 'Music: 80%'
       color: [0.9, 0.82, 0.68, 0.95]
       fontSize: 28
       horizontalAlignment: Center
@@ -1563,7 +1691,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.86, 0.05]
+      size: [0.86, 0.034]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiSlider:
@@ -1595,7 +1723,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.08]
+      size: [0.9, 0.052]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -1627,7 +1755,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.13]
+      size: [0.9, 0.11]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:

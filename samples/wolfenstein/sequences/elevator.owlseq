@@ -1,0 +1,18 @@
+Sequence: ''
+FormatVersion: 1
+duration: 3.2
+cameraTracks:
+  - name: Ride
+    muted: false
+    keys:
+      - {time: 0, position: [0, 0, 0], rotation: [0, 0, 0], fov: 0.7853982, size: 8, easing: Smooth}
+      - {time: 0.6, position: [0, 0, 0], rotation: [0, 0, 1.5708], fov: 0.7853982, size: 8, easing: Smooth}
+      - {time: 1.2, position: [0, 0, 0], rotation: [0, 0, 3.1416], fov: 0.7853982, size: 8, easing: Step}
+      - {time: 3.2, position: [0, 0, 0], rotation: [0, 0, 3.1416], fov: 0.7853982, size: 8, easing: Step}
+eventTracks:
+  - name: Events
+    muted: false
+    keys:
+      - {time: 0, function: on_ride_start}
+      - {time: 1, function: on_ride_turned}
+      - {time: 2.4, function: on_ride_fade}

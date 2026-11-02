@@ -30,6 +30,7 @@ local leaving = false
 local reveal, reveal_clock, reveal_index = 0, 0.0, 0
 local ids = {}
 local clock = 0.0
+local still = false         -- the `reduced_motion` setting: the sites do not bob
 local map_root, fitted = 0, { w = 0, h = 0, scale = 1.0 }
 local clouds, glints = {}, {}
 local FLAG_FRAMES = 4
@@ -94,6 +95,7 @@ local function show_site(site)
 end
 
 function on_create()
+    still = settings.get("reduced_motion", false) == true
     if not ui.is_transition_active() then
         ui.transition_play("wipe_down", 0.4, wipe_color.r, wipe_color.g, wipe_color.b)
     end
@@ -257,10 +259,10 @@ function on_update(dt)
     fit_map()
     animate(real)
     update_reveal(real)
-    -- The open, unfinished sites bob a little.
+    -- The open, unfinished sites bob a little (not with the `reduced_motion` setting).
     for _, site in ipairs(sites) do
         if site.open and not site.done and site.id ~= 0 then
-            local s = 2.4 * (1.0 + 0.04 * math.sin(clock * 3.0))
+            local s = still and 2.4 or 2.4 * (1.0 + 0.04 * math.sin(clock * 3.0))
             transform.set_scale(site.id, s, s, 1.0)
         end
     end

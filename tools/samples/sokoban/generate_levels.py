@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Write the tileset, the ten level tilemaps, the ten level scenes and the level HUD of the Sokoban sample game into
-``samples/sokoban/``, from the level texts of ``levels.py``.
+Write the tileset, the ten level tilemaps, the ten level scenes, the level table and the level HUD of the Sokoban
+sample game into ``samples/sokoban/``, from the level texts of ``levels.py``.
 
 A level is one ``.owltilemap`` of three layers, in the binary layout Owl Nest saves: ``floor`` (floor and walls),
 ``goals`` (the goal marks) and ``boxes`` (the crates and the hero tile where the player starts). Each level scene points
 its ``Level`` entity at its tilemap (one scene per level, gap G14) and holds the player, the sliding crate, the camera,
-the music and the ``Game`` entity running ``scripts/game/sokoban.lua``. The levels are edited in the tilemap editor of
+the music and the ``Game`` entity running ``scripts/game/sokoban.lua``; ``tables/levels.owltable`` lists the scene and
+the name of each level, in play order. The levels are edited in the tilemap editor of
 Owl Nest afterwards; running this script again overwrites those edits.
 
 Run from the repository root: ``./docker_run.sh poetry run python -m tools.samples.sokoban.generate_levels``.
@@ -128,9 +129,7 @@ def level_scene(index: int) -> str:
     )
     entities.add("MovingBox", [y.frames(sheet, COLUMNS, ROWS, TILES["box"])], position=(0, 0, 0.05), visible=False)
     entities.add("Music", [y.music("sounds/music/loop.wav", 0.3)])
-    next_scene = f"scenes/level_{number + 1:02d}.owl" if number < len(lv.LEVELS) else "scenes/victory.owl"
-    properties = [("level", "int", number), ("level_name", "string", lvl.name), ("next_scene", "string", next_scene)]
-    entities.add("Game", [y.script("scripts/game/sokoban.lua", properties)])
+    entities.add("Game", [y.script("scripts/game/sokoban.lua", [("level", "int", number)])])
     return y.scene(f"level_{number:02d}", entities, hud="huds/level.owlhud")
 
 
@@ -177,12 +176,29 @@ def level_hud() -> str:
     return y.hud_file("level", entities)
 
 
+def level_table() -> str:
+    """The data table of the levels: one row per level, its scene and its name."""
+    lines = [
+        "DataTable: ''",
+        "FormatVersion: 1",
+        "columns:",
+        "  - {name: scene, type: Asset}",
+        "  - {name: name, type: Text}",
+        "rows:",
+    ]
+    for index in range(len(lv.LEVELS)):
+        name = f"level_{index + 1:02d}"
+        lines += [f"  - key: {name}", f"    scene: scenes/{name}.owl", f"    name: {lv.level(index).name}"]
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     """Write every generated file of the levels."""
-    for folder in ("tilesets", "tilemaps", "scenes", "huds"):
+    for folder in ("tilesets", "tilemaps", "scenes", "huds", "tables"):
         (ROOT / folder).mkdir(parents=True, exist_ok=True)
     (ROOT / "tilesets" / "sokoban.owltileset").write_text(tileset())
     (ROOT / "huds" / "level.owlhud").write_text(level_hud())
+    (ROOT / "tables" / "levels.owltable").write_text(level_table())
     for index in range(len(lv.LEVELS)):
         name = f"level_{index + 1:02d}"
         (ROOT / "tilemaps" / f"{name}.owltilemap").write_bytes(tilemap(name, lv.level(index)))

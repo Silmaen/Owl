@@ -3,9 +3,10 @@
 --
 -- It closes the floor: the tally (score of the floor, items, secrets and map explored, in %) goes into `wolf_tally_*`,
 -- a bonus of 10 points per percent is added to the score, the best ratios of the floor are kept in the settings
--- (`wolf_best_<floor>_items`, `_secrets`, `_explored`, saved to `settings.yml`), then the tally screen opens and leads to
--- the scene of the `next_scene` property (the next floor, or the victory after the last one; the game export follows
--- it like a scene path quoted in a script).
+-- (`wolf_best_<floor>_items`, `_secrets`, `_explored`, saved to `settings.yml`), then the elevator ride of
+-- `elevator.lua` (`wolf_ride` set to 1) leads to the tally screen, which leads to the scene of the `next_scene`
+-- property (the next floor, or the victory after the last one; the game export follows it like a scene path quoted in
+-- a script).
 
 properties = {
     { name = "next_scene", type = "string", default = "scenes/victory.owl" },
@@ -53,6 +54,5 @@ function on_elevator_use()
     keep_best(best .. "secrets", secrets)
     keep_best(best .. "explored", explored)
     settings.save()
-    sound.play("sounds/game/elevator.wav")
-    scene.transition_to("scenes/tally.owl", "fade_out", 0.6, 0.22, 0.02, 0.02)
+    gamestate.set("wolf_ride", 1)
 end

@@ -3,26 +3,13 @@
 -- log on the right reads the progress (the `sokoban_done_NN` and `sokoban_best_NN` settings written by sokoban.lua).
 -- Every change of screen is a wipe in the brown of the crates (`scene.transition_to` with a colour).
 
--- Every level, to count the progress and find the level to continue (a level names the next one in `next_scene`).
+-- The levels, to count the progress and find the level to continue, are the rows of `tables/levels.owltable`
+-- (scripts/game/levels.lua).
 properties = {
     { name = "wipe_color", type = "color", default = { 0.2, 0.12, 0.05, 1 } },
 }
 
-local LEVEL_SCENES = {
-    "scenes/level_01.owl",
-    "scenes/level_02.owl",
-    "scenes/level_03.owl",
-    "scenes/level_04.owl",
-    "scenes/level_05.owl",
-    "scenes/level_06.owl",
-    "scenes/level_07.owl",
-    "scenes/level_08.owl",
-    "scenes/level_09.owl",
-    "scenes/level_10.owl",
-}
-local LEVEL_NAMES = { "First push", "Two by two", "Side door", "Back room", "Cellar", "Four corners", "Pantry",
-                      "Columns", "Loading bay", "Warehouse" }
-
+local levels = nil              -- scripts/game/levels.lua, required in on_create
 local leaving = false
 local next_level = 1
 local window_id, back_id, how_to_id = 0, 0, 0
@@ -41,6 +28,7 @@ local function set(name, text)
 end
 
 function on_create()
+    levels = require("scripts.game.levels")
     if not ui.is_transition_active() then
         ui.transition_play("wipe_left", 0.4, wipe_color.r, wipe_color.g, wipe_color.b)
     end
@@ -49,21 +37,21 @@ function on_create()
     how_to_id = scene.find_entity("HowToButton")
     local done, moves = 0, 0
     next_level = 0
-    for i = 1, #LEVEL_SCENES do
-        if settings.get(string.format("sokoban_done_%02d", i), false) then
+    for i = 1, levels.count() do
+        if levels.done(i) then
             done = done + 1
-            moves = moves + settings.get(string.format("sokoban_best_%02d", i), 0)
+            moves = moves + levels.best(i)
         elseif next_level == 0 then
             next_level = i
         end
     end
-    set("ProgressLabel", "Levels done: " .. done .. " / " .. #LEVEL_SCENES)
+    set("ProgressLabel", "Levels done: " .. done .. " / " .. levels.count())
     local bar_id = scene.find_entity("ProgressBar")
-    if bar_id ~= 0 then ui.set_progress(bar_id, done / #LEVEL_SCENES) end
+    if bar_id ~= 0 then ui.set_progress(bar_id, done / levels.count()) end
     if next_level == 0 then
         set("NextLabel", "Every level is done")
     else
-        set("NextLabel", "Next: level " .. next_level .. ", " .. LEVEL_NAMES[next_level])
+        set("NextLabel", "Next: level " .. next_level .. ", " .. levels.name(next_level))
     end
     set("BestLabel", done == 0 and "No level done yet" or ("Fewest moves, levels done: " .. moves))
     local continue_id = scene.find_entity("ContinueButton")
@@ -90,7 +78,7 @@ end
 function on_continue_clicked()
     if next_level == 0 then return end
     gamestate.set("sokoban_level", next_level)
-    leave(LEVEL_SCENES[next_level] or LEVEL_SCENES[1], true)
+    leave(levels.scene(next_level) or levels.scene(1), true)
 end
 
 function on_how_to_clicked()

@@ -1,0 +1,27 @@
+Dialogue: ""
+FormatVersion: 1
+nodes:
+  - id: 7800000000000000701
+    kind: Start
+    position: [0, 120]
+    next: 7800000000000000702
+  - id: 7800000000000000702
+    kind: Choice
+    position: [260, 120]
+    speaker: {text: 'Captain of the keep'}
+    text: {text: 'No rain for a month: the wells are low and the Horde is thirsty. Hold both gates.'}
+    options:
+      - text: {text: 'To arms!'}
+        next: 7800000000000000704
+      - text: {text: 'Skip tutorial'}
+        condition: tutorial_offered
+        next: 7800000000000000703
+  - id: 7800000000000000703
+    kind: Event
+    position: [560, 240]
+    function: skip_tutorial
+    next: 7800000000000000704
+  - id: 7800000000000000704
+    kind: End
+    position: [820, 120]
+routes: []

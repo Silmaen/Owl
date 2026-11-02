@@ -75,6 +75,14 @@ def button(
     return uuid
 
 
+def _neighbours(entities: y.Entities, uuid: int, **directions: int) -> None:
+    """Name the widgets the focus of an entity goes to (``up``, ``down``, ``left``, ``right``) in its ``UiFocus``."""
+    start = entities.lines.index(f"  - Entity: {uuid}")
+    at = entities.lines.index("    UiFocus:", start) + 1
+    for offset, (direction, target) in enumerate(directions.items()):
+        entities.lines.insert(at + 2 + offset, f"      {direction}: {target}")
+
+
 def _dossier(colour: y.Colour = (0.05, 0.05, 0.06, 0.88)) -> str:
     """A dark panel with a thin steel rim."""
     return y.panel(colour, (0.45, 0.46, 0.46, 0.9), 2)
@@ -174,6 +182,7 @@ def title() -> str:
     entities.add("BestText", [y.child_rect((0.92, 0.66)), best], parent=record)
     entities.add("RecordTitle", [y.child_rect((0.92, 0.18)), label("SERVICE RECORD", 30, RED)], parent=record)
     _how_to_play(entities, root)
+    entities.add("MenuMusic", [y.music("sounds/music/menu.wav", 0.6)])
     return y.scene("title", entities, header=RAYCAST_HEADER)
 
 
@@ -196,33 +205,61 @@ def _how_to_play(entities: y.Entities, root: int) -> None:
 
 
 def settings() -> str:
-    """Settings: master volume, mouse turn sensitivity, interface size, reset, Back (saves)."""
+    """Settings, in two columns: the sound (master, music, effects) and the mouse turn on the left, the interface size
+    and the accessibility (colour vision, reduced motion, subtitles) on the right; reset and Back (saves) below. A row
+    lays its children out from the right, a column from the bottom."""
     entities = y.Entities(3310000000000000000)
     _flat_world(entities)
     root = entities.add("SettingsCanvas", [y.canvas(), y.script("scripts/ui/settings.lua")])
+    entities.add("MenuMusic", [y.music("sounds/music/menu.wav", 0.6)])
     board = entities.add(
         "SettingsList",
-        [y.rect((0.5, 0.5), (0.95, 0.85)), _dossier(), y.layout("Column", 6, 12)],
+        [
+            y.rect((0.5, 0.5), (0.94, 0.86), units=("ScreenWidth", "ScreenHeight")),
+            _dossier(),
+            y.layout("Column", 8, 14),
+        ],
         parent=root,
     )
 
     def slider(callback: str, value: float, initial: bool) -> list[str]:
         bar = y.slider(callback, value, (0.12, 0.12, 0.13, 1), RED, STEEL)
-        return [y.child_rect((0.86, 0.05)), bar, y.focus(initial, True, "", RED, 3)]
+        return [y.child_rect((0.9, 0.07)), bar, y.focus(initial, True, "", RED, 3)]
 
-    button(entities, board, "BackButton", "Back", "go_back", (0.6, 0.11))
-    button(entities, board, "ResetButton", "Reset defaults", "on_reset_clicked", (0.6, 0.11))
-    rows: list[tuple[str, list[str]]] = [
-        ("TitleText", [y.child_rect((0.9, 0.14)), label("SETTINGS", 56, RED)]),
-        ("MasterVolLabel", [y.child_rect((0.9, 0.08)), label("Master volume: 100%", 26, SOFT, font="")]),
+    def setting_label(text: str) -> list[str]:
+        return [y.child_rect((0.95, 0.1)), label(text, 26, SOFT, font="")]
+
+    buttons = entities.add("SettingsButtons", [y.child_rect((0.9, 0.11)), y.layout("Row", 16)], parent=board)
+    back = button(entities, buttons, "BackButton", "Back", "go_back", (0.42, 1))
+    reset = button(entities, buttons, "ResetButton", "Reset defaults", "on_reset_clicked", (0.42, 1))
+    columns = entities.add("SettingsColumns", [y.child_rect((0.96, 0.66)), y.layout("Row", 16)], parent=board)
+    right = entities.add("DisplayColumn", [y.child_rect((0.48, 1)), y.layout("Column", 6)], parent=columns)
+    left = entities.add("SoundColumn", [y.child_rect((0.48, 1)), y.layout("Column", 6)], parent=columns)
+    left_rows: list[tuple[str, list[str]]] = [
+        ("MasterVolLabel", setting_label("Master volume: 100%")),
         ("MasterVolSlider", slider("on_master_vol_changed", 1.0, True)),
-        ("MouseLabel", [y.child_rect((0.9, 0.08)), label("Mouse turn: 1.00", 26, SOFT, font="")]),
+        ("MusicVolLabel", setting_label("Music: 80%")),
+        ("MusicVolSlider", slider("on_music_vol_changed", 0.8, False)),
+        ("SfxVolLabel", setting_label("Effects: 100%")),
+        ("SfxVolSlider", slider("on_sfx_vol_changed", 1.0, False)),
+        ("MouseLabel", setting_label("Mouse turn: 1.00")),
         ("MouseSlider", slider("on_mouse_changed", 0.27, False)),
-        ("UiScaleLabel", [y.child_rect((0.9, 0.08)), label("Interface size: 100%", 26, SOFT, font="")]),
-        ("UiScaleSlider", slider("on_ui_scale_changed", 0.2, False)),
     ]
-    for tag, components in reversed(rows):
-        entities.add(tag, components, parent=board)
+    ids = {tag: entities.add(tag, components, parent=left) for tag, components in reversed(left_rows)}
+    toggles = [
+        ("SubtitlesButton", "Subtitles: on", "on_subtitles_clicked"),
+        ("ReducedMotionButton", "Reduced motion: off", "on_reduced_motion_clicked"),
+        ("ColorBlindButton", "Colour vision: standard", "on_color_blind_clicked"),
+    ]
+    for tag, text, callback in toggles:
+        ids[tag] = button(entities, right, tag, text, callback, (0.9, 0.15))
+    entities.add("UiScaleSlider", slider("on_ui_scale_changed", 0.2, False), parent=right)
+    entities.add("UiScaleLabel", setting_label("Interface size: 100%"), parent=right)
+    entities.add("TitleText", [y.child_rect((0.9, 0.12)), label("SETTINGS", 52, RED)], parent=board)
+    # Left and right move a slider: the buttons below lead from one column to the other.
+    _neighbours(entities, reset, up=ids["MouseSlider"], right=back)
+    _neighbours(entities, back, up=ids["SubtitlesButton"], left=reset)
+    _neighbours(entities, ids["SubtitlesButton"], down=back)
     return y.scene("settings", entities)
 
 

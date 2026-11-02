@@ -9,6 +9,8 @@ EnabledRenderers:
     Overrides:
       FloorColor: [0.36, 0.38, 0.42, 1]
       CeilingColor: [0.14, 0.15, 0.2, 1]
+  - Name: raycast_fx
+    Enabled: true
   - Name: overlay
     Enabled: true
     Overrides:
@@ -111,6 +113,93 @@ Entities:
       playOnStart: true
       maxDistance: 50
       rolloff: 1
+  - Entity: 5964998397462374173
+    Tag:
+      tag: Music
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    SoundSource:
+      soundAsset: gid:2846a7e5f966c29d:sounds/music/floor.wav
+      category: Music
+      volume: 0.6
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1
+  - Entity: 5802187642253513470
+    Tag:
+      tag: GoldSparkle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 96
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 0.8
+      shape: Sphere
+      shapeSize: [0.18, 0.18, 0.12]
+      speedMin: 0.3
+      speedMax: 0.9
+      gravity: [0, 0, 0.8]
+      drag: 3
+      sizeMin: 0.018
+      sizeMax: 0.04
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.3]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.92, 0.55, 1], [1, 1, 0.6, 0.12, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+    RendererTag:
+      Name: raycast_fx
+  - Entity: 3480835728605097514
+    Tag:
+      tag: BlueSparkle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    ParticleEmitter:
+      playOnStart: false
+      maxParticles: 96
+      rate: 0
+      burst: 0
+      duration: 0
+      loop: false
+      lifetimeMin: 0.4
+      lifetimeMax: 0.8
+      shape: Sphere
+      shapeSize: [0.18, 0.18, 0.12]
+      speedMin: 0.3
+      speedMax: 0.9
+      gravity: [0, 0, 0.8]
+      drag: 3
+      sizeMin: 0.018
+      sizeMax: 0.04
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.3]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 0.75, 0.88, 1, 1], [1, 0.25, 0.45, 1, 0]]
+      emissive: 0
+      blend: Additive
+      space: World
+    RendererTag:
+      Name: raycast_fx
   - Entity: 1171409816181319687
     Tag:
       tag: Minimap
@@ -610,6 +699,18 @@ Entities:
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
+    HudMarker:
+      enabled: false
+      color: [0.4, 0.65, 1, 1]
+      size: [20, 20]
+      offset: [0, 0, -0.15]
+      label: Blue key
+      labelColor: [1, 1, 1, 1]
+      fontSize: 16
+      showDistance: true
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
@@ -766,6 +867,18 @@ Entities:
       CallbackName: on_pickup
     Visibility:
       gameVisible: true
+    HudMarker:
+      enabled: false
+      color: [1, 0.82, 0.25, 1]
+      size: [20, 20]
+      offset: [0, 0, -0.15]
+      label: Gold key
+      labelColor: [1, 1, 1, 1]
+      fontSize: 16
+      showDistance: true
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
@@ -1543,9 +1656,61 @@ Entities:
       CallbackName: on_elevator_use
     Visibility:
       gameVisible: true
+    HudMarker:
+      enabled: false
+      color: [0.35, 0.95, 0.45, 1]
+      size: [20, 20]
+      offset: [0, 0, -0.15]
+      label: Exit
+      labelColor: [1, 1, 1, 1]
+      fontSize: 16
+      showDistance: true
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
     LuaScript:
       scriptPath: gid:52ca3a542daadd52:scripts/game/exit.lua
       properties:
         - name: next_scene
           type: string
           value: scenes/level_3.owl
+    RendererTag:
+      Name: raycast_world
+  - Entity: 6769693033558203204
+    Tag:
+      tag: ElevatorCamera
+    Transform:
+      translation: [-14.5, 6.5, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.01
+        perspectiveFar: 1000
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: false
+      fixedAspectRatio: false
+    Visibility:
+      gameVisible: true
+  - Entity: 5194111958802472739
+    Tag:
+      tag: ElevatorRide
+    Transform:
+      translation: [-14.5, 6.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: gid:3bfbe497039c1361:scripts/game/elevator.lua
+    SequencePlayer:
+      sequence: gid:94267f7f400725b5:sequences/elevator.owlseq
+      camera: 6769693033558203204
+      playOnStart: false
+      loop: false
+      speed: 1
+      onFinished: on_ride_finished

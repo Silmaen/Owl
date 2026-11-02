@@ -1,20 +1,21 @@
 -- Victory screen of Sokoban, after the Engine Demo (scripts/ui/victory.lua): reached when the last level is done; it
--- shows how many levels are done and the sum of their best moves (the `sokoban_*` settings).
-
-local LEVEL_COUNT = 10
+-- shows how many levels are done and the sum of their best moves (the `sokoban_*` settings), over the levels of
+-- `tables/levels.owltable` (scripts/game/levels.lua).
 
 function on_create()
+    local levels = require("scripts.game.levels")
+    local count = levels.count()
     if not ui.is_transition_active() then ui.transition_play("wipe_left", 0.4, 0.2, 0.12, 0.05) end
     sound.play("sounds/ui/victory.wav")
     local done, total = 0, 0
-    for i = 1, LEVEL_COUNT do
-        if settings.get(string.format("sokoban_done_%02d", i), false) then
+    for i = 1, count do
+        if levels.done(i) then
             done = done + 1
-            total = total + settings.get(string.format("sokoban_best_%02d", i), 0)
+            total = total + levels.best(i)
         end
     end
-    local text = "Levels done: " .. done .. " / " .. LEVEL_COUNT .. "\nBest moves, all levels: " .. total
-    if done < LEVEL_COUNT then
+    local text = "Levels done: " .. done .. " / " .. count .. "\nBest moves, all levels: " .. total
+    if done < count then
         text = text .. "\nThe level select shows the ones left."
     end
     local label = scene.find_entity("ScoreLabel")

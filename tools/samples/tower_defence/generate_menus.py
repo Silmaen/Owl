@@ -82,6 +82,9 @@ CONTROLS = (
 )
 """The controls, in the How to play window and the pause window of a level."""
 
+MENU_MUSIC = "sounds/music/menu.wav"
+"""The music of the menus and of the world map, on the Music bus."""
+
 
 def label(value: str, size: int, colour: y.Colour = STONE, align: str = "Center", font: str = LABEL) -> str:
     """A text of the menus, outlined in ink."""
@@ -219,38 +222,66 @@ def title() -> str:
     entities.add("HowToControls", [y.child_rect((0.95, 0.4)), controls], parent=how_to)
     rules = y.text(HOW_TO_PLAY, 23, "Left", SOFT, wrap=True, line_spacing=0.15)
     entities.add("HowToRules", [y.child_rect((0.95, 0.34)), rules], parent=how_to)
+    entities.add("Music", [y.music(MENU_MUSIC, 0.6)])
     return y.scene("title", entities)
 
 
 def settings() -> str:
-    """Settings: master volume, interface size, reset of the progress, Back (saves)."""
+    """Settings on a board: the sound (master, music and effects volumes) and the interface size on the left, the
+    accessibility (colour vision, reduced motion, subtitles) and the resets of the progress and of the tutorial on the
+    right, Back (saves) and Reset defaults at the bottom."""
     entities = y.Entities(7410000000000000000)
     world(entities)
     root = entities.add("SettingsCanvas", [y.canvas(), y.script("scripts/ui/settings.lua")])
     panel = entities.add(
         "SettingsList",
-        [y.rect((0.5, 0), (0.95, 0.84), (0, 0.02), SCREEN, SCREEN), board(), y.layout("Column", 4, 8)],
+        [y.rect((0.5, 0), (1.3, 0.9), (0, 0.02), SCREEN, SCREEN), board(), y.layout("Column", 4, 8)],
         parent=root,
     )
 
     def slider(callback: str, value: float, initial: bool) -> list[str]:
         bar = y.slider(callback, value, (0.04, 0.05, 0.1, 1), GOLD, STONE)
-        return [y.child_rect((0.86, 0.05)), bar, y.focus(initial, True, "on_slider_focused", GOLD, 3)]
+        return [y.child_rect((0.86, 0.06)), bar, y.focus(initial, True, "on_slider_focused", GOLD, 3)]
 
+    def heading(text: str) -> list[str]:
+        return [y.child_rect((0.9, 0.1)), label(text, 32, GOLD, font=HEADING)]
+
+    def caption(text: str) -> list[str]:
+        return [y.child_rect((0.9, 0.08)), label(text, 24, SOFT)]
+
+    bottom = entities.add("SettingsButtons", [y.child_rect((0.7, 0.09)), y.layout("Row", 16)], parent=panel)
+    button(entities, bottom, "ResetButton", "Reset defaults", "on_reset_clicked", (0.45, 0.95), False, font_size=24)
+    button(entities, bottom, "BackButton", "Back", "go_back", (0.45, 0.95), False, font_size=24)
+    columns = entities.add("SettingsColumns", [y.child_rect((0.96, 0.72)), y.layout("Row", 20)], parent=panel)
+    entities.add("TitleText", [y.child_rect((0.9, 0.13)), label("Settings", 56, GOLD, font=HEADING)], parent=panel)
+    right = entities.add("AccessColumn", [y.child_rect((0.47, 1)), y.layout("Column", 6, 4)], parent=columns)
+    entities.add("ProgressLabel", caption("Maps defended: 0 / 10"), parent=right)
+    for tag, text, callback in reversed(
+        [
+            ("ColourVisionButton", "Colour vision: off", "on_colour_vision_clicked"),
+            ("ReducedMotionButton", "Reduced motion: off", "on_reduced_motion_clicked"),
+            ("SubtitlesButton", "Subtitles: on", "on_subtitles_clicked"),
+            ("ResetTutorialButton", "Reset tutorial", "on_reset_tutorial_clicked"),
+            ("ResetProgressButton", "Reset progress", "on_reset_progress_clicked"),
+        ]
+    ):
+        button(entities, right, tag, text, callback, (0.9, 0.11), False, font_size=22)
+    entities.add("AccessHeading", heading("Accessibility"), parent=right)
+    left = entities.add("SoundColumn", [y.child_rect((0.47, 1)), y.layout("Column", 2, 4)], parent=columns)
     rows: list[tuple[str, list[str]]] = [
-        ("TitleText", [y.child_rect((0.9, 0.11)), label("Settings", 56, GOLD, font=HEADING)]),
-        ("MasterVolLabel", [y.child_rect((0.9, 0.07)), label("Master Volume: 100%", 28, SOFT)]),
+        ("SoundHeading", heading("Sound and display")),
+        ("MasterVolLabel", caption("Master volume: 100%")),
         ("MasterVolSlider", slider("on_master_vol_changed", 1.0, True)),
-        ("UiScaleLabel", [y.child_rect((0.9, 0.07)), label("Interface Size: 100%", 28, SOFT)]),
+        ("MusicVolLabel", caption("Music: 70%")),
+        ("MusicVolSlider", slider("on_music_vol_changed", 0.7, False)),
+        ("SfxVolLabel", caption("Effects: 100%")),
+        ("SfxVolSlider", slider("on_sfx_vol_changed", 1.0, False)),
+        ("UiScaleLabel", caption("Interface size: 100%")),
         ("UiScaleSlider", slider("on_ui_scale_changed", 0.2, False)),
-        ("ProgressLabel", [y.child_rect((0.9, 0.07)), label("Maps defended: 0 / 10", 28)]),
     ]
-    button(entities, panel, "BackButton", "Back", "go_back", (0.6, 0.08), False)
-    button(entities, panel, "ResetButton", "Reset defaults", "on_reset_clicked", (0.6, 0.08), False)
-    button(entities, panel, "ResetTutorialButton", "Reset tutorial", "on_reset_tutorial_clicked", (0.6, 0.08), False)
-    button(entities, panel, "ResetProgressButton", "Reset progress", "on_reset_progress_clicked", (0.6, 0.08), False)
     for tag, components in reversed(rows):
-        entities.add(tag, components, parent=panel)
+        entities.add(tag, components, parent=left)
+    entities.add("Music", [y.music(MENU_MUSIC, 0.6)])
     return y.scene("settings", entities)
 
 
@@ -448,6 +479,7 @@ def world_map() -> str:
     button(entities, bonus, "BonusBackButton", "Back", "on_bonus_closed", (0.4, 0.09), False)
     for index in reversed(range(len(CAMPAIGN))):
         entities.add(f"BonusLine{index + 1}", [y.child_rect((0.95, 0.072)), label("", 18, SOFT, "Left")], parent=bonus)
+    entities.add("Music", [y.music(MENU_MUSIC, 0.6)])
     return y.scene("world_map", entities)
 
 
@@ -481,6 +513,7 @@ def upgrades() -> str:
     entities.add(
         "UpgradesTitle", [y.child_rect((0.9, 0.1)), label("Upgrades", 52, GOLD, font=HEADING)], parent=board_id
     )
+    entities.add("Music", [y.music(MENU_MUSIC, 0.6)])
     return y.scene("upgrades", entities)
 
 

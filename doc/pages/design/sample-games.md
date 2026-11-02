@@ -98,22 +98,25 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Menus    | Arcade neon (`generate_menus.py`): a brick wall lit in a wave, an attract ball, neon buttons, magenta wipes      |
 | Entities | `Paddle` and `PaddleWide` (Kinematic), `Ball` (Dynamic, restitution 1, friction 0), three `Wall` (Static)        |
 | Bricks   | Instances of `prefabs/brick.owlprefab` (Static body, `SpriteRenderer`, `brick.lua` with its properties)          |
-| Lua      | `game.lua` (rules, pools, pause), `paddle.lua`, `ball.lua` (speed kept with `physics.set_velocity`), `brick.lua` |
+| Lua      | `game.lua` (rules, spawns, pause), `paddle.lua`, `ball.lua` (speed set with `physics.set_velocity`), `brick.lua` |
 | HUD      | `huds/play.owlhud`: score, level, lives, a message line, the pause window (Resume, Restart, Quit, controls)      |
 | Art      | Home-made bricks, paddle, ball, capsules, walls and backdrop, chip sounds and music (`tools/samples/breakout/`)  |
+| Effects  | Sparks and a flash of light per broken brick (prefab), a neon trail and a 2D light on the ball, bloom            |
 | Saves    | No slot; best score and levels cleared with their best through `settings.save` (`breakout_best`, `_done_N`)      |
 
 - Reuse: the menus, built from the Engine Demo ones, have a
   look of their own. A broken brick is destroyed at once (a popping brick
-  would keep its body), its burst shown from a pool instead of the pop of `coin.lua`.
-- Gaps met: G5 (the paddle follows the mouse motion, `breakout_mouse_speed` setting), G1 (pools of hidden entities:
-  power-ups, bursts, and a second paddle for the wide one, a body cannot be resized from Lua), G14 (one scene per
-  level), G9 (master volume only), G8 (the pause stops the scene clock, `time.set_paused`). Each level names the next
+  would keep its body); its burst (`prefabs/brick_burst.owlprefab`, tinted with `entity.set_tint`) and the power-up
+  capsules are prefabs spawned with `scene.spawn_prefab` and destroyed when done.
+- Gaps met: G5 (the paddle follows the mouse motion, `breakout_mouse_speed` setting), a second paddle for the wide one
+  (a body cannot be resized from Lua), G14 (one scene per level). The music and the effects have their volumes on the
+  mixer buses (G9 closed), the pause stops the scene clock (`time.set_paused`). Each level names the next
   one in the `next_scene` property of its `Game` script (G16 fixed): a new level is a duplicated scene in Owl Nest.
 - Scenarios: `breakout_serve` (serve, 300 frames, `breakout_bricks` below 40), `breakout_lose` (no input at all:
   the automatic serve, `breakout_lives` below 3), `breakout_gamepad` (dead zone, the stick moves the paddle, A serves),
   `breakout_level_select` (down selects level 2, accept starts a fresh run there), `breakout_how_to` (the How to play
-  window opens and closes with the keyboard focus).
+  window opens and closes with the keyboard focus), `breakout_pause` (no serve while paused), `breakout_settings`
+  (music and effects sliders with the D-pad); `breakout_serve` also counts the bursts.
 - The levels were first laid out by `tools/samples/breakout/generate_levels.py` (text grids) and are edited in Owl Nest
   from then on; `tools/tests/test_breakout_levels.py` checks the grids.
 
@@ -128,29 +131,34 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 | Scenes   | `title`, `level_select` (`UiList` with done marks), `level_01` to `level_10`, `settings`, `victory`           |
 | Tilemap  | One `.owltilemap` per level: layer 0 floor and walls, 1 goals, 2 crates and the hero tile of the start        |
 | Entities | `Level` (`Tilemap`), player (`AnimatedSpriteRenderer`, `isometric.set_sprite_frame`), `MovingBox`, music      |
-| Lua      | `sokoban.lua` (rules on `isometric.get_cell`, undo stack in a Lua table, win), `level_select.lua`, menus      |
+| Lua      | `sokoban.lua` (rules on `isometric.get_cell`, undo stack in a Lua table, win), `levels.lua`, menus            |
+| Levels   | `tables/levels.owltable`: the scene and the name of each level, in play order                                 |
+| Effects  | Dust behind a pushed crate (`PushDust`), a sparkle on a crate set on a goal (`GoalSparkle`)                   |
 | HUD      | `huds/level.owlhud`: level, moves and pushes, best, Undo / Restart / Menu buttons, pause window with controls |
 | Menus    | Wooden warehouse (`generate_menus.py`): crate letters, plank buttons, a progress log, an animated corridor    |
 | Art      | `sokoban_tiles.png`: Tiny Dungeon floor, wall and hero (walk and push frames), home-made goal mark and crates |
 | Saves    | No slot: `sokoban_done_NN` and `sokoban_best_NN` settings saved at once; Continue starts the first level left |
 
 - Level editing in Owl Nest: paint the three layers in the tilemap editor (the hero tile of layer 2 places the player);
-  for a new level, duplicate a level scene, point its `Level` at a new tilemap, set the `level`, `level_name` and
-  `next_scene` properties of its `Game` script (and `next_scene` of the level before), then add the scene to
-  `LEVEL_SCENES` of `title.lua` and `level_select.lua`, which list every level for the progress and the level select.
-  `sokoban.lua` warns when crates and goals do not match.
+  for a new level, duplicate a level scene, point its `Level` at a new tilemap, set the `level` property of its `Game`
+  script, then add its row (scene, name) to `tables/levels.owltable` in the data table editor: the title, the level
+  select, the victory screen and the level before it follow the table. `sokoban.lua` warns when crates and goals do not
+  match.
 - Generators in `tools/samples/sokoban/`: `generate_assets.py` (tile sheet, sounds), `generate_levels.py` (tileset,
   tilemaps, level scenes, HUD, from the texts of `levels.py`), `generate_menus.py`; `tools/tests/test_sokoban_levels.py`
   replays a stored solution of each level text.
 - Reuse: the walk frames of `tools/demo/generate_kenney_atlases.py`, `scripts/hub/hub_water.lua` (`get_cell` /
   `set_cell` on a 2D tilemap), the journal list of `scripts/raycast/inventory.lua`; the menus, first copied from the
   Engine Demo, have a look of their own since the first playthrough.
-- Gaps: G6 (tile bindings named `isometric`), G14 (one scene per level), G9 (master volume only). Lua had no way to
+- Gaps: G6 (tile bindings named `isometric`), G14 (one scene per level); the music and the effects have their volumes
+  on the mixer buses (G9 closed), the pause stops the scene clock (`time.set_paused`). Lua had no way to
   read the size of a tilemap: `isometric.get_size` was added for it (width, height, cell size).
 - Scenarios: `sokoban_push` (`sokoban_on_goal` grows), `sokoban_undo` (undo and restart put back crate and counters),
   `sokoban_wall` (no step into a wall nor a blocked crate), `sokoban_win` (level 1 solved, `sokoban_done_01` set, level
   2
-  opens), `sokoban_gamepad` (D-pad, B, stick dead zone), `sokoban_level_select` (`ui_down`, `ui_accept`).
+  opens), `sokoban_gamepad` (D-pad, B, stick dead zone), `sokoban_level_select` (`ui_down`, `ui_accept`),
+  `sokoban_pause` (no step while paused), `sokoban_settings` (music and effects sliders); `sokoban_push` also counts
+  the sparkles.
 - Size: **S**, done.
 
 ### Tower defence {#sample-games-tower-defence}
@@ -164,22 +172,23 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
 | ![The briefing card of Greenmarch Ford](../../images/showcase/tower_briefing.png)               | ![Wolf riders crossing the bridges of Frostmere](../../images/showcase/tower_frostmere.png) |
 | ![Sunscorch Flats: towers on the plateaus, the keep at the end of the road](../../images/showcase/tower_sunscorch.png) |                                                                                   |
 
-| Item      | Plan                                                                                                                               |                                                                                         |
-|-----------|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
-| Play      | 10 levels of 8 to 12 waves, on 3D terrain with relief, between visits to a world map and its upgrades screen                       |                                                                                         |
-| Win/lose  | Every wave held with a life left / the 20 lives lost; 3, 2 or 1 stars for 18, 10 or fewer lives kept                               |                                                                                         |
-| Waves     | Timed, called early for gold; the `night_waves` of a level are fought at night, dusk or dawn announced between two waves           |                                                                                         |
-| Day/night | `time_effects` of `defence.lua`: a bonus or a malus by day and by night for every tower and enemy kind                             | Sun or moon on the HUD, legend in the pause window                                      |
-| Modifiers | Per level (`modifiers`): fog, blizzard, blood moon, drought, gale, plunder, long night, effects of the same form                   | Briefing, world map panel, pause window                                                 |
-| Briefing  | A modal window before the first wave: a line and an icon per night, modifier and new enemy (its portrait)                          | Time paused; Skip tutorial on level 1                                                   |
-| Tutorial  | Level 1, skippable: build on a glowing pad, call a wave, raise, sell, read day and night; hints by the targets                     | `tower_tutorial` setting, Reset tutorial in Settings                                    |
-| Towers    | Archer, cannon, frost on build pads; levels 1, 2, 3, then one power-up of two; sold for half of what was spent                     |                                                                                         |
-| Enemies   | `Renderer2D` `sprites`: billboards, depth test                                                                                     | 8 directions x 9 frames (walk, attack, death), lit like the 3D scene; hit flash, sparks |
-| Relief    | Plateaus, ramps, rivers and bridges; a pad on high ground gives its tower +15 % range per height step                              |                                                                                         |
-| Controls  | As in the first map (mouse, keyboard cursor, gamepad), plus Z / C or pad LB, D-pad up / down turn the view by 45°, the wheel zooms |                                                                                         |
-| Scenes    | `title`, `world_map`, `upgrades`, `level_01` to `level_10`, `settings`, `victory` (stats, stars credited, unlock), `game_over`     |                                                                                         |
-| Saves     | No slot: `tower_done_NN`, `tower_stars_NN` (best), `tower_best_NN`, `tower_up_<family>` settings; unlocks follow from the wins     |                                                                                         |
-| Scripts   | `defence.lua` holds the properties and the hooks; the rules are the modules of `scripts/game/td/` (`require`)                      |                                                                                         |
+| Item      | Plan                                                                                                                                       |                                                                                            |
+|-----------|--------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| Play      | 10 levels of 8 to 12 waves, on 3D terrain with relief, between visits to a world map and its upgrades screen                               |                                                                                            |
+| Win/lose  | Every wave held with a life left / the 20 lives lost; 3, 2 or 1 stars for 18, 10 or fewer lives kept                                       |                                                                                            |
+| Waves     | Timed, called early for gold; a data table per level (`waves_NN.owltable`), its night waves fought at night                                | Dusk or dawn announced between two waves                                                   |
+| Day/night | `time_effects` of `defence.lua`: a bonus or a malus by day and by night for every tower and enemy kind                                     | Sun or moon on the HUD, legend in the pause window                                         |
+| Modifiers | Per level (`modifiers`): fog, blizzard, blood moon, drought, gale, plunder, long night, effects of the same form                           | Briefing, world map panel, pause window                                                    |
+| Briefing  | A modal window before the first wave: the captain speaks (a `.owldlg` dialogue), then a line and an icon per night, modifier and new enemy | Time paused; its answers are the buttons, Skip tutorial on level 1                         |
+| Tutorial  | Level 1, skippable: build on a glowing pad, call a wave, raise, sell, read day and night; hints by the targets                             | `tower_tutorial` setting, Reset tutorial in Settings                                       |
+| Towers    | Archer, cannon, frost on build pads; levels 1, 2, 3, then one power-up of two; sold for half of what was spent                             |                                                                                            |
+| Enemies   | `Renderer2D` `sprites`: billboards, depth test, walking the lanes of the road splines                                                      | 8 directions x 9 frames (walk, attack, death), lit like the 3D scene; hit flash, particles |
+| Relief    | Plateaus, ramps, rivers and bridges; a pad on high ground gives its tower +15 % range per height step                                      |                                                                                            |
+| Controls  | As in the first map (mouse, keyboard cursor, gamepad), plus Z / C or pad LB, D-pad up / down turn the view by 45°, the wheel zooms         |                                                                                            |
+| Scenes    | `title`, `world_map`, `upgrades`, `level_01` to `level_10`, `settings`, `victory` (stats, stars credited, unlock), `game_over`             |                                                                                            |
+| Saves     | No slot: `tower_done_NN`, `tower_stars_NN` (best), `tower_best_NN`, `tower_up_<family>` settings; unlocks follow from the wins             |                                                                                            |
+| Scripts   | `defence.lua` holds the properties and the hooks; the rules are the modules of `scripts/game/td/` (`require`)                              | Towers and enemies in data tables                                                          |
+| Sound     | Music and effects on their mixer buses, their volumes in Settings, subtitles of the sounds that tell something                             | Accessibility: colour vision, reduced motion, subtitles                                    |
 
 | #  | Level           | Terrain                                                    | Theme | Nights             | Modifiers           | New                    |
 |----|-----------------|------------------------------------------------------------|-------|--------------------|---------------------|------------------------|
@@ -273,9 +282,10 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
   following the light and exposure of the 3D scene; `scene.pick_entity` with a tag returns the tagged ancestor of the
   mesh hit and sees billboards as drawn; `ui.set_text` writes a world `TextRenderer`; shared materials instanced.
 - Data-driven levels: `tools/samples/tower_defence/maps.py` holds per level a height grid, the road, the river, the
-  pads, the decor, the waves and `night_from`; `generate_maps.py` writes one scene per level, editable in Owl Nest:
-  terrain cells are mesh entities, the roads are the `Waypoint NN` and `Waypoint B NN` entities the enemies walk, pads
-  are `Pad` entities.
+  pads, the decor, the waves, the nights and the briefing; `generate_maps.py` writes one scene per level, its waves
+  table and its briefing dialogue, editable in Owl Nest: terrain cells are mesh entities, the roads are the `Linear`
+  splines of the `Road` and `Road B` entities the enemies walk in seven lanes, pads are `Pad` entities; the towers and
+  the enemies are the rows of `tables/towers.owltable` and `tables/enemies.owltable`.
 - Scenarios: `tower_build` (mouse, wheel), `tower_upgrade` (archer to level 3, power-up), `tower_wave`,
   `tower_call_early`, `tower_defend` (gamepad), `tower_fast_forward`, `tower_rotate` (the enemy frames follow the view),
   `tower_build_only` (towers never raised lose level 1), `tower_win` (raised towers hold it, night, stars),
@@ -284,7 +294,8 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
   `tower_level_wolves` (level 2), `tower_level_roads` (level 3, both roads), `tower_level_frostmere` (sappers, a mage's
   wards), `tower_level_black_gate`, `tower_night_and_fog` (briefing shown and dismissed, the fog and the night effects
   on the range of an archer and the speed of a goblin), `tower_drought` (a cheaper cannon), `tower_tutorial` (each step
-  of the tutorial in turn, then done), `tower_tutorial_skip` (skipped and remembered on a restart).
+  of the tutorial in turn, then done), `tower_tutorial_skip` (the answers of the briefing dialogue, skipped and
+  remembered on a restart), `tower_settings` (the music volume and the accessibility settings, reset).
 - Size: **M–L**.
 - Done: the ten levels in 3D with relief (grass, marsh, snow, sand and ash themes), the Horde of nine kinds in 8
   directions with walk, attack and death frames introduced across the campaign with their counters, tower upgrades and
@@ -323,18 +334,18 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
 Shipped in `samples/wolfenstein/` (how to play: its `README.md`). An exploration game first: the guards, the weapons
 and the combat come in a later release, once their art exists.
 
-| Item     | As shipped                                                                                                                                                              |
-|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Play     | 3 floors of 32×32 (cellars, prison, headquarters): treasure, food, gold and blue keys with their locked doors, 3 secret walls each, an exit elevator                    |
-| Win      | The elevator of floor 3; after each floor a tally counted up line by line (skippable): items, secrets and map explored in %, 10 points per percent as a bonus           |
-| Controls | `walk`, `turn`, `run`, `interact` (doors, secret walls, elevator), `map` (Tab, pad Y: large map); keyboard, mouse (right button turns, left opens) and gamepad          |
-| Scenes   | `title`, `level_1` to `level_3` (`RendererRaycast` + a `Space: Screen` `Renderer2D` for the minimap), `tally`, `settings`, `victory`                                    |
-| Entities | Player (`PhysicBody`, `Camera`), wall `Tilemap`, `RaycastDoor` (locked: empty `interactionAction`, `door.activate` with the key), `RaycastPushWall`, pick-ups, props    |
-| Lua      | `player.lua`, `pickup.lua`, `locked_door.lua`, `secret.lua` (counts each wall once), `explore.lua` (fog, minimap, cells seen over floor cells), `level.lua`, `exit.lua` |
-| HUD      | `huds/play.owlhud`: floor, score, keys, messages, a pause window with the controls (no ratio during play); the minimap is a tilemap of the overlay layer                |
-| Menus    | Dark stone and steel (`generate_menus.py`): a raycast view turning behind the title, steel plate title and buttons, red fades                                           |
-| Art      | The walls and props of `textures/wolf3d/`, reworked by the maintainer; the sounds of `sounds/raycast/` of the Engine Demo; guards and the weapon view later (G11)       |
-| Saves    | Autosave in slot 1 at each floor start, F6 / F9 in slot 2, Continue loads the newer; best ratios per floor and best score in the settings                               |
+| Item     | As shipped                                                                                                                                                                                                                                                                                     |
+|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Play     | 3 floors of 32×32 (cellars, prison, headquarters): treasure, food, gold and blue keys with their locked doors, 3 secret walls each, an exit elevator                                                                                                                                           |
+| Win      | The elevator of floor 3; after each floor a tally counted up line by line (skippable): items, secrets and map explored in %, 10 points per percent as a bonus                                                                                                                                  |
+| Controls | `walk`, `turn`, `run`, `interact` (doors, secret walls, elevator), `map` (Tab, pad Y: large map); keyboard, mouse (right button turns, left opens) and gamepad                                                                                                                                 |
+| Scenes   | `title`, `level_1` to `level_3` (`RendererRaycast` + a `Space: Screen` `Renderer2D` for the minimap), `tally`, `settings`, `victory`                                                                                                                                                           |
+| Entities | Player (`PhysicBody`, `Camera`), wall `Tilemap`, `RaycastDoor` (locked: empty `interactionAction`, `door.activate` with the key), `RaycastPushWall`, pick-ups, props                                                                                                                           |
+| Lua      | `player.lua`, `pickup.lua` (sparks), `locked_door.lua`, `secret.lua` (counts each wall once), `explore.lua` (fog, minimap, markers, cells seen over floor cells), `level.lua` (pause through `time.set_paused`), `exit.lua`, `elevator.lua` (the ride, `sequences/elevator.owlseq`, skippable) |
+| HUD      | `huds/play.owlhud`: floor, score, keys, messages, a pause window with the controls (no ratio during play); the minimap is a tilemap of the overlay layer; markers on the keys and the switch once seen                                                                                         |
+| Menus    | Dark stone and steel (`generate_menus.py`): a raycast view turning behind the title, steel plate title and buttons, red fades; settings with master, music and effects volumes (mixer buses), mouse turn, interface size, colour vision, reduced motion, subtitles                             |
+| Art      | The walls and props of `textures/wolf3d/`, reworked by the maintainer; the sounds of `sounds/raycast/` of the Engine Demo, home-made music; guards and the weapon view later (G11)                                                                                                             |
+| Saves    | Autosave in slot 1 at each floor start, F6 / F9 in slot 2, Continue loads the newer; best ratios per floor and best score in the settings                                                                                                                                                      |
 
 - Floors carved by `tools/samples/wolfenstein/generate_levels.py`, which refuses a floor with a cell out of reach (so
   100 % is always possible; a slid secret wall counts as a wall where it stops, which cut off a room of floors 2 and
@@ -347,13 +358,18 @@ and the combat come in a later release, once their art exists.
   `scripts/raycast/raycast_exit.lua`, `tilesets/raycast_w3d_walls.owltileset`, `tilesets/minimap.owltileset`,
   `sounds/raycast/`; the menus, built from the Engine Demo ones, have a look of their own, and the ratios show
   on the tally, not on the play HUD.
-- Gaps: G9, G17; G16 fixed (the `next_scene` property of `exit.lua` names the next floor). Later, with combat: G11
+- Pick-up sparks: a `RendererParticles` layer with `Projection: Raycast` (`raycast_fx`) draws them in the first-person
+  view, the raycast sprites' convention (world Z above the eye).
+- Gaps: G17; G9 and G16 fixed (the music and effects sliders; the `next_scene` property of `exit.lua` names the next
+  floor). Later, with combat: G11
   (art), G10 (line of sight), G7 (weapon view frames), G1 (dropped ammo).
 - Scenarios: `wolf_pickup` (walk onto a cross, `wolf_items` and `wolf_score` rise), `wolf_locked_door` (closed without
   the key, opens with it), `wolf_secret` (push a secret wall, `wolf_secrets` equals 1), `wolf_explore` (`wolf_seen`
   and `wolf_explored` rise while turning, Tab enlarges the map), `wolf_exit` (the tally scene opens, counts up,
-  then floor 2), `wolf_tally` (accept during the count shows every line at once, the next accept leaves), `wolf_pause`
-  (Escape opens the pause window, the player stands still, a door in reach stays closed, Resume closes it).
+  then floor 2, after the elevator ride), `wolf_tally` (a second E skips the ride, accept during the count shows every
+  line at once, the next accept leaves), `wolf_pause` (Escape opens the pause window, the player stands still, a door
+  in reach stays closed, Resume closes it), `wolf_markers` (the key's marker once seen, the sparks of its pick-up),
+  `wolf_settings` (music and effects sliders, reduced motion and colour vision with the gamepad).
 
 ### Mini Minecraft
 

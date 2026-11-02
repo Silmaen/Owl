@@ -1,0 +1,36 @@
+# Tower defence settings: a click on the Music slider turns the Music bus down (`volume_music`), the accessibility
+# buttons cycle the colour vision correction, turn the reduced motion on and the subtitles off, Reset defaults puts
+# them back, then Escape saves and returns to the title. The headless view is 1600x960: the board is centred, its left
+# column holds the sliders, its right column the accessibility buttons.
+scene: ../../../samples/tower_defence/scenes/settings.owl
+steps:
+  - frames: 10
+  - expect: {setting: volume_music, greater: 0.65}
+  - expect: {setting: color_blind_mode, equals: none}
+  - expect: {gamestate: tower_subtitles, equals: true}
+  - input: {mouse: Left, mouse_pos: [362, 380], frames: 2}
+  - frames: 2
+  - expect: {setting: volume_music, less: 0.4}
+  - input: {mouse_pos: [1068, 256], frames: 2}
+  - input: {mouse: Left, mouse_pos: [1068, 256], frames: 2}
+  - frames: 2
+  - expect: {setting: color_blind_mode, equals: protanopia}
+  - expect: {gamestate: tower_colour_vision, equals: protanopia}
+  - input: {mouse_pos: [1068, 332], frames: 2}
+  - input: {mouse: Left, mouse_pos: [1068, 332], frames: 2}
+  - frames: 2
+  - expect: {setting: reduced_motion, equals: true}
+  - input: {mouse_pos: [1068, 408], frames: 2}
+  - input: {mouse: Left, mouse_pos: [1068, 408], frames: 2}
+  - frames: 2
+  - expect: {setting: subtitles, equals: false}
+  - input: {mouse_pos: [962, 812], frames: 2}
+  - input: {mouse: Left, mouse_pos: [962, 812], frames: 2}
+  - frames: 2
+  - expect: {setting: color_blind_mode, equals: none}
+  - expect: {setting: reduced_motion, equals: false}
+  - expect: {setting: subtitles, equals: true}
+  - expect: {setting: volume_music, greater: 0.65}
+  - input: {key: Escape, frames: 2}
+  - frames: 60
+  - expect: {entity: PlayButton, exists: true}

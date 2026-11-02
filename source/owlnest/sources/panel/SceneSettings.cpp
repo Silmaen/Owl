@@ -276,6 +276,36 @@ auto renderIsometricOverrides(YAML::Node& ioOverrides) -> bool {
 	return changed;
 }
 
+auto renderParticlesOverrides(YAML::Node& ioOverrides) -> bool {
+	constexpr float defaultFov = 75.f;
+	bool changed = false;
+	const std::string projection =
+			ioOverrides["Projection"] ? ioOverrides["Projection"].as<std::string>("Scene") : std::string{"Scene"};
+	gui::widgets::propertyLabel("Projection",
+								"Scene draws the particles with the scene camera; Raycast in the "
+								"first-person view of a raycast layer, world Z the height above the eye.");
+	if (gui::widgets::beginCombo("##projection", projection.c_str())) {
+		for (const auto* candidate: {"Scene", "Raycast"}) {
+			const bool selected = (projection == candidate);
+			if (ImGui::Selectable(candidate, selected) && !selected) {
+				ioOverrides["Projection"] = std::string{candidate};
+				changed = true;
+			}
+			if (selected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+	std::ignore = gui::widgets::propertyReset(false);
+	float fov = overrideFloat(ioOverrides, "Fov", defaultFov);
+	if (gui::widgets::propertyFloat("Field of View", fov, defaultFov, 0.5f, "%.1f deg",
+									"Raycast projection: the field of view of the raycast layer it draws over.")) {
+		ioOverrides["Fov"] = std::clamp(fov, 30.f, 120.f);
+		changed = true;
+	}
+	return changed;
+}
+
 }// namespace
 
 auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML::Node& ioOverrides) -> bool {
@@ -283,7 +313,7 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 	if (!ioOverrides || !ioOverrides.IsMap())
 		ioOverrides = YAML::Node{YAML::NodeType::Map};
 	if (iTypeKey != "Renderer2D" && iTypeKey != "RendererRaycast" && iTypeKey != "RendererIsometric" &&
-		iTypeKey != "RendererMesh" && iTypeKey != "RendererVoxel") {
+		iTypeKey != "RendererMesh" && iTypeKey != "RendererVoxel" && iTypeKey != "RendererParticles") {
 		ImGui::TextDisabled("No editable override for the type '%s'.", iTypeKey.c_str());
 		return false;
 	}
@@ -363,6 +393,8 @@ auto SceneSettings::renderLayerOverridesEditor(const std::string& iTypeKey, YAML
 		changed |= renderPixelArtOverrides(ioOverrides);
 	} else if (iTypeKey == "RendererVoxel") {
 		changed = renderLightingOverrides<renderer::VoxelConfig>(ioOverrides);
+	} else if (iTypeKey == "RendererParticles") {
+		changed = renderParticlesOverrides(ioOverrides);
 	} else {
 		changed = renderRaycastOverrides(ioOverrides);
 	}

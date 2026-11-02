@@ -423,7 +423,7 @@ Entities:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [0.95, 0.84]
+      size: [1.3, 0.9]
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [0, 0.02]
       offsetUnit: [ScreenHeight, ScreenHeight]
@@ -441,7 +441,7 @@ Entities:
       cellSize: [0, 0]
   - Entity: 7410000000000000025
     Tag:
-      tag: BackButton
+      tag: SettingsButtons
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -454,38 +454,19 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.08]
+      size: [0.7, 0.09]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
-    UiButton:
-      normalColor: [0.3, 0.18, 0.09, 1]
-      hoverColor: [0.74, 0.5, 0.2, 1]
-      pressedColor: [0.16, 0.09, 0.04, 1]
-      disabledColor: [0.12, 0.1, 0.12, 1]
-      onClickCallback: go_back
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.16, 0.09, 0.04, 1]
-      text: 'Back'
-      color: [0.95, 0.88, 0.72, 1]
-      fontSize: 30
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: MedievalSharp
-    UiFocus:
-      focusable: true
-      initial: false
-      onFocusCallback: ''
-      highlightColor: [0.97, 0.77, 0.3, 1]
-      highlightThickness: 3
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 16
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
   - Entity: 7410000000000000026
     Tag:
-      tag: BackButtonFrame
+      tag: ResetButton
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -498,28 +479,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
-  - Entity: 7410000000000000027
-    Tag:
-      tag: ResetButton
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7410000000000000024
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.6, 0.08]
+      size: [0.45, 0.95]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
@@ -533,7 +493,7 @@ Entities:
       outlineColor: [0.16, 0.09, 0.04, 1]
       text: 'Reset defaults'
       color: [0.95, 0.88, 0.72, 1]
-      fontSize: 30
+      fontSize: 24
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -548,7 +508,7 @@ Entities:
       onFocusCallback: ''
       highlightColor: [0.97, 0.77, 0.3, 1]
       highlightThickness: 3
-  - Entity: 7410000000000000028
+  - Entity: 7410000000000000027
     Tag:
       tag: ResetButtonFrame
     Transform:
@@ -558,7 +518,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7410000000000000027
+      parentId: 7410000000000000026
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -569,9 +529,53 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: gid:1448d220f0d7c20f:textures/ui/banner.png
+  - Entity: 7410000000000000028
+    Tag:
+      tag: BackButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000025
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.45, 0.95]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: go_back
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Back'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
   - Entity: 7410000000000000029
     Tag:
-      tag: ResetTutorialButton
+      tag: BackButtonFrame
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -579,43 +583,20 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7410000000000000024
+      parentId: 7410000000000000028
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.08]
+      size: [1, 1]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
-    UiButton:
-      normalColor: [0.3, 0.18, 0.09, 1]
-      hoverColor: [0.74, 0.5, 0.2, 1]
-      pressedColor: [0.16, 0.09, 0.04, 1]
-      disabledColor: [0.12, 0.1, 0.12, 1]
-      onClickCallback: on_reset_tutorial_clicked
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.16, 0.09, 0.04, 1]
-      text: 'Reset tutorial'
-      color: [0.95, 0.88, 0.72, 1]
-      fontSize: 30
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: MedievalSharp
-    UiFocus:
-      focusable: true
-      initial: false
-      onFocusCallback: ''
-      highlightColor: [0.97, 0.77, 0.3, 1]
-      highlightThickness: 3
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
   - Entity: 7410000000000000030
     Tag:
-      tag: ResetTutorialButtonFrame
+      tag: SettingsColumns
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -623,243 +604,22 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7410000000000000029
+      parentId: 7410000000000000024
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 1]
+      size: [0.96, 0.72]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 20
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
   - Entity: 7410000000000000031
-    Tag:
-      tag: ResetProgressButton
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7410000000000000024
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.6, 0.08]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiButton:
-      normalColor: [0.3, 0.18, 0.09, 1]
-      hoverColor: [0.74, 0.5, 0.2, 1]
-      pressedColor: [0.16, 0.09, 0.04, 1]
-      disabledColor: [0.12, 0.1, 0.12, 1]
-      onClickCallback: on_reset_progress_clicked
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.16, 0.09, 0.04, 1]
-      text: 'Reset progress'
-      color: [0.95, 0.88, 0.72, 1]
-      fontSize: 30
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: MedievalSharp
-    UiFocus:
-      focusable: true
-      initial: false
-      onFocusCallback: ''
-      highlightColor: [0.97, 0.77, 0.3, 1]
-      highlightThickness: 3
-  - Entity: 7410000000000000032
-    Tag:
-      tag: ResetProgressButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7410000000000000031
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
-  - Entity: 7410000000000000033
-    Tag:
-      tag: ProgressLabel
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7410000000000000024
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.9, 0.07]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.16, 0.09, 0.04, 1]
-      text: 'Maps defended: 0 / 10'
-      color: [0.95, 0.88, 0.72, 1]
-      fontSize: 28
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: MedievalSharp
-  - Entity: 7410000000000000034
-    Tag:
-      tag: UiScaleSlider
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7410000000000000024
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.86, 0.05]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiSlider:
-      value: 0.2
-      minValue: 0
-      maxValue: 1
-      trackColor: [0.04, 0.05, 0.1, 1]
-      fillColor: [0.97, 0.77, 0.3, 1]
-      handleColor: [0.95, 0.88, 0.72, 1]
-      onValueChangedCallback: on_ui_scale_changed
-    UiFocus:
-      focusable: true
-      initial: false
-      onFocusCallback: 'on_slider_focused'
-      highlightColor: [0.97, 0.77, 0.3, 1]
-      highlightThickness: 3
-  - Entity: 7410000000000000035
-    Tag:
-      tag: UiScaleLabel
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7410000000000000024
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.9, 0.07]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.16, 0.09, 0.04, 1]
-      text: 'Interface Size: 100%'
-      color: [0.88, 0.8, 0.64, 0.95]
-      fontSize: 28
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: MedievalSharp
-  - Entity: 7410000000000000036
-    Tag:
-      tag: MasterVolSlider
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7410000000000000024
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.86, 0.05]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiSlider:
-      value: 1
-      minValue: 0
-      maxValue: 1
-      trackColor: [0.04, 0.05, 0.1, 1]
-      fillColor: [0.97, 0.77, 0.3, 1]
-      handleColor: [0.95, 0.88, 0.72, 1]
-      onValueChangedCallback: on_master_vol_changed
-    UiFocus:
-      focusable: true
-      initial: true
-      onFocusCallback: 'on_slider_focused'
-      highlightColor: [0.97, 0.77, 0.3, 1]
-      highlightThickness: 3
-  - Entity: 7410000000000000037
-    Tag:
-      tag: MasterVolLabel
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7410000000000000024
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.9, 0.07]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.16, 0.09, 0.04, 1]
-      text: 'Master Volume: 100%'
-      color: [0.88, 0.8, 0.64, 0.95]
-      fontSize: 28
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: MedievalSharp
-  - Entity: 7410000000000000038
     Tag:
       tag: TitleText
     Transform:
@@ -874,7 +634,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.11]
+      size: [0.9, 0.13]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -891,3 +651,750 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: Cinzel
+  - Entity: 7410000000000000032
+    Tag:
+      tag: AccessColumn
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000030
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.47, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 6
+      padding: 4
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7410000000000000033
+    Tag:
+      tag: ProgressLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000032
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.08]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Maps defended: 0 / 10'
+      color: [0.88, 0.8, 0.64, 0.95]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 7410000000000000034
+    Tag:
+      tag: ResetProgressButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000032
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_reset_progress_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Reset progress'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 22
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7410000000000000035
+    Tag:
+      tag: ResetProgressButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000034
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
+  - Entity: 7410000000000000036
+    Tag:
+      tag: ResetTutorialButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000032
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_reset_tutorial_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Reset tutorial'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 22
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7410000000000000037
+    Tag:
+      tag: ResetTutorialButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000036
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
+  - Entity: 7410000000000000038
+    Tag:
+      tag: SubtitlesButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000032
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_subtitles_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Subtitles: on'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 22
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7410000000000000039
+    Tag:
+      tag: SubtitlesButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000038
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
+  - Entity: 7410000000000000040
+    Tag:
+      tag: ReducedMotionButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000032
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_reduced_motion_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Reduced motion: off'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 22
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7410000000000000041
+    Tag:
+      tag: ReducedMotionButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000040
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
+  - Entity: 7410000000000000042
+    Tag:
+      tag: ColourVisionButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000032
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.3, 0.18, 0.09, 1]
+      hoverColor: [0.74, 0.5, 0.2, 1]
+      pressedColor: [0.16, 0.09, 0.04, 1]
+      disabledColor: [0.12, 0.1, 0.12, 1]
+      onClickCallback: on_colour_vision_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Colour vision: off'
+      color: [0.95, 0.88, 0.72, 1]
+      fontSize: 22
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7410000000000000043
+    Tag:
+      tag: ColourVisionButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000042
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:1448d220f0d7c20f:textures/ui/banner.png
+  - Entity: 7410000000000000044
+    Tag:
+      tag: AccessHeading
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000032
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Accessibility'
+      color: [0.97, 0.77, 0.3, 1]
+      fontSize: 32
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: Cinzel
+  - Entity: 7410000000000000045
+    Tag:
+      tag: SoundColumn
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000030
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.47, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 2
+      padding: 4
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7410000000000000046
+    Tag:
+      tag: UiScaleSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000045
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 0.2
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.04, 0.05, 0.1, 1]
+      fillColor: [0.97, 0.77, 0.3, 1]
+      handleColor: [0.95, 0.88, 0.72, 1]
+      onValueChangedCallback: on_ui_scale_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: 'on_slider_focused'
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7410000000000000047
+    Tag:
+      tag: UiScaleLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000045
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.08]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Interface size: 100%'
+      color: [0.88, 0.8, 0.64, 0.95]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 7410000000000000048
+    Tag:
+      tag: SfxVolSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000045
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 1
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.04, 0.05, 0.1, 1]
+      fillColor: [0.97, 0.77, 0.3, 1]
+      handleColor: [0.95, 0.88, 0.72, 1]
+      onValueChangedCallback: on_sfx_vol_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: 'on_slider_focused'
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7410000000000000049
+    Tag:
+      tag: SfxVolLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000045
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.08]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Effects: 100%'
+      color: [0.88, 0.8, 0.64, 0.95]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 7410000000000000050
+    Tag:
+      tag: MusicVolSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000045
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 0.7
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.04, 0.05, 0.1, 1]
+      fillColor: [0.97, 0.77, 0.3, 1]
+      handleColor: [0.95, 0.88, 0.72, 1]
+      onValueChangedCallback: on_music_vol_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: 'on_slider_focused'
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7410000000000000051
+    Tag:
+      tag: MusicVolLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000045
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.08]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Music: 70%'
+      color: [0.88, 0.8, 0.64, 0.95]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 7410000000000000052
+    Tag:
+      tag: MasterVolSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000045
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 1
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.04, 0.05, 0.1, 1]
+      fillColor: [0.97, 0.77, 0.3, 1]
+      handleColor: [0.95, 0.88, 0.72, 1]
+      onValueChangedCallback: on_master_vol_changed
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: 'on_slider_focused'
+      highlightColor: [0.97, 0.77, 0.3, 1]
+      highlightThickness: 3
+  - Entity: 7410000000000000053
+    Tag:
+      tag: MasterVolLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000045
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.08]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Master volume: 100%'
+      color: [0.88, 0.8, 0.64, 0.95]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+  - Entity: 7410000000000000054
+    Tag:
+      tag: SoundHeading
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7410000000000000045
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.9, 0.1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.16, 0.09, 0.04, 1]
+      text: 'Sound and display'
+      color: [0.97, 0.77, 0.3, 1]
+      fontSize: 32
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: Cinzel
+  - Entity: 7410000000000000055
+    Tag:
+      tag: Music
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:201656300c77f666:sounds/music/menu.wav
+      category: Music
+      volume: 0.6
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1

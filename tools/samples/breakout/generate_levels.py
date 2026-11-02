@@ -338,19 +338,6 @@ def level_scene(level: int) -> str:
             "  loop: true\n  spatial: false\n  playOnStart: true\n  maxDistance: 50\n  rolloff: 1\n"
         ],
     )
-    for kind in ("Wide", "Slow"):
-        for index in (1, 2):
-            entities.add(
-                f"Power{kind}{index}",
-                [sprite(f"power_{kind.lower()}.png")],
-                position=(0, PARK_Y, 0.2),
-                scale=(1.2, 0.525, 1),
-                visible=False,
-            )
-    for index in range(1, 7):
-        entities.add(
-            f"BreakFx{index}", [sprite("brick.png")], position=(0, PARK_Y, 0.2), scale=(*BRICK_SIZE, 1), visible=False
-        )
     for brick in layout(level):
         uuid = entities.new_id()
         link = (

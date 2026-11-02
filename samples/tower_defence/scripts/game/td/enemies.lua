@@ -30,10 +30,11 @@ function Foes.spawn_enemy(kind, road)
         gamestate.set("tower_seen_" .. kind, true)
     end
     if road == 2 then gamestate.set("tower_spawned_b", (gamestate.get("tower_spawned_b", 0)) + 1) end
-    local side = ((S.spawned * 37) % 7) / 6.0 - 0.5
+    -- A lane of the road (`lane_1` on its left to `lane_7` on its right), so that the Horde walks side by side.
+    local lane = "lane_" .. ((S.spawned * 37) % 7 + 1)
     S.enemies[#S.enemies + 1] = {
         id = id, bar = bar, shadow = shadow, kind = kind, hp = hp, max = hp, speed = base.speed, gold = base.gold,
-        arrow = base.arrow, regen = base.regen or 0.0, road = road or 1, distance = 0.0, side = side * 0.28,
+        arrow = base.arrow, regen = base.regen or 0.0, road = road or 1, distance = 0.0, lane = lane,
         slow = 0.0, slow_factor = 1.0, frozen = 0.0, frost_hits = 0, burn = 0.0, x = x, y = y, z = z, dx = 1.0,
         dz = 0.0, walk = S.spawned * 0.37, frame = -1, lift = lift, lives = base.lives or 1, boss = base.boss == true,
         ward = 0.0, ward_clock = base.ward and 1.5 or nil, ward_give = base.ward, blast = base.blast, rage = base.rage,
@@ -70,7 +71,7 @@ function Foes.hurt(foe, amount, through_ward)
         S.earned = S.earned + pay
         S.kills = S.kills + 1
         UI.play("sounds/game/pop.wav")
-        Vis.emit(foe.x, foe.y + 0.35, foe.z, 6, 1.4, 0.75, 0.15, 0.1, 0.12, 0.45, 1.2)
+        Vis.burst("Blood", foe.x, foe.y + 0.35, foe.z, 12)
         for index, other in ipairs(S.enemies) do
             if other == foe then
                 Foes.remove_enemy(index, true)
@@ -92,12 +93,13 @@ end
 -- A sapper killed on the road: its keg bursts and hurts the Horde around it.
 function Foes.blast(foe)
     UI.play("sounds/game/cannon.wav")
-    Vis.spawn_ring(foe.x, foe.y, foe.z, sapper_blast_radius, 1.0, 0.6, 0.2)
-    Vis.emit(foe.x, foe.y + 0.3, foe.z, 14, 2.2, 1.0, 0.55, 0.15, 0.14, 0.5, 1.4)
+    local radius = S.stats[foe.kind].radius
+    Vis.spawn_ring(foe.x, foe.y, foe.z, radius, 1.0, 0.6, 0.2)
+    Vis.burst("Blast", foe.x, foe.y + 0.3, foe.z, 30)
     local hit = {}
     for _, other in ipairs(S.enemies) do
         local dx, dz = other.x - foe.x, other.z - foe.z
-        if dx * dx + dz * dz <= sapper_blast_radius * sapper_blast_radius then hit[#hit + 1] = other end
+        if dx * dx + dz * dz <= radius * radius then hit[#hit + 1] = other end
     end
     for _, other in ipairs(hit) do Foes.hurt(other, foe.blast) end
     gamestate.set("tower_blasts", gamestate.get("tower_blasts", 0) + 1)
@@ -105,22 +107,24 @@ end
 
 -- An ogre mage wards the Horde around it (itself included) every few seconds.
 function Foes.cast_ward(mage)
+    local radius = S.stats[mage.kind].radius
     for _, other in ipairs(S.enemies) do
         local dx, dz = other.x - mage.x, other.z - mage.z
-        if dx * dx + dz * dz <= mage_ward_radius * mage_ward_radius then
+        if dx * dx + dz * dz <= radius * radius then
             other.ward = math.max(other.ward, mage.ward_give * Fx.factor_of(mage.kind, false, "ward"))
         end
     end
-    Vis.spawn_ring(mage.x, mage.y, mage.z, mage_ward_radius, 0.55, 0.75, 1.0)
+    Vis.spawn_ring(mage.x, mage.y, mage.z, radius, 0.55, 0.75, 1.0)
     gamestate.set("tower_wards", gamestate.get("tower_wards", 0) + 1)
 end
 
 -- The speed factor of an enemy near the chieftain (its war cry).
 function Foes.rally_of(foe)
     for _, other in ipairs(S.enemies) do
-        if other.boss and other ~= foe then
+        local rally = S.stats[other.kind]
+        if other ~= foe and rally.rally ~= nil then
             local dx, dz = other.x - foe.x, other.z - foe.z
-            if dx * dx + dz * dz <= chieftain_rally_radius * chieftain_rally_radius then return chieftain_rally end
+            if dx * dx + dz * dz <= rally.radius * rally.radius then return rally.rally end
         end
     end
     return 1.0
@@ -163,7 +167,7 @@ function Foes.update_enemies(dt)
         if foe.ward_clock ~= nil then
             foe.ward_clock = foe.ward_clock - dt
             if foe.ward_clock <= 0.0 then
-                foe.ward_clock = mage_ward_every
+                foe.ward_clock = S.stats[foe.kind].every
                 Foes.cast_ward(foe)
             end
         end
@@ -195,16 +199,14 @@ function Foes.update_enemies(dt)
                     S.lives_left = S.lives_left - foe.lives
                     S.leaks = S.leaks + 1
                     UI.play("sounds/game/leak.wav")
-                    Vis.emit(foe.x, foe.y + 0.5, foe.z, 5, 1.2, 0.9, 0.85, 0.7, 0.14, 0.4, 0.6)
+                    Vis.burst("Dust", foe.x, foe.y + 0.5, foe.z, 12)
                     UI.message("The keep is hit! " .. math.max(0, S.lives_left) .. " lives left", 1.5)
                     Foes.remove_enemy(index, false)
                 else
                     index = index + 1
                 end
             else
-                local x, y, z, dx, dz = World.along(foe.distance, foe.road)
-                -- Walk beside the middle of the road, on the right of the heading.
-                x, z = x - dz * foe.side, z + dx * foe.side
+                local x, y, z, dx, dz = World.along(foe.distance, foe.road, foe.lane)
                 foe.x, foe.y, foe.z, foe.dx, foe.dz = x, y, z, dx, dz
                 foe.walk = foe.walk + step * 3.2
                 local frame = (math.floor(foe.walk) % 4) * C.DIRECTIONS + Foes.direction_of(dx, dz)

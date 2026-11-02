@@ -22,3 +22,23 @@ Entities:
       loop: false
     RendererTag:
       Name: sprites
+  - Entity: 7600000000001420002
+    Tag:
+      tag: ProjectileTrail
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7600000000001420001
+    Trail:
+      enabled: true
+      lifetime: 0.3
+      minDistance: 0.05
+      maxPoints: 32
+      width: 0.14
+      color: [0.5, 0.48, 0.45, 0.6]
+      emissive: 0
+      blend: Alpha

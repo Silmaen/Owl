@@ -7,8 +7,10 @@
 -- Game state: `wolf_score` (whole run), `wolf_items` / `wolf_items_total`, `wolf_secrets` / `wolf_secrets_total`,
 -- `wolf_key_gold` / `wolf_key_blue` (0 or 1), `wolf_explored` and `wolf_doors_opened` (explore.lua); `wolf_toast` is a
 -- message shown a few seconds. The HUD shows the floor, the score and the keys only: the ratios wait for the tally of
--- the floor. F6 saves in slot 2, F9 loads it; Escape (pad Start) pauses (`wolf_paused`): the pause window holds the
--- controls, Resume and Quit. While it is shown the engine opens no door and slides no secret wall.
+-- the floor. F6 saves in slot 2, F9 loads it; Escape (pad Start) pauses (`wolf_paused`): the scene clock stops
+-- (`time.set_paused`: no physics step, no door nor secret wall moves) and the pause window holds the controls, Resume
+-- and Quit; while it is shown the engine opens no door. Once the floor is left (the elevator ride, `wolf_leaving`) the
+-- pause key belongs to the ride, which it skips.
 
 properties = {
     { name = "level", type = "int", default = 1 },
@@ -65,6 +67,7 @@ end
 
 local function set_paused(value)
     paused = value
+    time.set_paused(value)
     gamestate.set("wolf_paused", value)
     if ids.PauseWindow ~= 0 then
         ui.set_visible(ids.PauseWindow, value)
@@ -143,7 +146,7 @@ function on_update(dt)
             ui.set_visible(ids.ToastText, false)
         end
     end
-    if ui.is_transition_active() or leaving then
+    if ui.is_transition_active() or leaving or gamestate.get("wolf_leaving", 0) == 1 then
         return
     end
     -- Saved once the floor runs: the save holds the scene as it starts.

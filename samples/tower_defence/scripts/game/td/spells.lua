@@ -31,17 +31,13 @@ function Spells.cast(name)
     end
     if name == "rain" then
         UI.play("sounds/game/arrow.wav")
-        for k = 1, 14 do
-            local a, r = k * 2.4, (k % 5) * spell.radius * 0.2
-            Vis.emit(target.x + math.cos(a) * r, target.y + 2.2, target.z + math.sin(a) * r, 1, 0.2, 0.95, 0.9, 0.75,
-                    0.1, 0.5, -4.0)
-        end
+        Vis.burst("Rain", target.x, target.y + 2.2, target.z, 36)
         Vis.spawn_ring(target.x, target.y, target.z, spell.radius, 0.95, 0.9, 0.7)
         for _, foe in ipairs(hit) do Foes.hurt(foe, spell.damage) end
     else
         UI.play("sounds/game/build.wav")
         Vis.spawn_ring(target.x, target.y, target.z, spell.radius, 1.0, 0.85, 0.3)
-        Vis.emit(target.x, target.y + 0.4, target.z, 12, 1.6, 1.0, 0.85, 0.35, 0.12, 0.6, 0.8)
+        Vis.burst("Shield", target.x, target.y + 0.4, target.z, 20)
         for _, foe in ipairs(hit) do foe.frozen = math.max(foe.frozen, foe.boss and spell.time * 0.5 or spell.time) end
     end
     gamestate.set("tower_" .. name .. "_casts", spell.casts)

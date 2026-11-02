@@ -35,6 +35,9 @@ function Waves.update_sky(dt)
             entity.set_light_enabled(torch.light, night)
             if torch.glow ~= 0 then entity.set_light_enabled(torch.glow, night) end
             UI.show(torch.flame, night)
+            if torch.embers ~= 0 then
+                if night then entity.particles_play(torch.embers) else entity.particles_stop(torch.embers) end
+            end
         end
     end
 end
@@ -89,7 +92,7 @@ end
 
 function Waves.start_wave()
     S.wave = S.wave + 1
-    S.spawning = Waves.parse_wave(waves[S.wave])
+    S.spawning = Waves.parse_wave(S.waves[S.wave])
     S.spawn_clock = 0.0
     S.countdown = 0.0
     Waves.set_phase(Fx.nights[S.wave] == true, false)

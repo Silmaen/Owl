@@ -27,6 +27,8 @@ OwlProject:
       DefaultConfig:
         Billboard: Full
         DepthTest: true
+    - Type: RendererParticles
+      Name: particles
     - Type: Renderer2D
       Name: marks
       DefaultConfig:
