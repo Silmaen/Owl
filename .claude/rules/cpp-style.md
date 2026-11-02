@@ -294,7 +294,8 @@ The Doxygen format used across the codebase:
 ## Logging
 
 Use engine macros (never `std::cout`, `printf`, `std::cerr`). Before the logger exists (startup, fatal
-paths), use `std::println(stderr, ...)` from `<print>`:
+paths), use `std::println(stderr, ...)` from `<print>` (in the engine library `std::fputs(std::format(...).c_str(),
+stderr)`: the MinGW libc++ cannot link `println` to a `FILE*`):
 ```
 OWL_CORE_TRACE / OWL_TRACE       — per-frame / per-item detail
 OWL_CORE_DEBUG / OWL_DEBUG       — developer detail of one operation

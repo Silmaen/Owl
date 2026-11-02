@@ -25,9 +25,9 @@ OWL_DIAG_POP
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <format>
 #include <mutex>
 #include <optional>
-#include <print>
 #include <string>
 #include <string_view>
 
@@ -129,7 +129,9 @@ auto Log::getDefaultLevel() -> Level {
 	if (const char* forced = std::getenv("OWL_LOG_VERBOSITY"); forced != nullptr) {
 		if (const auto level = parseLevel(forced); level.has_value())
 			return *level;
-		std::println(stderr, "Log: Unknown OWL_LOG_VERBOSITY '{}', the default level applies.", forced);
+		// std::println to a FILE* does not link against the MinGW libc++ (std::__open_terminal).
+		std::fputs(std::format("Log: Unknown OWL_LOG_VERBOSITY '{}', the default level applies.\n", forced).c_str(),
+				   stderr);
 	}
 #ifdef OWL_DEBUG_BUILD
 	return Level::Debug;

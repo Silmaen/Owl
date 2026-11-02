@@ -116,6 +116,8 @@ Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.ca
   check that every `NOLINTBEGIN` / `clang-format off` stays balanced.
 - MinGW GCC does not export the `static constexpr` members of an `OWL_API` class: a test binding one to a reference
   (`EXPECT_EQ(x, Class::max)`) fails to link on Windows GCC only; pass a copy (`size_t{Class::max}`).
-- `std::cerr` / iostreams are banned: logger macros, or `std::println(stderr, …)` before the logger exists.
+- `std::cerr` / iostreams are banned: logger macros, or `std::println(stderr, …)` before the logger exists — but not
+  inside `OwlEngine`: the MinGW libc++ lacks `std::__open_terminal`, the DLL fails to link; use
+  `std::fputs(std::format(…).c_str(), stderr)` there.
 - Third-party code only through Conan (ConanCenter, else `conan/recipes/`), never vendored.
 - Editor SVG icons (`source/owlnest/assets_sources/icons/`) are hand-made: never edit them by script.

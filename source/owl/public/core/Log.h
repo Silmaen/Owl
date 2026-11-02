@@ -249,7 +249,7 @@ private:
 #define OWL_LOG_ONCE_AT(logger, level, ...)                                                                            \
 	((::owl::core::Log::isLevelCompiled(::owl::core::Log::Level::level) &&                                             \
 	  ::owl::core::Log::isLevelEnabled(::owl::core::Log::Level::level) &&                                              \
-	  ::owl::core::Log::isFirstCall<decltype([] {})>())                                                                \
+	  ::owl::core::Log::isFirstCall<decltype([]() -> void {})>())                                                      \
 			 ? ::owl::core::Log::logger(::owl::core::Log::Level::level, __VA_ARGS__)                                   \
 			 : void());
 
