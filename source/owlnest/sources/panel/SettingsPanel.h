@@ -140,10 +140,10 @@ private:
 
 	/**
 	 * @brief
-	 *  Render the Log tab: the lowest level recorded.
+	 *  Render the Log tab: the lowest level recorded and the period of the per-frame traces (`config.yml`).
 	 * @param[in,out] ioSettings The editor settings.
 	 */
-	static void renderLogSection(EditorSettings& ioSettings);
+	void renderLogSection(EditorSettings& ioSettings);
 
 	/**
 	 * @brief
@@ -165,6 +165,9 @@ private:
 	 * @return The int.
 	 */
 	static auto ImGuiKeyToGlfwKey(ImGuiKey iKey) -> int;
+
+	/// The application parameters changed in the Log tab, written to `config.yml` once the edit ends.
+	bool m_appParamsChanged = false;
 };
 
 }// namespace owl::nest::panel

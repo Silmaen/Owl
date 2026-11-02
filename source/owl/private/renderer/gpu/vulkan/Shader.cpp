@@ -57,20 +57,20 @@ auto createShaderModule(const VkDevice& iLogicalDevice, const std::vector<uint32
 
 }// namespace utils
 
+// clang-format off: it misreads a log macro ending a constructor body and indents the rest of the file.
 Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& /*iVertexSrc*/,
 			   const std::string& /*iFragmentSrc*/)
 	: renderer::gpu::Shader{iShaderName, iRenderer} {
-			  OWL_PROFILE_FUNCTION()
+	OWL_CORE_WARN("Vulkan: Separate vertex and fragment sources are deprecated, use a Slang source.")
+}
 
-					  OWL_CORE_WARN("Vulkan: The separate vertex/fragment source constructor is deprecated, "
-									"use a Slang source.")}
-
-	  Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& iSlangSource)
+Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& iSlangSource)
 	: renderer::gpu::Shader{iShaderName, iRenderer} {
 	OWL_PROFILE_FUNCTION()
 
 	createShader(iSlangSource);
 }
+// clang-format on
 
 Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
 			   const std::vector<std::filesystem::path>& iSources)

@@ -187,6 +187,18 @@ public:
 
 	/**
 	 * @brief
+	 *  Whether a call site runs for the first time (the `*_ONCE` macros give each site a type of its own).
+	 * @tparam Tag Type unique to the call site.
+	 * @return True the first time only.
+	 */
+	template<typename Tag>
+	[[nodiscard]] static auto isFirstCall() -> bool {
+		static std::atomic<bool> s_done{false};
+		return !s_done.exchange(true);
+	}
+
+	/**
+	 * @brief
 	 *  Access the shared log buffer for UI display.
 	 * @return Reference to the global LogBuffer.
 	 */
@@ -236,10 +248,8 @@ private:
 /// Log a message at a level the first time the call site runs only: for a fault a loop would repeat every frame.
 #define OWL_LOG_ONCE_AT(logger, level, ...)                                                                            \
 	((::owl::core::Log::isLevelCompiled(::owl::core::Log::Level::level) &&                                             \
-	  ::owl::core::Log::isLevelEnabled(::owl::core::Log::Level::level) && []() -> bool {                               \
-		  static std::atomic<bool> s_logged{false};                                                                    \
-		  return !s_logged.exchange(true);                                                                             \
-	  }())                                                                                                             \
+	  ::owl::core::Log::isLevelEnabled(::owl::core::Log::Level::level) &&                                              \
+	  ::owl::core::Log::isFirstCall<decltype([] {})>())                                                                \
 			 ? ::owl::core::Log::logger(::owl::core::Log::Level::level, __VA_ARGS__)                                   \
 			 : void());
 

@@ -31,8 +31,8 @@
 #include <format>
 #include <optional>
 #include <string>
-#include <tuple>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 namespace owl::nest::panel {
@@ -44,12 +44,12 @@ auto getLogLevelSetting(const std::string& iSetting) -> core::Log::Level {
 }
 
 auto logLevelCombo(const char* iId, std::string& ioSetting) -> bool {
-	constexpr std::array levels{core::Log::Level::Trace,	core::Log::Level::Debug, core::Log::Level::Info,
+	constexpr std::array levels{core::Log::Level::Trace,   core::Log::Level::Debug, core::Log::Level::Info,
 								core::Log::Level::Warning, core::Log::Level::Error, core::Log::Level::Critical,
 								core::Log::Level::Off};
 	const auto defaultLabel = std::format("Default ({})", magic_enum::enum_name(core::Log::getDefaultLevel()));
-	const auto preview = ioSetting.empty() ? defaultLabel
-										   : std::string{magic_enum::enum_name(getLogLevelSetting(ioSetting))};
+	const auto preview =
+			ioSetting.empty() ? defaultLabel : std::string{magic_enum::enum_name(getLogLevelSetting(ioSetting))};
 	bool changed = false;
 	if (gui::widgets::beginCombo(iId, preview.c_str())) {
 		if (ImGui::Selectable(defaultLabel.c_str(), ioSetting.empty())) {

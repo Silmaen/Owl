@@ -192,7 +192,8 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 				if (!parsed->valid) {
 					const auto message = std::format("Cannot open scene '{}': {}. Fix: {}.", scenePath.string(),
 													 parsed->error, scene::fixHint(parsed->failure));
-					OWL_ERROR("SceneDocument: {}", message)
+					OWL_ERROR("SceneDocument: Cannot open '{}': {}; fix: {}.", scenePath.string(), parsed->error,
+							  scene::fixHint(parsed->failure))
 					state->setError(message);
 					return;
 				}

@@ -41,17 +41,17 @@ auto debugUtilsMessageCallback(const VkDebugUtilsMessageSeverityFlagBitsEXT iMes
 	auto bufferName = VulkanHandler::get().getCurrentFrameBufferName();
 	auto frameId = app::Application::get().getTimeStep().getFrameNumber();
 	if ((iMessageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) != 0) {
-		OWL_CORE_TRACE("Vulkan: Frame {} ('{}'), [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
-					   iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
+		OWL_CORE_TRACE("Vulkan: {} [{} {}, frame {} '{}'].", iPCallbackData->pMessage, iPCallbackData->pMessageIdName,
+					   iPCallbackData->messageIdNumber, frameId, bufferName)
 	} else if ((iMessageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0) {
-		OWL_CORE_DEBUG("Vulkan: Frame {} ('{}'), [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
-					   iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
+		OWL_CORE_DEBUG("Vulkan: {} [{} {}, frame {} '{}'].", iPCallbackData->pMessage, iPCallbackData->pMessageIdName,
+					   iPCallbackData->messageIdNumber, frameId, bufferName)
 	} else if ((iMessageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0) {
-		OWL_CORE_WARN("Vulkan: Frame {} ('{}'), [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
-					  iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
+		OWL_CORE_WARN("Vulkan: {} [{} {}, frame {} '{}'].", iPCallbackData->pMessage, iPCallbackData->pMessageIdName,
+					  iPCallbackData->messageIdNumber, frameId, bufferName)
 	} else if ((iMessageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0) {
-		OWL_CORE_ERROR("Vulkan: Frame {} ('{}'), [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
-					   iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
+		OWL_CORE_ERROR("Vulkan: {} [{} {}, frame {} '{}'].", iPCallbackData->pMessage, iPCallbackData->pMessageIdName,
+					   iPCallbackData->messageIdNumber, frameId, bufferName)
 	}
 	return VK_FALSE;
 }

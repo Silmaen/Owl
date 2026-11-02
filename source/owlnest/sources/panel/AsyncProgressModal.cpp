@@ -101,7 +101,7 @@ void AsyncProgressModal::onImGuiRender() {
 	} else if (isFinished()) {
 		// ImGui closed the popup by itself: let go, or the editor refuses the next operation.
 		if (m_state->hasError.load())
-			OWL_CORE_ERROR("Progress: '{}' failed. {}", m_title, m_state->getError())
+			OWL_CORE_ERROR("Progress: '{}' failed ({}).", m_title, m_state->getError())
 		close();
 	}
 }

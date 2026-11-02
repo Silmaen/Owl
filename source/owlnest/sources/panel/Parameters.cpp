@@ -63,12 +63,10 @@ auto Parameters::apply() -> bool {
 	params.sound = m_localParams.sound;
 	params.lowLatencyPresent = m_localParams.lowLatencyPresent;
 	params.useDebugging = m_localParams.useDebugging;
-	params.frameLogFrequency = m_localParams.frameLogFrequency;
 	app::Application::get().setHotReloadEnabled(m_localParams.hotReload);
 
 	const auto configPath = platform::getUserDirectory() / "config.yml";
 	params.saveToFile(configPath);
-	core::Log::setFrameFrequency(params.frameLogFrequency);
 
 	return m_localParams.renderer != m_originalRenderer || m_localParams.sound != m_originalSound ||
 		   m_localParams.lowLatencyPresent != m_originalLowLatency;
@@ -119,10 +117,6 @@ void Parameters::onImGuiRender() {
 				std::ignore = gui::widgets::propertyBool(
 						"Hot Reload", m_localParams.hotReload, params.hotReload,
 						"Reload textures, shaders, scenes, tilesets and scripts when their file changes.");
-				auto freq = static_cast<int>(m_localParams.frameLogFrequency);
-				if (gui::widgets::propertyInt("Frame Log Frequency", freq, static_cast<int>(params.frameLogFrequency),
-											  0, 100000, "%d", "Frames between two frame-sampled log lines."))
-					m_localParams.frameLogFrequency = static_cast<uint64_t>(freq);
 				gui::widgets::endProperties();
 			}
 			gui::widgets::endSection();

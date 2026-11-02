@@ -11,6 +11,8 @@
 #include "../EditorResources.h"
 #include "LogPanel.h"
 
+#include <app/Application.h>
+#include <core/Log.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
@@ -18,8 +20,10 @@
 #include <gui/widgets/Combo.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/PropertyGrid.h>
+#include <platform/UserDirectory.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <format>
 #include <string>
 #include <tuple>
@@ -219,7 +223,20 @@ void SettingsPanel::renderLogSection(EditorSettings& ioSettings) {
 		ioSettings.logLevel.clear();
 		core::Log::setVerbosityLevel(getLogLevelSetting(ioSettings.logLevel));
 	}
+	auto& params = app::Application::get().getInitParams();
+	auto every = static_cast<int>(params.frameLogFrequency);
+	if (gui::widgets::propertyInt("Frame Trace Every", every, 0, 0, 100000, "%d frames",
+								  "Frames between two lines of a per-frame trace (OWL_CORE_FRAME_TRACE); 0 turns them "
+								  "off. They show at the Trace level only.")) {
+		params.frameLogFrequency = static_cast<uint64_t>(std::max(every, 0));
+		core::Log::setFrameFrequency(params.frameLogFrequency);
+		m_appParamsChanged = true;
+	}
 	gui::widgets::endProperties();
+	if (m_appParamsChanged && !ImGui::IsAnyItemActive()) {
+		params.saveToFile(platform::getUserDirectory() / "config.yml");
+		m_appParamsChanged = false;
+	}
 }
 
 void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {
