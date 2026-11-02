@@ -45,7 +45,7 @@ void StorageBuffer::setData(const void* iData, const uint32_t iSize, const uint3
 	if (m_buffer.buffer == nullptr || iSize == 0 || iData == nullptr)
 		return;
 	if (iOffset + iSize > m_size) {
-		OWL_CORE_WARN("Vulkan storage buffer: setData out of range (offset {} + size {} > capacity {}).", iOffset,
+		OWL_CORE_WARN_ONCE("Vulkan storage buffer: setData out of range (offset {} + size {} > capacity {}).", iOffset,
 					  iSize, m_size)
 		return;
 	}
@@ -103,7 +103,7 @@ void StorageBuffer::getData(void* oData, const uint32_t iSize, const uint32_t iO
 	if (m_buffer.mapped == nullptr || iSize == 0 || oData == nullptr)
 		return;
 	if (iOffset + iSize > m_size) {
-		OWL_CORE_WARN("Vulkan storage buffer: getData out of range (offset {} + size {} > capacity {}).", iOffset,
+		OWL_CORE_WARN_ONCE("Vulkan storage buffer: getData out of range (offset {} + size {} > capacity {}).", iOffset,
 					  iSize, m_size)
 		return;
 	}
@@ -124,7 +124,7 @@ void StorageBuffer::getData(void* oData, const uint32_t iSize, const uint32_t iO
 		available = m_shadow.size();
 	}
 	if (iOffset + iSize > available) {
-		OWL_CORE_WARN("Vulkan storage buffer: getData beyond the streamed content ({} bytes).", available)
+		OWL_CORE_WARN_ONCE("Vulkan storage buffer: getData beyond the streamed content ({} bytes).", available)
 		return;
 	}
 

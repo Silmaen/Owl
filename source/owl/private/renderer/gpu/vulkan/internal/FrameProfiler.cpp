@@ -142,7 +142,7 @@ void FrameProfiler::harvest(const size_t iSlot) {
 				timing.spanMs = static_cast<double>(lastTick - firstTick) * m_periodNs * 1e-6;
 			}
 		} else {
-			OWL_CORE_WARN("Vulkan: failed to read the timestamp queries ({}).", resultString(result))
+			OWL_CORE_WARN_ONCE("Vulkan: failed to read the timestamp queries ({}).", resultString(result))
 		}
 	}
 	m_completed.push_back(timing);

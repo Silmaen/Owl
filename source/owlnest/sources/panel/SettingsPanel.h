@@ -140,6 +140,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Render the Log tab: the lowest level recorded.
+	 * @param[in,out] ioSettings The editor settings.
+	 */
+	static void renderLogSection(EditorSettings& ioSettings);
+
+	/**
+	 * @brief
 	 *  Render keybindings section.
 	 * @param[in,out] ioSettings Editor settings being modified.
 	 * @param[in,out] ioRegistry Action registry whose bindings are edited.

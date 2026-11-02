@@ -570,7 +570,7 @@ void UiLayer::initializeDocking() const {
 				m_bottomBarCallback ? ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y : 0.0f;
 		ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, -bottomBarHeight), dockSpaceFlags);
 	} else {
-		OWL_CORE_WARN("Docking is not enabled.")
+		OWL_CORE_WARN_ONCE("Docking is not enabled.")
 	}
 	style.WindowMinSize.x = minWinSizeX;
 	if (m_bottomBarCallback)

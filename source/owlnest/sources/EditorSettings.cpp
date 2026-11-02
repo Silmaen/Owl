@@ -113,6 +113,7 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 	if (auto config = data["EditorSettings"]; config) {
 		readKey(config, "showStats", showStats);
 		readKey(config, "showAllFiles", showAllFiles);
+		readKey(config, "logLevel", logLevel);
 		if (config["themePreset"]) {
 			const auto preset = gui::Theme::presetFromName(config["themePreset"].as<std::string>());
 			for (const auto& [candidate, name]: gui::Theme::getPresetNames()) {
@@ -197,6 +198,7 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "EditorSettings" << YAML::Value << YAML::BeginMap;
 	out << YAML::Key << "showStats" << YAML::Value << showStats;
 	out << YAML::Key << "showAllFiles" << YAML::Value << showAllFiles;
+	out << YAML::Key << "logLevel" << YAML::Value << logLevel;
 	out << YAML::Key << "themePreset" << YAML::Value << themePreset;
 	out << YAML::Key << "codeEditorFontSize" << YAML::Value << codeEditorFontSize;
 	out << YAML::Key << "uiFontSize" << YAML::Value << uiFontSize;

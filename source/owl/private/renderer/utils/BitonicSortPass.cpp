@@ -51,7 +51,7 @@ void BitonicSortPass::sort(std::span<const Item> iItems) {
 		return;
 	m_itemCount = std::min(static_cast<uint32_t>(iItems.size()), kSortSize);
 	if (iItems.size() > kSortSize) {
-		OWL_CORE_WARN("BitonicSortPass: {} items > capacity {}; truncating.", iItems.size(), kSortSize)
+		OWL_CORE_WARN_ONCE("BitonicSortPass: {} items > capacity {}; truncating.", iItems.size(), kSortSize)
 	}
 
 	thread_local std::vector<Item> staging;

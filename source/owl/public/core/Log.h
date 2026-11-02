@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include <atomic>
 #include <cstdint>
 #include <format>
 #include <optional>
@@ -232,6 +233,21 @@ private:
 /// Log an engine critical error.
 #define OWL_CORE_CRITICAL(...) OWL_LOG_AT(logCore, Critical, __VA_ARGS__)
 
+/// Log a message at a level the first time the call site runs only: for a fault a loop would repeat every frame.
+#define OWL_LOG_ONCE_AT(logger, level, ...)                                                                            \
+	((::owl::core::Log::isLevelCompiled(::owl::core::Log::Level::level) &&                                             \
+	  ::owl::core::Log::isLevelEnabled(::owl::core::Log::Level::level) && []() -> bool {                               \
+		  static std::atomic<bool> s_logged{false};                                                                    \
+		  return !s_logged.exchange(true);                                                                             \
+	  }())                                                                                                             \
+			 ? ::owl::core::Log::logger(::owl::core::Log::Level::level, __VA_ARGS__)                                   \
+			 : void());
+
+/// Log an engine warning the first time only.
+#define OWL_CORE_WARN_ONCE(...) OWL_LOG_ONCE_AT(logCore, Warning, __VA_ARGS__)
+/// Log an engine error the first time only.
+#define OWL_CORE_ERROR_ONCE(...) OWL_LOG_ONCE_AT(logCore, Error, __VA_ARGS__)
+
 // Client log macros
 /// Log a client trace message.
 #define OWL_TRACE(...) OWL_LOG_AT(logClient, Trace, __VA_ARGS__)
@@ -245,3 +261,5 @@ private:
 #define OWL_ERROR(...) OWL_LOG_AT(logClient, Error, __VA_ARGS__)
 /// Log a client critical error.
 #define OWL_CRITICAL(...) OWL_LOG_AT(logClient, Critical, __VA_ARGS__)
+/// Log a client warning the first time only.
+#define OWL_WARN_ONCE(...) OWL_LOG_ONCE_AT(logClient, Warning, __VA_ARGS__)

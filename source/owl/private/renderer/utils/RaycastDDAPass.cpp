@@ -62,7 +62,7 @@ void RaycastDDAPass::update(std::span<const int32_t> iTileGrid, const uint32_t i
 		return;
 	const uint32_t cellCount = iWidth * iHeight;
 	if (cellCount == 0 || iTileGrid.size() < cellCount) {
-		OWL_CORE_WARN("RaycastDDAPass: update with empty / undersized grid (cells={}, span={}).", cellCount,
+		OWL_CORE_WARN_ONCE("RaycastDDAPass: update with empty / undersized grid (cells={}, span={}).", cellCount,
 					  iTileGrid.size())
 		return;
 	}
@@ -95,7 +95,7 @@ void RaycastDDAPass::dispatch(const Params& iParams) {
 	if (!m_ready)
 		return;
 	if (iParams.numRays == 0 || m_gridBuffer == nullptr || m_metaBuffer == nullptr) {
-		OWL_CORE_WARN("RaycastDDAPass: dispatch with numRays=0 or missing grid/meta — skipped.")
+		OWL_CORE_WARN_ONCE("RaycastDDAPass: dispatch with numRays=0 or missing grid/meta — skipped.")
 		return;
 	}
 

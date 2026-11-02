@@ -521,6 +521,7 @@ void EditorLayer::onAttach() {
 	else
 		m_settingsImportPrompt.open();
 	utils::applyTheme(gui::Theme::fromPreset(gui::Theme::presetFromName(m_settings.themePreset)));
+	core::Log::setVerbosityLevel(panel::getLogLevelSetting(m_settings.logLevel));
 
 	m_dockLayout.setPreset(DockLayout::presetFromName(m_settings.layoutPreset));
 	gui::component::setNavigationGraphSwitch(
@@ -1057,7 +1058,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	//=============================================================
 	m_sceneHierarchy.onImGuiRender();
 	// The last window to appear takes the focus, which picks the tab shown in its group.
-	m_logPanel.onImGuiRender();
+	m_logPanel.onImGuiRender(m_settings.logLevel);
 	m_consolePanel.onImGuiRender();
 	renderScriptDebug();
 	renderStats(iTimeStep);

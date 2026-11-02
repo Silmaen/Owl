@@ -222,11 +222,11 @@ void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData,
 	const auto* cmdSsbo = dynamic_cast<const StorageBuffer*>(iCommandBuffer.get());
 	const auto* countSsbo = dynamic_cast<const StorageBuffer*>(iCountBuffer.get());
 	if (cmdSsbo == nullptr || countSsbo == nullptr || cmdSsbo->getHandle() == 0 || countSsbo->getHandle() == 0) {
-		OWL_CORE_WARN("OpenGL: drawIndexedIndirect with non-OpenGL or empty SSBOs.")
+		OWL_CORE_WARN_ONCE("OpenGL: drawIndexedIndirect with non-OpenGL or empty SSBOs.")
 		return;
 	}
 	if (glad_glMultiDrawElementsIndirectCount == nullptr) {
-		OWL_CORE_WARN("OpenGL: drawIndexedIndirect needs OpenGL 4.6 (glMultiDrawElementsIndirectCount), skipped.")
+		OWL_CORE_WARN_ONCE("OpenGL: drawIndexedIndirect needs OpenGL 4.6 (glMultiDrawElementsIndirectCount), skipped.")
 		return;
 	}
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, cmdSsbo->getHandle());
@@ -245,7 +245,7 @@ void RenderAPI::drawIndexedIndirectAt(const shared<DrawData>& iData,
 		return;
 	const auto* cmdSsbo = dynamic_cast<const StorageBuffer*>(iCommandBuffer.get());
 	if (cmdSsbo == nullptr || cmdSsbo->getHandle() == 0) {
-		OWL_CORE_WARN("OpenGL: drawIndexedIndirectAt with a non-OpenGL or empty SSBO.")
+		OWL_CORE_WARN_ONCE("OpenGL: drawIndexedIndirectAt with a non-OpenGL or empty SSBO.")
 		return;
 	}
 	const auto mode = prepareDraw(iData);

@@ -9,6 +9,7 @@
 #include "SettingsPanel.h"
 
 #include "../EditorResources.h"
+#include "LogPanel.h"
 
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
@@ -72,6 +73,10 @@ void SettingsPanel::onImGuiRender(EditorSettings& ioSettings, ActionRegistry& io
 		}
 		if (ImGui::BeginTabItem(std::format("{}  Appearance###appearance", gui::icon::paintbrush).c_str())) {
 			renderThemeSection(ioSettings);
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem(std::format("{}  Log###log", gui::icon::scrollText).c_str())) {
+			renderLogSection(ioSettings);
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem(std::format("{}  Shortcuts###shortcuts", gui::icon::keyboard).c_str())) {
@@ -201,6 +206,20 @@ void SettingsPanel::renderMcpSection(EditorSettings& ioSettings) {
 		m_regenerateTokenRequested = true;
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Draw a new token: clients holding the old one are refused from now on.");
+}
+
+void SettingsPanel::renderLogSection(EditorSettings& ioSettings) {
+	if (!gui::widgets::beginProperties("##log"))
+		return;
+	gui::widgets::propertyLabel("Level", "Lowest level recorded, in the Log panel and the log file, applied at once. "
+										 "Default: Info in a release build, Debug in a debug build, or the "
+										 "OWL_LOG_VERBOSITY environment variable.");
+	std::ignore = logLevelCombo("##logLevelSetting", ioSettings.logLevel);
+	if (gui::widgets::propertyReset(!ioSettings.logLevel.empty())) {
+		ioSettings.logLevel.clear();
+		core::Log::setVerbosityLevel(getLogLevelSetting(ioSettings.logLevel));
+	}
+	gui::widgets::endProperties();
 }
 
 void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {

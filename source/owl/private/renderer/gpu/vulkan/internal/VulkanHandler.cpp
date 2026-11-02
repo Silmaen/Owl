@@ -715,7 +715,7 @@ void VulkanHandler::beginFrame() {
 	if (m_state != State::Running)
 		return;
 	if (!isMainFramebuffer()) {
-		OWL_CORE_WARN("Vulkan: begin frame on non main framebuffer {}.", m_currentFramebuffer->getName())
+		OWL_CORE_WARN_ONCE("Vulkan: begin frame on non main framebuffer {}.", m_currentFramebuffer->getName())
 	}
 	unbindFramebuffer();
 	startFrame();
@@ -788,7 +788,7 @@ void VulkanHandler::endFrame() {
 	if (m_state != State::Running)
 		return;
 	if (!isMainFramebuffer()) {
-		OWL_CORE_WARN("Vulkan: ending frame on non main framebuffer {}.", m_currentFramebuffer->getName())
+		OWL_CORE_WARN_ONCE("Vulkan: ending frame on non main framebuffer {}.", m_currentFramebuffer->getName())
 		unbindFramebuffer();
 	}
 	inFrame = false;
@@ -811,7 +811,7 @@ void VulkanHandler::endFrame() {
 
 void VulkanHandler::nextSubpass(bool internal) {
 	if (!inBatch) {
-		OWL_CORE_WARN("Vulkan next subpass called outside of batch.")
+		OWL_CORE_WARN_ONCE("Vulkan next subpass called outside of batch.")
 		return;
 	}
 	m_passCleared = false;
@@ -927,7 +927,7 @@ void VulkanHandler::bindPipeline(const int32_t iId, const gpu::PipelineState& iS
 	if (m_state != State::Running)
 		return;
 	if (!m_pipeLines.contains(iId)) {
-		OWL_CORE_WARN("Vulkan: cannot bind pipeline with id {}.", iId)
+		OWL_CORE_WARN_ONCE("Vulkan: cannot bind pipeline with id {}.", iId)
 		return;
 	}
 	auto* const cmd = getCurrentCommandBuffer();
