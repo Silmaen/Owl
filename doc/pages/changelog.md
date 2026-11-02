@@ -203,6 +203,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- CI: the coverage presets `linux-gcc-debug` and `linux-clang-debug` give each test binary 1200 s, the image test shards ran up to 600 s on a loaded agent.
 - `entity.set_tint` and `entity.get_tint` also reach the colour of a `ParticleEmitter`.
 - Breakout: the power-ups and the bursts are prefabs spawned and destroyed by `game.lua`, no longer pools of hidden entities.
 - Sokoban: the levels are the rows of the data table `tables/levels.owltable`, read by the title, the level select, the levels and the victory screen; the pause stops the scene clock (`time.set_paused`).
