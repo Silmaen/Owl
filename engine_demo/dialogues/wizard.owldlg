@@ -10,7 +10,7 @@ nodes:
     position: [260, 120]
     speaker: {text: Wizard, key: dialogue.wizard.name}
     text: {text: "Greetings, traveller. Few come to talk to an old wizard.", key: dialogue.wizard.greeting}
-    sound: sounds/hub/board.wav
+    sound: gid:3ba048d302dd484b:sounds/hub/board.wav
     next: 7100000000000000003
   - id: 7100000000000000003
     kind: Branch
@@ -20,50 +20,50 @@ nodes:
     nextFalse: 7100000000000000005
   - id: 7100000000000000004
     kind: Line
-    position: [820, 0]
+    position: [800, 64]
     speaker: {text: Wizard, key: dialogue.wizard.name}
     text: {text: "The six places are done and the portal is awake: go to the shrine!", key: dialogue.wizard.awake}
     next: 7100000000000000010
   - id: 7100000000000000005
     kind: Choice
-    position: [820, 240]
+    position: [816, 240]
     speaker: {text: Wizard, key: dialogue.wizard.name}
     text: {text: "What would you know?", key: dialogue.wizard.ask}
     options:
       - text: {text: "How do I wake the portal?", key: dialogue.wizard.answer_portal}
         next: 7100000000000000006
-      - text: {text: "Show me a spell.", key: dialogue.wizard.answer_spell}
+      - text: {text: Show me a spell., key: dialogue.wizard.answer_spell}
         condition: has_met_wizard
         next: 7100000000000000007
-      - text: {text: "Farewell.", key: dialogue.wizard.answer_bye}
+      - text: {text: Farewell., key: dialogue.wizard.answer_bye}
         next: 7100000000000000009
   - id: 7100000000000000006
     kind: Line
-    position: [1120, 120]
+    position: [1120, 176]
     speaker: {text: Wizard, key: dialogue.wizard.name}
     text: {text: "Finish the six places of the village: the four houses of the high street, the tavern and the telescope of the observatory.", key: dialogue.wizard.portal}
     next: 7100000000000000005
   - id: 7100000000000000007
     kind: Event
-    position: [1120, 260]
+    position: [1120, 256]
     function: cast_spell
     next: 7100000000000000008
   - id: 7100000000000000008
     kind: Line
-    position: [1380, 260]
+    position: [1312, 256]
     speaker: {text: Wizard, key: dialogue.wizard.name}
     text: {text: "There! Only a little Lua, but the bell of the church never fails to ring.", key: dialogue.wizard.spell}
     next: 7100000000000000005
   - id: 7100000000000000009
     kind: Line
-    position: [1120, 420]
+    position: [1280, 336]
     speaker: {text: Wizard, key: dialogue.wizard.name}
     text: {text: "Come back when you want, I have time.", key: dialogue.wizard.bye}
     next: 7100000000000000010
   - id: 7100000000000000010
     kind: End
-    position: [1660, 120]
+    position: [1664, 64]
 routes:
-  - {node: 7100000000000000006, output: 0, points: [], color: Violet}
-  - {node: 7100000000000000008, output: 0, points: [], color: Violet}
   - {node: 7100000000000000003, output: 0, points: [], color: Green}
+  - {node: 7100000000000000008, output: 0, points: [[1520, 144], [816, 144]], color: Violet}
+  - {node: 7100000000000000006, output: 0, points: [[1344, 160], [848, 160]], color: Violet}
