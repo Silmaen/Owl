@@ -5,6 +5,7 @@ One line per release. The detailed history (Keep a Changelog, one line per chang
 
 | Version     | Date       | Summary                                                                                                             |
 |-------------|------------|---------------------------------------------------------------------------------------------------------------------|
+| 0.6.0       | 2026-11-03 | Content & scripting: cook, PCG graphs, visual scripts, dialogues, sequences, audio mixer, large worlds, 2 games     |
 | 0.5.0       | 2026-10-25 | 3D core: PBR meshes, 2D / 3D lights and shadows, render graph, GPU culling, frame pacing, tower defence             |
 | 0.4.0       | 2026-10-20 | Isometric worlds: 1024² isometric maps, pathfinding, HUD editor, gamepad, MCP server, Engine Demo, 3 sample games   |
 | 0.3.0       | 2026-10-11 | Foundations: Conan 2, bug sweep, Vulkan-first Owl RHI, CI safety nets, hot reload, ergonomic Owl Nest               |

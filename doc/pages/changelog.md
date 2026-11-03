@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-03
+
 ### Added
 
 - Owl Nest and engine documentation: screenshots of the localisation, visual script, dialogue, material, sequence, data table and sound cue editors in the pages of their editors.

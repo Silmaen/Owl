@@ -6,7 +6,7 @@ Only the latest minor release gets fixes; nothing is backported to older lines.
 
 | Version                | Supported |
 |------------------------|-----------|
-| 0.5.x (latest release) | Yes       |
+| 0.6.x (latest release) | Yes       |
 | older                  | No        |
 
 ## Reporting a Vulnerability
@@ -26,7 +26,7 @@ Owl Engine is a game engine intended for offline/local use. The primary security
 
 - **Asset pack integrity**: `.owlpack` files use obfuscation but not cryptographic
   security -- they should not be relied upon for DRM
-- **Untrusted asset packs**: since 0.3.0 the pack reader validates every offset, size and
+- **Untrusted asset packs**: the pack reader validates every offset, size and
   entry path before use and confines extraction to the target directory; a forged pack is
   rejected with an error. Packs are not signed, so a modified pack can still replace game
   assets

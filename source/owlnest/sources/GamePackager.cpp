@@ -137,7 +137,7 @@ void GamePackager::renderWizardModal() {
 #endif
 		ImGui::Text("Target platform: %s", platform);
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-			ImGui::SetTooltip("The pack is built for the current platform. Cross-compilation is planned for v0.3.");
+			ImGui::SetTooltip("The pack is built for the current platform; other targets are planned for v0.8.");
 
 		// Destination folder with Browse button.
 		ImGui::Spacing();
