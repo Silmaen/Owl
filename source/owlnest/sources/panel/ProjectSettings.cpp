@@ -176,6 +176,61 @@ void ProjectSettings::scanScenes() {
 	std::ranges::sort(m_availableScenes);
 }
 
+void ProjectSettings::renderGeneralTab() {
+	if (gui::widgets::beginProperties("##general")) {
+		std::ignore = gui::widgets::propertyText("Name", m_nameBuffer, "Project name");
+		gui::widgets::propertyLabel("First Scene", "Scene the game opens on.");
+		const char* preview = m_selectedSceneIndex >= 0
+									  ? m_availableScenes[static_cast<size_t>(m_selectedSceneIndex)].c_str()
+									  : "(none)";
+		if (gui::widgets::beginCombo("##firstScene", preview)) {
+			if (ImGui::Selectable("(none)", m_selectedSceneIndex < 0))
+				m_selectedSceneIndex = -1;
+			for (int i = 0; i < static_cast<int>(m_availableScenes.size()); ++i) {
+				const bool isSelected = m_selectedSceneIndex == i;
+				if (ImGui::Selectable(m_availableScenes[static_cast<size_t>(i)].c_str(), isSelected))
+					m_selectedSceneIndex = i;
+				if (isSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		std::ignore = gui::widgets::propertyReset(false);
+		drawDefaultAsset("Default HUD", "HUD of the scenes that name none (their `Hud:` key).", "##defaultHud",
+						 m_localProject.defaultHud, m_availableHuds);
+		drawDefaultAsset("Default HUD Theme",
+						 "Theme of the widgets of the scenes and HUDs that name none (their `HudTheme:` key).",
+						 "##defaultHudTheme", m_localProject.defaultHudTheme, m_availableHudThemes);
+		const auto engineVersion = getVersionString();
+		std::ignore = gui::widgets::propertyText("Version", m_versionBuffer, engineVersion.c_str(),
+												 "Version of the game; empty, it follows the engine version.");
+		std::ignore = gui::widgets::propertyText("Author", m_authorBuffer);
+		std::ignore = gui::widgets::propertyText("Description", m_descriptionBuffer);
+		std::ignore = gui::widgets::propertyText("Icon", m_iconBuffer, "icon.png",
+												 "Image of the game window, relative to the project.");
+		gui::widgets::endProperties();
+	}
+}
+
+void ProjectSettings::renderWindowTab() {
+	if (gui::widgets::beginProperties("##window")) {
+		const Project::WindowSettings defaults;
+		auto widthI = static_cast<int>(m_localProject.window.width);
+		auto heightI = static_cast<int>(m_localProject.window.height);
+		if (gui::widgets::propertyInt("Width", widthI, static_cast<int>(defaults.width), 320, 7680, "%d px"))
+			m_localProject.window.width = static_cast<uint32_t>(widthI);
+		if (gui::widgets::propertyInt("Height", heightI, static_cast<int>(defaults.height), 240, 4320, "%d px"))
+			m_localProject.window.height = static_cast<uint32_t>(heightI);
+		std::ignore = gui::widgets::propertyBool("Fullscreen", m_localProject.window.fullscreen, defaults.fullscreen);
+		std::ignore = gui::widgets::propertyBool("Resizable", m_localProject.window.resizable, defaults.resizable);
+		std::ignore = gui::widgets::propertyBool(
+				"ImGui Overlay", m_localProject.imGui, false,
+				"The exported game creates an ImGui layer and packs its fonts; off for a game drawing its "
+				"interface with HUDs only.");
+		gui::widgets::endProperties();
+	}
+}
+
 void ProjectSettings::onImGuiRender() {
 	if (m_pendingOpen) {
 		ImGui::OpenPopup(g_popupName);
@@ -190,64 +245,11 @@ void ProjectSettings::onImGuiRender() {
 		const float footer = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y * 2.f;
 		if (ImGui::BeginChild("##projectBody", {0.f, -footer}) && ImGui::BeginTabBar("##projectTabs")) {
 			if (ImGui::BeginTabItem(std::format("{}  General###general", gui::icon::package).c_str())) {
-				if (gui::widgets::beginProperties("##general")) {
-					std::ignore = gui::widgets::propertyText("Name", m_nameBuffer, "Project name");
-					gui::widgets::propertyLabel("First Scene", "Scene the game opens on.");
-					const char* preview = m_selectedSceneIndex >= 0
-												  ? m_availableScenes[static_cast<size_t>(m_selectedSceneIndex)].c_str()
-												  : "(none)";
-					if (gui::widgets::beginCombo("##firstScene", preview)) {
-						if (ImGui::Selectable("(none)", m_selectedSceneIndex < 0))
-							m_selectedSceneIndex = -1;
-						for (int i = 0; i < static_cast<int>(m_availableScenes.size()); ++i) {
-							const bool isSelected = m_selectedSceneIndex == i;
-							if (ImGui::Selectable(m_availableScenes[static_cast<size_t>(i)].c_str(), isSelected))
-								m_selectedSceneIndex = i;
-							if (isSelected)
-								ImGui::SetItemDefaultFocus();
-						}
-						ImGui::EndCombo();
-					}
-					std::ignore = gui::widgets::propertyReset(false);
-					drawDefaultAsset("Default HUD", "HUD of the scenes that name none (their `Hud:` key).",
-									 "##defaultHud", m_localProject.defaultHud, m_availableHuds);
-					drawDefaultAsset(
-							"Default HUD Theme",
-							"Theme of the widgets of the scenes and HUDs that name none (their `HudTheme:` key).",
-							"##defaultHudTheme", m_localProject.defaultHudTheme, m_availableHudThemes);
-					const auto engineVersion = getVersionString();
-					std::ignore =
-							gui::widgets::propertyText("Version", m_versionBuffer, engineVersion.c_str(),
-													   "Version of the game; empty, it follows the engine version.");
-					std::ignore = gui::widgets::propertyText("Author", m_authorBuffer);
-					std::ignore = gui::widgets::propertyText("Description", m_descriptionBuffer);
-					std::ignore = gui::widgets::propertyText("Icon", m_iconBuffer, "icon.png",
-															 "Image of the game window, relative to the project.");
-					gui::widgets::endProperties();
-				}
+				renderGeneralTab();
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem(std::format("{}  Window###window", gui::icon::appWindow).c_str())) {
-				if (gui::widgets::beginProperties("##window")) {
-					const Project::WindowSettings defaults;
-					auto widthI = static_cast<int>(m_localProject.window.width);
-					auto heightI = static_cast<int>(m_localProject.window.height);
-					if (gui::widgets::propertyInt("Width", widthI, static_cast<int>(defaults.width), 320, 7680,
-												  "%d px"))
-						m_localProject.window.width = static_cast<uint32_t>(widthI);
-					if (gui::widgets::propertyInt("Height", heightI, static_cast<int>(defaults.height), 240, 4320,
-												  "%d px"))
-						m_localProject.window.height = static_cast<uint32_t>(heightI);
-					std::ignore = gui::widgets::propertyBool("Fullscreen", m_localProject.window.fullscreen,
-															 defaults.fullscreen);
-					std::ignore = gui::widgets::propertyBool("Resizable", m_localProject.window.resizable,
-															 defaults.resizable);
-					std::ignore = gui::widgets::propertyBool(
-							"ImGui Overlay", m_localProject.imGui, false,
-							"The exported game creates an ImGui layer and packs its fonts; off for a game drawing its "
-							"interface with HUDs only.");
-					gui::widgets::endProperties();
-				}
+				renderWindowTab();
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem(std::format("{}  Input###input", gui::icon::gamepad2).c_str())) {

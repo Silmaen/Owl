@@ -570,7 +570,8 @@ void LocalisationDocument::renderLanguageRow(const Language& iLanguage) {
 		setLanguageShown(iLanguage.code, !shown);
 	const char* glyph = shown ? gui::icon::eye : gui::icon::eyeOff;
 	const auto glyphSize = ImGui::CalcTextSize(glyph);
-	const auto color = ImGui::IsItemHovered() ? theme.text : (shown ? theme.textMuted : theme.textDisabled);
+	const auto& restColor = shown ? theme.textMuted : theme.textDisabled;
+	const auto& color = ImGui::IsItemHovered() ? theme.text : restColor;
 	ImGui::GetWindowDrawList()->AddText(
 			{std::floor(x + (side - glyphSize.x) * 0.5f), std::floor(row.min.y() + (side - glyphSize.y) * 0.5f)},
 			ImGui::GetColorU32(gui::vec(color)), glyph);

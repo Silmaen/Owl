@@ -51,7 +51,7 @@ TEST(SettingsPanel, RendersTheMcpTabWithoutChangingAnything) {
 TEST(SettingsPanel, EditsADraftUntilApply) {
 	core::Log::init(core::Log::Level::Off);
 	SettingsPanel panel;
-	ActionRegistry registry;
+	const ActionRegistry registry;
 	EditorSettings settings;
 	settings.recentProjects = {"a"};
 	panel.beginEdit(settings, registry);
@@ -76,7 +76,7 @@ TEST(SettingsPanel, CancelForgetsTheDraftAndTheShortcuts) {
 	ActionRegistry registry;
 	registry.registerAction("test.save", "Save", Shortcut{.key = input::key::S, .modifiers = Modifiers::Ctrl},
 							[]() -> void {});
-	EditorSettings settings;
+	const EditorSettings settings;
 	panel.open();
 	panel.beginEdit(settings, registry);
 	panel.getDraft()->idleWaitMs = 7;
