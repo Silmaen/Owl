@@ -13,6 +13,7 @@
 #include "viewer/TilesetUsage.h"
 
 #include <math/vectors.h>
+#include <renderer/EnvironmentMap.h>
 #include <renderer/gpu/Texture.h>
 
 #include <cstddef>
@@ -36,11 +37,21 @@ struct ImageInfo {
 	uint32_t channels = 0;
 	/// Size of the file in bytes.
 	uint64_t fileBytes = 0;
+	/// True for a Radiance `.hdr` image, shown tone-mapped.
+	bool highDynamicRange = false;
 };
 
 /**
  * @brief
- *  Read-only viewer of an image asset (`.png`, `.jpg`, ...): zoom, pan, pixel grid, checkerboard behind the
+ *  Tone-map a linear HDR image to 8-bit sRGB for display: Reinhard (`x / (1 + x)`) then the sRGB curve.
+ * @param[in] iImage The linear image, rows top first.
+ * @return `size.x * size.y * 4` RGBA bytes, rows bottom first like the image decoders, alpha opaque.
+ */
+[[nodiscard]] auto toneMapHdr(const renderer::FloatImage& iImage) -> std::vector<uint8_t>;
+
+/**
+ * @brief
+ *  Read-only viewer of an image asset (`.png`, `.jpg`, `.hdr` tone-mapped, ...): zoom, pan, pixel grid, checkerboard behind the
  *  transparency, file information and the tile grid of the tilesets that use the image as their atlas.
  *
  * Nothing in it edits the file, so it has no undo stack and is never dirty.
@@ -259,6 +270,12 @@ public:
 private:
 	/**
 	 * @brief
+	 *  Create the GPU texture: from the file, or from the tone-mapped pixels of an `.hdr` image.
+	 */
+	void createTexture();
+
+	/**
+	 * @brief
 	 *  Draw the canvas: checkerboard, image, pixel grid, tile overlay, pan and zoom gestures.
 	 * @param[in] iSize Size of the canvas in screen pixels.
 	 */
@@ -270,6 +287,8 @@ private:
 	ImageInfo m_info;
 	/// GPU texture, made on the first frame.
 	shared<renderer::gpu::Texture2D> m_texture;
+	/// Tone-mapped pixels of an `.hdr` image, uploaded when the texture is created; empty for the other formats.
+	std::vector<uint8_t> m_hdrPixels;
 	/// Tilesets using the image.
 	std::vector<viewer::TilesetGrid> m_tilesets;
 	/// Tileset whose grid is drawn.

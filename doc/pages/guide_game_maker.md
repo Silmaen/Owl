@@ -26,6 +26,7 @@ flowchart LR
 | [Scene and Components](scene.md)               | Entities, hierarchy, every component, HUD, triggers, serialization   |
 | [Scripting Games in Lua](scripting.md)         | Scripts on entities, lifecycle, properties, sandbox                  |
 | [Lua API Reference](lua-api.md)                | Every Lua table and function, one page per theme (generated)         |
+| [Sample Games](samples.md)                     | Six complete games to read, what each shows and where               |
 
 ## Gameplay systems
 

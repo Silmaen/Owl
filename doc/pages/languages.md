@@ -34,12 +34,23 @@ strings:
 
 **Home > Project > Localisation** (or a double-click on `localisation.yml`) opens the localisation document:
 
-- **Languages**: name, font and **Export** of each one, the **Fallback** button, a code field to add one and a bin
-  to remove one with its texts.
-- **Strings**: one row per key, one column per language; a missing value is tinted and shows the fallback text as a
-  hint. Filter by table, search keys and texts, add a string to the table shown. Click the handle of a row to
-  select it, **Ctrl** and **Shift** to select many; **Ctrl+D** duplicates them, **Delete** removes them, **move to
-  table** moves them into another table. The toolbar counts the missing texts of each language.
+![The localisation document: the string table, the Languages panel and the Language & Tables panel](../images/nest/localisation.png)
+
+The string table fills the document; two panels sit beside it.
+
+- **String table**: one row per key, one column per shown language; a missing value is tinted and shows the fallback
+  text as a hint. With more than 3 shown languages the table scrolls sideways, the columns keeping a fixed width. Click
+  the handle of a row to select it, **Ctrl** and **Shift** to select many; **Ctrl+D** duplicates the rows, **Delete**
+  removes them. The toolbar holds the table filter, add, duplicate and remove buttons, a **Missing only** chip (the
+  strings missing a text in a shown language) and a search field for keys and texts.
+- **Languages** (the left panel): every language, with an eye to show or hide its column in the string table (a view
+  setting, not saved). The right-click menu has **Show only this language**, **Show every language**, **Use as
+  fallback** and **Remove**. The field under the list adds a language by its code.
+- **Language & Tables** (the properties panel): the selected language, with its code, name, font, **Export**, the
+  **Fallback** button, the number of missing texts and **Remove the language**; then the **Tables** section: **All
+  tables** and each table with its string count. A click on one filters the string list. With a table selected, the
+  name field renames it on Enter and **Remove the table** removes its strings; with **All tables**, the field creates a
+  table with a first string. **Move Selection** moves the selected strings into a table.
 - Every edit is one undo step; **Save** updates the texts shown by the editor.
 
 A `UI Text` takes a **Text Key** in the inspector, picked among the keys: the HUD then shows its translation, the

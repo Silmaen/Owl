@@ -59,6 +59,8 @@ choose **Split Pin** to show one number pin per component, **Recombine** to join
 removed and its value is kept. **Make Color**, **Break Color**, **Make Vector 2 / 3** and **Break Vector 2 / 3**
 convert between a value and its components. Variables can be of type `color`, `vec2` and `vec3`.
 
+![The graph of `cellar_ladder.owlvs`: an event, a branch and three actions, with the Nodes and Graph panels](../images/nest/visual_script.png)
+
 ## Panels
 
 | Panel                     | Content                                                                                       |

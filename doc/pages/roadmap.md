@@ -178,7 +178,7 @@ deterministic simulation and replay, Jolt, gravity fields.
   Zelda-like, a marble or kart game, a lunar lander, an asteroid dogfight, an orbital golf, a bridge builder
   ([Pool](design/sample-games.md#sample-games-pool))
 
-## v0.6.0 -- Expected 2026-11-08
+## v0.6.0 -- 2026-11-03
 
 **Goal:** Produce content at scale and script games without C++: offline asset pipeline, animation and effects,
 procedural graphs, tile tools, Lua editor scripts, Blueprints-style visual scripting compiled to Lua; then the content
@@ -258,65 +258,6 @@ side of large worlds, audio, dialogue and cutscenes, accessibility ([large world
 - ![Done][done] Sample games picked from the pool: Ring Runner, the rail shooter
   ([Rail shooter](design/sample-games.md#sample-games-rail-shooter)), and The Moon Lantern, the point-and-click
   ([Point-and-click](design/sample-games.md#sample-games-point-and-click))
-
-## v0.5.0 -- 2026-10-25
-
-**Goal:** A focused 3D core on the repaired Owl RHI — static meshes, PBR, lights and shadows for 2D, isometric and 3D,
-render graph, essential post-processing — with full 3D editing ([details](design/3d-core.md)).
-
-- ![Done][done] CI streamlining, before anything else of the cycle: a pull request answered in under 10 min, builds
-  halved, `-j` everywhere, full suites at night, artefacts under 50 MB ([CI streamlining](design/ci-streamlining.md))
-- ![Done][done] 3D render pipeline (forward, depth, perspective camera)
-- ![Done][done] Render graph hosting the renderer-stack layers
-- ![Done][done] Lighting: directional, point and spot lights, directional shadow maps
-- ![Done][done] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows), isometric sprites included
-  ([2D](design/2d-complete.md))
-- ![Done][done] PBR materials with editor and material library, emissive colour and strength included
-  ([3D core](design/3d-core.md#emissive-and-area-lights))
-- ![Done][done] Static mesh component with instancing
-- ![Done][done] Essential post-processing stack (tone mapping, bloom, vignette, LUT)
-- ![Done][done] Camera-relative rendering and reversed-Z depth, precise at any distance
-  ([Large worlds](design/large-worlds.md))
-- ![Done][done] Compute-driven frustum / occlusion culling with indirect draws
-- ![Done][done] GPU raycast sprite stripes and `BitonicSortPass` adoption
-- ![Done][done] Spatial partitioning (loose octree shared by the 2D and 3D layers)
-- ![Done][done] Multithreaded render preparation: world transforms and spatial boxes of scenes above 4096 entities on
-  the task scheduler ([Renderer](renderer.md))
-- ![Done][done] Cost of the 2D lighting cut back: 80-byte quad instances, unlit tilemaps, near-plane-only frustum
-  tolerance ([2D](design/2d-complete.md#lighting-cost))
-- ![Done][done] Laid-out text kept between frames while its font, text and layout stay
-  ([Renderer](renderer.md#renderer-text-cache))
-- ![Done][done] Frame pacing: FIFO vsync, a frame rate cap, an idle editor waiting for input, the frame cost on the
-  viewport chip ([Windowing](design/windowing-input.md))
-- ![Done][done] HUD minimap on a render target: `RenderTarget`, `FollowTarget`, `UiImage.renderTarget`
-  ([HUD system](design/hud-system.md#minimap))
-- ![Done][done] 3D scene editing in Owl Nest (3D gizmos, snapping, mesh preview), "look through scene camera" mode
-- ![Done][done] Editor reach, before the release: every script and Lua function of a scene visible in Owl Nest with its
-  hooks and an **Open** at the line, a scene script, richer script properties, layer overrides for every key
-  ([Editor reach](design/editor-reach.md))
-- ![Done][done] Behaviour components replacing demo scripts: `LightFlicker` (fire, candles), `Oscillator`, `Patrol`,
-  `Drift` ([Editor reach](design/editor-reach.md#behaviour-components))
-- ![Done][done] Tuned constants of the Engine Demo and the sample games moved to script properties; a test failing on
-  any component field or layer key without an editor widget ([Editor reach](design/editor-reach.md))
-- ![Done][done] `ProceduralSky` and `DayNightCycle`: a sky and a sun and moon moving over the voxel level
-  ([3D core](design/3d-core.md#procedural-sky-and-day-night-cycle))
-- ![Done][done] Voxel and isometric art revamp: relief and roughness maps on voxel tilesets, 128 px demo blocks, more
-  surface detail on the isometric tiles
-- ![Done][done] `FirstPersonController` walking on `MeshRenderer` boxes, and the Engine Demo tavern as a fifth hub level
-- ![Done][done] Owl Nest fixes: material texture **Open** buttons, text files (`gamecontrollerdb.txt`) in the code
-  editor; material thumbnails and a prefab document ([Editor reach](design/editor-reach.md#editor-fixes-and-gaps))
-- ![Done][done] Help panel: mermaid diagrams drawn as SVG at build time, list hanging indent, flat inline code, task
-  lists ([Nest UI](design/nest-ui.md#in-editor-documentation))
-- ![Done][done] Owl Nest user help: an editor start page, editor pages per part, a sidebar grouped by theme, no planning
-  page in the help ([Nest UI](design/nest-ui.md#in-editor-documentation))
-- ![Done][done] Help reading: gallery tables, coloured status tags, anchored links, browser-like history, Lua API per
-  theme ([Nest UI](design/nest-ui.md#in-editor-documentation))
-- ![Done][done] Lua gaps of the sample games: spawn a prefab, tilemap cells kept by saves, `ui.set_image`, pause and
-  time scale, entity under the mouse ([Gaps](design/sample-games.md#sample-games-gaps))
-- ![Done][done] Sample game: a tower defence, first map in basic art
-  ([Sample games](design/sample-games.md#sample-games-tower-defence))
-- ![Done][done] Tower defence campaign: 10 levels in 3D, day and night, modifiers, sprite enemies, world map, star
-  upgrades ([Sample games](design/sample-games.md#sample-games-tower-defence))
 
 ## Earlier versions
 

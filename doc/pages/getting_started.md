@@ -62,7 +62,8 @@ Both ship next to `bin/` in the Owl Nest archive and open from the File screen:
   platformer, a raycast level, an isometric town and a voxel terrain. Play any scene to see how Lua scripts, HUDs,
   sound and triggers fit together.
 - **Sample games** (`samples/`, the **Sample games** list): Breakout, Sokoban, a Wolfenstein mini, a tower defence
-  and a rail shooter, small complete games of a readable size to start a project from.
+  and a rail shooter, small complete games of a readable size to start a project from, described in
+  [Sample Games](samples.md).
 
 ![The File screen: the Engine Demo card, the sample games and the recent projects](../images/nest/file_screen.png)
 

@@ -32,6 +32,8 @@ leads to the next one through its outputs; an output left unlinked ends the conv
 
 ## Editing in Owl Nest {#dialogues-editor}
 
+![The `barkeeper` dialogue: the graph, the Nodes list and the Node panel](../images/nest/dialogue_editor.png)
+
 Create one with **New Dialogue** in the Content Browser (a Start node linked to an End node), open it with a
 double-click. The tab is a graph on the node canvas; the **Nodes** and **Node** panels replace the Hierarchy and
 Properties panels while it is the active document.

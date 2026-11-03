@@ -73,7 +73,8 @@ void applyColors(const Theme& iTheme, ImGuiStyle& ioStyle) {
 	set(ImGuiCol_WindowBg, iTheme.surface1);
 	set(ImGuiCol_ChildBg, clear);
 	set(ImGuiCol_PopupBg, iTheme.surface2);
-	set(ImGuiCol_Border, iTheme.line);
+	// A floating window sits on panels of its own colour: its edge needs more contrast than a separator.
+	set(ImGuiCol_Border, T::mix(iTheme.line, iTheme.textDisabled, 0.4f));
 	set(ImGuiCol_BorderShadow, clear);
 	set(ImGuiCol_FrameBg, iTheme.well);
 	set(ImGuiCol_FrameBgHovered, T::mix(iTheme.well, iTheme.surface3, 0.6f));
@@ -143,7 +144,7 @@ void applyMetrics(const Theme& iTheme, ImGuiStyle& ioStyle) {
 	ioStyle.IndentSpacing = iTheme.indentSpacing;
 	ioStyle.ScrollbarSize = 11.f;
 	ioStyle.GrabMinSize = 10.f;
-	ioStyle.WindowBorderSize = 0.f;
+	ioStyle.WindowBorderSize = 1.f;
 	ioStyle.ChildBorderSize = 1.f;
 	ioStyle.PopupBorderSize = 1.f;
 	ioStyle.FrameBorderSize = 0.f;

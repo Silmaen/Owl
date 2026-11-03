@@ -21,6 +21,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace owl::nest {
@@ -187,6 +188,39 @@ public:
 	 */
 	void performRedo() override;
 
+	/**
+	 * @brief
+	 *  The document fills the side panels: the languages on the left, the selected language and the tables on the right.
+	 * @return True.
+	 */
+	[[nodiscard]] auto overridesGlobalPanels() const -> bool override { return true; }
+
+	/**
+	 * @brief
+	 *  Draw the languages: one row each, with the eye that shows or hides its column of the string table.
+	 */
+	void renderHierarchyPanel() override;
+
+	/**
+	 * @brief
+	 *  Draw the selected language (name, font, export, fallback) and the string tables.
+	 */
+	void renderPropertiesPanel() override;
+
+	/**
+	 * @brief
+	 *  Title of the left panel.
+	 * @return "Languages".
+	 */
+	[[nodiscard]] auto hierarchyPanelTitle() const -> std::string override { return "Languages"; }
+
+	/**
+	 * @brief
+	 *  Title of the right panel.
+	 * @return "Language & Tables".
+	 */
+	[[nodiscard]] auto propertiesPanelTitle() const -> std::string override { return "Language & Tables"; }
+
 	// --- Localisation API ----------------------------------------------------
 	/**
 	 * @brief
@@ -324,6 +358,95 @@ public:
 	 */
 	void setSelection(std::vector<size_t> iIndices);
 
+	// --- View ----------------------------------------------------------------
+
+	/**
+	 * @brief
+	 *  Check whether a language has its column in the string table.
+	 * @param[in] iCode The language code.
+	 * @return True unless it was hidden.
+	 */
+	[[nodiscard]] auto isLanguageShown(std::string_view iCode) const -> bool;
+
+	/**
+	 * @brief
+	 *  Show or hide the column of a language; the file is not changed.
+	 * @param[in] iCode The language code.
+	 * @param[in] iShown True to show it.
+	 */
+	void setLanguageShown(std::string_view iCode, bool iShown);
+
+	/**
+	 * @brief
+	 *  Show the column of one language and hide the others.
+	 * @param[in] iCode The language code.
+	 */
+	void showOnlyLanguage(std::string_view iCode);
+
+	/**
+	 * @brief
+	 *  Show the column of every language.
+	 */
+	void showAllLanguages() { m_hiddenLanguages.clear(); }
+
+	/**
+	 * @brief
+	 *  The language shown in the right panel.
+	 * @return Its code, empty when none is selected.
+	 */
+	[[nodiscard]] auto getSelectedLanguage() const -> const std::string& { return m_selectedLanguage; }
+
+	/**
+	 * @brief
+	 *  Select the language shown in the right panel.
+	 * @param[in] iCode The language code, empty for none.
+	 */
+	void selectLanguage(std::string iCode) { m_selectedLanguage = std::move(iCode); }
+
+	/**
+	 * @brief
+	 *  The table the string list shows.
+	 * @return The table, `""` for the strings without one, empty for every table.
+	 */
+	[[nodiscard]] auto getTableFilter() const -> const std::optional<std::string>& { return m_tableFilter; }
+
+	/**
+	 * @brief
+	 *  Show one table in the string list, or all of them.
+	 * @param[in] iTable The table, `""` for the strings without one, empty for every table.
+	 */
+	void setTableFilter(std::optional<std::string> iTable) { m_tableFilter = std::move(iTable); }
+
+	/**
+	 * @brief
+	 *  Set the text a shown key or value contains.
+	 * @param[in] iSearch The text, case-insensitive; empty shows every string.
+	 */
+	void setSearch(std::string iSearch) { m_search = std::move(iSearch); }
+
+	/**
+	 * @brief
+	 *  Show only the strings missing a text in a shown language.
+	 * @param[in] iMissingOnly True to filter on the missing texts.
+	 */
+	void setMissingOnly(const bool iMissingOnly) { m_missingOnly = iMissingOnly; }
+
+	/**
+	 * @brief
+	 *  Check whether a string passes the table, search and missing filters.
+	 * @param[in] iIndex Index of the string.
+	 * @return True when the list shows it.
+	 */
+	[[nodiscard]] auto isStringShown(size_t iIndex) const -> bool;
+
+	/**
+	 * @brief
+	 *  The strings of a table.
+	 * @param[in] iTable The table, `""` for the strings without one.
+	 * @return Their indices, in increasing order.
+	 */
+	[[nodiscard]] auto getTableStrings(std::string_view iTable) const -> std::vector<size_t>;
+
 	// --- Tab -----------------------------------------------------------------
 	/**
 	 * @brief
@@ -414,13 +537,26 @@ private:
 
 	/**
 	 * @brief
-	 *  Draw the languages: code, name, font, export flag and fallback.
+	 *  Draw the row of a language in the left panel: name, missing count, column eye, context menu.
+	 * @param[in] iLanguage The language.
 	 */
-	void renderLanguages();
+	void renderLanguageRow(const data::localisation::Language& iLanguage);
 
 	/**
 	 * @brief
-	 *  Draw the toolbar of the strings: table filter, search, add, move, duplicate, remove.
+	 *  Draw the selected language: code, name, font, export flag, fallback, removal.
+	 */
+	void renderLanguageProperties();
+
+	/**
+	 * @brief
+	 *  Draw the string tables: the one the list shows, renaming, removal, a new table, moving the selection.
+	 */
+	void renderTables();
+
+	/**
+	 * @brief
+	 *  Draw the toolbar of the strings: table filter, search, missing filter, add, duplicate, remove.
 	 */
 	void renderStringToolbar();
 
@@ -455,6 +591,14 @@ private:
 	std::string m_newLanguageCode;
 	/// Table typed to move the selection to.
 	std::string m_moveTable;
+	/// Name typed for the selected table, or for a new one.
+	std::string m_tableName;
+	/// Languages whose column the string table hides (view only, not saved).
+	std::vector<std::string> m_hiddenLanguages;
+	/// Language shown in the right panel, empty for none.
+	std::string m_selectedLanguage;
+	/// Only the strings missing a text in a shown language are listed.
+	bool m_missingOnly{false};
 	/// The localisation before the typing being previewed, while there is some.
 	std::optional<data::localisation::Localisation> m_previewBefore;
 	/// Tracks the ImGui "Open" state of the tab.

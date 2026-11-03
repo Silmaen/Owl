@@ -9,8 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-03
+
 ### Added
 
+- Owl Nest and engine documentation: screenshots of the localisation, visual script, dialogue, material, sequence, data table and sound cue editors in the pages of their editors.
+- Owl Nest Localisation document: a **Languages** panel (an eye per language to show or hide its column, a context menu, a new-language field) and a **Language & Tables** panel (language properties, table filter, rename, create and remove, **Move Selection**).
+- Owl Nest Localisation toolbar: a **Missing only** chip, and a string table that scrolls sideways beyond 3 shown languages.
+- Owl Nest image viewer opens `.hdr` images tone-mapped (Reinhard and sRGB), the info reading "HDR, shown tone-mapped".
+- Documentation: a *Sample Games* overview and one page per sample game (features shown, files, screenshots), in the Doxygen tree and in the Owl Nest help.
 - Owl Nest viewport: **Standard**, **Orbit**, **Fly** and **Pan** navigation modes in the view overlay choose what the left drag does, kept in the editor settings, with a click still selecting.
 - Owl Nest viewport: a fly speed button and a **Fly Speed** camera setting, kept across sessions and followed by the wheel during a flight.
 - `CameraEditor::Navigation::leftDrag`: orbit, look around (flying with the keys) or pan on a left drag without modifier.
@@ -211,6 +218,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Owl Nest Editor Settings window: edits are a draft, **OK** applies and closes, **Apply** applies and stays open, **Cancel** forgets the changes since the last **Apply**, shortcuts included.
+- Owl Nest theme, log level and frame-trace period take effect on **Apply** rather than at once.
+- Owl Nest Project Settings: the five sections are tabs and the dialog fits the screen.
+- Owl Nest floating windows have a visible 1 px border.
+- `tools/doc/capture_nest.py` forces its own user directory (`OWL_USER_DIR`) and disables the idle wait.
 - Logs: a release build starts at Info and a debug build at Debug instead of Trace; per-asset loads, timings and setup details moved to Debug or Trace, the levels of warnings, errors and critical messages follow one rule, and every message reads `Subsystem: Sentence.`
 - The build-type definitions are `OWL_DEBUG_BUILD` and `OWL_RELEASE_BUILD`, freeing `OWL_DEBUG` for the debug log macro.
 - CI: the coverage presets `linux-gcc-debug` and `linux-clang-debug` give each test binary 1200 s, the image test shards ran up to 600 s on a loaded agent.
@@ -265,6 +277,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Documentation side menu: the expand arrows of the chapters show at all times (the theme hid them until hovered), and the image tables of the sample game pages render.
+- Owl Nest Localisation document: the toolbar buttons are no longer hidden behind the full-width search field.
 - Owl Nest: Slang headers (`.slangh`), `.hlsl` and `.glsl` shaders open in the code editor from the Content Browser.
 - `settings.apply()` resizes the window only in the runner and only for a window setting that changed: changing the language or the subtitles in Play no longer resizes Owl Nest, nor a game window the player resized.
 - Engine Demo tavern: the two patrons sit on their stools instead of through them, and the server's `ServerRoute` loops between the bar and the patrons' table around the furniture, the trapdoor and the player's spawn.

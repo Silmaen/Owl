@@ -76,6 +76,18 @@ private:
 	 */
 	void scanScenes();
 
+	/**
+	 * @brief
+	 *  Draw the General tab: name, first scene, default HUD and theme, version, author, description, icon.
+	 */
+	void renderGeneralTab();
+
+	/**
+	 * @brief
+	 *  Draw the Window tab: size, fullscreen, resizable, ImGui overlay.
+	 */
+	void renderWindowTab();
+
 	/// Local working copy.
 	Project m_localProject;
 	/// Name buffer for ImGui input.

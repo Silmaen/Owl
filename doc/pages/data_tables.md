@@ -49,6 +49,8 @@ rows:
 
 ## Editing in Owl Nest {#data-tables-editor}
 
+![The `dishes` table: a text, an integer and a bool column](../images/nest/data_table.png)
+
 Create one with **New Data Table** in the Content Browser (a text column and a row to start from), open it with a
 double-click. The tab is a grid: the keys on the left, one column per field.
 

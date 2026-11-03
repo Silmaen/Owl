@@ -11,7 +11,10 @@
 
 #include "document/ImageDocument.h"
 
+#include "testHelper.h"
+
 #include <core/Log.h>
+#include <renderer/EnvironmentMap.h>
 #include <renderer/TextureDecoder.h>
 
 #include <gtest/gtest.h>
@@ -94,4 +97,28 @@ TEST_F(ImageDocumentTest, listsTheTilesetsUsingTheImage) {
 	EXPECT_EQ(m_document.overlay(), 0u);
 	m_document.setOverlay(3);
 	EXPECT_FALSE(m_document.overlay().has_value());
+}
+
+TEST_F(ImageDocumentTest, opensAnHdrImageToneMapped) {
+	const auto hdr = test::getTestAssetsPath("render_tests") / "hdri" / "sky_gradient.hdr";
+	ASSERT_TRUE(m_document.loadFromFile(hdr));
+	EXPECT_TRUE(m_document.info().highDynamicRange);
+	EXPECT_EQ(m_document.info().channels, 3u);
+	EXPECT_GT(m_document.info().size.x(), 0u);
+	ASSERT_TRUE(m_document.loadFromFile(m_image));
+	EXPECT_FALSE(m_document.info().highDynamicRange);
+}
+
+TEST(ImageDocumentToneMap, mapsLinearToSrgbBottomRowFirst) {
+	renderer::FloatImage image;
+	image.size = {1, 2};
+	image.pixels = {math::vec3{0.f, 1.f, 1000.f}, math::vec3{-1.f, 0.f, 0.f}};
+	const auto pixels = toneMapHdr(image);
+	ASSERT_EQ(pixels.size(), 8u);
+	EXPECT_EQ(pixels[0], 0u);
+	EXPECT_EQ(pixels[3], 255u);
+	EXPECT_EQ(pixels[4], 0u);
+	EXPECT_EQ(pixels[5], 188u);
+	EXPECT_EQ(pixels[6], 255u);
+	EXPECT_EQ(pixels[7], 255u);
 }

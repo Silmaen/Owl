@@ -25,8 +25,10 @@
 #include <algorithm>
 #include <cstdint>
 #include <format>
+#include <ranges>
 #include <string>
 #include <tuple>
+#include <utility>
 
 namespace owl::nest::panel {
 
@@ -44,6 +46,24 @@ auto settingInt(const char* iLabel, int& ioValue, const int iMin, const int iMax
 	return changed;
 }
 
+// The fields the window edits; the rest of the settings (session, layout, history) changes elsewhere meanwhile.
+template<typename Settings>
+auto editedFields(Settings& ioSettings) -> auto {
+	return std::tie(ioSettings.showStats, ioSettings.showAllFiles, ioSettings.textScalePercent, ioSettings.uiFontSize,
+					ioSettings.codeEditorFontSize, ioSettings.autosaveIntervalSeconds, ioSettings.frameRateLimit,
+					ioSettings.backgroundFrameRateLimit, ioSettings.idleWaitMs, ioSettings.snapEnabled,
+					ioSettings.snapStep, ioSettings.snapMultiplier, ioSettings.snapRotationDegrees,
+					ioSettings.snapAutoFromTilemap, ioSettings.cameraRotatePercent, ioSettings.cameraPanPercent,
+					ioSettings.cameraZoomPercent, ioSettings.cameraInvertY, ioSettings.cameraDeadZone,
+					ioSettings.cameraFlySpeed, ioSettings.themePreset, ioSettings.logLevel, ioSettings.mcpEnabled,
+					ioSettings.mcpPort);
+}
+
+auto currentFrameLogFrequency() -> uint64_t {
+	return app::Application::instanced() ? app::Application::get().getInitParams().frameLogFrequency
+										 : core::g_DefaultFrequency;
+}
+
 void copyOnClick(const std::string& iText) {
 	if (iText.empty() || !ImGui::IsItemHovered())
 		return;
@@ -54,48 +74,139 @@ void copyOnClick(const std::string& iText) {
 
 }// namespace
 
-void SettingsPanel::onImGuiRender(EditorSettings& ioSettings, ActionRegistry& ioRegistry) {
-	if (!m_visible)
+void SettingsPanel::beginEdit(const EditorSettings& iSettings, const ActionRegistry& iRegistry) {
+	m_draft = iSettings;
+	m_shortcutsAtOpen = iRegistry.getOverrides();
+	m_draftFrameLogFrequency = currentFrameLogFrequency();
+}
+
+auto SettingsPanel::hasPendingChanges(const EditorSettings& iSettings) const -> bool {
+	if (!m_draft.has_value())
+		return false;
+	return editedFields(*m_draft) != editedFields(iSettings) || m_draftFrameLogFrequency != currentFrameLogFrequency();
+}
+
+void SettingsPanel::apply(EditorSettings& ioSettings, const ActionRegistry& iRegistry) {
+	if (!m_draft.has_value())
 		return;
-	ImGui::SetNextWindowSize({ImGui::GetFontSize() * 34.f, ImGui::GetFontSize() * 26.f}, ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin("Editor Settings###EditorSettings", &m_visible)) {
+	const bool themeChanged = m_draft->themePreset != ioSettings.themePreset;
+	editedFields(ioSettings) = editedFields(std::as_const(*m_draft));
+	ioSettings.keybindingOverrides = iRegistry.getOverrides();
+	m_shortcutsAtOpen = ioSettings.keybindingOverrides;
+	if (themeChanged && ImGui::GetCurrentContext() != nullptr)
+		utils::applyTheme(gui::Theme::fromPreset(gui::Theme::presetFromName(ioSettings.themePreset)));
+	core::Log::setVerbosityLevel(getLogLevelSetting(ioSettings.logLevel));
+	if (app::Application::instanced()) {
+		if (auto& params = app::Application::get().getInitParams();
+			params.frameLogFrequency != m_draftFrameLogFrequency) {
+			params.frameLogFrequency = m_draftFrameLogFrequency;
+			core::Log::setFrameFrequency(params.frameLogFrequency);
+			params.saveToFile(platform::getUserDirectory() / "config.yml");
+		}
+	}
+}
+
+void SettingsPanel::cancel(ActionRegistry& ioRegistry) {
+	ioRegistry.resetToDefaults();
+	ioRegistry.loadOverrides(m_shortcutsAtOpen);
+	ioRegistry.setSuspended(false);
+	m_capturing = false;
+	m_captureActionId.clear();
+	m_conflictMessage.clear();
+	m_draft.reset();
+	m_visible = false;
+}
+
+void SettingsPanel::onImGuiRender(EditorSettings& ioSettings, ActionRegistry& ioRegistry) {
+	if (!m_visible) {
+		m_draft.reset();
+		return;
+	}
+	if (!m_draft.has_value())
+		beginEdit(ioSettings, ioRegistry);
+	ImGui::SetNextWindowSize({ImGui::GetFontSize() * 46.f, ImGui::GetFontSize() * 28.f}, ImGuiCond_FirstUseEver);
+	const bool expanded = ImGui::Begin("Editor Settings###EditorSettings", &m_visible);
+	if (!m_visible) {
+		ImGui::End();
+		cancel(ioRegistry);
+		return;
+	}
+	if (!expanded) {
 		ImGui::End();
 		return;
 	}
-	if (ImGui::BeginTabBar("##settingsTabs")) {
+	auto& draft = *m_draft;
+	const float footer = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y * 2.f;
+	if (ImGui::BeginChild("##settingsBody", {0.f, -footer}) && ImGui::BeginTabBar("##settingsTabs")) {
 		if (ImGui::BeginTabItem(std::format("{}  General###general", gui::icon::settings2).c_str())) {
-			renderGeneralSection(ioSettings);
+			renderGeneralSection(draft);
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem(std::format("{}  Gizmo Snap###snap", gui::icon::magnet).c_str())) {
-			renderSnapSection(ioSettings);
+			renderSnapSection(draft);
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem(std::format("{}  Camera###camera", gui::icon::video).c_str())) {
-			renderCameraSection(ioSettings);
+			renderCameraSection(draft);
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem(std::format("{}  Appearance###appearance", gui::icon::paintbrush).c_str())) {
-			renderThemeSection(ioSettings);
+			renderThemeSection(draft);
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem(std::format("{}  Log###log", gui::icon::scrollText).c_str())) {
-			renderLogSection(ioSettings);
+			renderLogSection(draft);
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem(std::format("{}  Shortcuts###shortcuts", gui::icon::keyboard).c_str())) {
-			renderKeybindingsSection(ioSettings, ioRegistry);
+			renderKeybindingsSection(draft, ioRegistry);
 			ImGui::EndTabItem();
 		}
 		const ImGuiTabItemFlags mcpFlags = m_selectMcpTab ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
 		m_selectMcpTab = false;
 		if (ImGui::BeginTabItem(std::format("{}  MCP Server###mcp", gui::icon::globe).c_str(), nullptr, mcpFlags)) {
-			renderMcpSection(ioSettings);
+			renderMcpSection(draft);
 			ImGui::EndTabItem();
 		}
 		ImGui::EndTabBar();
 	}
+	ImGui::EndChild();
+	renderFooter(ioSettings, ioRegistry);
 	ImGui::End();
+}
+
+void SettingsPanel::renderFooter(EditorSettings& ioSettings, ActionRegistry& ioRegistry) {
+	ImGui::Separator();
+	const auto& style = ImGui::GetStyle();
+	const float width = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() + style.ItemInnerSpacing.x +
+						style.FramePadding.x * 2.f;
+	ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(),
+								  ImGui::GetWindowContentRegionMax().x - width * 3.f - style.ItemSpacing.x * 2.f));
+	const bool pending = hasPendingChanges(ioSettings);
+	if (gui::widgets::button("OK##settings", {.glyph = gui::icon::check,
+											  .label = "OK",
+											  .tooltip = "Apply the changes and close the window",
+											  .primary = true,
+											  .width = width})) {
+		apply(ioSettings, ioRegistry);
+		m_draft.reset();
+		m_visible = false;
+		return;
+	}
+	ImGui::SameLine();
+	if (gui::widgets::button("Apply##settings", {.glyph = gui::icon::check,
+												 .label = "Apply",
+												 .tooltip = "Apply the changes and keep the window open",
+												 .disabled = !pending,
+												 .width = width}))
+		apply(ioSettings, ioRegistry);
+	ImGui::SameLine();
+	if (gui::widgets::button("Cancel##settings",
+							 {.glyph = gui::icon::x,
+							  .label = "Cancel",
+							  .tooltip = "Close the window and forget the changes since the last Apply",
+							  .width = width}))
+		cancel(ioRegistry);
 }
 
 void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
@@ -215,41 +326,29 @@ void SettingsPanel::renderMcpSection(EditorSettings& ioSettings) {
 void SettingsPanel::renderLogSection(EditorSettings& ioSettings) {
 	if (!gui::widgets::beginProperties("##log"))
 		return;
-	gui::widgets::propertyLabel("Level", "Lowest level recorded, in the Log panel and the log file, applied at once. "
-										 "Default: Info in a release build, Debug in a debug build, or the "
-										 "OWL_LOG_VERBOSITY environment variable.");
+	gui::widgets::propertyLabel("Level", "Lowest level recorded, in the Log panel and the log file. Default: Info in a "
+										 "release build, Debug in a debug build, or the OWL_LOG_VERBOSITY environment "
+										 "variable.");
 	std::ignore = logLevelCombo("##logLevelSetting", ioSettings.logLevel);
-	if (gui::widgets::propertyReset(!ioSettings.logLevel.empty())) {
+	if (gui::widgets::propertyReset(!ioSettings.logLevel.empty()))
 		ioSettings.logLevel.clear();
-		core::Log::setVerbosityLevel(getLogLevelSetting(ioSettings.logLevel));
-	}
-	auto& params = app::Application::get().getInitParams();
-	auto every = static_cast<int>(params.frameLogFrequency);
+	auto every = static_cast<int>(m_draftFrameLogFrequency);
 	if (gui::widgets::propertyInt("Frame Trace Every", every, 0, 0, 100000, "%d frames",
 								  "Frames between two lines of a per-frame trace (OWL_CORE_FRAME_TRACE); 0 turns them "
-								  "off. They show at the Trace level only.")) {
-		params.frameLogFrequency = static_cast<uint64_t>(std::max(every, 0));
-		core::Log::setFrameFrequency(params.frameLogFrequency);
-		m_appParamsChanged = true;
-	}
+								  "off. They show at the Trace level only."))
+		m_draftFrameLogFrequency = static_cast<uint64_t>(std::max(every, 0));
 	gui::widgets::endProperties();
-	if (m_appParamsChanged && !ImGui::IsAnyItemActive()) {
-		params.saveToFile(platform::getUserDirectory() / "config.yml");
-		m_appParamsChanged = false;
-	}
 }
 
 void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {
 	if (!gui::widgets::beginProperties("##appearance"))
 		return;
-	gui::widgets::propertyLabel("Theme", "Colours of the editor; applied at once.");
+	gui::widgets::propertyLabel("Theme", "Colours of the editor.");
 	if (gui::widgets::beginCombo("##ThemeCombo", ioSettings.themePreset.c_str())) {
-		for (const auto& [preset, name]: gui::Theme::getPresetNames()) {
+		for (const auto& name: gui::Theme::getPresetNames() | std::views::values) {
 			const bool selected = ioSettings.themePreset == name;
-			if (ImGui::Selectable(name.c_str(), selected)) {
+			if (ImGui::Selectable(name.c_str(), selected))
 				ioSettings.themePreset = name;
-				utils::applyTheme(gui::Theme::fromPreset(preset));
-			}
 			if (selected)
 				ImGui::SetItemDefaultFocus();
 		}
