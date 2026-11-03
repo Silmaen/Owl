@@ -21,8 +21,9 @@ home-made, and each game has at least one scenario test.
 | Ring Runner      | Star Fox               | 3D on a rail, planet             | [Ring Runner](sample_rail_shooter.md)         |
 | The Moon Lantern | The Legend of Kyrandia | 2D backdrops, 3D actors          | [The Moon Lantern](sample_point_and_click.md) |
 
-| ![Breakout](../images/showcase/breakout.png) | ![Sokoban](../images/showcase/sokoban.png) | ![Wolfenstein mini](../images/showcase/wolfenstein.png) |
-|----------------------------------------------|--------------------------------------------|---------------------------------------------------------|
+| ![Breakout](../images/showcase/breakout.png)             | ![Sokoban](../images/showcase/sokoban.png)          | ![Wolfenstein mini](../images/showcase/wolfenstein.png)     |
+|----------------------------------------------------------|-----------------------------------------------------|-------------------------------------------------------------|
+| ![Tower defence](../images/showcase/tower_sunscorch.png) | ![Ring Runner](../images/showcase/rail_shooter.png) | ![The Moon Lantern](../images/showcase/point_and_click.png) |
 
 ## What each game shows
 

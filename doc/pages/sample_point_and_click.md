@@ -9,7 +9,9 @@ bridge), one chain of puzzles, objects picked, combined and used, no death and n
 of the wizard Barnaby, must find the moonstone of the dark Moon Lantern and give it a spark. The project is
 `samples/point_and_click`; play `scenes/title.owl`.
 
-No screenshot of this game is in `doc/images/showcase/` yet.
+| Title screen                                                            | In game                                                             |
+|-------------------------------------------------------------------------|---------------------------------------------------------------------|
+| ![The Moon Lantern title](../images/showcase/point_and_click_title.png) | ![The Moon Lantern cottage](../images/showcase/point_and_click.png) |
 
 ## What it brings
 

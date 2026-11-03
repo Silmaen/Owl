@@ -275,6 +275,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Documentation side menu: the expand arrows of the chapters show at all times (the theme hid them until hovered), and the image tables of the sample game pages render.
 - Owl Nest Localisation document: the toolbar buttons are no longer hidden behind the full-width search field.
 - Owl Nest: Slang headers (`.slangh`), `.hlsl` and `.glsl` shaders open in the code editor from the Content Browser.
 - `settings.apply()` resizes the window only in the runner and only for a window setting that changed: changing the language or the subtitles in Play no longer resizes Owl Nest, nor a game window the player resized.

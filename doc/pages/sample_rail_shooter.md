@@ -9,7 +9,9 @@ fighters and a boss, the Warden, at the end. The ship rides the rail by itself; 
 aims two reticles, fires and barrel-rolls. The victory screen counts the score and awards a medal. The project is
 `samples/rail_shooter`; play `scenes/title.owl`.
 
-No screenshot of this game is in `doc/images/showcase/` yet.
+| Title screen                                                    | In game                                                   |
+|-----------------------------------------------------------------|-----------------------------------------------------------|
+| ![Ring Runner title](../images/showcase/rail_shooter_title.png) | ![Ring Runner level](../images/showcase/rail_shooter.png) |
 
 ## What it brings
 

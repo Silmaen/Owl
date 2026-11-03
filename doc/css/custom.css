@@ -488,3 +488,8 @@ html.dark-mode div.contents img[src$=".jpg"],
 html.dark-mode div.contents img[src$=".jpeg"] {
 	filter: none;
 }
+
+/* Side menu: the theme shows the expand arrows on hover only, so a collapsed chapter looked like a plain page. */
+html {
+	--side-nav-arrow-opacity: 0.6;
+}

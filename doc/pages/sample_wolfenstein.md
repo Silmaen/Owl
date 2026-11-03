@@ -4,8 +4,9 @@
 
 **Level:** Beginner. **Read first:** [Sample Games](samples.md).
 
-| ![Wolfenstein mini title](../images/showcase/wolfenstein_title.png) | ![Wolfenstein mini floor](../images/showcase/wolfenstein.png) |
+| Title screen                                                        | In game                                                       |
 |---------------------------------------------------------------------|---------------------------------------------------------------|
+| ![Wolfenstein mini title](../images/showcase/wolfenstein_title.png) | ![Wolfenstein mini floor](../images/showcase/wolfenstein.png) |
 
 An exploration game in the spirit of Wolfenstein 3D: three floors of 32x32 cells drawn by the raycast renderer, with
 treasure, food, keys and locked doors, secret walls and an elevator on each floor. There are no guards nor weapons.

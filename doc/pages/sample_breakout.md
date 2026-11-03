@@ -4,8 +4,9 @@
 
 **Level:** Beginner. **Read first:** [Sample Games](samples.md).
 
-| ![Breakout title](../images/showcase/breakout_title.png) | ![Breakout level](../images/showcase/breakout.png) |
+| Title screen                                             | In game                                            |
 |----------------------------------------------------------|----------------------------------------------------|
+| ![Breakout title](../images/showcase/breakout_title.png) | ![Breakout level](../images/showcase/breakout.png) |
 
 A Breakout and Arkanoid game: five levels on one screen, three lives, bricks of one to three hits and two power-ups
 (a wider paddle, a slower ball). The ball speeds up at each bounce and its angle depends on where it lands on the

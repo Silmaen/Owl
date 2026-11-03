@@ -4,8 +4,9 @@
 
 **Level:** Beginner. **Read first:** [Sample Games](samples.md).
 
-| ![Sokoban title](../images/showcase/sokoban_title.png) | ![Sokoban level](../images/showcase/sokoban.png) |
+| Title screen                                           | In game                                          |
 |--------------------------------------------------------|--------------------------------------------------|
+| ![Sokoban title](../images/showcase/sokoban_title.png) | ![Sokoban level](../images/showcase/sokoban.png) |
 
 A Sokoban game: ten levels of rising difficulty, from one crate to five. Push every crate onto a goal; crates are
 pushed one at a time, never pulled, and an undo is always at hand. The fewest moves of each level and the levels done
