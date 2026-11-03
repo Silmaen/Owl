@@ -58,7 +58,7 @@ tileset and map of the templates.
 
 ## Project Settings
 
-**Home > Project > Settings** edits the project in five sections; **OK** writes `owl_project.yml`, **Cancel** drops
+**Home > Project > Settings** edits the project in five tabs, the dialog fitting the screen; **OK** writes `owl_project.yml`, **Cancel** drops
 the changes (they are not undo steps).
 
 | Section        | Fields                                                                                             |

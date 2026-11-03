@@ -41,6 +41,8 @@ the sequence stops or ends, then `onFinished` is called. The export packs the `.
 
 ## Editing in Owl Nest {#sequences-editor}
 
+![The Sequencer on `tavern_intro`: two camera tracks and an event track, with the Sequence panel](../images/nest/sequence_editor.png)
+
 Create one with **New Sequence** in the Content Browser folder menu. The **Open** button of a `SequencePlayer` in the
 Inspector, or a double-click on the file, opens the **Sequencer**: a tab docked with the bottom panels, under the scene.
 It previews on a scene that plays the sequence: the selected player when it was opened from the Inspector, else the

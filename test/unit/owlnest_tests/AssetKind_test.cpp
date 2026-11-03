@@ -49,7 +49,7 @@ TEST(AssetKind, ClassifiesTextAsCode) {
 }
 
 TEST(AssetKind, ClassifiesImagesAndShaders) {
-	for (const auto* name: {"a.png", "b.jpg", "c.jpeg", "textures/d.bmp", "e.tga"})
+	for (const auto* name: {"a.png", "b.jpg", "c.jpeg", "textures/d.bmp", "e.tga", "e.hdr"})
 		EXPECT_EQ(classifyAsset(name), AssetKind::Image) << name;
 	EXPECT_EQ(classifyAsset("shaders/text.slang"), AssetKind::Code);
 	EXPECT_EQ(classifyAsset("shaders/common/pbr.slangh"), AssetKind::Code);

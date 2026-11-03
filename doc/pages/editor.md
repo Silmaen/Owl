@@ -21,7 +21,7 @@ between runs.
 | Status bar    | Mode, active document, autosave, backend, warnings, previews, notifications, MCP                     |
 
 - The Hierarchy, Properties and viewport always show the **active** document: the tab in front.
-- Drag a tab by its title to dock it elsewhere or tear it out as a floating window. Under Wayland a torn-out window
+- Drag a tab by its title to dock it elsewhere or tear it out as a floating window (drawn with a 1 px border). Under Wayland a torn-out window
   stays inside the main one; with `OWL_WINDOW_PLATFORM=x11` it becomes a desktop window of its own.
 - **View > Layout > Hierarchy Left** (`Alt+2`) moves the Scene Hierarchy to a column left of the documents, `Alt+1`
   puts the default layout back; **Reset Layout** returns every panel to its place in the current layout.

@@ -147,6 +147,28 @@ SHOTS: list[Shot] = [
     ),
     Shot("hud_editor", documents=["huds/gameplay.owlhud"], steps=[("click", 1240, 274), ("wait", 2)]),
     Shot("action_map", documents=["input_actions.yml"], crop=(0, 125, 1460, 760)),
+    # The languages on the left (eye = column shown), the strings in the middle, the language and tables on the right.
+    Shot("localisation", documents=["localisation.yml"], steps=[("click", 1540, 197), ("wait", 2)]),
+    Shot("visual_script", documents=["scripts/tavern/cellar_ladder.owlvs"], settle=15.0),
+    Shot("dialogue_editor", documents=["dialogues/barkeeper.owldlg"], settle=15.0),
+    Shot("material_editor", documents=["materials/old_brass.owlmat"], settle=20.0),
+    Shot("sequence_editor", documents=["sequences/tavern_intro.owlseq"], settle=15.0),
+    Shot("data_table", documents=["tables/dishes.owltable"]),
+    Shot("sound_editor", documents=["sounds/hub/steps.owlsound"]),
+    Shot("hdr_image", documents=["textures/hdri/starfield.hdr"], proof=True),
+    # The windows opened from the File screen: a visible edge over the panels, OK / Apply / Cancel, tabs.
+    Shot(
+        "editor_settings",
+        documents=["scenes/iso_town.owl"],
+        steps=[("click", 32, 18), ("wait", 2), ("click", 88, 254), ("wait", 3)],
+        proof=True,
+    ),
+    Shot(
+        "project_settings",
+        documents=["scenes/iso_town.owl"],
+        steps=[("click", 32, 18), ("wait", 2), ("click", 92, 289), ("wait", 3)],
+        proof=True,
+    ),
     Shot(
         "console",
         documents=["scenes/iso_town.owl"],
@@ -366,6 +388,8 @@ def write_settings(run_dir: Path, shot: Shot, demo: Path) -> None:
         "  showStats: true",
         "  themePreset: Owl Dark",
         "  autosaveIntervalSeconds: 0",
+        # Draw every frame: an idle editor waits for input before drawing, and a capture sends none.
+        "  idleWaitMs: 0",
         "  mcpEnabled: true",
         f"  mcpPort: {MCP_PORT}",
         "  layoutPreset: Default",
@@ -454,8 +478,13 @@ def capture(shot: Shot, args: argparse.Namespace) -> Image.Image | None:
     demo = NEUTRAL_ROOT / "engine_demo"
     write_settings(run_dir, shot, demo)
     binary = NEUTRAL_ROOT / args.build / "bin" / "OwlNest"
+    # The settings of the shot, never the ones a developer keeps beside the binary (`bin/user/`).
     env = dict(
-        os.environ, DISPLAY=DISPLAY, HOME=str(NEUTRAL_HOME), VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/lvp_icd.json"
+        os.environ,
+        DISPLAY=DISPLAY,
+        HOME=str(NEUTRAL_HOME),
+        OWL_USER_DIR=str(run_dir),
+        VK_ICD_FILENAMES="/usr/share/vulkan/icd.d/lvp_icd.json",
     )
     env.pop("WAYLAND_DISPLAY", None)
     env.pop("XDG_RUNTIME_DIR", None)

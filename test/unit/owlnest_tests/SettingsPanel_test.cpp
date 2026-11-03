@@ -16,6 +16,9 @@
 
 #include <gtest/gtest.h>
 
+#include <string>
+#include <vector>
+
 using namespace owl;
 using namespace owl::nest;
 using namespace owl::nest::panel;
@@ -42,5 +45,47 @@ TEST(SettingsPanel, RendersTheMcpTabWithoutChangingAnything) {
 	EXPECT_FALSE(settings.mcpEnabled);
 	EXPECT_EQ(settings.mcpPort, EditorSettings{}.mcpPort);
 	layer.onDetach();
+	core::Log::invalidate();
+}
+
+TEST(SettingsPanel, EditsADraftUntilApply) {
+	core::Log::init(core::Log::Level::Off);
+	SettingsPanel panel;
+	ActionRegistry registry;
+	EditorSettings settings;
+	settings.recentProjects = {"a"};
+	panel.beginEdit(settings, registry);
+	ASSERT_TRUE(panel.getDraft().has_value());
+	EXPECT_FALSE(panel.hasPendingChanges(settings));
+	panel.getDraft()->showStats = !settings.showStats;
+	panel.getDraft()->snapStep = 0.25f;
+	panel.getDraft()->recentProjects = {"b"};
+	EXPECT_TRUE(panel.hasPendingChanges(settings));
+	EXPECT_NE(settings.snapStep, 0.25f);
+	panel.apply(settings, registry);
+	EXPECT_FALSE(panel.hasPendingChanges(settings));
+	EXPECT_EQ(settings.snapStep, 0.25f);
+	EXPECT_EQ(settings.showStats, !EditorSettings{}.showStats);
+	EXPECT_EQ(settings.recentProjects, std::vector<std::string>{"a"});
+	core::Log::invalidate();
+}
+
+TEST(SettingsPanel, CancelForgetsTheDraftAndTheShortcuts) {
+	core::Log::init(core::Log::Level::Off);
+	SettingsPanel panel;
+	ActionRegistry registry;
+	registry.registerAction("test.save", "Save", Shortcut{.key = input::key::S, .modifiers = Modifiers::Ctrl},
+							[]() -> void {});
+	EditorSettings settings;
+	panel.open();
+	panel.beginEdit(settings, registry);
+	panel.getDraft()->idleWaitMs = 7;
+	registry.rebind("test.save", Shortcut{.key = input::key::D, .modifiers = Modifiers::Ctrl});
+	panel.cancel(registry);
+	EXPECT_FALSE(panel.isOpen());
+	EXPECT_FALSE(panel.getDraft().has_value());
+	EXPECT_NE(settings.idleWaitMs, 7);
+	EXPECT_EQ(registry.getShortcutString("test.save"),
+			  (Shortcut{.key = input::key::S, .modifiers = Modifiers::Ctrl}).toString());
 	core::Log::invalidate();
 }

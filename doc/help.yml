@@ -44,6 +44,15 @@ Groups:
       - doc/pages/sequences.md
       - doc/pages/pathfinding.md
       - doc/pages/pcg_graphs.md
+  - title: Sample games
+    pages:
+      - doc/pages/samples.md
+      - doc/pages/sample_breakout.md
+      - doc/pages/sample_sokoban.md
+      - doc/pages/sample_wolfenstein.md
+      - doc/pages/sample_tower_defence.md
+      - doc/pages/sample_rail_shooter.md
+      - doc/pages/sample_point_and_click.md
   - title: Scripting
     pages:
       - doc/pages/scripting.md

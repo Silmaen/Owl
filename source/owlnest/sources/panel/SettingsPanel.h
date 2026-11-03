@@ -11,7 +11,10 @@
 #include "../ActionRegistry.h"
 #include "../EditorSettings.h"
 
+#include <cstdint>
+#include <optional>
 #include <string>
+#include <unordered_map>
 
 namespace owl::nest::panel {
 
@@ -51,6 +54,53 @@ public:
 	 *  Show the settings window.
 	 */
 	void open() { m_visible = true; }
+
+	/**
+	 * @brief
+	 *  Check whether the window is shown.
+	 * @return True while it is open.
+	 */
+	[[nodiscard]] auto isOpen() const -> bool { return m_visible; }
+
+	/**
+	 * @brief
+	 *  Start editing: copy the settings into the draft the tabs edit and note the shortcuts, so Cancel can put them
+	 *  back. Called by the window when it opens.
+	 * @param[in] iSettings The settings in use.
+	 * @param[in] iRegistry The actions and their shortcuts in use.
+	 */
+	void beginEdit(const EditorSettings& iSettings, const ActionRegistry& iRegistry);
+
+	/**
+	 * @brief
+	 *  The settings the tabs edit until Apply or OK.
+	 * @return The draft, empty while the window is closed.
+	 */
+	[[nodiscard]] auto getDraft() -> std::optional<EditorSettings>& { return m_draft; }
+
+	/**
+	 * @brief
+	 *  Check whether the draft differs from the settings in use, on the fields the window edits.
+	 * @param[in] iSettings The settings in use.
+	 * @return True when Apply would change something.
+	 */
+	[[nodiscard]] auto hasPendingChanges(const EditorSettings& iSettings) const -> bool;
+
+	/**
+	 * @brief
+	 *  Apply: copy the fields the window edits from the draft, then apply the theme, the log level and the frame
+	 *  trace period. The rest of the settings (session, layout, recent projects) is left as it is.
+	 * @param[in,out] ioSettings The settings in use.
+	 * @param[in] iRegistry The shortcuts, kept as the ones Cancel goes back to.
+	 */
+	void apply(EditorSettings& ioSettings, const ActionRegistry& iRegistry);
+
+	/**
+	 * @brief
+	 *  Cancel: drop the draft, put back the shortcuts of the last Apply and close the window.
+	 * @param[in,out] ioRegistry The actions whose shortcuts go back.
+	 */
+	void cancel(ActionRegistry& ioRegistry);
 
 	/**
 	 * @brief
@@ -147,6 +197,14 @@ private:
 
 	/**
 	 * @brief
+	 *  OK, Apply and Cancel under the tabs.
+	 * @param[in,out] ioSettings The settings in use.
+	 * @param[in,out] ioRegistry The actions and their shortcuts.
+	 */
+	void renderFooter(EditorSettings& ioSettings, ActionRegistry& ioRegistry);
+
+	/**
+	 * @brief
 	 *  Render keybindings section.
 	 * @param[in,out] ioSettings Editor settings being modified.
 	 * @param[in,out] ioRegistry Action registry whose bindings are edited.
@@ -166,8 +224,12 @@ private:
 	 */
 	static auto ImGuiKeyToGlfwKey(ImGuiKey iKey) -> int;
 
-	/// The application parameters changed in the Log tab, written to `config.yml` once the edit ends.
-	bool m_appParamsChanged = false;
+	/// The settings the tabs edit, from the opening of the window to OK or Cancel.
+	std::optional<EditorSettings> m_draft;
+	/// Shortcut overrides at the opening of the window or the last Apply, put back by Cancel.
+	std::unordered_map<std::string, std::string> m_shortcutsAtOpen;
+	/// Frames between two lines of a per-frame trace, edited in the Log tab.
+	uint64_t m_draftFrameLogFrequency = 0;
 };
 
 }// namespace owl::nest::panel

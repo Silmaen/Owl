@@ -22,10 +22,11 @@
 #include <gui/widgets/EmptyState.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/Menu.h>
+#include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/SearchField.h>
 #include <gui/widgets/SectionHeader.h>
-#include <gui/widgets/Toggle.h>
 #include <gui/widgets/Tooltip.h>
+#include <gui/widgets/TreeRow.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -36,6 +37,7 @@ OWL_DIAG_POP
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -453,93 +455,260 @@ void LocalisationDocument::onImGuiRender() {
 		m_wasFocused = windowFocused;
 		if (windowFocused && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false))
 			std::ignore = save();
-		if (gui::widgets::sectionHeader("Languages", "ribbon_book", false).open) {
-			renderLanguages();
-			gui::widgets::endSection();
-		}
-		if (gui::widgets::sectionHeader("Strings", "comp_ui_text", false).open) {
-			renderStringToolbar();
-			renderStrings();
-			gui::widgets::endSection();
-		}
+		renderStringToolbar();
+		renderStrings();
 	}
 	ImGui::End();
 }
 
-void LocalisationDocument::renderLanguages() {
-	if (!ImGui::BeginTable("##languages", 5, ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingStretchProp))
-		return;
-	ImGui::TableSetupColumn("Code", ImGuiTableColumnFlags_WidthFixed, 60.f);
-	ImGui::TableSetupColumn("Name");
-	ImGui::TableSetupColumn("Font");
-	ImGui::TableSetupColumn("Export / fallback", ImGuiTableColumnFlags_WidthFixed, 170.f);
-	ImGui::TableSetupColumn("##remove", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
-	ImGui::TableHeadersRow();
-	const auto fonts = data::fonts::FontLibrary::getFoundFontNames();
-	std::optional<std::string> removed;
-	std::optional<Language> typed;
-	for (const auto& language: m_localisation.languages) {
-		ImGui::PushID(language.code.c_str());
-		ImGui::TableNextRow();
-		ImGui::TableNextColumn();
-		ImGui::AlignTextToFramePadding();
-		ImGui::TextUnformatted(language.code.c_str());
-		ImGui::TableNextColumn();
-		auto next = language;
-		ImGui::SetNextItemWidth(-1.f);
-		if (ImGui::InputText("##name", &next.name))
-			typed = next;
-		ImGui::TableNextColumn();
-		ImGui::SetNextItemWidth(-1.f);
-		if (gui::widgets::beginCombo("##font", language.font.empty() ? "(each text's font)" : language.font.c_str())) {
-			if (ImGui::Selectable("(each text's font)", language.font.empty())) {
-				next.font.clear();
-				std::ignore = runLanguageCommand(next);
-			}
-			for (const auto& font: fonts)
-				if (ImGui::Selectable(font.c_str(), font == language.font)) {
-					next.font = font;
-					std::ignore = runLanguageCommand(next);
-				}
-			ImGui::EndCombo();
-		}
-		gui::widgets::itemTooltip("Font of the localised HUD texts in this language, for its glyphs.");
-		ImGui::TableNextColumn();
-		if (gui::widgets::checkbox("Export", &next.exported))
-			std::ignore = runLanguageCommand(next);
-		gui::widgets::itemTooltip("Pack this language with the game.");
-		ImGui::SameLine();
-		if (const bool fallback = m_localisation.fallback == language.code;
-			gui::widgets::chip("Fallback", fallback) && !fallback)
-			std::ignore = runCommand("locale.set_fallback", {{"code", language.code}});
-		gui::widgets::itemTooltip("A text missing in a language shows its value in this one.");
-		ImGui::TableNextColumn();
-		if (gui::widgets::iconButton("##removeLanguage",
-									 {.glyph = gui::icon::trash2,
-									  .tooltip = "Remove the language",
-									  .description = "Its texts go with it; undo brings them back."}))
-			removed = language.code;
-		ImGui::PopID();
-	}
-	ImGui::EndTable();
-	if (typed.has_value()) {
-		auto edited = m_localisation;
-		*std::ranges::find(edited.languages, typed->code, &Language::code) = *typed;
-		preview(std::move(edited));
-	}
-	if (removed.has_value())
-		std::ignore = runCommand("locale.remove_language", {{"code", *removed}});
-	ImGui::SetNextItemWidth(80.f);
-	const bool entered =
-			ImGui::InputTextWithHint("##newLanguage", "code", &m_newLanguageCode, ImGuiInputTextFlags_EnterReturnsTrue);
+auto LocalisationDocument::isLanguageShown(const std::string_view iCode) const -> bool {
+	return !std::ranges::contains(m_hiddenLanguages, iCode);
+}
+
+void LocalisationDocument::setLanguageShown(const std::string_view iCode, const bool iShown) {
+	std::erase(m_hiddenLanguages, iCode);
+	if (!iShown)
+		m_hiddenLanguages.emplace_back(iCode);
+}
+
+void LocalisationDocument::showOnlyLanguage(const std::string_view iCode) {
+	m_hiddenLanguages.clear();
+	for (const auto& language: m_localisation.languages)
+		if (language.code != iCode)
+			m_hiddenLanguages.push_back(language.code);
+}
+
+auto LocalisationDocument::isStringShown(const size_t iIndex) const -> bool {
+	if (iIndex >= m_localisation.strings.size())
+		return false;
+	const auto& entry = m_localisation.strings[iIndex];
+	if ((m_tableFilter.has_value() && entry.table != *m_tableFilter) || !matches(entry, m_search))
+		return false;
+	if (!m_missingOnly)
+		return true;
+	return std::ranges::any_of(m_localisation.languages, [&](const Language& iLanguage) -> bool {
+		if (!isLanguageShown(iLanguage.code))
+			return false;
+		const auto found = entry.values.find(iLanguage.code);
+		return found == entry.values.end() || found->second.empty();
+	});
+}
+
+auto LocalisationDocument::getTableStrings(const std::string_view iTable) const -> std::vector<size_t> {
+	std::vector<size_t> indices;
+	for (size_t i = 0; i < m_localisation.strings.size(); ++i)
+		if (m_localisation.strings[i].table == iTable)
+			indices.push_back(i);
+	return indices;
+}
+
+void LocalisationDocument::renderHierarchyPanel() {
+	if (m_localisation.languages.empty())
+		std::ignore = gui::widgets::emptyState(gui::icon::globe, "No language", "Type a language code below.");
+	for (const auto& language: m_localisation.languages) renderLanguageRow(language);
+	ImGui::Spacing();
+	ImGui::SetNextItemWidth(std::max(
+			ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight() - ImGui::GetStyle().ItemSpacing.x, 40.f));
+	const bool entered = ImGui::InputTextWithHint("##newLanguage", "new language code (de, ja...)", &m_newLanguageCode,
+												  ImGuiInputTextFlags_EnterReturnsTrue);
 	ImGui::SameLine();
 	if ((gui::widgets::iconButton("##addLanguage", {.glyph = gui::icon::plus,
 													.tooltip = "Add a language",
 													.description = "Type its code first (en, fr, ja...).",
 													.disabled = m_newLanguageCode.empty()}) ||
 		 entered) &&
-		runCommand("locale.add_language", {{"code", m_newLanguageCode}}))
+		runCommand("locale.add_language", {{"code", m_newLanguageCode}})) {
+		m_selectedLanguage = m_newLanguageCode;
 		m_newLanguageCode.clear();
+	}
+	if (const auto hidden = m_hiddenLanguages.size(); hidden > 0) {
+		ImGui::TextDisabled("%zu hidden in the table", hidden);
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Show all"))
+			showAllLanguages();
+	}
+}
+
+void LocalisationDocument::renderLanguageRow(const Language& iLanguage) {
+	ImGui::PushID(iLanguage.code.c_str());
+	const auto& theme = gui::UiLayer::getTheme();
+	const bool shown = isLanguageShown(iLanguage.code);
+	const bool fallback = m_localisation.fallback == iLanguage.code;
+	const auto missing = m_localisation.getMissing(iLanguage.code).size();
+	const auto label = std::format("{} ({})", iLanguage.name.empty() ? iLanguage.code : iLanguage.name, iLanguage.code);
+	std::string trailing;
+	if (fallback)
+		trailing = "fallback";
+	else if (missing > 0)
+		trailing = std::format("{} missing", missing);
+	const auto row = gui::widgets::treeRow(
+			"##language", {.label = label.c_str(),
+						   .glyph = gui::icon::globe,
+						   .glyphColor = iLanguage.exported ? math::vec4{0.f, 0.f, 0.f, 0.f} : theme.textDisabled,
+						   .trailing = trailing.empty() ? nullptr : trailing.c_str(),
+						   .labelColor = shown ? math::vec4{0.f, 0.f, 0.f, 0.f} : theme.textDisabled,
+						   .selected = m_selectedLanguage == iLanguage.code});
+	if (row.clicked)
+		m_selectedLanguage = iLanguage.code;
+	if (ImGui::BeginPopupContextItem("##languageMenu")) {
+		if (ImGui::MenuItem("Show only this language"))
+			showOnlyLanguage(iLanguage.code);
+		if (ImGui::MenuItem("Show every language"))
+			showAllLanguages();
+		ImGui::Separator();
+		if (ImGui::MenuItem("Use as fallback", nullptr, fallback, !fallback))
+			std::ignore = runCommand("locale.set_fallback", {{"code", iLanguage.code}});
+		if (ImGui::MenuItem("Remove the language"))
+			std::ignore = runCommand("locale.remove_language", {{"code", iLanguage.code}});
+		ImGui::EndPopup();
+	}
+	const ImVec2 cursor = ImGui::GetCursorScreenPos();
+	const float side = row.max.y() - row.min.y();
+	const float x = row.max.x() - side - 4.f;
+	ImGui::SetCursorScreenPos({x, row.min.y()});
+	if (ImGui::InvisibleButton("##shown", {side, side}))
+		setLanguageShown(iLanguage.code, !shown);
+	const char* glyph = shown ? gui::icon::eye : gui::icon::eyeOff;
+	const auto glyphSize = ImGui::CalcTextSize(glyph);
+	const auto color = ImGui::IsItemHovered() ? theme.text : (shown ? theme.textMuted : theme.textDisabled);
+	ImGui::GetWindowDrawList()->AddText(
+			{std::floor(x + (side - glyphSize.x) * 0.5f), std::floor(row.min.y() + (side - glyphSize.y) * 0.5f)},
+			ImGui::GetColorU32(gui::vec(color)), glyph);
+	gui::widgets::itemTooltip(shown ? "Hide its column in the string table" : "Show its column in the string table");
+	ImGui::SetCursorScreenPos(cursor);
+	ImGui::PopID();
+}
+
+void LocalisationDocument::renderPropertiesPanel() {
+	if (gui::widgets::sectionHeader("Language", gui::icon::globe, false).open) {
+		renderLanguageProperties();
+		gui::widgets::endSection();
+	}
+	if (gui::widgets::sectionHeader("Tables", gui::icon::rows3, false).open) {
+		renderTables();
+		gui::widgets::endSection();
+	}
+}
+
+void LocalisationDocument::renderLanguageProperties() {
+	const auto found = std::ranges::find(m_localisation.languages, m_selectedLanguage, &Language::code);
+	if (found == m_localisation.languages.end()) {
+		ImGui::TextDisabled("Select a language in the Languages panel.");
+		return;
+	}
+	const Language& language = *found;
+	if (!gui::widgets::beginProperties("##language"))
+		return;
+	gui::widgets::propertyLabel("Code", "Code of the language, used by the scripts and the save files.");
+	ImGui::TextUnformatted(language.code.c_str());
+	std::ignore = gui::widgets::propertyReset(false);
+	auto next = language;
+	gui::widgets::propertyLabel("Name", "Name shown to the player in the language menu.");
+	if (ImGui::InputText("##name", &next.name)) {
+		auto edited = m_localisation;
+		*std::ranges::find(edited.languages, next.code, &Language::code) = next;
+		preview(std::move(edited));
+	}
+	std::ignore = gui::widgets::propertyReset(false);
+	gui::widgets::propertyLabel("Font", "Font of the localised HUD texts in this language, for its glyphs.");
+	const auto fonts = data::fonts::FontLibrary::getFoundFontNames();
+	if (gui::widgets::beginCombo("##font", language.font.empty() ? "(each text's font)" : language.font.c_str())) {
+		if (ImGui::Selectable("(each text's font)", language.font.empty())) {
+			next.font.clear();
+			std::ignore = runLanguageCommand(next);
+		}
+		for (const auto& font: fonts)
+			if (ImGui::Selectable(font.c_str(), font == language.font)) {
+				next.font = font;
+				std::ignore = runLanguageCommand(next);
+			}
+		ImGui::EndCombo();
+	}
+	if (gui::widgets::propertyReset(!language.font.empty())) {
+		next.font.clear();
+		std::ignore = runLanguageCommand(next);
+	}
+	if (gui::widgets::propertyBool("Export", next.exported, true, "Pack this language with the game."))
+		std::ignore = runLanguageCommand(next);
+	gui::widgets::propertyLabel("Fallback", "A text missing in a language shows its value in this one.");
+	if (const bool fallback = m_localisation.fallback == language.code;
+		gui::widgets::chip(fallback ? "Fallback" : "Use as fallback", fallback) && !fallback)
+		std::ignore = runCommand("locale.set_fallback", {{"code", language.code}});
+	std::ignore = gui::widgets::propertyReset(false);
+	gui::widgets::propertyLabel("Missing", "Strings without a text in this language.");
+	ImGui::Text("%zu", m_localisation.getMissing(language.code).size());
+	std::ignore = gui::widgets::propertyReset(false);
+	gui::widgets::endProperties();
+	if (gui::widgets::button("##removeLanguage", {.glyph = gui::icon::trash2,
+												  .label = "Remove the language",
+												  .tooltip = "Remove the language",
+												  .description = "Its texts go with it; undo brings them back."}))
+		std::ignore = runCommand("locale.remove_language", {{"code", language.code}});
+}
+
+void LocalisationDocument::renderTables() {
+	const auto tables = m_localisation.getTables();
+	const auto tableLabel = [](const std::string& iTable) -> std::string {
+		return iTable.empty() ? std::string{"(no table)"} : iTable;
+	};
+	if (gui::widgets::treeRow("##allTables", {.label = "All tables",
+											  .glyph = gui::icon::layers,
+											  .trailing = std::format("{}", m_localisation.strings.size()).c_str(),
+											  .selected = !m_tableFilter.has_value()})
+				.clicked)
+		m_tableFilter.reset();
+	for (const auto& table: tables) {
+		ImGui::PushID(table.c_str());
+		const auto label = tableLabel(table);
+		const auto count = std::format("{}", getTableStrings(table).size());
+		if (gui::widgets::treeRow("##table", {.label = label.c_str(),
+											  .glyph = gui::icon::rows3,
+											  .trailing = count.c_str(),
+											  .selected = m_tableFilter == table})
+					.clicked) {
+			m_tableFilter = table;
+			m_tableName = table;
+		}
+		ImGui::PopID();
+	}
+	ImGui::Spacing();
+	if (!gui::widgets::beginProperties("##tables"))
+		return;
+	const bool tableShown = m_tableFilter.has_value() && !m_tableFilter->empty();
+	gui::widgets::propertyLabel(tableShown ? "Rename" : "New Table",
+								tableShown ? "Type a new name and press Enter: every string of the table moves to it."
+										   : "Type a name and press Enter: a first string is added in the new table.");
+	if (ImGui::InputTextWithHint("##tableName", "table name", &m_tableName, ImGuiInputTextFlags_EnterReturnsTrue) &&
+		!m_tableName.empty()) {
+		if (tableShown) {
+			if (m_tableName != *m_tableFilter &&
+				runCommand("locale.set_table",
+						   {{"keys", getKeys(getTableStrings(*m_tableFilter))}, {"table", m_tableName}}))
+				m_tableFilter = m_tableName;
+		} else if (runCommand("locale.add_string",
+							  {{"key", getUniqueKey(m_tableName + ".text")}, {"table", m_tableName}})) {
+			m_tableFilter = m_tableName;
+		}
+	}
+	std::ignore = gui::widgets::propertyReset(false);
+	gui::widgets::propertyLabel("Move Selection", "Type a table and press Enter to move the selected strings into it.");
+	ImGui::BeginDisabled(m_selection.empty());
+	if (ImGui::InputTextWithHint("##moveTable", std::format("{} selected", m_selection.size()).c_str(), &m_moveTable,
+								 ImGuiInputTextFlags_EnterReturnsTrue))
+		std::ignore = runCommand("locale.set_table", {{"keys", getKeys(m_selection)}, {"table", m_moveTable}});
+	ImGui::EndDisabled();
+	std::ignore = gui::widgets::propertyReset(false);
+	gui::widgets::endProperties();
+	if (tableShown) {
+		const auto strings = getTableStrings(*m_tableFilter);
+		const auto label = std::format("Remove the table ({} strings)", strings.size());
+		if (gui::widgets::button("##removeTable", {.glyph = gui::icon::trash2,
+												   .label = label.c_str(),
+												   .tooltip = "Remove the table",
+												   .description = "Its strings go with it; undo brings them back."}) &&
+			runCommand("locale.remove_strings", {{"keys", getKeys(strings)}}))
+			m_tableFilter.reset();
+	}
 }
 
 void LocalisationDocument::renderStringToolbar() {
@@ -557,9 +726,6 @@ void LocalisationDocument::renderStringToolbar() {
 		ImGui::EndCombo();
 	}
 	gui::widgets::itemTooltip("String table shown.");
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(200.f);
-	std::ignore = gui::widgets::searchField("##search", m_search, "Search keys and texts");
 	ImGui::SameLine();
 	if (gui::widgets::iconButton(
 				"##addString",
@@ -584,18 +750,11 @@ void LocalisationDocument::renderStringToolbar() {
 													 .disabled = none}))
 		std::ignore = runCommand("locale.remove_strings", {{"keys", getKeys(m_selection)}});
 	ImGui::SameLine();
-	ImGui::BeginDisabled(none);
-	ImGui::SetNextItemWidth(140.f);
-	if (ImGui::InputTextWithHint("##moveTable", "move to table", &m_moveTable, ImGuiInputTextFlags_EnterReturnsTrue))
-		std::ignore = runCommand("locale.set_table", {{"keys", getKeys(m_selection)}, {"table", m_moveTable}});
-	ImGui::EndDisabled();
-	gui::widgets::itemTooltip("Type a table and press Enter to move the selected strings into it.");
-	for (const auto& language: m_localisation.languages)
-		if (const auto count = m_localisation.getMissing(language.code).size(); count > 0) {
-			ImGui::SameLine();
-			gui::widgets::badge(std::format("{} {} missing", language.code, count).c_str(),
-								gui::widgets::BadgeKind::Warning);
-		}
+	if (gui::widgets::chip("Missing only", m_missingOnly))
+		m_missingOnly = !m_missingOnly;
+	gui::widgets::itemTooltip("List only the strings missing a text in a shown language.");
+	ImGui::SameLine();
+	std::ignore = gui::widgets::searchField("##search", m_search, "Search keys and texts");
 }
 
 void LocalisationDocument::clickRow(const size_t iIndex) {
@@ -624,17 +783,28 @@ void LocalisationDocument::renderStrings() {
 											   "Add a string, then type its text in each language.");
 		return;
 	}
-	const auto& languages = m_localisation.languages;
-	const auto columns = static_cast<int>(languages.size()) + 2;
-	if (!ImGui::BeginTable("##strings", columns,
-						   ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
-								   ImGuiTableFlags_Resizable))
+	std::vector<const Language*> languages;
+	for (const auto& language: m_localisation.languages)
+		if (isLanguageShown(language.code))
+			languages.push_back(&language);
+	// Past a few languages the columns keep a readable width and the table scrolls sideways.
+	const bool wide = languages.size() > 3;
+	const bool tableColumn = !m_tableFilter.has_value();
+	const auto columns = static_cast<int>(languages.size()) + (tableColumn ? 2 : 1);
+	ImGuiTableFlags tableFlags =
+			ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable;
+	if (wide)
+		tableFlags |= ImGuiTableFlags_ScrollX;
+	if (!ImGui::BeginTable("##strings", columns, tableFlags))
 		return;
 	ImGui::TableSetupScrollFreeze(1, 1);
-	ImGui::TableSetupColumn("Key", ImGuiTableColumnFlags_WidthFixed, 200.f);
-	ImGui::TableSetupColumn("Table", ImGuiTableColumnFlags_WidthFixed, 100.f);
-	for (const auto& language: languages)
-		ImGui::TableSetupColumn(std::format("{} ({})", language.name, language.code).c_str());
+	ImGui::TableSetupColumn("Key", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 13.f);
+	if (tableColumn)
+		ImGui::TableSetupColumn("Table", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 7.f);
+	for (const auto* language: languages)
+		ImGui::TableSetupColumn(std::format("{} ({})", language->name, language->code).c_str(),
+								wide ? ImGuiTableColumnFlags_WidthFixed : ImGuiTableColumnFlags_WidthStretch,
+								wide ? ImGui::GetFontSize() * 15.f : 0.f);
 	ImGui::TableHeadersRow();
 	const auto warning = ImGui::GetColorU32(gui::vec(gui::Theme::withAlpha(gui::UiLayer::getTheme().warning, 0.18f)));
 	std::optional<std::pair<size_t, std::string>> renamed;
@@ -642,7 +812,7 @@ void LocalisationDocument::renderStrings() {
 	std::optional<std::tuple<size_t, std::string, std::string>> edited;
 	for (size_t i = 0; i < m_localisation.strings.size(); ++i) {
 		const auto& entry = m_localisation.strings[i];
-		if ((m_tableFilter.has_value() && entry.table != *m_tableFilter) || !matches(entry, m_search))
+		if (!isStringShown(i))
 			continue;
 		ImGui::PushID(static_cast<int>(i));
 		ImGui::TableNextRow();
@@ -657,12 +827,15 @@ void LocalisationDocument::renderStrings() {
 			renamed = {i, key};
 		if (ImGui::IsItemActivated() && !selected)
 			setSelection({i});
-		ImGui::TableNextColumn();
-		auto table = entry.table;
-		ImGui::SetNextItemWidth(-1.f);
-		if (ImGui::InputText("##table", &table, ImGuiInputTextFlags_EnterReturnsTrue))
-			moved = {i, table};
-		for (const auto& language: languages) {
+		if (tableColumn) {
+			ImGui::TableNextColumn();
+			auto table = entry.table;
+			ImGui::SetNextItemWidth(-1.f);
+			if (ImGui::InputText("##table", &table, ImGuiInputTextFlags_EnterReturnsTrue))
+				moved = {i, table};
+		}
+		for (const auto* languagePtr: languages) {
+			const auto& language = *languagePtr;
 			ImGui::TableNextColumn();
 			const auto found = entry.values.find(language.code);
 			auto value = found != entry.values.end() ? found->second : std::string{};
@@ -701,8 +874,7 @@ void LocalisationDocument::renderStrings() {
 		if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_A, false)) {
 			std::vector<size_t> all;
 			for (size_t i = 0; i < m_localisation.strings.size(); ++i)
-				if ((!m_tableFilter.has_value() || m_localisation.strings[i].table == *m_tableFilter) &&
-					matches(m_localisation.strings[i], m_search))
+				if (isStringShown(i))
 					all.push_back(i);
 			setSelection(std::move(all));
 		}

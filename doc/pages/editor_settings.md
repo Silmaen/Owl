@@ -5,7 +5,9 @@
 **Level:** Confirmed. **Read first:** [The Owl Nest window](editor.md).
 
 **View > Settings > Editor** (or **Editor settings** in the File screen) opens the editor settings, one tab per
-topic; each row has a reset button once it differs from its default. They are saved in `OwlNest_settings.yml`, with
+topic; each row has a reset button once it differs from its default. The window edits a draft: **OK** applies it and closes,
+**Apply** applies it and stays open (greyed while nothing changed), **Cancel** or the close button forgets the changes
+made since the last **Apply**, shortcuts included. The settings file `OwlNest_settings.yml` is written when the editor closes, with
 the recent projects and their sessions, in the `user/` folder beside Owl Nest
 ([user directory](architecture.md#architecture-user-directory)). **Import settings...** in the File screen, also offered
 at the first start, takes them from the folder of a previous version and applies them at the next start.
@@ -17,8 +19,8 @@ at the first start, takes them from the folder of a previous version and applies
 | General    | Stats panel, Show All Files (Content Browser), text size (75 to 150 %), UI and code font sizes (next start), autosave, frame pacing    |
 | Gizmo Snap | Snap to grid, snap step, step from tilemap and its cell multiplier, rotation step ([snapping](editor_viewport.md#gizmos-and-snapping)) |
 | Camera     | Orbit, pan and zoom speeds (10 to 300 %), invert vertical, dead zone, fly speed (0.1 to 100 units/s)                                   |
-| Appearance | Theme: **Owl Dark** or **Owl Light**, applied at once (also **View > Appearance**)                                                     |
-| Log        | Level recorded (Default, Trace to Off), also in the **Log** panel; frame trace period (`config.yml`)                                   |
+| Appearance | Theme: **Owl Dark** or **Owl Light**, applied with **Apply** (also **View > Appearance**)                                              |
+| Log        | Level recorded (Default, Trace to Off, also in the **Log** panel) and frame trace period (`config.yml`), applied with **Apply**        |
 | Shortcuts  | Every action and its key ([below](#rebinding))                                                                                         |
 | MCP Server | Enabled (off by default), port (47800), status, endpoint and token file (a click copies), **Regenerate Token**                         |
 

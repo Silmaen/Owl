@@ -83,18 +83,52 @@ void ImageDocument::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
 
 void ImageDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {}
 
-auto ImageDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
-	const auto decoded = renderer::decodeImageFile(iPath);
-	if (!decoded.valid) {
-		OWL_WARN("ImageDocument: '{}' is not a readable image.", iPath.string())
-		return false;
+auto toneMapHdr(const renderer::FloatImage& iImage) -> std::vector<uint8_t> {
+	const auto toByte = [](const float iLinear) -> uint8_t {
+		const float mapped = std::max(iLinear, 0.f) / (1.f + std::max(iLinear, 0.f));
+		const float srgb = mapped <= 0.0031308f ? mapped * 12.92f : 1.055f * std::pow(mapped, 1.f / 2.4f) - 0.055f;
+		return static_cast<uint8_t>(std::lround(std::clamp(srgb, 0.f, 1.f) * 255.f));
+	};
+	const auto width = static_cast<size_t>(iImage.size.x());
+	const auto height = static_cast<size_t>(iImage.size.y());
+	std::vector<uint8_t> pixels(width * height * 4);
+	for (size_t row = 0; row < height; ++row) {
+		for (size_t col = 0; col < width; ++col) {
+			const auto& source = iImage.pixels[row * width + col];
+			const size_t target = ((height - 1 - row) * width + col) * 4;
+			pixels[target + 0] = toByte(source.x());
+			pixels[target + 1] = toByte(source.y());
+			pixels[target + 2] = toByte(source.z());
+			pixels[target + 3] = 255;
+		}
 	}
-	m_path = iPath;
+	return pixels;
+}
+
+auto ImageDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	std::error_code error;
 	const auto bytes = std::filesystem::file_size(iPath, error);
-	m_info = {.size = decoded.size,
-			  .channels = decoded.format == renderer::gpu::ImageFormat::Rgb8 ? 3u : 4u,
-			  .fileBytes = error ? 0 : static_cast<uint64_t>(bytes)};
+	const uint64_t fileBytes = error ? 0 : static_cast<uint64_t>(bytes);
+	if (iPath.extension() == ".hdr") {
+		const auto image = renderer::loadHdrImage(iPath);
+		if (!image.has_value() || image->isEmpty()) {
+			OWL_WARN("ImageDocument: '{}' is not a readable HDR image.", iPath.string())
+			return false;
+		}
+		m_hdrPixels = toneMapHdr(*image);
+		m_info = {.size = image->size, .channels = 3, .fileBytes = fileBytes, .highDynamicRange = true};
+	} else {
+		const auto decoded = renderer::decodeImageFile(iPath);
+		if (!decoded.valid) {
+			OWL_WARN("ImageDocument: '{}' is not a readable image.", iPath.string())
+			return false;
+		}
+		m_hdrPixels.clear();
+		m_info = {.size = decoded.size,
+				  .channels = decoded.format == renderer::gpu::ImageFormat::Rgb8 ? 3u : 4u,
+				  .fileBytes = fileBytes};
+	}
+	m_path = iPath;
 	m_texture.reset();
 	m_needsFit = true;
 	m_tilesets.clear();
@@ -144,7 +178,7 @@ void ImageDocument::onImGuiRender() {
 			mp_editorLayer->getDocumentManager().setActive(this);
 		m_wasFocused = windowFocused;
 		if (m_texture == nullptr)
-			m_texture = renderer::gpu::Texture2D::create(m_path);
+			createTexture();
 		if (const auto id = gui::imTexture(m_texture); !id.has_value()) {
 			std::ignore = gui::widgets::emptyState(gui::icon::image, "Image not loaded",
 												   "The image could not be uploaded to the GPU.");
@@ -154,6 +188,19 @@ void ImageDocument::onImGuiRender() {
 		}
 	}
 	ImGui::End();
+}
+
+void ImageDocument::createTexture() {
+	if (m_hdrPixels.empty()) {
+		m_texture = renderer::gpu::Texture2D::create(m_path);
+		return;
+	}
+	m_texture = renderer::gpu::Texture2D::create(
+			renderer::gpu::Texture::Specification{.size = m_info.size,
+												  .format = renderer::gpu::ImageFormat::Rgba8,
+												  .generateMips = false});
+	if (m_texture != nullptr)
+		m_texture->setData(m_hdrPixels.data(), static_cast<uint32_t>(m_hdrPixels.size()));
 }
 
 void ImageDocument::drawCanvas(const math::vec2& iSize) {
@@ -283,7 +330,10 @@ void ImageDocument::renderHierarchyPanel() {
 		ImGui::Text("%u x %u", m_info.size.x(), m_info.size.y());
 		std::ignore = gui::widgets::propertyReset(false);
 		gui::widgets::propertyLabel("Channels", "3 for an opaque image, 4 when it has an alpha channel.");
-		ImGui::Text("%u", m_info.channels);
+		if (m_info.highDynamicRange)
+			ImGui::Text("%u (HDR, shown tone-mapped)", m_info.channels);
+		else
+			ImGui::Text("%u", m_info.channels);
 		std::ignore = gui::widgets::propertyReset(false);
 		gui::widgets::propertyLabel("File size");
 		ImGui::TextUnformatted(viewer::formatFileSize(m_info.fileBytes).c_str());

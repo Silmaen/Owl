@@ -15,6 +15,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -128,4 +129,46 @@ TEST_F(LocalisationDocumentTest, StringsAreRenamedMovedDuplicatedAndRemovedAsGro
 	EXPECT_FALSE(m_document.restoreRecoverySnapshot("nope"));
 	EXPECT_EQ(m_document.getUniqueKey("menu.start"), "menu.start_2");
 	EXPECT_EQ(m_document.getUniqueKey(""), "text");
+}
+
+TEST_F(LocalisationDocumentTest, TheViewShowsLanguagesTablesAndMissingTexts) {
+	ASSERT_TRUE(m_document.addLanguage("fr", "Français"));
+	ASSERT_TRUE(m_document.addLanguage("de", "Deutsch"));
+	EXPECT_EQ(m_document.addString("menu.start", "menu"), 0u);
+	EXPECT_EQ(m_document.addString("menu.quit", "menu"), 1u);
+	EXPECT_EQ(m_document.addString("npc.hello", "dialogue"), 2u);
+	for (const auto* code: {"en", "fr", "de"}) ASSERT_TRUE(m_document.setValue(0, code, "Start"));
+	ASSERT_TRUE(m_document.setValue(1, "en", "Quit"));
+	ASSERT_TRUE(m_document.setValue(1, "fr", "Quitter"));
+
+	EXPECT_TRUE(m_document.isLanguageShown("de"));
+	m_document.showOnlyLanguage("fr");
+	EXPECT_TRUE(m_document.isLanguageShown("fr"));
+	EXPECT_FALSE(m_document.isLanguageShown("en"));
+	EXPECT_FALSE(m_document.isLanguageShown("de"));
+	m_document.setLanguageShown("de", true);
+	EXPECT_TRUE(m_document.isLanguageShown("de"));
+	m_document.showAllLanguages();
+	EXPECT_TRUE(m_document.isLanguageShown("en"));
+
+	EXPECT_EQ(m_document.getTableStrings("menu"), (std::vector<size_t>{0, 1}));
+	EXPECT_TRUE(m_document.getTableStrings("none").empty());
+	m_document.setTableFilter("menu");
+	EXPECT_TRUE(m_document.isStringShown(1));
+	EXPECT_FALSE(m_document.isStringShown(2));
+	EXPECT_FALSE(m_document.isStringShown(9));
+
+	m_document.setMissingOnly(true);
+	EXPECT_FALSE(m_document.isStringShown(0));
+	EXPECT_TRUE(m_document.isStringShown(1));
+	m_document.setLanguageShown("de", false);
+	EXPECT_FALSE(m_document.isStringShown(1));
+	m_document.setMissingOnly(false);
+	m_document.setTableFilter(std::nullopt);
+	m_document.setSearch("HELLO");
+	EXPECT_TRUE(m_document.isStringShown(2));
+	EXPECT_FALSE(m_document.isStringShown(0));
+
+	m_document.selectLanguage("fr");
+	EXPECT_EQ(m_document.getSelectedLanguage(), "fr");
 }

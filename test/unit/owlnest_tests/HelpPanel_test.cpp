@@ -152,9 +152,9 @@ TEST_F(HelpPanelTest, BundleStartsOnTheEditorHelpWithItsGroupsInOrder) {
 			groups.push_back(page.group);
 		}
 	}
-	const std::vector<std::string> expected{
-			"Getting started",           "The editor",   "Making games",       "Scripting",
-			"Engine for C++ developers", "Contributing", "Roadmap and changes"};
+	const std::vector<std::string> expected{"Getting started", "The editor",         "Making games",
+											"Sample games",    "Scripting",          "Engine for C++ developers",
+											"Contributing",    "Roadmap and changes"};
 	EXPECT_EQ(groups, expected);
 }
 

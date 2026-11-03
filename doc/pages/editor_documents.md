@@ -80,7 +80,11 @@ open button of a mesh slot.
 - **Preview**: a sphere or a cube drawn with the material; drag to orbit, wheel to zoom, double-click to reset.
 - **Save** updates every entity using the material, in every open scene.
 
+![The material `old_brass.owlmat`: the parameters on the left, the sphere preview on the right](../images/nest/material_editor.png)
+
 ## Sound cues
+
+![The cue `steps.owlsound`: its four takes, the waveform of the first and the Sound Cue panel](../images/nest/sound_editor.png)
 
 An `.owlsound` is a sound made of takes, one picked at random at each play, wherever an audio file is accepted (a
 `SoundSource`, `sound.play` in Lua). Open one with a double-click, or create it with **New Sound Cue** in the Content
@@ -103,7 +107,7 @@ Cue** in place of the Properties; the tab itself shows the selected take.
 
 ## Image viewer
 
-A read-only tab: the wheel zooms around the cursor (5 % to 3200 %), a left or middle drag pans, **Fit** (`F`,
+A read-only tab (`.hdr` images included, shown tone-mapped with Reinhard and sRGB; the info reads "3 (HDR, shown tone-mapped)"): the wheel zooms around the cursor (5 % to 3200 %), a left or middle drag pans, **Fit** (`F`,
 double-click) and **1:1** (`1`). A checkerboard shows behind transparent pixels and a pixel grid from 800 %; the
 status line gives the zoom, the size and the pixel under the cursor. The **Image** panel gives size, channels, file
 size and the tilesets that use the image; pick one to draw its tile grid with the index of the hovered tile.
