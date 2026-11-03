@@ -46,7 +46,7 @@ auto McpServer::start() -> bool {
 		OWL_CORE_ERROR("Mcp: The server cannot start on port {}.", m_options.http.port)
 		return false;
 	}
-	OWL_CORE_INFO("Mcp: Token written to {}.", m_tokenFile.string())
+	OWL_CORE_INFO("Mcp: Token written to '{}'.", m_tokenFile.string())
 	return true;
 }
 

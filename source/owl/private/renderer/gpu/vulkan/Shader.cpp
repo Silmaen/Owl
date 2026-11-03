@@ -48,7 +48,7 @@ auto createShaderModule(const VkDevice& iLogicalDevice, const std::vector<uint32
 	VkShaderModule shaderModule = nullptr;
 	if (const VkResult result = vkCreateShaderModule(iLogicalDevice, &createInfo, nullptr, &shaderModule);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("failed to create shader module ({}).", internal::resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create a shader module ({}).", internal::resultString(result))
 		return nullptr;
 	}
 	return shaderModule;
@@ -57,20 +57,20 @@ auto createShaderModule(const VkDevice& iLogicalDevice, const std::vector<uint32
 
 }// namespace utils
 
+// clang-format off: it misreads a log macro ending a constructor body and indents the rest of the file.
 Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& /*iVertexSrc*/,
 			   const std::string& /*iFragmentSrc*/)
-	: renderer::gpu::Shader{iShaderName,
-							iRenderer} {OWL_PROFILE_FUNCTION()
+	: renderer::gpu::Shader{iShaderName, iRenderer} {
+	OWL_CORE_WARN("Vulkan: Separate vertex and fragment sources are deprecated, use a Slang source.")
+}
 
-												OWL_CORE_WARN("Vulkan Shader: Separate vertex/fragment source. "
-															  "constructor is deprecated, use Slang source.")}
-
-	  Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& iSlangSource)
+Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& iSlangSource)
 	: renderer::gpu::Shader{iShaderName, iRenderer} {
 	OWL_PROFILE_FUNCTION()
 
 	createShader(iSlangSource);
 }
+// clang-format on
 
 Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
 			   const std::vector<std::filesystem::path>& iSources)
@@ -81,7 +81,7 @@ Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
 	if (iSources.size() == 1 && iSources[0].extension() == ".slang") {
 		createShader(renderer::utils::readShaderSource(iSources[0]));
 	} else {
-		OWL_CORE_ERROR("Vulkan Shader: Expected a single .slang file, got {} files.", iSources.size())
+		OWL_CORE_ERROR("Vulkan: Expected a single .slang file, got {} files.", iSources.size())
 	}
 }
 
@@ -120,7 +120,7 @@ void Shader::createShader(const std::string& iSlangSource) {
 	const auto timer = std::chrono::steady_clock::now() - start;
 	double duration =
 			static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(timer).count()) / 1000.0;
-	OWL_CORE_INFO("Compilation of shader {} in {} ms.", getName(), duration)
+	OWL_CORE_DEBUG("Vulkan: Shader '{}' compiled in {} ms.", getName(), duration)
 }
 
 auto Shader::recompile(const std::string& iSlangSource) -> bool {
@@ -178,7 +178,8 @@ auto Shader::getStagesInfo() -> std::vector<VkPipelineShaderStageCreateInfo> {
 			if (recoverRejectedSpirv(
 						std::format("vkCreateShaderModule failed for the {} stage", magic_enum::enum_name(stage))))
 				return getStagesInfo();
-			OWL_CORE_ERROR("Vulkan: Failed create shader module {} {}.", getName(), magic_enum::enum_name(stage))
+			OWL_CORE_ERROR("Vulkan: Cannot create the shader module of '{}' ({} stage).", getName(),
+						   magic_enum::enum_name(stage))
 			vkh.setState(internal::VulkanHandler::State::ErrorCreatingPipeline);
 			return {};
 		}

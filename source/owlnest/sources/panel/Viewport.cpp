@@ -38,6 +38,7 @@
 #include <gui/UiLayer.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/Menu.h>
+#include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/Tooltip.h>
 #include <math/linAlgebra.h>
 #include <owlgui.h>
@@ -232,7 +233,7 @@ void Viewport::attach() {
 }
 
 void Viewport::detach() {
-	OWL_TRACE("Viewport: framebuffer freed.")
+	OWL_DEBUG("Viewport: Framebuffer released.")
 	m_framebuffer.reset();
 	m_previewFramebuffer.reset();
 }
@@ -1074,7 +1075,7 @@ void Viewport::renderCameraModels(const shared<scene::Scene>& iScene) const {
 		}
 		m_cameraModelMissing = !m_cameraModel;
 		if (m_cameraModelMissing)
-			OWL_WARN("Viewport: meshes/camera.glb not found in the editor assets, cameras show their frustum only.")
+			OWL_WARN("Viewport: 'meshes/camera.glb' not found in the editor assets, cameras show their frustum only.")
 	}
 	if (!m_upTriangle) {
 		const std::array<renderer::Mesh3DVertex, 3> vertices{
@@ -1759,7 +1760,7 @@ void Viewport::renderViewOverlay() {
 					 .label = "Iso",
 					 .tooltip = "Isometric view",
 					 .description = "The scene draws an isometric layer: the 2:1 dimetric view is locked. "
-									"Pan with the middle or right drag (or the left drag outside the Select "
+									"Pan with the middle or right drag (or the left drag outside the Standard "
 									"mode), zoom by powers of two with the wheel.",
 					 .disabled = true});
 		} else if (gui::widgets::button("projection",
@@ -1869,10 +1870,10 @@ void Viewport::renderNavigationButtons(EditorSettings& ioSettings) {
 		const char* tooltip;
 	};
 	constexpr std::array buttons{
-			ModeButton{.mode = ViewNavigationMode::Select,
-					   .id = "navSelect",
+			ModeButton{.mode = ViewNavigationMode::Standard,
+					   .id = "navStandard",
 					   .glyph = gui::icon::mousePointer2,
-					   .tooltip = "Select navigation"},
+					   .tooltip = "Standard navigation"},
 			ModeButton{.mode = ViewNavigationMode::Orbit,
 					   .id = "navOrbit",
 					   .glyph = gui::icon::orbit,
@@ -1899,10 +1900,13 @@ void Viewport::renderNavigationButtons(EditorSettings& ioSettings) {
 		ImGui::OpenPopup("##flySpeed");
 	if (ImGui::BeginPopup("##flySpeed")) {
 		gui::widgets::menuHeader("Fly speed");
-		ImGui::SetNextItemWidth(180.f);
-		if (ImGui::SliderFloat("##speed", &ioSettings.cameraFlySpeed, 0.1f, 100.f, "%.1f units/s",
-							   ImGuiSliderFlags_Logarithmic))
-			ioSettings.cameraFlySpeed = std::clamp(ioSettings.cameraFlySpeed, 0.1f, 100.f);
+		ImGui::Dummy({ImGui::GetFontSize() * 16.f, 0.f});
+		if (gui::widgets::beginProperties("##flySpeedGrid")) {
+			if (gui::widgets::propertyFloat("Speed", ioSettings.cameraFlySpeed, g_defaultCameraFlySpeed, 0.1f,
+											"%.1f units/s", "From 0.1 to 100 units/s; Shift flies three times faster."))
+				ioSettings.cameraFlySpeed = std::clamp(ioSettings.cameraFlySpeed, 0.1f, 100.f);
+			gui::widgets::endProperties();
+		}
 		ImGui::EndPopup();
 	}
 }

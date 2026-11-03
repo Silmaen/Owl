@@ -157,7 +157,7 @@ void SequenceDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {}
 auto SequenceDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	auto loaded = Sequence::loadFile(iPath);
 	if (!loaded) {
-		OWL_CORE_WARN("SequenceDocument: {} is not a sequence.", iPath.string())
+		OWL_CORE_WARN("SequenceDocument: '{}' is not a sequence.", iPath.string())
 		return false;
 	}
 	m_sequence = std::move(*loaded);
@@ -329,7 +329,7 @@ auto SequenceDocument::addTrack(const bool iCamera) -> bool {
 auto SequenceDocument::sendCommand(const std::string_view iName, commands::CommandArgs iArgs)
 		-> std::optional<commands::CommandResult> {
 	if (mp_editorLayer == nullptr) {
-		OWL_WARN("SequenceDocument: {} ignored, no editor to run it.", iName)
+		OWL_WARN("SequenceDocument: '{}' ignored, no editor to run it.", iName)
 		return std::nullopt;
 	}
 	iArgs.set("path", m_path.generic_string());

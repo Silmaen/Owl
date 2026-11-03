@@ -62,7 +62,7 @@ auto MemoryAllocator::init(VkInstance iInstance, VkPhysicalDevice iPhysicalDevic
 									  .vulkanApiVersion = VK_API_VERSION_1_3,
 									  .pTypeExternalMemoryHandleTypes = nullptr};
 	if (const VkResult result = vmaCreateAllocator(&info, &m_allocator); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to create the memory allocator ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the memory allocator ({}).", resultString(result))
 		m_allocator = nullptr;
 		return false;
 	}
@@ -80,7 +80,7 @@ auto MemoryAllocator::createBuffer(const VkDeviceSize iSize, const VkBufferUsage
 								   const std::string_view iName) const -> AllocatedBuffer {
 	AllocatedBuffer out;
 	if (m_allocator == nullptr || iSize == 0) {
-		OWL_CORE_ERROR("Vulkan: cannot create buffer {} (allocator not ready or empty size).", iName)
+		OWL_CORE_ERROR("Vulkan: Cannot create buffer '{}' (allocator not ready or empty size).", iName)
 		return out;
 	}
 	const VkBufferCreateInfo bufferInfo{.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -96,7 +96,7 @@ auto MemoryAllocator::createBuffer(const VkDeviceSize iSize, const VkBufferUsage
 	if (const VkResult res =
 				vmaCreateBuffer(m_allocator, &bufferInfo, &allocInfo, &out.buffer, &out.allocation, &result);
 		res != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to create buffer {} of {} bytes ({}).", iName, iSize, resultString(res))
+		OWL_CORE_ERROR("Vulkan: Cannot create buffer '{}' of {} bytes ({}).", iName, iSize, resultString(res))
 		return {};
 	}
 	out.mapped = result.pMappedData;
@@ -118,13 +118,13 @@ auto MemoryAllocator::createImage(const VkImageCreateInfo& iInfo, const std::str
 		-> AllocatedImage {
 	AllocatedImage out;
 	if (m_allocator == nullptr) {
-		OWL_CORE_ERROR("Vulkan: cannot create image {} (allocator not ready).", iName)
+		OWL_CORE_ERROR("Vulkan: Cannot create image '{}' (allocator not ready).", iName)
 		return out;
 	}
 	const VmaAllocationCreateInfo allocInfo = toAllocationInfo(MemoryUsage::Device);
 	if (const VkResult res = vmaCreateImage(m_allocator, &iInfo, &allocInfo, &out.image, &out.allocation, nullptr);
 		res != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to create image {} ({}).", iName, resultString(res))
+		OWL_CORE_ERROR("Vulkan: Cannot create image '{}' ({}).", iName, resultString(res))
 		return {};
 	}
 	if (!iName.empty()) {

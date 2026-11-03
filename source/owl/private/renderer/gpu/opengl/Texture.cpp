@@ -200,7 +200,7 @@ auto Texture2D::setLevels(const TextureLevels& iLevels) -> bool {
 	OWL_PROFILE_FUNCTION()
 
 	if (iLevels.levels.empty() || iLevels.size.surface() == 0) {
-		OWL_CORE_WARN("OpenGL Texture: No level to set on '{}'.", getName())
+		OWL_CORE_WARN("OpenGL: No level given to set on texture '{}'.", getName())
 		return false;
 	}
 	auto specs = m_specification;
@@ -258,7 +258,7 @@ void TextureCube::setData(void* iData, const uint32_t iSize) {
 	OWL_PROFILE_FUNCTION()
 
 	if (iSize != m_specification.size.surface() * m_specification.getPixelSize() * g_faceCount) {
-		OWL_CORE_WARN("OpenGL TextureCube: Data of {} bytes does not hold the six faces.", iSize)
+		OWL_CORE_WARN("OpenGL: TextureCube data of {} bytes does not hold the six faces.", iSize)
 		return;
 	}
 	uploadLevel(0, {static_cast<const uint8_t*>(iData), iSize});
@@ -269,14 +269,14 @@ auto TextureCube::setLevels(const TextureLevels& iLevels) -> bool {
 
 	if (iLevels.size != m_specification.size || iLevels.format != m_specification.format ||
 		iLevels.levels.size() != getLevelCount()) {
-		OWL_CORE_WARN("OpenGL TextureCube: Levels do not match the cube.")
+		OWL_CORE_WARN("OpenGL: TextureCube levels do not match the cube.")
 		return false;
 	}
 	for (uint32_t level = 0; level < getLevelCount(); ++level) {
 		const uint32_t face = getFaceSize(level);
 		if (iLevels.levels[level].size() !=
 			static_cast<size_t>(face) * face * m_specification.getPixelSize() * g_faceCount) {
-			OWL_CORE_WARN("OpenGL TextureCube: Level {} does not hold the six faces.", level)
+			OWL_CORE_WARN("OpenGL: TextureCube level {} does not hold the six faces.", level)
 			return false;
 		}
 		uploadLevel(level, iLevels.levels[level]);

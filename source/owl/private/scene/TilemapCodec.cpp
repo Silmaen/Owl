@@ -93,7 +93,7 @@ auto readChunk(Reader& ioReader, const size_t iLayer, const math::vec2ui& iChunk
 		return false;
 	}
 	if (*cx >= iChunkGrid.x() || *cy >= iChunkGrid.y()) {
-		OWL_CORE_ERROR("TilemapAsset: Chunk ({}, {}) of layer {} lies outside its {}×{} chunk grid.", *cx, *cy, iLayer,
+		OWL_CORE_ERROR("TilemapAsset: Chunk ({}, {}) of layer {} lies outside its {}x{} chunk grid.", *cx, *cy, iLayer,
 					   iChunkGrid.x(), iChunkGrid.y())
 		return false;
 	}

@@ -117,13 +117,13 @@ void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture
 		return;
 	}
 	if (!cubes.empty())
-		OWL_CORE_WARN("Vulkan: Cubes bound outside a renderer block are ignored.")
+		OWL_CORE_WARN_ONCE("Vulkan: Cubes bound outside a renderer block are ignored.")
 }
 
 void RenderAPI::beginFrame() {
 	auto& vkh = internal::VulkanHandler::get();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_ERROR("Vulkan is in error state ({}).", magic_enum::enum_name(vkh.getState()))
+		OWL_CORE_ERROR_ONCE("Vulkan: The handler is in error state ({}).", magic_enum::enum_name(vkh.getState()))
 		setState(State::Error);
 		return;
 	}
@@ -147,7 +147,7 @@ void RenderAPI::nextSubpass() {
 void RenderAPI::endFrame() {
 	auto& vkh = internal::VulkanHandler::get();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_ERROR("Vulkan is in error state: ({}).", magic_enum::enum_name(vkh.getState()))
+		OWL_CORE_ERROR_ONCE("Vulkan: The handler is in error state ({}).", magic_enum::enum_name(vkh.getState()))
 		setState(State::Error);
 		return;
 	}
@@ -160,17 +160,14 @@ void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData, const shared<
 	if (!iData || !iCommandBuffer || !iCountBuffer || iMaxDrawCount == 0)
 		return;
 	if (!internal::VulkanCore::get().hasDrawIndirectCount()) {
-		static bool warned = false;
-		if (!warned)
-			OWL_CORE_WARN("Vulkan: drawIndexedIndirect needs the drawIndirectCount feature, skipped.")
-		warned = true;
+		OWL_CORE_WARN_ONCE("Vulkan: drawIndexedIndirect needs the drawIndirectCount feature, skipped.")
 		return;
 	}
 	auto& vkh = internal::VulkanHandler::get();
 	auto* const cmdSsbo = dynamic_cast<StorageBuffer*>(iCommandBuffer.get());
 	auto* const countSsbo = dynamic_cast<StorageBuffer*>(iCountBuffer.get());
 	if (cmdSsbo == nullptr || countSsbo == nullptr) {
-		OWL_CORE_WARN("Vulkan: drawIndexedIndirect with non-Vulkan SSBOs.")
+		OWL_CORE_WARN_ONCE("Vulkan: drawIndexedIndirect called with non-Vulkan SSBOs.")
 		return;
 	}
 	const auto commands = cmdSsbo->resolve();
@@ -193,7 +190,7 @@ void RenderAPI::drawIndexedIndirectAt(const shared<DrawData>& iData, const share
 		return;
 	auto* const cmdSsbo = dynamic_cast<StorageBuffer*>(iCommandBuffer.get());
 	if (cmdSsbo == nullptr) {
-		OWL_CORE_WARN("Vulkan: drawIndexedIndirectAt with a non-Vulkan SSBO.")
+		OWL_CORE_WARN_ONCE("Vulkan: drawIndexedIndirectAt called with a non-Vulkan SSBO.")
 		return;
 	}
 	const auto commands = cmdSsbo->resolve();

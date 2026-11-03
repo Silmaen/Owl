@@ -35,7 +35,7 @@ void VulkanHandler::initVulkan() {
 		createCore();
 		if (m_state != State::Uninitialized)
 			return;
-		OWL_CORE_TRACE("Vulkan: Core created.")
+		OWL_CORE_DEBUG("Vulkan: Core created.")
 	}
 	{
 		createFrames();
@@ -44,14 +44,14 @@ void VulkanHandler::initVulkan() {
 		createSwapChain();
 		if (m_state != State::Uninitialized)
 			return;
-		OWL_CORE_TRACE("Vulkan: Swap Chain created.")
+		OWL_CORE_DEBUG("Vulkan: Swapchain created.")
 	}
 	{
 		auto& desc = Descriptors::get();
 		desc.createDescriptors();
 		if (m_state != State::Uninitialized)
 			return;
-		OWL_CORE_TRACE("Vulkan: Descriptor pool created.")
+		OWL_CORE_DEBUG("Vulkan: Descriptor pool created.")
 	}
 	GpuProfiler::init();
 	m_state = State::Running;
@@ -93,19 +93,19 @@ void VulkanHandler::release() {
 
 	m_swapChain.reset();
 	m_currentFramebuffer = nullptr;
-	OWL_CORE_TRACE("Vulkan: swap destroyed.")
+	OWL_CORE_TRACE("Vulkan: Swapchain destroyed.")
 	auto& vkd = Descriptors::get();
 	vkd.release();
 	OWL_CORE_TRACE("Vulkan: Descriptors released.")
 	// Destroy per-renderer descriptor blocks while the device is valid; their process-static storage else outlives it.
 	gpu::RendererDescriptors::releaseAll();
 	RendererDescriptors::releaseDefaults();
-	OWL_CORE_TRACE("Vulkan: per-renderer descriptor blocks released.")
+	OWL_CORE_TRACE("Vulkan: Per-renderer descriptor blocks released.")
 	runReleases();
 	m_ring.release();
 	releaseFrames();
 	core.release();
-	OWL_CORE_TRACE("Vulkan: core destroyed.")
+	OWL_CORE_DEBUG("Vulkan: Core destroyed.")
 	m_state = State::Uninitialized;
 	m_releasing = false;
 }
@@ -114,7 +114,7 @@ void VulkanHandler::release() {
 namespace {
 void func(const VkResult iResult) {
 	if (iResult != VK_SUCCESS)
-		OWL_CORE_ERROR("Vulkan Imgui: Error detected: {}.", resultString(iResult))
+		OWL_CORE_ERROR_ONCE("Vulkan: ImGui reports an error ({}).", resultString(iResult))
 }
 
 constexpr auto toVkTopology(const gpu::PrimitiveTopology iTopology) -> VkPrimitiveTopology {
@@ -284,7 +284,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 
 				vkCreatePipelineLayout(core.getLogicalDevice(), &pipelineLayoutInfo, nullptr, &pData.layout);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: Shader: failed to create pipeline layout {} ({}).", iPipeLineName, resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the pipeline layout '{}' ({}).", iPipeLineName, resultString(result))
 		m_state = State::ErrorCreatingPipelineLayout;
 		return -1;
 	}
@@ -416,11 +416,11 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 													.basePipelineHandle = VK_NULL_HANDLE,
 													.basePipelineIndex = 0};
 
-	OWL_CORE_TRACE("Vulkan pipeline: vkCreateGraphicsPipelines.")
+	OWL_CORE_TRACE("Vulkan: Creating a graphics pipeline.")
 	if (const VkResult result = vkCreateGraphicsPipelines(core.getLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo,
 														  nullptr, &pData.pipeLine);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to create graphics pipeline for {} ({}).", iPipeLineName, resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the graphics pipeline '{}' ({}).", iPipeLineName, resultString(result))
 		m_state = State::ErrorCreatingPipeline;
 		return -1;
 	}
@@ -429,7 +429,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 	m_pipeLines.emplace(id, pData);
 	m_pipelineCache.emplace(key, id);
 
-	OWL_CORE_TRACE("Vulkan pipeline: {} Loaded.", iPipeLineName)
+	OWL_CORE_TRACE("Vulkan: Pipeline '{}' loaded.", iPipeLineName)
 	return id;
 }
 
@@ -520,14 +520,14 @@ void VulkanHandler::createFrames() {
 		}
 		if (vkCreateFence(device, &signaledFence, nullptr, &frame.fence) != VK_SUCCESS ||
 			vkCreateSemaphore(device, &semaphoreInfo, nullptr, &frame.imageAvailable) != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan: failed to create the frame synchronisation objects.")
+			OWL_CORE_ERROR("Vulkan: Cannot create the frame synchronisation objects.")
 			m_state = State::ErrorCreatingSyncObjects;
 			return;
 		}
 		frame.serial = 0;
 	}
 	if (vkCreateFence(device, &unsignaledFence, nullptr, &m_flushFence) != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to create the flush fence.")
+		OWL_CORE_ERROR("Vulkan: Cannot create the flush fence.")
 		m_state = State::ErrorCreatingSyncObjects;
 		return;
 	}
@@ -613,7 +613,7 @@ void VulkanHandler::acquireImage() {
 		return;
 	}
 	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-		OWL_CORE_ERROR("Vulkan: failed to acquire next image ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot acquire the next image ({}).", resultString(result))
 		m_state = State::ErrorAcquiringNextImage;
 		return;
 	}
@@ -624,7 +624,7 @@ void VulkanHandler::acquireImage() {
 auto VulkanHandler::beginCommandBuffer() -> bool {
 	auto* const cmd = m_frames[m_frameSlot].commandBuffer;
 	if (const VkResult result = vkResetCommandBuffer(cmd, 0); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to reset the frame command buffer ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot reset the frame command buffer ({}).", resultString(result))
 		m_state = State::ErrorResetCommandBuffer;
 		return false;
 	}
@@ -633,7 +633,7 @@ auto VulkanHandler::beginCommandBuffer() -> bool {
 												 .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 												 .pInheritanceInfo = nullptr};
 	if (const VkResult result = vkBeginCommandBuffer(cmd, &beginInfo); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to begin the frame command buffer ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot begin the frame command buffer ({}).", resultString(result))
 		m_state = State::ErrorBeginCommandBuffer;
 		return false;
 	}
@@ -655,7 +655,7 @@ auto VulkanHandler::submitCommandBuffer(const bool iLast, VkFence iFence) -> boo
 	recordHostBarrier(frame.commandBuffer);
 	m_recording = false;
 	if (const VkResult result = vkEndCommandBuffer(frame.commandBuffer); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to end the frame command buffer ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot end the frame command buffer ({}).", resultString(result))
 		m_state = State::ErrorEndCommandBuffer;
 		return false;
 	}
@@ -677,7 +677,7 @@ auto VulkanHandler::submitCommandBuffer(const bool iLast, VkFence iFence) -> boo
 	const auto& core = VulkanCore::get();
 	vkResetFences(core.getLogicalDevice(), 1, &iFence);
 	if (const VkResult result = vkQueueSubmit(core.getGraphicQueue(), 1, &submitInfo, iFence); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to submit the frame command buffer ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot submit the frame command buffer ({}).", resultString(result))
 		m_state = State::ErrorSubmittingDrawCommand;
 		return false;
 	}
@@ -715,7 +715,8 @@ void VulkanHandler::beginFrame() {
 	if (m_state != State::Running)
 		return;
 	if (!isMainFramebuffer()) {
-		OWL_CORE_WARN("Vulkan: begin frame on non main framebuffer {}.", m_currentFramebuffer->getName())
+		OWL_CORE_WARN_ONCE("Vulkan: Frame begun on framebuffer '{}', not the main one.",
+						   m_currentFramebuffer->getName())
 	}
 	unbindFramebuffer();
 	startFrame();
@@ -788,7 +789,8 @@ void VulkanHandler::endFrame() {
 	if (m_state != State::Running)
 		return;
 	if (!isMainFramebuffer()) {
-		OWL_CORE_WARN("Vulkan: ending frame on non main framebuffer {}.", m_currentFramebuffer->getName())
+		OWL_CORE_WARN_ONCE("Vulkan: Frame ended on framebuffer '{}', not the main one.",
+						   m_currentFramebuffer->getName())
 		unbindFramebuffer();
 	}
 	inFrame = false;
@@ -811,7 +813,7 @@ void VulkanHandler::endFrame() {
 
 void VulkanHandler::nextSubpass(bool internal) {
 	if (!inBatch) {
-		OWL_CORE_WARN("Vulkan next subpass called outside of batch.")
+		OWL_CORE_WARN_ONCE("Vulkan: nextSubpass called outside a batch.")
 		return;
 	}
 	m_passCleared = false;
@@ -917,7 +919,7 @@ void VulkanHandler::swapFrame() {
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || result == VK_SUCCESS) {
 			recreateSwapChain();
 		} else {
-			OWL_CORE_ERROR("Vulkan: failed to present queue ({}).", resultString(result))
+			OWL_CORE_ERROR("Vulkan: Cannot present the queue ({}).", resultString(result))
 			m_state = State::ErrorPresentingQueue;
 		}
 	}
@@ -927,7 +929,7 @@ void VulkanHandler::bindPipeline(const int32_t iId, const gpu::PipelineState& iS
 	if (m_state != State::Running)
 		return;
 	if (!m_pipeLines.contains(iId)) {
-		OWL_CORE_WARN("Vulkan: cannot bind pipeline with id {}.", iId)
+		OWL_CORE_WARN_ONCE("Vulkan: No pipeline with id {} to bind.", iId)
 		return;
 	}
 	auto* const cmd = getCurrentCommandBuffer();

@@ -66,7 +66,7 @@ void MeshDocument::onDetach() {
 auto MeshDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	const auto loaded = data::geometry::MeshLoader::loadMesh(iPath);
 	if (!loaded.mesh) {
-		OWL_WARN("MeshDocument: {} holds no mesh.", iPath.string())
+		OWL_WARN("MeshDocument: '{}' holds no mesh.", iPath.string())
 		return false;
 	}
 	m_path = iPath;

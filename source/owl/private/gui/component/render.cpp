@@ -4286,6 +4286,29 @@ void renderSplineLanes(Spline& ioComponent) {
 	fieldTooltip("A path beside the curve that followers and scripts name: a lane of a road, a track of a rail.");
 }
 
+void renderFollowerStops(SplineFollower& ioComponent) {
+	std::optional<size_t> removed;
+	for (size_t index = 0; index < ioComponent.stops.size(); ++index) {
+		auto& stop = ioComponent.stops[index];
+		ImGui::PushID(static_cast<int>(index));
+		if (auto point = static_cast<int>(stop.point); prop::DragInt("Point", &point, 0.1f, 0, 100000))
+			stop.point = static_cast<uint32_t>(std::max(point, 0));
+		fieldTooltip("Index of the control point of the spline where the entity waits, from 0.");
+		ImGui::SameLine();
+		if (removeButton("Remove the stop"))
+			removed = index;
+		prop::DragFloat("Seconds", &stop.seconds, 0.05f, 0.f, 3600.f, "%.2f s");
+		fieldTooltip("Time the entity waits at the point before going on.");
+		ImGui::Separator();
+		ImGui::PopID();
+	}
+	eraseAt(ioComponent.stops, removed);
+	if (ImGui::Button("Add Stop", {-FLT_MIN, 0.f}))
+		ioComponent.stops.push_back(
+				{.point = ioComponent.stops.empty() ? 0 : ioComponent.stops.back().point + 1, .seconds = 1.f});
+	fieldTooltip("A control point where the entity waits each time it reaches it: a bus stop, a table to serve.");
+}
+
 // A double field with its reset slot, dragged at a speed proportional to the value.
 auto resetDouble(const char* iLabel, double& ioValue, const double iDefault, const double iMin, const double iMax,
 				 const char* iFormat = "%.1f") -> bool {
@@ -4464,6 +4487,8 @@ void renderProps(SplineFollower& ioComponent) {
 	fieldTooltip("At the end: Once stops (after a lap on a closed spline), Loop starts again, PingPong turns round.");
 	prop::Checkbox("Orient", &ioComponent.orient);
 	fieldTooltip("Face the direction of the curve: the -Z axis in 3D, the +X axis on a 2D path.");
+	if (widgets::subHeader("Stops", true))
+		renderFollowerStops(ioComponent);
 }
 
 auto WalkAreaSelection::contains(const core::UUID iEntity, const Vertex& iVertex) const -> bool {

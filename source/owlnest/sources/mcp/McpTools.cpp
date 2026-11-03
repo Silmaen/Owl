@@ -181,14 +181,14 @@ auto parseArguments(const commands::CommandSpec& iSpec, const json& iArguments)
 	for (const auto& [name, value]: iArguments.items()) {
 		const auto spec = std::ranges::find(iSpec.args, name, &commands::ArgSpec::name);
 		if (spec == iSpec.args.end()) {
-			OWL_CORE_WARN("Mcp: {} has no argument `{}`.", iSpec.name, name)
+			OWL_CORE_WARN("Mcp: '{}' has no argument '{}'.", iSpec.name, name)
 			return unexpected{
 					commands::CommandFailure{.error = commands::CommandError::UnknownArgument,
 											 .message = std::format("{}: unknown argument `{}`", iSpec.name, name)}};
 		}
 		auto parsed = parseArgValue(*spec, value);
 		if (!parsed) {
-			OWL_CORE_WARN("Mcp: Argument `{}` of {} does not fit its type.", name, iSpec.name)
+			OWL_CORE_WARN("Mcp: Argument '{}' of '{}' does not fit its type.", name, iSpec.name)
 			return unexpected{commands::CommandFailure{
 					.error = commands::CommandError::WrongArgumentType,
 					.message = std::format("{}: `{}` does not fit the schema of the argument", iSpec.name, name)}};

@@ -112,6 +112,8 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 	YAML::Node data = YAML::LoadFile(iFile.string());
 	if (auto config = data["EditorSettings"]; config) {
 		readKey(config, "showStats", showStats);
+		readKey(config, "showAllFiles", showAllFiles);
+		readKey(config, "logLevel", logLevel);
 		if (config["themePreset"]) {
 			const auto preset = gui::Theme::presetFromName(config["themePreset"].as<std::string>());
 			for (const auto& [candidate, name]: gui::Theme::getPresetNames()) {
@@ -159,7 +161,7 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			cameraFlySpeed = std::clamp(config["cameraFlySpeed"].as<float>(), 0.1f, 100.f);
 		if (config["viewNavigation"])
 			viewNavigation = panel::parseViewNavigationMode(config["viewNavigation"].as<std::string>())
-									 .value_or(panel::ViewNavigationMode::Select);
+									 .value_or(panel::ViewNavigationMode::Standard);
 		if (config["autosaveIntervalSeconds"])
 			autosaveIntervalSeconds = std::clamp(config["autosaveIntervalSeconds"].as<int>(), 0, 3600);
 		if (config["frameRateLimit"])
@@ -195,6 +197,8 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::BeginMap;
 	out << YAML::Key << "EditorSettings" << YAML::Value << YAML::BeginMap;
 	out << YAML::Key << "showStats" << YAML::Value << showStats;
+	out << YAML::Key << "showAllFiles" << YAML::Value << showAllFiles;
+	out << YAML::Key << "logLevel" << YAML::Value << logLevel;
 	out << YAML::Key << "themePreset" << YAML::Value << themePreset;
 	out << YAML::Key << "codeEditorFontSize" << YAML::Value << codeEditorFontSize;
 	out << YAML::Key << "uiFontSize" << YAML::Value << uiFontSize;

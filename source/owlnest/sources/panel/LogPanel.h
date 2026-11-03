@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <core/Log.h>
 #include <debug/LogSink.h>
 #include <owlgui.h>
 
@@ -17,6 +18,24 @@
 #include <vector>
 
 namespace owl::nest::panel {
+
+/**
+ * @brief
+ *  Log level an editor setting names.
+ * @param[in] iSetting Level name (`trace` to `off`), empty for the program default (`Log::getDefaultLevel`).
+ * @return The level.
+ */
+[[nodiscard]] auto getLogLevelSetting(const std::string& iSetting) -> core::Log::Level;
+
+/**
+ * @brief
+ *  Draw the log level combo: *Default* then every level; a choice is saved in the setting and applied at once.
+ * @param[in] iId Unique ImGui identifier.
+ * @param[in,out] ioSetting The level setting (empty for the default).
+ * @return True when the level changed.
+ */
+auto logLevelCombo(const char* iId, std::string& ioSetting) -> bool;
+
 /**
  * @brief
  *  Dockable panel displaying engine logs with filtering.
@@ -38,8 +57,9 @@ public:
 	/**
 	 * @brief
 	 *  Render the log panel.
+	 * @param[in,out] ioLevelSetting The log level editor setting, changed by the level combo of the toolbar.
 	 */
-	void onImGuiRender();
+	void onImGuiRender(std::string& ioLevelSetting);
 
 private:
 	/// Show trace-level entries.

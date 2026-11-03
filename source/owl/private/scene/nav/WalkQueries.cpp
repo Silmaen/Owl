@@ -35,7 +35,7 @@ auto findWalkPath(const Scene& iScene, const Entity& iArea, const math::vec2& iF
 				  std::vector<math::vec2>& oPath) -> bool {
 	oPath.clear();
 	if (!hasArea(iArea)) {
-		OWL_CORE_WARN("findWalkPath: the entity has no WalkArea.")
+		OWL_CORE_WARN("WalkMesh: The entity has no WalkArea, no path found.")
 		return false;
 	}
 	const math::mat4 world = iScene.getWorldTransform(iArea)();
@@ -75,7 +75,7 @@ auto getWalkScaleAt(const Scene& iScene, const Entity& iArea, const math::vec2& 
 
 auto walkAgentTo(Scene& ioScene, const Entity& iAgent, const math::vec2& iTarget) -> bool {
 	if (!iAgent || !iAgent.hasComponent<component::WalkAgent>()) {
-		OWL_CORE_WARN("walkAgentTo: the entity has no WalkAgent.")
+		OWL_CORE_WARN("WalkMesh: The entity has no WalkAgent, it cannot walk.")
 		return false;
 	}
 	auto& agent = iAgent.getComponent<component::WalkAgent>();

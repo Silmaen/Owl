@@ -56,7 +56,7 @@ void ColorEncoder::init() {
 	OWL_PROFILE_FUNCTION()
 
 	if (g_data) {
-		OWL_CORE_WARN("ColorEncoder already initiated.")
+		OWL_CORE_WARN("ColorEncoder: Already initiated.")
 		g_data.reset();
 	}
 	g_data = mkShared<InternalData>();
@@ -87,7 +87,7 @@ void ColorEncoder::shutdown() {
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_data) {
-		OWL_CORE_WARN("ColorEncoder already shutdown.")
+		OWL_CORE_WARN("ColorEncoder: Already shut down.")
 		return;
 	}
 	g_data->drawData.reset();

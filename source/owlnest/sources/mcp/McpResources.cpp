@@ -62,7 +62,7 @@ auto equalsIgnoringCase(const std::string_view iLeft, const std::string_view iRi
 auto readText(const std::filesystem::path& iPath) -> std::optional<std::string> {
 	const std::ifstream stream(iPath, std::ios::binary);
 	if (!stream) {
-		OWL_CORE_WARN("Mcp: Cannot read {}.", iPath.string())
+		OWL_CORE_WARN("Mcp: Cannot read '{}'.", iPath.string())
 		return std::nullopt;
 	}
 	std::stringstream buffer;
@@ -100,7 +100,7 @@ void McpResources::loadHelpIndex() {
 		return;
 	const auto indexFile = m_helpRoot / "index.yml";
 	if (!exists(indexFile)) {
-		OWL_CORE_WARN("Mcp: No help index in {}.", m_helpRoot.string())
+		OWL_CORE_WARN("Mcp: No help index in '{}'.", m_helpRoot.string())
 		return;
 	}
 	try {
@@ -115,7 +115,7 @@ void McpResources::loadHelpIndex() {
 				m_pages.push_back(std::move(page));
 		}
 	} catch (const std::exception& ex) {
-		OWL_CORE_WARN("Mcp: Cannot parse the help index {} ({}).", indexFile.string(), ex.what())
+		OWL_CORE_WARN("Mcp: Cannot parse the help index '{}' ({}).", indexFile.string(), ex.what())
 		m_pages.clear();
 	}
 }
@@ -162,7 +162,7 @@ auto McpResources::read(const std::string_view iUri) const -> std::optional<json
 		if (auto page = readPage(iUri.substr(g_HelpPrefix.size())); page)
 			return contents(iUri, g_MarkdownMime, std::move(*page));
 	}
-	OWL_CORE_WARN("Mcp: No resource {}.", iUri)
+	OWL_CORE_WARN("Mcp: No resource '{}'.", iUri)
 	return std::nullopt;
 }
 
@@ -184,7 +184,7 @@ auto McpResources::readEntity(const std::string_view iId) const -> std::optional
 	uint64_t uuid = 0;
 	if (const auto [ptr, ec] = std::from_chars(iId.data(), iId.data() + iId.size(), uuid);
 		!scene || ec != std::errc{} || ptr != iId.data() + iId.size()) {
-		OWL_CORE_WARN("Mcp: Entity resource `{}` names no UUID of an open scene.", iId)
+		OWL_CORE_WARN("Mcp: Entity resource '{}' names no UUID of an open scene.", iId)
 		return std::nullopt;
 	}
 	const auto entity = scene->findEntityByUUID(core::UUID{uuid});
@@ -242,12 +242,12 @@ auto McpResources::readPage(const std::string_view iId) const -> std::optional<s
 	const auto page = std::ranges::find_if(
 			m_pages, [iId](const HelpPage& iPage) -> bool { return equalsIgnoringCase(iPage.id, iId); });
 	if (page == m_pages.end()) {
-		OWL_CORE_WARN("Mcp: No documentation page {}.", iId)
+		OWL_CORE_WARN("Mcp: No documentation page '{}'.", iId)
 		return std::nullopt;
 	}
 	const auto file = m_helpRoot / page->path;
 	if (!isInside(file, m_helpRoot)) {
-		OWL_CORE_WARN("Mcp: Documentation page {} lies outside the help bundle.", iId)
+		OWL_CORE_WARN("Mcp: Documentation page '{}' lies outside the help bundle.", iId)
 		return std::nullopt;
 	}
 	return readText(file);

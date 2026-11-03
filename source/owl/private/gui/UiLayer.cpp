@@ -225,7 +225,7 @@ auto fallbackFontData() -> const std::vector<std::vector<uint8_t>>& {
 				std::vector<uint8_t> bytes{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
 				if (bytes.empty())
 					continue;
-				OWL_CORE_TRACE("UiLayer: Fallback font {}.", path.string())
+				OWL_CORE_DEBUG("UiLayer: Using the fallback font '{}'.", path.string())
 				found.push_back(std::move(bytes));
 				break;
 			}
@@ -256,7 +256,7 @@ void mergeIconFont(const float iSize) {
 	// Lucide draws on a 24-unit grid centred on the em box; this sits it on the text's optical centre.
 	config.GlyphOffset = {0.f, iSize * 0.12f};
 	if (addFont("fonts/lucide.ttf", iSize, config) == nullptr)
-		OWL_CORE_WARN("UiLayer: could not load lucide.ttf from engine_assets/fonts/, icons render as boxes.")
+		OWL_CORE_WARN("UiLayer: Cannot load lucide.ttf from engine_assets/fonts/, the icons render as boxes.")
 }
 }// namespace
 
@@ -341,7 +341,7 @@ void UiLayer::onAttach() {
 	io.ConfigDockingTransparentPayload = true;
 	// ViewPort configuration
 	if (m_withApp && app::Application::get().getWindow().getPlatform() == window::Platform::Wayland) {
-		OWL_CORE_INFO("UiLayer: Multi-viewports disabled under Wayland (GLFW cannot position windows).")
+		OWL_CORE_DEBUG("UiLayer: Multi-viewports disabled under Wayland (GLFW cannot position windows).")
 	} else {
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 	}
@@ -357,7 +357,7 @@ void UiLayer::onAttach() {
 	if (m_withApp) {
 		g_bodyFont = loadFont("fonts/Inter-Regular.ttf", uiSize);
 		if (g_bodyFont == nullptr) {
-			OWL_CORE_ERROR("UiLayer: could not load Inter-Regular.ttf from engine_assets/fonts/, using Roboto.")
+			OWL_CORE_WARN("UiLayer: Cannot load Inter-Regular.ttf from engine_assets/fonts/, using Roboto.")
 			g_bodyFont = loadFont("fonts/Roboto-Regular.ttf", uiSize);
 		}
 		if (g_bodyFont != nullptr) {
@@ -371,7 +371,7 @@ void UiLayer::onAttach() {
 		}
 		g_monoFont = loadFont("fonts/JetBrainsMono-Regular.ttf", g_codeFontSize);
 		if (g_monoFont == nullptr)
-			OWL_CORE_ERROR("UiLayer: could not load JetBrainsMono-Regular.ttf — code editor will fall back to UI font.")
+			OWL_CORE_WARN("UiLayer: Cannot load JetBrainsMono-Regular.ttf, the code editor falls back to the UI font.")
 	}
 	if (g_bodyFont == nullptr)
 		g_bodyFont = io.Fonts->AddFontDefault();
@@ -489,7 +489,7 @@ void UiLayer::end() const {
 		if (VkCommandBuffer cmd = vkh.getRenderPassCommandBuffer(); cmd != VK_NULL_HANDLE)
 			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 		else
-			OWL_CORE_FRAME_TRACE("UiLayer: skipped ImGui submission (no swapchain image this frame).")
+			OWL_CORE_FRAME_TRACE("UiLayer: ImGui submission skipped (no swapchain image this frame).")
 		renderer::gpu::RenderCommand::endBatch();
 	}
 	g_deferredTextureReleases.clear();
@@ -570,7 +570,7 @@ void UiLayer::initializeDocking() const {
 				m_bottomBarCallback ? ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y : 0.0f;
 		ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, -bottomBarHeight), dockSpaceFlags);
 	} else {
-		OWL_CORE_WARN("Docking is not enabled.")
+		OWL_CORE_WARN_ONCE("UiLayer: Docking is not enabled.")
 	}
 	style.WindowMinSize.x = minWinSizeX;
 	if (m_bottomBarCallback)

@@ -100,7 +100,7 @@ void MaterialDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {}
 auto MaterialDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	auto loaded = renderer::MaterialAsset::load(iPath);
 	if (!loaded) {
-		OWL_CORE_WARN("MaterialDocument: {} is not a material.", iPath.string())
+		OWL_CORE_WARN("MaterialDocument: '{}' is not a material.", iPath.string())
 		return false;
 	}
 	m_asset = std::move(*loaded);
@@ -119,7 +119,7 @@ auto MaterialDocument::save() -> bool {
 
 auto MaterialDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 	if (!m_asset.save(iPath)) {
-		OWL_CORE_ERROR("MaterialDocument: failed to write '{}'.", iPath.string())
+		OWL_CORE_ERROR("MaterialDocument: Failed to write '{}'.", iPath.string())
 		return false;
 	}
 	m_path = iPath;
@@ -174,11 +174,11 @@ auto MaterialDocument::setParent(const std::filesystem::path& iParent) -> bool {
 	if (iParent == m_asset.parent)
 		return false;
 	if (!iParent.empty() && iParent.extension() != ".owlmat") {
-		OWL_CORE_WARN("MaterialDocument: {} is not a material.", iParent.string())
+		OWL_CORE_WARN("MaterialDocument: '{}' is not a material.", iParent.string())
 		return false;
 	}
 	if (!iParent.empty() && !m_path.empty() && iParent.filename() == m_path.filename()) {
-		OWL_CORE_WARN("MaterialDocument: a material cannot be its own parent.")
+		OWL_CORE_WARN("MaterialDocument: A material cannot be its own parent.")
 		return false;
 	}
 	auto next = m_asset;

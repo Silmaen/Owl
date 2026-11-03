@@ -32,7 +32,7 @@ void Window::init(const Properties& iProps) {
 	m_windowData.title = iProps.title;
 	m_windowData.size = {iProps.width, iProps.height};
 
-	OWL_CORE_INFO("Creating window {} ({}, {}).", iProps.title, iProps.width, iProps.height)
+	OWL_CORE_DEBUG("Window: Creating the null window '{}' ({}x{}).", iProps.title, iProps.width, iProps.height)
 	setVSync(true);
 }
 

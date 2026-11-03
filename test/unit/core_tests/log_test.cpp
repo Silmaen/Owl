@@ -11,6 +11,8 @@
 #include <core/Log.h>
 #include <debug/LogSink.h>
 
+#include <cstdlib>
+
 using namespace owl::core;
 
 namespace {
@@ -103,5 +105,58 @@ TEST(Log, frameTraceIsSampled) {
 		OWL_CORE_FRAME_TRACE("frame {}", countEvaluations(evaluations))
 	}
 	EXPECT_EQ(evaluations, expected);
+	Log::invalidate();
+}
+
+TEST(Log, parseLevelReadsEveryName) {
+	EXPECT_EQ(Log::parseLevel("trace"), Log::Level::Trace);
+	EXPECT_EQ(Log::parseLevel("DEBUG"), Log::Level::Debug);
+	EXPECT_EQ(Log::parseLevel("Info"), Log::Level::Info);
+	EXPECT_EQ(Log::parseLevel("warn"), Log::Level::Warning);
+	EXPECT_EQ(Log::parseLevel("warning"), Log::Level::Warning);
+	EXPECT_EQ(Log::parseLevel("error"), Log::Level::Error);
+	EXPECT_EQ(Log::parseLevel("critical"), Log::Level::Critical);
+	EXPECT_EQ(Log::parseLevel("off"), Log::Level::Off);
+	EXPECT_FALSE(Log::parseLevel("loud").has_value());
+	EXPECT_FALSE(Log::parseLevel("").has_value());
+}
+
+#if defined(OWL_PLATFORM_LINUX)
+TEST(Log, defaultLevelFollowsTheBuildAndTheEnvironment) {
+	unsetenv("OWL_LOG_VERBOSITY");
+#ifdef OWL_DEBUG_BUILD
+	EXPECT_EQ(Log::getDefaultLevel(), Log::Level::Debug);
+#else
+	EXPECT_EQ(Log::getDefaultLevel(), Log::Level::Info);
+#endif
+	setenv("OWL_LOG_VERBOSITY", "trace", 1);
+	EXPECT_EQ(Log::getDefaultLevel(), Log::Level::Trace);
+	setenv("OWL_LOG_VERBOSITY", "nonsense", 1);
+	EXPECT_NE(Log::getDefaultLevel(), Log::Level::Trace);
+	unsetenv("OWL_LOG_VERBOSITY");
+}
+#endif
+
+TEST(Log, debugMacrosReachTheBuffer) {
+	Log::init(Log::Level::Debug);
+	Log::getLogBuffer().clear();
+	OWL_CORE_DEBUG("Core debug {}.", 1)
+	EXPECT_EQ(lastEntry().level, Log::Level::Debug);
+	OWL_DEBUG("Client debug {}.", 2)
+	EXPECT_EQ(lastEntry().level, Log::Level::Debug);
+	Log::setVerbosityLevel(Log::Level::Info);
+	OWL_CORE_DEBUG("Hidden {}.", 3)
+	EXPECT_EQ(lastEntry().message, "Client debug 2.");
+	Log::invalidate();
+}
+
+TEST(Log, onceMacrosLogTheFirstTimeOnly) {
+	Log::init(Log::Level::Trace);
+	Log::getLogBuffer().clear();
+	for (int i = 0; i < 3; ++i) OWL_CORE_WARN_ONCE("Once {}.", i)
+	const auto entries = Log::getLogBuffer().getEntries();
+	ASSERT_EQ(entries.size(), 1u);
+	EXPECT_EQ(entries.front().message, "Once 0.");
+	EXPECT_EQ(entries.front().level, Log::Level::Warning);
 	Log::invalidate();
 }

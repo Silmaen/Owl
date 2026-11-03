@@ -16,12 +16,15 @@
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
 #include <gui/widgets/Badge.h>
+#include <gui/widgets/Combo.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/Menu.h>
+#include <gui/widgets/Tooltip.h>
 #include <magic_enum/magic_enum.hpp>
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <chrono>
 #include <cstddef>
 #include <ctime>
@@ -29,9 +32,47 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 namespace owl::nest::panel {
+
+auto getLogLevelSetting(const std::string& iSetting) -> core::Log::Level {
+	if (iSetting.empty())
+		return core::Log::getDefaultLevel();
+	return core::Log::parseLevel(iSetting).value_or(core::Log::getDefaultLevel());
+}
+
+auto logLevelCombo(const char* iId, std::string& ioSetting) -> bool {
+	constexpr std::array levels{core::Log::Level::Trace,   core::Log::Level::Debug, core::Log::Level::Info,
+								core::Log::Level::Warning, core::Log::Level::Error, core::Log::Level::Critical,
+								core::Log::Level::Off};
+	const auto defaultLabel = std::format("Default ({})", magic_enum::enum_name(core::Log::getDefaultLevel()));
+	const auto preview =
+			ioSetting.empty() ? defaultLabel : std::string{magic_enum::enum_name(getLogLevelSetting(ioSetting))};
+	bool changed = false;
+	if (gui::widgets::beginCombo(iId, preview.c_str())) {
+		if (ImGui::Selectable(defaultLabel.c_str(), ioSetting.empty())) {
+			ioSetting.clear();
+			changed = true;
+		}
+		for (const auto level: levels) {
+			const auto name = std::string{magic_enum::enum_name(level)};
+			const bool selected = !ioSetting.empty() && getLogLevelSetting(ioSetting) == level;
+			if (ImGui::Selectable(name.c_str(), selected)) {
+				ioSetting = name;
+				std::ranges::transform(ioSetting, ioSetting.begin(), [](const unsigned char iChar) -> char {
+					return static_cast<char>(std::tolower(iChar));
+				});
+				changed = true;
+			}
+		}
+		ImGui::EndCombo();
+	}
+	if (changed)
+		core::Log::setVerbosityLevel(getLogLevelSetting(ioSetting));
+	return changed;
+}
 
 namespace {
 auto getLevelColor(const core::Log::Level iLevel) -> math::vec4 {
@@ -154,7 +195,7 @@ auto joinLines(const std::vector<const debug::LogEntry*>& iShown) -> std::string
 
 }// namespace
 
-void LogPanel::onImGuiRender() {
+void LogPanel::onImGuiRender(std::string& ioLevelSetting) {
 	const auto entries = core::Log::getLogBuffer().getEntries();
 	std::array<size_t, magic_enum::enum_count<core::Log::Level>()> counts{};
 	for (const auto& entry: entries) ++counts[magic_enum::enum_index(entry.level).value_or(0)];
@@ -179,6 +220,11 @@ void LogPanel::onImGuiRender() {
 															 "(Ctrl+C); the colours come back when it is off.",
 											  .selected = m_textMode}))
 		m_textMode = !m_textMode;
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8.f);
+	std::ignore = logLevelCombo("##logLevel", ioLevelSetting);
+	gui::widgets::itemTooltip("Lowest level recorded: a message below it is never written, to this panel or to the "
+							  "log file. The chips only filter what is shown. Also in Settings > Log.");
 	ImGui::SameLine();
 	const auto chipToggle = [](const char* iLabel, bool& ioFlag) -> void {
 		if (gui::widgets::chip(iLabel, ioFlag))

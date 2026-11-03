@@ -90,7 +90,7 @@ auto HudLibrary::load(const std::string& iPath) -> shared<Scene> {
 	++m_loadCount;
 	const auto source = findSource(iPath);
 	if (!source) {
-		OWL_CORE_ERROR("HudLibrary: HUD '{}' not found. Fix: check the `Hud:` key or the project `DefaultHud`.", iPath)
+		OWL_CORE_ERROR("HudLibrary: HUD '{}' not found. Fix: check the 'Hud' key or the project 'DefaultHud'.", iPath)
 		return nullptr;
 	}
 	auto hud = mkShared<Scene>();

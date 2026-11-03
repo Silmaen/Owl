@@ -146,11 +146,11 @@ auto NodeCanvasSerializer::deserializeFromString(NodeCanvas& ioCanvas, std::stri
 		return false;
 	}
 	if (!root || !root.IsMap()) {
-		OWL_CORE_ERROR("NodeCanvasSerializer: top-level YAML is not a map.")
+		OWL_CORE_ERROR("NodeCanvasSerializer: The top-level YAML is not a map.")
 		return false;
 	}
 	if (!core::upgradeYamlDocument(g_nodeGraphFormat, root, "<buffer>")) {
-		OWL_CORE_ERROR("NodeCanvasSerializer: Document cannot be read.")
+		OWL_CORE_ERROR("NodeCanvasSerializer: The document cannot be read.")
 		return false;
 	}
 
@@ -187,7 +187,7 @@ auto NodeCanvasSerializer::serializeToFile(const NodeCanvas& iCanvas, const std:
 auto NodeCanvasSerializer::deserializeFromFile(NodeCanvas& ioCanvas, const std::filesystem::path& iPath) -> bool {
 	const std::ifstream in(iPath);
 	if (!in) {
-		OWL_CORE_WARN("NodeCanvasSerializer: cannot open '{}' for reading.", iPath.string())
+		OWL_CORE_WARN("NodeCanvasSerializer: Cannot open '{}' for reading.", iPath.string())
 		return false;
 	}
 	std::stringstream ss;

@@ -170,18 +170,18 @@ auto enumerateDevices(const VkInstance& iInstance) -> std::vector<PhysicalDevice
 	{
 		if (const VkResult result = vkEnumeratePhysicalDevices(iInstance, &deviceCount, nullptr);
 			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan: Error while enumerating physical devices ({}).", resultString(result))
+			OWL_CORE_ERROR("Vulkan: Cannot enumerate the physical devices ({}).", resultString(result))
 			return {};
 		}
 		if (deviceCount == 0) {
-			OWL_CORE_ERROR("Vulkan: Cannot find any GPUs with vulkan support.")
+			OWL_CORE_ERROR("Vulkan: No GPU with Vulkan support found.")
 			return {};
 		}
 	}
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	if (const VkResult result = vkEnumeratePhysicalDevices(iInstance, &deviceCount, devices.data());
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: Error while enumerating physical devices ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot enumerate the physical devices ({}).", resultString(result))
 		return {};
 	}
 	resultVec.reserve(devices.size());
@@ -193,10 +193,10 @@ auto enumerateDevices(const VkInstance& iInstance) -> std::vector<PhysicalDevice
 				[](const PhysicalDeviceCapabilities& iFirst, const PhysicalDeviceCapabilities& iSecond) -> bool {
 					return iFirst.getScore() > iSecond.getScore();
 				});
-	OWL_CORE_TRACE("Vulkan: Found {} physical devices.", resultVec.size())
+	OWL_CORE_DEBUG("Vulkan: Found {} physical devices.", resultVec.size())
 	for (const auto& device: resultVec) {
-		OWL_CORE_TRACE("{}", device.getDetailedName())
-		OWL_CORE_TRACE("{}", device.getCapabilityString())
+		OWL_CORE_TRACE("Vulkan: Device {}.", device.getDetailedName())
+		OWL_CORE_TRACE("Vulkan: Device capabilities: {}.", device.getCapabilityString())
 	}
 	return resultVec;
 }

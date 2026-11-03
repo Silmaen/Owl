@@ -86,7 +86,7 @@ Texture2D::~Texture2D() {
 	if (m_textureId > 0)
 		internal::Descriptors::get().unregisterTexture(m_textureId);
 	else
-		OWL_CORE_WARN("Destroying text with null id.")
+		OWL_CORE_DEBUG("Vulkan: Destroying a texture with a null id.")
 }
 
 auto Texture2D::operator==(const Texture& iOther) const -> bool {
@@ -106,7 +106,8 @@ OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 void Texture2D::setData(void* iData, const uint32_t iSize) {
 	if (const uint32_t expected = m_specification.getPixelSize() * m_specification.size.surface(); iSize != expected) {
-		OWL_CORE_ERROR("Vulkan Texture {}: Image size mismatch: expect {}, got {}.", m_path.string(), expected, iSize)
+		OWL_CORE_ERROR("Vulkan: Texture '{}' image size mismatch, expected {}, got {}.", m_path.string(), expected,
+					   iSize)
 		return;
 	}
 	const bool floating = m_specification.format == ImageFormat::Rgba32F;
@@ -127,7 +128,7 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 			*(dataPixelChar + i + 3) = 0xFFu;
 		}
 	} else {
-		OWL_CORE_ERROR("Vulkan Texture, image format {} not supported.", magic_enum::enum_name(m_specification.format))
+		OWL_CORE_ERROR("Vulkan: Texture format {} not supported.", magic_enum::enum_name(m_specification.format))
 		internal::freeBuffer(staging);
 		return;
 	}
@@ -165,7 +166,7 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 }
 auto Texture2D::setLevels(const TextureLevels& iLevels) -> bool {
 	if (iLevels.levels.empty() || iLevels.size.surface() == 0) {
-		OWL_CORE_WARN("Vulkan Texture: No level to set on '{}'.", getName())
+		OWL_CORE_WARN("Vulkan: No level given to set on texture '{}'.", getName())
 		return false;
 	}
 	VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -184,7 +185,7 @@ auto Texture2D::setLevels(const TextureLevels& iLevels) -> bool {
 		case ImageFormat::Rgba32F:
 		case ImageFormat::R32F:
 		case ImageFormat::Rgba16F:
-			OWL_CORE_WARN("Vulkan Texture: Levels in format {} are not supported.",
+			OWL_CORE_WARN("Vulkan: Texture levels in format {} are not supported.",
 						  magic_enum::enum_name(iLevels.format))
 			return false;
 	}
@@ -300,7 +301,7 @@ auto TextureCube::operator==(const Texture& iOther) const -> bool {
 }
 
 void TextureCube::bind(const uint32_t iSlot) const {
-		OWL_CORE_WARN("Vulkan TextureCube: Cannot bind a cube to the 2D slot {}, bind it with the cubes.", iSlot)}
+		OWL_CORE_WARN_ONCE("Vulkan: Cannot bind a cube to the 2D slot {}, bind it with the cubes.", iSlot)}
 
 OWL_DIAG_PUSH OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage") auto TextureCube::upload(
 		const std::span<const std::span<const uint8_t>> iLevels) const -> bool {
@@ -309,7 +310,7 @@ OWL_DIAG_PUSH OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage") auto TextureCube
 	auto staging = internal::createBuffer(total, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, internal::MemoryUsage::Upload,
 										  "cube.staging");
 	if (staging.mapped == nullptr) {
-		OWL_CORE_WARN("Vulkan TextureCube: No staging memory for {} bytes.", total)
+		OWL_CORE_WARN("Vulkan: TextureCube has no staging memory for {} bytes.", total)
 		return false;
 	}
 	std::vector<VkBufferImageCopy> regions;
@@ -345,7 +346,7 @@ OWL_DIAG_POP
 
 void TextureCube::setData(void* iData, const uint32_t iSize) {
 	if (iSize != m_specification.size.surface() * m_specification.getPixelSize() * g_faceCount) {
-		OWL_CORE_WARN("Vulkan TextureCube: Data of {} bytes does not hold the six faces.", iSize)
+		OWL_CORE_WARN("Vulkan: TextureCube data of {} bytes does not hold the six faces.", iSize)
 		return;
 	}
 	const std::array levels{std::span<const uint8_t>{static_cast<const uint8_t*>(iData), iSize}};
@@ -355,7 +356,7 @@ void TextureCube::setData(void* iData, const uint32_t iSize) {
 auto TextureCube::setLevels(const TextureLevels& iLevels) -> bool {
 	if (iLevels.size != m_specification.size || iLevels.format != m_specification.format ||
 		iLevels.levels.size() != getLevelCount()) {
-		OWL_CORE_WARN("Vulkan TextureCube: Levels do not match the cube.")
+		OWL_CORE_WARN("Vulkan: TextureCube levels do not match the cube.")
 		return false;
 	}
 	std::vector<std::span<const uint8_t>> levels;
@@ -364,7 +365,7 @@ auto TextureCube::setLevels(const TextureLevels& iLevels) -> bool {
 		const uint32_t face = getFaceSize(level);
 		if (iLevels.levels[level].size() !=
 			static_cast<size_t>(face) * face * m_specification.getPixelSize() * g_faceCount) {
-			OWL_CORE_WARN("Vulkan TextureCube: Level {} does not hold the six faces.", level)
+			OWL_CORE_WARN("Vulkan: TextureCube level {} does not hold the six faces.", level)
 			return false;
 		}
 		levels.emplace_back(iLevels.levels[level]);

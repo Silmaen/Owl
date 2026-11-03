@@ -15,8 +15,8 @@ namespace owl::nest::panel {
 
 auto getName(const ViewNavigationMode iMode) -> std::string_view {
 	switch (iMode) {
-		case ViewNavigationMode::Select:
-			return "Select";
+		case ViewNavigationMode::Standard:
+			return "Standard";
 		case ViewNavigationMode::Orbit:
 			return "Orbit";
 		case ViewNavigationMode::Fly:
@@ -24,7 +24,7 @@ auto getName(const ViewNavigationMode iMode) -> std::string_view {
 		case ViewNavigationMode::Pan:
 			return "Pan";
 	}
-	return "Select";
+	return "Standard";
 }
 
 auto parseViewNavigationMode(const std::string_view iName) -> std::optional<ViewNavigationMode> {
@@ -40,7 +40,7 @@ auto parseViewNavigationMode(const std::string_view iName) -> std::optional<View
 
 auto getHelp(const ViewNavigationMode iMode) -> const char* {
 	switch (iMode) {
-		case ViewNavigationMode::Select:
+		case ViewNavigationMode::Standard:
 			return "Left click selects, left drag moves the gizmo. Right drag looks around (W A S D Q E fly, the wheel "
 				   "sets the speed), middle drag pans, the wheel zooms.";
 		case ViewNavigationMode::Orbit:
@@ -58,8 +58,8 @@ auto getHelp(const ViewNavigationMode iMode) -> const char* {
 
 auto getActionId(const ViewNavigationMode iMode) -> const char* {
 	switch (iMode) {
-		case ViewNavigationMode::Select:
-			return "view.navigateSelect";
+		case ViewNavigationMode::Standard:
+			return "view.navigateStandard";
 		case ViewNavigationMode::Orbit:
 			return "view.navigateOrbit";
 		case ViewNavigationMode::Fly:
@@ -67,13 +67,13 @@ auto getActionId(const ViewNavigationMode iMode) -> const char* {
 		case ViewNavigationMode::Pan:
 			return "view.navigatePan";
 	}
-	return "view.navigateSelect";
+	return "view.navigateStandard";
 }
 
 auto getLeftDrag(const ViewNavigationMode iMode) -> renderer::CameraEditor::LeftDrag {
 	using LeftDrag = renderer::CameraEditor::LeftDrag;
 	switch (iMode) {
-		case ViewNavigationMode::Select:
+		case ViewNavigationMode::Standard:
 			return LeftDrag::None;
 		case ViewNavigationMode::Orbit:
 			return LeftDrag::Orbit;
@@ -86,7 +86,7 @@ auto getLeftDrag(const ViewNavigationMode iMode) -> renderer::CameraEditor::Left
 }
 
 auto ViewNavigation::pressLeft(const bool iFree) -> bool {
-	leftDragNavigates = iFree && mode != ViewNavigationMode::Select;
+	leftDragNavigates = iFree && mode != ViewNavigationMode::Standard;
 	pickOnRelease = leftDragNavigates;
 	return iFree && !leftDragNavigates;
 }

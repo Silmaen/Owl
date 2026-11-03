@@ -199,6 +199,12 @@ public:
 
 	/**
 	 * @brief
+	 *  Open the asset whose reference is under the cursor (a `gid:` reference or a bare GUID), as a double click does.
+	 */
+	void openReferenceUnderCursor() const;
+
+	/**
+	 * @brief
 	 *  Set or remove the breakpoint of a line of a Lua script (the gutter click and F9 do it).
 	 * @param[in] iLine Line, from 1.
 	 */

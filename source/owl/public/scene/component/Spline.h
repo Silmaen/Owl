@@ -137,6 +137,28 @@ struct OWL_API SplineFollower {
 		PingPong,///< Turns round.
 	};
 
+	/**
+	 * @brief
+	 *  A control point of the spline where the entity waits before going on.
+	 */
+	struct OWL_API Stop {
+		/// Index of the control point, from 0.
+		uint32_t point{0};
+		/// Seconds the entity waits there.
+		float seconds{1.f};
+
+		OWL_DIAG_PUSH
+		OWL_DIAG_DISABLE_CLANG("-Wfloat-equal")
+		/**
+		 * @brief
+		 *  Compare two stops field by field.
+		 * @param[in] iOther The other stop.
+		 * @return True when every field is equal.
+		 */
+		auto operator==(const Stop& iOther) const -> bool = default;
+		OWL_DIAG_POP
+	};
+
 	/// Whether the entity moves; off leaves it where it is.
 	bool enabled = true;
 	/// Entity holding the `Spline` (0: none).
@@ -153,6 +175,8 @@ struct OWL_API SplineFollower {
 	Mode mode = Mode::Loop;
 	/// Whether the entity faces the direction of the curve.
 	bool orient = true;
+	/// Control points where the entity waits, each crossed once per pass.
+	std::vector<Stop> stops;
 
 	/// Runtime: the start distance was read.
 	bool m_started = false;
@@ -162,6 +186,15 @@ struct OWL_API SplineFollower {
 	float m_direction = 1.f;
 	/// Runtime: distance travelled since the start (ends a lap of `Once` on a closed spline).
 	float m_travelled = 0.f;
+	/// Runtime: seconds left to wait at the current stop.
+	float m_wait = 0.f;
+
+	/**
+	 * @brief
+	 *  Whether the entity waits at a stop.
+	 * @return True while a stop holds it.
+	 */
+	[[nodiscard]] auto isWaiting() const -> bool { return m_wait > 0.f; }
 
 	/**
 	 * @brief

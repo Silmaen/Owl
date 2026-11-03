@@ -86,14 +86,14 @@ auto Project::format() -> const core::DocumentFormat& { return g_projectFormat; 
 auto Project::loadFromFile(const std::filesystem::path& iFile) -> bool {
 	const std::ifstream in(iFile, std::ios::binary);
 	if (!in.is_open()) {
-		OWL_ERROR("Project: Cannot open {}.", iFile.string())
+		OWL_ERROR("Project: Cannot open '{}'.", iFile.string())
 		return false;
 	}
 	std::stringstream buffer;
 	buffer << in.rdbuf();
 	std::string text = buffer.str();
 	if (const auto fileFormat = core::upgradeDocumentText(g_projectFormat, text, iFile.string()); !fileFormat) {
-		OWL_ERROR("Project: Cannot load {}: {}.", iFile.string(), describe(fileFormat.error()))
+		OWL_ERROR("Project: Cannot load '{}': {}.", iFile.string(), describe(fileFormat.error()))
 		return false;
 	}
 	Project loaded = *this;
@@ -101,7 +101,7 @@ auto Project::loadFromFile(const std::filesystem::path& iFile) -> bool {
 		if (const YAML::Node data = YAML::Load(text); data["OwlProject"])
 			readProjectConfig(data["OwlProject"], loaded);
 	} catch (const std::exception& iEx) {
-		OWL_ERROR("Project: Cannot load {}: {}.", iFile.string(), iEx.what())
+		OWL_ERROR("Project: Cannot load '{}': {}.", iFile.string(), iEx.what())
 		return false;
 	}
 	loaded.projectDirectory = iFile.parent_path();
@@ -183,7 +183,7 @@ auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {
 	out << YAML::EndMap;
 
 	if (const auto written = platform::writeFileAtomic(iFile, out.c_str()); !written) {
-		OWL_ERROR("Project: Cannot save {}: {}.", iFile.string(), describe(written.error()))
+		OWL_ERROR("Project: Cannot save '{}': {}.", iFile.string(), describe(written.error()))
 		return false;
 	}
 	return true;

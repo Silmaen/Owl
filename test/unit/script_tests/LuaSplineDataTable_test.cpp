@@ -53,6 +53,7 @@ TEST(LuaBindings, splineSampledInTheWorld) {
 	auto& follower = cart.addComponent<scene::component::SplineFollower>();
 	follower.spline = rail.getUUID();
 	follower.startDistance = 3.f;
+	follower.m_wait = 1.f;
 	const std::string script = std::string{"function on_create()\n"
 										   "  cart = scene.find_entity('Cart')\n"
 										   "  length = spline.get_length(entity_id)\n"
@@ -70,6 +71,8 @@ TEST(LuaBindings, splineSampledInTheWorld) {
 										   "  speed = spline.get_speed(cart)\n"
 										   "  spline.set_distance(cart, 7)\n"
 										   "  distance = spline.get_distance(cart)\n"
+										   "  waiting = spline.is_waiting(cart)\n"
+										   "  noWait = spline.is_waiting(entity_id) == nil\n"
 										   "  laned = spline.set_lane(cart, 'right')\n"
 										   "  noFollower = spline.set_speed(entity_id, 1)\n"
 										   "  entity.set_spline_follower_enabled(cart, false)\n"
@@ -93,6 +96,8 @@ TEST(LuaBindings, splineSampledInTheWorld) {
 	EXPECT_NEAR(inst.getPropertyFloat("start").value_or(0), 3.f, 1e-3f);
 	EXPECT_NEAR(inst.getPropertyFloat("speed").value_or(0), 4.f, 1e-3f);
 	EXPECT_NEAR(inst.getPropertyFloat("distance").value_or(0), 7.f, 1e-3f);
+	EXPECT_TRUE(inst.getPropertyBool("waiting").value_or(false));
+	EXPECT_TRUE(inst.getPropertyBool("noWait").value_or(false));
 	EXPECT_TRUE(inst.getPropertyBool("laned").value_or(false));
 	EXPECT_FALSE(inst.getPropertyBool("noFollower").value_or(true));
 	EXPECT_FALSE(inst.getPropertyBool("following").value_or(true));

@@ -34,7 +34,7 @@ auto SoundData::create(const Specification& iSpec) -> shared<SoundData> {
 			break;// OpenAL not built (OWL_MODULE_AUDIO=OFF)
 #endif
 	}
-	OWL_CORE_ERROR("Unknown Sound API Type!")
+	OWL_CORE_ERROR("SoundData: Unknown sound API type.")
 	return nullptr;
 }
 

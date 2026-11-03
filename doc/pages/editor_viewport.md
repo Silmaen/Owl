@@ -39,7 +39,7 @@ The gizmo and view overlays show in Edit only. In Play a frame in the play colou
 **In short:** hold the **right** button and move the mouse to look around; while it is held, `W` `A` `S` `D` fly
 forward, left, back and right, `Q` and `E` go down and up. The **middle** button pans, the **wheel** zooms, `F`
 frames the selection. To move the view with the left button instead, pick a mode with the four buttons of the top
-right overlay: **Orbit**, **Fly** or **Pan** (the arrow, **Select**, gives the left button back to the selection).
+right overlay: **Orbit**, **Fly** or **Pan** (the arrow, **Standard**, gives the left button back to the selection).
 
 The view moves only while the viewport is hovered, in Edit. The fly keys follow the key positions (Z Q S D on an
 AZERTY keyboard); while a button flies, the gizmo letters are off.
@@ -67,15 +67,15 @@ AZERTY keyboard); while a button flies, the gizmo letters are off.
 
 The buttons sit next to **2D** / **3D** in the top right overlay; their tooltips repeat the gestures. The mode is kept
 in the editor settings and applies to every viewport. Each mode is also an action of the command palette
-(**Navigation: Select**, **Orbit**, **Fly**, **Pan**), without a factory key, bindable in
+(**Navigation: Standard**, **Orbit**, **Fly**, **Pan**), without a factory key, bindable in
 [Settings > Shortcuts](editor_settings.md).
 
-| Mode       | Left drag                                      | Left click | Keys while the left button is held  |
-|------------|------------------------------------------------|------------|-------------------------------------|
-| **Select** | Nothing: the gizmo, the brushes, the selection | Selects    | Gizmo letters                       |
-| **Orbit**  | Orbit around the point the view turns around   | Selects    | Gizmo letters                       |
-| **Fly**    | Look around from the eye                       | Selects    | W A S D, Q / E, Shift, wheel: speed |
-| **Pan**    | Pan, the scene follows the hand                | Selects    | Gizmo letters                       |
+| Mode         | Left drag                                      | Left click | Keys while the left button is held  |
+|--------------|------------------------------------------------|------------|-------------------------------------|
+| **Standard** | Nothing: the gizmo, the brushes, the selection | Selects    | Gizmo letters                       |
+| **Orbit**    | Orbit around the point the view turns around   | Selects    | Gizmo letters                       |
+| **Fly**      | Look around from the eye                       | Selects    | W A S D, Q / E, Shift, wheel: speed |
+| **Pan**      | Pan, the scene follows the hand                | Selects    | Gizmo letters                       |
 
 In **Orbit**, **Fly** and **Pan** a press on the gizmo still drives the gizmo, and a click that does not drag (less
 than 4 pixels) selects on release; a drag moves the view and selects nothing. `Ctrl` and `Alt` drags keep their

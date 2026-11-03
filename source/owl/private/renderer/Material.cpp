@@ -261,11 +261,11 @@ auto MaterialAsset::fromYaml(const std::string& iYaml) -> std::optional<Material
 	}
 	auto node = root && root.IsMap() ? root["Material"] : YAML::Node{};
 	if (!node || !node.IsMap()) {
-		OWL_CORE_WARN("Material: Document is not a material.")
+		OWL_CORE_WARN("Material: The document is not a material.")
 		return std::nullopt;
 	}
 	if (!core::upgradeYamlDocument(g_materialFormat, node, "<material>")) {
-		OWL_CORE_WARN("Material: Document cannot be read.")
+		OWL_CORE_WARN("Material: The document cannot be read.")
 		return std::nullopt;
 	}
 	MaterialAsset asset;
@@ -287,7 +287,7 @@ auto MaterialAsset::load(const std::filesystem::path& iFile) -> std::optional<Ma
 
 auto MaterialAsset::save(const std::filesystem::path& iFile) const -> bool {
 	if (const auto written = platform::writeFileAtomic(iFile, toYaml()); !written) {
-		OWL_CORE_ERROR("Material: Failed to write '{}': {}.", iFile.string(), describe(written.error()))
+		OWL_CORE_ERROR("Material: Cannot write '{}': {}.", iFile.string(), describe(written.error()))
 		return false;
 	}
 	return true;

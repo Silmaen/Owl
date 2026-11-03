@@ -252,8 +252,8 @@ auto AssetRegistry::addDirectory(const std::filesystem::path& iRoot, const bool 
 		}
 	}
 	rebuildPathIndex();
-	OWL_CORE_INFO("Assets: {} asset(s) in '{}' ({} sidecar(s) created, {} copy(ies) given a new GUID).", report.assets,
-				  rootPath.string(), report.created, report.reassigned)
+	OWL_CORE_DEBUG("Assets: {} asset(s) in '{}' ({} sidecar(s) created, {} copy(ies) given a new GUID).", report.assets,
+				   rootPath.string(), report.created, report.reassigned)
 	return report;
 }
 
@@ -372,7 +372,7 @@ auto AssetRegistry::setMeta(const AssetMeta& iMeta) -> bool {
 	const WriteLock lock(m_mutex);
 	const auto entry = m_entries.find(iMeta.guid);
 	if (entry == m_entries.end()) {
-		OWL_CORE_WARN("Assets: Cannot set the import settings of unknown GUID {}.", formatGuid(iMeta.guid))
+		OWL_CORE_WARN("Assets: Cannot set the import settings of unknown GUID '{}'.", formatGuid(iMeta.guid))
 		return false;
 	}
 	const auto* root = rootOf(entry->second.root / entry->second.path);
@@ -465,7 +465,7 @@ auto AssetRegistry::toAssetPath(const std::string_view iReference) const -> std:
 		return std::move(parsed.path);
 	if (const auto entry = find(*parsed.guid); entry)
 		return entry->path;
-	OWL_CORE_TRACE("Assets: GUID {} unknown, falling back to '{}'.", formatGuid(*parsed.guid), parsed.path)
+	OWL_CORE_DEBUG("Assets: GUID '{}' unknown, falling back to '{}'.", formatGuid(*parsed.guid), parsed.path)
 	return std::move(parsed.path);
 }
 

@@ -88,7 +88,7 @@ void EditorLayer::handleRecoveryChoice(const panel::RecoveryPrompt::Choice iChoi
 			++failures;
 			continue;
 		}
-		OWL_INFO("Recovery: Restored '{}' (autosave of {}); save it to keep the changes.", entry.title, entry.savedAt)
+		OWL_INFO("Recovery: Restored '{}' (autosave of {}), save it to keep the changes.", entry.title, entry.savedAt)
 		last = doc;
 	}
 	if (failures > 0) {

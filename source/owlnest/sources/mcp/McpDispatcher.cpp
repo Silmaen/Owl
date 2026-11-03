@@ -153,7 +153,7 @@ auto McpDispatcher::handleMessage(const json& iMessage) -> std::optional<json> {
 	}
 	const auto params = iMessage.find("params");
 	if (params != iMessage.end() && !params->is_object()) {
-		OWL_CORE_WARN("Mcp: Parameters of {} are not an object.", name)
+		OWL_CORE_WARN("Mcp: Parameters of '{}' are not an object.", name)
 		return errorResponse(id, rpcError(RpcError::InvalidParams, "params must be an object"));
 	}
 	try {
@@ -162,7 +162,7 @@ auto McpDispatcher::handleMessage(const json& iMessage) -> std::optional<json> {
 			return errorResponse(id, std::move(result.error()));
 		return response(id, std::move(*result));
 	} catch (const std::exception& ex) {
-		OWL_CORE_ERROR("Mcp: {} failed ({}).", name, ex.what())
+		OWL_CORE_ERROR("Mcp: '{}' failed ({}).", name, ex.what())
 		return errorResponse(id, rpcError(RpcError::InternalError, "Internal error", ex.what()));
 	}
 }
@@ -182,7 +182,7 @@ auto McpDispatcher::dispatch(const std::string_view iMethod, const json& iParams
 		return json{{"resourceTemplates", m_resources.listTemplates()}};
 	if (iMethod == "resources/read")
 		return readResource(iParams);
-	OWL_CORE_WARN("Mcp: Unknown method {}.", iMethod)
+	OWL_CORE_WARN("Mcp: Unknown method '{}'.", iMethod)
 	return unexpected{rpcError(RpcError::MethodNotFound, std::format("Method not found: {}", iMethod))};
 }
 
@@ -224,7 +224,7 @@ auto McpDispatcher::callTool(const json& iParams) -> expected<json, json> {
 	}
 	const auto* spec = m_session.getRegistry().find(toolName);
 	if (spec == nullptr) {
-		OWL_CORE_WARN("Mcp: Unknown tool {}.", toolName)
+		OWL_CORE_WARN("Mcp: Unknown tool '{}'.", toolName)
 		return unexpected{rpcError(RpcError::InvalidParams, std::format("Unknown tool: {}", toolName))};
 	}
 	const auto arguments = iParams.find("arguments");
@@ -278,7 +278,7 @@ auto McpDispatcher::confinePaths(const commands::CommandSpec& iSpec, commands::C
 		const std::filesystem::path given{ioArgs.getText(arg.name)};
 		auto confined = confinePath(project, given);
 		if (!confined) {
-			OWL_CORE_WARN("Mcp: Argument {} of {} refused ({}).", arg.name, iSpec.name, confined.error())
+			OWL_CORE_WARN("Mcp: Argument '{}' of '{}' refused ({}).", arg.name, iSpec.name, confined.error())
 			return unexpected{commands::CommandFailure{.error = commands::CommandError::InvalidArgument,
 													   .message = std::format("`{}`: {}", arg.name, confined.error())}};
 		}

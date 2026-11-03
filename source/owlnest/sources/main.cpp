@@ -119,12 +119,12 @@ private:
 		if (is_directory(projectFile))
 			projectFile /= "owl_project.yml";
 		if (!exists(projectFile)) {
-			OWL_ERROR("Export: Project file {} not found.", projectFile.string())
+			OWL_ERROR("Export: Project file '{}' not found.", projectFile.string())
 			return 1;
 		}
 		nest::Project project;
 		if (!project.loadFromFile(projectFile)) {
-			OWL_ERROR("Export: Unable to load project {}.", projectFile.string())
+			OWL_ERROR("Export: Cannot load project '{}'.", projectFile.string())
 			return 1;
 		}
 		addAssetDirectory({"Project: " + project.name, project.projectDirectory});
@@ -138,7 +138,7 @@ private:
 			OWL_ERROR("Export: Failed, {}.", data::assets::pack::GameExporter::getErrorMessage(result.error()))
 			return 1;
 		}
-		OWL_INFO("Export: Game written to {}.", result->gameDirectory.string())
+		OWL_INFO("Export: Game written to '{}'.", result->gameDirectory.string())
 		return 0;
 	}
 };
@@ -157,7 +157,7 @@ private:
 		if (getState() != State::Running)
 			return 1;
 		if (!is_directory(iProject)) {
-			OWL_ERROR("Upgrade: Project folder {} not found.", iProject.string())
+			OWL_ERROR("Upgrade: Project folder '{}' not found.", iProject.string())
 			return 1;
 		}
 		addAssetDirectory({"Project", iProject}, true);
@@ -173,7 +173,7 @@ private:
 			if (rewritten == text)
 				continue;
 			if (const auto written = platform::writeFileAtomic(file, rewritten); !written) {
-				OWL_ERROR("Upgrade: Cannot write {}: {}.", file.string(), platform::describe(written.error()))
+				OWL_ERROR("Upgrade: Cannot write '{}': {}.", file.string(), platform::describe(written.error()))
 				++failed;
 				continue;
 			}

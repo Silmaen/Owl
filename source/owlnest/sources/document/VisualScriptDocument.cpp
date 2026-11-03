@@ -317,7 +317,7 @@ auto VisualScriptDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 auto VisualScriptDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	auto script = vs::deserialize(platform::fileToString(iPath), iPath.string());
 	if (!script) {
-		OWL_WARN("VisualScriptDocument: {} is not a visual script.", iPath.string())
+		OWL_WARN("VisualScriptDocument: '{}' is not a visual script.", iPath.string())
 		return false;
 	}
 	m_script = std::move(*script);
@@ -1211,7 +1211,7 @@ auto VisualScriptDocument::prepareSceneGraph(const std::filesystem::path& iScene
 		}
 		return std::pair{file, asset};
 	}
-	OWL_WARN("VisualScriptDocument: '{}' is in no asset folder: save it in the project first.", iSceneFile.string())
+	OWL_WARN("VisualScriptDocument: '{}' is in no asset folder, save it in the project first.", iSceneFile.string())
 	return std::nullopt;
 }
 

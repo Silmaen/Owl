@@ -118,7 +118,7 @@ void ensureDefaults() {
 RendererDescriptors::RendererDescriptors(std::string iRendererName) : m_rendererName{std::move(iRendererName)} {
 	auto& registry = getRegistry();
 	if (registry.contains(m_rendererName)) {
-		OWL_CORE_WARN("Vulkan RendererDescriptors: renderer '{}' already registered — overwriting.", m_rendererName)
+		OWL_CORE_WARN("Vulkan: Descriptors of renderer '{}' already registered, overwriting them.", m_rendererName)
 	}
 	registry[m_rendererName] = this;
 }
@@ -169,7 +169,7 @@ void RendererDescriptors::init(std::span<const BindingDecl> iBindings) {
 													 .pBindings = layoutBindings.data()};
 	if (const auto result = vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &m_layout);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan RendererDescriptors[{}]: failed to create descriptor set layout ({}).", m_rendererName,
+		OWL_CORE_ERROR("Vulkan: Cannot create the descriptor set layout of renderer '{}' ({}).", m_rendererName,
 					   resultString(result))
 		return;
 	}
@@ -235,8 +235,7 @@ void RendererDescriptors::registerUniform(const uint32_t iBinding, const uint32_
 void RendererDescriptors::setUniformData(const uint32_t iBinding, const void* iData, const size_t iSize) {
 	const auto it = m_uniformBindings.find(iBinding);
 	if (it == m_uniformBindings.end()) {
-		OWL_CORE_WARN("Vulkan RendererDescriptors[{}]: setUniformData on unregistered binding {}.", m_rendererName,
-					  iBinding)
+		OWL_CORE_WARN_ONCE("Vulkan: Renderer '{}' has no binding {} for setUniformData.", m_rendererName, iBinding)
 		return;
 	}
 	if (iData == nullptr || iSize == 0)
@@ -390,7 +389,7 @@ auto RendererDescriptors::collectImageInfos(const std::span<const uint32_t> iBin
 										 .imageView = iFallback.textureImageView,
 										 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
 	if (fallback.sampler == nullptr || fallback.imageView == nullptr) {
-		OWL_CORE_WARN("Vulkan RendererDescriptors[{}]: No default texture to fill a texture array.", m_rendererName)
+		OWL_CORE_WARN_ONCE("Vulkan: Renderer '{}' has no default texture to fill a texture array.", m_rendererName)
 		return std::nullopt;
 	}
 	const size_t first = m_imageInfos.size();

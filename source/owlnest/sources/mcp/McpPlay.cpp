@@ -29,7 +29,7 @@ using json = nlohmann::json;
 constexpr std::string_view g_base64Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 auto invalid(std::string iMessage) -> unexpected<std::string> {
-	OWL_CORE_WARN("Mcp: play.run: {}.", iMessage)
+	OWL_CORE_WARN("Mcp: Play request refused, {}.", iMessage)
 	return unexpected{std::move(iMessage)};
 }
 

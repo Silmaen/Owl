@@ -68,7 +68,7 @@ static auto shaderDataTypeSize(const ShaderDataType iType) -> uint32_t {
 		case ShaderDataType::None:
 			return 0;
 	}
-	OWL_CORE_ERROR("shaderDataTypeSize: Unknown ShaderDataType!")
+	OWL_CORE_ERROR("Buffer: Unknown ShaderDataType in shaderDataTypeSize.")
 	return 0;
 }
 
@@ -130,7 +130,7 @@ struct OWL_API BufferElement {
 			case ShaderDataType::None:
 				return 0;
 		}
-		OWL_CORE_ERROR("getComponentCount: Unknown ShaderDataType!")
+		OWL_CORE_ERROR("Buffer: Unknown ShaderDataType in getComponentCount.")
 		return 0;
 	}
 };

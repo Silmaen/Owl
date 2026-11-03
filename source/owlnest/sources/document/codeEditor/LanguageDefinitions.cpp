@@ -191,8 +191,10 @@ auto detectLanguage(const std::filesystem::path& iPath) -> Language {
 		return Language::Markdown;
 	if (ext == ".svg" || ext == ".xml")
 		return Language::Xml;
-	if (ext == ".slang")
+	if (ext == ".slang" || ext == ".slangh" || ext == ".hlsl")
 		return Language::Slang;
+	if (ext == ".glsl")
+		return Language::C;
 	return Language::PlainText;
 }
 

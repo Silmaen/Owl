@@ -99,7 +99,7 @@ auto hitTriangle(const math::vec3& iOrigin, const math::vec3& iDirection, const 
 auto loadAsset(const std::filesystem::path& iAssetPath) -> std::optional<std::pair<std::filesystem::path, LoadedMesh>> {
 	const auto extension = iAssetPath.extension().string();
 	if (!MeshLoader::isMeshAsset(iAssetPath)) {
-		OWL_CORE_WARN("MeshCache: {} is not a mesh file (.obj, .gltf, .glb).", iAssetPath.generic_string())
+		OWL_CORE_WARN("MeshCache: '{}' is not a mesh file (.obj, .gltf, .glb).", iAssetPath.generic_string())
 		return std::nullopt;
 	}
 	const auto tryFile =
@@ -131,7 +131,7 @@ auto loadAsset(const std::filesystem::path& iAssetPath) -> std::optional<std::pa
 	}
 	if (exists(iAssetPath))
 		return tryFile(iAssetPath);
-	OWL_CORE_WARN("MeshCache: Mesh {} not found.", iAssetPath.generic_string())
+	OWL_CORE_WARN("MeshCache: Mesh '{}' not found.", iAssetPath.generic_string())
 	return std::nullopt;
 }
 
@@ -286,7 +286,7 @@ auto createTexture(const data::geometry::MeshImage& iImage) -> shared<gpu::Textu
 																					 .format = gpu::ImageFormat::Rgba8})
 							  : nullptr;
 		if (!texture || !texture->setLevels(*levels)) {
-			OWL_CORE_WARN("MeshCache: Cannot upload the cooked image {}.", iImage.name)
+			OWL_CORE_WARN("MeshCache: Cannot upload the cooked image '{}'.", iImage.name)
 			return nullptr;
 		}
 		return texture;
@@ -348,8 +348,8 @@ MeshResource::MeshResource(std::filesystem::path iFile, const data::geometry::Lo
 	: m_file{std::move(iFile)}, m_baseColorFactor{iLoaded.materials.front().baseColorFactor} {
 	const bool skinned = iLoaded.isSkinned() && iLoaded.skeleton->isValid();
 	if (iLoaded.isSkinned() && !skinned)
-		OWL_CORE_WARN("MeshCache: Skeleton of {} cannot be drawn ({} bones), drawn static.", m_file.generic_string(),
-					  iLoaded.skeleton->getBoneCount())
+		OWL_CORE_WARN("MeshCache: The skeleton of '{}' cannot be drawn ({} bones), the mesh is drawn static.",
+					  m_file.generic_string(), iLoaded.skeleton->getBoneCount())
 	if (iLoaded.mesh)
 		m_geometry = MeshGeometry::fromCorners(
 				*iLoaded.mesh, skinned ? std::span{iLoaded.skin} : std::span<const data::geometry::VertexSkin>{}, {});
@@ -388,7 +388,7 @@ MeshResource::MeshResource(std::filesystem::path iFile, const data::geometry::Lo
 				m_lodScreenSizes.push_back(level.screenSize);
 			}
 		} else if (!lods.empty()) {
-			OWL_CORE_WARN("MeshCache: Levels of detail of {} do not match its submeshes, ignored.",
+			OWL_CORE_WARN("MeshCache: The levels of detail of '{}' do not match its submeshes, ignored.",
 						  m_file.generic_string())
 		}
 	}
@@ -519,7 +519,7 @@ auto MeshCache::invalidate(const std::filesystem::path& iFile) -> uint32_t {
 		++dropped;
 	}
 	if (dropped > 0)
-		OWL_CORE_INFO("MeshCache: {} reloads on its next draw.", changed)
+		OWL_CORE_DEBUG("MeshCache: '{}' reloads on its next draw.", changed)
 	return dropped;
 }
 

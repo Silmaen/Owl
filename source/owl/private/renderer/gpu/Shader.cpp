@@ -34,8 +34,7 @@ auto Shader::create(const Specification& iShaderName) -> shared<Shader> {
 	if (RenderCommand::requireInit()) {
 		const auto result = Renderer::getTextureLibrary().find(std::format("{}.slang", shaderDir.string()));
 		if (!result.has_value()) {
-			OWL_CORE_ERROR("Shader::Create: Failed to load shader {}, unable to find assets.",
-						   iShaderName.shaderName.name)
+			OWL_CORE_ERROR("Shader: Cannot load shader '{}', its asset is not found.", iShaderName.shaderName.name)
 			return nullptr;
 		}
 		shaderDir = result.value().parent_path() / iShaderName.shaderName.name;
@@ -62,7 +61,7 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 				sources.push_back(f);
 			}
 			if (sources.empty()) {
-				OWL_CORE_WARN("Not able to find Shader {} in directory {}.", shad, iFile.string())
+				OWL_CORE_ERROR("Shader: Cannot find shader '{}' in directory '{}'.", shad, iFile.string())
 				return nullptr;
 			}
 		} else {
@@ -74,12 +73,12 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 				}
 			}
 			if (sources.empty()) {
-				OWL_CORE_WARN("Not able to find Shader {} for {}.", shad, iFile.string())
+				OWL_CORE_ERROR("Shader: Cannot find shader '{}' for '{}'.", shad, iFile.string())
 				return nullptr;
 			}
 		}
 	}
-	OWL_CORE_TRACE("Try to create shader {} for renderer {} / API {}.", name, renderer,
+	OWL_CORE_TRACE("Shader: Creating shader '{}' for renderer '{}' ({} API).", name, renderer,
 				   magic_enum::enum_name(RenderCommand::getApi()))
 	shared<Shader> shader = nullptr;
 	switch (RenderCommand::getApi()) {
@@ -116,7 +115,7 @@ auto Shader::reload() -> bool {
 	OWL_PROFILE_FUNCTION()
 
 	if (m_sourcePath.empty() || !std::filesystem::is_regular_file(m_sourcePath)) {
-		OWL_CORE_ERROR("Shader: Cannot reload {}, source file '{}' not found.", getFullName(), m_sourcePath.string())
+		OWL_CORE_ERROR("Shader: Cannot reload '{}', source file '{}' not found.", getFullName(), m_sourcePath.string())
 		return false;
 	}
 #if OWL_WITH_RENDER
@@ -125,13 +124,13 @@ auto Shader::reload() -> bool {
 	const auto source = platform::fileToString(m_sourcePath);
 #endif
 	if (!recompile(source)) {
-		OWL_CORE_ERROR("Shader: Reload of {} failed ({}), the previous version stays in use.", getFullName(),
+		OWL_CORE_ERROR("Shader: Reload of '{}' failed ({}), the previous version stays in use.", getFullName(),
 					   m_sourcePath.string())
 		return false;
 	}
 	++m_generation;
 	onRecompiled();
-	OWL_CORE_INFO("Shader: {} reloaded from {}.", getFullName(), m_sourcePath.string())
+	OWL_CORE_DEBUG("Shader: '{}' reloaded from '{}'.", getFullName(), m_sourcePath.string())
 	return true;
 }
 
@@ -145,7 +144,7 @@ auto Shader::decomposeName(const std::string& iFullName) -> ShaderName {
 		result.renderer = iFullName.substr(0, pos);
 		result.name = iFullName.substr(pos + 1);
 		if (result.name.empty()) {
-			OWL_CORE_ERROR("Shader::decomposeName: Failed to decompose shader name {}.", iFullName)
+			OWL_CORE_ERROR("Shader: Cannot decompose the shader name '{}'.", iFullName)
 			result.renderer = "";
 		}
 	}

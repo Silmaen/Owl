@@ -31,13 +31,13 @@ auto RenderAPI::create(const Type& iType) -> uniq<RenderAPI> {
 		case Type::OpenGL:
 		case Type::Vulkan:
 			// GPU backends not built (OWL_MODULE_RENDER=OFF): the engine runs headless.
-			OWL_CORE_WARN("RenderAPI: {} not built in (OWL_MODULE_RENDER=OFF), using the Null backend.",
+			OWL_CORE_INFO("RenderAPI: {} not built in (OWL_MODULE_RENDER=OFF), using the Null backend.",
 						  iType == Type::OpenGL ? "OpenGL" : "Vulkan")
 			return mkUniq<null::RenderAPI>();
 #endif
 	}
 
-	OWL_CORE_ERROR("Unknown RendererAPI!")
+	OWL_CORE_ERROR("RenderAPI: Unknown render API type.")
 	return nullptr;
 }
 

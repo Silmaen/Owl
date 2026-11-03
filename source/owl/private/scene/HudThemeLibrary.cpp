@@ -30,7 +30,7 @@ auto HudThemeLibrary::get(const std::string& iPath) -> shared<const HudTheme> {
 	if (auto loaded = HudTheme::load(iPath); loaded)
 		theme = mkShared<const HudTheme>(std::move(*loaded));
 	else
-		OWL_CORE_ERROR("HudThemeLibrary: Theme '{}' unusable, check the `HudTheme:` key or `DefaultHudTheme`.", iPath)
+		OWL_CORE_WARN("HudThemeLibrary: Theme '{}' unusable, check the 'HudTheme' key or 'DefaultHudTheme'.", iPath)
 	m_themes.insert_or_assign(iPath, theme);
 	return theme;
 }

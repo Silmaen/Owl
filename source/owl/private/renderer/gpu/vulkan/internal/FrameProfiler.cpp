@@ -33,7 +33,7 @@ void FrameProfiler::setEnabled(const bool iEnabled) {
 		return;
 	}
 	if (!isSupported()) {
-		OWL_CORE_WARN("Vulkan: GPU timestamps not supported by the graphics queue.")
+		OWL_CORE_WARN("Vulkan: GPU timestamps are not supported by the graphics queue.")
 		return;
 	}
 	if (m_pool == VK_NULL_HANDLE && !createPool())
@@ -57,7 +57,7 @@ auto FrameProfiler::createPool() -> bool {
 									 .pipelineStatistics = {}};
 	if (const VkResult result = vkCreateQueryPool(core.getLogicalDevice(), &info, nullptr, &m_pool);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to create the timestamp query pool ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the timestamp query pool ({}).", resultString(result))
 		m_pool = VK_NULL_HANDLE;
 		return false;
 	}
@@ -142,7 +142,7 @@ void FrameProfiler::harvest(const size_t iSlot) {
 				timing.spanMs = static_cast<double>(lastTick - firstTick) * m_periodNs * 1e-6;
 			}
 		} else {
-			OWL_CORE_WARN("Vulkan: failed to read the timestamp queries ({}).", resultString(result))
+			OWL_CORE_WARN_ONCE("Vulkan: Cannot read the timestamp queries ({}).", resultString(result))
 		}
 	}
 	m_completed.push_back(timing);

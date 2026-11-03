@@ -73,7 +73,7 @@ Tests are auto-discovered from `test/` subdirectories. See testing rules.
 
 - Settings propagate via `${CMAKE_PROJECT_NAME}_Base` INTERFACE library
 - Never add compile flags to individual targets — add to Base if global
-- `OWL_DEBUG` / `OWL_RELEASE` compile definitions are set automatically
+- `OWL_DEBUG_BUILD` / `OWL_RELEASE_BUILD` compile definitions are set automatically
 - Set globally in `cmake/BaseConfig.cmake`: C++23, no C++ module scan (`CMAKE_CXX_SCAN_FOR_MODULES OFF`, the
   project has no module), `CMAKE_LINK_DEPENDS_NO_SHARED ON` (a program is not relinked when only a shared library it
   uses changed: a custom command whose output depends on the engine code names `${ENGINE_NAME}` in its `DEPENDS`,

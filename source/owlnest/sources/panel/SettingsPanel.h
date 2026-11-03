@@ -140,6 +140,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Render the Log tab: the lowest level recorded and the period of the per-frame traces (`config.yml`).
+	 * @param[in,out] ioSettings The editor settings.
+	 */
+	void renderLogSection(EditorSettings& ioSettings);
+
+	/**
+	 * @brief
 	 *  Render keybindings section.
 	 * @param[in,out] ioSettings Editor settings being modified.
 	 * @param[in,out] ioRegistry Action registry whose bindings are edited.
@@ -158,6 +165,9 @@ private:
 	 * @return The int.
 	 */
 	static auto ImGuiKeyToGlfwKey(ImGuiKey iKey) -> int;
+
+	/// The application parameters changed in the Log tab, written to `config.yml` once the edit ends.
+	bool m_appParamsChanged = false;
 };
 
 }// namespace owl::nest::panel

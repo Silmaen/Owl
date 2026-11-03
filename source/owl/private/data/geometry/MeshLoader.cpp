@@ -78,11 +78,12 @@ void attachCornerData(StaticMesh& ioMesh, const CornerUvs& iUvs, const CornerNor
 
 void logCompleteness(const std::string& iLoader, const std::string& iName, const StaticMesh& iMesh, const bool iHasUv,
 					 const bool iHasNormals) {
-	OWL_CORE_INFO("MeshLoader::{}: Loaded mesh {} with {} vertices and {} triangles.", iLoader, iName,
-				  iMesh.getVertexCount(), iMesh.getTriangleCount())
-	OWL_CORE_INFO("MeshLoader::{}: Mesh has {} UV coordinates and {} normals.", iLoader,
-				  !iHasUv || iMesh.isExtraDataDefinedOnAllTriangles<TriangleUVCoordinate>() ? "complete" : "incomplete",
-				  !iHasNormals || iMesh.isExtraDataDefinedOnAllTriangles<TriangleNormals>() ? "complete" : "incomplete")
+	OWL_CORE_DEBUG("MeshLoader: {} mesh '{}' loaded with {} vertices and {} triangles.", iLoader, iName,
+				   iMesh.getVertexCount(), iMesh.getTriangleCount())
+	OWL_CORE_DEBUG(
+			"MeshLoader: {} mesh has {} UV coordinates and {} normals.", iLoader,
+			!iHasUv || iMesh.isExtraDataDefinedOnAllTriangles<TriangleUVCoordinate>() ? "complete" : "incomplete",
+			!iHasNormals || iMesh.isExtraDataDefinedOnAllTriangles<TriangleNormals>() ? "complete" : "incomplete")
 }
 
 // Marks a glTF image holding the KTX2 bytes of a cooked image instead of pixels.
@@ -93,7 +94,7 @@ auto decodeImageBytes(const std::span<const uint8_t> iBytes, const std::string& 
 	if (renderer::isKtx2(iBytes)) {
 		const auto size = renderer::peekImageSize(iBytes);
 		if (!size) {
-			OWL_CORE_WARN("MeshLoader: Cannot read the cooked image {}.", iName)
+			OWL_CORE_WARN("MeshLoader: Cannot read the cooked image '{}'.", iName)
 			return std::nullopt;
 		}
 		return MeshImage{.size = *size, .pixels = {}, .name = iName, .cooked = {iBytes.begin(), iBytes.end()}};
@@ -106,7 +107,7 @@ auto decodeImageBytes(const std::span<const uint8_t> iBytes, const std::string& 
 			stbi_load_from_memory(iBytes.data(), static_cast<int>(iBytes.size()), &width, &height, &channels, 4);
 	stbi_set_flip_vertically_on_load_thread(0);
 	if (pixels == nullptr) {
-		OWL_CORE_WARN("MeshLoader: Cannot decode image {}: {}.", iName, stbi_failure_reason())
+		OWL_CORE_WARN("MeshLoader: Cannot decode image '{}': {}.", iName, stbi_failure_reason())
 		return std::nullopt;
 	}
 	const auto byteCount = static_cast<size_t>(width) * static_cast<size_t>(height) * 4u;
@@ -143,7 +144,7 @@ public:
 			-> bool override {
 		const auto bytes = readSiblingFile(m_baseDirectory, m_readFile, iMaterialFile);
 		if (!bytes) {
-			OWL_CORE_WARN("MeshLoader::loadObj: Material file {} not found.", iMaterialFile)
+			OWL_CORE_WARN("MeshLoader: OBJ material file '{}' not found.", iMaterialFile)
 			return false;
 		}
 		std::istringstream stream{std::string{reinterpret_cast<const char*>(bytes->data()), bytes->size()}};
@@ -174,8 +175,7 @@ auto convertObjMaterial(const tinyobj::material_t& iSource, const std::filesyste
 			if (auto image = decodeImageBytes(*bytes, iSource.diffuse_texname))
 				material.baseColor = std::move(*image);
 		} else {
-			OWL_CORE_WARN("MeshLoader::loadObj: Texture {} of material {} not found.", iSource.diffuse_texname,
-						  iSource.name)
+			OWL_CORE_WARN("MeshLoader: Texture '{}' of material '{}' not found.", iSource.diffuse_texname, iSource.name)
 		}
 	}
 	return material;
@@ -212,8 +212,8 @@ auto buildObj(const tinyobj::attrib_t& iAttrib, const std::vector<tinyobj::shape
 		for (size_t faceIndex = 0; faceIndex < shape.mesh.num_face_vertices.size(); ++faceIndex) {
 			const size_t fv = shape.mesh.num_face_vertices[faceIndex];
 			if (fv != 3) {
-				OWL_CORE_WARN(
-						"MeshLoader::loadObj: Face with {} vertices found, only triangles are supported, skipping.", fv)
+				OWL_CORE_WARN_ONCE(
+						"MeshLoader: OBJ face with {} vertices found, only triangles are supported, face skipped.", fv)
 				indexOffset += fv;
 				continue;
 			}
@@ -263,7 +263,7 @@ auto buildObj(const tinyobj::attrib_t& iAttrib, const std::vector<tinyobj::shape
 		mesh.addTriangle(vertexIndices);
 	}
 	attachCornerData(mesh, uvCoords, normals);
-	logCompleteness("loadObj", iName, mesh, hasUv, hasNormals);
+	logCompleteness("OBJ", iName, mesh, hasUv, hasNormals);
 	loaded.materials.clear();
 	for (const auto& source: iMaterials)
 		loaded.materials.push_back(convertObjMaterial(source, iBaseDirectory, iReadFile));
@@ -318,7 +318,7 @@ auto readFloats(const tinygltf::Model& iModel, const int iAccessor) -> std::vect
 		return {};
 	const auto& accessor = iModel.accessors.at(static_cast<size_type>(iAccessor));
 	if (accessor.componentType != TINYGLTF_COMPONENT_TYPE_FLOAT || accessor.bufferView < 0) {
-		OWL_CORE_WARN("MeshLoader::loadGltf: Accessor {} is not made of floats, ignored.", iAccessor)
+		OWL_CORE_WARN("MeshLoader: glTF accessor {} is not made of floats, ignored.", iAccessor)
 		return {};
 	}
 	const auto& view = iModel.bufferViews.at(static_cast<size_type>(accessor.bufferView));
@@ -327,7 +327,7 @@ auto readFloats(const tinygltf::Model& iModel, const int iAccessor) -> std::vect
 	const size_t start = view.byteOffset + accessor.byteOffset;
 	if (stride <= 0 ||
 		start + static_cast<size_t>(stride) * (accessor.count - 1) + N * sizeof(float) > buffer.data.size()) {
-		OWL_CORE_WARN("MeshLoader::loadGltf: Accessor {} overflows its buffer, ignored.", iAccessor)
+		OWL_CORE_WARN("MeshLoader: glTF accessor {} overflows its buffer, ignored.", iAccessor)
 		return {};
 	}
 	std::vector<std::array<float, N>> values(accessor.count);
@@ -396,7 +396,7 @@ auto readGltfImage(const tinygltf::Model& iModel, const int iTextureIndex) -> Me
 	}
 	if (image.width <= 0 || image.height <= 0 || image.component != 4 || image.bits != 8 ||
 		image.image.size() != static_cast<size_t>(image.width) * static_cast<size_t>(image.height) * 4u) {
-		OWL_CORE_WARN("MeshLoader::loadGltf: Image {} could not be decoded, ignored.", result.name)
+		OWL_CORE_WARN("MeshLoader: glTF image '{}' could not be decoded, ignored.", result.name)
 		return result;
 	}
 	result.size = {static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height)};
@@ -616,8 +616,8 @@ void appendPrimitive(GltfBuild& ioBuild, const tinygltf::Primitive& iPrimitive, 
 					 const bool iSkinned) {
 	const auto& model = ioBuild.model;
 	if (iPrimitive.mode != TINYGLTF_MODE_TRIANGLES && iPrimitive.mode != -1) {
-		OWL_CORE_WARN("MeshLoader::loadGltf: Primitive of mode {} in {} is not made of triangles, skipped.",
-					  iPrimitive.mode, ioBuild.name)
+		OWL_CORE_WARN("MeshLoader: Primitive of mode {} in '{}' is not made of triangles, skipped.", iPrimitive.mode,
+					  ioBuild.name)
 		return;
 	}
 	const auto attribute = [&iPrimitive](const char* iKey) -> int {
@@ -626,14 +626,14 @@ void appendPrimitive(GltfBuild& ioBuild, const tinygltf::Primitive& iPrimitive, 
 	};
 	const auto positions = readFloats<3>(model, attribute("POSITION"));
 	if (positions.empty()) {
-		OWL_CORE_ERROR("MeshLoader::loadGltf: No POSITION attribute in a primitive of {}.", ioBuild.name)
+		OWL_CORE_WARN("MeshLoader: No POSITION attribute in a primitive of '{}', skipped.", ioBuild.name)
 		return;
 	}
 	const auto uvs = readFloats<2>(model, attribute("TEXCOORD_0"));
 	const auto vertexNormals = readFloats<3>(model, attribute("NORMAL"));
 	const auto indices = readIndices(model, iPrimitive, positions.size());
 	if (!indices) {
-		OWL_CORE_WARN("MeshLoader::loadGltf: Unreadable indices in a primitive of {}, skipped.", ioBuild.name)
+		OWL_CORE_WARN("MeshLoader: Unreadable indices in a primitive of '{}', skipped.", ioBuild.name)
 		return;
 	}
 	ioBuild.hasUv = ioBuild.hasUv || !uvs.empty();
@@ -671,7 +671,7 @@ void appendPrimitive(GltfBuild& ioBuild, const tinygltf::Primitive& iPrimitive, 
 				faceNormals[j] = transformNormal(cofactor, vertexNormals[index]) * static_cast<float>(normalSign);
 		}
 		if (!valid) {
-			OWL_CORE_WARN("MeshLoader::loadGltf: Triangle with an index out of range in {}, skipped.", ioBuild.name)
+			OWL_CORE_WARN("MeshLoader: Triangle with an index out of range in '{}', skipped.", ioBuild.name)
 			continue;
 		}
 		mesh.addTriangle(corners);
@@ -688,7 +688,7 @@ auto buildGltf(const tinygltf::Model& iModel, const std::string& iName) -> Loade
 	LoadedMesh loaded;
 	loaded.mesh = mkShared<StaticMesh>();
 	if (iModel.meshes.empty()) {
-		OWL_CORE_ERROR("MeshLoader::loadGltf: No mesh found in {}.", iName)
+		OWL_CORE_ERROR("MeshLoader: No mesh found in '{}'.", iName)
 		return loaded;
 	}
 	loaded.materials.clear();
@@ -720,7 +720,7 @@ auto buildGltf(const tinygltf::Model& iModel, const std::string& iName) -> Loade
 		// glTF ignores the transform of the node of a skinned mesh: its joints place it.
 		const bool skinned = skinImport.isSkinned(instance.skin);
 		if (instance.skin > 0 && !skinned)
-			OWL_CORE_WARN("MeshLoader::loadGltf: Mesh of {} bound to skin {} drawn static (first skin only).", iName,
+			OWL_CORE_WARN("MeshLoader: Mesh of '{}' bound to skin {} drawn static (first skin only).", iName,
 						  instance.skin)
 		for (const auto& primitive: iModel.meshes[instance.mesh].primitives)
 			appendPrimitive(build, primitive, skinned ? g_identityMatrix : instance.transform, skinned);
@@ -733,7 +733,7 @@ auto buildGltf(const tinygltf::Model& iModel, const std::string& iName) -> Loade
 	loaded.sockets = gltf::importSockets(iModel, skinImport);
 	attachCornerData(*loaded.mesh, build.hasUv ? build.uvCoords : CornerUvs{},
 					 build.hasNormals ? build.normals : CornerNormals{});
-	logCompleteness("loadGltf", iName, *loaded.mesh, build.hasUv, build.hasNormals);
+	logCompleteness("glTF", iName, *loaded.mesh, build.hasUv, build.hasNormals);
 	if (loaded.materials.empty())
 		loaded.materials.emplace_back();
 	return loaded;
@@ -786,9 +786,9 @@ auto parseGltf(const std::span<const uint8_t> iData, const bool iBinary, const s
 					: loader.LoadASCIIFromString(&model, &err, &warn, reinterpret_cast<const char*>(iData.data()), size,
 												 baseDirectory);
 	if (!warn.empty())
-		OWL_CORE_WARN("MeshLoader::loadGltf: {}.", warn)
+		OWL_CORE_WARN("MeshLoader: The glTF loader warns: {}.", warn)
 	if (!loaded) {
-		OWL_CORE_ERROR("MeshLoader::loadGltf: Failed to load {}: {}.", iName, err)
+		OWL_CORE_ERROR("MeshLoader: Failed to load glTF '{}': {}.", iName, err)
 		return std::nullopt;
 	}
 	return model;
@@ -809,7 +809,7 @@ auto areLodsValid(const std::vector<MeshLodLevel>& iLods, const LoadedMesh& iMes
 auto readFileBytes(const std::filesystem::path& iFilePath) -> std::optional<std::vector<uint8_t>> {
 	std::ifstream file(iFilePath, std::ios::binary);
 	if (!file) {
-		OWL_CORE_ERROR("MeshLoader: Cannot open {}.", iFilePath.string())
+		OWL_CORE_ERROR("MeshLoader: Cannot open '{}'.", iFilePath.string())
 		return std::nullopt;
 	}
 	return std::vector<uint8_t>{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
@@ -824,7 +824,7 @@ auto MeshLoader::isMeshAsset(const std::filesystem::path& iFilePath) -> bool {
 
 auto MeshLoader::loadMesh(const std::filesystem::path& iFilePath) -> LoadedMesh {
 	if (!isMeshAsset(iFilePath)) {
-		OWL_CORE_ERROR("MeshLoader::loadMesh: Unsupported mesh file {}.", iFilePath.string())
+		OWL_CORE_ERROR("MeshLoader: Unsupported mesh file '{}'.", iFilePath.string())
 		return {};
 	}
 	const auto bytes = readFileBytes(iFilePath);
@@ -853,14 +853,14 @@ auto loadSourceMesh(const std::span<const uint8_t> iData, const std::string& iEx
 		std::istringstream stream{std::string{reinterpret_cast<const char*>(iData.data()), iData.size()}};
 		ObjMaterialReader materialReader{iBaseDirectory, iReadFile};
 		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &stream, &materialReader)) {
-			OWL_CORE_ERROR("MeshLoader::loadObj: Failed to load {}: {}.", iName, err)
+			OWL_CORE_ERROR("MeshLoader: Failed to load OBJ '{}': {}.", iName, err)
 			return {};
 		}
 		if (!warn.empty())
-			OWL_CORE_WARN("MeshLoader::loadObj: {}.", warn)
+			OWL_CORE_WARN("MeshLoader: The OBJ loader warns: {}.", warn)
 		return buildObj(attrib, shapes, materials, iName, iBaseDirectory, iReadFile);
 	}
-	OWL_CORE_ERROR("MeshLoader::loadMesh: Unsupported mesh format {} for {}.", iExtension, iName)
+	OWL_CORE_ERROR("MeshLoader: Unsupported mesh format '{}' for '{}'.", iExtension, iName)
 	return {};
 }
 
@@ -872,14 +872,14 @@ auto MeshLoader::loadMeshFromMemory(const std::span<const uint8_t> iData, const 
 	if (isCookedMesh(iData)) {
 		auto cooked = readCookedMesh(iData);
 		if (!cooked) {
-			OWL_CORE_ERROR("MeshLoader::loadMesh: Cannot read the cooked mesh {}.", iName)
+			OWL_CORE_ERROR("MeshLoader: Cannot read the cooked mesh '{}'.", iName)
 			return {};
 		}
 		auto loaded = loadSourceMesh(cooked->source, iExtension, iName, iBaseDirectory, iReadFile);
 		if (loaded.mesh && areLodsValid(cooked->lods, loaded))
 			loaded.lods = std::move(cooked->lods);
 		else if (loaded.mesh)
-			OWL_CORE_WARN("MeshLoader::loadMesh: Levels of detail of {} do not match the mesh, ignored.", iName)
+			OWL_CORE_WARN("MeshLoader: Levels of detail of '{}' do not match the mesh, ignored.", iName)
 		return loaded;
 	}
 	return loadSourceMesh(iData, iExtension, iName, iBaseDirectory, iReadFile);
@@ -933,7 +933,7 @@ auto MeshLoader::getExternalFiles(const std::filesystem::path& iFilePath) -> std
 			}
 		}
 	} catch (const nlohmann::json::exception& iError) {
-		OWL_CORE_WARN("MeshLoader: Cannot list the files of {}: {}.", iFilePath.string(), iError.what())
+		OWL_CORE_WARN("MeshLoader: Cannot list the files of '{}': {}.", iFilePath.string(), iError.what())
 		return {};
 	}
 	return files;
@@ -946,23 +946,22 @@ auto MeshLoader::loadObj(const std::filesystem::path& iFilePath) -> shared<Stati
 	std::string warn;
 	std::string err;
 	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, iFilePath.string().c_str())) {
-		OWL_CORE_ERROR("MeshLoader::loadObj: Failed to load {}: {}.", iFilePath.string(), err)
+		OWL_CORE_ERROR("MeshLoader: Failed to load OBJ '{}': {}.", iFilePath.string(), err)
 		return mkShared<StaticMesh>();
 	}
 	if (!warn.empty())
-		OWL_CORE_WARN("MeshLoader::loadObj: {}.", warn)
+		OWL_CORE_WARN("MeshLoader: The OBJ loader warns: {}.", warn)
 	return buildObj(attrib, shapes, materials, iFilePath.string(), iFilePath.parent_path(), {}).mesh;
 }
 
 auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath) -> shared<StaticMesh> {
-	OWL_CORE_WARN("MeshLoader::loadFbx: FBX loading not implemented yet!")
 	shared<StaticMesh> mesh = mkShared<StaticMesh>();
 
 	constexpr ufbx_load_opts opts = {};
 	ufbx_error error;
 	ufbx_scene* scene = ufbx_load_file(iFilePath.string().c_str(), &opts, &error);
 	if (scene == nullptr) {
-		OWL_CORE_ERROR("MeshLoader::loadFbx: Failed to load {}: {}.", iFilePath.string(), error.description.data)
+		OWL_CORE_ERROR("MeshLoader: Failed to load FBX '{}': {}.", iFilePath.string(), error.description.data)
 		return mesh;
 	}
 
@@ -998,8 +997,8 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 		for (size_t faceIdx = 0; faceIdx < fbxMesh->num_faces; ++faceIdx) {
 			const auto& [index_begin, num_indices] = fbxMesh->faces.data[faceIdx];
 			if (num_indices != 3) {
-				OWL_CORE_WARN(
-						"MeshLoader::loadFbx: Face with {} vertices found, only triangles are supported, skipping.",
+				OWL_CORE_WARN_ONCE(
+						"MeshLoader: FBX face with {} vertices found, only triangles are supported, face skipped.",
 						num_indices)
 				continue;
 			}
@@ -1042,12 +1041,12 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 	attachCornerData(*mesh, hasUv ? uvCoords : std::vector<std::array<vec2, 3>>{},
 					 hasNormals ? normals : std::vector<std::array<vec3, 3>>{});
 
-	OWL_CORE_INFO("MeshLoader::loadFbx: Loaded mesh {} with {} vertices and {} triangles.", iFilePath.string(),
-				  mesh->getVertexCount(), mesh->getTriangleCount())
-	OWL_CORE_INFO("MeshLoader::loadFbx: Mesh has {} UV coordinates and {} normals.",
-				  !hasUv || mesh->isExtraDataDefinedOnAllTriangles<TriangleUVCoordinate>() ? "complete" : "incomplete",
-				  !hasNormals || mesh->isExtraDataDefinedOnAllTriangles<TriangleNormals>() ? "complete" : "incomplete")
-	OWL_CORE_INFO("MeshLoader::loadFbx: All other mesh data are ignored.")
+	OWL_CORE_DEBUG("MeshLoader: FBX mesh '{}' loaded with {} vertices and {} triangles.", iFilePath.string(),
+				   mesh->getVertexCount(), mesh->getTriangleCount())
+	OWL_CORE_DEBUG("MeshLoader: FBX mesh has {} UV coordinates and {} normals.",
+				   !hasUv || mesh->isExtraDataDefinedOnAllTriangles<TriangleUVCoordinate>() ? "complete" : "incomplete",
+				   !hasNormals || mesh->isExtraDataDefinedOnAllTriangles<TriangleNormals>() ? "complete" : "incomplete")
+	OWL_CORE_DEBUG("MeshLoader: Other FBX mesh data are ignored.")
 	return mesh;
 }
 

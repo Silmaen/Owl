@@ -55,6 +55,8 @@ TEST(SlangSyntax, everyListedWordClassifiesBackToItsKind) {
 TEST(SlangSyntax, detectsSlangFiles) {
 	EXPECT_EQ(detectLanguage("engine_assets/shaders/opengl/text.slang"), Language::Slang);
 	EXPECT_EQ(detectLanguage("A.SLANG"), Language::Slang);
+	EXPECT_EQ(detectLanguage("engine_assets/shaders/common/pbr.slangh"), Language::Slang);
+	EXPECT_EQ(detectLanguage("blur.hlsl"), Language::Slang);
 	EXPECT_STREQ(languageName(Language::Slang), "Slang");
 }
 

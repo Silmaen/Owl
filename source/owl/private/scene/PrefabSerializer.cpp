@@ -155,7 +155,7 @@ auto instantiateDocument(const shared<const core::YamlDocument>& iDocument, Scen
 	const uint32_t version = root["Version"] ? root["Version"].as<uint32_t>() : 1;
 	const auto entitiesNode = root["Entities"];
 	if (!entitiesNode) {
-		OWL_CORE_ERROR("Prefab {} has no entities.", iAssetRelativePath)
+		OWL_CORE_ERROR("Prefab: '{}' has no entities.", iAssetRelativePath)
 		return {};
 	}
 
@@ -173,7 +173,7 @@ auto instantiateDocument(const shared<const core::YamlDocument>& iDocument, Scen
 		}
 	}
 	if (!tempRoot) {
-		OWL_CORE_ERROR("Prefab {} has no root entity.", iAssetRelativePath)
+		OWL_CORE_ERROR("Prefab: '{}' has no root entity.", iAssetRelativePath)
 		return {};
 	}
 	const auto orderedEntities = collectSubtreeBFS(tempRoot, *tempScene);
@@ -262,7 +262,7 @@ auto PrefabSerializer::instantiate(const std::filesystem::path& iFilepath, const
 		return instantiateDocument(loadPrefabDocument(iFilepath), *ioScene,
 								   iAssetRelativePath.empty() ? iFilepath.filename().string() : iAssetRelativePath);
 	} catch (...) {
-		OWL_CORE_ERROR("Unable to instantiate prefab from file {}.", iFilepath.string())
+		OWL_CORE_ERROR("Prefab: Unable to instantiate '{}' from its file.", iFilepath.string())
 		return {};
 	}
 }
@@ -272,7 +272,7 @@ auto PrefabSerializer::instantiateFromString(const std::string& iText, Scene& io
 	try {
 		return instantiateDocument(parsePrefabDocument(iText, iAssetRelativePath), ioScene, iAssetRelativePath);
 	} catch (...) {
-		OWL_CORE_ERROR("Unable to instantiate prefab {}.", iAssetRelativePath)
+		OWL_CORE_ERROR("Prefab: Unable to instantiate '{}'.", iAssetRelativePath)
 		return {};
 	}
 }
@@ -292,10 +292,10 @@ auto PrefabSerializer::readInfo(const std::filesystem::path& iFilepath) -> std::
 			info.entityCount = entities.size();
 		return info;
 	} catch (const std::exception& e) {
-		OWL_CORE_WARN("Prefab: cannot read info from '{}': {}.", iFilepath.string(), e.what())
+		OWL_CORE_WARN("Prefab: Cannot read info from '{}': {}.", iFilepath.string(), e.what())
 		return std::nullopt;
 	} catch (...) {
-		OWL_CORE_WARN("Prefab: cannot read info from '{}' (unknown error).", iFilepath.string())
+		OWL_CORE_WARN("Prefab: Cannot read info from '{}' (unknown error).", iFilepath.string())
 		return std::nullopt;
 	}
 }
@@ -322,10 +322,10 @@ auto loadPrefabToTempScene(const std::filesystem::path& iFilepath) -> std::optio
 		}
 		return LoadedPrefab{.scene = loadEntities(entitiesNode), .version = version};
 	} catch (const std::exception& e) {
-		OWL_CORE_ERROR("Prefab: failed to load '{}': {}.", iFilepath.string(), e.what())
+		OWL_CORE_ERROR("Prefab: Failed to load '{}': {}.", iFilepath.string(), e.what())
 		return std::nullopt;
 	} catch (...) {
-		OWL_CORE_ERROR("Prefab: failed to load '{}' (unknown error).", iFilepath.string())
+		OWL_CORE_ERROR("Prefab: Failed to load '{}' (unknown error).", iFilepath.string())
 		return std::nullopt;
 	}
 }
@@ -505,7 +505,7 @@ auto PrefabSerializer::revertComponent(const std::filesystem::path& iFilepath, c
 	}
 	if (iComponentKey == component::Hierarchy::key() || iComponentKey == component::PrefabLink::key() ||
 		isInstancePlacement(iEntity == iInstanceRoot, iComponentKey)) {
-		OWL_CORE_WARN("Prefab: Component {} belongs to the instance and cannot be reverted.", iComponentKey)
+		OWL_CORE_WARN("Prefab: Component '{}' belongs to the instance and cannot be reverted.", iComponentKey)
 		return false;
 	}
 	auto& link = iInstanceRoot.getComponent<component::PrefabLink>();
@@ -528,7 +528,7 @@ auto PrefabSerializer::revertComponent(const std::filesystem::path& iFilepath, c
 			mergeEntityYaml(iEntity.getUUID(), loadEntityNode(prefabEntity), loadEntityNode(iEntity),
 							[&iComponentKey](const std::string& iKey) -> bool { return iKey != iComponentKey; });
 	if (!SceneSerializer::applyEntityFromString(iEntity, merged)) {
-		OWL_CORE_WARN("Prefab: Component {} could not be reverted.", iComponentKey)
+		OWL_CORE_WARN("Prefab: Component '{}' could not be reverted.", iComponentKey)
 		return false;
 	}
 	link.clearOverride(*canonicalUuid, iComponentKey);

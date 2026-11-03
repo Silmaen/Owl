@@ -22,6 +22,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 using namespace owl;
 using namespace owl::nest;
@@ -72,6 +73,24 @@ TEST(CodeEditorTextLayout, visualColumnExpandsTabsAndCountsCodePoints) {
 	EXPECT_EQ(codeEditor::visualColumn("\tx", 1, 0), 1u);
 	EXPECT_EQ(codeEditor::visualColumn("\xc3\xa9t\xc3\xa9", 2, 4), 2u);
 	EXPECT_EQ(codeEditor::visualColumn("ab", 10, 4), 2u);
+}
+
+TEST(CodeEditorTextLayout, findAssetGuidAtReadsTheReferenceUnderTheGlyph) {
+	const std::string_view line = "      mesh: gid:8f0f0550b4240490:meshes/characters/server.glb";
+	const auto expected = data::assets::parseGuid("8f0f0550b4240490");
+	ASSERT_TRUE(expected.has_value());
+	// On the prefix, the digits and the path hint.
+	EXPECT_EQ(codeEditor::findAssetGuidAt(line, 13), expected);
+	EXPECT_EQ(codeEditor::findAssetGuidAt(line, 20), expected);
+	EXPECT_EQ(codeEditor::findAssetGuidAt(line, 45), expected);
+	EXPECT_FALSE(codeEditor::findAssetGuidAt(line, 7).has_value());
+	EXPECT_EQ(codeEditor::findAssetGuidAt("    scriptPath: 'gid:f77328372cd37ad7:a.lua'", 30),
+			  data::assets::parseGuid("f77328372cd37ad7"));
+	// A bare GUID, as the `Guid:` line of an `.owlmeta`.
+	EXPECT_EQ(codeEditor::findAssetGuidAt("Guid: f77328372cd37ad7", 10), data::assets::parseGuid("f77328372cd37ad7"));
+	EXPECT_FALSE(codeEditor::findAssetGuidAt("Guid: f77328372cd37ad", 10).has_value());
+	EXPECT_FALSE(codeEditor::findAssetGuidAt("id_f77328372cd37ad7", 10).has_value());
+	EXPECT_FALSE(codeEditor::findAssetGuidAt("", 0).has_value());
 }
 
 TEST(CodeEditorDocumentDetached, hasNoEditorBeforeAttach) {

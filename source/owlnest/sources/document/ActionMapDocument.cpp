@@ -354,7 +354,7 @@ auto ActionMapDocument::save() -> bool {
 
 auto ActionMapDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 	if (!m_map.saveFile(iPath)) {
-		OWL_CORE_ERROR("ActionMapDocument: failed to write '{}'.", iPath.string())
+		OWL_CORE_ERROR("ActionMapDocument: Failed to write '{}'.", iPath.string())
 		return false;
 	}
 	m_path = iPath;
@@ -400,7 +400,7 @@ void ActionMapDocument::performRedo() {
 auto ActionMapDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	auto map = input::ActionMap::loadFile(iPath);
 	if (!map) {
-		OWL_CORE_ERROR("ActionMapDocument: failed to load '{}': {}.", iPath.string(), map.error())
+		OWL_CORE_ERROR("ActionMapDocument: Failed to load '{}': {}.", iPath.string(), map.error())
 		return false;
 	}
 	m_path = iPath;

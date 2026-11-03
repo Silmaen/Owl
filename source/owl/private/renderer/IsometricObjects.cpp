@@ -81,16 +81,16 @@ auto IsometricObjectSet::parse(const std::string_view iText)
 	try {
 		root = YAML::Load(std::string{iText});
 	} catch (const YAML::Exception& error) {
-		OWL_CORE_WARN("IsometricObjectSet: invalid document ({}).", error.what())
+		OWL_CORE_WARN("IsometricObjectSet: Invalid document ({}).", error.what())
 		return owl::unexpected{IsometricObjectError::InvalidDocument};
 	}
 	if (!root || !root.IsMap()) {
-		OWL_CORE_WARN("IsometricObjectSet: the document is not a map.")
+		OWL_CORE_WARN("IsometricObjectSet: The document is not a map.")
 		return owl::unexpected{IsometricObjectError::InvalidDocument};
 	}
 	const auto buildings = root["buildings"];
 	if (!buildings || !buildings.IsMap() || buildings.size() == 0) {
-		OWL_CORE_WARN("IsometricObjectSet: the document has no objects.")
+		OWL_CORE_WARN("IsometricObjectSet: The document has no objects.")
 		return owl::unexpected{IsometricObjectError::NoObjects};
 	}
 	IsometricObjectSet set;
@@ -99,13 +99,13 @@ auto IsometricObjectSet::parse(const std::string_view iText)
 		for (const auto& entry: buildings) {
 			IsometricObjectDef object;
 			if (const auto name = entry.first.as<std::string>(); !readObject(name, entry.second, object)) {
-				OWL_CORE_WARN("IsometricObjectSet: object {} is malformed.", name)
+				OWL_CORE_WARN("IsometricObjectSet: Object '{}' is malformed.", name)
 				return owl::unexpected{IsometricObjectError::InvalidObject};
 			}
 			set.m_objects.push_back(std::move(object));
 		}
 	} catch (const YAML::Exception& error) {
-		OWL_CORE_WARN("IsometricObjectSet: malformed value ({}).", error.what())
+		OWL_CORE_WARN("IsometricObjectSet: Malformed value ({}).", error.what())
 		return owl::unexpected{IsometricObjectError::InvalidObject};
 	}
 	std::ranges::sort(set.m_objects, [](const IsometricObjectDef& iA, const IsometricObjectDef& iB) -> bool {

@@ -313,11 +313,11 @@ auto ActionMap::fromYaml(const std::string_view iText, const std::string_view iS
 	try {
 		YAML::Node root = YAML::Load(std::string{iText});
 		if (!root.IsMap()) {
-			OWL_CORE_WARN("ActionMap: {} is not a YAML map.", iSourceName)
+			OWL_CORE_WARN("ActionMap: '{}' is not a YAML map.", iSourceName)
 			return unexpected{std::format("{}: the document is not a map", iSourceName)};
 		}
 		if (const auto upgraded = core::upgradeYamlDocument(g_actionMapFormat, root, iSourceName); !upgraded) {
-			OWL_CORE_WARN("ActionMap: Cannot read {}: {}.", iSourceName, describe(upgraded.error()))
+			OWL_CORE_WARN("ActionMap: Cannot read '{}': {}.", iSourceName, describe(upgraded.error()))
 			return unexpected{std::format("{}: {}", iSourceName, describe(upgraded.error()))};
 		}
 		ActionMap map;
@@ -327,11 +327,11 @@ auto ActionMap::fromYaml(const std::string_view iText, const std::string_view iS
 			for (const auto& node: actions) {
 				ActionDefinition action;
 				if (const auto error = parseAction(node, action); !error.empty()) {
-					OWL_CORE_WARN("ActionMap: {}: {}.", iSourceName, error)
+					OWL_CORE_WARN("ActionMap: Invalid action in '{}': {}.", iSourceName, error)
 					return unexpected{std::format("{}: {}", iSourceName, error)};
 				}
 				if (map.find(action.name) != nullptr) {
-					OWL_CORE_WARN("ActionMap: {}: action '{}' is defined twice.", iSourceName, action.name)
+					OWL_CORE_WARN("ActionMap: In '{}', action '{}' is defined twice.", iSourceName, action.name)
 					return unexpected{std::format("{}: action '{}' is defined twice", iSourceName, action.name)};
 				}
 				map.m_actions.push_back(std::move(action));
@@ -339,14 +339,14 @@ auto ActionMap::fromYaml(const std::string_view iText, const std::string_view iS
 		}
 		return map;
 	} catch (const YAML::Exception& iEx) {
-		OWL_CORE_WARN("ActionMap: Cannot parse {}: {}.", iSourceName, iEx.what())
+		OWL_CORE_WARN("ActionMap: Cannot parse '{}': {}.", iSourceName, iEx.what())
 		return unexpected{std::format("{}: {}", iSourceName, iEx.what())};
 	}
 }
 
 auto ActionMap::loadFile(const std::filesystem::path& iFile) -> expected<ActionMap, std::string> {
 	if (!exists(iFile)) {
-		OWL_CORE_WARN("ActionMap: File {} not found.", iFile.string())
+		OWL_CORE_WARN("ActionMap: File '{}' not found.", iFile.string())
 		return unexpected{std::format("{}: file not found", iFile.string())};
 	}
 	return fromYaml(platform::fileToString(iFile), iFile.string());
@@ -371,7 +371,7 @@ auto ActionMap::toYaml() const -> std::string {
 
 auto ActionMap::saveFile(const std::filesystem::path& iFile) const -> bool {
 	if (const auto written = platform::writeFileAtomic(iFile, toYaml()); !written) {
-		OWL_CORE_ERROR("ActionMap: Cannot save {}: {}.", iFile.string(), describe(written.error()))
+		OWL_CORE_ERROR("ActionMap: Cannot save '{}': {}.", iFile.string(), describe(written.error()))
 		return false;
 	}
 	return true;

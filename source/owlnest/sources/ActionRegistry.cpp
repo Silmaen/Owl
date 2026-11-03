@@ -225,7 +225,7 @@ auto ActionRegistry::dispatch(const event::KeyPressedEvent& iEvent) -> bool {
 	if (bestMatch == nullptr)
 		return false;
 	if (bestMatch->currentShortcut.modifiers == Modifiers::None && ImGui::GetIO().WantCaptureKeyboard) {
-		OWL_TRACE("ActionRegistry: shortcut '{}' suppressed by ImGui keyboard capture.", bestMatch->id)
+		OWL_TRACE("ActionRegistry: Shortcut '{}' suppressed by ImGui keyboard capture.", bestMatch->id)
 		return false;
 	}
 	m_runByEvent.insert(bestMatch->id);
@@ -313,7 +313,7 @@ auto ActionRegistry::run(const std::string& iId) const -> bool {
 			return true;
 		}
 	}
-	OWL_WARN("ActionRegistry: no action named '{}'.", iId)
+	OWL_WARN("ActionRegistry: No action named '{}'.", iId)
 	return false;
 }
 

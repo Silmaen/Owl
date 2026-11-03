@@ -155,7 +155,7 @@ auto createEntityFromNode(const shared<Scene>& ioScene, const core::YamlNode& iN
 	std::string name;
 	if (const auto tagComponent = iNode["Tag"]; tagComponent && tagComponent["tag"])
 		name = tagComponent["tag"].as<std::string>();
-	OWL_CORE_TRACE("Deserialized entity with ID = {0}, name = {1}.", iUuid, name)
+	OWL_CORE_TRACE("SceneSerializer: Entity {} '{}' deserialized.", iUuid, name)
 	return ioScene->createEntityWithUUID(core::UUID{iUuid}, name);
 }
 
@@ -200,18 +200,18 @@ void rollback(const shared<Scene>& ioScene, std::vector<Entity>& ioCreated) {
 auto readFile(const std::filesystem::path& iFilepath) -> std::optional<std::vector<uint8_t>> {
 	std::ifstream file(iFilepath, std::ios::binary | std::ios::ate);
 	if (!file.is_open()) {
-		OWL_CORE_ERROR("SceneSerializer: Unable to open scene file {}.", iFilepath.string())
+		OWL_CORE_ERROR("SceneSerializer: Unable to open scene file '{}'.", iFilepath.string())
 		return std::nullopt;
 	}
 	const auto size = file.tellg();
 	if (size < 0) {
-		OWL_CORE_ERROR("SceneSerializer: Unable to read scene file {}.", iFilepath.string())
+		OWL_CORE_ERROR("SceneSerializer: Unable to read scene file '{}'.", iFilepath.string())
 		return std::nullopt;
 	}
 	file.seekg(0);
 	std::vector<uint8_t> bytes(static_cast<size_t>(size));
 	if (!file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size))) {
-		OWL_CORE_ERROR("SceneSerializer: Unable to read scene file {}.", iFilepath.string())
+		OWL_CORE_ERROR("SceneSerializer: Unable to read scene file '{}'.", iFilepath.string())
 		return std::nullopt;
 	}
 	return bytes;
@@ -232,7 +232,7 @@ auto deserializePhysicsSettings(const core::YamlNode& iNode) -> PhysicsSettings 
 	if (!iNode.isMap())
 		return settings;
 	if (iNode["tickRate"] || iNode["maxStepsPerFrame"])
-		OWL_CORE_WARN("SceneSerializer: Physics tickRate / maxStepsPerFrame ignored, see the project tick rate.")
+		OWL_CORE_WARN("SceneSerializer: Physics 'tickRate' and 'maxStepsPerFrame' ignored, see the project tick rate.")
 	settings.solverSubSteps = iNode["solverSubSteps"].as<uint32_t>(settings.solverSubSteps);
 	settings.interpolate = iNode["interpolate"].as<bool>(settings.interpolate);
 	settings.workerCount = iNode["workerCount"].as<uint32_t>(settings.workerCount);
@@ -335,7 +335,7 @@ void deserializeWorldPartition(Scene& ioScene, const core::YamlNode& iNode) {
 				const auto coords = cell["coords"];
 				const auto scene = cell["scene"];
 				if (!coords.isSequence() || coords.size() < 3 || !scene.isScalar()) {
-					OWL_CORE_WARN("SceneSerializer: A world partition cell without `coords` or `scene` is skipped.")
+					OWL_CORE_WARN("SceneSerializer: A world partition cell without 'coords' or 'scene' is skipped.")
 					continue;
 				}
 				settings.cells.push_back(
@@ -356,7 +356,7 @@ void linkIntoHierarchy(Scene& ioScene, const Entity& iEntity) {
 				std::ranges::find(siblings, uuid) == siblings.end())
 				siblings.push_back(uuid);
 		} else {
-			OWL_CORE_WARN("SceneSerializer: Parent {} of entity {} not found, orphaning entity.",
+			OWL_CORE_WARN("SceneSerializer: Parent {} of entity {} not found, entity moved to the root.",
 						  static_cast<uint64_t>(hierarchy.parentId), static_cast<uint64_t>(uuid))
 			hierarchy.parentId = core::UUID{0};
 		}
@@ -488,7 +488,7 @@ auto SceneSerializer::serializeToString() const -> std::string {
 
 auto SceneSerializer::serialize(const std::filesystem::path& iFilepath) const -> bool {
 	if (const auto written = platform::writeFileAtomic(iFilepath, serializeToString()); !written) {
-		OWL_CORE_ERROR("SceneSerializer: Unable to save scene {}: {}.", iFilepath.string(), describe(written.error()))
+		OWL_CORE_ERROR("SceneSerializer: Unable to save scene '{}': {}.", iFilepath.string(), describe(written.error()))
 		return false;
 	}
 	return true;
@@ -564,8 +564,8 @@ auto SceneSerializer::parseBuffer(const std::vector<uint8_t>& iData, const std::
 		out.serializer.reset();
 	}
 	const auto dur = std::chrono::duration<double, std::milli>{clk::now() - t0}.count();
-	OWL_CORE_INFO("SceneSerializer::parseBuffer: '{}' {:.1f} ms ({} bytes, {}).", iSourceName, dur, iData.size(),
-				  out.valid ? "ok" : out.error)
+	OWL_CORE_DEBUG("SceneSerializer: '{}' parsed in {:.1f} ms ({} bytes, {}).", iSourceName, dur, iData.size(),
+				   out.valid ? "ok" : out.error)
 	return out;
 }
 
@@ -576,7 +576,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 		OWL_CORE_ERROR("SceneSerializer: Cannot apply an invalid parsed scene ({}).", iParsed.error)
 		return unexpected{iParsed.valid ? SceneLoadError::InvalidYaml : iParsed.failure};
 	}
-	OWL_CORE_INFO("SceneSerializer::applyParsed: '{}' begin.", iParsed.sceneName)
+	OWL_CORE_DEBUG("SceneSerializer: Applying '{}'.", iParsed.sceneName)
 	const auto& sData = *iParsed.serializer;
 	const auto previousRenderers = mp_scene->getEnabledRenderers();
 	const auto previousPhysics = mp_scene->getPhysicsSettings();
@@ -655,11 +655,11 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	}
 	const auto hierStart = clk::now();
 	mp_scene->rebuildHierarchyChildren();
-	OWL_CORE_INFO("SceneSerializer::applyParsed: rebuildHierarchyChildren {:.1f} ms.",
-				  std::chrono::duration<double, std::milli>{clk::now() - hierStart}.count())
+	OWL_CORE_DEBUG("SceneSerializer: Hierarchy children rebuilt in {:.1f} ms.",
+				   std::chrono::duration<double, std::milli>{clk::now() - hierStart}.count())
 	mp_scene->setDocumentKind(iParsed.kind);
-	OWL_CORE_INFO("SceneSerializer::applyParsed: '{}' total {:.1f} ms ({} entities).", iParsed.sceneName,
-				  std::chrono::duration<double, std::milli>{clk::now() - t0}.count(), created.size())
+	OWL_CORE_DEBUG("SceneSerializer: '{}' applied in {:.1f} ms ({} entities).", iParsed.sceneName,
+				   std::chrono::duration<double, std::milli>{clk::now() - t0}.count(), created.size())
 	return {};
 }
 
@@ -682,7 +682,7 @@ auto SceneSerializer::mergeParsed(const ParsedScene& iParsed, const math::vec3& 
 			const core::Serializer scratch;
 			for (const auto entity: entities) {
 				if (!isValidEntityNode(entity)) {
-					OWL_CORE_ERROR("SceneSerializer: Cannot merge scene '{}': {} has no `Entity:` id.", source,
+					OWL_CORE_ERROR("SceneSerializer: Cannot merge scene '{}': {} has no 'Entity' id.", source,
 								   describeEntityNode(entity, created.size()))
 					rollback(mp_scene, created);
 					return unexpected{SceneLoadError::InvalidEntity};
@@ -738,7 +738,7 @@ auto SceneSerializer::deserializeEntityFromString(const shared<Scene>& ioScene, 
 		component::deserializeComponents(entity, root, scratch, true);
 		linkIntoHierarchy(*ioScene, entity);
 	} catch (...) {
-		OWL_CORE_ERROR("Unable to deserialize entity from string.")
+		OWL_CORE_ERROR("SceneSerializer: Unable to deserialize an entity from a string.")
 		return false;
 	}
 	return true;
@@ -783,7 +783,7 @@ auto SceneSerializer::replaceComponentInString(const std::string& iEntityYaml, c
 	try {
 		auto entity = YAML::Load(iEntityYaml);
 		if (!entity.IsMap()) {
-			OWL_CORE_WARN("SceneSerializer: Entity data is not a map, cannot replace component {}.", iComponentKey)
+			OWL_CORE_WARN("SceneSerializer: Entity data is not a map, cannot replace component '{}'.", iComponentKey)
 			return {};
 		}
 		const std::string key{iComponentKey};
@@ -792,7 +792,7 @@ auto SceneSerializer::replaceComponentInString(const std::string& iEntityYaml, c
 		} else {
 			const auto component = YAML::Load(iComponentYaml);
 			if (!component[key]) {
-				OWL_CORE_WARN("SceneSerializer: Component data does not describe component {}.", iComponentKey)
+				OWL_CORE_WARN("SceneSerializer: Component data does not describe component '{}'.", iComponentKey)
 				return {};
 			}
 			entity[key] = component[key];
@@ -801,7 +801,7 @@ auto SceneSerializer::replaceComponentInString(const std::string& iEntityYaml, c
 		out << entity;
 		return out.c_str();
 	} catch (const std::exception& e) {
-		OWL_CORE_WARN("SceneSerializer: Cannot replace component {}: {}.", iComponentKey, e.what())
+		OWL_CORE_WARN("SceneSerializer: Cannot replace component '{}': {}.", iComponentKey, e.what())
 		return {};
 	}
 }

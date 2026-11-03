@@ -50,10 +50,10 @@ void* g_JoystickTarget = nullptr;
 
 void glfwErrorCallback(int iError, const char* iDescription) {
 	if (iError == GLFW_FEATURE_UNAVAILABLE) {
-		OWL_CORE_TRACE("GLFW: Feature unavailable on this platform ({}).", iDescription)
+		OWL_CORE_DEBUG("GLFW: Feature unavailable on this platform ({}).", iDescription)
 		return;
 	}
-	OWL_CORE_ERROR("GLFW Error ({}): {}.", iError, iDescription)
+	OWL_CORE_ERROR("GLFW: Error {}: {}.", iError, iDescription)
 }
 
 [[nodiscard]] auto toGlfwPlatform(const Platform iPlatform) -> int {
@@ -92,7 +92,7 @@ void hintWaylandDecorations(const Platform iRequested) {
 							*display != '\0' && compositorDrawsDecorations();
 	glfwInitHint(GLFW_WAYLAND_LIBDECOR, serverSide ? GLFW_WAYLAND_DISABLE_LIBDECOR : GLFW_WAYLAND_PREFER_LIBDECOR);
 	if (serverSide)
-		OWL_CORE_INFO("GLFW: The compositor draws the window decorations, libdecor not loaded.")
+		OWL_CORE_DEBUG("GLFW: The compositor draws the window decorations, libdecor not loaded.")
 }
 
 auto initGlfw(const Platform iRequested) -> bool {
@@ -109,7 +109,7 @@ auto initGlfw(const Platform iRequested) -> bool {
 	hintWaylandDecorations(iRequested);
 	bool success = glfwInit() == GLFW_TRUE;
 	if (!success && hint != GLFW_ANY_PLATFORM) {
-		OWL_CORE_WARN("GLFW: Could not initialise the {} platform, falling back to auto.", platformName(iRequested))
+		OWL_CORE_WARN("GLFW: Cannot initialise the {} platform, falling back to auto.", platformName(iRequested))
 		glfwInitHint(GLFW_PLATFORM, GLFW_ANY_PLATFORM);
 		success = glfwInit() == GLFW_TRUE;
 	}
@@ -152,15 +152,15 @@ void Window::init(const Properties& iProps) {
 		m_windowData.title = iProps.title;
 		m_windowData.size = {iProps.width, iProps.height};
 
-		OWL_CORE_INFO("Creating window {} ({}, {}).", iProps.title, iProps.width, iProps.height)
+		OWL_CORE_DEBUG("GLFW: Creating window '{}' ({}x{}).", iProps.title, iProps.width, iProps.height)
 
 		if (g_GlfwWindowCount == 0) {
 			if (!initGlfw(iProps.platform)) {
-				OWL_CORE_CRITICAL("GLFW: Could not initialise any platform (no display?).")
+				OWL_CORE_ERROR("GLFW: Cannot initialise any platform (no display?).")
 				return;
 			}
-			OWL_CORE_INFO("GLFW: Using the {} platform (requested {}).", platformName(getPlatform()),
-						  platformName(iProps.platform))
+			OWL_CORE_DEBUG("GLFW: Using the {} platform (requested {}).", platformName(getPlatform()),
+						   platformName(iProps.platform))
 		}
 		m_appId = iProps.appId.empty() ? makeAppId(iProps.title) : iProps.appId;
 	}
@@ -171,11 +171,11 @@ void Window::init(const Properties& iProps) {
 		const auto api = renderer::gpu::RenderCommand::getApi();
 		if (api == renderer::gpu::RenderAPI::Type::Vulkan) {
 			if (glfwVulkanSupported() == GLFW_FALSE) {
-				OWL_CORE_CRITICAL("No Vulkan support for glfw.")
+				OWL_CORE_ERROR("GLFW: No Vulkan support.")
 				return;
 			}
 		}
-#if defined(OWL_DEBUG)
+#if defined(OWL_DEBUG_BUILD)
 		if (api == renderer::gpu::RenderAPI::Type::OpenGL)
 
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
@@ -190,12 +190,12 @@ void Window::init(const Properties& iProps) {
 		mp_glfwWindow = glfwCreateWindow(static_cast<int>(iProps.width), static_cast<int>(iProps.height),
 										 m_windowData.title.c_str(), nullptr, nullptr);
 		if (mp_glfwWindow == nullptr) {
-			OWL_CORE_CRITICAL("GLFW: Window creation failed.")
+			OWL_CORE_ERROR("GLFW: Window creation failed.")
 			return;
 		}
 		++g_GlfwWindowCount;
 		const auto scale = getContentScale();
-		OWL_CORE_INFO("GLFW: Window created, app id {}, content scale {}x{}.", m_appId, scale.x(), scale.y())
+		OWL_CORE_DEBUG("GLFW: Window created, app id '{}', content scale {}x{}.", m_appId, scale.x(), scale.y())
 	}
 	initIcon(iProps);
 	// Graph context
@@ -331,7 +331,7 @@ void Window::initIcon(const Properties& iProps) {
 	std::error_code errorCode;
 	const auto executable = std::filesystem::read_symlink("/proc/self/exe", errorCode);
 	if (errorCode) {
-		OWL_CORE_WARN("GLFW: Cannot resolve the executable path, no desktop entry for {}.", m_appId)
+		OWL_CORE_WARN("GLFW: Cannot resolve the executable path, no desktop entry for '{}'.", m_appId)
 		return;
 	}
 	platform::installDesktopEntry({.appId = m_appId,
@@ -402,7 +402,7 @@ void Window::setIcon(const std::filesystem::path& iIconPath) {
 	if (getPlatform() == Platform::Wayland)
 		return;// Wayland compositor picks the icon from a .desktop file, not the app.
 	if (!exists(iIconPath)) {
-		OWL_CORE_WARN("Window icon not found: {}.", iIconPath.string())
+		OWL_CORE_WARN("GLFW: Window icon '{}' not found.", iIconPath.string())
 		return;
 	}
 	GLFWimage icon;
@@ -412,7 +412,7 @@ void Window::setIcon(const std::filesystem::path& iIconPath) {
 		glfwSetWindowIcon(mp_glfwWindow, 1, &icon);
 		stbi_image_free(icon.pixels);
 	} else {
-		OWL_CORE_WARN("Failed to load window icon: {}.", iIconPath.string())
+		OWL_CORE_WARN("GLFW: Cannot load the window icon '{}'.", iIconPath.string())
 	}
 }
 
@@ -446,7 +446,7 @@ void Window::shutdown() {
 	}
 	--g_GlfwWindowCount;
 	mp_glfwWindow = nullptr;
-	OWL_CORE_INFO("GLFW: Window closed after {} presented frames.", m_presentedFrames)
+	OWL_CORE_DEBUG("GLFW: Window closed after {} presented frames.", m_presentedFrames)
 	if (g_GlfwWindowCount == 0) {
 		glfwTerminate();
 		g_GlfwPlatform = Platform::None;
@@ -475,9 +475,9 @@ void Window::setVSync(const bool iEnabled) {
 		m_refreshPacer.setPeriod(pace ? refreshPeriod(mp_glfwWindow) : core::FramePacer::clock::duration::zero(),
 								 core::FramePacer::clock::now());
 		if (pace)
-			OWL_CORE_INFO("GLFW: Wayland {} vsync paced at {:.1f} Hz instead of a blocking present.",
-						  magic_enum::enum_name(api),
-						  1.0 / std::chrono::duration<double>(m_refreshPacer.getPeriod()).count())
+			OWL_CORE_DEBUG("GLFW: Wayland {} vsync paced at {:.1f} Hz instead of a blocking present.",
+						   magic_enum::enum_name(api),
+						   1.0 / std::chrono::duration<double>(m_refreshPacer.getPeriod()).count())
 	}
 	renderer::gpu::RenderCommand::setVSync(iEnabled);
 	renderer::gpu::RenderCommand::setLowLatencyPresent(m_lowLatencyPresent || wayland);

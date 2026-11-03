@@ -214,7 +214,7 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 	const auto relString = iRelativePath.generic_string();
 	const auto kind = classifyAsset(iRelativePath);
 	if (kind == AssetKind::Unsupported) {
-		OWL_CORE_WARN("Could not load {}: unsupported file type.", relString)
+		OWL_CORE_WARN("Viewport: Cannot drop '{}', its file type is not supported.", relString)
 		return;
 	}
 	// The path is relative to the root the browser shows: another asset folder may hold a file of the same name.
@@ -228,7 +228,7 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 			full = candidate;
 	}
 	if (full.empty()) {
-		OWL_CORE_WARN("Could not resolve dropped file: {}.", relString)
+		OWL_CORE_WARN("Viewport: The dropped file '{}' is in no asset folder.", relString)
 		return;
 	}
 	if (kind == AssetKind::Prefab)
@@ -343,7 +343,7 @@ void EditorLayer::openAssetFromInspector(const std::filesystem::path& iPath, con
 	if (exists(iPath))
 		request(iPath);
 	else
-		OWL_WARN("EditorLayer: Cannot open {}, it is in no asset folder.", iPath.string())
+		OWL_ERROR("Editor: Cannot open '{}', it is in no asset folder.", iPath.string())
 }
 
 void EditorLayer::closeDocument(const core::UUID iId) {
@@ -521,6 +521,7 @@ void EditorLayer::onAttach() {
 	else
 		m_settingsImportPrompt.open();
 	utils::applyTheme(gui::Theme::fromPreset(gui::Theme::presetFromName(m_settings.themePreset)));
+	core::Log::setVerbosityLevel(panel::getLogLevelSetting(m_settings.logLevel));
 
 	m_dockLayout.setPreset(DockLayout::presetFromName(m_settings.layoutPreset));
 	gui::component::setNavigationGraphSwitch(
@@ -714,6 +715,11 @@ void EditorLayer::onAttach() {
 		openAssetFromInspector(iPath, iLine);
 	});
 	m_contentBrowser.setSceneOpenCallback([this](const std::filesystem::path& iPath) -> void { openScene(iPath); });
+	m_contentBrowser.setPackageSettingsCallback([this]() -> std::optional<data::assets::pack::ExportSettings> {
+		if (!m_project.isLoaded())
+			return std::nullopt;
+		return m_project.makeExportSettings({}, app::Application::get().getWorkingDirectory());
+	});
 	m_contentBrowser.setCodeOpenCallback([this](const std::filesystem::path& iPath) -> void { openCodeFile(iPath); });
 	m_contentBrowser.setNodeGraphOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openNodeGraphFile(iPath); });
@@ -788,7 +794,7 @@ void EditorLayer::onDetach() {
 	// Pending MCP requests get 503 and the token file goes before any document closes.
 	mp_mcp.reset();
 	m_contentBrowser.detach();
-	OWL_TRACE("EditorLayer: deleted editor FrameBuffer.")
+	OWL_DEBUG("Editor: Editor framebuffer released.")
 	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr) {
 		ui->setTopBarCallback({});
 		ui->setBottomBarCallback({});
@@ -799,7 +805,7 @@ void EditorLayer::onDetach() {
 	// Unsaved changes survive a quit too: Nest asks nothing on exit.
 	m_recovery.autosave(m_documents);
 	m_documents.clear();
-	OWL_TRACE("EditorLayer: closed all documents (and their viewports).")
+	OWL_DEBUG("Editor: All documents and their viewports closed.")
 
 	// Free the static IconBank's atlas while the device is still valid, else it outlives vkDestroyDevice and leaks.
 	gui::IconBank::instance().clear();
@@ -1052,10 +1058,11 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	//=============================================================
 	m_sceneHierarchy.onImGuiRender();
 	// The last window to appear takes the focus, which picks the tab shown in its group.
-	m_logPanel.onImGuiRender();
+	m_logPanel.onImGuiRender(m_settings.logLevel);
 	m_consolePanel.onImGuiRender();
 	renderScriptDebug();
 	renderStats(iTimeStep);
+	m_contentBrowser.setShowAllFiles(m_settings.showAllFiles);
 	m_contentBrowser.onImGuiRender();
 	m_parameters.onImGuiRender();
 	m_projectSettings.onImGuiRender();
@@ -1458,7 +1465,7 @@ void EditorLayer::renderScriptDebug() {
 		if (auto hit = script::ScriptDebugger::takeHit(); hit.has_value()) {
 			if (doc->state() == SceneDocument::State::Play)
 				onScenePause();
-			OWL_INFO("Script: Breakpoint reached in {} at line {}.", hit->script, hit->line)
+			OWL_INFO("Script: Breakpoint reached in '{}' at line {}.", hit->script, hit->line)
 			m_scriptDebugPanel.setHit(std::move(*hit));
 		}
 	} else if (m_scriptDebugPanel.getHit().has_value()) {
@@ -1535,7 +1542,7 @@ void EditorLayer::selectDeferredGraphEvent(const std::filesystem::path& iPath) {
 void EditorLayer::editHandlerInGraph(const std::string& iFunction) {
 	auto* doc = activeSceneDocument();
 	if (doc == nullptr || doc->state() != SceneDocument::State::Edit) {
-		OWL_WARN("EditorLayer: Stop the game to edit a handler in a graph.")
+		OWL_WARN("Editor: Stop the game to edit a handler in a graph.")
 		return;
 	}
 	const auto scene = doc->getActiveScene();
@@ -1651,7 +1658,7 @@ void EditorLayer::packScene() {
 
 void EditorLayer::packGame() {
 	if (m_asyncProgress.isActive()) {
-		OWL_CORE_WARN("EditorLayer: Cannot pack the game while another operation runs.")
+		OWL_CORE_WARN("Editor: Cannot pack the game while another operation runs.")
 		return;
 	}
 	if (m_project.isLoaded())

@@ -384,7 +384,7 @@ auto loadHdrImage(const std::filesystem::path& iFile) -> std::optional<FloatImag
 	const HdrPixels data{stbi_loadf(iFile.string().c_str(), &width, &height, &channels, 3)};
 	auto image = toFloatImage(data, width, height);
 	if (!image) {
-		OWL_CORE_WARN("EnvironmentMap: Cannot read the HDR image {}.", iFile.string())
+		OWL_CORE_WARN("EnvironmentMap: Cannot read the HDR image '{}'.", iFile.string())
 	}
 	return image;
 }
@@ -551,7 +551,7 @@ auto ColorLut::parse(const std::string_view iText) -> std::optional<ColorLut> {
 		} else if (keyword == "DOMAIN_MIN" || keyword == "DOMAIN_MAX") {
 			math::vec3 value;
 			if (!parseTriplet(args, value)) {
-				OWL_CORE_WARN("ColorLut: Line {} has an invalid {}.", lineNumber, std::string{keyword})
+				OWL_CORE_WARN("ColorLut: Line {} has an invalid '{}'.", lineNumber, std::string{keyword})
 				return std::nullopt;
 			}
 			(keyword == "DOMAIN_MIN" ? lut.domainMin : lut.domainMax) = value;
@@ -571,7 +571,7 @@ auto ColorLut::parse(const std::string_view iText) -> std::optional<ColorLut> {
 auto ColorLut::load(const std::filesystem::path& iFile) -> std::optional<ColorLut> {
 	std::ifstream stream(iFile, std::ios::binary);
 	if (!stream) {
-		OWL_CORE_WARN("ColorLut: Cannot open {}.", iFile.string())
+		OWL_CORE_WARN("ColorLut: Cannot open '{}'.", iFile.string())
 		return std::nullopt;
 	}
 	const std::string text{std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>()};
@@ -596,7 +596,7 @@ auto loadHdrAsset(const std::filesystem::path& iAssetPath) -> std::optional<Floa
 	}
 	if (exists(iAssetPath))
 		return loadHdrImage(iAssetPath);
-	OWL_CORE_WARN("EnvironmentMap: {} not found.", iAssetPath.generic_string())
+	OWL_CORE_WARN("EnvironmentMap: '{}' not found.", iAssetPath.generic_string())
 	return std::nullopt;
 }
 

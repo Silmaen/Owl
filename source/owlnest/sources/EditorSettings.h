@@ -55,6 +55,9 @@ struct ProjectSession {
 			-> std::filesystem::path;
 };
 
+/// Speed of the fly keys of the editor camera in a fresh settings file, in world units per second.
+constexpr float g_defaultCameraFlySpeed = 5.f;
+
 /**
  * @brief
  *  Structure holding editor-specific settings persisted across sessions.
@@ -65,6 +68,10 @@ struct EditorSettings {
 
 	/// Whether the stats panel is visible.
 	bool showStats = true;
+	/// Whether the Content Browser shows every file: the shader build products, the engine logos, the assets of Owl Nest.
+	bool showAllFiles = false;
+	/// Lowest log level recorded (`trace` to `off`), empty for the program default (the build, `OWL_LOG_VERBOSITY`).
+	std::string logLevel;
 	/// Theme preset name (`gui::Theme::getPresetNames`); retired names are mapped on load.
 	std::string themePreset = "Owl Dark";
 	/// Font size (pixels) used inside the code editor tabs.
@@ -121,9 +128,9 @@ struct EditorSettings {
 	/// Pixels the cursor travels before a camera drag moves the view (0 to 20).
 	int cameraDeadZone = 0;
 	/// Speed of the fly keys of the editor camera, in world units per second (0.1 to 100).
-	float cameraFlySpeed = 5.f;
+	float cameraFlySpeed = g_defaultCameraFlySpeed;
 	/// What the left drag does in the viewport when it does not start on the gizmo.
-	panel::ViewNavigationMode viewNavigation = panel::ViewNavigationMode::Select;
+	panel::ViewNavigationMode viewNavigation = panel::ViewNavigationMode::Standard;
 	/// Seconds between two autosaves of the modified documents (crash recovery); 0 disables the autosave.
 	int autosaveIntervalSeconds = 60;
 	/// Most frames per second while the editor has the focus (0: the display rate, 1 to 1000).

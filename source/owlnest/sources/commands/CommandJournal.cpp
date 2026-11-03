@@ -56,11 +56,11 @@ auto CommandJournal::resolveReference(const std::optional<size_t> iIndex) const 
 	else if (!m_entries.empty())
 		entry = &m_entries.back();
 	if (entry == nullptr) {
-		OWL_WARN("Journal: {} designates no command of the journal.", name)
+		OWL_WARN("Journal: '{}' names no command of the journal.", name)
 		return unexpected<std::string>{std::format("{} designates no command of the journal", name)};
 	}
 	if (!entry->succeeded || entry->result.entity == core::UUID{0}) {
-		OWL_WARN("Journal: {} ({}) gave no entity.", name, entry->name)
+		OWL_WARN("Journal: '{}' ('{}') gave no entity.", name, entry->name)
 		return unexpected<std::string>{std::format("{} ({}) gave no entity", name, entry->name)};
 	}
 	return entry->result.entity;

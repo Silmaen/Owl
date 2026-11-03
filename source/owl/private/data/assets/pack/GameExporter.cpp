@@ -305,7 +305,7 @@ void addExecPermission(const std::filesystem::path& iFile) {
 										 std::filesystem::perms::others_exec,
 								 std::filesystem::perm_options::add, ec);
 	if (ec)
-		OWL_CORE_WARN("GameExporter: Cannot set exec permissions on {}: {}.", iFile.string(), ec.message())
+		OWL_CORE_WARN("GameExporter: Cannot set the exec permissions of '{}': {}.", iFile.string(), ec.message())
 }
 #endif
 
@@ -323,7 +323,7 @@ void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem:
 		std::filesystem::remove(dest, copyEc);
 		std::filesystem::copy(entry.path(), dest, std::filesystem::copy_options::copy_symlinks, copyEc);
 		if (copyEc)
-			OWL_CORE_WARN("GameExporter: Cannot copy {}: {}.", entry.path().string(), copyEc.message())
+			OWL_CORE_WARN("GameExporter: Cannot copy '{}': {}.", entry.path().string(), copyEc.message())
 	}
 }
 
@@ -534,8 +534,8 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		return unexpected{shadersBaked.error()};
 	std::string rendererList{"Renderer2D"};
 	for (const auto& name: renderers.getNames()) rendererList += " + " + name;
-	OWL_CORE_INFO("GameExporter: Renderers {}, {} unused engine shader files left out, {} shader(s) baked.",
-				  rendererList, engineFilesSkipped, *shadersBaked)
+	OWL_CORE_DEBUG("GameExporter: Renderers {}, {} unused engine shader files left out, {} shader(s) baked.",
+				   rendererList, engineFilesSkipped, *shadersBaked)
 	const auto baseName = sanitizeFilename(iSettings.gameName);
 	ExportReport result;
 	result.renderers = renderers.getNames();
@@ -557,7 +557,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 	for (size_t index = 0; index < assets.size(); ++index) {
 		const auto& ref = assets[index];
 		if (isCancelled(iCancel)) {
-			OWL_CORE_WARN("GameExporter: Export cancelled.")
+			OWL_CORE_INFO("GameExporter: Export cancelled.")
 			return unexpected{ExportError::Cancelled};
 		}
 		report(iProgress, 0.05f + 0.15f * static_cast<float>(index) / static_cast<float>(assets.size()),
@@ -588,7 +588,8 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		writer.addData(*cooked, ref.packPath, ref.assetType);
 	}
 	std::ignore = cache.saveManifest();
-	OWL_CORE_INFO("GameExporter: {} font atlas(es) baked.", bakeFontAtlases(textFonts, writer))
+	const auto bakedFonts = bakeFontAtlases(textFonts, writer);
+	OWL_CORE_DEBUG("GameExporter: {} font atlas(es) baked.", bakedFonts)
 	result.cookedAssets = cache.getStats().cooked;
 	result.cacheHits = cache.getStats().hits;
 	if (app::Application::instanced()) {
@@ -607,7 +608,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 			writer.addData(std::vector<uint8_t>(exported.begin(), exported.end()),
 						   std::string{localisation::Localisation::fileName}, AssetType::Other);
 		} else {
-			OWL_CORE_WARN("GameExporter: {} cannot be read, not packed.", localisationPath.string())
+			OWL_CORE_WARN("GameExporter: '{}' cannot be read, not packed.", localisationPath.string())
 		}
 	}
 	std::string mappingsEntry;
@@ -630,7 +631,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 			iCancel);
 	if (!written) {
 		if (isCancelled(iCancel)) {
-			OWL_CORE_WARN("GameExporter: Export cancelled.")
+			OWL_CORE_INFO("GameExporter: Export cancelled.")
 			return unexpected{ExportError::Cancelled};
 		}
 		OWL_CORE_ERROR("GameExporter: Cannot write pack '{}'.", result.packFile.string())
@@ -645,7 +646,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		std::filesystem::create_directories(iconDst.parent_path(), ec);
 		std::filesystem::copy_file(*iconSrc, iconDst, std::filesystem::copy_options::overwrite_existing, ec);
 		if (ec)
-			OWL_CORE_WARN("GameExporter: Cannot copy icon {}: {}.", iconSrc->string(), ec.message())
+			OWL_CORE_WARN("GameExporter: Cannot copy icon '{}': {}.", iconSrc->string(), ec.message())
 		else
 			iconEntry = iconOf(iSettings);
 	} else {
@@ -655,7 +656,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 					  iconEntry, mappingsEntry, result.renderers);
 	writeMetadata(iSettings, result.gameDirectory);
 	if (isCancelled(iCancel)) {
-		OWL_CORE_WARN("GameExporter: Export cancelled.")
+		OWL_CORE_INFO("GameExporter: Export cancelled.")
 		return unexpected{ExportError::Cancelled};
 	}
 
@@ -678,13 +679,13 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 #endif
 #ifdef OWL_PLATFORM_WINDOWS
 	if (!createZipArchive(result.gameDirectory, result.gameDirectory.parent_path() / (baseName + ".zip")))
-		OWL_CORE_WARN("GameExporter: Cannot create the zip archive of {}.", result.gameDirectory.string())
+		OWL_CORE_WARN("GameExporter: Cannot create the zip archive of '{}'.", result.gameDirectory.string())
 #endif
 	std::error_code sizeEc;
 	result.packBytes = std::filesystem::file_size(result.packFile, sizeEc);
 	report(iProgress, 1.f, "Done.");
 	const auto seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - startTime).count();
-	OWL_CORE_INFO("GameExporter: Exported {} ({} assets, {:.2f} MiB) to {} in {:.1f}s.", iSettings.gameName,
+	OWL_CORE_INFO("GameExporter: Exported '{}' ({} assets, {:.2f} MiB) to '{}' in {:.1f} s.", iSettings.gameName,
 				  result.assetCount, static_cast<double>(result.packBytes) / (1024.0 * 1024.0),
 				  result.gameDirectory.string(), seconds)
 	return result;

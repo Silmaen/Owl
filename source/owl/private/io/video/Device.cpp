@@ -82,16 +82,17 @@ void convertMJpegToRgb24(const uint8_t* iJpegBuffer, const int32_t iJpegSize, co
 	stbi_set_flip_vertically_on_load(0);
 	uint8_t* buffer = stbi_load_from_memory(iJpegBuffer, iJpegSize, &width, &height, &comp, 3);
 	if (buffer == nullptr) {
-		OWL_CORE_WARN("Jpeg decoding: nullptr result.")
+		OWL_CORE_WARN_ONCE("Video: JPEG decoding gave no image.")
 		return;
 	}
 	if (iSize != math::vec2ui{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}) {
-		OWL_CORE_WARN("Jpeg decoding: size mismatch ({} {}) expecting {} {}.", width, height, iSize.x(), iSize.y())
+		OWL_CORE_WARN_ONCE("Video: JPEG decoding gave a {}x{} image, expected {}x{}.", width, height, iSize.x(),
+						   iSize.y())
 		stbi_image_free(buffer);
 		return;
 	}
 	if (comp != 3) {
-		OWL_CORE_WARN("Jpeg decoding: wrong number of channels: {} expecting 3.", comp)
+		OWL_CORE_WARN_ONCE("Video: JPEG decoding gave {} channels, expected 3.", comp)
 		stbi_image_free(buffer);
 		return;
 	}
@@ -131,7 +132,7 @@ auto Device::getRgbBuffer(const uint8_t* iInputBuffer, const int32_t iBufferSize
 		output.resize(3ull * m_size.surface());
 		convertMJpegToRgb24(iInputBuffer, iBufferSize, m_size, output.data());
 	} else {
-		OWL_CORE_WARN("Unknown or unsupported pixel format, empty output buffer.")
+		OWL_CORE_WARN_ONCE("Video: Unknown or unsupported pixel format, the frame stays empty.")
 	}
 	return output;
 }

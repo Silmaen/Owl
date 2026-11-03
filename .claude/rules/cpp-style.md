@@ -294,10 +294,12 @@ The Doxygen format used across the codebase:
 ## Logging
 
 Use engine macros (never `std::cout`, `printf`, `std::cerr`). Before the logger exists (startup, fatal
-paths), use `std::println(stderr, ...)` from `<print>`:
+paths), use `std::println(stderr, ...)` from `<print>` (in the engine library `std::fputs(std::format(...).c_str(),
+stderr)`: the MinGW libc++ cannot link `println` to a `FILE*`):
 ```
-OWL_CORE_TRACE / OWL_TRACE       — verbose debug
-OWL_CORE_INFO / OWL_INFO         — informational
+OWL_CORE_TRACE / OWL_TRACE       — per-frame / per-item detail
+OWL_CORE_DEBUG / OWL_DEBUG       — developer detail of one operation
+OWL_CORE_INFO / OWL_INFO         — milestones a user follows
 OWL_CORE_WARN / OWL_WARN         — warnings
 OWL_CORE_ERROR / OWL_ERROR       — errors
 OWL_CORE_CRITICAL / OWL_CRITICAL — fatal
@@ -308,11 +310,16 @@ OWL_CORE_CRITICAL / OWL_CRITICAL — fatal
 
 | Level    | When to use                                                                                                       |
 |----------|-------------------------------------------------------------------------------------------------------------------|
-| TRACE    | Frame-level / instrumented diagnostics. Must be cheap (no allocations) and stripped at higher log levels.         |
-| INFO     | One-shot lifecycle events: subsystem initialised, project opened, pack written.                                   |
+| TRACE    | Per-frame or per-item diagnostics (each draw, each entity, each file of a scan). Cheap, no allocation.            |
+| DEBUG    | A developer's detail of one operation: a choice made (device, format, cache hit), a timing, a count, a step done. |
+| INFO     | A milestone a user follows: engine and renderer up, project or scene opened, pack or export written, server up.   |
 | WARN     | Recoverable failure or degraded operation: missing optional asset, fallback path taken, deprecated input.         |
 | ERROR    | The caller's request could not be fulfilled. Always paired with an early return or a state transition to `Error`. |
 | CRITICAL | The engine cannot continue: GPU init failure, OOM, corrupted state. Followed by abort/exit.                       |
+
+A program starts at `Log::getDefaultLevel()`: `Info` in a release build, `Debug` in a debug build, or the
+`OWL_LOG_VERBOSITY` environment variable. A release run must read as a short story: a few INFO lines per load, never
+one per asset; what a developer needs to see goes to DEBUG.
 
 ### Message format
 
@@ -328,7 +335,10 @@ OWL_CORE_ERROR("PackReader: corrupted TOC at offset {} (expected magic {:#x}).",
 - Sentences end with a period (`.`).
 - Subsystem prefix mandatory in infrastructure code (Vulkan, IO, script, sound, GPU); optional but encouraged elsewhere.
 - No trailing newline (the logger adds it).
-- Avoid emitting from hot loops (`onUpdate`, render passes). If you must, gate with `OWL_CORE_FRAME_TRACE` (sampled at the configured frame frequency).
+- Avoid emitting from hot loops (`onUpdate`, render passes). A trace there goes through `OWL_CORE_FRAME_TRACE` (sampled
+  at the configured frame frequency); a fault a frame loop repeats through `OWL_CORE_WARN_ONCE` / `OWL_CORE_ERROR_ONCE`
+  (client `OWL_WARN_ONCE`), logged the first time only.
+- Never put work with a side effect in the arguments: a message below the active level evaluates none of them.
 - A message below the verbosity evaluates neither its format nor its arguments; below `OWL_LOG_LEVEL` (compile
   time) it is not compiled. The macros are expressions: `if (c) OWL_CORE_WARN("…") else …` is safe.
 

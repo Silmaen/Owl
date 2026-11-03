@@ -34,7 +34,7 @@ if [[ ! -S "${XDG_RUNTIME_DIR}/${socket}" ]]; then
 	exit 1
 fi
 
-export WAYLAND_DISPLAY="${socket}" OWL_WINDOW_PLATFORM=wayland
+export WAYLAND_DISPLAY="${socket}" OWL_WINDOW_PLATFORM=wayland OWL_LOG_VERBOSITY=debug
 # Same software-driver setup as the image tests (test/unit/render_tests/RenderImage_test.cpp): capped CPU, no shader cache.
 export GALLIUM_OVERRIDE_CPU_CAPS=sse4.1 MESA_SHADER_CACHE_DISABLE=true
 unset DISPLAY

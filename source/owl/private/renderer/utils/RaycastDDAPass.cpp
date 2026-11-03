@@ -30,12 +30,12 @@ void RaycastDDAPass::init() {
 		return;
 	m_shader = gpu::ComputeShader::create(kShaderName, kRenderer);
 	if (m_shader == nullptr) {
-		OWL_CORE_ERROR("RaycastDDAPass: failed to create compute shader.")
+		OWL_CORE_ERROR("RaycastDDAPass: Cannot create the compute shader.")
 		return;
 	}
 	m_paramsBuffer = gpu::StorageBuffer::create(static_cast<uint32_t>(sizeof(Params)), kBindingParams, kRenderer);
 	if (m_paramsBuffer == nullptr) {
-		OWL_CORE_ERROR("RaycastDDAPass: failed to create params SSBO.")
+		OWL_CORE_ERROR("RaycastDDAPass: Cannot create the params SSBO.")
 		m_shader.reset();
 		return;
 	}
@@ -62,15 +62,15 @@ void RaycastDDAPass::update(std::span<const int32_t> iTileGrid, const uint32_t i
 		return;
 	const uint32_t cellCount = iWidth * iHeight;
 	if (cellCount == 0 || iTileGrid.size() < cellCount) {
-		OWL_CORE_WARN("RaycastDDAPass: update with empty / undersized grid (cells={}, span={}).", cellCount,
-					  iTileGrid.size())
+		OWL_CORE_WARN_ONCE("RaycastDDAPass: Update with an empty or undersized grid (cells={}, span={}).", cellCount,
+						   iTileGrid.size())
 		return;
 	}
 	if (cellCount > m_gridCapacity) {
 		m_gridBuffer =
 				gpu::StorageBuffer::create(cellCount * static_cast<uint32_t>(sizeof(int32_t)), kBindingGrid, kRenderer);
 		if (m_gridBuffer == nullptr) {
-			OWL_CORE_ERROR("RaycastDDAPass: failed to grow grid SSBO to {} cells.", cellCount)
+			OWL_CORE_ERROR_ONCE("RaycastDDAPass: Cannot grow the grid SSBO to {} cells.", cellCount)
 			return;
 		}
 		m_gridCapacity = cellCount;
@@ -82,7 +82,7 @@ void RaycastDDAPass::update(std::span<const int32_t> iTileGrid, const uint32_t i
 		m_metaBuffer = gpu::StorageBuffer::create(metaCount * static_cast<uint32_t>(sizeof(TileMeta)), kBindingMeta,
 												  kRenderer);
 		if (m_metaBuffer == nullptr) {
-			OWL_CORE_ERROR("RaycastDDAPass: failed to grow meta SSBO to {} entries.", metaCount)
+			OWL_CORE_ERROR_ONCE("RaycastDDAPass: Cannot grow the meta SSBO to {} entries.", metaCount)
 			return;
 		}
 		m_metaCapacity = metaCount;
@@ -95,7 +95,7 @@ void RaycastDDAPass::dispatch(const Params& iParams) {
 	if (!m_ready)
 		return;
 	if (iParams.numRays == 0 || m_gridBuffer == nullptr || m_metaBuffer == nullptr) {
-		OWL_CORE_WARN("RaycastDDAPass: dispatch with numRays=0 or missing grid/meta — skipped.")
+		OWL_CORE_WARN_ONCE("RaycastDDAPass: Dispatch with numRays=0 or a missing grid/meta, skipped.")
 		return;
 	}
 
@@ -107,7 +107,7 @@ void RaycastDDAPass::dispatch(const Params& iParams) {
 		m_zBufferBuffer = gpu::StorageBuffer::create(zBytes, kBindingZBuffer, kRenderer);
 		m_columnHitsBuffer = gpu::StorageBuffer::create(colBytes, kBindingColumnHits, kRenderer);
 		if (m_hitCountBuffer == nullptr || m_zBufferBuffer == nullptr || m_columnHitsBuffer == nullptr) {
-			OWL_CORE_ERROR("RaycastDDAPass: failed to grow output buffers for {} columns.", iParams.numRays)
+			OWL_CORE_ERROR_ONCE("RaycastDDAPass: Cannot grow the output buffers to {} columns.", iParams.numRays)
 			return;
 		}
 		m_columnCapacity = iParams.numRays;

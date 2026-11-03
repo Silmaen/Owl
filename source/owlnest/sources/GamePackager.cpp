@@ -94,8 +94,8 @@ void GamePackager::packScene(const std::filesystem::path& iScenePath) {
 				const auto mib = static_cast<double>(packBytes) / (1024.0 * 1024.0);
 				state->setMessage(std::format("Packed {} assets ({:.2f} MiB)\nOutput: {}", assets.size(), mib,
 											  outputPath.string()));
-				OWL_CORE_INFO("Scene packed: {} ({} assets, {:.2f} MiB) -> {}.", sceneFilename, assets.size(), mib,
-							  outputPath.string())
+				OWL_CORE_INFO("GamePackager: Scene '{}' packed ({} assets, {:.2f} MiB) to '{}'.", sceneFilename,
+							  assets.size(), mib, outputPath.string())
 			},
 			[state]() -> void { state->completed.store(true); }));
 }

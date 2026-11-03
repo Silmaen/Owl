@@ -46,7 +46,7 @@ void BaseDrawPanel::onRender() {
 		ImGui::Image(tex.value(), viewportPanelSize, vec(mp_framebuffer->getLowerData()),
 					 vec(mp_framebuffer->getUpperData()));
 	} else
-		OWL_WARN("No frameBuffer to render...")
+		OWL_WARN_ONCE("BaseDrawPanel: No framebuffer to render.")
 	ImGui::End();
 	ImGui::PopStyleVar();
 }

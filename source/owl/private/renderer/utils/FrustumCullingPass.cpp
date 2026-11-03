@@ -47,7 +47,7 @@ void FrustumCullingPass::init() {
 		return;
 	m_shader = gpu::ComputeShader::create(kShaderName, kRenderer);
 	if (m_shader == nullptr) {
-		OWL_CORE_ERROR("FrustumCullingPass: failed to create compute shader.")
+		OWL_CORE_ERROR("FrustumCullingPass: Cannot create the compute shader.")
 		return;
 	}
 	// Frustum + counter are fixed-size, allocate now.
@@ -55,7 +55,7 @@ void FrustumCullingPass::init() {
 			gpu::StorageBuffer::create(static_cast<uint32_t>(sizeof(FrustumPayload)), kBindingFrustum, kRenderer);
 	m_counterBuffer = gpu::StorageBuffer::create(static_cast<uint32_t>(sizeof(uint32_t)), kBindingCounter, kRenderer);
 	if (m_frustumBuffer == nullptr || m_counterBuffer == nullptr) {
-		OWL_CORE_ERROR("FrustumCullingPass: failed to create frustum/counter SSBO.")
+		OWL_CORE_ERROR("FrustumCullingPass: Cannot create the frustum/counter SSBO.")
 		m_shader.reset();
 		m_frustumBuffer.reset();
 		m_counterBuffer.reset();
@@ -88,7 +88,7 @@ void FrustumCullingPass::dispatch(std::span<const Aabb> iAabbs, const std::array
 		m_aabbsBuffer = gpu::StorageBuffer::create(aabbBytes, kBindingAabbs, kRenderer);
 		m_commandsBuffer = gpu::StorageBuffer::create(cmdBytes, kBindingCommands, kRenderer);
 		if (m_aabbsBuffer == nullptr || m_commandsBuffer == nullptr) {
-			OWL_CORE_ERROR("FrustumCullingPass: failed to grow buffers for {} entries.", paddedCount)
+			OWL_CORE_ERROR_ONCE("FrustumCullingPass: Cannot grow the buffers to {} entries.", paddedCount)
 			return;
 		}
 		m_paddedCapacity = paddedCount;

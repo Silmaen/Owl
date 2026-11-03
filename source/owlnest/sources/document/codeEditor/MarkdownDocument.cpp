@@ -121,7 +121,7 @@ public:
 		parser.text = &Parser::text;
 		const int rc = md_parse(iSource.data(), static_cast<MD_SIZE>(iSource.size()), &parser, this);
 		if (rc != 0) {
-			OWL_CORE_WARN("MarkdownDocument: md_parse aborted with code {}.", rc)
+			OWL_CORE_WARN("MarkdownDocument: The Markdown parser aborted with code {}.", rc)
 		}
 		return std::move(m_root);
 	}

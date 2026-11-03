@@ -35,7 +35,7 @@ auto DrawData::create() -> shared<DrawData> {
 			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
 #endif
 	}
-	OWL_CORE_ERROR("Unknown RendererAPI ({}).", static_cast<int>(api))
+	OWL_CORE_ERROR("DrawData: Unknown render API ({}).", static_cast<int>(api))
 	return nullptr;
 }
 

@@ -59,7 +59,7 @@ void VoxelPalette::saveStructure(const std::string& iName) const {
 	const data::voxel::VoxelStructure structure =
 			data::voxel::VoxelStructure::captureFromWorld(voxelWorld->world, voxelWorld->registry);
 	if (structure.isEmpty()) {
-		OWL_WARN("VoxelPalette: nothing to save, the world has no solid block.")
+		OWL_WARN("VoxelPalette: Nothing to save, the world has no solid block.")
 		return;
 	}
 	const std::filesystem::path dir = structureDirectory();
@@ -67,10 +67,10 @@ void VoxelPalette::saveStructure(const std::string& iName) const {
 	std::filesystem::create_directories(dir, ec);
 	const std::filesystem::path file = dir / (iName + ".owlvoxstruct");
 	if (!structure.saveToFile(file, iName)) {
-		OWL_WARN("VoxelPalette: Failed to write structure {}.", file.generic_string())
+		OWL_ERROR("VoxelPalette: Cannot write the structure '{}'.", file.generic_string())
 		return;
 	}
-	OWL_INFO("VoxelPalette: saved structure {}.", file.generic_string())
+	OWL_INFO("VoxelPalette: Structure saved to '{}'.", file.generic_string())
 }
 
 void VoxelPalette::onImGuiRender(VoxelBrush& ioBrush, const bool iShown) {
@@ -214,7 +214,7 @@ void VoxelPalette::renderStructureSection(VoxelBrush& ioBrush) {
 			ioBrush.structureName = name;
 			ioBrush.eraser = false;
 		} else {
-			OWL_WARN("VoxelPalette: failed to load structure {}.", entry.path().generic_string())
+			OWL_WARN("VoxelPalette: Cannot load the structure '{}'.", entry.path().generic_string())
 		}
 	}
 	gui::widgets::endSection();

@@ -332,7 +332,7 @@ public:
 	 */
 	[[nodiscard]] static auto loadStaticMesh(const std::filesystem::path& iFilePath) -> shared<StaticMesh> {
 		if (!std::filesystem::exists(iFilePath)) {
-			OWL_CORE_ERROR("MeshLoader::loadStaticMesh: File {} does not exist!", iFilePath.string())
+			OWL_CORE_ERROR("MeshLoader: File '{}' does not exist.", iFilePath.string())
 			return nullptr;
 		}
 		const auto extension = iFilePath.extension().string();
@@ -345,7 +345,7 @@ public:
 		if (extension == ".gltf" || extension == ".glb") {
 			return loadGltf(iFilePath);
 		}
-		OWL_CORE_ERROR("MeshLoader::loadStaticMesh: Unsupported file extension {}!", extension)
+		OWL_CORE_ERROR("MeshLoader: Unsupported file extension '{}'.", extension)
 		return nullptr;
 	}
 

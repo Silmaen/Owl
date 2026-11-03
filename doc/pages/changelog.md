@@ -11,13 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Owl Nest viewport: **Select**, **Orbit**, **Fly** and **Pan** navigation modes in the view overlay choose what the left drag does, kept in the editor settings, with a click still selecting.
+- Owl Nest viewport: **Standard**, **Orbit**, **Fly** and **Pan** navigation modes in the view overlay choose what the left drag does, kept in the editor settings, with a click still selecting.
 - Owl Nest viewport: a fly speed button and a **Fly Speed** camera setting, kept across sessions and followed by the wheel during a flight.
 - `CameraEditor::Navigation::leftDrag`: orbit, look around (flying with the keys) or pan on a left drag without modifier.
 - Editor manual: a *Navigating the scene* section with every mouse and key gesture, per mode and per rendering style.
 - Project templates **2D platformer** (Box2D platforms, run and jump), **3D** (meshes, sun, procedural sky, first-person player) and **Isometric** (tilemap island and sprites), each with a scenario and a preview image.
 - Owl Nest **New Project** dialog: a grid of template cards (preview, name, description, style tags) filtered by tag and walked with the arrow keys, the details of the selected template, and a checked name and location (`panel::validateNewProject`).
 - `tools/demo/generate_templates.py` writes the meshes, the isometric atlas, tileset and map of the templates.
+- `OWL_CORE_DEBUG` / `OWL_DEBUG` and Lua `log.debug`: the Debug level the Log panel filters on has its messages.
+- Owl Nest log level: a list in the Log panel toolbar and **Settings > Log** set the lowest level recorded, kept in the editor settings; the tab also sets the period of the per-frame traces.
+- `OWL_CORE_WARN_ONCE`, `OWL_CORE_ERROR_ONCE` and `OWL_WARN_ONCE`: a fault a frame loop repeats is logged the first time only.
+- `OWL_LOG_VERBOSITY` environment variable: the log level a program starts at (`trace` to `off`).
+- Owl Nest Content Browser **Packaged files**: only the files a game export packs, and the folders holding them.
+- Owl Nest **Settings > General > Show All Files**: the Content Browser hides the compiled shaders, the engine logos and the assets of Owl Nest unless it is on.
+- `Application::getAssetOrigin`: whether an asset directory is a project, the application's, the working directory's or the engine's.
+- Owl Nest code editor: a double click on a `gid:` reference or a bare GUID opens the asset it names.
 - Owl Nest Content Browser **New Lua Script**: a starter script with one property and the lifecycle hooks, opened in the code editor.
 - Tutorial "Create a new game" (`tutorial-first-game.md`): a first game in Owl Nest from the Empty 2D template, from the project to the export.
 - Documentation reading levels: a `Level:` line under each page title (beginner, confirmed, expert) and three entry paths in the README.
@@ -27,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Engine Demo hub: day and night with an ambient tint and 2D lamp and window lights, and Kenney Tiny Farm and Tiny Dungeon art.
 - Engine Demo hub: the sound yard folded into a north-west cave with a reverb zone, torch, drips and the adaptive hub music; its scene is gone.
 - Engine Demo tavern: the character yard folded in, with a barkeeper holding a tankard on a socket, a server walking a spline, two seated patrons and four dialogues; its scene is gone.
+- `SplineFollower` stops: the entity waits some seconds on chosen control points of its spline, edited in the inspector, read by Lua `spline.is_waiting`.
+- Engine Demo tavern: the server pauses at the patrons' table and by the bar, idle while she waits (`tavern_server.lua`).
 - Engine Demo main menu: a live diorama of a 3D tavern under a day and night sky with the 2D village in front.
 - Engine Demo: a scenario for every scene, checked by `GameExportCoverage.EveryDemoSceneHasAScenario`.
 - `ShipController` component (`owl.ships`): assisted inertial spaceflight, mouse pitch and yaw, roll, thrust, strafe and a flight assist toggle, moving a `WorldPosition` in double, with its Owl Nest inspector and `entity.*_ship_*` Lua bindings.
@@ -201,6 +211,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Logs: a release build starts at Info and a debug build at Debug instead of Trace; per-asset loads, timings and setup details moved to Debug or Trace, the levels of warnings, errors and critical messages follow one rule, and every message reads `Subsystem: Sentence.`
+- The build-type definitions are `OWL_DEBUG_BUILD` and `OWL_RELEASE_BUILD`, freeing `OWL_DEBUG` for the debug log macro.
+- CI: the coverage presets `linux-gcc-debug` and `linux-clang-debug` give each test binary 1200 s, the image test shards ran up to 600 s on a loaded agent.
 - `entity.set_tint` and `entity.get_tint` also reach the colour of a `ParticleEmitter`.
 - Breakout: the power-ups and the bursts are prefabs spawned and destroyed by `game.lua`, no longer pools of hidden entities.
 - Sokoban: the levels are the rows of the data table `tables/levels.owltable`, read by the title, the level select, the levels and the victory screen; the pause stops the scene clock (`time.set_paused`).
@@ -252,6 +265,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Owl Nest: Slang headers (`.slangh`), `.hlsl` and `.glsl` shaders open in the code editor from the Content Browser.
 - `settings.apply()` resizes the window only in the runner and only for a window setting that changed: changing the language or the subtitles in Play no longer resizes Owl Nest, nor a game window the player resized.
 - Engine Demo tavern: the two patrons sit on their stools instead of through them, and the server's `ServerRoute` loops between the bar and the patrons' table around the furniture, the trapdoor and the player's spawn.
 - The export scans the scenes named in the `Asset` cells of a data table, with their scripts and assets.

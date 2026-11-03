@@ -89,8 +89,8 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		m_workingDirectory = absolute(std::filesystem::current_path());
 
 		OWL_CORE_INFO("Application: {} on Owl Engine {}.", m_initParams.name, getVersionFullString())
-		OWL_CORE_INFO("Working directory: {}.", m_workingDirectory.string())
-		OWL_CORE_INFO("User directory: {}.", platform::getUserDirectory().string())
+		OWL_CORE_DEBUG("Application: Working directory '{}'.", m_workingDirectory.string())
+		OWL_CORE_INFO("Application: User directory '{}'.", platform::getUserDirectory().string())
 
 		// load config file if any
 		if (!m_initParams.isDummy && m_initParams.useConfigFile) {
@@ -122,12 +122,14 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	// Lowest priority first: a development tree finds the engine and app assets above the working directory.
 	{
 		if (const auto engineAssets = searchAssets("engine_assets"); engineAssets.has_value())
-			m_assetDirectories.push_front({"Engine assets", engineAssets.value()});
+			addFoundAssetDirectory({.title = "Engine assets", .assetsPath = engineAssets.value()}, AssetOrigin::Engine);
 		if (exists(m_workingDirectory / "assets"))
-			m_assetDirectories.push_front({"working dir assets", m_workingDirectory / "assets"});
+			addFoundAssetDirectory({.title = "working dir assets", .assetsPath = m_workingDirectory / "assets"},
+								   AssetOrigin::WorkingDirectory);
 		if (!m_initParams.assetsPattern.empty()) {
 			if (const auto appAssets = searchAssets(m_initParams.assetsPattern); appAssets.has_value())
-				m_assetDirectories.push_front({"App assets", appAssets.value()});
+				addFoundAssetDirectory({.title = "App assets", .assetsPath = appAssets.value()},
+									   AssetOrigin::Application);
 		}
 		if (m_assetDirectories.empty() && !hasOpenPack())
 			OWL_CORE_ERROR("Application: No asset directory found from '{}'.", m_workingDirectory.string())
@@ -139,7 +141,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		renderer::gpu::RenderCommand::create(m_initParams.renderer);
 		// check renderer creation
 		if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Created) {
-			OWL_CORE_ERROR("ERROR while Creating Renderer.")
+			OWL_CORE_ERROR("Application: Cannot create the renderer.")
 			m_state = State::Error;
 			return;
 		}
@@ -154,14 +156,14 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		renderer::Renderer::initContext();
 		// check renderer initialization
 		if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Ready && !fallBackRenderer()) {
-			OWL_CORE_ERROR("ERROR while Initializing Renderer.")
+			OWL_CORE_ERROR("Application: Cannot initialize the renderer.")
 			m_state = State::Error;
 			return;
 		}
 		// wait for all asynchronous tasks
 		m_scheduler.waitEmptyQueue();
 
-		OWL_CORE_TRACE("Renderer context initiated.")
+		OWL_CORE_DEBUG("Application: Renderer context ready.")
 	}
 
 	// set up the callbacks
@@ -184,7 +186,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		// wait for all asynchronous tasks
 		m_scheduler.waitEmptyQueue();
 
-		OWL_CORE_TRACE("GUI Layer created.")
+		OWL_CORE_DEBUG("Application: GUI layer created.")
 	}
 #else
 	if (m_initParams.hasGui)
@@ -201,7 +203,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 			soundReady = sound::SoundCommand::getState() == sound::SoundAPI::State::Ready;
 		}
 		if (!soundReady && requestedSound != sound::SoundAPI::Type::Null) {
-			OWL_CORE_WARN("Sound backend unavailable -- falling back to Null sound (audio disabled).")
+			OWL_CORE_WARN("Application: Sound backend unavailable, falling back to the Null backend (audio disabled).")
 			sound::SoundSystem::shutdown();
 
 			sound::SoundCommand::create(sound::SoundAPI::Type::Null);
@@ -210,14 +212,14 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 			soundReady = sound::SoundCommand::getState() == sound::SoundAPI::State::Ready;
 		}
 		if (!soundReady) {
-			OWL_CORE_ERROR("ERROR while Initializing Sound system.")
+			OWL_CORE_ERROR("Application: Cannot initialize the sound system.")
 			m_state = State::Error;
 			return;
 		}
 		// wait for all asynchronous tasks
 		m_scheduler.waitEmptyQueue();
 
-		OWL_CORE_INFO("Sound system initiated.")
+		OWL_CORE_INFO("Application: Sound system ready.")
 	}
 
 	// Compile renderer shaders with an ImGui loading screen.
@@ -225,7 +227,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 #if OWL_WITH_GUI
 		renderer::Renderer::initShaders(
 				[this](const uint32_t iCurrent, const uint32_t iTotal, const std::string& iName) -> void {
-					OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
+					OWL_CORE_TRACE("Application: Compiling shader {}/{}, '{}'.", iCurrent + 1, iTotal, iName)
 					// Render a loading frame if ImGui is available.
 					if (mp_imGuiLayer && mp_appWindow && !m_minimized) {
 						renderer::gpu::RenderCommand::beginFrame();
@@ -255,13 +257,13 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		renderer::Renderer::initShaders(
 				[]([[maybe_unused]] const uint32_t iCurrent, [[maybe_unused]] const uint32_t iTotal,
 				   [[maybe_unused]] const std::string& iName) -> void {
-					OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
+					OWL_CORE_TRACE("Application: Compiling shader {}/{}, '{}'.", iCurrent + 1, iTotal, iName)
 				},
 				m_initParams.renderers);
 #endif
 		m_scheduler.waitEmptyQueue();
 
-		OWL_CORE_INFO("Renderer initiated.")
+		OWL_CORE_INFO("Application: Renderer ready.")
 	}
 
 	// update the state here. (required for font initialization)
@@ -272,7 +274,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 	setHotReloadEnabled(m_initParams.hotReload);
 
-	OWL_CORE_TRACE("Application creation done.")
+	OWL_CORE_DEBUG("Application: Creation done.")
 }
 
 void Application::createMainWindow() {
@@ -296,7 +298,7 @@ void Application::createMainWindow() {
 		mp_appWindow->setVSync(false);
 	setFrameRateLimit(m_initParams.frameRateLimit);
 
-	OWL_CORE_INFO("Window Created.")
+	OWL_CORE_INFO("Application: Window created.")
 }
 
 auto Application::fallBackRenderer() -> bool {
@@ -309,7 +311,7 @@ auto Application::fallBackRenderer() -> bool {
 		OWL_CORE_WARN("Application: {}", m_rendererFallbackReason)
 	OWL_CORE_WARN("Application: The {} renderer could not start, falling back to {}.", magic_enum::enum_name(failed),
 				  magic_enum::enum_name(*fallback))
-	OWL_CORE_WARN("Application: Set `renderer: {}` in config.yml to skip the attempt.",
+	OWL_CORE_WARN("Application: Set 'renderer: {}' in 'config.yml' to skip the attempt.",
 				  magic_enum::enum_name(*fallback))
 	input::Input::invalidate();
 	renderer::gpu::RenderCommand::invalidate();
@@ -370,11 +372,11 @@ Application::~Application() {
 
 		renderer::gpu::RenderCommand::invalidate();
 
-		OWL_CORE_TRACE("Renderer shut down and invalidated.")
+		OWL_CORE_DEBUG("Application: Renderer shut down.")
 		// 4. Finally tear down the window (destroys GLFW window / terminates GLFW).
 		if (mp_appWindow) {
 			mp_appWindow->shutdown();
-			OWL_CORE_TRACE("Application window shut down.")
+			OWL_CORE_DEBUG("Application: Window shut down.")
 		}
 		mp_appWindow.reset();
 	}
@@ -383,13 +385,23 @@ Application::~Application() {
 
 		sound::SoundCommand::invalidate();
 
-		OWL_CORE_TRACE("Sound system shut down and invalidated.")
+		OWL_CORE_DEBUG("Application: Sound system shut down.")
 	}
 	if (!m_initParams.isDummy) {
 		std::signal(SIGINT, SIG_DFL);
 		std::signal(SIGTERM, SIG_DFL);
 	}
 	invalidate();
+}
+
+void Application::addFoundAssetDirectory(const AssetDirectory& iDir, const AssetOrigin iOrigin) {
+	m_assetOrigins.emplace_back(iDir.assetsPath, iOrigin);
+	m_assetDirectories.push_front(iDir);
+}
+
+auto Application::getAssetOrigin(const std::filesystem::path& iPath) const -> AssetOrigin {
+	const auto found = std::ranges::find(m_assetOrigins, iPath, &std::pair<std::filesystem::path, AssetOrigin>::first);
+	return found == m_assetOrigins.end() ? AssetOrigin::Project : found->second;
 }
 
 void Application::addAssetDirectory(const AssetDirectory& iDir, const bool iEditable) {
@@ -424,14 +436,14 @@ auto Application::unloadAssetsFrom(const std::filesystem::path& iDirectory) -> s
 		mp_engineContext->getHudLibrary().clear();
 		mp_engineContext->getVoxelMeshCache().clear();
 	}
-	OWL_CORE_INFO("Application: Unloaded {} asset(s) of {}.", count, iDirectory.string())
+	OWL_CORE_DEBUG("Application: Unloaded {} asset(s) of '{}'.", count, iDirectory.string())
 	return count;
 }
 
 void Application::setHotReloadEnabled(const bool iEnabled) {
 	m_initParams.hotReload = iEnabled;
 	if (iEnabled && hasOpenPack()) {
-		OWL_CORE_INFO("Hot reload: Off, the assets come from a pack.")
+		OWL_CORE_DEBUG("HotReload: Off, the assets come from a pack.")
 		m_hotReload.setEnabled(false);
 		return;
 	}
@@ -557,16 +569,9 @@ void Application::run() {
 		{
 			if (const auto& memState = debug::TrackerAPI::checkState();
 				memState.allocationCalls > memState.deallocationCalls && frameCount > 0) {
-				OWL_CORE_TRACE("----------------------------------")
-				OWL_CORE_TRACE("Frame Leak Detected.")
-				OWL_CORE_TRACE("-----------------------------------")
-				OWL_CORE_TRACE("")
-				OWL_CORE_TRACE(" LEAK Amount: {} in {} Unallocated chunks.",
-							   owl::core::utils::sizeToString(memState.allocatedMemory), memState.allocs.size())
-				for (const auto& chunk: memState.allocs) { OWL_CORE_TRACE(" ** {}", chunk.toStr()) }
-
-				OWL_CORE_TRACE("----------------------------------")
-				OWL_CORE_TRACE("")
+				OWL_CORE_WARN("Memory: Frame leak, {} in {} unreleased chunk(s).",
+							  owl::core::utils::sizeToString(memState.allocatedMemory), memState.allocs.size())
+				for (const auto& chunk: memState.allocs) { OWL_CORE_DEBUG("Memory: Leaked chunk {}.", chunk.toStr()) }
 			}
 		}
 		++frameCount;
@@ -588,7 +593,7 @@ void Application::onEvent(event::Event& ioEvent) {
 		return false;
 	});
 	dispatcher.dispatch<event::GamepadConnectedEvent>([](const event::GamepadConnectedEvent& iEvent) -> bool {
-		OWL_CORE_INFO("Input: Gamepad {} connected ({}).", iEvent.getPad(), iEvent.getGamepadName())
+		OWL_CORE_INFO("Input: Gamepad {} connected ('{}').", iEvent.getPad(), iEvent.getGamepadName())
 		return false;
 	});
 	dispatcher.dispatch<event::GamepadDisconnectedEvent>([](const event::GamepadDisconnectedEvent& iEvent) -> bool {
@@ -688,7 +693,7 @@ void AppParams::loadFromFile(const std::filesystem::path& iFile) {
 		if (const auto platform = window::parsePlatform(platformStr); platform.has_value())
 			windowPlatform = platform.value();
 		else if (!platformStr.empty())
-			OWL_CORE_WARN("AppParams: Unknown windowPlatform '{}', keeping {}.", platformStr,
+			OWL_CORE_WARN("Application: Unknown window platform '{}', keeping {}.", platformStr,
 						  window::platformName(windowPlatform))
 		get(appConfig, "installDesktopEntry", installDesktopEntry);
 		get(appConfig, "hotReload", hotReload);
@@ -730,10 +735,10 @@ auto Application::openPack(const std::filesystem::path& iPackFile) -> bool {
 					   data::assets::pack::fixHint(opened.error()))
 		return false;
 	}
-	OWL_CORE_INFO("Opened asset pack: {} ({} entries).", iPackFile.string(), m_packReader.getHeader().entryCount)
+	OWL_CORE_INFO("Pack: Asset pack '{}' opened ({} entries).", iPackFile.string(), m_packReader.getHeader().entryCount)
 	if (const auto index = m_packReader.readEntry(std::string{data::assets::pack::g_assetIndexEntry}); index) {
 		const auto count = m_assetRegistry.loadIndex(std::string(index->begin(), index->end()));
-		OWL_CORE_INFO("Pack: {} asset GUID(s) in the index.", count)
+		OWL_CORE_DEBUG("Pack: {} asset GUID(s) in the index.", count)
 	}
 	m_hotReload.setEnabled(false);
 	return true;

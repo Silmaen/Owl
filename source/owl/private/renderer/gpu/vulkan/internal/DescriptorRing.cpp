@@ -51,7 +51,7 @@ auto DescriptorRing::createPool() const -> VkDescriptorPool {
 	VkDescriptorPool pool = nullptr;
 	if (const auto result = vkCreateDescriptorPool(VulkanCore::get().getLogicalDevice(), &poolInfo, nullptr, &pool);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan DescriptorRing: failed to create descriptor pool ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: DescriptorRing cannot create its descriptor pool ({}).", resultString(result))
 		return nullptr;
 	}
 	return pool;
@@ -86,7 +86,7 @@ auto DescriptorRing::acquire(const uint32_t iSlot, const uint64_t iSerial) -> Vk
 												.descriptorSetCount = 1,
 												.pSetLayouts = &m_layout};
 	if (const auto result = vkAllocateDescriptorSets(device, &allocInfo, &set); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan DescriptorRing: failed to allocate descriptor set ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: DescriptorRing cannot allocate a descriptor set ({}).", resultString(result))
 		return nullptr;
 	}
 	++slot.setsInActive;

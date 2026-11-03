@@ -25,7 +25,7 @@ auto registry() -> std::unordered_map<std::string, RenderLayerFactory::CreateFn>
 void RenderLayerFactory::registerType(const std::string& iTypeKey, CreateFn iFactory) {
 	auto& reg = registry();
 	if (reg.contains(iTypeKey)) {
-		OWL_CORE_WARN("RenderLayerFactory: type '{}' already registered, replacing.", iTypeKey)
+		OWL_CORE_WARN("RenderLayerFactory: Type '{}' already registered, replacing it.", iTypeKey)
 	}
 	reg[iTypeKey] = std::move(iFactory);
 }
@@ -38,7 +38,7 @@ auto RenderLayerFactory::create(const std::string& iTypeKey, const std::string& 
 	const auto& reg = registry();
 	const auto it = reg.find(iTypeKey);
 	if (it == reg.end()) {
-		OWL_CORE_ERROR("RenderLayerFactory: unknown type '{}'.", iTypeKey)
+		OWL_CORE_ERROR("RenderLayerFactory: Unknown type '{}'.", iTypeKey)
 		return nullptr;
 	}
 	return it->second(iName);

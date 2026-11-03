@@ -34,7 +34,7 @@ auto GraphContext::create(void* ioWindow) -> uniq<GraphContext> {
 #endif
 	}
 
-	OWL_CORE_ERROR("Unknown RendererAPI ({}).", static_cast<int>(api))
+	OWL_CORE_ERROR("GraphContext: Unknown render API ({}).", static_cast<int>(api))
 	return nullptr;
 }
 

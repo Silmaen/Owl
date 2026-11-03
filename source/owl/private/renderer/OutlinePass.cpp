@@ -83,7 +83,7 @@ void OutlinePass::shutdown() {
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_data) {
-		OWL_CORE_WARN("OutlinePass: Already shutdown.")
+		OWL_CORE_WARN("OutlinePass: Already shut down.")
 		return;
 	}
 	g_data->drawData.reset();

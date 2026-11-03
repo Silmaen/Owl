@@ -62,7 +62,7 @@ auto loadProc(const char* iName) -> T {
 void initEfx() {
 	g_Efx = EfxApi{};
 	if (alcIsExtensionPresent(g_Device.device, "ALC_EXT_EFX") == ALC_FALSE) {
-		OWL_CORE_WARN("SoundAPI(OpenAL): No EFX extension, reverb zones and filters are off.")
+		OWL_CORE_WARN("OpenAL: No EFX extension, reverb zones and filters are off.")
 		return;
 	}
 	g_Efx.genEffects = loadProc<LPALGENEFFECTS>("alGenEffects");
@@ -81,7 +81,7 @@ void initEfx() {
 		g_Efx.effectf == nullptr || g_Efx.genSlots == nullptr || g_Efx.deleteSlots == nullptr ||
 		g_Efx.sloti == nullptr || g_Efx.slotf == nullptr || g_Efx.genFilters == nullptr ||
 		g_Efx.deleteFilters == nullptr || g_Efx.filteri == nullptr || g_Efx.filterf == nullptr) {
-		OWL_CORE_WARN("SoundAPI(OpenAL): EFX entry points missing, reverb zones and filters are off.")
+		OWL_CORE_WARN("OpenAL: EFX entry points missing, reverb zones and filters are off.")
 		return;
 	}
 	alGetError();
@@ -91,7 +91,7 @@ void initEfx() {
 	g_Efx.slotf(g_Efx.slot, AL_EFFECTSLOT_GAIN, 0.f);
 	g_Efx.sloti(g_Efx.slot, AL_EFFECTSLOT_EFFECT, static_cast<ALint>(g_Efx.effect));
 	if (const ALenum err = alGetError(); err != AL_NO_ERROR) {
-		OWL_CORE_WARN("SoundAPI(OpenAL): EFX reverb could not be created ({}), reverb zones are off.", alGetString(err))
+		OWL_CORE_WARN("OpenAL: EFX reverb could not be created ({}), reverb zones are off.", alGetString(err))
 		return;
 	}
 	g_Efx.available = true;
@@ -111,11 +111,11 @@ void SoundAPI::init() {
 	OWL_PROFILE_FUNCTION()
 
 	if (g_Device.device != nullptr) {
-		OWL_CORE_WARN("SoundAPI(OpenAL): Device already initialized.")
+		OWL_CORE_DEBUG("OpenAL: Device already initialized.")
 	} else {
 		g_Device.device = alcOpenDevice(nullptr);
 		if (g_Device.device == nullptr) {
-			OWL_CORE_ERROR("SoundAPI(OpenAL): Device could not be opened.")
+			OWL_CORE_ERROR("OpenAL: Device could not be opened.")
 			setState(State::Error);
 			return;
 		}
@@ -123,16 +123,16 @@ void SoundAPI::init() {
 
 	// Context
 	if (g_Device.context != nullptr) {
-		OWL_CORE_WARN("SoundAPI(OpenAL): Context already initialized.")
+		OWL_CORE_DEBUG("OpenAL: Context already initialized.")
 	} else {
 		g_Device.context = alcCreateContext(g_Device.device, nullptr);
 		if (g_Device.context == nullptr) {
-			OWL_CORE_ERROR("SoundAPI(OpenAL): Context could not be created.")
+			OWL_CORE_ERROR("OpenAL: Context could not be created.")
 			setState(State::Error);
 			return;
 		}
 		if (alcMakeContextCurrent(g_Device.context) == 0) {
-			OWL_CORE_ERROR("SoundAPI(OpenAL): Failed to make context current.")
+			OWL_CORE_ERROR("OpenAL: Failed to make the context current.")
 			setState(State::Error);
 			return;
 		}
@@ -177,7 +177,7 @@ auto SoundAPI::play(const shared<SoundData>& iData, const PlayParams& iParams) -
 	OWL_PROFILE_FUNCTION()
 
 	if (iData == nullptr) {
-		OWL_CORE_WARN("SoundAPI(OpenAL)::play: SoundData is null.")
+		OWL_CORE_WARN("OpenAL: Cannot play, the sound data is null.")
 		return invalidSoundHandle;
 	}
 	const auto bufferId = static_cast<uint32_t>(iData->getSystemId());
@@ -191,7 +191,7 @@ auto SoundAPI::play(const shared<SoundData>& iData, const PlayParams& iParams) -
 		err = alGetError();
 	}
 	if (err != AL_NO_ERROR) {
-		OWL_CORE_ERROR("SoundAPI(OpenAL)::play: alGenSources error: {} ({} sources playing).", alGetString(err),
+		OWL_CORE_ERROR("OpenAL: alGenSources failed while playing: {} ({} sources playing).", alGetString(err),
 					   m_handleToSource.size())
 		return invalidSoundHandle;
 	}
@@ -405,7 +405,7 @@ auto SoundAPI::reclaimSource() -> bool {
 	}
 	if (!oldest.has_value())
 		return false;
-	OWL_CORE_WARN("SoundAPI(OpenAL)::play: No source left, the oldest sound is cut.")
+	OWL_CORE_WARN("OpenAL: No source left, the oldest sound is cut.")
 	stop(*oldest);
 	return true;
 }

@@ -38,7 +38,7 @@ ExtraDataContainer::ExtraDataContainer(const ExtraDataPid iEdPid, const size_t i
 
 void ExtraDataContainer::init() {
 	if (!ExtraDataRegistry::isRegistered(m_edPid)) {
-		OWL_CORE_ERROR("ExtraDataContainer::init: Unknown ExtraData pid {}.", m_edPid)
+		OWL_CORE_ERROR("ExtraDataContainer: Unknown extra data pid {}.", m_edPid)
 		return;
 	}
 	for (auto& ed: m_extraDataList) {
@@ -49,7 +49,7 @@ void ExtraDataContainer::init() {
 
 auto ExtraDataContainer::getExtraData(size_t iIndex) const -> shared<ExtraDataBase> {
 	if (iIndex >= m_extraDataList.size()) {
-		OWL_CORE_WARN("ExtraDataContainer::getExtraData: Index {} out of range (size={}).", iIndex,
+		OWL_CORE_WARN("ExtraDataContainer: Cannot get extra data {}, out of range (size {}).", iIndex,
 					  m_extraDataList.size())
 		return nullptr;
 	}
@@ -65,7 +65,7 @@ auto ExtraDataContainer::clone() const -> ExtraDataContainer {
 
 void ExtraDataContainer::removeExtraData(size_t iIndex) {
 	if (iIndex >= m_extraDataList.size()) {
-		OWL_CORE_WARN("ExtraDataContainer::removeExtraData: Index {} out of range (size={}).", iIndex,
+		OWL_CORE_WARN("ExtraDataContainer: Cannot remove extra data {}, out of range (size {}).", iIndex,
 					  m_extraDataList.size())
 		return;
 	}

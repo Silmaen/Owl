@@ -30,7 +30,7 @@ auto SoundAPI::create(const Type& iType) -> uniq<SoundAPI> {
 #endif
 	}
 
-	OWL_CORE_ERROR("Unknown Sound API Type!")
+	OWL_CORE_ERROR("SoundAPI: Unknown sound API type.")
 	return nullptr;
 }
 

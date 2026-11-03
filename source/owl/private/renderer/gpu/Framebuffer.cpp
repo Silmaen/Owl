@@ -37,7 +37,7 @@ auto Framebuffer::create(const FramebufferSpecification& iSpec) -> shared<Frameb
 			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
 #endif
 	}
-	OWL_CORE_ERROR("Unknown RendererAPI ({}).", static_cast<int>(api))
+	OWL_CORE_ERROR("Framebuffer: Unknown render API ({}).", static_cast<int>(api))
 	return nullptr;
 }
 
@@ -81,7 +81,7 @@ auto Framebuffer::canCopyToCube(const uint32_t iIndex, const TextureCube& iTarge
 auto Framebuffer::copyAttachmentToCube(const uint32_t iIndex, TextureCube& ioTarget, const uint32_t iFace,
 									   const uint32_t iLevel) -> bool {
 	if (!canCopyToCube(iIndex, ioTarget, iFace, iLevel)) {
-		OWL_CORE_WARN("Framebuffer ({}): Cannot copy attachment {} into face {} of level {} of the cube.",
+		OWL_CORE_WARN("Framebuffer: '{}' cannot copy attachment {} into face {} of level {} of the cube.",
 					  getSpecification().debugName, iIndex, iFace, iLevel)
 		return false;
 	}

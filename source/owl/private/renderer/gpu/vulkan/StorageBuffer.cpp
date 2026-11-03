@@ -25,7 +25,7 @@ StorageBuffer::StorageBuffer(const uint32_t iSize, const uint32_t iBinding) : m_
 	if (iSize == 0)
 		return;
 	if (internal::VulkanHandler::get().getState() != internal::VulkanHandler::State::Running) {
-		OWL_CORE_WARN("Vulkan storage buffer: Trying to create SSBO before VulkanHandler is running.")
+		OWL_CORE_WARN("Vulkan: Storage buffer not created, the VulkanHandler is not running.")
 		return;
 	}
 	m_buffer = internal::createBuffer(iSize,
@@ -45,8 +45,8 @@ void StorageBuffer::setData(const void* iData, const uint32_t iSize, const uint3
 	if (m_buffer.buffer == nullptr || iSize == 0 || iData == nullptr)
 		return;
 	if (iOffset + iSize > m_size) {
-		OWL_CORE_WARN("Vulkan storage buffer: setData out of range (offset {} + size {} > capacity {}).", iOffset,
-					  iSize, m_size)
+		OWL_CORE_WARN_ONCE("Vulkan: Storage buffer setData out of range (offset {} + size {} > capacity {}).", iOffset,
+						   iSize, m_size)
 		return;
 	}
 	if (m_shadow.size() < m_size)
@@ -103,8 +103,8 @@ void StorageBuffer::getData(void* oData, const uint32_t iSize, const uint32_t iO
 	if (m_buffer.mapped == nullptr || iSize == 0 || oData == nullptr)
 		return;
 	if (iOffset + iSize > m_size) {
-		OWL_CORE_WARN("Vulkan storage buffer: getData out of range (offset {} + size {} > capacity {}).", iOffset,
-					  iSize, m_size)
+		OWL_CORE_WARN_ONCE("Vulkan: Storage buffer getData out of range (offset {} + size {} > capacity {}).", iOffset,
+						   iSize, m_size)
 		return;
 	}
 	auto& vkh = internal::VulkanHandler::get();
@@ -124,7 +124,7 @@ void StorageBuffer::getData(void* oData, const uint32_t iSize, const uint32_t iO
 		available = m_shadow.size();
 	}
 	if (iOffset + iSize > available) {
-		OWL_CORE_WARN("Vulkan storage buffer: getData beyond the streamed content ({} bytes).", available)
+		OWL_CORE_WARN_ONCE("Vulkan: Storage buffer getData beyond the streamed content ({} bytes).", available)
 		return;
 	}
 

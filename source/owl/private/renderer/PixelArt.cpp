@@ -112,7 +112,7 @@ void PixelArtPass::shutdown() {
 	OWL_PROFILE_FUNCTION()
 
 	if (!g_data) {
-		OWL_CORE_WARN("PixelArtPass: Already shutdown.")
+		OWL_CORE_WARN("PixelArtPass: Already shut down.")
 		return;
 	}
 	g_data->drawData.reset();

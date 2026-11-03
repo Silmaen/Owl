@@ -9,7 +9,10 @@
 #include "SettingsPanel.h"
 
 #include "../EditorResources.h"
+#include "LogPanel.h"
 
+#include <app/Application.h>
+#include <core/Log.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
@@ -17,8 +20,10 @@
 #include <gui/widgets/Combo.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/PropertyGrid.h>
+#include <platform/UserDirectory.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <format>
 #include <string>
 #include <tuple>
@@ -74,6 +79,10 @@ void SettingsPanel::onImGuiRender(EditorSettings& ioSettings, ActionRegistry& io
 			renderThemeSection(ioSettings);
 			ImGui::EndTabItem();
 		}
+		if (ImGui::BeginTabItem(std::format("{}  Log###log", gui::icon::scrollText).c_str())) {
+			renderLogSection(ioSettings);
+			ImGui::EndTabItem();
+		}
 		if (ImGui::BeginTabItem(std::format("{}  Shortcuts###shortcuts", gui::icon::keyboard).c_str())) {
 			renderKeybindingsSection(ioSettings, ioRegistry);
 			ImGui::EndTabItem();
@@ -95,6 +104,10 @@ void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
 		return;
 	std::ignore = gui::widgets::propertyBool("Stats Panel", ioSettings.showStats, defaults.showStats,
 											 "Show the frame statistics panel.");
+	std::ignore = gui::widgets::propertyBool(
+			"Show All Files", ioSettings.showAllFiles, defaults.showAllFiles,
+			"List every file in the Content Browser: the compiled shaders (spirv folders, .spv and .spv.hash), "
+			"the engine logos and the assets of Owl Nest itself (App assets).");
 	std::ignore = settingInt("Text Size", ioSettings.textScalePercent, 75, 150, defaults.textScalePercent, "%d %%",
 							 "Scale of every text of the editor, applied at once (Ctrl+= / Ctrl+- / Ctrl+0).");
 	std::ignore = settingInt("UI Font Size", ioSettings.uiFontSize, 14, 24, defaults.uiFontSize, "%d px",
@@ -197,6 +210,33 @@ void SettingsPanel::renderMcpSection(EditorSettings& ioSettings) {
 		m_regenerateTokenRequested = true;
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Draw a new token: clients holding the old one are refused from now on.");
+}
+
+void SettingsPanel::renderLogSection(EditorSettings& ioSettings) {
+	if (!gui::widgets::beginProperties("##log"))
+		return;
+	gui::widgets::propertyLabel("Level", "Lowest level recorded, in the Log panel and the log file, applied at once. "
+										 "Default: Info in a release build, Debug in a debug build, or the "
+										 "OWL_LOG_VERBOSITY environment variable.");
+	std::ignore = logLevelCombo("##logLevelSetting", ioSettings.logLevel);
+	if (gui::widgets::propertyReset(!ioSettings.logLevel.empty())) {
+		ioSettings.logLevel.clear();
+		core::Log::setVerbosityLevel(getLogLevelSetting(ioSettings.logLevel));
+	}
+	auto& params = app::Application::get().getInitParams();
+	auto every = static_cast<int>(params.frameLogFrequency);
+	if (gui::widgets::propertyInt("Frame Trace Every", every, 0, 0, 100000, "%d frames",
+								  "Frames between two lines of a per-frame trace (OWL_CORE_FRAME_TRACE); 0 turns them "
+								  "off. They show at the Trace level only.")) {
+		params.frameLogFrequency = static_cast<uint64_t>(std::max(every, 0));
+		core::Log::setFrameFrequency(params.frameLogFrequency);
+		m_appParamsChanged = true;
+	}
+	gui::widgets::endProperties();
+	if (m_appParamsChanged && !ImGui::IsAnyItemActive()) {
+		params.saveToFile(platform::getUserDirectory() / "config.yml");
+		m_appParamsChanged = false;
+	}
 }
 
 void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {

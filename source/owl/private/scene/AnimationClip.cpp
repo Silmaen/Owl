@@ -83,7 +83,7 @@ auto AnimationClip::deserializeFromString(const std::string_view iYaml) -> bool 
 	try {
 		root = YAML::Load(std::string{iYaml});
 	} catch (const YAML::Exception& e) {
-		OWL_CORE_ERROR("AnimationClip: failed to parse YAML — {}.", e.what())
+		OWL_CORE_ERROR("AnimationClip: Failed to parse YAML: {}.", e.what())
 		return false;
 	}
 	if (!root || !root.IsMap() || !root["AnimationClip"]) {
@@ -127,7 +127,7 @@ auto AnimationClip::saveToFile(const std::filesystem::path& iPath, const std::st
 auto AnimationClip::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	std::ifstream in(iPath, std::ios::binary);
 	if (!in.is_open()) {
-		OWL_CORE_ERROR("AnimationClip: failed to open '{}' for reading.", iPath.string())
+		OWL_CORE_ERROR("AnimationClip: Failed to open '{}' for reading.", iPath.string())
 		return false;
 	}
 	std::stringstream buffer;

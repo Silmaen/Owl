@@ -28,13 +28,13 @@ auto loadSlangSource(const std::string& iShaderName, const std::string& iRendere
 	const auto sourcePath =
 			Renderer::getTextureLibrary().find(relative.generic_string()).value_or(std::filesystem::path{});
 	if (sourcePath.empty()) {
-		OWL_CORE_ERROR("OpenGL compute shader: source not found for '{}' / '{}'.", iRenderer, iShaderName)
+		OWL_CORE_ERROR("OpenGL: No compute shader source for '{}/{}'.", iRenderer, iShaderName)
 		return {};
 	}
 	// Expanded like the graphics shaders and the bake: the includes resolved, the cache key of the same text.
 	auto source = renderer::utils::readShaderSource(sourcePath);
 	if (source.empty()) {
-		OWL_CORE_ERROR("OpenGL compute shader: cannot open '{}'.", sourcePath.string())
+		OWL_CORE_ERROR("OpenGL: Cannot open the compute shader '{}'.", sourcePath.string())
 		return {};
 	}
 	return source;
@@ -55,7 +55,7 @@ auto linkProgram(const std::vector<uint32_t>& iSpirv, const std::string& iName) 
 		if (logLen > 0) {
 			std::vector<GLchar> log(static_cast<size_t>(logLen));
 			glGetProgramInfoLog(program, logLen, &logLen, log.data());
-			OWL_CORE_ERROR("OpenGL compute shader: link failed for '{}': {}.", iName, log.data())
+			OWL_CORE_ERROR("OpenGL: Linking of the compute shader '{}' failed: {}.", iName, log.data())
 		}
 		glDeleteShader(shaderId);
 		glDeleteProgram(program);
@@ -75,12 +75,12 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 	const auto compiled = renderer::utils::loadOrCompileSpirv(source, iShaderName, iRenderer, /*iForVulkan=*/false,
 															  {ShaderType::Compute});
 	if (!compiled.has_value()) {
-		OWL_CORE_ERROR("OpenGL compute shader: Slang compilation failed for '{}'.", m_name)
+		OWL_CORE_ERROR("OpenGL: Slang compilation of the compute shader '{}' failed.", m_name)
 		return;
 	}
 	const auto it = compiled->stages.find(ShaderType::Compute);
 	if (it == compiled->stages.end() || it->second.empty()) {
-		OWL_CORE_ERROR("OpenGL compute shader: no `computeMain` entry point in '{}'.", m_name)
+		OWL_CORE_ERROR("OpenGL: The compute shader '{}' has no 'computeMain' entry point.", m_name)
 		return;
 	}
 	m_programId = linkProgram(it->second, m_name);

@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <optional>
 
 namespace owl::scene::systems {
 
@@ -39,41 +40,82 @@ auto transformPoint(const math::mat4& iMatrix, const math::vec3& iPoint) -> math
 	return {point.x(), point.y(), point.z()};
 }
 
-void advance(component::SplineFollower& ioFollower, const float iLength, const bool iClosed, const float iSeconds) {
+struct StopAhead {
+	float ahead;
+	float seconds;
+};
+
+// Distance under which a stop is under the follower: the one it just waited at is not ahead again.
+constexpr float g_stopTolerance = 1.e-4f;
+
+// The first stop the step reaches, measured from the follower along its motion.
+auto findStopAhead(const component::SplineFollower& iFollower, const math::SplineCurve& iCurve, const float iStep)
+		-> std::optional<StopAhead> {
+	const size_t pointCount = iCurve.getPoints().size();
+	if (pointCount == 0)
+		return std::nullopt;
+	const float length = iCurve.getLength();
+	std::optional<StopAhead> first;
+	for (const auto& [point, seconds]: iFollower.stops) {
+		if (seconds <= 0.f)
+			continue;
+		const auto parameter = static_cast<float>(std::min<size_t>(point, pointCount - 1));
+		const float distance = iCurve.getDistanceAtParameter(parameter);
+		float ahead = iStep > 0.f ? distance - iFollower.m_distance : iFollower.m_distance - distance;
+		if (iCurve.isClosed())
+			ahead = std::fmod(std::fmod(ahead, length) + length, length);
+		if (ahead > g_stopTolerance && ahead <= std::abs(iStep) && (!first || ahead < first->ahead))
+			first = StopAhead{.ahead = ahead, .seconds = seconds};
+	}
+	return first;
+}
+
+void advance(component::SplineFollower& ioFollower, const math::SplineCurve& iCurve, const float iSeconds) {
 	using Mode = component::SplineFollower::Mode;
 	if (!ioFollower.m_started) {
 		ioFollower.m_distance = ioFollower.startDistance;
 		ioFollower.m_direction = 1.f;
 		ioFollower.m_travelled = 0.f;
+		ioFollower.m_wait = 0.f;
 		ioFollower.m_started = true;
 		return;
 	}
-	if (iLength <= 0.f)
+	if (ioFollower.m_wait > 0.f) {
+		ioFollower.m_wait = std::max(0.f, ioFollower.m_wait - iSeconds);
+		return;
+	}
+	const float length = iCurve.getLength();
+	const bool closed = iCurve.isClosed();
+	if (length <= 0.f)
 		return;
 	float step = ioFollower.speed * ioFollower.m_direction * iSeconds;
+	if (const auto stop = findStopAhead(ioFollower, iCurve, step); stop) {
+		step = std::copysign(stop->ahead, step);
+		ioFollower.m_wait = stop->seconds;
+	}
 	switch (ioFollower.mode) {
 		case Mode::Once:
-			if (iClosed) {
-				const float left = std::max(0.f, iLength - ioFollower.m_travelled);
+			if (closed) {
+				const float left = std::max(0.f, length - ioFollower.m_travelled);
 				step = std::clamp(step, -left, left);
 				ioFollower.m_travelled += std::abs(step);
-				ioFollower.m_distance = std::fmod(std::fmod(ioFollower.m_distance + step, iLength) + iLength, iLength);
+				ioFollower.m_distance = std::fmod(std::fmod(ioFollower.m_distance + step, length) + length, length);
 			} else {
-				ioFollower.m_distance = std::clamp(ioFollower.m_distance + step, 0.f, iLength);
+				ioFollower.m_distance = std::clamp(ioFollower.m_distance + step, 0.f, length);
 			}
 			break;
 		case Mode::Loop:
-			ioFollower.m_distance = std::fmod(std::fmod(ioFollower.m_distance + step, iLength) + iLength, iLength);
+			ioFollower.m_distance = std::fmod(std::fmod(ioFollower.m_distance + step, length) + length, length);
 			break;
 		case Mode::PingPong:
 			ioFollower.m_distance += step;
-			if (iClosed) {
-				ioFollower.m_distance = std::fmod(std::fmod(ioFollower.m_distance, iLength) + iLength, iLength);
-			} else if (ioFollower.m_distance > iLength) {
-				ioFollower.m_distance = std::max(0.f, 2.f * iLength - ioFollower.m_distance);
+			if (closed) {
+				ioFollower.m_distance = std::fmod(std::fmod(ioFollower.m_distance, length) + length, length);
+			} else if (ioFollower.m_distance > length) {
+				ioFollower.m_distance = std::max(0.f, 2.f * length - ioFollower.m_distance);
 				ioFollower.m_direction = -ioFollower.m_direction;
 			} else if (ioFollower.m_distance < 0.f) {
-				ioFollower.m_distance = std::min(iLength, -ioFollower.m_distance);
+				ioFollower.m_distance = std::min(length, -ioFollower.m_distance);
 				ioFollower.m_direction = -ioFollower.m_direction;
 			}
 			break;
@@ -132,7 +174,7 @@ void updateSplineFollowers(Scene& ioScene, const SystemContext& iContext) {
 		if (!splineEntity || splineEntity == entity || !splineEntity.hasComponent<component::Spline>())
 			continue;
 		const auto& spline = splineEntity.getComponent<component::Spline>();
-		advance(follower, spline.curve.getLength(), spline.curve.isClosed(), seconds);
+		advance(follower, spline.curve, seconds);
 		const auto sample = spline.sample(follower.m_distance, follower.lane, follower.offset);
 		const math::mat4 world = ioScene.getWorldTransform(splineEntity)();
 		const math::vec3 position = transformPoint(world, sample.position);

@@ -66,23 +66,23 @@ void destroySized(SizedObjects& ioObjects) {
 
 Framebuffer::Framebuffer(FramebufferSpecification iSpec) : m_specs{std::move(iSpec)} {
 	if (m_specs.samples > 1 && !isMainTarget()) {
-		OWL_CORE_ERROR("Vulkan Framebuffer ({}): only FrameBuffer for swapchain supports multiple sample.",
+		OWL_CORE_ERROR("Vulkan: Framebuffer '{}' is multisampled, only a swapchain framebuffer can be.",
 					   m_specs.debugName)
 		return;
 	}
 	if (m_specs.samples < 1) {
-		OWL_CORE_ERROR("Vulkan Framebuffer ({}): sample must be at least one.", m_specs.debugName)
+		OWL_CORE_ERROR("Vulkan: Framebuffer '{}' needs at least one sample.", m_specs.debugName)
 		return;
 	}
 	if (isMainTarget() && m_specs.attachments[0].format != AttachmentSpecification::Format::Surface) {
-		OWL_CORE_ERROR("Vulkan Framebuffer ({}): format of swap chain's first attachment is not 'Surface'.",
+		OWL_CORE_ERROR("Vulkan: The first attachment of swapchain framebuffer '{}' is not in 'Surface' format.",
 					   m_specs.debugName)
 		return;
 	}
 	if (isMainTarget()) {
-		OWL_CORE_INFO("Vulkan Framebuffer ({}): creation for swapchain use.", m_specs.debugName)
+		OWL_CORE_TRACE("Vulkan: Creating framebuffer '{}' for swapchain use.", m_specs.debugName)
 	} else {
-		OWL_CORE_INFO("Vulkan Framebuffer ({}): creation for simple frame buffer use.", m_specs.debugName)
+		OWL_CORE_TRACE("Vulkan: Creating framebuffer '{}' for offscreen use.", m_specs.debugName)
 	}
 	createRenderPass();
 	invalidate();
@@ -90,7 +90,7 @@ Framebuffer::Framebuffer(FramebufferSpecification iSpec) : m_specs{std::move(iSp
 
 Framebuffer::~Framebuffer() {
 	deepCleanup();
-	OWL_CORE_TRACE("Vulkan Framebuffer ({}): destroyed.", m_specs.debugName)
+	OWL_CORE_TRACE("Vulkan: Framebuffer '{}' destroyed.", m_specs.debugName)
 }
 
 void Framebuffer::invalidate() {
@@ -127,7 +127,7 @@ void Framebuffer::nextSubpass() {
 	auto& vkh = internal::VulkanHandler::get();
 	++m_currentSubPass;
 	if (m_currentSubPass >= getSubpassCount()) {
-		OWL_CORE_ERROR("Vulkan Framebuffer ({}): subpass index out of range.", m_specs.debugName)
+		OWL_CORE_ERROR("Vulkan: Framebuffer '{}' subpass index out of range.", m_specs.debugName)
 		--m_currentSubPass;
 		return;
 	}
@@ -241,8 +241,8 @@ auto Framebuffer::readPixel(const uint32_t iAttachmentIndex, const int iX, const
 	if (iAttachmentIndex >= m_specs.attachments.size() ||
 		m_specs.attachments[iAttachmentIndex].format == AttachmentSpecification::Format::Depth32F ||
 		(isMainTarget() && iAttachmentIndex == 0)) {
-		OWL_CORE_WARN("Vulkan Framebuffer ({}): Cannot read a pixel of attachment {}.", m_specs.debugName,
-					  iAttachmentIndex)
+		OWL_CORE_WARN_ONCE("Vulkan: Framebuffer '{}' cannot read a pixel of attachment {}.", m_specs.debugName,
+						   iAttachmentIndex)
 		return 0;
 	}
 	if (iX < 0 || iY < 0 || std::cmp_greater_equal(iX, m_specs.size.x()) ||
@@ -283,13 +283,13 @@ auto Framebuffer::readPixel(const uint32_t iAttachmentIndex, const int iX, const
 
 auto Framebuffer::readColorAttachment(const uint32_t iAttachmentIndex) -> std::vector<uint8_t> {
 	if (iAttachmentIndex >= m_specs.attachments.size() || isMainTarget()) {
-		OWL_CORE_WARN("Vulkan Framebuffer ({}): No offscreen attachment {} to read back.", m_specs.debugName,
+		OWL_CORE_WARN("Vulkan: Framebuffer '{}' has no offscreen attachment {} to read back.", m_specs.debugName,
 					  iAttachmentIndex)
 		return {};
 	}
 	const auto format = m_specs.attachments[iAttachmentIndex].format;
 	if (format != AttachmentSpecification::Format::Surface && format != AttachmentSpecification::Format::Rgba8) {
-		OWL_CORE_WARN("Vulkan Framebuffer ({}): Attachment {} is not an 8-bit colour attachment.", m_specs.debugName,
+		OWL_CORE_WARN("Vulkan: Framebuffer '{}' attachment {} is not an 8-bit colour attachment.", m_specs.debugName,
 					  iAttachmentIndex)
 		return {};
 	}
@@ -297,7 +297,7 @@ auto Framebuffer::readColorAttachment(const uint32_t iAttachmentIndex) -> std::v
 	auto staging = internal::createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, internal::MemoryUsage::Readback,
 										  "fb.readback");
 	if (staging.mapped == nullptr) {
-		OWL_CORE_ERROR("Vulkan Framebuffer ({}): Failed to create the read-back buffer.", m_specs.debugName)
+		OWL_CORE_ERROR("Vulkan: Framebuffer '{}' cannot create the read-back buffer.", m_specs.debugName)
 		return {};
 	}
 	auto& image = m_images[attToImgIdx(iAttachmentIndex)];
@@ -342,7 +342,8 @@ void Framebuffer::recordClear(const uint32_t iAttachmentIndex, const VkClearColo
 		return;
 	}
 	if (isMainTarget()) {
-		OWL_CORE_WARN("Vulkan Framebuffer ({}): The swapchain is cleared in its render pass only.", m_specs.debugName)
+		OWL_CORE_WARN_ONCE("Vulkan: Framebuffer '{}' is the swapchain, cleared in its render pass only.",
+						   m_specs.debugName)
 		return;
 	}
 	auto& image = m_images[attToImgIdx(iAttachmentIndex)];
@@ -364,7 +365,7 @@ void Framebuffer::recordClear(const uint32_t iAttachmentIndex, const VkClearColo
 void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const int iValue) {
 	if (iAttachmentIndex >= m_specs.attachments.size() ||
 		m_specs.attachments[iAttachmentIndex].format != AttachmentSpecification::Format::RedInteger) {
-		OWL_CORE_WARN("Vulkan Framebuffer ({}): Try to int-clear non integer attachment.", m_specs.debugName)
+		OWL_CORE_WARN_ONCE("Vulkan: Framebuffer '{}' cannot int-clear a non-integer attachment.", m_specs.debugName)
 		return;
 	}
 	VkClearColorValue val{};
@@ -378,7 +379,7 @@ void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const math::v
 	if (iAttachmentIndex >= m_specs.attachments.size() ||
 		m_specs.attachments[iAttachmentIndex].format == AttachmentSpecification::Format::RedInteger ||
 		m_specs.attachments[iAttachmentIndex].format == AttachmentSpecification::Format::Depth32F) {
-		OWL_CORE_WARN("Vulkan Framebuffer ({}): Try to color-clear non color attachment.", m_specs.debugName)
+		OWL_CORE_WARN_ONCE("Vulkan: Framebuffer '{}' cannot colour-clear a non-colour attachment.", m_specs.debugName)
 		return;
 	}
 	VkClearColorValue val{};
@@ -420,7 +421,7 @@ void Framebuffer::createImages() {
 				.oldSwapchain = VK_NULL_HANDLE};
 		if (const VkResult result = vkCreateSwapchainKHR(vkc.getLogicalDevice(), &createInfo, nullptr, &m_swapChain);
 			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Framebuffer ({}): failed to create swap chain ({}).", m_specs.debugName,
+			OWL_CORE_ERROR("Vulkan: Framebuffer '{}' cannot create the swapchain ({}).", m_specs.debugName,
 						   internal::resultString(result))
 			return;
 		}
@@ -434,8 +435,8 @@ void Framebuffer::createImages() {
 			m_images[ii].image = temp[ii];
 			m_images[ii].layout = VK_IMAGE_LAYOUT_UNDEFINED;
 		}
-		OWL_CORE_INFO("Vulkan Framebuffer ({}): Created {} images for swapchain.", m_specs.debugName,
-					  m_swapChainImageCount)
+		OWL_CORE_TRACE("Vulkan: Framebuffer '{}' created {} swapchain images.", m_specs.debugName,
+					   m_swapChainImageCount)
 	} else
 		m_images.resize(m_specs.attachments.size());
 	// Create remaining Memory images
@@ -506,7 +507,7 @@ void Framebuffer::createImageViews() {
 		if (const VkResult result =
 					vkCreateImageView(vkc.getLogicalDevice(), &createInfo, nullptr, &m_images[i].imageView);
 			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Framebuffer ({}): Error creating image views ({}).", m_specs.debugName,
+			OWL_CORE_ERROR("Vulkan: Framebuffer '{}' cannot create its image views ({}).", m_specs.debugName,
 						   internal::resultString(result))
 		}
 	}
@@ -533,7 +534,7 @@ void Framebuffer::createFrameBuffer() {
 		if (const VkResult result =
 					vkCreateFramebuffer(vkc.getLogicalDevice(), &framebufferInfo, nullptr, &framebuffer);
 			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Framebuffer ({}): Error creating framebuffer {} ({}).", m_specs.debugName, idx,
+			OWL_CORE_ERROR("Vulkan: Framebuffer '{}' cannot create framebuffer {} ({}).", m_specs.debugName, idx,
 						   internal::resultString(result))
 		}
 		++idx;
@@ -641,7 +642,7 @@ auto Framebuffer::buildRenderPass(const bool iFirst) const -> VkRenderPass {
 	VkRenderPass renderPass = nullptr;
 	if (const VkResult result = vkCreateRenderPass(vkc.getLogicalDevice(), &renderPassInfo, nullptr, &renderPass);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan framebuffer ({}): failed to create render pass ({}).", m_specs.debugName,
+		OWL_CORE_ERROR("Vulkan: Framebuffer '{}' cannot create its render pass ({}).", m_specs.debugName,
 					   internal::resultString(result))
 		return nullptr;
 	}
@@ -676,8 +677,8 @@ void Framebuffer::createSyncObjects() {
 	for (auto& semaphore: m_renderFinished) {
 		if (const VkResult result = vkCreateSemaphore(core.getLogicalDevice(), &semaphoreInfo, nullptr, &semaphore);
 			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan framebuffer ({}): failed to create render finish semaphore ({}).", m_specs.debugName,
-						   internal::resultString(result))
+			OWL_CORE_ERROR("Vulkan: Framebuffer '{}' cannot create its render finish semaphore ({}).",
+						   m_specs.debugName, internal::resultString(result))
 		}
 	}
 }
@@ -726,7 +727,7 @@ auto Framebuffer::getColorAttachmentFormats() const -> std::vector<VkFormat> {
 auto Framebuffer::getAttachmentTexture(const uint32_t iIndex) -> shared<renderer::gpu::Texture2D> {
 	if (isMainTarget() || iIndex >= m_specs.attachments.size() ||
 		m_specs.attachments[iIndex].format == AttachmentSpecification::Format::Depth32F) {
-		OWL_CORE_WARN("Vulkan Framebuffer ({}): No colour attachment {} to sample.", m_specs.debugName, iIndex)
+		OWL_CORE_WARN_ONCE("Vulkan: Framebuffer '{}' has no colour attachment {} to sample.", m_specs.debugName, iIndex)
 		return nullptr;
 	}
 	if (m_attachmentTextures.size() <= iIndex)
@@ -746,7 +747,7 @@ auto Framebuffer::copyAttachmentToCube(const uint32_t iIndex, renderer::gpu::Tex
 	auto& vkd = internal::Descriptors::get();
 	const auto cubeId = static_cast<uint32_t>(ioTarget.getRendererId());
 	if (!vkd.isTextureRegistered(cubeId)) {
-		OWL_CORE_WARN("Vulkan Framebuffer ({}): The cube has no image.", m_specs.debugName)
+		OWL_CORE_WARN("Vulkan: Framebuffer '{}' copies into a cube that has no image.", m_specs.debugName)
 		return false;
 	}
 	auto& source = m_images[attToImgIdx(iIndex)];
@@ -793,8 +794,8 @@ void Framebuffer::copyAttachment(const uint32_t iIndex, renderer::gpu::Framebuff
 	if (target == nullptr || target->isMainTarget() || isMainTarget() || target->m_specs.size != m_specs.size ||
 		iIndex >= m_specs.attachments.size() || iIndex >= target->m_specs.attachments.size() ||
 		target->m_specs.attachments[iIndex].format != m_specs.attachments[iIndex].format) {
-		OWL_CORE_WARN("Vulkan Framebuffer ({}): Cannot copy attachment {} to an unmatched framebuffer.",
-					  m_specs.debugName, iIndex)
+		OWL_CORE_WARN_ONCE("Vulkan: Framebuffer '{}' cannot copy attachment {} to an unmatched framebuffer.",
+						   m_specs.debugName, iIndex)
 		return;
 	}
 	const bool depth = m_specs.attachments[iIndex].format == AttachmentSpecification::Format::Depth32F;
@@ -898,12 +899,12 @@ void Framebuffer::createDescriptorSets() {
 		if (const VkResult result =
 					vkCreateSampler(core.getLogicalDevice(), &imageSamplerInfo, nullptr, &img.imageSampler);
 			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Texture: Error creating texture sampler ({}).", internal::resultString(result))
+			OWL_CORE_ERROR("Vulkan: Cannot create the texture sampler ({}).", internal::resultString(result))
 		}
 		if (const auto result =
 					vkCreateDescriptorSetLayout(core.getLogicalDevice(), &layoutCi, nullptr, &img.descriptorSetLayout);
 			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Texture Descriptor: failed to create descriptor set layout ({}).",
+			OWL_CORE_ERROR("Vulkan: Cannot create the texture descriptor set layout ({}).",
 						   internal::resultString(result))
 		}
 		const VkDescriptorSetAllocateInfo allocInfo{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -913,8 +914,7 @@ void Framebuffer::createDescriptorSets() {
 													.pSetLayouts = &img.descriptorSetLayout};
 		if (const auto result = vkAllocateDescriptorSets(core.getLogicalDevice(), &allocInfo, &img.descriptorSet);
 			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Texture Descriptor: failed to allocate descriptor sets ({}).",
-						   internal::resultString(result))
+			OWL_CORE_ERROR("Vulkan: Cannot allocate the texture descriptor sets ({}).", internal::resultString(result))
 		}
 		const VkDescriptorImageInfo info{.sampler = img.imageSampler,
 										 .imageView = img.imageView,

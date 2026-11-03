@@ -194,8 +194,8 @@ auto luaTransformSetWorldPosition(lua_State* iState) -> int {
 		return 0;
 	if (entity->hasComponent<scene::component::Hierarchy>() &&
 		entity->getComponent<scene::component::Hierarchy>().parentId != core::UUID{0}) {
-		OWL_CORE_WARN("Script: transform.set_world_position ignores the child entity {}; a child follows its parent.",
-					  static_cast<uint64_t>(entity->getUUID()))
+		OWL_CORE_WARN_ONCE("Lua: transform.set_world_position ignores the child entity {}, a child follows its parent.",
+						   static_cast<uint64_t>(entity->getUUID()))
 		return 0;
 	}
 	if (!entity->hasComponent<scene::component::WorldPosition>())
@@ -655,7 +655,7 @@ auto luaSceneSpawnPrefab(lua_State* iState) -> int {
 	}
 	const auto text = data::assets::readAssetText(path);
 	if (!text) {
-		OWL_CORE_WARN("Script: Prefab '{}' not found, nothing spawned.", path)
+		OWL_CORE_WARN("Lua: Prefab '{}' not found, nothing spawned.", path)
 		lua_pushinteger(iState, 0);
 		return 1;
 	}
@@ -881,6 +881,12 @@ auto luaLogTrace(lua_State* iState) -> int {
 	// Checked outside the macro: a disabled level evaluates none of its arguments.
 	const char* message = luaL_checkstring(iState, 1);
 	OWL_TRACE("{}", message)
+	return 0;
+}
+
+auto luaLogDebug(lua_State* iState) -> int {
+	const char* message = luaL_checkstring(iState, 1);
+	OWL_DEBUG("{}", message)
 	return 0;
 }
 
@@ -1830,7 +1836,7 @@ auto luaUiTransitionPlay(lua_State* iState) -> int {
 	}
 	const auto type = parseTransitionType(typeName);
 	if (type == scene::ScreenTransition::Type::None) {
-		OWL_CORE_WARN("Lua ui.transition_play: unknown transition type '{}'.", typeName)
+		OWL_CORE_WARN("Lua: Unknown transition type '{}' in ui.transition_play.", typeName)
 		return 0;
 	}
 	if (auto* transition = transitionOf(iState); transition != nullptr)
@@ -2862,6 +2868,14 @@ auto luaSplineSetDistance(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaSplineIsWaiting(lua_State* iState) -> int {
+	const auto* follower = followerOf(iState);
+	if (follower == nullptr)
+		return 0;
+	lua_pushboolean(iState, follower->isWaiting() ? 1 : 0);
+	return 1;
+}
+
 auto luaSplineGetSpeed(lua_State* iState) -> int {
 	const auto* follower = followerOf(iState);
 	if (follower == nullptr)
@@ -3460,6 +3474,8 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .returns = {{"alpha", Number}}},
 		{.table = "log", .name = "trace", .function = guarded<luaLogTrace>,
 		 .description = "Log a message at trace level.", .params = {{"message", String}}},
+		{.table = "log", .name = "debug", .function = guarded<luaLogDebug>,
+		 .description = "Log a message at debug level.", .params = {{"message", String}}},
 		{.table = "log", .name = "info", .function = guarded<luaLogInfo>,
 		 .description = "Log a message at info level.", .params = {{"message", String}}},
 		{.table = "log", .name = "warn", .function = guarded<luaLogWarn>,
@@ -4026,6 +4042,9 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "spline", .name = "set_speed", .function = guarded<luaSplineSetSpeed>,
 		 .description = "Set the speed of the entity's `SplineFollower` (negative goes backwards); false when it has none.",
 		 .params = {entityId, {"speed", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "spline", .name = "is_waiting", .function = guarded<luaSplineIsWaiting>,
+		 .description = "Whether the entity's `SplineFollower` waits at one of its stops; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"waiting", Boolean}}},
 		{.table = "spline", .name = "set_lane", .function = guarded<luaSplineSetLane>,
 		 .description = "Move the entity's `SplineFollower` to a lane of its spline (empty: the curve itself); false when it has none.",
 		 .params = {entityId, {"lane", String}}, .returns = {{"done", Boolean}}},

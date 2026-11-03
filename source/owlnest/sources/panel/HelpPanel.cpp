@@ -112,7 +112,7 @@ auto HelpPanel::readIndex(const std::filesystem::path& iIndexFile) -> std::vecto
 	}
 	const auto pagesNode = root["Help"]["Pages"];
 	if (!pagesNode || !pagesNode.IsSequence()) {
-		OWL_CORE_WARN("HelpPanel: '{}' has no Help/Pages sequence.", iIndexFile.string())
+		OWL_CORE_WARN("HelpPanel: '{}' has no 'Help/Pages' sequence.", iIndexFile.string())
 		return {};
 	}
 	std::vector<HelpPage> pages;
@@ -133,7 +133,7 @@ void HelpPanel::loadIndex() {
 	m_pages.clear();
 	m_helpRoot = resolveHelpRoot();
 	if (m_helpRoot.empty()) {
-		OWL_CORE_WARN("HelpPanel: Could not locate the help bundle (help/index.yml).")
+		OWL_CORE_WARN("HelpPanel: Cannot locate the help bundle ('help/index.yml').")
 		return;
 	}
 	// The renderer needs the help root to resolve relative image paths (`![](images/foo.svg)`).

@@ -42,6 +42,7 @@ Engine log.
 | Function                     | Returns | Description                     |
 |------------------------------|---------|---------------------------------|
 | `log.trace(message: string)` |         | Log a message at trace level.   |
+| `log.debug(message: string)` |         | Log a message at debug level.   |
 | `log.info(message: string)`  |         | Log a message at info level.    |
 | `log.warn(message: string)`  |         | Log a message at warning level. |
 | `log.error(message: string)` |         | Log a message at error level.   |

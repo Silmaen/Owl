@@ -29,7 +29,7 @@ auto readVersionNode(const YAML::Node& iRoot) -> expected<uint32_t, FormatError>
 	int64_t value = 0;
 	if (!node.IsScalar() || !YAML::convert<int64_t>::decode(node, value) || value < 1 ||
 		value > std::numeric_limits<uint32_t>::max()) {
-		OWL_CORE_ERROR("FormatVersion: Invalid {} value '{}'.", g_FormatVersionKey,
+		OWL_CORE_ERROR("FormatVersion: Invalid '{}' value '{}'.", g_FormatVersionKey,
 					   node.IsScalar() ? node.Scalar() : std::string{"<not a scalar>"})
 		return unexpected{FormatError::InvalidVersion};
 	}

@@ -27,12 +27,12 @@ void BitonicSortPass::init() {
 		return;
 	m_shader = gpu::ComputeShader::create(kShaderName, kRenderer);
 	if (m_shader == nullptr) {
-		OWL_CORE_ERROR("BitonicSortPass: failed to create compute shader.")
+		OWL_CORE_ERROR("BitonicSortPass: Cannot create the compute shader.")
 		return;
 	}
 	m_buffer = gpu::StorageBuffer::create(kSortSize * static_cast<uint32_t>(sizeof(Item)), kBindingItems, kRenderer);
 	if (m_buffer == nullptr) {
-		OWL_CORE_ERROR("BitonicSortPass: failed to create SSBO.")
+		OWL_CORE_ERROR("BitonicSortPass: Cannot create the SSBO.")
 		m_shader.reset();
 		return;
 	}
@@ -51,7 +51,8 @@ void BitonicSortPass::sort(std::span<const Item> iItems) {
 		return;
 	m_itemCount = std::min(static_cast<uint32_t>(iItems.size()), kSortSize);
 	if (iItems.size() > kSortSize) {
-		OWL_CORE_WARN("BitonicSortPass: {} items > capacity {}; truncating.", iItems.size(), kSortSize)
+		OWL_CORE_WARN_ONCE("BitonicSortPass: {} items exceed the capacity of {}, the list is truncated.", iItems.size(),
+						   kSortSize)
 	}
 
 	thread_local std::vector<Item> staging;

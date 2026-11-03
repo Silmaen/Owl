@@ -46,7 +46,7 @@ auto checkCompileStatus(const GLuint iShader, const std::string& iName) -> bool 
 	glGetShaderiv(iShader, GL_INFO_LOG_LENGTH, &logLength);
 	std::string log(static_cast<size_t>(std::max(logLength, 1)), '\0');
 	glGetShaderInfoLog(iShader, logLength, &logLength, log.data());
-	OWL_CORE_ERROR("OpenGL Shader: Compilation of {} failed ({}).", iName, log.c_str())
+	OWL_CORE_ERROR("OpenGL: Compilation of shader '{}' failed ({}).", iName, log.c_str())
 	return false;
 }
 
@@ -77,7 +77,7 @@ auto detectShaderFormat() -> ShaderFormat {
 			return ShaderFormat::Glsl;
 		if (value == "spirv")
 			return ShaderFormat::Spirv;
-		OWL_CORE_WARN("OpenGL Shader: Unknown OWL_OPENGL_SHADERS value '{}' (expected glsl or spirv).", value)
+		OWL_CORE_WARN("OpenGL: Unknown OWL_OPENGL_SHADERS value '{}' (expected glsl or spirv).", value)
 	}
 	return isSpirvSupported() ? ShaderFormat::Spirv : ShaderFormat::Glsl;
 }
@@ -93,7 +93,7 @@ auto getShaderFormat() -> ShaderFormat {
 auto createShaderObject(const ShaderType iStage, const std::vector<uint32_t>& iSpirv, const std::string& iName)
 		-> uint32_t {
 	if (iSpirv.empty()) {
-		OWL_CORE_ERROR("OpenGL Shader: No SPIR-V for {} ({}).", iName, magic_enum::enum_name(iStage))
+		OWL_CORE_ERROR("OpenGL: No SPIR-V for shader '{}' ({} stage).", iName, magic_enum::enum_name(iStage))
 		return 0;
 	}
 	const GLuint shaderId = glCreateShader(utils::shaderStageToGlShader(iStage));
@@ -123,7 +123,7 @@ auto createShaderObject(const ShaderType iStage, const std::vector<uint32_t>& iS
 Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& /*iVertexSrc*/,
 			   const std::string& /*iFragmentSrc*/)
 	: renderer::gpu::Shader{iShaderName, iRenderer} {OWL_CORE_WARN(
-			  "OpenGL Shader: Separate vertex/fragment source constructor is deprecated, use Slang source.")}
+			  "OpenGL: The separate vertex/fragment source constructor is deprecated, use a Slang source.")}
 
 	  Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& iSlangSource)
 	: renderer::gpu::Shader{iShaderName, iRenderer} {
@@ -140,7 +140,7 @@ Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
 	if (iSources.size() == 1 && iSources[0].extension() == ".slang") {
 		compile(renderer::utils::readShaderSource(iSources[0]));
 	} else {
-		OWL_CORE_ERROR("OpenGL Shader: Expected a single .slang file, got {} files.", iSources.size())
+		OWL_CORE_ERROR("OpenGL: Expected a single .slang file, got {} files.", iSources.size())
 	}
 }
 
@@ -165,7 +165,7 @@ void Shader::compile(const std::string& iSlangSource) {
 	const auto timer = std::chrono::steady_clock::now() - start;
 	double duration =
 			static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(timer).count()) / 1000.0;
-	OWL_CORE_INFO("Compilation of shader {} in {} ms.", getName(), duration)
+	OWL_CORE_DEBUG("OpenGL: Shader '{}' compiled in {} ms.", getName(), duration)
 }
 
 auto Shader::recompile(const std::string& iSlangSource) -> bool {
@@ -228,13 +228,13 @@ auto Shader::createProgram(const std::unordered_map<ShaderType, std::vector<uint
 		glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
 	}
 	if (isLinked == GL_FALSE) {
-		OWL_CORE_ERROR("Shader linking failed ({}).", getName())
+		OWL_CORE_ERROR("OpenGL: Linking of shader '{}' failed.", getName())
 		GLint maxLength = 0;
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
 		if (maxLength > 0) {
 			std::vector<GLchar> infoLog(static_cast<size_t>(maxLength));
 			glGetProgramInfoLog(program, maxLength, &maxLength, infoLog.data());
-			OWL_CORE_ERROR("     Details: {}.", infoLog.data())
+			OWL_CORE_ERROR("OpenGL: Link details: {}.", infoLog.data())
 		}
 		glDeleteProgram(program);
 		for (const auto id: shaderIDs) glDeleteShader(id);

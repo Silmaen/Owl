@@ -26,11 +26,11 @@ void LayerStack::clear() {
 		auto name = layer->getName();
 		layer->onDetach();
 		layer.reset();
-		OWL_CORE_TRACE("Layer {} deleted.", name)
+		OWL_CORE_DEBUG("LayerStack: Layer '{}' deleted.", name)
 	}
 	m_layers.clear();
 	m_layerInsertIndex = 0;
-	OWL_CORE_TRACE("LayerStack is empty.")
+	OWL_CORE_TRACE("LayerStack: Empty.")
 }
 
 void LayerStack::pushLayer(shared<Layer>&& iLayer) {

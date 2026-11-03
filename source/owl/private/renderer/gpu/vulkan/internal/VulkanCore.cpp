@@ -41,17 +41,17 @@ auto debugUtilsMessageCallback(const VkDebugUtilsMessageSeverityFlagBitsEXT iMes
 	auto bufferName = VulkanHandler::get().getCurrentFrameBufferName();
 	auto frameId = app::Application::get().getTimeStep().getFrameNumber();
 	if ((iMessageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) != 0) {
-		OWL_CORE_TRACE("Vulkan fb({} {}): [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
-					   iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
+		OWL_CORE_TRACE("Vulkan: {} [{} {}, frame {} '{}'].", iPCallbackData->pMessage, iPCallbackData->pMessageIdName,
+					   iPCallbackData->messageIdNumber, frameId, bufferName)
 	} else if ((iMessageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0) {
-		OWL_CORE_INFO("Vulkan fb({} {}): [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
-					  iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
+		OWL_CORE_DEBUG("Vulkan: {} [{} {}, frame {} '{}'].", iPCallbackData->pMessage, iPCallbackData->pMessageIdName,
+					   iPCallbackData->messageIdNumber, frameId, bufferName)
 	} else if ((iMessageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0) {
-		OWL_CORE_WARN("Vulkan fb({} {}): [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
-					  iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
+		OWL_CORE_WARN("Vulkan: {} [{} {}, frame {} '{}'].", iPCallbackData->pMessage, iPCallbackData->pMessageIdName,
+					  iPCallbackData->messageIdNumber, frameId, bufferName)
 	} else if ((iMessageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0) {
-		OWL_CORE_ERROR("Vulkan fb({} {}): [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
-					   iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
+		OWL_CORE_ERROR("Vulkan: {} [{} {}, frame {} '{}'].", iPCallbackData->pMessage, iPCallbackData->pMessageIdName,
+					   iPCallbackData->messageIdNumber, frameId, bufferName)
 	}
 	return VK_FALSE;
 }
@@ -93,7 +93,7 @@ void VulkanCore::init(const VulkanConfiguration& iConfiguration) {
 		m_failureReason = std::format("The Vulkan loader offers Vulkan {} only, 1.3 is needed: update the graphics "
 									  "driver. Owl Engine uses OpenGL meanwhile.",
 									  formatApiVersion(m_instanceInfo->version));
-		OWL_CORE_ERROR("Vulkan: cannot initialize du to insufficient instance version. Require 1.3.")
+		OWL_CORE_ERROR("Vulkan: The instance version is too old, 1.3 required.")
 		m_state = State::Error;
 		return;
 	}
@@ -107,7 +107,7 @@ void VulkanCore::init(const VulkanConfiguration& iConfiguration) {
 	}
 	auto* const gc = dynamic_cast<GraphContext*>(app::Application::get().getWindow().getGraphContext());
 	if (const VkResult result = gc->createSurface(m_instance); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to create window surface ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the window surface ({}).", resultString(result))
 		m_state = State::Error;
 		return;
 	}
@@ -130,26 +130,26 @@ void VulkanCore::release() {
 	MemoryAllocator::get().release();
 	if (m_commandPool != nullptr) {
 		vkDestroyCommandPool(m_logicalDevice, m_commandPool, nullptr);
-		OWL_CORE_TRACE("Vulkan: commandPool destroyed.")
+		OWL_CORE_DEBUG("Vulkan: Command pool destroyed.")
 	}
 	if (m_logicalDevice != nullptr) {
 		vkDestroyDevice(m_logicalDevice, nullptr);
 		m_logicalDevice = nullptr;
-		OWL_CORE_TRACE("Vulkan: logicalDevice destroyed.")
+		OWL_CORE_DEBUG("Vulkan: Logical device destroyed.")
 	}
 	{
 		auto* const gc = dynamic_cast<GraphContext*>(app::Application::get().getWindow().getGraphContext());
 		gc->destroySurface(m_instance);
-		OWL_CORE_TRACE("Vulkan: Surface destroyed.")
+		OWL_CORE_DEBUG("Vulkan: Surface destroyed.")
 	}
 	if (m_debugUtilsMessenger != nullptr) {
 		g_VkDestroyDebugUtilsMessengerExt(m_instance, m_debugUtilsMessenger, nullptr);
 		m_debugUtilsMessenger = nullptr;
-		OWL_CORE_TRACE("Vulkan: debugUtilsMessenger destroyed.")
+		OWL_CORE_DEBUG("Vulkan: Debug utils messenger destroyed.")
 	}
 	vkDestroyInstance(m_instance, nullptr);
 	m_instance = nullptr;
-	OWL_CORE_TRACE("Vulkan: instance destroyed.")
+	OWL_CORE_DEBUG("Vulkan: Instance destroyed.")
 	m_phyProps.reset();
 	m_instanceInfo.reset();
 }
@@ -184,7 +184,7 @@ void VulkanCore::createInstance() {
 		m_debugMessage = true;
 	if (m_config.activeValidation) {
 		if (!m_instanceInfo->hasLayer("VK_LAYER_KHRONOS_validation")) {
-			OWL_CORE_WARN("Vulkan: Missing validation layers, go one without it.")
+			OWL_CORE_WARN("Vulkan: Validation layers missing, running without them.")
 		} else {
 			requestedLayers.emplace_back("VK_LAYER_KHRONOS_validation");
 			m_hasValidation = true;
@@ -234,7 +234,7 @@ void VulkanCore::createInstance() {
 	VkResult result = vkCreateInstance(&instanceCi, nullptr, &m_instance);
 	bool second = false;
 	if (result == VK_ERROR_LAYER_NOT_PRESENT) {
-		OWL_CORE_ERROR("Vulkan: Unable to create instance because a layer can't be loaded, Retry without layers.")
+		OWL_CORE_WARN("Vulkan: A layer cannot be loaded, the instance creation is retried without layers.")
 		second = true;
 		instanceCi.ppEnabledLayerNames = nullptr;
 		instanceCi.enabledLayerCount = 0;
@@ -242,9 +242,9 @@ void VulkanCore::createInstance() {
 	}
 	if (result != VK_SUCCESS) {
 		if (second)
-			OWL_CORE_ERROR("Vulkan: Definitively unable to create instance ({}).", resultString(result))
+			OWL_CORE_ERROR("Vulkan: Cannot create the instance, even without layers ({}).", resultString(result))
 		else
-			OWL_CORE_ERROR("Vulkan: Unable to create instance ({}).", resultString(result))
+			OWL_CORE_ERROR("Vulkan: Cannot create the instance ({}).", resultString(result))
 		m_state = State::Error;
 	}
 }
@@ -259,8 +259,8 @@ void VulkanCore::selectPhysicalDevice() {
 	const auto devices = enumerateDevices(m_instance);
 	for (const auto& device: devices) {
 		if (const auto missing = getMissingRequirements(device.getSupport()); !missing.empty()) {
-			OWL_CORE_WARN("Vulkan: Device {} (Vulkan {}) skipped, missing: {}.", device.properties.deviceName,
-						  formatApiVersion(device.properties.apiVersion), joinList(missing))
+			OWL_CORE_DEBUG("Vulkan: Device '{}' (Vulkan {}) skipped, missing: {}.", device.properties.deviceName,
+						   formatApiVersion(device.properties.apiVersion), joinList(missing))
 			continue;
 		}
 		m_phyProps = mkUniq<PhysicalDeviceCapabilities>(device);
@@ -387,7 +387,7 @@ void VulkanCore::createLogicalDevice() {
 		result != VK_SUCCESS) {
 		m_state = State::Error;
 
-		OWL_CORE_ERROR("Vulkan: Error while creating the logical device ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the logical device ({}).", resultString(result))
 	}
 }
 
@@ -404,7 +404,7 @@ void VulkanCore::setupDebugging() {
 	if (const VkResult result =
 				g_VkCreateDebugUtilsMessengerExt(m_instance, &g_DebugUtilsMessagerCi, nullptr, &m_debugUtilsMessenger);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: Error while setup debugging ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot set up the debug messenger ({}).", resultString(result))
 		m_state = State::Error;
 	}
 }
@@ -522,7 +522,7 @@ auto VulkanCore::beginSingleTimeCommands() const -> VkCommandBuffer {
 	VkCommandBuffer commandBuffer = nullptr;
 	if (const VkResult result = vkAllocateCommandBuffers(core.getLogicalDevice(), &allocInfo, &commandBuffer);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to create command buffer for buffer copy.")
+		OWL_CORE_ERROR("Vulkan: Cannot create the command buffer of a buffer copy.")
 		return nullptr;
 	}
 
@@ -531,7 +531,7 @@ auto VulkanCore::beginSingleTimeCommands() const -> VkCommandBuffer {
 												 .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 												 .pInheritanceInfo = nullptr};
 	if (const VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to begin command buffer for buffer copy.")
+		OWL_CORE_ERROR("Vulkan: Cannot begin the command buffer of a buffer copy.")
 		return nullptr;
 	}
 	FrameProfiler::get().beginOneShot(commandBuffer);
@@ -543,7 +543,7 @@ void VulkanCore::endSingleTimeCommands(VkCommandBuffer iCommandBuffer) const {
 	auto& profiler = FrameProfiler::get();
 	profiler.endOneShot(iCommandBuffer);
 	if (const VkResult result = vkEndCommandBuffer(iCommandBuffer); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to end single time command buffer.")
+		OWL_CORE_ERROR("Vulkan: Cannot end a single-time command buffer.")
 		return;
 	}
 
@@ -560,11 +560,11 @@ void VulkanCore::endSingleTimeCommands(VkCommandBuffer iCommandBuffer) const {
 	VkFence fence = nullptr;
 	if (const VkResult result = vkCreateFence(core.getLogicalDevice(), &fenceInfo, nullptr, &fence);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to create the fence of a single time command buffer.")
+		OWL_CORE_ERROR("Vulkan: Cannot create the fence of a single-time command buffer.")
 		return;
 	}
 	if (const VkResult result = vkQueueSubmit(core.getGraphicQueue(), 1, &submitInfo, fence); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to submit to queue for single time command buffer.")
+		OWL_CORE_ERROR("Vulkan: Cannot submit a single-time command buffer.")
 		vkDestroyFence(core.getLogicalDevice(), fence, nullptr);
 		return;
 	}
@@ -584,7 +584,7 @@ void VulkanCore::endSingleTimeCommands(VkCommandBuffer iCommandBuffer) const {
 												.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
 												.commandBufferCount = 1};
 	if (const VkResult result = vkAllocateCommandBuffers(m_logicalDevice, &allocInfo, &cmd); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Core: failed to allocate command buffers ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot allocate the command buffers ({}).", resultString(result))
 	}
 	return cmd;
 }
@@ -597,14 +597,14 @@ void VulkanCore::createCommandPool() {
 
 	if (const VkResult result = vkCreateCommandPool(getLogicalDevice(), &poolInfo, nullptr, &m_commandPool);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Core: failed to create command pool ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Cannot create the command pool ({}).", resultString(result))
 		m_state = State::Error;
 	}
 }
 
 InstanceInformations::InstanceInformations() {
 	vkEnumerateInstanceVersion(&version);
-	OWL_CORE_INFO("Vulkan: Found API Version: {}.{}.", VK_API_VERSION_MAJOR(version), VK_API_VERSION_MINOR(version))
+	OWL_CORE_DEBUG("Vulkan: Found API version {}.{}.", VK_API_VERSION_MAJOR(version), VK_API_VERSION_MINOR(version))
 	// Get the list of available layers
 	{
 		supportedLayers.clear();
@@ -616,11 +616,11 @@ InstanceInformations::InstanceInformations() {
 			for (const auto& [layerName, specVersion, implementationVersion, description]: layers) {
 				supportedLayers.emplace_back(layerName);
 #ifdef OWL_RENDERER_VERBOSE_CAPABILITIES
-				OWL_CORE_TRACE("Vulkan: Instance layer: {} version {} // {}.", layerName, specVersion, description)
+				OWL_CORE_TRACE("Vulkan: Instance layer '{}' version {} ({}).", layerName, specVersion, description)
 #endif
 			}
 		} else {
-			OWL_CORE_WARN("Vulkan: unable to enumerate instance layers ({}).", resultString(result))
+			OWL_CORE_WARN("Vulkan: Cannot enumerate the instance layers ({}).", resultString(result))
 		}
 	}
 	// Get extensions supported by the instance and store for later use
@@ -635,11 +635,11 @@ InstanceInformations::InstanceInformations() {
 				for (const auto& [extensionName, specVersion]: extensions) {
 					supportedExtensions.emplace_back(extensionName);
 #ifdef OWL_RENDERER_VERBOSE_CAPABILITIES
-					OWL_CORE_TRACE("Vulkan: Supported instance extension: {} version: {}.", extensionName, specVersion)
+					OWL_CORE_TRACE("Vulkan: Instance extension '{}' version {}.", extensionName, specVersion)
 #endif
 				}
 			} else {
-				OWL_CORE_WARN("Vulkan: unable to enumerate instance extensions ({}).", resultString(result))
+				OWL_CORE_WARN("Vulkan: Cannot enumerate the instance extensions ({}).", resultString(result))
 			}
 		}
 	}

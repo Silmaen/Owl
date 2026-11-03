@@ -89,7 +89,7 @@ void HudThemeDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {}
 auto HudThemeDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	auto loaded = HudTheme::load(iPath);
 	if (!loaded) {
-		OWL_CORE_WARN("HudThemeDocument: {} is not a HUD theme.", iPath.string())
+		OWL_CORE_WARN("HudThemeDocument: '{}' is not a HUD theme.", iPath.string())
 		return false;
 	}
 	m_theme = std::move(*loaded);
@@ -193,7 +193,7 @@ void HudThemeDocument::publish() const {
 
 auto HudThemeDocument::runCommand(const std::string_view iName, commands::CommandArgs iArgs) -> bool {
 	if (mp_editorLayer == nullptr) {
-		OWL_WARN("HudThemeDocument: {} ignored, no editor to run it.", iName)
+		OWL_WARN("HudThemeDocument: '{}' ignored, no editor to run it.", iName)
 		return false;
 	}
 	iArgs.set("path", m_path.generic_string());

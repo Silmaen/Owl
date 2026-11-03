@@ -35,7 +35,7 @@ namespace owl::nest::session {
 namespace {
 
 auto failure(const SessionError iError, std::string iMessage) -> unexpected<SessionFailure> {
-	OWL_WARN("HeadlessSession: {}.", iMessage)
+	OWL_WARN("HeadlessSession: Failed, {}.", iMessage)
 	return unexpected<SessionFailure>{SessionFailure{.error = iError, .message = std::move(iMessage)}};
 }
 
@@ -135,7 +135,7 @@ void HeadlessSession::loadProjectSettings() {
 				}
 			}
 		} catch (const std::exception& iEx) {
-			OWL_WARN("HeadlessSession: Cannot read {}/owl_project.yml ({}).", m_project.string(), iEx.what())
+			OWL_WARN("HeadlessSession: Cannot read '{}/owl_project.yml' ({}).", m_project.string(), iEx.what())
 		}
 	}
 	app::Application::get().getEngineContext().setSimulationSettings(simulation);

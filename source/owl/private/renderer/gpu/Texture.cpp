@@ -173,7 +173,7 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 			{
 				if (auto texture = mkShared<null::Texture2D>(iFile); texture->isLoaded())
 					return texture;
-				OWL_CORE_WARN("Texture: failed to load '{}' (Null backend).", iFile.string())
+				OWL_CORE_WARN("Texture: Cannot load '{}' (Null backend).", iFile.string())
 				return nullptr;
 			}
 #if OWL_WITH_RENDER
@@ -181,14 +181,14 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 			{
 				if (auto texture = mkShared<opengl::Texture2D>(iFile); texture->isLoaded())
 					return texture;
-				OWL_CORE_WARN("Texture: failed to load '{}' (OpenGL backend).", iFile.string())
+				OWL_CORE_WARN("Texture: Cannot load '{}' (OpenGL backend).", iFile.string())
 				return nullptr;
 			}
 		case RenderAPI::Type::Vulkan:
 			{
 				if (auto texture = mkShared<vulkan::Texture2D>(iFile); texture->isLoaded())
 					return texture;
-				OWL_CORE_WARN("Texture: failed to load '{}' (Vulkan backend).", iFile.string())
+				OWL_CORE_WARN("Texture: Cannot load '{}' (Vulkan backend).", iFile.string())
 				return nullptr;
 			}
 #else
@@ -198,7 +198,7 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 #endif
 	}
 
-	OWL_CORE_ERROR("Texture: unknown render API ({}).", static_cast<int>(api))
+	OWL_CORE_ERROR("Texture: Unknown render API ({}).", static_cast<int>(api))
 	return nullptr;
 }
 
@@ -220,7 +220,7 @@ auto Texture2D::create(const Specification& iSpecs) -> shared<Texture2D> {
 #endif
 	}
 
-	OWL_CORE_ERROR("Texture: unknown render API ({}).", static_cast<int>(api))
+	OWL_CORE_ERROR("Texture: Unknown render API ({}).", static_cast<int>(api))
 	return nullptr;
 }
 
@@ -460,8 +460,8 @@ auto Texture2D::reloadFromFile() -> bool {
 		setData(const_cast<uint8_t*>(decoded.pixels.data()), static_cast<uint32_t>(decoded.pixels.size()));
 	}
 	m_loadState = LoadState::Ready;
-	OWL_CORE_INFO("Texture: '{}' reloaded ({}x{}).", m_path.string(), m_specification.size.x(),
-				  m_specification.size.y())
+	OWL_CORE_DEBUG("Texture: '{}' reloaded ({}x{}).", m_path.string(), m_specification.size.x(),
+				   m_specification.size.y())
 	return true;
 }
 

@@ -20,7 +20,7 @@ using owl::nest::panel::ViewNavigationMode;
 using LeftDrag = owl::renderer::CameraEditor::LeftDrag;
 
 TEST(ViewNavigation, EveryModeHasItsLeftDrag) {
-	EXPECT_EQ(getLeftDrag(ViewNavigationMode::Select), LeftDrag::None);
+	EXPECT_EQ(getLeftDrag(ViewNavigationMode::Standard), LeftDrag::None);
 	EXPECT_EQ(getLeftDrag(ViewNavigationMode::Orbit), LeftDrag::Orbit);
 	EXPECT_EQ(getLeftDrag(ViewNavigationMode::Fly), LeftDrag::Look);
 	EXPECT_EQ(getLeftDrag(ViewNavigationMode::Pan), LeftDrag::Pan);
@@ -36,7 +36,7 @@ TEST(ViewNavigation, NamesRoundTrip) {
 	EXPECT_FALSE(owl::nest::panel::parseViewNavigationMode("walk").has_value());
 }
 
-TEST(ViewNavigation, SelectModePicksOnPress) {
+TEST(ViewNavigation, StandardModePicksOnPress) {
 	ViewNavigation navigation;
 	EXPECT_TRUE(navigation.pressLeft(true));
 	EXPECT_EQ(navigation.getActiveLeftDrag(), LeftDrag::None);
@@ -67,7 +67,7 @@ TEST(ViewNavigation, SwitchingModeDuringADragKeepsTheDragGoing) {
 	std::ignore = navigation.pressLeft(true);
 	navigation.mode = ViewNavigationMode::Fly;
 	EXPECT_EQ(navigation.getActiveLeftDrag(), LeftDrag::Look);
-	navigation.mode = ViewNavigationMode::Select;
+	navigation.mode = ViewNavigationMode::Standard;
 	EXPECT_EQ(navigation.getActiveLeftDrag(), LeftDrag::None);
 }
 
@@ -76,10 +76,12 @@ TEST(ViewNavigation, SettingsKeepTheModeAndTheFlySpeed) {
 	owl::nest::EditorSettings saved;
 	saved.viewNavigation = ViewNavigationMode::Fly;
 	saved.cameraFlySpeed = 12.5f;
+	saved.showAllFiles = true;
 	saved.saveToFile(file);
 	owl::nest::EditorSettings loaded;
 	loaded.loadFromFile(file);
 	EXPECT_EQ(loaded.viewNavigation, ViewNavigationMode::Fly);
 	EXPECT_FLOAT_EQ(loaded.cameraFlySpeed, 12.5f);
+	EXPECT_TRUE(loaded.showAllFiles);
 	std::filesystem::remove(file);
 }

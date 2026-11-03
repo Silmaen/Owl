@@ -83,14 +83,14 @@ auto LevelTransition::getSearchRoots() -> std::vector<std::filesystem::path> {
 
 auto LevelTransition::loadLevel(const ParsedScene& iParsed, const Scene& iCurrent) -> shared<Scene> {
 	if (!iParsed.valid) {
-		OWL_CORE_ERROR("Teleport: Level '{}' is invalid: {}. Fix: {}.", iParsed.sourceName, iParsed.error,
+		OWL_CORE_ERROR("LevelTransition: Level '{}' is invalid: {}. Fix: {}.", iParsed.sourceName, iParsed.error,
 					   fixHint(iParsed.failure))
 		return nullptr;
 	}
 	auto level = mkShared<Scene>();
 	const SceneSerializer serializer(level);
 	if (const auto loaded = serializer.applyParsed(iParsed); !loaded) {
-		OWL_CORE_ERROR("Teleport: Failed to load level '{}': {}. Fix: {}.", iParsed.sourceName,
+		OWL_CORE_ERROR("LevelTransition: Failed to load level '{}': {}. Fix: {}.", iParsed.sourceName,
 					   describe(loaded.error()), fixHint(loaded.error()))
 		return nullptr;
 	}

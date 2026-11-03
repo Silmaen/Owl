@@ -124,7 +124,8 @@ void revertComponentToPrefab(const scene::Entity& iEntity, const std::string& iC
 		return;
 	const auto prefabPath = resolvePrefabPath(root.getComponent<PrefabLink>());
 	if (prefabPath.empty()) {
-		OWL_WARN("Prefab {} not found in the asset directories.", root.getComponent<PrefabLink>().prefabAssetPath)
+		OWL_ERROR("SceneHierarchy: Prefab '{}' not found in the asset directories.",
+				  root.getComponent<PrefabLink>().prefabAssetPath)
 		return;
 	}
 	auto before = EntitySnapshot::capture(iEntity);
@@ -759,7 +760,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 	if (gui::widgets::menuItem({.glyph = gui::icon::packagePlus, .label = "Create Prefab..."})) {
 		if (const auto filepath = platform::FileDialog::saveFile("Owl Prefab (*.owlprefab)|owlprefab\n");
 			!filepath.empty() && !scene::PrefabSerializer::serialize(iEntity, *m_context, filepath, iEntity.getName()))
-			OWL_ERROR("SceneHierarchy: Prefab {} was not created.", filepath.string())
+			OWL_ERROR("SceneHierarchy: Prefab '{}' was not created.", filepath.string())
 	}
 	// --- HUD: a root canvas moves to an `.owlhud` the scene then draws.
 	if (iEntity.hasComponent<scene::component::Canvas>() && iParentId == core::UUID{0}) {
@@ -804,8 +805,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 				if (!resolved.empty())
 					mp_parentEditor->requestDeferredOpen(resolved);
 				else
-					OWL_CORE_WARN("Could not resolve tilemap path '{}' against any asset directory.",
-								  tilemap.tilemapPath.string())
+					OWL_CORE_ERROR("SceneHierarchy: Tilemap '{}' is in no asset folder.", tilemap.tilemapPath.string())
 			}
 		}
 	}

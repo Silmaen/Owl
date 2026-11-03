@@ -79,7 +79,7 @@ auto VoxelStructure::deserializeFromString(const std::string_view iYaml) -> bool
 	try {
 		node = YAML::Load(std::string{iYaml});
 	} catch (const YAML::Exception& iEx) {
-		OWL_CORE_WARN("VoxelStructure: Invalid YAML in structure document: {}.", iEx.what())
+		OWL_CORE_WARN("VoxelStructure: Invalid YAML in the structure document: {}.", iEx.what())
 		return false;
 	}
 	if (!node.IsMap() || !core::upgradeYamlDocument(g_structureFormat, node, "<buffer>")) {
@@ -88,18 +88,18 @@ auto VoxelStructure::deserializeFromString(const std::string_view iYaml) -> bool
 	}
 	const auto sizeNode = node["Size"];
 	if (!sizeNode || !sizeNode.IsSequence() || sizeNode.size() < 3) {
-		OWL_CORE_WARN("VoxelStructure: missing or malformed Size in structure document.")
+		OWL_CORE_WARN("VoxelStructure: Missing or malformed 'Size' in the structure document.")
 		return false;
 	}
 	size = math::vec3i{sizeNode[0].as<int32_t>(), sizeNode[1].as<int32_t>(), sizeNode[2].as<int32_t>()};
 	if (size.x() <= 0 || size.y() <= 0 || size.z() <= 0) {
-		OWL_CORE_WARN("VoxelStructure: non-positive Size in structure document.")
+		OWL_CORE_WARN("VoxelStructure: Non-positive 'Size' in the structure document.")
 		size = math::vec3i{0, 0, 0};
 		return false;
 	}
 	if (const auto blocksNode = node["Blocks"];
 		!blocksNode || !decodeBlockRuns(blocksNode.as<std::string>(), blocks, meta, volume())) {
-		OWL_CORE_WARN("VoxelStructure: Blocks run count does not match Size volume.")
+		OWL_CORE_WARN("VoxelStructure: The 'Blocks' run count does not match the 'Size' volume.")
 		size = math::vec3i{0, 0, 0};
 		blocks.clear();
 		meta.clear();

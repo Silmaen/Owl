@@ -76,7 +76,7 @@ auto createPrivateDirectory(const std::filesystem::path& iDirectory) -> bool {
 	if (exists(iDirectory, error))
 		return is_directory(iDirectory, error);
 	if (!create_directories(iDirectory, error)) {
-		OWL_CORE_WARN("Mcp: Cannot create {} ({}).", iDirectory.string(), error.message())
+		OWL_CORE_WARN("Mcp: Cannot create '{}' ({}).", iDirectory.string(), error.message())
 		return false;
 	}
 	permissions(iDirectory, std::filesystem::perms::owner_all, std::filesystem::perm_options::replace, error);
@@ -122,7 +122,7 @@ auto writeTokenFile(const std::filesystem::path& iFile, const std::string_view i
 	{
 		std::ofstream out(iFile, std::ios::binary | std::ios::trunc);
 		if (!out) {
-			OWL_CORE_WARN("Mcp: Cannot write the token file {}.", iFile.string())
+			OWL_CORE_WARN("Mcp: Cannot write the token file '{}'.", iFile.string())
 			return false;
 		}
 		out.write(iToken.data(), static_cast<std::streamsize>(iToken.size()));
@@ -134,7 +134,7 @@ auto writeTokenFile(const std::filesystem::path& iFile, const std::string_view i
 #else
 	const int file = open(iFile.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW | O_CLOEXEC, S_IRUSR | S_IWUSR);
 	if (file < 0) {
-		OWL_CORE_WARN("Mcp: Cannot write the token file {}.", iFile.string())
+		OWL_CORE_WARN("Mcp: Cannot write the token file '{}'.", iFile.string())
 		return false;
 	}
 	// The file may predate this run with wider rights: open does not change them.
@@ -150,7 +150,7 @@ auto writeTokenFile(const std::filesystem::path& iFile, const std::string_view i
 	}
 	written = close(file) == 0 && written;
 	if (!written)
-		OWL_CORE_WARN("Mcp: Cannot write the token file {}.", iFile.string())
+		OWL_CORE_WARN("Mcp: Cannot write the token file '{}'.", iFile.string())
 	return written;
 #endif
 }

@@ -48,7 +48,7 @@ void GpuProfiler::init() {
 	VkPhysicalDeviceProperties properties{};
 	vkGetPhysicalDeviceProperties(core.getPhysicalDevice(), &properties);
 	if (properties.limits.timestampComputeAndGraphics == VK_FALSE) {
-		OWL_CORE_WARN("Vulkan: No timestamp support on the graphic queue, Tracy GPU zones disabled.")
+		OWL_CORE_DEBUG("Vulkan: No timestamp support on the graphics queue, Tracy GPU zones disabled.")
 		return;
 	}
 	VkCommandBuffer commandBuffer = core.createCommandBuffer();

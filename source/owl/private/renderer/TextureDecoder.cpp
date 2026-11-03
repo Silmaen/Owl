@@ -46,7 +46,7 @@ auto makeDecodedImage(stbi_uc* iData, int iWidth, int iHeight, int iChannels) ->
 		return out;
 	}
 	if (iChannels != 3 && iChannels != 4) {
-		OWL_CORE_ERROR("TextureDecoder: unsupported channel count {} (expected 3 or 4).", iChannels)
+		OWL_CORE_ERROR("TextureDecoder: Unsupported channel count {} (expected 3 or 4).", iChannels)
 		stbi_image_free(iData);
 		return out;
 	}
@@ -105,7 +105,7 @@ auto decodeImageFile(const std::filesystem::path& iPath, int iDesiredChannels) -
 	int channels = 0;
 	stbi_uc* data = stbi_load(iPath.string().c_str(), &width, &height, &channels, iDesiredChannels);
 	if (data == nullptr) {
-		OWL_CORE_WARN("TextureDecoder: failed to load image {}.", iPath.string())
+		OWL_CORE_WARN("TextureDecoder: Cannot load the image '{}'.", iPath.string())
 		return {};
 	}
 	const int effectiveChannels = iDesiredChannels == 0 ? channels : iDesiredChannels;
@@ -115,8 +115,8 @@ auto decodeImageFile(const std::filesystem::path& iPath, int iDesiredChannels) -
 auto writeImagePng(const std::filesystem::path& iPath, const math::vec2ui iSize, const std::span<const uint8_t> iRgba)
 		-> bool {
 	if (iSize.surface() == 0 || iRgba.size() != static_cast<size_t>(iSize.surface()) * 4) {
-		OWL_CORE_ERROR("TextureDecoder: Cannot write {} ({}x{} image, {} bytes).", iPath.string(), iSize.x(), iSize.y(),
-					   iRgba.size())
+		OWL_CORE_ERROR("TextureDecoder: Cannot write '{}' ({}x{} image, {} bytes).", iPath.string(), iSize.x(),
+					   iSize.y(), iRgba.size())
 		return false;
 	}
 	png_image image{};
@@ -125,7 +125,7 @@ auto writeImagePng(const std::filesystem::path& iPath, const math::vec2ui iSize,
 	image.height = iSize.y();
 	image.format = PNG_FORMAT_RGBA;
 	if (png_image_write_to_file(&image, iPath.string().c_str(), 0, iRgba.data(), 0, nullptr) == 0) {
-		OWL_CORE_ERROR("TextureDecoder: Failed to write {} ({}).", iPath.string(), image.message)
+		OWL_CORE_ERROR("TextureDecoder: Cannot write '{}' ({}).", iPath.string(), image.message)
 		png_image_free(&image);
 		return false;
 	}
