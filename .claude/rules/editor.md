@@ -77,3 +77,13 @@ new logic in a panel, document or command, not in `EditorLayer`.
   the open graphs their probes.
 - `session/LuaConsole.h`: the Lua mode of the Console over `script::ScriptConsole`, with the `editor` module built from
   the `CommandRegistry`; editor scripts (`.lua` under `editor/`) run as one `UndoManager` group.
+
+## Connections to the delivery site
+
+- Every HTTP request of Owl Nest to the delivery site (OwlDelivery, e.g. fetching a missing package) sends the user
+  agent **exactly** `OwlNest/X.Y.Z`: the engine version of `project(VERSION)`, case as written, nothing before nor
+  after (set it explicitly, so the HTTP library does not append its own name). The site refuses anonymous scripts and
+  robots outside its home page: this user agent is the known client it lets through and counts as a person, not a
+  robot; any other user agent naming OwlNest (`OwlNest/0.7`, `owlnest/0.7.0`, `OwlNest/0.7.0 libcurl/8.5`) gets
+  a 403 on every request (`KNOWN_CLIENTS` in
+  `delivery/stats_utils.py`, `$is_script` / `$is_robot` in `server/config/http.d/Django_server.conf`).
