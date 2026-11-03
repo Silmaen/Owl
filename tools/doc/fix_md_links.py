@@ -44,6 +44,8 @@ _ANCHOR = re.compile(r"\{#([A-Za-z0-9_-]+)\}")
 _SUBPAGE = re.compile(r"<!--\s*subpage:\s*([A-Za-z0-9_./-]+\.md)\s*-->")
 _LINK = re.compile(r"\[([^\]]+)\]\(([A-Za-z0-9_./-]+\.md)\)")
 _TOC = Path(__file__).resolve().parents[2] / "doc" / "help.yml"
+_IMAGES = Path(__file__).resolve().parents[2] / "doc" / "images"
+_IMAGE = re.compile(r"(!\[[^\]]*\]\()([A-Za-z0-9_./-]+\.(?:png|jpg|jpeg|gif|svg|webp))(\))")
 _TOC_GROUP = re.compile(r"^  - title: (.+)$")
 _TOC_PAGE = re.compile(r"^      - ([A-Za-z0-9_./-]+\.md)$")
 
@@ -89,9 +91,9 @@ def _anchor_of(target: Path) -> str | None:
     return m.group(1) if m else None
 
 
-def fix_links(content: str, source: Path | None = None, toc: Path = _TOC) -> str:
-    """Replace [text](X.md) links with [text](@ref page-id) when the target page has an anchor, and append the
-    `\\subpage` list `doc/help.yml` gives `source`."""
+def fix_links(content: str, source: Path | None = None, toc: Path = _TOC, images: Path = _IMAGES) -> str:
+    """Replace [text](X.md) links with [text](@ref page-id) when the target page has an anchor, an image of `images`
+    by its bare name, and append the `\\subpage` list `doc/help.yml` gives `source`."""
 
     def replace_link(m: re.Match) -> str:
         text = m.group(1)
@@ -111,8 +113,14 @@ def fix_links(content: str, source: Path | None = None, toc: Path = _TOC) -> str
         page_id = _anchor_of((source.parent / m.group(1)).resolve()) if source is not None else None
         return f"\\subpage {page_id}" if page_id else m.group(0)
 
-    # Doxygen copies the project logo and the `doc/images` files flat next to the pages.
+    def replace_image(m: re.Match) -> str:
+        if source is None or not (source.parent / m.group(2)).resolve().is_relative_to(images.resolve()):
+            return m.group(0)
+        return f"{m.group(1)}{Path(m.group(2)).name}{m.group(3)}"
+
+    # Doxygen copies the logo and `doc/images` flat into html/ (the published folder): pages name images bare.
     content = content.replace('src="engine_assets/logo/', 'src="').replace('src="doc/images/', 'src="')
+    content = _IMAGE.sub(replace_image, content)
     content = _LINK.sub(replace_link, _SUBPAGE.sub(replace_subpage, content))
     if source is not None:
         ids = [page_id for page in toc_subpages(source, toc) if (page_id := _anchor_of(page))]

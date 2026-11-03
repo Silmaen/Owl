@@ -20,12 +20,7 @@ add_custom_target(documentation
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Generating API documentation"
         VERBATIM)
-# Copy doc images so that Markdown relative paths (../images/file.svg) resolve
-# from the generated html/ directory.
-add_custom_command(TARGET documentation POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${PROJECT_SOURCE_DIR}/doc/images
-        ${CMAKE_BINARY_DIR}/Documentation/images
-        COMMENT "Copying documentation images")
+# No copy of doc/images beside html/: Doxygen copies them into html/, the only folder published
+# (tools/doc/fix_md_links.py names them bare), so a local build shows what the site shows.
 add_custom_command(TARGET documentation POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo "look at the result: file:///${CMAKE_BINARY_DIR}/Documentation/html/index.html")
