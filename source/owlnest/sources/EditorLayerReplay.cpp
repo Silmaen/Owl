@@ -29,7 +29,7 @@ auto projectRelative(const std::filesystem::path& iPath, const std::filesystem::
 	if (iProject.empty() || iPath.empty())
 		return iPath.generic_string();
 	const auto relative = iPath.lexically_relative(iProject);
-	return relative.empty() || relative.native().starts_with("..") ? iPath.generic_string() : relative.generic_string();
+	return relative.empty() || *relative.begin() == ".." ? iPath.generic_string() : relative.generic_string();
 }
 
 }// namespace
