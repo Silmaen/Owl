@@ -342,8 +342,9 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	auto& dstSceneRegistry = newScene->registry;
 	std::unordered_map<core::UUID, entt::entity> enttMap;
 
-	// Create entities in new scene
-	for (const auto idView = srcSceneRegistry.view<component::ID>(); const auto e: idView) {
+	// Created in the source's order (a view walks the storage backwards): the copy simulates as the source does.
+	for (const auto e:
+		 std::views::reverse(static_cast<const entt::sparse_set&>(srcSceneRegistry.storage<component::ID>()))) {
 		const core::UUID uuid = srcSceneRegistry.get<component::ID>(e).id;
 		const auto& name = srcSceneRegistry.get<component::Tag>(e).tag;
 		const Entity newEntity = newScene->createEntityWithUUID(uuid, name);

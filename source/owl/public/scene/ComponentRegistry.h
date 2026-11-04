@@ -18,6 +18,7 @@
 
 #include <concepts>
 #include <functional>
+#include <ranges>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -134,10 +135,16 @@ public:
 				oDst.addOrReplaceComponent<T>(iSrc.getComponent<T>());
 		};
 		desc.copyAll = [](entt::registry& oDst, const entt::registry& iSrc, const EntityRemap& iRemap) -> void {
-			for (const auto view = iSrc.view<component::ID, T>(); const auto entity: view) {
-				if (const auto target = iRemap.find(view.template get<component::ID>(entity).id);
-					target != iRemap.end())
-					oDst.emplace_or_replace<T>(target->second, view.template get<T>(entity));
+			const auto* storage = iSrc.template storage<T>();
+			if (storage == nullptr)
+				return;
+			// In the source's storage order (a view walks it backwards): the systems visit the copy as the source.
+			for (const auto entity: std::views::reverse(static_cast<const entt::sparse_set&>(*storage))) {
+				const auto* uuid = iSrc.try_get<component::ID>(entity);
+				if (uuid == nullptr)
+					continue;
+				if (const auto target = iRemap.find(uuid->id); target != iRemap.end())
+					oDst.emplace_or_replace<T>(target->second, storage->get(entity));
 			}
 		};
 		return desc;
