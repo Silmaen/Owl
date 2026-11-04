@@ -13,6 +13,7 @@
 
 #include <data/assets/pack/PackReader.h>
 #include <owl.h>
+#include <scene/Replay.h>
 #include <scene/SceneSerializer.h>
 #include <scene/SimulationClock.h>
 #include <window/Window.h>
@@ -85,6 +86,14 @@ struct RunnerConfig {
 struct SmokeTest {
 	/// Frames played per scene (0 disables the smoke test).
 	uint32_t frames{0};
+};
+
+/// Replay files of a run (`--record`, `--replay`): both apply to the first scene played.
+struct ReplayOptions {
+	/// File the session of the first scene is recorded to, empty for none.
+	std::filesystem::path record;
+	/// File of the session the first scene replays, empty for none.
+	std::filesystem::path replay;
 };
 
 /**
@@ -176,7 +185,27 @@ public:
 	 */
 	[[nodiscard]] auto getActiveScene() const -> const shared<scene::Scene>& { return m_activeScene; }
 
+	/**
+	 * @brief
+	 *  Record or replay the session of the first scene played.
+	 * @param[in] iOptions The replay files.
+	 * @return False if the replay file cannot be read.
+	 */
+	auto setReplayOptions(const ReplayOptions& iOptions) -> bool;
+
 private:
+	/**
+	 * @brief
+	 *  Arm the recording or the replay on the first scene, before its runtime starts.
+	 */
+	void armReplay();
+
+	/**
+	 * @brief
+	 *  Write the recorded session, once, before the recorded scene stops.
+	 */
+	void saveRecording();
+
 	/**
 	 * @brief
 	 *  Handle the key pressed event.
@@ -338,6 +367,12 @@ private:
 	auto stepSmokeTest() -> bool;
 
 	shared<scene::Scene> m_activeScene;
+	/// File the first scene's session is recorded to, cleared once written.
+	std::filesystem::path m_recordFile;
+	/// Session the first scene replays.
+	shared<const scene::Replay> mp_replay;
+	/// Whether the first scene already started (the replay options are spent).
+	bool m_replayArmed = false;
 	/// File of the running scene (empty when it came from a pack), reloaded by the hot reload.
 	std::filesystem::path m_scenePath;
 	/// Id of the hot reload listener.

@@ -92,10 +92,28 @@ struct RunnerOptions {
 	bool noHotReload{false};
 	// Smoke-test options (inactive when frames is 0).
 	nest::runner::SmokeTest smokeTest;
+	// Session of the first scene recorded or replayed.
+	nest::runner::ReplayOptions replay;
 };
 
-auto parseOptions(const int iArgc, char** iArgv) -> RunnerOptions {
+// `--record <file>` and `--replay <file>`, relative to the caller's folder.
+auto parseReplayOptions(const int iArgc, char** iArgv, const std::filesystem::path& iCallerDir)
+		-> nest::runner::ReplayOptions {
+	nest::runner::ReplayOptions options;
+	const std::span args(iArgv, static_cast<size_t>(iArgc));
+	for (size_t i = 1; i + 1 < args.size(); ++i) {
+		const std::string_view arg(args[i]);
+		if (arg == "--record")
+			options.record = iCallerDir / args[++i];
+		else if (arg == "--replay")
+			options.replay = iCallerDir / args[++i];
+	}
+	return options;
+}
+
+auto parseOptions(const int iArgc, char** iArgv, const std::filesystem::path& iCallerDir) -> RunnerOptions {
 	RunnerOptions options;
+	options.replay = parseReplayOptions(iArgc, iArgv, iCallerDir);
 	const std::span args(iArgv, static_cast<size_t>(iArgc));
 	for (size_t i = 1; i < args.size(); ++i) {
 		const std::string_view arg(args[i]);
@@ -123,14 +141,18 @@ OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
 class OwlNest final : public app::Application {
 public:
 	OwlNest() = delete;
-	OwlNest(const app::AppParams& iParam, const nest::runner::SmokeTest& iSmokeTest) : Application(iParam) {
+	OwlNest(const app::AppParams& iParam, const nest::runner::SmokeTest& iSmokeTest,
+			const nest::runner::ReplayOptions& iReplay)
+		: Application(iParam) {
 		if (getState() == State::Running)
-			pushLayer(mkShared<nest::runner::RunnerLayer>(iSmokeTest));
+			pushRunner(mkShared<nest::runner::RunnerLayer>(iSmokeTest), iReplay);
 	}
 
-	OwlNest(const app::AppParams& iParam, nest::runner::ScenarioTest iScenario) : Application(iParam) {
+	OwlNest(const app::AppParams& iParam, nest::runner::ScenarioTest iScenario,
+			const nest::runner::ReplayOptions& iReplay)
+		: Application(iParam) {
 		if (getState() == State::Running)
-			pushLayer(mkShared<nest::runner::RunnerLayer>(std::move(iScenario)));
+			pushRunner(mkShared<nest::runner::RunnerLayer>(std::move(iScenario)), iReplay);
 		else
 			setExitCode(4);
 	}
@@ -140,6 +162,16 @@ public:
 			pushLayer(mkShared<nest::runner::RunnerLayer>(iBench));
 		else
 			setExitCode(4);
+	}
+
+private:
+	void pushRunner(const shared<nest::runner::RunnerLayer>& iRunner, const nest::runner::ReplayOptions& iReplay) {
+		if (!iRunner->setReplayOptions(iReplay)) {
+			setExitCode(2);
+			close();
+			return;
+		}
+		pushLayer(iRunner);
 	}
 };
 
@@ -211,7 +243,7 @@ auto createScenarioApplication(const int iArgc, char** iArgv, const std::filesys
 											.hasGui = false,
 											.isDummy = true,
 											.useConfigFile = false},
-							 std::move(*scenario));
+							 std::move(*scenario), parseReplayOptions(iArgc, iArgv, iCallerDir));
 }
 }// namespace
 OWL_DIAG_POP
@@ -233,7 +265,7 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 
 	const auto workDir = std::filesystem::current_path();
 	const auto [packFile, gameName, icon, width, height, imGui, renderers] = readEarlyConfig(workDir);
-	const auto options = parseOptions(iArgc, iArgv);
+	const auto options = parseOptions(iArgc, iArgv, callerDir);
 
 	AppParams params{
 			.args = iArgv,
@@ -256,7 +288,7 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 		params.hasGui = false;
 		params.isDummy = true;
 	}
-	return mkShared<OwlNest>(params, options.smokeTest);
+	return mkShared<OwlNest>(params, options.smokeTest, options.replay);
 }
 
 }// namespace owl

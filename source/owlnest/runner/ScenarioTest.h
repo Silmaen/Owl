@@ -15,6 +15,7 @@
 #include <core/expected.h>
 #include <input/Gamepad.h>
 #include <owl.h>
+#include <scene/Replay.h>
 #include <scene/Scene.h>
 
 #include <cstddef>
@@ -84,6 +85,10 @@ struct ScenarioStep {
 	std::string gameState;
 	/// Settings key checked (the `SettingsManager` of the scene's engine context), empty for an entity check.
 	std::string setting;
+	/// State of the replay checked (`replay:`): `synced` (no divergence so far) or `finished` (every frame, in sync).
+	std::string replay;
+	/// World hash expected (`world_hash:`).
+	std::optional<uint64_t> worldHash;
 	/// Comparisons of an expectation.
 	std::vector<ScenarioCheck> checks;
 	/// Editor command run by the step (`command:`), empty otherwise.
@@ -155,6 +160,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Session the scene replays (`replay:`, relative to the scenario file).
+	 * @return The replay, null when the scenario has none.
+	 */
+	[[nodiscard]] auto getReplay() const -> const shared<const scene::Replay>& { return mp_replay; }
+
+	/**
+	 * @brief
 	 *  Get the steps.
 	 * @return The steps, in order.
 	 */
@@ -219,6 +231,8 @@ private:
 	std::vector<std::filesystem::path> m_assets;
 	/// Fixed time step.
 	core::Timestep m_step;
+	/// Session the scene replays, null for none.
+	shared<const scene::Replay> mp_replay;
 	/// Steps, in order.
 	std::vector<ScenarioStep> m_steps;
 	/// Index of the current step.
