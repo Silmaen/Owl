@@ -33,7 +33,7 @@ namespace {
 // Jolt is built for SSE4.2 on x86_64: on an older CPU physics stays off instead of crashing on an illegal instruction.
 auto isCpuUnsupported() -> bool {
 #if defined(__x86_64__) || defined(_M_X64)
-	static const bool unsupported = __builtin_cpu_supports("sse4.2") == 0 || __builtin_cpu_supports("popcnt") == 0;
+	static const bool unsupported = !__builtin_cpu_supports("sse4.2") || !__builtin_cpu_supports("popcnt");
 	return unsupported;
 #else
 	return false;
