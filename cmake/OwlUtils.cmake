@@ -170,3 +170,14 @@ function(owl_target_link_libraries Target LinkType Module)
         target_link_libraries(${Target} ${LinkType} $<BUILD_INTERFACE:${PROJECT_PREFIX_LOWER}_imgui_bindings>)
     endif ()
 endfunction()
+
+# Sources that include Jolt get its instruction set (SSE4.2 on x86_64, as the joltphysics recipe builds it), and only
+# them: the rest of the target keeps the x86-64 baseline. They skip the precompiled header, built for that baseline.
+function(owl_jolt_sources Target)
+    if (NOT ARGN OR NOT CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+        return()
+    endif ()
+    set_source_files_properties(${ARGN} TARGET_DIRECTORY ${Target} PROPERTIES
+            COMPILE_OPTIONS "-msse4.2;-mpopcnt"
+            SKIP_PRECOMPILE_HEADERS ON)
+endfunction()

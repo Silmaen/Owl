@@ -154,6 +154,7 @@ class OwlEngineConan(ConanFile):
             self.requires("vulkan-utility-libraries/1.4.357.0")
         if self.options.physics:
             self.requires("box2d/3.1.1")
+            self.requires("joltphysics/5.6.0")
         if self.options.audio:
             self.requires("openal-soft/1.25.2")
             self.requires("libsndfile/1.2.2")

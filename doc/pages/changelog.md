@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OwlRunner --record <file>` and `--replay <file>`, and the scenario key `replay:` with the expectations `replay: synced` / `finished` and `world_hash:`.
 - Owl Nest: a Record button and `scene.record` (`Shift+F5`) write a `.owlreplay`, and a double-click in the Content Browser plays it.
 - Engine Demo: a recorded tour of the platformer house, checked by `replay_platformer_house.owltest`.
+- Jolt Physics 5.6.0 as a dependency, built cross-platform deterministic with SSE4.2 on x86_64, and a frozen world-hash test of a Jolt scene.
 
 ### Changed
 

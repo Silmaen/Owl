@@ -149,6 +149,7 @@ endif ()
 # physics
 if (${PROJECT_PREFIX}_MODULE_PHYSICS)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d REQUIRED)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Jolt REQUIRED MODULE_TARGET "Jolt::Jolt")
     if (${PROJECT_PREFIX}_PHYSICS_AVX2 AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
         target_compile_definitions(${ENGINE_NAME}Private INTERFACE OWL_PHYSICS_AVX2)
     endif ()
