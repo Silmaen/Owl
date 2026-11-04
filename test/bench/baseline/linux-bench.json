@@ -1178,11 +1178,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1880524.0,
-      "p25_ns": 1873923.5,
-      "p75_ns": 1889359.5,
-      "min_ns": 1862923.0,
-      "max_ns": 1914677.0
+      "median_ns": 2717311.0,
+      "p25_ns": 2712492.5,
+      "p75_ns": 2724296.0,
+      "min_ns": 2707603.0,
+      "max_ns": 2732537.0
     },
     {
       "name": "sample/load/raycast_demo",
