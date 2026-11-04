@@ -197,7 +197,9 @@ body). Two runs of the same inputs give the same hash; a different one shows whe
 The hash matches across targets too: the engine builds without FMA contraction nor fast maths, and the scene systems
 call `math::sin`, `math::atan2`, `math::exp`, `math::pow`… (`math/elementaryFunctions.h`, the same bits on every
 target) instead of the libm; so do Lua `math.sin` to `math.log` and `math.pow`. The Lua `^` operator still uses the
-libm: gameplay code writes `math.pow(x, y)`.
+libm: gameplay code writes `math.pow(x, y)`. `pairs` walks keys in the order of their insertion history;
+`table.sorted_keys(t)` gives booleans, numbers then strings in a fixed order (a table, function or userdata key has
+no stable order and raises an error).
 
 Only the ticks are deterministic: `on_update` gets the duration of a frame, which varies from one run to the next, so
 gameplay that must replay goes into `on_tick` and the systems' `tick`.

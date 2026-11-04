@@ -64,3 +64,11 @@ Random values drawn from the scene seed and elementary functions with the same b
 | `math.exp(x: number)`                     | `value: number` | e to the power x, the same bits on every target.                                                                                                                                  |
 | `math.log(x: number, [base: number])`     | `value: number` | Logarithm of x, natural or in a base, the same bits on every target.                                                                                                              |
 | `math.pow(x: number, y: number)`          | `value: number` | x to the power y, the same bits on every target, unlike the `^` operator which uses the platform's maths.                                                                         |
+
+## `table`
+
+Sorted iteration over the Lua standard `table` table.
+
+| Function                      | Returns       | Description                                                                                                                                                                                                                                                    |
+|-------------------------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `table.sorted_keys(t: table)` | `keys: table` | Keys of a table in a fixed order (booleans, then numbers ascending, then strings bytewise), the same on every run whatever the insertion history: `for _, k in ipairs(table.sorted_keys(t))`. A key that is a table, a function or a userdata raises an error. |

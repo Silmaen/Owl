@@ -16,11 +16,13 @@ on the deterministic simulation, the per-scene world (PR-33) and the open compon
 | Lua `math.random` on the `lua` stream, fixed Lua string hash seed                     | Done        |
 | World hash (`scene::computeWorldHash`), run-to-run test                               | Done        |
 | No wall-clock read in gameplay code (the engine reads it only to time its logs)      | Done        |
-| World hash of the same input log compared across every target, at night               | Planned     |
+| Frozen world hash of a physics and Lua scene, checked on every target (arm64 nightly) | Done        |
+| Engine Demo: dice crates thrown from the seed (`platformer_dice.owltest`)              | Done        |
+| World hash of a recorded input log compared across every target, with the replay      | Planned     |
 
 - Replays record the `ActionFrame` stream ([Windowing and input](windowing-input.md))
-- The cross-target comparison needs the bit-exact rules below: until then the hash is only compared between runs on
-  one target
+- The frozen hash rests on the bit-exact rules below; it changes everywhere with the simulation or the scene format,
+  on one target only with a determinism bug
 
 ## Cross-platform determinism (v0.7.0) {#simulation-cross-platform}
 
@@ -35,9 +37,9 @@ linux-x64, linux-arm64, windows-x64 (MinGW and clang-cl), android-arm64 and the 
 | 2D physics           | Box2D 3 deterministic across platforms (its build sets `-ffp-contract=off`, its own trigonometry)               | Done    |
 | 3D physics           | Jolt built with `JPH_CROSS_PLATFORM_DETERMINISTIC`, its cost measured in `test/bench/`, when Jolt lands          | Planned |
 | Lua                  | Fixed string hash seed; `math.sin`… `math.pow` bound to the engine maths (the `^` operator keeps the libm)       | Done    |
-| Lua iteration        | Sorted iteration helper for tables keyed by tables or functions (their order follows addresses)                  | Planned |
+| Lua iteration        | `table.sorted_keys(t)`: booleans, numbers, strings in a fixed order whatever the insertion history               | Done    |
 | Test                 | Bit fingerprints of the engine maths checked on every target (`ElementaryFunctions` tests, arm64 nightly)        | Done    |
-| Test                 | World hash of the same input log compared across every target at night                                          | Planned |
+| Test                 | Frozen world hash of a Box2D and Lua scene (`WorldHashGoldenTest`), the same value on every target              | Done    |
 
 ## Input recording and replay (v0.7.0)
 

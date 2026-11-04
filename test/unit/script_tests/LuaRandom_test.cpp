@@ -44,6 +44,17 @@ function on_create()
 	gamestate.set('atan', math.atan(1, -2))
 	gamestate.set('log', math.log(8, 2))
 	gamestate.set('pow', math.pow(2, 10))
+	local mixed = {}
+	mixed.z = 1
+	mixed[3] = 1
+	mixed.b = 1
+	mixed[true] = 1
+	mixed[1.5] = 1
+	mixed[false] = 1
+	local parts = {}
+	for _, key in ipairs(table.sorted_keys(mixed)) do parts[#parts + 1] = tostring(key) end
+	gamestate.set('sorted', table.concat(parts, ','))
+	gamestate.set('unsortable', pcall(table.sorted_keys, {[{}] = 1}))
 end
 )";
 
@@ -109,4 +120,10 @@ TEST_F(LuaRandom, MathFunctionsUseTheEngineMaths) {
 	EXPECT_EQ(state.get("atan"), (GameState::Value{static_cast<float>(math::atan2(1.0, -2.0))}));
 	EXPECT_EQ(state.get("log"), (GameState::Value{static_cast<float>(math::log(8.0) / math::log(2.0))}));
 	EXPECT_EQ(state.get("pow"), (GameState::Value{1024.f}));
+}
+
+TEST_F(LuaRandom, SortedKeysGiveAFixedOrder) {
+	const auto state = play(0);
+	EXPECT_EQ(state.get("sorted"), (GameState::Value{std::string{"false,true,1.5,3,b,z"}}));
+	EXPECT_EQ(state.get("unsortable"), (GameState::Value{false}));
 }

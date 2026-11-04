@@ -301,6 +301,76 @@ auto luaMathPow(lua_State* iState) -> int {
 	return 1;
 }
 
+// A table key that sorts the same on every run: a boolean, a number or a string.
+struct SortableKey {
+	int type = LUA_TNIL;
+	bool isInteger = false;
+	lua_Integer integer = 0;
+	lua_Number number = 0;
+	std::string text;
+	bool boolean = false;
+};
+
+auto isBefore(const SortableKey& iLeft, const SortableKey& iRight) -> bool {
+	if (iLeft.type != iRight.type)
+		return iLeft.type < iRight.type;
+	switch (iLeft.type) {
+		case LUA_TBOOLEAN:
+			return !iLeft.boolean && iRight.boolean;
+		case LUA_TNUMBER:
+			if (iLeft.isInteger && iRight.isInteger)
+				return iLeft.integer < iRight.integer;
+			if (iLeft.number < iRight.number || iRight.number < iLeft.number)
+				return iLeft.number < iRight.number;
+			return iLeft.isInteger && !iRight.isInteger;
+		default:
+			return iLeft.text < iRight.text;
+	}
+}
+
+auto luaTableSortedKeys(lua_State* iState) -> int {
+	luaL_checktype(iState, 1, LUA_TTABLE);
+	lua_pushnil(iState);
+	while (lua_next(iState, 1) != 0) {
+		lua_pop(iState, 1);
+		if (const int type = lua_type(iState, -1); type != LUA_TBOOLEAN && type != LUA_TNUMBER && type != LUA_TSTRING)
+			return luaL_error(iState, "sorted_keys: a %s key has no stable order", luaL_typename(iState, -1));
+	}
+	std::vector<SortableKey> keys;
+	lua_pushnil(iState);
+	while (lua_next(iState, 1) != 0) {
+		lua_pop(iState, 1);
+		SortableKey& key = keys.emplace_back();
+		key.type = lua_type(iState, -1);
+		if (key.type == LUA_TBOOLEAN) {
+			key.boolean = lua_toboolean(iState, -1) != 0;
+		} else if (key.type == LUA_TNUMBER) {
+			key.isInteger = lua_isinteger(iState, -1) != 0;
+			key.integer = key.isInteger ? lua_tointeger(iState, -1) : 0;
+			key.number = lua_tonumber(iState, -1);
+		} else {
+			size_t length = 0;
+			const char* chars = lua_tolstring(iState, -1, &length);
+			key.text.assign(chars, length);
+		}
+	}
+	std::ranges::sort(keys, isBefore);
+	lua_createtable(iState, static_cast<int>(keys.size()), 0);
+	lua_Integer index = 0;
+	for (const auto& key: keys) {
+		if (key.type == LUA_TBOOLEAN)
+			lua_pushboolean(iState, key.boolean ? 1 : 0);
+		else if (key.type == LUA_TNUMBER && key.isInteger)
+			lua_pushinteger(iState, key.integer);
+		else if (key.type == LUA_TNUMBER)
+			lua_pushnumber(iState, key.number);
+		else
+			lua_pushlstring(iState, key.text.data(), key.text.size());
+		lua_rawseti(iState, -2, ++index);
+	}
+	return 1;
+}
+
 auto luaTransformGetRotation(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Transform>()) {
 		const auto& t = entity->getComponent<scene::component::Transform>().transform;
@@ -3510,6 +3580,11 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "x to the power y, the same bits on every target, unlike the `^` operator which uses the "
 						"platform's maths.",
 		 .params = {{"x", Number}, {"y", Number}}, .returns = {{"value", Number}}},
+		{.table = "table", .name = "sorted_keys", .function = guarded<luaTableSortedKeys>,
+		 .description = "Keys of a table in a fixed order (booleans, then numbers ascending, then strings bytewise), the "
+						"same on every run whatever the insertion history: `for _, k in ipairs(table.sorted_keys(t))`. "
+						"A key that is a table, a function or a userdata raises an error.",
+		 .params = {{"t", Table}}, .returns = {{"keys", Table}}},
 		{.table = "scene", .name = "get_world_origin", .function = guarded<luaSceneGetWorldOrigin>,
 		 .description = "World position of the scene origin, which local positions are relative to.",
 		 .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
@@ -4324,6 +4399,7 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "math",
 			 .description = "Random values drawn from the scene seed and elementary functions with the same bits on "
 							"every target, over the Lua standard `math` table."},
+			{.name = "table", .description = "Sorted iteration over the Lua standard `table` table."},
 			{.name = "physics", .description = "Box2D body of an entity."},
 			{.name = "input",
 			 .description = "Actions of the game's input map, then the raw keyboard, mouse and gamepad state."},
@@ -4367,7 +4443,7 @@ auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 			{.file = "lua-api-entities.md", .title = "Entities and transforms", .tables = {"entity", "transform"}},
 			{.file = "lua-api-scene.md",
 			 .title = "Scene, engine and log",
-			 .tables = {"scene", "engine", "log", "math"}},
+			 .tables = {"scene", "engine", "log", "math", "table"}},
 			{.file = "lua-api-input.md", .title = "Input", .tables = {"input"}},
 			{.file = "lua-api-physics.md", .title = "Physics", .tables = {"physics"}},
 			{.file = "lua-api-sound.md", .title = "Sound", .tables = {"sound"}},

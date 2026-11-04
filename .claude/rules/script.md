@@ -22,8 +22,8 @@ User-facing reference: `doc/pages/scripting.md` (guide), `doc/pages/lua-api.md` 
   (`<build>/test/lua-api/` under ctest) over `doc/pages/`. Every `table.fn(` in `scripting.md` must be bound (tested).
 - Tables (`getLuaTables()`): `transform`, `physics`, `input`, `sound`, `scene`, `time`, `log`, `entity`, `ui`,
   `gamestate`, `save`, `settings`, `locale`, `trigger`, `door`, `pushwall`, `isometric`, `path`, `walk`, `animator`,
-  `socket`, `spline`, `datatable`, `engine`, `math` (`random` / `randomseed` on the scene stream, over the standard
-  table).
+  `socket`, `spline`, `datatable`, `engine`, `math` (`random` / `randomseed` on the scene stream and the engine's
+  elementary functions, over the standard table), `table` (`sorted_keys`, over the standard table).
 - Sandbox: only `base`, `table`, `string`, `math`, `utf8`, `coroutine`; `io`, `os`, `dofile`, `loadfile`,
   `string.dump` are removed, `load` is text-only, `setmetatable` refuses `__gc`, `collectgarbage` keeps
   `count` / `isrunning`. Never re-open them. Chunks load in mode `"t"` only (no bytecode).

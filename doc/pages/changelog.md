@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scene random seed (`Simulation: seed:`), edited in Owl Nest's *Scene Settings* and by the `scene.set_random_seed` command.
 - `scene::computeWorldHash`: a hash of the simulated state of a scene, to compare two runs of the same inputs.
 - `math/elementaryFunctions.h`: `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `exp`, `log` and `pow` giving the same bits on every target.
+- Lua `table.sorted_keys(t)`: the keys of a table in a fixed order, whatever the order they were added in.
+- Engine Demo: dice crates at the start of the platformer, thrown on the fixed tick from the scene seed, the same throws and total on every Play.
 - Lua `math.pow`, and `math.sin` to `math.log` bound to the engine maths, so a script computes the same values on every target.
 
 ### Changed
