@@ -63,6 +63,8 @@ class JoltPhysicsConan(ConanFile):
         # Owl derives from Jolt's listener interfaces: their typeinfo must exist in the library.
         tc.cache_variables["CPP_RTTI_ENABLED"] = True
         tc.cache_variables["USE_ASSERTS"] = False
+        # Debug and release consumers share one ABI: JPH_DEBUG (asserts, debug-only members) is never defined.
+        tc.preprocessor_definitions["JPH_NO_DEBUG"] = 1
         tc.cache_variables["ENABLE_OBJECT_STREAM"] = False
         tc.cache_variables["DEBUG_RENDERER_IN_DEBUG_AND_RELEASE"] = False
         tc.cache_variables["PROFILER_IN_DEBUG_AND_RELEASE"] = False
@@ -92,7 +94,7 @@ class JoltPhysicsConan(ConanFile):
         self.cpp_info.set_property("cmake_file_name", "Jolt")
         self.cpp_info.set_property("cmake_target_name", "Jolt::Jolt")
         # The public defines of Jolt.cmake; a consumer built with other ones fails JPH::VerifyJoltVersionID().
-        self.cpp_info.defines = ["JPH_CROSS_PLATFORM_DETERMINISTIC"]
+        self.cpp_info.defines = ["JPH_CROSS_PLATFORM_DETERMINISTIC", "JPH_NO_DEBUG"]
         if self._is_x86_64:
             self.cpp_info.defines.extend(["JPH_USE_SSE4_1", "JPH_USE_SSE4_2"])
         if self.options.shared:
