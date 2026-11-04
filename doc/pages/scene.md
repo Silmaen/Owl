@@ -204,6 +204,11 @@ no stable order and raises an error).
 Only the ticks are deterministic: `on_update` gets the duration of a frame, which varies from one run to the next, so
 gameplay that must replay goes into `on_tick` and the systems' `tick`.
 
+A session can be recorded and replayed frame-exact: `Scene::setRecordingReplay` and `takeRecordedReplay` capture the
+duration, the devices, the cursor capture and the HUD pointer of every frame, `setPlaybackReplay` plays a `scene::Replay`
+(`.owlreplay`) in their place, and `getReplayProgress` tells whether the world still matches its world hash checkpoints
+([design](design/simulation-networking.md#simulation-replay)).
+
 The engine systems live in `scene::systems` (private, `source/owl/private/scene/systems/`).
 
 ## Component Reference {#components}
@@ -1720,7 +1725,8 @@ keeps the previous one, logs and returns a `platform::WriteError` (`false` from 
 ### Play copy
 
 Play runs on `Scene::copy()` of the editor scene: components by value, `VoxelWorld` chunks deep-copied (Play edits
-never reach the editor scene; chunks still generating are re-queued).
+never reach the editor scene; chunks still generating are re-queued). The copy keeps the entity and component storage
+order of its source, so Play simulates like the runner's loaded scene.
 
 ## Teleport System
 

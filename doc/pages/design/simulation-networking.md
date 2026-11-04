@@ -18,9 +18,9 @@ on the deterministic simulation, the per-scene world (PR-33) and the open compon
 | No wall-clock read in gameplay code (the engine reads it only to time its logs)      | Done        |
 | Frozen world hash of a physics and Lua scene, checked on every target (arm64 nightly) | Done        |
 | Engine Demo: dice crates thrown from the seed (`platformer_dice.owltest`)              | Done        |
-| World hash of a recorded input log compared across every target, with the replay      | Planned     |
+| World hash of a recorded input log compared across every target, with the replay      | Done        |
 
-- Replays record the `ActionFrame` stream ([Windowing and input](windowing-input.md))
+- Replays record the device state of every frame ([Windowing and input](windowing-input.md)); the replay scenarios check the world hash on every target
 - The frozen hash rests on the bit-exact rules below; it changes everywhere with the simulation or the scene format,
   on one target only with a determinism bug
 
@@ -41,10 +41,29 @@ linux-x64, linux-arm64, windows-x64 (MinGW and clang-cl), android-arm64 and the 
 | Test                 | Bit fingerprints of the engine maths checked on every target (`ElementaryFunctions` tests, arm64 nightly)        | Done    |
 | Test                 | Frozen world hash of a Box2D and Lua scene (`WorldHashGoldenTest`), the same value on every target              | Done    |
 
-## Input recording and replay (v0.7.0)
+## Input recording and replay (v0.7.0) {#simulation-replay}
 
-- Record the input stream of a Play session, replay it frame-exact in the editor or the headless runner
-- Replays double as regression tests
+| Part                                                                                              | Status |
+|---------------------------------------------------------------------------------------------------|--------|
+| `scene::Replay` and the `.owlreplay` YAML file (versioned format)                                 | Done   |
+| `Scene::setRecordingReplay` / `takeRecordedReplay`, `setPlaybackReplay`, `getReplayProgress`      | Done   |
+| `OwlRunner --record <file>` and `--replay <file>`, also with `--scenario`                         | Done   |
+| Scenario key `replay:` and expectations `replay: synced` / `finished`, `world_hash:`              | Done   |
+| Owl Nest: Record button (`scene.record`), replay played from the Content Browser                  | Done   |
+| Engine Demo: recorded tour of the platformer house, checked by `replay_platformer_house.owltest`  | Done   |
+
+- A replay holds, per frame, its exact duration, the device `InputState`, the cursor capture and the HUD pointer
+  (`ReplayPointer`); and the scene seed, the tick rate, the world hash at the start and a world hash every
+  `Replay::checkpointTicks` (60) ticks
+- Playing a replay applies its seed and clock settings and ignores the time step of the caller and the devices; after
+  the last frame the scene reads the devices again
+- Lua raw input (`input.is_key_pressed`, mouse, gamepad) and the mouse-look of the first-person, ship and voxel
+  controllers read the input frame of the scene, so they replay too
+- A divergence is reported at the first checkpoint whose world hash differs (frame 0: the start state differs)
+- A replay needs the same project: its action map, settings and texts are not stored
+- Only the first scene of a session is recorded: a level transition ends the recording
+- The systems that run per frame replay the recorded frame sequence, not a different frame rate
+- `Scene::copy` keeps the entity and component order of its source, so the editor's Play simulates like the runner
 
 ## Rewind in Play (v0.7.0)
 

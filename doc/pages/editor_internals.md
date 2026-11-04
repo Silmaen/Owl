@@ -124,6 +124,7 @@ scene: ../../engine_demo/scenes/platformer_house.owl   # relative to the file; p
 timestep_ms: 16.667                                       # optional
 # project: ../../engine_demo                              # optional: the project, when the scene is a test fixture
 # assets: assets                                          # optional: extra asset folder(s) of the fixture
+# replay: ../../engine_demo/replays/tour.owlreplay        # optional: a recording played in place of the devices
 steps:
   - frames: 30                                            # play 30 frames, no input
   - input: {key: Right, frames: 20}                       # hold keys (or `keys: [...]`, `mouse: Left`,
@@ -148,7 +149,8 @@ steps:
 |           | with the inverse of their dead zone and curve); `frames` defaults to 1                        |
 | `expect`  | `entity: <tag>` or `player: true` with fields `translation.*`, `rotation.z`, `scale.*`,       |
 |           | `exists`; or `gamestate: <key>`, or `setting: <key>` (a game setting). Each check is a value  |
-|           | or `equals` / `greater` / `less`, `tolerance` for a numeric `equals`                          |
+|           | or `equals` / `greater` / `less`, `tolerance` for a numeric `equals`; or `replay: synced` /   |
+|           | `finished` (no divergence so far / every recorded frame played), or `world_hash: 0x...`       |
 | `command` | An editor command by name, its arguments under `args`:                                        |
 |           | `{command: entity.delete, args: {entity: Crate}}`; a vector or a colour is a list of numbers, |
 |           | a text argument may be a map (`component.set` values)                                         |
@@ -161,6 +163,10 @@ steps:
   pad on the Null back-end (`test/unit/scenarios/platformer_gamepad.owltest`).
 - An `actions` step resolves its names against the action map when the file is read, so it survives a rebinding
   (`test/unit/scenarios/platformer_actions.owltest`).
+- A `replay:` file (relative to the scenario) is played by the scene; the first frame of a run starts the runtime, so
+  N+1 scenario frames play N recorded frames (`test/unit/scenarios/replay_platformer_2d.owltest`,
+  `test/unit/scenarios/replay_platformer_house.owltest`). `OwlRunner --record <file>` writes a recording and
+  `--replay <file>` plays one, with or without `--scenario`.
 - Commands run on the playing scene with an undo history of their own (`test/unit/scenarios/editor_commands.owltest`,
   macros in `test/unit/scenarios/editor_macro.owltest`). Every `test/unit/scenarios/*.owltest` is a CTest case
   (label `scenario`).

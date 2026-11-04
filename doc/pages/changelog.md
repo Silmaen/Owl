@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `table.sorted_keys(t)`: the keys of a table in a fixed order, whatever the order they were added in.
 - Engine Demo: dice crates at the start of the platformer, thrown on the fixed tick from the scene seed, the same throws and total on every Play.
 - Lua `math.pow`, and `math.sin` to `math.log` bound to the engine maths, so a script computes the same values on every target.
+- `scene::Replay` and the `.owlreplay` file: a Play session recorded and replayed frame-exact, with world hash checkpoints reporting where a run diverges.
+- `OwlRunner --record <file>` and `--replay <file>`, and the scenario key `replay:` with the expectations `replay: synced` / `finished` and `world_hash:`.
+- Owl Nest: a Record button and `scene.record` (`Shift+F5`) write a `.owlreplay`, and a double-click in the Content Browser plays it.
+- Engine Demo: a recorded tour of the platformer house, checked by `replay_platformer_house.owltest`.
 
 ### Changed
 
@@ -27,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `Scene::copy` reversed the entity and component order, so the editor's Play could simulate differently from the runner.
+- Lua raw input and the mouse-look of the controllers read the devices directly and escaped the fixed input frame.
 - Published Doxygen documentation: the screenshots of the pages show again, the `fix_md_links.py` filter naming the `doc/images` files Doxygen copies into `html/`.
 
 ## [0.6.0] - 2026-11-03
