@@ -20,6 +20,7 @@ TEST(AssetKind, ClassifiesTheEngineFormats) {
 	EXPECT_EQ(classifyAsset("map.owltilemap"), AssetKind::Tilemap);
 	EXPECT_EQ(classifyAsset("tiles.owltileset"), AssetKind::Tileset);
 	EXPECT_EQ(classifyAsset("prefabs/door.owlprefab"), AssetKind::Prefab);
+	EXPECT_EQ(classifyAsset("replays/level-20261104-101500.owlreplay"), AssetKind::Replay);
 }
 
 TEST(AssetKind, ClassifiesMaterials) { EXPECT_EQ(classifyAsset("materials/gold.owlmat"), AssetKind::Material); }

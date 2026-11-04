@@ -13,10 +13,13 @@
 #include "panel/HudEditor.h"
 #include "panel/Viewport.h"
 
+#include <scene/Replay.h>
+
 #include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <utility>
 
 namespace owl::nest {
 
@@ -260,6 +263,36 @@ public:
 
 	/**
 	 * @brief
+	 *  Record the next Play session (kept until `takeRecording`).
+	 * @param[in] iRecord Whether to record.
+	 */
+	void setRecordingNextPlay(const bool iRecord) { m_recordNextPlay = iRecord; }
+
+	/**
+	 * @brief
+	 *  Whether the next Play session is recorded.
+	 * @return True if recording.
+	 */
+	[[nodiscard]] auto isRecordingNextPlay() const -> bool { return m_recordNextPlay; }
+
+	/**
+	 * @brief
+	 *  Replay a recorded session in the next Play instead of reading the devices.
+	 * @param[in] iReplay The replay, null for a live Play.
+	 */
+	void setReplayForNextPlay(const shared<const scene::Replay>& iReplay) { mp_nextReplay = iReplay; }
+
+	/**
+	 * @brief
+	 *  The session recorded by the last Play, handed over once.
+	 * @return The replay, none when nothing was recorded since the last call.
+	 */
+	[[nodiscard]] auto takeRecording() -> std::optional<scene::Replay> {
+		return std::exchange(m_recording, std::nullopt);
+	}
+
+	/**
+	 * @brief
 	 *  Consume the pending single-step request (set by the toolbar Step button).
 	 * @return True if a step was pending (and is now consumed); false otherwise.
 	 */
@@ -378,6 +411,12 @@ private:
 	State m_state = State::Edit;
 	/// True for one frame after `requestStep()`; consumed by the runtime loop.
 	bool m_stepRequested = false;
+	/// Whether the next Play session is recorded.
+	bool m_recordNextPlay = false;
+	/// Session replayed by the next Play.
+	shared<const scene::Replay> mp_nextReplay;
+	/// Session recorded by the last Play, until taken.
+	std::optional<scene::Replay> m_recording;
 	/// True for one frame after `requestStop()`; consumed by the runtime loop.
 	bool m_stopRequested = false;
 

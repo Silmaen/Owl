@@ -634,6 +634,12 @@ void EditorLayer::onAttach() {
 		if (getState() == State::Pause)
 			onSceneStep();
 	});
+	m_actionRegistry.registerAction("scene.record", "Record Play Session", {input::key::F5, Modifiers::Shift},
+									[this]() -> void {
+										if (auto* doc = activeSceneDocument();
+											doc != nullptr && doc->state() == SceneDocument::State::Edit)
+											doc->setRecordingNextPlay(!doc->isRecordingNextPlay());
+									});
 	m_actionRegistry.registerAction("scene.play_controls", "Fold Play Controls", {input::key::F10, Modifiers::None},
 									[this]() -> void {
 										m_settings.playControlsCollapsed = !m_settings.playControlsCollapsed;
@@ -755,6 +761,8 @@ void EditorLayer::onAttach() {
 	m_contentBrowser.setMacroRunCallback([this](const std::filesystem::path& iPath) -> void {
 		runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 	});
+	m_contentBrowser.setReplayPlayCallback(
+			[this](const std::filesystem::path& iPath) -> void { playReplayFile(iPath); });
 	bindScriptCallbacks();
 	m_contentBrowser.setCommandCallback([this](const std::string& iName, const commands::CommandArgs& iArgs) -> bool {
 		const auto result = execute(iName, iArgs, commands::CommandSource::Gesture);
@@ -1566,6 +1574,7 @@ void EditorLayer::onSceneStop() {
 	if (m_playDriver.isActive() && doc == mp_playDocument)
 		finishBoundedPlay(/*iInterrupted=*/true);
 	doc->onSceneStop();
+	saveRecording(*doc);
 	m_sceneHierarchy.setContext(doc->getActiveScene());
 }
 

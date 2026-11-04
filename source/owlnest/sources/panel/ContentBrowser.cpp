@@ -111,7 +111,8 @@ auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> 
 																	{".owltable", {rgb(0x4fb3d9), "Data table"}},
 																	{".owlhudtheme", {rgb(0xe0b04f), "HUD theme"}},
 																	{".owldlg", {rgb(0xd98f4f), "Dialogue"}},
-																	{".owlseq", {rgb(0xd94f7a), "Sequence"}}};
+																	{".owlseq", {rgb(0xd94f7a), "Sequence"}},
+																	{".owlreplay", {rgb(0x3d8bff), "Replay"}}};
 	if (const auto it = kinds.find(iPath.extension().string()); it != kinds.end())
 		return it->second;
 	return {rgb(0x8a929e), "File"};
@@ -706,6 +707,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 		m_localisationOpenCallback(path);
 	} else if (path.extension() == ".owlmacro" && m_macroRunCallback) {
 		m_macroRunCallback(path);
+	} else if (path.extension() == ".owlreplay" && m_replayPlayCallback) {
+		m_replayPlayCallback(path);
 	} else if (classifyAsset(path) == AssetKind::Mesh && m_meshPlaceCallback) {
 		m_meshPlaceCallback(path);
 	} else if (m_codeOpenCallback && classifyAsset(path) == AssetKind::Code) {
@@ -862,6 +865,9 @@ void ContentBrowser::renderContextMenu() {
 		if (isMesh && m_meshPlaceCallback &&
 			gui::widgets::menuItem({.glyph = gui::icon::plus, .label = "Place in Scene"}))
 			m_meshPlaceCallback(m_selectedPath);
+		if (m_selectedPath.extension() == ".owlreplay" && m_codeOpenCallback &&
+			gui::widgets::menuItem({.glyph = gui::icon::fileCode2, .label = "Edit as Text"}))
+			m_codeOpenCallback(m_selectedPath);
 		if (m_selectedPath.extension() == ".owlmacro" && m_codeOpenCallback &&
 			gui::widgets::menuItem({.glyph = gui::icon::fileCode2, .label = "Edit as Text"}))
 			m_codeOpenCallback(m_selectedPath);

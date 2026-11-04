@@ -185,7 +185,7 @@ SHOTS: list[Shot] = [
         ],
         crop=(0, 760, 1460, 1050),
     ),
-    Shot("play_mode", documents=["scenes/platformer_house.owl"], steps=[("click", 689, 175), ("wait", 8)]),
+    Shot("play_mode", documents=["scenes/platformer_house.owl"], steps=[("click", 702, 175), ("wait", 8)]),
     # The help panel among the documents, on its start page.
     Shot("help_home", documents=["scenes/iso_town.owl"], steps=HELP_OPEN, crop=HELP_CROP),
     # Checks of the help renderer: a mermaid diagram, the README, a gallery table, a hovered link, the heading levels,

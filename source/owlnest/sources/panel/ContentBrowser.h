@@ -335,6 +335,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the callback that plays a `.owlreplay` (double-click or Open).
+	 * @param[in] iCallback The callback, given the replay file.
+	 */
+	void setReplayPlayCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_replayPlayCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when a macro (`.owlmacro`) is double-clicked or run from its context menu.
 	 * @param[in] iCallback Function taking the macro file path.
 	 */
@@ -693,6 +702,8 @@ private:
 	std::function<void(const std::filesystem::path&)> m_localisationOpenCallback;
 	/// Called when a macro (`.owlmacro`) is double-clicked or run from its context menu.
 	std::function<void(const std::filesystem::path&)> m_macroRunCallback;
+	/// Plays a `.owlreplay`.
+	std::function<void(const std::filesystem::path&)> m_replayPlayCallback;
 	/// Called to export a macro to an editor script.
 	std::function<void(const std::filesystem::path&)> m_macroExportCallback;
 	/// Called to run an editor script.
