@@ -887,6 +887,17 @@ auto setWorldOrigin(const shared<scene::Scene>& ioScene, const CommandArgs& iArg
 	return PreparedCommand{.command = mkUniq<SetWorldOriginCommand>(before, after), .applied = false};
 }
 
+auto setRandomSeed(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto seed = iArgs.get<int64_t>("seed");
+	if (!seed || *seed < 0)
+		return fail(CommandError::InvalidArgument, "`seed` must be a positive integer");
+	const auto before = ioScene->getRandomSeed();
+	const auto after = static_cast<uint64_t>(*seed);
+	if (after == before)
+		return fail(CommandError::NotApplicable, "the scene already has this seed");
+	return PreparedCommand{.command = mkUniq<SetRandomSeedCommand>(before, after), .applied = false};
+}
+
 auto setSceneScript(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
 	const auto text = iArgs.getText("script");
 	if (!text.empty()) {
@@ -1787,6 +1798,15 @@ CommandRegistry::CommandRegistry() {
 				  {.name = "y", .type = ArgType::Number, .description = "World y of the new origin."},
 				  {.name = "z", .type = ArgType::Number, .description = "World z of the new origin."}},
 		 .factory = setWorldOrigin});
+	add({.name = "scene.set_random_seed",
+		 .description =
+				 "Set the seed of the random streams of the scene (`math.random`, the entities created in Play): "
+				 "the same seed and the same inputs replay the same game.",
+		 .args = {{.name = "seed",
+				   .type = ArgType::Integer,
+				   .required = true,
+				   .description = "Seed, a positive integer."}},
+		 .factory = setRandomSeed});
 	add({.name = "scene.set_script",
 		 .description = "Choose the script the scene owns (`SceneScript`), with its property values; empty removes "
 						"it. It runs before the entity scripts and has no entity.",

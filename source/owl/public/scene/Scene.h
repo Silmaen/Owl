@@ -15,6 +15,7 @@
 #include "data/geometry/LooseOctree.h"
 #include "input/ActionFrame.h"
 #include "input/InputFrame.h"
+#include "math/RandomStream.h"
 #include "math/Transform.h"
 #include "math/matrices.h"
 #include "math/matrixCreation.h"
@@ -46,6 +47,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
+#include <map>
 #include <optional>
 #include <span>
 #include <string>
@@ -250,6 +253,16 @@ public:
 	 * @return The Entity.
 	 */
 	auto createEntityWithUUID(core::UUID iUuid, const std::string& iName = std::string()) -> Entity;
+
+	/**
+	 * @brief
+	 *  A UUID for a new entity: random in edition, drawn from the `owl.entity` stream in Play.
+	 *
+	 * In Play a replay of the same inputs creates the same entities under the same ids, so the world hash and the
+	 * maps keyed by UUID stay the same from one run to the next.
+	 * @return A UUID no entity of the scene has.
+	 */
+	[[nodiscard]] auto generateEntityUUID() -> core::UUID;
 
 	/**
 	 * @brief
@@ -1203,6 +1216,41 @@ public:
 	 */
 	[[nodiscard]] auto getSimulationClock() const -> const SimulationClock& { return m_simulationClock; }
 
+	/**
+	 * @brief
+	 *  Seed of the random streams of the simulation (`Simulation: seed:` in the scene file).
+	 * @return The seed.
+	 */
+	[[nodiscard]] auto getRandomSeed() const -> uint64_t { return m_randomSeed; }
+
+	/**
+	 * @brief
+	 *  Set the seed of the random streams; the streams restart from it.
+	 * @param[in] iSeed The seed.
+	 */
+	void setRandomSeed(uint64_t iSeed);
+
+	/**
+	 * @brief
+	 *  Named random stream of the simulation, created from the scene seed on first use.
+	 *
+	 * One stream per system (`owl.entity` for the UUIDs of the entities created in Play, `lua` for `math.random`):
+	 * a system drawing one more value leaves the others unchanged. `onStartRuntime()` restarts every stream, so
+	 * the same seed and the same inputs replay the same game.
+	 * @param[in] iName The stream name.
+	 * @return The stream.
+	 */
+	[[nodiscard]] auto getRandomStream(std::string_view iName) -> math::RandomStream&;
+
+	/**
+	 * @brief
+	 *  Every random stream drawn from since the last restart, by name.
+	 * @return The streams.
+	 */
+	[[nodiscard]] auto getRandomStreams() const -> const std::map<std::string, math::RandomStream, std::less<>>& {
+		return m_randomStreams;
+	}
+
 	/// Highest accepted time scale.
 	static constexpr float maxTimeScale = 16.f;
 
@@ -1625,6 +1673,10 @@ private:
 	math::vec3d m_worldOrigin{0.0, 0.0, 0.0};
 	/// Fixed-tick accumulator of the runtime (systems' `tick`, physics steps).
 	SimulationClock m_simulationClock;
+	/// Seed of the random streams.
+	uint64_t m_randomSeed = 0;
+	/// Random streams of the simulation, by name, ordered so that the world hash reads them in a fixed order.
+	std::map<std::string, math::RandomStream, std::less<>> m_randomStreams;
 	/// Context given to the systems' `tick` functions, reused from frame to frame.
 	SystemContext m_tickContext;
 	/// Input sampled once per runtime frame (read outside the ticks).

@@ -22,6 +22,7 @@
 #include "input/Gamepad.h"
 #include "input/Input.h"
 #include "input/InputFrame.h"
+#include "math/RandomStream.h"
 #include "physics/PhysicCommand.h"
 #include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
@@ -58,6 +59,7 @@
 #include <cstdint>
 #include <deque>
 #include <format>
+#include <memory>
 #include <optional>
 #include <ranges>
 #include <span>
@@ -208,6 +210,63 @@ auto luaTransformSetWorldPosition(lua_State* iState) -> int {
 auto luaSceneGetWorldOrigin(lua_State* iState) -> int {
 	const auto* activeScene = getBoundScene(iState);
 	return pushVector(iState, activeScene != nullptr ? activeScene->getWorldOrigin() : math::vec3d{0.0, 0.0, 0.0});
+}
+
+// The `lua` stream of the bound scene, else a stream kept in the registry of a state bound to no scene.
+auto luaRandomStream(lua_State* iState) -> math::RandomStream& {
+	if (auto* activeScene = getBoundScene(iState); activeScene != nullptr)
+		return activeScene->getRandomStream("lua");
+	static constexpr char key = 0;
+	if (lua_rawgetp(iState, LUA_REGISTRYINDEX, &key) != LUA_TUSERDATA) {
+		lua_pop(iState, 1);
+		std::construct_at(static_cast<math::RandomStream*>(lua_newuserdatauv(iState, sizeof(math::RandomStream), 0)), 0,
+						  "lua");
+		lua_pushvalue(iState, -1);
+		lua_rawsetp(iState, LUA_REGISTRYINDEX, &key);
+	}
+	auto* stream = static_cast<math::RandomStream*>(lua_touserdata(iState, -1));
+	lua_pop(iState, 1);
+	return *stream;
+}
+
+auto luaMathRandom(lua_State* iState) -> int {
+	auto& stream = luaRandomStream(iState);
+	int64_t low = 1;
+	int64_t high = 0;
+	switch (lua_gettop(iState)) {
+		case 0:
+			lua_pushnumber(iState, static_cast<lua_Number>(stream.nextDouble()));
+			return 1;
+		case 1:
+			high = luaL_checkinteger(iState, 1);
+			if (high == 0) {
+				lua_pushinteger(iState, static_cast<lua_Integer>(stream.nextU64()));
+				return 1;
+			}
+			break;
+		case 2:
+			low = luaL_checkinteger(iState, 1);
+			high = luaL_checkinteger(iState, 2);
+			break;
+		default:
+			return luaL_error(iState, "wrong number of arguments");
+	}
+	luaL_argcheck(iState, low <= high, lua_gettop(iState), "interval is empty");
+	lua_pushinteger(iState, static_cast<lua_Integer>(stream.nextInt(low, high)));
+	return 1;
+}
+
+auto luaMathRandomSeed(lua_State* iState) -> int {
+	auto& stream = luaRandomStream(iState);
+	if (lua_isnoneornil(iState, 1)) {
+		const auto* activeScene = getBoundScene(iState);
+		stream = math::RandomStream{activeScene != nullptr ? activeScene->getRandomSeed() : 0, "lua"};
+		return 0;
+	}
+	const auto seed = lua_isinteger(iState, 1) != 0 ? lua_tointeger(iState, 1)
+													: static_cast<lua_Integer>(luaL_checknumber(iState, 1));
+	stream.reseed(static_cast<uint64_t>(seed));
+	return 0;
 }
 
 auto luaTransformGetRotation(lua_State* iState) -> int {
@@ -3383,6 +3442,13 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "sound", .name = "get_music_state", .function = guarded<luaSoundGetMusicState>,
 		 .description = "State of the adaptive music of the scene, empty when none plays.",
 		 .returns = {{"state", String}}},
+		{.table = "math", .name = "random", .function = guarded<luaMathRandom>,
+		 .description = "Random value of the `lua` stream of the scene, the same on every run of the same seed: a "
+						"number in [0, 1) without argument, an integer in [1, m] or [m, n], 64 random bits for 0.",
+		 .params = {{"m", Integer, true}, {"n", Integer, true}}, .returns = {{"value", Number}}},
+		{.table = "math", .name = "randomseed", .function = guarded<luaMathRandomSeed>,
+		 .description = "Restart the `lua` stream from a seed, or from the seed of the scene without argument.",
+		 .params = {{"seed", Integer, true}}},
 		{.table = "scene", .name = "get_world_origin", .function = guarded<luaSceneGetWorldOrigin>,
 		 .description = "World position of the scene origin, which local positions are relative to.",
 		 .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
@@ -4194,6 +4260,8 @@ auto getLuaBindings() -> const std::vector<LuaBinding>& {
 auto getLuaTables() -> const std::vector<LuaTable>& {
 	static const std::vector<LuaTable> s_tables{
 			{.name = "transform", .description = "Local transform of an entity."},
+			{.name = "math",
+			 .description = "Random values of the Lua standard `math` table, drawn from the scene seed."},
 			{.name = "physics", .description = "Box2D body of an entity."},
 			{.name = "input",
 			 .description = "Actions of the game's input map, then the raw keyboard, mouse and gamepad state."},
@@ -4235,7 +4303,9 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 	static const std::vector<LuaReferencePage> s_pages{
 			{.file = "lua-api-entities.md", .title = "Entities and transforms", .tables = {"entity", "transform"}},
-			{.file = "lua-api-scene.md", .title = "Scene, engine and log", .tables = {"scene", "engine", "log"}},
+			{.file = "lua-api-scene.md",
+			 .title = "Scene, engine and log",
+			 .tables = {"scene", "engine", "log", "math"}},
 			{.file = "lua-api-input.md", .title = "Input", .tables = {"input"}},
 			{.file = "lua-api-physics.md", .title = "Physics", .tables = {"physics"}},
 			{.file = "lua-api-sound.md", .title = "Sound", .tables = {"sound"}},

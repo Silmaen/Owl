@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `math::RandomStream` and `Scene::getRandomStream`: seeded random streams per system, the same values on every target.
+- Scene random seed (`Simulation: seed:`), edited in Owl Nest's *Scene Settings* and by the `scene.set_random_seed` command.
+- `scene::computeWorldHash`: a hash of the simulated state of a scene, to compare two runs of the same inputs.
+
+### Changed
+
+- Entities created in Play take their UUIDs from the scene seed, so a replay creates the same entities under the same ids.
+- Lua `math.random` and `math.randomseed` draw from the `lua` stream of the scene, and Lua tables iterate in the same order on every run.
+
+### Fixed
+
+- Published Doxygen documentation: the screenshots of the pages show again, the `fix_md_links.py` filter naming the `doc/images` files Doxygen copies into `html/`.
+
 ## [0.6.0] - 2026-11-03
 
 ### Added

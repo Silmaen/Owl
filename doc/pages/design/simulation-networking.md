@@ -5,13 +5,22 @@
 Design page for the deterministic simulation of v0.7.0 and the networking of v0.9.0, summarised in the [Roadmap](../roadmap.md). Networking stays before 1.0 and rests
 on the deterministic simulation, the per-scene world (PR-33) and the open component registry (PR-37).
 
-## Deterministic simulation (v0.7.0)
+## Deterministic simulation (v0.7.0) {#simulation-deterministic}
 
-- Fixed-step simulation (physics, scripts, timers) independent from the frame rate: the clock and `on_tick` land in
-  v0.4.0 (SIM1 of [Isometric worlds](isometric-worlds.md)), v0.7.0 makes every system run on it
-- Replays record the v0.4.0 `ActionFrame` stream ([Windowing and input](windowing-input.md))
-- Seeded random streams per system; no wall-clock reads in gameplay code
-- Determinism test in CI: the same input log produces the same world hash on every target
+| Part                                                                                  | Status      |
+|---------------------------------------------------------------------------------------|-------------|
+| Every system (physics, scripts, timers) on the fixed tick of `SimulationClock`        | Done        |
+| Seeded random streams per system (`math::RandomStream`, `Scene::getRandomStream`)     | Done        |
+| Scene seed (`Simulation: seed:`), Scene Settings field, `scene.set_random_seed`       | Done        |
+| UUIDs of the entities created in Play drawn from the `owl.entity` stream              | Done        |
+| Lua `math.random` on the `lua` stream, fixed Lua string hash seed                     | Done        |
+| World hash (`scene::computeWorldHash`), run-to-run test                               | Done        |
+| No wall-clock read in gameplay code (the engine reads it only to time its logs)      | Done        |
+| World hash of the same input log compared across every target, at night               | Planned     |
+
+- Replays record the `ActionFrame` stream ([Windowing and input](windowing-input.md))
+- The cross-target comparison needs the bit-exact rules below: until then the hash is only compared between runs on
+  one target
 
 ## Cross-platform determinism (v0.7.0) {#simulation-cross-platform}
 

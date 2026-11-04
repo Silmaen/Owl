@@ -252,6 +252,19 @@ auto SetWorldOriginCommand::description() const -> std::string {
 	return std::format("Move the world origin to {:.3f}, {:.3f}, {:.3f}", m_after.x(), m_after.y(), m_after.z());
 }
 
+SetRandomSeedCommand::SetRandomSeedCommand(const uint64_t iBefore, const uint64_t iAfter)
+	: m_before{iBefore}, m_after{iAfter} {}
+
+SetRandomSeedCommand::~SetRandomSeedCommand() = default;
+
+void SetRandomSeedCommand::undo(scene::Scene& ioScene) { ioScene.setRandomSeed(m_before); }
+
+void SetRandomSeedCommand::redo(scene::Scene& ioScene) { ioScene.setRandomSeed(m_after); }
+
+auto SetRandomSeedCommand::description() const -> std::string {
+	return std::format("Set the random seed to {}", m_after);
+}
+
 SetSceneScriptCommand::SetSceneScriptCommand(std::string iBefore, std::string iAfter)
 	: m_before{std::move(iBefore)}, m_after{std::move(iAfter)} {}
 

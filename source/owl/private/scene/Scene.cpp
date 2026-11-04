@@ -326,6 +326,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_mixSettings = iOther->m_mixSettings;
 	newScene->m_worldPartitionSettings = iOther->m_worldPartitionSettings;
 	newScene->m_worldOrigin = iOther->m_worldOrigin;
+	newScene->m_randomSeed = iOther->m_randomSeed;
 	newScene->m_hudPath = iOther->m_hudPath;
 	newScene->m_hudThemePath = iOther->m_hudThemePath;
 	newScene->m_sceneScript = iOther->m_sceneScript;
@@ -387,7 +388,29 @@ auto Scene::getHudTheme() const -> shared<const HudTheme> {
 	return path.empty() ? nullptr : mp_engineContext->getHudThemeLibrary().get(path);
 }
 
-auto Scene::createEntity(const std::string& iName) -> Entity { return createEntityWithUUID(core::UUID(), iName); }
+auto Scene::createEntity(const std::string& iName) -> Entity {
+	return createEntityWithUUID(generateEntityUUID(), iName);
+}
+
+auto Scene::generateEntityUUID() -> core::UUID {
+	if (status != Status::Playing)
+		return core::UUID{};
+	auto& stream = getRandomStream("owl.entity");
+	uint64_t uuid = stream.nextU64();
+	while (uuid == 0 || m_uuidIndex.contains(core::UUID{uuid})) uuid = stream.nextU64();
+	return core::UUID{uuid};
+}
+
+void Scene::setRandomSeed(const uint64_t iSeed) {
+	m_randomSeed = iSeed;
+	m_randomStreams.clear();
+}
+
+auto Scene::getRandomStream(const std::string_view iName) -> math::RandomStream& {
+	if (const auto found = m_randomStreams.find(iName); found != m_randomStreams.end())
+		return found->second;
+	return m_randomStreams.emplace(std::string{iName}, math::RandomStream{m_randomSeed, iName}).first->second;
+}
 
 auto Scene::createEntityWithUUID(const core::UUID iUuid, const std::string& iName) -> Entity {
 	Entity entity = {registry.create(), this};
@@ -445,6 +468,7 @@ void Scene::onStartRuntime() {
 	if (mp_engineContext != nullptr)
 		m_simulationClock.setSettings(mp_engineContext->getSimulationSettings());
 	m_simulationClock.reset();
+	m_randomStreams.clear();
 	m_runtimeSeconds = 0.0;
 	m_timeScale = 1.f;
 	m_paused = false;

@@ -62,8 +62,7 @@ below, validated and proven through the hardening phase ([details](design/stable
 **Goal:** The 1.0 release candidate: networked multiplayer on the v0.7.0 deterministic simulation, then the freeze of
 the API and of the formats, the SDK and everything a third party needs; followed by the 0.9.x hardening phase
 ([networking](design/simulation-networking.md), [stable release](design/stable-release.md)). Critical path: transport
-and
-replication, the freezes, the SDK.
+and replication, the freezes, the SDK.
 
 - ![Planned][planned] Network transport layer (reliable UDP, authoritative server, connection management), on desktop
   and Android
@@ -143,7 +142,8 @@ scale; material graphs compiled to Slang and the groundwork of typed scripting
 [large worlds](design/large-worlds.md), [material graphs](design/material-graphs.md)). Critical path: the
 deterministic simulation and replay, Jolt, gravity fields.
 
-- ![Planned][planned] Deterministic simulation (seeded streams, cross-platform world-hash test) on the v0.4.0 fixed tick
+- ![In Progress][progress] Deterministic simulation (seeded streams, cross-platform world-hash test) on the fixed tick
+  ([Simulation](design/simulation-networking.md#simulation-deterministic))
 - ![Planned][planned] Bit-exact simulation on every target, always on: no FMA contraction, deterministic maths,
   deterministic Box2D and Jolt, fixed Lua hash seed
   ([Simulation](design/simulation-networking.md#simulation-cross-platform))
@@ -162,7 +162,7 @@ deterministic simulation and replay, Jolt, gravity fields.
   ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Simulation level of detail: far entities on a coarse model, on a slower tick
   ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Navigation (NavMesh generation, A*, dynamic avoidance); tile-graph pathfinding comes in v0.4.0
+- ![Planned][planned] Navigation (NavMesh generation, A*, dynamic avoidance); on top of the tile-graph pathfinding
 - ![Planned][planned] Behaviour trees with a visual editor (`.owlbt`)
 - ![Planned][planned] Steering behaviours and flocking, in 2D and in open 3D space (obstacle avoidance, formations)
 - ![Planned][planned] Engine Demo: enemies demo on the AI modules

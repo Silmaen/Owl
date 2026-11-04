@@ -46,3 +46,12 @@ Engine log.
 | `log.info(message: string)`  |         | Log a message at info level.    |
 | `log.warn(message: string)`  |         | Log a message at warning level. |
 | `log.error(message: string)` |         | Log a message at error level.   |
+
+## `math`
+
+Random values of the Lua standard `math` table, drawn from the scene seed.
+
+| Function                                  | Returns         | Description                                                                                                                                                                       |
+|-------------------------------------------|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `math.random([m: integer], [n: integer])` | `value: number` | Random value of the `lua` stream of the scene, the same on every run of the same seed: a number in [0, 1) without argument, an integer in [1, m] or [m, n], 64 random bits for 0. |
+| `math.randomseed([seed: integer])`        |                 | Restart the `lua` stream from a seed, or from the seed of the scene without argument.                                                                                             |

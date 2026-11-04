@@ -581,6 +581,9 @@ void wrapBaseFunction(lua_State* iState, const char* iName, const lua_CFunction 
 	lua_setfield(iState, -2, iName);
 }
 
+// Fixed, so that the order of `pairs` over a table is the same from one run (and one replay) to the next.
+constexpr unsigned g_StringHashSeed = 0x4f776c21u;
+
 void openSandboxedLibraries(lua_State* iState) {
 	luaL_requiref(iState, LUA_GNAME, luaopen_base, 1);
 	lua_pop(iState, 1);
@@ -636,7 +639,7 @@ void openSandboxedLibraries(lua_State* iState) {
 LuaEngine::LuaEngine() : LuaEngine(ScriptEngine::getDefaultQuotas()) {}
 
 LuaEngine::LuaEngine(const ScriptQuotas& iQuotas)
-	: mp_quota{mkUniq<Quota>()}, mp_state{lua_newstate(quotaAlloc, mp_quota.get(), luaL_makeseed(nullptr))} {
+	: mp_quota{mkUniq<Quota>()}, mp_state{lua_newstate(quotaAlloc, mp_quota.get(), g_StringHashSeed)} {
 	OWL_PROFILE_FUNCTION()
 
 	setQuotas(iQuotas);
@@ -719,6 +722,13 @@ auto LuaEngine::callGuarded(lua_State* iState, int (*iFunction)(lua_State*)) -> 
 
 void LuaEngine::registerTable(lua_State* iState, const char* iTableName, const luaL_Reg* iFunctions, const int iCount) {
 	lua_pushglobaltable(iState);
+	if (lua_getfield(iState, -1, iTableName) == LUA_TTABLE) {
+		// A standard library table (`math`) keeps its functions, the engine ones replace or extend them.
+		luaL_setfuncs(iState, iFunctions, 0);
+		lua_pop(iState, 2);
+		return;
+	}
+	lua_pop(iState, 1);
 	lua_createtable(iState, 0, iCount);
 	luaL_setfuncs(iState, iFunctions, 0);
 	lua_setfield(iState, -2, iTableName);
