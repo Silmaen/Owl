@@ -11,14 +11,11 @@
 #include "EngineSystems.h"
 #include "math/elementaryFunctions.h"
 
-#include "app/Application.h"
 #include "data/geometry/BoxCollision.h"
 #include "input/ActionFrame.h"
-#include "input/Input.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 #include "scene/component/components.h"
-#include "window/Window.h"
 
 #include <algorithm>
 #include <cmath>
@@ -35,9 +32,9 @@ namespace owl::scene::systems {
 namespace {
 
 void turnView(component::FirstPersonController& ioController, math::Transform& ioTransform,
-			  const input::ActionFrame& iActions, const float iDt, const bool iCursorCaptured) {
-	if (iCursorCaptured) {
-		const math::vec2 mouse = input::Input::getMousePos();
+			  const input::ActionFrame& iActions, const float iDt, const std::optional<math::vec2>& iCapturedCursor) {
+	if (iCapturedCursor.has_value()) {
+		const math::vec2& mouse = *iCapturedCursor;
 		if (ioController.m_mouseValid) {
 			ioController.m_yaw -= (mouse.x() - ioController.m_lastMouse.x()) * ioController.mouseSensitivity;
 			ioController.m_pitch -= (mouse.y() - ioController.m_lastMouse.y()) * ioController.mouseSensitivity;
@@ -202,8 +199,8 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 	const auto view = ioScene.registry.view<component::Transform, component::FirstPersonController>();
 	if (view.begin() == view.end())
 		return;
-	const bool cursorCaptured = app::Application::instanced() &&
-								app::Application::get().getWindow().getCursorMode() == window::CursorMode::Disabled;
+	const auto capturedCursor =
+			ioScene.isCursorCaptured() ? std::optional{ioScene.getInputFrame().getCursor()} : std::nullopt;
 	const auto& actions = ioScene.getActions();
 	std::vector<uint32_t> ids;
 	std::vector<math::box3f> boxes;
@@ -219,7 +216,7 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 		controller.m_pitch = eye.rotation().x();
 		// The same aiming crosshair as the voxel player: interactions are used by aiming at them.
 		ioScene.setShowCrosshair(true);
-		turnView(controller, eye, actions, dt, cursorCaptured);
+		turnView(controller, eye, actions, dt, capturedCursor);
 		if (!controller.m_worldReady) {
 			controller.m_worldReady = isWorldLoaded(ioScene);
 			if (!controller.m_worldReady)

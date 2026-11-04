@@ -1019,34 +1019,48 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 
 	if (iScene == nullptr)
 		return;
-	auto& state = iScene->getUiInputState();
-	state.consuming = false;
-	state.windowShown = false;
-	if (iScene->status != Scene::Status::Playing)
+	if (iScene->status != Scene::Status::Playing) {
+		auto& state = iScene->getUiInputState();
+		state.consuming = false;
+		state.windowShown = false;
 		return;
-	state.windowShown = isWindowShown(*iScene);
+	}
+	const auto pointer = iScene->routeUiPointer({.viewport = iViewportSize,
+												 .position = iMousePos,
+												 .pressed = iMousePressed,
+												 .wheel = iWheel,
+												 .deltaTime = iDeltaTime});
+	if (pointer.has_value())
+		updatePointer(*iScene, *pointer);
+}
 
-	const bool clicked = !state.wasPressed && iMousePressed;
-	const bool mouseMoved = state.hasMouse && (std::abs(iMousePos.x() - state.mousePosition.x()) > 0.5f ||
-											   std::abs(iMousePos.y() - state.mousePosition.y()) > 0.5f);
-	state.wasPressed = iMousePressed;
+void UiInputSystem::updatePointer(Scene& ioScene, const ReplayPointer& iPointer) {
+	Scene* const scene = &ioScene;
+	auto& state = scene->getUiInputState();
+	state.consuming = false;
+	state.windowShown = isWindowShown(*scene);
+
+	const bool clicked = !state.wasPressed && iPointer.pressed;
+	const bool mouseMoved = state.hasMouse && (std::abs(iPointer.position.x() - state.mousePosition.x()) > 0.5f ||
+											   std::abs(iPointer.position.y() - state.mousePosition.y()) > 0.5f);
+	state.wasPressed = iPointer.pressed;
 	state.hasMouse = true;
-	state.mousePosition = iMousePos;
+	state.mousePosition = iPointer.position;
 
 	// The HUD asset is drawn over the scene: a widget of it takes the mouse before the scene's own.
-	const auto hudHandle = iScene->getHud();
-	Scene* const hud = hudHandle && hudHandle.get() != iScene ? hudHandle.get() : nullptr;
-	const bool dragging = dragWindow(*iScene, hud, iViewportSize, iMousePos, iMousePressed) ||
-						  dragScrollBar(*iScene, hud, iViewportSize, iMousePos, iMousePressed);
-	const ui::HudLayout* hudLayout = hud != nullptr ? &layoutOf(*hud, iViewportSize) : nullptr;
-	const auto& layout = layoutOf(*iScene, iViewportSize);
-	Probe hudProbe = hud != nullptr && !dragging ? probeSurface(*hud, *hudLayout, iMousePos) : Probe{};
-	Probe sceneProbe = dragging || hudProbe.consumes() ? Probe{} : probeSurface(*iScene, layout, iMousePos);
+	const auto hudHandle = scene->getHud();
+	Scene* const hud = hudHandle && hudHandle.get() != scene ? hudHandle.get() : nullptr;
+	const bool dragging = dragWindow(*scene, hud, iPointer.viewport, iPointer.position, iPointer.pressed) ||
+						  dragScrollBar(*scene, hud, iPointer.viewport, iPointer.position, iPointer.pressed);
+	const ui::HudLayout* hudLayout = hud != nullptr ? &layoutOf(*hud, iPointer.viewport) : nullptr;
+	const auto& layout = layoutOf(*scene, iPointer.viewport);
+	Probe hudProbe = hud != nullptr && !dragging ? probeSurface(*hud, *hudLayout, iPointer.position) : Probe{};
+	Probe sceneProbe = dragging || hudProbe.consumes() ? Probe{} : probeSurface(*scene, layout, iPointer.position);
 	// A shown modal window takes the mouse: outside it, the click and the hover reach nothing.
 	const ui::HudNode* modal = hud != nullptr ? modalWindowOf(*hud, *hudLayout) : nullptr;
 	const bool modalInHud = modal != nullptr;
 	if (modal == nullptr)
-		modal = modalWindowOf(*iScene, layout);
+		modal = modalWindowOf(*scene, layout);
 	const bool blockedByModal = modal != nullptr && (modalInHud ? hudProbe.window : sceneProbe.window) != modal;
 	if (blockedByModal) {
 		hudProbe = Probe{};
@@ -1054,43 +1068,43 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 	}
 	if (clicked && !dragging) {
 		if (hudProbe.window != nullptr)
-			clickWindow(*hud, *iScene, true, hudProbe, iMousePos);
+			clickWindow(*hud, *scene, true, hudProbe, iPointer.position);
 		else if (sceneProbe.window != nullptr)
-			clickWindow(*iScene, *iScene, false, sceneProbe, iMousePos);
+			clickWindow(*scene, *scene, false, sceneProbe, iPointer.position);
 	}
 	if (clicked && !dragging) {
 		const bool inHud = hudProbe.interactive != nullptr;
 		const Probe& probe = inHud ? hudProbe : sceneProbe;
-		Scene* const surface = inHud ? hud : iScene;
+		Scene* const surface = inHud ? hud : scene;
 		const auto& surfaceLayout = inHud ? *hudLayout : layout;
 		if (const auto* scroll = probe.interactive != nullptr ? scrollOf(surfaceLayout, *probe.interactive) : nullptr;
 			scroll != nullptr)
-			clickScroll(*surface, *iScene, inHud, *scroll, iMousePos);
+			clickScroll(*surface, *scene, inHud, *scroll, iPointer.position);
 	}
-	if (iWheel.x() != 0.f || iWheel.y() != 0.f) {
-		const bool scrolled = hud != nullptr && scrollWithWheel(*hud, *hudLayout, hudProbe.top, iWheel);
+	if (iPointer.wheel.x() != 0.f || iPointer.wheel.y() != 0.f) {
+		const bool scrolled = hud != nullptr && scrollWithWheel(*hud, *hudLayout, hudProbe.top, iPointer.wheel);
 		if (!scrolled && !hudProbe.consumes())
-			scrollWithWheel(*iScene, layout, sceneProbe.top, iWheel);
+			scrollWithWheel(*scene, layout, sceneProbe.top, iPointer.wheel);
 	}
 	if ((mouseMoved || clicked) && !dragging) {
 		if (hudProbe.interactive != nullptr)
-			focusUnderMouse(*iScene, {.surface = hud, .node = hudProbe.interactive, .inHud = true});
+			focusUnderMouse(*scene, {.surface = hud, .node = hudProbe.interactive, .inHud = true});
 		else if (sceneProbe.interactive != nullptr)
-			focusUnderMouse(*iScene, {.surface = iScene, .node = sceneProbe.interactive, .inHud = false});
+			focusUnderMouse(*scene, {.surface = scene, .node = sceneProbe.interactive, .inHud = false});
 	}
-	navigateFrame(*iScene, iViewportSize, iScene->getActions(), iDeltaTime);
+	navigateFrame(*scene, iPointer.viewport, scene->getActions(), iPointer.deltaTime);
 	const auto shownFocus = [&state](const bool iInHud) -> entt::entity {
 		return state.focusVisible && state.focusInHud == iInHud ? state.focus : entt::null;
 	};
-	updateWidgets(*iScene, iScene, layout, sceneProbe.interactive, shownFocus(false), iMousePos, iMousePressed,
+	updateWidgets(*scene, scene, layout, sceneProbe.interactive, shownFocus(false), iPointer.position, iPointer.pressed,
 				  clicked);
 	if (hud != nullptr)
-		updateWidgets(*hud, iScene, *hudLayout, hudProbe.interactive, shownFocus(true), iMousePos, iMousePressed,
-					  clicked);
+		updateWidgets(*hud, scene, *hudLayout, hudProbe.interactive, shownFocus(true), iPointer.position,
+					  iPointer.pressed, clicked);
 	state.consuming = dragging || blockedByModal || hudProbe.consumes() || sceneProbe.consumes();
-	bindVisibleRows(*iScene, iScene, layout);
+	bindVisibleRows(*scene, scene, layout);
 	if (hud != nullptr)
-		bindVisibleRows(*hud, iScene, *hudLayout);
+		bindVisibleRows(*hud, scene, *hudLayout);
 
 	entt::entity tooltip = entt::null;
 	bool tooltipInHud = false;
@@ -1099,12 +1113,12 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 			tooltip = findTooltipWidget(*hud, *hudLayout, hudProbe.top);
 		tooltipInHud = tooltip != entt::null;
 		if (!tooltipInHud)
-			tooltip = findTooltipWidget(*iScene, layout, sceneProbe.top);
+			tooltip = findTooltipWidget(*scene, layout, sceneProbe.top);
 	}
-	trackTooltip(state, tooltip, tooltipInHud, iMousePressed, iDeltaTime);
+	trackTooltip(state, tooltip, tooltipInHud, iPointer.pressed, iPointer.deltaTime);
 
 	// Drawing lays the HUD out again: the next update reuses that layout, or recomputes one when no frame was drawn.
-	iScene->getHudLayout().invalidate();
+	scene->getHudLayout().invalidate();
 	if (hud != nullptr)
 		hud->getHudLayout().invalidate();
 }

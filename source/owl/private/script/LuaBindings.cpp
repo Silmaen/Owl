@@ -467,31 +467,37 @@ auto luaPhysicsSetGravityScale(lua_State* iState) -> int {
 	return 0;
 }
 
+auto inputFrameOf(lua_State* iState) -> const input::InputFrame* {
+	const auto* boundScene = getBoundScene(iState);
+	return boundScene != nullptr ? &boundScene->getInputFrame() : nullptr;
+}
+
+// The device state of the running step: the scene's (replayed in a replay), the devices without a scene.
+auto inputStateOf(lua_State* iState) -> input::InputState {
+	const auto* frame = inputFrameOf(iState);
+	return frame != nullptr ? frame->current : input::Input::readState();
+}
+
 auto luaInputIsKeyPressed(lua_State* iState) -> int {
 	const auto keyCode = static_cast<input::KeyCode>(luaL_checkinteger(iState, 1));
-	lua_pushboolean(iState, input::Input::isKeyPressed(keyCode) ? 1 : 0);
+	lua_pushboolean(iState, inputStateOf(iState).isKeyPressed(keyCode) ? 1 : 0);
 	return 1;
 }
 
 auto luaInputIsMouseButtonPressed(lua_State* iState) -> int {
 	const auto button = static_cast<input::MouseCode>(luaL_checkinteger(iState, 1));
-	lua_pushboolean(iState, input::Input::isMouseButtonPressed(button) ? 1 : 0);
+	lua_pushboolean(iState, inputStateOf(iState).isMouseButtonPressed(button) ? 1 : 0);
 	return 1;
 }
 
 auto luaInputGetMouseX(lua_State* iState) -> int {
-	lua_pushnumber(iState, static_cast<lua_Number>(input::Input::getMouseX()));
+	lua_pushnumber(iState, static_cast<lua_Number>(inputStateOf(iState).cursor.x()));
 	return 1;
 }
 
 auto luaInputGetMouseY(lua_State* iState) -> int {
-	lua_pushnumber(iState, static_cast<lua_Number>(input::Input::getMouseY()));
+	lua_pushnumber(iState, static_cast<lua_Number>(inputStateOf(iState).cursor.y()));
 	return 1;
-}
-
-auto inputFrameOf(lua_State* iState) -> const input::InputFrame* {
-	const auto* boundScene = getBoundScene(iState);
-	return boundScene != nullptr ? &boundScene->getInputFrame() : nullptr;
 }
 
 template<bool (input::InputFrame::*Edge)(input::KeyCode) const>
@@ -580,7 +586,7 @@ auto checkGamepadCode(lua_State* iState, const int iArg) -> Code {
 
 auto luaInputIsGamepadConnected(lua_State* iState) -> int {
 	const auto pad = checkGamepadSlot(iState, 1);
-	lua_pushboolean(iState, input::Input::isGamepadConnected(pad) ? 1 : 0);
+	lua_pushboolean(iState, inputStateOf(iState).isGamepadConnected(pad) ? 1 : 0);
 	return 1;
 }
 
@@ -594,7 +600,7 @@ auto luaInputGetGamepadName(lua_State* iState) -> int {
 auto luaInputIsGamepadButtonPressed(lua_State* iState) -> int {
 	const auto pad = checkGamepadSlot(iState, 1);
 	const auto button = checkGamepadCode<input::GamepadButton, input::g_GamepadButtonCount>(iState, 2);
-	lua_pushboolean(iState, input::Input::getGamepadState(pad).isButtonPressed(button) ? 1 : 0);
+	lua_pushboolean(iState, inputStateOf(iState).isGamepadButtonPressed(pad, button) ? 1 : 0);
 	return 1;
 }
 
@@ -610,7 +616,7 @@ auto luaInputGamepadButtonEdge(lua_State* iState) -> int {
 auto luaInputGetGamepadAxis(lua_State* iState) -> int {
 	const auto pad = checkGamepadSlot(iState, 1);
 	const auto axis = checkGamepadCode<input::GamepadAxis, input::g_GamepadAxisCount>(iState, 2);
-	lua_pushnumber(iState, static_cast<lua_Number>(input::Input::getGamepadState(pad).getAxis(axis)));
+	lua_pushnumber(iState, static_cast<lua_Number>(inputStateOf(iState).getGamepad(pad).getAxis(axis)));
 	return 1;
 }
 
@@ -619,7 +625,7 @@ auto luaInputGetGamepadStick(lua_State* iState) -> int {
 	const auto stick = luaL_checkinteger(iState, 2) == 1 ? input::gamepad::Stick::Right : input::gamepad::Stick::Left;
 	const input::AxisResponse response{.deadZone = static_cast<float>(luaL_optnumber(
 											   iState, 3, lua_Number{input::AxisResponse::defaultDeadZone}))};
-	const auto shaped = input::applyStickResponse(input::Input::getGamepadState(pad).getStick(stick), response);
+	const auto shaped = input::applyStickResponse(inputStateOf(iState).getGamepad(pad).getStick(stick), response);
 	lua_pushnumber(iState, static_cast<lua_Number>(shaped.x()));
 	lua_pushnumber(iState, static_cast<lua_Number>(shaped.y()));
 	return 2;
@@ -840,7 +846,7 @@ auto luaScenePickEntity(lua_State* iState) -> int {
 	}
 	// The viewport mouse of the last HUD update: in Owl Nest the game is drawn inside a panel, not at the window origin.
 	const auto& uiState = activeScene->getUiInputState();
-	const auto mouse = uiState.hasMouse ? uiState.mousePosition : input::Input::getMousePos();
+	const auto mouse = uiState.hasMouse ? uiState.mousePosition : activeScene->getInputFrame().getCursor();
 	const auto pointX = static_cast<float>(luaL_optnumber(iState, 1, static_cast<lua_Number>(mouse.x())));
 	const auto pointY = static_cast<float>(luaL_optnumber(iState, 2, static_cast<lua_Number>(mouse.y())));
 	const std::string_view tag = luaL_optstring(iState, 3, "");
@@ -911,7 +917,7 @@ auto luaSceneGetViewportSize(lua_State* iState) -> int {
 auto luaSceneGetViewportMouse(lua_State* iState) -> int {
 	auto* activeScene = getBoundScene(iState);
 	// The viewport mouse of the last HUD update, as `scene.pick_entity` reads it (Owl Nest draws the game in a panel).
-	math::vec2 mouse = input::Input::getMousePos();
+	math::vec2 mouse = inputStateOf(iState).cursor;
 	if (activeScene != nullptr && activeScene->getUiInputState().hasMouse)
 		mouse = activeScene->getUiInputState().mousePosition;
 	lua_pushnumber(iState, static_cast<lua_Number>(mouse.x()));
@@ -2419,7 +2425,7 @@ auto findIsometricMap(lua_State* iState) -> std::optional<IsometricMap> {
 auto luaIsometricPickCell(lua_State* iState) -> int {
 	// The viewport mouse of the last HUD update: in Owl Nest the game is drawn inside a panel, not at the window origin.
 	const auto& uiState = getBoundScene(iState)->getUiInputState();
-	const auto mouse = uiState.hasMouse ? uiState.mousePosition : input::Input::getMousePos();
+	const auto mouse = uiState.hasMouse ? uiState.mousePosition : inputStateOf(iState).cursor;
 	const auto windowX = static_cast<float>(luaL_optnumber(iState, 2, static_cast<lua_Number>(mouse.x())));
 	const auto windowY = static_cast<float>(luaL_optnumber(iState, 3, static_cast<lua_Number>(mouse.y())));
 	const auto map = findIsometricMap(iState);

@@ -475,7 +475,7 @@ void Scene::onStartRuntime() {
 	m_paused = false;
 	m_pendingSpawns.clear();
 	syncWorldPositions();
-	const auto heldInput = input::Input::readState();
+	const auto heldInput = startReplay();
 	m_frameInput.reset(heldInput);
 	m_tickInput.reset(heldInput);
 	m_inputSampler.reset(heldInput);
@@ -592,6 +592,7 @@ void Scene::onStartRuntime() {
 	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view)
 		view.get<component::VoxelWorld>(entity).pendingChunks.clear();
 	connectRuntimeHooks(registry);
+	checkReplayStart();
 	OWL_CORE_DEBUG("Scene: Runtime started in {:.1f} ms.", ms(clk::now() - runtimeStart))
 }
 
@@ -634,19 +635,21 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	};
 	const auto tStart = now();
 	m_lastRuntimeTimings = {};
-	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
-	m_realFrameSeconds = iTimeStep.getSeconds();
-	updateScaledTimeStep(iTimeStep);
+	input::InputState frameInput;
+	const core::Timestep& frameStep = beginReplayFrame(iTimeStep, frameInput) ? m_replayTimeStep : iTimeStep;
+	m_toastTimer = std::max(0.f, m_toastTimer - frameStep.getSeconds());
+	m_realFrameSeconds = frameStep.getSeconds();
+	updateScaledTimeStep(frameStep);
 	const core::Timestep& sceneStep = m_scaledTimeStep;
 	m_runtimeSeconds += static_cast<double>(sceneStep.getSeconds());
 	m_inUpdatePass = false;
 	m_worldTransformCacheActive = false;
-	const auto frameInput = input::Input::readState();
 	m_frameInput.advance(frameInput);
 	m_inputSampler.observe(frameInput);
 	m_frameActions.update(getActionMap(), m_frameInput);
 	if (status == Status::Victory || status == Status::Death) {
-		m_systems.run(SystemPhase::Ended, *this, {.timeStep = iTimeStep, .render = iRender});
+		m_systems.run(SystemPhase::Ended, *this, {.timeStep = frameStep, .render = iRender});
+		endReplayFrame();
 		return;
 	}
 	const uint32_t ticks = m_simulationClock.advance(sceneStep);
@@ -675,7 +678,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 
 	const auto tRender = now();
 	if (iRender)
-		renderRuntimeFrame(iTimeStep);
+		renderRuntimeFrame(frameStep);
 	// Disarm per-pass caches; the next tick repopulates from scratch.
 	m_inUpdatePass = false;
 	m_worldTransformCacheActive = false;
@@ -687,6 +690,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 								.totalMs = elapsedMs(tStart, tEnd)};
 	}
 	flushPendingDestructions();
+	endReplayFrame();
 }
 
 void Scene::updateScaledTimeStep(const core::Timestep& iTimeStep) {
