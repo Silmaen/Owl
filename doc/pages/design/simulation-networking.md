@@ -5,28 +5,41 @@
 Design page for the deterministic simulation of v0.7.0 and the networking of v0.9.0, summarised in the [Roadmap](../roadmap.md). Networking stays before 1.0 and rests
 on the deterministic simulation, the per-scene world (PR-33) and the open component registry (PR-37).
 
-## Deterministic simulation (v0.7.0)
+## Deterministic simulation (v0.7.0) {#simulation-deterministic}
 
-- Fixed-step simulation (physics, scripts, timers) independent from the frame rate: the clock and `on_tick` land in
-  v0.4.0 (SIM1 of [Isometric worlds](isometric-worlds.md)), v0.7.0 makes every system run on it
-- Replays record the v0.4.0 `ActionFrame` stream ([Windowing and input](windowing-input.md))
-- Seeded random streams per system; no wall-clock reads in gameplay code
-- Determinism test in CI: the same input log produces the same world hash on every target
+| Part                                                                                  | Status      |
+|---------------------------------------------------------------------------------------|-------------|
+| Every system (physics, scripts, timers) on the fixed tick of `SimulationClock`        | Done        |
+| Seeded random streams per system (`math::RandomStream`, `Scene::getRandomStream`)     | Done        |
+| Scene seed (`Simulation: seed:`), Scene Settings field, `scene.set_random_seed`       | Done        |
+| UUIDs of the entities created in Play drawn from the `owl.entity` stream              | Done        |
+| Lua `math.random` on the `lua` stream, fixed Lua string hash seed                     | Done        |
+| World hash (`scene::computeWorldHash`), run-to-run test                               | Done        |
+| No wall-clock read in gameplay code (the engine reads it only to time its logs)      | Done        |
+| Frozen world hash of a physics and Lua scene, checked on every target (arm64 nightly) | Done        |
+| Engine Demo: dice crates thrown from the seed (`platformer_dice.owltest`)              | Done        |
+| World hash of a recorded input log compared across every target, with the replay      | Planned     |
+
+- Replays record the `ActionFrame` stream ([Windowing and input](windowing-input.md))
+- The frozen hash rests on the bit-exact rules below; it changes everywhere with the simulation or the scene format,
+  on one target only with a determinism bug
 
 ## Cross-platform determinism (v0.7.0) {#simulation-cross-platform}
 
 Always on, in the simulation only (rendering is not concerned): the same inputs give the same world, bit for bit, on
 linux-x64, linux-arm64, windows-x64 (MinGW and clang-cl), android-arm64 and the Web.
 
-| Source of divergence | Rule                                                                                                   |
-|----------------------|--------------------------------------------------------------------------------------------------------|
-| FMA contraction      | `-ffp-contract=off` on the simulation code (Clang fuses `a*b+c` on arm64, not on baseline x64)         |
-| Maths library        | `sin`, `cos`, `exp`, `pow`, `atan2`… from a deterministic library of the engine, never the system libm |
-| Fast maths           | `-ffast-math` and its parts banned; denormals kept (no flush to zero)                                  |
-| 2D physics           | Box2D cross-platform determinism                                                                       |
-| 3D physics           | Jolt built with `JPH_CROSS_PLATFORM_DETERMINISTIC`, its cost measured in `test/bench/`                 |
-| Lua                  | Fixed string hash seed, sorted iteration helper for tables, `math.*` bound to the deterministic maths  |
-| Test                 | World hash of the same input log compared across every target at night                                 |
+| Source of divergence | Rule                                                                                                            | Status  |
+|----------------------|-----------------------------------------------------------------------------------------------------------------|---------|
+| FMA contraction      | `-ffp-contract=off` on every Owl target (Clang fuses `a*b+c` on arm64, GCC in GNU mode)                         | Done    |
+| Maths library        | `math::sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `exp`, `log`, `pow` (`math/elementaryFunctions.h`), never the system libm, in `math` and `scene` | Done    |
+| Fast maths           | `-fno-fast-math` on every Owl target; denormals kept (no flush to zero)                                         | Done    |
+| 2D physics           | Box2D 3 deterministic across platforms (its build sets `-ffp-contract=off`, its own trigonometry)               | Done    |
+| 3D physics           | Jolt built with `JPH_CROSS_PLATFORM_DETERMINISTIC`, its cost measured in `test/bench/`, when Jolt lands          | Planned |
+| Lua                  | Fixed string hash seed; `math.sin`… `math.pow` bound to the engine maths (the `^` operator keeps the libm)       | Done    |
+| Lua iteration        | `table.sorted_keys(t)`: booleans, numbers, strings in a fixed order whatever the insertion history               | Done    |
+| Test                 | Bit fingerprints of the engine maths checked on every target (`ElementaryFunctions` tests, arm64 nightly)        | Done    |
+| Test                 | Frozen world hash of a Box2D and Lua scene (`WorldHashGoldenTest`), the same value on every target              | Done    |
 
 ## Input recording and replay (v0.7.0)
 

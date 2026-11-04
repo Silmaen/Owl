@@ -486,6 +486,62 @@ private:
 
 /**
  * @brief
+ *  Undoable edit of the seed of a scene's random streams (`Simulation: seed:`).
+ */
+class SetRandomSeedCommand final : public SceneUndoCommand {
+public:
+	SetRandomSeedCommand(const SetRandomSeedCommand&) = delete;
+
+	SetRandomSeedCommand(SetRandomSeedCommand&&) = default;
+
+	auto operator=(const SetRandomSeedCommand&) -> SetRandomSeedCommand& = delete;
+
+	auto operator=(SetRandomSeedCommand&&) -> SetRandomSeedCommand& = default;
+
+	/**
+	 * @brief
+	 *  Construct from the seed before and after the edit.
+	 * @param[in] iBefore Seed prior to the edit.
+	 * @param[in] iAfter Seed after the edit.
+	 */
+	SetRandomSeedCommand(uint64_t iBefore, uint64_t iAfter);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~SetRandomSeedCommand() override;
+
+	/**
+	 * @brief
+	 *  Restore the previous seed.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void undo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Apply the new seed.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void redo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Description.
+	 * @return Human-readable description for menus and tooltips.
+	 */
+	[[nodiscard]] auto description() const -> std::string override;
+
+private:
+	/// Seed before the edit.
+	uint64_t m_before;
+	/// Seed after the edit.
+	uint64_t m_after;
+};
+
+/**
+ * @brief
  *  Undoable choice of the HUD asset a scene draws (its `Hud:` key).
  */
 class SetSceneHudCommand final : public SceneUndoCommand {

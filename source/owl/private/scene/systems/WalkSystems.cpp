@@ -9,6 +9,7 @@
 #include "owlpch.h"
 
 #include "EngineSystems.h"
+#include "math/elementaryFunctions.h"
 #include "math/matrixCreation.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
@@ -108,7 +109,7 @@ void updateAgent(Scene& ioScene, const Entity& iEntity, component::WalkAgent& io
 		scale.x() *= ioAgent.m_sideways;
 	transform.scale() = scale;
 	if (ioAgent.facing == component::WalkAgent::Facing::TurnY && direction.normSq() > 0.f)
-		transform.rotation().y() = std::atan2(direction.x(), -direction.y());
+		transform.rotation().y() = math::atan2(direction.x(), -direction.y());
 	if (ioAgent.speedParameter.empty())
 		return;
 	if (auto* animator = findAnimator(ioScene, iEntity); animator != nullptr && animator->player.isReady())

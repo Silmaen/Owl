@@ -38,6 +38,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <limits>
 #include <optional>
 #include <string>
 #include <tuple>
@@ -539,6 +540,25 @@ void SceneSettings::renderPhysicsSection() const {
 		mp_undoManager->push(mkUniq<commands::ModifyPhysicsSettingsCommand>(before, edited));
 }
 
+void SceneSettings::renderSimulationSection() const {
+	if (!gui::widgets::sectionHeader("Simulation", gui::icon::timer, false).open)
+		return;
+	const auto before = m_scene->getRandomSeed();
+	int seed = static_cast<int>(std::min<uint64_t>(before, std::numeric_limits<int>::max()));
+	bool edited = false;
+	if (gui::widgets::beginProperties("##simulation")) {
+		edited = gui::widgets::propertyInt("Random Seed", seed, 0, 0, std::numeric_limits<int>::max(), "%d",
+										   "Seed of the random streams (`math.random`, the entities created in Play): "
+										   "the same seed and the same inputs replay the same game.");
+		gui::widgets::endProperties();
+	}
+	gui::widgets::endSection();
+	if (edited) {
+		const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
+		std::ignore = target.execute("scene.set_random_seed", {{"seed", static_cast<int64_t>(seed)}});
+	}
+}
+
 void SceneSettings::renderWorldOriginSection() const {
 	if (!gui::widgets::sectionHeader("World Origin", gui::icon::globe, false).open)
 		return;
@@ -855,6 +875,7 @@ void SceneSettings::onImGuiRender() {
 	ImGui::Separator();
 
 	renderPhysicsSection();
+	renderSimulationSection();
 	renderWorldOriginSection();
 	renderWorldPartitionSection();
 	renderHudSection();

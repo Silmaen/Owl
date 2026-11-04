@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "math/elementaryFunctions.h"
 #include "math/vectors.h"
 
 #include <algorithm>
@@ -86,8 +87,10 @@ public:
 	 */
 	constexpr explicit Quaternion(const Vector<BaseType, 3>& iVector) {
 		constexpr BaseType demi{0.5};
-		Vector<BaseType, 3> c{std::cos(iVector.x() * demi), std::cos(iVector.y() * demi), std::cos(iVector.z() * demi)};
-		Vector<BaseType, 3> s{std::sin(iVector.x() * demi), std::sin(iVector.y() * demi), std::sin(iVector.z() * demi)};
+		Vector<BaseType, 3> c{math::cos(iVector.x() * demi), math::cos(iVector.y() * demi),
+							  math::cos(iVector.z() * demi)};
+		Vector<BaseType, 3> s{math::sin(iVector.x() * demi), math::sin(iVector.y() * demi),
+							  math::sin(iVector.z() * demi)};
 		w() = c.x() * c.y() * c.z() + s.x() * s.y() * s.z();
 		x() = s.x() * c.y() * c.z() - c.x() * s.y() * s.z();
 		y() = c.x() * s.y() * c.z() + s.x() * c.y() * s.z();

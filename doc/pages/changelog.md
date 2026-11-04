@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `math::RandomStream` and `Scene::getRandomStream`: seeded random streams per system, the same values on every target.
+- Scene random seed (`Simulation: seed:`), edited in Owl Nest's *Scene Settings* and by the `scene.set_random_seed` command.
+- `scene::computeWorldHash`: a hash of the simulated state of a scene, to compare two runs of the same inputs.
+- `math/elementaryFunctions.h`: `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `exp`, `log` and `pow` giving the same bits on every target.
+- Lua `table.sorted_keys(t)`: the keys of a table in a fixed order, whatever the order they were added in.
+- Engine Demo: dice crates at the start of the platformer, thrown on the fixed tick from the scene seed, the same throws and total on every Play.
+- Lua `math.pow`, and `math.sin` to `math.log` bound to the engine maths, so a script computes the same values on every target.
+
+### Changed
+
+- Entities created in Play take their UUIDs from the scene seed, so a replay creates the same entities under the same ids.
+- Every Owl target builds with `-ffp-contract=off -fno-fast-math`, and the scene systems use the engine maths instead of the libm: the simulation gives the same bits on every target.
+- Lua `math.random` and `math.randomseed` draw from the `lua` stream of the scene, and Lua tables iterate in the same order on every run.
+
+### Fixed
+
+- Published Doxygen documentation: the screenshots of the pages show again, the `fix_md_links.py` filter naming the `doc/images` files Doxygen copies into `html/`.
+
 ## [0.6.0] - 2026-11-03
 
 ### Added

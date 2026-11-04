@@ -9,6 +9,7 @@
 #include "owlpch.h"
 
 #include "EngineSystems.h"
+#include "math/elementaryFunctions.h"
 
 #include "app/Application.h"
 #include "data/voxel/VoxelCollision.h"
@@ -83,8 +84,8 @@ auto cellOverlapsBox(const math::vec3i& iCell, const math::vec3& iCenter, const 
 void applyPlayerMovement(component::VoxelPlayer& ioPlayer, math::Transform& ioTransform,
 						 const input::ActionFrame& iActions, const float iDt,
 						 const data::voxel::SolidPredicate& iIsSolid) {
-	const float sy = std::sin(ioPlayer.yaw);
-	const float cy = std::cos(ioPlayer.yaw);
+	const float sy = math::sin(ioPlayer.yaw);
+	const float cy = math::cos(ioPlayer.yaw);
 	const math::vec2 steer = iActions.getVector("move");
 	const math::vec3 move = math::vec3{-sy, 0.f, -cy} * -steer.y() + math::vec3{cy, 0.f, -sy} * steer.x();
 	const float horizLen = std::sqrt(move.x() * move.x() + move.z() * move.z());
@@ -131,8 +132,8 @@ void applyPlayerMovement(component::VoxelPlayer& ioPlayer, math::Transform& ioTr
 
 void updatePlayerInteraction(Scene& ioScene, component::VoxelPlayer& ioPlayer, const math::vec3& iEye,
 							 const bool iCursorCaptured) {
-	const float cp = std::cos(ioPlayer.pitch);
-	const math::vec3 forward{-cp * std::sin(ioPlayer.yaw), std::sin(ioPlayer.pitch), -cp * std::cos(ioPlayer.yaw)};
+	const float cp = math::cos(ioPlayer.pitch);
+	const math::vec3 forward{-cp * math::sin(ioPlayer.yaw), math::sin(ioPlayer.pitch), -cp * math::cos(ioPlayer.yaw)};
 	const auto worlds = ioScene.registry.view<component::VoxelWorld>();
 	const auto targetable = [&](const int32_t iX, const int32_t iY, const int32_t iZ) -> bool {
 		const math::vec3i block{iX, iY, iZ};

@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "SceneAudio.h"
+#include "math/elementaryFunctions.h"
 
 #include "app/EngineContext.h"
 #include "scene/Entity.h"
@@ -107,7 +108,7 @@ void updateSceneAudio(Scene& ioScene, const float iSeconds) {
 	if (const auto listener = findListener(ioScene); listener) {
 		const auto& [entity, frame] = *listener;
 		sound::SoundCommand::setListenerPosition(frame.position);
-		sound::SoundCommand::setListenerOrientation({std::sin(frame.rotationZ), std::cos(frame.rotationZ), 0.0f},
+		sound::SoundCommand::setListenerOrientation({math::sin(frame.rotationZ), math::cos(frame.rotationZ), 0.0f},
 													{0.0f, 0.0f, 1.0f});
 		auto& listenerComp = entity.getComponent<component::SoundListener>();
 		const math::vec3d world = origin + toVec3d(frame.position);

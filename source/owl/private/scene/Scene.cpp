@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "SceneAudio.h"
+#include "math/elementaryFunctions.h"
 
 #include "scene/Scene.h"
 
@@ -326,6 +327,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_mixSettings = iOther->m_mixSettings;
 	newScene->m_worldPartitionSettings = iOther->m_worldPartitionSettings;
 	newScene->m_worldOrigin = iOther->m_worldOrigin;
+	newScene->m_randomSeed = iOther->m_randomSeed;
 	newScene->m_hudPath = iOther->m_hudPath;
 	newScene->m_hudThemePath = iOther->m_hudThemePath;
 	newScene->m_sceneScript = iOther->m_sceneScript;
@@ -387,7 +389,29 @@ auto Scene::getHudTheme() const -> shared<const HudTheme> {
 	return path.empty() ? nullptr : mp_engineContext->getHudThemeLibrary().get(path);
 }
 
-auto Scene::createEntity(const std::string& iName) -> Entity { return createEntityWithUUID(core::UUID(), iName); }
+auto Scene::createEntity(const std::string& iName) -> Entity {
+	return createEntityWithUUID(generateEntityUUID(), iName);
+}
+
+auto Scene::generateEntityUUID() -> core::UUID {
+	if (status != Status::Playing)
+		return core::UUID{};
+	auto& stream = getRandomStream("owl.entity");
+	uint64_t uuid = stream.nextU64();
+	while (uuid == 0 || m_uuidIndex.contains(core::UUID{uuid})) uuid = stream.nextU64();
+	return core::UUID{uuid};
+}
+
+void Scene::setRandomSeed(const uint64_t iSeed) {
+	m_randomSeed = iSeed;
+	m_randomStreams.clear();
+}
+
+auto Scene::getRandomStream(const std::string_view iName) -> math::RandomStream& {
+	if (const auto found = m_randomStreams.find(iName); found != m_randomStreams.end())
+		return found->second;
+	return m_randomStreams.emplace(std::string{iName}, math::RandomStream{m_randomSeed, iName}).first->second;
+}
 
 auto Scene::createEntityWithUUID(const core::UUID iUuid, const std::string& iName) -> Entity {
 	Entity entity = {registry.create(), this};
@@ -445,6 +469,7 @@ void Scene::onStartRuntime() {
 	if (mp_engineContext != nullptr)
 		m_simulationClock.setSettings(mp_engineContext->getSimulationSettings());
 	m_simulationClock.reset();
+	m_randomStreams.clear();
 	m_runtimeSeconds = 0.0;
 	m_timeScale = 1.f;
 	m_paused = false;
@@ -490,7 +515,7 @@ void Scene::onStartRuntime() {
 			// Derive forward/up from rotation (Z-axis rotation for 2D)
 			const float rotZ = wt.rotation().z();
 
-			sound::SoundCommand::setListenerOrientation({std::sin(rotZ), std::cos(rotZ), 0.0f}, {0.0f, 0.0f, 1.0f});
+			sound::SoundCommand::setListenerOrientation({math::sin(rotZ), math::cos(rotZ), 0.0f}, {0.0f, 0.0f, 1.0f});
 			break;
 		}
 	}
@@ -1264,7 +1289,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 				{.positionRange = {position.x(), position.y(), position.z(), std::max(light.range, 0.01f)},
 				 .directionType = {direction.x(), direction.y(), direction.z(), static_cast<float>(light.type)},
 				 .color = {color.x(), color.y(), color.z(), 0.f},
-				 .spotCosines = {std::cos(light.innerAngle), std::cos(std::max(light.outerAngle, light.innerAngle)),
+				 .spotCosines = {math::cos(light.innerAngle), math::cos(std::max(light.outerAngle, light.innerAngle)),
 								 -1.f,
 								 light.type == component::Light::Type::Directional
 										 ? std::clamp(light.angularRadius, 0.f, component::g_maxAngularRadius)
@@ -1305,7 +1330,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 	m_shadowSettings.cascadeCount = m_shadowCascades.count;
 	m_shadowSettings.bias = shadowLight->shadowBias;
 	m_shadowSettings.tanAngularRadius =
-			std::tan(std::clamp(shadowLight->angularRadius, 0.f, component::g_maxAngularRadius));
+			math::tan(std::clamp(shadowLight->angularRadius, 0.f, component::g_maxAngularRadius));
 	m_shadowSettings.resolution = shadowLight->shadowResolution;
 	m_shadowSettings.viewDepthRow = mp_renderCamera->getView().row(2);
 	const math::vec2ui mapSize{shadowLight->shadowResolution, shadowLight->shadowResolution};
@@ -1358,7 +1383,7 @@ void Scene::recordLocalShadowPasses(renderer::RenderGraph& ioGraph) {
 				{.lightIndex = candidate.lightIndex,
 				 .relativeViewProjection = camera.getProjection() * renderer::cameraRelativeView(camera.getView()),
 				 .origin = caster.position,
-				 .tanHalfAngle = std::tan(std::clamp(caster.outerAngle, 0.0175f, 1.48f)),
+				 .tanHalfAngle = math::tan(std::clamp(caster.outerAngle, 0.0175f, 1.48f)),
 				 .map = nullptr,
 				 .resolution = caster.resolution,
 				 .bias = caster.bias});
@@ -2346,8 +2371,8 @@ void Scene::applyLighting2D(const bool iEditorMode, const Layer2DLighting& iLaye
 								   .color = toLinear(light.color, light.intensity),
 								   .falloff = light.falloff,
 								   .direction = direction,
-								   .cosInner = spot ? std::cos(light.innerAngle) : 1.f,
-								   .cosOuter = spot ? std::cos(std::max(light.outerAngle, light.innerAngle)) : -2.f,
+								   .cosInner = spot ? math::cos(light.innerAngle) : 1.f,
+								   .cosOuter = spot ? math::cos(std::max(light.outerAngle, light.innerAngle)) : -2.f,
 								   .castShadows = light.castShadows,
 								   .shadowSoftness = light.shadowSoftness});
 		anyShadow = anyShadow || light.castShadows;

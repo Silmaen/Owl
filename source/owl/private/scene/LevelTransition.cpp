@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "math/elementaryFunctions.h"
 #include "scene/LevelTransition.h"
 
 #include "app/Application.h"
@@ -107,8 +108,8 @@ void LevelTransition::placeArrival(Scene& ioScene, const std::string& iTargetNam
 			continue;
 		const auto& target = view.get<component::Transform>(ent).transform;
 		const float rotation = target.rotation().z();
-		const float cosR = std::cos(rotation);
-		const float sinR = std::sin(rotation);
+		const float cosR = math::cos(rotation);
+		const float sinR = math::sin(rotation);
 		const math::vec2f velocity = {iVelocity.x() * cosR - iVelocity.y() * sinR,
 									  iVelocity.x() * sinR + iVelocity.y() * cosR};
 		physics::PhysicCommand::setTransform(player, {target.translation().x(), target.translation().y()}, rotation);

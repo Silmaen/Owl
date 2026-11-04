@@ -10,6 +10,7 @@
 
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
+#include "math/elementaryFunctions.h"
 #include "scene/component/DayNightCycle.h"
 
 #include <algorithm>
@@ -23,11 +24,11 @@ auto DayNightCycle::getSunDirection() const -> math::vec3 {
 	constexpr float pi = std::numbers::pi_v<float>;
 	const float hour = (timeOfDay - 6.f) / 24.f * 2.f * pi;
 	const float elevation = std::clamp(maxElevation, 1.f, 90.f) * pi / 180.f;
-	const float east = std::cos(hour);
-	const float up = std::sin(hour) * std::sin(elevation);
-	const float south = std::sin(hour) * std::cos(elevation);
+	const float east = math::cos(hour);
+	const float up = math::sin(hour) * math::sin(elevation);
+	const float south = math::sin(hour) * math::cos(elevation);
 	const float heading = azimuth * pi / 180.f;
-	const math::vec3 rise{std::sin(heading), 0.f, -std::cos(heading)};
+	const math::vec3 rise{math::sin(heading), 0.f, -math::cos(heading)};
 	const math::vec3 noon{-rise.z(), 0.f, rise.x()};
 	return math::vec3{rise.x() * east + noon.x() * south, up, rise.z() * east + noon.z() * south}.normalized();
 }

@@ -170,6 +170,40 @@ The editor and the runner hand it to the `app::EngineContext` (`setSimulationSet
 it; a scene without engine context (tests) keeps the settings set on its clock. In the editor, **Step Frame** while
 paused runs exactly one tick.
 
+### Deterministic simulation {#deterministic-simulation}
+
+The same scene, seed and inputs replay the same game. The randomness of the simulation comes from named streams
+(`Scene::getRandomStream(name)`, `math::RandomStream`, xoshiro256** on integers only, the same values on every
+target), one per system so that a system drawing one more value leaves the others unchanged:
+
+| Stream       | Drawn by                                                                       |
+|--------------|--------------------------------------------------------------------------------|
+| `owl.entity` | The UUIDs of the entities created in Play (`Scene::generateEntityUUID`)        |
+| `lua`        | Lua `math.random` / `math.randomseed` (no argument: back to the scene seed)    |
+
+Every stream starts from the scene seed, set in Owl Nest's *Scene Settings* (**Simulation** section, command
+`scene.set_random_seed`) and saved in the scene file when it is not 0; `onStartRuntime()` restarts them all. Lua
+states use a fixed string hash seed, so `pairs` walks a table in the same order on every run.
+
+```yaml
+Simulation:
+  seed: 1234
+```
+
+`scene::computeWorldHash(scene)` hashes the simulated state: tick count, seed and streams, game state, and every entity
+in UUID order (its components as the scene file writes them, floats to the bit, and the velocities of its physics
+body). Two runs of the same inputs give the same hash; a different one shows where a run diverged.
+
+The hash matches across targets too: the engine builds without FMA contraction nor fast maths, and the scene systems
+call `math::sin`, `math::atan2`, `math::exp`, `math::pow`… (`math/elementaryFunctions.h`, the same bits on every
+target) instead of the libm; so do Lua `math.sin` to `math.log` and `math.pow`. The Lua `^` operator still uses the
+libm: gameplay code writes `math.pow(x, y)`. `pairs` walks keys in the order of their insertion history;
+`table.sorted_keys(t)` gives booleans, numbers then strings in a fixed order (a table, function or userdata key has
+no stable order and raises an error).
+
+Only the ticks are deterministic: `on_update` gets the duration of a frame, which varies from one run to the next, so
+gameplay that must replay goes into `on_tick` and the systems' `tick`.
+
 The engine systems live in `scene::systems` (private, `source/owl/private/scene/systems/`).
 
 ## Component Reference {#components}

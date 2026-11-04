@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "math/elementaryFunctions.h"
 #include "scene/ui/HudMarkerPlacement.h"
 
 #include <algorithm>
@@ -20,7 +21,7 @@ auto placeHudMarker(const renderer::ViewportPoint& iPoint, const math::vec2& iVi
 		-> HudMarkerPlacement {
 	const math::vec2 centre = iViewport * 0.5f;
 	const math::vec2 delta = iPoint.position - centre;
-	const float angle = std::atan2(delta.y(), delta.x());
+	const float angle = math::atan2(delta.y(), delta.x());
 	const bool inside = iPoint.position.x() >= 0.f && iPoint.position.x() <= iViewport.x() &&
 						iPoint.position.y() >= 0.f && iPoint.position.y() <= iViewport.y();
 	if (iPoint.ahead && inside)

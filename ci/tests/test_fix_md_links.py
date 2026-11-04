@@ -73,3 +73,18 @@ def test_repository_toc_lists_every_doc_page_once() -> None:
     assert len(pages) == len(set(pages))
     doc_pages = {page.resolve() for page in (fix_md_links._TOC.parent / "pages").glob("*.md")}
     assert doc_pages <= set(pages)
+
+
+def test_markdown_image_of_the_doc_images_is_named_bare(tmp_path: Path) -> None:
+    images = tmp_path / "doc" / "images"
+    page = tmp_path / "doc" / "pages" / "design" / "page.md"
+    shot = "![Shot](../../images/nest/shot.png)"
+    assert fix_md_links.fix_links(shot, page, images=images) == "![Shot](shot.png)"
+    outside = "![Logo](../../../engine_assets/logo/owl.svg)"
+    assert fix_md_links.fix_links(outside, page, images=images) == outside
+    assert fix_md_links.fix_links("![Web](https://example.org/a.png)", page, images=images).endswith("a.png)")
+
+
+def test_doc_images_have_unique_names() -> None:
+    names = [image.name for image in fix_md_links._IMAGES.rglob("*") if image.is_file()]
+    assert len(names) == len(set(names))

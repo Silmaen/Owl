@@ -162,3 +162,22 @@ TEST_F(SceneSettingsCommandsTest, PatrolWaypointsAreEditedThroughComponentSetAnd
 	ASSERT_EQ(entity.getComponent<scene::component::Patrol>().waypoints.size(), 2u);
 	EXPECT_FLOAT_EQ(entity.getComponent<scene::component::Patrol>().waypoints[1].x(), 2.f);
 }
+
+TEST_F(SceneSettingsCommandsTest, SetRandomSeedUndoesAndRejectsBadSeeds) {
+	const CommandRegistry registry;
+	auto scene = mkShared<scene::Scene>();
+	SceneUndoManager undo;
+	ASSERT_TRUE(registry.execute("scene.set_random_seed", {{"seed", int64_t{77}}}, scene, undo));
+	EXPECT_EQ(scene->getRandomSeed(), 77u);
+	EXPECT_EQ(undo.undoDescription(), "Set the random seed to 77");
+	const auto same = registry.execute("scene.set_random_seed", {{"seed", int64_t{77}}}, scene, undo);
+	ASSERT_FALSE(same);
+	EXPECT_EQ(same.error().error, CommandError::NotApplicable);
+	const auto negative = registry.execute("scene.set_random_seed", {{"seed", int64_t{-1}}}, scene, undo);
+	ASSERT_FALSE(negative);
+	EXPECT_EQ(negative.error().error, CommandError::InvalidArgument);
+	undo.undo(*scene);
+	EXPECT_EQ(scene->getRandomSeed(), 0u);
+	undo.redo(*scene);
+	EXPECT_EQ(scene->getRandomSeed(), 77u);
+}

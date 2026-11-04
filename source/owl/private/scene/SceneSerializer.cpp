@@ -265,6 +265,18 @@ void deserializeFloatingOrigin(Scene& ioScene, const core::YamlNode& iNode) {
 	ioScene.shiftWorldOrigin(origin);
 }
 
+void serializeSimulation(YAML::Emitter& ioEmitter, const Scene& iScene) {
+	if (iScene.getRandomSeed() == 0)
+		return;
+	ioEmitter << YAML::Key << "Simulation" << YAML::Value << YAML::BeginMap;
+	ioEmitter << YAML::Key << "seed" << YAML::Value << iScene.getRandomSeed();
+	ioEmitter << YAML::EndMap;
+}
+
+auto deserializeSimulationSeed(const core::YamlNode& iNode) -> uint64_t {
+	return iNode.isMap() ? iNode["seed"].as<uint64_t>(0) : 0;
+}
+
 void serializeMix(YAML::Emitter& ioEmitter, const sound::MixSettings& iMix) {
 	if (iMix == sound::MixSettings{})
 		return;
@@ -467,6 +479,7 @@ auto SceneSerializer::serializeToString() const -> std::string {
 		}
 		serializePhysicsSettings(sOut.getImpl()->emitter, mp_scene->getPhysicsSettings());
 		serializeFloatingOrigin(sOut.getImpl()->emitter, *mp_scene);
+		serializeSimulation(sOut.getImpl()->emitter, *mp_scene);
 		serializeMix(sOut.getImpl()->emitter, mp_scene->getMixSettings());
 		serializeWorldPartition(sOut.getImpl()->emitter, *mp_scene);
 	}
@@ -584,6 +597,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	const auto previousMix = mp_scene->getMixSettings();
 	const auto previousPartition = mp_scene->getWorldPartitionSettings();
 	const auto previousWorldOrigin = mp_scene->getWorldOrigin();
+	const auto previousSeed = mp_scene->getRandomSeed();
 	const auto previousHud = mp_scene->getHudPath();
 	const auto previousHudTheme = mp_scene->getHudThemePath();
 	const auto previousSceneScript = mp_scene->getSceneScript();
@@ -604,6 +618,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 		mp_scene->getMixSettings() = previousMix;
 		mp_scene->getWorldPartitionSettings() = previousPartition;
 		mp_scene->shiftWorldOrigin(previousWorldOrigin);
+		mp_scene->setRandomSeed(previousSeed);
 		mp_scene->setHudPath(previousHud);
 		mp_scene->setHudThemePath(previousHudTheme);
 		mp_scene->getSceneScript() = previousSceneScript;
@@ -624,6 +639,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 				mp_scene->getEnabledRenderers() = renderer::enabledFromYaml(enabled);
 			mp_scene->getPhysicsSettings() = deserializePhysicsSettings(root["Physics"]);
 			deserializeFloatingOrigin(*mp_scene, root["FloatingOrigin"]);
+			mp_scene->setRandomSeed(deserializeSimulationSeed(root["Simulation"]));
 			mp_scene->getMixSettings() = deserializeMix(root["Mixer"]);
 			deserializeWorldPartition(*mp_scene, root["WorldPartition"]);
 		}
@@ -691,7 +707,7 @@ auto SceneSerializer::mergeParsed(const ParsedScene& iParsed, const math::vec3& 
 				if (mp_scene->findEntityByUUID(core::UUID{uuid})) {
 					OWL_CORE_WARN("SceneSerializer: Entity {} of '{}' is already in the scene, it gets a new id.", uuid,
 								  source)
-					const auto fresh = static_cast<uint64_t>(core::UUID{});
+					const auto fresh = static_cast<uint64_t>(mp_scene->generateEntityUUID());
 					renamed.emplace(uuid, fresh);
 					uuid = fresh;
 				}

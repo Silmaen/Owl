@@ -285,7 +285,7 @@ private:
 				if (direction == "vertical")
 					value = v;
 				else if (direction == "radial")
-					value = std::min(1.f, std::hypot(u - 0.5f, v - 0.5f) * 2.f);
+					value = std::min(1.f, std::sqrt((u - 0.5f) * (u - 0.5f) + (v - 0.5f) * (v - 0.5f)) * 2.f);
 				result.values[static_cast<size_t>(y) * m_region.size.x() + x] = value;
 			}
 		}

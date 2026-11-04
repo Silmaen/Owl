@@ -4,7 +4,114 @@ Hud: gid:2c86b8cd48736e60:huds/gameplay.owlhud
 EnabledRenderers:
 - Name: raycast_world
   Enabled: false
+Simulation: {seed: 7}
 Entities:
+- Entity: 3300000000000000100
+  Tag: {tag: DiceCup}
+  Transform:
+    translation: [2, -13, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  LuaScript:
+    scriptPath: gid:b6874c2f8f77cd2d:scripts/platformer/dice_cup.lua
+  Hierarchy: {}
+- Entity: 3300000000000000101
+  Tag: {tag: DiceCrate1}
+  Transform:
+    translation: [0.6, -12.5, 0.2]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.8, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: gid:163b4439fd9ebaf7:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 6
+    lastFrame: 6
+    frameDuration: 1
+    loop: false
+  PhysicBody:
+    type: Dynamic
+    fixedRotation: false
+    colliderSize: [1, 1, 1]
+    density: 1
+    friction: 0.6
+    restitution: 0.2
+  Visibility: {gameVisible: true}
+  Hierarchy: {}
+- Entity: 3300000000000000102
+  Tag: {tag: DiceCrate2}
+  Transform:
+    translation: [1.6, -13.1, 0.2]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.8, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: gid:163b4439fd9ebaf7:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 6
+    lastFrame: 6
+    frameDuration: 1
+    loop: false
+  PhysicBody:
+    type: Dynamic
+    fixedRotation: false
+    colliderSize: [1, 1, 1]
+    density: 1
+    friction: 0.6
+    restitution: 0.2
+  Visibility: {gameVisible: true}
+  Hierarchy: {}
+- Entity: 3300000000000000103
+  Tag: {tag: DiceCrate3}
+  Transform:
+    translation: [2.6, -12.5, 0.2]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.8, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: gid:163b4439fd9ebaf7:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 6
+    lastFrame: 6
+    frameDuration: 1
+    loop: false
+  PhysicBody:
+    type: Dynamic
+    fixedRotation: false
+    colliderSize: [1, 1, 1]
+    density: 1
+    friction: 0.6
+    restitution: 0.2
+  Visibility: {gameVisible: true}
+  Hierarchy: {}
+- Entity: 3300000000000000104
+  Tag: {tag: DiceCrate4}
+  Transform:
+    translation: [3.4, -13.1, 0.2]
+    rotation: [0, 0, 0]
+    scale: [0.8, 0.8, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: gid:163b4439fd9ebaf7:textures/atlases/platformer_ext_atlas.png
+    columns: 16
+    rows: 16
+    firstFrame: 6
+    lastFrame: 6
+    frameDuration: 1
+    loop: false
+  PhysicBody:
+    type: Dynamic
+    fixedRotation: false
+    colliderSize: [1, 1, 1]
+    density: 1
+    friction: 0.6
+    restitution: 0.2
+  Visibility: {gameVisible: true}
+  Hierarchy: {}
 - Entity: 9100000000000000002
   Tag: {tag: ControlsHint}
   Transform:

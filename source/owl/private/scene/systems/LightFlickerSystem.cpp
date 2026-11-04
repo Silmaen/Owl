@@ -9,6 +9,7 @@
 #include "owlpch.h"
 
 #include "EngineSystems.h"
+#include "math/elementaryFunctions.h"
 
 #include "scene/Entity.h"
 #include "scene/Scene.h"
@@ -24,7 +25,7 @@ namespace {
 
 // Hashed value in [-1, 1] per integer.
 auto hash(const double iValue) -> double {
-	const double x = std::sin(iValue * 127.1 + 311.7) * 43758.5453;
+	const double x = math::sin(iValue * 127.1 + 311.7) * 43758.5453;
 	return (x - std::floor(x)) * 2.0 - 1.0;
 }
 
@@ -54,7 +55,7 @@ auto sampleFlicker(const component::LightFlicker& iFlicker, const double iSecond
 	switch (iFlicker.style) {
 		case Style::Fire:
 			sample.shape = 0.5 * noise(t * 1.3 + seed) + 0.3 * noise(t * 4.7 + seed * 2.1) +
-						   0.2 * noise(t * 11.0 + seed * 3.7) + 0.08 * std::sin(t * 17.0 + seed);
+						   0.2 * noise(t * 11.0 + seed * 3.7) + 0.08 * math::sin(t * 17.0 + seed);
 			break;
 		case Style::Candle:
 			{
@@ -66,7 +67,7 @@ auto sampleFlicker(const component::LightFlicker& iFlicker, const double iSecond
 		case Style::Pulse:
 			{
 				const double phase = t + seed;
-				sample.shape = std::sin(phase) * std::sin(phase * 1.73 + 1.3);
+				sample.shape = math::sin(phase) * math::sin(phase * 1.73 + 1.3);
 				break;
 			}
 	}

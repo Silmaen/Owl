@@ -143,6 +143,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the simulation section (the seed of the random streams).
+	 */
+	void renderSimulationSection() const;
+
+	/**
+	 * @brief
 	 *  Render the world origin section (floating origin, shift radius, current origin); runs
 	 *  `scene.set_floating_origin` on change.
 	 */
