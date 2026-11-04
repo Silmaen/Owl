@@ -217,7 +217,7 @@ struct CallSlot {
 	pthread_t thread{pthread_self()};
 #endif
 	uint64_t lastSeen = 0;
-	uint32_t staleMs = 0;
+	std::chrono::steady_clock::time_point staleSince;
 	uint64_t firedSequence = 0;
 };
 
@@ -300,13 +300,14 @@ private:
 	static void watch(CallSlot& ioSlot) {
 		const uint64_t sequence = ioSlot.sequence.load(std::memory_order_relaxed);
 		const uint32_t budget = ioSlot.budgetMs.load(std::memory_order_relaxed);
+		const auto now = std::chrono::steady_clock::now();
 		if (ioSlot.state.load(std::memory_order_relaxed) == nullptr || budget == 0 || sequence != ioSlot.lastSeen) {
 			ioSlot.lastSeen = sequence;
-			ioSlot.staleMs = 0;
+			ioSlot.staleSince = now;
 			return;
 		}
-		ioSlot.staleMs += g_WatchdogTickMs;
-		if (ioSlot.staleMs < budget || ioSlot.firedSequence == sequence)
+		// Elapsed time, not a tick count: a late tick (coarse Windows timer, loaded machine) would stretch the budget.
+		if (now - ioSlot.staleSince < std::chrono::milliseconds(budget) || ioSlot.firedSequence == sequence)
 			return;
 		ioSlot.firedSequence = sequence;
 		ioSlot.targetSequence.store(sequence, std::memory_order_relaxed);

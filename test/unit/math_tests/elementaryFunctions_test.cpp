@@ -58,8 +58,9 @@ auto fingerprint(const std::function<double(double)>& iFunction, const double iL
 
 }// namespace
 
+// The reference libm is itself off by up to 2 ulp on some targets (MinGW), hence a margin wider than the own error.
 TEST(ElementaryFunctions, StayWithinAFewUlpOfTheLibm) {
-	constexpr uint64_t tolerance = 2;
+	constexpr uint64_t tolerance = 4;
 	EXPECT_LE(maxUlp([](const double iX) -> double { return math::sin(iX); },
 					 [](const double iX) -> double { return std::sin(iX); }, -100.0, 100.0),
 			  tolerance);
