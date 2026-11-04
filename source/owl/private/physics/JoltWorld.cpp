@@ -218,6 +218,12 @@ auto makeBox(const BodyBox& iBox, const float iDensity) -> JPH::Ref<JPH::BoxShap
 	return settings.GetPtr();
 }
 
+// Jolt settings are reference counted: the Ref takes what `new` returns.
+template<typename T, typename... Args>
+auto makeConvex(Args&&... iArgs) -> JPH::Ref<JPH::ConvexShapeSettings> {
+	return JPH::Ref<JPH::ConvexShapeSettings>(new T(std::forward<Args>(iArgs)...));
+}
+
 // Radius and half height of the cylinder part of a capsule; a capsule no taller than wide is a sphere (0).
 auto capsuleOf(const math::vec3f& iSize) -> std::pair<float, float> {
 	const float radius = std::max(iSize.x() * 0.5f, g_MinHalfExtent);
@@ -233,27 +239,27 @@ auto makeSingleShape(const BodyDescription& iDescription, const float iDensity) 
 				const JPH::Vec3 half{std::max(iDescription.size.x() * 0.5f, g_MinHalfExtent),
 									 std::max(iDescription.size.y() * 0.5f, g_MinHalfExtent),
 									 space ? std::max(iDescription.size.z() * 0.5f, g_MinHalfExtent) : g_HalfDepth};
-				settings =
-						new JPH::BoxShapeSettings(half, std::min(JPH::cDefaultConvexRadius, half.ReduceMin() * 0.5f));
+				settings = makeConvex<JPH::BoxShapeSettings>(
+						half, std::min(JPH::cDefaultConvexRadius, half.ReduceMin() * 0.5f));
 				break;
 			}
 		case scene::SceneBody::Shape::Sphere:
-			settings = new JPH::SphereShapeSettings(std::max(iDescription.size.x() * 0.5f, g_MinHalfExtent));
+			settings = makeConvex<JPH::SphereShapeSettings>(std::max(iDescription.size.x() * 0.5f, g_MinHalfExtent));
 			break;
 		case scene::SceneBody::Shape::Capsule:
 			{
 				const auto [radius, halfHeight] = capsuleOf(iDescription.size);
 				if (halfHeight > 0.f)
-					settings = new JPH::CapsuleShapeSettings(halfHeight, radius);
+					settings = makeConvex<JPH::CapsuleShapeSettings>(halfHeight, radius);
 				else
-					settings = new JPH::SphereShapeSettings(radius);
+					settings = makeConvex<JPH::SphereShapeSettings>(radius);
 				break;
 			}
 		case scene::SceneBody::Shape::Cylinder:
 			{
 				const float radius = std::max(iDescription.size.x() * 0.5f, g_MinHalfExtent);
 				const float halfHeight = std::max(iDescription.size.y() * 0.5f, g_MinHalfExtent);
-				settings = new JPH::CylinderShapeSettings(
+				settings = makeConvex<JPH::CylinderShapeSettings>(
 						halfHeight, radius, std::min(JPH::cDefaultConvexRadius, std::min(radius, halfHeight) * 0.5f));
 				break;
 			}

@@ -16,6 +16,7 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -173,12 +174,12 @@ TEST_F(Physic3DTest, ATumblingBodyGivesTheSameBitsWhateverTheWorkerCount) {
 		Scene scene;
 		scene.getPhysicsSettings().workerCount = iWorkers;
 		addGround(scene, SceneBody::Dimension::Space);
+		constexpr std::array shapes{SceneBody::Shape::Sphere, SceneBody::Shape::Capsule, SceneBody::Shape::Box};
 		std::vector<Entity> bodies;
 		for (uint32_t i = 0; i < 40; ++i) {
-			auto body = addBody(scene, SceneBody::Dimension::Space,
-								i % 3 == 0 ? SceneBody::Shape::Sphere
-										   : (i % 3 == 1 ? SceneBody::Shape::Capsule : SceneBody::Shape::Box),
-								{static_cast<float>(i % 5) * 0.7f - 1.4f, 2.f + static_cast<float>(i / 5) * 1.2f,
+			const uint32_t layer = i / 5;
+			auto body = addBody(scene, SceneBody::Dimension::Space, shapes.at(i % 3),
+								{static_cast<float>(i % 5) * 0.7f - 1.4f, 2.f + static_cast<float>(layer) * 1.2f,
 								 static_cast<float>(i % 3) * 0.6f - 0.6f});
 			body.getComponent<component::Transform>().transform.rotation() = {0.1f * static_cast<float>(i), 0.f, 0.3f};
 			bodies.push_back(body);
