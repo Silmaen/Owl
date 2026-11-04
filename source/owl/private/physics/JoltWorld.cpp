@@ -13,10 +13,14 @@
 #include "core/external/taskflow.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <iterator>
 #include <mutex>
 #include <optional>
 #include <ranges>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -183,6 +187,43 @@ private:
 	std::vector<Entry> m_begins;
 	// Ended contacts.
 	std::vector<Entry> m_ends;
+};
+
+// A Jolt state as plain bytes: written by SaveState, read back by RestoreState.
+class ByteRecorder final : public JPH::StateRecorder {
+public:
+	ByteRecorder() = default;
+
+	explicit ByteRecorder(const std::span<const uint8_t> iBytes) : m_bytes{iBytes.begin(), iBytes.end()} {}
+
+	void WriteBytes(const void* iData, const size_t iSize) override {
+		const auto* bytes = static_cast<const uint8_t*>(iData);
+		m_bytes.insert(m_bytes.end(), bytes, std::next(bytes, static_cast<std::ptrdiff_t>(iSize)));
+	}
+
+	void ReadBytes(void* oData, const size_t iSize) override {
+		if (m_failed || iSize > m_bytes.size() - m_read) {
+			m_failed = true;
+			std::memset(oData, 0, iSize);
+			return;
+		}
+		std::memcpy(oData, std::next(m_bytes.data(), static_cast<std::ptrdiff_t>(m_read)), iSize);
+		m_read += iSize;
+	}
+
+	[[nodiscard]] auto IsEOF() const -> bool override { return m_read >= m_bytes.size(); }
+
+	[[nodiscard]] auto IsFailed() const -> bool override { return m_failed; }
+
+	[[nodiscard]] auto take() -> std::vector<uint8_t> { return std::move(m_bytes); }
+
+private:
+	// The state.
+	std::vector<uint8_t> m_bytes;
+	// Bytes read so far.
+	size_t m_read = 0;
+	// A read ran past the end.
+	bool m_failed = false;
 };
 
 auto toBodyId(const uint32_t iBody) -> JPH::BodyID { return JPH::BodyID(iBody); }
@@ -435,6 +476,17 @@ void JoltWorld::step(const float iSeconds, const uint32_t iCollisionSteps) {
 											   &mp_impl->temp, mp_impl->jobs.get());
 	if (error != JPH::EPhysicsUpdateError::None)
 		OWL_CORE_WARN_ONCE("Physics: Step overflowed the world limits (error {:#x}).", static_cast<uint32_t>(error))
+}
+
+auto JoltWorld::saveState() const -> std::vector<uint8_t> {
+	ByteRecorder recorder;
+	mp_impl->system->SaveState(recorder);
+	return recorder.take();
+}
+
+auto JoltWorld::restoreState(const std::span<const uint8_t> iState) -> bool {
+	ByteRecorder recorder{iState};
+	return mp_impl->system->RestoreState(recorder) && !recorder.IsFailed() && recorder.IsEOF();
 }
 
 auto JoltWorld::takeContacts() -> BodyContacts { return mp_impl->contacts.take(); }

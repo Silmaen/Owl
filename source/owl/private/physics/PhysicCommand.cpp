@@ -16,7 +16,9 @@
 #include "scene/component/components.h"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
+#include <bit>
 #include <cmath>
 #include <cstdint>
 #include <map>
@@ -542,6 +544,22 @@ auto runningWorld(const scene::Entity& iEntity, const char* iFunc) -> PhysicsWor
 	return world;
 }
 
+template<typename T>
+void appendValue(std::vector<uint8_t>& ioBytes, const T iValue) {
+	const auto bytes = std::bit_cast<std::array<uint8_t, sizeof(T)>>(iValue);
+	ioBytes.insert(ioBytes.end(), bytes.begin(), bytes.end());
+}
+
+template<typename T>
+auto readValue(const std::span<const uint8_t> iBytes, size_t& ioOffset) -> std::optional<T> {
+	if (sizeof(T) > iBytes.size() - ioOffset)
+		return std::nullopt;
+	std::array<uint8_t, sizeof(T)> bytes{};
+	std::ranges::copy(iBytes.subspan(ioOffset, sizeof(T)), bytes.begin());
+	ioOffset += sizeof(T);
+	return std::bit_cast<T>(bytes);
+}
+
 // The entity has a 3D PhysicBody.
 auto isInSpace(const scene::Entity& iEntity) -> bool {
 	return iEntity && iEntity.hasComponent<scene::component::PhysicBody>() &&
@@ -705,6 +723,69 @@ auto PhysicCommand::takeCollisionEvents(scene::Scene& ioScene) -> std::vector<Co
 		return {};
 	world->frameEventsStart = 0;
 	return std::exchange(world->collisionBegins, {});
+}
+
+auto PhysicCommand::saveState(const scene::Scene& iScene) -> std::vector<uint8_t> {
+	OWL_PROFILE_FUNCTION()
+
+	const auto* const world = iScene.getPhysicsWorld();
+	if (world == nullptr)
+		return {};
+	const auto simulation = world->jolt->saveState();
+	std::vector<uint8_t> state;
+	appendValue(state, static_cast<uint64_t>(simulation.size()));
+	state.insert(state.end(), simulation.begin(), simulation.end());
+	appendValue(state, static_cast<uint64_t>(world->touching.size()));
+	for (const auto& [pair, count]: world->touching) {
+		appendValue(state, pair.first);
+		appendValue(state, pair.second);
+		appendValue(state, count);
+	}
+	return state;
+}
+
+auto PhysicCommand::restoreState(scene::Scene& ioScene, const std::span<const uint8_t> iState) -> bool {
+	OWL_PROFILE_FUNCTION()
+
+	auto* const world = ioScene.getPhysicsWorld();
+	if (world == nullptr) {
+		logNotInitialized("restoreState");
+		return false;
+	}
+	size_t offset = 0;
+	const auto simulationSize = readValue<uint64_t>(iState, offset);
+	if (!simulationSize || *simulationSize > iState.size() - offset) {
+		OWL_CORE_WARN("Physics: State of {} bytes is truncated, not restored.", iState.size())
+		return false;
+	}
+	const auto simulation = iState.subspan(offset, static_cast<size_t>(*simulationSize));
+	offset += simulation.size();
+	std::map<std::pair<uint64_t, uint64_t>, uint32_t> touching;
+	const auto pairCount = readValue<uint64_t>(iState, offset);
+	for (uint64_t i = 0; pairCount && i < *pairCount; ++i) {
+		const auto first = readValue<uint64_t>(iState, offset);
+		const auto second = readValue<uint64_t>(iState, offset);
+		const auto count = readValue<uint32_t>(iState, offset);
+		if (!first || !second || !count) {
+			OWL_CORE_WARN("Physics: State of {} bytes is truncated, not restored.", iState.size())
+			return false;
+		}
+		touching[{*first, *second}] = *count;
+	}
+	if (!pairCount || offset != iState.size()) {
+		OWL_CORE_WARN("Physics: State of {} bytes is malformed, not restored.", iState.size())
+		return false;
+	}
+	if (!world->jolt->restoreState(simulation)) {
+		OWL_CORE_WARN("Physics: State saved with other bodies than the world holds, not restored.")
+		return false;
+	}
+	world->touching = std::move(touching);
+	world->collisionBegins.clear();
+	world->frameEventsStart = 0;
+	world->captureCurrent();
+	world->capturePrevious();
+	return true;
 }
 
 void PhysicCommand::destroyBody(const scene::Entity& iEntity) {

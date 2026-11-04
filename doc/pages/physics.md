@@ -45,7 +45,7 @@ until `destroy(scene)`, `onEndRuntime()` or its destructor, so nothing dangles. 
 
 | Field         | Type        | Default     | Description                                                     |
 |---------------|-------------|-------------|-----------------------------------------------------------------|
-| type          | `BodyType`  | `Dynamic`   | How Jolt treats the body (see table below)                       |
+| type          | `BodyType`  | `Dynamic`   | How Jolt treats the body (see table below)                      |
 | dimension     | `Dimension` | `Plane`     | `Plane`: 2D, locked to the XY plane; `Space`: 3D, free in space |
 | shape         | `Shape`     | `Box`       | `Box`, `Sphere`, `Capsule` or `Cylinder` (see below)            |
 | fixedRotation | `bool`      | `false`     | Lock rotation so the body cannot spin                           |
@@ -243,6 +243,8 @@ each multi-threaded world and destroyed with it.
 | `syncSimulatedTransforms()`                  | Write the last step's poses, not blended ones                                                     |
 | `shiftOrigin(scene, shift)`                  | Move every body back by a shift of the world origin ([World positions](scene.md#world-positions)) |
 | `takeCollisionEvents()`                      | Hand over and clear the collisions begun                                                          |
+| `saveState(scene)`                           | Bytes of the whole simulation, for rewind (see below)                                             |
+| `restoreState(scene, bytes)`                 | Put back a saved simulation; refused if the bodies changed                                        |
 | `destroyBody(entity)`                        | Remove the entity's bodies (the bodies resting on it wake up)                                     |
 | `impulse(entity, vec2f)`                     | Apply a linear impulse to the entity's centre                                                     |
 | `getVelocity(entity) -> vec2f`               | Read the entity's current linear velocity                                                         |
@@ -255,6 +257,12 @@ each multi-threaded world and destroyed with it.
 
 Every method returns silently without a world or a `PhysicBody`; `impulse`, `getVelocity` and `setVelocity` skip
 static bodies.
+
+`saveState()` holds every body (pose, velocities, sleep), Jolt's contact cache and the touching pairs of the collision
+events; after `restoreState()`, the same steps give the same world, bit for bit, and the same `on_collision` calls. It
+is the physics part of a rewind or rollback snapshot: the scene's simulation clock and the other components are saved
+apart. The bytes belong to the running process (no format version), and a world that gained or lost a body since the
+save refuses them.
 
 ### Example: applying an impulse from a NativeScript
 

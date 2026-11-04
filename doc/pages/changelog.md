@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Engine Demo: a recorded tour of the platformer house, checked by `replay_platformer_house.owltest`.
 - Jolt Physics 5.6.0 as a dependency, built cross-platform deterministic with SSE4.2 on x86_64, and a frozen world-hash test of a Jolt scene.
 - 3D bodies on the same `PhysicBody`: dimension `Space`, box, sphere, capsule and cylinder shapes for 2D and 3D, colliding with 2D bodies, with a Z component in the Lua `physics` functions and stacked barrels to shove in the tavern of the Engine Demo.
+- `PhysicCommand::saveState` and `restoreState`: the whole simulation of a scene in bytes, replayed bit for bit with the same collision events, for rewind and rollback.
 
 ### Changed
 

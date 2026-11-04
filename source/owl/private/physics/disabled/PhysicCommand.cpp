@@ -10,6 +10,7 @@
 #include "physics/PhysicCommand.h"
 
 #include <cstdint>
+#include <span>
 #include <vector>
 
 // Built instead of the Jolt implementation when OWL_MODULE_PHYSICS is OFF: the API stays, nothing simulates.
@@ -65,6 +66,13 @@ void PhysicCommand::setTransform([[maybe_unused]] const scene::Entity& iEntity,
 
 void PhysicCommand::setVelocity([[maybe_unused]] const scene::Entity& iEntity,
 								[[maybe_unused]] const math::vec2f& iVelocity) {}
+
+auto PhysicCommand::saveState([[maybe_unused]] const scene::Scene& iScene) -> std::vector<uint8_t> { return {}; }
+
+auto PhysicCommand::restoreState([[maybe_unused]] scene::Scene& ioScene,
+								 [[maybe_unused]] const std::span<const uint8_t> iState) -> bool {
+	return false;
+}
 
 void PhysicCommand::impulse3D([[maybe_unused]] const scene::Entity& iEntity,
 							  [[maybe_unused]] const math::vec3f& iImpulse) {}

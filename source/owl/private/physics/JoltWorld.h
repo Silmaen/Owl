@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace owl::physics {
@@ -156,6 +157,21 @@ public:
 	 * @param[in] iCollisionSteps Collision and integration passes inside the step, at least 1.
 	 */
 	void step(float iSeconds, uint32_t iCollisionSteps);
+
+	/**
+	 * @brief
+	 *  Bytes of the whole simulation state: bodies, sleep, contact cache. For this process only (no format version).
+	 * @return The state.
+	 */
+	[[nodiscard]] auto saveState() const -> std::vector<uint8_t>;
+
+	/**
+	 * @brief
+	 *  Put back a state of `saveState()`; the world must hold the same bodies as when it was saved.
+	 * @param[in] iState The state.
+	 * @return False if the bytes do not match the bodies of the world (nothing usable was restored then).
+	 */
+	[[nodiscard]] auto restoreState(std::span<const uint8_t> iState) -> bool;
 
 	/**
 	 * @brief

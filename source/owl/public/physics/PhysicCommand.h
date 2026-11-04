@@ -14,6 +14,7 @@
 #include "scene/Scene.h"
 
 #include <cstdint>
+#include <span>
 #include <vector>
 
 /**
@@ -177,6 +178,30 @@ public:
 	 * @return The begun collisions, sorted by body: the same order on every run and worker count.
 	 */
 	[[nodiscard]] static auto takeCollisionEvents(scene::Scene& ioScene) -> std::vector<CollisionEvent>;
+
+	/**
+	 * @brief
+	 *  Snapshot of the simulation of a scene's world, for rewind and rollback.
+	 *
+	 * Holds every body (pose, velocities, sleep), the contact cache and the touching pairs of the collision events: a
+	 * `restoreState()` followed by the same steps gives the same world, bit for bit, and the same events. The bytes are
+	 * for this process only: not a save format.
+	 * @param[in] iScene The scene.
+	 * @return The state, empty when the scene has no world.
+	 */
+	[[nodiscard]] static auto saveState(const scene::Scene& iScene) -> std::vector<uint8_t>;
+
+	/**
+	 * @brief
+	 *  Put back a state of `saveState()` into a scene's world, which must hold the same bodies as when it was saved.
+	 *
+	 * The entity transforms follow at the next `writeFrameTransforms()`; the collisions not yet taken are dropped.
+	 * @param[in,out] ioScene The scene.
+	 * @param[in] iState The state.
+	 * @return False without a world, or when the bodies changed since the save (the world is then left as it was
+	 * partly restored: restore another state or call `init()`).
+	 */
+	[[nodiscard]] static auto restoreState(scene::Scene& ioScene, std::span<const uint8_t> iState) -> bool;
 
 	/**
 	 * @brief

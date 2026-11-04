@@ -52,7 +52,7 @@ a simulation result.
 | Backend-independent physics world interface, Jolt behind it                                | Done        |
 | 3D rigid body component and shapes, editor support                                         | Done        |
 | 2D bodies on Jolt (plane-locked), the 2D scenes and the world-hash golden moved, Box2D out | Done        |
-| Rewind snapshots through `SaveState` / `RestoreState`                                      | Planned     |
+| Rewind snapshots through `SaveState` / `RestoreState`                                      | Done        |
 
 ## v0.7.0 — 2D physics complete
 

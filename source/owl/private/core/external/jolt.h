@@ -33,5 +33,6 @@ OWL_DIAG_PUSH
 #include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
 #include <Jolt/Physics/Collision/TransformedShape.h>
 #include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Physics/StateRecorder.h>
 #include <Jolt/RegisterTypes.h>
 OWL_DIAG_POP
