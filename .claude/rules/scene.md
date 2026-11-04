@@ -45,20 +45,20 @@ Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `chi
 - `destroyEntity()` reparents children to the grandparent; `destroyEntityWithChildren()` cascades.
   Both are immediate (editor). Runtime code (Lua, triggers) must use `destroyEntityDeferred()`: the
   subtree is destroyed by `flushPendingDestructions()` at the end of `onUpdateRuntime()`. All three run
-  `on_destroy`, remove Box2D bodies and stop sounds before destroying anything.
-- Each scene owns its runtime world: Box2D world (`PhysicCommand::init(scene)`, kept in `Scene`, destroyed
+  `on_destroy`, remove physics bodies and stop sounds before destroying anything.
+- Each scene owns its runtime world: Jolt world (`PhysicCommand::init(scene)`, kept in `Scene`, destroyed
   with it), script instances bound to it (`ScriptInstance::setScene`), UI mouse state
   (`Scene::getUiInputState()`). Never keep a scene pointer in static state. State shared by the scenes of an
   application (screen transition, settings, voxel mesh cache) lives in `app::EngineContext`, never in a static; a test
   creates its own context and gives it to its scenes.
 - In Play, EnTT hooks tie runtime resources to components (`PhysicCommand::init` for bodies,
-  `onStartRuntime` for scripts and sounds): never create or destroy a Box2D body, script instance or
+  `onStartRuntime` for scripts and sounds): never create or destroy a physics body, script instance or
   runtime sound by hand next to an `addComponent` / `removeComponent`.
 - `duplicateEntity()` makes a root copy; `duplicateSubtree()` duplicates recursively with new UUIDs and points the
   `EntityLink`s between the copies at the copies (prefab instantiation does the same). Entity references are UUIDs,
   never names alone.
 - Only `parentId` is serialized; `childrenIds` is rebuilt after load by `rebuildHierarchyChildren()`.
-- Physics: Box2D bodies ignore the hierarchy. `PhysicCommand` works in world space and converts back to
+- Physics: Jolt bodies ignore the hierarchy. `PhysicCommand` works in world space and converts back to
   local. A non-physics child follows its physics parent; two physics entities move independently.
 
 ## Prefab (`.owlprefab`)

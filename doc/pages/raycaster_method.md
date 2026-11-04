@@ -396,7 +396,7 @@ perpendicular-to-camera-plane distance — no extra projection required.
 
 ### Physics — hermetic when closed
 
-`PhysicCommand::init` auto-creates a **kinematic Box2D body** for any
+`PhysicCommand::init` auto-creates a **kinematic Jolt body** for any
 `RaycastDoor` / `RaycastPushWall` entity that doesn't already carry an explicit `PhysicBody` component. The body's
 collider matches the moving surface:
 
@@ -424,7 +424,7 @@ so:
 
 Each tick the `owl.raycast_walls` system (`scene::systems::updateRaycastDynamicWalls`) advances the state machine, shifts the entity's local
 `Transform.translation` along `slideDirection` by the offset delta, and — if the entity carries a `PhysicBody` — mirrors
-the new world position onto the Box2D body via
+the new world position onto the Jolt body via
 `PhysicCommand::setTransform`. Kinematic bodies respect `setTransform`, so the player collider sees the door's actual
 current position.
 
@@ -516,7 +516,7 @@ To drive either object from a Lua script instead of the built-in key, set the co
   The fix is to invert the tilemap world transform and project the camera into tilemap-local space before the cast.
 - **Single-layer tilemap** — only the first non-empty `TilemapLayer` of the component is read. Multi-layer tilemaps
   don't stack walls.
-- **No collision integration** — the raycast walls don't generate Box2D fixtures, so a `PhysicBody` player will walk
+- **No collision integration** — the raycast walls do not generate colliders, so a `PhysicBody` player will walk
   through them. The physics generation in the 2D Tilemap path uses per-tile `collidable` flags from the tileset; reusing
   it for the raycast scene is a one-line change but hasn't been wired yet.
 - **No depth buffer** — the wall stripe quads draw in submission order (back-to-front by ray column). Foreground

@@ -67,8 +67,6 @@ class OwlEngineConan(ConanFile):
         # plutovg (lunasvg's) drops dllimport only with PLUTOVG_BUILD_STATIC, which its recipe does not export.
         "plutovg/*:shared": True,
         "glfw/*:shared": True,
-        # SSE2 solver by default: virtualised agents and older CPUs have no AVX2 (opt in with -o "box2d/*:avx2=True").
-        "box2d/*:avx2": False,
         "openal-soft/*:shared": True,
         "libsndfile/*:shared": True,
         "libsndfile/*:programs": False,
@@ -153,7 +151,6 @@ class OwlEngineConan(ConanFile):
             self.requires("vulkan-memory-allocator/3.3.0")
             self.requires("vulkan-utility-libraries/1.4.357.0")
         if self.options.physics:
-            self.requires("box2d/3.1.1")
             self.requires("joltphysics/5.6.0")
         if self.options.audio:
             self.requires("openal-soft/1.25.2")
@@ -196,8 +193,6 @@ class OwlEngineConan(ConanFile):
         tc.cache_variables["OWL_USE_CCACHE"] = False
         for module in ("render", "physics", "audio", "script", "gui"):
             tc.cache_variables[f"OWL_MODULE_{module.upper()}"] = bool(self.options.get_safe(module))
-        if self.options.physics:
-            tc.cache_variables["OWL_PHYSICS_AVX2"] = bool(self.dependencies["box2d"].options.get_safe("avx2"))
         tc.generate()
 
     def build(self):

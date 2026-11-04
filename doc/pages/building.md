@@ -414,8 +414,7 @@ it nothing.
 | `OWL_PROFILER`                             | none    | `OWL_PROFILE_*` backend: `none`, `tracy` or `chrome` ([Profiling](profiling.md))                    |
 | `OWL_LOG_LEVEL`                            | trace   | Lowest log level compiled in (`trace` to `off`)                                                     |
 | `OWL_MODULE_RENDER`                        | ON      | OpenGL / Vulkan backends, GLFW, Slang ([Engine modules](#engine-modules))                           |
-| `OWL_MODULE_PHYSICS`                       | ON      | Box2D physics ([Engine modules](#engine-modules))                                                   |
-| `OWL_PHYSICS_AVX2`                         | OFF     | Box2D built with AVX2 on x86_64 ([Physics](physics.md#multi-threaded-solver))                       |
+| `OWL_MODULE_PHYSICS`                       | ON      | Jolt physics ([Engine modules](#engine-modules))                                                    |
 | `OWL_MODULE_AUDIO`                         | ON      | OpenAL backend, libsndfile ([Engine modules](#engine-modules))                                      |
 | `OWL_MODULE_SCRIPT`                        | ON      | Lua scripting ([Engine modules](#engine-modules))                                                   |
 | `OWL_MODULE_GUI`                           | ON      | ImGui layer, widgets, `Owl::Gui` ([Engine modules](#engine-modules))                                |
@@ -429,7 +428,7 @@ its public API stays, backed by the Null backend or a no-op, so a game compiles 
 | Option               | Conan option | Third parties left out                          | Without it                                                |
 |----------------------|--------------|-------------------------------------------------|-----------------------------------------------------------|
 | `OWL_MODULE_RENDER`  | `render`     | glad, GLFW, lunasvg, Vulkan, SPIRV-Cross, Slang | Null window, input and graphics: the engine runs headless |
-| `OWL_MODULE_PHYSICS` | `physics`    | Box2D                                           | `PhysicCommand` does nothing, bodies stay where they are  |
+| `OWL_MODULE_PHYSICS` | `physics`    | Jolt                                            | `PhysicCommand` does nothing, bodies stay where they are  |
 | `OWL_MODULE_AUDIO`   | `audio`      | OpenAL Soft, libsndfile                         | Null sound backend                                        |
 | `OWL_MODULE_SCRIPT`  | `script`     | Lua                                             | `ScriptInstance` never loads, scripts are skipped         |
 | `OWL_MODULE_GUI`     | `gui`        | imgui, ImGuizmo                                 | No `UiLayer`, no `gui/` headers, no `Owl::Gui` target     |

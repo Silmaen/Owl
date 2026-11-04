@@ -23,7 +23,7 @@ a simulation result.
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------|
 | Engine              | Jolt (MIT): cross-platform determinism, MinGW, Android and WASM, mutable compounds, constraints, state save                    |
 | Rejected            | PhysX (determinism on one machine only, no MinGW nor Web), Bullet (maintenance mode), Rapier (Rust toolchain)                  |
-| 2D                  | Jolt bodies locked to the XY plane; Box2D removed once the 2D features run on Jolt                                             |
+| 2D                  | Jolt bodies locked to the XY plane; Box2D removed                                                                              |
 | Lua API             | One `physics` table for 2D and 3D: the dimension follows the vector type (`vec2` or `vec3`)                                    |
 | Precision           | Single precision; large worlds go through the floating origin ([Large worlds](large-worlds.md)), no `JPH_DOUBLE_PRECISION`     |
 | Determinism         | `JPH_CROSS_PLATFORM_DETERMINISTIC`, no FMA, `-ffp-contract=off`                                                                |
@@ -49,9 +49,9 @@ a simulation result.
 | Step                                                                                       | Status      |
 |--------------------------------------------------------------------------------------------|-------------|
 | Local Jolt recipe (deterministic, SSE4.2, no consumer flags), world-hash golden on Jolt    | Done        |
-| Backend-independent physics world interface, Jolt behind it                                | Planned     |
+| Backend-independent physics world interface, Jolt behind it                                | Done        |
 | 3D rigid body component and shapes, editor support                                         | Planned     |
-| 2D bodies on Jolt (plane-locked), the 2D scenes and the world-hash golden moved, Box2D out | Planned     |
+| 2D bodies on Jolt (plane-locked), the 2D scenes and the world-hash golden moved, Box2D out | Done        |
 | Rewind snapshots through `SaveState` / `RestoreState`                                      | Planned     |
 
 ## v0.7.0 — 2D physics complete

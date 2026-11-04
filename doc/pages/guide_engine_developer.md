@@ -36,7 +36,7 @@ others a section of the renderer page.
 
 | Page                                      | What you learn                                            |
 |-------------------------------------------|-----------------------------------------------------------|
-| [Physics](physics.md)                     | Box2D integration                                         |
+| [Physics](physics.md)                     | Jolt integration                                          |
 | [Sound](sound.md)                         | The OpenAL backend and the sound components               |
 | [Events and Input](event_input.md)        | Event dispatch, input backends                            |
 | [Lua Scripting](scripting.md)             | How the Lua state, the sandbox and the bindings are wired |

@@ -42,7 +42,7 @@ namespace owl::scene::component {
  *
  * The entity's `Transform.translation` (XY) marks the door's **cell centre**;
  * `Transform.scale` is intentionally ignored — the cell is always one tile.
- * The kinematic Box2D body, when present, tracks the plate position so the
+ * The kinematic physics body, when present, tracks the plate position so the
  * player collides with the actual moving surface.
  *
  * Activation matches `RaycastPushWall`: built-in proximity-and-action

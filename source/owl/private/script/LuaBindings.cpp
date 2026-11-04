@@ -4406,7 +4406,7 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			 .description = "Random values drawn from the scene seed and elementary functions with the same bits on "
 							"every target, over the Lua standard `math` table."},
 			{.name = "table", .description = "Sorted iteration over the Lua standard `table` table."},
-			{.name = "physics", .description = "Box2D body of an entity."},
+			{.name = "physics", .description = "Physics body of an entity."},
 			{.name = "input",
 			 .description = "Actions of the game's input map, then the raw keyboard, mouse and gamepad state."},
 			{.name = "sound", .description = "Sound playback by handle, the mixer buses and the music."},

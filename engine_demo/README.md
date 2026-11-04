@@ -268,7 +268,7 @@ regression fixture (`coin.owlanim` and its 6×3 sheet) lives with the tests, in 
 - [x] `log` (trace, info, warn, error)
 - [x] `trigger` (start_timer, stop_timer, reset_timer)
 - [x] Trigger callbacks (on_trigger_enter/exit, on_timer, on_interact, custom)
-- [x] Collision callback (`on_collision(other_id)` from Box2D contacts)
+- [x] Collision callback (`on_collision(other_id)` from Jolt contacts)
 - [x] Gamepad (`input.get_gamepad_stick`, `is_gamepad_button_just_pressed`) in the platformer, project mapping file
 - [x] Action map (`input_actions.yml`: axis, button and vector actions on keys, mouse and gamepad, overriding the built-in ones)
 

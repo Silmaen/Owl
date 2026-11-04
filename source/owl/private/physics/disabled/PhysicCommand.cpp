@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <vector>
 
-// Built instead of the Box2D implementation when OWL_MODULE_PHYSICS is OFF: the API stays, nothing simulates.
+// Built instead of the Jolt implementation when OWL_MODULE_PHYSICS is OFF: the API stays, nothing simulates.
 
 namespace owl::physics {
 

@@ -78,7 +78,7 @@ Every fix lands with its regression test.
   (PR-14: D-06, D-16)
 - ![Done][done] Format version and atomic writes — every engine file carries a `FormatVersion` with a migration
   chain, newer files are refused, and writes go through a temporary file renamed in place (PR-25: C-10, C-13)
-- ![Done][done] `on_collision` implemented — the callback documented since v0.1 is fed by Box2D contact events,
+- ![Done][done] `on_collision` implemented — the callback documented since v0.1 is fed by physics contact events,
   with the entity it collided with (D-07, I-02); the rest of the 2D physics API is v0.7.0, see
   [Physics API](physics-api.md)
 - ![Done][done] Game export works end to end — packaging, pack, runner, assets, voxel in the runner (D-03),
@@ -220,7 +220,7 @@ reorganised, made discoverable and consistent. See [Owl Nest UI](nest-ui.md).
 ## Performance work
 
 - ![Done][done] Dense per-frame transforms, direct TRS composition (PR-21: P-02, P-06, C-09)
-- ![Done][done] Fixed-step physics, multi-threaded Box2D solver on Taskflow (PR-22: D-05, P-12, D-14)
+- ![Done][done] Fixed-step physics, multi-threaded solver on Taskflow (PR-22: D-05, P-12, D-14)
 - ![Done][done] Inspector serializes only the edited component, only on edit (PR-23: E-04)
 - ![Done][done] Voxel meshing on workers with a per-frame budget, neighbours invalidated; streaming frame peak
   14.3 → 0.35 ms (PR-24: D-08, P-09, B-15)

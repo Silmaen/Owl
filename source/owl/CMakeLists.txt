@@ -26,7 +26,7 @@ endif ()
 if (${PROJECT_PREFIX}_MODULE_PHYSICS)
     list(APPEND _owl_excluded "/private/physics/disabled/")
 else ()
-    list(APPEND _owl_excluded "/private/physics/(PhysicCommand|SolverTaskPool)\\.(cpp|h)$")
+    list(APPEND _owl_excluded "/private/physics/(PhysicCommand|SolverTaskPool|JoltWorld)\\.(cpp|h)$")
 endif ()
 if (NOT ${PROJECT_PREFIX}_MODULE_AUDIO)
     list(APPEND _owl_excluded "/private/sound/openal/" "/private/core/external/openal\\.h$")
@@ -148,11 +148,8 @@ endif ()
 
 # physics
 if (${PROJECT_PREFIX}_MODULE_PHYSICS)
-    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d REQUIRED)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Jolt REQUIRED MODULE_TARGET "Jolt::Jolt")
-    if (${PROJECT_PREFIX}_PHYSICS_AVX2 AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
-        target_compile_definitions(${ENGINE_NAME}Private INTERFACE OWL_PHYSICS_AVX2)
-    endif ()
+    owl_jolt_sources(${ENGINE_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/private/physics/JoltWorld.cpp)
 endif ()
 
 # audio

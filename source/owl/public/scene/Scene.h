@@ -72,7 +72,7 @@ class Scheduler;
 
 namespace owl::physics {
 class PhysicCommand;
-/// Box2D world of one scene (defined by the physics module).
+/// Physics world of one scene (defined by the physics module).
 class PhysicsWorld;
 }// namespace owl::physics
 
@@ -955,7 +955,7 @@ public:
 	 *  Destroy every entity queued by `destroyEntityDeferred()`, with its children.
 	 *
 	 * Each destroyed entity first gets its runtime teardown: Lua `on_destroy` (called once), native
-	 * script `onDestroy`, Box2D body removal and sound stop. Destructions queued by `on_destroy` are
+	 * script `onDestroy`, physics body removal and sound stop. Destructions queued by `on_destroy` are
 	 * processed in the same call. Run at the end of `onUpdateRuntime()` (after scripts, physics and
 	 * triggers) and at the start of `onEndRuntime()`.
 	 */
@@ -1777,7 +1777,7 @@ private:
 	std::size_t m_nextCheckpoint = 0;
 	/// Recorded duration of the replayed frame, given to the systems in place of the caller's.
 	core::Timestep m_replayTimeStep;
-	/// Box2D world of the scene while it is simulated (owned here, managed by `physics::PhysicCommand`).
+	/// Physics world of the scene while it is simulated (owned here, managed by `physics::PhysicCommand`).
 	shared<physics::PhysicsWorld> m_physicsWorld;
 	/// Pathfinding graphs and requests, created by `getNavigation`.
 	mutable uniq<nav::NavWorld> m_navigation;

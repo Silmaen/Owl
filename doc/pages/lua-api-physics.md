@@ -6,7 +6,7 @@ Generated from the binding registry, do not edit by hand: see the [Lua API refer
 
 ## `physics`
 
-Box2D body of an entity.
+Physics body of an entity.
 
 | Function                                                                           | Returns                    | Description                                               |
 |------------------------------------------------------------------------------------|----------------------------|-----------------------------------------------------------|

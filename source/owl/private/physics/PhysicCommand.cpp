@@ -7,19 +7,20 @@
  */
 #include "owlpch.h"
 
+#include "JoltWorld.h"
 #include "SolverTaskPool.h"
 #include "physics/PhysicCommand.h"
 #include "scene/Entity.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
 #include "scene/component/components.h"
-#include <box2d/box2d.h>
 
 #include <algorithm>
 #include <atomic>
 #include <cmath>
 #include <cstdint>
 #include <map>
+#include <numbers>
 #include <optional>
 #include <ranges>
 #include <span>
@@ -29,10 +30,10 @@ namespace owl::physics {
 
 namespace {
 
-// An AVX2 Box2D on a CPU without AVX2: physics stays off instead of crashing on an illegal instruction.
+// Jolt is built for SSE4.2 on x86_64: on an older CPU physics stays off instead of crashing on an illegal instruction.
 auto isCpuUnsupported() -> bool {
-#ifdef OWL_PHYSICS_AVX2
-	static const bool unsupported = __builtin_cpu_supports("avx2") == 0;
+#if defined(__x86_64__) || defined(_M_X64)
+	static const bool unsupported = __builtin_cpu_supports("sse4.2") == 0 || __builtin_cpu_supports("popcnt") == 0;
 	return unsupported;
 #else
 	return false;
@@ -49,15 +50,16 @@ inline void logNullEntity(const char* iFunc) { OWL_CORE_WARN("Physics: {} called
 
 }// namespace
 
+
 class PhysicsWorld {
 public:
 	// Body whose pose is copied to its entity each frame, with the last two step poses for interpolation.
 	struct SyncedBody {
 		entt::entity entity;
 		uint64_t bodyId;
-		b2BodyId body;
-		b2Transform previous;
-		b2Transform current;
+		uint32_t body;
+		BodyPose previous;
+		BodyPose current;
 	};
 
 	PhysicsWorld() = default;
@@ -72,38 +74,31 @@ public:
 
 	auto operator=(PhysicsWorld&&) -> PhysicsWorld& = delete;
 
-	void registerBody(const b2BodyId iBody, const scene::Entity& iOwner) {
-		bodyOwners[b2StoreBodyId(iBody)] = iOwner.getUUID();
-	}
-
-	[[nodiscard]] auto ownerOf(const b2ShapeId iShape) const -> std::optional<core::UUID> {
-		if (!b2Shape_IsValid(iShape))
-			return std::nullopt;
-		if (const auto it = bodyOwners.find(b2StoreBodyId(b2Shape_GetBody(iShape))); it != bodyOwners.end())
+	[[nodiscard]] auto ownerOf(const uint32_t iBody) const -> std::optional<core::UUID> {
+		if (const auto it = bodyOwners.find(iBody); it != bodyOwners.end())
 			return it->second;
 		return std::nullopt;
 	}
 
-	[[nodiscard]] auto pairKey(const b2ShapeId iShapeA, const b2ShapeId iShapeB) const
-			-> std::optional<std::pair<core::UUID, core::UUID>> {
-		const auto ownerA = ownerOf(iShapeA);
-		const auto ownerB = ownerOf(iShapeB);
+	[[nodiscard]] auto pairKey(const BodyContact& iContact) const -> std::optional<std::pair<core::UUID, core::UUID>> {
+		const auto ownerA = ownerOf(iContact.bodyA);
+		const auto ownerB = ownerOf(iContact.bodyB);
 		if (!ownerA || !ownerB || *ownerA == *ownerB)
 			return std::nullopt;
 		return std::pair{*ownerA, *ownerB};
 	}
 
 	void collectContactEvents() {
-		const b2ContactEvents events = b2World_GetContactEvents(worldId);
-		for (const auto& event: std::span(events.beginEvents, static_cast<size_t>(events.beginCount))) {
-			const auto pair = pairKey(event.shapeIdA, event.shapeIdB);
+		const auto [begins, ends] = jolt->takeContacts();
+		for (const auto& contact: begins) {
+			const auto pair = pairKey(contact);
 			if (!pair)
 				continue;
 			if (++touching[ordered(*pair)] == 1 && !isReportedThisFrame(*pair))
 				collisionBegins.push_back({.entityA = pair->first, .entityB = pair->second});
 		}
-		for (const auto& event: std::span(events.endEvents, static_cast<size_t>(events.endCount))) {
-			const auto pair = pairKey(event.shapeIdA, event.shapeIdB);
+		for (const auto& contact: ends) {
+			const auto pair = pairKey(contact);
 			if (!pair)
 				continue;
 			if (const auto it = touching.find(ordered(*pair)); it != touching.end() && --it->second == 0)
@@ -120,8 +115,8 @@ public:
 				});
 	}
 
-	void trackBody(const entt::entity iEntity, const uint64_t iBodyId, const b2BodyId iBody) {
-		const b2Transform pose = b2Body_GetTransform(iBody);
+	void trackBody(const entt::entity iEntity, const uint64_t iBodyId, const uint32_t iBody) {
+		const BodyPose pose = jolt->getPose(iBody);
 		syncedIndex[iBodyId] = synced.size();
 		synced.push_back({.entity = iEntity, .bodyId = iBodyId, .body = iBody, .previous = pose, .current = pose});
 	}
@@ -142,9 +137,9 @@ public:
 	void snapBody(const uint64_t iBodyId) {
 		if (const auto it = syncedIndex.find(iBodyId); it != syncedIndex.end()) {
 			auto& tracked = synced[it->second];
-			const b2Transform moved = b2Body_GetTransform(tracked.body);
+			const BodyPose moved = jolt->getPose(tracked.body);
 			// Carry the previous pose along with the teleport so the blend between steps goes on without a hitch.
-			tracked.previous = b2MulTransforms(moved, b2InvMulTransforms(tracked.current, tracked.previous));
+			tracked.previous = JoltWorld::carryPrevious(tracked.previous, tracked.current, moved);
 			tracked.current = moved;
 		}
 	}
@@ -153,16 +148,12 @@ public:
 		for (auto& tracked: synced) tracked.previous = tracked.current;
 	}
 
-	void shiftOrigin(const b2Vec2 iShift) {
-		for (const auto& body: bodies | std::views::values) {
-			if (!b2Body_IsValid(body))
-				continue;
-			const b2Transform pose = b2Body_GetTransform(body);
-			b2Body_SetTransform(body, b2Sub(pose.p, iShift), pose.q);
-		}
+	void shiftOrigin(const math::vec2f& iShift) {
+		for (const auto body: bodies | std::views::values)
+			jolt->setPositionQuietly(body, jolt->getPose(body).position - iShift);
 		for (auto& tracked: synced) {
-			tracked.previous.p = b2Sub(tracked.previous.p, iShift);
-			tracked.current.p = b2Sub(tracked.current.p, iShift);
+			tracked.previous.position -= iShift;
+			tracked.current.position -= iShift;
 		}
 	}
 
@@ -172,7 +163,7 @@ public:
 
 	void captureCurrent() {
 		const auto capture = [this](const size_t iBegin, const size_t iEnd) -> void {
-			for (size_t i = iBegin; i < iEnd; ++i) synced[i].current = b2Body_GetTransform(synced[i].body);
+			for (size_t i = iBegin; i < iEnd; ++i) synced[i].current = jolt->getPose(synced[i].body);
 		};
 		if (taskPool != nullptr && synced.size() >= parallelSyncMinBodies)
 			taskPool->parallelFor(synced.size(), parallelSyncMinRange, capture);
@@ -198,10 +189,8 @@ public:
 									  }
 									  if (auto* transform =
 												  ioScene.registry.try_get<scene::component::Transform>(tracked.entity);
-										  transform != nullptr) {
-										  const auto [position, angle] = interpolatedPose(tracked, iAlpha);
-										  writeRootPose(transform->transform, position, angle);
-									  }
+										  transform != nullptr)
+										  writeRootPose(transform->transform, interpolatedPose(tracked, iAlpha));
 								  }
 							  });
 		if (!hasChildren.load(std::memory_order_relaxed))
@@ -215,39 +204,47 @@ public:
 		auto* transform = ioScene.registry.try_get<scene::component::Transform>(iTracked.entity);
 		if (transform == nullptr)
 			return;
-		const auto [position, angle] = interpolatedPose(iTracked, iAlpha);
-		writeWorldPose(ioScene, iTracked.entity, transform->transform, position, angle);
+		writeWorldPose(ioScene, iTracked.entity, transform->transform, interpolatedPose(iTracked, iAlpha));
 	}
 
-	[[nodiscard]] static auto interpolatedPose(const SyncedBody& iTracked, const float iAlpha)
-			-> std::pair<b2Vec2, float> {
+	[[nodiscard]] static auto wrapAngle(const float iAngle) -> float {
+		if (iAngle > std::numbers::pi_v<float>)
+			return iAngle - 2.f * std::numbers::pi_v<float>;
+		if (iAngle < -std::numbers::pi_v<float>)
+			return iAngle + 2.f * std::numbers::pi_v<float>;
+		return iAngle;
+	}
+
+	[[nodiscard]] static auto interpolatedPose(const SyncedBody& iTracked, const float iAlpha) -> BodyPose {
 		if (iAlpha >= 1.f)
-			return {iTracked.current.p, b2Rot_GetAngle(iTracked.current.q)};
-		return {b2Lerp(iTracked.previous.p, iTracked.current.p, iAlpha),
-				b2Rot_GetAngle(b2NLerp(iTracked.previous.q, iTracked.current.q, iAlpha))};
+			return iTracked.current;
+		const auto& [p0, a0] = iTracked.previous;
+		const auto& [p1, a1] = iTracked.current;
+		return {.position = p0 + (p1 - p0) * iAlpha, .angle = wrapAngle(a0 + wrapAngle(a1 - a0) * iAlpha)};
 	}
 
-	static void writeRootPose(math::Transform& ioTransform, const b2Vec2 iPosition, const float iAngle) {
-		ioTransform.translation().x() = iPosition.x;
-		ioTransform.translation().y() = iPosition.y;
-		ioTransform.rotation().z() = iAngle;
+	static void writeRootPose(math::Transform& ioTransform, const BodyPose& iPose) {
+		ioTransform.translation().x() = iPose.position.x();
+		ioTransform.translation().y() = iPose.position.y();
+		ioTransform.rotation().z() = iPose.angle;
 	}
 
 	static void writeWorldPose(scene::Scene& ioScene, const entt::entity iEntity, math::Transform& ioTransform,
-							   const b2Vec2 iPosition, const float iAngle) {
+							   const BodyPose& iPose) {
 		const auto& hierarchy = ioScene.registry.get<scene::component::Hierarchy>(iEntity);
 		if (hierarchy.parentId != core::UUID{0}) {
 			if (const scene::Entity parent = ioScene.findEntityByUUID(hierarchy.parentId); parent) {
 				const math::Transform parentWorld = ioScene.getWorldTransform(parent);
-				const math::vec4 localPos = math::inverse(parentWorld()) *
-											math::vec4{iPosition.x, iPosition.y, ioTransform.translation().z(), 1.0f};
+				const math::vec4 localPos =
+						math::inverse(parentWorld()) *
+						math::vec4{iPose.position.x(), iPose.position.y(), ioTransform.translation().z(), 1.0f};
 				ioTransform.translation().x() = localPos.x();
 				ioTransform.translation().y() = localPos.y();
-				ioTransform.rotation().z() = iAngle - parentWorld.rotation().z();
+				ioTransform.rotation().z() = iPose.angle - parentWorld.rotation().z();
 				return;
 			}
 		}
-		writeRootPose(ioTransform, iPosition, iAngle);
+		writeRootPose(ioTransform, iPose);
 	}
 
 	void forgetContacts(const core::UUID iEntity) {
@@ -256,7 +253,7 @@ public:
 		});
 	}
 
-	[[nodiscard]] auto find(const uint64_t iBodyId) const -> std::optional<b2BodyId> {
+	[[nodiscard]] auto find(const uint64_t iBodyId) const -> std::optional<uint32_t> {
 		if (iBodyId == 0)
 			return std::nullopt;
 		if (const auto it = bodies.find(iBodyId); it != bodies.end())
@@ -264,10 +261,14 @@ public:
 		return std::nullopt;
 	}
 
-	auto store(const b2BodyId iBody, const scene::Entity& iOwner) -> uint64_t {
+	// Creates the body and names it for the components; 0 when Jolt refused it.
+	auto create(const BodyDescription& iDescription, const scene::Entity& iOwner) -> uint64_t {
+		const auto body = jolt->createBody(iDescription);
+		if (!body)
+			return 0;
 		const uint64_t bodyId = nextId++;
-		bodies[bodyId] = iBody;
-		registerBody(iBody, iOwner);
+		bodies[bodyId] = *body;
+		bodyOwners[*body] = iOwner.getUUID();
 		return bodyId;
 	}
 
@@ -276,51 +277,82 @@ public:
 		if (ioBodyId == 0)
 			return;
 		if (const auto it = bodies.find(ioBodyId); it != bodies.end()) {
-			if (const auto owner = bodyOwners.find(b2StoreBodyId(it->second)); owner != bodyOwners.end()) {
+			if (const auto owner = bodyOwners.find(it->second); owner != bodyOwners.end()) {
 				forgetContacts(owner->second);
 				bodyOwners.erase(owner);
 			}
-			b2DestroyBody(it->second);
+			jolt->destroyBody(it->second);
 			bodies.erase(it);
 		}
 		untrackBody(ioBodyId);
 		ioBodyId = 0;
 	}
 
+	[[nodiscard]] static auto poseOf(const math::Transform& iWorldTransform) -> BodyPose {
+		return {.position = {iWorldTransform.translation().x(), iWorldTransform.translation().y()},
+				.angle = iWorldTransform.rotation().z()};
+	}
+
+	// A body Owl moves itself (raycast door or pushwall): kinematic, upright, one box.
+	[[nodiscard]] static auto movedBlock(const math::Transform& iWorldTransform, const math::vec2f& iHalfExtents)
+			-> BodyDescription {
+		return {.type = scene::SceneBody::BodyType::Kinematic,
+				.fixedRotation = true,
+				.pose = poseOf(iWorldTransform),
+				.boxes = {{.halfExtents = iHalfExtents}}};
+	}
+
 	void createPhysicBody(scene::Scene& ioScene, const entt::entity iEntity) {
 		const scene::Entity entity{iEntity, &ioScene};
 		auto& [sbody] = entity.getComponent<scene::component::PhysicBody>();
 		const math::Transform worldTransform = ioScene.getWorldTransform(entity);
-		b2BodyDef bodyDef = b2DefaultBodyDef();
-		switch (sbody.type) {
-			case scene::SceneBody::BodyType::Static:
-				bodyDef.type = b2_staticBody;
-				break;
-			case scene::SceneBody::BodyType::Dynamic:
-				bodyDef.type = b2_dynamicBody;
-				break;
-			case scene::SceneBody::BodyType::Kinematic:
-				bodyDef.type = b2_kinematicBody;
-				break;
+		const BodyDescription description{
+				.type = sbody.type,
+				.fixedRotation = sbody.fixedRotation,
+				.pose = poseOf(worldTransform),
+				.boxes = {{.halfExtents = {sbody.colliderSize.x() * worldTransform.scale().x() * 0.5f,
+										   sbody.colliderSize.y() * worldTransform.scale().y() * 0.5f}}},
+				.density = sbody.density,
+				.friction = sbody.friction,
+				.restitution = sbody.restitution};
+		sbody.bodyId = create(description, entity);
+		if (sbody.bodyId != 0)
+			trackBody(iEntity, sbody.bodyId, bodies[sbody.bodyId]);
+	}
+
+	void createTilemapBody(scene::Scene& ioScene, const entt::entity iEntity) {
+		const scene::Entity entity{iEntity, &ioScene};
+		const auto& tilemap = entity.getComponent<scene::component::Tilemap>();
+		if (!tilemap.asset || !tilemap.asset->tileset || tilemap.asset->layers.empty())
+			return;
+		const auto& assetData = *tilemap.asset;
+		const auto& tileset = *assetData.tileset;
+		const math::Transform worldTransform = ioScene.getWorldTransform(entity);
+		const float cellSize = assetData.cellSize;
+		const float originX = -static_cast<float>(assetData.width - 1) * 0.5f * cellSize;
+		const float originY = static_cast<float>(assetData.height - 1) * 0.5f * cellSize;
+		const math::vec2f half{cellSize * worldTransform.scale().x() * 0.5f,
+							   cellSize * worldTransform.scale().y() * 0.5f};
+		BodyDescription description{.type = scene::SceneBody::BodyType::Static,
+									.pose = poseOf(worldTransform),
+									.boxes = {}};
+		for (const auto& layer: assetData.layers) {
+			for (uint32_t y = 0; y < assetData.height; ++y) {
+				for (uint32_t x = 0; x < assetData.width; ++x) {
+					const int32_t tileIdx = layer.getTile(x, y);
+					if (tileIdx < 0 || !tileset.isCollidable(static_cast<uint32_t>(tileIdx)))
+						continue;
+					description.boxes.push_back(
+							{.halfExtents = half,
+							 .offset = {(originX + static_cast<float>(x) * cellSize) * worldTransform.scale().x(),
+										(originY - static_cast<float>(y) * cellSize) * worldTransform.scale().y()}});
+				}
+			}
 		}
-		bodyDef.fixedRotation = sbody.fixedRotation;
-		bodyDef.position.x = worldTransform.translation().x();
-		bodyDef.position.y = worldTransform.translation().y();
-		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
-
-		const b2BodyId body = b2CreateBody(worldId, &bodyDef);
-		OWL_CORE_TRACE("Physics: Body created ({} {} {}).", body.index1, body.world0, body.generation)
-		sbody.bodyId = store(body, entity);
-		trackBody(iEntity, sbody.bodyId, body);
-
-		const b2Polygon dynamicBox = b2MakeBox(sbody.colliderSize.x() * worldTransform.scale().x() * 0.5f,
-											   sbody.colliderSize.y() * worldTransform.scale().y() * 0.5f);
-		b2ShapeDef shapeDef = b2DefaultShapeDef();
-		shapeDef.density = sbody.density;
-		shapeDef.material.friction = sbody.friction;
-		shapeDef.material.restitution = sbody.restitution;
-		shapeDef.enableContactEvents = true;
-		b2CreatePolygonShape(body, &shapeDef, &dynamicBox);
+		if (description.boxes.empty())
+			return;
+		if (const uint64_t bodyId = create(description, entity); bodyId != 0)
+			tilemapBodies[iEntity] = bodyId;
 	}
 
 	// Created a frame late so the entity is fully set up (transform, parent) when its body is placed.
@@ -393,12 +425,11 @@ public:
 		return first < second ? std::pair{first, second} : std::pair{second, first};
 	}
 
-	b2WorldId worldId{0, 0};
 	uint64_t nextId = 1;
-	std::unordered_map<uint64_t, b2BodyId> bodies;
+	std::unordered_map<uint64_t, uint32_t> bodies;
 	std::unordered_map<entt::entity, uint64_t> tilemapBodies;
 	std::vector<entt::entity> pendingBodies;
-	std::unordered_map<uint64_t, core::UUID> bodyOwners;
+	std::unordered_map<uint32_t, core::UUID> bodyOwners;
 	std::map<std::pair<uint64_t, uint64_t>, uint32_t> touching;
 	std::vector<PhysicCommand::CollisionEvent> collisionBegins;
 	size_t frameEventsStart = 0;
@@ -409,7 +440,9 @@ public:
 	uint32_t stepsSinceWrite = 0;
 	uint32_t lastStepCount = 0;
 	float alpha = 1.f;
+	// Declared before the Jolt world, which runs its jobs on it: destroyed after it.
 	uniq<SolverTaskPool> taskPool;
+	uniq<JoltWorld> jolt;
 };
 namespace {
 
@@ -428,135 +461,61 @@ auto runningWorld(const scene::Entity& iEntity, const char* iFunc) -> PhysicsWor
 	return world;
 }
 
+// The Jolt body of an entity's PhysicBody, when it is not static.
+auto movingBody(const PhysicsWorld& iWorld, const scene::Entity& iEntity) -> std::optional<uint32_t> {
+	if (!iEntity.hasComponent<scene::component::PhysicBody>())
+		return std::nullopt;
+	const auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
+	if (body.type == scene::SceneBody::BodyType::Static)
+		return std::nullopt;
+	return iWorld.find(body.bodyId);
+}
+
 }// namespace
 
 void PhysicCommand::init(scene::Scene& ioScene) {
 	if (isInitialized(ioScene))
 		destroy(ioScene);
 	if (isCpuUnsupported()) {
-		OWL_CORE_WARN("Physics: Box2D is built with AVX2, which this CPU lacks; physics disabled.")
+		OWL_CORE_WARN("Physics: Jolt is built with SSE4.2, which this CPU lacks; physics disabled.")
 		return;
 	}
 	const auto world = mkShared<PhysicsWorld>();
 	ioScene.m_physicsWorld = world;
 	world->settings = ioScene.getPhysicsSettings().clamped();
-	b2WorldDef def = b2DefaultWorldDef();
-	def.gravity = {.x = 0.0f, .y = -9.81f};
 	uint32_t dynamicBodies = 0;
 	for (const auto [e, body]: ioScene.registry.view<scene::component::PhysicBody>().each())
 		if (body.body.type == scene::SceneBody::BodyType::Dynamic)
 			++dynamicBodies;
-	if (const uint32_t workers = world->settings.getEffectiveWorkerCount(dynamicBodies); workers > 1) {
+	if (const uint32_t workers = world->settings.getEffectiveWorkerCount(dynamicBodies); workers > 1)
 		world->taskPool = mkUniq<SolverTaskPool>(workers);
-		world->taskPool->configure(def);
-	}
-	world->worldId = b2CreateWorld(&def);
+	world->jolt = mkUniq<JoltWorld>(world->taskPool.get());
+	OWL_CORE_DEBUG("Physics: World created ({} workers).", getWorkerCount(ioScene))
 
-	OWL_CORE_DEBUG("Physics: World created ({} {}).", world->worldId.index1, world->worldId.generation)
-
-	// Add entities...
 	for (const auto e: ioScene.registry.view<scene::component::PhysicBody, scene::component::Transform>())
 		world->createPhysicBody(ioScene, e);
-
-	for (const auto view = ioScene.registry.view<scene::component::Tilemap, scene::component::Transform>();
-		 const auto e: view) {
-		const scene::Entity entity{e, &ioScene};
-		const auto& tilemap = entity.getComponent<scene::component::Tilemap>();
-		if (!tilemap.asset || !tilemap.asset->tileset || tilemap.asset->layers.empty())
-			continue;
-		const auto& assetData = *tilemap.asset;
-		const auto* tilesetPtr = assetData.tileset.get();
-		bool anyCollidable = false;
-		for (uint32_t i = 0; i < tilesetPtr->tileCount(); ++i) {
-			if (tilesetPtr->isCollidable(i)) {
-				anyCollidable = true;
-				break;
-			}
-		}
-		if (!anyCollidable)
-			continue;
-		const math::Transform worldTransform = ioScene.getWorldTransform(entity);
-		b2BodyDef bodyDef = b2DefaultBodyDef();
-		bodyDef.type = b2_staticBody;
-		bodyDef.position.x = worldTransform.translation().x();
-		bodyDef.position.y = worldTransform.translation().y();
-		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
-		const b2BodyId tileBody = b2CreateBody(world->worldId, &bodyDef);
-		world->tilemapBodies[e] = world->store(tileBody, entity);
-		const float cellSize = assetData.cellSize;
-		const float originX = -static_cast<float>(assetData.width - 1) * 0.5f * cellSize;
-		const float originY = static_cast<float>(assetData.height - 1) * 0.5f * cellSize;
-		const float halfX = cellSize * worldTransform.scale().x() * 0.5f;
-		const float halfY = cellSize * worldTransform.scale().y() * 0.5f;
-		b2ShapeDef shapeDef = b2DefaultShapeDef();
-		shapeDef.density = 0.f;// static
-		shapeDef.material.friction = 0.5f;
-		shapeDef.enableContactEvents = true;
-		for (const auto& layer: assetData.layers) {
-			for (uint32_t y = 0; y < assetData.height; ++y) {
-				for (uint32_t x = 0; x < assetData.width; ++x) {
-					const int32_t tileIdx = layer.getTile(x, y);
-					if (tileIdx < 0 || !tilesetPtr->isCollidable(static_cast<uint32_t>(tileIdx)))
-						continue;
-					const float cx = (originX + static_cast<float>(x) * cellSize) * worldTransform.scale().x();
-					const float cy = (originY - static_cast<float>(y) * cellSize) * worldTransform.scale().y();
-					const b2Polygon cellBox = b2MakeOffsetBox(halfX, halfY, b2Vec2{.x = cx, .y = cy}, b2MakeRot(0.f));
-
-					b2CreatePolygonShape(tileBody, &shapeDef, &cellBox);
-				}
-			}
-		}
-	}
-
+	for (const auto e: ioScene.registry.view<scene::component::Tilemap, scene::component::Transform>())
+		world->createTilemapBody(ioScene, e);
 	for (const auto view = ioScene.registry.view<scene::component::RaycastDoor, scene::component::Transform>();
 		 const auto e: view) {
 		const scene::Entity entity{e, &ioScene};
 		if (entity.hasComponent<scene::component::PhysicBody>())
 			continue;// designer-managed body, leave it alone
 		auto& door = view.get<scene::component::RaycastDoor>(e);
-		const math::Transform worldTransform = ioScene.getWorldTransform(entity);
-		b2BodyDef bodyDef = b2DefaultBodyDef();
-		bodyDef.type = b2_kinematicBody;
-		bodyDef.fixedRotation = true;
-		bodyDef.position.x = worldTransform.translation().x();
-		bodyDef.position.y = worldTransform.translation().y();
-		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
-		const b2BodyId body = b2CreateBody(world->worldId, &bodyDef);
 		using OD = scene::component::RaycastDoor::OpeningDirection;
 		const bool slideAlongY = (door.openingDirection == OD::North || door.openingDirection == OD::South);
 		constexpr float kPlateHalfThickness = 0.05f;// matches the renderer's lateral bias
-		const float halfX = slideAlongY ? kPlateHalfThickness : 0.5f;
-		const float halfY = slideAlongY ? 0.5f : kPlateHalfThickness;
-		const b2Polygon plateBox = b2MakeBox(halfX, halfY);
-		b2ShapeDef shapeDef = b2DefaultShapeDef();
-		shapeDef.density = 0.f;
-		shapeDef.material.friction = 0.5f;
-		shapeDef.enableContactEvents = true;
-		b2CreatePolygonShape(body, &shapeDef, &plateBox);
-		door.bodyId = world->store(body, entity);
+		const math::vec2f half{slideAlongY ? kPlateHalfThickness : 0.5f, slideAlongY ? 0.5f : kPlateHalfThickness};
+		door.bodyId = world->create(PhysicsWorld::movedBlock(ioScene.getWorldTransform(entity), half), entity);
 	}
 	for (const auto view = ioScene.registry.view<scene::component::RaycastPushWall, scene::component::Transform>();
 		 const auto e: view) {
 		const scene::Entity entity{e, &ioScene};
 		if (entity.hasComponent<scene::component::PhysicBody>())
 			continue;
-		auto& push = view.get<scene::component::RaycastPushWall>(e);
-		const math::Transform worldTransform = ioScene.getWorldTransform(entity);
-		b2BodyDef bodyDef = b2DefaultBodyDef();
-		bodyDef.type = b2_kinematicBody;
-		bodyDef.fixedRotation = true;
-		bodyDef.position.x = worldTransform.translation().x();
-		bodyDef.position.y = worldTransform.translation().y();
-		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
-		const b2BodyId body = b2CreateBody(world->worldId, &bodyDef);
 		// Pushwall footprint: full 1×1 block — same as the rendered cube.
-		const b2Polygon block = b2MakeBox(0.5f, 0.5f);
-		b2ShapeDef shapeDef = b2DefaultShapeDef();
-		shapeDef.density = 0.f;
-		shapeDef.material.friction = 0.5f;
-		shapeDef.enableContactEvents = true;
-		b2CreatePolygonShape(body, &shapeDef, &block);
-		push.bodyId = world->store(body, entity);
+		view.get<scene::component::RaycastPushWall>(e).bodyId =
+				world->create(PhysicsWorld::movedBlock(ioScene.getWorldTransform(entity), {0.5f, 0.5f}), entity);
 	}
 	// Bodies follow their components from now on: added ones are created, removed ones destroyed.
 	world->connect(ioScene.registry);
@@ -567,8 +526,7 @@ void PhysicCommand::destroy(scene::Scene& ioScene) {
 	if (!world)
 		return;
 	world->disconnect(ioScene.registry);
-	b2DestroyWorld(world->worldId);
-	world->worldId = {.index1 = 0, .generation = 0};
+	world->jolt.reset();
 	world->bodies.clear();
 }
 
@@ -586,10 +544,7 @@ void PhysicCommand::step(scene::Scene& ioScene) {
 	impl.createPendingBodies(ioScene);
 	if (impl.settings.interpolate)
 		impl.capturePrevious();
-	b2World_Step(impl.worldId, static_cast<float>(ioScene.getSimulationClock().getStepSeconds()),
-				 static_cast<int>(impl.settings.solverSubSteps));
-	if (impl.taskPool != nullptr)
-		impl.taskPool->recycle();
+	impl.jolt->step(static_cast<float>(ioScene.getSimulationClock().getStepSeconds()), impl.settings.solverSubSteps);
 	impl.collectContactEvents();
 	impl.captureCurrent();
 	++impl.stepsSinceWrite;
@@ -654,7 +609,7 @@ void PhysicCommand::shiftOrigin(scene::Scene& ioScene, const math::vec2f& iShift
 	OWL_PROFILE_FUNCTION()
 
 	if (auto* const world = ioScene.getPhysicsWorld(); world != nullptr)
-		world->shiftOrigin({iShift.x(), iShift.y()});
+		world->shiftOrigin(iShift);
 }
 
 auto PhysicCommand::takeCollisionEvents(scene::Scene& ioScene) -> std::vector<CollisionEvent> {
@@ -684,38 +639,30 @@ void PhysicCommand::destroyBody(const scene::Entity& iEntity) {
 
 void PhysicCommand::impulse(const scene::Entity& iEntity, const math::vec2f& iImpulse) {
 	const auto* const world = runningWorld(iEntity, "impulse");
-	if (world == nullptr || !iEntity.hasComponent<scene::component::PhysicBody>())
+	if (world == nullptr)
 		return;
-	auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
-	if (body.type == scene::SceneBody::BodyType::Static)
-		return;
-	if (const auto handle = world->find(body.bodyId); handle)
-		b2Body_ApplyLinearImpulseToCenter(*handle, {iImpulse.x(), iImpulse.y()}, true);
+	if (const auto body = movingBody(*world, iEntity); body)
+		world->jolt->addImpulse(*body, iImpulse);
 }
 
 auto PhysicCommand::getVelocity(const scene::Entity& iEntity) -> math::vec2f {
 	const auto* const world = runningWorld(iEntity, "getVelocity");
-	if (world == nullptr || !iEntity.hasComponent<scene::component::PhysicBody>())
+	if (world == nullptr)
 		return {0.0f, 0.0f};
-	auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
-	if (body.type == scene::SceneBody::BodyType::Static)
-		return {0.0f, 0.0f};
-	const auto handle = world->find(body.bodyId);
-	if (!handle)
-		return {0.0f, 0.0f};
-	const auto [x, y] = b2Body_GetLinearVelocity(*handle);
-	return {x, y};
+	const auto body = movingBody(*world, iEntity);
+	return body ? world->jolt->getLinearVelocity(*body) : math::vec2f{0.0f, 0.0f};
 }
 
 void PhysicCommand::setTransform(const scene::Entity& iEntity, const math::vec2f& iPosition, const float iRotation) {
 	auto* const world = runningWorld(iEntity, "setTransform");
 	if (world == nullptr)
 		return;
+	const BodyPose pose{.position = iPosition, .angle = iRotation};
 	// Explicit `PhysicBody` takes priority — that's the designer-authored body.
 	if (iEntity.hasComponent<scene::component::PhysicBody>()) {
 		auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
 		if (const auto handle = world->find(body.bodyId); handle) {
-			b2Body_SetTransform(*handle, {iPosition.x(), iPosition.y()}, b2MakeRot(iRotation));
+			world->jolt->setPose(*handle, pose);
 			world->snapBody(body.bodyId);
 		}
 		return;
@@ -727,67 +674,52 @@ void PhysicCommand::setTransform(const scene::Entity& iEntity, const math::vec2f
 	else if (iEntity.hasComponent<scene::component::RaycastPushWall>())
 		bodyId = iEntity.getComponent<scene::component::RaycastPushWall>().bodyId;
 	if (const auto handle = world->find(bodyId); handle)
-		b2Body_SetTransform(*handle, {iPosition.x(), iPosition.y()}, b2MakeRot(iRotation));
+		world->jolt->setPose(*handle, pose);
 }
 
 void PhysicCommand::setVelocity(const scene::Entity& iEntity, const math::vec2f& iVelocity) {
 	const auto* const world = runningWorld(iEntity, "setVelocity");
-	if (world == nullptr || !iEntity.hasComponent<scene::component::PhysicBody>())
+	if (world == nullptr)
 		return;
-	auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
-	if (body.type == scene::SceneBody::BodyType::Static)
-		return;
-	if (const auto handle = world->find(body.bodyId); handle)
-		b2Body_SetLinearVelocity(*handle, {iVelocity.x(), iVelocity.y()});
+	if (const auto body = movingBody(*world, iEntity); body)
+		world->jolt->setLinearVelocity(*body, iVelocity);
 }
 
 void PhysicCommand::setGravityScale(const scene::Entity& iEntity, const float iScale) {
 	const auto* const world = runningWorld(iEntity, "setGravityScale");
 	if (world == nullptr || !iEntity.hasComponent<scene::component::PhysicBody>())
 		return;
-	auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
-	if (body.type != scene::SceneBody::BodyType::Dynamic)
+	if (iEntity.getComponent<scene::component::PhysicBody>().body.type != scene::SceneBody::BodyType::Dynamic)
 		return;
-	const auto handle = world->find(body.bodyId);
-	if (!handle)
-		return;
-	b2Body_SetGravityScale(*handle, iScale);
-	// Wake the body so the new scale takes effect immediately.
-	b2Body_SetAwake(*handle, true);
+	if (const auto body = movingBody(*world, iEntity); body)
+		world->jolt->setGravityFactor(*body, iScale);
 }
 
 auto PhysicCommand::getSnapshot(const scene::Entity& iEntity) -> PhysicsSnapshot {
 	PhysicsSnapshot snapshot;
 	const auto* const world = worldOf(iEntity);
-	if (world == nullptr || !iEntity.hasComponent<scene::component::PhysicBody>())
+	if (world == nullptr)
 		return snapshot;
-	const auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
-	if (body.type == scene::SceneBody::BodyType::Static)
+	const auto body = movingBody(*world, iEntity);
+	if (!body)
 		return snapshot;
-	const auto handle = world->find(body.bodyId);
-	if (!handle)
-		return snapshot;
-	const auto [vx, vy] = b2Body_GetLinearVelocity(*handle);
-	snapshot.linearVelocity = {vx, vy};
-	snapshot.angularVelocity = b2Body_GetAngularVelocity(*handle);
-	snapshot.awake = b2Body_IsAwake(*handle);
+	snapshot.linearVelocity = world->jolt->getLinearVelocity(*body);
+	snapshot.angularVelocity = world->jolt->getAngularVelocity(*body);
+	snapshot.awake = world->jolt->isAwake(*body);
 	return snapshot;
 }
 
 void PhysicCommand::applySnapshot(const scene::Entity& iEntity, const PhysicsSnapshot& iSnapshot) {
 	const auto* const world = worldOf(iEntity);
-	if (world == nullptr || !iEntity.hasComponent<scene::component::PhysicBody>())
+	if (world == nullptr)
 		return;
-	const auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
-	if (body.type == scene::SceneBody::BodyType::Static)
+	const auto body = movingBody(*world, iEntity);
+	if (!body)
 		return;
-	const auto handle = world->find(body.bodyId);
-	if (!handle)
-		return;
-	b2Body_SetLinearVelocity(*handle, {iSnapshot.linearVelocity.x(), iSnapshot.linearVelocity.y()});
-	b2Body_SetAngularVelocity(*handle, iSnapshot.angularVelocity);
+	world->jolt->setLinearVelocity(*body, iSnapshot.linearVelocity);
+	world->jolt->setAngularVelocity(*body, iSnapshot.angularVelocity);
 	if (iSnapshot.awake)
-		b2Body_SetAwake(*handle, true);
+		world->jolt->wake(*body);
 }
 
 }// namespace owl::physics

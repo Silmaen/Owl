@@ -11,7 +11,7 @@ stacked under one HUD, in the editor and in game.**
   renderer-stack layers that compose with each other and the HUD, in the editor viewport and in Play.
 - **Owl Nest editor**: scenes, tilemaps, node graphs, animations, HUDs and prefabs with undo/redo and hot reload,
   driven by an [MCP server](doc/pages/mcp.md) as well as by hand.
-- **Lua gameplay, C++ engine**: scripts on entities, Box2D physics, OpenAL sound, OpenGL 4.5 or Vulkan 1.3+ rendering,
+- **Lua gameplay, C++ engine**: scripts on entities, Jolt physics, OpenAL sound, OpenGL 4.5 or Vulkan 1.3+ rendering,
   on Linux x64/arm64 and Windows x64.
 
 ## Where to start

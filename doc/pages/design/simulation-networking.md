@@ -34,12 +34,12 @@ linux-x64, linux-arm64, windows-x64 (MinGW and clang-cl), android-arm64 and the 
 | FMA contraction      | `-ffp-contract=off` on every Owl target (Clang fuses `a*b+c` on arm64, GCC in GNU mode)                                                                      | Done        |
 | Maths library        | `math::sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `exp`, `log`, `pow` (`math/elementaryFunctions.h`), never the system libm, in `math` and `scene` | Done        |
 | Fast maths           | `-fno-fast-math` on every Owl target; denormals kept (no flush to zero)                                                                                      | Done        |
-| 2D physics           | Box2D 3 deterministic across platforms (its build sets `-ffp-contract=off`, its own trigonometry), until 2D moves to Jolt                                    | Done        |
-| Jolt physics         | `JPH_CROSS_PLATFORM_DETERMINISTIC`, no FMA, SSE4.2 on every x86_64 build, NEON on arm64 ([Physics API](physics-api.md))                                      | In progress |
+| 2D physics           | Jolt: bit-exact on x86_64 and arm64 and for every worker count, same `PhysicCommand` and Lua API                                                             | Done        |
+| Jolt physics         | `JPH_CROSS_PLATFORM_DETERMINISTIC`, no FMA, SSE4.2 on every x86_64 build, NEON on arm64 ([Physics API](physics-api.md))                                      | Done        |
 | Lua                  | Fixed string hash seed; `math.sin`… `math.pow` bound to the engine maths (the `^` operator keeps the libm)                                                   | Done        |
 | Lua iteration        | `table.sorted_keys(t)`: booleans, numbers, strings in a fixed order whatever the insertion history                                                           | Done        |
 | Test                 | Bit fingerprints of the engine maths checked on every target (`ElementaryFunctions` tests, arm64 nightly)                                                    | Done        |
-| Test                 | Frozen world hash of a Box2D and Lua scene (`WorldHashGoldenTest`), the same value on every target                                                           | Done        |
+| Test                 | Frozen world hash of a Jolt and Lua scene (`WorldHashGoldenTest`), the same value on every target                                                            | Done        |
 
 ## Input recording and replay (v0.7.0) {#simulation-replay}
 

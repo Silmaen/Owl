@@ -37,7 +37,7 @@ Options:
 
 Examples:
 ```cmake
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d REQUIRED)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Jolt REQUIRED MODULE_TARGET "Jolt::Jolt")
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw3 MODULE_TARGET glfw REQUIRED)
 owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED)
 ```

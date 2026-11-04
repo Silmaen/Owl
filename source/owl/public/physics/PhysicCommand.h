@@ -23,7 +23,7 @@
 namespace owl::physics {
 /**
  * @brief
- *  Physics of the scenes: each scene owns its Box2D world, created by `init()` and reached through the
+ *  Physics of the scenes: each scene owns its Jolt world (2D bodies locked to the XY plane), created by `init()` and reached through the
  *  scene (scene-level calls) or the entity (body calls).
  */
 class OWL_API PhysicCommand final {
@@ -112,7 +112,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Number of threads running the Box2D solver of a scene.
+	 *  Number of threads running the physics solver of a scene.
 	 * @param[in] iScene The scene.
 	 * @return 1 for the single-threaded solver, the task pool size when multi-threaded, 0 without a world.
 	 */
@@ -170,17 +170,17 @@ public:
 	 * @brief
 	 *  Hand over the collisions that began during the steps since the last call on a scene, and clear them.
 	 *
-	 * Built from Box2D begin-touch contact events. A pair is reported once when its first contact
+	 * Built from the contacts Jolt adds and removes. A pair is reported once when its first contact
 	 * begins; contacts between further shapes of the same two entities (tilemap cells) are not
 	 * reported again until all of them have ended.
 	 * @param[in,out] ioScene The scene.
-	 * @return The begun collisions, in Box2D event order.
+	 * @return The begun collisions, sorted by body: the same order on every run and worker count.
 	 */
 	[[nodiscard]] static auto takeCollisionEvents(scene::Scene& ioScene) -> std::vector<CollisionEvent>;
 
 	/**
 	 * @brief
-	 *  Remove the Box2D bodies owned by an entity (PhysicBody, tilemap, raycast door or pushwall body).
+	 *  Remove the physics bodies owned by an entity (PhysicBody, tilemap, raycast door or pushwall body).
 	 *
 	 * Component removal already does it; this drops the bodies of an entity that stays in the scene. No-op
 	 * when the entity's scene has no world or the entity owns no body.

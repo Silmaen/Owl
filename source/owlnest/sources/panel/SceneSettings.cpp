@@ -514,14 +514,17 @@ void SceneSettings::renderPhysicsSection() const {
 	scene::PhysicsSettings edited = before;
 	if (gui::widgets::beginProperties("##physics")) {
 		auto subSteps = static_cast<int>(edited.solverSubSteps);
-		if (gui::widgets::propertyInt("Solver Sub-steps", subSteps, static_cast<int>(defaults.solverSubSteps), 1,
-									  static_cast<int>(scene::PhysicsSettings::maxSolverSubSteps)))
+		if (gui::widgets::propertyInt(
+					"Collision Steps", subSteps, static_cast<int>(defaults.solverSubSteps), 1,
+					static_cast<int>(scene::PhysicsSettings::maxSolverSubSteps), "%d",
+					"Collision passes inside one physics step: more keeps fast bodies and long chains stable, "
+					"at a cost per pass."))
 			edited.solverSubSteps = static_cast<uint32_t>(subSteps);
 		auto workers = static_cast<int>(edited.workerCount);
 		if (gui::widgets::propertyInt("Solver Threads", workers, static_cast<int>(defaults.workerCount), 0,
 									  static_cast<int>(scene::PhysicsSettings::maxWorkerCount),
 									  workers == 0 ? "auto" : "%d",
-									  "Threads of the Box2D solver: 0 picks a count from the hardware, 1 is "
+									  "Threads of the physics solver: 0 picks a count from the hardware, 1 is "
 									  "single-threaded."))
 			edited.workerCount = static_cast<uint32_t>(workers);
 		std::ignore = gui::widgets::propertyBool("Interpolate", edited.interpolate, defaults.interpolate,

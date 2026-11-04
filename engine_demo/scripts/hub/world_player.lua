@@ -1,6 +1,6 @@
 -- World map player controller (top-down view).
 -- Demonstrates: top-down 4-directional movement using physics.set_velocity
--- with gravity scale = 0 to opt out of the global Box2D gravity.
+-- with gravity scale = 0 to opt out of the global gravity.
 --
 -- The world physic uses a downward gravity (-9.81 on Y). For top-down play we
 -- set this body's gravity scale to 0 once at create time, so set_velocity is

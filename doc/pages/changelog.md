@@ -29,6 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Entities created in Play take their UUIDs from the scene seed, so a replay creates the same entities under the same ids.
 - Every Owl target builds with `-ffp-contract=off -fno-fast-math`, and the scene systems use the engine maths instead of the libm: the simulation gives the same bits on every target.
 - Lua `math.random` and `math.randomseed` draw from the `lua` stream of the scene, and Lua tables iterate in the same order on every run.
+- 2D physics runs on Jolt instead of Box2D: bit-exact on every target and for every worker count, same `PhysicCommand` and Lua API.
+
+### Removed
+
+- Box2D and the `OWL_PHYSICS_AVX2` option.
 
 ### Fixed
 

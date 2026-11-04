@@ -21,7 +21,7 @@ using namespace owl;
 namespace {
 
 // Final state of the reference scene, the same value on every target, instruction set and worker count.
-constexpr uint64_t g_GoldenHash = 0x36d15cc0c444dc80ull;
+constexpr uint64_t g_GoldenHash = 0x9a3bc1dd30ffe4deull;
 
 constexpr JPH::ObjectLayer g_StaticLayer = 0;
 constexpr JPH::ObjectLayer g_MovingLayer = 1;
@@ -73,7 +73,8 @@ public:
 		m_objectFilter.EnableCollision(g_MovingLayer, g_MovingLayer);
 		m_broadPhaseLayers.MapObjectToBroadPhaseLayer(g_StaticLayer, JPH::BroadPhaseLayer(0));
 		m_broadPhaseLayers.MapObjectToBroadPhaseLayer(g_MovingLayer, JPH::BroadPhaseLayer(1));
-		m_system.Init(1024, 0, 4096, 4096, m_broadPhaseLayers, m_broadPhaseFilter, m_objectFilter);
+		m_broadPhaseFilter = mkUniq<JPH::ObjectVsBroadPhaseLayerFilterTable>(m_broadPhaseLayers, 2, m_objectFilter, 2);
+		m_system.Init(1024, 0, 4096, 4096, m_broadPhaseLayers, *m_broadPhaseFilter, m_objectFilter);
 		auto& bodies = m_system.GetBodyInterface();
 		bodies.CreateAndAddBody(JPH::BodyCreationSettings(new JPH::BoxShape(JPH::Vec3(40.0f, 1.0f, 40.0f)),
 														  JPH::RVec3(0.0f, -1.0f, 0.0f), JPH::Quat::sIdentity(),
@@ -117,6 +118,8 @@ public:
 		for (uint32_t step = 0; step < g_StepCount; ++step)
 			EXPECT_EQ(m_system.Update(g_TimeStep, 1, &temp, &ioJobs), JPH::EPhysicsUpdateError::None);
 		const auto& bodies = m_system.GetBodyInterfaceNoLock();
+		EXPECT_GT(bodies.GetPosition(m_moving.front()).GetY(), 0.f)
+				<< "the base of the pyramid fell through the ground";
 		Fnv1a hash;
 		for (const auto id: m_moving) {
 			hash.add(JPH::Vec3(bodies.GetPosition(id)));
@@ -136,8 +139,8 @@ private:
 	JPH::BroadPhaseLayerInterfaceTable m_broadPhaseLayers{2, 2};
 	/// Which object layers collide.
 	JPH::ObjectLayerPairFilterTable m_objectFilter{2};
-	/// Which object layer meets which broad-phase layer, derived from the two tables above.
-	JPH::ObjectVsBroadPhaseLayerFilterTable m_broadPhaseFilter{m_broadPhaseLayers, 2, m_objectFilter, 2};
+	/// Which object layer meets which broad-phase layer, built from the two tables once they are filled.
+	uniq<JPH::ObjectVsBroadPhaseLayerFilterTable> m_broadPhaseFilter;
 	/// The simulated world.
 	JPH::PhysicsSystem m_system;
 	/// Dynamic bodies, in creation order, which is the hash order.
@@ -146,7 +149,10 @@ private:
 
 class JoltDeterminismTest : public testing::Test {
 public:
+	// The engine registers Jolt for its worlds the same way: whoever comes first owns the registry.
 	static void SetUpTestSuite() {
+		if (JPH::Factory::sInstance != nullptr)
+			return;
 		JPH::RegisterDefaultAllocator();
 		s_factory = mkUniq<JPH::Factory>();
 		JPH::Factory::sInstance = s_factory.get();
@@ -154,6 +160,8 @@ public:
 	}
 
 	static void TearDownTestSuite() {
+		if (!s_factory)
+			return;
 		JPH::UnregisterTypes();
 		JPH::Factory::sInstance = nullptr;
 		s_factory.reset();
