@@ -1674,3 +1674,217 @@ Entities:
       Name: mesh_pixel
     Visibility:
       gameVisible: true
+  - Entity: 3900000000000002400
+    Tag:
+      tag: FloorCollider
+    Transform:
+      translation: [0.5, -0.1, 0.5]
+      rotation: [0, 0, 0]
+      scale: [8, 0.2, 8]
+    PhysicBody:
+      type: Static
+      dimension: Space
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.7
+  - Entity: 3900000000000002401
+    Tag:
+      tag: BackWallCollider
+    Transform:
+      translation: [0.5, 1.5, -3.3]
+      rotation: [0, 0, 0]
+      scale: [8, 3, 0.2]
+    PhysicBody:
+      type: Static
+      dimension: Space
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.7
+  - Entity: 3900000000000002402
+    Tag:
+      tag: FrontWallCollider
+    Transform:
+      translation: [0.5, 1.5, 4.3]
+      rotation: [0, 0, 0]
+      scale: [8, 3, 0.2]
+    PhysicBody:
+      type: Static
+      dimension: Space
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.7
+  - Entity: 3900000000000002403
+    Tag:
+      tag: LeftWallCollider
+    Transform:
+      translation: [-3.3, 1.5, 0.5]
+      rotation: [0, 0, 0]
+      scale: [0.2, 3, 8]
+    PhysicBody:
+      type: Static
+      dimension: Space
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.7
+  - Entity: 3900000000000002404
+    Tag:
+      tag: RightWallCollider
+    Transform:
+      translation: [4.3, 1.5, 0.5]
+      rotation: [0, 0, 0]
+      scale: [0.2, 3, 8]
+    PhysicBody:
+      type: Static
+      dimension: Space
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.7
+  - Entity: 3900000000000002410
+    Tag:
+      tag: StackBarrel1
+    Transform:
+      translation: [3.8, 0.46, 1.7]
+      rotation: [0, 0.4, 0]
+      scale: [1, 1, 1]
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Cylinder
+      fixedRotation: false
+      colliderSize: [0.6, 0.9, 0.6]
+      density: 1
+      restitution: 0.05
+      friction: 0.6
+  - Entity: 3900000000000002411
+    Tag:
+      tag: StackBarrel1Mesh
+    Transform:
+      translation: [0, -0.45, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000002410}
+    MeshRenderer:
+      mesh: gid:04dd2abdfcec9e7a:meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002412
+    Tag:
+      tag: StackBarrel2
+    Transform:
+      translation: [3.8, 0.46, 2.35]
+      rotation: [0, 1.3, 0]
+      scale: [1, 1, 1]
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Cylinder
+      fixedRotation: false
+      colliderSize: [0.6, 0.9, 0.6]
+      density: 1
+      restitution: 0.05
+      friction: 0.6
+  - Entity: 3900000000000002413
+    Tag:
+      tag: StackBarrel2Mesh
+    Transform:
+      translation: [0, -0.45, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000002412}
+    MeshRenderer:
+      mesh: gid:04dd2abdfcec9e7a:meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002414
+    Tag:
+      tag: StackBarrel3
+    Transform:
+      translation: [3.8, 1.38, 2.025]
+      rotation: [0, 2.2, 0]
+      scale: [1, 1, 1]
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Cylinder
+      fixedRotation: false
+      colliderSize: [0.6, 0.9, 0.6]
+      density: 1
+      restitution: 0.05
+      friction: 0.6
+  - Entity: 3900000000000002415
+    Tag:
+      tag: StackBarrel3Mesh
+    Transform:
+      translation: [0, -0.45, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000002414}
+    MeshRenderer:
+      mesh: gid:04dd2abdfcec9e7a:meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002416
+    Tag:
+      tag: KickBarrel
+    Transform:
+      translation: [3.75, 0.46, 0.9]
+      rotation: [0, 0.9, 0]
+      scale: [1, 1, 1]
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Cylinder
+      fixedRotation: false
+      colliderSize: [0.6, 0.9, 0.6]
+      density: 1
+      restitution: 0.05
+      friction: 0.6
+    Trigger: {Type: Interaction, CallbackName: on_barrel_kick}
+    LuaScript:
+      scriptPath: gid:875dd5ddaa7fe91d:scripts/tavern/barrel_kick.lua
+  - Entity: 3900000000000002417
+    Tag:
+      tag: KickBarrelMesh
+    Transform:
+      translation: [0, -0.45, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Hierarchy: {parentId: 3900000000000002416}
+    MeshRenderer:
+      mesh: gid:04dd2abdfcec9e7a:meshes/tavern/barrel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - material: gid:6bec311f29144233:materials/rough_wood.owlmat
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true

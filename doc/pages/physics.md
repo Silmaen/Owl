@@ -43,15 +43,17 @@ until `destroy(scene)`, `onEndRuntime()` or its destructor, so nothing dangles. 
 
 `PhysicBody` wraps a `SceneBody` (YAML key `PhysicBody`):
 
-| Field         | Type       | Default     | Description                                         |
-|---------------|------------|-------------|-----------------------------------------------------|
-| type          | `BodyType` | `Dynamic`   | How Jolt treats the body    (see table below)         |
-| fixedRotation | `bool`     | `false`     | Lock rotation so the body cannot spin               |
-| colliderSize  | `vec3f`    | `{1, 1, 1}` | Half-extents of the box collider (x, y used for 2D) |
-| density       | `float`    | `1.0`       | Material density, affects mass                      |
-| restitution   | `float`    | `0.0`       | Bounciness coefficient (0 = no bounce, 1 = full)    |
-| friction      | `float`    | `0.5`       | Surface friction coefficient                        |
-| bodyId        | `uint64_t` | `0`         | Runtime-only internal id (not serialized)           |
+| Field         | Type        | Default     | Description                                                     |
+|---------------|-------------|-------------|-----------------------------------------------------------------|
+| type          | `BodyType`  | `Dynamic`   | How Jolt treats the body (see table below)                       |
+| dimension     | `Dimension` | `Plane`     | `Plane`: 2D, locked to the XY plane; `Space`: 3D, free in space |
+| shape         | `Shape`     | `Box`       | `Box`, `Sphere`, `Capsule` or `Cylinder` (see below)            |
+| fixedRotation | `bool`      | `false`     | Lock rotation so the body cannot spin                           |
+| colliderSize  | `vec3f`     | `{1, 1, 1}` | Size of the collider, times the entity scale (see below)        |
+| density       | `float`     | `1.0`       | Material density, affects mass                                  |
+| restitution   | `float`     | `0.0`       | Bounciness coefficient (0 = no bounce, 1 = full)                |
+| friction      | `float`     | `0.5`       | Surface friction coefficient                                    |
+| bodyId        | `uint64_t`  | `0`         | Runtime-only internal id (not serialized)                       |
 
 `bodyId` is assigned by `PhysicCommand::init()` and maps to the Jolt body of the body table.
 
@@ -62,6 +64,23 @@ until `destroy(scene)`, `onEndRuntime()` or its destructor, so nothing dangles. 
 | `Static`    | Immovable body, participates in collision but never moves          |
 | `Dynamic`   | Fully simulated body, affected by forces, impulses, and gravity    |
 | `Kinematic` | Moved programmatically, not affected by forces but can push others |
+
+### Dimension and Shape
+
+A `Plane` body and a `Space` body live in the same Jolt world and collide with each other: a 3D ball bounces on a 2D
+ground. `dimension` and `shape` are written only when they differ from `Plane` and `Box`.
+
+| Shape      | Collider                                                                 | In 2D         |
+|------------|--------------------------------------------------------------------------|---------------|
+| `Box`      | Box of `colliderSize` (full size)                                        | One unit deep |
+| `Sphere`   | Sphere of diameter `colliderSize.x`                                      | A disc        |
+| `Capsule`  | Capsule along Y, diameter `colliderSize.x`, full height `colliderSize.y` | A stadium     |
+| `Cylinder` | Cylinder along Y, diameter `colliderSize.x`, height `colliderSize.y`     | A rectangle   |
+
+A 2D body weighs `density` times its area, a 3D one `density` times its volume. A 3D body reads and writes the whole
+transform: translation and Euler angles (X, then Y, then Z, as `math::Transform` composes them).
+A save keeps the 2D state of a body (`PhysicsSnapshot`): the Z velocity and the spin around X and Y of a 3D body are
+not saved yet ([Physics API](design/physics-api.md)).
 
 ## Physics Lifecycle
 
@@ -209,26 +228,30 @@ each multi-threaded world and destroyed with it.
 
 `PhysicCommand` exposes the following static methods for gameplay code:
 
-| Method                                     | Description                                                                                       |
-|--------------------------------------------|---------------------------------------------------------------------------------------------------|
-| `init(scene)`                              | Create the Jolt world and bodies from scene                                                       |
-| `destroy()`                                | Destroy the Jolt world and clear all bodies                                                       |
-| `isInitialized()`                          | Check if the physics world is active                                                              |
-| `step()`                                   | Run one fixed step of the scene's clock                                                           |
-| `writeFrameTransforms()`                   | Write the drawn (blended) poses                                                                   |
-| `frame(timestep)`                          | Advance the clock, step and sync transforms                                                       |
-| `getSettings()`                            | Settings of the running world                                                                     |
-| `getLastFrameStepCount()`                  | Steps run before the last transform write                                                         |
-| `getWorkerCount()`                         | Solver threads in use (1 = single-threaded)                                                       |
-| `getInterpolationAlpha()`                  | Blend factor of the last transform write                                                          |
-| `syncSimulatedTransforms()`                | Write the last step's poses, not blended ones                                                     |
-| `shiftOrigin(scene, shift)`                | Move every body back by a shift of the world origin ([World positions](scene.md#world-positions)) |
-| `takeCollisionEvents()`                    | Hand over and clear the collisions begun                                                          |
-| `destroyBody(entity)`                      | Remove the entity's bodies (the bodies resting on it wake up)                                     |
-| `impulse(entity, vec2f)`                   | Apply a linear impulse to the entity's centre                                                     |
-| `getVelocity(entity) -> vec2f`             | Read the entity's current linear velocity                                                         |
-| `setVelocity(entity, vec2f)`               | Override the entity's linear velocity                                                             |
-| `setTransform(entity, position, rotation)` | Teleport the body to a new position and angle                                                     |
+| Method                                       | Description                                                                                       |
+|----------------------------------------------|---------------------------------------------------------------------------------------------------|
+| `init(scene)`                                | Create the Jolt world and bodies from scene                                                       |
+| `destroy()`                                  | Destroy the Jolt world and clear all bodies                                                       |
+| `isInitialized()`                            | Check if the physics world is active                                                              |
+| `step()`                                     | Run one fixed step of the scene's clock                                                           |
+| `writeFrameTransforms()`                     | Write the drawn (blended) poses                                                                   |
+| `frame(timestep)`                            | Advance the clock, step and sync transforms                                                       |
+| `getSettings()`                              | Settings of the running world                                                                     |
+| `getLastFrameStepCount()`                    | Steps run before the last transform write                                                         |
+| `getWorkerCount()`                           | Solver threads in use (1 = single-threaded)                                                       |
+| `getInterpolationAlpha()`                    | Blend factor of the last transform write                                                          |
+| `syncSimulatedTransforms()`                  | Write the last step's poses, not blended ones                                                     |
+| `shiftOrigin(scene, shift)`                  | Move every body back by a shift of the world origin ([World positions](scene.md#world-positions)) |
+| `takeCollisionEvents()`                      | Hand over and clear the collisions begun                                                          |
+| `destroyBody(entity)`                        | Remove the entity's bodies (the bodies resting on it wake up)                                     |
+| `impulse(entity, vec2f)`                     | Apply a linear impulse to the entity's centre                                                     |
+| `getVelocity(entity) -> vec2f`               | Read the entity's current linear velocity                                                         |
+| `setVelocity(entity, vec2f)`                 | Override the entity's linear velocity                                                             |
+| `setTransform(entity, position, rotation)`   | Teleport the body to a new position and angle                                                     |
+| `impulse3D(entity, vec3f)`                   | Impulse in space; a 2D body takes X and Y                                                         |
+| `getVelocity3D(entity) -> vec3f`             | Velocity in space (Z is 0 for a 2D body)                                                          |
+| `setVelocity3D(entity, vec3f)`               | Velocity in space; a 2D body takes X and Y                                                        |
+| `setTransform3D(entity, position, rotation)` | Teleport in space, rotation as Euler angles; a 2D body takes X, Y and Z rotation                  |
 
 Every method returns silently without a world or a `PhysicBody`; `impulse`, `getVelocity` and `setVelocity` skip
 static bodies.
@@ -318,11 +341,11 @@ callbacks are in [Lua Scripting](scripting.md).
 
 Bodies live in **world space**, independent of the hierarchy:
 
-| Parent      | Child       | Behaviour                                                                                                  |
-|-------------|-------------|------------------------------------------------------------------------------------------------------------|
-| Non-physics | Physics     | Moving the parent does **not** move the physics child -- the child stays in its physics position           |
-| Physics     | Physics     | Both bodies move **independently** -- Jolt simulates each body on its own regardless of parent-child link  |
-| Physics     | Non-physics | The non-physics child **follows** the parent via the normal hierarchy transform chain                      |
+| Parent      | Child       | Behaviour                                                                                                 |
+|-------------|-------------|-----------------------------------------------------------------------------------------------------------|
+| Non-physics | Physics     | Moving the parent does **not** move the physics child -- the child stays in its physics position          |
+| Physics     | Physics     | Both bodies move **independently** -- Jolt simulates each body on its own regardless of parent-child link |
+| Physics     | Non-physics | The non-physics child **follows** the parent via the normal hierarchy transform chain                     |
 
 Written back, a world pose is converted to local space through the parent's inverse world transform, so `Transform`
 stays consistent while Jolt keeps the authority. Hierarchy rules: [Scene System](scene.md#transform-hierarchy).

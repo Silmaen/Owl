@@ -50,7 +50,7 @@ a simulation result.
 |--------------------------------------------------------------------------------------------|-------------|
 | Local Jolt recipe (deterministic, SSE4.2, no consumer flags), world-hash golden on Jolt    | Done        |
 | Backend-independent physics world interface, Jolt behind it                                | Done        |
-| 3D rigid body component and shapes, editor support                                         | Planned     |
+| 3D rigid body component and shapes, editor support                                         | Done        |
 | 2D bodies on Jolt (plane-locked), the 2D scenes and the world-hash golden moved, Box2D out | Done        |
 | Rewind snapshots through `SaveState` / `RestoreState`                                      | Planned     |
 

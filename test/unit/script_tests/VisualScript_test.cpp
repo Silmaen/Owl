@@ -249,6 +249,11 @@ TEST(VisualScript, PrefixedComponentsFormANamedGroup) {
 	ASSERT_NE(velocity, pins.inputs.end());
 	EXPECT_EQ(velocity->type, PinType::Vector2);
 	EXPECT_EQ(velocity->components, (std::vector<std::string>{"vx", "vy"}));
+	// The optional third component of a 3D body stays a pin of its own: 2D graphs keep their velocity.
+	const auto vz = std::ranges::find(pins.inputs, std::string{"vz"}, &PinSpec::name);
+	ASSERT_NE(vz, pins.inputs.end());
+	EXPECT_EQ(vz->type, PinType::Number);
+	EXPECT_TRUE(vz->optional);
 	const auto create = addNode(script, "event.on_create");
 	link(script, create, "Then", set, "Exec");
 	const auto lua = compile(script);

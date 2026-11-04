@@ -33,6 +33,17 @@ struct BodyPose {
 
 /**
  * @brief
+ *  Position and rotation of a body in space.
+ */
+struct SpacePose {
+	/// Position, in world units.
+	math::vec3f position{0.f, 0.f, 0.f};
+	/// Rotation, a unit quaternion (x, y, z, w).
+	math::vec4f rotation{0.f, 0.f, 0.f, 1.f};
+};
+
+/**
+ * @brief
  *  One box of a body's collider, in the body frame.
  */
 struct BodyBox {
@@ -51,11 +62,19 @@ struct BodyDescription {
 	scene::SceneBody::BodyType type = scene::SceneBody::BodyType::Static;
 	/// The body does not rotate.
 	bool fixedRotation = false;
-	/// Initial pose.
+	/// 2D (XY plane, `pose`) or 3D (`spacePose`).
+	scene::SceneBody::Dimension dimension = scene::SceneBody::Dimension::Plane;
+	/// Initial pose of a 2D body.
 	BodyPose pose;
-	/// Collider: one box or more (a tilemap gets one per collidable cell).
+	/// Initial pose of a 3D body.
+	SpacePose spacePose;
+	/// Collider of a 2D body: one box or more (a tilemap gets one per collidable cell); empty for `shape`.
 	std::vector<BodyBox> boxes;
-	/// Mass per unit of area.
+	/// Collider of a 3D body, and of a 2D one without `boxes`.
+	scene::SceneBody::Shape shape = scene::SceneBody::Shape::Box;
+	/// Full size of the `shape` collider (see `scene::SceneBody::Shape`), the entity scale included.
+	math::vec3f size{1.f, 1.f, 1.f};
+	/// Mass per unit of area in 2D, of volume in 3D.
 	float density = 1.f;
 	/// Friction coefficient.
 	float friction = 0.5f;
@@ -232,6 +251,82 @@ public:
 	 * @param[in] iBody The body id.
 	 */
 	void wake(uint32_t iBody);
+
+	/**
+	 * @brief
+	 *  Pose of a 3D body.
+	 * @param[in] iBody The body id.
+	 * @return Its pose.
+	 */
+	[[nodiscard]] auto getSpacePose(uint32_t iBody) const -> SpacePose;
+
+	/**
+	 * @brief
+	 *  Move a 3D body, waking it.
+	 * @param[in] iBody The body id.
+	 * @param[in] iPose The new pose.
+	 */
+	void setSpacePose(uint32_t iBody, const SpacePose& iPose);
+
+	/**
+	 * @brief
+	 *  Linear velocity of a body in space.
+	 * @param[in] iBody The body id.
+	 * @return The velocity.
+	 */
+	[[nodiscard]] auto getSpaceVelocity(uint32_t iBody) const -> math::vec3f;
+
+	/**
+	 * @brief
+	 *  Set the linear velocity of a body in space, waking it when the velocity is not zero.
+	 * @param[in] iBody The body id.
+	 * @param[in] iVelocity The velocity.
+	 */
+	void setSpaceVelocity(uint32_t iBody, const math::vec3f& iVelocity);
+
+	/**
+	 * @brief
+	 *  Apply an impulse in space at the centre of mass, waking the body.
+	 * @param[in] iBody The body id.
+	 * @param[in] iImpulse The impulse.
+	 */
+	void addSpaceImpulse(uint32_t iBody, const math::vec3f& iImpulse);
+
+	/**
+	 * @brief
+	 *  Rotation of Euler angles applied X, then Y, then Z, as `math::Transform` composes them.
+	 * @param[in] iEuler The angles, in radians.
+	 * @return The unit quaternion.
+	 */
+	[[nodiscard]] static auto toRotation(const math::vec3f& iEuler) -> math::vec4f;
+
+	/**
+	 * @brief
+	 *  Euler angles of a rotation, the inverse of `toRotation`.
+	 * @param[in] iRotation The unit quaternion.
+	 * @return The angles, in radians.
+	 */
+	[[nodiscard]] static auto toEuler(const math::vec4f& iRotation) -> math::vec3f;
+
+	/**
+	 * @brief
+	 *  Euler angles of a rotation seen from a parent.
+	 * @param[in] iParentEuler The parent world rotation, Euler angles.
+	 * @param[in] iRotation The world rotation, a unit quaternion.
+	 * @return The local rotation, Euler angles.
+	 */
+	[[nodiscard]] static auto toLocalEuler(const math::vec3f& iParentEuler, const math::vec4f& iRotation)
+			-> math::vec3f;
+
+	/**
+	 * @brief
+	 *  Pose between two poses of a 3D body.
+	 * @param[in] iFrom The pose at 0.
+	 * @param[in] iTo The pose at 1.
+	 * @param[in] iAlpha The blend factor, in [0, 1].
+	 * @return The blended pose.
+	 */
+	[[nodiscard]] static auto blend(const SpacePose& iFrom, const SpacePose& iTo, float iAlpha) -> SpacePose;
 
 	/**
 	 * @brief

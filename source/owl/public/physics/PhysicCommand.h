@@ -223,6 +223,40 @@ public:
 
 	/**
 	 * @brief
+	 *  Apply an impulse in space to the given entity's body; a 2D body takes its X and Y only.
+	 * @param[in] iEntity The entity.
+	 * @param[in] iImpulse The impulse.
+	 */
+	static void impulse3D(const scene::Entity& iEntity, const math::vec3f& iImpulse);
+
+	/**
+	 * @brief
+	 *  Linear velocity in space of the given entity's body.
+	 * @param[in] iEntity The entity.
+	 * @return The velocity (Z is 0 for a 2D body), zero without a moving body.
+	 */
+	[[nodiscard]] static auto getVelocity3D(const scene::Entity& iEntity) -> math::vec3f;
+
+	/**
+	 * @brief
+	 *  Set the linear velocity in space of the given entity's body; a 2D body takes its X and Y only.
+	 * @param[in] iEntity The entity.
+	 * @param[in] iVelocity The velocity.
+	 */
+	static void setVelocity3D(const scene::Entity& iEntity, const math::vec3f& iVelocity);
+
+	/**
+	 * @brief
+	 *  Move the given entity's body in space; a 2D body takes X, Y and the rotation around Z only.
+	 * @param[in] iEntity The entity.
+	 * @param[in] iPosition The world position.
+	 * @param[in] iRotation The world rotation, Euler angles in radians (as `math::Transform`).
+	 */
+	static void setTransform3D(const scene::Entity& iEntity, const math::vec3f& iPosition,
+							   const math::vec3f& iRotation);
+
+	/**
+	 * @brief
 	 *  Set the gravity scale of the given dynamic body. A value of 0
 	 * cancels gravity for that body without changing its mass; useful for
 	 * top-down characters that share a 2D world with platformer scenes.

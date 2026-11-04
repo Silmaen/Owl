@@ -86,7 +86,8 @@ auto getBindingNodeTypes() -> std::vector<NodeType> {
 		}
 		for (const auto& param: binding.params)
 			type.inputs.push_back(pin(std::string{param.name}, toPinType(param.type), {}, param.optional));
-		for (const auto& ret: binding.returns) type.outputs.push_back(pin(std::string{ret.name}, toPinType(ret.type)));
+		for (const auto& ret: binding.returns)
+			type.outputs.push_back(pin(std::string{ret.name}, toPinType(ret.type), {}, ret.optional));
 		types.push_back(std::move(type));
 	}
 	return types;

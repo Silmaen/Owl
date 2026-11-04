@@ -177,6 +177,8 @@ callback needs a `LuaScript`.
   [Entity destruction](#entity-destruction)): destroying the entity itself or `other_id` is safe.
 - Two static bodies never collide, and a body that only moves through `transform.set_position` does not move in
   the physics world (use `physics.set_velocity` or `physics.set_transform`).
+- The same `physics` functions drive 2D and 3D bodies: a 3D body (`PhysicBody` dimension `Space`) takes a Z
+  component (`physics.impulse(entity_id, fx, fy, fz)`) and `physics.get_velocity` returns `vx, vy, vz` for it.
 
 ### The `entity_id` Global
 

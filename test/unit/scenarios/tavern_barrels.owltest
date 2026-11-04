@@ -1,0 +1,15 @@
+# The tavern corner: three 3D barrels stand stacked on the floor colliders; aimed at from the room, E
+# shoves the lone barrel away from the player, towards the stack.
+scene: ../../../engine_demo/scenes/tavern.owl
+project: ../../../engine_demo
+steps:
+  - frames: 120
+  - expect: {entity: StackBarrel1, translation.y: {equals: 0.45, tolerance: 0.02}}
+  - expect: {entity: StackBarrel3, translation.y: {equals: 1.35, tolerance: 0.03}}
+  - expect: {entity: KickBarrel, translation.y: {equals: 0.45, tolerance: 0.02}}
+  - expect: {entity: KickBarrel, translation.z: {equals: 0.9, tolerance: 0.01}}
+  - {command: entity.set_transform, args: {entity: TavernCamera, translation: [2.8, 1.6, 0.1], rotation: [-0.742, -2.271, 0]}}
+  - frames: 30
+  - input: {key: E, frames: 3}
+  - frames: 60
+  - expect: {entity: KickBarrel, translation.z: {greater: 1.1}}

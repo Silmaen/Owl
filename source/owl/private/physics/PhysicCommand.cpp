@@ -60,6 +60,10 @@ public:
 		uint32_t body;
 		BodyPose previous;
 		BodyPose current;
+		// A 3D body blends these poses instead.
+		bool space = false;
+		SpacePose previousSpace;
+		SpacePose currentSpace;
 	};
 
 	PhysicsWorld() = default;
@@ -115,10 +119,28 @@ public:
 				});
 	}
 
-	void trackBody(const entt::entity iEntity, const uint64_t iBodyId, const uint32_t iBody) {
-		const BodyPose pose = jolt->getPose(iBody);
+	void trackBody(const entt::entity iEntity, const uint64_t iBodyId, const uint32_t iBody, const bool iSpace) {
+		SyncedBody tracked{.entity = iEntity,
+						   .bodyId = iBodyId,
+						   .body = iBody,
+						   .previous = {},
+						   .current = {},
+						   .space = iSpace,
+						   .previousSpace = {},
+						   .currentSpace = {}};
+		if (iSpace)
+			tracked.previousSpace = tracked.currentSpace = jolt->getSpacePose(iBody);
+		else
+			tracked.previous = tracked.current = jolt->getPose(iBody);
 		syncedIndex[iBodyId] = synced.size();
-		synced.push_back({.entity = iEntity, .bodyId = iBodyId, .body = iBody, .previous = pose, .current = pose});
+		synced.push_back(tracked);
+	}
+
+	void capture(SyncedBody& ioTracked) const {
+		if (ioTracked.space)
+			ioTracked.currentSpace = jolt->getSpacePose(ioTracked.body);
+		else
+			ioTracked.current = jolt->getPose(ioTracked.body);
 	}
 
 	void untrackBody(const uint64_t iBodyId) {
@@ -137,6 +159,10 @@ public:
 	void snapBody(const uint64_t iBodyId) {
 		if (const auto it = syncedIndex.find(iBodyId); it != syncedIndex.end()) {
 			auto& tracked = synced[it->second];
+			if (tracked.space) {
+				tracked.previousSpace = tracked.currentSpace = jolt->getSpacePose(tracked.body);
+				return;
+			}
 			const BodyPose moved = jolt->getPose(tracked.body);
 			// Carry the previous pose along with the teleport so the blend between steps goes on without a hitch.
 			tracked.previous = JoltWorld::carryPrevious(tracked.previous, tracked.current, moved);
@@ -145,15 +171,21 @@ public:
 	}
 
 	void capturePrevious() {
-		for (auto& tracked: synced) tracked.previous = tracked.current;
+		for (auto& tracked: synced) {
+			tracked.previous = tracked.current;
+			tracked.previousSpace = tracked.currentSpace;
+		}
 	}
 
 	void shiftOrigin(const math::vec2f& iShift) {
 		for (const auto body: bodies | std::views::values)
 			jolt->setPositionQuietly(body, jolt->getPose(body).position - iShift);
+		const math::vec3f spaceShift{iShift.x(), iShift.y(), 0.f};
 		for (auto& tracked: synced) {
 			tracked.previous.position -= iShift;
 			tracked.current.position -= iShift;
+			tracked.previousSpace.position -= spaceShift;
+			tracked.currentSpace.position -= spaceShift;
 		}
 	}
 
@@ -162,13 +194,13 @@ public:
 	static constexpr size_t parallelSyncMinRange = 256;
 
 	void captureCurrent() {
-		const auto capture = [this](const size_t iBegin, const size_t iEnd) -> void {
-			for (size_t i = iBegin; i < iEnd; ++i) synced[i].current = jolt->getPose(synced[i].body);
+		const auto copy = [this](const size_t iBegin, const size_t iEnd) -> void {
+			for (size_t i = iBegin; i < iEnd; ++i) capture(synced[i]);
 		};
 		if (taskPool != nullptr && synced.size() >= parallelSyncMinBodies)
-			taskPool->parallelFor(synced.size(), parallelSyncMinRange, capture);
+			taskPool->parallelFor(synced.size(), parallelSyncMinRange, copy);
 		else
-			capture(0, synced.size());
+			copy(0, synced.size());
 	}
 
 	void writeTransforms(scene::Scene& ioScene, const float iAlpha) const {
@@ -190,7 +222,7 @@ public:
 									  if (auto* transform =
 												  ioScene.registry.try_get<scene::component::Transform>(tracked.entity);
 										  transform != nullptr)
-										  writeRootPose(transform->transform, interpolatedPose(tracked, iAlpha));
+										  writeRoot(transform->transform, tracked, iAlpha);
 								  }
 							  });
 		if (!hasChildren.load(std::memory_order_relaxed))
@@ -204,7 +236,45 @@ public:
 		auto* transform = ioScene.registry.try_get<scene::component::Transform>(iTracked.entity);
 		if (transform == nullptr)
 			return;
-		writeWorldPose(ioScene, iTracked.entity, transform->transform, interpolatedPose(iTracked, iAlpha));
+		if (iTracked.space)
+			writeWorldSpacePose(ioScene, iTracked.entity, transform->transform,
+								interpolatedSpacePose(iTracked, iAlpha));
+		else
+			writeWorldPose(ioScene, iTracked.entity, transform->transform, interpolatedPose(iTracked, iAlpha));
+	}
+
+	static void writeRoot(math::Transform& ioTransform, const SyncedBody& iTracked, const float iAlpha) {
+		if (iTracked.space)
+			writeRootSpacePose(ioTransform, interpolatedSpacePose(iTracked, iAlpha));
+		else
+			writeRootPose(ioTransform, interpolatedPose(iTracked, iAlpha));
+	}
+
+	[[nodiscard]] static auto interpolatedSpacePose(const SyncedBody& iTracked, const float iAlpha) -> SpacePose {
+		return iAlpha >= 1.f ? iTracked.currentSpace
+							 : JoltWorld::blend(iTracked.previousSpace, iTracked.currentSpace, iAlpha);
+	}
+
+	static void writeRootSpacePose(math::Transform& ioTransform, const SpacePose& iPose) {
+		ioTransform.translation() = iPose.position;
+		ioTransform.rotation() = JoltWorld::toEuler(iPose.rotation);
+	}
+
+	static void writeWorldSpacePose(scene::Scene& ioScene, const entt::entity iEntity, math::Transform& ioTransform,
+									const SpacePose& iPose) {
+		const auto& hierarchy = ioScene.registry.get<scene::component::Hierarchy>(iEntity);
+		if (hierarchy.parentId != core::UUID{0}) {
+			if (const scene::Entity parent = ioScene.findEntityByUUID(hierarchy.parentId); parent) {
+				const math::Transform parentWorld = ioScene.getWorldTransform(parent);
+				const math::vec4 localPos =
+						math::inverse(parentWorld()) *
+						math::vec4{iPose.position.x(), iPose.position.y(), iPose.position.z(), 1.0f};
+				ioTransform.translation() = {localPos.x(), localPos.y(), localPos.z()};
+				ioTransform.rotation() = JoltWorld::toLocalEuler(parentWorld.rotation(), iPose.rotation);
+				return;
+			}
+		}
+		writeRootSpacePose(ioTransform, iPose);
 	}
 
 	[[nodiscard]] static auto wrapAngle(const float iAngle) -> float {
@@ -299,6 +369,7 @@ public:
 		return {.type = scene::SceneBody::BodyType::Kinematic,
 				.fixedRotation = true,
 				.pose = poseOf(iWorldTransform),
+				.spacePose = {},
 				.boxes = {{.halfExtents = iHalfExtents}}};
 	}
 
@@ -306,18 +377,27 @@ public:
 		const scene::Entity entity{iEntity, &ioScene};
 		auto& [sbody] = entity.getComponent<scene::component::PhysicBody>();
 		const math::Transform worldTransform = ioScene.getWorldTransform(entity);
-		const BodyDescription description{
-				.type = sbody.type,
-				.fixedRotation = sbody.fixedRotation,
-				.pose = poseOf(worldTransform),
-				.boxes = {{.halfExtents = {sbody.colliderSize.x() * worldTransform.scale().x() * 0.5f,
-										   sbody.colliderSize.y() * worldTransform.scale().y() * 0.5f}}},
-				.density = sbody.density,
-				.friction = sbody.friction,
-				.restitution = sbody.restitution};
+		const bool space = sbody.dimension == scene::SceneBody::Dimension::Space;
+		const auto& scale = worldTransform.scale();
+		BodyDescription description{.type = sbody.type,
+									.fixedRotation = sbody.fixedRotation,
+									.dimension = sbody.dimension,
+									.pose = poseOf(worldTransform),
+									.spacePose = {.position = worldTransform.translation(),
+												  .rotation = JoltWorld::toRotation(worldTransform.rotation())},
+									.boxes = {},
+									.shape = sbody.shape,
+									.size = {sbody.colliderSize.x() * scale.x(), sbody.colliderSize.y() * scale.y(),
+											 sbody.colliderSize.z() * scale.z()},
+									.density = sbody.density,
+									.friction = sbody.friction,
+									.restitution = sbody.restitution};
+		if (!space && sbody.shape == scene::SceneBody::Shape::Box)
+			description.boxes.push_back({.halfExtents = {sbody.colliderSize.x() * scale.x() * 0.5f,
+														 sbody.colliderSize.y() * scale.y() * 0.5f}});
 		sbody.bodyId = create(description, entity);
 		if (sbody.bodyId != 0)
-			trackBody(iEntity, sbody.bodyId, bodies[sbody.bodyId]);
+			trackBody(iEntity, sbody.bodyId, bodies[sbody.bodyId], space);
 	}
 
 	void createTilemapBody(scene::Scene& ioScene, const entt::entity iEntity) {
@@ -335,6 +415,7 @@ public:
 							   cellSize * worldTransform.scale().y() * 0.5f};
 		BodyDescription description{.type = scene::SceneBody::BodyType::Static,
 									.pose = poseOf(worldTransform),
+									.spacePose = {},
 									.boxes = {}};
 		for (const auto& layer: assetData.layers) {
 			for (uint32_t y = 0; y < assetData.height; ++y) {
@@ -459,6 +540,12 @@ auto runningWorld(const scene::Entity& iEntity, const char* iFunc) -> PhysicsWor
 	if (world == nullptr)
 		logNotInitialized(iFunc);
 	return world;
+}
+
+// The entity has a 3D PhysicBody.
+auto isInSpace(const scene::Entity& iEntity) -> bool {
+	return iEntity && iEntity.hasComponent<scene::component::PhysicBody>() &&
+		   iEntity.getComponent<scene::component::PhysicBody>().body.dimension == scene::SceneBody::Dimension::Space;
 }
 
 // The Jolt body of an entity's PhysicBody, when it is not static.
@@ -662,7 +749,15 @@ void PhysicCommand::setTransform(const scene::Entity& iEntity, const math::vec2f
 	if (iEntity.hasComponent<scene::component::PhysicBody>()) {
 		auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
 		if (const auto handle = world->find(body.bodyId); handle) {
-			world->jolt->setPose(*handle, pose);
+			if (body.dimension == scene::SceneBody::Dimension::Space) {
+				auto spacePose = world->jolt->getSpacePose(*handle);
+				auto euler = JoltWorld::toEuler(spacePose.rotation);
+				euler.z() = iRotation;
+				spacePose.position = {iPosition.x(), iPosition.y(), spacePose.position.z()};
+				spacePose.rotation = JoltWorld::toRotation(euler);
+				world->jolt->setSpacePose(*handle, spacePose);
+			} else
+				world->jolt->setPose(*handle, pose);
 			world->snapBody(body.bodyId);
 		}
 		return;
@@ -681,8 +776,55 @@ void PhysicCommand::setVelocity(const scene::Entity& iEntity, const math::vec2f&
 	const auto* const world = runningWorld(iEntity, "setVelocity");
 	if (world == nullptr)
 		return;
-	if (const auto body = movingBody(*world, iEntity); body)
+	const auto body = movingBody(*world, iEntity);
+	if (!body)
+		return;
+	if (isInSpace(iEntity))
+		world->jolt->setSpaceVelocity(*body, {iVelocity.x(), iVelocity.y(), world->jolt->getSpaceVelocity(*body).z()});
+	else
 		world->jolt->setLinearVelocity(*body, iVelocity);
+}
+
+void PhysicCommand::impulse3D(const scene::Entity& iEntity, const math::vec3f& iImpulse) {
+	const auto* const world = runningWorld(iEntity, "impulse3D");
+	if (world == nullptr)
+		return;
+	if (const auto body = movingBody(*world, iEntity); body)
+		world->jolt->addSpaceImpulse(*body,
+									 isInSpace(iEntity) ? iImpulse : math::vec3f{iImpulse.x(), iImpulse.y(), 0.f});
+}
+
+auto PhysicCommand::getVelocity3D(const scene::Entity& iEntity) -> math::vec3f {
+	const auto* const world = runningWorld(iEntity, "getVelocity3D");
+	if (world == nullptr)
+		return {0.f, 0.f, 0.f};
+	const auto body = movingBody(*world, iEntity);
+	return body ? world->jolt->getSpaceVelocity(*body) : math::vec3f{0.f, 0.f, 0.f};
+}
+
+void PhysicCommand::setVelocity3D(const scene::Entity& iEntity, const math::vec3f& iVelocity) {
+	const auto* const world = runningWorld(iEntity, "setVelocity3D");
+	if (world == nullptr)
+		return;
+	if (const auto body = movingBody(*world, iEntity); body)
+		world->jolt->setSpaceVelocity(*body,
+									  isInSpace(iEntity) ? iVelocity : math::vec3f{iVelocity.x(), iVelocity.y(), 0.f});
+}
+
+void PhysicCommand::setTransform3D(const scene::Entity& iEntity, const math::vec3f& iPosition,
+								   const math::vec3f& iRotation) {
+	if (!isInSpace(iEntity)) {
+		setTransform(iEntity, {iPosition.x(), iPosition.y()}, iRotation.z());
+		return;
+	}
+	auto* const world = runningWorld(iEntity, "setTransform3D");
+	if (world == nullptr)
+		return;
+	const auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
+	if (const auto handle = world->find(body.bodyId); handle) {
+		world->jolt->setSpacePose(*handle, {.position = iPosition, .rotation = JoltWorld::toRotation(iRotation)});
+		world->snapBody(body.bodyId);
+	}
 }
 
 void PhysicCommand::setGravityScale(const scene::Entity& iEntity, const float iScale) {

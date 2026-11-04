@@ -189,9 +189,17 @@ auto toBodyId(const uint32_t iBody) -> JPH::BodyID { return JPH::BodyID(iBody); 
 
 auto toVec3(const math::vec2f& iVector) -> JPH::Vec3 { return {iVector.x(), iVector.y(), 0.f}; }
 
-auto toRotation(const float iAngle) -> JPH::Quat { return JPH::Quat::sRotation(JPH::Vec3::sAxisZ(), iAngle); }
+auto planeRotation(const float iAngle) -> JPH::Quat { return JPH::Quat::sRotation(JPH::Vec3::sAxisZ(), iAngle); }
 
 auto toAngle(const JPH::Quat& iRotation) -> float { return 2.f * JPH::ATan2(iRotation.GetZ(), iRotation.GetW()); }
+
+auto toQuat(const math::vec4f& iRotation) -> JPH::Quat {
+	return JPH::Quat(iRotation.x(), iRotation.y(), iRotation.z(), iRotation.w()).Normalized();
+}
+
+auto fromQuat(const JPH::Quat& iRotation) -> math::vec4f {
+	return {iRotation.GetX(), iRotation.GetY(), iRotation.GetZ(), iRotation.GetW()};
+}
 
 auto wrapAngle(const float iAngle) -> float {
 	if (iAngle > JPH::JPH_PI)
@@ -207,17 +215,77 @@ auto makeBox(const BodyBox& iBox, const float iDensity) -> JPH::Ref<JPH::BoxShap
 	auto settings = JPH::Ref<JPH::BoxShapeSettings>(
 			new JPH::BoxShapeSettings(half, std::min(JPH::cDefaultConvexRadius, half.ReduceMin() * 0.5f)));
 	settings->mDensity = iDensity;
-	return settings;
+	return settings.GetPtr();
+}
+
+// Radius and half height of the cylinder part of a capsule; a capsule no taller than wide is a sphere (0).
+auto capsuleOf(const math::vec3f& iSize) -> std::pair<float, float> {
+	const float radius = std::max(iSize.x() * 0.5f, g_MinHalfExtent);
+	return {radius, std::max(iSize.y() * 0.5f - radius, 0.f)};
+}
+
+auto makeSingleShape(const BodyDescription& iDescription, const float iDensity) -> JPH::Ref<JPH::ShapeSettings> {
+	const bool space = iDescription.dimension == scene::SceneBody::Dimension::Space;
+	JPH::Ref<JPH::ConvexShapeSettings> settings;
+	switch (iDescription.shape) {
+		case scene::SceneBody::Shape::Box:
+			{
+				const JPH::Vec3 half{std::max(iDescription.size.x() * 0.5f, g_MinHalfExtent),
+									 std::max(iDescription.size.y() * 0.5f, g_MinHalfExtent),
+									 space ? std::max(iDescription.size.z() * 0.5f, g_MinHalfExtent) : g_HalfDepth};
+				settings =
+						new JPH::BoxShapeSettings(half, std::min(JPH::cDefaultConvexRadius, half.ReduceMin() * 0.5f));
+				break;
+			}
+		case scene::SceneBody::Shape::Sphere:
+			settings = new JPH::SphereShapeSettings(std::max(iDescription.size.x() * 0.5f, g_MinHalfExtent));
+			break;
+		case scene::SceneBody::Shape::Capsule:
+			{
+				const auto [radius, halfHeight] = capsuleOf(iDescription.size);
+				if (halfHeight > 0.f)
+					settings = new JPH::CapsuleShapeSettings(halfHeight, radius);
+				else
+					settings = new JPH::SphereShapeSettings(radius);
+				break;
+			}
+		case scene::SceneBody::Shape::Cylinder:
+			{
+				const float radius = std::max(iDescription.size.x() * 0.5f, g_MinHalfExtent);
+				const float halfHeight = std::max(iDescription.size.y() * 0.5f, g_MinHalfExtent);
+				settings = new JPH::CylinderShapeSettings(
+						halfHeight, radius, std::min(JPH::cDefaultConvexRadius, std::min(radius, halfHeight) * 0.5f));
+				break;
+			}
+	}
+	settings->mDensity = iDensity;
+	return settings.GetPtr();
 }
 
 auto makeShape(const BodyDescription& iDescription) -> JPH::ShapeSettings::ShapeResult {
 	const float density = std::max(iDescription.density, g_MinDensity);
+	if (iDescription.boxes.empty())
+		return makeSingleShape(iDescription, density)->Create();
 	if (iDescription.boxes.size() == 1 && iDescription.boxes.front().offset == math::vec2f{0.f, 0.f})
 		return makeBox(iDescription.boxes.front(), density)->Create();
 	JPH::StaticCompoundShapeSettings compound;
 	for (const auto& box: iDescription.boxes)
 		compound.AddShape(toVec3(box.offset), JPH::Quat::sIdentity(), makeBox(box, density));
 	return compound.Create();
+}
+
+// A round 2D body weighs its density times its area, like a box of unit depth, not times its volume.
+auto planeMass(const BodyDescription& iDescription) -> std::optional<float> {
+	if (iDescription.dimension != scene::SceneBody::Dimension::Plane || !iDescription.boxes.empty() ||
+		iDescription.shape == scene::SceneBody::Shape::Box)
+		return std::nullopt;
+	if (iDescription.shape == scene::SceneBody::Shape::Cylinder)
+		return std::max(iDescription.density, g_MinDensity) * std::max(iDescription.size.x(), 2.f * g_MinHalfExtent) *
+			   std::max(iDescription.size.y(), 2.f * g_MinHalfExtent);
+	const auto [radius, halfHeight] = iDescription.shape == scene::SceneBody::Shape::Capsule
+											  ? capsuleOf(iDescription.size)
+											  : std::pair{std::max(iDescription.size.x() * 0.5f, g_MinHalfExtent), 0.f};
+	return std::max(iDescription.density, g_MinDensity) * (JPH::JPH_PI * radius * radius + 4.f * radius * halfHeight);
 }
 
 auto toMotionType(const scene::SceneBody::BodyType iType) -> JPH::EMotionType {
@@ -298,23 +366,31 @@ JoltWorld::JoltWorld(SolverTaskPool* ipPool) : mp_impl{mkUniq<Impl>(ipPool)} {}
 JoltWorld::~JoltWorld() = default;
 
 auto JoltWorld::createBody(const BodyDescription& iDescription) -> std::optional<uint32_t> {
-	if (iDescription.boxes.empty()) {
-		OWL_CORE_WARN("Physics: Body without collider, not created.")
-		return std::nullopt;
-	}
 	const auto shape = makeShape(iDescription);
 	if (shape.HasError()) {
 		OWL_CORE_WARN("Physics: Invalid collider ({}), body not created.", shape.GetError().c_str())
 		return std::nullopt;
 	}
 	const auto motion = toMotionType(iDescription.type);
-	JPH::BodyCreationSettings settings(shape.Get(), JPH::RVec3(toVec3(iDescription.pose.position)),
-									   toRotation(iDescription.pose.angle), motion,
+	const bool space = iDescription.dimension == scene::SceneBody::Dimension::Space;
+	const auto& [spacePosition, spaceRotation] = iDescription.spacePose;
+	JPH::BodyCreationSettings settings(shape.Get(),
+									   space ? JPH::RVec3(spacePosition.x(), spacePosition.y(), spacePosition.z())
+											 : JPH::RVec3(toVec3(iDescription.pose.position)),
+									   space ? toQuat(spaceRotation) : planeRotation(iDescription.pose.angle), motion,
 									   motion == JPH::EMotionType::Static ? g_StaticLayer : g_MovingLayer);
-	if (motion != JPH::EMotionType::Static)
-		settings.mAllowedDOFs = iDescription.fixedRotation
-										? JPH::EAllowedDOFs::TranslationX | JPH::EAllowedDOFs::TranslationY
-										: JPH::EAllowedDOFs::Plane2D;
+	if (motion != JPH::EMotionType::Static) {
+		constexpr auto planeTranslation = JPH::EAllowedDOFs::TranslationX | JPH::EAllowedDOFs::TranslationY;
+		if (space)
+			settings.mAllowedDOFs = iDescription.fixedRotation ? planeTranslation | JPH::EAllowedDOFs::TranslationZ
+															   : JPH::EAllowedDOFs::All;
+		else
+			settings.mAllowedDOFs = iDescription.fixedRotation ? planeTranslation : JPH::EAllowedDOFs::Plane2D;
+	}
+	if (const auto mass = planeMass(iDescription); mass) {
+		settings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
+		settings.mMassPropertiesOverride.mMass = *mass;
+	}
 	if (motion == JPH::EMotionType::Dynamic) {
 		settings.mMotionQuality = JPH::EMotionQuality::LinearCast;
 		// A body sliding over a row of tilemap cells must not catch on the edges between two cells.
@@ -366,7 +442,7 @@ auto JoltWorld::getPose(const uint32_t iBody) const -> BodyPose {
 
 void JoltWorld::setPose(const uint32_t iBody, const BodyPose& iPose) {
 	mp_impl->bodies().SetPositionAndRotation(toBodyId(iBody), JPH::RVec3(toVec3(iPose.position)),
-											 toRotation(iPose.angle), JPH::EActivation::Activate);
+											 planeRotation(iPose.angle), JPH::EActivation::Activate);
 }
 
 void JoltWorld::setPositionQuietly(const uint32_t iBody, const math::vec2f& iPosition) {
@@ -406,6 +482,57 @@ void JoltWorld::setGravityFactor(const uint32_t iBody, const float iFactor) {
 auto JoltWorld::isAwake(const uint32_t iBody) const -> bool { return mp_impl->bodies().IsActive(toBodyId(iBody)); }
 
 void JoltWorld::wake(const uint32_t iBody) { mp_impl->bodies().ActivateBody(toBodyId(iBody)); }
+
+auto JoltWorld::getSpacePose(const uint32_t iBody) const -> SpacePose {
+	JPH::RVec3 position;
+	JPH::Quat rotation;
+	mp_impl->bodies().GetPositionAndRotation(toBodyId(iBody), position, rotation);
+	return {.position = {position.GetX(), position.GetY(), position.GetZ()}, .rotation = fromQuat(rotation)};
+}
+
+void JoltWorld::setSpacePose(const uint32_t iBody, const SpacePose& iPose) {
+	mp_impl->bodies().SetPositionAndRotation(toBodyId(iBody),
+											 JPH::RVec3(iPose.position.x(), iPose.position.y(), iPose.position.z()),
+											 toQuat(iPose.rotation), JPH::EActivation::Activate);
+}
+
+auto JoltWorld::getSpaceVelocity(const uint32_t iBody) const -> math::vec3f {
+	const auto velocity = mp_impl->bodies().GetLinearVelocity(toBodyId(iBody));
+	return {velocity.GetX(), velocity.GetY(), velocity.GetZ()};
+}
+
+void JoltWorld::setSpaceVelocity(const uint32_t iBody, const math::vec3f& iVelocity) {
+	mp_impl->bodies().SetLinearVelocity(toBodyId(iBody), {iVelocity.x(), iVelocity.y(), iVelocity.z()});
+}
+
+void JoltWorld::addSpaceImpulse(const uint32_t iBody, const math::vec3f& iImpulse) {
+	mp_impl->bodies().AddImpulse(toBodyId(iBody), {iImpulse.x(), iImpulse.y(), iImpulse.z()});
+}
+
+auto JoltWorld::toRotation(const math::vec3f& iEuler) -> math::vec4f {
+	return fromQuat(JPH::Quat::sEulerAngles({iEuler.x(), iEuler.y(), iEuler.z()}));
+}
+
+auto JoltWorld::toEuler(const math::vec4f& iRotation) -> math::vec3f {
+	const auto angles = toQuat(iRotation).GetEulerAngles();
+	return {angles.GetX(), angles.GetY(), angles.GetZ()};
+}
+
+auto JoltWorld::toLocalEuler(const math::vec3f& iParentEuler, const math::vec4f& iRotation) -> math::vec3f {
+	const auto parent = JPH::Quat::sEulerAngles({iParentEuler.x(), iParentEuler.y(), iParentEuler.z()});
+	const auto angles = (parent.Conjugated() * toQuat(iRotation)).Normalized().GetEulerAngles();
+	return {angles.GetX(), angles.GetY(), angles.GetZ()};
+}
+
+auto JoltWorld::blend(const SpacePose& iFrom, const SpacePose& iTo, const float iAlpha) -> SpacePose {
+	const auto from = toQuat(iFrom.rotation);
+	auto to = toQuat(iTo.rotation);
+	// q and -q are the same rotation: blend towards the one on the short way.
+	if (from.Dot(to) < 0.f)
+		to = -to;
+	return {.position = iFrom.position + (iTo.position - iFrom.position) * iAlpha,
+			.rotation = fromQuat(from.LERP(to, iAlpha).Normalized())};
+}
 
 auto JoltWorld::carryPrevious(const BodyPose& iPrevious, const BodyPose& iCurrent, const BodyPose& iMoved) -> BodyPose {
 	const float turn = iMoved.angle - iCurrent.angle;

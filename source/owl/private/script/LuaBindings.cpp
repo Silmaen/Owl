@@ -419,21 +419,33 @@ auto luaTransformSetScale(lua_State* iState) -> int {
 	return 0;
 }
 
+// A 3D PhysicBody: its velocity has three components.
+auto isSpaceBody(const scene::Entity& iEntity) -> bool {
+	return iEntity.hasComponent<scene::component::PhysicBody>() &&
+		   iEntity.getComponent<scene::component::PhysicBody>().body.dimension == scene::SceneBody::Dimension::Space;
+}
+
 auto luaPhysicsImpulse(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState)) {
 		const auto fx = static_cast<float>(luaL_checknumber(iState, 2));
 		const auto fy = static_cast<float>(luaL_checknumber(iState, 3));
-		physics::PhysicCommand::impulse(*entity, {fx, fy});
+		if (lua_isnoneornil(iState, 4))
+			physics::PhysicCommand::impulse(*entity, {fx, fy});
+		else
+			physics::PhysicCommand::impulse3D(*entity, {fx, fy, static_cast<float>(luaL_checknumber(iState, 4))});
 	}
 	return 0;
 }
 
 auto luaPhysicsGetVelocity(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState)) {
-		const auto vel = physics::PhysicCommand::getVelocity(*entity);
+		const auto vel = physics::PhysicCommand::getVelocity3D(*entity);
 		lua_pushnumber(iState, static_cast<lua_Number>(vel.x()));
 		lua_pushnumber(iState, static_cast<lua_Number>(vel.y()));
-		return 2;
+		if (!isSpaceBody(*entity))
+			return 2;
+		lua_pushnumber(iState, static_cast<lua_Number>(vel.z()));
+		return 3;
 	}
 	lua_pushnumber(iState, 0);
 	lua_pushnumber(iState, 0);
@@ -444,7 +456,10 @@ auto luaPhysicsSetVelocity(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState)) {
 		const auto vx = static_cast<float>(luaL_checknumber(iState, 2));
 		const auto vy = static_cast<float>(luaL_checknumber(iState, 3));
-		physics::PhysicCommand::setVelocity(*entity, {vx, vy});
+		if (lua_isnoneornil(iState, 4))
+			physics::PhysicCommand::setVelocity(*entity, {vx, vy});
+		else
+			physics::PhysicCommand::setVelocity3D(*entity, {vx, vy, static_cast<float>(luaL_checknumber(iState, 4))});
 	}
 	return 0;
 }
@@ -453,8 +468,15 @@ auto luaPhysicsSetTransform(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState)) {
 		const auto px = static_cast<float>(luaL_checknumber(iState, 2));
 		const auto py = static_cast<float>(luaL_checknumber(iState, 3));
-		const auto rot = static_cast<float>(luaL_checknumber(iState, 4));
-		physics::PhysicCommand::setTransform(*entity, {px, py}, rot);
+		const auto third = static_cast<float>(luaL_checknumber(iState, 4));
+		if (lua_isnoneornil(iState, 5)) {
+			physics::PhysicCommand::setTransform(*entity, {px, py}, third);
+			return 0;
+		}
+		const math::vec3f rotation{static_cast<float>(luaL_checknumber(iState, 5)),
+								   static_cast<float>(luaL_checknumber(iState, 6)),
+								   static_cast<float>(luaL_checknumber(iState, 7))};
+		physics::PhysicCommand::setTransform3D(*entity, {px, py, third}, rotation);
 	}
 	return 0;
 }
@@ -3419,17 +3441,24 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Set the local scale.",
 		 .params = {entityId, {"sx", Number}, {"sy", Number}, {"sz", Number}}},
 		{.table = "physics", .name = "impulse", .function = guarded<luaPhysicsImpulse>,
-		 .description = "Apply a linear impulse to the body.",
-		 .params = {entityId, {"fx", Number}, {"fy", Number}}},
+		 .description = "Apply a linear impulse to the body; fz for a 3D body.",
+		 .params = {entityId, {"fx", Number}, {"fy", Number}, {"fz", Number, true}}},
 		{.table = "physics", .name = "get_velocity", .function = guarded<luaPhysicsGetVelocity>,
-		 .description = "Linear velocity of the body (zeros without a body).",
-		 .params = {entityId}, .returns = {{"vx", Number}, {"vy", Number}}},
+		 .description = "Linear velocity of the body (zeros without a body); vz for a 3D body.",
+		 .params = {entityId},
+		 .returns = {{"vx", Number}, {"vy", Number}, {"vz", Number, true}}},
 		{.table = "physics", .name = "set_velocity", .function = guarded<luaPhysicsSetVelocity>,
-		 .description = "Set the linear velocity of the body.",
-		 .params = {entityId, {"vx", Number}, {"vy", Number}}},
+		 .description = "Set the linear velocity of the body; vz for a 3D body.",
+		 .params = {entityId, {"vx", Number}, {"vy", Number}, {"vz", Number, true}}},
 		{.table = "physics", .name = "set_transform", .function = guarded<luaPhysicsSetTransform>,
-		 .description = "Move the body to a world position and rotation (radians).",
-		 .params = {entityId, {"x", Number}, {"y", Number}, {"rotation", Number}}},
+		 .description = "Move the body: x, y and its rotation (radians) in 2D; x, y, z and Euler angles rx, ry, rz in 3D.",
+		 .params = {entityId,
+					{"x", Number},
+					{"y", Number},
+					{"rotation_or_z", Number},
+					{"rx", Number, true},
+					{"ry", Number, true},
+					{"rz", Number, true}}},
 		{.table = "physics", .name = "set_gravity_scale", .function = guarded<luaPhysicsSetGravityScale>,
 		 .description = "Scale the world gravity for this body (0 = none).",
 		 .params = {entityId, {"scale", Number}}},

@@ -66,6 +66,20 @@ void PhysicCommand::setTransform([[maybe_unused]] const scene::Entity& iEntity,
 void PhysicCommand::setVelocity([[maybe_unused]] const scene::Entity& iEntity,
 								[[maybe_unused]] const math::vec2f& iVelocity) {}
 
+void PhysicCommand::impulse3D([[maybe_unused]] const scene::Entity& iEntity,
+							  [[maybe_unused]] const math::vec3f& iImpulse) {}
+
+auto PhysicCommand::getVelocity3D([[maybe_unused]] const scene::Entity& iEntity) -> math::vec3f {
+	return {0.f, 0.f, 0.f};
+}
+
+void PhysicCommand::setVelocity3D([[maybe_unused]] const scene::Entity& iEntity,
+								  [[maybe_unused]] const math::vec3f& iVelocity) {}
+
+void PhysicCommand::setTransform3D([[maybe_unused]] const scene::Entity& iEntity,
+								   [[maybe_unused]] const math::vec3f& iPosition,
+								   [[maybe_unused]] const math::vec3f& iRotation) {}
+
 void PhysicCommand::setGravityScale([[maybe_unused]] const scene::Entity& iEntity,
 									[[maybe_unused]] const float iScale) {}
 
