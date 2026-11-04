@@ -144,7 +144,7 @@ deterministic simulation and replay, Jolt, gravity fields.
 
 - ![In Progress][progress] Deterministic simulation (seeded streams, cross-platform world-hash test) on the fixed tick
   ([Simulation](design/simulation-networking.md#simulation-deterministic))
-- ![Planned][planned] Bit-exact simulation on every target, always on: no FMA contraction, deterministic maths,
+- ![In Progress][progress] Bit-exact simulation on every target, always on: no FMA contraction, deterministic maths,
   deterministic Box2D and Jolt, fixed Lua hash seed
   ([Simulation](design/simulation-networking.md#simulation-cross-platform))
 - ![Planned][planned] Fair play: fixed tick whatever the frame rate, gameplay visibility never cut by quality settings,

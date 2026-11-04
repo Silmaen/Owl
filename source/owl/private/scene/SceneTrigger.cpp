@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "math/elementaryFunctions.h"
 #include "scene/SceneTrigger.h"
 
 #include "physics/PhysicCommand.h"
@@ -107,8 +108,8 @@ void SceneTrigger::onTriggered(const Entity& ioPlayer, const Entity& iTriggerEnt
 							const float targetRotation = targetTransform.rotation().z();
 							const float delta = targetRotation - triggerRotation;
 							// Rotate velocity by delta angle.
-							const float cosD = std::cos(delta);
-							const float sinD = std::sin(delta);
+							const float cosD = math::cos(delta);
+							const float sinD = math::sin(delta);
 							const math::vec2f rotatedVelocity = {playerVelocity.x() * cosD - playerVelocity.y() * sinD,
 																 playerVelocity.x() * sinD + playerVelocity.y() * cosD};
 
@@ -128,8 +129,8 @@ void SceneTrigger::onTriggered(const Entity& ioPlayer, const Entity& iTriggerEnt
 				} else {
 					// Cross-level teleport: set pending request.
 					const float delta = -triggerRotation;// Target rotation unknown until new scene loads.
-					const float cosD = std::cos(delta);
-					const float sinD = std::sin(delta);
+					const float cosD = math::cos(delta);
+					const float sinD = math::sin(delta);
 					scene->teleportRequest = {
 							.pending = true,
 							.levelName = levelName,

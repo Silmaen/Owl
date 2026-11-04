@@ -9,6 +9,7 @@
 #include "owlpch.h"
 
 #include "EngineSystems.h"
+#include "math/elementaryFunctions.h"
 
 #include "physics/PhysicCommand.h"
 #include "scene/Entity.h"
@@ -33,7 +34,7 @@ auto isSimulatedBody(const Scene& iScene, const Entity& iEntity) -> bool {
 // Hashed value in [0, 1) of a seed and a counter.
 auto unitHash(const float iSeed, const uint32_t iCounter) -> float {
 	const double x =
-			std::sin(static_cast<double>(iSeed) * 12.9898 + static_cast<double>(iCounter) * 78.233) * 43758.5453;
+			math::sin(static_cast<double>(iSeed) * 12.9898 + static_cast<double>(iCounter) * 78.233) * 43758.5453;
 	return static_cast<float>(x - std::floor(x));
 }
 
@@ -103,8 +104,8 @@ auto nextTarget(component::Patrol& ioPatrol) -> math::vec3 {
 	const float angle = 2.f * std::numbers::pi_v<float> * unitHash(ioPatrol.seed, ioPatrol.m_choices * 2);
 	const float radius = ioPatrol.wanderRadius * std::sqrt(unitHash(ioPatrol.seed, ioPatrol.m_choices * 2 + 1));
 	++ioPatrol.m_choices;
-	return {ioPatrol.m_basePosition.x() + radius * std::cos(angle),
-			ioPatrol.m_basePosition.y() + radius * std::sin(angle), ioPatrol.m_basePosition.z()};
+	return {ioPatrol.m_basePosition.x() + radius * math::cos(angle),
+			ioPatrol.m_basePosition.y() + radius * math::sin(angle), ioPatrol.m_basePosition.z()};
 }
 
 void stepPatrol(const Entity& iEntity, component::Patrol& ioPatrol, const float iSeconds) {
@@ -134,7 +135,7 @@ void stepPatrol(const Entity& iEntity, component::Patrol& ioPatrol, const float 
 	if (moving)
 		ioPatrol.m_walked += iSeconds;
 	auto& transform = iEntity.getComponent<component::Transform>().transform;
-	const float hop = moving ? ioPatrol.hopHeight * std::abs(std::sin(ioPatrol.m_walked * ioPatrol.hopRate)) : 0.f;
+	const float hop = moving ? ioPatrol.hopHeight * std::abs(math::sin(ioPatrol.m_walked * ioPatrol.hopRate)) : 0.f;
 	transform.translation() = {ioPatrol.m_position.x(), ioPatrol.m_position.y() + hop, ioPatrol.m_position.z()};
 	if (ioPatrol.faceDirection && directionX != 0.f)
 		transform.scale().x() = directionX < 0.f ? -ioPatrol.m_baseScaleX : ioPatrol.m_baseScaleX;
@@ -263,7 +264,7 @@ void applyDayNightCycles(Scene& ioScene, const bool iRuntime) {
 		if (sky != nullptr && light.angularRadius > 0.f)
 			sky->discSize = 2.f * light.angularRadius * 180.f / std::numbers::pi_v<float>;
 		const float noonHeight =
-				std::sin(std::clamp(cycle.maxElevation, 1.f, 90.f) * std::numbers::pi_v<float> / 180.f);
+				math::sin(std::clamp(cycle.maxElevation, 1.f, 90.f) * std::numbers::pi_v<float> / 180.f);
 		const bool byDay = sun.y() >= 0.f;
 		const math::vec3 source = byDay ? sun : sun * -1.f;
 		const float height = source.y();
@@ -277,7 +278,7 @@ void applyDayNightCycles(Scene& ioScene, const bool iRuntime) {
 		}
 		const math::vec3 travel = source * -1.f;
 		auto& rotation = lightEntity.getComponent<component::Transform>().transform.rotation();
-		rotation = {std::asin(std::clamp(travel.y(), -1.f, 1.f)), std::atan2(-travel.x(), -travel.z()), 0.f};
+		rotation = {math::asin(std::clamp(travel.y(), -1.f, 1.f)), math::atan2(-travel.x(), -travel.z()), 0.f};
 	}
 }
 

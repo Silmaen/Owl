@@ -144,6 +144,9 @@ elseif (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
 else ()
     message(FATAL_ERROR "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
 endif ()
+# Bit-exact simulation on every target: no fused multiply-add (Clang fuses `a*b+c` on arm64, GCC in GNU mode),
+# no fast maths, denormals kept (doc/pages/design/simulation-networking.md).
+target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -ffp-contract=off -fno-fast-math)
 
 # Cross compilation
 if (NOT (${${PROJECT_PREFIX}_HOST_PLATFORM_STR} STREQUAL ${${PROJECT_PREFIX}_PLATFORM_STR} AND

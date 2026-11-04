@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <core/Log.h>
+#include <math/elementaryFunctions.h>
 #include <scene/Entity.h>
 #include <scene/GameState.h>
 #include <scene/Scene.h>
@@ -39,6 +40,10 @@ function on_create()
 	math.randomseed(5)
 	gamestate.set('reseeded', math.random(1000000))
 	gamestate.set('empty', pcall(math.random, 3, 1))
+	gamestate.set('sin', math.sin(0.7))
+	gamestate.set('atan', math.atan(1, -2))
+	gamestate.set('log', math.log(8, 2))
+	gamestate.set('pow', math.pow(2, 10))
 end
 )";
 
@@ -96,4 +101,12 @@ TEST_F(LuaRandom, SeedChangesTheValuesButNotTheReseededOnes) {
 	const auto other = play(43);
 	EXPECT_NE(first.get("unit"), other.get("unit"));
 	EXPECT_EQ(first.get("reseeded"), other.get("reseeded"));
+}
+
+TEST_F(LuaRandom, MathFunctionsUseTheEngineMaths) {
+	const auto state = play(0);
+	EXPECT_EQ(state.get("sin"), (GameState::Value{static_cast<float>(math::sin(0.7))}));
+	EXPECT_EQ(state.get("atan"), (GameState::Value{static_cast<float>(math::atan2(1.0, -2.0))}));
+	EXPECT_EQ(state.get("log"), (GameState::Value{static_cast<float>(math::log(8.0) / math::log(2.0))}));
+	EXPECT_EQ(state.get("pow"), (GameState::Value{1024.f}));
 }

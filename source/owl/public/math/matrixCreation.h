@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "math/elementaryFunctions.h"
 #include "math/matrices.h"
 #include "quaternion.h"
 
@@ -102,7 +103,7 @@ constexpr auto perspective(BaseType iFovy, BaseType iAspect, BaseType iZNear, Ba
 	static constexpr BaseType one{1};
 	static constexpr BaseType two{2};
 	Matrix<BaseType, 4, 4> result{};
-	const BaseType tanHalfFovy = std::tan(iFovy / two);
+	const BaseType tanHalfFovy = math::tan(iFovy / two);
 	result(0, 0) = one / (iAspect * tanHalfFovy);
 	result(1, 1) = one / tanHalfFovy;
 	result(2, 2) = -(iZFar + iZNear) / (iZFar - iZNear);
@@ -157,7 +158,7 @@ constexpr auto perspectiveReversedZ(BaseType iFovy, BaseType iAspect, BaseType i
 	static constexpr BaseType one{1};
 	static constexpr BaseType two{2};
 	Matrix<BaseType, 4, 4> result{};
-	const BaseType tanHalfFovy = std::tan(iFovy / two);
+	const BaseType tanHalfFovy = math::tan(iFovy / two);
 	result(0, 0) = one / (iAspect * tanHalfFovy);
 	result(1, 1) = one / tanHalfFovy;
 	result(3, 2) = -one;
@@ -226,8 +227,8 @@ constexpr auto translate(const Matrix<BaseType, 4, 4>& iMatrix, const Vector<Bas
 template<typename BaseType>
 constexpr auto rotate(const Matrix<BaseType, 4, 4>& iMatrix, const BaseType iAngle, const Vector<BaseType, 3>& iAxis)
 		-> Matrix<BaseType, 4, 4> {
-	const BaseType c = std::cos(iAngle);
-	const BaseType s = std::sin(iAngle);
+	const BaseType c = math::cos(iAngle);
+	const BaseType s = math::sin(iAngle);
 	Vector<BaseType, 3> axis(iAxis.normalized());
 	Vector<BaseType, 3> temp((BaseType(1) - c) * axis);
 	Matrix<BaseType, 4, 4> rotate{};

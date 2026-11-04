@@ -27,15 +27,17 @@ on the deterministic simulation, the per-scene world (PR-33) and the open compon
 Always on, in the simulation only (rendering is not concerned): the same inputs give the same world, bit for bit, on
 linux-x64, linux-arm64, windows-x64 (MinGW and clang-cl), android-arm64 and the Web.
 
-| Source of divergence | Rule                                                                                                   |
-|----------------------|--------------------------------------------------------------------------------------------------------|
-| FMA contraction      | `-ffp-contract=off` on the simulation code (Clang fuses `a*b+c` on arm64, not on baseline x64)         |
-| Maths library        | `sin`, `cos`, `exp`, `pow`, `atan2`… from a deterministic library of the engine, never the system libm |
-| Fast maths           | `-ffast-math` and its parts banned; denormals kept (no flush to zero)                                  |
-| 2D physics           | Box2D cross-platform determinism                                                                       |
-| 3D physics           | Jolt built with `JPH_CROSS_PLATFORM_DETERMINISTIC`, its cost measured in `test/bench/`                 |
-| Lua                  | Fixed string hash seed, sorted iteration helper for tables, `math.*` bound to the deterministic maths  |
-| Test                 | World hash of the same input log compared across every target at night                                 |
+| Source of divergence | Rule                                                                                                            | Status  |
+|----------------------|-----------------------------------------------------------------------------------------------------------------|---------|
+| FMA contraction      | `-ffp-contract=off` on every Owl target (Clang fuses `a*b+c` on arm64, GCC in GNU mode)                         | Done    |
+| Maths library        | `math::sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `exp`, `log`, `pow` (`math/elementaryFunctions.h`), never the system libm, in `math` and `scene` | Done    |
+| Fast maths           | `-fno-fast-math` on every Owl target; denormals kept (no flush to zero)                                         | Done    |
+| 2D physics           | Box2D 3 deterministic across platforms (its build sets `-ffp-contract=off`, its own trigonometry)               | Done    |
+| 3D physics           | Jolt built with `JPH_CROSS_PLATFORM_DETERMINISTIC`, its cost measured in `test/bench/`, when Jolt lands          | Planned |
+| Lua                  | Fixed string hash seed; `math.sin`… `math.pow` bound to the engine maths (the `^` operator keeps the libm)       | Done    |
+| Lua iteration        | Sorted iteration helper for tables keyed by tables or functions (their order follows addresses)                  | Planned |
+| Test                 | Bit fingerprints of the engine maths checked on every target (`ElementaryFunctions` tests, arm64 nightly)        | Done    |
+| Test                 | World hash of the same input log compared across every target at night                                          | Planned |
 
 ## Input recording and replay (v0.7.0)
 

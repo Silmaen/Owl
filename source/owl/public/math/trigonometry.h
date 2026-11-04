@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 #include "core/Macros.h"
+#include "math/elementaryFunctions.h"
 #include "math/vectors.h"
 
 #include <cstddef>
@@ -66,14 +67,5 @@ constexpr auto degrees(const Vector<BaseType, Dim>& iInput) -> Vector<BaseType, 
 	return iInput / BaseType{0.01745329251994329576923690768489};
 }
 OWL_DIAG_POP
-
-/**
- * @brief
- *  Arc tangent 2, safe atan(y/(x + |x,y|)).
- * @param[in] iY Numerator.
- * @param[in] iX Denominator.
- * @return Arc tangent with the right quadrant.
- */
-OWL_API auto atan2(float iY, float iX) -> float;
 
 }// namespace owl::math

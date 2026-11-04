@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "math/elementaryFunctions.h"
 #include "scene/ScreenTransition.h"
 
 #include "app/Application.h"
@@ -111,8 +112,8 @@ void renderLoadingScreen(const math::vec4& iColor, const float iElapsed, const f
 	for (int i = 0; i < kDotCount; ++i) {
 		const float fraction = static_cast<float>(i) / static_cast<float>(kDotCount);
 		const float angle = -fraction * 2.f * std::numbers::pi_v<float>;
-		const float dotX = cx + radius * std::cos(angle);
-		const float dotY = cy + radius * std::sin(angle);
+		const float dotX = cx + radius * math::cos(angle);
+		const float dotY = cy + radius * math::sin(angle);
 		const float headOffset = std::fmod(static_cast<float>(i) - headAngle / (2.f * std::numbers::pi_v<float>),
 										   static_cast<float>(kDotCount));
 		const float wrapped = headOffset < 0.f ? headOffset + static_cast<float>(kDotCount) : headOffset;

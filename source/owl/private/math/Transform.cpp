@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "math/Transform.h"
+#include "math/elementaryFunctions.h"
 
 #include <bit>
 #include <cmath>
@@ -81,9 +82,9 @@ Transform::Transform(const mat4& iTransform) {
 		}
 	}
 
-	m_rotation.y() = -std::asin(row[0][2]);
+	m_rotation.y() = -math::asin(row[0][2]);
 
-	if (const float cy = std::cos(m_rotation.y()); epsilonNotEqual(cy, g_zero, g_epsi)) {
+	if (const float cy = math::cos(m_rotation.y()); epsilonNotEqual(cy, g_zero, g_epsi)) {
 		m_rotation.x() = atan2(row[1][2] / cy, row[2][2] / cy);
 		m_rotation.z() = atan2(row[0][1] / cy, row[0][0] / cy);
 	} else {
@@ -99,7 +100,7 @@ auto Transform::operator()() const -> mat4 {
 		// Bit test for +0 / -0: cheaper than a float compare chain and free of -Wfloat-equal.
 		if ((std::bit_cast<uint32_t>(iAngle) << 1u) == 0u)
 			return {g_zero, g_one};
-		return {std::sin(iAngle), std::cos(iAngle)};
+		return {math::sin(iAngle), math::cos(iAngle)};
 	};
 	const auto [sx, cx] = sinCos(m_rotation[0]);
 	const auto [sy, cy] = sinCos(m_rotation[1]);

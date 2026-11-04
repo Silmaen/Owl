@@ -10,6 +10,7 @@
 
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
+#include "math/elementaryFunctions.h"
 #include "scene/component/Oscillator.h"
 
 #include <algorithm>
@@ -23,7 +24,7 @@ auto Oscillator::share(const float iSeconds) const -> float {
 	const float cycle = iSeconds / std::max(period, 0.001f) + phase;
 	const float unit = cycle - std::floor(cycle);
 	if (easing == Easing::Smooth)
-		return 0.5f - 0.5f * std::cos(2.f * std::numbers::pi_v<float> * unit);
+		return 0.5f - 0.5f * math::cos(2.f * std::numbers::pi_v<float> * unit);
 	return unit < 0.5f ? 2.f * unit : 2.f - 2.f * unit;
 }
 

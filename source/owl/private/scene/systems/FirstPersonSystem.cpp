@@ -9,6 +9,7 @@
 #include "owlpch.h"
 
 #include "EngineSystems.h"
+#include "math/elementaryFunctions.h"
 
 #include "app/Application.h"
 #include "data/geometry/BoxCollision.h"
@@ -224,8 +225,8 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 			if (!controller.m_worldReady)
 				continue;
 		}
-		const float sy = std::sin(controller.m_yaw);
-		const float cy = std::cos(controller.m_yaw);
+		const float sy = math::sin(controller.m_yaw);
+		const float cy = math::cos(controller.m_yaw);
 		const math::vec2 steer = actions.getVector("move");
 		const math::vec3 wish = math::vec3{-sy, 0.f, -cy} * -steer.y() + math::vec3{cy, 0.f, -sy} * steer.x();
 		const float length = std::sqrt(wish.x() * wish.x() + wish.z() * wish.z());
@@ -250,9 +251,9 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 		controller.m_grounded = moved.onGround;
 		if (moved.onGround || moved.hitCeiling)
 			controller.m_velocityY = 0.f;
-		const float cp = std::cos(controller.m_pitch);
-		const math::vec3 forward{-cp * std::sin(controller.m_yaw), std::sin(controller.m_pitch),
-								 -cp * std::cos(controller.m_yaw)};
+		const float cp = math::cos(controller.m_pitch);
+		const math::vec3 forward{-cp * math::sin(controller.m_yaw), math::sin(controller.m_pitch),
+								 -cp * math::cos(controller.m_yaw)};
 		const auto aimed = findAimedInteraction(ioScene, eye.translation(), forward, controller.reach, ids);
 		controller.m_target = aimed ? aimed->first.getUUID() : core::UUID{0};
 		const bool hasMesh = aimed && hasMeshInSubtree(ioScene, aimed->first);

@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "HudPass.h"
+#include "math/elementaryFunctions.h"
 
 #include "app/Application.h"
 #include "app/EngineContext.h"
@@ -636,7 +637,7 @@ auto turnedQuad(const math::vec2& iCentre, const math::vec2& iSize, const float 
 void drawMarkerArrow(const component::HudMarker& iMarker, const HudMarkerPlacement& iPlacement, const float iIconSize,
 					 const float iHeight, const int iEntityId) {
 	const float length = iIconSize * 0.6f;
-	const math::vec2 direction{std::cos(iPlacement.angle), std::sin(iPlacement.angle)};
+	const math::vec2 direction{math::cos(iPlacement.angle), math::sin(iPlacement.angle)};
 	const math::vec2 centre = iPlacement.position + direction * (iIconSize * 0.5f + length * 0.6f);
 	if (iMarker.arrow) {
 		renderer::Renderer2D::drawQuad({.transform = turnedQuad(centre, {length, length}, iPlacement.angle, iHeight),
@@ -650,7 +651,7 @@ void drawMarkerArrow(const component::HudMarker& iMarker, const HudMarkerPlaceme
 	const float arm = length * 0.7f;
 	for (const float side: {-1.f, 1.f}) {
 		const float angle = iPlacement.angle + side * std::numbers::pi_v<float> * 0.75f;
-		const math::vec2 back{std::cos(angle), std::sin(angle)};
+		const math::vec2 back{math::cos(angle), math::sin(angle)};
 		renderer::Renderer2D::drawQuad(
 				{.transform = turnedQuad(tip + back * (arm * 0.5f), {arm, length * 0.22f}, angle, iHeight),
 				 .color = iMarker.color,

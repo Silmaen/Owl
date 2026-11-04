@@ -9,6 +9,7 @@
 #include "owlpch.h"
 
 #include "EngineSystems.h"
+#include "math/elementaryFunctions.h"
 
 #include "app/Application.h"
 #include "input/ActionFrame.h"
@@ -36,22 +37,22 @@ constexpr float g_deadZone = 1e-3f;
 
 // The basis of the `Transform` rotation (Rz * Ry * Rx, the order of `math::Transform`).
 auto toBasis(const math::vec3& iEuler) -> Basis {
-	const float sx = std::sin(iEuler.x());
-	const float cx = std::cos(iEuler.x());
-	const float sy = std::sin(iEuler.y());
-	const float cy = std::cos(iEuler.y());
-	const float sz = std::sin(iEuler.z());
-	const float cz = std::cos(iEuler.z());
+	const float sx = math::sin(iEuler.x());
+	const float cx = math::cos(iEuler.x());
+	const float sy = math::sin(iEuler.y());
+	const float cy = math::cos(iEuler.y());
+	const float sz = math::sin(iEuler.z());
+	const float cz = math::cos(iEuler.z());
 	return {math::vec3{cz * cy, sz * cy, -sy}, math::vec3{cz * sy * sx - sz * cx, sz * sy * sx + cz * cx, cy * sx},
 			math::vec3{cz * sy * cx + sz * sx, sz * sy * cx - cz * sx, cy * cx}};
 }
 
 auto toEuler(const Basis& iBasis) -> math::vec3 {
 	const float sy = std::clamp(-iBasis[0].z(), -1.f, 1.f);
-	const float y = std::asin(sy);
-	if (std::abs(std::cos(y)) < 1e-5f)
-		return {std::atan2(-iBasis[2].y(), iBasis[1].y()), y, 0.f};
-	return {std::atan2(iBasis[1].z(), iBasis[2].z()), y, std::atan2(iBasis[0].y(), iBasis[0].x())};
+	const float y = math::asin(sy);
+	if (std::abs(math::cos(y)) < 1e-5f)
+		return {math::atan2(-iBasis[2].y(), iBasis[1].y()), y, 0.f};
+	return {math::atan2(iBasis[1].z(), iBasis[2].z()), y, math::atan2(iBasis[0].y(), iBasis[0].x())};
 }
 
 // Rodrigues rotation of a vector about the axis-angle vector.
@@ -60,8 +61,8 @@ auto rotated(const math::vec3& iVector, const math::vec3& iAxisAngle) -> math::v
 	if (angle < 1e-9f)
 		return iVector;
 	const math::vec3 axis = iAxisAngle * (1.f / angle);
-	const float c = std::cos(angle);
-	return iVector * c + (axis ^ iVector) * std::sin(angle) + axis * ((axis * iVector) * (1.f - c));
+	const float c = math::cos(angle);
+	return iVector * c + (axis ^ iVector) * math::sin(angle) + axis * ((axis * iVector) * (1.f - c));
 }
 
 // Turn the body by angles about its own axes (pitch about right, yaw about up, roll about back).
@@ -94,7 +95,7 @@ void steer(component::ShipController& ioShip, Basis& ioBasis, const input::Actio
 							-iActions.getValue("ship_roll") * ioShip.rollRate};
 	auto& rate = ioShip.m_angularVelocity;
 	if (ioShip.flightAssist) {
-		const float keep = std::exp(-ioShip.angularResponse * iDt);
+		const float keep = math::exp(-ioShip.angularResponse * iDt);
 		rate = wanted + (rate - wanted) * keep;
 	} else {
 		rate += wanted * (ioShip.angularResponse * iDt);
@@ -117,7 +118,7 @@ void accelerate(component::ShipController& ioShip, const Basis& iBasis, const in
 				iDt;
 	if (ioShip.flightAssist) {
 		// The dampers remove the motion along every body axis no thruster pushes.
-		const float keep = std::exp(-ioShip.assistDamping * iDt);
+		const float keep = math::exp(-ioShip.assistDamping * iDt);
 		const std::array<bool, 3> pushed{std::abs(strafe.x()) > g_deadZone, std::abs(strafe.y()) > g_deadZone,
 										 std::abs(throttle) > g_deadZone};
 		for (size_t axis = 0; axis < 3; ++axis) {

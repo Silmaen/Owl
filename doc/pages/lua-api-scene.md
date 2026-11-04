@@ -49,9 +49,18 @@ Engine log.
 
 ## `math`
 
-Random values of the Lua standard `math` table, drawn from the scene seed.
+Random values drawn from the scene seed and elementary functions with the same bits on every target, over the Lua standard `math` table.
 
 | Function                                  | Returns         | Description                                                                                                                                                                       |
 |-------------------------------------------|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `math.random([m: integer], [n: integer])` | `value: number` | Random value of the `lua` stream of the scene, the same on every run of the same seed: a number in [0, 1) without argument, an integer in [1, m] or [m, n], 64 random bits for 0. |
 | `math.randomseed([seed: integer])`        |                 | Restart the `lua` stream from a seed, or from the seed of the scene without argument.                                                                                             |
+| `math.sin(x: number)`                     | `value: number` | Sine of an angle in radians, the same bits on every target.                                                                                                                       |
+| `math.cos(x: number)`                     | `value: number` | Cosine of an angle in radians, the same bits on every target.                                                                                                                     |
+| `math.tan(x: number)`                     | `value: number` | Tangent of an angle in radians, the same bits on every target.                                                                                                                    |
+| `math.asin(x: number)`                    | `angle: number` | Arc sine in radians, the same bits on every target.                                                                                                                               |
+| `math.acos(x: number)`                    | `angle: number` | Arc cosine in radians, the same bits on every target.                                                                                                                             |
+| `math.atan(y: number, [x: number])`       | `angle: number` | Arc tangent of y / x in radians, in the quadrant of (x, y) (x is 1 when omitted), the same bits on every target.                                                                  |
+| `math.exp(x: number)`                     | `value: number` | e to the power x, the same bits on every target.                                                                                                                                  |
+| `math.log(x: number, [base: number])`     | `value: number` | Logarithm of x, natural or in a base, the same bits on every target.                                                                                                              |
+| `math.pow(x: number, y: number)`          | `value: number` | x to the power y, the same bits on every target, unlike the `^` operator which uses the platform's maths.                                                                         |

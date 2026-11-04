@@ -194,6 +194,11 @@ Simulation:
 in UUID order (its components as the scene file writes them, floats to the bit, and the velocities of its physics
 body). Two runs of the same inputs give the same hash; a different one shows where a run diverged.
 
+The hash matches across targets too: the engine builds without FMA contraction nor fast maths, and the scene systems
+call `math::sin`, `math::atan2`, `math::exp`, `math::pow`… (`math/elementaryFunctions.h`, the same bits on every
+target) instead of the libm; so do Lua `math.sin` to `math.log` and `math.pow`. The Lua `^` operator still uses the
+libm: gameplay code writes `math.pow(x, y)`.
+
 Only the ticks are deterministic: `on_update` gets the duration of a frame, which varies from one run to the next, so
 gameplay that must replay goes into `on_tick` and the systems' `tick`.
 

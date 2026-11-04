@@ -23,6 +23,7 @@
 #include "input/Input.h"
 #include "input/InputFrame.h"
 #include "math/RandomStream.h"
+#include "math/elementaryFunctions.h"
 #include "physics/PhysicCommand.h"
 #include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
@@ -267,6 +268,37 @@ auto luaMathRandomSeed(lua_State* iState) -> int {
 													: static_cast<lua_Integer>(luaL_checknumber(iState, 1));
 	stream.reseed(static_cast<uint64_t>(seed));
 	return 0;
+}
+
+template<auto Function>
+auto luaMathUnary(lua_State* iState) -> int {
+	lua_pushnumber(iState, static_cast<lua_Number>(Function(static_cast<double>(luaL_checknumber(iState, 1)))));
+	return 1;
+}
+
+auto luaMathAtan(lua_State* iState) -> int {
+	const auto y = static_cast<double>(luaL_checknumber(iState, 1));
+	const auto x = static_cast<double>(luaL_optnumber(iState, 2, 1.0));
+	lua_pushnumber(iState, static_cast<lua_Number>(math::atan2(y, x)));
+	return 1;
+}
+
+auto luaMathLog(lua_State* iState) -> int {
+	const auto x = static_cast<double>(luaL_checknumber(iState, 1));
+	if (lua_isnoneornil(iState, 2)) {
+		lua_pushnumber(iState, static_cast<lua_Number>(math::log(x)));
+		return 1;
+	}
+	const auto base = static_cast<double>(luaL_checknumber(iState, 2));
+	lua_pushnumber(iState, static_cast<lua_Number>(math::log(x) / math::log(base)));
+	return 1;
+}
+
+auto luaMathPow(lua_State* iState) -> int {
+	const auto x = static_cast<double>(luaL_checknumber(iState, 1));
+	const auto y = static_cast<double>(luaL_checknumber(iState, 2));
+	lua_pushnumber(iState, static_cast<lua_Number>(math::pow(x, y)));
+	return 1;
 }
 
 auto luaTransformGetRotation(lua_State* iState) -> int {
@@ -3449,6 +3481,35 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "math", .name = "randomseed", .function = guarded<luaMathRandomSeed>,
 		 .description = "Restart the `lua` stream from a seed, or from the seed of the scene without argument.",
 		 .params = {{"seed", Integer, true}}},
+		{.table = "math", .name = "sin", .function = guarded<luaMathUnary<static_cast<double (*)(double)>(math::sin)>>,
+		 .description = "Sine of an angle in radians, the same bits on every target.", .params = {{"x", Number}},
+		 .returns = {{"value", Number}}},
+		{.table = "math", .name = "cos", .function = guarded<luaMathUnary<static_cast<double (*)(double)>(math::cos)>>,
+		 .description = "Cosine of an angle in radians, the same bits on every target.", .params = {{"x", Number}},
+		 .returns = {{"value", Number}}},
+		{.table = "math", .name = "tan", .function = guarded<luaMathUnary<static_cast<double (*)(double)>(math::tan)>>,
+		 .description = "Tangent of an angle in radians, the same bits on every target.", .params = {{"x", Number}},
+		 .returns = {{"value", Number}}},
+		{.table = "math", .name = "asin", .function = guarded<luaMathUnary<static_cast<double (*)(double)>(math::asin)>>,
+		 .description = "Arc sine in radians, the same bits on every target.", .params = {{"x", Number}},
+		 .returns = {{"angle", Number}}},
+		{.table = "math", .name = "acos", .function = guarded<luaMathUnary<static_cast<double (*)(double)>(math::acos)>>,
+		 .description = "Arc cosine in radians, the same bits on every target.", .params = {{"x", Number}},
+		 .returns = {{"angle", Number}}},
+		{.table = "math", .name = "atan", .function = guarded<luaMathAtan>,
+		 .description = "Arc tangent of y / x in radians, in the quadrant of (x, y) (x is 1 when omitted), the same bits "
+						"on every target.",
+		 .params = {{"y", Number}, {"x", Number, true}}, .returns = {{"angle", Number}}},
+		{.table = "math", .name = "exp", .function = guarded<luaMathUnary<static_cast<double (*)(double)>(math::exp)>>,
+		 .description = "e to the power x, the same bits on every target.", .params = {{"x", Number}},
+		 .returns = {{"value", Number}}},
+		{.table = "math", .name = "log", .function = guarded<luaMathLog>,
+		 .description = "Logarithm of x, natural or in a base, the same bits on every target.",
+		 .params = {{"x", Number}, {"base", Number, true}}, .returns = {{"value", Number}}},
+		{.table = "math", .name = "pow", .function = guarded<luaMathPow>,
+		 .description = "x to the power y, the same bits on every target, unlike the `^` operator which uses the "
+						"platform's maths.",
+		 .params = {{"x", Number}, {"y", Number}}, .returns = {{"value", Number}}},
 		{.table = "scene", .name = "get_world_origin", .function = guarded<luaSceneGetWorldOrigin>,
 		 .description = "World position of the scene origin, which local positions are relative to.",
 		 .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
@@ -4261,7 +4322,8 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 	static const std::vector<LuaTable> s_tables{
 			{.name = "transform", .description = "Local transform of an entity."},
 			{.name = "math",
-			 .description = "Random values of the Lua standard `math` table, drawn from the scene seed."},
+			 .description = "Random values drawn from the scene seed and elementary functions with the same bits on "
+							"every target, over the Lua standard `math` table."},
 			{.name = "physics", .description = "Box2D body of an entity."},
 			{.name = "input",
 			 .description = "Actions of the game's input map, then the raw keyboard, mouse and gamepad state."},

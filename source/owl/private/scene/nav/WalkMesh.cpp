@@ -8,6 +8,7 @@
 
 #include "owlpch.h"
 
+#include "math/elementaryFunctions.h"
 #include "scene/nav/WalkMesh.h"
 
 #include <algorithm>
@@ -165,7 +166,7 @@ auto findBridge(const Vertices& iVertices, const Ring& iRing, const math::vec2& 
 			!isInAnyTriangle(iStart, hit, candidate, point))
 			continue;
 		const math::vec2 offset = point - iStart;
-		const float angle = std::atan2(std::abs(offset.y()), offset.x());
+		const float angle = math::atan2(std::abs(offset.y()), offset.x());
 		const float distance = offset.normSq();
 		if (angle < bestAngle || (angle <= bestAngle && distance < bestDistance)) {
 			bestAngle = angle;

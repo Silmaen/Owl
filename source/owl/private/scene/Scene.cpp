@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "SceneAudio.h"
+#include "math/elementaryFunctions.h"
 
 #include "scene/Scene.h"
 
@@ -514,7 +515,7 @@ void Scene::onStartRuntime() {
 			// Derive forward/up from rotation (Z-axis rotation for 2D)
 			const float rotZ = wt.rotation().z();
 
-			sound::SoundCommand::setListenerOrientation({std::sin(rotZ), std::cos(rotZ), 0.0f}, {0.0f, 0.0f, 1.0f});
+			sound::SoundCommand::setListenerOrientation({math::sin(rotZ), math::cos(rotZ), 0.0f}, {0.0f, 0.0f, 1.0f});
 			break;
 		}
 	}
@@ -1288,7 +1289,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 				{.positionRange = {position.x(), position.y(), position.z(), std::max(light.range, 0.01f)},
 				 .directionType = {direction.x(), direction.y(), direction.z(), static_cast<float>(light.type)},
 				 .color = {color.x(), color.y(), color.z(), 0.f},
-				 .spotCosines = {std::cos(light.innerAngle), std::cos(std::max(light.outerAngle, light.innerAngle)),
+				 .spotCosines = {math::cos(light.innerAngle), math::cos(std::max(light.outerAngle, light.innerAngle)),
 								 -1.f,
 								 light.type == component::Light::Type::Directional
 										 ? std::clamp(light.angularRadius, 0.f, component::g_maxAngularRadius)
@@ -1329,7 +1330,7 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 	m_shadowSettings.cascadeCount = m_shadowCascades.count;
 	m_shadowSettings.bias = shadowLight->shadowBias;
 	m_shadowSettings.tanAngularRadius =
-			std::tan(std::clamp(shadowLight->angularRadius, 0.f, component::g_maxAngularRadius));
+			math::tan(std::clamp(shadowLight->angularRadius, 0.f, component::g_maxAngularRadius));
 	m_shadowSettings.resolution = shadowLight->shadowResolution;
 	m_shadowSettings.viewDepthRow = mp_renderCamera->getView().row(2);
 	const math::vec2ui mapSize{shadowLight->shadowResolution, shadowLight->shadowResolution};
@@ -1382,7 +1383,7 @@ void Scene::recordLocalShadowPasses(renderer::RenderGraph& ioGraph) {
 				{.lightIndex = candidate.lightIndex,
 				 .relativeViewProjection = camera.getProjection() * renderer::cameraRelativeView(camera.getView()),
 				 .origin = caster.position,
-				 .tanHalfAngle = std::tan(std::clamp(caster.outerAngle, 0.0175f, 1.48f)),
+				 .tanHalfAngle = math::tan(std::clamp(caster.outerAngle, 0.0175f, 1.48f)),
 				 .map = nullptr,
 				 .resolution = caster.resolution,
 				 .bias = caster.bias});
@@ -2370,8 +2371,8 @@ void Scene::applyLighting2D(const bool iEditorMode, const Layer2DLighting& iLaye
 								   .color = toLinear(light.color, light.intensity),
 								   .falloff = light.falloff,
 								   .direction = direction,
-								   .cosInner = spot ? std::cos(light.innerAngle) : 1.f,
-								   .cosOuter = spot ? std::cos(std::max(light.outerAngle, light.innerAngle)) : -2.f,
+								   .cosInner = spot ? math::cos(light.innerAngle) : 1.f,
+								   .cosOuter = spot ? math::cos(std::max(light.outerAngle, light.innerAngle)) : -2.f,
 								   .castShadows = light.castShadows,
 								   .shadowSoftness = light.shadowSoftness});
 		anyShadow = anyShadow || light.castShadows;
