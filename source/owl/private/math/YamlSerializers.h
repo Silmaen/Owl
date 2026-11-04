@@ -181,8 +181,7 @@ struct YamlRead<math::Vector<T, N>> {
 	static auto decode(const YamlNode& iNode, math::Vector<T, N>& oValue) -> bool {
 		if (!iNode.isSequence() || iNode.size() != N)
 			return false;
-		std::size_t index = 0;
-		for (const auto element: iNode) oValue[index++] = element.template as<T>();
+		for (std::size_t index = 0; index < N; ++index) oValue[index] = iNode[index].template as<T>();
 		return true;
 	}
 };
