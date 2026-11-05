@@ -22,7 +22,9 @@
 #include <atomic>
 #include <bit>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <map>
 #include <numbers>
 #include <optional>
@@ -572,8 +574,8 @@ public:
 		if (sjoint.connected != core::UUID{0}) {
 			const scene::Entity other = ioScene.findEntityByUUID(sjoint.connected);
 			const auto* otherBody = other && other.hasComponent<scene::component::PhysicBody>()
-											 ? &other.getComponent<scene::component::PhysicBody>()
-											 : nullptr;
+											? &other.getComponent<scene::component::PhysicBody>()
+											: nullptr;
 			if (otherBody == nullptr) {
 				OWL_CORE_WARN("Physics: Joint of '{}' connects an entity without a PhysicBody, not created.",
 							  iEntity.getName())
@@ -581,7 +583,7 @@ public:
 			}
 			if (otherBody->body.bodyId == 0)
 				return std::ranges::contains(pendingBodies, static_cast<entt::entity>(other)) ? JointBuild::Waiting
-																							   : JointBuild::Failed;
+																							  : JointBuild::Failed;
 			description.other = find(otherBody->body.bodyId);
 			description.otherPoint = worldPoint(ioScene.getWorldTransform(other), sjoint.connectedAnchor);
 		}
@@ -1007,7 +1009,9 @@ auto PhysicCommand::restoreState(scene::Scene& ioScene, const std::span<const ui
 			return false;
 		}
 		contacts[{.bodyA = values[0], .shapeA = values[1], .bodyB = values[2], .shapeB = values[3]}] = {
-				.pair = {core::UUID{*first}, core::UUID{*second}}, .dormant = values[5] != 0, .awakeSteps = values[4]};
+				.pair = {core::UUID{*first}, core::UUID{*second}},
+				.dormant = values[5] != 0,
+				.awakeSteps = values[4]};
 	}
 	if (!contactCount || offset != iState.size()) {
 		OWL_CORE_WARN("Physics: State of {} bytes is malformed, not restored.", iState.size())
@@ -1205,15 +1209,16 @@ auto normalized(const math::vec3f& iVector) -> std::optional<math::vec3f> {
 	return iVector / length;
 }
 
-auto toHit(const PhysicsWorld& iWorld, const std::optional<QueryHit>& iHit)
-		-> std::optional<PhysicCommand::QueryHit> {
+auto toHit(const PhysicsWorld& iWorld, const std::optional<QueryHit>& iHit) -> std::optional<PhysicCommand::QueryHit> {
 	if (!iHit)
 		return std::nullopt;
 	const auto owner = iWorld.ownerOf(iHit->body);
 	if (!owner)
 		return std::nullopt;
-	return PhysicCommand::QueryHit{
-			.entity = *owner, .point = iHit->point, .normal = iHit->normal, .distance = iHit->distance};
+	return PhysicCommand::QueryHit{.entity = *owner,
+								   .point = iHit->point,
+								   .normal = iHit->normal,
+								   .distance = iHit->distance};
 }
 
 auto jointOf(const scene::Entity& iEntity, const char* iFunc) -> std::optional<std::pair<PhysicsWorld*, uint32_t>> {

@@ -54,7 +54,9 @@ void PhysicBody::deserialize(const core::Serializer& iNode) {
 							   : SceneBody::Shape::Box;
 	body.fixedRotation = iNode.getImpl()->node["fixedRotation"].as<bool>();
 	body.sensor = node["sensor"] ? node["sensor"].as<bool>() : false;
-	body.layer = node["layer"] ? static_cast<uint8_t>(std::min(node["layer"].as<uint32_t>(), SceneBody::layerCount - 1u)) : 0;
+	body.layer = node["layer"]
+						 ? static_cast<uint8_t>(std::min(node["layer"].as<uint32_t>(), SceneBody::layerCount - 1u))
+						 : 0;
 	body.mask = node["mask"] ? static_cast<uint8_t>(node["mask"].as<uint32_t>() & 0xffu) : SceneBody::allLayers;
 	body.bodyId = 0;
 	body.colliderSize = iNode.getImpl()->node["colliderSize"].as<math::vec3f>();

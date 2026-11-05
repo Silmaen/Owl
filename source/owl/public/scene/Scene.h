@@ -2915,7 +2915,8 @@ template<>
 OWL_API void Scene::onComponentAdded<component::PhysicBody>(const Entity& iEntity, component::PhysicBody& ioComponent);
 
 template<>
-OWL_API void Scene::onComponentAdded<component::PhysicJoint>(const Entity& iEntity, component::PhysicJoint& ioComponent);
+OWL_API void Scene::onComponentAdded<component::PhysicJoint>(const Entity& iEntity,
+															 component::PhysicJoint& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Player>(const Entity& iEntity, component::Player& ioComponent);

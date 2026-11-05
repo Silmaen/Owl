@@ -33,7 +33,7 @@ void runFrames(Scene& ioScene, const int iFrames) {
 	for (int f = 0; f < iFrames; ++f) PhysicCommand::frame(ioScene, ts);
 }
 
-auto positionOf(const Entity& iEntity) -> math::vec3f {
+auto placeOf(const Entity& iEntity) -> math::vec3f {
 	return iEntity.getComponent<component::Transform>().transform.translation();
 }
 
@@ -78,8 +78,8 @@ TEST_F(PhysicJointTest, AHingeToTheWorldSwingsAroundItsAnchor) {
 	PhysicCommand::init(m_scene);
 	const math::vec3f pivot{0.f, 5.f, 0.f};
 	runFrames(m_scene, 30);
-	EXPECT_NEAR(distance(positionOf(bob), pivot), 2.f, 0.02f);
-	EXPECT_LT(positionOf(bob).y(), 4.f);
+	EXPECT_NEAR(distance(placeOf(bob), pivot), 2.f, 0.02f);
+	EXPECT_LT(placeOf(bob).y(), 4.f);
 	EXPECT_NE(PhysicCommand::getJointPosition(bob), 0.f);
 }
 
@@ -90,10 +90,10 @@ TEST_F(PhysicJointTest, ADistanceJointKeepsTwoBodiesApart) {
 	auto& joint = addJoint(weight, SceneJoint::Type::Distance);
 	joint.connected = top.getUUID();
 	PhysicCommand::init(m_scene);
-	const float length = distance(positionOf(weight), positionOf(top));
+	const float length = distance(placeOf(weight), placeOf(top));
 	runFrames(m_scene, 90);
-	EXPECT_NEAR(distance(positionOf(weight), positionOf(top)), length, 0.03f);
-	EXPECT_LT(positionOf(weight).x(), 1.4f);
+	EXPECT_NEAR(distance(placeOf(weight), placeOf(top)), length, 0.03f);
+	EXPECT_LT(placeOf(weight).x(), 1.4f);
 }
 
 TEST_F(PhysicJointTest, AFixedJointMovesTheBodiesAsOne) {
@@ -103,8 +103,8 @@ TEST_F(PhysicJointTest, AFixedJointMovesTheBodiesAsOne) {
 	PhysicCommand::init(m_scene);
 	PhysicCommand::setVelocity(left, {3.f, 0.f});
 	runFrames(m_scene, 30);
-	EXPECT_NEAR(distance(positionOf(left), positionOf(right)), 1.f, 0.01f);
-	EXPECT_GT(positionOf(right).x(), 1.5f);
+	EXPECT_NEAR(distance(placeOf(left), placeOf(right)), 1.f, 0.01f);
+	EXPECT_GT(placeOf(right).x(), 1.5f);
 }
 
 TEST_F(PhysicJointTest, ASliderMotorDrivesTheBodyAlongItsAxis) {
@@ -117,12 +117,12 @@ TEST_F(PhysicJointTest, ASliderMotorDrivesTheBodyAlongItsAxis) {
 	PhysicCommand::init(m_scene);
 	runFrames(m_scene, 60);
 	PhysicCommand::syncSimulatedTransforms(m_scene);
-	EXPECT_NEAR(positionOf(cart).y(), 5.f, 0.01f);
-	EXPECT_NEAR(positionOf(cart).x(), 2.f, 0.1f);
-	EXPECT_NEAR(PhysicCommand::getJointPosition(cart), positionOf(cart).x(), 0.01f);
+	EXPECT_NEAR(placeOf(cart).y(), 5.f, 0.01f);
+	EXPECT_NEAR(placeOf(cart).x(), 2.f, 0.1f);
+	EXPECT_NEAR(PhysicCommand::getJointPosition(cart), placeOf(cart).x(), 0.01f);
 	PhysicCommand::setJointMotor(cart, true, -2.f);
 	runFrames(m_scene, 60);
-	EXPECT_NEAR(positionOf(cart).x(), 0.f, 0.1f);
+	EXPECT_NEAR(placeOf(cart).x(), 0.f, 0.1f);
 }
 
 TEST_F(PhysicJointTest, AJointWithoutTheConnectedBodyIsNotBuilt) {
@@ -131,7 +131,7 @@ TEST_F(PhysicJointTest, AJointWithoutTheConnectedBodyIsNotBuilt) {
 	PhysicCommand::init(m_scene);
 	runFrames(m_scene, 30);
 	EXPECT_EQ(box.getComponent<component::PhysicJoint>().joint.jointId, 0u);
-	EXPECT_LT(positionOf(box).y(), 4.f);
+	EXPECT_LT(placeOf(box).y(), 4.f);
 }
 
 TEST_F(PhysicJointTest, JointsAreRestoredWithTheState) {
@@ -142,11 +142,11 @@ TEST_F(PhysicJointTest, JointsAreRestoredWithTheState) {
 	const auto state = PhysicCommand::saveState(m_scene);
 	runFrames(m_scene, 40);
 	PhysicCommand::syncSimulatedTransforms(m_scene);
-	const auto first = positionOf(bob);
+	const auto first = placeOf(bob);
 	ASSERT_TRUE(PhysicCommand::restoreState(m_scene, state));
 	runFrames(m_scene, 40);
 	PhysicCommand::syncSimulatedTransforms(m_scene);
-	EXPECT_EQ(positionOf(bob), first);
+	EXPECT_EQ(placeOf(bob), first);
 }
 
 TEST_F(PhysicJointTest, AJointRemovedFreesTheBody) {
@@ -154,10 +154,10 @@ TEST_F(PhysicJointTest, AJointRemovedFreesTheBody) {
 	addJoint(bob, SceneJoint::Type::Fixed);
 	PhysicCommand::init(m_scene);
 	runFrames(m_scene, 20);
-	EXPECT_NEAR(positionOf(bob).y(), 5.f, 0.01f);
+	EXPECT_NEAR(placeOf(bob).y(), 5.f, 0.01f);
 	bob.removeComponent<component::PhysicJoint>();
 	runFrames(m_scene, 20);
-	EXPECT_LT(positionOf(bob).y(), 4.5f);
+	EXPECT_LT(placeOf(bob).y(), 4.5f);
 }
 
 TEST_F(PhysicJointTest, TheJointRoundTrips) {
@@ -172,7 +172,8 @@ TEST_F(PhysicJointTest, TheJointRoundTrips) {
 	joint.motor = true;
 	joint.motorSpeed = 0.5f;
 	const auto scene = mkShared<Scene>();
-	scene->createEntityWithUUID(core::UUID{7}, "copy").addComponent<component::PhysicJoint>(box.getComponent<component::PhysicJoint>());
+	scene->createEntityWithUUID(core::UUID{7}, "copy")
+			.addComponent<component::PhysicJoint>(box.getComponent<component::PhysicJoint>());
 	const std::string text = SceneSerializer(scene).serializeToString();
 	const auto loaded = mkShared<Scene>();
 	ASSERT_TRUE(SceneSerializer(loaded).deserializeFromBuffer(std::vector<uint8_t>(text.begin(), text.end()), "mem"));

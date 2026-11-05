@@ -152,10 +152,10 @@ deterministic simulation and replay, Jolt, gravity fields.
 - ![Done][done] Input recording and frame-exact replay (replays double as regression tests)
   ([Replay](design/simulation-networking.md#simulation-replay))
 - ![Planned][planned] Rewind in Play (snapshot ring buffer + input log)
-- ![Planned][planned] Full 2D physics on Jolt (plane-locked bodies): callbacks, queries, joints, on the shared physics
+- ![Done][done] Full 2D physics on Jolt (plane-locked bodies): callbacks, queries, joints, on the shared physics
   interface
   ([Physics](design/physics-api.md))
-- ![In Progress][progress] 3D physics with Jolt on the shared physics interface, built cross-platform deterministic
+- ![Done][done] 3D physics with Jolt on the shared physics interface, built cross-platform deterministic
   ([Physics API](design/physics-api.md))
 - ![Planned][planned] Articulated bodies: compound bodies rebuilt at runtime, breakable joints, mass recomputed,
   sub-stepping ([Physics API](design/physics-api.md))

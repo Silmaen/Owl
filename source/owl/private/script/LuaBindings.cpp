@@ -489,7 +489,9 @@ auto luaPhysicsSetGravityScale(lua_State* iState) -> int {
 	return 0;
 }
 
-auto luaArg(lua_State* iState, const int iIndex) -> float { return static_cast<float>(luaL_checknumber(iState, iIndex)); }
+auto luaArg(lua_State* iState, const int iIndex) -> float {
+	return static_cast<float>(luaL_checknumber(iState, iIndex));
+}
 
 auto luaMask(lua_State* iState, const int iIndex) -> uint8_t {
 	return lua_isnoneornil(iState, iIndex) ? scene::SceneBody::allLayers
@@ -537,7 +539,8 @@ auto luaPhysicsRaycast(lua_State* iState) -> int {
 	const auto* boundScene = getBoundScene(iState);
 	if (boundScene == nullptr)
 		return pushHit(iState, std::nullopt, false);
-	return pushHit(iState, physics::PhysicCommand::raycast(*boundScene, origin, direction, distance, luaMask(iState, 6)),
+	return pushHit(iState,
+				   physics::PhysicCommand::raycast(*boundScene, origin, direction, distance, luaMask(iState, 6)),
 				   false);
 }
 
@@ -548,8 +551,8 @@ auto luaPhysicsRaycast3D(lua_State* iState) -> int {
 	const auto* boundScene = getBoundScene(iState);
 	if (boundScene == nullptr)
 		return pushHit(iState, std::nullopt, true);
-	return pushHit(iState, physics::PhysicCommand::raycast(*boundScene, origin, direction, distance, luaMask(iState, 8)),
-				   true);
+	return pushHit(iState,
+				   physics::PhysicCommand::raycast(*boundScene, origin, direction, distance, luaMask(iState, 8)), true);
 }
 
 auto luaPhysicsCircleCast(lua_State* iState) -> int {
@@ -561,10 +564,10 @@ auto luaPhysicsCircleCast(lua_State* iState) -> int {
 	if (boundScene == nullptr)
 		return pushHit(iState, std::nullopt, false);
 	const physics::PhysicCommand::QueryShape shape{.sphere = true, .halfExtents = {radius, radius, radius}};
-	return pushHit(iState,
-				   physics::PhysicCommand::shapeCast(*boundScene, shape, origin, direction, distance,
-													 luaMask(iState, 7)),
-				   false);
+	return pushHit(
+			iState,
+			physics::PhysicCommand::shapeCast(*boundScene, shape, origin, direction, distance, luaMask(iState, 7)),
+			false);
 }
 
 auto luaPhysicsBoxCast(lua_State* iState) -> int {
@@ -577,10 +580,10 @@ auto luaPhysicsBoxCast(lua_State* iState) -> int {
 	const auto* boundScene = getBoundScene(iState);
 	if (boundScene == nullptr)
 		return pushHit(iState, std::nullopt, false);
-	return pushHit(iState,
-				   physics::PhysicCommand::shapeCast(*boundScene, shape, origin, direction, distance,
-													 luaMask(iState, 9)),
-				   false);
+	return pushHit(
+			iState,
+			physics::PhysicCommand::shapeCast(*boundScene, shape, origin, direction, distance, luaMask(iState, 9)),
+			false);
 }
 
 auto luaPhysicsSphereCast(lua_State* iState) -> int {
@@ -592,10 +595,10 @@ auto luaPhysicsSphereCast(lua_State* iState) -> int {
 	if (boundScene == nullptr)
 		return pushHit(iState, std::nullopt, true);
 	const physics::PhysicCommand::QueryShape shape{.sphere = true, .halfExtents = {radius, radius, radius}};
-	return pushHit(iState,
-				   physics::PhysicCommand::shapeCast(*boundScene, shape, origin, direction, distance,
-													 luaMask(iState, 9)),
-				   true);
+	return pushHit(
+			iState,
+			physics::PhysicCommand::shapeCast(*boundScene, shape, origin, direction, distance, luaMask(iState, 9)),
+			true);
 }
 
 auto luaPhysicsOverlapCircle(lua_State* iState) -> int {

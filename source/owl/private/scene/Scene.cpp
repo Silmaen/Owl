@@ -4189,7 +4189,7 @@ auto Scene::isPendingDestructionInTree(const Entity& iEntity) const -> bool {
 
 void Scene::dispatchCollisionEvents() {
 	const auto notify = [this](const core::UUID iSelf, const core::UUID iOther,
-								 const physics::PhysicCommand::CollisionEvent& iEvent) -> void {
+							   const physics::PhysicCommand::CollisionEvent& iEvent) -> void {
 		const Entity self = findEntityByUUID(iSelf);
 		if (!self || !self.hasComponent<component::LuaScript>() || isPendingDestructionInTree(self) ||
 			!isEffectivelyVisible(self, /*iEditorMode=*/false))

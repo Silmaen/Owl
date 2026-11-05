@@ -247,7 +247,8 @@ public:
 			std::ranges::sort(ioEntries);
 			std::vector<BodyContact> contacts;
 			contacts.reserve(ioEntries.size());
-			for (const auto& entry: ioEntries) contacts.push_back(
+			for (const auto& entry: ioEntries)
+				contacts.push_back(
 						{.bodyA = entry.bodyA, .shapeA = entry.shapeA, .bodyB = entry.bodyB, .shapeB = entry.shapeB});
 			ioEntries.clear();
 			return contacts;
@@ -425,7 +426,8 @@ auto makeShape(const BodyDescription& iDescription) -> JPH::ShapeSettings::Shape
 // A round 2D body weighs its density times its area, like a box of unit depth, not times its volume.
 auto planeMass(const BodyDescription& iDescription) -> std::optional<float> {
 	if (iDescription.dimension != scene::SceneBody::Dimension::Plane || !iDescription.boxes.empty() ||
-		iDescription.shape == scene::SceneBody::Shape::Box || iDescription.shape == scene::SceneBody::Shape::ConvexHull ||
+		iDescription.shape == scene::SceneBody::Shape::Box ||
+		iDescription.shape == scene::SceneBody::Shape::ConvexHull ||
 		iDescription.shape == scene::SceneBody::Shape::Mesh)
 		return std::nullopt;
 	if (iDescription.shape == scene::SceneBody::Shape::Cylinder)
@@ -523,11 +525,12 @@ auto JoltWorld::createBody(const BodyDescription& iDescription) -> std::optional
 	const auto motion = toMotionType(iDescription.type);
 	const bool space = iDescription.dimension == scene::SceneBody::Dimension::Space;
 	const auto& [spacePosition, spaceRotation] = iDescription.spacePose;
-	JPH::BodyCreationSettings settings(shape.Get(),
-									   space ? JPH::RVec3(spacePosition.x(), spacePosition.y(), spacePosition.z())
-											 : JPH::RVec3(toVec3(iDescription.pose.position)),
-									   space ? toQuat(spaceRotation) : planeRotation(iDescription.pose.angle), motion,
-									   toObjectLayer(iDescription.layer, motion != JPH::EMotionType::Static, iDescription.mask));
+	JPH::BodyCreationSettings settings(
+			shape.Get(),
+			space ? JPH::RVec3(spacePosition.x(), spacePosition.y(), spacePosition.z())
+				  : JPH::RVec3(toVec3(iDescription.pose.position)),
+			space ? toQuat(spaceRotation) : planeRotation(iDescription.pose.angle), motion,
+			toObjectLayer(iDescription.layer, motion != JPH::EMotionType::Static, iDescription.mask));
 	if (motion != JPH::EMotionType::Static) {
 		constexpr auto planeTranslation = JPH::EAllowedDOFs::TranslationX | JPH::EAllowedDOFs::TranslationY;
 		if (space)
@@ -710,11 +713,10 @@ auto makeQueryShape(const QueryVolume& iVolume) -> JPH::RefConst<JPH::Shape> {
 	const auto settings =
 			iVolume.sphere
 					? makeConvex<JPH::SphereShapeSettings>(std::max(iVolume.halfExtents.x(), g_MinHalfExtent))
-					: makeConvex<JPH::BoxShapeSettings>(
-							  JPH::Vec3(std::max(iVolume.halfExtents.x(), g_MinHalfExtent),
-										std::max(iVolume.halfExtents.y(), g_MinHalfExtent),
-										std::max(iVolume.halfExtents.z(), g_MinHalfExtent)),
-							  0.f);
+					: makeConvex<JPH::BoxShapeSettings>(JPH::Vec3(std::max(iVolume.halfExtents.x(), g_MinHalfExtent),
+																  std::max(iVolume.halfExtents.y(), g_MinHalfExtent),
+																  std::max(iVolume.halfExtents.z(), g_MinHalfExtent)),
+														0.f);
 	const auto shape = settings->Create();
 	return shape.HasError() ? nullptr : shape.Get();
 }
@@ -736,14 +738,13 @@ auto JoltWorld::castVolume(const QueryVolume& iVolume, const math::vec3f& iOrigi
 	JPH::ClosestHitCollisionCollector<JPH::CastShapeCollector> collector;
 	const QueryLayerFilter layers{iMask};
 	const SolidBodyFilter solid;
-	mp_impl->system->GetNarrowPhaseQuery().CastShape(cast, settings, JPH::RVec3::sZero(), collector, {}, layers,
-													 solid);
+	mp_impl->system->GetNarrowPhaseQuery().CastShape(cast, settings, JPH::RVec3::sZero(), collector, {}, layers, solid);
 	if (!collector.HadHit())
 		return std::nullopt;
 	const auto& hit = collector.mHit;
-	const JPH::Vec3 normal = hit.mPenetrationAxis.LengthSq() > 0.f ? -hit.mPenetrationAxis.Normalized()
-																	: -JPH::Vec3(iDirection.x(), iDirection.y(),
-																				 iDirection.z());
+	const JPH::Vec3 normal = hit.mPenetrationAxis.LengthSq() > 0.f
+									 ? -hit.mPenetrationAxis.Normalized()
+									 : -JPH::Vec3(iDirection.x(), iDirection.y(), iDirection.z());
 	return QueryHit{.body = hit.mBodyID2.GetIndexAndSequenceNumber(),
 					.point = {hit.mContactPointOn2.GetX(), hit.mContactPointOn2.GetY(), hit.mContactPointOn2.GetZ()},
 					.normal = {normal.GetX(), normal.GetY(), normal.GetZ()},

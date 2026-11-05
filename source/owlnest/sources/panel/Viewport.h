@@ -627,6 +627,14 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the joint of the selected entity: its anchor, the link to the connected body and the axis of a hinge or
+	 *  a slider.
+	 * @param[in] iScene The scene being edited.
+	 */
+	void renderJointOverlay(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
 	 *  Point of the plane of the selected `WalkArea` under the cursor, in the space of the entity.
 	 * @return The point, or nothing when the cursor misses the plane.
 	 */

@@ -776,8 +776,13 @@ Lua: `entity.get_ship_velocity`, `entity.get_ship_speed`, `entity.get_ship_throt
 
 #### PhysicBody
 
-`type` (`Static`, `Dynamic`, `Kinematic`), `fixedRotation`, `colliderSize`, `density`, `restitution`, `friction`.
+`type` (`Static`, `Dynamic`, `Kinematic`), `fixedRotation`, `colliderSize`, `sensor`, `layer`, `mask`, `density`, `restitution`, `friction`.
 YAML key: `PhysicBody`; fields, defaults and lifecycle in [Physics](physics.md#physicbody-component).
+
+#### PhysicJoint
+
+Links the entity's body to another body or to the world: `Fixed`, `Distance`, `Hinge` or `Slider`, with limits and a
+motor. YAML key: `PhysicJoint`; see [Physics](physics.md#joints).
 
 #### Trigger
 

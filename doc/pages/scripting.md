@@ -130,6 +130,7 @@ end
 | `on_tick(dt)`            | Every fixed simulation tick (60 Hz)        | `dt`: tick duration (seconds) |
 | `on_destroy()`           | Entity destroyed, or Play mode ends        | None                          |
 | `on_collision(other_id)` | Body starts touching another entity's body | `other_id`: UUID              |
+| `on_collision_exit(other_id)` | Last contact with another entity's body ends | `other_id`: UUID         |
 
 All callbacks are optional — missing callbacks are silently skipped.
 
@@ -512,6 +513,15 @@ and fire events. The engine provides 7 trigger types:
 | **LuaCallback** | Fires a Lua callback every frame while overlapping              |
 
 ### Trigger Callbacks
+
+`on_collision_exit(other_id)` is called when the last contact of the pair ends. A body with `sensor` set stops
+nothing: the bodies entering and leaving it call `on_trigger_enter(other_id)` and `on_trigger_exit(other_id)` on both
+entities. Physics queries read the world, for instance a line of sight (sensors are ignored; the hit is a table or `nil`):
+
+```lua
+local hit = physics.raycast_3d(ox, oy, oz, dx, dy, dz, 20)
+if hit and hit.entity == target_id then log.info("seen at " .. hit.distance) end
+```
 
 All overlap-based triggers (except Victory, Death, Target) fire edge events, on the trigger entity's script and
 on the player's script. `other_id` is the other side: the player's UUID for the trigger, the trigger's UUID for the

@@ -54,26 +54,22 @@ a simulation result.
 | 2D bodies on Jolt (plane-locked), the 2D scenes and the world-hash golden moved, Box2D out | Done        |
 | Rewind snapshots through `SaveState` / `RestoreState`                                      | Done        |
 
-## v0.7.0 — 2D physics complete
+## v0.7.0 — 2D and 3D physics
 
-- Collision callbacks
-    - `on_collision_enter`, `on_collision_exit`, `on_trigger_enter`, `on_trigger_exit`
-    - Collision layers and masks for filtering
-- Physics queries
-    - Raycast, box cast, circle cast with filtering
-    - Overlap queries (find all entities in area)
-    - Lua API: `physics.raycast(origin, direction, distance)`
-- Joints and constraints
-    - Distance, revolute, prismatic, weld joints
-    - Motor joints for vehicles/mechanisms
-    - Visual joint editor in Owl Nest
+| Part   | Step                                                                                              | Status  |
+|--------|---------------------------------------------------------------------------------------------------|---------|
+| 2D, 3D | Collision callbacks: `on_collision`, `on_collision_exit`, `on_trigger_enter`, `on_trigger_exit`   | Done    |
+| 2D, 3D | Collision layers and masks, sensors                                                               | Done    |
+| 2D, 3D | Queries: raycast, circle, box and sphere casts with a layer mask, overlaps; Lua `physics.raycast` | Done    |
+| 2D, 3D | Joints: fixed, distance, hinge, slider, limits, motors                                            | Done    |
+| 2D, 3D | Visual joint editor in Owl Nest (viewport overlay and inspector)                                  | Done    |
+| 3D     | 3D rigid body component on the same interface                                                     | Done    |
+| 3D     | Collision shapes: box, sphere, capsule, cylinder, convex hull, mesh                               | Done    |
+| 3D     | Raycasting for gameplay (line-of-sight, ground detection), sphere casts                           | Done    |
+| 3D     | Articulated bodies                                                                                | Planned |
 
-## v0.7.0 — 3D physics
+### Planned
 
-- 3D rigid body component on the same interface
-- Collision shapes: box, sphere, capsule, mesh
-- Raycasting queries for gameplay (line-of-sight, ground detection), sphere casts
-- Joints and constraints
 - Articulated bodies ([Large worlds](large-worlds.md))
     - Compound bodies rebuilt when parts join or leave; mass, centre of mass and inertia recomputed
     - Breakable joints with force and torque thresholds, an event when they break

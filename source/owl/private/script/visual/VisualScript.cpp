@@ -99,9 +99,10 @@ void addEvents(std::vector<NodeType>& ioTypes) {
 			event("on_collision", "On Collision", "Runs when the body starts touching another body.", {other}));
 	ioTypes.push_back(event("on_collision_exit", "On Collision Exit", "Runs when the body stops touching another body.",
 							{other}));
-	ioTypes.push_back(
-			event("on_trigger_enter", "On Trigger Enter", "Runs when an entity enters the trigger or the sensor body.", {other}));
-	ioTypes.push_back(event("on_trigger_exit", "On Trigger Exit", "Runs when an entity leaves the trigger or the sensor body.", {other}));
+	ioTypes.push_back(event("on_trigger_enter", "On Trigger Enter",
+							"Runs when an entity enters the trigger or the sensor body.", {other}));
+	ioTypes.push_back(event("on_trigger_exit", "On Trigger Exit",
+							"Runs when an entity leaves the trigger or the sensor body.", {other}));
 	ioTypes.push_back(event("on_triggered", "On Triggered", "Runs when the trigger fires.", {other}));
 	ioTypes.push_back(event("on_interact", "On Interact", "Runs when the player interacts with the trigger."));
 	ioTypes.push_back(event("on_timer", "On Timer", "Runs when the timer of the trigger elapses."));
