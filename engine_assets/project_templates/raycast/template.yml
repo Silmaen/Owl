@@ -5,5 +5,5 @@ Template:
   tags: [Raycast]
   contents:
     - Raycast layer over a tilemap room (tilemaps/room.owltilemap, tilesets/walls.owltileset)
-    - Player with a Box2D body and a Lua controller (scripts/player.lua)
+    - Player with a physics body and a Lua controller (scripts/player.lua)
     - HUD with the controls

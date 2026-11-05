@@ -14,4 +14,4 @@ events:
   - {frame: 89, keys: [Space]}
   - {frame: 91, keys: []}
 checkpoints:
-  - [60, 0x748e8c23d5674bf3]
+  - [60, 0x4c4bed6d7ca1f93c]

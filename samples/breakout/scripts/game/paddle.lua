@@ -1,5 +1,5 @@
 -- The paddle: the `paddle` action (A / D, arrows, left stick, D-pad) or the mouse moves it along the bottom of the
--- field. A kinematic body driven by its velocity, so that Box2D sees it move and the ball bounces off it.
+-- field. A kinematic body driven by its velocity, so that Jolt sees it move and the ball bounces off it.
 --
 -- The wide power-up swaps it for `PaddleWide`, a second authored paddle parked below the field: a body cannot be
 -- resized from Lua, so the game keeps one body per width (a pool, gap G1). The mouse moves the paddle by its motion
