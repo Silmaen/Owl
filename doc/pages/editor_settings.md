@@ -58,6 +58,7 @@ The factory keys; every one can change in **Settings > Shortcuts**.
 | Pause                                          | `F6`                           |
 | Stop                                           | `F7`                           |
 | Step Frame                                     | `F8`                           |
+| Rewind One Second                              | `F9`                           |
 | Fold Play Controls                             | `F10`                          |
 | Help                                           | `F1`                           |
 | Collapse / Expand the Ribbon                   | `Ctrl+F1`                      |

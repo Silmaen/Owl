@@ -234,3 +234,40 @@ TEST_F(ReplayTest, RequestsAreRefusedWhilePlaying) {
 	EXPECT_TRUE(scene.setRecordingReplay(false));
 	scene.onEndRuntime();
 }
+
+// Replayed halfway then taken over, the session goes on live with the same inputs: the recording that comes out is
+// the live one, frame for frame, and replays to the same world.
+TEST_F(ReplayTest, ATakenOverReplayRecordsTheSessionFromThere) {
+	Replay recorded;
+	const uint64_t liveHash = record(recorded);
+	constexpr int half = g_frameCount / 2;
+	Scene scene;
+	build(scene);
+	EXPECT_FALSE(scene.takeOverReplay());
+	ASSERT_TRUE(scene.setPlaybackReplay(mkShared<const Replay>(recorded)));
+	scene.onStartRuntime();
+	core::Timestep step;
+	for (int frame = 0; frame < g_frameCount; ++frame) {
+		if (frame == half) {
+			ASSERT_TRUE(scene.takeOverReplay());
+			EXPECT_FALSE(scene.isPlayingReplay());
+			ASSERT_TRUE(scene.getRecordedReplay().has_value());
+			EXPECT_EQ(scene.getRecordedReplay()->frames.size(), static_cast<std::size_t>(half));
+		}
+		inject(frame);
+		UiInputSystem::update(&scene, {320, 200}, {static_cast<float>(frame), 5.f}, frame % 30 == 0, 0.016f);
+		step.forceUpdate(frameDuration(frame));
+		scene.onUpdateRuntime(step, false);
+	}
+	input::Input::resetInjection();
+	EXPECT_EQ(computeWorldHash(scene), liveHash);
+	const auto branched = scene.takeRecordedReplay();
+	scene.onEndRuntime();
+	ASSERT_TRUE(branched.has_value());
+	EXPECT_EQ(branched->frames.size(), recorded.frames.size());
+	EXPECT_EQ(branched->checkpoints, recorded.checkpoints);
+	EXPECT_EQ(branched->startHash, recorded.startHash);
+	ReplayProgress progress;
+	EXPECT_EQ(replay(*branched, progress), liveHash);
+	EXPECT_FALSE(progress.divergedFrame.has_value());
+}

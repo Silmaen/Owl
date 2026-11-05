@@ -1379,6 +1379,24 @@ public:
 
 	/**
 	 * @brief
+	 *  The session recorded so far, left in place.
+	 * @return The recording, none when the scene does not record.
+	 */
+	[[nodiscard]] auto getRecordedReplay() const -> const std::optional<Replay>& { return m_recording; }
+
+	/**
+	 * @brief
+	 *  Stop the replay at the frame it reached and record from there, live.
+	 *
+	 * The recording starts with the frames and the checkpoints already replayed, the start state of the replay and its
+	 * settings: the session goes on as if it had been recorded live up to here (the rewind of the editor branches a
+	 * new session this way). The frames not replayed yet are dropped.
+	 * @return True if taken, false when the scene does not play a replay.
+	 */
+	auto takeOverReplay() -> bool;
+
+	/**
+	 * @brief
 	 *  Replay a recorded session from the next `onStartRuntime()`, instead of reading the devices.
 	 *
 	 * The seed and the simulation settings of the replay apply, each frame takes its recorded duration and input

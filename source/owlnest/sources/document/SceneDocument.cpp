@@ -16,11 +16,14 @@
 #include <scene/LevelTransition.h>
 #include <scene/SaveManager.h>
 #include <scene/SceneSerializer.h>
+#include <scene/UiInputSystem.h>
 #include <scene/component/components.h>
 #include <script/ScriptDebugger.h>
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
 
+#include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
@@ -176,13 +179,27 @@ void SceneDocument::onScenePlay() {
 	sound::SoundCommand::playSound(soundLibrary.get("clic.wav"));
 
 	m_state = State::Play;
+	m_recording.reset();
+	mp_timeline.reset();
+	m_seekTarget.reset();
+	script::ScriptDebugger::setEnabled(true);
+	startRuntime(std::exchange(mp_nextReplay, nullptr));
+}
+
+void SceneDocument::startRuntime(const shared<const scene::Replay>& iPlayback) {
 	resetHudValues();
 	m_activeScene = scene::Scene::copy(m_editorScene);
-	script::ScriptDebugger::setEnabled(true);
-	m_recording.reset();
-	std::ignore = m_activeScene->setPlaybackReplay(std::exchange(mp_nextReplay, nullptr));
-	std::ignore = m_activeScene->setRecordingReplay(m_recordNextPlay);
+	std::ignore = m_activeScene->setPlaybackReplay(iPlayback);
+	// Every Play records its timeline, the inputs the rewind plays again.
+	std::ignore = m_activeScene->setRecordingReplay(true);
 	m_activeScene->onStartRuntime();
+}
+
+void SceneDocument::keepRecording(std::optional<scene::Replay> iRecording) {
+	if (!iRecording || !m_recordNextPlay)
+		return;
+	iRecording->scene = m_scenePath.generic_string();
+	m_recording = std::move(iRecording);
 }
 
 void SceneDocument::onSceneStop() {
@@ -190,13 +207,16 @@ void SceneDocument::onSceneStop() {
 	script::ScriptDebugger::setEnabled(false);
 	std::ignore = script::ScriptDebugger::takeHit();
 	m_pendingTeleportVelocity = false;
+	endSeek();
 	if (m_activeScene) {
-		if (auto recording = m_activeScene->takeRecordedReplay(); recording) {
-			recording->scene = m_scenePath.generic_string();
-			m_recording = std::move(recording);
-		}
+		// Stopped on a sought timeline, the session is the whole timeline: nothing new was played.
+		if (mp_timeline)
+			keepRecording(*mp_timeline);
+		else
+			keepRecording(m_activeScene->takeRecordedReplay());
 		m_activeScene->onEndRuntime();
 	}
+	mp_timeline.reset();
 	m_activeScene = m_editorScene;
 	resetHudValues();
 }
@@ -207,6 +227,129 @@ void SceneDocument::resetHudValues() {
 		app::Application::get().getEngineContext().getHudLibrary().clear();
 		app::Application::get().getEngineContext().getDialogues().clear();
 	}
+}
+
+void SceneDocument::onSceneResume() {
+	endSeek();
+	branchTimeline();
+	m_state = State::Play;
+}
+
+void SceneDocument::onSceneStep() {
+	if (isSeeking())
+		return;
+	branchTimeline();
+	m_stepRequested = true;
+}
+
+auto SceneDocument::getTimelineFrameCount() const -> uint64_t {
+	if (m_state == State::Edit || !m_activeScene)
+		return 0;
+	if (mp_timeline)
+		return mp_timeline->frames.size();
+	if (const auto& recording = m_activeScene->getRecordedReplay(); recording)
+		return recording->frames.size();
+	return 0;
+}
+
+auto SceneDocument::getTimelineFrame() const -> uint64_t {
+	if (mp_timeline)
+		return m_activeScene->getReplayProgress().frame;
+	return getTimelineFrameCount();
+}
+
+auto SceneDocument::timeline() const -> const scene::Replay* {
+	if (mp_timeline)
+		return mp_timeline.get();
+	if (m_state != State::Edit && m_activeScene && m_activeScene->getRecordedReplay())
+		return &*m_activeScene->getRecordedReplay();
+	return nullptr;
+}
+
+auto SceneDocument::getTimelineSeconds(const uint64_t iFrames) const -> double {
+	const auto* timeline = this->timeline();
+	if (timeline == nullptr)
+		return 0.0;
+	double seconds = 0.0;
+	const auto count = std::min<uint64_t>(iFrames, timeline->frames.size());
+	for (uint64_t i = 0; i < count; ++i)
+		seconds += std::chrono::duration<double>(timeline->frames[static_cast<size_t>(i)].duration).count();
+	return seconds;
+}
+
+auto SceneDocument::seek(const uint64_t iFrame) -> bool {
+	const uint64_t count = getTimelineFrameCount();
+	if (count == 0) {
+		OWL_WARN("Rewind: Nothing to seek in this Play session.")
+		return false;
+	}
+	const uint64_t target = std::min(iFrame, count);
+	m_state = State::Pause;
+	if (!mp_timeline) {
+		if (target == count)
+			return true;
+		mp_timeline = mkShared<const scene::Replay>(*m_activeScene->getRecordedReplay());
+		m_activeScene->onEndRuntime();
+		startRuntime(mp_timeline);
+		m_sceneSwapped = true;
+	} else if (target < getTimelineFrame()) {
+		m_activeScene->onEndRuntime();
+		startRuntime(mp_timeline);
+		m_sceneSwapped = true;
+	}
+	if (!m_seekTarget) {
+		// The frames played again are heard once already, and a breakpoint would stop the seek half-way.
+		sound::SoundCommand::setListenerGain(0.f);
+		script::ScriptDebugger::setEnabled(false);
+	}
+	m_seekTarget = target;
+	return true;
+}
+
+auto SceneDocument::rewind(const double iSeconds) -> bool {
+	const auto* timeline = this->timeline();
+	if (timeline == nullptr)
+		return seek(0);
+	uint64_t frame = std::min<uint64_t>(isSeeking() ? *m_seekTarget : getTimelineFrame(), timeline->frames.size());
+	double back = 0.0;
+	while (frame > 0 && back < iSeconds) {
+		--frame;
+		back += std::chrono::duration<double>(timeline->frames[static_cast<size_t>(frame)].duration).count();
+	}
+	return seek(frame);
+}
+
+auto SceneDocument::advanceSeek(const std::chrono::microseconds iBudget) -> bool {
+	if (!m_seekTarget || !m_activeScene)
+		return true;
+	const auto start = std::chrono::steady_clock::now();
+	core::Timestep step;
+	step.forceUpdate(std::chrono::milliseconds{16});
+	while (getTimelineFrame() < *m_seekTarget && !m_activeScene->getReplayProgress().finished) {
+		scene::UiInputSystem::update(m_activeScene.get(), {64, 64}, {0.f, 0.f}, false, 0.f);
+		m_activeScene->onUpdateRuntime(step, /*iRender=*/false);
+		if (std::chrono::steady_clock::now() - start >= iBudget)
+			break;
+	}
+	if (getTimelineFrame() < *m_seekTarget && !m_activeScene->getReplayProgress().finished)
+		return false;
+	endSeek();
+	return true;
+}
+
+void SceneDocument::endSeek() {
+	if (!m_seekTarget)
+		return;
+	m_seekTarget.reset();
+	sound::SoundCommand::setListenerGain(1.f);
+	script::ScriptDebugger::setEnabled(m_state != State::Edit);
+}
+
+void SceneDocument::branchTimeline() {
+	if (!mp_timeline || !m_activeScene)
+		return;
+	std::ignore = m_activeScene->takeOverReplay();
+	mp_timeline.reset();
 }
 
 auto SceneDocument::consumeStepRequest() -> bool {
@@ -234,10 +377,8 @@ void SceneDocument::handleTeleportRequest(const math::vec2ui& iViewportSize) {
 	if (!newScene)
 		return;
 	// The running level is only torn down once the target loaded, so a failed teleport keeps playing.
-	if (auto recording = m_activeScene->takeRecordedReplay(); recording) {
-		recording->scene = m_scenePath.generic_string();
-		m_recording = std::move(recording);
-	}
+	keepRecording(m_activeScene->takeRecordedReplay());
+	mp_timeline.reset();
 	m_activeScene->onEndRuntime();
 	newScene->onViewportResize(iViewportSize);
 
@@ -259,6 +400,7 @@ void SceneDocument::handleSaveLoadRequest(const math::vec2ui& iViewportSize) {
 		return;
 	}
 	if (auto loaded = scene::LevelTransition::loadSavedGame(slr.slot, *m_activeScene, iViewportSize); loaded) {
+		mp_timeline.reset();
 		m_activeScene = std::move(loaded);
 		m_sceneSwapped = true;
 	}

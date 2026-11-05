@@ -15,6 +15,7 @@
 
 #include <scene/Replay.h>
 
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -245,9 +246,9 @@ public:
 
 	/**
 	 * @brief
-	 *  Handle the scene resume event.
+	 *  Handle the scene resume event; after a seek the session branches from the frame reached (`branchTimeline`).
 	 */
-	void onSceneResume() { m_state = State::Play; }
+	void onSceneResume();
 
 	/**
 	 * @brief
@@ -257,21 +258,23 @@ public:
 
 	/**
 	 * @brief
-	 *  Handle the scene step event.
+	 *  Handle the scene step event; after a seek the session branches from the frame reached (`branchTimeline`).
 	 */
-	void onSceneStep() { m_stepRequested = true; }
+	void onSceneStep();
 
 	/**
 	 * @brief
-	 *  Record the next Play session (kept until `takeRecording`).
-	 * @param[in] iRecord Whether to record.
+	 *  Keep the next Play session for `takeRecording` (written to a `.owlreplay` by the editor).
+	 *
+	 * Every Play records its timeline in memory for the rewind; this only decides whether Stop hands it over.
+	 * @param[in] iRecord Whether to keep it.
 	 */
 	void setRecordingNextPlay(const bool iRecord) { m_recordNextPlay = iRecord; }
 
 	/**
 	 * @brief
-	 *  Whether the next Play session is recorded.
-	 * @return True if recording.
+	 *  Whether the next Play session is kept for `takeRecording`.
+	 * @return True if kept.
 	 */
 	[[nodiscard]] auto isRecordingNextPlay() const -> bool { return m_recordNextPlay; }
 
@@ -290,6 +293,84 @@ public:
 	[[nodiscard]] auto takeRecording() -> std::optional<scene::Replay> {
 		return std::exchange(m_recording, std::nullopt);
 	}
+
+	// --- Rewind --------------------------------------------------------------
+	/**
+	 * @brief
+	 *  Frames of the Play session that can be sought, from the Play start.
+	 * @return The frame count, 0 when the session cannot be rewound (edit mode, a played `.owlreplay`, or after a
+	 *  level transition).
+	 */
+	[[nodiscard]] auto getTimelineFrameCount() const -> uint64_t;
+
+	/**
+	 * @brief
+	 *  Frames of the timeline the running scene has played.
+	 * @return The frame reached.
+	 */
+	[[nodiscard]] auto getTimelineFrame() const -> uint64_t;
+
+	/**
+	 * @brief
+	 *  Duration of the first frames of the timeline.
+	 * @param[in] iFrames The frame count.
+	 * @return The seconds those frames lasted.
+	 */
+	[[nodiscard]] auto getTimelineSeconds(uint64_t iFrames) const -> double;
+
+	/**
+	 * @brief
+	 *  Go back or forward in the Play session to a frame of its timeline.
+	 *
+	 * Going back plays a fresh copy of the edited scene with the recorded inputs from the start; going forward goes on
+	 * from where the scene is. The frames are re-simulated by `advanceSeek`, then the document pauses there.
+	 * @param[in] iFrame The frame to reach, clamped to the timeline.
+	 * @return True if the seek started, false when the session cannot be rewound.
+	 */
+	auto seek(uint64_t iFrame) -> bool;
+
+	/**
+	 * @brief
+	 *  Seek back in the Play session by a duration, from the frame reached (or sought).
+	 * @param[in] iSeconds The duration to go back.
+	 * @return True if the seek started.
+	 */
+	auto rewind(double iSeconds) -> bool;
+
+	/**
+	 * @brief
+	 *  Whether a seek is re-simulating frames.
+	 * @return True while seeking.
+	 */
+	[[nodiscard]] auto isSeeking() const -> bool { return m_seekTarget.has_value(); }
+
+	/**
+	 * @brief
+	 *  Whether the running scene replays the sought timeline (until `branchTimeline`).
+	 * @return True after a seek, until the session goes on live.
+	 */
+	[[nodiscard]] auto isOnTimeline() const -> bool { return mp_timeline != nullptr; }
+
+	/**
+	 * @brief
+	 *  The frame a running seek goes to.
+	 * @return The target frame, 0 without seek.
+	 */
+	[[nodiscard]] auto getSeekTarget() const -> uint64_t { return m_seekTarget.value_or(0); }
+
+	/**
+	 * @brief
+	 *  Re-simulate frames of the running seek, headless and silent, within a time budget.
+	 * @param[in] iBudget Wall-clock time to spend; at least one frame runs.
+	 * @return True once the seek reached its frame (the document is paused there).
+	 */
+	auto advanceSeek(std::chrono::microseconds iBudget) -> bool;
+
+	/**
+	 * @brief
+	 *  Leave the sought timeline and record live from the frame reached; the frames after it are dropped.
+	 */
+	void branchTimeline();
 
 	/**
 	 * @brief
@@ -400,6 +481,33 @@ private:
 	 */
 	static void resetHudValues();
 
+	/**
+	 * @brief
+	 *  Run a fresh copy of the edited scene, recording its timeline.
+	 * @param[in] iPlayback The session it replays, null for a live Play.
+	 */
+	void startRuntime(const shared<const scene::Replay>& iPlayback);
+
+	/**
+	 * @brief
+	 *  Keep a recorded session for `takeRecording` when the Play is recorded.
+	 * @param[in] iRecording The session (moved in).
+	 */
+	void keepRecording(std::optional<scene::Replay> iRecording);
+
+	/**
+	 * @brief
+	 *  End the running seek: the sound and the script debugger come back.
+	 */
+	void endSeek();
+
+	/**
+	 * @brief
+	 *  The timeline of the running Play: the sought one, else the recording of the scene.
+	 * @return The timeline, null when there is none.
+	 */
+	[[nodiscard]] auto timeline() const -> const scene::Replay*;
+
 	/// The persistent editor-side scene (what is saved to disk / restored when leaving Play).
 	shared<scene::Scene> m_editorScene;
 	/// The scene currently being updated/rendered (a copy of `m_editorScene` while in Play).
@@ -417,6 +525,10 @@ private:
 	shared<const scene::Replay> mp_nextReplay;
 	/// Session recorded by the last Play, until taken.
 	std::optional<scene::Replay> m_recording;
+	/// Timeline the running scene replays after a seek, null while it plays live.
+	shared<const scene::Replay> mp_timeline;
+	/// Frame a running seek goes to.
+	std::optional<uint64_t> m_seekTarget;
 	/// True for one frame after `requestStop()`; consumed by the runtime loop.
 	bool m_stopRequested = false;
 

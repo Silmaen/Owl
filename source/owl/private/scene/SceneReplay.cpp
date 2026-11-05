@@ -14,7 +14,10 @@
 #include "scene/WorldHash.h"
 #include "window/Window.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <utility>
 
 namespace owl::scene {
@@ -42,6 +45,35 @@ auto Scene::setRecordingReplay(const bool iRecord) -> bool {
 auto Scene::takeRecordedReplay() -> std::optional<Replay> {
 	m_recordArmed = false;
 	return std::exchange(m_recording, std::nullopt);
+}
+
+auto Scene::takeOverReplay() -> bool {
+	if (status == Status::Editing || mp_playback == nullptr) {
+		OWL_CORE_WARN("Scene: No replay playing, nothing to take over.")
+		return false;
+	}
+	const auto& replay = *mp_playback;
+	const auto played = static_cast<std::ptrdiff_t>(std::min<uint64_t>(m_replayProgress.frame, replay.frames.size()));
+	Replay recording{.scene = replay.scene,
+					 .seed = replay.seed,
+					 .tickRate = replay.tickRate,
+					 .maxTicksPerFrame = replay.maxTicksPerFrame,
+					 .start = replay.start,
+					 .startHash = replay.startHash,
+					 .frames = {replay.frames.begin(), std::next(replay.frames.begin(), played)},
+					 .checkpoints = {}};
+	for (const auto& checkpoint: replay.checkpoints)
+		if (checkpoint.frame <= static_cast<uint64_t>(played))
+			recording.checkpoints.push_back(checkpoint);
+	m_recording = std::move(recording);
+	m_recordArmed = true;
+	m_framePointer.reset();
+	const uint64_t ticks = m_simulationClock.getTotalTickCount();
+	m_nextCheckpointTick = (ticks / Replay::checkpointTicks + 1) * Replay::checkpointTicks;
+	mp_playback.reset();
+	m_replayProgress = {};
+	m_nextCheckpoint = 0;
+	return true;
 }
 
 auto Scene::setPlaybackReplay(const shared<const Replay>& iReplay) -> bool {

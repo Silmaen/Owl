@@ -31,9 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Physics queries `PhysicCommand::raycast`, `shapeCast` and `overlap`, and Lua `physics.raycast`, `raycast_3d`, `circle_cast`, `box_cast`, `sphere_cast`, `overlap_circle`, `overlap_box`, `overlap_sphere`.
 - `PhysicJoint` component (fixed, distance, hinge, slider, limits, motors), Lua `physics.set_joint_motor` and `physics.get_joint_position`, drawn in the Owl Nest viewport.
 - Engine Demo: in the tavern, a `BarrelLine` sensor counting barrels, a hanging bucket on a distance joint, a mesh collider on the table and a line-of-sight raycast for the kick.
+- Owl Nest rewind in Play: a timeline slider and `scene.rewind` (`F9`) seek any frame of the session, simulated again bit for bit from the recorded inputs, and Play goes on from there.
+- `Scene::takeOverReplay` and `getRecordedReplay`: a replay stopped at the frame it reached goes on as a live recording.
 
 ### Changed
 
+- Every Play in Owl Nest records its inputs in memory for the rewind; the Record button decides whether Stop writes them to a `.owlreplay`.
 - Entities created in Play take their UUIDs from the scene seed, so a replay creates the same entities under the same ids.
 - Every Owl target builds with `-ffp-contract=off -fno-fast-math`, and the scene systems use the engine maths instead of the libm: the simulation gives the same bits on every target.
 - Lua `math.random` and `math.randomseed` draw from the `lua` stream of the scene, and Lua tables iterate in the same order on every run.

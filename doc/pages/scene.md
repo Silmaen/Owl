@@ -207,7 +207,10 @@ gameplay that must replay goes into `on_tick` and the systems' `tick`.
 A session can be recorded and replayed frame-exact: `Scene::setRecordingReplay` and `takeRecordedReplay` capture the
 duration, the devices, the cursor capture and the HUD pointer of every frame, `setPlaybackReplay` plays a `scene::Replay`
 (`.owlreplay`) in their place, and `getReplayProgress` tells whether the world still matches its world hash checkpoints
-([design](design/simulation-networking.md#simulation-replay)).
+([design](design/simulation-networking.md#simulation-replay)). `getRecordedReplay` reads the recording so far, and
+`takeOverReplay` stops a replay at the frame it reached and records live from there, the frames already replayed
+becoming the start of the recording: the rewind of Owl Nest branches a session this way
+([design](design/simulation-networking.md#simulation-rewind)).
 
 The engine systems live in `scene::systems` (private, `source/owl/private/scene/systems/`).
 

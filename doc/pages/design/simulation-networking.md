@@ -65,9 +65,23 @@ linux-x64, linux-arm64, windows-x64 (MinGW and clang-cl), android-arm64 and the 
 - The systems that run per frame replay the recorded frame sequence, not a different frame rate
 - `Scene::copy` keeps the entity and component order of its source, so the editor's Play simulates like the runner
 
-## Rewind in Play (v0.7.0)
+## Rewind in Play (v0.7.0) {#simulation-rewind}
 
-- Scrub back in time during a Play session in Owl Nest (ring buffer of world snapshots + input log)
+| Part                                                                                       | Status |
+|--------------------------------------------------------------------------------------------|--------|
+| Every editor Play records its timeline in memory (the Record button only writes the file)  | Done   |
+| Seek: frames simulated again from the Play start with the recorded inputs, then paused     | Done   |
+| Seek bounded per editor frame, silent, without script breakpoints                          | Done   |
+| `Scene::takeOverReplay`: Play or Step after a seek branches the session from that frame    | Done   |
+| Owl Nest: timeline slider in the Play controls, `scene.rewind` (`F9`, one second back)     | Done   |
+
+- A seek re-simulates instead of restoring snapshots: the Lua state of the scripts cannot be saved, and the
+  bit-exact simulation gives the world of the frame from its inputs; the physics state (`PhysicCommand::saveState`)
+  stays for the trajectory prediction and the rollback of the network
+- A seek costs the frames it simulates again: going back starts from the Play start, going forward goes on from the
+  frame reached
+- The timeline is the first scene of a Play: a level transition ends it, and a played `.owlreplay` is not rewound
+- The timeline holds every frame of the Play (the device state and the HUD mouse of each frame)
 
 ## Fair play {#networking-fairness}
 

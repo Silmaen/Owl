@@ -634,6 +634,12 @@ void EditorLayer::onAttach() {
 		if (getState() == State::Pause)
 			onSceneStep();
 	});
+	m_actionRegistry.registerAction("scene.rewind", "Rewind One Second", {input::key::F9, Modifiers::None},
+									[this]() -> void {
+										if (auto* doc = activeSceneDocument();
+											doc != nullptr && doc->state() != SceneDocument::State::Edit)
+											std::ignore = doc->rewind(1.0);
+									});
 	m_actionRegistry.registerAction("scene.record", "Record Play Session", {input::key::F5, Modifiers::Shift},
 									[this]() -> void {
 										if (auto* doc = activeSceneDocument();
