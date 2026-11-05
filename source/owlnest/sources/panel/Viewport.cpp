@@ -1522,7 +1522,7 @@ void Viewport::renderTimeline() {
 		return;
 	}
 	uint64_t frame = m_scrubFrame.value_or(mp_document->isSeeking() ? mp_document->getSeekTarget()
-																	 : mp_document->getTimelineFrame());
+																	: mp_document->getTimelineFrame());
 	constexpr uint64_t first = 0;
 	const auto label = std::format("{:.1f} s / {:.1f} s", mp_document->getTimelineSeconds(frame),
 								   mp_document->getTimelineSeconds(count));

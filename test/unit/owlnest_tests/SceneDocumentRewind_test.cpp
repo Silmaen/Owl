@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <map>
+#include <tuple>
 
 using namespace owl;
 using namespace owl::nest;
