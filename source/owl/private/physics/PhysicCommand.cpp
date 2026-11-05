@@ -456,7 +456,9 @@ public:
 				.fixedRotation = true,
 				.pose = poseOf(iWorldTransform),
 				.spacePose = {},
-				.boxes = {{.halfExtents = iHalfExtents}}};
+				.boxes = {{.halfExtents = iHalfExtents}},
+				.meshVertices = {},
+				.meshIndices = {}};
 	}
 
 	void createPhysicBody(scene::Scene& ioScene, const entt::entity iEntity) {
@@ -511,8 +513,8 @@ public:
 		const auto& geometry = mesh->getGeometry();
 		ioDescription.meshVertices.reserve(geometry.vertices.size());
 		for (const auto& vertex: geometry.vertices)
-			ioDescription.meshVertices.push_back({vertex.position.x() * iScale.x(), vertex.position.y() * iScale.y(),
-												  vertex.position.z() * iScale.z()});
+			ioDescription.meshVertices.emplace_back(vertex.position.x() * iScale.x(), vertex.position.y() * iScale.y(),
+													vertex.position.z() * iScale.z());
 		ioDescription.meshIndices = geometry.indices;
 	}
 
@@ -636,7 +638,9 @@ public:
 		BodyDescription description{.type = scene::SceneBody::BodyType::Static,
 									.pose = poseOf(worldTransform),
 									.spacePose = {},
-									.boxes = {}};
+									.boxes = {},
+									.meshVertices = {},
+									.meshIndices = {}};
 		for (const auto& layer: assetData.layers) {
 			for (uint32_t y = 0; y < assetData.height; ++y) {
 				for (uint32_t x = 0; x < assetData.width; ++x) {

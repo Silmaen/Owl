@@ -356,7 +356,9 @@ auto makeMeshShape(const BodyDescription& iDescription) -> JPH::Ref<JPH::ShapeSe
 	for (size_t i = 0; i + 2 < iDescription.meshIndices.size(); i += 3)
 		triangles.push_back(JPH::IndexedTriangle(iDescription.meshIndices[i], iDescription.meshIndices[i + 1],
 												 iDescription.meshIndices[i + 2]));
-	return JPH::Ref<JPH::ShapeSettings>(new JPH::MeshShapeSettings(std::move(vertices), std::move(triangles)));
+	auto settings =
+			JPH::Ref<JPH::MeshShapeSettings>(new JPH::MeshShapeSettings(std::move(vertices), std::move(triangles)));
+	return settings.GetPtr();
 }
 
 auto makeHull(const BodyDescription& iDescription) -> JPH::Ref<JPH::ConvexShapeSettings> {
@@ -853,7 +855,7 @@ auto JoltWorld::createJoint(const JointDescription& iDescription) -> std::option
 	}
 	const auto settings = makeJointSettings(iDescription);
 	// The connected body (or the world) comes first: a motor and the position measure the motion of the joint's own body.
-	JPH::Ref<JPH::TwoBodyConstraint> joint = bodies.CreateConstraint(settings.GetPtr(), second, first);
+	const JPH::Ref<JPH::TwoBodyConstraint> joint = bodies.CreateConstraint(settings.GetPtr(), second, first);
 	if (joint == nullptr) {
 		OWL_CORE_WARN("Physics: Joint refused by Jolt, not created.")
 		return std::nullopt;

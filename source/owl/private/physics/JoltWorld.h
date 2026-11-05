@@ -90,9 +90,9 @@ struct BodyDescription {
 	/// Layers the body collides with, one bit per layer.
 	uint8_t mask = scene::SceneBody::allLayers;
 	/// Vertices of a `ConvexHull` or `Mesh` collider, in the body frame, the entity scale included.
-	std::vector<math::vec3f> meshVertices{};
+	std::vector<math::vec3f> meshVertices;
 	/// Triangles of a `Mesh` collider, three indices into `meshVertices` each.
-	std::vector<uint32_t> meshIndices{};
+	std::vector<uint32_t> meshIndices;
 };
 
 /**
