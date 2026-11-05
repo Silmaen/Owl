@@ -173,7 +173,7 @@ TEST_F(SceneDocumentRewind, ResumingBranchesTheSessionFromTheFrameReached) {
 	m_doc.setReplayForNextPlay(mkShared<const scene::Replay>(*recording));
 	m_doc.onScenePlay();
 	EXPECT_EQ(m_doc.getTimelineFrameCount(), 0u);
-	core::Timestep step;
+	const core::Timestep step;
 	for (std::size_t frame = 0; frame < recording->frames.size(); ++frame) {
 		scene::UiInputSystem::update(m_doc.getActiveScene().get(), {64, 64}, {0.f, 0.f}, false, 0.016f);
 		m_doc.getActiveScene()->onUpdateRuntime(step, false);
