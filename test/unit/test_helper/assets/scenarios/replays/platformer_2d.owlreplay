@@ -1,0 +1,17 @@
+FormatVersion: 1
+scene: scenes/main.owl
+seed: 0
+tick_rate: 60
+max_ticks_per_frame: 8
+start_hash: 0xf0ed2acc68ff8b14
+start:
+  {}
+durations:
+  - [16666666, 99]
+events:
+  - {frame: 0, pointer: {viewport: [1600, 960], position: [0, 0], pressed: false, wheel: [0, 0], dt: 0.016666666}}
+  - {frame: 59, keys: [D]}
+  - {frame: 89, keys: [Space]}
+  - {frame: 91, keys: []}
+checkpoints:
+  - [60, 0x748e8c23d5674bf3]

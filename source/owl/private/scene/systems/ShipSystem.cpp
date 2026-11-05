@@ -11,16 +11,13 @@
 #include "EngineSystems.h"
 #include "math/elementaryFunctions.h"
 
-#include "app/Application.h"
 #include "input/ActionFrame.h"
-#include "input/Input.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 #include "scene/component/Hierarchy.h"
 #include "scene/component/ShipController.h"
 #include "scene/component/Transform.h"
 #include "scene/component/WorldPosition.h"
-#include "window/Window.h"
 
 #include <algorithm>
 #include <array>
@@ -76,12 +73,12 @@ void turn(Basis& ioBasis, const math::vec3& iBodyAngles) {
 	ioBasis[1] = ioBasis[2] ^ ioBasis[0];
 }
 
-auto readMouse(component::ShipController& ioShip, const bool iCaptured) -> math::vec2 {
+auto readMouse(component::ShipController& ioShip, const bool iCaptured, const math::vec2& iCursor) -> math::vec2 {
 	if (!iCaptured) {
 		ioShip.m_mouseValid = false;
 		return {0.f, 0.f};
 	}
-	const math::vec2 mouse = input::Input::getMousePos();
+	const math::vec2& mouse = iCursor;
 	const math::vec2 delta = ioShip.m_mouseValid ? mouse - ioShip.m_lastMouse : math::vec2{0.f, 0.f};
 	ioShip.m_lastMouse = mouse;
 	ioShip.m_mouseValid = true;
@@ -168,8 +165,7 @@ void updateShips(Scene& ioScene, const SystemContext& iContext) {
 	const auto view = ioScene.registry.view<component::Transform, component::ShipController>();
 	if (view.begin() == view.end())
 		return;
-	const bool cursorCaptured = app::Application::instanced() &&
-								app::Application::get().getWindow().getCursorMode() == window::CursorMode::Disabled;
+	const bool cursorCaptured = ioScene.isCursorCaptured();
 	const auto& actions = ioScene.getActions();
 	for (const auto handle: view) {
 		auto [transform, ship] = view.get<component::Transform, component::ShipController>(handle);
@@ -180,7 +176,8 @@ void updateShips(Scene& ioScene, const SystemContext& iContext) {
 		auto& pose = transform.transform;
 		// The transform holds the attitude: a script or the editor turning the entity turns the ship.
 		Basis basis = toBasis(pose.rotation());
-		steer(ship, basis, actions, readMouse(ship, cursorCaptured && ship.captureCursor), dt);
+		steer(ship, basis, actions,
+			  readMouse(ship, cursorCaptured && ship.captureCursor, ioScene.getInputFrame().getCursor()), dt);
 		pose.rotation() = toEuler(basis);
 		accelerate(ship, basis, actions, dt);
 		move(ioScene, handle, pose.translation(), ship.m_velocity * dt);

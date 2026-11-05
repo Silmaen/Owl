@@ -1,0 +1,26 @@
+FormatVersion: 1
+scene: scenes/platformer_house.owl
+seed: 7
+tick_rate: 60
+max_ticks_per_frame: 8
+start_hash: 0x171cae5cf497cf31
+start:
+  {}
+durations:
+  - [16666666, 366]
+events:
+  - {frame: 0, pointer: {viewport: [1600, 960], position: [0, 0], pressed: false, wheel: [0, 0], dt: 0.016666666}}
+  - {frame: 59, keys: [D]}
+  - {frame: 149, keys: [Space, D]}
+  - {frame: 161, keys: [D]}
+  - {frame: 221, keys: []}
+  - {frame: 251, keys: [A]}
+  - {frame: 296, keys: [Space]}
+  - {frame: 306, keys: []}
+checkpoints:
+  - [60, 0x7476f72dcd1bbfef]
+  - [120, 0x950d41b7e1c3c7b4]
+  - [180, 0x9fc9df2999f37d91]
+  - [240, 0x80937457e2f48855]
+  - [300, 0x988a580c71b16944]
+  - [360, 0x77c4e39a21324b5d]

@@ -179,6 +179,9 @@ void SceneDocument::onScenePlay() {
 	resetHudValues();
 	m_activeScene = scene::Scene::copy(m_editorScene);
 	script::ScriptDebugger::setEnabled(true);
+	m_recording.reset();
+	std::ignore = m_activeScene->setPlaybackReplay(std::exchange(mp_nextReplay, nullptr));
+	std::ignore = m_activeScene->setRecordingReplay(m_recordNextPlay);
 	m_activeScene->onStartRuntime();
 }
 
@@ -187,8 +190,13 @@ void SceneDocument::onSceneStop() {
 	script::ScriptDebugger::setEnabled(false);
 	std::ignore = script::ScriptDebugger::takeHit();
 	m_pendingTeleportVelocity = false;
-	if (m_activeScene)
+	if (m_activeScene) {
+		if (auto recording = m_activeScene->takeRecordedReplay(); recording) {
+			recording->scene = m_scenePath.generic_string();
+			m_recording = std::move(recording);
+		}
 		m_activeScene->onEndRuntime();
+	}
 	m_activeScene = m_editorScene;
 	resetHudValues();
 }
@@ -226,6 +234,10 @@ void SceneDocument::handleTeleportRequest(const math::vec2ui& iViewportSize) {
 	if (!newScene)
 		return;
 	// The running level is only torn down once the target loaded, so a failed teleport keeps playing.
+	if (auto recording = m_activeScene->takeRecordedReplay(); recording) {
+		recording->scene = m_scenePath.generic_string();
+		m_recording = std::move(recording);
+	}
 	m_activeScene->onEndRuntime();
 	newScene->onViewportResize(iViewportSize);
 

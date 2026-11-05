@@ -1,0 +1,7 @@
+# The Engine Demo replay of the platformer house (engine_demo/replays/) plays bit for bit: the world hash of every
+# checkpoint matches. When the scene changes, record the tour again with `OwlRunner --record` (see the replay page).
+scene: ../../../engine_demo/scenes/platformer_house.owl
+replay: ../../../engine_demo/replays/platformer_house_tour.owlreplay
+steps:
+  - frames: 367
+  - expect: {replay: finished}

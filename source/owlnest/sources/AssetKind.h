@@ -33,6 +33,7 @@ enum struct AssetKind : uint8_t {
 	Hud,///< `.owlhud`: opened in a scene document (the HUD is a scene of widgets).
 	HudTheme,///< `.owlhudtheme`: opened in a HUD theme document.
 	Macro,///< `.owlmacro`: replayed on the active scene (one undo step).
+	Replay,///< `.owlreplay`: the scene it recorded played with the recorded inputs.
 	ActionMap,///< `input_actions.yml`: opened in the action map document.
 	Material,///< `.owlmat`: opened in a material document.
 	SoundCue,///< `.owlsound`: opened in a sound document.

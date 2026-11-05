@@ -826,6 +826,12 @@ private:
 
 	/**
 	 * @brief
+	 *  State of the recording or the replay of the running scene, beside the play controls.
+	 */
+	void renderReplayStatus() const;
+
+	/**
+	 * @brief
 	 *  Draw the "Playing" / "Paused" message while its timer runs.
 	 * @param[in] iCollapsed Whether the controls are folded, which moves the message to the top.
 	 */

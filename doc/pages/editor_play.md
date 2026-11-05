@@ -9,13 +9,14 @@ game does. It plays a copy: **Stop** gives back the scene exactly as it was befo
 
 ## Controls
 
-| Control | Key   | Ribbon / overlay              | Effect                                                  |
-|---------|-------|-------------------------------|---------------------------------------------------------|
-| Play    | `F5`  | Play button over the viewport | Start, or resume a paused scene                         |
-| Pause   | `F6`  | Pause button                  | Freeze the simulation, keep drawing                     |
-| Step    | `F8`  | Step button (paused)          | Run one tick, then pause again                          |
-| Stop    | `F7`  | Stop button                   | End Play, back to the scene as it was                   |
-| Fold    | `F10` | Chevron of the Play controls  | Fold the controls into a handle in the top-right corner |
+| Control | Key        | Ribbon / overlay                           | Effect                                                  |
+|---------|------------|--------------------------------------------|---------------------------------------------------------|
+| Play    | `F5`       | Play button over the viewport              | Start, or resume a paused scene                         |
+| Pause   | `F6`       | Pause button                               | Freeze the simulation, keep drawing                     |
+| Step    | `F8`       | Step button (paused)                       | Run one tick, then pause again                          |
+| Stop    | `F7`       | Stop button                                | End Play, back to the scene as it was                   |
+| Record  | `Shift+F5` | Record button (left of Play, editing only) | Record the inputs of the next Plays (toggle)            |
+| Fold    | `F10`      | Chevron of the Play controls               | Fold the controls into a handle in the top-right corner |
 
 ```mermaid
 flowchart LR
@@ -41,6 +42,18 @@ flowchart LR
   played from.
 - One scene plays at a time. Switching to another tab keeps the played scene running, undrawn; its tab shows its
   state and its controls come back when you return.
+
+## Replays {#replays}
+
+- **Record** (`scene.record`, a circle-dot glyph, highlighted when armed) arms the recording: every Play then records each
+  frame until Record is toggled off; **Stop**
+  writes `<project>/replays/<scene>-<YYYYMMDD-HHMMSS>.owlreplay` and shows a toast.
+- A `.owlreplay` double-clicked (or **Open**) in the Content Browser opens its scene and plays it with the recorded
+  inputs; its context menu has **Edit as Text**.
+- The Play controls show `REC` while recording, then `Replay n / m`, `Replay diverged at frame n` when the world
+  differs from the recording, and `Replay done, live input` once the recorded frames are over.
+- A replay needs the project it was recorded in; only the first scene of a session is recorded
+  ([design](design/simulation-networking.md#simulation-replay)).
 
 ## Before you play
 

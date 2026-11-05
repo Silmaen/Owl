@@ -81,6 +81,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the exact duration elapsed since last update.
+	 * @return The duration, in clock ticks.
+	 */
+	[[nodiscard]] auto getDuration() const -> duration { return m_delta; }
+
+	/**
+	 * @brief
 	 *  Get the milliseconds elapsed since last update.
 	 * @return Milliseconds elapsed.
 	 */

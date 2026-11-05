@@ -26,18 +26,19 @@ them, places them in the scene and takes files dropped from the desktop.
 
 ## Opening and placing
 
-| Gesture                                         | Effect                                                                           |
-|-------------------------------------------------|----------------------------------------------------------------------------------|
-| Double-click a folder                           | Enter it                                                                         |
-| Double-click a scene (`.owl`)                   | Open it in a scene tab                                                           |
-| Double-click a prefab                           | Open it as a prefab document                                                     |
-| Double-click a mesh                             | Place a Mesh Renderer entity at the origin                                       |
-| Double-click a macro (`.owlmacro`)              | Replay it on the active scene ([macros](editor_console.md#macros))               |
-| Double-click any other file                     | Open it in its [document](editor_documents.md)                                   |
-| Drag a prefab, a mesh to the viewport           | Place it under the mouse ([dropping assets](editor_viewport.md#dropping-assets)) |
-| Drag a material onto a mesh                     | Give every slot of the mesh the material                                         |
-| Drag a texture, a sound, a script to Properties | Fill the matching field of the component                                         |
-| Drop files from the desktop                     | Copy them into the folder shown                                                  |
+| Gesture                                         | Effect                                                                               |
+|-------------------------------------------------|--------------------------------------------------------------------------------------|
+| Double-click a folder                           | Enter it                                                                             |
+| Double-click a scene (`.owl`)                   | Open it in a scene tab                                                               |
+| Double-click a prefab                           | Open it as a prefab document                                                         |
+| Double-click a mesh                             | Place a Mesh Renderer entity at the origin                                           |
+| Double-click a macro (`.owlmacro`)              | Replay it on the active scene ([macros](editor_console.md#macros))                   |
+| Double-click a replay (`.owlreplay`)            | Open its scene and play it with the recorded inputs ([Play](editor_play.md#replays)) |
+| Double-click any other file                     | Open it in its [document](editor_documents.md)                                       |
+| Drag a prefab, a mesh to the viewport           | Place it under the mouse ([dropping assets](editor_viewport.md#dropping-assets))     |
+| Drag a material onto a mesh                     | Give every slot of the mesh the material                                             |
+| Drag a texture, a sound, a script to Properties | Fill the matching field of the component                                             |
+| Drop files from the desktop                     | Copy them into the folder shown                                                      |
 
 A dragged tile follows the cursor and the places that accept it light up; a field that takes another kind of file
 ignores it.

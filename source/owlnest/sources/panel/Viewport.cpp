@@ -1444,6 +1444,19 @@ void Viewport::renderPlayControls(const bool iCollapsed) {
 							{0.5f, 0.f})) {
 		const bool playing = state == SceneDocument::State::Play;
 		const bool paused = state == SceneDocument::State::Pause;
+		const auto recordKey = shortcut("scene.record");
+		const bool recording =
+				editing ? mp_document->isRecordingNextPlay() : mp_document->getActiveScene()->isRecordingReplay();
+		if (iconButton("record",
+					   {.glyph = gui::icon::circleDot,
+						.tooltip = recording ? "Recording the next Play" : "Record the next Play",
+						.shortcut = recordKey.c_str(),
+						.description = "Records the inputs of the Play session; Stop writes them to replays/ as a "
+									   ".owlreplay, played again frame-exact from the Content Browser.",
+						.selected = recording,
+						.disabled = !editing}))
+			std::ignore = m_parent->runAction("scene.record");
+		ImGui::SameLine();
 		const auto playKey = shortcut("scene.play");
 		if (iconButton("play",
 					   {.glyph = gui::icon::play,
@@ -1476,6 +1489,8 @@ void Viewport::renderPlayControls(const bool iCollapsed) {
 								.description = "Leave the play mode and restore the scene.",
 								.disabled = editing}))
 			std::ignore = m_parent->runAction("scene.stop");
+		if (!editing)
+			renderReplayStatus();
 		if (!editing) {
 			overlaySeparator();
 			const auto key = shortcut("scene.play_controls");
@@ -1490,6 +1505,36 @@ void Viewport::renderPlayControls(const bool iCollapsed) {
 	}
 	if (!collapsed)
 		endOverlay();
+}
+
+void Viewport::renderReplayStatus() const {
+	const auto& theme = gui::UiLayer::getTheme();
+	const auto& activeScene = mp_document->getActiveScene();
+	if (!activeScene)
+		return;
+	const auto& progress = activeScene->getReplayProgress();
+	std::string label;
+	math::vec4 colour = theme.textMuted;
+	if (activeScene->isRecordingReplay()) {
+		label = std::format("{} REC", gui::icon::circleDot);
+		colour = theme.error;
+	} else if (progress.frameCount > 0) {
+		if (progress.divergedFrame.has_value()) {
+			label = std::format("Replay diverged at frame {}", *progress.divergedFrame);
+			colour = theme.warning;
+		} else if (progress.finished) {
+			label = "Replay done, live input";
+			colour = theme.success;
+		} else {
+			label = std::format("Replay {} / {}", progress.frame, progress.frameCount);
+			colour = theme.play;
+		}
+	}
+	if (label.empty())
+		return;
+	ImGui::SameLine();
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextColored(gui::vec(colour), " %s", label.c_str());
 }
 
 void Viewport::renderPlayBanner(const bool iCollapsed) {

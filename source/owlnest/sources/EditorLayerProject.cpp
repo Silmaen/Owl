@@ -108,6 +108,9 @@ void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
 		case AssetKind::Macro:
 			runCommandFromUi("macro.run", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 			return;
+		case AssetKind::Replay:
+			playReplayFile(iPath);
+			return;
 		case AssetKind::Code:
 		case AssetKind::Unsupported:
 			openCodeFile(iPath);

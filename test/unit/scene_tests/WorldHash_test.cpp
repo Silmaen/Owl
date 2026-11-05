@@ -107,3 +107,24 @@ TEST_F(WorldHashTest, SeedRoundTripsThroughTheSceneFile) {
 	const auto unseeded = makeScene(0);
 	EXPECT_EQ(SceneSerializer(unseeded).serializeToString().find("Simulation"), std::string::npos);
 }
+
+TEST_F(WorldHashTest, CopyKeepsTheOrderOfTheEntitiesAndTheirComponents) {
+	const auto source = makeScene(5);
+	for (uint64_t id = 20; id < 26; ++id) {
+		auto entity = source->createEntityWithUUID(core::UUID{id}, "Box");
+		if (id % 2 == 0)
+			entity.addComponent<component::CircleRenderer>();
+	}
+	const auto order = [](const Scene& iScene) -> std::vector<uint64_t> {
+		std::vector<uint64_t> ids;
+		for (const auto view = iScene.registry.view<component::ID>(); const auto entity: view)
+			ids.push_back(static_cast<uint64_t>(view.get<component::ID>(entity).id));
+		for (const auto view = iScene.registry.view<component::ID, component::CircleRenderer>();
+			 const auto entity: view)
+			ids.push_back(static_cast<uint64_t>(view.get<component::ID>(entity).id));
+		return ids;
+	};
+	const auto copy = Scene::copy(source);
+	EXPECT_EQ(order(*copy), order(*source));
+	EXPECT_EQ(order(*Scene::copy(copy)), order(*source));
+}

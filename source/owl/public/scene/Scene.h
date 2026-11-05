@@ -32,6 +32,7 @@
 #include "scene/Accessibility.h"
 #include "scene/FloatingOriginSettings.h"
 #include "scene/PhysicsSettings.h"
+#include "scene/Replay.h"
 #include "scene/SimulationClock.h"
 #include "scene/Subtitles.h"
 #include "scene/SystemSchedule.h"
@@ -1345,6 +1346,73 @@ public:
 
 	/**
 	 * @brief
+	 *  Whether the window cursor is captured in this runtime frame (mouse look), the recorded one in a replay.
+	 * @return True if captured.
+	 */
+	[[nodiscard]] auto isCursorCaptured() const -> bool { return m_cursorCaptured; }
+
+	/**
+	 * @brief
+	 *  Record the next Play session of the scene into a `Replay`.
+	 *
+	 * A replay starts with the runtime: asked while the scene is edited, the recording starts with the next
+	 * `onStartRuntime()`; asked while it plays, it is refused. False drops the recording.
+	 * @param[in] iRecord Whether to record.
+	 * @return True if the request is taken.
+	 */
+	auto setRecordingReplay(bool iRecord) -> bool;
+
+	/**
+	 * @brief
+	 *  Whether a recording is asked or running.
+	 * @return True if recording.
+	 */
+	[[nodiscard]] auto isRecordingReplay() const -> bool { return m_recordArmed; }
+
+	/**
+	 * @brief
+	 *  Stop the recording and hand it over.
+	 * @return The replay of the session so far, none if nothing was recorded.
+	 */
+	[[nodiscard]] auto takeRecordedReplay() -> std::optional<Replay>;
+
+	/**
+	 * @brief
+	 *  Replay a recorded session from the next `onStartRuntime()`, instead of reading the devices.
+	 *
+	 * The seed and the simulation settings of the replay apply, each frame takes its recorded duration and input
+	 * whatever the caller passes, and the world hash is compared at every checkpoint. Once every frame is replayed,
+	 * the scene reads the devices again. Null stops the replay.
+	 * @param[in] iReplay The replay.
+	 * @return True if the request is taken (refused while the scene plays).
+	 */
+	auto setPlaybackReplay(const shared<const Replay>& iReplay) -> bool;
+
+	/**
+	 * @brief
+	 *  Whether the scene is replaying a recorded session (not yet finished).
+	 * @return True if replaying.
+	 */
+	[[nodiscard]] auto isPlayingReplay() const -> bool { return mp_playback != nullptr && !m_replayProgress.finished; }
+
+	/**
+	 * @brief
+	 *  Where the replay stands.
+	 * @return The progress, empty without replay.
+	 */
+	[[nodiscard]] auto getReplayProgress() const -> const ReplayProgress& { return m_replayProgress; }
+
+	/**
+	 * @brief
+	 *  Route the mouse handed to the HUD for the coming frame through the replay (`UiInputSystem::update`).
+	 * @param[in] iLive The mouse read by the caller.
+	 * @return The mouse to use: the live one (recorded when recording), the recorded one when replaying, none when the
+	 *  recorded frame had no HUD update.
+	 */
+	[[nodiscard]] auto routeUiPointer(const ReplayPointer& iLive) -> std::optional<ReplayPointer>;
+
+	/**
+	 * @brief
 	 *  Physical world of this scene, created by `physics::PhysicCommand::init()`.
 	 * @return The world, or nullptr while the scene is not simulated.
 	 */
@@ -1691,6 +1759,24 @@ private:
 	input::ActionFrame m_tickActions;
 	/// Whether the simulation ticks are running (selects the tick input).
 	bool m_inTick = false;
+	/// Whether the window cursor is captured in this runtime frame.
+	bool m_cursorCaptured = false;
+	/// Whether the next or running Play session is recorded.
+	bool m_recordArmed = false;
+	/// The session being recorded.
+	std::optional<Replay> m_recording;
+	/// HUD mouse of the coming frame, kept for the recording.
+	std::optional<ReplayPointer> m_framePointer;
+	/// Tick count of the next recorded checkpoint.
+	uint64_t m_nextCheckpointTick = 0;
+	/// The session being replayed.
+	shared<const Replay> mp_playback;
+	/// Progress of the replay.
+	ReplayProgress m_replayProgress;
+	/// Next checkpoint of the replay to compare.
+	std::size_t m_nextCheckpoint = 0;
+	/// Recorded duration of the replayed frame, given to the systems in place of the caller's.
+	core::Timestep m_replayTimeStep;
 	/// Box2D world of the scene while it is simulated (owned here, managed by `physics::PhysicCommand`).
 	shared<physics::PhysicsWorld> m_physicsWorld;
 	/// Pathfinding graphs and requests, created by `getNavigation`.
@@ -2321,6 +2407,35 @@ private:
 	 * @param[in] iFrame The frame context (`tickCount` ticks to run).
 	 */
 	void runSimulationTicks(const SystemContext& iFrame);
+
+	/**
+	 * @brief
+	 *  Start the replay or the recording with the runtime: seed and clock settings of a replay, its held input.
+	 * @return The input held at the start.
+	 */
+	[[nodiscard]] auto startReplay() -> input::InputState;
+
+	/**
+	 * @brief
+	 *  Keep the world hash at the end of `onStartRuntime()`, or compare it to the replayed one.
+	 */
+	void checkReplayStart();
+
+	/**
+	 * @brief
+	 *  Input of a runtime frame: the recorded one in a replay (its time step then in `m_replayTimeStep`), else the
+	 *  devices (recorded with the caller's time step when recording).
+	 * @param[in] iTimeStep The time step of the caller.
+	 * @param[out] oInput The device state of the frame.
+	 * @return True if the frame is replayed.
+	 */
+	[[nodiscard]] auto beginReplayFrame(const core::Timestep& iTimeStep, input::InputState& oInput) -> bool;
+
+	/**
+	 * @brief
+	 *  Close a runtime frame of the replay or the recording: checkpoint hash, progress.
+	 */
+	void endReplayFrame();
 
 	/**
 	 * @brief

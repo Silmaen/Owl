@@ -48,7 +48,8 @@ public:
 	 * The wheel scrolls the `UiScrollView` or `UiList` under the mouse (the nearest one above the widget under it that can
 	 * move); a click on a bar grabs its thumb, a click on a list row selects it. A `UiWindow` under the mouse blocks every widget beneath it and counts as consuming the mouse. A click on a window
 	 * raises it (last child of its parent, hence drawn last), the title bar drags it (kept inside the screen) and the
-	 * close button hides it.
+	 * close button hides it. The mouse goes through `Scene::routeUiPointer`: recorded with a replay, replaced by the
+	 * recorded one in a replay.
 	 */
 	static void update(Scene* iScene, const math::vec2ui& iViewportSize, const math::vec2& iMousePos,
 					   bool iMousePressed, float iDeltaTime = 0.f, const math::vec2& iWheel = {0.f, 0.f});
@@ -126,6 +127,15 @@ public:
 	 * @param[in,out] ioScene The scene.
 	 */
 	static void reset(Scene& ioScene);
+
+private:
+	/**
+	 * @brief
+	 *  Hover, click, drag, wheel and navigation of one frame, from the mouse the scene routed (live or replayed).
+	 * @param[in,out] ioScene The playing scene.
+	 * @param[in] iPointer The mouse of the frame.
+	 */
+	static void updatePointer(Scene& ioScene, const ReplayPointer& iPointer);
 };
 
 }// namespace owl::scene

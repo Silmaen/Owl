@@ -350,6 +350,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Play a `.owlreplay`: open the scene it recorded and play it with the recorded inputs.
+	 * @param[in] iPath The file.
+	 */
+	void playReplayFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
 	 *  The tab of a sequence, for the `sequence.*` commands: switched to, opened when it is not.
 	 * @param[in] iPath The `.owlseq` file.
 	 * @return Its document, or null when it cannot be opened.
@@ -1128,6 +1135,13 @@ private:
 	 *  Handle the scene stop event.
 	 */
 	void onSceneStop();
+
+	/**
+	 * @brief
+	 *  Write the session a scene document recorded into the project's `replays/` folder.
+	 * @param[in,out] ioDocument The document whose Play stopped.
+	 */
+	void saveRecording(SceneDocument& ioDocument);
 
 	/**
 	 * @brief

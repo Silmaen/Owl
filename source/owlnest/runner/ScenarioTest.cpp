@@ -21,6 +21,7 @@
 #include <scene/Entity.h>
 #include <scene/GameState.h>
 #include <scene/SettingsManager.h>
+#include <scene/WorldHash.h>
 #include <scene/component/components.h>
 
 #include <algorithm>
@@ -236,6 +237,14 @@ auto parseStep(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 	const auto expect = iNode["expect"];
 	if (!expect || !expect.IsMap())
 		return "a step is `frames`, `input`, `expect`, `command`, `macro`, `undo` or `redo`";
+	if (const auto replay = expect["replay"]; replay) {
+		oStep.replay = replay.as<std::string>();
+		return oStep.replay == "synced" || oStep.replay == "finished" ? "" : "`replay` is `synced` or `finished`";
+	}
+	if (const auto hash = expect["world_hash"]; hash) {
+		oStep.worldHash = std::stoull(hash.as<std::string>(), nullptr, 0);
+		return "";
+	}
 	if (const auto gameState = expect["gamestate"]; gameState) {
 		oStep.gameState = gameState.as<std::string>();
 		ScenarioCheck check;
@@ -400,6 +409,12 @@ auto ScenarioTest::load(const std::filesystem::path& iFile) -> expected<Scenario
 				return unexpected<std::string>{
 						std::format("assets folder {} not found", scenario.m_assets.back().string())};
 		}
+		if (const auto replayNode = root["replay"]; replayNode) {
+			auto replay = scene::Replay::loadFile(weakly_canonical(folder / replayNode.as<std::string>()));
+			if (!replay)
+				return unexpected<std::string>{replay.error()};
+			scenario.mp_replay = mkShared<const scene::Replay>(std::move(*replay));
+		}
 		const double stepMs = root["timestep_ms"] ? root["timestep_ms"].as<double>() : 1000.0 / 60.0;
 		scenario.m_step.forceUpdate(std::chrono::duration_cast<core::Timestep::duration>(
 				std::chrono::duration<double, std::milli>{stepMs}));
@@ -468,6 +483,23 @@ auto ScenarioTest::runStep(const ScenarioStep& iStep, const shared<scene::Scene>
 }
 
 auto ScenarioTest::check(const ScenarioStep& iStep, const scene::Scene& iScene) -> std::string {
+	if (!iStep.replay.empty()) {
+		const auto& progress = iScene.getReplayProgress();
+		if (progress.frameCount == 0)
+			return std::format("line {}: the scene replays nothing", iStep.line);
+		if (progress.divergedFrame.has_value())
+			return std::format("line {}: the replay diverges at frame {}", iStep.line, *progress.divergedFrame);
+		if (iStep.replay == "finished" && !progress.finished)
+			return std::format("line {}: the replay is at frame {} of {}", iStep.line, progress.frame,
+							   progress.frameCount);
+		return "";
+	}
+	if (iStep.worldHash.has_value()) {
+		if (const uint64_t hash = scene::computeWorldHash(iScene); hash != *iStep.worldHash)
+			return std::format("line {}: world hash is {:#018x}, expected {:#018x}", iStep.line, hash,
+							   *iStep.worldHash);
+		return "";
+	}
 	if (!iStep.gameState.empty())
 		return checkValue(iStep, "game-state", iStep.gameState, iScene.getGameState().get(iStep.gameState));
 	if (!iStep.setting.empty()) {

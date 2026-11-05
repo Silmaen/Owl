@@ -1,0 +1,13 @@
+# A recorded session of the 2D platformer template replays bit for bit: the world hash of every checkpoint matches,
+# whatever the inputs and the time step of the run. The recording follows the template scene: when the scene changes,
+# record it again with `OwlRunner --scenario template_platformer_2d.owltest --record <this replay>`. The first frame
+# of a run starts the runtime: 100 frames play the 99 recorded ones.
+scene: ../../../engine_assets/project_templates/platformer_2d/scenes/main.owl
+project: ../../../engine_assets/project_templates/platformer_2d
+replay: ../test_helper/assets/scenarios/replays/platformer_2d.owlreplay
+steps:
+  - frames: 50
+  - expect: {replay: synced}
+  - frames: 50
+  - expect: {replay: finished}
+  - expect: {entity: Player, translation.x: {greater: 1.0}}

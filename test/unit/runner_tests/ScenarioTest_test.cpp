@@ -15,8 +15,10 @@
 #include <input/KeyCodes.h>
 #include <input/MouseCode.h>
 #include <scene/Entity.h>
+#include <scene/Replay.h>
 #include <scene/Scene.h>
 #include <scene/SettingsManager.h>
+#include <scene/WorldHash.h>
 #include <scene/component/components.h>
 
 #include <algorithm>
@@ -281,4 +283,50 @@ TEST_F(ScenarioFile, RunnerFailsOnABrokenExpectation) {
 	// NOLINTNEXTLINE(bugprone-command-processor) The scenario is played by the runner process itself.
 	EXPECT_NE(std::system(command.c_str()), 0);
 #endif
+}
+
+TEST_F(ScenarioFile, LoadsAReplayAndItsChecks) {
+	scene::Replay replay;
+	replay.frames.resize(3);
+	ASSERT_TRUE(replay.saveFile(m_dir / "session.owlreplay"));
+	const auto scenario = ScenarioTest::load(write("replay: session.owlreplay\n"
+												   "steps:\n"
+												   "  - frames: 4\n"
+												   "  - expect: {replay: finished}\n"
+												   "  - expect: {world_hash: 0x00000000000000ff}\n"));
+	ASSERT_TRUE(scenario.has_value()) << scenario.error();
+	ASSERT_NE(scenario->getReplay(), nullptr);
+	EXPECT_EQ(scenario->getReplay()->frames.size(), 3u);
+	EXPECT_EQ(scenario->getSteps()[1].replay, "finished");
+	EXPECT_EQ(scenario->getSteps()[2].worldHash, 0xffu);
+	EXPECT_FALSE(ScenarioTest::load(write("replay: missing.owlreplay\nsteps:\n  - frames: 1\n")).has_value());
+	EXPECT_FALSE(ScenarioTest::load(write("steps:\n  - expect: {replay: maybe}\n")).has_value());
+}
+
+TEST(ScenarioTest, ChecksTheReplayAndTheWorldHash) {
+	core::Log::init(core::Log::Level::Off);
+	scene::Scene scn;
+	ScenarioStep synced;
+	synced.replay = "synced";
+	EXPECT_NE(ScenarioTest::check(synced, scn).find("replays nothing"), std::string::npos);
+	auto replay = mkShared<scene::Replay>();
+	replay->frames.resize(2);
+	replay->startHash = scene::computeWorldHash(scn);
+	ASSERT_TRUE(scn.setPlaybackReplay(replay));
+	scn.onStartRuntime();
+	EXPECT_EQ(ScenarioTest::check(synced, scn), "");
+	ScenarioStep finished;
+	finished.replay = "finished";
+	EXPECT_NE(ScenarioTest::check(finished, scn).find("frame 0 of 2"), std::string::npos);
+	const core::Timestep step;
+	scn.onUpdateRuntime(step, false);
+	scn.onUpdateRuntime(step, false);
+	EXPECT_EQ(ScenarioTest::check(finished, scn), "");
+	ScenarioStep hash;
+	hash.worldHash = scene::computeWorldHash(scn);
+	EXPECT_EQ(ScenarioTest::check(hash, scn), "");
+	hash.worldHash = *hash.worldHash ^ 1u;
+	EXPECT_NE(ScenarioTest::check(hash, scn).find("world hash"), std::string::npos);
+	scn.onEndRuntime();
+	core::Log::invalidate();
 }

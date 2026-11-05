@@ -149,7 +149,8 @@ deterministic simulation and replay, Jolt, gravity fields.
   ([Simulation](design/simulation-networking.md#simulation-cross-platform))
 - ![Planned][planned] Fair play: fixed tick whatever the frame rate, gameplay visibility never cut by quality settings,
   bounded field of view ([Fair play](design/simulation-networking.md#networking-fairness))
-- ![Planned][planned] Input recording and frame-exact replay (replays double as regression tests)
+- ![Done][done] Input recording and frame-exact replay (replays double as regression tests)
+  ([Replay](design/simulation-networking.md#simulation-replay))
 - ![Planned][planned] Rewind in Play (snapshot ring buffer + input log)
 - ![Planned][planned] Full 2D physics: callbacks, queries, joints, on the shared physics interface
   ([Physics](design/physics-api.md))

@@ -11,19 +11,17 @@
 #include "EngineSystems.h"
 #include "math/elementaryFunctions.h"
 
-#include "app/Application.h"
 #include "data/voxel/VoxelCollision.h"
 #include "data/voxel/VoxelRaycast.h"
 #include "input/ActionFrame.h"
-#include "input/Input.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 #include "scene/component/components.h"
-#include "window/Window.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace owl::scene::systems {
@@ -31,9 +29,9 @@ namespace owl::scene::systems {
 namespace {
 
 void applyPlayerLook(component::VoxelPlayer& ioPlayer, math::Transform& ioTransform, const input::ActionFrame& iActions,
-					 const float iDt, const bool iCursorCaptured) {
-	if (iCursorCaptured) {
-		const math::vec2 mouse = input::Input::getMousePos();
+					 const float iDt, const std::optional<math::vec2>& iCapturedCursor) {
+	if (iCapturedCursor.has_value()) {
+		const math::vec2& mouse = *iCapturedCursor;
 		if (ioPlayer.mouseValid) {
 			ioPlayer.yaw -= (mouse.x() - ioPlayer.lastMouse.x()) * ioPlayer.mouseSensitivity;
 			ioPlayer.pitch -= (mouse.y() - ioPlayer.lastMouse.y()) * ioPlayer.mouseSensitivity;
@@ -209,7 +207,8 @@ void updateVoxelPlayers(Scene& ioScene, const SystemContext& iContext) {
 		});
 	};
 
-	const bool cursorCaptured = app::Application::get().getWindow().getCursorMode() == window::CursorMode::Disabled;
+	const auto capturedCursor =
+			ioScene.isCursorCaptured() ? std::optional{ioScene.getInputFrame().getCursor()} : std::nullopt;
 	for (const auto entity: players) {
 		auto [transform, player] = players.get<component::Transform, component::VoxelPlayer>(entity);
 		auto& tr = transform.transform;
@@ -218,10 +217,10 @@ void updateVoxelPlayers(Scene& ioScene, const SystemContext& iContext) {
 			player.pitch = tr.rotation().x();
 			player.initialized = true;
 		}
-		applyPlayerLook(player, tr, ioScene.getActions(), dt, cursorCaptured);
+		applyPlayerLook(player, tr, ioScene.getActions(), dt, capturedCursor);
 		if (const auto toast = updatePlayerModes(player, ioScene.getActions(), dt); !toast.empty())
 			ioScene.showToast(toast);
-		updatePlayerInteraction(ioScene, player, tr.translation(), cursorCaptured);
+		updatePlayerInteraction(ioScene, player, tr.translation(), capturedCursor.has_value());
 
 		// Hold still until the player's chunk has streamed in, so it never falls through an ungenerated world.
 		if (!hasChunk(tr.translation())) {

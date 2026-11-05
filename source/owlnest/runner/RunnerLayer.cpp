@@ -602,6 +602,7 @@ auto RunnerLayer::stepScenario() -> bool {
 	} else {
 		OWL_INFO("Scenario: Passed, {} expectation(s).", m_scenario->getCheckCount())
 	}
+	saveRecording();
 	if (m_activeScene->status != scene::Scene::Status::Editing)
 		m_activeScene->onEndRuntime();
 	m_scenario.reset();
@@ -648,11 +649,53 @@ void RunnerLayer::installRenderStack() {
 	renderer::Renderer::setRenderStack(std::move(stack));
 }
 
+auto RunnerLayer::setReplayOptions(const ReplayOptions& iOptions) -> bool {
+	m_recordFile = iOptions.record;
+	if (iOptions.replay.empty())
+		return true;
+	auto replay = scene::Replay::loadFile(iOptions.replay);
+	if (!replay) {
+		OWL_ERROR("Runner: Cannot replay {}.", replay.error())
+		return false;
+	}
+	mp_replay = mkShared<const scene::Replay>(std::move(*replay));
+	return true;
+}
+
+void RunnerLayer::armReplay() {
+	if (m_replayArmed)
+		return;
+	m_replayArmed = true;
+	if (m_scenario && m_scenario->getReplay())
+		mp_replay = m_scenario->getReplay();
+	if (mp_replay) {
+		std::ignore = m_activeScene->setPlaybackReplay(mp_replay);
+		OWL_INFO("Runner: Replaying {} frames ({:.1f} s) of '{}'.", mp_replay->frames.size(), mp_replay->getSeconds(),
+				 mp_replay->scene)
+	}
+	if (!m_recordFile.empty())
+		std::ignore = m_activeScene->setRecordingReplay(true);
+}
+
+void RunnerLayer::saveRecording() {
+	if (m_recordFile.empty() || !m_activeScene)
+		return;
+	const auto file = std::exchange(m_recordFile, {});
+	auto replay = m_activeScene->takeRecordedReplay();
+	if (!replay)
+		return;
+	replay->scene = m_scenario ? relative(m_scenario->getScene(), m_scenario->getProject()).generic_string()
+							   : m_scenePath.generic_string();
+	if (replay->saveFile(file))
+		OWL_INFO("Runner: Session of {} frames recorded to {}.", replay->frames.size(), file.string())
+}
+
 void RunnerLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
 
 	app::Application::get().getHotReload().removeListener(m_hotReloadListener);
 	finishFrameBench(/*iInterrupted=*/true);
+	saveRecording();
 	m_captureTarget.reset();
 	// unload the active scene.
 	m_activeScene.reset();
@@ -693,6 +736,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 				m_captureTarget->clearAttachment(1, -1);
 			m_activeScene->onViewportResize(m_viewportSize);
 			if (m_activeScene->status == scene::Scene::Status::Editing) {
+				armReplay();
 				m_activeScene->onStartRuntime();
 				applyPendingTeleport();
 			} else {
@@ -710,6 +754,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 					samplePicks();
 					// Handle quit request from Lua (scene.quit()).
 					if (m_activeScene->quitRequested) {
+						saveRecording();
 						m_activeScene->onEndRuntime();
 						if (m_smokeTest.frames > 0) {
 							m_activeScene->quitRequested = false;
@@ -806,6 +851,7 @@ void RunnerLayer::finishTransition() {
 	if (!newScene)
 		return;
 	// The old level stops only once the new one loaded, so a failed teleport resumes the current level.
+	saveRecording();
 	m_activeScene->onEndRuntime();
 	OWL_CORE_DEBUG("Runner: Transition to '{}' applied in {:.1f} ms.", transition->sourceName,
 				   std::chrono::duration<double, std::milli>{clk::now() - t0}.count())
