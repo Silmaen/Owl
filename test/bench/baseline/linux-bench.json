@@ -430,22 +430,22 @@
       "items": 1000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1089970.0,
-      "p25_ns": 1088119.5,
-      "p75_ns": 1091716.5,
-      "min_ns": 1085640.0,
-      "max_ns": 1098002.0
+      "median_ns": 1278686.0,
+      "p25_ns": 1274076.5,
+      "p75_ns": 1281200.5,
+      "min_ns": 1264577.0,
+      "max_ns": 1286229.0
     },
     {
       "name": "physics/init/100_bodies",
       "items": 100,
       "batch": 1,
       "samples": 15,
-      "median_ns": 104066.0,
-      "p25_ns": 103717.0,
-      "p75_ns": 105079.0,
-      "min_ns": 103368.0,
-      "max_ns": 107767.0
+      "median_ns": 352288.0,
+      "p25_ns": 343872.0,
+      "p75_ns": 355990.0,
+      "min_ns": 340974.0,
+      "max_ns": 379178.0
     },
     {
       "name": "physics/init/5000_bodies",
@@ -463,44 +463,44 @@
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 28491906.0,
-      "p25_ns": 28463969.0,
-      "p75_ns": 28632640.0,
-      "min_ns": 28442178.0,
-      "max_ns": 30580842.0
+      "median_ns": 134240612.0,
+      "p25_ns": 134121599.5,
+      "p75_ns": 134448220.0,
+      "min_ns": 133945176.0,
+      "max_ns": 135563857.0
     },
     {
       "name": "physics/step_falling/100_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 4560261.0,
-      "p25_ns": 4547899.5,
-      "p75_ns": 4575033.0,
-      "min_ns": 4545314.0,
-      "max_ns": 4589456.0
+      "median_ns": 11814012.0,
+      "p25_ns": 11801441.0,
+      "p75_ns": 11825851.0,
+      "min_ns": 11793200.0,
+      "max_ns": 11867652.0
     },
     {
       "name": "physics/step_falling/5000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 118060916.0,
-      "p25_ns": 118033118.5,
-      "p75_ns": 118207900.5,
-      "min_ns": 117879324.0,
-      "max_ns": 118689224.0
+      "median_ns": 364578969.0,
+      "p25_ns": 364437781.5,
+      "p75_ns": 365023694.5,
+      "min_ns": 364038175.0,
+      "max_ns": 365309248.0
     },
     {
       "name": "physics/step_falling_mt2/1000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 46785821.0,
-      "p25_ns": 43976036.0,
-      "p75_ns": 50003071.0,
-      "min_ns": 41778007.0,
-      "max_ns": 59564233.0
+      "median_ns": 67895354.0,
+      "p25_ns": 67388189.0,
+      "p75_ns": 68607997.0,
+      "min_ns": 65778064.0,
+      "max_ns": 70453842.0
     },
     {
       "name": "physics/step_falling_mt2/100_bodies",
@@ -529,11 +529,11 @@
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 36267810.0,
-      "p25_ns": 32928126.5,
-      "p75_ns": 37334872.5,
-      "min_ns": 28305984.0,
-      "max_ns": 42452970.0
+      "median_ns": 52011241.0,
+      "p25_ns": 51154721.5,
+      "p75_ns": 52704258.0,
+      "min_ns": 50312729.0,
+      "max_ns": 56464221.0
     },
     {
       "name": "physics/step_falling_mt4/100_bodies",
@@ -551,22 +551,22 @@
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 154224311.0,
-      "p25_ns": 147647857.0,
-      "p75_ns": 164001044.5,
-      "min_ns": 131837664.0,
-      "max_ns": 169739033.0
+      "median_ns": 186024864.0,
+      "p25_ns": 178146014.5,
+      "p75_ns": 191114078.0,
+      "min_ns": 170806354.0,
+      "max_ns": 223628682.0
     },
     {
       "name": "physics/step_falling_mt8/1000_bodies",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 20778791.0,
-      "p25_ns": 20677379.5,
-      "p75_ns": 20953573.5,
-      "min_ns": 20469177.0,
-      "max_ns": 21575770.0
+      "median_ns": 46890422.0,
+      "p25_ns": 46806121.0,
+      "p75_ns": 47289819.0,
+      "min_ns": 46483866.0,
+      "max_ns": 48221839.0
     },
     {
       "name": "physics/step_falling_mt8/100_bodies",
@@ -584,11 +584,11 @@
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 58099765.0,
-      "p25_ns": 57960672.5,
-      "p75_ns": 58584475.5,
-      "min_ns": 56842660.0,
-      "max_ns": 60557192.0
+      "median_ns": 152946452.0,
+      "p25_ns": 150063717.5,
+      "p75_ns": 154302279.5,
+      "min_ns": 148619329.0,
+      "max_ns": 156408989.0
     },
     {
       "name": "physics/step_settled/1000_bodies",
@@ -617,11 +617,11 @@
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 556527443.0,
-      "p25_ns": 556055374.5,
-      "p75_ns": 557045539.0,
-      "min_ns": 555630379.0,
-      "max_ns": 557821984.0
+      "median_ns": 781732184.0,
+      "p25_ns": 781351435.0,
+      "p75_ns": 782149530.0,
+      "min_ns": 780312415.0,
+      "max_ns": 782506533.0
     },
     {
       "name": "physics/step_settled_mt2/1000_bodies",
@@ -1398,11 +1398,11 @@
       "items": 10000,
       "batch": 1,
       "samples": 15,
-      "median_ns": 3584624.0,
-      "p25_ns": 3560912.0,
-      "p75_ns": 3595100.5,
-      "min_ns": 3531612.0,
-      "max_ns": 3635051.0
+      "median_ns": 4174027.0,
+      "p25_ns": 4156740.5,
+      "p75_ns": 4211113.0,
+      "min_ns": 4144204.0,
+      "max_ns": 4263566.0
     },
     {
       "name": "scene/view_iterate/transform_sprite/1000",
@@ -2624,6 +2624,17 @@
       "p75_ns": 1103419.6,
       "min_ns": 1099155.7,
       "max_ns": 1108382.0
+    },
+    {
+      "name": "hud/frame/500_styled_widgets",
+      "items": 500,
+      "batch": 59,
+      "samples": 15,
+      "median_ns": 199521.3,
+      "p25_ns": 199414.8,
+      "p75_ns": 199660.4,
+      "min_ns": 199238.4,
+      "max_ns": 200074.1
     }
   ],
   "metrics": [
