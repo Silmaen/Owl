@@ -44,9 +44,9 @@ User-facing reference: `doc/pages/scripting.md` (guide), `doc/pages/lua-api.md` 
 - Lifecycle: `Scene::onStartRuntime()` creates each instance bound to its scene (`ScriptInstance::setScene`,
   read by the bindings through `getBoundScene(L)`, never a global); instances call `on_create` /
   `on_update` / `on_destroy`.
-- Event callbacks: `on_collision(other_id)` (from `PhysicCommand::takeCollisionEvents(scene)`, dispatched by
+- Event callbacks: `on_collision(other_id)` / `on_collision_exit(other_id)` (from `PhysicCommand::takeCollisionEvents(scene)`, dispatched by
   `Scene::dispatchCollisionEvents()` after the physics step), `on_trigger_enter(other_id)` /
-  `on_trigger_exit(other_id)` / `on_triggered(other_id)`, `on_timer()`, `on_interact()`. Never dispatch to an
+  `on_trigger_exit(other_id)` (also from `PhysicBody` sensors) / `on_triggered(other_id)`, `on_timer()`, `on_interact()`. Never dispatch to an
   entity for which `Scene::isPendingDestructionInTree()` is true; destruction from a callback is deferred.
 - Properties: `properties = { {name, type, default}, ... }`, parsed by
   `ScriptEngine::extractProperties()`, set as globals before `on_create`.

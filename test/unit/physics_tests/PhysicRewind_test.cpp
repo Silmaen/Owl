@@ -78,8 +78,9 @@ protected:
 		Trace trace;
 		for (int t = 0; t < iTicks; ++t) {
 			PhysicCommand::step(m_scene);
-			for (const auto& [entityA, entityB]: PhysicCommand::takeCollisionEvents(m_scene))
-				trace.collisions.emplace_back(static_cast<uint64_t>(entityA), static_cast<uint64_t>(entityB));
+			for (const auto& event: PhysicCommand::takeCollisionEvents(m_scene))
+				trace.collisions.emplace_back(static_cast<uint64_t>(event.entityA),
+											  static_cast<uint64_t>(event.entityB));
 		}
 		PhysicCommand::syncSimulatedTransforms(m_scene);
 		for (const auto& body: m_bodies) {

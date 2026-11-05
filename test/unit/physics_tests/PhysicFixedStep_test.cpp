@@ -14,11 +14,13 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -204,7 +206,9 @@ TEST_F(PhysicFixedStepTest, CollisionReportedOnceInAFrameOfManySteps) {
 	for (int i = 0; i < 3; ++i) {
 		PhysicCommand::frame(scene, makeFrame(1'000'000));
 		ASSERT_EQ(PhysicCommand::getLastFrameStepCount(scene), 60u);
-		const auto events = PhysicCommand::takeCollisionEvents(scene);
+		std::vector<PhysicCommand::CollisionEvent> events;
+		std::ranges::copy_if(PhysicCommand::takeCollisionEvents(scene), std::back_inserter(events),
+							 [](const PhysicCommand::CollisionEvent& iEvent) -> bool { return !iEvent.ended; });
 		ASSERT_EQ(events.size(), 2u) << "frame " << i;
 		EXPECT_NE(events[0].entityA == ball.getUUID() ? events[0].entityB : events[0].entityA,
 				  events[1].entityA == ball.getUUID() ? events[1].entityB : events[1].entityA);

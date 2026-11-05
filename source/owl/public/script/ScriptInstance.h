@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace owl::scene {
@@ -178,6 +179,14 @@ public:
 	 * @param[in] iOtherEntityId UUID of the other entity.
 	 */
 	void onCollision(uint64_t iOtherEntityId) const;
+
+	/**
+	 * @brief
+	 *  Call a contact callback of the script (`on_collision_exit`, `on_trigger_enter`, `on_trigger_exit`).
+	 * @param[in] iCallback Name of the Lua function.
+	 * @param[in] iOtherEntityId UUID of the other entity.
+	 */
+	void onContact(std::string_view iCallback, uint64_t iOtherEntityId) const;
 
 	/**
 	 * @brief

@@ -47,9 +47,12 @@ until `destroy(scene)`, `onEndRuntime()` or its destructor, so nothing dangles. 
 |---------------|-------------|-------------|-----------------------------------------------------------------|
 | type          | `BodyType`  | `Dynamic`   | How Jolt treats the body (see table below)                      |
 | dimension     | `Dimension` | `Plane`     | `Plane`: 2D, locked to the XY plane; `Space`: 3D, free in space |
-| shape         | `Shape`     | `Box`       | `Box`, `Sphere`, `Capsule` or `Cylinder` (see below)            |
+| shape         | `Shape`     | `Box`       | `Box`, `Sphere`, `Capsule`, `Cylinder`, `ConvexHull`, `Mesh`    |
 | fixedRotation | `bool`      | `false`     | Lock rotation so the body cannot spin                           |
 | colliderSize  | `vec3f`     | `{1, 1, 1}` | Size of the collider, times the entity scale (see below)        |
+| sensor        | `bool`      | `false`     | Detects bodies entering it without stopping them (see below)    |
+| layer         | `uint8_t`   | `0`         | Collision layer, 0 to 7                                         |
+| mask          | `uint8_t`   | `255`       | Layers the body collides with, one bit per layer                |
 | density       | `float`     | `1.0`       | Material density, affects mass                                  |
 | restitution   | `float`     | `0.0`       | Bounciness coefficient (0 = no bounce, 1 = full)                |
 | friction      | `float`     | `0.5`       | Surface friction coefficient                                    |
@@ -79,8 +82,19 @@ ground. `dimension` and `shape` are written only when they differ from `Plane` a
 
 A 2D body weighs `density` times its area, a 3D one `density` times its volume. A 3D body reads and writes the whole
 transform: translation and Euler angles (X, then Y, then Z, as `math::Transform` composes them).
-A save keeps the 2D state of a body (`PhysicsSnapshot`): the Z velocity and the spin around X and Y of a 3D body are
-not saved yet ([Physics API](design/physics-api.md)).
+A save (`PhysicsSnapshot`) keeps the 3D state of a body: linear and angular velocity (a save writes `vz`, `avx` and
+`avy` for a 3D body).
+
+`ConvexHull` and `Mesh` are 3D shapes built from the mesh of the entity's `MeshRenderer`, scaled like the entity:
+`ConvexHull` is the hull of the mesh, `Mesh` its triangles, for a static or kinematic body (a dynamic body gets the
+hull). Without a mesh the body gets a box and a warning is logged.
+
+### Layers and Sensors {#layers-sensors}
+
+Two bodies collide when each one's `mask` holds the other's `layer`; the inspector shows `mask` as *Collides With*
+checkboxes. A `sensor` stops nothing: the bodies entering and leaving it call Lua `on_trigger_enter(other)` and
+`on_trigger_exit(other)` on both entities, and queries go through it. A solid body on layer 0 colliding with every
+layer (the defaults) writes no YAML key for `sensor`, `layer` or `mask`.
 
 ## Physics Lifecycle
 
@@ -242,7 +256,8 @@ each multi-threaded world and destroyed with it.
 | `getInterpolationAlpha()`                    | Blend factor of the last transform write                                                          |
 | `syncSimulatedTransforms()`                  | Write the last step's poses, not blended ones                                                     |
 | `shiftOrigin(scene, shift)`                  | Move every body back by a shift of the world origin ([World positions](scene.md#world-positions)) |
-| `takeCollisionEvents()`                      | Hand over and clear the collisions begun                                                          |
+| `takeCollisionEvents()`                      | Hand over and clear the collision events (begun and ended)                                        |
+| `raycast`, `shapeCast`, `overlap`            | Queries of the world (see [Queries](#queries))                                                    |
 | `saveState(scene)`                           | Bytes of the whole simulation, for rewind (see below)                                             |
 | `restoreState(scene, bytes)`                 | Put back a saved simulation; refused if the bodies changed                                        |
 | `destroyBody(entity)`                        | Remove the entity's bodies (the bodies resting on it wake up)                                     |
@@ -284,6 +299,12 @@ void MyScript::onUpdate(const owl::core::Timestep& iTimeStep) {
 
 ## Collision Events {#collision-events}
 
+A `CollisionEvent` carries `entityA`, `entityB`, `ended` (the pair stopped touching) and `sensor` (one side is a
+sensor). A pair begins once and ends when its last contact ends; a pair that ends and begins again within one frame
+reports nothing, a destroyed body ends its pairs, and a body falling asleep does not end its contacts (they are
+tracked per sub-shape pair and stay dormant until the body wakes elsewhere). Lua receives `on_collision(other)` at the
+begin, `on_collision_exit(other)` at the end, and `on_trigger_enter` / `on_trigger_exit` when one side is a sensor.
+
 `step()` turns Jolt contact events into entity-level collisions. Each contact-added event, sorted by body, is resolved to the two
 owning entities; Owl Engine counts the touching shape pairs of every entity pair and records a `CollisionEvent`
 (`entityA`, `entityB` UUIDs) only when the count goes from 0 to 1. The events gathered since the last
@@ -316,6 +337,45 @@ sequenceDiagram
     S->>S: triggers, render
     S->>S: flushPendingDestructions()
 ```
+
+## Queries {#queries}
+
+`PhysicCommand::raycast`, `shapeCast` (a `QueryShape` swept along a direction) and `overlap` return the first solid
+body met, as a `QueryHit`, or the entities inside a shape. Sensors are ignored. A 2D query runs in the plane z = 0 and
+meets 2D bodies and the 3D ones crossing it. Overlaps return entity ids in a fixed order.
+
+| Lua function                                                              | Returns              |
+|---------------------------------------------------------------------------|----------------------|
+| `physics.raycast`, `physics.raycast_3d`                                   | A hit table or `nil` |
+| `physics.circle_cast`, `physics.box_cast`, `physics.sphere_cast`          | A hit table or `nil` |
+| `physics.overlap_circle`, `physics.overlap_box`, `physics.overlap_sphere` | A list of entity ids |
+
+The hit is `{entity, x, y, [z], nx, ny, [nz], distance}` (`z` and `nz` in 3D). Each function takes an optional `mask`
+of layers to test.
+
+## Joints {#joints}
+
+The `PhysicJoint` component (YAML key `PhysicJoint`, inspector *Physics Joint*) links its entity to another body or to
+the world:
+
+| Field                        | Used by         | Description                                                   |
+|------------------------------|-----------------|---------------------------------------------------------------|
+| Type                         | All             | `Fixed`, `Distance`, `Hinge` or `Slider`                      |
+| Connected entity             | All             | The other body; none = the world                              |
+| Anchor                       | All             | Joint point, in the frame of the entity                       |
+| Connected Anchor             | `Distance`      | Joint point on the connected body                             |
+| Spring frequency, damping    | `Distance`      | A spring instead of a rod                                     |
+| Axis                         | Hinge, Slider   | A 2D hinge turns around Z, a 2D slider stays in the plane     |
+| Limited, lower, upper        | Hinge, Slider   | Angle or position limits                                      |
+| Motor, speed, force          | Hinge, Slider   | Drives the joint to the speed, up to the force                |
+
+A joint is built once both bodies exist; one whose connected entity has no body is not built and a warning is logged.
+Lua `physics.set_joint_motor(id, speed, [enabled])` drives the motor and `physics.get_joint_position(id)` reads the
+hinge angle from the start pose or the slider position, measured on the joint's own entity relative to the connected
+body. Joints are part of `saveState` / `restoreState`. Owl Nest draws the selected joint in the viewport: anchor
+cross, line to the connected body, axis.
+
+Articulated bodies and breakable joints are not available yet ([Physics API](design/physics-api.md)).
 
 ## Player Integration
 

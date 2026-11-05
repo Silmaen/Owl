@@ -13,3 +13,4 @@ steps:
   - input: {key: E, frames: 3}
   - frames: 60
   - expect: {entity: KickBarrel, translation.z: {greater: 1.1}}
+  - expect: {gamestate: barrels_over_line, equals: 1}

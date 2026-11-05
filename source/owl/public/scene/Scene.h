@@ -142,6 +142,7 @@ struct ShipController;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
+struct PhysicJoint;
 struct Player;
 struct PrefabLink;
 struct RaycastDoor;
@@ -1375,6 +1376,24 @@ public:
 	 * @return The replay of the session so far, none if nothing was recorded.
 	 */
 	[[nodiscard]] auto takeRecordedReplay() -> std::optional<Replay>;
+
+	/**
+	 * @brief
+	 *  The session recorded so far, left in place.
+	 * @return The recording, none when the scene does not record.
+	 */
+	[[nodiscard]] auto getRecordedReplay() const -> const std::optional<Replay>& { return m_recording; }
+
+	/**
+	 * @brief
+	 *  Stop the replay at the frame it reached and record from there, live.
+	 *
+	 * The recording starts with the frames and the checkpoints already replayed, the start state of the replay and its
+	 * settings: the session goes on as if it had been recorded live up to here (the rewind of the editor branches a
+	 * new session this way). The frames not replayed yet are dropped.
+	 * @return True if taken, false when the scene does not play a replay.
+	 */
+	auto takeOverReplay() -> bool;
 
 	/**
 	 * @brief
@@ -2912,6 +2931,10 @@ OWL_API void Scene::onComponentAdded<component::Text>(const Entity& iEntity, com
 
 template<>
 OWL_API void Scene::onComponentAdded<component::PhysicBody>(const Entity& iEntity, component::PhysicBody& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::PhysicJoint>(const Entity& iEntity,
+															 component::PhysicJoint& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Player>(const Entity& iEntity, component::Player& ioComponent);

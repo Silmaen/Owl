@@ -627,6 +627,14 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the joint of the selected entity: its anchor, the link to the connected body and the axis of a hinge or
+	 *  a slider.
+	 * @param[in] iScene The scene being edited.
+	 */
+	void renderJointOverlay(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
 	 *  Point of the plane of the selected `WalkArea` under the cursor, in the space of the entity.
 	 * @return The point, or nothing when the cursor misses the plane.
 	 */
@@ -832,6 +840,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Timeline of the Play session beside the play controls: dragging it seeks (rewinds or fast-forwards) the scene.
+	 */
+	void renderTimeline();
+
+	/**
+	 * @brief
 	 *  Draw the "Playing" / "Paused" message while its timer runs.
 	 * @param[in] iCollapsed Whether the controls are folded, which moves the message to the top.
 	 */
@@ -1029,6 +1043,8 @@ private:
 	std::size_t m_overlayCount = 0;
 	/// Whether the window was focused last frame (used to detect a focus transition).
 	bool m_wasFocused = false;
+	/// Frame shown by the timeline slider while it is dragged, sought on release.
+	std::optional<uint64_t> m_scrubFrame;
 	/// False while the viewport window is hidden behind another tab or collapsed: its scene is not drawn.
 	bool m_visible = true;
 	/// ImGui close state — set to false by ImGui when the tab's close X is clicked.

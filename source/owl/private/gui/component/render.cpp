@@ -1484,6 +1484,11 @@ void renderProps(Text& ioComponent) {
 	}
 }
 
+namespace {
+// Defined with the script property editors below.
+auto scriptEntityPicker(uint64_t& ioTarget, float iWidth) -> bool;
+}// namespace
+
 void renderProps(PhysicBody& ioComponent) {
 	constexpr auto bodyTypeDesc = [](const SceneBody::BodyType iType) -> const char* {
 		switch (iType) {
@@ -1539,6 +1544,88 @@ void renderProps(PhysicBody& ioComponent) {
 	fieldTooltip("Bounciness. 0 = no bounce, 1 = perfectly elastic.");
 	prop::DragFloat("Friction", &ioComponent.body.friction, 0.00025f, 0.0f, 1.0f);
 	fieldTooltip("Surface friction coefficient. 0 = ice, 1 = rubber.");
+	prop::Checkbox("Sensor", &ioComponent.body.sensor);
+	fieldTooltip("A sensor stops nothing: the bodies entering and leaving it call on_trigger_enter and on_trigger_exit "
+				 "on both entities. Rays and shape queries go through it.");
+	int layer = ioComponent.body.layer;
+	if (prop::DragInt("Layer", &layer, 0.05f, 0, SceneBody::layerCount - 1))
+		ioComponent.body.layer = static_cast<uint8_t>(std::clamp(layer, 0, SceneBody::layerCount - 1));
+	fieldTooltip("Collision layer of the body, 0 to 7.");
+	prop::row("Collides With", [&](const char* iId) -> bool {
+		bool changed = false;
+		for (uint8_t bit = 0; bit < SceneBody::layerCount; ++bit) {
+			if (bit > 0)
+				ImGui::SameLine(0.f, 2.f);
+			bool on = ((ioComponent.body.mask >> bit) & 1u) != 0;
+			if (ImGui::Checkbox(std::format("##{}{}", iId, bit).c_str(), &on)) {
+				ioComponent.body.mask = static_cast<uint8_t>(on ? ioComponent.body.mask | (1u << bit)
+																: ioComponent.body.mask & ~(1u << bit));
+				changed = true;
+			}
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("Layer %u", static_cast<uint32_t>(bit));
+		}
+		return changed;
+	});
+	fieldTooltip("Layers this body collides with, 0 to 7 from the left: two bodies collide when each one ticks the "
+				 "other's layer.");
+}
+
+void renderProps(PhysicJoint& ioComponent) {
+	auto& joint = ioComponent.joint;
+	const std::string typeName{magic_enum::enum_name(joint.type)};
+	if (prop::BeginCombo("Type", typeName.c_str())) {
+		for (const auto type: magic_enum::enum_values<SceneJoint::Type>())
+			if (ImGui::Selectable(std::string(magic_enum::enum_name(type)).c_str(), type == joint.type))
+				joint.type = type;
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Fixed: the bodies move as one. Distance: the anchors keep their distance (a rod, or a spring). "
+				 "Hinge: the bodies turn around the anchor (around Z in 2D). Slider: they slide along the axis.");
+	auto connected = static_cast<uint64_t>(joint.connected);
+	prop::row("Connected", [&](const char*) -> bool {
+		if (scriptEntityPicker(connected, ImGui::GetContentRegionAvail().x)) {
+			joint.connected = core::UUID{connected};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Entity whose Physical body is joined; none joins the body to the world.");
+	drawVec3Control("Anchor", joint.anchor, 0.f);
+	fieldTooltip("Joint point, in the frame of this entity.");
+	if (joint.type == SceneJoint::Type::Distance) {
+		drawVec3Control("Connected Anchor", joint.connectedAnchor, 0.f);
+		fieldTooltip("Point on the connected body, in its frame (in the world without one).");
+		prop::DragFloat("Spring Frequency", &joint.springFrequency, 0.01f, 0.f, 60.f, "%.2f Hz");
+		fieldTooltip("0 keeps the distance rigid; above, the joint is a spring of that frequency.");
+		prop::DragFloat("Spring Damping", &joint.springDamping, 0.005f, 0.f, 1.f);
+		fieldTooltip("Damping ratio of the spring: 0 bounces forever, 1 stops without bouncing.");
+	}
+	if (joint.type == SceneJoint::Type::Hinge || joint.type == SceneJoint::Type::Slider) {
+		drawVec3Control("Axis", joint.axis, 0.f);
+		fieldTooltip("Hinge axis or slide direction, in the frame of this entity; a 2D hinge always turns around Z.");
+	}
+	if (joint.type == SceneJoint::Type::Fixed)
+		return;
+	prop::Checkbox("Limited", &joint.limited);
+	fieldTooltip("Bound the motion: angles of a hinge (radians, -pi to pi around the start pose), positions of a "
+				 "slider, lengths of a distance joint.");
+	if (joint.limited) {
+		prop::DragFloat("Lower Limit", &joint.lowerLimit, 0.01f, -1000.f, 1000.f);
+		fieldTooltip("Smallest angle, position or length.");
+		prop::DragFloat("Upper Limit", &joint.upperLimit, 0.01f, -1000.f, 1000.f);
+		fieldTooltip("Largest angle, position or length.");
+	}
+	if (joint.type == SceneJoint::Type::Distance)
+		return;
+	prop::Checkbox("Motor", &joint.motor);
+	fieldTooltip("Drive the hinge or the slider at Motor Speed; Lua changes it with physics.set_joint_motor.");
+	if (joint.motor) {
+		prop::DragFloat("Motor Speed", &joint.motorSpeed, 0.01f, -1000.f, 1000.f);
+		fieldTooltip("Target speed, radians per second for a hinge, units per second for a slider.");
+		prop::DragFloat("Motor Force", &joint.motorForce, 0.1f, 0.f, 1.e6f);
+		fieldTooltip("Largest torque or force the motor applies.");
+	}
 }
 
 void renderProps(Player& ioComponent) {

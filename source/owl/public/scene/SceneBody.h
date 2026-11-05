@@ -80,13 +80,26 @@ public:
 		Box,///< Box of `colliderSize`.
 		Sphere,///< Sphere (a disc in 2D) of diameter `colliderSize.x`.
 		Capsule,///< Capsule along Y, of diameter `colliderSize.x` and full height `colliderSize.y`.
-		Cylinder///< Cylinder along Y, of diameter `colliderSize.x` and height `colliderSize.y` (a rectangle in 2D).
+		Cylinder,///< Cylinder along Y, of diameter `colliderSize.x` and height `colliderSize.y` (a rectangle in 2D).
+		ConvexHull,///< 3D: the convex hull of the mesh of the entity's `MeshRenderer`, scaled like the entity.
+		Mesh///< 3D, static or kinematic: the triangles of the mesh of the entity's `MeshRenderer`.
 	};
 	/// Shape of the collider.
 	Shape shape = Shape::Box;
 
+	/// Mask of a body colliding with every layer.
+	static constexpr uint8_t allLayers = 0xff;
+	/// Number of collision layers.
+	static constexpr uint8_t layerCount = 8;
+
 	/// If the body can rotate.
 	bool fixedRotation = false;
+	/// A sensor detects the bodies entering it (`on_trigger_enter`, `on_trigger_exit`) without stopping them.
+	bool sensor = false;
+	/// Collision layer of the body, 0 to `layerCount - 1`.
+	uint8_t layer = 0;
+	/// Layers the body collides with, one bit per layer; two bodies collide when each one's mask has the other's layer.
+	uint8_t mask = allLayers;
 	/// Internal body index.
 	uint64_t bodyId = 0;
 	/// The size of the collider (see `Shape`), multiplied by the entity scale; a 2D box ignores Z (unit depth).

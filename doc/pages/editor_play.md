@@ -15,7 +15,8 @@ game does. It plays a copy: **Stop** gives back the scene exactly as it was befo
 | Pause   | `F6`       | Pause button                               | Freeze the simulation, keep drawing                     |
 | Step    | `F8`       | Step button (paused)                       | Run one tick, then pause again                          |
 | Stop    | `F7`       | Stop button                                | End Play, back to the scene as it was                   |
-| Record  | `Shift+F5` | Record button (left of Play, editing only) | Record the inputs of the next Plays (toggle)            |
+| Record  | `Shift+F5` | Record button (left of Play, editing only) | Write the next Plays to a `.owlreplay` (toggle)         |
+| Rewind  | `F9`       | Timeline slider (playing or paused)        | Go back one second; drag the timeline to any frame      |
 | Fold    | `F10`      | Chevron of the Play controls               | Fold the controls into a handle in the top-right corner |
 
 ```mermaid
@@ -24,6 +25,8 @@ flowchart LR
     P -->|F6 Pause| Z[Pause]
     Z -->|F5 Resume| P
     Z -->|F8 Step| Z
+    P -->|F9 Rewind| Z
+    Z -->|F9 Rewind| Z
     P -->|F7 Stop| E
 ```
 
@@ -54,6 +57,18 @@ flowchart LR
   differs from the recording, and `Replay done, live input` once the recorded frames are over.
 - A replay needs the project it was recorded in; only the first scene of a session is recorded
   ([design](design/simulation-networking.md#simulation-replay)).
+
+## Rewind {#rewind}
+
+- Every Play keeps its inputs in memory: the **timeline** slider beside the Play controls shows the frame reached and
+  the seconds played. Dragging it, or `F9` (`scene.rewind`, one second back), seeks that frame and pauses there.
+- A seek simulates the frames again with the recorded inputs, from a fresh copy of the scene when it goes back: the
+  world is the one of that frame, bit for bit. The controls show `Rewinding n / m` while it runs, silent, a slice
+  of each editor frame; its cost grows with the frames simulated again.
+- **Play** or **Step** goes on live from the frame reached and drops the frames after it; **Stop** after a seek
+  keeps the whole timeline. With **Record** armed, Stop writes the session as it ends up.
+- A played `.owlreplay` and the scenes reached by a level transition are not rewound: the timeline covers the first
+  scene of the Play ([design](design/simulation-networking.md#simulation-rewind)).
 
 ## Before you play
 

@@ -193,6 +193,12 @@ void ScriptInstance::onCollision(const uint64_t iOtherEntityId) const {
 	mp_impl->checkQuota(g_OnCollision, mp_impl->engine.callFunction(g_OnCollision, iOtherEntityId));
 }
 
+void ScriptInstance::onContact(const std::string_view iCallback, const uint64_t iOtherEntityId) const {
+	if (!isValid() || mp_impl->disabled)
+		return;
+	mp_impl->checkQuota(iCallback, mp_impl->engine.callFunction(iCallback, iOtherEntityId));
+}
+
 auto ScriptInstance::callFunction(const std::string& iName) const -> bool {
 	if (!isValid() || mp_impl->disabled)
 		return false;

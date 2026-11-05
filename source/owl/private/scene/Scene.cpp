@@ -4188,19 +4188,26 @@ auto Scene::isPendingDestructionInTree(const Entity& iEntity) const -> bool {
 }
 
 void Scene::dispatchCollisionEvents() {
-	const auto notify = [this](const core::UUID iSelf, const core::UUID iOther) -> void {
+	const auto notify = [this](const core::UUID iSelf, const core::UUID iOther,
+							   const physics::PhysicCommand::CollisionEvent& iEvent) -> void {
 		const Entity self = findEntityByUUID(iSelf);
 		if (!self || !self.hasComponent<component::LuaScript>() || isPendingDestructionInTree(self) ||
 			!isEffectivelyVisible(self, /*iEditorMode=*/false))
 			return;
 		// Hold the instance itself: the callback may grow component storages and move the component.
-		if (const auto* instance = self.getComponent<component::LuaScript>().instance.get();
-			instance != nullptr && instance->isValid())
+		const auto* instance = self.getComponent<component::LuaScript>().instance.get();
+		if (instance == nullptr || !instance->isValid())
+			return;
+		if (iEvent.sensor)
+			instance->onContact(iEvent.ended ? "on_trigger_exit" : "on_trigger_enter", iOther);
+		else if (iEvent.ended)
+			instance->onContact("on_collision_exit", iOther);
+		else
 			instance->onCollision(iOther);
 	};
-	for (const auto& [entityA, entityB]: physics::PhysicCommand::takeCollisionEvents(*this)) {
-		notify(entityA, entityB);
-		notify(entityB, entityA);
+	for (const auto& event: physics::PhysicCommand::takeCollisionEvents(*this)) {
+		notify(event.entityA, event.entityB, event);
+		notify(event.entityB, event.entityA, event);
 	}
 }
 
@@ -4467,6 +4474,10 @@ OWL_API void Scene::onComponentAdded<component::Text>([[maybe_unused]] const Ent
 template<>
 OWL_API void Scene::onComponentAdded<component::PhysicBody>([[maybe_unused]] const Entity& iEntity,
 															[[maybe_unused]] component::PhysicBody& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::PhysicJoint>([[maybe_unused]] const Entity& iEntity,
+															 [[maybe_unused]] component::PhysicJoint& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Player>([[maybe_unused]] const Entity& iEntity,

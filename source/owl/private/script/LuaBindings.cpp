@@ -489,6 +489,164 @@ auto luaPhysicsSetGravityScale(lua_State* iState) -> int {
 	return 0;
 }
 
+auto luaArg(lua_State* iState, const int iIndex) -> float {
+	return static_cast<float>(luaL_checknumber(iState, iIndex));
+}
+
+auto luaMask(lua_State* iState, const int iIndex) -> uint8_t {
+	return lua_isnoneornil(iState, iIndex) ? scene::SceneBody::allLayers
+										   : static_cast<uint8_t>(luaL_checkinteger(iState, iIndex) & 0xff);
+}
+
+// A hit as `{entity, x, y, nx, ny, distance}`, with z and nz for a 3D query; nil without one.
+auto pushHit(lua_State* iState, const std::optional<physics::PhysicCommand::QueryHit>& iHit, const bool iSpace) -> int {
+	if (!iHit) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	lua_newtable(iState);
+	lua_pushinteger(iState, static_cast<lua_Integer>(static_cast<uint64_t>(iHit->entity)));
+	lua_setfield(iState, -2, "entity");
+	const auto field = [iState](const char* iName, const float iValue) -> void {
+		lua_pushnumber(iState, static_cast<lua_Number>(iValue));
+		lua_setfield(iState, -2, iName);
+	};
+	field("x", iHit->point.x());
+	field("y", iHit->point.y());
+	field("nx", iHit->normal.x());
+	field("ny", iHit->normal.y());
+	if (iSpace) {
+		field("z", iHit->point.z());
+		field("nz", iHit->normal.z());
+	}
+	field("distance", iHit->distance);
+	return 1;
+}
+
+auto pushEntities(lua_State* iState, const std::vector<core::UUID>& iEntities) -> int {
+	lua_createtable(iState, static_cast<int>(iEntities.size()), 0);
+	for (size_t i = 0; i < iEntities.size(); ++i) {
+		lua_pushinteger(iState, static_cast<lua_Integer>(static_cast<uint64_t>(iEntities[i])));
+		lua_rawseti(iState, -2, static_cast<lua_Integer>(i) + 1);
+	}
+	return 1;
+}
+
+auto luaPhysicsRaycast(lua_State* iState) -> int {
+	const math::vec3f origin{luaArg(iState, 1), luaArg(iState, 2), 0.f};
+	const math::vec3f direction{luaArg(iState, 3), luaArg(iState, 4), 0.f};
+	const float distance = luaArg(iState, 5);
+	const auto* boundScene = getBoundScene(iState);
+	if (boundScene == nullptr)
+		return pushHit(iState, std::nullopt, false);
+	return pushHit(iState,
+				   physics::PhysicCommand::raycast(*boundScene, origin, direction, distance, luaMask(iState, 6)),
+				   false);
+}
+
+auto luaPhysicsRaycast3D(lua_State* iState) -> int {
+	const math::vec3f origin{luaArg(iState, 1), luaArg(iState, 2), luaArg(iState, 3)};
+	const math::vec3f direction{luaArg(iState, 4), luaArg(iState, 5), luaArg(iState, 6)};
+	const float distance = luaArg(iState, 7);
+	const auto* boundScene = getBoundScene(iState);
+	if (boundScene == nullptr)
+		return pushHit(iState, std::nullopt, true);
+	return pushHit(iState,
+				   physics::PhysicCommand::raycast(*boundScene, origin, direction, distance, luaMask(iState, 8)), true);
+}
+
+auto luaPhysicsCircleCast(lua_State* iState) -> int {
+	const math::vec3f origin{luaArg(iState, 1), luaArg(iState, 2), 0.f};
+	const float radius = luaArg(iState, 3);
+	const math::vec3f direction{luaArg(iState, 4), luaArg(iState, 5), 0.f};
+	const float distance = luaArg(iState, 6);
+	const auto* boundScene = getBoundScene(iState);
+	if (boundScene == nullptr)
+		return pushHit(iState, std::nullopt, false);
+	const physics::PhysicCommand::QueryShape shape{.sphere = true, .halfExtents = {radius, radius, radius}};
+	return pushHit(
+			iState,
+			physics::PhysicCommand::shapeCast(*boundScene, shape, origin, direction, distance, luaMask(iState, 7)),
+			false);
+}
+
+auto luaPhysicsBoxCast(lua_State* iState) -> int {
+	const math::vec3f origin{luaArg(iState, 1), luaArg(iState, 2), 0.f};
+	const physics::PhysicCommand::QueryShape shape{.sphere = false,
+												   .halfExtents = {luaArg(iState, 3), luaArg(iState, 4), 0.5f},
+												   .rotation = {0.f, 0.f, luaArg(iState, 5)}};
+	const math::vec3f direction{luaArg(iState, 6), luaArg(iState, 7), 0.f};
+	const float distance = luaArg(iState, 8);
+	const auto* boundScene = getBoundScene(iState);
+	if (boundScene == nullptr)
+		return pushHit(iState, std::nullopt, false);
+	return pushHit(
+			iState,
+			physics::PhysicCommand::shapeCast(*boundScene, shape, origin, direction, distance, luaMask(iState, 9)),
+			false);
+}
+
+auto luaPhysicsSphereCast(lua_State* iState) -> int {
+	const math::vec3f origin{luaArg(iState, 1), luaArg(iState, 2), luaArg(iState, 3)};
+	const float radius = luaArg(iState, 4);
+	const math::vec3f direction{luaArg(iState, 5), luaArg(iState, 6), luaArg(iState, 7)};
+	const float distance = luaArg(iState, 8);
+	const auto* boundScene = getBoundScene(iState);
+	if (boundScene == nullptr)
+		return pushHit(iState, std::nullopt, true);
+	const physics::PhysicCommand::QueryShape shape{.sphere = true, .halfExtents = {radius, radius, radius}};
+	return pushHit(
+			iState,
+			physics::PhysicCommand::shapeCast(*boundScene, shape, origin, direction, distance, luaMask(iState, 9)),
+			true);
+}
+
+auto luaPhysicsOverlapCircle(lua_State* iState) -> int {
+	const math::vec3f centre{luaArg(iState, 1), luaArg(iState, 2), 0.f};
+	const float radius = luaArg(iState, 3);
+	const auto* boundScene = getBoundScene(iState);
+	if (boundScene == nullptr)
+		return pushEntities(iState, {});
+	const physics::PhysicCommand::QueryShape shape{.sphere = true, .halfExtents = {radius, radius, radius}};
+	return pushEntities(iState, physics::PhysicCommand::overlap(*boundScene, shape, centre, luaMask(iState, 4)));
+}
+
+auto luaPhysicsOverlapBox(lua_State* iState) -> int {
+	const math::vec3f centre{luaArg(iState, 1), luaArg(iState, 2), 0.f};
+	const physics::PhysicCommand::QueryShape shape{.sphere = false,
+												   .halfExtents = {luaArg(iState, 3), luaArg(iState, 4), 0.5f},
+												   .rotation = {0.f, 0.f, luaArg(iState, 5)}};
+	const auto* boundScene = getBoundScene(iState);
+	if (boundScene == nullptr)
+		return pushEntities(iState, {});
+	return pushEntities(iState, physics::PhysicCommand::overlap(*boundScene, shape, centre, luaMask(iState, 6)));
+}
+
+auto luaPhysicsOverlapSphere(lua_State* iState) -> int {
+	const math::vec3f centre{luaArg(iState, 1), luaArg(iState, 2), luaArg(iState, 3)};
+	const float radius = luaArg(iState, 4);
+	const auto* boundScene = getBoundScene(iState);
+	if (boundScene == nullptr)
+		return pushEntities(iState, {});
+	const physics::PhysicCommand::QueryShape shape{.sphere = true, .halfExtents = {radius, radius, radius}};
+	return pushEntities(iState, physics::PhysicCommand::overlap(*boundScene, shape, centre, luaMask(iState, 5)));
+}
+
+auto luaPhysicsSetJointMotor(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState)) {
+		const float speed = luaArg(iState, 2);
+		const bool enabled = lua_isnoneornil(iState, 3) || lua_toboolean(iState, 3) != 0;
+		physics::PhysicCommand::setJointMotor(*entity, enabled, speed);
+	}
+	return 0;
+}
+
+auto luaPhysicsGetJointPosition(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	lua_pushnumber(iState, entity ? static_cast<lua_Number>(physics::PhysicCommand::getJointPosition(*entity)) : 0.);
+	return 1;
+}
+
 auto inputFrameOf(lua_State* iState) -> const input::InputFrame* {
 	const auto* boundScene = getBoundScene(iState);
 	return boundScene != nullptr ? &boundScene->getInputFrame() : nullptr;
@@ -3462,6 +3620,52 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "physics", .name = "set_gravity_scale", .function = guarded<luaPhysicsSetGravityScale>,
 		 .description = "Scale the world gravity for this body (0 = none).",
 		 .params = {entityId, {"scale", Number}}},
+		{.table = "physics", .name = "raycast", .function = guarded<luaPhysicsRaycast>,
+		 .description = "First body a 2D ray meets, sensors ignored: `{entity, x, y, nx, ny, distance}`, nil for none.",
+		 .params = {{"x", Number}, {"y", Number}, {"dx", Number}, {"dy", Number}, {"distance", Number},
+					{"mask", Integer, true}},
+		 .returns = {{"hit", Table, true}}},
+		{.table = "physics", .name = "raycast_3d", .function = guarded<luaPhysicsRaycast3D>,
+		 .description = "First body a 3D ray meets: `{entity, x, y, z, nx, ny, nz, distance}`, nil for none.",
+		 .params = {{"x", Number}, {"y", Number}, {"z", Number}, {"dx", Number}, {"dy", Number}, {"dz", Number},
+					{"distance", Number}, {"mask", Integer, true}},
+		 .returns = {{"hit", Table, true}}},
+		{.table = "physics", .name = "circle_cast", .function = guarded<luaPhysicsCircleCast>,
+		 .description = "First body a disc meets moving along (dx, dy); the hit as for `raycast`.",
+		 .params = {{"x", Number}, {"y", Number}, {"radius", Number}, {"dx", Number}, {"dy", Number},
+					{"distance", Number}, {"mask", Integer, true}},
+		 .returns = {{"hit", Table, true}}},
+		{.table = "physics", .name = "box_cast", .function = guarded<luaPhysicsBoxCast>,
+		 .description = "First body a box (half sizes, rotation in radians) meets moving along (dx, dy).",
+		 .params = {{"x", Number}, {"y", Number}, {"half_width", Number}, {"half_height", Number},
+					{"rotation", Number}, {"dx", Number}, {"dy", Number}, {"distance", Number},
+					{"mask", Integer, true}},
+		 .returns = {{"hit", Table, true}}},
+		{.table = "physics", .name = "sphere_cast", .function = guarded<luaPhysicsSphereCast>,
+		 .description = "First body a sphere meets moving along (dx, dy, dz); the hit as for `raycast_3d`.",
+		 .params = {{"x", Number}, {"y", Number}, {"z", Number}, {"radius", Number}, {"dx", Number},
+					{"dy", Number}, {"dz", Number}, {"distance", Number}, {"mask", Integer, true}},
+		 .returns = {{"hit", Table, true}}},
+		{.table = "physics", .name = "overlap_circle", .function = guarded<luaPhysicsOverlapCircle>,
+		 .description = "Entities whose bodies overlap a disc, sensors ignored, in a fixed order.",
+		 .params = {{"x", Number}, {"y", Number}, {"radius", Number}, {"mask", Integer, true}},
+		 .returns = {{"entity_ids", Table}}},
+		{.table = "physics", .name = "overlap_box", .function = guarded<luaPhysicsOverlapBox>,
+		 .description = "Entities whose bodies overlap a box (half sizes, rotation in radians).",
+		 .params = {{"x", Number}, {"y", Number}, {"half_width", Number}, {"half_height", Number},
+					{"rotation", Number}, {"mask", Integer, true}},
+		 .returns = {{"entity_ids", Table}}},
+		{.table = "physics", .name = "overlap_sphere", .function = guarded<luaPhysicsOverlapSphere>,
+		 .description = "Entities whose bodies overlap a sphere.",
+		 .params = {{"x", Number}, {"y", Number}, {"z", Number}, {"radius", Number}, {"mask", Integer, true}},
+		 .returns = {{"entity_ids", Table}}},
+		{.table = "physics", .name = "set_joint_motor", .function = guarded<luaPhysicsSetJointMotor>,
+		 .description = "Drive the hinge or slider joint of the entity at a speed (radians or units per second); "
+						"enabled false stops the motor.",
+		 .params = {entityId, {"speed", Number}, {"enabled", Boolean, true}}},
+		{.table = "physics", .name = "get_joint_position", .function = guarded<luaPhysicsGetJointPosition>,
+		 .description = "Angle of the entity's hinge joint (radians) or position of its slider; 0 otherwise.",
+		 .params = {entityId}, .returns = {{"position", Number}}},
 		{.table = "input", .name = "has_action", .function = guarded<luaInputHasAction>,
 		 .description = "Whether the game's action map defines an action (a misspelt name reads as released).",
 		 .params = {{"action", String}}, .returns = {{"exists", Boolean}}},

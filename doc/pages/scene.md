@@ -207,7 +207,10 @@ gameplay that must replay goes into `on_tick` and the systems' `tick`.
 A session can be recorded and replayed frame-exact: `Scene::setRecordingReplay` and `takeRecordedReplay` capture the
 duration, the devices, the cursor capture and the HUD pointer of every frame, `setPlaybackReplay` plays a `scene::Replay`
 (`.owlreplay`) in their place, and `getReplayProgress` tells whether the world still matches its world hash checkpoints
-([design](design/simulation-networking.md#simulation-replay)).
+([design](design/simulation-networking.md#simulation-replay)). `getRecordedReplay` reads the recording so far, and
+`takeOverReplay` stops a replay at the frame it reached and records live from there, the frames already replayed
+becoming the start of the recording: the rewind of Owl Nest branches a session this way
+([design](design/simulation-networking.md#simulation-rewind)).
 
 The engine systems live in `scene::systems` (private, `source/owl/private/scene/systems/`).
 
@@ -776,8 +779,13 @@ Lua: `entity.get_ship_velocity`, `entity.get_ship_speed`, `entity.get_ship_throt
 
 #### PhysicBody
 
-`type` (`Static`, `Dynamic`, `Kinematic`), `fixedRotation`, `colliderSize`, `density`, `restitution`, `friction`.
+`type` (`Static`, `Dynamic`, `Kinematic`), `fixedRotation`, `colliderSize`, `sensor`, `layer`, `mask`, `density`, `restitution`, `friction`.
 YAML key: `PhysicBody`; fields, defaults and lifecycle in [Physics](physics.md#physicbody-component).
+
+#### PhysicJoint
+
+Links the entity's body to another body or to the world: `Fixed`, `Distance`, `Hinge` or `Slider`, with limits and a
+motor. YAML key: `PhysicJoint`; see [Physics](physics.md#joints).
 
 #### Trigger
 

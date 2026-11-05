@@ -70,6 +70,7 @@ OWL_DIAG_POP
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -88,6 +89,8 @@ namespace owl::nest::panel {
 
 namespace {
 constexpr math::vec4 g_selectionColor{0.95f, 0.55f, 0.f, 1.f};
+// Time a seek re-simulates per editor frame, so the editor stays responsive while it rewinds.
+constexpr std::chrono::microseconds g_SeekBudget{25000};
 
 auto makeWindowTitle(const SceneDocument& iDoc, const EditorLayer* iParent) -> std::string {
 	std::string base;
@@ -382,7 +385,10 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 			}
 		case SceneDocument::State::Pause:
 			{
-				if (mp_document->consumeStepRequest()) {
+				if (mp_document->isSeeking()) {
+					std::ignore = mp_document->advanceSeek(g_SeekBudget);
+					mp_document->getActiveScene()->onRenderRuntime();
+				} else if (mp_document->consumeStepRequest()) {
 					// One step of Pause is one simulation tick, whatever the frame duration.
 					activeScene->onUpdateRuntime(activeScene->getSimulationClock().getStepTimestep());
 					mp_document->handleTeleportRequest(getSize());
@@ -813,6 +819,7 @@ void Viewport::renderOverlay() const {
 		renderBehaviourOverlays(activeScene);
 		renderSplineOverlay(activeScene);
 		renderWalkAreaOverlay(activeScene);
+		renderJointOverlay(activeScene);
 		renderSequenceOverlay(activeScene);
 		renderSkeletonMarkers(activeScene);
 		renderWorldCells(activeScene);
@@ -1445,8 +1452,7 @@ void Viewport::renderPlayControls(const bool iCollapsed) {
 		const bool playing = state == SceneDocument::State::Play;
 		const bool paused = state == SceneDocument::State::Pause;
 		const auto recordKey = shortcut("scene.record");
-		const bool recording =
-				editing ? mp_document->isRecordingNextPlay() : mp_document->getActiveScene()->isRecordingReplay();
+		const bool recording = mp_document->isRecordingNextPlay();
 		if (iconButton("record",
 					   {.glyph = gui::icon::circleDot,
 						.tooltip = recording ? "Recording the next Play" : "Record the next Play",
@@ -1489,8 +1495,10 @@ void Viewport::renderPlayControls(const bool iCollapsed) {
 								.description = "Leave the play mode and restore the scene.",
 								.disabled = editing}))
 			std::ignore = m_parent->runAction("scene.stop");
-		if (!editing)
+		if (!editing) {
+			renderTimeline();
 			renderReplayStatus();
+		}
 		if (!editing) {
 			overlaySeparator();
 			const auto key = shortcut("scene.play_controls");
@@ -1507,6 +1515,32 @@ void Viewport::renderPlayControls(const bool iCollapsed) {
 		endOverlay();
 }
 
+void Viewport::renderTimeline() {
+	const uint64_t count = mp_document->getTimelineFrameCount();
+	if (count == 0) {
+		m_scrubFrame.reset();
+		return;
+	}
+	uint64_t frame = m_scrubFrame.value_or(mp_document->isSeeking() ? mp_document->getSeekTarget()
+																	: mp_document->getTimelineFrame());
+	constexpr uint64_t first = 0;
+	const auto label = std::format("{:.1f} s / {:.1f} s", mp_document->getTimelineSeconds(frame),
+								   mp_document->getTimelineSeconds(count));
+	overlaySeparator();
+	ImGui::SetNextItemWidth(ImGui::GetFontSize() * 14.f);
+	if (ImGui::SliderScalar("##timeline", ImGuiDataType_U64, &frame, &first, &count, label.c_str()))
+		m_scrubFrame = frame;
+	if (ImGui::IsItemDeactivated() && m_scrubFrame) {
+		std::ignore = mp_document->seek(*m_scrubFrame);
+		m_scrubFrame.reset();
+	}
+	const auto rewindKey = m_parent->getActionShortcut("scene.rewind");
+	ImGui::SetItemTooltip("Timeline of the Play session (%s: back one second). Drag it to rewind or fast-forward: the "
+						  "frames are simulated again with the recorded inputs, then the game pauses there; Play or "
+						  "Step goes on from that frame and drops what came after.",
+						  rewindKey.c_str());
+}
+
 void Viewport::renderReplayStatus() const {
 	const auto& theme = gui::UiLayer::getTheme();
 	const auto& activeScene = mp_document->getActiveScene();
@@ -1515,14 +1549,19 @@ void Viewport::renderReplayStatus() const {
 	const auto& progress = activeScene->getReplayProgress();
 	std::string label;
 	math::vec4 colour = theme.textMuted;
-	if (activeScene->isRecordingReplay()) {
+	if (mp_document->isSeeking()) {
+		label = std::format("Rewinding {} / {}", mp_document->getTimelineFrame(), mp_document->getSeekTarget());
+		colour = theme.play;
+	} else if (progress.divergedFrame.has_value()) {
+		label = std::format("Replay diverged at frame {}", *progress.divergedFrame);
+		colour = theme.warning;
+	} else if (mp_document->isOnTimeline()) {
+		label = "Rewound: Play or Step goes on from here";
+	} else if (activeScene->isRecordingReplay() && mp_document->isRecordingNextPlay()) {
 		label = std::format("{} REC", gui::icon::circleDot);
 		colour = theme.error;
 	} else if (progress.frameCount > 0) {
-		if (progress.divergedFrame.has_value()) {
-			label = std::format("Replay diverged at frame {}", *progress.divergedFrame);
-			colour = theme.warning;
-		} else if (progress.finished) {
+		if (progress.finished) {
 			label = "Replay done, live input";
 			colour = theme.success;
 		} else {

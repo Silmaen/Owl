@@ -1,0 +1,10 @@
+# The tavern bucket hangs over the table from a hook on a distance joint (rope): it swings, never falls, never touches
+# the table (a mesh collider).
+scene: ../../../engine_demo/scenes/tavern.owl
+project: ../../../engine_demo
+steps:
+  - frames: 20
+  - expect: {entity: HangingBucket, translation.x: {less: 1.8}}
+  - frames: 40
+  - expect: {entity: HangingBucket, translation.y: {greater: 1.6}}
+  - expect: {entity: HangingBucket, translation.y: {less: 2.5}}
