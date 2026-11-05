@@ -265,6 +265,32 @@ private:
 	std::vector<Entry> m_ends;
 };
 
+// Bodies woken up by Jolt's jobs, in any order; sorted when taken.
+class ActivationCollector final : public JPH::BodyActivationListener {
+public:
+	void OnBodyActivated(const JPH::BodyID& iBody, const JPH::uint64 /*iUserData*/) override {
+		const std::scoped_lock<std::mutex> lock(m_mutex);
+		m_bodies.push_back(iBody.GetIndexAndSequenceNumber());
+	}
+
+	void OnBodyDeactivated(const JPH::BodyID& /*iBody*/, const JPH::uint64 /*iUserData*/) override {}
+
+	[[nodiscard]] auto take() -> std::vector<uint32_t> {
+		const std::scoped_lock<std::mutex> lock(m_mutex);
+		auto bodies = std::exchange(m_bodies, {});
+		std::ranges::sort(bodies);
+		const auto [first, last] = std::ranges::unique(bodies);
+		bodies.erase(first, last);
+		return bodies;
+	}
+
+private:
+	// Guards the list against concurrent jobs.
+	std::mutex m_mutex;
+	// Woken bodies.
+	std::vector<uint32_t> m_bodies;
+};
+
 // A Jolt state as plain bytes: written by SaveState, read back by RestoreState.
 class ByteRecorder final : public JPH::StateRecorder {
 public:
@@ -470,6 +496,7 @@ struct JoltWorld::Impl {
 					 pairFilter);
 		system->SetGravity({0.f, -9.81f, 0.f});
 		system->SetContactListener(&contacts);
+		system->SetBodyActivationListener(&activations);
 		if (ipPool != nullptr)
 			jobs = mkUniq<TaskflowJobSystem>(*ipPool);
 		else
@@ -500,6 +527,8 @@ struct JoltWorld::Impl {
 	LayerPairFilter pairFilter;
 	// Contacts reported during the steps.
 	ContactCollector contacts;
+	// Bodies woken up since the last step.
+	ActivationCollector activations;
 	// Scratch memory of a step.
 	JPH::TempAllocatorImpl temp{g_TempAllocatorBytes};
 	// Jobs of a step.
@@ -604,6 +633,8 @@ auto JoltWorld::restoreState(const std::span<const uint8_t> iState) -> bool {
 }
 
 auto JoltWorld::takeContacts() -> BodyContacts { return mp_impl->contacts.take(); }
+
+auto JoltWorld::takeActivatedBodies() -> std::vector<uint32_t> { return mp_impl->activations.take(); }
 
 auto JoltWorld::getPose(const uint32_t iBody) const -> BodyPose {
 	JPH::RVec3 position;

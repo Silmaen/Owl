@@ -31,8 +31,10 @@
 #include <ranges>
 #include <set>
 #include <span>
+#include <tuple>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 namespace owl::physics {
 
@@ -117,7 +119,8 @@ public:
 		for (const auto& contact: begins) {
 			if (const auto it = contacts.find(contact); it != contacts.end()) {
 				it->second.dormant = false;
-				dormant.erase(contact);
+				it->second.awakeSteps = 0;
+				unlinkDormant(contact);
 				continue;
 			}
 			const auto pair = pairKey(contact);
@@ -133,31 +136,51 @@ public:
 				continue;
 			if (!jolt->isAwake(contact.bodyA) && !jolt->isAwake(contact.bodyB)) {
 				it->second = {.pair = it->second.pair, .dormant = true, .awakeSteps = 0};
-				dormant.insert(contact);
+				linkDormant(contact);
 				continue;
 			}
 			removeContact(it);
 		}
-		// A woken body touches again within a step or two when it did not move away.
-		for (auto it = dormant.begin(); it != dormant.end();) {
-			const auto tracked = contacts.find(*it);
-			if (tracked == contacts.end()) {
-				it = dormant.erase(it);
-				continue;
-			}
-			if ((!jolt->isAwake(it->bodyA) && !jolt->isAwake(it->bodyB)) || ++tracked->second.awakeSteps < 2) {
-				++it;
-				continue;
-			}
-			it = dormant.erase(it);
-			removeContact(tracked);
+		for (const uint32_t body: jolt->takeActivatedBodies()) {
+			const auto [first, last] = dormantByBody.equal_range(body);
+			for (auto it = first; it != last; ++it) waking.insert(it->second);
 		}
+		// A woken body touches again within a step or two when it did not move away.
+		std::vector<BodyContact> ended;
+		for (const auto& contact: waking) {
+			const auto tracked = contacts.find(contact);
+			if (tracked != contacts.end() && (jolt->isAwake(contact.bodyA) || jolt->isAwake(contact.bodyB)) &&
+				++tracked->second.awakeSteps >= 2)
+				ended.push_back(contact);
+		}
+		for (const auto& contact: ended)
+			if (const auto it = contacts.find(contact); it != contacts.end())
+				removeContact(it);
+	}
+
+	// A sleeping contact is listed under both its bodies, to be found again when either one wakes up.
+	void linkDormant(const BodyContact& iContact) {
+		dormantByBody.emplace(iContact.bodyA, iContact);
+		dormantByBody.emplace(iContact.bodyB, iContact);
+	}
+
+	void unlinkDormant(const BodyContact& iContact) {
+		for (const uint32_t body: {iContact.bodyA, iContact.bodyB}) {
+			const auto [first, last] = dormantByBody.equal_range(body);
+			if (const auto it = std::ranges::find_if(first, last, [&iContact](const auto& iEntry) -> bool {
+					return iEntry.second == iContact;
+				});
+				it != last)
+				dormantByBody.erase(it);
+		}
+		waking.erase(iContact);
 	}
 
 	void removeContact(const std::map<BodyContact, TrackedContact>::iterator iContact) {
 		const auto pair = iContact->second.pair;
 		const bool sensor = isSensorContact(iContact->first);
-		dormant.erase(iContact->first);
+		if (iContact->second.dormant)
+			unlinkDormant(iContact->first);
 		contacts.erase(iContact);
 		if (const auto it = touching.find(ordered(pair)); it != touching.end() && --it->second == 0) {
 			touching.erase(it);
@@ -385,7 +408,8 @@ public:
 		std::erase_if(contacts, [this, iEntity](const auto& iEntry) -> bool {
 			if (iEntry.second.pair.first != iEntity && iEntry.second.pair.second != iEntity)
 				return false;
-			dormant.erase(iEntry.first);
+			if (iEntry.second.dormant)
+				unlinkDormant(iEntry.first);
 			return true;
 		});
 		const auto entity = static_cast<uint64_t>(iEntity);
@@ -741,7 +765,8 @@ public:
 	std::vector<entt::entity> pendingBodies;
 	std::unordered_map<uint32_t, core::UUID> bodyOwners;
 	std::map<BodyContact, TrackedContact> contacts;
-	std::set<BodyContact> dormant;
+	std::multimap<uint32_t, BodyContact> dormantByBody;
+	std::set<BodyContact> waking;
 	std::map<std::pair<uint64_t, uint64_t>, uint32_t> touching;
 	std::unordered_set<uint32_t> sensorBodies;
 	std::unordered_set<uint64_t> sensorOwners;
@@ -1025,12 +1050,17 @@ auto PhysicCommand::restoreState(scene::Scene& ioScene, const std::span<const ui
 		OWL_CORE_WARN("Physics: State saved with other bodies than the world holds, not restored.")
 		return false;
 	}
+	std::ignore = world->jolt->takeActivatedBodies();
 	world->touching.clear();
-	world->dormant.clear();
+	world->dormantByBody.clear();
+	world->waking.clear();
 	for (const auto& [contact, tracked]: contacts) {
 		++world->touching[PhysicsWorld::ordered(tracked.pair)];
-		if (tracked.dormant)
-			world->dormant.insert(contact);
+		if (!tracked.dormant)
+			continue;
+		world->linkDormant(contact);
+		if (tracked.awakeSteps > 0)
+			world->waking.insert(contact);
 	}
 	world->contacts = std::move(contacts);
 	world->collisionEvents.clear();

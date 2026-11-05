@@ -269,6 +269,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Hand over the bodies woken up since the last call, sorted.
+	 * @return The ids of the woken bodies.
+	 */
+	[[nodiscard]] auto takeActivatedBodies() -> std::vector<uint32_t>;
+
+	/**
+	 * @brief
 	 *  Pose of a body.
 	 * @param[in] iBody The body id.
 	 * @return Its pose.
