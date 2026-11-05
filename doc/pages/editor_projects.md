@@ -24,7 +24,7 @@ opens one project at a time and exports it as a game folder players can run with
 | Template      | Tags             | Renderer stack                            | Content                                                                              |
 |---------------|------------------|-------------------------------------------|--------------------------------------------------------------------------------------|
 | Empty 2D      | 2D               | `world` (2D), `ui`                        | Camera, ground, player sprite moved by Lua (WASD), HUD title                         |
-| 2D platformer | 2D               | `world` (2D), `ui`                        | Box2D ground and platforms, Lua player (A/D, space), camera on it                    |
+| 2D platformer | 2D               | `world` (2D), `ui`                        | Jolt ground and platforms, Lua player (A/D, space), camera on it                     |
 | 3D            | 3D               | `mesh_world`, `ui`                        | Ground and crate meshes, sun, procedural sky, `FirstPersonController`                |
 | Isometric     | Iso, 2D          | `world`, `iso_world`, `ui`                | Tilemap island, tree and lamp sprites, Lua flag (WASD), camera on it                 |
 | Raycast       | Raycast          | `raycast_world`, `ui`                     | Tilemap room, Lua first-person player (W/S, A/D), HUD hint                           |

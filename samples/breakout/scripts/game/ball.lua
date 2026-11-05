@@ -1,4 +1,4 @@
--- The ball: a dynamic body without gravity, bouncing with a restitution of 1 and no friction. Box2D solves the bounces;
+-- The ball: a dynamic body without gravity, bouncing with a restitution of 1 and no friction. Jolt solves the bounces;
 -- this script keeps the speed constant (`physics.set_velocity` every tick), aims the bounce off the paddle by where the
 -- ball lands on it, and handles the serve and the lost balls.
 --

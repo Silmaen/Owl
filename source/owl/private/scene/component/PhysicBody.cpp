@@ -16,6 +16,13 @@ void PhysicBody::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	iOut.getImpl()->emitter << YAML::Key << "type" << YAML::Value << std::string(magic_enum::enum_name(body.type));
+	// A 2D box, the default, writes neither key.
+	if (body.dimension != SceneBody::Dimension::Plane)
+		iOut.getImpl()->emitter << YAML::Key << "dimension" << YAML::Value
+								<< std::string(magic_enum::enum_name(body.dimension));
+	if (body.shape != SceneBody::Shape::Box)
+		iOut.getImpl()->emitter << YAML::Key << "shape" << YAML::Value
+								<< std::string(magic_enum::enum_name(body.shape));
 	iOut.getImpl()->emitter << YAML::Key << "fixedRotation" << YAML::Value << body.fixedRotation;
 	iOut.getImpl()->emitter << YAML::Key << "colliderSize" << YAML::Value << body.colliderSize;
 	iOut.getImpl()->emitter << YAML::Key << "density" << YAML::Value << body.density;
@@ -27,6 +34,14 @@ void PhysicBody::serialize(const core::Serializer& iOut) const {
 void PhysicBody::deserialize(const core::Serializer& iNode) {
 	body.type = magic_enum::enum_cast<SceneBody::BodyType>(iNode.getImpl()->node["type"].as<std::string>())
 						.value_or(SceneBody::BodyType::Static);
+	const auto& node = iNode.getImpl()->node;
+	body.dimension = node["dimension"]
+							 ? magic_enum::enum_cast<SceneBody::Dimension>(node["dimension"].as<std::string>())
+									   .value_or(SceneBody::Dimension::Plane)
+							 : SceneBody::Dimension::Plane;
+	body.shape = node["shape"] ? magic_enum::enum_cast<SceneBody::Shape>(node["shape"].as<std::string>())
+										 .value_or(SceneBody::Shape::Box)
+							   : SceneBody::Shape::Box;
 	body.fixedRotation = iNode.getImpl()->node["fixedRotation"].as<bool>();
 	body.bodyId = 0;
 	body.colliderSize = iNode.getImpl()->node["colliderSize"].as<math::vec3f>();

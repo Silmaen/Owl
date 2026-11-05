@@ -145,16 +145,17 @@ deterministic simulation and replay, Jolt, gravity fields.
 - ![Done][done] Deterministic simulation (seeded streams, cross-platform world-hash test) on the fixed tick
   ([Simulation](design/simulation-networking.md#simulation-deterministic))
 - ![Done][done] Bit-exact simulation on every target, always on: no FMA contraction, deterministic maths,
-  deterministic Box2D, fixed Lua hash seed
+  deterministic Jolt physics, fixed Lua hash seed
   ([Simulation](design/simulation-networking.md#simulation-cross-platform))
 - ![Planned][planned] Fair play: fixed tick whatever the frame rate, gameplay visibility never cut by quality settings,
   bounded field of view ([Fair play](design/simulation-networking.md#networking-fairness))
 - ![Done][done] Input recording and frame-exact replay (replays double as regression tests)
   ([Replay](design/simulation-networking.md#simulation-replay))
 - ![Planned][planned] Rewind in Play (snapshot ring buffer + input log)
-- ![Planned][planned] Full 2D physics: callbacks, queries, joints, on the shared physics interface
+- ![Planned][planned] Full 2D physics on Jolt (plane-locked bodies): callbacks, queries, joints, on the shared physics
+  interface
   ([Physics](design/physics-api.md))
-- ![Planned][planned] 3D physics with Jolt on the shared physics interface, built cross-platform deterministic
+- ![In Progress][progress] 3D physics with Jolt on the shared physics interface, built cross-platform deterministic
   ([Physics API](design/physics-api.md))
 - ![Planned][planned] Articulated bodies: compound bodies rebuilt at runtime, breakable joints, mass recomputed,
   sub-stepping ([Physics API](design/physics-api.md))

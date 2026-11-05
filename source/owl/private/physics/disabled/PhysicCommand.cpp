@@ -10,9 +10,10 @@
 #include "physics/PhysicCommand.h"
 
 #include <cstdint>
+#include <span>
 #include <vector>
 
-// Built instead of the Box2D implementation when OWL_MODULE_PHYSICS is OFF: the API stays, nothing simulates.
+// Built instead of the Jolt implementation when OWL_MODULE_PHYSICS is OFF: the API stays, nothing simulates.
 
 namespace owl::physics {
 
@@ -65,6 +66,27 @@ void PhysicCommand::setTransform([[maybe_unused]] const scene::Entity& iEntity,
 
 void PhysicCommand::setVelocity([[maybe_unused]] const scene::Entity& iEntity,
 								[[maybe_unused]] const math::vec2f& iVelocity) {}
+
+auto PhysicCommand::saveState([[maybe_unused]] const scene::Scene& iScene) -> std::vector<uint8_t> { return {}; }
+
+auto PhysicCommand::restoreState([[maybe_unused]] scene::Scene& ioScene,
+								 [[maybe_unused]] const std::span<const uint8_t> iState) -> bool {
+	return false;
+}
+
+void PhysicCommand::impulse3D([[maybe_unused]] const scene::Entity& iEntity,
+							  [[maybe_unused]] const math::vec3f& iImpulse) {}
+
+auto PhysicCommand::getVelocity3D([[maybe_unused]] const scene::Entity& iEntity) -> math::vec3f {
+	return {0.f, 0.f, 0.f};
+}
+
+void PhysicCommand::setVelocity3D([[maybe_unused]] const scene::Entity& iEntity,
+								  [[maybe_unused]] const math::vec3f& iVelocity) {}
+
+void PhysicCommand::setTransform3D([[maybe_unused]] const scene::Entity& iEntity,
+								   [[maybe_unused]] const math::vec3f& iPosition,
+								   [[maybe_unused]] const math::vec3f& iRotation) {}
 
 void PhysicCommand::setGravityScale([[maybe_unused]] const scene::Entity& iEntity,
 									[[maybe_unused]] const float iScale) {}

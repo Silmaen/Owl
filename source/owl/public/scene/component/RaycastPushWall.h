@@ -27,7 +27,7 @@ namespace owl::scene::component {
  * displacement.
  *
  * `Transform.translation.xy` is the rest world position; while moving, the
- * rendered AABB and the kinematic Box2D body are offset by `currentOffset`
+ * rendered AABB and the kinematic physics body are offset by `currentOffset`
  * along `slideDirection`.
  */
 struct OWL_API RaycastPushWall {

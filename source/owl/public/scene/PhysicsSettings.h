@@ -22,7 +22,7 @@ namespace owl::scene {
  * set by the project). Rendered transforms are blended between the last two steps when `interpolate` is set.
  */
 struct OWL_API PhysicsSettings {
-	/// Highest accepted Box2D sub-step count.
+	/// Highest accepted collision step count.
 	static constexpr uint32_t maxSolverSubSteps = 16;
 	/// Highest accepted solver thread count.
 	static constexpr uint32_t maxWorkerCount = 32;
@@ -31,8 +31,8 @@ struct OWL_API PhysicsSettings {
 	/// Dynamic bodies below which the automatic count stays single-threaded (task dispatch costs more than it saves).
 	static constexpr uint32_t autoThreadingMinBodies = 2000;
 
-	/// Box2D sub-steps inside one fixed step.
-	uint32_t solverSubSteps = 4;
+	/// Jolt collision steps inside one fixed step.
+	uint32_t solverSubSteps = 2;
 	/// Blend the rendered transforms between the last two fixed steps.
 	bool interpolate = true;
 	/// Solver threads: 0 picks a count from the hardware, 1 runs the solver on the calling thread.

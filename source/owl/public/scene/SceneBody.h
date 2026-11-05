@@ -67,11 +67,29 @@ public:
 	/// The type of body.
 	BodyType type = BodyType::Dynamic;
 
+	/// Where the body moves.
+	enum struct Dimension : uint8_t {
+		Plane,///< 2D: locked to the XY plane, rotating around Z.
+		Space///< 3D: free in space.
+	};
+	/// Where the body moves.
+	Dimension dimension = Dimension::Plane;
+
+	/// Shape of the collider.
+	enum struct Shape : uint8_t {
+		Box,///< Box of `colliderSize`.
+		Sphere,///< Sphere (a disc in 2D) of diameter `colliderSize.x`.
+		Capsule,///< Capsule along Y, of diameter `colliderSize.x` and full height `colliderSize.y`.
+		Cylinder///< Cylinder along Y, of diameter `colliderSize.x` and height `colliderSize.y` (a rectangle in 2D).
+	};
+	/// Shape of the collider.
+	Shape shape = Shape::Box;
+
 	/// If the body can rotate.
 	bool fixedRotation = false;
 	/// Internal body index.
 	uint64_t bodyId = 0;
-	/// The size of the collider.
+	/// The size of the collider (see `Shape`), multiplied by the entity scale; a 2D box ignores Z (unit depth).
 	math::vec3f colliderSize{1, 1, 1};
 	/// The density of the material.
 	float density{1.f};

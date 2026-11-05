@@ -13,9 +13,7 @@
 #include <scene/Scene.h>
 #include <scene/component/components.h>
 
-#include <algorithm>
 #include <chrono>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -79,14 +77,11 @@ TEST(PhysicMultiThread, SolverGivesTheSingleThreadResult) {
 	EXPECT_EQ(mono.workers, 1u);
 	EXPECT_EQ(multi.workers, 4u);
 	ASSERT_EQ(mono.positions.size(), multi.positions.size());
-	// The solve order of a 600-box pile depends on the worker count: same count, same bits; mono, within 1 cm.
-	float maxGap = 0.f;
+	// Jolt solves in an order that does not depend on the worker count: the same bits with 1 or 4 workers.
 	for (size_t i = 0; i < mono.positions.size(); ++i) {
+		EXPECT_EQ(mono.positions[i], multi.positions[i]) << "box " << i;
 		EXPECT_EQ(multi.positions[i], again.positions[i]) << "box " << i;
-		maxGap = std::max({maxGap, std::abs(mono.positions[i].x() - multi.positions[i].x()),
-						   std::abs(mono.positions[i].y() - multi.positions[i].y())});
 	}
-	EXPECT_LT(maxGap, 1e-2f);
 	EXPECT_EQ(mono.collisions, multi.collisions);
 	EXPECT_GT(mono.collisions, 0u);
 	core::Log::invalidate();
@@ -152,10 +147,7 @@ TEST(PhysicMultiThread, ParallelPoseCopyMatchesSerialCopy) {
 	const auto mono = run(1);
 	const auto multi = run(4);
 	ASSERT_EQ(mono.size(), multi.size());
-	for (size_t i = 0; i < mono.size(); ++i) {
-		EXPECT_NEAR(mono[i].x(), multi[i].x(), 1e-2f) << "box " << i;
-		EXPECT_NEAR(mono[i].y(), multi[i].y(), 1e-2f) << "box " << i;
-	}
+	for (size_t i = 0; i < mono.size(); ++i) { EXPECT_EQ(mono[i], multi[i]) << "box " << i; }
 	// The child box (world x near 148.5) is written in its parent's space: minus the parent's 10.
 	EXPECT_NEAR(multi.back().x(), 138.5f, 0.5f);
 	core::Log::invalidate();

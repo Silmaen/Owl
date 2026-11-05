@@ -62,7 +62,7 @@ TEST(PhysicCommand, Creation) {
 	// test the new positions...
 	// 100 ms = 6 fixed steps of 1/60 s; the transform shows the blend between steps 5 and 6.
 	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 6u);
-	EXPECT_NEAR(transform1.translation().y(), -0.0357656f, 1e-5f);
+	EXPECT_NEAR(transform1.translation().y(), -0.0374688f, 1e-5f);
 	EXPECT_EQ(transform2.translation().y(), 0.0f);
 	EXPECT_EQ(transform3.translation().y(), 0.0f);
 
@@ -148,7 +148,7 @@ TEST(PhysicCommand, GravityScaleZeroCancelsFalling) {
 	Timestep ts;
 	ts.forceUpdate(std::chrono::milliseconds(500));
 	for (int i = 0; i < 10; ++i) PhysicCommand::frame(scene, ts);
-	// Vertical velocity must stay at 0 — Box2D world gravity has no effect on this body.
+	// Vertical velocity must stay at 0 — world gravity has no effect on this body.
 	EXPECT_NEAR(PhysicCommand::getVelocity(b1).y(), 0.0, 1e-3);
 	PhysicCommand::destroy(scene);
 	Log::invalidate();
@@ -305,7 +305,7 @@ TEST(PhysicCommand, GetVelocityGuards) {
 }
 
 // frame() must update child entity transforms relative to a moving parent
-// — this exercises the hierarchy branch that converts world-space Box2D
+// — this exercises the hierarchy branch that converts world-space physics
 // positions back into local space.
 TEST(PhysicCommand, FrameUpdatesChildBodiesInLocalSpace) {
 	Log::init(Log::Level::Off);
@@ -322,6 +322,7 @@ TEST(PhysicCommand, FrameUpdatesChildBodiesInLocalSpace) {
 	{
 		auto& [body] = child.addComponent<component::PhysicBody>();
 		body.type = SceneBody::BodyType::Dynamic;
+		child.getComponent<component::Transform>().transform.translation().y() = 3.f;
 	}
 
 	PhysicCommand::init(scene);
@@ -329,7 +330,7 @@ TEST(PhysicCommand, FrameUpdatesChildBodiesInLocalSpace) {
 	ts.forceUpdate(std::chrono::milliseconds(100));
 	PhysicCommand::frame(scene, ts);
 
-	// Child is parented to parent at (10,0). Its world-pos is around (10, gravity*dt^2/2)
+	// Child is parented to parent at (10,0). Its world-pos is around (10, 3 - gravity*dt^2/2)
 	// but the LOCAL translation must reflect "world − parent" so the local x stays near 0.
 	const auto& [childTransform] = child.getComponent<component::Transform>();
 	EXPECT_NEAR(childTransform.translation().x(), 0.f, 0.5f);

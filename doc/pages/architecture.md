@@ -14,7 +14,7 @@ flowchart TD
     Runner["OwlRunner<br/>game runner"] --> Core
     Bake["OwlShaderBake<br/>build tool"] --> Core
     Core["OwlEngine core<br/>app, scene, data, event, math, core"] --> Render["render<br/>renderer, window, input"]
-    Core --> Phys["physics<br/>Box2D"]
+    Core --> Phys["physics<br/>Jolt"]
     Core --> Audio["audio<br/>OpenAL, libsndfile"]
     Core --> Script["script<br/>Lua 5.5"]
     Core --> Gui["Gui<br/>ImGui, ImGuizmo"]
@@ -33,7 +33,7 @@ The engine library (`source/owl/`) is organized into the following modules:
 | `renderer` | Rendering abstraction, buffers, shaders, framebuffers, camera controllers         |
 | `scene`    | Entity-Component-System (EnTT), scene graph, components, save/load                |
 | `script`   | Lua 5.5 embedded scripting (sandboxed `LuaEngine` per entity)                     |
-| `physics`  | 2D physics (Box2D integration)                                                    |
+| `physics`  | 2D physics (Jolt integration)                                                     |
 | `sound`    | Audio playback and device management                                              |
 | `input`    | Keyboard, mouse, and gamepad input abstraction                                    |
 | `window`   | Window creation and management                                                    |
@@ -80,7 +80,7 @@ core depends on whether it is built.
 |--------------|-----------------------------------|-------------------------------------------------------------|-------------------------------------|
 | core         | every module                      | ECS, scene, data, assets, renderer front end, Null backends | always built                        |
 | render       | `renderer`, `window`, `input`     | `gpu/opengl`, `gpu/vulkan`, `window/glfw`, `input/glfw`     | Null backends: headless             |
-| physics      | `physics`                         | `physics/PhysicCommand.cpp` (Box2D)                         | `physics/disabled/`: no-op          |
+| physics      | `physics`                         | `physics/PhysicCommand.cpp` (Jolt)                          | `physics/disabled/`: no-op          |
 | audio        | `sound`                           | `sound/openal`                                              | Null sound backend                  |
 | script       | `script`                          | `script/` (Lua)                                             | `script/disabled/`: scripts skipped |
 | Gui          | `gui`, the ImGui overlay of `app` | `gui/`, `Owl::Gui`                                          | no `gui/` headers, no overlay       |
@@ -282,7 +282,7 @@ Key conventions:
 Entities support parent-child relationships via the **Hierarchy** component (mandatory on every entity): `Transform`
 is local, the world transform and the visibility are inherited from the parents, only `parentId` is saved. The
 operations, the world-transform cache and serialization are in [Scene & Components](scene.md#transform-hierarchy), the
-interaction with Box2D bodies in [Physics and Hierarchy](physics.md#hierarchy), the hierarchy panel in
+interaction with physics bodies in [Physics and Hierarchy](physics.md#hierarchy), the hierarchy panel in
 [Hierarchy and inspector](editor_scene.md).
 
 ## Icon System

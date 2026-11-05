@@ -18,9 +18,9 @@ events:
   - {frame: 296, keys: [Space]}
   - {frame: 306, keys: []}
 checkpoints:
-  - [60, 0x7476f72dcd1bbfef]
-  - [120, 0x950d41b7e1c3c7b4]
-  - [180, 0x9fc9df2999f37d91]
-  - [240, 0x80937457e2f48855]
-  - [300, 0x988a580c71b16944]
-  - [360, 0x77c4e39a21324b5d]
+  - [60, 0xa7de1c2fbf4f9b60]
+  - [120, 0xb184a7d78c281b16]
+  - [180, 0xd272fe3d73c9a0bd]
+  - [240, 0xe1244293a753967f]
+  - [300, 0xe6eeb3632ef443b3]
+  - [360, 0x9b9538eea3001d5e]

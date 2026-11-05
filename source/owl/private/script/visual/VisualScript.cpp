@@ -270,7 +270,7 @@ auto groupName(const std::string_view iPrefix, const std::string_view iLetters) 
 	return std::string{iPrefix.ends_with('_') ? iPrefix.substr(0, iPrefix.size() - 1) : iPrefix};
 }
 
-// The run of number (or integer) pins from iFirst named `<prefix>x, <prefix>y [, <prefix>z]` or `r, g, b [, a]`.
+// The run of required (or optional) number pins from iFirst named `<p>x, <p>y [, <p>z]` or `r, g, b [, a]`.
 auto findGroup(const std::vector<PinSpec>& iPins, const size_t iFirst) -> std::optional<PinGroup> {
 	const auto& first = iPins[iFirst];
 	if ((first.type != PinType::Number && first.type != PinType::Integer) || first.name.empty())
@@ -283,8 +283,8 @@ auto findGroup(const std::vector<PinSpec>& iPins, const size_t iFirst) -> std::o
 			return false;
 		for (size_t i = 0; i < iLetters.size(); ++i) {
 			const auto& pin = iPins[iFirst + i];
-			if (pin.type != first.type || pin.name.size() != prefix.size() + 1 || !pin.name.starts_with(prefix) ||
-				pin.name.back() != iLetters[i])
+			if (pin.type != first.type || pin.optional != first.optional || pin.name.size() != prefix.size() + 1 ||
+				!pin.name.starts_with(prefix) || pin.name.back() != iLetters[i])
 				return false;
 		}
 		return true;

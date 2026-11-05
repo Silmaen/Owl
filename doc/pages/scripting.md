@@ -163,7 +163,7 @@ end
 
 ### Collision Callback
 
-`on_collision(other_id)` is fed by Box2D contact events. It needs a Box2D body on both sides: a `PhysicBody`
+`on_collision(other_id)` is fed by Jolt contact events. It needs a physics body on both sides: a `PhysicBody`
 component, a collidable tilemap, or the automatic body of a raycast door or pushwall. Only the entity receiving the
 callback needs a `LuaScript`.
 
@@ -176,7 +176,9 @@ callback needs a `LuaScript`.
 - `scene.destroy_entity` in the callback is deferred like everywhere else (see
   [Entity destruction](#entity-destruction)): destroying the entity itself or `other_id` is safe.
 - Two static bodies never collide, and a body that only moves through `transform.set_position` does not move in
-  Box2D (use `physics.set_velocity` or `physics.set_transform`).
+  the physics world (use `physics.set_velocity` or `physics.set_transform`).
+- The same `physics` functions drive 2D and 3D bodies: a 3D body (`PhysicBody` dimension `Space`) takes a Z
+  component (`physics.impulse(entity_id, fx, fy, fz)`) and `physics.get_velocity` returns `vx, vy, vz` for it.
 
 ### The `entity_id` Global
 
@@ -624,7 +626,7 @@ Each script of the prefab is then created bound to the scene, gets its propertie
 `scene.destroy_entity(id)` does not destroy anything right away: it queues the entity, which stays valid
 until the end of the current `onUpdateRuntime()`, after scripts, physics and triggers have run. A script
 may therefore destroy its own entity and keep running. At that point the entity and all its children are
-destroyed; each of them gets `on_destroy()` once, loses its Box2D body and stops its `SoundSource`.
+destroyed; each of them gets `on_destroy()` once, loses its physics body and stops its `SoundSource`.
 
 ## Sandbox and quotas {#sandbox-and-quotas}
 

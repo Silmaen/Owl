@@ -443,7 +443,7 @@ function on_update(dt)
     end
 end
 
--- Box2D contact: fires once when the player starts touching another body
+-- Physics contact: fires once when the player starts touching another body
 -- (ground tilemap, moving platform...), with that body's entity id.
 function on_collision(other_id)
     log.trace("Player touched " .. entity.get_name(other_id) .. " (" .. jump_state .. ")")

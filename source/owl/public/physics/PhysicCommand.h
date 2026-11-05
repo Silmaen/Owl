@@ -14,6 +14,7 @@
 #include "scene/Scene.h"
 
 #include <cstdint>
+#include <span>
 #include <vector>
 
 /**
@@ -23,7 +24,7 @@
 namespace owl::physics {
 /**
  * @brief
- *  Physics of the scenes: each scene owns its Box2D world, created by `init()` and reached through the
+ *  Physics of the scenes: each scene owns its Jolt world (2D bodies locked to the XY plane), created by `init()` and reached through the
  *  scene (scene-level calls) or the entity (body calls).
  */
 class OWL_API PhysicCommand final {
@@ -112,7 +113,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Number of threads running the Box2D solver of a scene.
+	 *  Number of threads running the physics solver of a scene.
 	 * @param[in] iScene The scene.
 	 * @return 1 for the single-threaded solver, the task pool size when multi-threaded, 0 without a world.
 	 */
@@ -170,17 +171,41 @@ public:
 	 * @brief
 	 *  Hand over the collisions that began during the steps since the last call on a scene, and clear them.
 	 *
-	 * Built from Box2D begin-touch contact events. A pair is reported once when its first contact
+	 * Built from the contacts Jolt adds and removes. A pair is reported once when its first contact
 	 * begins; contacts between further shapes of the same two entities (tilemap cells) are not
 	 * reported again until all of them have ended.
 	 * @param[in,out] ioScene The scene.
-	 * @return The begun collisions, in Box2D event order.
+	 * @return The begun collisions, sorted by body: the same order on every run and worker count.
 	 */
 	[[nodiscard]] static auto takeCollisionEvents(scene::Scene& ioScene) -> std::vector<CollisionEvent>;
 
 	/**
 	 * @brief
-	 *  Remove the Box2D bodies owned by an entity (PhysicBody, tilemap, raycast door or pushwall body).
+	 *  Snapshot of the simulation of a scene's world, for rewind and rollback.
+	 *
+	 * Holds every body (pose, velocities, sleep), the contact cache and the touching pairs of the collision events: a
+	 * `restoreState()` followed by the same steps gives the same world, bit for bit, and the same events. The bytes are
+	 * for this process only: not a save format.
+	 * @param[in] iScene The scene.
+	 * @return The state, empty when the scene has no world.
+	 */
+	[[nodiscard]] static auto saveState(const scene::Scene& iScene) -> std::vector<uint8_t>;
+
+	/**
+	 * @brief
+	 *  Put back a state of `saveState()` into a scene's world, which must hold the same bodies as when it was saved.
+	 *
+	 * The entity transforms follow at the next `writeFrameTransforms()`; the collisions not yet taken are dropped.
+	 * @param[in,out] ioScene The scene.
+	 * @param[in] iState The state.
+	 * @return False without a world, or when the bodies changed since the save (the world is then left as it was
+	 * partly restored: restore another state or call `init()`).
+	 */
+	[[nodiscard]] static auto restoreState(scene::Scene& ioScene, std::span<const uint8_t> iState) -> bool;
+
+	/**
+	 * @brief
+	 *  Remove the physics bodies owned by an entity (PhysicBody, tilemap, raycast door or pushwall body).
 	 *
 	 * Component removal already does it; this drops the bodies of an entity that stays in the scene. No-op
 	 * when the entity's scene has no world or the entity owns no body.
@@ -220,6 +245,40 @@ public:
 	 * @param iVelocity The new velocity.
 	 */
 	static void setVelocity(const scene::Entity& iEntity, const math::vec2f& iVelocity);
+
+	/**
+	 * @brief
+	 *  Apply an impulse in space to the given entity's body; a 2D body takes its X and Y only.
+	 * @param[in] iEntity The entity.
+	 * @param[in] iImpulse The impulse.
+	 */
+	static void impulse3D(const scene::Entity& iEntity, const math::vec3f& iImpulse);
+
+	/**
+	 * @brief
+	 *  Linear velocity in space of the given entity's body.
+	 * @param[in] iEntity The entity.
+	 * @return The velocity (Z is 0 for a 2D body), zero without a moving body.
+	 */
+	[[nodiscard]] static auto getVelocity3D(const scene::Entity& iEntity) -> math::vec3f;
+
+	/**
+	 * @brief
+	 *  Set the linear velocity in space of the given entity's body; a 2D body takes its X and Y only.
+	 * @param[in] iEntity The entity.
+	 * @param[in] iVelocity The velocity.
+	 */
+	static void setVelocity3D(const scene::Entity& iEntity, const math::vec3f& iVelocity);
+
+	/**
+	 * @brief
+	 *  Move the given entity's body in space; a 2D body takes X, Y and the rotation around Z only.
+	 * @param[in] iEntity The entity.
+	 * @param[in] iPosition The world position.
+	 * @param[in] iRotation The world rotation, Euler angles in radians (as `math::Transform`).
+	 */
+	static void setTransform3D(const scene::Entity& iEntity, const math::vec3f& iPosition,
+							   const math::vec3f& iRotation);
 
 	/**
 	 * @brief

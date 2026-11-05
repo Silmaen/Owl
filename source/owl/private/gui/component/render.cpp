@@ -1509,6 +1509,27 @@ void renderProps(PhysicBody& ioComponent) {
 		ImGui::EndCombo();
 	}
 	fieldTooltip(bodyTypeDesc(ioComponent.body.type));
+	const std::string dimensionName{magic_enum::enum_name(ioComponent.body.dimension)};
+	if (prop::BeginCombo("Dimension", dimensionName.c_str())) {
+		for (const auto dimension: magic_enum::enum_values<SceneBody::Dimension>())
+			if (ImGui::Selectable(std::string(magic_enum::enum_name(dimension)).c_str(),
+								  dimension == ioComponent.body.dimension))
+				ioComponent.body.dimension = dimension;
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Plane: a 2D body, moving in the XY plane and turning around Z. Space: a 3D body, free in space. Both "
+				 "collide with each other.");
+	const std::string shapeName{magic_enum::enum_name(ioComponent.body.shape)};
+	if (prop::BeginCombo("Shape", shapeName.c_str())) {
+		for (const auto shape: magic_enum::enum_values<SceneBody::Shape>())
+			if (ImGui::Selectable(std::string(magic_enum::enum_name(shape)).c_str(), shape == ioComponent.body.shape))
+				ioComponent.body.shape = shape;
+		ImGui::EndCombo();
+	}
+	fieldTooltip(
+			"Box: Size is its full size (a 2D box is one unit deep). Sphere: Size X is its diameter (a disc in 2D). "
+			"Capsule: Size X is its diameter, Size Y its full height along Y. Cylinder: Size X is its diameter, "
+			"Size Y its height along Y.");
 	prop::Checkbox("Fixed Rotation", &ioComponent.body.fixedRotation);
 	fieldTooltip("Lock rotation — the body cannot spin (useful for platformer characters).");
 	drawVec3Control("Size", ioComponent.body.colliderSize, 1.0f);

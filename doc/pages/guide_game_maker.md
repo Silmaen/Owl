@@ -33,7 +33,7 @@ flowchart LR
 | Page                               | What you learn                           |
 |------------------------------------|------------------------------------------|
 | [Events and Input](event_input.md) | Keyboard, mouse, gamepad, input actions  |
-| [Physics](physics.md)              | Box2D bodies, colliders, triggers        |
+| [Physics](physics.md)              | Jolt bodies, colliders, triggers         |
 | [Sound](sound.md)                  | Effects, music, listeners, spatial audio |
 | [Pathfinding](pathfinding.md)      | Tile-graph navigation on tilemaps        |
 | [Particles](particles.md)          | Particles, trails and lens flares        |

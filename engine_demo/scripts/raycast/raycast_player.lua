@@ -32,7 +32,7 @@ function on_create()
     local _, _, start_yaw = transform.get_rotation(entity_id)
     yaw = start_yaw
     -- Restore world-position if returning from a transition. Route through
-    -- `physics.set_transform` so the Box2D body picks up the new pose;
+    -- `physics.set_transform` so the physics body picks up the new pose;
     -- `transform.set_position/set_rotation` would be silently overwritten on
     -- the next physics step (the body is the source of truth).
     local rx = gamestate.get("raycast_return_x", -1000)
@@ -59,7 +59,7 @@ function on_update(dt)
     -- A / D rotate the player in place (GLFW-A = AZERTY 'Q' = turn left;
     -- GLFW-D = AZERTY 'D' = turn right). CCW is positive rz.
     -- Must go through `physics.set_transform` (not `transform.set_rotation`) —
-    -- the Box2D body is the source of truth for entities with a `PhysicBody`,
+    -- the physics body is the source of truth for entities with a `PhysicBody`,
     -- and it overwrites `Transform.rotation` after every physics step. Going
     -- through `b2Body_SetTransform` rotates the body itself, so the rotation
     -- survives the next sync.

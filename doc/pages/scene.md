@@ -35,7 +35,7 @@ Scenes are serialized to and from YAML files (`.owl` extension).
 
 The first two are immediate (editor). Runtime code (Lua `scene.destroy_entity`, trigger callbacks) uses the deferred
 form, flushed at the end of `onUpdateRuntime()` and at the start of `onEndRuntime()`. All three run `on_destroy`,
-remove the Box2D bodies and stop the sounds while the whole subtree is still intact.
+remove the physics bodies and stop the sounds while the whole subtree is still intact.
 
 While the scene runs, runtime resources follow their components through EnTT `on_construct` / `on_destroy` hooks
 (connected by `onStartRuntime()`, disconnected by `onEndRuntime()`): removing a `LuaScript` or `NativeScript` calls
@@ -117,7 +117,7 @@ flowchart LR
 |---------------|----------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
 | `Scripts`     | `owl.physics_poses` (simulated body poses), `owl.scripts` (native, Lua)                                                                            | May move, create or destroy entities      |
 | `PrePhysics`  | `owl.oscillators`, `owl.patrols`, `owl.spline_followers`, `owl.walk_agents`, `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input` | Gameplay controllers before the step      |
-| `Physics`     | `owl.physics` (one Box2D step and `on_collision` per tick)                                                                                         | Owns the physics step                     |
+| `Physics`     | `owl.physics` (one Jolt update and `on_collision` per tick)                                                                                        | Owns the physics step                     |
 | `PostPhysics` | `owl.drift`, `owl.animation`, `owl.sockets`, `owl.light_flicker`, `owl.entity_links`, `owl.triggers`, `owl.floating_origin`, `owl.world_streaming` | Last phase allowed to change the world    |
 | `Late`        | `owl.navigation`, `owl.sound`, `owl.sprite_animation`                                                                                              | Reads the settled world (caches armed)    |
 | `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                                                                                                | Replaces every other phase once game over |
@@ -540,8 +540,8 @@ YAML key: `Tilemap`.
 - Cells are reached only through `TilemapLayer::getTile` / `setTile` / `getCell` / `setCell` / `getChunk` /
   `setChunk` / `resize` / `assign` / `fill`, which keep one generation per 32 × 32 chunk for the renderer cache
   ([Chunked tilemaps](renderer.md)).
-- Tiles index the atlas in row-major order; each collidable tile (declared in the tileset) becomes one static Box2D
-  fixture at `onStartRuntime`. The tileset resolves lazily against `Application::getAssetDirectories()`.
+- Tiles index the atlas in row-major order; each collidable tile (declared in the tileset) becomes one box of the static compound
+  body at `onStartRuntime`. The tileset resolves lazily against `Application::getAssetDirectories()`.
 
 The **`Tileset`** asset (`.owltileset`, `scene::Tileset`, authored in the Tile Palette) holds the atlas texture,
 `tileWidth` / `tileHeight`, `columns × rows`, sparse per-tile metadata (`collidable`, `name`) and its `kind`:
@@ -1531,7 +1531,7 @@ ruler of beads 20 cm apart by the debris.
 
 ### Physics and Hierarchy
 
-Physics bodies (Box2D) operate in **world space** independently of the scene hierarchy.
+Physics bodies (Jolt) operate in **world space** independently of the scene hierarchy.
 See [Physics > Hierarchy Interaction](physics.md) for details.
 
 ## Scene Serialization

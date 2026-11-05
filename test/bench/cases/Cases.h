@@ -120,7 +120,7 @@ void runScriptBenches(Runner& ioRunner);
 
 /**
  * @brief
- *  Box2D physics benchmarks.
+ *  Physics benchmarks (Jolt).
  * @param[in,out] ioRunner The runner.
  */
 void runPhysicsBenches(Runner& ioRunner);

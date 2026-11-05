@@ -184,7 +184,7 @@ Checked on 2026-10-09 with `conan search -r conancenter` (Conan 2.33). "Owl (Con
 
 | Dependency            | DepManager     | Owl (Conan)     | Source                | Linkage | Note                                                                           |
 |-----------------------|----------------|-----------------|-----------------------|---------|--------------------------------------------------------------------------------|
-| box2d                 | 3.1.1          | 3.1.1           | local recipe          | static  | Latest upstream; ConanCenter's recipe plus an `avx2` option                    |
+| joltphysics           | —              | 5.6.0           | local recipe          | static  | Latest upstream; cross-platform deterministic, SSE4.2 on x86_64, no FMA        |
 | cpptrace              | 1.0.4          | 1.0.4           | ConanCenter           | static  | Pulls libdwarf 2.1.0 (DepManager: 2.2.0)                                       |
 | debugbreak            | 1.0            | —               | removed               | —       | Replaced by `OWL_DEBUG_BREAK()` in `core/Assert.h`                             |
 | entt                  | 3.15.0         | 4.0.0           | local recipe          | header  | ConanCenter stops at 3.16.0; its recipe, C++20 for 4.x                         |
@@ -269,7 +269,7 @@ ConanCenter as is.
 | `openal-soft` 1.25.2              | ConanCenter stops at 1.24.3: its recipe on libalsa 1.2.16.1, `-Werror=function-effects` off (libstdc++)                                                                                                                                                 |
 | `msdfgen` 1.13                    | ConanCenter stops at 1.12 (needed by msdf-atlas-gen 1.4): its recipe, on freetype 2.14.3 and tinyxml2 11.0.0                                                                                                                                            |
 | `tinyobjloader` 2.0.0-rc13        | ConanCenter stops at rc10: its recipe, unchanged                                                                                                                                                                                                        |
-| `box2d` 3.1.1                     | ConanCenter's recipe has no AVX2 switch: its recipe plus `avx2` (default on, x86_64 only, `BOX2D_AVX2`)                                                                                                                                                 |
+| `joltphysics` 5.6.0               | ConanCenter's recipe turns cross-platform determinism off and pushes `-mavx2 -mfma` to its consumers: deterministic, SSE4.2 on x86_64, no FMA, RTTI on, no consumer flag                                                                                |
 | `glfw` 3.5.1                      | ConanCenter stops at 3.4 and builds Wayland on its own libwayland: both backends, system libraries dlopened                                                                                                                                             |
 | `ktx` 4.4.2                       | ConanCenter's recipe plus a patch: the ETC1S encoder allocates the BasisLZ global data with `new[]` that `ktxTexture2_Destroy` frees with `free` (ASan)                                                                                                 |
 
