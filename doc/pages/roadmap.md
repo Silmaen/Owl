@@ -151,7 +151,8 @@ deterministic simulation and replay, Jolt, gravity fields.
   bounded field of view ([Fair play](design/simulation-networking.md#networking-fairness))
 - ![Done][done] Input recording and frame-exact replay (replays double as regression tests)
   ([Replay](design/simulation-networking.md#simulation-replay))
-- ![Planned][planned] Rewind in Play (snapshot ring buffer + input log)
+- ![Done][done] Rewind in Play: the session simulated again from its recorded inputs
+  ([Simulation](design/simulation-networking.md#simulation-rewind))
 - ![Done][done] Full 2D physics on Jolt (plane-locked bodies): callbacks, queries, joints, on the shared physics
   interface
   ([Physics](design/physics-api.md))
