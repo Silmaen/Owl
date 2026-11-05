@@ -12,8 +12,10 @@
 #include "physics/PhysicsSettings.h"
 #include "scene/PhysicsSnapshot.h"
 #include "scene/Scene.h"
+#include "scene/SceneBody.h"
 
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -158,26 +160,121 @@ public:
 
 	/**
 	 * @brief
-	 *  Two entities whose bodies started touching during a physics step.
+	 *  Two entities whose bodies started or stopped touching during a physics step.
 	 */
 	struct CollisionEvent {
 		/// UUID of the first entity of the pair.
 		core::UUID entityA;
 		/// UUID of the second entity of the pair.
 		core::UUID entityB;
+		/// True when the bodies stopped touching (`on_collision_exit`, `on_trigger_exit`).
+		bool ended = false;
+		/// True when one of the bodies is a sensor (`on_trigger_enter`, `on_trigger_exit`).
+		bool sensor = false;
 	};
 
 	/**
 	 * @brief
-	 *  Hand over the collisions that began during the steps since the last call on a scene, and clear them.
+	 *  Hand over the collisions that began or ended during the steps since the last call on a scene, and clear them.
 	 *
-	 * Built from the contacts Jolt adds and removes. A pair is reported once when its first contact
-	 * begins; contacts between further shapes of the same two entities (tilemap cells) are not
-	 * reported again until all of them have ended.
+	 * Built from the contacts Jolt adds and removes. A pair begins once when its first contact begins and ends when
+	 * its last one ends: contacts between further shapes of the same two entities (tilemap cells) report nothing more.
+	 * A pair that ends and begins again within one frame reports nothing; a body destroyed while touching ends its
+	 * pairs.
 	 * @param[in,out] ioScene The scene.
-	 * @return The begun collisions, sorted by body: the same order on every run and worker count.
+	 * @return The events in the order they happened, sorted by body within a step: the same order on every run and
+	 *  worker count.
 	 */
 	[[nodiscard]] static auto takeCollisionEvents(scene::Scene& ioScene) -> std::vector<CollisionEvent>;
+
+	/**
+	 * @brief
+	 *  What a ray or a moving shape met first.
+	 */
+	struct QueryHit {
+		/// UUID of the entity of the body met.
+		core::UUID entity;
+		/// Contact point, in the world.
+		math::vec3f point{0.f, 0.f, 0.f};
+		/// Surface normal at the point, out of the body met.
+		math::vec3f normal{0.f, 0.f, 0.f};
+		/// Distance travelled to the hit.
+		float distance = 0.f;
+	};
+
+	/**
+	 * @brief
+	 *  A sphere (a disc in the XY plane) or a box, for the shape casts and overlap queries.
+	 */
+	struct QueryShape {
+		/// A sphere of radius `halfExtents.x`, or a box of `halfExtents` (a 2D box is one unit deep).
+		bool sphere = true;
+		/// Radius of the sphere, half size of the box.
+		math::vec3f halfExtents{0.5f, 0.5f, 0.5f};
+		/// Euler angles of the box, in radians (only Z for a 2D query).
+		math::vec3f rotation{0.f, 0.f, 0.f};
+	};
+
+	/**
+	 * @brief
+	 *  The first body a ray meets in a scene's world, sensors ignored.
+	 *
+	 * A 2D query is a 3D one in the plane z = 0: it meets the 2D bodies and the 3D ones crossing the plane.
+	 * @param[in] iScene The scene.
+	 * @param[in] iOrigin Start of the ray.
+	 * @param[in] iDirection Direction of the ray (normalized here).
+	 * @param[in] iDistance Length of the ray.
+	 * @param[in] iMask Collision layers looked at, one bit per layer.
+	 * @return The hit, none when nothing is met or the scene has no world.
+	 */
+	[[nodiscard]] static auto raycast(const scene::Scene& iScene, const math::vec3f& iOrigin,
+									  const math::vec3f& iDirection, float iDistance,
+									  uint8_t iMask = scene::SceneBody::allLayers) -> std::optional<QueryHit>;
+
+	/**
+	 * @brief
+	 *  The first body a shape meets when it moves through a scene's world, sensors ignored.
+	 * @param[in] iScene The scene.
+	 * @param[in] iShape The shape.
+	 * @param[in] iOrigin Start position of the shape centre.
+	 * @param[in] iDirection Direction of the move (normalized here).
+	 * @param[in] iDistance Length of the move.
+	 * @param[in] iMask Collision layers looked at, one bit per layer.
+	 * @return The hit, none when nothing is met or the scene has no world.
+	 */
+	[[nodiscard]] static auto shapeCast(const scene::Scene& iScene, const QueryShape& iShape,
+										const math::vec3f& iOrigin, const math::vec3f& iDirection, float iDistance,
+										uint8_t iMask = scene::SceneBody::allLayers) -> std::optional<QueryHit>;
+
+	/**
+	 * @brief
+	 *  The entities whose bodies overlap a shape in a scene's world, sensors ignored.
+	 * @param[in] iScene The scene.
+	 * @param[in] iShape The shape.
+	 * @param[in] iCentre Position of the shape centre.
+	 * @param[in] iMask Collision layers looked at, one bit per layer.
+	 * @return The entities, sorted by body, each once.
+	 */
+	[[nodiscard]] static auto overlap(const scene::Scene& iScene, const QueryShape& iShape, const math::vec3f& iCentre,
+									  uint8_t iMask = scene::SceneBody::allLayers) -> std::vector<core::UUID>;
+
+	/**
+	 * @brief
+	 *  Run or stop the motor of the hinge or slider joint of an entity (`component::PhysicJoint`).
+	 * @param[in] iEntity The entity with the joint.
+	 * @param[in] iEnabled Whether the motor runs.
+	 * @param[in] iSpeed Target speed, radians or units per second.
+	 */
+	static void setJointMotor(const scene::Entity& iEntity, bool iEnabled, float iSpeed);
+
+	/**
+	 * @brief
+	 *  Angle of the hinge joint of an entity from its rest pose, or position of its slider.
+	 * @param[in] iEntity The entity with the joint.
+	 * @return The angle in radians or the position; 0 for another joint or without one.
+	 */
+	[[nodiscard]] static auto getJointPosition(const scene::Entity& iEntity) -> float;
+
 
 	/**
 	 * @brief

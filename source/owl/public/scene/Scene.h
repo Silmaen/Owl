@@ -142,6 +142,7 @@ struct ShipController;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
+struct PhysicJoint;
 struct Player;
 struct PrefabLink;
 struct RaycastDoor;
@@ -2912,6 +2913,9 @@ OWL_API void Scene::onComponentAdded<component::Text>(const Entity& iEntity, com
 
 template<>
 OWL_API void Scene::onComponentAdded<component::PhysicBody>(const Entity& iEntity, component::PhysicBody& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::PhysicJoint>(const Entity& iEntity, component::PhysicJoint& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Player>(const Entity& iEntity, component::Player& ioComponent);

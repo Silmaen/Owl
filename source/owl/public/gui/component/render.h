@@ -173,6 +173,13 @@ OWL_API void renderProps(scene::component::PhysicBody& ioComponent);
 
 /**
  * @brief
+ *  Draw the properties of a physics joint.
+ * @param[in,out] ioComponent The component.
+ */
+OWL_API void renderProps(scene::component::PhysicJoint& ioComponent);
+
+/**
+ * @brief
  *  Render a Gui for editing the component.
  * @param ioComponent The component to edit.
  */
@@ -811,7 +818,7 @@ using DrawableComponents =
 				   scene::component::CircleRenderer, scene::component::MeshRenderer, scene::component::Animator,
 				   scene::component::MeshSockets, scene::component::SocketAttachment, scene::component::Light,
 				   scene::component::Environment, scene::component::Text, scene::component::Tilemap,
-				   scene::component::IsometricObject, scene::component::PhysicBody, scene::component::Player,
+				   scene::component::IsometricObject, scene::component::PhysicBody, scene::component::PhysicJoint, scene::component::Player,
 				   scene::component::Trigger, scene::component::RaycastDoor, scene::component::RaycastPushWall,
 				   scene::component::EntityLink, scene::component::BackgroundTexture, scene::component::Visibility,
 				   scene::component::SoundSource, scene::component::SoundListener, scene::component::ReverbZone,

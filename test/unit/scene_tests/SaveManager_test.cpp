@@ -238,7 +238,7 @@ TEST(SaveManager, loadSaveWithPhysicsSnapshots) {
 	const auto& snap1 = result.physicsSnapshots.at(100);
 	EXPECT_NEAR(snap1.linearVelocity.x(), 1.5f, 0.01f);
 	EXPECT_NEAR(snap1.linearVelocity.y(), -2.5f, 0.01f);
-	EXPECT_NEAR(snap1.angularVelocity, 0.3f, 0.01f);
+	EXPECT_NEAR(snap1.angularVelocity.z(), 0.3f, 0.01f);
 	EXPECT_TRUE(snap1.awake);
 
 	// Verify second snapshot.
@@ -246,7 +246,7 @@ TEST(SaveManager, loadSaveWithPhysicsSnapshots) {
 	const auto& snap2 = result.physicsSnapshots.at(200);
 	EXPECT_NEAR(snap2.linearVelocity.x(), 0.0f, 0.01f);
 	EXPECT_NEAR(snap2.linearVelocity.y(), 0.0f, 0.01f);
-	EXPECT_NEAR(snap2.angularVelocity, 0.0f, 0.01f);
+	EXPECT_NEAR(snap2.angularVelocity.z(), 0.0f, 0.01f);
 	EXPECT_FALSE(snap2.awake);
 
 	SaveManager::deleteSave(52);
@@ -281,7 +281,7 @@ TEST(SaveManager, loadSaveWithPartialPhysicsSnapshot) {
 	EXPECT_NEAR(snap.linearVelocity.x(), 5.0f, 0.01f);
 	// Default values for missing fields.
 	EXPECT_NEAR(snap.linearVelocity.y(), 0.0f, 0.01f);
-	EXPECT_NEAR(snap.angularVelocity, 0.0f, 0.01f);
+	EXPECT_NEAR(snap.angularVelocity.z(), 0.0f, 0.01f);
 	EXPECT_TRUE(snap.awake);// PhysicsSnapshot default is true.
 
 	SaveManager::deleteSave(53);

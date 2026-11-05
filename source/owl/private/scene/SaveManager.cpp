@@ -227,7 +227,12 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 										<< static_cast<uint64_t>(entity.getUUID());
 				sOut.getImpl()->emitter << YAML::Key << "vx" << YAML::Value << snap.linearVelocity.x();
 				sOut.getImpl()->emitter << YAML::Key << "vy" << YAML::Value << snap.linearVelocity.y();
-				sOut.getImpl()->emitter << YAML::Key << "av" << YAML::Value << snap.angularVelocity;
+				if (body.dimension == SceneBody::Dimension::Space) {
+					sOut.getImpl()->emitter << YAML::Key << "vz" << YAML::Value << snap.linearVelocity.z();
+					sOut.getImpl()->emitter << YAML::Key << "avx" << YAML::Value << snap.angularVelocity.x();
+					sOut.getImpl()->emitter << YAML::Key << "avy" << YAML::Value << snap.angularVelocity.y();
+				}
+				sOut.getImpl()->emitter << YAML::Key << "av" << YAML::Value << snap.angularVelocity.z();
 				sOut.getImpl()->emitter << YAML::Key << "awake" << YAML::Value << snap.awake;
 				sOut.getImpl()->emitter << YAML::EndMap;
 			}
@@ -303,7 +308,13 @@ auto SaveManager::load(const uint32_t iSlot, const shared<Scene>& iScene) -> Loa
 				if (entry["vy"])
 					snap.linearVelocity.y() = entry["vy"].as<float>();
 				if (entry["av"])
-					snap.angularVelocity = entry["av"].as<float>();
+					snap.angularVelocity.z() = entry["av"].as<float>();
+				if (entry["vz"])
+					snap.linearVelocity.z() = entry["vz"].as<float>();
+				if (entry["avx"])
+					snap.angularVelocity.x() = entry["avx"].as<float>();
+				if (entry["avy"])
+					snap.angularVelocity.y() = entry["avy"].as<float>();
 				if (entry["awake"])
 					snap.awake = entry["awake"].as<bool>();
 				result.physicsSnapshots[uuid] = snap;

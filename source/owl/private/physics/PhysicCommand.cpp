@@ -9,7 +9,9 @@
 
 #include "JoltWorld.h"
 #include "SolverTaskPool.h"
+#include "app/EngineContext.h"
 #include "physics/PhysicCommand.h"
+#include "renderer/MeshCache.h"
 #include "scene/Entity.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
@@ -25,7 +27,9 @@
 #include <numbers>
 #include <optional>
 #include <ranges>
+#include <set>
 #include <span>
+#include <unordered_set>
 #include <utility>
 
 namespace owl::physics {
@@ -68,6 +72,13 @@ public:
 		SpacePose currentSpace;
 	};
 
+	// A contact between two sub shapes, and whether it sleeps.
+	struct TrackedContact {
+		std::pair<core::UUID, core::UUID> pair;
+		bool dormant = false;
+		uint32_t awakeSteps = 0;
+	};
+
 	PhysicsWorld() = default;
 
 	~PhysicsWorld() = default;
@@ -94,31 +105,79 @@ public:
 		return std::pair{*ownerA, *ownerB};
 	}
 
+	[[nodiscard]] auto isSensorContact(const BodyContact& iContact) const -> bool {
+		return sensorBodies.contains(iContact.bodyA) || sensorBodies.contains(iContact.bodyB);
+	}
+
+	// Jolt drops the contacts of a body that falls asleep: they stay, dormant, until it wakes up elsewhere.
 	void collectContactEvents() {
 		const auto [begins, ends] = jolt->takeContacts();
 		for (const auto& contact: begins) {
+			if (const auto it = contacts.find(contact); it != contacts.end()) {
+				it->second.dormant = false;
+				dormant.erase(contact);
+				continue;
+			}
 			const auto pair = pairKey(contact);
 			if (!pair)
 				continue;
-			if (++touching[ordered(*pair)] == 1 && !isReportedThisFrame(*pair))
-				collisionBegins.push_back({.entityA = pair->first, .entityB = pair->second});
+			contacts.emplace(contact, TrackedContact{.pair = *pair});
+			if (++touching[ordered(*pair)] == 1)
+				reportBegin(*pair, isSensorContact(contact));
 		}
 		for (const auto& contact: ends) {
-			const auto pair = pairKey(contact);
-			if (!pair)
+			const auto it = contacts.find(contact);
+			if (it == contacts.end())
 				continue;
-			if (const auto it = touching.find(ordered(*pair)); it != touching.end() && --it->second == 0)
-				touching.erase(it);
+			if (!jolt->isAwake(contact.bodyA) && !jolt->isAwake(contact.bodyB)) {
+				it->second = {.pair = it->second.pair, .dormant = true, .awakeSteps = 0};
+				dormant.insert(contact);
+				continue;
+			}
+			removeContact(it);
+		}
+		// A woken body touches again within a step or two when it did not move away.
+		for (auto it = dormant.begin(); it != dormant.end();) {
+			const auto tracked = contacts.find(*it);
+			if (tracked == contacts.end()) {
+				it = dormant.erase(it);
+				continue;
+			}
+			if ((!jolt->isAwake(it->bodyA) && !jolt->isAwake(it->bodyB)) || ++tracked->second.awakeSteps < 2) {
+				++it;
+				continue;
+			}
+			it = dormant.erase(it);
+			removeContact(tracked);
 		}
 	}
 
-	[[nodiscard]] auto isReportedThisFrame(const std::pair<core::UUID, core::UUID>& iPair) const -> bool {
+	void removeContact(const std::map<BodyContact, TrackedContact>::iterator iContact) {
+		const auto pair = iContact->second.pair;
+		const bool sensor = isSensorContact(iContact->first);
+		dormant.erase(iContact->first);
+		contacts.erase(iContact);
+		if (const auto it = touching.find(ordered(pair)); it != touching.end() && --it->second == 0) {
+			touching.erase(it);
+			collisionEvents.push_back({.entityA = pair.first, .entityB = pair.second, .ended = true, .sensor = sensor});
+		}
+	}
+
+
+	// A pair that ended earlier in the frame and touches again only jittered: neither change is reported.
+	void reportBegin(const std::pair<core::UUID, core::UUID>& iPair, const bool iSensor) {
 		const auto key = ordered(iPair);
-		return std::ranges::any_of(
-				std::span(collisionBegins).subspan(std::min(frameEventsStart, collisionBegins.size())),
-				[&key](const PhysicCommand::CollisionEvent& iEvent) -> bool {
-					return ordered({iEvent.entityA, iEvent.entityB}) == key;
-				});
+		for (size_t i = collisionEvents.size(); i > frameEventsStart; --i) {
+			const auto& event = collisionEvents[i - 1];
+			if (ordered({event.entityA, event.entityB}) != key)
+				continue;
+			if (event.ended) {
+				collisionEvents.erase(std::next(collisionEvents.begin(), static_cast<std::ptrdiff_t>(i - 1)));
+				return;
+			}
+			break;
+		}
+		collisionEvents.push_back({.entityA = iPair.first, .entityB = iPair.second, .ended = false, .sensor = iSensor});
 	}
 
 	void trackBody(const entt::entity iEntity, const uint64_t iBodyId, const uint32_t iBody, const bool iSpace) {
@@ -319,9 +378,25 @@ public:
 		writeRootPose(ioTransform, iPose);
 	}
 
-	void forgetContacts(const core::UUID iEntity) {
-		std::erase_if(touching, [iEntity](const auto& iEntry) -> bool {
-			return iEntry.first.first == iEntity || iEntry.first.second == iEntity;
+	// The partners of a body that goes away stop touching it.
+	void forgetContacts(const core::UUID iEntity, const bool iSensor) {
+		std::erase_if(contacts, [this, iEntity](const auto& iEntry) -> bool {
+			if (iEntry.second.pair.first != iEntity && iEntry.second.pair.second != iEntity)
+				return false;
+			dormant.erase(iEntry.first);
+			return true;
+		});
+		const auto entity = static_cast<uint64_t>(iEntity);
+		std::erase_if(touching, [this, entity, iEntity, iSensor](const auto& iEntry) -> bool {
+			const auto& [first, second] = iEntry.first;
+			if (first != entity && second != entity)
+				return false;
+			const core::UUID other{first == entity ? second : first};
+			collisionEvents.push_back({.entityA = iEntity,
+									   .entityB = other,
+									   .ended = true,
+									   .sensor = iSensor || sensorOwners.contains(static_cast<uint64_t>(other))});
+			return true;
 		});
 	}
 
@@ -341,6 +416,10 @@ public:
 		const uint64_t bodyId = nextId++;
 		bodies[bodyId] = *body;
 		bodyOwners[*body] = iOwner.getUUID();
+		if (iDescription.sensor) {
+			sensorBodies.insert(*body);
+			sensorOwners.insert(static_cast<uint64_t>(iOwner.getUUID()));
+		}
 		return bodyId;
 	}
 
@@ -350,7 +429,10 @@ public:
 			return;
 		if (const auto it = bodies.find(ioBodyId); it != bodies.end()) {
 			if (const auto owner = bodyOwners.find(it->second); owner != bodyOwners.end()) {
-				forgetContacts(owner->second);
+				const bool sensor = sensorBodies.erase(it->second) > 0;
+				if (sensor)
+					sensorOwners.erase(static_cast<uint64_t>(owner->second));
+				forgetContacts(owner->second, sensor);
 				bodyOwners.erase(owner);
 			}
 			jolt->destroyBody(it->second);
@@ -393,13 +475,147 @@ public:
 											 sbody.colliderSize.z() * scale.z()},
 									.density = sbody.density,
 									.friction = sbody.friction,
-									.restitution = sbody.restitution};
+									.restitution = sbody.restitution,
+									.sensor = sbody.sensor,
+									.layer = sbody.layer,
+									.mask = sbody.mask,
+									.meshVertices = {},
+									.meshIndices = {}};
+		if (sbody.shape == scene::SceneBody::Shape::ConvexHull || sbody.shape == scene::SceneBody::Shape::Mesh)
+			readMesh(ioScene, entity, scale, description);
 		if (!space && sbody.shape == scene::SceneBody::Shape::Box)
 			description.boxes.push_back({.halfExtents = {sbody.colliderSize.x() * scale.x() * 0.5f,
 														 sbody.colliderSize.y() * scale.y() * 0.5f}});
 		sbody.bodyId = create(description, entity);
 		if (sbody.bodyId != 0)
 			trackBody(iEntity, sbody.bodyId, bodies[sbody.bodyId], space);
+	}
+
+	// The collider of a mesh shape is the mesh of the entity's MeshRenderer, scaled like the entity.
+	static void readMesh(const scene::Scene& iScene, const scene::Entity& iEntity, const math::vec3f& iScale,
+						 BodyDescription& ioDescription) {
+		const auto* renderer = iEntity.hasComponent<scene::component::MeshRenderer>()
+									   ? &iEntity.getComponent<scene::component::MeshRenderer>()
+									   : nullptr;
+		shared<renderer::MeshResource> mesh = renderer != nullptr ? renderer->mesh : nullptr;
+		if (mesh == nullptr && renderer != nullptr && iScene.getEngineContext() != nullptr)
+			mesh = iScene.getEngineContext()->getMeshCache().get(renderer->meshPath);
+		if (mesh == nullptr || mesh->getGeometry().isEmpty()) {
+			OWL_CORE_WARN("Physics: Entity '{}' has a mesh collider but no mesh to read, it gets a box.",
+						  iEntity.getName())
+			ioDescription.shape = scene::SceneBody::Shape::Box;
+			return;
+		}
+		const auto& geometry = mesh->getGeometry();
+		ioDescription.meshVertices.reserve(geometry.vertices.size());
+		for (const auto& vertex: geometry.vertices)
+			ioDescription.meshVertices.push_back({vertex.position.x() * iScale.x(), vertex.position.y() * iScale.y(),
+												  vertex.position.z() * iScale.z()});
+		ioDescription.meshIndices = geometry.indices;
+	}
+
+	// Created once both bodies exist; a joint whose connected entity has no body is dropped.
+	void createPendingJoints(scene::Scene& ioScene) {
+		if (pendingJoints.empty())
+			return;
+		std::vector<entt::entity> waiting;
+		for (const auto entity: std::exchange(pendingJoints, {})) {
+			auto* joint = ioScene.registry.try_get<scene::component::PhysicJoint>(entity);
+			const auto* body = ioScene.registry.try_get<scene::component::PhysicBody>(entity);
+			if (joint == nullptr || joint->joint.jointId != 0)
+				continue;
+			if (body == nullptr) {
+				OWL_CORE_WARN("Physics: Joint on an entity without a PhysicBody, not created.")
+				continue;
+			}
+			if (body->body.bodyId == 0 && std::ranges::contains(pendingBodies, entity)) {
+				waiting.push_back(entity);
+				continue;
+			}
+			switch (buildJoint(ioScene, {entity, &ioScene}, *joint)) {
+				case JointBuild::Built:
+				case JointBuild::Failed:
+					break;
+				case JointBuild::Waiting:
+					waiting.push_back(entity);
+					break;
+			}
+		}
+		pendingJoints = std::move(waiting);
+	}
+
+	enum struct JointBuild : uint8_t { Built, Waiting, Failed };
+
+	auto buildJoint(scene::Scene& ioScene, const scene::Entity& iEntity, scene::component::PhysicJoint& ioJoint)
+			-> JointBuild {
+		const auto& sjoint = ioJoint.joint;
+		const auto self = find(iEntity.getComponent<scene::component::PhysicBody>().body.bodyId);
+		if (!self)
+			return JointBuild::Failed;
+		const math::Transform selfWorld = ioScene.getWorldTransform(iEntity);
+		const bool plane = iEntity.getComponent<scene::component::PhysicBody>().body.dimension ==
+						   scene::SceneBody::Dimension::Plane;
+		JointDescription description{.type = sjoint.type,
+									 .body = *self,
+									 .other = std::nullopt,
+									 .point = worldPoint(selfWorld, sjoint.anchor),
+									 .otherPoint = sjoint.connectedAnchor,
+									 .axis = worldAxis(selfWorld, sjoint.axis, plane, sjoint.type),
+									 .limited = sjoint.limited,
+									 .lower = sjoint.lowerLimit,
+									 .upper = sjoint.upperLimit,
+									 .motor = sjoint.motor,
+									 .motorSpeed = sjoint.motorSpeed,
+									 .motorForce = sjoint.motorForce,
+									 .springFrequency = sjoint.springFrequency,
+									 .springDamping = sjoint.springDamping};
+		if (sjoint.connected != core::UUID{0}) {
+			const scene::Entity other = ioScene.findEntityByUUID(sjoint.connected);
+			const auto* otherBody = other && other.hasComponent<scene::component::PhysicBody>()
+											 ? &other.getComponent<scene::component::PhysicBody>()
+											 : nullptr;
+			if (otherBody == nullptr) {
+				OWL_CORE_WARN("Physics: Joint of '{}' connects an entity without a PhysicBody, not created.",
+							  iEntity.getName())
+				return JointBuild::Failed;
+			}
+			if (otherBody->body.bodyId == 0)
+				return std::ranges::contains(pendingBodies, static_cast<entt::entity>(other)) ? JointBuild::Waiting
+																							   : JointBuild::Failed;
+			description.other = find(otherBody->body.bodyId);
+			description.otherPoint = worldPoint(ioScene.getWorldTransform(other), sjoint.connectedAnchor);
+		}
+		const auto id = jolt->createJoint(description);
+		if (!id)
+			return JointBuild::Failed;
+		ioJoint.joint.jointId = *id;
+		return JointBuild::Built;
+	}
+
+	[[nodiscard]] static auto worldPoint(const math::Transform& iWorld, const math::vec3f& iLocal) -> math::vec3f {
+		const math::vec4 point = iWorld() * math::vec4{iLocal.x(), iLocal.y(), iLocal.z(), 1.f};
+		return {point.x(), point.y(), point.z()};
+	}
+
+	// A 2D hinge turns around Z and a 2D slider moves in the plane.
+	[[nodiscard]] static auto worldAxis(const math::Transform& iWorld, const math::vec3f& iLocal, const bool iPlane,
+										const scene::SceneJoint::Type iType) -> math::vec3f {
+		if (iPlane && iType == scene::SceneJoint::Type::Hinge)
+			return {0.f, 0.f, 1.f};
+		const math::vec4 axis = iWorld() * math::vec4{iLocal.x(), iLocal.y(), iLocal.z(), 0.f};
+		return {axis.x(), axis.y(), iPlane ? 0.f : axis.z()};
+	}
+
+	void onPhysicJointAdded(entt::registry& ioRegistry, const entt::entity iEntity) {
+		ioRegistry.get<scene::component::PhysicJoint>(iEntity).joint.jointId = 0;
+		pendingJoints.push_back(iEntity);
+	}
+
+	void onPhysicJointRemoved(entt::registry& ioRegistry, const entt::entity iEntity) {
+		std::erase(pendingJoints, iEntity);
+		auto& jointId = ioRegistry.get<scene::component::PhysicJoint>(iEntity).joint.jointId;
+		if (jointId != 0)
+			jolt->destroyJoint(static_cast<uint32_t>(std::exchange(jointId, 0)));
 	}
 
 	void createTilemapBody(scene::Scene& ioScene, const entt::entity iEntity) {
@@ -446,6 +662,7 @@ public:
 				ioScene.registry.all_of<scene::component::Transform, scene::component::Hierarchy>(entity))
 				createPhysicBody(ioScene, entity);
 		}
+		createPendingJoints(ioScene);
 	}
 
 	void onPhysicBodyAdded(entt::registry& ioRegistry, const entt::entity iEntity) {
@@ -486,6 +703,8 @@ public:
 		ioRegistry.on_construct<scene::component::PhysicBody>().connect<&PhysicsWorld::onPhysicBodyAdded>(*this);
 		ioRegistry.on_destroy<scene::component::PhysicBody>().connect<&PhysicsWorld::onPhysicBodyRemoved>(*this);
 		ioRegistry.on_destroy<scene::component::Tilemap>().connect<&PhysicsWorld::onTilemapRemoved>(*this);
+		ioRegistry.on_construct<scene::component::PhysicJoint>().connect<&PhysicsWorld::onPhysicJointAdded>(*this);
+		ioRegistry.on_destroy<scene::component::PhysicJoint>().connect<&PhysicsWorld::onPhysicJointRemoved>(*this);
 		ioRegistry.on_construct<scene::component::RaycastDoor>().connect<&PhysicsWorld::onDoorAdded>();
 		ioRegistry.on_construct<scene::component::RaycastPushWall>().connect<&PhysicsWorld::onPushWallAdded>();
 		ioRegistry.on_destroy<scene::component::RaycastDoor>().connect<&PhysicsWorld::onDoorRemoved>(*this);
@@ -496,6 +715,8 @@ public:
 		ioRegistry.on_construct<scene::component::PhysicBody>().disconnect(static_cast<const void*>(this));
 		ioRegistry.on_destroy<scene::component::PhysicBody>().disconnect(static_cast<const void*>(this));
 		ioRegistry.on_destroy<scene::component::Tilemap>().disconnect(static_cast<const void*>(this));
+		ioRegistry.on_construct<scene::component::PhysicJoint>().disconnect(static_cast<const void*>(this));
+		ioRegistry.on_destroy<scene::component::PhysicJoint>().disconnect(static_cast<const void*>(this));
 		ioRegistry.on_construct<scene::component::RaycastDoor>().disconnect<&PhysicsWorld::onDoorAdded>();
 		ioRegistry.on_construct<scene::component::RaycastPushWall>().disconnect<&PhysicsWorld::onPushWallAdded>();
 		ioRegistry.on_destroy<scene::component::RaycastDoor>().disconnect(static_cast<const void*>(this));
@@ -513,8 +734,13 @@ public:
 	std::unordered_map<entt::entity, uint64_t> tilemapBodies;
 	std::vector<entt::entity> pendingBodies;
 	std::unordered_map<uint32_t, core::UUID> bodyOwners;
+	std::map<BodyContact, TrackedContact> contacts;
+	std::set<BodyContact> dormant;
 	std::map<std::pair<uint64_t, uint64_t>, uint32_t> touching;
-	std::vector<PhysicCommand::CollisionEvent> collisionBegins;
+	std::unordered_set<uint32_t> sensorBodies;
+	std::unordered_set<uint64_t> sensorOwners;
+	std::vector<PhysicCommand::CollisionEvent> collisionEvents;
+	std::vector<entt::entity> pendingJoints;
 	size_t frameEventsStart = 0;
 
 	std::vector<SyncedBody> synced;
@@ -622,6 +848,8 @@ void PhysicCommand::init(scene::Scene& ioScene) {
 		view.get<scene::component::RaycastPushWall>(e).bodyId =
 				world->create(PhysicsWorld::movedBlock(ioScene.getWorldTransform(entity), {0.5f, 0.5f}), entity);
 	}
+	for (const auto e: ioScene.registry.view<scene::component::PhysicJoint>()) world->pendingJoints.push_back(e);
+	world->createPendingJoints(ioScene);
 	// Bodies follow their components from now on: added ones are created, removed ones destroyed.
 	world->connect(ioScene.registry);
 }
@@ -677,7 +905,7 @@ void PhysicCommand::frame(scene::Scene& ioScene, const core::Timestep& iTimestep
 		return;
 	}
 	world->createPendingBodies(ioScene);
-	world->frameEventsStart = world->collisionBegins.size();
+	world->frameEventsStart = world->collisionEvents.size();
 	const uint32_t steps = ioScene.getSimulationClock().advance(iTimestep);
 	for (uint32_t i = 0; i < steps; ++i) step(ioScene);
 	writeFrameTransforms(ioScene);
@@ -722,7 +950,7 @@ auto PhysicCommand::takeCollisionEvents(scene::Scene& ioScene) -> std::vector<Co
 	if (world == nullptr)
 		return {};
 	world->frameEventsStart = 0;
-	return std::exchange(world->collisionBegins, {});
+	return std::exchange(world->collisionEvents, {});
 }
 
 auto PhysicCommand::saveState(const scene::Scene& iScene) -> std::vector<uint8_t> {
@@ -735,11 +963,13 @@ auto PhysicCommand::saveState(const scene::Scene& iScene) -> std::vector<uint8_t
 	std::vector<uint8_t> state;
 	appendValue(state, static_cast<uint64_t>(simulation.size()));
 	state.insert(state.end(), simulation.begin(), simulation.end());
-	appendValue(state, static_cast<uint64_t>(world->touching.size()));
-	for (const auto& [pair, count]: world->touching) {
-		appendValue(state, pair.first);
-		appendValue(state, pair.second);
-		appendValue(state, count);
+	appendValue(state, static_cast<uint64_t>(world->contacts.size()));
+	for (const auto& [contact, tracked]: world->contacts) {
+		for (const uint32_t value: {contact.bodyA, contact.shapeA, contact.bodyB, contact.shapeB, tracked.awakeSteps,
+									tracked.dormant ? 1u : 0u})
+			appendValue(state, value);
+		appendValue(state, static_cast<uint64_t>(tracked.pair.first));
+		appendValue(state, static_cast<uint64_t>(tracked.pair.second));
 	}
 	return state;
 }
@@ -760,19 +990,26 @@ auto PhysicCommand::restoreState(scene::Scene& ioScene, const std::span<const ui
 	}
 	const auto simulation = iState.subspan(offset, static_cast<size_t>(*simulationSize));
 	offset += simulation.size();
-	std::map<std::pair<uint64_t, uint64_t>, uint32_t> touching;
-	const auto pairCount = readValue<uint64_t>(iState, offset);
-	for (uint64_t i = 0; pairCount && i < *pairCount; ++i) {
+	std::map<BodyContact, PhysicsWorld::TrackedContact> contacts;
+	const auto contactCount = readValue<uint64_t>(iState, offset);
+	for (uint64_t i = 0; contactCount && i < *contactCount; ++i) {
+		std::array<uint32_t, 6> values{};
+		bool complete = true;
+		for (auto& value: values) {
+			const auto read = readValue<uint32_t>(iState, offset);
+			complete = complete && read.has_value();
+			value = read.value_or(0);
+		}
 		const auto first = readValue<uint64_t>(iState, offset);
 		const auto second = readValue<uint64_t>(iState, offset);
-		const auto count = readValue<uint32_t>(iState, offset);
-		if (!first || !second || !count) {
+		if (!complete || !first || !second) {
 			OWL_CORE_WARN("Physics: State of {} bytes is truncated, not restored.", iState.size())
 			return false;
 		}
-		touching[{*first, *second}] = *count;
+		contacts[{.bodyA = values[0], .shapeA = values[1], .bodyB = values[2], .shapeB = values[3]}] = {
+				.pair = {core::UUID{*first}, core::UUID{*second}}, .dormant = values[5] != 0, .awakeSteps = values[4]};
 	}
-	if (!pairCount || offset != iState.size()) {
+	if (!contactCount || offset != iState.size()) {
 		OWL_CORE_WARN("Physics: State of {} bytes is malformed, not restored.", iState.size())
 		return false;
 	}
@@ -780,8 +1017,15 @@ auto PhysicCommand::restoreState(scene::Scene& ioScene, const std::span<const ui
 		OWL_CORE_WARN("Physics: State saved with other bodies than the world holds, not restored.")
 		return false;
 	}
-	world->touching = std::move(touching);
-	world->collisionBegins.clear();
+	world->touching.clear();
+	world->dormant.clear();
+	for (const auto& [contact, tracked]: contacts) {
+		++world->touching[PhysicsWorld::ordered(tracked.pair)];
+		if (tracked.dormant)
+			world->dormant.insert(contact);
+	}
+	world->contacts = std::move(contacts);
+	world->collisionEvents.clear();
 	world->frameEventsStart = 0;
 	world->captureCurrent();
 	world->capturePrevious();
@@ -802,7 +1046,7 @@ void PhysicCommand::destroyBody(const scene::Entity& iEntity) {
 		world->onDoorRemoved(registry, handle);
 	if (iEntity.hasComponent<scene::component::RaycastPushWall>())
 		world->onPushWallRemoved(registry, handle);
-	world->forgetContacts(iEntity.getUUID());
+	world->forgetContacts(iEntity.getUUID(), world->sensorOwners.contains(static_cast<uint64_t>(iEntity.getUUID())));
 }
 
 void PhysicCommand::impulse(const scene::Entity& iEntity, const math::vec2f& iImpulse) {
@@ -926,8 +1170,8 @@ auto PhysicCommand::getSnapshot(const scene::Entity& iEntity) -> PhysicsSnapshot
 	const auto body = movingBody(*world, iEntity);
 	if (!body)
 		return snapshot;
-	snapshot.linearVelocity = world->jolt->getLinearVelocity(*body);
-	snapshot.angularVelocity = world->jolt->getAngularVelocity(*body);
+	snapshot.linearVelocity = world->jolt->getSpaceVelocity(*body);
+	snapshot.angularVelocity = world->jolt->getSpaceAngularVelocity(*body);
 	snapshot.awake = world->jolt->isAwake(*body);
 	return snapshot;
 }
@@ -939,10 +1183,90 @@ void PhysicCommand::applySnapshot(const scene::Entity& iEntity, const PhysicsSna
 	const auto body = movingBody(*world, iEntity);
 	if (!body)
 		return;
-	world->jolt->setLinearVelocity(*body, iSnapshot.linearVelocity);
-	world->jolt->setAngularVelocity(*body, iSnapshot.angularVelocity);
+	world->jolt->setSpaceVelocity(*body, iSnapshot.linearVelocity);
+	world->jolt->setSpaceAngularVelocity(*body, iSnapshot.angularVelocity);
 	if (iSnapshot.awake)
 		world->jolt->wake(*body);
+}
+
+
+namespace {
+
+auto toQueryVolume(const PhysicCommand::QueryShape& iShape) -> QueryVolume {
+	return {.sphere = iShape.sphere,
+			.halfExtents = iShape.halfExtents,
+			.rotation = JoltWorld::toRotation(iShape.rotation)};
+}
+
+auto normalized(const math::vec3f& iVector) -> std::optional<math::vec3f> {
+	const float length = std::sqrt(iVector.x() * iVector.x() + iVector.y() * iVector.y() + iVector.z() * iVector.z());
+	if (length <= 0.f || !std::isfinite(length))
+		return std::nullopt;
+	return iVector / length;
+}
+
+auto toHit(const PhysicsWorld& iWorld, const std::optional<QueryHit>& iHit)
+		-> std::optional<PhysicCommand::QueryHit> {
+	if (!iHit)
+		return std::nullopt;
+	const auto owner = iWorld.ownerOf(iHit->body);
+	if (!owner)
+		return std::nullopt;
+	return PhysicCommand::QueryHit{
+			.entity = *owner, .point = iHit->point, .normal = iHit->normal, .distance = iHit->distance};
+}
+
+auto jointOf(const scene::Entity& iEntity, const char* iFunc) -> std::optional<std::pair<PhysicsWorld*, uint32_t>> {
+	auto* const world = runningWorld(iEntity, iFunc);
+	if (world == nullptr || !iEntity.hasComponent<scene::component::PhysicJoint>())
+		return std::nullopt;
+	const uint64_t id = iEntity.getComponent<scene::component::PhysicJoint>().joint.jointId;
+	if (id == 0)
+		return std::nullopt;
+	return std::pair{world, static_cast<uint32_t>(id)};
+}
+
+}// namespace
+
+auto PhysicCommand::raycast(const scene::Scene& iScene, const math::vec3f& iOrigin, const math::vec3f& iDirection,
+							const float iDistance, const uint8_t iMask) -> std::optional<QueryHit> {
+	const auto* const world = iScene.getPhysicsWorld();
+	const auto direction = normalized(iDirection);
+	if (world == nullptr || !direction || !(iDistance > 0.f))
+		return std::nullopt;
+	return toHit(*world, world->jolt->castRay(iOrigin, *direction, iDistance, iMask));
+}
+
+auto PhysicCommand::shapeCast(const scene::Scene& iScene, const QueryShape& iShape, const math::vec3f& iOrigin,
+							  const math::vec3f& iDirection, const float iDistance, const uint8_t iMask)
+		-> std::optional<QueryHit> {
+	const auto* const world = iScene.getPhysicsWorld();
+	const auto direction = normalized(iDirection);
+	if (world == nullptr || !direction || !(iDistance > 0.f))
+		return std::nullopt;
+	return toHit(*world, world->jolt->castVolume(toQueryVolume(iShape), iOrigin, *direction, iDistance, iMask));
+}
+
+auto PhysicCommand::overlap(const scene::Scene& iScene, const QueryShape& iShape, const math::vec3f& iCentre,
+							const uint8_t iMask) -> std::vector<core::UUID> {
+	const auto* const world = iScene.getPhysicsWorld();
+	if (world == nullptr)
+		return {};
+	std::vector<core::UUID> entities;
+	for (const auto body: world->jolt->overlap(toQueryVolume(iShape), iCentre, iMask))
+		if (const auto owner = world->ownerOf(body); owner && !std::ranges::contains(entities, *owner))
+			entities.push_back(*owner);
+	return entities;
+}
+
+void PhysicCommand::setJointMotor(const scene::Entity& iEntity, const bool iEnabled, const float iSpeed) {
+	if (const auto joint = jointOf(iEntity, "setJointMotor"); joint)
+		joint->first->jolt->setJointMotor(joint->second, iEnabled, iSpeed);
+}
+
+auto PhysicCommand::getJointPosition(const scene::Entity& iEntity) -> float {
+	const auto joint = jointOf(iEntity, "getJointPosition");
+	return joint ? joint->first->jolt->getJointPosition(joint->second) : 0.f;
 }
 
 }// namespace owl::physics

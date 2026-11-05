@@ -252,23 +252,23 @@ TEST(PhysicCommand, SnapshotRoundTrip) {
 	// Before init: default snapshot, awake whatever the earlier tests left.
 	ASSERT_FALSE(PhysicCommand::isInitialized(scene));
 	auto snap0 = PhysicCommand::getSnapshot(dyn);
-	EXPECT_EQ(snap0.linearVelocity, owl::math::vec2f(0, 0));
-	EXPECT_FLOAT_EQ(snap0.angularVelocity, 0.f);
+	EXPECT_EQ(snap0.linearVelocity, owl::math::vec3f(0, 0, 0));
+	EXPECT_FLOAT_EQ(snap0.angularVelocity.z(), 0.f);
 	EXPECT_TRUE(snap0.awake);
 
 	PhysicCommand::init(scene);
 
 	// Static body: zero snapshot, applySnapshot is no-op.
 	auto snapStatic = PhysicCommand::getSnapshot(staticBody);
-	EXPECT_EQ(snapStatic.linearVelocity, owl::math::vec2f(0, 0));
+	EXPECT_EQ(snapStatic.linearVelocity, owl::math::vec3f(0, 0, 0));
 	PhysicCommand::applySnapshot(staticBody, snapStatic);
 
 	// No-body / null entity: zero snapshot.
 	auto snapNoBody = PhysicCommand::getSnapshot(noBody);
-	EXPECT_EQ(snapNoBody.linearVelocity, owl::math::vec2f(0, 0));
+	EXPECT_EQ(snapNoBody.linearVelocity, owl::math::vec3f(0, 0, 0));
 	PhysicCommand::applySnapshot(noBody, snapNoBody);
 	auto snapNull = PhysicCommand::getSnapshot({});
-	EXPECT_EQ(snapNull.linearVelocity, owl::math::vec2f(0, 0));
+	EXPECT_EQ(snapNull.linearVelocity, owl::math::vec3f(0, 0, 0));
 	PhysicCommand::applySnapshot({}, snapNull);
 
 	// Dynamic body: round-trip a velocity.
@@ -420,6 +420,7 @@ TEST(PhysicCommand, CollisionReportedOncePerPair) {
 		for (const auto& event: PhysicCommand::takeCollisionEvents(scene)) events.push_back(event);
 	}
 	ASSERT_EQ(events.size(), 1u);
+	EXPECT_FALSE(events.front().ended);
 	const std::set<uint64_t> pair{events.front().entityA, events.front().entityB};
 	EXPECT_EQ(pair, (std::set<uint64_t>{ground.getUUID(), box.getUUID()}));
 	EXPECT_TRUE(PhysicCommand::takeCollisionEvents(scene).empty());
@@ -437,6 +438,10 @@ TEST(PhysicCommand, DestroyedBodyStopsReportingCollisions) {
 	for (int i = 0; i < 60; ++i) PhysicCommand::frame(scene, ts);
 	EXPECT_EQ(PhysicCommand::takeCollisionEvents(scene).size(), 1u);
 	PhysicCommand::destroyBody(ground);
+	for (int i = 0; i < 60; ++i) PhysicCommand::frame(scene, ts);
+	const auto ends = PhysicCommand::takeCollisionEvents(scene);
+	ASSERT_EQ(ends.size(), 1u);
+	EXPECT_TRUE(ends.front().ended);
 	for (int i = 0; i < 60; ++i) PhysicCommand::frame(scene, ts);
 	EXPECT_TRUE(PhysicCommand::takeCollisionEvents(scene).empty());
 	EXPECT_LT(box.getComponent<component::Transform>().transform.translation().y(), 0.f);

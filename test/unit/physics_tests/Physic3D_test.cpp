@@ -121,7 +121,9 @@ TEST_F(Physic3DTest, PlaneAndSpaceBodiesCollide) {
 	std::vector<PhysicCommand::CollisionEvent> events;
 	for (int f = 0; f < 120; ++f) {
 		runFrames(scene, 1);
-		for (const auto& event: PhysicCommand::takeCollisionEvents(scene)) events.push_back(event);
+		for (const auto& event: PhysicCommand::takeCollisionEvents(scene))
+			if (!event.ended)
+				events.push_back(event);
 	}
 	EXPECT_NEAR(translationOf(ball).y(), 1.f, 0.02f);
 	ASSERT_EQ(events.size(), 1u);

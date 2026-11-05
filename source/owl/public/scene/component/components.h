@@ -37,6 +37,7 @@
 #include "ParticleEmitter.h"
 #include "Patrol.h"
 #include "PhysicBody.h"
+#include "PhysicJoint.h"
 #include "Planet.h"
 #include "Player.h"
 #include "PrefabLink.h"
@@ -110,7 +111,7 @@ concept isComponent =
 		std::is_same_v<Component, Environment> || std::is_same_v<Component, LuaScript> ||
 		std::is_same_v<Component, MeshRenderer> || std::is_same_v<Component, Animator> ||
 		std::is_same_v<Component, MeshSockets> || std::is_same_v<Component, SocketAttachment> ||
-		std::is_same_v<Component, NativeScript> || std::is_same_v<Component, PhysicBody> ||
+		std::is_same_v<Component, NativeScript> || std::is_same_v<Component, PhysicBody> || std::is_same_v<Component, PhysicJoint> ||
 		std::is_same_v<Component, Player> || std::is_same_v<Component, PrefabLink> ||
 		std::is_same_v<Component, RaycastDoor> || std::is_same_v<Component, RaycastPushWall> ||
 		std::is_same_v<Component, RendererTag> || std::is_same_v<Component, SoundListener> ||
@@ -168,7 +169,7 @@ concept isDeserializableComponent =
 using CopiableComponents =
 		std::tuple<Transform, WorldPosition, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer,
 				   MeshRenderer, Animator, MeshSockets, SocketAttachment, Light, Light2D, Environment, Text, Tilemap,
-				   IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, Visibility,
+				   IsometricObject, PhysicBody, PhysicJoint, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, Visibility,
 				   Hierarchy, SoundSource, SoundListener, ReverbZone, AdaptiveMusic, LuaScript, PrefabLink, RaycastDoor,
 				   RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, ParticleEmitter, Trail, Planet,
 				   StreamingSource, Oscillator, Patrol, Spline, SplineFollower, WalkArea, WalkAgent, WalkBehind,
@@ -184,7 +185,7 @@ using CopiableComponents =
 using SerializableComponents =
 		std::tuple<Tag, Transform, WorldPosition, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer,
 				   CircleRenderer, MeshRenderer, Animator, MeshSockets, SocketAttachment, Light, Light2D, Environment,
-				   Text, Tilemap, IsometricObject, PhysicBody, Player, Trigger, EntityLink, FlyCamera,
+				   Text, Tilemap, IsometricObject, PhysicBody, PhysicJoint, Player, Trigger, EntityLink, FlyCamera,
 				   BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener, ReverbZone, AdaptiveMusic,
 				   LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer,
 				   LightFlicker, ParticleEmitter, Trail, Planet, StreamingSource, Oscillator, Patrol, Spline,
@@ -201,7 +202,7 @@ using SerializableComponents =
 using OptionalComponents =
 		std::tuple<WorldPosition, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, MeshRenderer,
 				   Animator, MeshSockets, SocketAttachment, Light, Light2D, Environment, Text, Tilemap, IsometricObject,
-				   PhysicBody, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, SoundSource, SoundListener,
+				   PhysicBody, PhysicJoint, Player, Trigger, EntityLink, FlyCamera, BackgroundTexture, SoundSource, SoundListener,
 				   ReverbZone, AdaptiveMusic, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag,
 				   VoxelWorld, VoxelPlayer, LightFlicker, ParticleEmitter, Trail, Planet, StreamingSource, Oscillator,
 				   Patrol, Spline, SplineFollower, WalkArea, WalkAgent, WalkBehind, SequencePlayer, Drift, FollowTarget,

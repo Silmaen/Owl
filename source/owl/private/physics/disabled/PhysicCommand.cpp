@@ -10,6 +10,7 @@
 #include "physics/PhysicCommand.h"
 
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -95,5 +96,29 @@ auto PhysicCommand::getSnapshot([[maybe_unused]] const scene::Entity& iEntity) -
 
 void PhysicCommand::applySnapshot([[maybe_unused]] const scene::Entity& iEntity,
 								  [[maybe_unused]] const PhysicsSnapshot& iSnapshot) {}
+
+auto PhysicCommand::raycast([[maybe_unused]] const scene::Scene& iScene, [[maybe_unused]] const math::vec3f& iOrigin,
+							[[maybe_unused]] const math::vec3f& iDirection, [[maybe_unused]] const float iDistance,
+							[[maybe_unused]] const uint8_t iMask) -> std::optional<QueryHit> {
+	return std::nullopt;
+}
+
+auto PhysicCommand::shapeCast([[maybe_unused]] const scene::Scene& iScene, [[maybe_unused]] const QueryShape& iShape,
+							  [[maybe_unused]] const math::vec3f& iOrigin,
+							  [[maybe_unused]] const math::vec3f& iDirection, [[maybe_unused]] const float iDistance,
+							  [[maybe_unused]] const uint8_t iMask) -> std::optional<QueryHit> {
+	return std::nullopt;
+}
+
+auto PhysicCommand::overlap([[maybe_unused]] const scene::Scene& iScene, [[maybe_unused]] const QueryShape& iShape,
+							[[maybe_unused]] const math::vec3f& iCentre, [[maybe_unused]] const uint8_t iMask)
+		-> std::vector<core::UUID> {
+	return {};
+}
+
+void PhysicCommand::setJointMotor([[maybe_unused]] const scene::Entity& iEntity, [[maybe_unused]] const bool iEnabled,
+								  [[maybe_unused]] const float iSpeed) {}
+
+auto PhysicCommand::getJointPosition([[maybe_unused]] const scene::Entity& iEntity) -> float { return 0.f; }
 
 }// namespace owl::physics

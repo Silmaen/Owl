@@ -11,7 +11,9 @@
 #include "core/Core.h"
 #include "math/vectors.h"
 #include "scene/SceneBody.h"
+#include "scene/SceneJoint.h"
 
+#include <compare>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -81,6 +83,16 @@ struct BodyDescription {
 	float friction = 0.5f;
 	/// Restitution coefficient.
 	float restitution = 0.f;
+	/// The body detects the others without stopping them.
+	bool sensor = false;
+	/// Collision layer, 0 to `scene::SceneBody::layerCount - 1`.
+	uint8_t layer = 0;
+	/// Layers the body collides with, one bit per layer.
+	uint8_t mask = scene::SceneBody::allLayers;
+	/// Vertices of a `ConvexHull` or `Mesh` collider, in the body frame, the entity scale included.
+	std::vector<math::vec3f> meshVertices{};
+	/// Triangles of a `Mesh` collider, three indices into `meshVertices` each.
+	std::vector<uint32_t> meshIndices{};
 };
 
 /**
@@ -90,8 +102,19 @@ struct BodyDescription {
 struct BodyContact {
 	/// First body.
 	uint32_t bodyA = 0;
+	/// Sub shape of the first body.
+	uint32_t shapeA = 0;
 	/// Second body.
 	uint32_t bodyB = 0;
+	/// Sub shape of the second body.
+	uint32_t shapeB = 0;
+
+	/**
+	 * @brief
+	 *  Order of the contacts: by bodies, then by shapes.
+	 * @return The order.
+	 */
+	auto operator<=>(const BodyContact&) const = default;
 };
 
 /**
@@ -107,7 +130,70 @@ struct BodyContacts {
 
 /**
  * @brief
- *  A Jolt physics system holding the 2D bodies of one scene, locked to the XY plane.
+ *  The closest body met by a ray or a moving volume.
+ */
+struct QueryHit {
+	/// The body.
+	uint32_t body = 0;
+	/// Contact point, in the world.
+	math::vec3f point{0.f, 0.f, 0.f};
+	/// Surface normal at the point, pointing out of the body.
+	math::vec3f normal{0.f, 0.f, 0.f};
+	/// Distance travelled to the hit.
+	float distance = 0.f;
+};
+
+/**
+ * @brief
+ *  The volume of a shape cast or of an overlap query.
+ */
+struct QueryVolume {
+	/// A sphere of radius `halfExtents.x`, or a box of `halfExtents`.
+	bool sphere = true;
+	/// Radius of the sphere, half size of the box.
+	math::vec3f halfExtents{0.5f, 0.5f, 0.5f};
+	/// Rotation of the box, a unit quaternion (x, y, z, w).
+	math::vec4f rotation{0.f, 0.f, 0.f, 1.f};
+};
+
+/**
+ * @brief
+ *  A joint between two bodies, or a body and the world, in world space.
+ */
+struct JointDescription {
+	/// What the joint lets the bodies do.
+	scene::SceneJoint::Type type = scene::SceneJoint::Type::Hinge;
+	/// First body.
+	uint32_t body = 0;
+	/// Second body, none for the world.
+	std::optional<uint32_t> other;
+	/// Joint point (the anchor on the first body for a distance joint).
+	math::vec3f point{0.f, 0.f, 0.f};
+	/// Distance joint: the anchor on the second body.
+	math::vec3f otherPoint{0.f, 0.f, 0.f};
+	/// Unit hinge axis or slide direction.
+	math::vec3f axis{0.f, 0.f, 1.f};
+	/// Limits of the motion (see `scene::SceneJoint`).
+	bool limited = false;
+	/// Smallest angle, position or length.
+	float lower = 0.f;
+	/// Largest angle, position or length.
+	float upper = 0.f;
+	/// Whether the motor runs.
+	bool motor = false;
+	/// Motor target speed.
+	float motorSpeed = 0.f;
+	/// Largest motor torque or force.
+	float motorForce = 100.f;
+	/// Spring frequency of a distance joint, 0 for rigid.
+	float springFrequency = 0.f;
+	/// Spring damping ratio of a distance joint.
+	float springDamping = 0.f;
+};
+
+/**
+ * @brief
+ *  A Jolt physics system holding the bodies of one scene: 2D ones locked to the XY plane, 3D ones free.
  *
  * The only file that includes Jolt (it is compiled with Jolt's instruction set); everything here is in engine types.
  * Bodies are named by their Jolt body id. Results are bit-exact on every target and for every worker count.
@@ -307,6 +393,90 @@ public:
 	 * @param[in] iImpulse The impulse.
 	 */
 	void addSpaceImpulse(uint32_t iBody, const math::vec3f& iImpulse);
+
+	/**
+	 * @brief
+	 *  Angular velocity of a body in space.
+	 * @param[in] iBody The body id.
+	 * @return The velocity, in radians per second around each axis.
+	 */
+	[[nodiscard]] auto getSpaceAngularVelocity(uint32_t iBody) const -> math::vec3f;
+
+	/**
+	 * @brief
+	 *  Set the angular velocity of a body in space.
+	 * @param[in] iBody The body id.
+	 * @param[in] iVelocity The velocity, in radians per second around each axis.
+	 */
+	void setSpaceAngularVelocity(uint32_t iBody, const math::vec3f& iVelocity);
+
+	/**
+	 * @brief
+	 *  The closest body a ray meets; sensors and the bodies whose layer is not in the mask are ignored.
+	 * @param[in] iOrigin Start of the ray.
+	 * @param[in] iDirection Unit direction.
+	 * @param[in] iDistance Length of the ray.
+	 * @param[in] iMask Layers looked at, one bit per layer.
+	 * @return The hit, none when the ray meets nothing.
+	 */
+	[[nodiscard]] auto castRay(const math::vec3f& iOrigin, const math::vec3f& iDirection, float iDistance,
+							   uint8_t iMask) const -> std::optional<QueryHit>;
+
+	/**
+	 * @brief
+	 *  The closest body a volume meets when it moves; sensors and the bodies outside the mask are ignored.
+	 * @param[in] iVolume The volume.
+	 * @param[in] iOrigin Start position of the volume centre.
+	 * @param[in] iDirection Unit direction.
+	 * @param[in] iDistance Length of the move.
+	 * @param[in] iMask Layers looked at, one bit per layer.
+	 * @return The hit, none when the volume meets nothing.
+	 */
+	[[nodiscard]] auto castVolume(const QueryVolume& iVolume, const math::vec3f& iOrigin, const math::vec3f& iDirection,
+								  float iDistance, uint8_t iMask) const -> std::optional<QueryHit>;
+
+	/**
+	 * @brief
+	 *  The bodies overlapping a volume; sensors and the bodies outside the mask are ignored.
+	 * @param[in] iVolume The volume.
+	 * @param[in] iCentre Position of the volume centre.
+	 * @param[in] iMask Layers looked at, one bit per layer.
+	 * @return The bodies, sorted, each once.
+	 */
+	[[nodiscard]] auto overlap(const QueryVolume& iVolume, const math::vec3f& iCentre, uint8_t iMask) const
+			-> std::vector<uint32_t>;
+
+	/**
+	 * @brief
+	 *  Create a joint and add it to the world.
+	 * @param[in] iDescription The joint.
+	 * @return The joint id, none when a body is missing.
+	 */
+	[[nodiscard]] auto createJoint(const JointDescription& iDescription) -> std::optional<uint32_t>;
+
+	/**
+	 * @brief
+	 *  Remove a joint from the world.
+	 * @param[in] iJoint The joint id.
+	 */
+	void destroyJoint(uint32_t iJoint);
+
+	/**
+	 * @brief
+	 *  Run or stop the motor of a hinge or a slider, waking its bodies.
+	 * @param[in] iJoint The joint id.
+	 * @param[in] iEnabled Whether the motor runs.
+	 * @param[in] iSpeed Target speed, radians or units per second.
+	 */
+	void setJointMotor(uint32_t iJoint, bool iEnabled, float iSpeed);
+
+	/**
+	 * @brief
+	 *  Angle of a hinge from its rest pose, or position of a slider along its axis.
+	 * @param[in] iJoint The joint id.
+	 * @return The angle in radians or the position; 0 for the other joints.
+	 */
+	[[nodiscard]] auto getJointPosition(uint32_t iJoint) const -> float;
 
 	/**
 	 * @brief

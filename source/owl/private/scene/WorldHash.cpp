@@ -82,7 +82,12 @@ auto computeWorldHash(const Scene& iScene) -> uint64_t {
 			const auto snapshot = physics::PhysicCommand::getSnapshot(entity);
 			hash.add(snapshot.linearVelocity.x());
 			hash.add(snapshot.linearVelocity.y());
-			hash.add(snapshot.angularVelocity);
+			hash.add(snapshot.angularVelocity.z());
+			if (entity.getComponent<component::PhysicBody>().body.dimension == SceneBody::Dimension::Space) {
+				hash.add(snapshot.linearVelocity.z());
+				hash.add(snapshot.angularVelocity.x());
+				hash.add(snapshot.angularVelocity.y());
+			}
 			hash.add(static_cast<uint64_t>(snapshot.awake ? 1 : 0));
 		}
 	}

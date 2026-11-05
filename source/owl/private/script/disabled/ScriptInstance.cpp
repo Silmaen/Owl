@@ -10,6 +10,7 @@
 #include "script/ScriptInstance.h"
 
 #include <cstdint>
+#include <string_view>
 #include <vector>
 
 // Built instead of the Lua implementation when OWL_MODULE_SCRIPT is OFF: an instance never loads, every call is a no-op.
@@ -74,6 +75,9 @@ void ScriptInstance::onTick([[maybe_unused]] const float iTickTime) const {}
 void ScriptInstance::onDestroy() const {}
 
 void ScriptInstance::onCollision([[maybe_unused]] const uint64_t iOtherEntityId) const {}
+
+void ScriptInstance::onContact([[maybe_unused]] const std::string_view iCallback,
+							   [[maybe_unused]] const uint64_t iOtherEntityId) const {}
 
 auto ScriptInstance::callFunction([[maybe_unused]] const std::string& iName) const -> bool { return false; }
 
