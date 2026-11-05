@@ -738,6 +738,12 @@ public:
 
 	/**
 	 * @brief
+	 *  Register the playback actions: play, pause, stop, step, rewind, record and the folding of the play controls.
+	 */
+	void registerPlaybackActions();
+
+	/**
+	 * @brief
 	 *  Register the actions that make the text larger, smaller or back to its size (Ctrl+=, Ctrl+-, Ctrl+0).
 	 */
 	void registerTextScaleActions();

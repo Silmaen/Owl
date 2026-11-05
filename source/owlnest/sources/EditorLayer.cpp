@@ -285,6 +285,44 @@ void EditorLayer::registerCameraActions() {
 										{}, [this, mode]() -> void { m_settings.viewNavigation = mode; });
 }
 
+void EditorLayer::registerPlaybackActions() {
+	m_actionRegistry.registerAction("scene.play", "Play/Resume", {input::key::F5, Modifiers::None}, [this]() -> void {
+		if (getState() == State::Edit)
+			onScenePlay();
+		else if (getState() == State::Pause)
+			onSceneResume();
+	});
+	m_actionRegistry.registerAction("scene.pause", "Pause", {input::key::F6, Modifiers::None}, [this]() -> void {
+		if (getState() == State::Play)
+			onScenePause();
+	});
+	m_actionRegistry.registerAction("scene.stop", "Stop", {input::key::F7, Modifiers::None}, [this]() -> void {
+		// Deferred to the next update: the button and the shortcut fire while the running scene is still being drawn.
+		if (getState() == State::Play || getState() == State::Pause)
+			requestStop();
+	});
+	m_actionRegistry.registerAction("scene.step", "Step Frame", {input::key::F8, Modifiers::None}, [this]() -> void {
+		if (getState() == State::Pause)
+			onSceneStep();
+	});
+	m_actionRegistry.registerAction("scene.rewind", "Rewind One Second", {input::key::F9, Modifiers::None},
+									[this]() -> void {
+										if (auto* doc = activeSceneDocument();
+											doc != nullptr && doc->state() != SceneDocument::State::Edit)
+											std::ignore = doc->rewind(1.0);
+									});
+	m_actionRegistry.registerAction("scene.record", "Record Play Session", {input::key::F5, Modifiers::Shift},
+									[this]() -> void {
+										if (auto* doc = activeSceneDocument();
+											doc != nullptr && doc->state() == SceneDocument::State::Edit)
+											doc->setRecordingNextPlay(!doc->isRecordingNextPlay());
+									});
+	m_actionRegistry.registerAction("scene.play_controls", "Fold Play Controls", {input::key::F10, Modifiers::None},
+									[this]() -> void {
+										m_settings.playControlsCollapsed = !m_settings.playControlsCollapsed;
+									});
+}
+
 void EditorLayer::registerTextScaleActions() {
 	constexpr int step = 10;
 	m_actionRegistry.registerAction(
@@ -612,44 +650,7 @@ void EditorLayer::onAttach() {
 																					  : Projection::Orthographic);
 		}
 	});
-	// Playback actions
-	m_actionRegistry.registerAction("scene.play", "Play/Resume", {input::key::F5, Modifiers::None}, [this]() -> void {
-		if (getState() == State::Edit)
-
-			onScenePlay();
-		else if (getState() == State::Pause)
-
-			onSceneResume();
-	});
-	m_actionRegistry.registerAction("scene.pause", "Pause", {input::key::F6, Modifiers::None}, [this]() -> void {
-		if (getState() == State::Play)
-			onScenePause();
-	});
-	m_actionRegistry.registerAction("scene.stop", "Stop", {input::key::F7, Modifiers::None}, [this]() -> void {
-		// Deferred to the next update: the button and the shortcut fire while the running scene is still being drawn.
-		if (getState() == State::Play || getState() == State::Pause)
-			requestStop();
-	});
-	m_actionRegistry.registerAction("scene.step", "Step Frame", {input::key::F8, Modifiers::None}, [this]() -> void {
-		if (getState() == State::Pause)
-			onSceneStep();
-	});
-	m_actionRegistry.registerAction("scene.rewind", "Rewind One Second", {input::key::F9, Modifiers::None},
-									[this]() -> void {
-										if (auto* doc = activeSceneDocument();
-											doc != nullptr && doc->state() != SceneDocument::State::Edit)
-											std::ignore = doc->rewind(1.0);
-									});
-	m_actionRegistry.registerAction("scene.record", "Record Play Session", {input::key::F5, Modifiers::Shift},
-									[this]() -> void {
-										if (auto* doc = activeSceneDocument();
-											doc != nullptr && doc->state() == SceneDocument::State::Edit)
-											doc->setRecordingNextPlay(!doc->isRecordingNextPlay());
-									});
-	m_actionRegistry.registerAction("scene.play_controls", "Fold Play Controls", {input::key::F10, Modifiers::None},
-									[this]() -> void {
-										m_settings.playControlsCollapsed = !m_settings.playControlsCollapsed;
-									});
+	registerPlaybackActions();
 	// Entity actions
 	m_actionRegistry.registerAction("entity.delete", "Delete Entity", {input::key::Delete, Modifiers::None},
 									[this]() -> void { deleteSelection(); });
