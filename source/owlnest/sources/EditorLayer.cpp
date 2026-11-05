@@ -305,22 +305,19 @@ void EditorLayer::registerPlaybackActions() {
 		if (getState() == State::Pause)
 			onSceneStep();
 	});
-	m_actionRegistry.registerAction("scene.rewind", "Rewind One Second", {input::key::F9, Modifiers::None},
-									[this]() -> void {
-										if (auto* doc = activeSceneDocument();
-											doc != nullptr && doc->state() != SceneDocument::State::Edit)
-											std::ignore = doc->rewind(1.0);
-									});
-	m_actionRegistry.registerAction("scene.record", "Record Play Session", {input::key::F5, Modifiers::Shift},
-									[this]() -> void {
-										if (auto* doc = activeSceneDocument();
-											doc != nullptr && doc->state() == SceneDocument::State::Edit)
-											doc->setRecordingNextPlay(!doc->isRecordingNextPlay());
-									});
-	m_actionRegistry.registerAction("scene.play_controls", "Fold Play Controls", {input::key::F10, Modifiers::None},
-									[this]() -> void {
-										m_settings.playControlsCollapsed = !m_settings.playControlsCollapsed;
-									});
+	m_actionRegistry.registerAction(
+			"scene.rewind", "Rewind One Second", {input::key::F9, Modifiers::None}, [this]() -> void {
+				if (auto* doc = activeSceneDocument(); doc != nullptr && doc->state() != SceneDocument::State::Edit)
+					std::ignore = doc->rewind(1.0);
+			});
+	m_actionRegistry.registerAction(
+			"scene.record", "Record Play Session", {input::key::F5, Modifiers::Shift}, [this]() -> void {
+				if (auto* doc = activeSceneDocument(); doc != nullptr && doc->state() == SceneDocument::State::Edit)
+					doc->setRecordingNextPlay(!doc->isRecordingNextPlay());
+			});
+	m_actionRegistry.registerAction(
+			"scene.play_controls", "Fold Play Controls", {input::key::F10, Modifiers::None},
+			[this]() -> void { m_settings.playControlsCollapsed = !m_settings.playControlsCollapsed; });
 }
 
 void EditorLayer::registerTextScaleActions() {
