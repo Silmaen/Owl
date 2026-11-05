@@ -167,9 +167,8 @@ public:
 	void unlinkDormant(const BodyContact& iContact) {
 		for (const uint32_t body: {iContact.bodyA, iContact.bodyB}) {
 			const auto [first, last] = dormantByBody.equal_range(body);
-			if (const auto it = std::ranges::find_if(first, last, [&iContact](const auto& iEntry) -> bool {
-					return iEntry.second == iContact;
-				});
+			if (const auto it = std::ranges::find_if(
+						first, last, [&iContact](const auto& iEntry) -> bool { return iEntry.second == iContact; });
 				it != last)
 				dormantByBody.erase(it);
 		}
