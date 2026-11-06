@@ -26,12 +26,6 @@ class PresetConfig:
 
     def __init__(self, preset: str):
         self.cmake_preset = preset
-        # docker related fields
-        self.docker_registry: str | None = None
-        self.docker_namespace: str | None = None
-        self.docker_image: str | None = None
-        self.docker_parameters: str | None = None
-
         # Cmake related fields can be added here as needed
         self.cmake_generator: str | None = None
         self.cmake_build_types: list[str] = []
@@ -86,14 +80,6 @@ class PresetConfig:
             vendor = self.raw_config["vendor"]
             if "silmaen" in vendor:
                 vendor_conf = vendor["silmaen"]
-                if "docker_image" in vendor_conf:
-                    self.docker_image = vendor_conf["docker_image"]
-                if "docker_registry" in vendor_conf:
-                    self.docker_registry = vendor_conf["docker_registry"]
-                if "docker_namespace" in vendor_conf:
-                    self.docker_namespace = vendor_conf["docker_namespace"]
-                if "docker_parameters" in vendor_conf:
-                    self.docker_parameters = vendor_conf["docker_parameters"]
                 if "archive_format" in vendor_conf:
                     self.archive_format = vendor_conf["archive_format"]
                 else:
@@ -182,18 +168,3 @@ class PresetConfig:
         if self.build_directory is not None:
             return self.build_directory
         return root / "output" / "build" / self.cmake_preset
-
-    def get_docker_image(self) -> str:
-        """
-        Get the full docker image name.
-
-        :return: The full docker image name.
-        """
-        if self.docker_image in [None, ""]:
-            return ""
-        image = f"{self.docker_image}"
-        if self.docker_namespace not in [None, ""]:
-            image = f"{self.docker_namespace}/{image}"
-        if self.docker_registry not in [None, ""]:
-            image = f"{self.docker_registry}/{image}"
-        return image

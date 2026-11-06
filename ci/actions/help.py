@@ -14,10 +14,6 @@ class Help(BaseAction):
     @staticmethod
     def print_preset_info(preset: PresetConfig) -> int:
         log.info(preset)
-        if preset.get_docker_image() not in [None, ""]:
-            log.info(f"Will be run in docker image: `{preset.get_docker_image()}`")
-        else:
-            log.info("Will be run in native environment.")
         log.info(f"Build dir: {preset.get_build_dir()}")
         log.debug(f"raw config: {preset.raw_config}")
         return 0

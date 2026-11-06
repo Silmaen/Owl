@@ -1,0 +1,133 @@
+# Nightly jobs of Owl, a child pipeline of the scheduled one. `NightlyGate` writes it after `templates.yml`, so the
+# building blocks are in the same file: an artifact-generated pipeline cannot include the repository's files.
+#
+# Everything here is too long for every push, or publishes: all start at once, the runners deciding the order.
+
+stages:
+  - build
+  - publish
+
+# Clang Debug measures its own coverage, beside the GCC one of the merge requests.
+linux-clang-debug:
+  extends: .build-linux
+  stage: build
+  variables:
+    PRESET: linux-clang-debug
+
+# The whole suite, the `slow` tests the other builds leave out included, on the release tree where a slow scenario
+# takes seconds (in Debug with coverage, minutes). Neither documented nor packaged.
+slow-suite:
+  extends: .linux
+  stage: build
+  variables:
+    PRESET: linux-clang-release
+  script:
+    - poetry run python3 ci_action.py Clean "$PRESET"
+    - poetry run python3 ci_action.py Build "$PRESET"
+    - poetry run python3 ci_action.py Test "$PRESET"
+  artifacts:
+    when: always
+    reports:
+      junit: output/build/*/test/test/*_Report.xml
+
+sanitizer-thread:
+  extends: .build-linux
+  stage: build
+  variables:
+    PRESET: linux-sanitizer-thread
+
+sanitizer-undefined-behavior:
+  extends: .build-linux
+  stage: build
+  variables:
+    PRESET: linux-sanitizer-undefined-behavior
+
+clang-tidy:
+  extends: .analysis
+  stage: build
+  variables:
+    TOOL: tidy
+
+static-analyzer:
+  extends: .analysis
+  stage: build
+  variables:
+    TOOL: analyzer
+
+bench:
+  extends: .bench
+  stage: build
+
+# Each libFuzzer target for a fixed time; the failing inputs are kept to replay them locally.
+fuzz:
+  extends: .linux
+  stage: build
+  variables:
+    PRESET: linux-fuzz
+  script:
+    - poetry run python3 ci_action.py Clean "$PRESET"
+    - poetry run python3 ci_action.py Build "$PRESET"
+    - poetry run python3 ci_action.py Fuzz "$PRESET"
+  artifacts:
+    when: on_failure
+    paths:
+      - output/fuzz/*/artifacts/
+
+# Every header and source compiled alone on strict libc++: up to 26 minutes for a check that rarely fails.
+include-check:
+  extends: .linux
+  stage: build
+  variables:
+    PRESET: linux-include-check
+  script:
+    - poetry run python3 ci_action.py Clean "$PRESET"
+    - poetry run python3 ci_action.py IncludeCheck "$PRESET"
+
+# Informative: never fails.
+dependency-report:
+  extends: .linux
+  stage: build
+  script:
+    - poetry run python3 ci_action.py DependencyReport linux-clang-release
+  artifacts:
+    paths:
+      - output/dependency_report.json
+
+# --- Packages ---------------------------------------------------------------------------------------------------
+
+# Each one builds and tests its release tree, then publishes the archives it wrote (and, on Linux x64, the
+# documentation): an archive never comes from untested code.
+package-linux-x64:
+  extends: .build-linux
+  stage: publish
+  # Its own build is its gate: it does not wait for the rest of the night.
+  needs: []
+  variables:
+    PRESET: linux-clang-release
+  script:
+    - poetry run python3 ci_action.py BuildAndTest "$PRESET"
+    - poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"
+    - poetry run python3 ci_action.py PublishDoc "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"
+
+# Cross compiled on x64 (Clang --target=aarch64-linux-gnu, the arm64 sysroot of the image); the tests run under
+# qemu-user, in release because QEMU multiplies the cost of every instruction.
+package-linux-arm64:
+  extends: .build-linux
+  stage: publish
+  needs: []
+  image: registry.argawaen.net/builder/builder-cross-arm64-ubuntu2604
+  variables:
+    PRESET: linux-cross-arm64
+  script:
+    - poetry run python3 ci_action.py BuildAndTest "$PRESET"
+    - poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"
+
+package-windows-x64:
+  extends: .build-windows
+  stage: publish
+  needs: []
+  variables:
+    PRESET: windows-clang-release
+  script:
+    - poetry run python3 ci_action.py BuildAndTest $env:PRESET
+    - poetry run python3 ci_action.py PublishPackage $env:PRESET -- "--url=$env:OWL_DEPLOY_URL" "--login=$env:OWL_DEPLOY_LOGIN"

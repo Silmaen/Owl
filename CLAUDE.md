@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Owl is a C++23 game engine (`OwlEngine`) with an editor (Owl Nest), a game runner, a Python CI wrapper and
-TeamCity pipelines. Version: see `project(... VERSION ...)` in `CMakeLists.txt`; plan and last release in
+GitLab CI pipelines. Version: see `project(... VERSION ...)` in `CMakeLists.txt`; plan and last release in
 `doc/pages/roadmap.md`, every release in `doc/pages/changelog.md`. Backends: graphics OpenGL 4.5 / Vulkan 1.3+ /
 Null, input GLFW / Null, sound OpenAL / Null. ECS on EnTT with parent-child hierarchy. Platforms: Linux x64/arm64,
 Windows x64 (MinGW).
@@ -56,7 +56,9 @@ natively, never install a tool on the host; if a tool is missing from the image,
 | `Fuzz`                                             | libFuzzer targets for a fixed time each (`linux-fuzz`).                                        |
 | `IncludeCheck`                                     | Every header and source compiled alone on strict libc++, no PCH (`linux-include-check`).       |
 | `DependencyReport`                                 | Informative list of dependencies with a newer version.                                         |
-| `Package`, `Clean`, `PublishDoc`, `PublishPackage` | As named; also `DefineTeamCityVariables`, `Help`.                                              |
+| `BuildAndTest`                                     | One CI build job: configure, build, test, cover, document and package as the preset says.     |
+| `NightlyGate`                                      | Writes the nightly child pipeline only when `main` moved since the last nightly.              |
+| `Package`, `Clean`, `PublishDoc`, `PublishPackage` | As named; also `Help`.                                                                         |
 
 Run `CodeStyle` (and `ClangTidy linux-clang-tidy -- --diff_base=main` after a `linux-clang-tidy` build when C++
 changed) before calling C++ work done.
@@ -80,7 +82,7 @@ Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.ca
 | `tools/`                  | Python tools, not installed: `demo/`, `iso_atlas/` (demo assets), `editor/` (icons), `doc/` (Doxygen filter). |
 | `docker_run.sh`           | Runs any command in the build image (all builds go through it).                           |
 | `ci/`, `ci_action.py`     | Python CI (`ci/actions/*` extend `BaseAction`, auto-discovered).                          |
-| `.teamcity/`              | TeamCity Kotlin DSL (validate with Maven in Docker).                                      |
+| `.gitlab-ci.yml`, `ci/gitlab/` | GitLab CI: merge request and `main` pipeline, shared blocks, nightly child pipeline. |
 | `cmake/`, `CMakePresets*` | Build modules and presets; `conanfile.py` lists the dependencies, `conan.lock` pins them. |
 | `doc/pages/`              | User documentation (Doxygen + GitHub): `roadmap.md`, `changelog.md`, `design/` pages.     |
 

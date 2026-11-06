@@ -8,7 +8,7 @@ what makes the set of analysed translation units selectable. Two scopes:
 * **full** — every C++ translation unit of the repository in `compile_commands.json`. Runs on
   `main`, on a manual run, and whenever the diff scope cannot be established
   with certainty.
-* **diff** — only the translation units a pull request can change the verdict
+* **diff** — only the translation units a merge request can change the verdict
   of: the `.cpp` files it touches, plus every `.cpp` that includes — directly
   or transitively — a header it touches. That closure is the complete include
   set of each object file: ninja's dependency database (`ninja -t deps`) when
@@ -16,13 +16,13 @@ what makes the set of analysed translation units selectable. Two scopes:
   (preprocessing only, seconds instead of a build), so a header edit is never
   missed because the `.cpp` consuming it lies outside the diff.
 
-The diff base is the pull request's **merge base**, published by
-teamcity-github-bridge as `teamcity.github.bridge.pullRequest.mergeBase`.
+The diff base is the merge request's **merge base**, published by GitLab as
+`CI_MERGE_REQUEST_DIFF_BASE_SHA` (the job clones the full history for it).
 Diffing against the target branch's head instead would also pick up everything
 that landed on `main` since the branch started, and report other people's
-findings on this pull request.
+findings on this merge request.
 
-Anything that makes the narrowing untrustworthy — no pull request, no merge
+Anything that makes the narrowing untrustworthy — no merge request, no merge
 base, no git, no include closure, a merge base that does not configure, or a
 change to the dependencies or to `.clang-tidy` itself — degrades to the full
 scope. A CMake change adds the translation units whose compile command it
@@ -71,6 +71,8 @@ TOOL_ARGS: dict[str, list[str]] = {
     ],
 }
 TOOL_LABELS: dict[str, str] = {"tidy": "clang-tidy", "analyzer": "clang static analyzer"}
+# Code Quality report file of each tool, beside the other jobs' ones.
+REPORT_NAMES: dict[str, str] = {"tidy": "clang-tidy", "analyzer": "static-analyzer"}
 
 # Analyzer checks a test is right to trip: it casts out-of-range values to test enum validation, and samples
 # curves with float loop counters. `test/unit/.clang-tidy` relaxes the tidy set; the analyzer set is given on the
@@ -425,7 +427,7 @@ def _resolve_base(parsed: dict[str, str]) -> str | None:
     """
     Determine the commit the diff scope is computed against.
 
-    Order: an explicit `--diff_base` (local use), then the pull request's merge
+    Order: an explicit `--diff_base` (local use), then the merge request's merge
     base, then the target branch as a last resort — each candidate kept only if
     the commit is actually present in the checkout.
 
@@ -445,8 +447,8 @@ def _resolve_base(parsed: dict[str, str]) -> str | None:
         )
         return None
 
-    if parsed.get("is_pull_request", "").strip().lower() != "true":
-        log.info("clang-tidy: no pull request context, analysing every translation unit.")
+    if parsed.get("merge_request", "").strip() == "":
+        log.info("clang-tidy: no merge request context, analysing every translation unit.")
         return None
 
     candidates: list[str] = []
@@ -455,9 +457,9 @@ def _resolve_base(parsed: dict[str, str]) -> str | None:
         candidates.append(merge_base)
     else:
         log.warning(
-            "clang-tidy: pull request build with no merge base published "
-            "(the bridge's `mergeBase.enabled` is off, or the GitHub lookup "
-            "failed) — deriving it locally from the target branch instead. "
+            "clang-tidy: merge request build with no merge base published "
+            "(CI_MERGE_REQUEST_DIFF_BASE_SHA is empty) — deriving it locally "
+            "from the target branch instead. "
             "That stays a merge-base comparison: the diff below uses the "
             "three-dot form, so git recomputes the divergence point itself."
         )
@@ -571,7 +573,7 @@ def _select(
         log.warning("clang-tidy: could not list the changed files.")
         return None
     if not changed:
-        # A pull request always changes something, so an empty diff means the
+        # A merge request always changes something, so an empty diff means the
         # base is not the one we think it is (a squashed or re-pointed branch,
         # a checkout that already contains the base). Analysing nothing would
         # silently pass the gate; analyse everything instead.
@@ -624,9 +626,8 @@ def _log_level(line: str) -> int:
     """
     Map one clang-tidy output line to a log level.
 
-    Keeps the GNU/clang diagnostic shape intact — teamcity-github-bridge scans
-    the build log for it to annotate the pull request's diff — while letting
-    TeamCity colour the log the way the compiler steps do.
+    Keeps the GNU/clang diagnostic shape intact — the Code Quality report is
+    built from the same lines — while giving the job log the level of each one.
 
     :param line: One line of clang-tidy output.
     :return: The logging level to emit it at.
@@ -707,14 +708,15 @@ class ClangTidy(BaseAction):
     """Run clang-tidy over the preset's translation units.
 
     Extra arguments (after ``--``):
-      * ``--is_pull_request`` / ``--merge_base`` / ``--target_branch`` — the
-        pull request context, wired in TeamCity from
-        ``teamcity.github.bridge.*``. With ``is_pull_request=true`` and a
-        resolvable merge base, only the translation units the pull request can
-        change the verdict of are analysed.
+      * ``--merge_request`` / ``--merge_base`` / ``--target_branch`` — the
+        merge request context, wired in `.gitlab-ci.yml` from
+        ``CI_MERGE_REQUEST_IID`` / ``CI_MERGE_REQUEST_DIFF_BASE_SHA`` /
+        ``CI_MERGE_REQUEST_TARGET_BRANCH_NAME``. With a non-empty
+        ``merge_request`` and a resolvable merge base, only the translation
+        units the merge request can change the verdict of are analysed.
       * ``--diff_base=<ref>`` — analyse the diff against this ref instead.
         Meant for local use: ``-- --diff_base=main``.
-      * ``--full`` — force the full scope even in a pull request.
+      * ``--full`` — force the full scope even in a merge request.
       * ``--jobs=N`` — parallel clang-tidy processes (default: one per
         available core).
       * ``--tool=tidy|analyzer`` — ``tidy`` (default) runs the check set of
@@ -764,8 +766,15 @@ class ClangTidy(BaseAction):
             if len(listed) > LISTED_UNITS:
                 log.info(f"  ... and {len(listed) - LISTED_UNITS} more")
 
+        tool = parsed.get("tool", "tidy").lower() or "tidy"
+        if tool not in TOOL_ARGS:
+            log.error(f"clang-tidy: unknown --tool={tool!r}, expected tidy or analyzer.")
+            return 1
+        from ci.utils.code_quality import write_report
+
         if not selected:
             log.info("clang-tidy: nothing to analyse.")
+            write_report(REPORT_NAMES[tool], f"clang-{tool}", [])
             return 0
 
         if parsed.get("dry_run", "").lower() == "true":
@@ -781,14 +790,11 @@ class ClangTidy(BaseAction):
             return 1
 
         jobs = _job_count(parsed.get("jobs", ""))
-        tool = parsed.get("tool", "tidy").lower() or "tidy"
-        if tool not in TOOL_ARGS:
-            log.error(f"clang-tidy: unknown --tool={tool!r}, expected tidy or analyzer.")
-            return 1
 
         ordered = sorted(selected)
         log.info(f"Running {executable} on {len(ordered)} translation unit(s) with {jobs} parallel job(s).")
         failed: list[Path] = []
+        findings: list[str] = []
         with ThreadPoolExecutor(max_workers=jobs) as pool:
             results = pool.map(
                 lambda source: _analyse(executable, build_dir, source, tool_arguments(tool, source)), ordered
@@ -798,8 +804,10 @@ class ClangTidy(BaseAction):
                 for line in output.splitlines():
                     if line.strip():
                         log.log(_log_level(line), line)
+                        findings.append(line)
                 if status != 0:
                     failed.append(source)
+        write_report(REPORT_NAMES[tool], f"clang-{tool}", findings)
 
         if failed:
             log.error(

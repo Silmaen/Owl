@@ -4,282 +4,130 @@
 
 **Level:** Expert. **Read first:** [Contributing](contributing.md).
 
-This page documents the Owl Engine Continuous Integration pipeline: how TeamCity is
-configured, how builds get triggered, how the Kotlin DSL is structured, and
-how to extend or validate it. For local build instructions see
-[Building Owl Engine](building.md); for contribution conventions see
-[Contributing](contributing.md).
+This page documents the Owl Engine Continuous Integration: what GitLab CI runs and when, where the configuration
+lives, and the analyses it relies on. For local build instructions see [Building Owl Engine](building.md); for
+contribution conventions see [Contributing](contributing.md).
 
 ## Overview
 
-Owl Engine is built and tested by a self-hosted **TeamCity 2026.1+** server at
-[builder.argawaen.net](https://builder.argawaen.net). The full server
-configuration lives in the repository under `.teamcity/`
-as a **Kotlin DSL** — every project, build configuration, template, trigger,
-parameter and snapshot dependency is code, reviewed in PRs, and applied to
-the server when `main` advances.
+Owl Engine is built and tested by **GitLab CI** on [gitlab.argawaen.net](https://gitlab.argawaen.net) (project
+argawaen/Owl). Every job is one `ci_action.py` call (`ci/actions/`); the YAML only says which preset runs where and
+when:
 
-The CI surface covers:
+| File                      | Content                                                                       |
+|---------------------------|-------------------------------------------------------------------------------|
+| `.gitlab-ci.yml`          | Merge request and `main` pipeline: rules, stages, the jobs.                   |
+| `ci/gitlab/templates.yml` | Shared blocks (runners, artifacts, analysis, bench) and the secrets they use. |
+| `ci/gitlab/nightly.yml`   | The nightly child pipeline.                                                   |
+| `ci/gitlab/nightly-unchanged.yml` | The child pipeline written when `main` did not move.                  |
 
-| Area               | Coverage                                                                                                                               |
-|--------------------|----------------------------------------------------------------------------------------------------------------------------------------|
-| Build / Test       | Linux x64 — Clang Release, GCC Debug, Clang Debug (nightly); Windows x64 — Clang Release; Linux ARM64 (cross compiled) — Clang Release |
-| Quality            | clang-tidy, 3 blocking sanitizers (Address + Leak, Thread, UB), Code Style aggregator                                                  |
-| Packaging          | Engine + Owl Nest archives of the tested release tree, per platform — only on `main`                                                   |
-| GitHub integration | Draft PR suppression, Check Runs (tests, timings, diff annotations), ready_for_review reuse                                            |
+| Area         | Coverage                                                                                                          |
+|--------------|-------------------------------------------------------------------------------------------------------------------|
+| Build / Test | Linux x64 — Clang Release, GCC Debug, Clang Debug (nightly); Windows x64 — Clang Release; Linux ARM64 (cross compiled) |
+| Quality      | Code Style, clang-tidy, static analyzer, 3 sanitizers (Address + Leak, Thread, UB), include check, fuzzing, bench |
+| Packaging    | Engine + Owl Nest archives of the tested release tree, per platform, published by the nightly                     |
+| Reporting    | Findings as Code Quality reports, tests as JUnit, line coverage as Cobertura, all on the merge request            |
 
-## Project tree
-
-The DSL (`.teamcity/`) has one entry point (`settings.kts`), a `common/` folder and one file per sub-project. Code
-Style, Include Check and PR Ready sit at the root; the builds, sanitizers, analyses and packages each have their
-sub-project:
+## Pipelines
 
 ```mermaid
 flowchart TD
-    Root["Root project<br/>Code Style, Include Check, PR Ready"] --> Lx[Build Linux x64]
-    Root --> Wx[Build Windows x64]
-    Root --> La[Build Linux arm64]
-    Root --> San[Sanitizers]
-    Root --> An[Analysis]
-    Root --> Pkg[Package]
-    Lx --> LxR[Clang Release]
-    Lx --> LxG[GCC Debug]
-    Lx --> LxC[Clang Debug]
-    Wx --> WxC[Clang Release]
-    La --> LaC[Clang, cross compiled]
-    San --> SA[Address]
-    San --> ST[Thread]
-    San --> SU[Undefined Behavior]
-    An --> CT[Clang-Tidy]
-    An --> AN[Static Analyzer]
-    An --> BE[Benchmarks]
-    An --> FZ[Fuzzing]
-    Pkg --> PL[Linux x64]
-    Pkg --> PA[Linux arm64]
-    Pkg --> PW[Windows x64]
-```
-
-| File                      | Content                                                                                            |
-|---------------------------|----------------------------------------------------------------------------------------------------|
-| `settings.kts`            | The project: parameters, VCS root, templates, sub-projects and their order                         |
-| `common/Vcs.kt`           | The git VCS root, the GitHub App connection id                                                     |
-| `common/Templates.kt`     | Global Build (configure → package steps) and Tool Build (Code Style)                               |
-| `common/Helpers.kt`       | `mainBranchOnly()`, `githubBridge()`, `after()`, `ciAction()`, `coverageDrop()`, `CODE_ONLY_PATHS` |
-| `common/Factories.kt`     | `presetBuild()`, `analysisBuild()`, `publishBuild()`                                               |
-| `quality/CodeStyle.kt`    | The gate every other configuration waits for (root project)                                        |
-| `quality/IncludeCheck.kt` | Every file compiled alone, level 1 beside Code Style (root project)                                |
-| `build/*.kt`              | Build Linux x64, Build Windows x64, Build Linux arm64                                              |
-| `quality/Sanitizers.kt`   | The three sanitizers, after Code Style                                                             |
-| `quality/PrReady.kt`      | The `PR Ready` merge gate (root project): red when any ready-PR configuration is red               |
-| `quality/Analysis.kt`     | Clang-Tidy and Static Analyzer, after Code Style                                                   |
-| `quality/Fuzz.kt`         | Nightly fuzzing: `Fuzz` action on `linux-fuzz`, failing inputs published                           |
-| `packaging/Package.kt`    | Engine and Owl Nest archives, published after the build that tested their platform                 |
-
-The configuration ids are the ones the server already knew (`Build_LinuxX64_Clang`, `Build_Quality_ClangTidy`, …),
-so the build history is kept. Everything a build does lives in `ci/` (`ci_action.py <Action> <preset>`); the DSL only
-says which presets exist, where they run and in which order.
-
-The chain has two levels, as parallel as the agents allow: Code Style and Include Check wait for nothing; every
-build, sanitizer and analysis waits for Code Style only (each builds its own preset, none consumes another's output),
-so a broken commit fails several configurations at once instead of stopping at the first:
-
-```mermaid
-flowchart LR
-    subgraph L1[Level 1]
-        CS[Code Style]
-        IC[Include Check]
+    subgraph MR["Merge request / main push (.gitlab-ci.yml)"]
+        CS["code-style"] --> LCR["linux-clang-release"]
+        CS --> GCC["linux-gcc-debug (coverage gate)"]
+        CS --> WIN["windows-clang-release"]
+        CS --> TIDY["clang-tidy (diff)"]
+        CS --> BENCH["bench"]
+        CS --> ASAN["sanitizer-address (main only)"]
     end
-    subgraph L2[Level 2: after Code Style]
-        LxR[Linux x64 Clang Release] & LxG[Linux x64 GCC] & LxC[Linux x64 Clang Debug] & LxS[Slow Suite]
-        WxC[Windows x64 Clang]
-        SA[Sanitizer Address] & ST[Sanitizer Thread] & SU[Sanitizer UB]
-        CT[Clang-Tidy] & AN[Static Analyzer]
-        LaC[Linux arm64 Clang]
+    subgraph NIGHT["Schedule 02:00 on main"]
+        GATE["nightly-gate"] -->|"main moved"| CHILD["nightly child pipeline"]
+        GATE -->|"unchanged"| SKIP["single job, nothing built"]
+        CHILD --> N1["clang debug coverage, slow suite"]
+        CHILD --> N2["TSan, UBSan, tidy, analyzer"]
+        CHILD --> N3["bench, fuzz, include check, dependency report"]
+        CHILD --> N4["packages x3 (publish)"]
     end
-    CS --> LxR & LxG & LxC & LxS & WxC & SA & ST & SU & CT & AN & LaC
-    LxR --> PL[Packages Linux x64]
-    WxC --> PW[Packages Windows x64]
-    LaC --> PA[Packages Linux arm64]
-    classDef draft fill:#fff3cd,stroke:#856404,color:#856404
-    classDef mainOnly fill:#d1ecf1,stroke:#0c5460,color:#0c5460
-    classDef afterMerge fill:#e2e3e5,stroke:#383d41,color:#383d41
-    class CS,LxR draft
-    class IC,LxC,LxS,LaC,PL,PW,PA,ST,SU,AN mainOnly
-    class LxG,WxC,SA afterMerge
 ```
-
-- **Yellow**: also run on draft pull requests (the fast verdict: Code Style and Linux x64 Clang Release).
-- **Slow tests**: the Test steps pass `-- --label_exclude=slow` (`test_args`); only the Slow Suite (`fullSuite()`)
-  runs every test, on the `linux-clang-release` tree, where a slow scenario takes seconds instead of the minutes of
-  Debug with coverage or QEMU. Nightly only, its schedule sees the changes no push built for it.
-- **Blue**: nightly on `main`, when it changed: Linux x64 Clang Debug (its own coverage), the Slow Suite, arm64,
-  Include Check, the packages (they publish to the site), the Thread and UB sanitizers and the Static Analyzer, which
-  are not pull-request checks.
-- arm64 cross compiles the `linux-cross-arm64` preset on an x64 agent (Clang, lld, the image's arm64 sysroot) and
-  runs only the tests under qemu-user: the Release tree of `linux-clang-release` without documentation, benchmarks
-  or image tests (`OWL_RENDER_TESTS=OFF`, lavapipe's output depends on the CPU). Release, because QEMU multiplies the
-  cost of every instruction.
-- **Grey**: not on drafts. Linux x64 GCC (Debug, tests and coverage) and Windows x64 Clang run on ready pull requests
-  and `main` pushes (they are `PR Ready` checks); Sanitizer Address runs on `main` pushes only.
-- Uncoloured: Clang-Tidy, on every ready pull request (its diff) and nightly on `main` (the whole tree).
-
-Manual triggers always work; the custom build dialog shows only the CTest arguments (`test_args`) and the benchmark
-calibration, every other parameter is hidden. Orthogonal to the colours, a pull request that changes **only**
-documentation (`doc/`, `*.md`, `.claude/`, `LICENSE`) runs just Code Style and Linux x64 Clang Release, see
-[Doc-only pull requests](#doc-only-pull-requests).
-
-## VCS root
-
-A single Git VCS root (`HttpsGithubComSilmaenOwlGitRefsHeadsMain`) points at
-[Silmaen/Owl](https://github.com/Silmaen/Owl); the default branch is the `owl_git_branch` parameter (`main`). It
-pulls a restricted set of refs only:
-
-```text
-+:refs/heads/(%owl_git_branch%)
-+:refs/(pull/*)/head
-```
-
-TeamCity therefore sees only `main` and the head refs of open pull requests: a push to a branch **without an open
-PR** runs nothing, on purpose (no CI minutes burnt on work in progress).
-
-## Templates
-
-Two templates carry the configuration shared by the build configurations.
-
-### GlobalBuild (`globalBuild` in `common/Templates.kt`)
-
-The build-and-test template of every configuration of the build and packaging sub-projects (Code Style uses
-`toolBuild`). Each step is a `ci_action.py` action run in the build image, except the first, which sets
-`docker_image` from the preset's `vendor.silmaen` block:
-
-| Step                      | Condition                                                         |
-|---------------------------|-------------------------------------------------------------------|
-| Determine docker (native) | always                                                            |
-| Clean output              | always                                                            |
-| Build                     | always                                                            |
-| Test                      | `run_tests == true`                                               |
-| Code Coverage             | `run_coverage == true`                                            |
-| Documentation             | `run_documentation == true` (a Release preset with documentation) |
-| Package                   | `run_package == true` + default branch                            |
-| Publish Package           | `publish_package` + on default branch                             |
-| Publish Documentation     | `publish_package` + default branch + `publish_doc`                |
-
-- **Coverage**: the Code Coverage step publishes the line and branch coverage of `gcovr.cfg`'s scope (the engine
-  without its platform backends, which headless tests cannot reach) as TeamCity statistics (`CodeCoverageL`,
-  `CodeCoverageB` and their absolute counts). a configuration with the gate fails when the line coverage drops more than one
-  point below its last successful build (`coverageDrop()` in `common/Helpers.kt`). Linux x64 / GCC (every ready pull
-  request and `main`) and Linux x64 / Clang Debug (nightly) each carry the gate; Windows measures none.
-- **One tree per configuration**: a configuration builds, tests, documents and packages its own preset; the package
-  configurations (`publishBuild()`) rebuild nothing and publish the archives and documentation of the tested build.
-- **Secrets**: Publish Package and Publish Documentation read `OWL_DEPLOY_PASSWORD`, an `env.*` parameter of the
-  template set from the `%deploy_passwd%` password parameter of the server: the secret never appears on a command
-  line and TeamCity masks it in the log, on the Linux (Docker) and Windows agents alike.
 
 ## What runs when
 
-| Configuration                                        | `main` push | Nightly (`main`) | Draft PR | Ready PR | `Experiment/*` PR | Doc-only PR | `[skip ci]` |
-|------------------------------------------------------|-------------|------------------|----------|----------|-------------------|-------------|-------------|
-| Code Style                                           | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
-| Build Linux x64 / Clang Release (Doxygen)            | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
-| Build Linux x64 / GCC (Debug, coverage)              | ✅           | —                | ❌        | ✅        | ❌                 | ⏭           | ❌           |
-| Build Windows x64 / Clang Release                    | ✅           | —                | ❌        | ✅        | ❌                 | ⏭           | ❌           |
-| Build Linux x64 / Clang Debug (coverage)             | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Build Linux x64 / Slow Suite (Release, every test)   | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Build Linux arm64 / Clang (cross compiled)           | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Benchmarks (`linux-bench`)                           | ❌           | ✅                | ❌        | ✅        | ❌                 | ❌           | ❌           |
-| Fuzzing (`linux-fuzz`)                               | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Sanitizer Address (+ LSan)                           | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Sanitizer Thread, Sanitizer UB                       | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Clang-Tidy                                           | ❌           | ✅                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Static Analyzer                                      | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Include Check                                        | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| PR Ready (merge gate, no agent)                      | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Packages (one per platform, × 3)                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Job                                         | Draft MR / `Experiment/*` | Ready MR | Doc-only ready MR | `main` push | Nightly |
+|---------------------------------------------|---------------------------|----------|-------------------|-------------|---------|
+| `code-style`                                | ✅                         | ✅        | ✅                 | ✅           | —       |
+| `linux-clang-release` (Doxygen)             | ✅                         | ✅        | ✅                 | ✅           | —       |
+| `linux-gcc-debug` (coverage gate)           | ❌                         | ✅        | ❌                 | ✅           | —       |
+| `windows-clang-release`                     | ❌                         | ✅        | ❌                 | ✅           | —       |
+| `clang-tidy` (diff scope)                   | ❌                         | ✅        | ❌                 | ❌           | full    |
+| `bench` (runner tag `bench`)                | ❌                         | ✅        | ❌                 | ❌           | ✅       |
+| `sanitizer-address`                         | ❌                         | ❌        | ❌                 | ✅           | —       |
+| `linux-clang-debug` (Clang coverage)        | ❌                         | ❌        | ❌                 | ❌           | ✅       |
+| `slow-suite` (Release, every test)          | ❌                         | ❌        | ❌                 | ❌           | ✅       |
+| `sanitizer-thread`, `sanitizer-undefined-behavior` | ❌                  | ❌        | ❌                 | ❌           | ✅       |
+| `static-analyzer`, `include-check`          | ❌                         | ❌        | ❌                 | ❌           | ✅       |
+| `fuzz`, `dependency-report`                 | ❌                         | ❌        | ❌                 | ❌           | ✅       |
+| `package-linux-x64`, `-linux-arm64`, `-windows-x64` | ❌                 | ❌        | ❌                 | ❌           | ✅       |
 
-A draft pull request runs Code Style and Linux x64 Clang Release only: the fast verdict. A ready pull request runs six
-checks (Code Style, Linux Clang Release, Linux GCC, Windows Clang, Clang-Tidy, Benchmarks), the ones `PR Ready`
-requires: after Code Style, the three builds take one agent each and start together. A `main` push runs the three
-builds and Sanitizer Address; Linux Clang Debug (Clang coverage), the Slow Suite, arm64, the whole-tree Clang-Tidy,
-Include Check, the Thread and Undefined Behavior sanitizers and the Static Analyzer run nightly.
+- **Draft merge requests** (title `Draft:`) and **`Experiment/*` branches** run Code Style and Linux Clang Release
+  only: the fast verdict. An experiment is not meant to be merged as such; move the work to a `Feature/*` branch for
+  the full one.
+- **Ready merge requests** add the GCC Debug build (coverage gate), Windows Clang Release, clang-tidy and the
+  benchmarks. Every job but Code Style and Linux Clang Release is skipped when only documentation moved (`rules:
+  changes`: everything outside `doc/`, `.claude/`, the root Markdown files and `LICENSE`).
+- Marking a draft ready **does not start a pipeline**: run one by hand from the merge request (*Run pipeline*). A
+  pipeline run by hand always runs the ready set.
+- **Merging** needs the last pipeline to succeed (*Settings > Merge requests > Pipelines must succeed*); this
+  replaces any composite check.
+- **`main` push**: Code Style, the three builds and the address sanitizer, on the merged result.
+- **Nightly**: a pipeline schedule on `main` at 02:00 runs `nightly-gate` (`NightlyGate`), which writes the child
+  pipeline only when `main` moved since the last successful scheduled pipeline, a single no-op job otherwise. The
+  child pipeline builds nothing in the three package jobs beyond their own tree: each builds and tests its release
+  tree, then publishes the archives to the site (Linux x64 also publishes the documentation).
 
-✅ runs · ❌ not run · ⏭ a "Skipped" check is published, which GitHub counts as passing. A manual run, and *Re-run* in
-GitHub, always run a configuration.
+Code Style and Linux Clang Release run on documentation-only merge requests because those paths are their input:
 
-- **Draft → ready**: only what the draft did not run is built. `skipIfCommitPassed` drops an automatic build whose
-  commit already passed in that configuration and republishes the earlier success (`Build passed (reused #N)`), and
-  the snapshot dependencies reuse a build already green for the revision (`reuseBuilds = SUCCESSFUL`). A new commit
-  runs everything again.
-- **`Experiment/*` pull requests** run the fast subset only (the draft one): the full-matrix configurations carry
-  `prTriggerBranchesOverride = EXCLUDE_EXPERIMENT`. Their required checks are therefore *Skipped*: an experiment is not
-  meant to be merged as such; move the work to a `Feature/*` branch to get the full verdict.
-- **`main` push**: every configuration but the nightly ones (blue) and the packages, through the templates' VCS
-  trigger.
-- **Nightly** (02:00, `main`, only when it changed): Linux x64 Clang Debug, every package (they publish to the site).
-- **Packages without a rebuild**: on `main`, each tested build with `package: true` in its preset's `vendor.silmaen`
-  block (`linux-clang-release`, `windows-clang-release`, `linux-cross-arm64`) writes both archives in its own tree
-  (`Package` step, kept as artifacts). The three package configurations (`publishBuild()`) build nothing: they take
-  those archives and the documentation from the build of the same chain and publish them.
+- **Code Style** — codespell and the markdown checks read `doc/` and the root markdown files; `doc-identifiers`
+  checks that every symbol, file or `OWL_*` option cited between backticks in `doc/pages` exists in the repository
+  (`ci/utils/doc_identifiers.py`: the changelog, the roadmap and the design pages are skipped, the short list of
+  names living elsewhere is `EXCEPTIONS`, each with its reason).
+- **Linux Clang Release** — the only job whose preset (`linux-clang-release`) sets `OWL_ENABLE_DOCUMENTATION=ON`;
+  Doxygen documents it, with `WARN_AS_ERROR=YES` over `doc/`, `README.md`, `CHANGELOG.md`, `ROADMAP.md` and
+  `CONTRIBUTING.md`.
 
-## Triggering
+## Reports
 
-- **`main`**: the templates' VCS trigger (`mainBranchOnly()`); the bridge plugin ignores `push` events.
-- **Pull requests**: the GitHub App bridge, on the PR's **head branch** (`prBuildRef = branch`): TeamCity shows the
-  real branch name (`Feature/…`), never `pull/N`. The branch specification is `main`, `Feature/*` and `Experiment/*`,
-  the only branch names allowed.
-- **Manual runs** always run, whatever the configuration's pull request settings; so does *Re-run* in GitHub.
+- **Findings** (Code Style, clang-tidy, static analyzer) are GitLab Code Quality reports
+  (`ci/utils/code_quality.py`): the merge request shows the new ones on the diff.
+- **Tests** are JUnit reports; a build job (`BuildAndTest`) reads from its preset what to build, test, cover,
+  document and package.
+- **Coverage** is a Cobertura report plus the `coverage:` regex of the job. The `Coverage` action fails the job when
+  the line coverage of the engine (without backends, `gcovr.cfg`) is more than one point below the last successful
+  job of the same name on `main`, read through the GitLab API (`OWL_GITLAB_API_TOKEN`).
+- **Benchmarks** compare with `test/bench/baseline/<preset>.json`; only the runner tagged `bench` measures them. A
+  pipeline run by hand with `BENCH_CALIBRATE=true` (and `BENCH_ROUNDS=<n>`) publishes a proposed baseline instead
+  (see `test/bench/README.md`).
 
-### The `github-bridge` feature
+## Runners and secrets
 
-`githubBridge()` (`common/Helpers.kt`) sets every parameter explicitly. Each configuration declares the feature
-itself, with the same id as its template's, which replaces the inherited one:
+Jobs take tagged runners: `linux` + `docker`, `windows`, and `bench` (one machine, so timings stay comparable). The
+runner configuration provides `CONAN_HOME` and `CCACHE_DIR` on persistent volumes, `SYS_PTRACE` and
+`seccomp=unconfined` for the sanitizers, and qemu-user (`binfmt_misc`) for the arm64 tests; the YAML sets none of them.
+Conan's cache takes one writer at a time, so each concurrent slot of a runner uses its own `$CONAN_HOME/slot-<n>`.
 
-| Argument           | Default           | Effect                                               |
-|--------------------|-------------------|------------------------------------------------------|
-| `triggerOnPrDraft` | `false`           | `true` puts the configuration in the draft subset    |
-| `triggerOnPrReady` | `true`            | `false`: never runs for a pull request (`main` only) |
-| `annotateDiff`     | `true`            | findings pinned to the lines of the PR diff          |
-| `pathFilter`       | `CODE_ONLY_PATHS` | `""` runs on documentation-only pull requests too    |
+The secrets are masked project CI/CD variables, never in the repository:
 
-Always set: `publishChecks`, `runOnApproval`, `triggerOnBranch` to `true`, `skipIfCommitPassed = true` (a draft's
-verdict is republished when the PR turns ready) and `skipPhrase = [skip ci]`.
-
-### Required checks
-
-Require **one** check in the branch protection of `main`: **`PR Ready`**. It is a composite configuration
-(`quality/PrReady.kt`): it uses no agent, depends on the six configurations a ready pull request runs (Code Style,
-Linux x64 Clang Release, Linux x64 GCC, Windows x64 Clang, Clang-Tidy, Benchmarks) and turns red, naming the failed dependency, as
-soon as one of them is red. Like them it is not run for drafts nor `Experiment/…` pull requests (the PR
-cannot be merged until it is ready), and it skips documentation-only pull requests rather than pulling the whole
-matrix in. GitHub shows a check by the tail of its name (`checkName.stripPrefix = "TeamCity / Owl / "`).
-
-### Doc-only pull requests
-
-Every BT on `GlobalBuild` carries a `pathFilter` excluding `doc/*`, `*.md`,
-`.claude/*` and `LICENSE`. The plugin keeps a BT as soon as **one** file changed
-by the PR matches, so a PR touching only those paths matches nothing and is
-dropped with a *"Skipped: paths out of scope"* Check Run instead of running the
-whole matrix.
-
-Two configurations deliberately have **no** filter, because those paths are
-their input:
-
-- **Code Style** — codespell and the markdown checks read `doc/` and the root
-  markdown files; `doc-identifiers` checks that every symbol, file or `OWL_*` option cited between backticks in
-  `doc/pages` exists in the repository (`ci/utils/doc_identifiers.py`: the changelog, the roadmap and the design
-  pages are skipped, the short list of names living elsewhere is `EXCEPTIONS`, each with its reason).
-- **Linux x64 Clang Release** — the only BT whose preset (`linux-clang-release`) sets `OWL_ENABLE_DOCUMENTATION=ON`;
-  Doxygen documents it, with `WARN_AS_ERROR=YES`
-  over `doc/`, `README.md`, `CHANGELOG.md`, `ROADMAP.md` and `CONTRIBUTING.md`.
-
-A doc-only PR is therefore still gated — by the two configurations that can
-actually fail on it.
+| Variable                                                      | Used for                                     |
+|---------------------------------------------------------------|----------------------------------------------|
+| `OWL_DEPLOY_URL`, `OWL_DEPLOY_LOGIN`, `OWL_DEPLOY_PASSWORD`   | Publishing packages and documentation        |
+| `OWL_CONAN_CACHE_URL`, `CONAN_LOGIN_USERNAME_OWL_CACHE`, `CONAN_PASSWORD_OWL_CACHE` | The Conan binary cache |
+| `OWL_GITLAB_API_TOKEN`                                        | Coverage reference and nightly gate (`read_api`) |
 
 ## Fuzzing
 
 `linux-fuzz` builds every `test/fuzz/*_fuzzer.cpp` (libFuzzer, `OWL_FUZZING=ON`) with AddressSanitizer. The `Fuzz` action
 runs each `owl_*_fuzzer` for five minutes (`-- --time=<seconds>`, `-- --fuzzer=<name>` for one) on
 `output/fuzz/<fuzzer>/corpus`, seeded from `test/fuzz/corpus/<name>/` when that folder exists. A crash, a leak or a
-timeout fails the build; its input lands in `output/fuzz/<fuzzer>/artifacts/`, published as `fuzz-artifacts`, and
+timeout fails the job; its input lands in `output/fuzz/<fuzzer>/artifacts/`, kept as the job's artifacts, and
 replays with `bin/<fuzzer> <input>`.
 
 ```bash
@@ -289,7 +137,7 @@ replays with `bin/<fuzzer> <input>`.
 
 ## Dependency report
 
-On `main`, Build Linux x64 / Clang ends with the `DependencyReport` action. It never fails the build.
+On `main`, Build Linux x64 / Clang ends with the `DependencyReport` action. It never fails the job.
 
 - ConanCenter: `conan graph outdated` on `conanfile.py` (every option on) resolves the whole graph, transitive
   packages and build tools included, the local recipes through the `owl-local` remote (registered as
@@ -301,8 +149,7 @@ On `main`, Build Linux x64 / Clang ends with the `DependencyReport` action. It n
 
 An update counts within its scheme (semantic or date), with the same flavour (`-docking`), and as a pre-release only
 after a pre-release; `KNOWN_FALSE_POSITIVES` keeps the few older versions that sort higher (ImGuizmo 1.83). Each update
-is logged as a warning, the list written to `output/dependency_report.json` and its count published as the
-`OutdatedDependencies` statistic (`-- --no-upstream` skips the tags).
+is logged as a warning, the list written to `output/dependency_report.json` and its count logged (`-- --no-upstream` skips the tags).
 
 ```bash
 ./docker_run.sh poetry run python ci_action.py DependencyReport linux-clang-release
@@ -317,7 +164,7 @@ on Linux:
 
 - **`std-includes` (Code Style)** — a lexical audit (`ci/utils/std_includes.py`): every file under `source/`,
   `test/unit/` and `test/bench/` must include the standard header of each `std::` symbol, `uint*_t` and `size_t` it names.
-  A `.cpp` may rely on its own header and on `owlpch.h`. Fast, runs on every PR, any platform.
+  A `.cpp` may rely on its own header and on `owlpch.h`. Fast, runs on every merge request, any platform.
 - **Include Check (`linux-include-check`)** — `ci_action.py IncludeCheck` configures the preset (it sets
   `OWL_INCLUDE_CHECK=ON`) and builds `owl_include_check`, defined in `cmake/IncludeCheck.cmake`:
   - `owl_header_check` compiles every header of `source/owl/{public,private}`, `source/owlnest/{sources,runner}`,
@@ -337,109 +184,6 @@ Run it locally (the build image ships libc++):
 The compile check catches project headers that are not self-contained too (a missing `core/Macros.h`), which
 the lexical audit cannot see; the lexical audit catches what libc++ happens to provide transitively.
 
-## Code Style serialisation
-
-Code Style sits in the snapshot-dependency chain of every other BT. When
-multiple downstream BTs queue at the same time (e.g. three idle agents
-each grab a different BT), they each request a Code Style execution. To
-avoid running it three times in parallel:
-
-1. **`maxRunningBuilds = 1`** on `codeStyle` (`quality/CodeStyle.kt`) — TC caps concurrent
-   executions to one. Subsequent requests wait in the queue.
-2. **Default `reuseBuilds = ReuseBuilds.SUCCESSFUL`** on the snapshot
-   dependency — once the running Code Style finishes successfully, the
-   waiting dependents reuse its result instead of spawning a new
-   execution.
-
-Combined, the worst-case three-agents-idle-at-once scenario produces
-exactly one Code Style execution serving all three dependents.
-
-## teamcity-github-bridge plugin
-
-The pipeline relies on a custom server-side plugin —
-[teamcity-github-bridge](https://github.com/dlachouette/teamcity-github-bridge)
-— that closes the gaps between TeamCity 2026.1's bundled GitHub
-integration and what a real pipeline needs.
-
-Owl Engine tracks the plugin's **1.11.0** line. What it provides, in roles relevant
-to Owl:
-
-| Role                  | Mechanism                                                                                          |
-|-----------------------|----------------------------------------------------------------------------------------------------|
-| Draft PR suppression  | `DraftAwareBuildFilter` (StartBuildPrecondition) — holds builds with a visible wait reason         |
-| Draft cancellation    | `DraftBuildQueueCleaner` — removes inappropriate queued builds                                     |
-| Auto-trigger on PR    | `PullRequestEventListener` reacts to `opened`/`synchronize`/`ready_for_review`/`labeled`/…         |
-| Obsolete-build stop   | A push to a PR, or closing it, stops the builds still running on the previous head (`skipped`)     |
-| Check Run publishing  | `BuildStatusCheckRunPublisher` — rich GitHub Check Runs at every lifecycle transition              |
-| Visual pill tagging   | `PrPromotionTagger` + `SimplePageExtension` — `draft` / `ready` pills in TC UI                     |
-| PR context on a build | A *Pull request* tab on the build page, and 16 published `…pullRequest.*` parameters               |
-| Webhook endpoint      | `/app/teamcity-github-bridge/webhook` with HMAC-SHA256 verification                                |
-| Stable check name     | `checkName` on PR Ready: moving it in the project tree does not rename the required check          |
-| Labels and assignee   | `labelRules` add `documentation` / `ci` / `dependencies` / `engine` / `editor`; `autoAssignAuthor` |
-| Superseded build      | A build stopped by a newer push concludes `skipped` ("Superseded by …"), not a red `cancelled`     |
-
-Project-level params consumed by the plugin (set in `settings.kts`):
-
-| Parameter                                      | Value               | Purpose                                                      |
-|------------------------------------------------|---------------------|--------------------------------------------------------------|
-| `teamcity.github.bridge.repo`                  | `Silmaen/Owl`       | Webhook → BT routing (case-insensitive match)                |
-| `teamcity.github.bridge.connectionId`          | (CID constant)      | Used by the plugin to mint installation tokens               |
-| `teamcity.github.bridge.branchTrigger.enabled` | `false`             | `main` belongs to `TRIGGER_1`; the bridge must not double it |
-| `teamcity.github.bridge.checkName.stripPrefix` | `TeamCity / Owl / ` | Shortens the Check Run names GitHub shows in the merge box   |
-| `teamcity.github.bridge.autoAssignAuthor`      | `true`              | A PR opened with nobody assigned goes to its author          |
-| `teamcity.github.bridge.labelRules`            | (rules)             | Labels by changed paths; see `settings.kts`                  |
-
-`prTrigger.enabled` / `prTrigger.branches` are left unset (enabled, all
-branches); the per-BT gates described above carry the constraints.
-
-### What a Check Run says
-
-Server-side settings, not DSL — listed here because they are what a reviewer
-actually reads on a pull request. All are plugin defaults except where noted:
-
-- **the verdict, with test counts** — *"Build failed — 3 of 1046 tests failed
-  (2 new)"*, then the failing tests in the body, new ones first. Read from
-  TeamCity's own statistics, which Owl Engine feeds through the `xmlReport` feature on
-  both templates (Google Test XML at `output/build/**/test/*_Report.xml`).
-- **timings** — total, working time and the wait split (dependencies / free
-  agent / other). The Code Style snapshot dependency shows up as the dependency
-  share.
-- **an infrastructure failure is named** — a lost checkout or an unresolvable
-  artifact dependency reads *"Infrastructure failure: …"* instead of looking
-  like a failing test. It still concludes `failure` and still blocks the merge
-  (`checkRun.infraNeutral` is off).
-- **artifact links** — direct downloads, which for the packaging BTs is the
-  installer itself.
-- **name** — `Build / Linux x64 / Clang` rather than
-  `TeamCity / Owl / Build / Linux x64 / Clang`, since GitHub truncates the end
-  of the name, which is the part that identifies the build. Renaming a check
-  starts a new row on GitHub: safe today because the repository's
-  *main merging* ruleset requires no status check by name, and any rule added
-  later must use the stripped name.
-
-### Diff annotations
-
-The plugin turns compiler diagnostics into Check Run **annotations**, pinned to
-the file and line in the pull request's diff. For a **Command Line** runner —
-which is how every `ci_action.py` step is wired — TeamCity reports a single
-build problem (*"Process exited with code 1"*) and the real diagnostics only
-ever exist in the build log, so the plugin scans the log of a failed build for
-GNU/clang (`file:42:7: error: …`) and MSVC shapes.
-
-Two consequences for this repository:
-
-1. **Annotations are enabled on five configurations only** — Linux x64 Clang Release,
-   Windows x64 Clang, Clang-Tidy, Include Check and Code Style. The same compile
-   error reported by every configuration would otherwise be annotated once per
-   configuration on the same line; these five are the ones whose findings are distinct.
-2. **`ci/actions/code_style.py` prints in that shape on purpose.** Every
-   finding goes through its `_diag()` helper as
-   `<repo-relative path>:<line>:<column>: error: <check>: <message>`, and the
-   clang-format / codespell outputs are re-emitted through it too (their own
-   paths are absolute, which GitHub rejects). A finding printed in any other
-   shape stays in the build log and never reaches the diff — so keep new
-   sub-checks going through `_diag()`.
-
 ## Clang-tidy scoping
 
 `linux-clang-tidy` configures the tests too (`OWL_TESTING=ON`) but never runs them (`run_tests: false` in its
@@ -448,15 +192,14 @@ units): `test/unit/.clang-tidy` inherits the root configuration minus the checks
 (suspicious argument order, copies and moves under test, float loop counters, …), and the analyzer mode drops
 `EnumCastOutOfRange` and `FloatLoopCounter` on test files (`TEST_ANALYZER_EXCLUSIONS`).
 
-`Analysis / Clang-Tidy` is the only configuration this concerns. On a pull
-request it analyses only the translation units that pull request can change the
-verdict of. On `main`, on a manual run, and whenever the narrowing cannot be
-trusted, it analyses all of them — the behaviour every run had before.
+The `clang-tidy` job of a ready merge request is the one this concerns. It analyses only the translation units that
+merge request can change the verdict of. The nightly `clang-tidy` and `static-analyzer` jobs, a pipeline run by hand
+and every case where the narrowing cannot be trusted analyse all of them.
 
 The analysis is **not** hooked into the compiler. `cmake/Sanitizers.cmake`
 deliberately leaves `CMAKE_CXX_CLANG_TIDY` unset (for the two `*-clang-tidy`
 presets, the only ones that set `OWL_ENABLE_CLANG_TIDY`) and only turns on
-`CMAKE_EXPORT_COMPILE_COMMANDS`; the BT's own `ClangTidy` step then drives
+`CMAKE_EXPORT_COMPILE_COMMANDS`; the job's `ClangTidy` action then drives
 clang-tidy from `compile_commands.json`. The compiler hook has no way to skip a
 file, so selecting a subset is only possible from outside it.
 
@@ -482,7 +225,7 @@ flowchart TD
 ```
 
 The header step is the one that matters: a `.cpp` outside the diff still gets
-analysed when it includes a header the pull request touched. The closure is the
+analysed when it includes a header the merge request touched. The closure is the
 complete include list of every object file — so an indirect include, several
 headers deep, is covered too. In a configured tree it comes from `clang-scan-deps`
 over the compilation database (preprocessing only, about 5 s for the whole tree on
@@ -497,13 +240,11 @@ change that moves no flag adds nothing; one that moves a global flag adds every 
 
 ### Diff base
 
-The base is the pull request's **merge base**, read from
-`teamcity.github.bridge.pullRequest.mergeBase` and passed to the step as
-`--merge_base`. Not `baseSha`, and not `origin/main`: the target branch's head
+The base is the merge request's **merge base**, `CI_MERGE_REQUEST_DIFF_BASE_SHA`, passed to the action as
+`--merge_base`. Not the target branch's head: that head
 also carries everything that landed on `main` since the branch started, so
 diffing against it would report other contributors' findings on this pull
-request. When the parameter is empty (the bridge's `mergeBase.enabled` off, or
-the GitHub lookup failed) the action derives the merge base locally from
+request. When it is empty the action derives the merge base locally from
 `--target_branch` using git's three-dot form, which is the same comparison.
 
 ### Falling back to the full scope
@@ -513,16 +254,16 @@ mode. Any of these analyses everything:
 
 | Situation                                                                       | Why                                    |
 |---------------------------------------------------------------------------------|----------------------------------------|
-| not a pull request (`main`, manual run)                                         | nothing to narrow against              |
+| not a merge request (nightly, `main`, manual run)                                         | nothing to narrow against              |
 | no usable diff base                                                             | the range would be a guess             |
-| the diff is empty against the base                                              | a real PR changes something — bad base |
+| the diff is empty against the base                                              | a real merge request changes something — bad base |
 | `conanfile.py`, `conan.lock`, `conan/` (recipes, profiles)                      | dependencies moved                     |
 | `.clang-tidy`                                                                   | the check list itself changed          |
 | git, `clang-scan-deps` (or ninja) unavailable, or a scan error                  | the mapping cannot be built            |
 | a CMake input changed and the merge base does not configure                     | the moved commands cannot be compared  |
 
 Every fallback is logged with its reason, so a run that looks unexpectedly long
-says why in the build log.
+says why in the job log.
 
 ### Running it locally
 
@@ -530,114 +271,18 @@ says why in the build log.
 poetry run python ci_action.py Build linux-clang-tidy -- --configure_only  # the compilation database
 poetry run python ci_action.py ClangTidy linux-clang-tidy  # full scope
 
-# What would a PR against main analyse? (--dry_run stops before the analysis)
+# What would a merge request against main analyse? (--dry_run stops before the analysis)
 poetry run python ci_action.py ClangTidy linux-clang-tidy -- --diff_base=main --dry_run
 ```
 
 `--full` forces the full scope, `--jobs=N` caps the parallel clang-tidy
 processes (default: one per available core, from the scheduler affinity mask).
 
-## Project parameters
+The findings are written as a GitLab Code Quality report (`output/code-quality/*.json`): the merge request lists the new ones, and a finding fails the job.
 
-Set on the root project (`.teamcity/settings.kts`) and inherited by every BT:
-
-| Parameter                                      | Type  | Default             | Purpose                                                     |
-|------------------------------------------------|-------|---------------------|-------------------------------------------------------------|
-| `owl_git_branch`                               | param | `main`              | Default branch name used in branch_specification + VCS root |
-| `branch_specification`                         | param | (multi-line)        | Refs TC pulls (main + open PR heads only)                   |
-| `teamcity.github.bridge.repo`                  | param | `Silmaen/Owl`       | Plugin: webhook → BT routing                                |
-| `teamcity.github.bridge.connectionId`          | param | CID constant        | Plugin: GitHub App installation token mint                  |
-| `teamcity.github.bridge.branchTrigger.enabled` | param | `false`             | Plugin: leave `main` to the VCS trigger                     |
-| `teamcity.github.bridge.checkName.stripPrefix` | param | `TeamCity / Owl / ` | Plugin: shorten Check Run names                             |
-
-The plugin also **publishes** 16 read-only `teamcity.github.bridge.*`
-parameters into every build (`isPullRequest`, `isDraft`,
-`pullRequest.number` / `title` / `author` / `sourceBranch` / `targetBranch` /
-`headSha` / `url` / `baseSha` / `mergeBase` / `changedFiles` / `additions` /
-`deletions` / `commits` / `labels`). They are empty on a non-PR branch, so a
-step or a DSL condition can read them unconditionally. `mergeBase` is the one
-to diff against when a check should look at the pull request's own change
-(`git diff <mergeBase>..<headSha>`); diffing against `main` would also pick up
-everything that landed on it since the branch started. The Clang-Tidy step is
-the one that consumes them today — `isPullRequest`, `mergeBase` and
-`targetBranch`, see [Clang-tidy scoping](#clang-tidy-scoping).
-
-Template-level parameters live on `globalBuild` and `toolBuild` (`common/Templates.kt`):
-preset name (`cmake_preset`), checkboxes (`run_tests`, `run_coverage`,
-`run_documentation`, `run_package`, `publish_doc`), Docker plumbing
-(`docker_image`, `docker_parameters`, `extra_tc_vars`). Most are
-populated at runtime by the first build step
-(`ci_action.py DefineTeamCityVariables`) from the CMake preset's
-`vendor.silmaen` block, so they need no manual upkeep when a preset
-changes.
-
-The credentials (`deploy_url`, `deploy_login`, `deploy_passwd`, and the Conan cache's `conan_server`,
-`conan_user`, `conan_password`) are **not** in the DSL: they are set on the server, above this project.
-`deploy_passwd` and `conan_password` must be of type *password* there, so TeamCity masks them in the build log as
-a second line of defence. Declaring them in the DSL would
-shadow the server values with empty ones, which is why the DSL only
-references them.
-
-## DSL development workflow
-
-### Edit
-
-Open `.teamcity/` in any Kotlin-aware IDE (IntelliJ IDEA picks up the
-`pom.xml` and offers full completion against the TeamCity DSL APIs).
-The file layout is described in [Project tree](#project-tree); every
-build configuration lives in the *Build* or the *Packaging* sub-project. To add a
-new BT, follow one of the existing patterns:
-
-- **Cross-platform standard build**: a `presetBuild(...)` (`common/Factories.kt`) in the platform's file
-  (`build/Linux.kt`, `build/Windows.kt`, `build/LinuxArm64.kt`), added to its `Project`.
-- **Quality / sanitizer-style one-off**: a `presetBuild(...)` in `quality/Sanitizers.kt`, added to the
-  `sanitizers` project.
-- **Packaging build**: in `packaging/Package.kt`, `publishBuild(...)` for a platform whose tested build has
-  `package: true` in its preset.
-
-### Validate locally
-
-`mvn` is not installed on most workstations but is available via Docker.
-A throw-away cache directory avoids permission conflicts with the host
-`~/.m2`:
-
-```bash
-mkdir -p /tmp/m2-claude
-docker run --rm -u "$(id -u):$(id -g)" \
-  -v "$PWD/.teamcity:/work" \
-  -v "/tmp/m2-claude:/var/maven/.m2" \
-  -e MAVEN_CONFIG=/var/maven/.m2 \
-  -w /work \
-  maven:3.9.9-eclipse-temurin-21 \
-  mvn -Duser.home=/var/maven -B teamcity-configs:generate
-```
-
-A successful run prints `BUILD SUCCESS` and writes the generated XML
-config tree to `.teamcity/target/generated-configs/`. That directory is
-gitignored — feel free to inspect, but never commit. The generated
-project-config.xml files mirror what TeamCity will produce server-side,
-so spot-checking them after a non-trivial DSL change is a fast
-sanity check.
-
-The first run from a cold cache takes ~2–3 minutes (Maven downloads
-~150 MB of JetBrains DSL jars). Subsequent runs complete in ~9 seconds.
-
-### Sync to server
-
-The TeamCity server tracks `.teamcity/` from the VCS root. Pushing to
-`main` triggers a server-side reload that applies the new configuration
-within seconds. Failed DSL compiles surface in the server's
-"Administration → Versioned settings" page and as a notification on the
-affected project's main page.
-
-For draft / WIP DSL changes that aren't ready to merge, the server can
-optionally apply the DSL from a feature branch via the "Use settings
-from VCS" override, but the default workflow is push-to-`main`.
 
 ## Cross-references
 
 - [Building Owl Engine](building.md) — local CMake invocations and CI action wrappers
-- [Contributing](contributing.md) — coding conventions and PR workflow
+- [Contributing](contributing.md) — coding conventions and merge request workflow
 - [Roadmap](roadmap.md) — ongoing-quality priorities and per-release goals
-- [teamcity-github-bridge](https://github.com/dlachouette/teamcity-github-bridge)
-  — upstream plugin source and architecture documentation

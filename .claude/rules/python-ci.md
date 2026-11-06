@@ -20,7 +20,7 @@ poetry run python ci_action.py <Action> <preset> [-v] [-q] [-- --extra=args]
 ```
 
 Available actions: Build, Test, Coverage, Clean, Documentation, CodeStyle, ClangTidy, IncludeCheck, Bench, Fuzz,
-DependencyReport, Package, Help, DefineTeamCityVariables, PublishDoc, PublishPackage.
+DependencyReport, Package, Help, PublishDoc, PublishPackage, BuildAndTest, NightlyGate.
 
 `DependencyReport <preset>` lists the dependencies with a newer version: every package of the Conan graph
 (transitive ones included) on ConanCenter, the local recipes' sources upstream (their tags); false positives
@@ -35,7 +35,7 @@ any crash, leak or timeout fails it (see `doc/pages/continuous_integration.md#fu
 `ClangTidy` (`--tool=tidy`, default, or `--tool=analyzer` for the `clang-analyzer-*` checks only) drives
 clang-tidy from the preset's `compile_commands.json` — the compiler hook (`CMAKE_CXX_CLANG_TIDY`) is deliberately
 unset, because it cannot skip a file. Requires the preset to be configured (`Build -- --configure_only`; the CI never
-compiles it). On a pull request it analyses only the translation units the diff can affect (touched `.cpp` files plus
+compiles it). On a merge request it analyses only the translation units the diff can affect (touched `.cpp` files plus
 every `.cpp` whose include closure, from `clang-scan-deps`, or `ninja -t deps` in a built tree, contains a touched
 header, plus, when a CMake input changed, every unit whose compile command differs from the merge base's, configured
 in a temporary worktree); anywhere else, or whenever the narrowing is not trustworthy, it analyses all of them. Never make a doubtful
@@ -100,9 +100,9 @@ Each sub-check can be disabled with `-- --no-<name>=true`:
 
 **Report findings through `_diag()`**, never `log.error()` directly. It prints
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — the
-GNU/clang diagnostic shape teamcity-github-bridge parses out of the build log to
-annotate the pull request's diff. A finding printed in any other shape never
-leaves the build log. Whole-file findings go on line 1; advisory ones pass
+GNU/clang diagnostic shape `ci/utils/code_quality.py` turns into the GitLab Code Quality
+report shown on the merge request. A finding printed in any other shape never
+leaves the job log. Whole-file findings go on line 1; advisory ones pass
 `level="warning"`.
 
 ## Adding a New CI Action
@@ -129,7 +129,7 @@ class MyAction(BaseAction):
 - Build output through `run_command(..., MODE_FOR_NINJA)`: only `: error:`, `FAILED:`, a stopped build and link
   errors are logged as errors, `: warning:` as warnings, the rest as information
 - Use `pathlib.Path` for file paths (not string concatenation)
-- Logging via `ci.log` (standard Python logging, autoconfigured for TeamCity/Rich)
+- Logging via `ci.log` (standard Python logging, autoconfigured for GitLab CI/Rich)
 - Return `int` exit codes from actions (0 = success)
 - Use `from __future__ import annotations` if needed for forward refs
 - Stateless actions: instantiated once, reused across calls
@@ -138,8 +138,8 @@ class MyAction(BaseAction):
 
 - **Never a secret in argv or in a log.** A password, token or key is read from an environment variable
   with `ci.utils.secrets.get_secret()` (which registers it for masking), never from an extra argument;
-  refuse one passed as an argument with `reject_secret_args()`. TeamCity provides it as an `env.*`
-  parameter of the Global Build template (`common/Templates.kt`), referencing a server password parameter.
+  refuse one passed as an argument with `reject_secret_args()`. GitLab provides it as a masked CI/CD
+  variable of the project (the list is in `ci/gitlab/templates.yml`).
 - Never hand a secret to a child process on its command line: call the library in process (`requests`) or pass it through the child's environment.
 - Log commands only through `run_command` / `redact_command()`, never `' '.join(cmd)`; anything else that
   may echo a secret (server responses, exceptions) goes through `redact()`. Do not log a dict or object

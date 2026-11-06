@@ -1,0 +1,124 @@
+# Building blocks shared by `.gitlab-ci.yml` and the nightly child pipeline (`ci/gitlab/nightly.yml`).
+#
+# Everything a job does lives in `ci/` and is driven by `ci_action.py <Action> <preset>`: these files only say which
+# presets exist, where they run and when. What a preset builds, tests, covers, documents and packages is read from
+# the preset itself (`BuildAndTest`).
+#
+# Runners take tagged jobs only. Their configuration gives CONAN_HOME and CCACHE_DIR on persistent volumes, and the
+# Linux ones `SYS_PTRACE` + `seccomp=unconfined` for the sanitizers and qemu-user (binfmt_misc) for the arm64 tests,
+# so these files never set them. Secrets are project CI/CD variables, masked: OWL_DEPLOY_URL, OWL_DEPLOY_LOGIN,
+# OWL_DEPLOY_PASSWORD, OWL_CONAN_CACHE_URL, CONAN_LOGIN_USERNAME_OWL_CACHE, CONAN_PASSWORD_OWL_CACHE and
+# OWL_GITLAB_API_TOKEN (a project access token with `read_api`, for the coverage reference and the nightly gate).
+
+variables:
+  # In the project directory so that GitLab's cache carries the virtual environment.
+  POETRY_CACHE_DIR: $CI_PROJECT_DIR/.cache/pypoetry
+  LINUX_IMAGE: registry.argawaen.net/builder/builder-ubuntu2604
+  # The Conan binary cache is filled with every binary a job builds; skipped when OWL_CONAN_CACHE_URL is unset.
+  OWL_CONAN_CACHE_UPLOAD: "ON"
+  BENCH_CALIBRATE: "false"
+  BENCH_ROUNDS: "5"
+
+default:
+  interruptible: true
+
+# --- Where a job runs -------------------------------------------------------------------------------------------
+
+.linux:
+  image: $LINUX_IMAGE
+  tags: [linux, docker]
+  variables:
+    # The runner clones as root and the image runs as `user`: without this git refuses the checkout as of dubious
+    # ownership, and the analyses cannot diff.
+    GIT_CONFIG_COUNT: "1"
+    GIT_CONFIG_KEY_0: safe.directory
+    GIT_CONFIG_VALUE_0: $CI_PROJECT_DIR
+  cache:
+    key: linux-poetry
+    paths: [.cache/]
+  before_script:
+    # Conan's cache takes one writer at a time: two jobs of the same runner installing the same package fail on
+    # "Reference already exists". One home per concurrent slot of the runner.
+    - '[ -z "$CONAN_HOME" ] || export CONAN_HOME="$CONAN_HOME/slot-$CI_CONCURRENT_ID"'
+    - poetry sync --no-root
+
+.windows:
+  tags: [windows]
+  variables:
+    # The runner puts MSYS2 first on PATH, and its Python makes a POSIX-layout venv (`bin/`, no `Scripts/`) that
+    # neither Poetry nor cmake/Poetry.cmake can use.
+    POETRY_VIRTUALENVS_USE_POETRY_PYTHON: "true"
+  cache:
+    key: windows-poetry
+    paths: [.cache/]
+  before_script:
+    - if ($env:CONAN_HOME) { $env:CONAN_HOME = "$env:CONAN_HOME/slot-$env:CI_CONCURRENT_ID" }
+    - poetry sync --no-root
+
+# --- What a job keeps -------------------------------------------------------------------------------------------
+
+# No binaries: nothing downstream uses them, and the trees go past the size the server accepts. The archives are only
+# written on `main`.
+.build-artifacts:
+  coverage: '/lines: (\d+(?:\.\d+)?)%/'
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - output/build/*/Coverage/
+      - output/build/*/Documentation/html/
+      - output/build/*/OwlEngine-*
+      - output/build/*/OwlNest-*
+    reports:
+      junit: output/build/*/test/test/*_Report.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: output/build/*/Coverage/cobertura.xml
+
+# --- What a job does --------------------------------------------------------------------------------------------
+
+.build-linux:
+  extends: [.linux, .build-artifacts]
+  script:
+    - poetry run python3 ci_action.py BuildAndTest "$PRESET"
+
+.build-windows:
+  extends: [.windows, .build-artifacts]
+  script:
+    - poetry run python3 ci_action.py BuildAndTest $env:PRESET
+
+# clang-tidy or the static analyzer (`TOOL`) over the compilation database of `linux-clang-tidy`, never compiled.
+# Inside a merge request only the translation units its diff can change the verdict of, from its merge base (hence
+# the full history), and a finding fails the job; anywhere else every unit.
+.analysis:
+  extends: .linux
+  variables:
+    PRESET: linux-clang-tidy
+    GIT_DEPTH: 0
+  script:
+    - poetry run python3 ci_action.py Clean "$PRESET"
+    - poetry run python3 ci_action.py Build "$PRESET" -- --configure_only
+    - >-
+      poetry run python3 ci_action.py ClangTidy "$PRESET" -- "--tool=$TOOL"
+      "--merge_request=$CI_MERGE_REQUEST_IID" "--merge_base=$CI_MERGE_REQUEST_DIFF_BASE_SHA"
+      "--target_branch=$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+  artifacts:
+    when: always
+    reports:
+      codequality: output/code-quality/*.json
+
+# Timings only compare on the machine that measured the baseline: the `bench` tag is on hephaistos alone. A pipeline
+# run by hand with BENCH_CALIBRATE=true publishes a proposed baseline and thresholds instead of comparing.
+.bench:
+  extends: .linux
+  tags: [linux, docker, bench]
+  variables:
+    PRESET: linux-bench
+  script:
+    - poetry run python3 ci_action.py Clean "$PRESET"
+    - poetry run python3 ci_action.py Build "$PRESET"
+    - poetry run python3 ci_action.py Bench "$PRESET" -- "--calibrate=$BENCH_CALIBRATE" "--rounds=$BENCH_ROUNDS"
+  artifacts:
+    when: always
+    paths:
+      - output/bench/*.json

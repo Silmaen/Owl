@@ -54,10 +54,10 @@ Each sub-check can be disabled with extra args (`-- --no-<name>=true`):
 
 Every finding is reported through `_diag()` as a GNU/clang-style diagnostic —
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — including
-the ones clang-format and codespell produce themselves. That is what lets
-teamcity-github-bridge turn each finding into a GitHub Check Run annotation
-pinned to its line in the pull request's diff; anything printed in another
-shape only ever reaches the build log.
+the ones clang-format and codespell produce themselves. The same lines are
+written to the Code Quality report GitLab shows on the merge request
+(`ci/utils/code_quality.py`); anything printed in another shape only ever
+reaches the job log.
 """
 
 from __future__ import annotations
@@ -125,6 +125,10 @@ def _rel(path: Path | str) -> str:
         return p.as_posix()
 
 
+_findings: list[str] = []
+"""Every diagnostic `_diag()` printed during this run, for the Code Quality report."""
+
+
 def _diag(
     path: Path | str,
     line: int,
@@ -138,11 +142,9 @@ def _diag(
     Report one finding as a GNU/clang-style diagnostic:
     `<repo-relative path>:<line>:<column>: error: <check>: <message>`.
 
-    The shape carries meaning beyond the log: the teamcity-github-bridge plugin
-    scans a failed build's log for compiler diagnostics and turns each one into
-    a GitHub Check Run annotation pinned to that file and line in the pull
-    request's diff. A finding printed in any other shape stays invisible
-    outside the build log.
+    The shape carries meaning beyond the log: every line is kept for the Code
+    Quality report GitLab shows on the merge request. A finding printed in any
+    other shape stays invisible outside the job log.
 
     :param path: File the finding is about, absolute or repo-relative.
     :param line: 1-based line number (use 1 for a whole-file finding).
@@ -152,6 +154,7 @@ def _diag(
     :param level: `error` (fails the gate) or `warning` (advisory only).
     """
     text = f"{_rel(path)}:{line}:{column}: {level}: {check}: {message}"
+    _findings.append(text)
     if level == "warning":
         log.warning(text)
     else:
@@ -1511,6 +1514,7 @@ class CodeStyle(BaseAction):
         }
 
         log.info(f"Running CodeStyle gate for preset: {preset.cmake_preset}")
+        _findings.clear()
 
         results: list[tuple[str, int]] = []
         if not skip["format"]:
@@ -1540,6 +1544,9 @@ class CodeStyle(BaseAction):
         if not skip["secrets"]:
             results.append(("secrets", _check_secrets()))
 
+        from ci.utils.code_quality import write_report
+
+        write_report("code-style", "code-style", _findings)
         log.info("─" * 60)
         log.info("CodeStyle summary:")
         total = 0

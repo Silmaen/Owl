@@ -287,8 +287,8 @@ Options, output format and device selection: `test/bench/README.md`. The measure
 ## CI System
 
 The Python-based CI system wraps CMake operations. The same Python actions are invoked locally
-and from the TeamCity build steps — see [Continuous Integration](continuous_integration.md) for
-the full TC pipeline, build matrix, and trigger architecture.
+and from the GitLab CI jobs — see [Continuous Integration](continuous_integration.md) for
+the pipelines, the build matrix and the reports.
 
 Always invoke through Poetry:
 
@@ -302,7 +302,7 @@ poetry run python ci_action.py ClangTidy <preset>
 ```
 
 `ClangTidy` needs the preset built first — it reads `compile_commands.json` and
-ninja's dependency database. On a pull request it analyses only the translation
+ninja's dependency database. On a merge request it analyses only the translation
 units the diff can affect (the touched `.cpp` files plus every `.cpp` that
 includes a touched header); elsewhere, all of them. See
 [Clang-tidy scoping](continuous_integration.md#clang-tidy-scoping).

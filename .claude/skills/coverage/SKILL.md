@@ -5,7 +5,7 @@ description: Run code coverage analysis for the Owl project (GCC or Clang debug 
 
 # Generate code coverage
 
-1. Pick the preset: `linux-gcc-debug` gives the figure the pull requests are gated on, `linux-clang-debug` the one of
+1. Pick the preset: `linux-gcc-debug` gives the figure the merge requests are gated on, `linux-clang-debug` the one of
    the nightly Clang build. Both are measured because GCC and Clang count lines differently; say which one you report.
 2. Build and test the preset (`build` and `test` skills), then run:
    ```bash

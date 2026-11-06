@@ -42,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `math.random` and `math.randomseed` draw from the `lua` stream of the scene, and Lua tables iterate in the same order on every run.
 - `scene::PhysicsSnapshot` keeps the 3D velocity and angular velocity of a body.
 - 2D physics runs on Jolt instead of Box2D: bit-exact on every target and for every worker count, same `PhysicCommand` and Lua API.
+- CI moved from TeamCity to GitLab CI (`.gitlab-ci.yml`, `ci/gitlab/`), with the new `BuildAndTest` and `NightlyGate` actions.
+- Findings of Code Style, clang-tidy and the static analyzer show on the merge request as Code Quality reports.
+- Test results and line coverage show on the merge request; the coverage gate compares with the last successful job on `main`.
+- The nightly pipeline is skipped when `main` did not move since the last successful one.
 
 ### Removed
 

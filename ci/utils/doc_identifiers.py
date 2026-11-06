@@ -33,22 +33,13 @@ SKIPPED_FOLDERS: frozenset[str] = frozenset({"design"})
 EXTERNAL_NAMESPACES: frozenset[str] = frozenset({"std", "entt"})
 """Namespaces of the libraries the pages cite, declared outside the repository."""
 
-_PLUGIN = "class of the teamcity-github plugin, another repository"
 EXCEPTIONS: dict[str, str] = {
     "lib/": "folder of the installed package",
     "include/": "folder of the installed package",
     "origin/main": "branch of the remote",
-    ".teamcity/target/generated-configs/": "written by Maven when the DSL is validated",
     "ImLightRig": "widget of ImGuizmo, a dependency",
     "TracyLua": "Tracy API, a dependency",
     "LockableBase": "Tracy API, a dependency",
-    "DraftAwareBuildFilter": _PLUGIN,
-    "DraftBuildQueueCleaner": _PLUGIN,
-    "PullRequestEventListener": _PLUGIN,
-    "BuildStatusCheckRunPublisher": _PLUGIN,
-    "PrPromotionTagger": _PLUGIN,
-    "SimplePageExtension": _PLUGIN,
-    "checkRun.infraNeutral": "setting of the teamcity-github plugin, another repository",
 }
 """Cited names that live outside the repository, with the reason why."""
 
@@ -62,7 +53,7 @@ _CODE_ROOTS: tuple[str, ...] = (
     "ci/",
     "conan/",
     "docker_run.sh",
-    ".teamcity/",
+    ".gitlab-ci.yml",
     "CMakeLists.txt",
     "CMakePresets",
     "conanfile.py",

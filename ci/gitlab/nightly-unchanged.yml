@@ -1,0 +1,9 @@
+# Child pipeline of a night with no new commit on `main` since the last successful nightly (a child needs one job).
+
+unchanged:
+  tags: [linux, docker]
+  image: registry.argawaen.net/builder/builder-ubuntu2604
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo "main has not moved since the last successful nightly, nothing to build."

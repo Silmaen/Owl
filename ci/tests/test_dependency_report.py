@@ -124,12 +124,9 @@ def test_local_recipe_sources_point_to_their_repositories() -> None:
 
 def test_the_action_never_fails(tmp_path: Path) -> None:
     output = tmp_path / "report.json"
-    with (
-        mock.patch.object(dependency_report, "run_command", return_value=1),
-        mock.patch.object(dependency_report, "report_statistic") as statistic,
-    ):
+    with mock.patch.object(dependency_report, "run_command", return_value=1):
         assert DependencyReport().run(mock.MagicMock(), [f"--output={output}"]) == 0
-    statistic.assert_not_called()
+    assert not output.exists()
 
 
 def _fake_conan(output: Path, outdated: dict, versions: dict[str, list[str]]):
@@ -147,22 +144,18 @@ def _fake_conan(output: Path, outdated: dict, versions: dict[str, list[str]]):
     return run
 
 
-def test_the_action_resolves_with_the_local_recipes_and_publishes_the_count(tmp_path: Path) -> None:
+def test_the_action_resolves_with_the_local_recipes(tmp_path: Path) -> None:
     output = tmp_path / "report.json"
     outdated = {
         "libalsa": _entry("libalsa/1.2.10", "1.2.16.1"),
         "plutovg": _entry("plutovg/1.3.2", "cci.20230205"),
     }
     fake = _fake_conan(output, outdated, {"plutovg": ["1.3.3", "cci.20230205"]})
-    with (
-        mock.patch.object(dependency_report, "run_command", side_effect=fake) as run,
-        mock.patch.object(dependency_report, "report_statistic") as statistic,
-    ):
+    with mock.patch.object(dependency_report, "run_command", side_effect=fake) as run:
         assert DependencyReport().run(mock.MagicMock(), [f"--output={output}", "--no-upstream"]) == 0
     graph = next(call.args[0] for call in run.call_args_list if call.args[0][1:3] == ["graph", "outdated"])
     assert graph[graph.index("-r") + 1] == "owl-local"
     assert "conancenter" in graph
-    statistic.assert_called_once_with("OutdatedDependencies", 2)
     assert [entry["latest"] for entry in json.loads(output.read_text())] == ["1.2.16.1", "1.3.3"]
 
 
@@ -178,10 +171,8 @@ def test_the_action_checks_the_local_recipes_upstream(tmp_path: Path) -> None:
         mock.patch.object(dependency_report, "root", tmp_path),
         mock.patch.object(dependency_report, "run_command", side_effect=_fake_conan(output, {}, {})),
         mock.patch.object(dependency_report, "run_command_capture_output", return_value=(0, ls_remote)),
-        mock.patch.object(dependency_report, "report_statistic") as statistic,
     ):
         assert DependencyReport().run(mock.MagicMock(), [f"--output={output}"]) == 0
-    statistic.assert_called_once_with("OutdatedDependencies", 1)
     assert json.loads(output.read_text()) == [
         {"name": "glfw", "current": "3.4", "latest": "3.5.1", "source": "upstream"}
     ]

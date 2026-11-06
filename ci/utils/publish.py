@@ -160,9 +160,9 @@ def get_project_version() -> str:
     return "Bad Version"
 
 
-def _hash_from_teamcity_env() -> str | None:
-    """Return the SHA exposed by TeamCity as BUILD_VCS_NUMBER, if present and plausible."""
-    sha = os.environ.get("BUILD_VCS_NUMBER", "").strip()
+def _hash_from_ci_env() -> str | None:
+    """Return the SHA exposed by GitLab CI as CI_COMMIT_SHA, if present and plausible."""
+    sha = os.environ.get("CI_COMMIT_SHA", "").strip()
     if len(sha) >= 7 and all(c in "0123456789abcdef" for c in sha.lower()):
         return sha
     return None
@@ -174,7 +174,7 @@ def _hash_from_git_refs(repo: Path) -> str | None:
 
     Pure text-file walk, no access to the object store — survives a stale
     ``.git/objects/info/alternates`` (typical when a workspace is reused
-    across Windows and Linux TeamCity agents).
+    across Windows and Linux runners).
     """
     git_dir = repo / ".git"
     if not git_dir.exists():
@@ -220,10 +220,10 @@ def get_git_hash() -> str:
 
     Tries, in order:
     1. ``git log -1 --format=%h`` (the normal path);
-    2. TeamCity's ``BUILD_VCS_NUMBER`` env var (set on every agent);
+    2. GitLab's ``CI_COMMIT_SHA`` env var (set in every job);
     3. Direct read of ``.git/HEAD`` and the matching ref file
        (resilient to a broken ``.git/objects/info/alternates``,
-       e.g. a Windows path on a Linux agent — see TeamCity workspace reuse).
+       e.g. a Windows path on a Linux runner).
 
     :return: The short git hash, or "0000000" on failure.
     """
@@ -235,11 +235,11 @@ def get_git_hash() -> str:
             sha = ret.stdout.strip()[:7]
             if sha:
                 return sha
-        log.warning(f"git log returned {ret.returncode}, falling back to BUILD_VCS_NUMBER / .git/HEAD")
+        log.warning(f"git log returned {ret.returncode}, falling back to CI_COMMIT_SHA / .git/HEAD")
     except Exception as err:
-        log.warning(f"git log raised {err}, falling back to BUILD_VCS_NUMBER / .git/HEAD")
+        log.warning(f"git log raised {err}, falling back to CI_COMMIT_SHA / .git/HEAD")
 
-    env_sha = _hash_from_teamcity_env()
+    env_sha = _hash_from_ci_env()
     if env_sha:
         return env_sha[:7]
 
@@ -247,5 +247,5 @@ def get_git_hash() -> str:
     if ref_sha:
         return ref_sha[:7]
 
-    log.error("Could not retrieve git hash via git, BUILD_VCS_NUMBER, or .git/HEAD.")
+    log.error("Could not retrieve git hash via git, CI_COMMIT_SHA, or .git/HEAD.")
     return "0000000"

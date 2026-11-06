@@ -16,11 +16,6 @@
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Linux"
-      },
-      "vendor": {
-        "silmaen": {
-          "docker_image": "builder-ubuntu2604"
-        }
       }
     },
     {
@@ -28,12 +23,7 @@
       "inherits": [
         "linux-base",
         "gcc-release"
-      ],
-      "vendor": {
-        "silmaen": {
-          "docker_image": "builder-ubuntu2604"
-        }
-      }
+      ]
     },
     {
       "name": "linux-gcc-debug",
@@ -45,11 +35,6 @@
         "OWL_ENABLE_COVERAGE": "ON",
         "OWL_SCRIPT_TIME_SCALE": "4",
         "OWL_TEST_TIMEOUT": "1200"
-      },
-      "vendor": {
-        "silmaen": {
-          "docker_image": "builder-ubuntu2604"
-        }
       }
     },
     {
@@ -63,7 +48,6 @@
       },
       "vendor": {
         "silmaen": {
-          "docker_image": "builder-ubuntu2604",
           "package": true,
           "publish_doc": true
         }

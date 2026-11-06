@@ -39,8 +39,8 @@ output*
 .env
 .venv
 
-# Maven build artifacts (e.g. .teamcity/target/ from DSL validation)
-target/
+# Poetry cache of the CI jobs, carried by GitLab's cache
+.cache/
 
 # Cache
 *.spv

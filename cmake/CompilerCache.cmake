@@ -4,8 +4,8 @@
 # binary is missing so dev machines without ccache keep building.
 #
 # CCACHE_DIR is read from the environment so the same configuration works for
-# local devs (default `~/.cache/ccache`) and for TeamCity (the docker container
-# is launched with `-e CCACHE_DIR=/tmp/cache_dir/ccache`, see CMakePresetsBase.json).
+# local devs (default `~/.cache/ccache`) and for the CI (the GitLab runners set it
+# to a persistent volume).
 #
 
 if (NOT ${PROJECT_PREFIX}_USE_CCACHE)

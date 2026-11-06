@@ -161,6 +161,7 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
         set(${PROJECT_PREFIX}_CONAN_CACHE_UPLOAD "$ENV{${PROJECT_PREFIX}_CONAN_CACHE_UPLOAD}")
     endif ()
     set(_owl_conan_cache OFF)
+    set(_owl_conan_cache_error "")
     if (${PROJECT_PREFIX}_CONAN_CACHE_URL)
         execute_process(COMMAND ${_owl_conan} remote add owl-cache "${${PROJECT_PREFIX}_CONAN_CACHE_URL}"
                 --force --index 1
@@ -171,7 +172,8 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
             if (DEFINED ENV{CONAN_LOGIN_USERNAME_OWL_CACHE})
                 execute_process(COMMAND ${_owl_conan} remote login owl-cache -cc core:non_interactive=True
                         TIMEOUT 60
-                        OUTPUT_QUIET ERROR_QUIET
+                        OUTPUT_QUIET
+                        ERROR_VARIABLE _owl_conan_cache_error
                         RESULT_VARIABLE _owl_conan_result)
             endif ()
         endif ()
@@ -186,6 +188,7 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
                 # ERROR_VARIABLE is NOTFOUND (false) exactly when the `error` member exists.
                 string(JSON _owl_conan_error ERROR_VARIABLE _owl_conan_no_error GET "${_owl_conan_probe}" owl-cache error)
                 if (NOT _owl_conan_no_error OR NOT _owl_conan_probe MATCHES "owl-cache")
+                    set(_owl_conan_cache_error "${_owl_conan_error}")
                     set(_owl_conan_result 1)
                 endif ()
             endif ()
@@ -195,7 +198,9 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
             message(STATUS "Conan binary cache ${${PROJECT_PREFIX}_CONAN_CACHE_URL}")
         else ()
             execute_process(COMMAND ${_owl_conan} remote disable owl-cache OUTPUT_QUIET ERROR_QUIET)
-            message(WARNING "Conan binary cache ${${PROJECT_PREFIX}_CONAN_CACHE_URL} unreachable, using ConanCenter only.")
+            string(STRIP "${_owl_conan_cache_error}" _owl_conan_cache_error)
+            message(WARNING "Conan binary cache ${${PROJECT_PREFIX}_CONAN_CACHE_URL} unreachable, using ConanCenter only."
+                    " ${_owl_conan_cache_error}")
         endif ()
     else ()
         execute_process(COMMAND ${_owl_conan} remote remove owl-cache OUTPUT_QUIET ERROR_QUIET)

@@ -5,48 +5,19 @@ Utility functions for logging configuration and management.
 import logging
 
 
-class TeamCityFormatter(logging.Formatter):
-    """Formatter for TeamCity service messages."""
-
-    def format(self, record: logging.LogRecord) -> str:
-        message = record.getMessage()
-        level = record.levelname
-
-        if level == "ERROR":
-            return f"##teamcity[message text='{self._escape(message)}' status='ERROR']"
-        elif level == "WARNING":
-            return f"##teamcity[message text='{self._escape(message)}' status='WARNING']"
-        else:
-            return f"##teamcity[message text='{self._escape(message)}']"
-
-    @staticmethod
-    def _escape(text: str) -> str:
-        """Escape special characters for TeamCity."""
-        replacements = {
-            "|": "||",
-            "'": "|'",
-            "\n": "|n",
-            "\r": "|r",
-            "[": "|[",
-            "]": "|]",
-        }
-        for char, escaped in replacements.items():
-            text = text.replace(char, escaped)
-        return text
-
-
 def setup_logging(level: int = logging.DEBUG) -> None:
     """
-    Configures the logging system with Rich for development or TeamCity formatter for CI.
+    Configures the logging system with Rich for development, plain lines in GitLab CI.
 
     :param level: The logging level to set (default is logging.INFO).
     """
     from os import environ
 
     handler: logging.Handler
-    if "TEAMCITY_VERSION" in environ:
+    # Rich wraps at 80 columns without a terminal, which would cut a finding in two in the job log.
+    if "GITLAB_CI" in environ:
         handler = logging.StreamHandler()
-        handler.setFormatter(TeamCityFormatter())
+        handler.setFormatter(logging.Formatter("%(levelname)-8s %(message)s"))
     else:
         try:
             from rich.logging import RichHandler

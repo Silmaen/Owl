@@ -14,8 +14,7 @@ Informative only: it never fails the build. Two sources:
 
 A version counts as an update only within its scheme (semantic versions against semantic ones, dates against dates),
 with the same flavour (`-docking`), and never as a pre-release unless the current version is one. The report is
-logged, written to `output/dependency_report.json` and its count published as the TeamCity statistic
-`OutdatedDependencies`.
+logged and written to `output/dependency_report.json`, kept by the job.
 
 Options (after `--`): `--profile=<path>` (default `conan/profiles/linux-clang`), `--output=<file.json>` (default
 `output/dependency_report.json`), `--no-upstream` (skip the tags of the local recipes' repositories).
@@ -31,7 +30,6 @@ from pathlib import Path
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.run import run_command, run_command_capture_output
-from ci.utils.teamcity import report_statistic
 
 _DATE_VERSION = re.compile(r"^(?:cci\.)?(\d{8})(?:[.+].*)?$")
 _SEMANTIC_VERSION = re.compile(
@@ -281,7 +279,6 @@ class DependencyReport(BaseAction):
             log.warning(f"DependencyReport: {dep.name} {dep.current} -> {dep.latest} ({dep.source}).")
         output.write_text(json.dumps([asdict(dep) for dep in outdated], indent=2) + "\n")
         log.info(f"DependencyReport: {len(outdated)} dependencies have a newer version (report: {output}).")
-        report_statistic("OutdatedDependencies", len(outdated))
         return 0
 
     @staticmethod

@@ -223,9 +223,9 @@ add_dependencies(${CMAKE_PROJECT_NAME}_Base ${CMAKE_PROJECT_NAME}_SuperBase)
 #
 #
 # Git may legitimately fail here (shallow clones, out-of-tree builds, and — the case that
-# motivated this fallback — a checkout made on a Windows agent mounted into a Linux container,
+# motivated this fallback — a checkout made on a Windows host mounted into a Linux container,
 # where `.git/objects/info/alternates` points to a Windows path that can't be resolved).  When
-# that happens we fall back to TeamCity's `BUILD_VCS_NUMBER` environment variable; if that is
+# that happens we fall back to GitLab's `CI_COMMIT_SHA` environment variable; if that is
 # also unavailable we settle for a literal so the downstream `SUBSTRING` stays well-formed.
 if (NOT ${PROJECT_PREFIX}_GIT_HASH)
     execute_process(
@@ -237,8 +237,8 @@ if (NOT ${PROJECT_PREFIX}_GIT_HASH)
             ERROR_QUIET
     )
     if (NOT _owl_git_hash_result EQUAL 0 OR "${${PROJECT_PREFIX}_GIT_HASH}" STREQUAL "")
-        if (DEFINED ENV{BUILD_VCS_NUMBER} AND NOT "$ENV{BUILD_VCS_NUMBER}" STREQUAL "")
-            set(${PROJECT_PREFIX}_GIT_HASH "$ENV{BUILD_VCS_NUMBER}")
+        if (DEFINED ENV{CI_COMMIT_SHA} AND NOT "$ENV{CI_COMMIT_SHA}" STREQUAL "")
+            set(${PROJECT_PREFIX}_GIT_HASH "$ENV{CI_COMMIT_SHA}")
         else ()
             set(${PROJECT_PREFIX}_GIT_HASH "unknown")
         endif ()

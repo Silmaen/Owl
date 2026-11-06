@@ -5,8 +5,8 @@ description: Pre-handoff gate for Owl changes — build, tests, CodeStyle and cl
 
 # Check the current change before handing it back
 
-Arguments: `--quick` runs the fast loop only (what a draft pull request gets from the CI), `--fix` applies the
-formatters before the checks. Without `--quick`, run the full gate: it is what a ready pull request gets.
+Arguments: `--quick` runs the fast loop only (what a draft merge request gets from the CI), `--fix` applies the
+formatters before the checks. Without `--quick`, run the full gate: it is what a ready merge request gets.
 
 Run what the diff requires, in this order, stopping at the first failure:
 

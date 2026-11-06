@@ -3,7 +3,7 @@
 `owl_bench` is a single executable of CPU micro-benchmarks for the engine, run headless on the Null render
 backend. It uses a small in-house harness
 (`test/bench/harness/Bench.h`): `steady_clock`, warm-up samples, auto-calibrated batch size, median, quartiles,
-CSV / JSON output. It is off by default (`OWL_BENCHMARK=OFF`); the CI compiles it on every pull request
+CSV / JSON output. It is off by default (`OWL_BENCHMARK=OFF`); the CI compiles it on every merge request
 (`linux-clang-debug`) and runs it every night on `main` against a baseline (see [In CI](#in-ci)).
 
 ## Build
@@ -100,8 +100,8 @@ The action runs `owl_bench` `--rounds` times (default 5, at least 2) and never c
 `output/bench/linux-bench.proposed-baseline.json` (the median of the round medians of each benchmark) and
 `output/bench/linux-bench.proposed-thresholds.json` (for each benchmark whose spread between rounds exceeds its
 threshold: the spread rounded up to the next 0.05, plus 0.05), and logs the benchmarks moving by more than 5 % from the
-current baseline. In TeamCity, use *Run custom build* on any branch of *Benchmarks*, tick *Calibrate*, then review and
-commit the two proposed files from the artifacts (the baseline as `baseline/linux-bench.json`, the thresholds merged
+current baseline. In GitLab, run a pipeline by hand on the branch (*Run pipeline*) with `BENCH_CALIBRATE=true` (and `BENCH_ROUNDS=<n>`), then review and
+commit the two proposed files from the `bench` job's artifacts (the baseline as `baseline/linux-bench.json`, the thresholds merged
 into `thresholds.json`).
 
 ## Reading the output

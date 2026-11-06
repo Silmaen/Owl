@@ -1,0 +1,188 @@
+# Pipeline of Owl: merge requests and the default branch. The shared building blocks are in
+# `ci/gitlab/templates.yml`, the nightly jobs in `ci/gitlab/nightly.yml`.
+#
+# Two levels: Code Style first, then every build and analysis in parallel, none starting if it failed.
+#
+# - draft merge requests and `Experiment/…` branches: Code Style and Linux Clang, the fast verdict;
+# - ready merge requests: the full set, minus the jobs that cannot change a verdict when only the documentation moved;
+# - `main`: the builds again on the merged result, and the address sanitizer;
+# - the scheduled pipeline: only the nightly gate, which runs the nightly child pipeline when `main` moved.
+#
+# Marking a draft ready does not start a pipeline: run one from the merge request. The merge waits for the last
+# pipeline (Settings > Merge requests > Pipelines must succeed).
+
+include:
+  - local: ci/gitlab/templates.yml
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+stages:
+  - style
+  - build
+  - nightly
+
+variables:
+  BENCH_CALIBRATE:
+    value: "false"
+    description: "true: run the benchmarks several times and publish a proposed baseline instead of comparing."
+  BENCH_ROUNDS:
+    value: "5"
+    description: "Benchmark runs of a calibration."
+
+# --- When a job runs --------------------------------------------------------------------------------------------
+
+# Every pipeline but the scheduled one.
+.always:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - when: on_success
+
+# Ready merge requests that change more than the documentation, and `main`.
+.ready:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+    - !reference [.ready-merge-request, rules]
+
+# Ready merge requests that change more than the documentation, and pipelines run by hand: the jobs `main` runs
+# at night only.
+.ready-only:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+      when: never
+    - !reference [.ready-merge-request, rules]
+
+.ready-merge-request:
+  rules:
+    - if: $CI_MERGE_REQUEST_TITLE =~ /^(\[draft\]|\(draft\)|draft:)/i
+      when: never
+    # Exploratory work does not pay for the full set.
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^Experiment\//
+      when: never
+    # Everything but `doc/`, `.claude/`, the root Markdown files and LICENSE.
+    - changes:
+        - .gitlab-ci.yml
+        - .clang-format
+        - .clang-tidy
+        - .gitattributes
+        - .gitignore
+        - CMakeLists.txt
+        - CMakePresets.json
+        - CPackConfig.cmake
+        - DoxyfileTemplate
+        - ci_action.py
+        - conan.lock
+        - conanfile.py
+        - docker_run.sh
+        - gcovr.cfg
+        - poetry.lock
+        - pyproject.toml
+        - ci/**/*
+        - cmake/**/*
+        - conan/**/*
+        - engine_assets/**/*
+        - engine_demo/**/*
+        - samples/**/*
+        - source/**/*
+        - test/**/*
+        - tools/**/*
+
+# Pushes to `main` and pipelines run by hand, never a merge request.
+.main:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+.after-style:
+  stage: build
+  needs:
+    - job: code-style
+      artifacts: false
+
+# --- Style ------------------------------------------------------------------------------------------------------
+
+# The gate everything waits for, documentation-only merge requests included: codespell and Markdown are its job.
+code-style:
+  extends: [.linux, .always]
+  stage: style
+  script:
+    - poetry run python3 ci_action.py CodeStyle linux-clang-debug
+  artifacts:
+    when: always
+    reports:
+      codequality: output/code-quality/code-style.json
+
+# --- Builds -----------------------------------------------------------------------------------------------------
+
+# The fast verdict, on drafts and documentation-only merge requests too (it builds Doxygen): the release tree and
+# its tests; on `main` its archives.
+linux-clang-release:
+  extends: [.build-linux, .after-style, .always]
+  variables:
+    PRESET: linux-clang-release
+
+# The coverage gate: more than one point below the last successful job of `main` fails it.
+linux-gcc-debug:
+  extends: [.build-linux, .after-style, .ready]
+  variables:
+    PRESET: linux-gcc-debug
+
+# The single Windows runner is the bottleneck: one release tree, ready merge requests only. No coverage:
+# `gcovr.cfg` leaves the Windows-only code out, Linux measures the rest.
+windows-clang-release:
+  extends: [.build-windows, .after-style, .ready]
+  variables:
+    PRESET: windows-clang-release
+
+# Off merge requests: it held a runner for 25 minutes each.
+sanitizer-address:
+  extends: [.build-linux, .after-style, .main]
+  variables:
+    PRESET: linux-sanitizer-address
+
+# --- Analyses ---------------------------------------------------------------------------------------------------
+
+clang-tidy:
+  extends: [.analysis, .after-style, .ready-only]
+  variables:
+    TOOL: tidy
+
+bench:
+  extends: [.bench, .after-style, .ready-only]
+
+# --- Nightly ----------------------------------------------------------------------------------------------------
+
+# The schedule (Build > Pipeline schedules, `main`, 02:00) runs these two only. The gate writes the child pipeline:
+# the nightly jobs when `main` moved since the last successful nightly, else a single job saying so.
+nightly-gate:
+  extends: .linux
+  stage: nightly
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  script:
+    - poetry run python3 ci_action.py NightlyGate linux-clang-release
+  artifacts:
+    paths:
+      - output/nightly.yml
+
+nightly:
+  stage: nightly
+  inherit:
+    default: false
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  needs: [nightly-gate]
+  trigger:
+    include:
+      - artifact: output/nightly.yml
+        job: nightly-gate
+    strategy: depend
