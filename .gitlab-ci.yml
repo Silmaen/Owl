@@ -186,3 +186,8 @@ nightly:
       - artifact: output/nightly.yml
         job: nightly-gate
     strategy: depend
+    # The child has the YAML variables of its own file. Forwarded, they would be expanded in this trigger job, which
+    # has no `CI_PROJECT_DIR`: the Poetry cache would land in `/.cache`. The schedule's variables still go down.
+    forward:
+      yaml_variables: false
+      pipeline_variables: true
