@@ -1,7 +1,7 @@
 # Child pipeline of a night with no new commit on `main` since the last successful nightly (a child needs one job).
 
 unchanged:
-  tags: [linux, docker]
+  tags: [linux, docker, amd64]
   image: registry.argawaen.net/builder/builder-ubuntu2604
   variables:
     GIT_STRATEGY: none

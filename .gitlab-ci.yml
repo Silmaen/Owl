@@ -124,7 +124,7 @@ code-style:
 # --- Builds -----------------------------------------------------------------------------------------------------
 
 # The fast verdict, on drafts and documentation-only merge requests too (it builds Doxygen): the release tree and
-# its tests; on `main` its archives.
+# its tests; on `main` its archives too, to prove CPack still works.
 linux-clang-release:
   extends: [.build-linux, .after-style, .always]
   variables:

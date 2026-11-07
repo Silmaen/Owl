@@ -26,7 +26,7 @@ default:
 
 .linux:
   image: $LINUX_IMAGE
-  tags: [linux, docker]
+  tags: [linux, docker, amd64]
   variables:
     # The runner clones as root and the image runs as `user`: without this git refuses the checkout as of dubious
     # ownership, and the analyses cannot diff.
@@ -57,8 +57,8 @@ default:
 
 # --- What a job keeps -------------------------------------------------------------------------------------------
 
-# No binaries: nothing downstream uses them, and the trees go past the size the server accepts. The archives are only
-# written on `main`.
+# No binaries nor archives: nothing downstream uses them (the package jobs publish theirs from the job itself), and
+# they go past the size the server accepts.
 .build-artifacts:
   coverage: '/lines: (\d+(?:\.\d+)?)%/'
   artifacts:
@@ -67,8 +67,6 @@ default:
     paths:
       - output/build/*/Coverage/
       - output/build/*/Documentation/html/
-      - output/build/*/OwlEngine-*
-      - output/build/*/OwlNest-*
     reports:
       junit: output/build/*/test/test/*_Report.xml
       coverage_report:
@@ -111,7 +109,7 @@ default:
 # run by hand with BENCH_CALIBRATE=true publishes a proposed baseline and thresholds instead of comparing.
 .bench:
   extends: .linux
-  tags: [linux, docker, bench]
+  tags: [linux, docker, amd64, bench]
   variables:
     PRESET: linux-bench
   script:
