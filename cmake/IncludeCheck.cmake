@@ -103,6 +103,15 @@ function(owl_add_source_check iTarget)
         return()
     endif ()
     owl_include_check_library(${PROJECT_PREFIX_LOWER}_source_check_${iTarget} ${iTarget} ${l_cpps})
+    # Source properties belong to the directory of their target: the per-file options (the instruction set of the
+    # sources that include Jolt) are copied over to the check library.
+    foreach (l_cpp IN LISTS l_cpps)
+        get_source_file_property(l_options "${l_cpp}" TARGET_DIRECTORY ${iTarget} COMPILE_OPTIONS)
+        if (l_options)
+            set_source_files_properties("${l_cpp}" TARGET_DIRECTORY ${PROJECT_PREFIX_LOWER}_source_check_${iTarget}
+                    PROPERTIES COMPILE_OPTIONS "${l_options}")
+        endif ()
+    endforeach ()
     add_dependencies(${PROJECT_PREFIX_LOWER}_source_check ${PROJECT_PREFIX_LOWER}_source_check_${iTarget})
 endfunction()
 

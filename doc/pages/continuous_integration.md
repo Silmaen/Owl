@@ -83,6 +83,8 @@ flowchart TD
   pipeline only when `main` moved since the last successful scheduled pipeline, a single no-op job otherwise. The
   child pipeline builds nothing in the three package jobs beyond their own tree: each builds and tests its release
   tree, then publishes the archives to the site (Linux x64 also publishes the documentation).
+- **Nightly by hand**: *Build > Pipelines > Run pipeline* on any branch with `NIGHTLY` = `true` runs the gate and the
+  whole child pipeline on that branch, whether it moved or not, and none of the usual jobs; only `main` publishes.
 
 Code Style and Linux Clang Release run on documentation-only merge requests because those paths are their input:
 

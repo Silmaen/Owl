@@ -35,7 +35,7 @@ def test_only_repository_sources_are_analysed(tmp_path: Path, monkeypatch: pytes
     assert list(units.values()) == [ours]
 
 
-def test_the_analyzer_relaxes_only_test_files() -> None:
+def test_the_analyzer_relaxes_only_the_listed_units() -> None:
     from ci import root
     from ci.actions.clang_tidy import TOOL_ARGS, tool_arguments
 
@@ -45,6 +45,8 @@ def test_the_analyzer_relaxes_only_test_files() -> None:
     assert engine == TOOL_ARGS["analyzer"]
     assert test[0].endswith(",-clang-analyzer-optin.core.EnumCastOutOfRange,-clang-analyzer-security.FloatLoopCounter")
     assert tool_arguments("tidy", root / "test" / "unit" / "core_tests" / "log_test.cpp") == []
+    jolt = tool_arguments("analyzer", root / "source" / "owl" / "private" / "physics" / "JoltWorld.cpp")
+    assert jolt[0].endswith(",-clang-analyzer-optin.core.EnumCastOutOfRange")
 
 
 def test_ninja_and_make_closures_agree(tmp_path: Path) -> None:

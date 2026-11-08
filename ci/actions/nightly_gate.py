@@ -35,7 +35,7 @@ def nightly_pipeline(unchanged: bool) -> str:
 class NightlyGate(BaseAction):
     """
     Write the child pipeline of the scheduled pipeline: the nightly jobs when the default branch moved since the last
-    successful nightly, else a single job saying there is nothing new.
+    successful nightly, else a single job saying there is nothing new. Run by hand, it always writes the nightly jobs.
 
     A night without a reference (first nightly, no `OWL_GITLAB_API_TOKEN`, API unreachable) builds: skipping is an
     optimisation, missing a nightly is not.
@@ -51,7 +51,8 @@ class NightlyGate(BaseAction):
         from ci.utils.gitlab import last_scheduled_sha
 
         commit = os.environ.get("CI_COMMIT_SHA", "")
-        last = last_scheduled_sha()
+        # A nightly run by hand always builds: it is there to check a branch.
+        last = last_scheduled_sha() if os.environ.get("CI_PIPELINE_SOURCE", "schedule") == "schedule" else None
         unchanged = commit != "" and commit == last
         if unchanged:
             log.info(f"NightlyGate: {commit[:8]} already passed the last nightly, nothing to build.")

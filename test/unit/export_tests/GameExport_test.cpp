@@ -98,6 +98,10 @@ constexpr auto g_lavapipeEnvironment = "GALLIUM_OVERRIDE_CPU_CAPS=sse4.1 MESA_SH
 auto canRunOnLavapipe() -> bool {
 	if (OWL_RENDER_TESTS == 0)
 		return false;
+	// Under qemu-user (the cross-compiled tests) the software rasteriser is emulated too: the Engine Demo alone would
+	// take more than an hour.
+	if (const auto* emulated = std::getenv("QEMU_LD_PREFIX"); emulated != nullptr && *emulated != '\0')
+		return false;
 	const auto* display = std::getenv("DISPLAY");
 	return display != nullptr && *display != '\0' &&
 		   exists(std::filesystem::path{"/usr/share/vulkan/icd.d/lvp_icd.json"});

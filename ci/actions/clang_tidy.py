@@ -74,13 +74,20 @@ TOOL_LABELS: dict[str, str] = {"tidy": "clang-tidy", "analyzer": "clang static a
 # Code Quality report file of each tool, beside the other jobs' ones.
 REPORT_NAMES: dict[str, str] = {"tidy": "clang-tidy", "analyzer": "static-analyzer"}
 
-# Analyzer checks a test is right to trip: it casts out-of-range values to test enum validation, and samples
-# curves with float loop counters. `test/unit/.clang-tidy` relaxes the tidy set; the analyzer set is given on the
-# command line, which overrides any configuration file, so the test exclusions are added here.
-TEST_ANALYZER_EXCLUSIONS: tuple[str, ...] = (
-    "clang-analyzer-optin.core.EnumCastOutOfRange",
-    "clang-analyzer-security.FloatLoopCounter",
-)
+# Analyzer checks a unit is right to trip, per folder or file. A test casts out-of-range values to test enum
+# validation, and samples curves with float loop counters. Jolt's `EAllowedDOFs` is a bit mask: its `|` builds
+# values with no enumerator, which the analyzer reports inside the Jolt header, where no `NOLINT` can reach.
+# `test/unit/.clang-tidy` relaxes the tidy set; the analyzer set is given on the command line, which overrides any
+# configuration file, so the exclusions are added here.
+ANALYZER_EXCLUSIONS: dict[Path, tuple[str, ...]] = {
+    root / "test" / "unit": (
+        "clang-analyzer-optin.core.EnumCastOutOfRange",
+        "clang-analyzer-security.FloatLoopCounter",
+    ),
+    root / "source" / "owl" / "private" / "physics" / "JoltWorld.cpp": (
+        "clang-analyzer-optin.core.EnumCastOutOfRange",
+    ),
+}
 
 
 def tool_arguments(tool: str, source: Path) -> list[str]:
@@ -89,11 +96,13 @@ def tool_arguments(tool: str, source: Path) -> list[str]:
 
     :param tool: ``tidy`` or ``analyzer``.
     :param source: The translation unit.
-    :return: The arguments; analyzer runs on a test file also exclude `TEST_ANALYZER_EXCLUSIONS`.
+    :return: The arguments; analyzer runs also exclude the `ANALYZER_EXCLUSIONS` of the unit.
     """
     arguments = list(TOOL_ARGS[tool])
-    if tool == "analyzer" and (root / "test" / "unit") in source.parents:
-        arguments[0] += "".join(f",-{check}" for check in TEST_ANALYZER_EXCLUSIONS)
+    if tool == "analyzer":
+        for path, checks in ANALYZER_EXCLUSIONS.items():
+            if path == source or path in source.parents:
+                arguments[0] += "".join(f",-{check}" for check in checks)
     return arguments
 
 

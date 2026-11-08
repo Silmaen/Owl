@@ -33,8 +33,21 @@ def test_the_gate_compares_with_the_last_nightly(
     from ci.utils import gitlab
 
     monkeypatch.setenv("CI_COMMIT_SHA", "abc123")
+    monkeypatch.setenv("CI_PIPELINE_SOURCE", "schedule")
     monkeypatch.setattr(gitlab, "last_scheduled_sha", lambda: last)
     monkeypatch.setattr(nightly_gate, "OUTPUT", tmp_path / "nightly.yml")
 
     assert NightlyGate().run(PresetConfig("linux-clang-release")) == 0
     assert expected in yaml.safe_load((tmp_path / "nightly.yml").read_text())
+
+
+def test_a_nightly_run_by_hand_always_builds(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    from ci.utils import gitlab
+
+    monkeypatch.setenv("CI_COMMIT_SHA", "abc123")
+    monkeypatch.setenv("CI_PIPELINE_SOURCE", "web")
+    monkeypatch.setattr(gitlab, "last_scheduled_sha", lambda: "abc123")
+    monkeypatch.setattr(nightly_gate, "OUTPUT", tmp_path / "nightly.yml")
+
+    assert NightlyGate().run(PresetConfig("linux-clang-release")) == 0
+    assert "slow-suite" in yaml.safe_load((tmp_path / "nightly.yml").read_text())

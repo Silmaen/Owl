@@ -68,7 +68,6 @@ auto reduce(const double iX) -> Reduced {
 	constexpr double invHalfPi = 6.36619772367581382433e-01;
 	constexpr double part1 = 1.57079632673412561417e+00;
 	constexpr double part2 = 6.07710050630396597660e-11;
-	constexpr double part2Tail = 2.02226624879595063154e-21;
 	constexpr double part3 = 2.02226624871116645580e-21;
 	constexpr double part3Tail = 8.47842766036889956997e-32;
 	const double fn = std::floor(iX * invHalfPi + 0.5);
@@ -76,7 +75,6 @@ auto reduce(const double iX) -> Reduced {
 	double t = r;
 	double w = fn * part2;
 	r = t - w;
-	w = fn * part2Tail - ((t - r) - w);
 	t = r;
 	w = fn * part3;
 	r = t - w;

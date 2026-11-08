@@ -6,7 +6,9 @@
 # - draft merge requests and `Experiment/…` branches: Code Style and Linux Clang, the fast verdict;
 # - ready merge requests: the full set, minus the jobs that cannot change a verdict when only the documentation moved;
 # - `main`: the builds again on the merged result, and the address sanitizer;
-# - the scheduled pipeline: only the nightly gate, which runs the nightly child pipeline when `main` moved.
+# - the scheduled pipeline: only the nightly gate, which runs the nightly child pipeline when `main` moved;
+# - a pipeline run by hand with `NIGHTLY` = `true` (Build > Pipelines > Run pipeline, any branch): the nightly jobs
+#   on that branch, whether it moved or not, publishing nothing unless it is `main`.
 #
 # Marking a draft ready does not start a pipeline: run one from the merge request. The merge waits for the last
 # pipeline (Settings > Merge requests > Pipelines must succeed).
@@ -32,20 +34,23 @@ variables:
   BENCH_ROUNDS:
     value: "5"
     description: "Benchmark runs of a calibration."
+  NIGHTLY:
+    value: "false"
+    description: "true: run the nightly jobs on this branch instead of the usual ones."
 
 # --- When a job runs --------------------------------------------------------------------------------------------
 
-# Every pipeline but the scheduled one.
+# Every pipeline but the nightly ones.
 .always:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $NIGHTLY == "true"
       when: never
     - when: on_success
 
 # Ready merge requests that change more than the documentation, and `main`.
 .ready:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $NIGHTLY == "true"
       when: never
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
     - !reference [.ready-merge-request, rules]
@@ -54,6 +59,8 @@ variables:
 # at night only.
 .ready-only:
   rules:
+    - if: $NIGHTLY == "true"
+      when: never
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
       when: never
@@ -97,7 +104,7 @@ variables:
 # Pushes to `main` and pipelines run by hand, never a merge request.
 .main:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $NIGHTLY == "true"
       when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "web"
@@ -161,13 +168,20 @@ bench:
 
 # --- Nightly ----------------------------------------------------------------------------------------------------
 
+# The schedule, and a pipeline run by hand with `NIGHTLY` = `true`.
+.nightly:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web" && $NIGHTLY == "true"
+
 # The schedule (Build > Pipeline schedules, `main`, 02:00) runs these two only. The gate writes the child pipeline:
-# the nightly jobs when `main` moved since the last successful nightly, else a single job saying so.
+# the nightly jobs when `main` moved since the last successful nightly (or always, when run by hand), else a single
+# job saying so.
 nightly-gate:
   extends: .linux
   stage: nightly
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - !reference [.nightly, rules]
   script:
     - poetry run python3 ci_action.py NightlyGate linux-clang-release
   artifacts:
@@ -179,7 +193,7 @@ nightly:
   inherit:
     default: false
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - !reference [.nightly, rules]
   needs: [nightly-gate]
   trigger:
     include:

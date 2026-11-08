@@ -23,3 +23,6 @@ race:libgio-2.0.so
 # OpenAL Soft hands voice properties to its mixer thread through lock-free atomics compiled without TSan: a sound played
 # by a game's script (the exported tower defence plays one in onCreate) races in its memcpy / memset only.
 race:libopenal.so
+# Jolt is built without TSan: the job dependencies and barriers that order its jobs run in its own library, where
+# they are not seen, so the job slots and the temporary allocator its jobs share in turn look racy.
+race:JPH::

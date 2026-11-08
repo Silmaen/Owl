@@ -96,7 +96,8 @@ dependency-report:
 # --- Packages ---------------------------------------------------------------------------------------------------
 
 # Each one builds and tests its release tree, then publishes the archives it wrote (and, on Linux x64, the
-# documentation): an archive never comes from untested code.
+# documentation): an archive never comes from untested code. Only `main` publishes: a branch run by hand stops at
+# the archives.
 package-linux-x64:
   extends: .build-linux
   stage: publish
@@ -106,8 +107,8 @@ package-linux-x64:
     PRESET: linux-clang-release
   script:
     - poetry run python3 ci_action.py BuildAndTest "$PRESET"
-    - poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"
-    - poetry run python3 ci_action.py PublishDoc "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"
+    - '[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ] || poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"'
+    - '[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ] || poetry run python3 ci_action.py PublishDoc "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"'
 
 # Cross compiled on x64 (Clang --target=aarch64-linux-gnu, the arm64 sysroot of the image); the tests run under
 # qemu-user, in release because QEMU multiplies the cost of every instruction.
@@ -120,7 +121,7 @@ package-linux-arm64:
     PRESET: linux-cross-arm64
   script:
     - poetry run python3 ci_action.py BuildAndTest "$PRESET"
-    - poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"
+    - '[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ] || poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"'
 
 package-windows-x64:
   extends: .build-windows
@@ -130,4 +131,4 @@ package-windows-x64:
     PRESET: windows-clang-release
   script:
     - poetry run python3 ci_action.py BuildAndTest $env:PRESET
-    - poetry run python3 ci_action.py PublishPackage $env:PRESET -- "--url=$env:OWL_DEPLOY_URL" "--login=$env:OWL_DEPLOY_LOGIN"
+    - if ($env:CI_COMMIT_BRANCH -eq $env:CI_DEFAULT_BRANCH) { poetry run python3 ci_action.py PublishPackage $env:PRESET -- "--url=$env:OWL_DEPLOY_URL" "--login=$env:OWL_DEPLOY_LOGIN" }
