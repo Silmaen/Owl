@@ -24,6 +24,8 @@ def steps(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, list[str] | None]]
 
         monkeypatch.setattr(getattr(module, name), "run", fake_run)
     monkeypatch.delenv("CI_COMMIT_BRANCH", raising=False)
+    # Inside a CI job the real pipeline context would let the chain stand on an earlier success of that job.
+    monkeypatch.setenv("OWL_CI_REUSE", "false")
     return calls
 
 
