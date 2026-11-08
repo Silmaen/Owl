@@ -33,6 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Engine Demo: in the tavern, a `BarrelLine` sensor counting barrels, a hanging bucket on a distance joint, a mesh collider on the table and a line-of-sight raycast for the kick.
 - Owl Nest rewind in Play: a timeline slider and `scene.rewind` (`F9`) seek any frame of the session, simulated again bit for bit from the recorded inputs, and Play goes on from there.
 - `Scene::takeOverReplay` and `getRecordedReplay`: a replay stopped at the frame it reached goes on as a live recording.
+- `GravitySource` component (uniform, point or spherical field) pulling the dynamic bodies, summed with the world gravity.
+- `PhysicBody` `gravityScale` and `gravityFields`: the share of the gravity a body feels and its opt-out of the fields.
+- Scene world gravity (`Physics: gravity:`) and `railsTimeScale`, edited in Owl Nest's *Scene Settings*.
+- `PhysicCommand::getGravityAt` and `predictTrajectory`, Lua `physics.get_gravity` and `physics.predict_trajectory`, and the predicted path of a selected body in the Owl Nest viewport.
+- Time warp: above `railsTimeScale` the awake bodies follow their conic arcs (`math::propagateKepler`, `propagateUniform`) instead of the solver, read by `PhysicCommand::isOnRails` and Lua `physics.is_on_rails`.
+- `SimulationLod` component: far entities are demoted to a coarse tick (`on_demoted`, `on_promoted`, `on_coarse_tick(dt)`) with their body held or on rails, and promoted back near the focus.
+- Lua `entity.set_gravity_source_enabled`, `is_gravity_source_enabled`, `set_simulation_lod_enabled`, `is_simulation_lod_enabled` and `is_demoted`.
+- Owl Nest inspectors for `GravitySource` and `SimulationLod`, a viewport overlay of their radii and ranges, and the `scene.set_physics_settings` command.
+- Engine Demo: in the far orbit the moon pulls three moonlets, `.` and `,` warp the time up to 1000 and the relay demotes them, checked by `far_orbit_warp.owltest`.
 
 ### Changed
 
@@ -50,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The benchmark baseline (`test/bench/baseline/linux-bench.json`) is measured on the GitLab bench runner.
 - Every job a pipeline leaves out shows with a ▶ to run it by hand, and `nightly-jobs` offers each nightly job alone.
 - A build job of a push pipeline reuses an earlier success on the same tree instead of building again.
+- Scene time scale goes up to 100000 (`Scene::setTimeScale`, Lua `time.set_scale`).
 
 ### Removed
 
@@ -59,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Scene::copy` reversed the entity and component order, so the editor's Play could simulate differently from the runner.
 - Lua raw input and the mouse-look of the controllers read the devices directly and escaped the fixed input frame.
+- Owl Nest: stopping a Play that had moved to another level kept that level's renderers, so the edited scene and the next Play drew no meshes.
 - Published Doxygen documentation: the screenshots of the pages show again, the `fix_md_links.py` filter naming the `doc/images` files Doxygen copies into `html/`.
 
 ## [0.6.0] - 2026-11-03

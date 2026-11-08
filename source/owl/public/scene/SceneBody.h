@@ -110,6 +110,10 @@ public:
 	float restitution{0};
 	/// The friction coefficient for contact.
 	float friction{0.5f};
+	/// Share of the gravity the body feels, the world gravity and the `GravitySource` fields: 0 for none.
+	float gravityScale{1.f};
+	/// The body feels the `GravitySource` fields; off leaves it to the world gravity only.
+	bool gravityFields = true;
 };
 
 }// namespace owl::scene

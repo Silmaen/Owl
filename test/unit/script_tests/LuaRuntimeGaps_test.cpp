@@ -150,7 +150,7 @@ TEST_F(LuaRuntimeGaps, addComponentAddsAnOptionalComponentOnly) {
 TEST_F(LuaRuntimeGaps, timeScaleAndPauseDriveTheSceneClock) {
 	m_scene->onStartRuntime();
 	const auto instance = run("time.set_scale(2.5)\nscale = time.get_scale()\ntime.set_paused(true)\n"
-							  "paused = time.is_paused()\ntime.set_scale(99)\nclamped = time.get_scale()");
+							  "paused = time.is_paused()\ntime.set_scale(1e9)\nclamped = time.get_scale()");
 	EXPECT_NEAR(instance->getPropertyFloat("scale").value_or(0.f), 2.5f, 1e-5f);
 	EXPECT_TRUE(instance->getPropertyBool("paused").value_or(false));
 	EXPECT_NEAR(instance->getPropertyFloat("clamped").value_or(0.f), Scene::maxTimeScale, 1e-5f);

@@ -489,6 +489,59 @@ auto luaPhysicsSetGravityScale(lua_State* iState) -> int {
 	return 0;
 }
 
+auto luaPhysicsGetGravity(lua_State* iState) -> int {
+	const bool space = !lua_isnoneornil(iState, 3);
+	const math::vec3f point{static_cast<float>(luaL_checknumber(iState, 1)),
+							static_cast<float>(luaL_checknumber(iState, 2)),
+							space ? static_cast<float>(luaL_checknumber(iState, 3)) : 0.f};
+	const auto* boundScene = getBoundScene(iState);
+	const math::vec3f gravity = boundScene != nullptr ? physics::PhysicCommand::getGravityAt(*boundScene, point)
+													  : math::vec3f{0.f, 0.f, 0.f};
+	lua_pushnumber(iState, static_cast<lua_Number>(gravity.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(gravity.y()));
+	if (!space)
+		return 2;
+	lua_pushnumber(iState, static_cast<lua_Number>(gravity.z()));
+	return 3;
+}
+
+auto luaPhysicsPredictTrajectory(lua_State* iState) -> int {
+	const auto steps = static_cast<uint32_t>(std::clamp<lua_Integer>(
+			luaL_checkinteger(iState, 2), 0, static_cast<lua_Integer>(physics::PhysicCommand::maxPredictionSteps)));
+	const auto entity = findEntity(iState);
+	const auto path = entity ? physics::PhysicCommand::predictTrajectory(*entity, steps) : std::vector<math::vec3f>{};
+	const bool space = entity && isSpaceBody(*entity);
+	lua_createtable(iState, static_cast<int>(path.size()), 0);
+	for (size_t i = 0; i < path.size(); ++i) {
+		lua_createtable(iState, 0, space ? 3 : 2);
+		lua_pushnumber(iState, static_cast<lua_Number>(path[i].x()));
+		lua_setfield(iState, -2, "x");
+		lua_pushnumber(iState, static_cast<lua_Number>(path[i].y()));
+		lua_setfield(iState, -2, "y");
+		if (space) {
+			lua_pushnumber(iState, static_cast<lua_Number>(path[i].z()));
+			lua_setfield(iState, -2, "z");
+		}
+		lua_rawseti(iState, -2, static_cast<lua_Integer>(i) + 1);
+	}
+	return 1;
+}
+
+auto luaPhysicsIsOnRails(lua_State* iState) -> int {
+	const auto* boundScene = getBoundScene(iState);
+	lua_pushboolean(iState, boundScene != nullptr && physics::PhysicCommand::isOnRails(*boundScene) ? 1 : 0);
+	return 1;
+}
+
+auto luaEntityIsDemoted(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	lua_pushboolean(iState, entity && entity->hasComponent<scene::component::SimulationLod>() &&
+											entity->getComponent<scene::component::SimulationLod>().m_demoted
+									? 1
+									: 0);
+	return 1;
+}
+
 auto luaArg(lua_State* iState, const int iIndex) -> float {
 	return static_cast<float>(luaL_checknumber(iState, iIndex));
 }
@@ -3620,6 +3673,17 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "physics", .name = "set_gravity_scale", .function = guarded<luaPhysicsSetGravityScale>,
 		 .description = "Scale the world gravity for this body (0 = none).",
 		 .params = {entityId, {"scale", Number}}},
+		{.table = "physics", .name = "get_gravity", .function = guarded<luaPhysicsGetGravity>,
+		 .description = "Gravity at a point: the world gravity plus the `GravitySource` fields; gz with z for a 3D point.",
+		 .params = {{"x", Number}, {"y", Number}, {"z", Number, true}},
+		 .returns = {{"gx", Number}, {"gy", Number}, {"gz", Number, true}}},
+		{.table = "physics", .name = "predict_trajectory", .function = guarded<luaPhysicsPredictTrajectory>,
+		 .description = "Future positions `{x, y}` (with z for a 3D body) of the body under the gravity, one per fixed "
+						"step, collisions ignored.",
+		 .params = {entityId, {"steps", Integer}}, .returns = {{"points", Table}}},
+		{.table = "physics", .name = "is_on_rails", .function = guarded<luaPhysicsIsOnRails>,
+		 .description = "Whether the last physics step ran on rails: a time warp beyond the scene's rails time scale.",
+		 .returns = {{"on_rails", Boolean}}},
 		{.table = "physics", .name = "raycast", .function = guarded<luaPhysicsRaycast>,
 		 .description = "First body a 2D ray meets, sensors ignored: `{entity, x, y, nx, ny, distance}`, nil for none.",
 		 .params = {{"x", Number}, {"y", Number}, {"dx", Number}, {"dy", Number}, {"distance", Number},
@@ -3899,8 +3963,9 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Real duration of the current frame, in seconds, before the time scale and the pause (menus).",
 		 .returns = {{"seconds", Number}}},
 		{.table = "time", .name = "set_scale", .function = guarded<luaTimeSetScale>,
-		 .description = "Speed of the scene clock (0 to 16, 1 by default): `time.delta`, the ticks, the physics, the "
-						"animations and the behaviours follow it; the UI keeps the real time.",
+		 .description = "Speed of the scene clock (0 to 100000, 1 by default): `time.delta`, the ticks, the physics, "
+						"the animations and the behaviours follow it; the UI keeps the real time. Above the scene's "
+						"rails time scale the time warps: the bodies follow their arcs (`physics.is_on_rails`).",
 		 .params = {{"scale", Number}}},
 		{.table = "time", .name = "get_scale", .function = guarded<luaTimeGetScale>,
 		 .description = "Speed of the scene clock set by `time.set_scale`.", .returns = {{"scale", Number}}},
@@ -4054,6 +4119,27 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::Drift>>,
 		 .description = "Whether the entity's `Drift` moves it; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_gravity_source_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::GravitySource>>,
+		 .description = "Switch the entity's `GravitySource` field on or off; false when it has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_gravity_source_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::GravitySource>>,
+		 .description = "Whether the entity's `GravitySource` pulls; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_simulation_lod_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::SimulationLod>>,
+		 .description = "Allow the entity's `SimulationLod` to demote it, or keep it fully simulated; false when it has "
+						"none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_simulation_lod_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::SimulationLod>>,
+		 .description = "Whether the entity's `SimulationLod` may demote it; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "is_demoted", .function = guarded<luaEntityIsDemoted>,
+		 .description = "Whether the entity's `SimulationLod` demoted it: its script runs `on_coarse_tick` instead of "
+						"`on_update` and `on_tick`.",
+		 .params = {entityId}, .returns = {{"demoted", Boolean}}},
 		{.table = "entity", .name = "set_hud_marker_enabled",
 		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::HudMarker>>,
 		 .description = "Show or hide the entity's `HudMarker`, the HUD icon anchored to it; false when it has none.",

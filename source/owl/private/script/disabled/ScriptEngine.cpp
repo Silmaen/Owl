@@ -114,8 +114,9 @@ auto ScriptEngine::extractFunctionsFromBuffer([[maybe_unused]] const std::vector
 
 auto ScriptEngine::getHookNames() -> const std::vector<std::string>& {
 	static const std::vector<std::string> names{
-			"on_create",        "on_update",       "on_tick",      "on_destroy",  "on_collision", "on_collision_exit",
-			"on_trigger_enter", "on_trigger_exit", "on_triggered", "on_interact", "on_timer"};
+			"on_create",         "on_update",        "on_tick",         "on_destroy",    "on_collision",
+			"on_collision_exit", "on_trigger_enter", "on_trigger_exit", "on_triggered",  "on_interact",
+			"on_timer",          "on_demoted",       "on_promoted",     "on_coarse_tick"};
 	return names;
 }
 

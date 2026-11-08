@@ -28,6 +28,7 @@ namespace {
 constexpr std::string_view g_OnCreate = "on_create";
 constexpr std::string_view g_OnUpdate = "on_update";
 constexpr std::string_view g_OnTick = "on_tick";
+constexpr std::string_view g_OnCoarseTick = "on_coarse_tick";
 constexpr std::string_view g_OnDestroy = "on_destroy";
 constexpr std::string_view g_OnCollision = "on_collision";
 constexpr std::array<std::string_view, 9> g_hiddenGlobals{"_G",    "_VERSION", "coroutine",  "math",        "string",
@@ -179,6 +180,13 @@ void ScriptInstance::onTick(const float iTickTime) const {
 		return;
 	mp_impl->engine.setDeltaTime(static_cast<double>(iTickTime));
 	mp_impl->checkQuota(g_OnTick, mp_impl->engine.callFunction(g_OnTick, iTickTime));
+}
+
+void ScriptInstance::onCoarseTick(const float iSeconds) const {
+	if (!isValid() || mp_impl->disabled)
+		return;
+	mp_impl->engine.setDeltaTime(static_cast<double>(iSeconds));
+	mp_impl->checkQuota(g_OnCoarseTick, mp_impl->engine.callFunction(g_OnCoarseTick, iSeconds));
 }
 
 void ScriptInstance::onDestroy() const {

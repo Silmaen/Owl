@@ -90,8 +90,8 @@ coin.
 **Scene > Scene > Settings** opens the settings of the active scene, as a tab beside Properties. Every change is an
 undo step.
 
-- **Physics**: sub-steps, solver threads (`auto` = 0) and interpolation of the 2D physics ([Physics](physics.md)),
-  read when Play starts.
+- **Physics**: sub-steps, solver threads (`auto` = 0), interpolation, the world **Gravity** and the **Rails Time Scale**
+  above which the time warps ([Physics](physics.md)), set by `scene.set_physics_settings` and read when Play starts.
 - **World Origin**: the floating origin (on / off), its shift radius and the **Origin** itself, moved with
   `scene.set_world_origin` (undoable; the roots keep their place in the world); entities with a **World Position**
   component keep their position in double ([World positions](scene.md#world-positions)).

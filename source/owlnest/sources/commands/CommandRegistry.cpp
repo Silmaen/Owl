@@ -898,6 +898,25 @@ auto setRandomSeed(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs
 	return PreparedCommand{.command = mkUniq<SetRandomSeedCommand>(before, after), .applied = false};
 }
 
+auto setPhysicsSettings(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto before = ioScene->getPhysicsSettings();
+	auto after = before;
+	if (const auto steps = iArgs.get<int64_t>("solver_sub_steps"); steps)
+		after.solverSubSteps = static_cast<uint32_t>(std::max<int64_t>(*steps, 0));
+	if (const auto workers = iArgs.get<int64_t>("worker_count"); workers)
+		after.workerCount = static_cast<uint32_t>(std::max<int64_t>(*workers, 0));
+	if (const auto interpolate = iArgs.get<bool>("interpolate"); interpolate)
+		after.interpolate = *interpolate;
+	if (const auto gravity = iArgs.get<math::vec3>("gravity"); gravity)
+		after.gravity = *gravity;
+	if (const auto rails = iArgs.get<double>("rails_time_scale"); rails)
+		after.railsTimeScale = static_cast<float>(*rails);
+	after = after.clamped();
+	if (after == before)
+		return fail(CommandError::NotApplicable, "the scene already has these physics settings");
+	return PreparedCommand{.command = mkUniq<ModifyPhysicsSettingsCommand>(before, after), .applied = false};
+}
+
 auto setSceneScript(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
 	const auto text = iArgs.getText("script");
 	if (!text.empty()) {
@@ -1807,6 +1826,25 @@ CommandRegistry::CommandRegistry() {
 				   .required = true,
 				   .description = "Seed, a positive integer."}},
 		 .factory = setRandomSeed});
+	add({.name = "scene.set_physics_settings",
+		 .description = "Change the physics settings of the scene, applied when Play starts; the fields not given keep "
+						"their value.",
+		 .args = {{.name = "solver_sub_steps",
+				   .type = ArgType::Integer,
+				   .description = "Collision passes inside one physics step, 1 to 16."},
+				  {.name = "worker_count",
+				   .type = ArgType::Integer,
+				   .description = "Threads of the solver: 0 picks a count from the hardware, 1 is single-threaded."},
+				  {.name = "interpolate",
+				   .type = ArgType::Bool,
+				   .description = "Blend the drawn positions between the last two physics steps."},
+				  {.name = "gravity",
+				   .type = ArgType::Vec3,
+				   .description = "World gravity, summed with the gravity sources, in units per second squared."},
+				  {.name = "rails_time_scale",
+				   .type = ArgType::Number,
+				   .description = "Time scale above which the bodies go on rails (time warp), 1 to 64."}},
+		 .factory = setPhysicsSettings});
 	add({.name = "scene.set_script",
 		 .description = "Choose the script the scene owns (`SceneScript`), with its property values; empty removes "
 						"it. It runs before the entity scripts and has no entity.",

@@ -218,6 +218,8 @@ void SceneDocument::onSceneStop() {
 	}
 	mp_timeline.reset();
 	m_activeScene = m_editorScene;
+	// The play may have left a teleported level: the editor rebuilds the renderer stack of the edited scene.
+	m_sceneSwapped = true;
 	resetHudValues();
 }
 

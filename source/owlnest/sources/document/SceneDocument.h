@@ -418,7 +418,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Whether the active scene has been replaced (teleport / save-load) since
+	 *  Whether the active scene has been replaced (teleport / save-load / Stop) since
 	 * the last `consumeSceneSwapped`. Used by `EditorLayer` to rebuild the
 	 * renderer stack from the new scene's `EnabledRenderers` config — without
 	 * this poll, an in-Play scene swap inherits the previous scene's stack

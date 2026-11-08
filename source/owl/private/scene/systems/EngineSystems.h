@@ -94,6 +94,24 @@ void updateWalkAgents(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Demote the entities with a `SimulationLod` far from the focus, promote the ones it nears, and run the coarse ticks
+ *  of the demoted ones (`owl.simulation_lod`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The tick context.
+ */
+void tickSimulationLod(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
+ *  Whether an entity is demoted by its `SimulationLod`: its script skips `on_update` and `on_tick`.
+ * @param[in] iScene The scene.
+ * @param[in] iEntity The entity.
+ * @return True while demoted.
+ */
+[[nodiscard]] auto isSimulationDemoted(const Scene& iScene, entt::entity iEntity) -> bool;
+
+/**
+ * @brief
  *  Move the entities with a `Drift` (`owl.drift`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

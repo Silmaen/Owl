@@ -387,6 +387,77 @@ public:
 	 */
 	static void setGravityScale(const scene::Entity& iEntity, float iScale);
 
+	/**
+	 * @brief
+	 *  Gravity at a point of a scene: the world gravity plus the fields of the enabled `GravitySource`s.
+	 *
+	 * Read from the components, with or without a running world.
+	 * @param[in] iScene The scene.
+	 * @param[in] iPoint The point, in world units.
+	 * @return The acceleration a body of gravity scale 1 feels there, in world units per second squared.
+	 */
+	[[nodiscard]] static auto getGravityAt(const scene::Scene& iScene, const math::vec3f& iPoint) -> math::vec3f;
+
+	/**
+	 * @brief
+	 *  Future positions of the body of an entity under the gravity, one per fixed step, collisions ignored.
+	 *
+	 * Integrated as the solver does, from the body's position and velocity in a running world, from the entity's
+	 * position at rest otherwise; the sources are taken where they stand.
+	 * @param[in] iEntity The entity with a `PhysicBody`.
+	 * @param[in] iSteps Number of fixed steps, at most `maxPredictionSteps`.
+	 * @return The positions, empty without a dynamic body.
+	 */
+	[[nodiscard]] static auto predictTrajectory(const scene::Entity& iEntity, uint32_t iSteps)
+			-> std::vector<math::vec3f>;
+
+	/// Highest accepted step count of `predictTrajectory()`.
+	static constexpr uint32_t maxPredictionSteps = 100000;
+
+	/**
+	 * @brief
+	 *  Whether the last step of a scene's world ran on rails: a time warp beyond `PhysicsSettings::railsTimeScale`.
+	 *
+	 * On rails the solver stops: every awake dynamic body follows its conic arc around the strongest field (or its
+	 * parabola under the uniform pull) for the warped duration of the step, its rotation held; a sleeping body stays
+	 * where it rests. No contact begins or ends.
+	 * @param[in] iScene The scene.
+	 * @return True when the last step was on rails, false without a world.
+	 */
+	[[nodiscard]] static auto isOnRails(const scene::Scene& iScene) -> bool;
+
+	/**
+	 * @brief
+	 *  Hold the body of an entity out of the simulation, or give it back (the simulation level of detail).
+	 *
+	 * A held body sleeps and is put back to sleep when something wakes it; the fields and the rails leave it alone. Given
+	 * back, it wakes with the velocity passed.
+	 * @param[in] iEntity The entity with a dynamic `PhysicBody`.
+	 * @param[in] iSimulated False holds the body, true gives it back.
+	 * @param[in] iVelocity Velocity the body wakes with when given back.
+	 */
+	static void setSimulated(const scene::Entity& iEntity, bool iSimulated,
+							 const math::vec3f& iVelocity = {0.f, 0.f, 0.f});
+
+	/**
+	 * @brief
+	 *  Whether the body of an entity is simulated, not held by `setSimulated()`.
+	 * @param[in] iEntity The entity.
+	 * @return False while held; true otherwise, without a body too.
+	 */
+	[[nodiscard]] static auto isSimulated(const scene::Entity& iEntity) -> bool;
+
+	/**
+	 * @brief
+	 *  Carry a held body along its arc around the strongest field, as the rails of a time warp do.
+	 * @param[in] iEntity The entity whose body is held.
+	 * @param[in] iVelocity Velocity of the body, kept while it is held.
+	 * @param[in] iSeconds Duration.
+	 * @return The velocity at the end of the arc; `iVelocity` when the body is not held.
+	 */
+	[[nodiscard]] static auto followRails(const scene::Entity& iEntity, const math::vec3f& iVelocity, float iSeconds)
+			-> math::vec3f;
+
 	/// Snapshot of a physics body's runtime state (for save/load), defined with the scene that saves it.
 	using PhysicsSnapshot = scene::PhysicsSnapshot;
 

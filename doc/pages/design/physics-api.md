@@ -66,6 +66,7 @@ a simulation result.
 | 3D     | 3D rigid body component on the same interface                                                     | Done    |
 | 3D     | Collision shapes: box, sphere, capsule, cylinder, convex hull, mesh                               | Done    |
 | 3D     | Raycasting for gameplay (line-of-sight, ground detection), sphere casts                           | Done    |
+| 2D, 3D | Gravity fields, trajectory prediction, time warp on rails ([Large worlds](large-worlds.md))       | Done    |
 | 3D     | Articulated bodies                                                                                | Planned |
 
 ### Planned
@@ -75,5 +76,3 @@ a simulation result.
     - Breakable joints with force and torque thresholds, an event when they break
     - Sub-stepping per scene for long chains of joints
     - Forces and torques applied at a point, from Lua and from systems
-- Gravity fields (uniform, point, spherical) summed per body, in 2D and 3D, trajectory prediction, analytic propagation during
-  time warp ([Large worlds](large-worlds.md))

@@ -140,7 +140,7 @@ Entities:
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
-    text: 'Mouse: pitch / yaw    A / D: roll    W / S: thrust    Q / E, Space / Ctrl: slide    Z: flight assist    J: jump to the other site    Esc: back to the hub'
+    text: 'Mouse: pitch / yaw    A / D: roll    W / S: thrust    Q / E, Space / Ctrl: slide    Z: flight assist    J: jump to the other site    . / ,: time warp    Esc: back to the hub'
     color: [1, 1, 1, 0.85]
     fontSize: 18
     horizontalAlignment: Center
@@ -242,6 +242,30 @@ Entities:
     color: [0.55, 0.95, 1, 1]
     fontSize: 30
     horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 10
+- Entity: 4110000000000000040
+  Tag: {tag: WarpText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 4110000000000000001}
+  UiRect:
+    anchorMin: [0.5, 1]
+    anchorMax: [0.5, 1]
+    pivot: [0, 0]
+    size: [260, 40]
+    sizeUnit: [Pixels, Pixels]
+    offset: [-356, -94]
+  UiText:
+    text: ''
+    color: [0.55, 0.95, 1, 1]
+    fontSize: 20
+    horizontalAlignment: Right
     verticalAlignment: Top
     wrap: true
     fit: Shrink

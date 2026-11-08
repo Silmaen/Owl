@@ -181,3 +181,23 @@ TEST_F(SceneSettingsCommandsTest, SetRandomSeedUndoesAndRejectsBadSeeds) {
 	undo.redo(*scene);
 	EXPECT_EQ(scene->getRandomSeed(), 77u);
 }
+
+TEST_F(SceneSettingsCommandsTest, SetPhysicsSettingsMergesTheFieldsAndUndoes) {
+	const CommandRegistry registry;
+	auto scene = mkShared<scene::Scene>();
+	SceneUndoManager undo;
+	ASSERT_TRUE(registry.execute("scene.set_physics_settings",
+								 {{"gravity", math::vec3{0.f, 0.f, 0.f}}, {"rails_time_scale", 20.0}}, scene, undo));
+	EXPECT_FLOAT_EQ(scene->getPhysicsSettings().gravity.y(), 0.f);
+	EXPECT_FLOAT_EQ(scene->getPhysicsSettings().railsTimeScale, 20.f);
+	EXPECT_EQ(scene->getPhysicsSettings().solverSubSteps, scene::PhysicsSettings{}.solverSubSteps);
+	ASSERT_TRUE(registry.execute("scene.set_physics_settings", {{"rails_time_scale", 1000.0}}, scene, undo));
+	EXPECT_FLOAT_EQ(scene->getPhysicsSettings().railsTimeScale, scene::PhysicsSettings::maxRailsTimeScale);
+	const auto same = registry.execute("scene.set_physics_settings", {{"rails_time_scale", 64.0}}, scene, undo);
+	ASSERT_FALSE(same);
+	EXPECT_EQ(same.error().error, CommandError::NotApplicable);
+	// Edits in a row merge into one step, as a dragged field does.
+	undo.undo(*scene);
+	EXPECT_FLOAT_EQ(scene->getPhysicsSettings().gravity.y(), -9.81f);
+	EXPECT_FLOAT_EQ(scene->getPhysicsSettings().railsTimeScale, scene::PhysicsSettings::defaultRailsTimeScale);
+}

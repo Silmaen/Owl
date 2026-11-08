@@ -348,6 +348,47 @@ public:
 
 	/**
 	 * @brief
+	 *  Share of the gravity that applies to a body.
+	 * @param[in] iBody The body id.
+	 * @return The gravity factor.
+	 */
+	[[nodiscard]] auto getGravityFactor(uint32_t iBody) const -> float;
+
+	/**
+	 * @brief
+	 *  Set the gravity of the world, felt by every dynamic body times its gravity factor.
+	 * @param[in] iGravity The acceleration, in world units per second squared.
+	 */
+	void setGravity(const math::vec3f& iGravity);
+
+	/**
+	 * @brief
+	 *  Accelerate a dynamic body during the next step, as the world gravity does, without waking it.
+	 *
+	 * The force (the acceleration times the mass) is applied at each collision step of the next `step()`, then cleared.
+	 * @param[in] iBody The body id.
+	 * @param[in] iAcceleration The acceleration, in world units per second squared.
+	 */
+	void accelerate(uint32_t iBody, const math::vec3f& iAcceleration);
+
+	/**
+	 * @brief
+	 *  Put a body to sleep: it stops moving until something wakes it.
+	 * @param[in] iBody The body id.
+	 */
+	void sleep(uint32_t iBody);
+
+	/**
+	 * @brief
+	 *  Move a body and set its linear velocity, its rotation kept, without waking it nor touching its contacts.
+	 * @param[in] iBody The body id.
+	 * @param[in] iPosition The position, in world units.
+	 * @param[in] iVelocity The linear velocity (ignored by a sleeping body).
+	 */
+	void setSpaceMotion(uint32_t iBody, const math::vec3f& iPosition, const math::vec3f& iVelocity);
+
+	/**
+	 * @brief
 	 *  Check if a body is simulated (not sleeping).
 	 * @param[in] iBody The body id.
 	 * @return True if awake.

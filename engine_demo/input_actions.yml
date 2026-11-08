@@ -11,6 +11,14 @@ actions:
     type: button
     bindings:
       - {key: J}
+  - name: orbit_warp_up
+    type: button
+    bindings:
+      - {key: Period}
+  - name: orbit_warp_down
+    type: button
+    bindings:
+      - {key: Comma}
   - name: inventory
     type: button
     bindings:

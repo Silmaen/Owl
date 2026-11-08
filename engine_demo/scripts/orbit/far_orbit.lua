@@ -6,11 +6,16 @@
 -- within `dock_distance` of it, its `HudMarker` shows the way), which marks the place done and goes back to the hub. J
 -- jumps between the station and the relay, 400 000 km apart; Escape (or Start) goes back to the hub without completing
 -- it. The planet Cinder hangs below the station (a planet layer, drawn in scaled space from the relay), and debris
--- fields stream in as world partition cells along the way.
+-- fields stream in as world partition cells along the way. The moon pulls three moonlets (a `GravitySource`, the
+-- scene's world gravity is zero): launched on circular orbits at the first update, they follow them in the solver.
+-- Period and comma raise and lower the time warp (1, 10, 100, 1000): above the scene's rails time scale the moonlets go
+-- on rails, their conic arcs computed in closed form. At the relay their `SimulationLod` demotes them: they keep
+-- orbiting on a coarse tick and are back in the solver on the return.
 -- Demonstrates: transform.get_world_position / set_world_position (double precision), scene.get_world_origin, the
 -- floating origin of a scene (`FloatingOrigin:`), the world partition (`WorldPartition:`), a `Planet`,
 -- scene.get_loaded_world_cells, scene.get_planet_altitude, a distance in double, ui.set_text, entity.get_ship_speed,
--- entity.get_ship_throttle, entity.is_ship_assist_on, ui.set_progress, ui.set_visible.
+-- entity.get_ship_throttle, entity.is_ship_assist_on, ui.set_progress, ui.set_visible, physics.get_gravity,
+-- physics.set_velocity, physics.is_on_rails, time.set_scale, entity.is_demoted.
 
 properties = {
     { name = "hub_scene", type = "string", default = "scenes/world_map.owl" },
@@ -20,7 +25,17 @@ properties = {
     { name = "debris", type = "string", default = "Debris" },
     { name = "dock_distance", type = "float", default = 6.0, min = 0.5 },
     { name = "docked_delay", type = "float", default = 1.5, min = 0 },
+    { name = "moon", type = "string", default = "Moon" },
+    { name = "moonlet_count", type = "int", default = 3, min = 0 },
 }
+
+local warp_levels = { 1, 10, 100, 1000 }
+local warp_index = 1
+local warp_id = 0
+local moon_id = 0
+local moonlets = {}
+local moonlet_radii = {}
+local launched = false
 
 local readout_id = 0
 local objective_id = 0
@@ -48,6 +63,14 @@ function on_create()
     camera_id = scene.find_entity(camera)
     planet_id = scene.find_entity(planet)
     debris_id = scene.find_entity(debris)
+    warp_id = ui.find("WarpText")
+    moon_id = scene.find_entity(moon)
+    for index = 0, moonlet_count - 1 do
+        local id = scene.find_entity("Moonlet" .. index)
+        if id ~= 0 then
+            moonlets[#moonlets + 1] = id
+        end
+    end
     gamestate.set("orbit_docked", 0)
     ui.transition_fade_in(0.4)
 end
@@ -83,6 +106,58 @@ local function update_dashboard(distance)
     end
 end
 
+-- Offset of a moonlet from the moon, in metres.
+local function moon_offset(id)
+    local mx, my, mz = transform.get_world_position(moon_id)
+    local x, y, z = transform.get_world_position(id)
+    return x - mx, y - my, z - mz
+end
+
+-- Each moonlet on a circular orbit around the moon's Y axis, at the speed its pull asks: v = sqrt(g r).
+local function launch_moonlets()
+    launched = true
+    if moon_id == 0 then
+        return
+    end
+    for index, id in ipairs(moonlets) do
+        local rx, ry, rz = moon_offset(id)
+        local r = math.sqrt(rx * rx + ry * ry + rz * rz)
+        -- The physics works around the floating origin: the local position of the root entity.
+        local gx, gy, gz = physics.get_gravity(transform.get_position(id))
+        local speed = math.sqrt(math.sqrt(gx * gx + gy * gy + gz * gz) * r)
+        local flat = math.sqrt(rx * rx + rz * rz)
+        physics.set_velocity(id, speed * rz / flat, 0, -speed * rx / flat)
+        moonlet_radii[index] = r
+    end
+    gamestate.set("orbit_launched", 1)
+end
+
+-- The time warp and the moonlets: warp level, rails, demoted count and how far the orbits drifted.
+local function update_warp()
+    if input.is_action_just_pressed("orbit_warp_up") and warp_index < #warp_levels then
+        warp_index = warp_index + 1
+        time.set_scale(warp_levels[warp_index])
+    elseif input.is_action_just_pressed("orbit_warp_down") and warp_index > 1 then
+        warp_index = warp_index - 1
+        time.set_scale(warp_levels[warp_index])
+    end
+    local demoted = 0
+    local drift = 0
+    for index, id in ipairs(moonlets) do
+        if entity.is_demoted(id) then
+            demoted = demoted + 1
+        end
+        local rx, ry, rz = moon_offset(id)
+        drift = math.max(drift, math.abs(math.sqrt(rx * rx + ry * ry + rz * rz) - moonlet_radii[index]) / moonlet_radii[index])
+    end
+    local rails = physics.is_on_rails()
+    gamestate.set("orbit_warp", warp_levels[warp_index])
+    gamestate.set("orbit_rails", rails and 1 or 0)
+    gamestate.set("orbit_demoted", demoted)
+    gamestate.set("orbit_drift", drift)
+    ui.set_text(warp_id, string.format("WARP x%d%s", warp_levels[warp_index], rails and "  ON RAILS" or ""))
+end
+
 function on_update(dt)
     if leaving or ui.is_transition_active() then
         return
@@ -101,6 +176,10 @@ function on_update(dt)
     if camera_id == 0 then
         return
     end
+    if not launched then
+        launch_moonlets()
+    end
+    update_warp()
     local x, y, z = transform.get_world_position(camera_id)
     if input.is_action_just_pressed("orbit_jump") then
         local step = at_relay and -relay_offset or relay_offset

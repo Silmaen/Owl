@@ -820,6 +820,7 @@ void Viewport::renderOverlay() const {
 		renderSplineOverlay(activeScene);
 		renderWalkAreaOverlay(activeScene);
 		renderJointOverlay(activeScene);
+		renderGravityOverlay(activeScene);
 		renderSequenceOverlay(activeScene);
 		renderSkeletonMarkers(activeScene);
 		renderWorldCells(activeScene);

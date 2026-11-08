@@ -224,6 +224,9 @@ void serializePhysicsSettings(YAML::Emitter& ioEmitter, const PhysicsSettings& i
 	ioEmitter << YAML::Key << "solverSubSteps" << YAML::Value << iSettings.solverSubSteps;
 	ioEmitter << YAML::Key << "interpolate" << YAML::Value << iSettings.interpolate;
 	ioEmitter << YAML::Key << "workerCount" << YAML::Value << iSettings.workerCount;
+	ioEmitter << YAML::Key << "gravity" << YAML::Value << YAML::Flow << YAML::BeginSeq << iSettings.gravity.x()
+			  << iSettings.gravity.y() << iSettings.gravity.z() << YAML::EndSeq;
+	ioEmitter << YAML::Key << "railsTimeScale" << YAML::Value << iSettings.railsTimeScale;
 	ioEmitter << YAML::EndMap;
 }
 
@@ -236,6 +239,9 @@ auto deserializePhysicsSettings(const core::YamlNode& iNode) -> PhysicsSettings 
 	settings.solverSubSteps = iNode["solverSubSteps"].as<uint32_t>(settings.solverSubSteps);
 	settings.interpolate = iNode["interpolate"].as<bool>(settings.interpolate);
 	settings.workerCount = iNode["workerCount"].as<uint32_t>(settings.workerCount);
+	if (const auto gravityNode = iNode["gravity"]; gravityNode)
+		settings.gravity = gravityNode.as<math::vec3f>();
+	settings.railsTimeScale = iNode["railsTimeScale"].as<float>(settings.railsTimeScale);
 	return settings.clamped();
 }
 

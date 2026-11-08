@@ -160,11 +160,11 @@ deterministic simulation and replay, Jolt, gravity fields.
   ([Physics API](design/physics-api.md))
 - ![Planned][planned] Articulated bodies: compound bodies rebuilt at runtime, breakable joints, mass recomputed,
   sub-stepping ([Physics API](design/physics-api.md))
-- ![Planned][planned] Gravity fields (uniform, point, spherical) in 2D and 3D, with trajectory prediction
+- ![Done][done] Gravity fields (uniform, point, spherical) in 2D and 3D, with trajectory prediction
   ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Time warp: scaled clock, bodies handed to analytic propagation and back
+- ![Done][done] Time warp: scaled clock, bodies handed to analytic propagation and back
   ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Simulation level of detail: far entities on a coarse model, on a slower tick
+- ![Done][done] Simulation level of detail: far entities on a coarse model, on a slower tick
   ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Navigation (NavMesh generation, A*, dynamic avoidance); on top of the tile-graph pathfinding
 - ![Planned][planned] Behaviour trees with a visual editor (`.owlbt`)

@@ -682,6 +682,35 @@ void JoltWorld::setGravityFactor(const uint32_t iBody, const float iFactor) {
 	bodies.ActivateBody(toBodyId(iBody));
 }
 
+auto JoltWorld::getGravityFactor(const uint32_t iBody) const -> float {
+	return mp_impl->bodies().GetGravityFactor(toBodyId(iBody));
+}
+
+void JoltWorld::setGravity(const math::vec3f& iGravity) {
+	mp_impl->system->SetGravity({iGravity.x(), iGravity.y(), iGravity.z()});
+}
+
+void JoltWorld::accelerate(const uint32_t iBody, const math::vec3f& iAcceleration) {
+	const JPH::BodyLockWrite lock(mp_impl->system->GetBodyLockInterfaceNoLock(), toBodyId(iBody));
+	if (!lock.Succeeded() || !lock.GetBody().IsDynamic())
+		return;
+	auto& body = lock.GetBody();
+	const float inverseMass = body.GetMotionProperties()->GetInverseMass();
+	if (inverseMass <= 0.f)
+		return;
+	body.AddForce(JPH::Vec3(iAcceleration.x(), iAcceleration.y(), iAcceleration.z()) / inverseMass);
+}
+
+void JoltWorld::sleep(const uint32_t iBody) { mp_impl->bodies().DeactivateBody(toBodyId(iBody)); }
+
+void JoltWorld::setSpaceMotion(const uint32_t iBody, const math::vec3f& iPosition, const math::vec3f& iVelocity) {
+	auto& bodies = mp_impl->bodies();
+	const auto id = toBodyId(iBody);
+	bodies.SetPosition(id, JPH::RVec3(iPosition.x(), iPosition.y(), iPosition.z()), JPH::EActivation::DontActivate);
+	if (bodies.IsActive(id))
+		bodies.SetLinearVelocity(id, {iVelocity.x(), iVelocity.y(), iVelocity.z()});
+}
+
 auto JoltWorld::isAwake(const uint32_t iBody) const -> bool { return mp_impl->bodies().IsActive(toBodyId(iBody)); }
 
 void JoltWorld::wake(const uint32_t iBody) { mp_impl->bodies().ActivateBody(toBodyId(iBody)); }

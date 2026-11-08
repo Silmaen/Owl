@@ -26,6 +26,12 @@ WorldPartition:
     - {coords: [299200000, 0, -3], scene: scenes/orbit_cells/debris_b.owl}
     - {coords: [299199999, 0, -5], scene: scenes/orbit_cells/debris_c.owl}
     - {coords: [300000000, 0, -1], scene: scenes/orbit_cells/debris_b.owl}
+Physics:
+  solverSubSteps: 2
+  interpolate: true
+  workerCount: 0
+  gravity: [0, 0, 0]
+  railsTimeScale: 8
 Entities:
   - Entity: 4100000000000000001
     Tag:
@@ -260,6 +266,79 @@ Entities:
       mesh: gid:87e1b9f25a08e233:meshes/orbit/moon.glb
       color: [1, 1, 1, 1]
       transparent: false
+    GravitySource: {type: Spherical, enabled: true, strength: 1.5, radius: 60, range: 0, direction: [0, -1, 0]}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000080
+    Tag:
+      tag: Moonlet0
+    Transform:
+      translation: [350, -60, -420]
+      rotation: [0.3, 0.0, 0.1]
+      scale: [1.4, 1.4, 1.4]
+    WorldPosition: {position: [149600000350, -60, -420]}
+    MeshRenderer:
+      mesh: gid:2db3eabb42e96f46:meshes/orbit/rock_a.glb
+      color: [0.8, 0.75, 0.7, 1]
+      transparent: false
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [1.8, 1.8, 1.8]
+      density: 1
+      restitution: 0.2
+      friction: 0.5
+    SimulationLod: {enabled: true, radius: 2000, hysteresis: 200, coarseInterval: 15, model: Rails}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000081
+    Tag:
+      tag: Moonlet1
+    Transform:
+      translation: [220, -60, -255]
+      rotation: [0.3, 0.7, 0.1]
+      scale: [1.1, 1.1, 1.1]
+    WorldPosition: {position: [149600000220, -60, -255]}
+    MeshRenderer:
+      mesh: gid:2db3eabb42e96f46:meshes/orbit/rock_a.glb
+      color: [0.8, 0.75, 0.7, 1]
+      transparent: false
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [1.8, 1.8, 1.8]
+      density: 1
+      restitution: 0.2
+      friction: 0.5
+    SimulationLod: {enabled: true, radius: 2000, hysteresis: 200, coarseInterval: 15, model: Rails}
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000082
+    Tag:
+      tag: Moonlet2
+    Transform:
+      translation: [70, -35, -510]
+      rotation: [0.3, 1.4, 0.1]
+      scale: [1.7, 1.7, 1.7]
+    WorldPosition: {position: [149600000070, -35, -510]}
+    MeshRenderer:
+      mesh: gid:2db3eabb42e96f46:meshes/orbit/rock_a.glb
+      color: [0.8, 0.75, 0.7, 1]
+      transparent: false
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [1.8, 1.8, 1.8]
+      density: 1
+      restitution: 0.2
+      friction: 0.5
+    SimulationLod: {enabled: true, radius: 2000, hysteresis: 200, coarseInterval: 15, model: Rails}
     Visibility:
       gameVisible: true
   - Entity: 4100000000000000010

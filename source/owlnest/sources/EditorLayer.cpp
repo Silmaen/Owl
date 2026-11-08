@@ -1579,7 +1579,8 @@ void EditorLayer::onSceneStop() {
 		finishBoundedPlay(/*iInterrupted=*/true);
 	doc->onSceneStop();
 	saveRecording(*doc);
-	m_sceneHierarchy.setContext(doc->getActiveScene());
+	if (doc->consumeSceneSwapped())
+		syncActiveDocumentPanels();
 }
 
 void EditorLayer::onSceneStep() {

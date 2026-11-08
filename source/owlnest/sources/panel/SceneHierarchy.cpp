@@ -346,6 +346,8 @@ auto componentIconName(const char* iCompName) -> const char* {
 			{"Text Renderer", "comp_text"},
 			{"Physical body", "comp_physics"},
 			{"Physics Joint", "comp_physics"},
+			{"Gravity Source", "comp_physics"},
+			{"Simulation LOD", "comp_physics"},
 			{"Native Script", "comp_script"},
 			{"Trigger", "comp_trigger"},
 			{"Player", "comp_player"},

@@ -169,6 +169,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Call the script's `on_coarse_tick` callback, the slow tick of an entity demoted by its `SimulationLod`.
+	 * @param[in] iSeconds Duration since the previous coarse tick, in seconds (also what `time.delta()` returns).
+	 */
+	void onCoarseTick(float iSeconds) const;
+
+	/**
+	 * @brief
 	 *  Call the script's `on_destroy` callback.
 	 */
 	void onDestroy() const;

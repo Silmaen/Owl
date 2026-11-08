@@ -56,6 +56,8 @@ until `destroy(scene)`, `onEndRuntime()` or its destructor, so nothing dangles. 
 | density       | `float`     | `1.0`       | Material density, affects mass                                  |
 | restitution   | `float`     | `0.0`       | Bounciness coefficient (0 = no bounce, 1 = full)                |
 | friction      | `float`     | `0.5`       | Surface friction coefficient                                    |
+| gravityScale  | `float`     | `1.0`       | Share of the gravity felt, 0 for none (see [Gravity](#gravity)) |
+| gravityFields | `bool`      | `true`      | Feels the `GravitySource` fields; off leaves the world gravity  |
 | bodyId        | `uint64_t`  | `0`         | Runtime-only internal id (not serialized)                       |
 
 `bodyId` is assigned by `PhysicCommand::init()` and maps to the Jolt body of the body table.
@@ -113,7 +115,7 @@ stateDiagram-v2
 ### init(scene)
 
 Called from `Scene::onStartRuntime()`: reads the scene's [physics settings](#fixed-step), creates the Jolt world
-(gravity `(0, -9.81)`, its jobs run on the [dedicated executor](#multi-threaded-solver) when several threads are
+(gravity from the [settings](#gravity), its jobs run on the [dedicated executor](#multi-threaded-solver) when several threads are
 used), then for each entity with a `PhysicBody` and a `Transform`:
 
 1. a Jolt body at the **world** transform (`Scene::getWorldTransform()`), with its type, locked to the XY plane
@@ -160,11 +162,13 @@ not on how frames are cut. The tick rate is a project setting (`simulation:` in 
 [Fixed simulation tick](scene.md#fixed-tick)); at the default 60 Hz a frame of 40 ms runs two steps and keeps
 6.7 ms, a frame of 4 ms runs none and only moves the interpolated transforms.
 
-| Setting          | Default | Range   | Meaning                                                    |
-|------------------|---------|---------|------------------------------------------------------------|
-| `solverSubSteps` | `2`     | 1 to 16 | Jolt collision steps inside one step                       |
-| `interpolate`    | `true`  |         | Draw the transforms blended between the last two steps     |
-| `workerCount`    | `0`     | 0 to 32 | Solver threads: 0 automatic, 1 single-threaded (see below) |
+| Setting          | Default     | Range    | Meaning                                                                 |
+|------------------|-------------|----------|-------------------------------------------------------------------------|
+| `solverSubSteps` | `2`         | 1 to 16  | Jolt collision steps inside one step                                    |
+| `interpolate`    | `true`      |          | Draw the transforms blended between the last two steps                  |
+| `workerCount`    | `0`         | 0 to 32  | Solver threads: 0 automatic, 1 single-threaded (see below)              |
+| `gravity`        | `0 -9.81 0` | max 1000 | World gravity of every dynamic body, per axis ([Gravity](#gravity))     |
+| `railsTimeScale` | `8`         | 1 to 64  | Time scale above which the bodies go on rails ([Time Warp](#time-warp)) |
 
 The settings belong to the scene (`Scene::getPhysicsSettings()`, `physics::PhysicsSettings`) and are saved in the
 scene file only when they differ from the defaults:
@@ -175,12 +179,14 @@ Physics:
   solverSubSteps: 3
   interpolate: true
   workerCount: 0
+  gravity: [0, -9.81, 0]
+  railsTimeScale: 8
 Entities: ...
 ```
 
 The `tickRate` and `maxStepsPerFrame` keys a scene may still carry are ignored with a warning: the project's
 tick rate and tick bound replace them. In Owl Nest the settings are edited in the **Physics** section of the *Scene
-Settings* panel (undoable; `solverSubSteps` is labelled *Collision Steps*), the tick rate in *Project Settings*; they are read when Play starts.
+Settings* panel (undoable, through the `scene.set_physics_settings` command; `solverSubSteps` is labelled *Collision Steps*, `railsTimeScale` *Rails Time Scale*), the tick rate in *Project Settings*; they are read when Play starts.
 
 - **Step bound.** A long frame (synchronous load, window drag) runs `maxTicksPerFrame` ticks and drops the rest:
   the game slows down for that frame instead of stalling under an ever larger backlog (spiral of death), and no
@@ -376,6 +382,75 @@ body. Joints are part of `saveState` / `restoreState`. Owl Nest draws the select
 cross, line to the connected body, axis.
 
 Articulated bodies and breakable joints are not available yet ([Physics API](design/physics-api.md)).
+
+## Gravity {#gravity}
+
+A dynamic body feels the **world gravity** of the scene (`PhysicsSettings::gravity`, a `vec3`, `(0, -9.81, 0)` by
+default; edited as *Gravity* in the *Physics* section of *Scene Settings*) plus the pull of every enabled
+`GravitySource` that reaches it, the sum scaled by the body's `gravityScale`. A 2D body takes the X and Y of the
+result. The fields are read at every fixed step as a force applied before the solver step, so the solver integrates
+them like gravity.
+
+A `GravitySource` ([Scene](scene.md#gravity-source-component)) is centred on its entity; `type` picks how the pull varies:
+
+| Type        | Pull                                                                                  |
+|-------------|---------------------------------------------------------------------------------------|
+| `Uniform`   | `strength` along `direction` everywhere within `range`: a gravity zone                |
+| `Point`     | Toward the entity, `strength` at `radius` and falling with the square of the distance |
+| `Spherical` | As `Point` outside `radius`; inside, a solid ball pulling less toward its centre      |
+
+Several sources add up. `range` bounds the reach of a source (0: the whole scene). A body opts out of the fields with
+`gravityFields` off (it keeps the world gravity), and out of every gravity with `gravityScale` 0.
+
+```c++
+const auto g = physics::PhysicCommand::getGravityAt(scene, {0.f, 120.f, 0.f}); // acceleration at a point
+const auto path = physics::PhysicCommand::predictTrajectory(entity, 600);      // one position per fixed step
+```
+
+`getGravityAt` reads the components, with or without a running world, for a body of gravity scale 1. `predictTrajectory`
+integrates the position and velocity of a dynamic body step by step as the solver does, collisions ignored, and returns
+at most `PhysicCommand::maxPredictionSteps` positions; the sources are taken where they stand. Lua `physics.get_gravity(x, y[, z])` and
+`physics.predict_trajectory(id, steps)` ([reference](lua-api-physics.md)) read the same values, and
+`entity.set_gravity_source_enabled` / `entity.is_gravity_source_enabled` switch a field.
+
+Owl Nest draws the fields and the predicted path of the selection ([Viewport](editor_viewport.md#viewport-gravity)).
+
+## Time Warp {#time-warp}
+
+The scene clock runs up to `Scene::maxTimeScale` (100000; Lua `time.set_scale`). Up to `railsTimeScale` the ticks simply
+come faster. Above it the time **warps**: the ticks run at `railsTimeScale` at most, each one lasting
+`Scene::getRailsFactor()` times its normal duration (the scale over `railsTimeScale`), and the physics goes **on rails**
+(`PhysicCommand::isOnRails`, Lua `physics.is_on_rails`):
+
+- the solver stops stepping: no contact begins or ends;
+- every awake dynamic body follows its conic arc around the strongest `Point` or `Spherical` source at its position,
+  or the parabola of the uniform pull, for the warped duration of the step, its rotation held;
+- a sleeping body stays where it rests;
+- a body reaching the surface (`radius`) of its source stops on it;
+- a source that moves (an orbiting moon) carries its orbiters along.
+
+The arcs are closed-form Kepler orbits (`math::propagateKepler`, `math::propagateUniform` in `math/Orbit.h`), so any
+warp duration costs one evaluation. When the scale drops back to `railsTimeScale` or below, the bodies are in the solver
+again with the velocity of their arc.
+
+## Simulation Level of Detail {#simulation-lod}
+
+An entity with a `SimulationLod` ([Scene](scene.md#simulation-lod-component)) leaves the full simulation when it is far
+from the **focus**: every enabled `StreamingSource`, else the primary camera. Beyond `radius + hysteresis` of all the
+foci it is **demoted**; within `radius` it is **promoted** back. The system `owl.simulation_lod` runs on the fixed tick in
+the `Scripts` phase, before `owl.scripts`, in a fixed order, so a replay meets promotions and demotions at the same ticks.
+
+While demoted:
+
+- its script gets `on_demoted()` once, then `on_coarse_tick(dt)` every `coarseInterval` ticks (`dt` spans the skipped
+  ticks) instead of `on_update` and `on_tick`; `on_promoted()` follows the promotion;
+- its physics body is held asleep by the solver (`PhysicCommand::setSimulated(entity, false, velocity)`), still in the
+  world so snapshots and contacts stay consistent; with the `Rails` model it moves along its conic arc around the
+  strongest source on every coarse tick (`PhysicCommand::followRails`), with `Hold` it stays put;
+- on promotion the body wakes with its velocity (`isSimulated` tells which state it is in).
+
+Lua `entity.is_demoted(id)` reads the state, `entity.set_simulation_lod_enabled` / `is_simulation_lod_enabled` switch the
+component.
 
 ## Player Integration
 

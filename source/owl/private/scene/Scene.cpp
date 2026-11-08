@@ -473,6 +473,7 @@ void Scene::onStartRuntime() {
 	m_randomStreams.clear();
 	m_runtimeSeconds = 0.0;
 	m_timeScale = 1.f;
+	m_railsFactor = 1.0;
 	m_paused = false;
 	m_pendingSpawns.clear();
 	syncWorldPositions();
@@ -653,7 +654,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		endReplayFrame();
 		return;
 	}
-	const uint32_t ticks = m_simulationClock.advance(sceneStep);
+	const uint32_t ticks = m_simulationClock.advance(m_railsFactor > 1.0 ? m_clockTimeStep : sceneStep);
 	const SystemContext context{.timeStep = sceneStep,
 								.render = iRender,
 								.tickCount = ticks,
@@ -695,11 +696,24 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 }
 
 void Scene::updateScaledTimeStep(const core::Timestep& iTimeStep) {
-	// Assigned into a member: the time step's buffers are reused instead of allocated every frame.
-	m_scaledTimeStep = iTimeStep;
-	if (const float scale = getEffectiveTimeScale(); scale < 1.f || scale > 1.f)
-		m_scaledTimeStep.forceUpdate(std::chrono::duration_cast<core::Timestep::duration>(std::chrono::duration<double>(
-				static_cast<double>(iTimeStep.getSeconds()) * static_cast<double>(scale))));
+	const auto scaled = [&iTimeStep](core::Timestep& ioStep, const double iScale) -> void {
+		// Assigned into a member: the time step's buffers are reused instead of allocated every frame.
+		ioStep = iTimeStep;
+		if (iScale < 1.0 || iScale > 1.0)
+			ioStep.forceUpdate(std::chrono::duration_cast<core::Timestep::duration>(
+					std::chrono::duration<double>(static_cast<double>(iTimeStep.getSeconds()) * iScale)));
+	};
+	const auto scale = static_cast<double>(getEffectiveTimeScale());
+	scaled(m_scaledTimeStep, scale);
+	const auto railsScale = static_cast<double>(m_physicsSettings.clamped().railsTimeScale);
+	m_railsFactor = scale > railsScale ? scale / railsScale : 1.0;
+	if (m_railsFactor <= 1.0)
+		return;
+	// The ticks run at the rails scale at most; each one stands for a longer stretch of the scene time.
+	scaled(m_clockTimeStep, railsScale);
+	m_warpedTickStep = m_simulationClock.getStepTimestep();
+	m_warpedTickStep.forceUpdate(std::chrono::duration_cast<core::Timestep::duration>(
+			std::chrono::duration<double>(m_simulationClock.getStepSeconds() * m_railsFactor)));
 }
 
 void Scene::setTimeScale(const float iScale) {
@@ -754,7 +768,7 @@ void Scene::runSimulationTicks(const SystemContext& iFrame) {
 	if (iFrame.tickCount == 0)
 		return;
 	// Assigned into a member: the time step's buffers are reused instead of allocated every frame.
-	m_tickContext.timeStep = m_simulationClock.getStepTimestep();
+	m_tickContext.timeStep = m_railsFactor > 1.0 ? m_warpedTickStep : m_simulationClock.getStepTimestep();
 	m_tickContext.render = iFrame.render;
 	m_tickContext.tickCount = iFrame.tickCount;
 	m_tickContext.alpha = iFrame.alpha;
@@ -4430,6 +4444,18 @@ OWL_API void Scene::onComponentAdded<component::WalkBehind>([[maybe_unused]] con
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>([[maybe_unused]] const Entity& iEntity,
 													   [[maybe_unused]] component::Drift& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::GravitySource>([[maybe_unused]] const Entity& iEntity,
+															   [[maybe_unused]] component::GravitySource& ioComponent) {
+}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::SimulationLod>([[maybe_unused]] const Entity& iEntity,
+															   component::SimulationLod& ioComponent) {
+	ioComponent.m_demoted = false;
+	ioComponent.m_coarseCountdown = 0;
+}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::FollowTarget>([[maybe_unused]] const Entity& iEntity,

@@ -22,6 +22,7 @@
 #include "FirstPersonController.h"
 #include "FlyCamera.h"
 #include "FollowTarget.h"
+#include "GravitySource.h"
 #include "Hierarchy.h"
 #include "HudMarker.h"
 #include "ID.h"
@@ -50,6 +51,7 @@
 #include "ReverbZone.h"
 #include "SequencePlayer.h"
 #include "ShipController.h"
+#include "SimulationLod.h"
 #include "SoundListener.h"
 #include "SoundSource.h"
 #include "Spline.h"
@@ -105,6 +107,7 @@ concept isComponent =
 		std::is_same_v<Component, WalkArea> || std::is_same_v<Component, WalkAgent> ||
 		std::is_same_v<Component, WalkBehind> || std::is_same_v<Component, SequencePlayer> ||
 		std::is_same_v<Component, Drift> || std::is_same_v<Component, FollowTarget> ||
+		std::is_same_v<Component, GravitySource> || std::is_same_v<Component, SimulationLod> ||
 		std::is_same_v<Component, RenderTarget> || std::is_same_v<Component, ProceduralSky> ||
 		std::is_same_v<Component, DayNightCycle> || std::is_same_v<Component, ReflectionProbe> ||
 		std::is_same_v<Component, FirstPersonController> || std::is_same_v<Component, ShipController> ||
@@ -174,10 +177,10 @@ using CopiableComponents =
 				   Visibility, Hierarchy, SoundSource, SoundListener, ReverbZone, AdaptiveMusic, LuaScript, PrefabLink,
 				   RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, ParticleEmitter,
 				   Trail, Planet, StreamingSource, Oscillator, Patrol, Spline, SplineFollower, WalkArea, WalkAgent,
-				   WalkBehind, SequencePlayer, Drift, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle,
-				   ReflectionProbe, FirstPersonController, ShipController, UiButton, UiImage, UiPanel, UiProgressBar,
-				   UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, HudMarker, UiWindow, UiFocus,
-				   UiScrollView, UiList>;
+				   WalkBehind, SequencePlayer, Drift, GravitySource, SimulationLod, FollowTarget, RenderTarget,
+				   ProceduralSky, DayNightCycle, ReflectionProbe, FirstPersonController, ShipController, UiButton,
+				   UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip,
+				   HudMarker, UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
  * @brief
@@ -191,10 +194,10 @@ using SerializableComponents =
 				   BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener, ReverbZone, AdaptiveMusic,
 				   LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld, VoxelPlayer,
 				   LightFlicker, ParticleEmitter, Trail, Planet, StreamingSource, Oscillator, Patrol, Spline,
-				   SplineFollower, WalkArea, WalkAgent, WalkBehind, SequencePlayer, Drift, FollowTarget, RenderTarget,
-				   ProceduralSky, DayNightCycle, ReflectionProbe, FirstPersonController, ShipController, UiButton,
-				   UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip,
-				   HudMarker, UiWindow, UiFocus, UiScrollView, UiList>;
+				   SplineFollower, WalkArea, WalkAgent, WalkBehind, SequencePlayer, Drift, GravitySource, SimulationLod,
+				   FollowTarget, RenderTarget, ProceduralSky, DayNightCycle, ReflectionProbe, FirstPersonController,
+				   ShipController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout,
+				   UiToolCursor, UiTooltip, HudMarker, UiWindow, UiFocus, UiScrollView, UiList>;
 
 /**
  * @brief
@@ -208,8 +211,9 @@ using OptionalComponents =
 				   SoundListener, ReverbZone, AdaptiveMusic, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall,
 				   RendererTag, VoxelWorld, VoxelPlayer, LightFlicker, ParticleEmitter, Trail, Planet, StreamingSource,
 				   Oscillator, Patrol, Spline, SplineFollower, WalkArea, WalkAgent, WalkBehind, SequencePlayer, Drift,
-				   FollowTarget, RenderTarget, ProceduralSky, DayNightCycle, ReflectionProbe, FirstPersonController,
-				   ShipController, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText, UiLayout,
-				   UiToolCursor, UiTooltip, HudMarker, UiWindow, UiFocus, UiScrollView, UiList>;
+				   GravitySource, SimulationLod, FollowTarget, RenderTarget, ProceduralSky, DayNightCycle,
+				   ReflectionProbe, FirstPersonController, ShipController, UiButton, UiImage, UiPanel, UiProgressBar,
+				   UiRect, UiSlider, UiText, UiLayout, UiToolCursor, UiTooltip, HudMarker, UiWindow, UiFocus,
+				   UiScrollView, UiList>;
 
 }// namespace owl::scene::component

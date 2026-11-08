@@ -9,6 +9,10 @@
 
 #include "physics/PhysicCommand.h"
 
+#include "physics/GravityField.h"
+#include "scene/Entity.h"
+#include "scene/component/PhysicBody.h"
+
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -120,5 +124,44 @@ void PhysicCommand::setJointMotor([[maybe_unused]] const scene::Entity& iEntity,
 								  [[maybe_unused]] const float iSpeed) {}
 
 auto PhysicCommand::getJointPosition([[maybe_unused]] const scene::Entity& iEntity) -> float { return 0.f; }
+
+auto PhysicCommand::getGravityAt(const scene::Scene& iScene, const math::vec3f& iPoint) -> math::vec3f {
+	std::vector<FieldSource> sources;
+	gatherFieldSources(iScene, {}, sources);
+	return iScene.getPhysicsSettings().clamped().gravity + fieldAcceleration(sources, iPoint, core::UUID{0});
+}
+
+auto PhysicCommand::predictTrajectory(const scene::Entity& iEntity, const uint32_t iSteps) -> std::vector<math::vec3f> {
+	if (!iEntity || !iEntity.hasComponent<scene::component::PhysicBody>())
+		return {};
+	const auto& sbody = iEntity.getComponent<scene::component::PhysicBody>().body;
+	if (sbody.type != scene::SceneBody::BodyType::Dynamic)
+		return {};
+	const auto& scene = *iEntity.getScene();
+	std::vector<FieldSource> sources;
+	gatherFieldSources(scene, {}, sources);
+	const auto settings = scene.getPhysicsSettings().clamped();
+	const PathSettings path{.worldGravity = settings.gravity,
+							.gravityScale = sbody.gravityScale,
+							.fields = sbody.gravityFields,
+							.plane = sbody.dimension == scene::SceneBody::Dimension::Plane,
+							.stepSeconds = static_cast<float>(scene.getSimulationClock().getStepSeconds()),
+							.subSteps = settings.solverSubSteps,
+							.self = iEntity.getUUID()};
+	return predictPath(sources, path, scene.getWorldTransform(iEntity).translation(), {0.f, 0.f, 0.f},
+					   std::min(iSteps, maxPredictionSteps));
+}
+
+auto PhysicCommand::isOnRails([[maybe_unused]] const scene::Scene& iScene) -> bool { return false; }
+
+void PhysicCommand::setSimulated([[maybe_unused]] const scene::Entity& iEntity, [[maybe_unused]] const bool iSimulated,
+								 [[maybe_unused]] const math::vec3f& iVelocity) {}
+
+auto PhysicCommand::isSimulated([[maybe_unused]] const scene::Entity& iEntity) -> bool { return true; }
+
+auto PhysicCommand::followRails([[maybe_unused]] const scene::Entity& iEntity, const math::vec3f& iVelocity,
+								[[maybe_unused]] const float iSeconds) -> math::vec3f {
+	return iVelocity;
+}
 
 }// namespace owl::physics

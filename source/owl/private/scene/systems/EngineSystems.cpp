@@ -152,6 +152,7 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 				{.name = iName, .phase = iPhase, .update = std::move(iUpdate), .tick = std::move(iTick)});
 	};
 	add("owl.physics_poses", SystemPhase::Scripts, &restorePhysicsPoses);
+	add("owl.simulation_lod", SystemPhase::Scripts, nullptr, &tickSimulationLod);
 	add("owl.scripts", SystemPhase::Scripts, &updateScripts, &tickScripts);
 	add("owl.oscillators", SystemPhase::PrePhysics, &updateOscillators, &tickOscillators);
 	add("owl.patrols", SystemPhase::PrePhysics, &updatePatrols);
@@ -217,7 +218,8 @@ void updateScripts(Scene& ioScene, const SystemContext& iContext) {
 				ioNsc.instance->onUpdate(iContext.timeStep);
 			});
 	for (const auto view = ioScene.registry.view<component::LuaScript>(); const auto entity: view) {
-		if (!ioScene.isEffectivelyVisible(Entity{entity, &ioScene}, /*iEditorMode=*/false))
+		if (isSimulationDemoted(ioScene, entity) ||
+			!ioScene.isEffectivelyVisible(Entity{entity, &ioScene}, /*iEditorMode=*/false))
 			continue;
 		if (const auto& luaScript = view.get<component::LuaScript>(entity);
 			luaScript.instance && luaScript.instance->isValid())
@@ -237,7 +239,8 @@ void tickScripts(Scene& ioScene, const SystemContext& iContext) {
 			nsc.instance->onTick(iContext.timeStep);
 	}
 	for (const auto view = ioScene.registry.view<component::LuaScript>(); const auto entity: view) {
-		if (!ioScene.isEffectivelyVisible(Entity{entity, &ioScene}, /*iEditorMode=*/false))
+		if (isSimulationDemoted(ioScene, entity) ||
+			!ioScene.isEffectivelyVisible(Entity{entity, &ioScene}, /*iEditorMode=*/false))
 			continue;
 		if (const auto& luaScript = view.get<component::LuaScript>(entity);
 			luaScript.instance && luaScript.instance->isValid())

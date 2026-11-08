@@ -908,6 +908,54 @@ TEST(ComponentRoundTrip, Drift) {
 			});
 }
 
+TEST(ComponentRoundTrip, GravitySource) {
+	roundTrip(
+			"GravitySource",
+			[](scene::Entity& iEnt) -> void {
+				auto& source = iEnt.addComponent<scene::component::GravitySource>();
+				source.type = scene::component::GravitySource::Type::Point;
+				source.enabled = false;
+				source.strength = 3.5f;
+				source.radius = 12.f;
+				source.range = 80.f;
+				source.direction = {0.f, 0.f, -1.f};
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::GravitySource>());
+				const auto& source = iEnt.getComponent<scene::component::GravitySource>();
+				EXPECT_EQ(source.type, scene::component::GravitySource::Type::Point);
+				EXPECT_FALSE(source.enabled);
+				EXPECT_FLOAT_EQ(source.strength, 3.5f);
+				EXPECT_FLOAT_EQ(source.radius, 12.f);
+				EXPECT_FLOAT_EQ(source.range, 80.f);
+				EXPECT_FLOAT_EQ(source.direction.z(), -1.f);
+			});
+}
+
+TEST(ComponentRoundTrip, SimulationLod) {
+	roundTrip(
+			"SimulationLod",
+			[](scene::Entity& iEnt) -> void {
+				auto& lod = iEnt.addComponent<scene::component::SimulationLod>();
+				lod.enabled = false;
+				lod.radius = 350.f;
+				lod.hysteresis = 25.f;
+				lod.coarseInterval = 30;
+				lod.model = scene::component::SimulationLod::Model::Hold;
+				lod.m_demoted = true;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::SimulationLod>());
+				const auto& lod = iEnt.getComponent<scene::component::SimulationLod>();
+				EXPECT_FALSE(lod.enabled);
+				EXPECT_FLOAT_EQ(lod.radius, 350.f);
+				EXPECT_FLOAT_EQ(lod.hysteresis, 25.f);
+				EXPECT_EQ(lod.coarseInterval, 30u);
+				EXPECT_EQ(lod.model, scene::component::SimulationLod::Model::Hold);
+				EXPECT_FALSE(lod.m_demoted);
+			});
+}
+
 TEST(ComponentRoundTrip, VoxelPlayer) {
 	roundTrip(
 			"VoxelPlayer",

@@ -1569,6 +1569,12 @@ void renderProps(PhysicBody& ioComponent) {
 	});
 	fieldTooltip("Layers this body collides with, 0 to 7 from the left: two bodies collide when each one ticks the "
 				 "other's layer.");
+	prop::DragFloat("Gravity Scale", &ioComponent.body.gravityScale, 0.01f, -10.f, 10.f, "%.2f");
+	fieldTooltip("Share of the gravity a dynamic body feels, the world gravity and the gravity sources: 0 for none, "
+				 "negative to fall up.");
+	prop::Checkbox("Gravity Fields", &ioComponent.body.gravityFields);
+	fieldTooltip("Feel the fields of the Gravity Source components; off leaves the body to the world gravity of the "
+				 "scene (Scene Settings, Physics).");
 }
 
 void renderProps(PhysicJoint& ioComponent) {
@@ -3566,6 +3572,79 @@ void renderProps(Drift& ioComponent) {
 			"Half extent of the drift along each axis: the entity jumps from +range back to -range; 0 for no wrap.");
 	prop::DragFloat("Camera Follow", &ioComponent.cameraFollow, 0.005f, 0.f, 1.f, "%.3f");
 	fieldTooltip("Share of the camera movement followed: 0 pins the entity to the world, 1 to the screen (parallax).");
+}
+
+void renderProps(GravitySource& ioComponent) {
+	constexpr auto typeDescription = [](const GravitySource::Type iType) -> const char* {
+		switch (iType) {
+			case GravitySource::Type::Uniform:
+				return "Uniform: the same pull along Direction everywhere in reach (a gravity zone).";
+			case GravitySource::Type::Point:
+				return "Point: Strength at Radius toward the entity, falling with the square of the distance, capped "
+					   "inside Radius.";
+			case GravitySource::Type::Spherical:
+				return "Spherical: a planet; as Point outside Radius, less and less toward its centre inside.";
+		}
+		return "";
+	};
+	const std::string typeName{magic_enum::enum_name(ioComponent.type)};
+	if (prop::BeginCombo("Type", typeName.c_str())) {
+		for (const auto type: magic_enum::enum_values<GravitySource::Type>()) {
+			if (ImGui::Selectable(std::string(magic_enum::enum_name(type)).c_str(), type == ioComponent.type))
+				ioComponent.type = type;
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+				ImGui::SetTooltip("%s", typeDescription(type));
+		}
+		ImGui::EndCombo();
+	}
+	fieldTooltip(typeDescription(ioComponent.type));
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Switch the field off to leave the bodies to the other fields.");
+	prop::DragFloat("Strength", &ioComponent.strength, 0.05f, -10000.f, 10000.f, "%.2f");
+	fieldTooltip("Pull in world units per second squared: everywhere for Uniform, at Radius otherwise (9.81 is the "
+				 "gravity at the surface of the Earth); negative pushes away.");
+	if (ioComponent.type != GravitySource::Type::Uniform) {
+		if (prop::DragFloat("Radius", &ioComponent.radius, 0.05f, GravitySource::minRadius, 1.e9f, "%.2f"))
+			ioComponent.radius = std::max(ioComponent.radius, GravitySource::minRadius);
+		fieldTooltip("Distance from the entity where the pull is Strength: the surface of the planet. Bodies on rails "
+					 "stop on it.");
+	} else {
+		prop::DragFloat3("Direction", &ioComponent.direction.x(), 0.01f, -1.f, 1.f, "%.2f");
+		fieldTooltip("Direction of the pull, in world space; normalised when read.");
+	}
+	if (prop::DragFloat("Range", &ioComponent.range, 0.1f, 0.f, 1.e9f, ioComponent.range > 0.f ? "%.1f" : "infinite"))
+		ioComponent.range = std::max(ioComponent.range, 0.f);
+	fieldTooltip("Distance beyond which the field pulls nothing; 0 reaches the whole scene.");
+}
+
+void renderProps(SimulationLod& ioComponent) {
+	prop::Checkbox("Enabled", &ioComponent.enabled);
+	fieldTooltip("Off keeps the entity fully simulated wherever the focus is.");
+	if (prop::DragFloat("Radius", &ioComponent.radius, 1.f, 0.f, 1.e9f, "%.1f"))
+		ioComponent.radius = std::max(ioComponent.radius, 0.f);
+	fieldTooltip("Distance to the focus (the streaming sources, else the primary camera) within which the entity is "
+				 "fully simulated.");
+	if (prop::DragFloat("Hysteresis", &ioComponent.hysteresis, 0.5f, 0.f, 1.e9f, "%.1f"))
+		ioComponent.hysteresis = std::max(ioComponent.hysteresis, 0.f);
+	fieldTooltip(
+			"Extra distance beyond Radius before a demotion, so an entity on the edge does not switch every tick.");
+	auto interval = static_cast<int>(ioComponent.coarseInterval);
+	if (prop::DragInt("Coarse Interval", &interval, 0.2f, 1, static_cast<int>(SimulationLod::maxCoarseInterval)))
+		ioComponent.coarseInterval =
+				static_cast<uint32_t>(std::clamp(interval, 1, static_cast<int>(SimulationLod::maxCoarseInterval)));
+	fieldTooltip("Ticks between two coarse ticks of the demoted entity: its script gets on_coarse_tick(dt) instead of "
+				 "on_update and on_tick.");
+	const std::string modelName{magic_enum::enum_name(ioComponent.model)};
+	if (prop::BeginCombo("Model", modelName.c_str())) {
+		for (const auto model: magic_enum::enum_values<SimulationLod::Model>())
+			if (ImGui::Selectable(std::string(magic_enum::enum_name(model)).c_str(), model == ioComponent.model))
+				ioComponent.model = model;
+		ImGui::EndCombo();
+	}
+	fieldTooltip("What the physics body does while demoted. Hold: it stays where it was. Rails: it follows its arc "
+				 "around the strongest gravity source, on each coarse tick.");
+	if (ioComponent.m_demoted)
+		ImGui::TextDisabled("Demoted");
 }
 
 void renderProps(FollowTarget& ioComponent) {

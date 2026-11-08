@@ -59,14 +59,40 @@ The sockets are detailed in [Skeletal animation](skeletal-animation.md); the phy
 - Physics sub-stepping per scene, for long chains of joints
 - Forces and torques applied at a point, from Lua and from systems (thrust, drag, lift computed by the game)
 
-## Gravity and time
+## Gravity and time {#large-worlds-gravity}
+
+User reference: [Gravity](../physics.md#gravity), [Time Warp](../physics.md#time-warp),
+[Simulation Level of Detail](../physics.md#simulation-lod).
 
 - Gravity fields: uniform, point and spherical sources, several summed, per-body opt-out, on the 2D and the 3D physics
-- Trajectory prediction: the future path of a body under the fields, drawn by a debug view and readable from Lua
-- Time warp: the scene clock scaled; above a threshold, bodies leave the solver for analytic propagation
+- Trajectory prediction: the future path of a body under the fields, drawn in the viewport and readable from Lua
+- Time warp: the scene clock scaled; above `railsTimeScale`, bodies leave the solver for analytic propagation
   (conic arcs around the dominant source) and come back when the warp drops
 - Simulation level of detail: entities far from the focus follow a coarse model supplied by the game, on a slower
   tick; promotion and demotion are events, deterministic on the v0.7.0 simulation
+
+| Item                                                                                                             | Status |
+|------------------------------------------------------------------------------------------------------------------|--------|
+| `GravitySource` component (uniform, point, spherical), summed with the world gravity, per-body scale and opt-out | Done   |
+| Trajectory prediction: `PhysicCommand::predictTrajectory`, Lua `physics.predict_trajectory`, Owl Nest overlay    | Done   |
+| Time warp: clock up to 100000, bodies on rails above `railsTimeScale`, `math::propagateKepler`                   | Done   |
+| `SimulationLod` component: demotion, promotion, coarse tick, Lua hooks, Owl Nest overlay                         | Done   |
+| 2D and 3D bodies in the same fields                                                                              | Done   |
+
+| Decision                                                                                                                                  | Why                                                                                         |
+|-------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| World gravity is a scene setting; fields add to it, scaled by the body's `gravityScale`; `gravityFields` off keeps the world gravity only | One gravity for ordinary games, fields for the others, a per-body opt-out                   |
+| Fields are applied as a force before each step, read from the world position of the source                                                | The solver integrates them like gravity: contacts, sleeping and snapshots need nothing else |
+| Types: `Uniform` (zones), `Point` (inverse square), `Spherical` (a solid ball inside its `radius`)                                        | A planet surface and a black hole come from the same component; no singularity inside       |
+| Trajectory prediction integrates as the solver does, collisions ignored, sources where they stand                                         | The drawn path matches what the solver does until the first contact                         |
+| Rails are closed-form Kepler orbits in universal variables, in double, with the deterministic maths                                       | One evaluation for any warp duration; the same bits on every target                         |
+| Patched conics: each body follows the strongest `Point` or `Spherical` source at its position; a uniform pull gives a parabola            | No n-body integration on rails; cheap and predictable                                       |
+| The time warp caps the ticks at `railsTimeScale` and lengthens each one by `getRailsFactor()`                                             | The tick count per frame stays bounded at any scale                                         |
+| On rails the solver stops: sleeping bodies stay, a body reaching a source's `radius` stops on it, moving sources carry their orbiters     | A conic means nothing under the surface, and the stopped solver cannot catch a landing      |
+| A demoted body sleeps held by the solver (`setSimulated`) instead of being removed                                                        | Snapshots, joints and contacts stay consistent; promotion needs no rebuild                  |
+| The focus is every enabled `StreamingSource`, else the primary camera; `hysteresis` separates demotion from promotion                     | Same focus as the world partition; no switching on the edge                                 |
+| `owl.simulation_lod` runs on the tick in the `Scripts` phase before `owl.scripts`, in a fixed entity order                                | Promotions and demotions fall on the same ticks in a replay                                 |
+| A demoted script gets `on_coarse_tick(dt)` instead of `on_update` and `on_tick`; the `Rails` model follows the arc, `Hold` stays          | The game supplies the coarse model; the engine only decides when it runs                    |
 
 ## Planetary terrain
 

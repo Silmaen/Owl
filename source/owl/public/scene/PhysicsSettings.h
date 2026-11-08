@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "math/vectors.h"
 
 #include <cstdint>
 
@@ -30,6 +31,14 @@ struct OWL_API PhysicsSettings {
 	static constexpr uint32_t maxAutoWorkerCount = 4;
 	/// Dynamic bodies below which the automatic count stays single-threaded (task dispatch costs more than it saves).
 	static constexpr uint32_t autoThreadingMinBodies = 2000;
+	/// Default time scale above which the bodies go on rails: the default bound of the ticks of a frame.
+	static constexpr float defaultRailsTimeScale = 8.f;
+	/// Lowest accepted `railsTimeScale`.
+	static constexpr float minRailsTimeScale = 1.f;
+	/// Highest accepted `railsTimeScale`.
+	static constexpr float maxRailsTimeScale = 64.f;
+	/// Largest accepted component of `gravity`.
+	static constexpr float maxGravity = 1000.f;
 
 	/// Jolt collision steps inside one fixed step.
 	uint32_t solverSubSteps = 2;
@@ -37,6 +46,10 @@ struct OWL_API PhysicsSettings {
 	bool interpolate = true;
 	/// Solver threads: 0 picks a count from the hardware, 1 runs the solver on the calling thread.
 	uint32_t workerCount = 0;
+	/// Acceleration of every dynamic body, summed with the `GravitySource` fields, in world units per second squared.
+	math::vec3f gravity{0.f, -9.81f, 0.f};
+	/// Scene time scale above which the moving bodies leave the solver for their conic arcs (time warp).
+	float railsTimeScale = defaultRailsTimeScale;
 
 	/**
 	 * @brief

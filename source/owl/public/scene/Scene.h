@@ -131,6 +131,8 @@ struct WalkAgent;
 struct WalkBehind;
 struct SequencePlayer;
 struct Drift;
+struct GravitySource;
+struct SimulationLod;
 struct WorldPosition;
 struct FollowTarget;
 struct RenderTarget;
@@ -1254,7 +1256,7 @@ public:
 	}
 
 	/// Highest accepted time scale.
-	static constexpr float maxTimeScale = 16.f;
+	static constexpr float maxTimeScale = 100000.f;
 
 	/**
 	 * @brief
@@ -1262,9 +1264,19 @@ public:
 	 *  the physics, the animations and the behaviours is the real one times this scale.
 	 *
 	 * The UI input, the screen transitions and the toasts keep the real time. `onStartRuntime()` sets it back to 1.
+	 * Above `PhysicsSettings::railsTimeScale` the time warps: the ticks run at that scale at most, each one lasting
+	 * `getRailsFactor()` times its duration, and the physics bodies go on rails (`physics::PhysicCommand::isOnRails()`).
 	 * @param[in] iScale The scale, clamped to [0, `maxTimeScale`] (a non-finite one is ignored).
 	 */
 	void setTimeScale(float iScale);
+
+	/**
+	 * @brief
+	 *  How much longer than its duration a tick of the last runtime frame lasted: 1 below the rails time scale, the time
+	 *  scale over `PhysicsSettings::railsTimeScale` above it (time warp).
+	 * @return The factor, at least 1.
+	 */
+	[[nodiscard]] auto getRailsFactor() const -> double { return m_railsFactor; }
 
 	/**
 	 * @brief
@@ -1824,6 +1836,12 @@ private:
 	float m_realFrameSeconds = 0.f;
 	/// Frame time step scaled by the time scale, reused every frame.
 	core::Timestep m_scaledTimeStep;
+	/// Frame time step given to the simulation clock: the scaled one, or capped at the rails time scale in a time warp.
+	core::Timestep m_clockTimeStep;
+	/// Duration of a tick in a time warp, the tick duration times `m_railsFactor`, reused every frame.
+	core::Timestep m_warpedTickStep;
+	/// Warped over solver duration of the ticks of the last runtime frame.
+	double m_railsFactor = 1.0;
 	/// Roots of the subtrees spawned at runtime, started by `flushPendingSpawns()`.
 	std::vector<core::UUID> m_pendingSpawns;
 	/// Script the scene owns (runs before the entity scripts).
@@ -2458,7 +2476,8 @@ private:
 
 	/**
 	 * @brief
-	 *  Set the frame time step of the scene clock (`m_scaledTimeStep`): the real one times the effective time scale.
+	 *  Set the frame time step of the scene clock (`m_scaledTimeStep`): the real one times the effective time scale; and
+	 *  in a time warp the capped one of the simulation clock and the rails factor.
 	 * @param[in] iTimeStep The real frame time step.
 	 */
 	void updateScaledTimeStep(const core::Timestep& iTimeStep);
@@ -2893,6 +2912,14 @@ OWL_API void Scene::onComponentAdded<component::WalkBehind>(const Entity& iEntit
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>(const Entity& iEntity, component::Drift& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::GravitySource>(const Entity& iEntity,
+															   component::GravitySource& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::SimulationLod>(const Entity& iEntity,
+															   component::SimulationLod& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::WorldPosition>(const Entity& iEntity,

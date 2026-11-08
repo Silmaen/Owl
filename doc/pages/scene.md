@@ -148,7 +148,7 @@ dropped, so a long frame slows the game down instead of stalling it). The leftov
 the interpolation alpha (`SimulationClock::getAlpha()`, Lua `time.tick_alpha()`), used to draw the physics bodies
 between their last two steps. A simulation run with the same ticks gives the same result however the frames are cut.
 
-The scene clock runs at `Scene::setTimeScale(scale)` (0 to 16, Lua `time.set_scale`) and stops with
+The scene clock runs at `Scene::setTimeScale(scale)` (0 to 100000, Lua `time.set_scale`; above `PhysicsSettings::railsTimeScale` the time warps, see [Time Warp](physics.md#time-warp)) and stops with
 `Scene::setPaused(true)` (Lua `time.set_paused`): the frame duration the systems, the ticks and `getRuntimeSeconds()`
 see is the real one times `getEffectiveTimeScale()`. Paused, the scripts still get `on_update` with a zero duration,
 no tick nor physics step runs and the animations hold their frame; the UI input, the screen transitions and the toasts
@@ -1064,6 +1064,38 @@ YAML key: `FollowTarget`, system `owl.follow_target`. Places the entity at the p
 | `followYaw` | `bool` | `true`       | Turn with the heading of the target    |
 
 Lua switches it with `entity.set_follow_target_enabled(id, enabled)` and `entity.is_follow_target_enabled(id)`.
+
+#### GravitySource {#gravity-source-component}
+
+YAML key: `GravitySource`. A gravity field centred on the entity that pulls the dynamic bodies of the scene, summed with
+the world gravity and scaled by each body's `gravityScale`; the fields and the time warp are described in
+[Physics](physics.md#gravity).
+
+| Field       | Type    | Default      | Description                                                                             |
+|-------------|---------|--------------|-----------------------------------------------------------------------------------------|
+| `type`      | enum    | `Spherical`  | `Uniform`, `Point` or `Spherical`                                                       |
+| `enabled`   | `bool`  | `true`       | Off leaves the bodies to the other fields; Lua `entity.set_gravity_source_enabled`      |
+| `strength`  | `float` | `9.81`       | Pull in world units per second squared: everywhere for `Uniform`, at `radius` otherwise |
+| `radius`    | `float` | `10`         | Distance where the pull is `strength` (the surface of a planet); at least 0.001         |
+| `range`     | `float` | `0`          | Distance beyond which nothing is pulled; 0 reaches the whole scene                      |
+| `direction` | `vec3`  | `[0, -1, 0]` | Direction of a `Uniform` pull, world space                                              |
+
+#### SimulationLod {#simulation-lod-component}
+
+YAML key: `SimulationLod`, system `owl.simulation_lod` (`Scripts` phase, on the fixed tick, before `owl.scripts`). Beyond
+`radius + hysteresis` of every enabled `StreamingSource` (else of the primary camera) the entity is demoted: its script
+runs `on_coarse_tick(dt)` every `coarseInterval` ticks instead of `on_update` and `on_tick`, and its body sleeps; within
+`radius` it is promoted back ([Physics](physics.md#simulation-lod)).
+
+| Field            | Type    | Default | Description                                                                              |
+|------------------|---------|---------|------------------------------------------------------------------------------------------|
+| `enabled`        | `bool`  | `true`  | Off promotes the entity at the next tick; Lua `entity.set_simulation_lod_enabled`        |
+| `radius`         | `float` | `200`   | Distance to the nearest focus within which the entity is fully simulated                 |
+| `hysteresis`     | `float` | `20`    | Extra distance beyond `radius` before a demotion                                         |
+| `coarseInterval` | `uint`  | `10`    | Ticks between two coarse ticks of a demoted entity, at most 3600                         |
+| `model`          | enum    | `Rails` | `Hold`: the body stays put; `Rails`: it follows its conic arc around the strongest field |
+
+The script hooks are `on_demoted()`, `on_promoted()` and `on_coarse_tick(dt)`; Lua `entity.is_demoted(id)` reads the state.
 
 ### Audio Components
 

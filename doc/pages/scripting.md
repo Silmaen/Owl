@@ -123,14 +123,17 @@ end
 
 ### Lifecycle Callbacks
 
-| Callback                 | When                                       | Arguments                     |
-|--------------------------|--------------------------------------------|-------------------------------|
-| `on_create()`            | Scene enters Play mode                     | None                          |
-| `on_update(dt)`          | Every frame during Play mode               | `dt`: delta time (seconds)    |
-| `on_tick(dt)`            | Every fixed simulation tick (60 Hz)        | `dt`: tick duration (seconds) |
-| `on_destroy()`           | Entity destroyed, or Play mode ends        | None                          |
-| `on_collision(other_id)` | Body starts touching another entity's body | `other_id`: UUID              |
-| `on_collision_exit(other_id)` | Last contact with another entity's body ends | `other_id`: UUID         |
+| Callback                      | When                                                                             | Arguments                     |
+|-------------------------------|----------------------------------------------------------------------------------|-------------------------------|
+| `on_create()`                 | Scene enters Play mode                                                           | None                          |
+| `on_update(dt)`               | Every frame during Play mode                                                     | `dt`: delta time (seconds)    |
+| `on_tick(dt)`                 | Every fixed simulation tick (60 Hz)                                              | `dt`: tick duration (seconds) |
+| `on_destroy()`                | Entity destroyed, or Play mode ends                                              | None                          |
+| `on_collision(other_id)`      | Body starts touching another entity's body                                       | `other_id`: UUID              |
+| `on_collision_exit(other_id)` | Last contact with another entity's body ends                                     | `other_id`: UUID              |
+| `on_demoted()`                | The entity's `SimulationLod` demotes it                                          | None                          |
+| `on_promoted()`               | The entity's `SimulationLod` promotes it                                         | None                          |
+| `on_coarse_tick(dt)`          | Every `coarseInterval` ticks while demoted, instead of `on_update` and `on_tick` | `dt`: seconds covered         |
 
 All callbacks are optional — missing callbacks are silently skipped.
 
@@ -313,7 +316,7 @@ child returns its tagged ancestor: a tower made of several meshes is picked as o
 ### `time`
 
 `time.delta()` is the duration of the frame (or of the fixed tick in `on_tick`) on the scene clock.
-`time.set_scale(scale)` runs that clock faster or slower (0 to 16, back to 1 when a scene starts): the ticks, the
+`time.set_scale(scale)` runs that clock faster or slower (0 to 100000, back to 1 when a scene starts): the ticks, the
 physics, the animations, the behaviour components and `dt` follow it. `time.set_paused(true)` stops it: `on_update`
 still runs, with a zero `dt`, so the script can drive its pause menu; no tick, physics step nor animation runs
 until `time.set_paused(false)`. The UI, the screen transitions and `time.real_delta()` keep the real time:

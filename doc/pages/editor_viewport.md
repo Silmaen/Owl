@@ -165,6 +165,13 @@ the entity. A selected point of a Bezier spline shows its two handles: click one
 Click elsewhere to drop the point selection and get the entity gizmo back. The inspector lists the same points, with
 **Add Point**, **Insert After Selected** and **Delete Selected**, and the lanes.
 
+### Gravity {#viewport-gravity}
+
+The selected entity with a **Gravity Source** shows its radius (the surface) as a ring and its range as a second ring;
+a `Uniform` source adds an arrow along its direction. One with a **Simulation LOD** shows the rings of its `radius` and
+of `radius` plus `hysteresis`. A selected dynamic body shows its predicted path (600 fixed steps) under the gravity. The
+overlay shows in Edit and in Play.
+
 ### Walk areas {#viewport-walk-areas}
 
 The selected entity with a **Walk Area** shows its floors: the outlines in green, the holes in orange, the triangles in

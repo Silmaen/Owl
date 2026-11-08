@@ -635,6 +635,14 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the gravity of the selection: the radius and the reach of a gravity source, the predicted path of a dynamic
+	 *  body under the fields, the full-simulation radius of a simulation level of detail.
+	 * @param[in] iScene The scene being edited or played.
+	 */
+	void renderGravityOverlay(const shared<scene::Scene>& iScene) const;
+
+	/**
+	 * @brief
 	 *  Point of the plane of the selected `WalkArea` under the cursor, in the space of the entity.
 	 * @return The point, or nothing when the cursor misses the plane.
 	 */

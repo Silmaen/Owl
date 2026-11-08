@@ -1,0 +1,32 @@
+# The far orbit: the moon pulls three moonlets, launched on circular orbits. Period warps the time up to 1000: past the
+# rails time scale the moonlets follow their arcs in closed form and stay on their orbits. J jumps to the relay, far
+# from the moon: their simulation level of detail demotes them; J again brings the ship back and promotes them.
+scene: ../../../engine_demo/scenes/far_orbit.owl
+steps:
+  - frames: 40
+  - expect: {gamestate: orbit_launched, equals: 1}
+  - expect: {gamestate: orbit_rails, equals: 0}
+  - input: {key: Period, frames: 1}
+  - frames: 2
+  - input: {key: Period, frames: 1}
+  - frames: 2
+  - input: {key: Period, frames: 1}
+  - frames: 60
+  - expect: {gamestate: orbit_warp, equals: 1000}
+  - expect: {gamestate: orbit_rails, equals: 1}
+  - expect: {gamestate: orbit_drift, less: 0.05}
+  - input: {key: Comma, frames: 1}
+  - frames: 2
+  - input: {key: Comma, frames: 1}
+  - frames: 2
+  - input: {key: Comma, frames: 1}
+  - frames: 20
+  - expect: {gamestate: orbit_warp, equals: 1}
+  - expect: {gamestate: orbit_rails, equals: 0}
+  - expect: {gamestate: orbit_demoted, equals: 0}
+  - input: {key: J, frames: 1}
+  - frames: 10
+  - expect: {gamestate: orbit_demoted, equals: 3}
+  - input: {key: J, frames: 1}
+  - frames: 10
+  - expect: {gamestate: orbit_demoted, equals: 0}

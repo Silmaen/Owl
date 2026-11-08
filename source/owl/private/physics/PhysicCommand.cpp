@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "GravityField.h"
 #include "JoltWorld.h"
 #include "SolverTaskPool.h"
 #include "app/EngineContext.h"
@@ -460,6 +461,7 @@ public:
 				forgetContacts(owner->second, sensor);
 				bodyOwners.erase(owner);
 			}
+			heldBodies.erase(it->second);
 			jolt->destroyBody(it->second);
 			bodies.erase(it);
 		}
@@ -514,8 +516,11 @@ public:
 			description.boxes.push_back({.halfExtents = {sbody.colliderSize.x() * scale.x() * 0.5f,
 														 sbody.colliderSize.y() * scale.y() * 0.5f}});
 		sbody.bodyId = create(description, entity);
-		if (sbody.bodyId != 0)
-			trackBody(iEntity, sbody.bodyId, bodies[sbody.bodyId], space);
+		if (sbody.bodyId == 0)
+			return;
+		trackBody(iEntity, sbody.bodyId, bodies[sbody.bodyId], space);
+		if (sbody.type == scene::SceneBody::BodyType::Dynamic && (sbody.gravityScale < 1.f || sbody.gravityScale > 1.f))
+			jolt->setGravityFactor(bodies[sbody.bodyId], sbody.gravityScale);
 	}
 
 	// The collider of a mesh shape is the mesh of the entity's MeshRenderer, scaled like the entity.
@@ -758,6 +763,170 @@ public:
 		return first < second ? std::pair{first, second} : std::pair{second, first};
 	}
 
+	// Velocity of the body of an entity, for a gravity source that moves.
+	[[nodiscard]] auto velocityOf(const scene::Scene& iScene, const core::UUID iEntity) const -> math::vec3f {
+		const scene::Entity entity = iScene.findEntityByUUID(iEntity);
+		if (!entity || !entity.hasComponent<scene::component::PhysicBody>())
+			return {0.f, 0.f, 0.f};
+		const auto body = find(entity.getComponent<scene::component::PhysicBody>().body.bodyId);
+		return body ? jolt->getSpaceVelocity(*body) : math::vec3f{0.f, 0.f, 0.f};
+	}
+
+	void gatherSources(const scene::Scene& iScene) {
+		gatherFieldSources(
+				iScene,
+				[this, &iScene](const core::UUID iEntity) -> math::vec3f { return velocityOf(iScene, iEntity); },
+				fieldSources);
+	}
+
+	// A dynamic body Owl simulates: awake, not held by the simulation level of detail.
+	[[nodiscard]] auto isFree(const scene::Scene& iScene, const SyncedBody& iTracked) const -> const scene::SceneBody* {
+		const auto& sbody = iScene.registry.get<scene::component::PhysicBody>(iTracked.entity).body;
+		if (sbody.type != scene::SceneBody::BodyType::Dynamic || heldBodies.contains(iTracked.body) ||
+			!jolt->isAwake(iTracked.body))
+			return nullptr;
+		return &sbody;
+	}
+
+	// The fields act as the world gravity does: a force over the next step, scaled by the gravity factor.
+	void applyGravityFields(const scene::Scene& iScene) {
+		gatherSources(iScene);
+		if (fieldSources.empty())
+			return;
+		for (const auto& tracked: synced) {
+			const auto* sbody = isFree(iScene, tracked);
+			if (sbody == nullptr || !sbody->gravityFields)
+				continue;
+			const auto owner = ownerOf(tracked.body).value_or(core::UUID{0});
+			const math::vec3f pull = fieldAcceleration(fieldSources, jolt->getSpacePose(tracked.body).position, owner) *
+									 jolt->getGravityFactor(tracked.body);
+			if (pull.normSq() > 0.f)
+				jolt->accelerate(tracked.body, pull);
+		}
+	}
+
+	// A body on rails during a time warp.
+	struct RailedBody {
+		uint32_t body = 0;
+		core::UUID owner;
+		bool plane = false;
+		math::OrbitState start;
+		RailsArc arc;
+		bool moved = false;
+		math::OrbitState end;
+	};
+
+	// The railed body whose own source is a railed body not moved yet, which must move first; none when it can move.
+	[[nodiscard]] auto waitsFor(const std::vector<RailedBody>& iRailed,
+								const std::unordered_map<uint64_t, size_t>& iByOwner, const RailedBody& iBody) const
+			-> std::optional<size_t> {
+		if (!iBody.arc.source)
+			return std::nullopt;
+		const auto it = iByOwner.find(static_cast<uint64_t>(fieldSources[*iBody.arc.source].owner));
+		if (it == iByOwner.end() || iRailed[it->second].moved)
+			return std::nullopt;
+		return it->second;
+	}
+
+	// Moves a railed body, carried along with its source when that source is a railed body that already moved.
+	void moveOnRails(std::vector<RailedBody>& ioRailed, const std::unordered_map<uint64_t, size_t>& iByOwner,
+					 const size_t iIndex, const double iSeconds) const {
+		auto& railed = ioRailed[iIndex];
+		math::OrbitState relative = railed.start;
+		math::vec3d sourceEnd{0.0, 0.0, 0.0};
+		math::vec3d sourceEndVelocity{0.0, 0.0, 0.0};
+		if (railed.arc.source) {
+			const auto& source = fieldSources[*railed.arc.source];
+			const math::vec3d sourceStart = toDouble(source.position);
+			const math::vec3d sourceVelocity = toDouble(source.velocity);
+			sourceEnd = sourceStart;
+			sourceEndVelocity = sourceVelocity;
+			if (const auto it = iByOwner.find(static_cast<uint64_t>(source.owner));
+				it != iByOwner.end() && it->second != iIndex && ioRailed[it->second].moved) {
+				sourceEnd = ioRailed[it->second].end.position;
+				sourceEndVelocity = ioRailed[it->second].end.velocity;
+			}
+			relative = {.position = railed.start.position - sourceStart,
+						.velocity = railed.start.velocity - sourceVelocity};
+		}
+		const auto moved = followArc(railed.arc, fieldSources, relative, iSeconds);
+		railed.end = {.position = sourceEnd + moved.position, .velocity = sourceEndVelocity + moved.velocity};
+		if (railed.plane) {
+			railed.end.position.z() = railed.start.position.z();
+			railed.end.velocity.z() = 0.0;
+		}
+		railed.moved = true;
+	}
+
+	// Sources first, so a moon carries its satellites; a cycle of sources moves in body order.
+	void moveAllOnRails(std::vector<RailedBody>& ioRailed, const std::unordered_map<uint64_t, size_t>& iByOwner,
+						const double iSeconds) const {
+		size_t left = ioRailed.size();
+		while (left > 0) {
+			bool progress = false;
+			for (size_t index = 0; index < ioRailed.size(); ++index) {
+				if (ioRailed[index].moved)
+					continue;
+				if (const auto other = waitsFor(ioRailed, iByOwner, ioRailed[index]); other && *other != index)
+					continue;
+				moveOnRails(ioRailed, iByOwner, index, iSeconds);
+				progress = true;
+				--left;
+			}
+			if (progress)
+				continue;
+			for (size_t index = 0; index < ioRailed.size(); ++index)
+				if (!ioRailed[index].moved) {
+					moveOnRails(ioRailed, iByOwner, index, iSeconds);
+					--left;
+					break;
+				}
+		}
+	}
+
+	[[nodiscard]] static auto toDouble(const math::vec3f& iVector) -> math::vec3d {
+		return {static_cast<double>(iVector.x()), static_cast<double>(iVector.y()), static_cast<double>(iVector.z())};
+	}
+
+	[[nodiscard]] static auto toFloat(const math::vec3d& iVector) -> math::vec3f {
+		return {static_cast<float>(iVector.x()), static_cast<float>(iVector.y()), static_cast<float>(iVector.z())};
+	}
+
+	// The solver stops; the awake dynamic bodies follow their arcs for the warped duration of the step.
+	void railsStep(const scene::Scene& iScene, const double iSeconds) {
+		gatherSources(iScene);
+		const math::vec3f worldGravity = settings.gravity;
+		std::vector<RailedBody> railed;
+		std::unordered_map<uint64_t, size_t> byOwner;
+		for (const auto& tracked: synced) {
+			const auto* sbody = isFree(iScene, tracked);
+			if (sbody == nullptr)
+				continue;
+			const auto owner = ownerOf(tracked.body).value_or(core::UUID{0});
+			const math::vec3f position = jolt->getSpacePose(tracked.body).position;
+			byOwner[static_cast<uint64_t>(owner)] = railed.size();
+			railed.push_back({.body = tracked.body,
+							  .owner = owner,
+							  .plane = sbody->dimension == scene::SceneBody::Dimension::Plane,
+							  .start = {.position = toDouble(position),
+										.velocity = toDouble(jolt->getSpaceVelocity(tracked.body))},
+							  .arc = railsArc(fieldSources, worldGravity, position, owner,
+											  jolt->getGravityFactor(tracked.body), sbody->gravityFields),
+							  .moved = false,
+							  .end = {}});
+		}
+		moveAllOnRails(railed, byOwner, iSeconds);
+		for (const auto& body: railed)
+			jolt->setSpaceMotion(body.body, toFloat(body.end.position), toFloat(body.end.velocity));
+	}
+
+	// A held body woken by a contact goes back to sleep.
+	void holdBodies() const {
+		for (const uint32_t body: heldBodies)
+			if (jolt->isAwake(body))
+				jolt->sleep(body);
+	}
+
 	uint64_t nextId = 1;
 	std::unordered_map<uint64_t, uint32_t> bodies;
 	std::unordered_map<entt::entity, uint64_t> tilemapBodies;
@@ -772,6 +941,12 @@ public:
 	std::vector<PhysicCommand::CollisionEvent> collisionEvents;
 	std::vector<entt::entity> pendingJoints;
 	size_t frameEventsStart = 0;
+	// Gravity sources of the step, reused from step to step.
+	std::vector<FieldSource> fieldSources;
+	// Bodies held out of the simulation (`PhysicCommand::setSimulated`).
+	std::set<uint32_t> heldBodies;
+	// The last step ran on rails.
+	bool onRails = false;
 
 	std::vector<SyncedBody> synced;
 	std::unordered_map<uint64_t, size_t> syncedIndex;
@@ -851,6 +1026,7 @@ void PhysicCommand::init(scene::Scene& ioScene) {
 	if (const uint32_t workers = world->settings.getEffectiveWorkerCount(dynamicBodies); workers > 1)
 		world->taskPool = mkUniq<SolverTaskPool>(workers);
 	world->jolt = mkUniq<JoltWorld>(world->taskPool.get());
+	world->jolt->setGravity(world->settings.gravity);
 	OWL_CORE_DEBUG("Physics: World created ({} workers).", getWorkerCount(ioScene))
 
 	for (const auto e: ioScene.registry.view<scene::component::PhysicBody, scene::component::Transform>())
@@ -905,10 +1081,18 @@ void PhysicCommand::step(scene::Scene& ioScene) {
 	}
 	auto& impl = *world;
 	impl.createPendingBodies(ioScene);
+	impl.holdBodies();
 	if (impl.settings.interpolate)
 		impl.capturePrevious();
-	impl.jolt->step(static_cast<float>(ioScene.getSimulationClock().getStepSeconds()), impl.settings.solverSubSteps);
-	impl.collectContactEvents();
+	const double stepSeconds = ioScene.getSimulationClock().getStepSeconds();
+	impl.onRails = ioScene.getRailsFactor() > 1.0;
+	if (impl.onRails)
+		impl.railsStep(ioScene, stepSeconds * ioScene.getRailsFactor());
+	else {
+		impl.applyGravityFields(ioScene);
+		impl.jolt->step(static_cast<float>(stepSeconds), impl.settings.solverSubSteps);
+		impl.collectContactEvents();
+	}
 	impl.captureCurrent();
 	++impl.stepsSinceWrite;
 }
@@ -1226,6 +1410,113 @@ void PhysicCommand::applySnapshot(const scene::Entity& iEntity, const PhysicsSna
 		world->jolt->wake(*body);
 }
 
+
+auto PhysicCommand::getGravityAt(const scene::Scene& iScene, const math::vec3f& iPoint) -> math::vec3f {
+	std::vector<FieldSource> sources;
+	gatherFieldSources(iScene, {}, sources);
+	return iScene.getPhysicsSettings().clamped().gravity + fieldAcceleration(sources, iPoint, core::UUID{0});
+}
+
+auto PhysicCommand::predictTrajectory(const scene::Entity& iEntity, const uint32_t iSteps) -> std::vector<math::vec3f> {
+	if (!iEntity || !iEntity.hasComponent<scene::component::PhysicBody>())
+		return {};
+	const auto& sbody = iEntity.getComponent<scene::component::PhysicBody>().body;
+	if (sbody.type != scene::SceneBody::BodyType::Dynamic)
+		return {};
+	const auto& scene = *iEntity.getScene();
+	const auto* world = scene.getPhysicsWorld();
+	const auto body = world != nullptr ? world->find(sbody.bodyId) : std::nullopt;
+	std::vector<FieldSource> sources;
+	if (world != nullptr)
+		gatherFieldSources(
+				scene,
+				[world, &scene](const core::UUID iOwner) -> math::vec3f { return world->velocityOf(scene, iOwner); },
+				sources);
+	else
+		gatherFieldSources(scene, {}, sources);
+	const auto settings = world != nullptr ? world->settings : scene.getPhysicsSettings().clamped();
+	const PathSettings path{.worldGravity = settings.gravity,
+							.gravityScale = body ? world->jolt->getGravityFactor(*body) : sbody.gravityScale,
+							.fields = sbody.gravityFields,
+							.plane = sbody.dimension == scene::SceneBody::Dimension::Plane,
+							.stepSeconds = static_cast<float>(scene.getSimulationClock().getStepSeconds()),
+							.subSteps = settings.solverSubSteps,
+							.self = iEntity.getUUID()};
+	const math::vec3f position =
+			body ? world->jolt->getSpacePose(*body).position : scene.getWorldTransform(iEntity).translation();
+	const math::vec3f velocity = body ? world->jolt->getSpaceVelocity(*body) : math::vec3f{0.f, 0.f, 0.f};
+	return predictPath(sources, path, position, velocity, std::min(iSteps, maxPredictionSteps));
+}
+
+auto PhysicCommand::isOnRails(const scene::Scene& iScene) -> bool {
+	const auto* const world = iScene.getPhysicsWorld();
+	return world != nullptr && world->onRails;
+}
+
+void PhysicCommand::setSimulated(const scene::Entity& iEntity, const bool iSimulated, const math::vec3f& iVelocity) {
+	auto* const world = runningWorld(iEntity, "setSimulated");
+	if (world == nullptr)
+		return;
+	const auto body = movingBody(*world, iEntity);
+	if (!body || iEntity.getComponent<scene::component::PhysicBody>().body.type != scene::SceneBody::BodyType::Dynamic)
+		return;
+	if (iSimulated) {
+		if (world->heldBodies.erase(*body) == 0)
+			return;
+		world->jolt->wake(*body);
+		world->jolt->setSpaceVelocity(*body,
+									  isInSpace(iEntity) ? iVelocity : math::vec3f{iVelocity.x(), iVelocity.y(), 0.f});
+		return;
+	}
+	if (!world->heldBodies.insert(*body).second)
+		return;
+	world->jolt->setSpaceVelocity(*body, {0.f, 0.f, 0.f});
+	world->jolt->setSpaceAngularVelocity(*body, {0.f, 0.f, 0.f});
+	world->jolt->sleep(*body);
+}
+
+auto PhysicCommand::isSimulated(const scene::Entity& iEntity) -> bool {
+	const auto* const world = worldOf(iEntity);
+	if (world == nullptr)
+		return true;
+	const auto body = movingBody(*world, iEntity);
+	return !body || !world->heldBodies.contains(*body);
+}
+
+auto PhysicCommand::followRails(const scene::Entity& iEntity, const math::vec3f& iVelocity, const float iSeconds)
+		-> math::vec3f {
+	auto* const world = runningWorld(iEntity, "followRails");
+	if (world == nullptr)
+		return iVelocity;
+	const auto body = movingBody(*world, iEntity);
+	if (!body || !world->heldBodies.contains(*body))
+		return iVelocity;
+	const auto& scene = *iEntity.getScene();
+	const auto& sbody = iEntity.getComponent<scene::component::PhysicBody>().body;
+	world->gatherSources(scene);
+	const math::vec3f position = world->jolt->getSpacePose(*body).position;
+	const auto arc = railsArc(world->fieldSources, world->settings.gravity, position, iEntity.getUUID(),
+							  world->jolt->getGravityFactor(*body), sbody.gravityFields);
+	math::OrbitState state{.position = PhysicsWorld::toDouble(position), .velocity = PhysicsWorld::toDouble(iVelocity)};
+	math::vec3d origin{0.0, 0.0, 0.0};
+	if (arc.source) {
+		const auto& source = world->fieldSources[*arc.source];
+		origin = PhysicsWorld::toDouble(source.position);
+		state = {.position = state.position - origin,
+				 .velocity = state.velocity - PhysicsWorld::toDouble(source.velocity)};
+	}
+	auto moved = followArc(arc, world->fieldSources, state, static_cast<double>(iSeconds));
+	moved.position += origin;
+	if (arc.source)
+		moved.velocity += PhysicsWorld::toDouble(world->fieldSources[*arc.source].velocity);
+	if (sbody.dimension == scene::SceneBody::Dimension::Plane) {
+		moved.position.z() = static_cast<double>(position.z());
+		moved.velocity.z() = 0.0;
+	}
+	world->jolt->setSpaceMotion(*body, PhysicsWorld::toFloat(moved.position), {0.f, 0.f, 0.f});
+	world->snapBody(sbody.bodyId);
+	return PhysicsWorld::toFloat(moved.velocity);
+}
 
 namespace {
 

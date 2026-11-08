@@ -530,6 +530,13 @@ void SceneSettings::renderPhysicsSection() const {
 		std::ignore = gui::widgets::propertyBool("Interpolate", edited.interpolate, defaults.interpolate,
 												 "Blend the drawn positions between the last two physics steps "
 												 "(smooth motion, one step of latency).");
+		std::ignore = gui::widgets::propertyVec3("Gravity", edited.gravity, defaults.gravity, 0.05f,
+												 "World gravity felt by every dynamic body, summed with the fields of "
+												 "the Gravity Source components; zero for space.");
+		std::ignore = gui::widgets::propertyFloat("Rails Time Scale", edited.railsTimeScale, defaults.railsTimeScale,
+												  0.1f, "%.1f",
+												  "Time scale above which the time warps: the moving bodies leave the "
+												  "solver and follow their arcs around the strongest gravity source.");
 		gui::widgets::endProperties();
 	}
 	ImGui::TextDisabled("One step per simulation tick (%.0f Hz, Project Settings). Applied when Play starts.",
@@ -538,9 +545,13 @@ void SceneSettings::renderPhysicsSection() const {
 	edited = edited.clamped();
 	if (edited == before)
 		return;
-	m_scene->getPhysicsSettings() = edited;
-	if (mp_undoManager != nullptr)
-		mp_undoManager->push(mkUniq<commands::ModifyPhysicsSettingsCommand>(before, edited));
+	const commands::CommandTarget target{.registry = mp_commands, .scene = m_scene, .undo = mp_undoManager};
+	std::ignore = target.execute("scene.set_physics_settings",
+								 {{"solver_sub_steps", static_cast<int64_t>(edited.solverSubSteps)},
+								  {"worker_count", static_cast<int64_t>(edited.workerCount)},
+								  {"interpolate", edited.interpolate},
+								  {"gravity", math::vec3{edited.gravity}},
+								  {"rails_time_scale", static_cast<double>(edited.railsTimeScale)}});
 }
 
 void SceneSettings::renderSimulationSection() const {
