@@ -52,27 +52,30 @@ flowchart TD
 
 ## What runs when
 
-| Job                                         | Draft MR / `Experiment/*` | Ready MR | Doc-only ready MR | `main` push | Nightly |
-|---------------------------------------------|---------------------------|----------|-------------------|-------------|---------|
-| `code-style`                                | ✅                         | ✅        | ✅                 | ✅           | —       |
-| `linux-clang-release` (Doxygen)             | ✅                         | ✅        | ✅                 | ✅           | —       |
-| `linux-gcc-debug` (coverage gate)           | ❌                         | ✅        | ❌                 | ✅           | —       |
-| `windows-clang-release`                     | ❌                         | ✅        | ❌                 | ✅           | —       |
-| `clang-tidy` (diff scope)                   | ❌                         | ✅        | ❌                 | ❌           | full    |
-| `bench` (runner tag `bench`)                | ❌                         | ✅        | ❌                 | ❌           | ✅       |
-| `sanitizer-address`                         | ❌                         | ❌        | ❌                 | ✅           | —       |
-| `linux-clang-debug` (Clang coverage)        | ❌                         | ❌        | ❌                 | ❌           | ✅       |
-| `slow-suite` (Release, every test)          | ❌                         | ❌        | ❌                 | ❌           | ✅       |
-| `sanitizer-thread`, `sanitizer-undefined-behavior` | ❌                  | ❌        | ❌                 | ❌           | ✅       |
-| `static-analyzer`, `include-check`          | ❌                         | ❌        | ❌                 | ❌           | ✅       |
-| `fuzz`, `dependency-report`                 | ❌                         | ❌        | ❌                 | ❌           | ✅       |
-| `package-linux-x64`, `-linux-arm64`, `-windows-x64` | ❌                 | ❌        | ❌                 | ❌           | ✅       |
+| Job                                                 | Draft MR / `Experiment/*` | Ready MR | Doc-only ready MR | `main` push | Nightly |
+|-----------------------------------------------------|---------------------------|----------|-------------------|-------------|---------|
+| `code-style`                                        | ✅                         | ✅        | ✅                 | ✅           | —       |
+| `linux-clang-release` (Doxygen)                     | ✅                         | ✅        | ✅                 | ✅           | —       |
+| `linux-gcc-debug` (coverage gate)                   | ▶                         | ✅        | ▶                 | ✅           | —       |
+| `windows-clang-release`                             | ▶                         | ✅        | ▶                 | ✅           | —       |
+| `clang-tidy` (diff scope)                           | ▶                         | ✅        | ▶                 | ▶           | full    |
+| `bench` (runner tag `bench`)                        | ▶                         | ✅        | ▶                 | ▶           | ✅       |
+| `sanitizer-address`                                 | ▶                         | ▶        | ▶                 | ✅           | —       |
+| `nightly-jobs` (every nightly job, one ▶ each)      | ▶                         | ▶        | ▶                 | ▶           | —       |
+| `linux-clang-debug` (Clang coverage)                | —                         | —        | —                 | —           | ✅       |
+| `slow-suite` (Release, every test)                  | —                         | —        | —                 | —           | ✅       |
+| `sanitizer-thread`, `sanitizer-undefined-behavior`  | —                         | —        | —                 | —           | ✅       |
+| `static-analyzer`, `include-check`                  | —                         | —        | —                 | —           | ✅       |
+| `fuzz`, `dependency-report`                         | —                         | —        | —                 | —           | ✅       |
+| `package-linux-x64`, `-linux-arm64`, `-windows-x64` | —                         | —        | —                 | —           | ✅       |
 
+- ▶: the job shows, waiting for its ▶ (`when: manual`, `allow_failure: true`); left alone, it blocks neither the
+  pipeline nor the merge. —: the job is not in that pipeline.
 - **Draft merge requests** (title `Draft:`) and **`Experiment/*` branches** run Code Style and Linux Clang Release
   only: the fast verdict. An experiment is not meant to be merged as such; move the work to a `Feature/*` branch for
   the full one.
 - **Ready merge requests** add the GCC Debug build (coverage gate), Windows Clang Release, clang-tidy and the
-  benchmarks. Every job but Code Style and Linux Clang Release is skipped when only documentation moved (`rules:
+  benchmarks. Every job but Code Style and Linux Clang Release waits for its ▶ when only documentation moved (`rules:
   changes`: everything outside `doc/`, `.claude/`, the root Markdown files and `LICENSE`).
 - Marking a draft ready **does not start a pipeline**: run one by hand from the merge request (*Run pipeline*). A
   pipeline run by hand always runs the ready set.
@@ -83,8 +86,14 @@ flowchart TD
   pipeline only when `main` moved since the last successful scheduled pipeline, a single no-op job otherwise. The
   child pipeline builds nothing in the three package jobs beyond their own tree: each builds and tests its release
   tree, then publishes the archives to the site (Linux x64 also publishes the documentation).
+- **One nightly job by hand**: ▶ on `nightly-jobs` opens the nightly child pipeline of the branch with every job
+  waiting for its own ▶ (`NIGHTLY_PICK`): ▶ the one to check. The merge request does not wait for it.
 - **Nightly by hand**: *Build > Pipelines > Run pipeline* on any branch with `NIGHTLY` = `true` runs the gate and the
   whole child pipeline on that branch, whether it moved or not, and none of the usual jobs; only `main` publishes.
+- **Reuse**: in a pipeline a push started, a `BuildAndTest` job that a successful job of the same name already ran
+  on a commit with exactly the same tree (GitLab's `compare`, no diff) builds nothing and keeps that verdict, and
+  its coverage figure: the `main` pipeline of an up-to-date merge request, a push of the same content. Never a job
+  that packages, one started by ▶, a nightly one, nor with `OWL_CI_REUSE=false`; no artifact is kept for it.
 
 Code Style and Linux Clang Release run on documentation-only merge requests because those paths are their input:
 

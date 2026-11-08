@@ -1,5 +1,6 @@
-# Nightly jobs of Owl, a child pipeline of the scheduled one. `NightlyGate` writes it after `templates.yml`, so the
-# building blocks are in the same file: an artifact-generated pipeline cannot include the repository's files.
+# Nightly jobs of Owl, a child pipeline of the scheduled one, or of `nightly-jobs` (one ▶ per job). For the schedule
+# `NightlyGate` writes it after `templates.yml`, so the building blocks are in the same file: an artifact-generated
+# pipeline cannot include the repository's files; `nightly-jobs` includes both files.
 #
 # Everything here is too long for every push, or publishes: all start at once, the runners deciding the order.
 
@@ -7,9 +8,17 @@ stages:
   - build
   - publish
 
+# Opened from `nightly-jobs` (`NIGHTLY_PICK`), every job waits for its own ▶; from the schedule, all start.
+.nightly-job:
+  rules:
+    - if: $NIGHTLY_PICK == "true"
+      when: manual
+      allow_failure: true
+    - when: on_success
+
 # Clang Debug measures its own coverage, beside the GCC one of the merge requests.
 linux-clang-debug:
-  extends: .build-linux
+  extends: [.build-linux, .nightly-job]
   stage: build
   variables:
     PRESET: linux-clang-debug
@@ -17,7 +26,7 @@ linux-clang-debug:
 # The whole suite, the `slow` tests the other builds leave out included, on the release tree where a slow scenario
 # takes seconds (in Debug with coverage, minutes). Neither documented nor packaged.
 slow-suite:
-  extends: .linux
+  extends: [.linux, .nightly-job]
   stage: build
   variables:
     PRESET: linux-clang-release
@@ -31,36 +40,36 @@ slow-suite:
       junit: output/build/*/test/test/*_Report.xml
 
 sanitizer-thread:
-  extends: .build-linux
+  extends: [.build-linux, .nightly-job]
   stage: build
   variables:
     PRESET: linux-sanitizer-thread
 
 sanitizer-undefined-behavior:
-  extends: .build-linux
+  extends: [.build-linux, .nightly-job]
   stage: build
   variables:
     PRESET: linux-sanitizer-undefined-behavior
 
 clang-tidy:
-  extends: .analysis
+  extends: [.analysis, .nightly-job]
   stage: build
   variables:
     TOOL: tidy
 
 static-analyzer:
-  extends: .analysis
+  extends: [.analysis, .nightly-job]
   stage: build
   variables:
     TOOL: analyzer
 
 bench:
-  extends: .bench
+  extends: [.bench, .nightly-job]
   stage: build
 
 # Each libFuzzer target for a fixed time; the failing inputs are kept to replay them locally.
 fuzz:
-  extends: .linux
+  extends: [.linux, .nightly-job]
   stage: build
   variables:
     PRESET: linux-fuzz
@@ -75,7 +84,7 @@ fuzz:
 
 # Every header and source compiled alone on strict libc++: up to 26 minutes for a check that rarely fails.
 include-check:
-  extends: .linux
+  extends: [.linux, .nightly-job]
   stage: build
   variables:
     PRESET: linux-include-check
@@ -85,7 +94,7 @@ include-check:
 
 # Informative: never fails.
 dependency-report:
-  extends: .linux
+  extends: [.linux, .nightly-job]
   stage: build
   script:
     - poetry run python3 ci_action.py DependencyReport linux-clang-release
@@ -99,7 +108,7 @@ dependency-report:
 # documentation): an archive never comes from untested code. Only `main` publishes: a branch run by hand stops at
 # the archives.
 package-linux-x64:
-  extends: .build-linux
+  extends: [.build-linux, .nightly-job]
   stage: publish
   # Its own build is its gate: it does not wait for the rest of the night.
   needs: []
@@ -113,7 +122,7 @@ package-linux-x64:
 # Cross compiled on x64 (Clang --target=aarch64-linux-gnu, the arm64 sysroot of the image); the tests run under
 # qemu-user, in release because QEMU multiplies the cost of every instruction.
 package-linux-arm64:
-  extends: .build-linux
+  extends: [.build-linux, .nightly-job]
   stage: publish
   needs: []
   image: registry.argawaen.net/builder/builder-cross-arm64-ubuntu2604
@@ -124,7 +133,7 @@ package-linux-arm64:
     - '[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ] || poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"'
 
 package-windows-x64:
-  extends: .build-windows
+  extends: [.build-windows, .nightly-job]
   stage: publish
   needs: []
   variables:

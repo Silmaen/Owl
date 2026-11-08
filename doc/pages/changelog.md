@@ -48,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The nightly pipeline is skipped when `main` did not move since the last successful one.
 - A pipeline run by hand with `NIGHTLY=true` runs the nightly jobs on any branch, publishing only from `main`.
 - The benchmark baseline (`test/bench/baseline/linux-bench.json`) is measured on the GitLab bench runner.
+- Every job a pipeline leaves out shows with a ▶ to run it by hand, and `nightly-jobs` offers each nightly job alone.
+- A build job of a push pipeline reuses an earlier success on the same tree instead of building again.
 
 ### Removed
 

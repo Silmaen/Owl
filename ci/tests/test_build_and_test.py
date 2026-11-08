@@ -84,3 +84,65 @@ def test_no_section_outside_gitlab(
     monkeypatch.delenv("GITLAB_CI", raising=False)
     assert BuildAndTest().run(PresetConfig("linux-gcc-debug")) == 0
     assert "section_start" not in capsys.readouterr().err
+
+
+def test_an_earlier_success_on_the_same_tree_stands(
+    steps: list[tuple[str, list[str] | None]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from ci.utils import gitlab
+
+    monkeypatch.setattr(gitlab, "reuse_allowed", lambda: True)
+    monkeypatch.setattr(gitlab, "same_tree_success", lambda: {"id": 7, "coverage": 82.14, "commit": {"id": "a" * 40}})
+    assert BuildAndTest().run(PresetConfig("linux-gcc-debug")) == 0
+    assert steps == []
+
+    # A job that packages builds its own archives.
+    monkeypatch.setenv("CI_COMMIT_BRANCH", "main")
+    monkeypatch.setenv("CI_DEFAULT_BRANCH", "main")
+    assert BuildAndTest().run(PresetConfig("linux-clang-release")) == 0
+    assert names(steps)[-1] == "Package"
+
+
+@pytest.mark.parametrize(
+    ("source", "manual", "switch", "expected"),
+    [
+        ("merge_request_event", "", "", True),
+        ("push", "", "", True),
+        ("push", "true", "", False),
+        ("push", "", "false", False),
+        ("web", "", "", False),
+        ("parent_pipeline", "", "", False),
+    ],
+)
+def test_reuse_is_for_the_pipelines_a_push_starts(
+    monkeypatch: pytest.MonkeyPatch, source: str, manual: str, switch: str, expected: bool
+) -> None:
+    from ci.utils import gitlab
+
+    monkeypatch.setenv("GITLAB_CI", "true")
+    monkeypatch.setenv("CI_PIPELINE_SOURCE", source)
+    monkeypatch.setenv("CI_JOB_MANUAL", manual)
+    monkeypatch.setenv("OWL_CI_REUSE", switch or "true")
+    assert gitlab.reuse_allowed() is expected
+
+
+def test_only_a_commit_with_the_same_tree_is_reused(monkeypatch: pytest.MonkeyPatch) -> None:
+    from ci.utils import gitlab
+
+    jobs = [
+        {"id": 3, "name": "linux-gcc-debug", "commit": {"id": "changed"}},
+        {"id": 2, "name": "windows-clang-release", "commit": {"id": "same"}},
+        {"id": 1, "name": "linux-gcc-debug", "commit": {"id": "same"}},
+    ]
+
+    def fake_get(path: str) -> object:
+        if path.startswith("jobs"):
+            return jobs
+        return {"diffs": [] if "from=same" in path else [{"new_path": "source/x.cpp"}]}
+
+    monkeypatch.setenv("CI_JOB_NAME", "linux-gcc-debug")
+    monkeypatch.setenv("CI_COMMIT_SHA", "head")
+    monkeypatch.setattr(gitlab, "_api_get", fake_get)
+    assert (gitlab.same_tree_success() or {}).get("id") == 1
+    jobs.pop()
+    assert gitlab.same_tree_success() is None

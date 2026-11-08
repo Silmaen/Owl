@@ -8,7 +8,10 @@
 # - `main`: the builds again on the merged result, and the address sanitizer;
 # - the scheduled pipeline: only the nightly gate, which runs the nightly child pipeline when `main` moved;
 # - a pipeline run by hand with `NIGHTLY` = `true` (Build > Pipelines > Run pipeline, any branch): the nightly jobs
-#   on that branch, whether it moved or not, publishing nothing unless it is `main`.
+#   on that branch, whether it moved or not, publishing nothing unless it is `main`;
+# - anywhere else, every job left out still shows and runs on its ▶, and `nightly-jobs` ▶ opens the nightly jobs
+#   one by one;
+# - a build job of a push pipeline stands on an earlier success on the same tree (`BuildAndTest`, `OWL_CI_REUSE`).
 #
 # Marking a draft ready does not start a pipeline: run one from the merge request. The merge waits for the last
 # pipeline (Settings > Merge requests > Pipelines must succeed).
@@ -47,6 +50,12 @@ variables:
       when: never
     - when: on_success
 
+# A job a pipeline leaves out still shows, waiting for its ▶: it never blocks the pipeline nor the merge.
+.by-hand:
+  rules:
+    - when: manual
+      allow_failure: true
+
 # Ready merge requests that change more than the documentation, and `main`.
 .ready:
   rules:
@@ -54,25 +63,31 @@ variables:
       when: never
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
     - !reference [.ready-merge-request, rules]
+    - !reference [.by-hand, rules]
 
 # Ready merge requests that change more than the documentation, and pipelines run by hand: the jobs `main` runs
 # at night only.
 .ready-only:
   rules:
-    - if: $NIGHTLY == "true"
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $NIGHTLY == "true"
       when: never
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
-      when: never
+      when: manual
+      allow_failure: true
     - !reference [.ready-merge-request, rules]
+    - !reference [.by-hand, rules]
 
+# Waiting for their ▶ in drafts and `Experiment/…`; running when anything but the documentation changed.
 .ready-merge-request:
   rules:
     - if: $CI_MERGE_REQUEST_TITLE =~ /^(\[draft\]|\(draft\)|draft:)/i
-      when: never
+      when: manual
+      allow_failure: true
     # Exploratory work does not pay for the full set.
     - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^Experiment\//
-      when: never
+      when: manual
+      allow_failure: true
     # Everything but `doc/`, `.claude/`, the root Markdown files and LICENSE.
     - changes:
         - .gitlab-ci.yml
@@ -101,13 +116,14 @@ variables:
         - test/**/*
         - tools/**/*
 
-# Pushes to `main` and pipelines run by hand, never a merge request.
+# Pushes to `main` and pipelines run by hand; by hand in a merge request.
 .main:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" || $NIGHTLY == "true"
       when: never
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "web"
+    - !reference [.by-hand, rules]
 
 .after-style:
   stage: build
@@ -204,4 +220,27 @@ nightly:
     # has no `CI_PROJECT_DIR`: the Poetry cache would land in `/.cache`. The schedule's variables still go down.
     forward:
       yaml_variables: false
+      pipeline_variables: true
+
+# Every nightly job on this branch, one ▶ each, as a child pipeline: ▶ here opens it, then ▶ the job to run. The
+# usual pipeline never waits for it, and nothing in it publishes but `main`.
+nightly-jobs:
+  stage: nightly
+  inherit:
+    default: false
+    variables: false
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $NIGHTLY == "true"
+      when: never
+    - !reference [.by-hand, rules]
+  needs: []
+  variables:
+    NIGHTLY_PICK: "true"
+  trigger:
+    include:
+      - local: ci/gitlab/templates.yml
+      - local: ci/gitlab/nightly.yml
+    # Only its own `NIGHTLY_PICK` goes down with the YAML variables (`inherit` keeps the global ones here).
+    forward:
+      yaml_variables: true
       pipeline_variables: true
