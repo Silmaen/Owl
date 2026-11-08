@@ -26,6 +26,21 @@ modules on the v0.3.0 phased systems, not inside `Scene` (A-02). 3D physics is d
     - Composable via behaviour tree or Lua
     - Open 3D space: obstacle avoidance between moving volumes, formations
 
+User guide: [Pathfinding](../pathfinding.md#pathfinding-navmesh).
+
+| Decision   | Choice                                                                                         |
+|------------|------------------------------------------------------------------------------------------------|
+| Library    | In-house bake and search: deterministic on every target, no dependency                         |
+| Partition  | Monotone regions over voxels, stacked floors kept apart, contours simplified then triangulated |
+| Storage    | The baked triangles are saved in the scene (`NavMeshVolume`), every target loads the same mesh |
+| Bake input | Static colliders and meshes without body; what moves and hidden entities are skipped           |
+| Search     | A* over the triangles and the links, then the funnel                                           |
+| Avoidance  | ORCA: agents share half, obstacles none; a blocked agent retries bearing right                 |
+| Obstacles  | `NavObstacle` cylinders are avoided, never carved out of the mesh                              |
+| Links      | `NavLink` attached to the meshes at read time, no new bake                                     |
+| Tick       | `owl.nav_agents` in `PrePhysics`, fixed tick only, agents in UUID order                        |
+| Editor     | Inspector with a Bake button, `nav.bake` command, pickable markers, overlay                    |
+
 ## Audio
 
 - Audio mixer

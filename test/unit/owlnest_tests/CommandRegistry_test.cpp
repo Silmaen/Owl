@@ -105,7 +105,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 133u);
+	EXPECT_EQ(m_registry.getCommands().size(), 134u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -299,7 +299,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 133u);
+	EXPECT_EQ(m_registry.getCommands().size(), 134u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -1419,4 +1419,29 @@ TEST_F(CommandRegistryTest, SetHudThemeChoosesTheThemeOfTheSceneAndUndoes) {
 	EXPECT_EQ(*m_scene->getHudThemePath(), "");
 	m_undo.undo(*m_scene);
 	EXPECT_EQ(*m_scene->getHudThemePath(), "huds/demo.owlhudtheme");
+}
+
+TEST_F(CommandRegistryTest, NavBakeCutsTheMeshAndUndoes) {
+	m_undo.setMergeEnabled(false);
+	auto ground = m_scene->createEntity("Ground");
+	ground.getComponent<scene::component::Transform>().transform.translation() = {0.f, -0.1f, 0.f};
+	auto& body = ground.addComponent<scene::component::PhysicBody>().body;
+	body.type = scene::SceneBody::BodyType::Static;
+	body.dimension = scene::SceneBody::Dimension::Space;
+	body.colliderSize = {8.f, 0.2f, 8.f};
+	auto volume = m_scene->createEntity("Navigation");
+	EXPECT_FALSE(run("nav.bake", {{"entity", idOf(volume)}}));
+	volume.addComponent<scene::component::NavMeshVolume>().size = {10.f, 4.f, 10.f};
+	const auto baked = run("nav.bake", {{"entity", idOf(volume)}});
+	ASSERT_TRUE(baked) << baked.error().message;
+	EXPECT_GT(std::get<int64_t>(baked->data.at("triangles")), 0);
+	EXPECT_TRUE(volume.getComponent<scene::component::NavMeshVolume>().isBaked());
+	ASSERT_TRUE(run("edit.undo", {}));
+	const auto restored = m_scene->findEntityByUUID(volume.getUUID());
+	ASSERT_TRUE(restored);
+	EXPECT_FALSE(restored.getComponent<scene::component::NavMeshVolume>().isBaked());
+	// A box without floor inside bakes nothing and leaves no undo entry.
+	restored.getComponent<scene::component::Transform>().transform.translation() = {100.f, 0.f, 0.f};
+	EXPECT_FALSE(run("nav.bake", {{"entity", idOf(restored)}}));
+	EXPECT_FALSE(m_undo.canUndo());
 }

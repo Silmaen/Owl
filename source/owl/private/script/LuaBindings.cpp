@@ -42,6 +42,7 @@
 #include "scene/UiInputSystem.h"
 #include "scene/WorldStreamer.h"
 #include "scene/component/components.h"
+#include "scene/nav/NavBake.h"
 #include "scene/nav/NavWorld.h"
 #include "scene/nav/Pathfinder.h"
 #include "scene/nav/WalkQueries.h"
@@ -3132,6 +3133,92 @@ auto luaWalkSetArea(lua_State* iState) -> int {
 	return 1;
 }
 
+auto readPoint3(lua_State* iState, const int iIndex) -> math::vec3 {
+	return {static_cast<float>(luaL_checknumber(iState, iIndex)),
+			static_cast<float>(luaL_checknumber(iState, iIndex + 1)),
+			static_cast<float>(luaL_checknumber(iState, iIndex + 2))};
+}
+
+auto pushPoint3(lua_State* iState, const math::vec3& iPoint) -> int {
+	lua_pushnumber(iState, static_cast<lua_Number>(iPoint.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(iPoint.y()));
+	lua_pushnumber(iState, static_cast<lua_Number>(iPoint.z()));
+	return 3;
+}
+
+auto luaNavFindPath(lua_State* iState) -> int {
+	const auto from = readPoint3(iState, 2);
+	const auto to = readPoint3(iState, 5);
+	const auto volume = entityWith<scene::component::NavMeshVolume>(iState);
+	std::vector<scene::nav::NavPathPoint> path;
+	if (!volume || !volume->getComponent<scene::component::NavMeshVolume>().getMesh().findPath(from, to, path)) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	lua_createtable(iState, static_cast<int>(path.size() * 3), 0);
+	lua_Integer index = 1;
+	for (const auto& point: path) {
+		for (size_t axis = 0; axis < 3; ++axis) {
+			lua_pushnumber(iState, static_cast<lua_Number>(point.position[axis]));
+			lua_rawseti(iState, -2, index++);
+		}
+	}
+	return 1;
+}
+
+auto luaNavGetClosestPoint(lua_State* iState) -> int {
+	const auto point = readPoint3(iState, 2);
+	const auto volume = entityWith<scene::component::NavMeshVolume>(iState);
+	if (!volume)
+		return 0;
+	const auto nearest = volume->getComponent<scene::component::NavMeshVolume>().getMesh().findNearest(point);
+	return nearest.has_value() ? pushPoint3(iState, nearest->position) : 0;
+}
+
+auto luaNavBake(lua_State* iState) -> int {
+	const auto volume = entityWith<scene::component::NavMeshVolume>(iState);
+	lua_pushboolean(iState, volume && scene::nav::bakeNavMesh(*getBoundScene(iState), *volume).has_value() ? 1 : 0);
+	return 1;
+}
+
+auto luaNavGoTo(lua_State* iState) -> int {
+	const auto target = readPoint3(iState, 2);
+	const auto agent = entityWith<scene::component::NavAgent>(iState);
+	if (agent)
+		agent->getComponent<scene::component::NavAgent>().goTo(target);
+	lua_pushboolean(iState, agent ? 1 : 0);
+	return 1;
+}
+
+auto luaNavStop(lua_State* iState) -> int {
+	if (const auto agent = entityWith<scene::component::NavAgent>(iState); agent)
+		agent->getComponent<scene::component::NavAgent>().stop();
+	return 0;
+}
+
+auto luaNavIsMoving(lua_State* iState) -> int {
+	const auto agent = entityWith<scene::component::NavAgent>(iState);
+	lua_pushboolean(iState, agent && agent->getComponent<scene::component::NavAgent>().isMoving() ? 1 : 0);
+	return 1;
+}
+
+auto luaNavGetTarget(lua_State* iState) -> int {
+	const auto agent = entityWith<scene::component::NavAgent>(iState);
+	if (!agent)
+		return 0;
+	const auto& walker = agent->getComponent<scene::component::NavAgent>();
+	if (walker.m_pendingTarget)
+		return pushPoint3(iState, walker.m_target);
+	return walker.isMoving() ? pushPoint3(iState, walker.m_path.back().position) : 0;
+}
+
+auto luaNavSetSpeed(lua_State* iState) -> int {
+	const auto speed = static_cast<float>(luaL_checknumber(iState, 2));
+	if (const auto agent = entityWith<scene::component::NavAgent>(iState); agent)
+		agent->getComponent<scene::component::NavAgent>().speed = std::max(0.f, speed);
+	return 0;
+}
+
 auto splineEntity(lua_State* iState) -> std::optional<scene::Entity> {
 	if (auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Spline>())
 		return entity;
@@ -4506,6 +4593,31 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "walk", .name = "set_area", .function = guarded<luaWalkSetArea>,
 		 .description = "Put a `WalkAgent` on the `WalkArea` of another entity (it stops); false when that entity has no area.",
 		 .params = {entityId, {"area", Integer}}, .returns = {{"done", Boolean}}},
+		{.table = "nav", .name = "find_path", .function = guarded<luaNavFindPath>,
+		 .description = "Shortest path on the `NavMeshVolume` of an entity between two world points (each moved onto the mesh), links included: the corners as `{x1, y1, z1, x2, y2, z2, ...}`, start and goal included; nothing when a point is off the mesh or no path joins them.",
+		 .params = {entityId, {"from_x", Number}, {"from_y", Number}, {"from_z", Number}, {"to_x", Number}, {"to_y", Number}, {"to_z", Number}},
+		 .returns = {{"points", Table}}},
+		{.table = "nav", .name = "get_closest_point", .function = guarded<luaNavGetClosestPoint>,
+		 .description = "Point of the navigation mesh of a `NavMeshVolume` nearest to a world point, within 2 units; nothing when the mesh is farther.",
+		 .params = {entityId, {"x", Number}, {"y", Number}, {"z", Number}},
+		 .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "nav", .name = "bake", .function = guarded<luaNavBake>,
+		 .description = "Bake the navigation mesh of a `NavMeshVolume` again from the static geometry inside its box (a level built at run time); false when no floor was found, the previous mesh is then kept.",
+		 .params = {entityId}, .returns = {{"done", Boolean}}},
+		{.table = "nav", .name = "go_to", .function = guarded<luaNavGoTo>,
+		 .description = "Send a `NavAgent` to a world point: the path is found at the next tick and walked around the walls and the other agents; false when the entity has no agent.",
+		 .params = {entityId, {"x", Number}, {"y", Number}, {"z", Number}}, .returns = {{"sent", Boolean}}},
+		{.table = "nav", .name = "stop", .function = guarded<luaNavStop>,
+		 .description = "Stop a `NavAgent` where it stands.", .params = {entityId}},
+		{.table = "nav", .name = "is_moving", .function = guarded<luaNavIsMoving>,
+		 .description = "Whether a `NavAgent` still has a path to walk, or a goal waiting for its path.",
+		 .params = {entityId}, .returns = {{"moving", Boolean}}},
+		{.table = "nav", .name = "get_target", .function = guarded<luaNavGetTarget>,
+		 .description = "World point a walking `NavAgent` goes to; nothing when it stands.",
+		 .params = {entityId}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "nav", .name = "set_speed", .function = guarded<luaNavSetSpeed>,
+		 .description = "Highest speed of a `NavAgent`, in world units per second.",
+		 .params = {entityId, {"speed", Number}}},
 		{.table = "animator", .name = "set_float", .function = guarded<luaAnimatorSetFloat>,
 		 .description = "Set a number parameter of the entity's `Animator` state machine; false when it has no such parameter.",
 		 .params = {entityId, {"name", String}, {"value", Number}}, .returns = {{"done", Boolean}}},
@@ -4759,6 +4871,9 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "walk",
 			 .description = "Free walking on the 2D floors of the `WalkArea`s: paths around the holes, the agents "
 							"walking them, the scale by depth."},
+			{.name = "nav",
+			 .description = "Navigation meshes of the 3D scenes: paths over the floors and the links, the agents "
+							"walking them around each other."},
 	};
 	return s_tables;
 }
@@ -4782,6 +4897,7 @@ auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 			{.file = "lua-api-isometric.md",
 			 .title = "Isometric terrain, paths and walkable areas",
 			 .tables = {"isometric", "path", "walk"}},
+			{.file = "lua-api-navigation.md", .title = "Navigation meshes", .tables = {"nav"}},
 			{.file = "lua-api-animation.md", .title = "Animation and sockets", .tables = {"animator", "socket"}},
 			{.file = "lua-api-data.md", .title = "Splines and data tables", .tables = {"spline", "datatable"}},
 			{.file = "lua-api-dialogue.md", .title = "Dialogues", .tables = {"dialogue"}},

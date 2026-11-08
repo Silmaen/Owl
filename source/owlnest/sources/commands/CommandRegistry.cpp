@@ -21,6 +21,7 @@
 #include "HudCommands.h"
 #include "HudThemeCommands.h"
 #include "Macro.h"
+#include "NavCommands.h"
 #include "PrefabCommands.h"
 #include "SceneSettingsCommands.h"
 #include "SequenceCommands.h"
@@ -1901,6 +1902,7 @@ CommandRegistry::CommandRegistry() {
 	addHudCommands(*this);
 	addSplineCommands(*this);
 	addWalkAreaCommands(*this);
+	addNavCommands(*this);
 	addDataTableCommands(*this);
 	addHudThemeCommands(*this);
 	addDialogueCommands(*this);

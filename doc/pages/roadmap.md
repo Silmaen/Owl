@@ -166,7 +166,8 @@ deterministic simulation and replay, Jolt, gravity fields.
   ([Large worlds](design/large-worlds.md))
 - ![Done][done] Simulation level of detail: far entities on a coarse model, on a slower tick
   ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Navigation (NavMesh generation, A*, dynamic avoidance); on top of the tile-graph pathfinding
+- ![Done][done] Navigation (NavMesh generation, A*, dynamic avoidance); on top of the tile-graph pathfinding
+  ([Pathfinding](pathfinding.md#pathfinding-navmesh))
 - ![Planned][planned] Behaviour trees with a visual editor (`.owlbt`)
 - ![Planned][planned] Steering behaviours and flocking, in 2D and in open 3D space (obstacle avoidance, formations)
 - ![Planned][planned] Engine Demo: enemies demo on the AI modules

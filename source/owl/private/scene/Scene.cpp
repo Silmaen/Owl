@@ -3092,6 +3092,7 @@ void Scene::renderOverlays(const renderer::Camera& iCamera) {
 		nav::drawNavigationGraph(*this);
 		nav::drawNavigationRoutes(*this);
 		nav::drawWalkAreas(*this);
+		nav::drawNavMeshes(*this);
 		renderer::Renderer2D::endScene();
 	}
 	if (!m_hasVoxelHighlight && !m_showCrosshair && !m_interactionHighlight)
@@ -4440,6 +4441,23 @@ OWL_API void Scene::onComponentAdded<component::WalkAgent>([[maybe_unused]] cons
 template<>
 OWL_API void Scene::onComponentAdded<component::WalkBehind>([[maybe_unused]] const Entity& iEntity,
 															[[maybe_unused]] component::WalkBehind& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::NavMeshVolume>([[maybe_unused]] const Entity& iEntity,
+															   [[maybe_unused]] component::NavMeshVolume& ioComponent) {
+}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::NavAgent>([[maybe_unused]] const Entity& iEntity,
+														  [[maybe_unused]] component::NavAgent& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::NavObstacle>([[maybe_unused]] const Entity& iEntity,
+															 [[maybe_unused]] component::NavObstacle& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::NavLink>([[maybe_unused]] const Entity& iEntity,
+														 [[maybe_unused]] component::NavLink& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>([[maybe_unused]] const Entity& iEntity,

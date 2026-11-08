@@ -69,6 +69,7 @@ Groups:
       - doc/pages/lua-api-locale.md
       - doc/pages/lua-api-raycast.md
       - doc/pages/lua-api-isometric.md
+      - doc/pages/lua-api-navigation.md
       - doc/pages/lua-api-animation.md
       - doc/pages/lua-api-data.md
       - doc/pages/lua-api-dialogue.md

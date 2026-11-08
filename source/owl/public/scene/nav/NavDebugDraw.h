@@ -73,4 +73,13 @@ OWL_API void drawNavigationRoutes(Scene& ioScene);
  */
 OWL_API void drawWalkAreas(Scene& ioScene);
 
+/**
+ * @brief
+ *  Draw every `NavMeshVolume` of the scene with the 2D line renderer (a scene must be begun): its box in faint blue,
+ *  the borders of its mesh in cyan and its triangles in faint cyan, the `NavLink`s in magenta (an arrow head when one
+ *  way), the `NavObstacle`s as orange cylinders and the path left to each walking `NavAgent` in yellow.
+ * @param[in,out] ioScene The scene.
+ */
+OWL_API void drawNavMeshes(Scene& ioScene);
+
 }// namespace owl::scene::nav

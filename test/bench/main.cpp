@@ -118,6 +118,7 @@ auto main(const int iArgc, char** iArgv) -> int {
 		owl::bench::runParticleBenches(runner);
 		owl::bench::runLargeWorldBenches(runner);
 		owl::bench::runSplineBenches(runner);
+		owl::bench::runNavBenches(runner);
 		runner.writeReports();
 		owl::app::Application::invalidate();
 		application.reset();

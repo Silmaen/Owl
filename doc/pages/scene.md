@@ -1017,6 +1017,43 @@ baseline. Guide: [Walkable areas](pathfinding.md#pathfinding-walk-areas).
 | `area`             | UUID  | `0`     | Entity holding the `WalkArea` (its `depthSort` on)                           |
 | `baseline`         | float | `0`     | Height of the line on the plane: agents above it are behind the mask         |
 
+#### NavMeshVolume, NavAgent, NavObstacle and NavLink {#nav-components}
+
+YAML keys: `NavMeshVolume`, `NavAgent`, `NavObstacle`, `NavLink`, system `owl.nav_agents` (`PrePhysics`, fixed tick). A
+`NavMeshVolume` is a box of a 3D scene whose static floors are baked into a navigation mesh saved with the scene; a
+`NavAgent` walks it around the walls, the other agents and the obstacles; a `NavObstacle` is a cylinder the agents steer
+around; a `NavLink` joins two floors in a straight crossing. Guide: [Navigation meshes](pathfinding.md#pathfinding-navmesh).
+
+| `NavMeshVolume` field | Type | Default              | Description                                                                                                     |
+|-----------------------|------|----------------------|-----------------------------------------------------------------------------------------------------------------|
+| `size`                | vec3 | `[20, 6, 20]`        | Full size of the box, centred on the entity, on the world axes                                                  |
+| `settings`            | map  | see the guide        | `cellSize`, `cellHeight`, `agentHeight`, `agentRadius`, `maxClimb`, `maxSlope`, `minRegionArea`, `maxEdgeError` |
+| `sources`             | enum | `CollidersAndMeshes` | `CollidersAndMeshes`, `Colliders` or `Meshes`                                                                   |
+| `vertices`            | list | empty                | Baked corners, in world space                                                                                   |
+| `indices`             | list | empty                | Baked triangles, three indices in `vertices` each                                                               |
+
+| `NavAgent` field   | Type     | Default | Description                                                               |
+|--------------------|----------|---------|---------------------------------------------------------------------------|
+| `volume`           | UUID     | `0`     | Entity holding the `NavMeshVolume` (`0`: the first volume holding it)     |
+| `speed`            | float    | `3.5`   | Highest speed, in world units per second                                  |
+| `acceleration`     | float    | `10`    | Largest change of velocity per second                                     |
+| `radius`           | float    | `0.4`   | Radius of the actor, for the avoidance                                    |
+| `stoppingDistance` | float    | `0.1`   | Distance from the goal at which the agent stops                           |
+| `avoidance`        | `bool`   | `true`  | Steer clear of the other agents and of the obstacles                      |
+| `turn`             | `bool`   | `true`  | Turn the entity around Y the way it walks (front is +Z)                   |
+| `speedParameter`   | `string` | `speed` | Float parameter of the `Animator` (own or first child's) set to the speed |
+
+| `NavObstacle` field | Type  | Default | Description                     |
+|---------------------|-------|---------|---------------------------------|
+| `radius`            | float | `0.5`   | Radius of the vertical cylinder |
+| `height`            | float | `1`     | Height of the cylinder          |
+
+| `NavLink` field | Type   | Default     | Description                                             |
+|-----------------|--------|-------------|---------------------------------------------------------|
+| `end`           | vec3   | `[0, 0, 2]` | End point, relative to the entity origin, in world axes |
+| `bidirectional` | `bool` | `true`      | Crossed both ways                                       |
+| `costScale`     | float  | `1`         | Cost per unit of length, at least 1 (walking costs 1)   |
+
 #### SequencePlayer {#sequence-player-component}
 
 YAML key: `SequencePlayer`, system `owl.sequences` (`PostPhysics`, after `follow_target`). Plays a `.owlseq` sequence:

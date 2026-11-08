@@ -26,6 +26,7 @@
 #include <scene/component/Animator.h>
 #include <scene/component/Light.h>
 #include <scene/component/MeshRenderer.h>
+#include <scene/component/NavMeshVolume.h>
 #include <scene/component/ReflectionProbe.h>
 #include <scene/component/ReverbZone.h>
 #include <scene/component/SequencePlayer.h>
@@ -41,6 +42,7 @@
 #include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/Tooltip.h>
 #include <math/linAlgebra.h>
+#include <math/matrixCreation.h>
 #include <owlgui.h>
 #include <renderer/ClipSpace.h>
 #include <renderer/MeshCache.h>
@@ -151,6 +153,7 @@ auto snapToTilemapCellCenter(const math::vec3& iWorldTranslation, const TilemapS
 
 // Draws the reverb zones of a scene, the selected one with the edge of its fade (defined with the light markers).
 void drawReverbZoneMarkers(const shared<scene::Scene>& iScene, const scene::Entity& iSelected);
+void drawNavMarkers(const shared<scene::Scene>& iScene, const scene::Entity& iSelected);
 
 }// namespace
 
@@ -827,6 +830,7 @@ void Viewport::renderOverlay() const {
 
 		const scene::Entity selectedForGizmo = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
 		drawReverbZoneMarkers(activeScene, selectedForGizmo);
+		drawNavMarkers(activeScene, selectedForGizmo);
 		constexpr math::vec4 kPushwallOutline{0.25f, 0.85f, 0.35f, 1.f};
 		constexpr math::vec4 kDestinationLine{0.95f, 0.85f, 0.25f, 1.f};
 		// 1. Green outline around every pushwall.
@@ -2207,6 +2211,7 @@ void Viewport::renderNavigationOverlay(const shared<scene::Scene>& iScene) const
 	scene::nav::drawNavigationGraph(*iScene);
 	scene::nav::drawNavigationRoutes(*iScene);
 	scene::nav::drawWalkAreas(*iScene);
+	scene::nav::drawNavMeshes(*iScene);
 	if (m_navTool.active && m_hoveredCell.has_value() && m_isometric)
 		scene::nav::drawNavigationCellEditor(*iScene, static_cast<uint64_t>(m_hoveredMapEntity), m_hoveredCell->x(),
 											 m_hoveredCell->y(), m_navSide);
@@ -2757,6 +2762,51 @@ void drawOrientedBox(const math::mat4& iWorld, const math::vec3& iExtents, const
 			renderer::Renderer2D::drawLine(
 					{.point1 = corner(bits), .point2 = corner(bits | axis), .color = iColor, .entityId = iEntityId});
 		}
+	}
+}
+
+// Draw the navigation volumes, links and obstacles, pickable, brighter when selected; a selected volume shows its mesh.
+void drawNavMarkers(const shared<scene::Scene>& iScene, const scene::Entity& iSelected) {
+	const auto isSelected = [&iSelected](const scene::Entity& iEntity) -> bool {
+		return iSelected && static_cast<uint32_t>(iEntity) == static_cast<uint32_t>(iSelected);
+	};
+	const auto translation = [&iScene](const scene::Entity& iEntity) -> math::vec3 {
+		const math::mat4 world = iScene->getWorldTransform(iEntity)();
+		return {world(0, 3), world(1, 3), world(2, 3)};
+	};
+	for (const auto view = iScene->registry.view<scene::component::NavMeshVolume>(); const auto entity: view) {
+		const scene::Entity ent{entity, iScene.get()};
+		const bool selected = isSelected(ent);
+		const auto& volume = view.get<scene::component::NavMeshVolume>(entity);
+		drawOrientedBox(math::translate(math::identity<float, 4>(), translation(ent)), volume.size * 0.5f,
+						{0.35f, 0.55f, 1.f, selected ? 0.95f : 0.35f}, static_cast<int>(entity));
+		if (!selected)
+			continue;
+		const auto& mesh = volume.getMesh();
+		const math::vec3 lift{0.f, 0.03f, 0.f};
+		for (const auto& [from, to]: mesh.getBorderEdges())
+			renderer::Renderer2D::drawLine({.point1 = mesh.getVertices()[from] + lift,
+											.point2 = mesh.getVertices()[to] + lift,
+											.color = {0.2f, 0.9f, 1.f, 1.f},
+											.entityId = static_cast<int>(entity)});
+	}
+	for (const auto view = iScene->registry.view<scene::component::NavLink>(); const auto entity: view) {
+		const scene::Entity ent{entity, iScene.get()};
+		const math::vec3 start = translation(ent);
+		const math::vec3 end = start + view.get<scene::component::NavLink>(entity).end;
+		const math::vec4 color{1.f, 0.3f, 0.9f, isSelected(ent) ? 1.f : 0.55f};
+		renderer::Renderer2D::drawLine(
+				{.point1 = start, .point2 = end, .color = color, .entityId = static_cast<int>(entity)});
+		drawLightRange(end, 0.15f, color, static_cast<int>(entity));
+	}
+	for (const auto view = iScene->registry.view<scene::component::NavObstacle>(); const auto entity: view) {
+		const scene::Entity ent{entity, iScene.get()};
+		const auto& obstacle = view.get<scene::component::NavObstacle>(entity);
+		const math::vec3 base = translation(ent);
+		drawOrientedBox(
+				math::translate(math::identity<float, 4>(), base + math::vec3{0.f, obstacle.height * 0.5f, 0.f}),
+				{obstacle.radius, obstacle.height * 0.5f, obstacle.radius},
+				{1.f, 0.55f, 0.15f, isSelected(ent) ? 1.f : 0.45f}, static_cast<int>(entity));
 	}
 }
 

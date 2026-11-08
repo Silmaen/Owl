@@ -1,0 +1,17 @@
+# Two regulars stroll round the tavern on its baked navigation mesh: each walks to a spot, waits, then to another,
+# round the tables, the server on her round, the barrels and the player, and never leaves the room.
+scene: ../../../engine_demo/scenes/tavern.owl
+project: ../../../engine_demo
+steps:
+  - input: {key: Space, frames: 2}
+  - frames: 10
+  - expect: {entity: TavernNav, exists: true}
+  - expect: {entity: TableHop, exists: true}
+  - frames: 2400
+  - expect: {gamestate: tavern_strolls, greater: 3}
+  - expect: {entity: Regular_1, translation.x: {greater: -3.1}}
+  - expect: {entity: Regular_1, translation.x: {less: 4.1}}
+  - expect: {entity: Regular_1, translation.z: {greater: -3.1}}
+  - expect: {entity: Regular_1, translation.z: {less: 4.1}}
+  - expect: {entity: Regular_2, translation.x: {greater: -3.1}}
+  - expect: {entity: Regular_2, translation.z: {less: 4.1}}

@@ -112,6 +112,15 @@ void tickSimulationLod(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  Steer the entities with a `NavAgent` along their path on their `NavMeshVolume`, around the other agents and the
+ *  `NavObstacle`s, one fixed tick (`owl.nav_agents`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The tick context.
+ */
+void tickNavAgents(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
  *  Move the entities with a `Drift` (`owl.drift`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The frame context.

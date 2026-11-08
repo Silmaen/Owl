@@ -34,6 +34,7 @@
 #include "scene/HudTheme.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
+#include "scene/nav/NavBake.h"
 #include "scene/ui/HudLayout.h"
 #include "script/ScriptEngine.h"
 #include "script/visual/VisualScript.h"
@@ -4897,6 +4898,95 @@ void renderProps(WalkBehind& ioComponent) {
 	prop::DragFloat("Baseline", &ioComponent.baseline, 0.05f, -1.e4f, 1.e4f, "%.2f");
 	fieldTooltip("Height of the line on the plane of the area: an agent whose feet are above it walks behind the "
 				 "mask, one below it in front.");
+}
+
+void renderProps(NavMeshVolume& ioComponent, const Entity& iOwner) {
+	const NavMeshVolume defaults;
+	drawVec3Control("Size", ioComponent.size, defaults.size.x());
+	fieldTooltip("Full size of the box whose floors are baked, centred on the entity, on the world axes.");
+	enumCombo("Sources", ioComponent.sources);
+	fieldTooltip("CollidersAndMeshes: the colliders of the static bodies and the meshes of the entities without a "
+				 "body. Colliders or Meshes: only those. Agents and obstacles are never read.");
+	auto& settings = ioComponent.settings;
+	const nav::NavMeshSettings defaultSettings;
+	ImGui::SeparatorText("Agents");
+	resetFloat("Height", settings.agentHeight, defaultSettings.agentHeight, 0.01f, 0.01f, 100.f, "%.2f");
+	fieldTooltip("Free height an agent needs above the floor: lower ceilings are not walked under.");
+	resetFloat("Radius", settings.agentRadius, defaultSettings.agentRadius, 0.01f, 0.f, 20.f, "%.2f");
+	fieldTooltip("Radius of the agents: the floor is shrunk by it along the walls and the ledges.");
+	resetFloat("Max Climb", settings.maxClimb, defaultSettings.maxClimb, 0.01f, 0.f, 20.f, "%.2f");
+	fieldTooltip("Highest step an agent climbs: stairs, kerbs.");
+	resetFloat("Max Slope", settings.maxSlope, defaultSettings.maxSlope, 0.5f, 0.f, 89.f, "%.1f");
+	fieldTooltip("Steepest walkable slope, in degrees.");
+	ImGui::SeparatorText("Voxels");
+	resetFloat("Cell Size", settings.cellSize, defaultSettings.cellSize, 0.005f, 0.01f, 10.f, "%.3f");
+	fieldTooltip("Width of a voxel: smaller follows the walls closer, but bakes slower.");
+	resetFloat("Cell Height", settings.cellHeight, defaultSettings.cellHeight, 0.005f, 0.01f, 10.f, "%.3f");
+	fieldTooltip("Height of a voxel: the precision of the floor heights.");
+	resetFloat("Min Island", settings.minRegionArea, defaultSettings.minRegionArea, 0.1f, 0.f, 1.e4f, "%.1f");
+	fieldTooltip("Smallest island of floor kept, in square units: table tops and crate lids are dropped below it.");
+	resetFloat("Edge Error", settings.maxEdgeError, defaultSettings.maxEdgeError, 0.01f, 0.f, 10.f, "%.2f");
+	fieldTooltip("Largest distance between a simplified border and the voxels it follows.");
+	ImGui::SeparatorText("Mesh");
+	if (ioComponent.isBaked())
+		ImGui::TextDisabled("%zu triangles, %.1f square units", ioComponent.indices.size() / 3,
+							static_cast<double>(ioComponent.getMesh().getArea()));
+	else
+		ImGui::TextDisabled("Not baked");
+	prop::row("Bake", [&](const char* /*iId*/) -> bool {
+		if (!ImGui::Button("Bake", {-FLT_MIN, 0.f}) || iOwner.getScene() == nullptr)
+			return false;
+		return nav::bakeNavMesh(*iOwner.getScene(), iOwner).has_value();
+	});
+	fieldTooltip("Cut the floors again from the static geometry inside the box, after it moved or changed (also the "
+				 "nav.bake command).");
+}
+
+void renderProps(NavAgent& ioComponent) {
+	const NavAgent defaults;
+	auto volume = static_cast<uint64_t>(ioComponent.volume);
+	prop::row("Volume", [&](const char*) -> bool {
+		if (scriptEntityPicker(volume, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.volume = core::UUID{volume};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Entity holding the Nav Mesh Volume the agent walks on; none: the first volume holding it.");
+	resetFloat("Speed", ioComponent.speed, defaults.speed, 0.05f, 0.f, 1000.f, "%.2f");
+	fieldTooltip("Highest speed, in world units per second.");
+	resetFloat("Acceleration", ioComponent.acceleration, defaults.acceleration, 0.1f, 0.01f, 1000.f, "%.1f");
+	fieldTooltip("Largest change of velocity per second: lower turns and stops wider.");
+	resetFloat("Radius", ioComponent.radius, defaults.radius, 0.01f, 0.01f, 50.f, "%.2f");
+	fieldTooltip("Radius of the actor, kept clear of the other agents and of the obstacles.");
+	resetFloat("Stopping Distance", ioComponent.stoppingDistance, defaults.stoppingDistance, 0.01f, 0.f, 50.f, "%.2f");
+	fieldTooltip("Distance from the goal at which the agent stops.");
+	resetCheckbox("Avoidance", ioComponent.avoidance, defaults.avoidance);
+	fieldTooltip("Steer clear of the other agents and of the obstacles; off walks the path straight.");
+	resetCheckbox("Turn", ioComponent.turn, defaults.turn);
+	fieldTooltip("Turn the entity around Y the way it walks (its front is +Z).");
+	prop::InputText("Speed Parameter", &ioComponent.speedParameter);
+	fieldTooltip("Float parameter of the Animator (of the entity or of its first child that has one) set to the "
+				 "walking speed; empty for none.");
+}
+
+void renderProps(NavObstacle& ioComponent) {
+	const NavObstacle defaults;
+	resetFloat("Radius", ioComponent.radius, defaults.radius, 0.01f, 0.01f, 100.f, "%.2f");
+	fieldTooltip("Radius of the vertical cylinder the agents steer around.");
+	resetFloat("Height", ioComponent.height, defaults.height, 0.01f, 0.01f, 100.f, "%.2f");
+	fieldTooltip("Height of the cylinder, as drawn by the navigation overlay.");
+}
+
+void renderProps(NavLink& ioComponent) {
+	const NavLink defaults;
+	drawVec3Control("End", ioComponent.end);
+	fieldTooltip("End point, from the entity origin on the world axes; the start is the entity origin.");
+	resetCheckbox("Both Ways", ioComponent.bidirectional, defaults.bidirectional);
+	fieldTooltip("Crossed both ways; off: only from the start to the end (a drop).");
+	resetFloat("Cost Scale", ioComponent.costScale, defaults.costScale, 0.05f, 1.f, 100.f, "%.2f");
+	fieldTooltip("Cost of the crossing per unit of length (walking costs 1): higher makes the agents prefer to walk "
+				 "around.");
 }
 
 void renderProps(SequencePlayer& ioComponent) {

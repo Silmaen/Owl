@@ -188,4 +188,12 @@ void runLargeWorldBenches(Runner& ioRunner);
  */
 void runSplineBenches(Runner& ioRunner);
 
+/**
+ * @brief
+ *  Navigation meshes: baking a room of 24 x 24 with 36 crates at a cell of 0.1, a path across it, and the avoidance
+ *  velocities of 64 bodies for one tick; budget 50 us for the path, 1 ms for the 64 bodies.
+ * @param[in,out] ioRunner The runner.
+ */
+void runNavBenches(Runner& ioRunner);
+
 }// namespace owl::bench

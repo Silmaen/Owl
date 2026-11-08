@@ -129,6 +129,10 @@ struct SplineFollower;
 struct WalkArea;
 struct WalkAgent;
 struct WalkBehind;
+struct NavMeshVolume;
+struct NavAgent;
+struct NavObstacle;
+struct NavLink;
 struct SequencePlayer;
 struct Drift;
 struct GravitySource;
@@ -2909,6 +2913,20 @@ OWL_API void Scene::onComponentAdded<component::WalkAgent>(const Entity& iEntity
 
 template<>
 OWL_API void Scene::onComponentAdded<component::WalkBehind>(const Entity& iEntity, component::WalkBehind& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::NavMeshVolume>(const Entity& iEntity,
+															   component::NavMeshVolume& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::NavAgent>(const Entity& iEntity, component::NavAgent& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::NavObstacle>(const Entity& iEntity,
+															 component::NavObstacle& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::NavLink>(const Entity& iEntity, component::NavLink& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>(const Entity& iEntity, component::Drift& ioComponent);

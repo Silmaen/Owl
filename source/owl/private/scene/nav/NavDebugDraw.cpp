@@ -15,14 +15,19 @@
 #include "scene/Scene.h"
 #include "scene/TilemapAsset.h"
 #include "scene/TilemapTerrain.h"
+#include "scene/component/NavMeshVolume.h"
 #include "scene/component/Tilemap.h"
 #include "scene/component/WalkArea.h"
+#include "scene/nav/NavBake.h"
 #include "scene/nav/NavWorld.h"
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <numbers>
 #include <optional>
+#include <utility>
 
 namespace owl::scene::nav {
 
@@ -280,6 +285,119 @@ void drawWalkAreas(Scene& ioScene) {
 			const math::vec3 next{agent.m_path[index].x(), agent.m_path[index].y(), previous.z()};
 			renderer::Renderer2D::drawLine({.point1 = previous, .point2 = next, .color = pathColor});
 			previous = next;
+		}
+	}
+}
+
+namespace {
+
+void drawLine(const math::vec3& iFrom, const math::vec3& iTo, const math::vec4& iColor) {
+	renderer::Renderer2D::drawLine({.point1 = iFrom, .point2 = iTo, .color = iColor});
+}
+
+void drawBox(const math::vec3& iMin, const math::vec3& iMax, const math::vec4& iColor) {
+	const std::array<math::vec3, 8> corners{
+			math::vec3{iMin.x(), iMin.y(), iMin.z()}, math::vec3{iMax.x(), iMin.y(), iMin.z()},
+			math::vec3{iMax.x(), iMin.y(), iMax.z()}, math::vec3{iMin.x(), iMin.y(), iMax.z()},
+			math::vec3{iMin.x(), iMax.y(), iMin.z()}, math::vec3{iMax.x(), iMax.y(), iMin.z()},
+			math::vec3{iMax.x(), iMax.y(), iMax.z()}, math::vec3{iMin.x(), iMax.y(), iMax.z()}};
+	for (size_t index = 0; index < 4; ++index) {
+		drawLine(corners[index], corners[(index + 1) % 4], iColor);
+		drawLine(corners[index + 4], corners[(index + 1) % 4 + 4], iColor);
+		drawLine(corners[index], corners[index + 4], iColor);
+	}
+}
+
+void drawCircle(const math::vec3& iCentre, const float iRadius, const math::vec4& iColor) {
+	constexpr size_t segments = 16;
+	for (size_t index = 0; index < segments; ++index) {
+		const float a0 = 2.f * std::numbers::pi_v<float> * static_cast<float>(index) / static_cast<float>(segments);
+		const float a1 = 2.f * std::numbers::pi_v<float> * static_cast<float>(index + 1) / static_cast<float>(segments);
+		drawLine(iCentre + math::vec3{iRadius * std::cos(a0), 0.f, iRadius * std::sin(a0)},
+				 iCentre + math::vec3{iRadius * std::cos(a1), 0.f, iRadius * std::sin(a1)}, iColor);
+	}
+}
+
+// An arc from start to end, raised by a quarter of its length, with an arrow head at the end when one way.
+void drawLink(const NavMeshLink& iLink, const math::vec4& iColor) {
+	constexpr size_t segments = 8;
+	const float rise = (iLink.end - iLink.start).norm() * 0.25f;
+	math::vec3 previous = iLink.start;
+	for (size_t index = 1; index <= segments; ++index) {
+		const float t = static_cast<float>(index) / static_cast<float>(segments);
+		math::vec3 point = iLink.start + (iLink.end - iLink.start) * t;
+		point.y() += rise * 4.f * t * (1.f - t);
+		drawLine(previous, point, iColor);
+		previous = point;
+	}
+	drawCircle(iLink.start, 0.15f, iColor);
+	drawCircle(iLink.end, 0.15f, iColor);
+	if (iLink.bidirectional)
+		return;
+	const math::vec3 back = (iLink.start - iLink.end).normalized() * 0.4f;
+	const math::vec3 side{-back.z() * 0.5f, 0.f, back.x() * 0.5f};
+	drawLine(iLink.end, iLink.end + back + side, iColor);
+	drawLine(iLink.end, iLink.end + back - side, iColor);
+}
+
+}// namespace
+
+void drawNavMeshes(Scene& ioScene) {
+	constexpr math::vec4 boxColor{0.35f, 0.55f, 1.f, 0.35f};
+	constexpr math::vec4 borderColor{0.2f, 0.9f, 1.f, 1.f};
+	constexpr math::vec4 triangleColor{0.2f, 0.9f, 1.f, 0.25f};
+	constexpr math::vec4 linkColor{1.f, 0.3f, 0.9f, 1.f};
+	constexpr math::vec4 obstacleColor{1.f, 0.55f, 0.15f, 1.f};
+	constexpr math::vec4 pathColor{1.f, 0.85f, 0.2f, 1.f};
+	const math::vec3 lift{0.f, 0.03f, 0.f};
+	const auto links = collectNavLinks(ioScene);
+	for (const auto view = ioScene.registry.view<component::NavMeshVolume>(); const auto handle: view) {
+		const Entity entity{handle, &ioScene};
+		const auto& volume = view.get<component::NavMeshVolume>(handle);
+		math::vec3 boundsMin;
+		math::vec3 boundsMax;
+		getNavVolumeBounds(ioScene, entity, boundsMin, boundsMax);
+		drawBox(boundsMin, boundsMax, boxColor);
+		volume.setLinks(links);
+		const auto& mesh = volume.getMesh();
+		const auto& vertices = mesh.getVertices();
+		const auto& triangles = mesh.getTriangles();
+		for (size_t index = 0; index < triangles.size(); ++index) {
+			const auto& triangle = triangles[index];
+			for (size_t edge = 0; edge < 3; ++edge) {
+				// Each inner edge once, from the triangle of the lower index.
+				if (triangle.neighbours[edge] < 0 || std::cmp_less(triangle.neighbours[edge], index))
+					continue;
+				drawLine(vertices[triangle.vertices[edge]] + lift, vertices[triangle.vertices[(edge + 1) % 3]] + lift,
+						 triangleColor);
+			}
+		}
+		for (const auto& [from, to]: mesh.getBorderEdges())
+			drawLine(vertices[from] + lift, vertices[to] + lift, borderColor);
+	}
+	for (const auto& link: links) drawLink(link, linkColor);
+	for (const auto view = ioScene.registry.view<component::NavObstacle>(); const auto handle: view) {
+		const auto& obstacle = view.get<component::NavObstacle>(handle);
+		const math::mat4 world = ioScene.getWorldTransform(Entity{handle, &ioScene})();
+		const math::vec3 base{world(0, 3), world(1, 3), world(2, 3)};
+		const math::vec3 top = base + math::vec3{0.f, obstacle.height, 0.f};
+		drawCircle(base, obstacle.radius, obstacleColor);
+		drawCircle(top, obstacle.radius, obstacleColor);
+		for (const float side: {-1.f, 1.f}) {
+			drawLine(base + math::vec3{side * obstacle.radius, 0.f, 0.f},
+					 top + math::vec3{side * obstacle.radius, 0.f, 0.f}, obstacleColor);
+			drawLine(base + math::vec3{0.f, 0.f, side * obstacle.radius},
+					 top + math::vec3{0.f, 0.f, side * obstacle.radius}, obstacleColor);
+		}
+	}
+	for (const auto view = ioScene.registry.view<component::NavAgent>(); const auto handle: view) {
+		const auto& agent = view.get<component::NavAgent>(handle);
+		const math::mat4 world = ioScene.getWorldTransform(Entity{handle, &ioScene})();
+		math::vec3 previous{world(0, 3), world(1, 3), world(2, 3)};
+		drawCircle(previous + lift, agent.radius, pathColor);
+		for (size_t index = agent.m_next; index < agent.m_path.size(); ++index) {
+			drawLine(previous + lift, agent.m_path[index].position + lift, pathColor);
+			previous = agent.m_path[index].position;
 		}
 	}
 }

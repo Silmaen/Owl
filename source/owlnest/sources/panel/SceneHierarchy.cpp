@@ -44,6 +44,7 @@
 #include <scene/component/Environment.h>
 #include <scene/component/Hierarchy.h>
 #include <scene/component/Light.h>
+#include <scene/component/NavMeshVolume.h>
 #include <scene/component/ReflectionProbe.h>
 #include <scene/component/ReverbZone.h>
 
@@ -237,6 +238,14 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 		return {gui::icon::route, 0x4cd98a};
 	if (iEntity.hasComponent<WalkArea>())
 		return {gui::icon::squareDashed, 0x4cd98a};
+	if (iEntity.hasComponent<NavMeshVolume>())
+		return {gui::icon::boxes, 0x4cd98a};
+	if (iEntity.hasComponent<NavLink>())
+		return {gui::icon::signpost, 0xe066d1};
+	if (iEntity.hasComponent<NavObstacle>())
+		return {gui::icon::box, 0xffa94d};
+	if (iEntity.hasComponent<NavAgent>())
+		return {gui::icon::user, 0xf2d24b};
 	if (iEntity.hasComponent<VoxelWorld>())
 		return {gui::icon::cuboid, 0xe8c15a};
 	if (iEntity.hasComponent<Player>() || iEntity.hasComponent<VoxelPlayer>())

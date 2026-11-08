@@ -55,7 +55,7 @@ TEST(LuaBindingRegistry, EveryBindingIsDeclaredOnceAndDocumented) {
 										[&](const LuaTable& iTable) -> bool { return iTable.name == binding.table; }))
 				<< "table " << binding.table << " is not declared";
 	}
-	EXPECT_EQ(getLuaTables().size(), 28u);
+	EXPECT_EQ(getLuaTables().size(), 29u);
 }
 
 TEST(LuaBindingRegistry, RegistersEveryDeclaredFunction) {

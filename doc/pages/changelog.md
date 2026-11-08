@@ -42,6 +42,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `entity.set_gravity_source_enabled`, `is_gravity_source_enabled`, `set_simulation_lod_enabled`, `is_simulation_lod_enabled` and `is_demoted`.
 - Owl Nest inspectors for `GravitySource` and `SimulationLod`, a viewport overlay of their radii and ranges, and the `scene.set_physics_settings` command.
 - Engine Demo: in the far orbit the moon pulls three moonlets, `.` and `,` warp the time up to 1000 and the relay demotes them, checked by `far_orbit_warp.owltest`.
+- `NavMeshVolume`: a 3D box whose static colliders and meshes are baked into a navigation mesh (voxels, erosion by the agent radius, triangles) saved in the scene, with a `nav.bake` command and a Bake button.
+- `NavAgent`: walks the navigation mesh on the fixed tick along an A* and funnel path, avoiding the other agents with ORCA, turning and feeding its `Animator`.
+- `NavObstacle`: a cylinder the agents steer around without cutting the mesh.
+- `NavLink`: a jump or a ladder between two floors, attached to the meshes without a new bake.
+- Lua `nav`: `go_to`, `stop`, `is_moving`, `get_target`, `set_speed`, `find_path`, `get_closest_point` and `bake`.
+- Owl Nest navigation support: inspectors of the four components, pickable viewport markers and the mesh drawn by Show > Navigation graph and routes.
+- Engine Demo: two regulars stroll on the baked navigation mesh of the tavern, round the server, the barrels and the player, and hop onto the second table (`tavern_regular.lua`).
 
 ### Changed
 

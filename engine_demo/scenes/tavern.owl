@@ -36,6 +36,7 @@ Entities:
       primary: true
       fixedAspectRatio: false
     FirstPersonController: {enabled: true, walkSpeed: 2.2, runSpeed: 4, lookSpeed: 1.8, mouseSensitivity: 0.0025, captureCursor: true, eyeHeight: 1.6, height: 1.75, radius: 0.25, stepHeight: 0.3, gravity: 9.81, jumpSpeed: 0}
+    NavObstacle: {radius: 0.35, height: 1.75}
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000990
@@ -1514,6 +1515,7 @@ Entities:
       scriptPath: gid:8468d8979b59a4f7:scripts/tavern/tavern_server.lua
     Visibility:
       gameVisible: true
+    NavObstacle: {radius: 0.3, height: 1.4}
   - Entity: 3900000000000002011
     Tag:
       tag: Server
@@ -1774,6 +1776,7 @@ Entities:
       density: 1
       restitution: 0.05
       friction: 0.6
+    NavObstacle: {radius: 0.32, height: 0.9}
   - Entity: 3900000000000002411
     Tag:
       tag: StackBarrel1Mesh
@@ -1808,6 +1811,7 @@ Entities:
       density: 1
       restitution: 0.05
       friction: 0.6
+    NavObstacle: {radius: 0.32, height: 0.9}
   - Entity: 3900000000000002413
     Tag:
       tag: StackBarrel2Mesh
@@ -1842,6 +1846,7 @@ Entities:
       density: 1
       restitution: 0.05
       friction: 0.6
+    NavObstacle: {radius: 0.32, height: 0.9}
   - Entity: 3900000000000002415
     Tag:
       tag: StackBarrel3Mesh
@@ -1879,6 +1884,7 @@ Entities:
     Trigger: {Type: Interaction, CallbackName: on_barrel_kick}
     LuaScript:
       scriptPath: gid:875dd5ddaa7fe91d:scripts/tavern/barrel_kick.lua
+    NavObstacle: {radius: 0.32, height: 0.9}
   - Entity: 3900000000000002417
     Tag:
       tag: KickBarrelMesh
@@ -1956,3 +1962,114 @@ Entities:
       motorForce: 100
       springFrequency: 0
       springDamping: 0
+  - Entity: 3900000000000002501
+    Tag:
+      tag: TavernNav
+    Transform:
+      translation: [0.5, 0.8, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    NavMeshVolume:
+      size: [7.6, 2.2, 7.6]
+      settings: {cellSize: 0.08, cellHeight: 0.04, agentHeight: 1.3, agentRadius: 0.12, maxClimb: 0.2, maxSlope: 40, minRegionArea: 0.08, maxEdgeError: 0.1}
+      sources: CollidersAndMeshes
+      vertices: [-0.26, 0.01999998, -2.02, -0.26, 0.01999998, -2.74, 0.70000005, 0.01999998, -2.74, -0.42000008, 0.01999998, -1.86, 1.8999999, 0.01999998, -2.74, 3.4999998, 0.01999998, -2.74, 3.5799997, 0.01999998, -2.58, 2.86, 0.01999998, -2.5, 2.86, 0.01999998, -1.86, -2.1799998, 0.01999998, -1.7, -2.1799998, 0.13999999, -1.86, -2.02, 0.13999999, -1.86, 2.86, 0.01999998, -1.7, 1.6600001, 0.01999998, -1.7, 1.4199998, 0.01999998, -1.7, -2.26, 0.01999998, 0.22000003, 0.22000003, 0.01999998, -0.98, 0.37999988, 0.01999998, -0.3399999, 0.059999943, 0.01999998, -0.3399999, -2.82, 0.01999998, 0.37999988, -0.10000014, 0.01999998, -0.18000007, -0.18000007, 0.01999998, 0.37999988, -0.3399999, 0.01999998, 0.37999988, -1.06, 0.01999998, 0.37999988, 2.14, 0.01999998, -0.9000001, 1.8199999, 0.01999998, -1.06, 1.9799998, 0.01999998, -1.46, 2.3, 0.01999998, -0.10000014, 2.86, 0.01999998, 0.13999987, 1.26, 0.01999998, 0.37999988, 3.82, 0.01999998, 0.22000003, 3.82, 0.01999998, 0.37999988, -2.82, 1.7, -0.98, -2.6599998, 1.7, -0.98, -2.6599998, 1.7, -0.18000007, -2.82, 1.7, -0.18000007, -1.1400001, 0.01999998, 0.53999996, -1.46, 0.01999998, 0.53999996, -1.54, 0.01999998, 0.8599999, -1.78, 0.01999998, 1.0199997, -1.62, 0.01999998, 1.4999998, -1.22, 0.01999998, 1.4999998, -1.22, 0.01999998, 2.86, -1.7, 0.01999998, 2.9399998, -1.78, 0.01999998, 3.4199998, -1.22, 0.01999998, 3.82, -2.58, 0.01999998, 3.82, -2.6599998, 0.01999998, 3.5799997, -2.82, 0.01999998, 3.5799997, -0.10000014, 0.01999998, 0.53999996, 0.6199999, 0.01999998, 0.70000005, 0.78, 0.01999998, 0.37999988, 0.9399998, 0.01999998, 0.37999988, 3.82, 0.01999998, 0.70000005, 3.82, 0.01999998, 3.5799997, 3.5799997, 0.01999998, 3.5799997, 3.4999998, 0.01999998, 3.82, -0.18000007, 0.01999998, 3.82, 0.37999988, 0.01999998, 3.4199998, 0.22000003, 0.01999998, 2.86, -0.18000007, 0.01999998, 2.86, -0.18000007, 0.01999998, 1.4999998, 0.22000003, 0.01999998, 1.4999998, 0.37999988, 0.01999998, 1.26, 0.13999987, 0.01999998, 0.70000005, 0.37999988, 0.01999998, 0.70000005, -0.81999993, 0.82, 1.8199999, -0.5799999, 0.82, 1.8199999, -0.5799999, 0.82, 2.5399997, -0.81999993, 0.82, 2.5399997]
+      indices: [0, 1, 2, 3, 0, 2, 3, 2, 4, 3, 4, 5, 5, 6, 7, 3, 5, 7, 7, 8, 3, 9, 10, 11, 9, 11, 3, 9, 3, 8, 8, 12, 13, 8, 13, 14, 8, 14, 9, 15, 9, 14, 15, 14, 16, 16, 17, 18, 15, 16, 18, 19, 15, 18, 19, 18, 20, 20, 21, 22, 20, 22, 23, 20, 23, 19, 24, 25, 26, 26, 13, 12, 24, 26, 12, 27, 24, 12, 27, 12, 28, 29, 27, 28, 29, 28, 30, 30, 31, 29, 32, 33, 34, 34, 35, 32, 23, 36, 37, 37, 38, 39, 40, 41, 42, 39, 40, 42, 39, 42, 43, 39, 43, 44, 44, 45, 46, 39, 44, 46, 39, 46, 47, 39, 47, 48, 39, 48, 19, 37, 39, 19, 37, 19, 23, 49, 22, 21, 50, 51, 52, 50, 52, 29, 50, 29, 31, 31, 53, 50, 53, 54, 55, 53, 55, 56, 56, 57, 58, 53, 56, 58, 53, 58, 59, 53, 59, 60, 60, 61, 62, 53, 60, 62, 53, 62, 63, 63, 64, 65, 63, 65, 50, 63, 50, 53, 66, 67, 68, 68, 69, 66]
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002502
+    Tag:
+      tag: TableHop
+    Transform:
+      translation: [-0.15, 0, 2.2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    NavLink: {end: [-0.55, 0.8, 0], bidirectional: true, costScale: 1.5}
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002503
+    Tag:
+      tag: Regular_1
+    Transform:
+      translation: [-2.4, 0, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    NavAgent: {volume: 3900000000000002501, speed: 0.9, acceleration: 4, radius: 0.2, stoppingDistance: 0.1, avoidance: true, turn: true, speedParameter: speed}
+    LuaScript:
+      scriptPath: gid:5a7e3c19d42b86f0:scripts/tavern/tavern_regular.lua
+      properties:
+        - {name: spots, type: string, value: "-2.4 0 -1.8; -2.6 0 1.0; 0.6 0 1.6; 2.2 0 2.9; 2.3 0 -2.6"}
+        - {name: pause, type: float, value: 2.5}
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002504
+    Tag:
+      tag: Regular_1Body
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [2.2, 2.2, 2.2]
+    Hierarchy: {parentId: 3900000000000002503}
+    MeshRenderer:
+      color: [0.75, 0.85, 1, 1]
+      mesh: gid:ec8e5bbd9f12e64a:meshes/characters/patron_farmer.glb
+      transparent: false
+    Animator:
+      entry: idle
+      playing: true
+      speed: 1
+      parameters:
+        - {name: speed, type: Float, value: 0}
+      states:
+        - {name: idle, clip: idle, speed: 1, loop: true}
+        - {name: walk, clip: walk, speed: 1.1, loop: true}
+      transitions:
+        - {from: idle, to: walk, duration: 0.2, exitTime: -1, conditions: [{parameter: speed, op: Greater, threshold: 0.15}]}
+        - {from: walk, to: idle, duration: 0.25, exitTime: -1, conditions: [{parameter: speed, op: Less, threshold: 0.15}]}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002505
+    Tag:
+      tag: Regular_2
+    Transform:
+      translation: [1.8, 0, 1.2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    NavAgent: {volume: 3900000000000002501, speed: 0.9, acceleration: 4, radius: 0.2, stoppingDistance: 0.1, avoidance: true, turn: true, speedParameter: speed}
+    LuaScript:
+      scriptPath: gid:5a7e3c19d42b86f0:scripts/tavern/tavern_regular.lua
+      properties:
+        - {name: spots, type: string, value: "-2.0 0 3.6; 0.6 0 3.2; -0.7 0.8 2.2; 1.8 0 1.2; -2.5 0 -0.5"}
+        - {name: pause, type: float, value: 2.5}
+    Visibility:
+      gameVisible: true
+  - Entity: 3900000000000002506
+    Tag:
+      tag: Regular_2Body
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [2.2, 2.2, 2.2]
+    Hierarchy: {parentId: 3900000000000002505}
+    MeshRenderer:
+      color: [1, 0.85, 0.7, 1]
+      mesh: gid:0fcc95d871feb418:meshes/characters/patron_traveller.glb
+      transparent: false
+    Animator:
+      entry: idle
+      playing: true
+      speed: 1
+      parameters:
+        - {name: speed, type: Float, value: 0}
+      states:
+        - {name: idle, clip: idle, speed: 1, loop: true}
+        - {name: walk, clip: walk, speed: 1.1, loop: true}
+      transitions:
+        - {from: idle, to: walk, duration: 0.2, exitTime: -1, conditions: [{parameter: speed, op: Greater, threshold: 0.15}]}
+        - {from: walk, to: idle, duration: 0.25, exitTime: -1, conditions: [{parameter: speed, op: Less, threshold: 0.15}]}
+    RendererTag:
+      Name: mesh_world
+    Visibility:
+      gameVisible: true

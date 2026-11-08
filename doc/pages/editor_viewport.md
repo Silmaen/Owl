@@ -185,6 +185,14 @@ same floors, holes and vertices, with **Add Floor**, **Add Hole**, **Delete Hole
 [Walkable areas](pathfinding.md#pathfinding-walk-areas). **Show > Navigation graph and routes** draws every walk area of
 the scene and the paths of the walking agents.
 
+### Navigation meshes {#viewport-navmesh}
+
+A **Nav Mesh Volume** is drawn as a blue box; selected, the border of its baked mesh is drawn in cyan. A **Nav Link** is
+a magenta line from its entity to its end point, ending in a ring, and a **Nav Obstacle** an orange cylinder box; each is
+picked by a click. The **Bake** button of the Nav Mesh Volume inspector and the `nav.bake` command cut the floors again;
+see [Navigation meshes](pathfinding.md#pathfinding-navmesh). **Show > Navigation graph and routes** also draws the
+triangles of every baked mesh and the path left to each agent.
+
 ### Sequences {#viewport-sequences}
 
 The player previewed by an open **Sequencer** (else the selected entity with a **SequencePlayer**) draws the path of

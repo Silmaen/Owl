@@ -4,11 +4,12 @@
 
 **Level:** Confirmed. **Read first:** [Scene and Components](scene.md).
 
-Vehicles of a Transport Tycoon-like game follow a graph of tiles (roads, tracks), not a navigation mesh. A `Tilemap`
+Three ways to find a path. Vehicles of a Transport Tycoon-like game follow a graph of tiles (roads, tracks). A `Tilemap`
 carries `navigation` options that turn one of its layers into a graph, the roads coming from the tileset; the engine searches shortest paths over it, spreads
 the long queries over frames, and updates the graph chunk by chunk when a tile changes. The code is `scene::nav`
 (`source/owl/public/scene/nav/`). Point-and-click and top-down games walk freely on 2D floors instead: see
-[Walkable areas](#pathfinding-walk-areas).
+[Walkable areas](#pathfinding-walk-areas). 3D games bake the floors of a scene into a navigation mesh walked by
+agents: see [Navigation meshes](#pathfinding-navmesh).
 
 ```mermaid
 flowchart LR
@@ -263,3 +264,112 @@ area, its borders and triangles, and the path left to each walking agent in yell
 is edited in the viewport: vertices moved, inserted and deleted, holes and floors added, each gesture a `walk.*`
 command ([Walk areas in the viewport](editor_viewport.md#viewport-walk-areas)).
 
+## Navigation meshes {#pathfinding-navmesh}
+
+A 3D level has no tiles and no single plane: floors at several heights, stairs, walls, props. A `NavMeshVolume` cuts
+the static geometry inside its box into a mesh of triangles; `NavAgent` entities walk on it around the walls and around
+each other, `NavObstacle` entities are steered around, `NavLink` entities join floors the mesh does not (a jump, a
+ladder). The code is `scene::nav` (`NavMesh.h`, `NavBake.h`, `Avoidance.h`); the components are in
+[Scene and Components](scene.md#nav-components).
+
+```mermaid
+flowchart LR
+    G[Static colliders and meshes<br/>inside the box] -->|bake: voxels, filters, erosion,<br/>regions, contours, triangles| V[NavMeshVolume<br/>triangles saved in the scene]
+    V -->|read: links attached| M[NavMesh]
+    K[NavLink] --> M
+    M -->|A* over the triangles and links,<br/>then the funnel| P[path: corners and links]
+    P --> A[NavAgent<br/>owl.nav_agents, PrePhysics, fixed tick]
+    O[NavObstacle] --> R[ORCA avoidance]
+    A -->|preferred velocity| R
+    R -->|velocity kept clear| A
+    A -->|position, turn around Y| T[Transform]
+    A -->|speed| N[Animator float]
+    L[Lua nav.*] --> A
+    L --> P
+```
+
+### The bake
+
+A bake is done in the editor (or by `nav.bake` in Lua) and its triangles are saved in the scene, so every target loads
+the same mesh. The steps:
+
+1. The static geometry inside the box is rasterised into voxels (`cellSize` wide, `cellHeight` high).
+2. Floors that are too steep (`maxSlope`), steps higher than `maxClimb`, ledges and spans without `agentHeight` of
+   free space above are dropped.
+3. The floor is eroded by `agentRadius`, so a path along a wall keeps the actor clear of it.
+4. Islands smaller than `minRegionArea` (a table top, a crate lid) are dropped.
+5. The floor is split into monotone regions; stacked floors stay apart.
+6. The outline of each region is traced and simplified within `maxEdgeError`, then cut into triangles.
+
+The bake reads the colliders of the static bodies and the meshes of the entities without a body (`sources` picks
+`CollidersAndMeshes`, `Colliders` or `Meshes`). It skips what moves (agents, obstacles, spline followers, bodies that
+are not static, and their children) and hidden entities. The box is centred on the entity, aligned on the world axes.
+
+| Setting         | Default | Meaning                                                      |
+|-----------------|---------|--------------------------------------------------------------|
+| `cellSize`      | 0.25    | Width of a voxel: the precision of the borders.              |
+| `cellHeight`    | 0.1     | Height of a voxel: the precision of the floor heights.       |
+| `agentHeight`   | 1.8     | Free height an agent needs above the floor.                  |
+| `agentRadius`   | 0.4     | Radius of the agents: the floor is shrunk by it along walls. |
+| `maxClimb`      | 0.4     | Highest step an agent climbs.                                |
+| `maxSlope`      | 45      | Steepest walkable slope, in degrees.                         |
+| `minRegionArea` | 2       | Smallest island of floor kept, in square units.              |
+| `maxEdgeError`  | 0.3     | Largest distance between a simplified border and its voxels. |
+
+### Paths and links
+
+A* runs over the triangles and the links, from the middle of an edge to the middle of the next, then the corridor is
+pulled tight (funnel algorithm): the path turns only at corners. A start or goal off the mesh is moved to the nearest
+point of the mesh within 2 units, else there is no path.
+
+A `NavLink` goes from the entity origin to `end` (relative, world axes), one way or both (`bidirectional`), with a
+`costScale` of at least 1 on its length (walking costs 1). Links are attached to the mesh when it is read, to every
+volume whose mesh is within reach of both ends: moving or adding a link needs no new bake.
+
+### Agents and avoidance
+
+`nav.go_to` gives a `NavAgent` a goal; the `owl.nav_agents` system (`PrePhysics`, fixed tick only) finds the path and
+steers along it at up to `speed`, with at most `acceleration`. The agent slides along the walls, crosses a link in a
+straight line, keeps the entity on the surface of the mesh and, with `turn`, turns it around Y (its front is +Z). Its
+speed goes to the `speedParameter` float of its `Animator` (or of its first child holding one).
+
+With `avoidance`, the agent steers clear of the other agents and of the obstacles with ORCA (reciprocal velocity
+obstacles): two agents each take half of the avoidance, an obstacle takes none, so the agent takes all of it. An agent
+blocked by another retries bearing right. Everything runs in a fixed order (UUID order), so the simulation stays
+deterministic ([Simulation and networking](design/simulation-networking.md)).
+
+### Obstacles
+
+A `NavObstacle` is a vertical cylinder (`radius`, `height`) at the entity origin: a crate pushed about, a cart, a
+monster without a path. Its velocity is read from its moves between two ticks. It is avoided, never carved out of the
+mesh: a wall that stays belongs to the bake.
+
+### Lua
+
+```lua
+local regular = scene.find_entity("Regular_1")
+local volume = scene.find_entity("TavernNav")
+
+nav.go_to(regular, 2.1, 0, 2.9)                       -- the path is found at the next tick
+if not nav.is_moving(regular) then
+    -- arrived: wait, then pick another spot
+end
+
+local points = nav.find_path(volume, 0, 0, 0, 3, 0, 3)  -- {x1, y1, z1, x2, y2, z2, ...} or nil
+```
+
+Every function is in the [Lua API reference](lua-api-navigation.md#nav). The two regulars of the tavern in the Engine
+Demo stroll that way (`scripts/tavern/tavern_regular.lua`), round the tables, the server, the barrels and the player,
+and reach the second table by the `TableHop` link (scenario `tavern_regulars`).
+
+### Seeing and editing in Owl Nest
+
+The **Nav Mesh Volume** inspector sets the box (**Size**, **Sources**) and the bake settings under **Agents** and
+**Voxels**, shows the triangle count and area of the mesh (or *Not baked*) and has a **Bake** button. The same bake is
+the `nav.bake` command. **Nav Agent**, **Nav Obstacle** and **Nav Link** have their own
+inspectors, every field with a tooltip.
+
+In the viewport, every volume is a blue box (brighter when selected, and its border is then drawn in cyan), a link is a
+magenta line ending in a ring, an obstacle an orange cylinder box; all are pickable by a click. **Show >
+Navigation graph and routes** draws every baked mesh (borders and triangles in cyan), the links, the obstacles and the
+path left to each agent in yellow.

@@ -119,6 +119,7 @@ const std::map<std::string, std::set<std::string>> g_notDrawn{
 		{"RaycastDoor", {"bodyId"}},// runtime: the physics body
 		{"RaycastPushWall", {"bodyId"}},// runtime: the physics body
 		{"LuaScript", {"instance"}},// runtime: the Lua state
+		{"NavMeshVolume", {"vertices", "indices"}},// baked by the Bake button, its triangle count shown
 		{"Animator", {"pose", "boneMatrices", "skinMatrices", "source"}},// runtime: the pose computed by the system
 		{"VoxelPlayer",
 		 {"velocityY", "yaw", "pitch", "grounded", "initialized", "flyMode", "superSpeed", "lastMouse", "mouseValid",
