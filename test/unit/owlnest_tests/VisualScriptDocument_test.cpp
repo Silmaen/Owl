@@ -94,7 +94,13 @@ TEST_F(VisualScriptDocumentTest, DeleteGroupRemovesNodesAndLinks) {
 
 TEST_F(VisualScriptDocumentTest, CopyPasteKeepsInternalLinksWithFreshIds) {
 	auto script = m_document.getScript();
-	script.variables.push_back({.name = "speed", .type = script::ScriptPropertyType::Float, .defaultValue = "2"});
+	script.variables.push_back({.name = "speed",
+								.type = script::ScriptPropertyType::Float,
+								.defaultValue = "2",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
 	ASSERT_TRUE(m_document.commit(script, "Add Variable"));
 	const auto event = m_document.getScript().nodes.front().id;
 	const auto set = m_document.addNode("var.set", {0.f, 0.f});
@@ -238,6 +244,54 @@ TEST_F(VisualScriptDocumentTest, FunctionsAreAddedRenamedAndRemovedWithTheirNode
 	EXPECT_EQ(m_document.getScript().findNode(call), nullptr);
 	m_document.performUndo();
 	EXPECT_NE(m_document.getScript().findFunction("move"), nullptr);
+}
+
+TEST_F(VisualScriptDocumentTest, CustomNodesAreEditedWithTheirCalls) {
+	const auto name = m_document.addCustomNode();
+	EXPECT_EQ(name, "custom");
+	ASSERT_NE(m_document.getScript().findCustomNode(name), nullptr);
+	ASSERT_EQ(m_document.getScript().nodes.size(), 3u);
+	const auto call = m_document.getScript().nodes.back().id;
+	EXPECT_EQ(m_document.getScript().findNode(call)->type, "custom.pure");
+	const auto set = m_document.addNode("call.log.info", {200.f, 0.f});
+	auto script = m_document.getScript();
+	script.links.push_back({.fromNode = call, .fromPin = "result", .toNode = set, .toPin = "message", .waypoints = {}});
+	ASSERT_TRUE(m_document.commit(script, "Link"));
+
+	auto custom = *m_document.getScript().findCustomNode(name);
+	custom.outputs.front().name = "doubled";
+	custom.code = "return value * 2";
+	m_document.setCustomNode(name, custom);
+	EXPECT_TRUE(std::ranges::any_of(m_document.getScript().links,
+									[&](const vs::GraphLink& iLink) -> bool { return iLink.fromPin == "doubled"; }));
+	custom.pure = false;
+	m_document.setCustomNode(name, custom);
+	EXPECT_EQ(m_document.getScript().findNode(call)->type, "custom.call");
+	EXPECT_EQ(vs::getNodePins(m_document.getScript(), *m_document.getScript().findNode(call)).inputs.front().type,
+			  vs::PinType::Exec);
+	custom.outputs.clear();
+	m_document.setCustomNode(name, custom);
+	EXPECT_TRUE(std::ranges::none_of(m_document.getScript().links,
+									 [&](const vs::GraphLink& iLink) -> bool { return iLink.fromNode == call; }));
+
+	m_document.renameCustomNode(name, "twice");
+	EXPECT_EQ(m_document.getScript().findNode(call)->values.at("custom"), "twice");
+	m_document.removeCustomNode("twice");
+	EXPECT_TRUE(m_document.getScript().customNodes.empty());
+	EXPECT_EQ(m_document.getScript().findNode(call), nullptr);
+	m_document.performUndo();
+	EXPECT_NE(m_document.getScript().findCustomNode("twice"), nullptr);
+}
+
+TEST_F(VisualScriptDocumentTest, PaletteKeysCreateCustomAndLuaNodes) {
+	const auto name = m_document.addCustomNode();
+	const auto custom = m_document.addNode("custom.pure|" + name, {0.f, 0.f});
+	EXPECT_EQ(m_document.getScript().findNode(custom)->values.at("custom"), name);
+	const auto lua = m_document.addNode("lua.call|scripts.lib.maths|clamp", {0.f, 0.f});
+	const auto* node = m_document.getScript().findNode(lua);
+	ASSERT_NE(node, nullptr);
+	EXPECT_EQ(node->values.at("module"), "scripts.lib.maths");
+	EXPECT_EQ(node->values.at("function"), "clamp");
 }
 
 TEST_F(VisualScriptDocumentTest, EnsureCustomEventAddsTheHandlerOnce) {

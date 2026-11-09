@@ -328,6 +328,14 @@ public:
 
 	/**
 	 * @brief
+	 *  The tab of a material, for the `material.*` commands: switched to, opened when it is not.
+	 * @param[in] iPath The `.owlmat` file.
+	 * @return Its document, or null when it cannot be opened.
+	 */
+	auto openMaterial(const std::filesystem::path& iPath) -> commands::MaterialEditor* override;
+
+	/**
+	 * @brief
 	 *  Open a `.owldlg` in a `DialogueDocument` (or switch to it).
 	 * @param[in] iPath The file.
 	 */

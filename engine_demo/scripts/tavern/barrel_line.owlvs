@@ -1,0 +1,52 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    []
+  nodes:
+    - id: 7320000000000000001
+      type: event.on_trigger_enter
+      position: [0, 0]
+    - id: 7320000000000000002
+      type: call.gamestate.get
+      position: [234, 0]
+      values:
+        default: 0
+        key: barrels_over_line
+    - id: 7320000000000000003
+      type: math.add
+      position: [552, 150]
+      values:
+        B: 1
+    - id: 7320000000000000004
+      type: call.gamestate.set
+      position: [822, 0]
+      values:
+        key: barrels_over_line
+    - id: 7320000000000000005
+      type: event.on_trigger_exit
+      position: [0, 450]
+    - id: 7320000000000000006
+      type: call.gamestate.get
+      position: [234, 450]
+      values:
+        default: 0
+        key: barrels_past_line
+    - id: 7320000000000000007
+      type: math.add
+      position: [552, 600]
+      values:
+        B: 1
+    - id: 7320000000000000008
+      type: call.gamestate.set
+      position: [822, 450]
+      values:
+        key: barrels_past_line
+  links:
+    - {from: 7320000000000000001, fromPin: Then, to: 7320000000000000002, toPin: Exec}
+    - {from: 7320000000000000002, fromPin: Then, to: 7320000000000000004, toPin: Exec}
+    - {from: 7320000000000000002, fromPin: value, to: 7320000000000000003, toPin: A}
+    - {from: 7320000000000000003, fromPin: Result, to: 7320000000000000004, toPin: value}
+    - {from: 7320000000000000005, fromPin: Then, to: 7320000000000000006, toPin: Exec}
+    - {from: 7320000000000000006, fromPin: Then, to: 7320000000000000008, toPin: Exec}
+    - {from: 7320000000000000006, fromPin: value, to: 7320000000000000007, toPin: A}
+    - {from: 7320000000000000007, fromPin: Result, to: 7320000000000000008, toPin: value}

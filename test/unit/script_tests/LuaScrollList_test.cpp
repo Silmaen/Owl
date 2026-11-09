@@ -14,6 +14,7 @@
 #include <scene/UiInputSystem.h>
 #include <scene/component/components.h>
 #include <scene/ui/HudLayout.h>
+#include <script/EntityHandle.h>
 #include <script/ScriptInstance.h>
 
 #include <cstdint>
@@ -156,7 +157,7 @@ TEST(LuaScrollList, aClickRunsTheSelectCallbackWithTheRow) {
 	fixture.update({150.f, 160.f}, false);
 	fixture.update({150.f, 160.f}, true);
 	EXPECT_EQ(fixture.integer("picked"), 3);
-	EXPECT_EQ(fixture.integer("who"), static_cast<int64_t>(fixture.list.getUUID()));
+	EXPECT_EQ(fixture.integer("who"), static_cast<int64_t>(script::getEntityHandle(*fixture.world, fixture.list)));
 	EXPECT_EQ(fixture.list.getComponent<scene::component::UiList>().selectedIndex, 2);
 }
 

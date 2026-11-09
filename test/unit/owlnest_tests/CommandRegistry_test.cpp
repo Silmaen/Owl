@@ -105,7 +105,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 134u);
+	EXPECT_EQ(m_registry.getCommands().size(), 155u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -299,7 +299,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 134u);
+	EXPECT_EQ(m_registry.getCommands().size(), 155u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -1121,6 +1121,36 @@ TEST_F(CommandRegistryTest, MaterialCreateWritesAReadableFile) {
 	ASSERT_TRUE(child.has_value());
 	EXPECT_EQ(child->parent.generic_string(), "materials/gold.owlmat");
 	EXPECT_EQ(child->overrides, 0u);
+	std::filesystem::remove_all(dir);
+}
+
+TEST_F(CommandRegistryTest, MaterialCreateWritesAGraphMaterial) {
+	const auto dir = std::filesystem::temp_directory_path() / "owl_material_graph_create_test";
+	std::filesystem::remove_all(dir);
+	const auto file = dir / "lava.owlmat";
+	ASSERT_TRUE(run("material.create", {{"path", file.string()}, {"graph", true}}).has_value());
+	const auto material = renderer::MaterialAsset::load(file);
+	ASSERT_TRUE(material.has_value());
+	ASSERT_TRUE(material->graph.has_value());
+	EXPECT_EQ(*material->graph, renderer::getParameterMaterialGraph());
+	for (const auto* name: {"material.convert_to_graph", "material.convert_to_parameters",
+							"material.set_parent",       "material.set_values",
+							"material.add_node",         "material.remove_nodes",
+							"material.move_nodes",       "material.link",
+							"material.unlink",           "material.set_node_value",
+							"material.paste_nodes",      "material.add_parameter",
+							"material.remove_parameter", "material.set_parameter",
+							"material.add_custom_node",  "material.remove_custom_node",
+							"material.set_custom_node",  "material.add_function",
+							"material.remove_function",  "material.set_function",
+							"material.set_graph_value"}) {
+		const auto* spec = m_registry.find(name);
+		ASSERT_NE(spec, nullptr) << name;
+		EXPECT_FALSE(spec->needsScene) << name;
+		EXPECT_FALSE(spec->description.empty()) << name;
+	}
+	EXPECT_FALSE(run("material.add_node", {{"path", file.string()}, {"type", std::string{"math.add"}}}).has_value())
+			<< "no material tab without an editor";
 	std::filesystem::remove_all(dir);
 }
 

@@ -254,7 +254,7 @@ local scale = walk.get_scale_at(floor, 4, 6)      -- the size of an actor standi
 ```
 
 Every function is in the [Lua API reference](lua-api-isometric.md#walk). The `iso_town` plaza of the Engine Demo is
-walked by pedestrians this way (`scripts/iso/iso_town_walkers.lua`), and the point-and-click sample game The Moon
+walked by pedestrians this way (`scripts/iso/iso_town_walkers.owlvs`), and the point-and-click sample game The Moon
 Lantern moves its actors with it over 3D-on-2D rooms (`samples/point_and_click/`).
 
 ### Seeing and editing the floors
@@ -359,7 +359,7 @@ local points = nav.find_path(volume, 0, 0, 0, 3, 0, 3)  -- {x1, y1, z1, x2, y2, 
 ```
 
 Every function is in the [Lua API reference](lua-api-navigation.md#nav). The two regulars of the tavern in the Engine
-Demo stroll that way (`scripts/tavern/tavern_regular.lua`), round the tables, the server, the barrels and the player,
+Demo stroll that way (`scripts/tavern/tavern_regular.owlvs`), round the tables, the server, the barrels and the player,
 and reach the second table by the `TableHop` link (scenario `tavern_regulars`).
 
 ### Seeing and editing in Owl Nest

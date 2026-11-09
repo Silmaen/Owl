@@ -12,6 +12,7 @@
 
 #include "core/external/lua.h"
 #include "script/LuaEngine.h"
+#include "script/LuaValues.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -44,17 +45,17 @@ auto readValue(lua_State* iState, const int iIndex) -> HostValue {
 		case LUA_TBOOLEAN:
 			return lua_toboolean(iState, iIndex) != 0;
 		case LUA_TNUMBER:
-			if (lua_isinteger(iState, iIndex) != 0)
-				return static_cast<int64_t>(lua_tointeger(iState, iIndex));
+			if (isInteger(iState, iIndex))
+				return static_cast<int64_t>(toInteger(iState, iIndex));
 			return static_cast<double>(lua_tonumber(iState, iIndex));
 		case LUA_TSTRING:
 			return std::string{lua_tostring(iState, iIndex)};
 		case LUA_TTABLE:
 			{
 				std::vector<double> numbers;
-				const auto size = static_cast<int64_t>(lua_rawlen(iState, iIndex));
+				const auto size = static_cast<int64_t>(lua_objlen(iState, iIndex));
 				for (int64_t i = 1; i <= size; ++i) {
-					lua_rawgeti(iState, iIndex, i);
+					lua_rawgeti(iState, iIndex, static_cast<int>(i));
 					numbers.push_back(static_cast<double>(lua_tonumber(iState, -1)));
 					lua_pop(iState, 1);
 				}
@@ -73,7 +74,7 @@ void pushValue(lua_State* iState, const HostValue& iValue) {
 				else if constexpr (std::is_same_v<T, bool>)
 					lua_pushboolean(iState, iItem ? 1 : 0);
 				else if constexpr (std::is_same_v<T, int64_t>)
-					lua_pushinteger(iState, static_cast<lua_Integer>(iItem));
+					pushInteger(iState, static_cast<int64_t>(iItem));
 				else if constexpr (std::is_same_v<T, double>)
 					lua_pushnumber(iState, static_cast<lua_Number>(iItem));
 				else if constexpr (std::is_same_v<T, std::string>)
@@ -82,7 +83,7 @@ void pushValue(lua_State* iState, const HostValue& iValue) {
 					lua_createtable(iState, static_cast<int>(iItem.size()), 0);
 					for (size_t i = 0; i < iItem.size(); ++i) {
 						lua_pushnumber(iState, static_cast<lua_Number>(iItem[i]));
-						lua_rawseti(iState, -2, static_cast<lua_Integer>(i) + 1);
+						lua_rawseti(iState, -2, static_cast<int>(i) + 1);
 					}
 				}
 			},
@@ -92,7 +93,7 @@ void pushValue(lua_State* iState, const HostValue& iValue) {
 // Runs the host function; false leaves the error message on the stack.
 auto callHost(lua_State* iState) -> bool {
 	auto* impl = static_cast<ScriptConsole::Impl*>(lua_touserdata(iState, lua_upvalueindex(1)));
-	const auto index = static_cast<size_t>(lua_tointeger(iState, lua_upvalueindex(2)));
+	const auto index = static_cast<size_t>(toInteger(iState, lua_upvalueindex(2)));
 	std::map<std::string, HostValue> args;
 	if (lua_istable(iState, 1)) {
 		lua_pushnil(iState);
@@ -118,7 +119,11 @@ auto callHost(lua_State* iState) -> bool {
 	return true;
 }
 
-auto hostTrampoline(lua_State* iState) -> int { return callHost(iState) ? 1 : lua_error(iState); }
+auto hostTrampoline(lua_State* iState) -> int {
+	if (!callHost(iState))
+		lua_error(iState);
+	return 1;
+}
 
 auto printToConsole(lua_State* iState) -> int {
 	auto* impl = static_cast<ScriptConsole::Impl*>(lua_touserdata(iState, lua_upvalueindex(1)));
@@ -176,7 +181,7 @@ void ScriptConsole::addFunction(const std::string_view iPath, const std::string_
 		rest.remove_prefix(dot + 1);
 	}
 	lua_pushlightuserdata(state, mp_impl.get());
-	lua_pushinteger(state, static_cast<lua_Integer>(mp_impl->functions.size() - 1));
+	pushInteger(state, static_cast<int64_t>(mp_impl->functions.size() - 1));
 	lua_pushlstring(state, rest.data(), rest.size());
 	lua_insert(state, -3);
 	lua_pushcclosure(state, hostTrampoline, 2);

@@ -47,11 +47,11 @@ function Waves.parse_wave(text)
     for group in string.gmatch(text or "", "[^;]+") do
         local kind, count, gap, letter = string.match(group, "^%s*([%a_]+)%s+(%d+)%s+([%d%.]+)%s*(%a?)%s*$")
         if kind ~= nil and S.stats[kind] ~= nil and S.stats[kind].hp ~= nil then
-            for i = 1, tonumber(count) do
+            for i = 1, tonumber(count) or 0 do
                 local road = letter == "b" and 2 or (letter == "a" and 1 or (#queue % 2) + 1)
                 if S.routes[road] == nil then road = 1 end
                 queue[#queue + 1] = { kind = kind, road = road,
-                                      gap = (i == 1 and #queue > 0) and tonumber(gap) * 2 or tonumber(gap) }
+                                      gap = (i == 1 and #queue > 0) and (tonumber(gap) or 0) * 2 or (tonumber(gap) or 0) }
             end
         else
             log.warn("Tower defence: wave group '" .. group .. "' is not 'kind count gap [road]'.")

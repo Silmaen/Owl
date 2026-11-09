@@ -1,0 +1,87 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: hub_scene, type: string, default: scenes/world_map.owl}
+    - {name: objective_id, type: entity, default: 0}
+    - {name: leaving, type: bool, default: false}
+  nodes:
+    - id: 7420000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 7420000000000000002
+      type: call.ui.find
+      position: [0, 150]
+      values:
+        name: ObjectiveText
+    - id: 7420000000000000003
+      type: var.set
+      position: [358, 0]
+      values:
+        variable: objective_id
+    - id: 7420000000000000004
+      type: call.ui.set_text
+      position: [592, 0]
+      values:
+        text: "Objective: find the treasure of the cellar"
+    - id: 7420000000000000005
+      type: call.ui.transition_fade_in
+      position: [950, 0]
+      values:
+        duration: 0.6
+    - id: 7420000000000000006
+      type: event.on_update
+      position: [0, 450]
+    - id: 7420000000000000007
+      type: var.get
+      position: [0, 600]
+      values:
+        variable: leaving
+    - id: 7420000000000000008
+      type: call.ui.is_transition_active
+      position: [0, 750]
+    - id: 7420000000000000009
+      type: logic.or
+      position: [358, 600]
+    - id: 7420000000000000010
+      type: flow.branch
+      position: [592, 450]
+    - id: 7420000000000000011
+      type: call.input.is_action_just_pressed
+      position: [592, 750]
+      values:
+        action: pause
+    - id: 7420000000000000012
+      type: flow.branch
+      position: [950, 450]
+    - id: 7420000000000000013
+      type: var.set
+      position: [1228, 450]
+      values:
+        Value: true
+        variable: leaving
+    - id: 7420000000000000014
+      type: var.get
+      position: [1228, 600]
+      values:
+        variable: hub_scene
+    - id: 7420000000000000015
+      type: call.scene.transition_to
+      position: [1484, 450]
+      values:
+        duration: 0.3
+        kind: fade_out
+  links:
+    - {from: 7420000000000000001, fromPin: Then, to: 7420000000000000003, toPin: Exec}
+    - {from: 7420000000000000003, fromPin: Then, to: 7420000000000000004, toPin: Exec}
+    - {from: 7420000000000000004, fromPin: Then, to: 7420000000000000005, toPin: Exec}
+    - {from: 7420000000000000002, fromPin: entity_id, to: 7420000000000000003, toPin: Value}
+    - {from: 7420000000000000003, fromPin: Value, to: 7420000000000000004, toPin: entity_id}
+    - {from: 7420000000000000006, fromPin: Then, to: 7420000000000000010, toPin: Exec}
+    - {from: 7420000000000000007, fromPin: Value, to: 7420000000000000009, toPin: A}
+    - {from: 7420000000000000008, fromPin: active, to: 7420000000000000009, toPin: B}
+    - {from: 7420000000000000009, fromPin: Result, to: 7420000000000000010, toPin: Condition}
+    - {from: 7420000000000000010, fromPin: False, to: 7420000000000000012, toPin: Exec}
+    - {from: 7420000000000000011, fromPin: pressed, to: 7420000000000000012, toPin: Condition}
+    - {from: 7420000000000000012, fromPin: True, to: 7420000000000000013, toPin: Exec}
+    - {from: 7420000000000000013, fromPin: Then, to: 7420000000000000015, toPin: Exec}
+    - {from: 7420000000000000014, fromPin: Value, to: 7420000000000000015, toPin: scene_path}

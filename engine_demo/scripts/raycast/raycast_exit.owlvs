@@ -1,0 +1,121 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: kind, type: string, default: main}
+    - {name: leaving, type: bool, default: false}
+  nodes:
+    - id: 7430000000000000001
+      type: event.custom
+      position: [0, 0]
+      values:
+        function: on_elevator_use
+    - id: 7430000000000000002
+      type: var.get
+      position: [0, 150]
+      values:
+        variable: leaving
+    - id: 7430000000000000003
+      type: flow.branch
+      position: [226, 0]
+    - id: 7430000000000000004
+      type: var.set
+      position: [490, 0]
+      values:
+        Value: true
+        variable: leaving
+    - id: 7430000000000000005
+      type: call.gamestate.set
+      position: [746, 0]
+      values:
+        key: level_raycast_done
+        value: 1
+    - id: 7430000000000000006
+      type: var.get
+      position: [746, 300]
+      values:
+        variable: kind
+    - id: 7430000000000000007
+      type: compare.equal
+      position: [1024, 300]
+      values:
+        B: secret
+    - id: 7430000000000000008
+      type: flow.branch
+      position: [1024, 0]
+    - id: 7430000000000000009
+      type: call.gamestate.set
+      position: [1302, -150]
+      values:
+        key: raycast_secret_exit
+        value: 1
+    - id: 7430000000000000010
+      type: call.gamestate.set
+      position: [1302, 150]
+      values:
+        key: raycast_secret_exit
+        value: 0
+    - id: 7430000000000000011
+      type: call.gamestate.remove
+      position: [1580, 0]
+      values:
+        key: raycast_return_x
+    - id: 7430000000000000012
+      type: call.gamestate.remove
+      position: [1858, 0]
+      values:
+        key: raycast_return_y
+    - id: 7430000000000000013
+      type: call.gamestate.remove
+      position: [2136, 0]
+      values:
+        key: raycast_return_z
+    - id: 7430000000000000014
+      type: var.get
+      position: [2136, 300]
+      values:
+        variable: kind
+    - id: 7430000000000000015
+      type: text.concat
+      position: [2414, 300]
+      values:
+        A: Elevator taken (
+    - id: 7430000000000000016
+      type: text.concat
+      position: [2692, 300]
+      values:
+        B: "): E1M1 complete"
+    - id: 7430000000000000017
+      type: call.log.info
+      position: [2970, 0]
+    - id: 7430000000000000018
+      type: call.sound.play
+      position: [3178, 0]
+      values:
+        asset_path: sounds/raycast/elevator.wav
+    - id: 7430000000000000019
+      type: call.scene.transition_to
+      position: [3560, 0]
+      values:
+        duration: 0.4
+        kind: wipe_right
+        scene_path: scenes/world_map.owl
+  links:
+    - {from: 7430000000000000001, fromPin: Then, to: 7430000000000000003, toPin: Exec}
+    - {from: 7430000000000000002, fromPin: Value, to: 7430000000000000003, toPin: Condition}
+    - {from: 7430000000000000003, fromPin: False, to: 7430000000000000004, toPin: Exec}
+    - {from: 7430000000000000004, fromPin: Then, to: 7430000000000000005, toPin: Exec}
+    - {from: 7430000000000000005, fromPin: Then, to: 7430000000000000008, toPin: Exec}
+    - {from: 7430000000000000006, fromPin: Value, to: 7430000000000000007, toPin: A}
+    - {from: 7430000000000000007, fromPin: Result, to: 7430000000000000008, toPin: Condition}
+    - {from: 7430000000000000008, fromPin: True, to: 7430000000000000009, toPin: Exec}
+    - {from: 7430000000000000008, fromPin: False, to: 7430000000000000010, toPin: Exec}
+    - {from: 7430000000000000009, fromPin: Then, to: 7430000000000000011, toPin: Exec}
+    - {from: 7430000000000000010, fromPin: Then, to: 7430000000000000011, toPin: Exec}
+    - {from: 7430000000000000011, fromPin: Then, to: 7430000000000000012, toPin: Exec}
+    - {from: 7430000000000000012, fromPin: Then, to: 7430000000000000013, toPin: Exec}
+    - {from: 7430000000000000013, fromPin: Then, to: 7430000000000000017, toPin: Exec}
+    - {from: 7430000000000000017, fromPin: Then, to: 7430000000000000018, toPin: Exec}
+    - {from: 7430000000000000018, fromPin: Then, to: 7430000000000000019, toPin: Exec}
+    - {from: 7430000000000000014, fromPin: Value, to: 7430000000000000015, toPin: B}
+    - {from: 7430000000000000015, fromPin: Result, to: 7430000000000000016, toPin: A}
+    - {from: 7430000000000000016, fromPin: Result, to: 7430000000000000017, toPin: message}

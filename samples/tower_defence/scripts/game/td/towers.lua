@@ -297,7 +297,7 @@ function Towers.raise_start_towers()
         local index, kind, level, power = string.match(text, "^%s*(%d+)%s+(%a+)%s+(%d)%s*(%a*)%s*$")
         local pad = S.pads[tonumber(index or 0)]
         if pad ~= nil and pad.tower == nil and S.stats[kind] ~= nil and S.stats[kind].cost ~= nil then
-            local tower = { kind = kind, level = math.max(1, math.min(3, tonumber(level))), pad = pad, x = pad.x,
+            local tower = { kind = kind, level = math.max(1, math.min(3, tonumber(level) or 1)), pad = pad, x = pad.x,
                             y = pad.y, z = pad.z, cooldown = 0.2, spent = S.stats[kind].cost }
             if power ~= "" and tower.level == 3 then tower.power = power end
             Towers.place_tower(tower)

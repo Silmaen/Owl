@@ -14,6 +14,7 @@
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
+#include <script/EntityHandle.h>
 #include <script/ScriptInstance.h>
 
 #include <chrono>
@@ -78,9 +79,9 @@ TEST(LuaHud, uiFindSearchesTheHudThenTheScene) {
 	const auto score = inst.getPropertyInt("score");
 	ASSERT_TRUE(score.has_value());
 	EXPECT_NE(score.value(), 0);
-	const auto widget = fixture.world->getHud()->findEntityByUUID(core::UUID{static_cast<uint64_t>(score.value())});
-	ASSERT_TRUE(static_cast<bool>(widget));
-	EXPECT_EQ(widget.getComponent<scene::component::UiText>().text, "42");
+	const auto widget = resolveEntityHandle(*fixture.world, static_cast<uint64_t>(score.value()));
+	ASSERT_TRUE(widget.has_value());
+	EXPECT_EQ(widget->getComponent<scene::component::UiText>().text, "42");
 	EXPECT_EQ(inst.getPropertyString("both_text").value_or(""), "hud");
 	EXPECT_EQ(inst.getPropertyInt("missing").value_or(-1), 0);
 	core::Log::invalidate();

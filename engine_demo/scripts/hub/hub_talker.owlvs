@@ -1,0 +1,650 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: speaker, type: string, default: ""}
+    - {name: lines, type: string, default: ""}
+    - {name: follow, type: string, default: ""}
+    - {name: seconds_per_line, type: float, default: 0.06, min: 0}
+    - {name: seconds_min, type: float, default: 3.5, min: 0}
+    - {name: list, type: numbers, default: "", exposed: false}
+    - {name: speech_id, type: entity, default: 0, exposed: false}
+    - {name: followed_id, type: entity, default: 0, exposed: false}
+    - {name: last, type: float, default: 0, exposed: false}
+    - {name: left, type: float, default: 0, exposed: false}
+    - {name: pick, type: float, default: 0, exposed: false}
+    - {name: text, type: string, default: "", exposed: false}
+    - {name: x, type: float, default: 0, exposed: false}
+    - {name: y, type: float, default: 0, exposed: false}
+  nodes:
+    - id: 8070000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 8070000000000000002
+      type: call.gamestate.set
+      position: [518, 0]
+      values:
+        key: hub_talk_count
+    - id: 8070000000000000003
+      type: call.gamestate.get
+      position: [200, 0]
+      values:
+        default: 0
+        key: hub_talk_count
+    - id: 8070000000000000004
+      type: text.split
+      position: [518, 172]
+      values:
+        Separator: "|"
+    - id: 8070000000000000005
+      type: var.get
+      position: [200, 172]
+      values:
+        variable: lines
+    - id: 8070000000000000006
+      type: flow.for_each
+      position: [892, 0]
+    - id: 8070000000000000007
+      type: compare.not_equal
+      position: [892, 578]
+    - id: 8070000000000000008
+      type: value.string
+      position: [518, 578]
+      values:
+        Value: ""
+    - id: 8070000000000000009
+      type: flow.branch
+      position: [1250, 578]
+    - id: 8070000000000000010
+      type: table.set
+      position: [1520, 578]
+    - id: 8070000000000000011
+      type: var.get
+      position: [1250, 714]
+      values:
+        variable: list
+    - id: 8070000000000000012
+      type: math.add
+      position: [1250, 834]
+      values:
+        B: 1
+    - id: 8070000000000000013
+      type: var.get
+      position: [518, 688]
+      values:
+        variable: list
+    - id: 8070000000000000014
+      type: table.length
+      position: [892, 714]
+    - id: 8070000000000000015
+      type: call.ui.find
+      position: [892, 188]
+      values:
+        name: HubSpeech
+    - id: 8070000000000000016
+      type: var.set
+      position: [1250, 0]
+      values:
+        variable: speech_id
+    - id: 8070000000000000017
+      type: var.get
+      position: [892, 308]
+      values:
+        variable: follow
+    - id: 8070000000000000018
+      type: compare.not_equal
+      position: [1250, 146]
+    - id: 8070000000000000019
+      type: value.string
+      position: [892, 428]
+      values:
+        Value: ""
+    - id: 8070000000000000020
+      type: flow.branch
+      position: [1520, 0]
+    - id: 8070000000000000021
+      type: call.scene.find_entity
+      position: [1520, 136]
+    - id: 8070000000000000022
+      type: var.get
+      position: [1250, 282]
+      values:
+        variable: follow
+    - id: 8070000000000000023
+      type: var.set
+      position: [1784, 0]
+      values:
+        variable: followed_id
+    - id: 8070000000000000024
+      type: event.custom
+      position: [710, 1130]
+      values:
+        function: on_talk
+    - id: 8070000000000000025
+      type: var.get
+      position: [0, 1130]
+      values:
+        variable: list
+    - id: 8070000000000000026
+      type: table.length
+      position: [200, 1130]
+    - id: 8070000000000000027
+      type: compare.equal
+      position: [432, 1130]
+      values:
+        B: 0
+    - id: 8070000000000000028
+      type: var.get
+      position: [200, 1240]
+      values:
+        variable: speech_id
+    - id: 8070000000000000029
+      type: compare.equal
+      position: [432, 1266]
+      values:
+        B: 0
+    - id: 8070000000000000030
+      type: logic.or
+      position: [710, 1276]
+    - id: 8070000000000000031
+      type: flow.branch
+      position: [942, 1130]
+    - id: 8070000000000000032
+      type: math.random_integer
+      position: [942, 1266]
+      values:
+        Min: 1
+    - id: 8070000000000000033
+      type: var.get
+      position: [432, 1402]
+      values:
+        variable: list
+    - id: 8070000000000000034
+      type: table.length
+      position: [710, 1412]
+    - id: 8070000000000000035
+      type: var.set
+      position: [1228, 1130]
+      values:
+        variable: pick
+    - id: 8070000000000000036
+      type: var.get
+      position: [710, 1522]
+      values:
+        variable: pick
+    - id: 8070000000000000037
+      type: var.get
+      position: [710, 1642]
+      values:
+        variable: last
+    - id: 8070000000000000038
+      type: compare.equal
+      position: [942, 1402]
+    - id: 8070000000000000039
+      type: var.get
+      position: [432, 1522]
+      values:
+        variable: list
+    - id: 8070000000000000040
+      type: table.length
+      position: [710, 1762]
+    - id: 8070000000000000041
+      type: compare.greater
+      position: [942, 1538]
+      values:
+        B: 1
+    - id: 8070000000000000042
+      type: logic.and
+      position: [1228, 1276]
+    - id: 8070000000000000043
+      type: flow.branch
+      position: [1468, 1130]
+    - id: 8070000000000000044
+      type: math.add
+      position: [1468, 1266]
+      values:
+        B: 1
+    - id: 8070000000000000045
+      type: math.modulo
+      position: [1228, 1412]
+    - id: 8070000000000000046
+      type: var.get
+      position: [942, 1674]
+      values:
+        variable: pick
+    - id: 8070000000000000047
+      type: var.get
+      position: [710, 1872]
+      values:
+        variable: list
+    - id: 8070000000000000048
+      type: table.length
+      position: [942, 1794]
+    - id: 8070000000000000049
+      type: var.set
+      position: [1746, 1130]
+      values:
+        variable: pick
+    - id: 8070000000000000050
+      type: var.get
+      position: [1746, 1276]
+      values:
+        variable: pick
+    - id: 8070000000000000051
+      type: var.set
+      position: [1986, 1130]
+      values:
+        variable: last
+    - id: 8070000000000000052
+      type: var.get
+      position: [1468, 1402]
+      values:
+        variable: speaker
+    - id: 8070000000000000053
+      type: compare.not_equal
+      position: [1746, 1396]
+    - id: 8070000000000000054
+      type: value.string
+      position: [1468, 1522]
+      values:
+        Value: ""
+    - id: 8070000000000000055
+      type: logic.select
+      position: [1986, 1276]
+    - id: 8070000000000000056
+      type: text.concat
+      position: [1746, 1532]
+    - id: 8070000000000000057
+      type: var.get
+      position: [1468, 1632]
+      values:
+        variable: speaker
+    - id: 8070000000000000058
+      type: text.concat
+      position: [1468, 1752]
+      values:
+        A: ": "
+    - id: 8070000000000000059
+      type: var.get
+      position: [942, 1904]
+      values:
+        variable: list
+    - id: 8070000000000000060
+      type: table.get
+      position: [1228, 1548]
+    - id: 8070000000000000061
+      type: var.get
+      position: [942, 2024]
+      values:
+        variable: pick
+    - id: 8070000000000000062
+      type: var.get
+      position: [1468, 1888]
+      values:
+        variable: list
+    - id: 8070000000000000063
+      type: table.get
+      position: [1746, 1668]
+    - id: 8070000000000000064
+      type: var.get
+      position: [1468, 2008]
+      values:
+        variable: pick
+    - id: 8070000000000000065
+      type: var.set
+      position: [2258, 1130]
+      values:
+        variable: text
+    - id: 8070000000000000066
+      type: call.ui.set_text
+      position: [2524, 1130]
+    - id: 8070000000000000067
+      type: var.get
+      position: [2258, 1276]
+      values:
+        variable: speech_id
+    - id: 8070000000000000068
+      type: var.get
+      position: [2258, 1396]
+      values:
+        variable: text
+    - id: 8070000000000000069
+      type: call.ui.set_visible
+      position: [2750, 1130]
+      values:
+        visible: true
+    - id: 8070000000000000070
+      type: var.get
+      position: [2524, 1302]
+      values:
+        variable: speech_id
+    - id: 8070000000000000071
+      type: var.get
+      position: [2524, 1422]
+      values:
+        variable: seconds_min
+    - id: 8070000000000000072
+      type: math.max
+      position: [2750, 1302]
+    - id: 8070000000000000073
+      type: math.multiply
+      position: [2524, 1542]
+    - id: 8070000000000000074
+      type: var.get
+      position: [1986, 1438]
+      values:
+        variable: text
+    - id: 8070000000000000075
+      type: text.length
+      position: [2258, 1516]
+    - id: 8070000000000000076
+      type: var.get
+      position: [2258, 1626]
+      values:
+        variable: seconds_per_line
+    - id: 8070000000000000077
+      type: var.set
+      position: [2982, 1130]
+      values:
+        variable: left
+    - id: 8070000000000000078
+      type: call.sound.set_volume
+      position: [3596, 1130]
+      values:
+        volume: 0.35
+    - id: 8070000000000000079
+      type: call.sound.play
+      position: [3214, 1130]
+      values:
+        asset_path: sounds/hub/board.wav
+    - id: 8070000000000000080
+      type: call.gamestate.set
+      position: [3858, 1130]
+      values:
+        key: hub_talk_owner
+    - id: 8070000000000000081
+      type: value.self
+      position: [3596, 1302]
+    - id: 8070000000000000082
+      type: call.gamestate.set
+      position: [4136, 1130]
+      values:
+        key: hub_talk_who
+    - id: 8070000000000000083
+      type: var.get
+      position: [3858, 1302]
+      values:
+        variable: speaker
+    - id: 8070000000000000084
+      type: call.gamestate.set
+      position: [4414, 1130]
+      values:
+        key: hub_talk_text
+    - id: 8070000000000000085
+      type: var.get
+      position: [3858, 1422]
+      values:
+        variable: list
+    - id: 8070000000000000086
+      type: table.get
+      position: [4136, 1302]
+    - id: 8070000000000000087
+      type: var.get
+      position: [3858, 1542]
+      values:
+        variable: pick
+    - id: 8070000000000000088
+      type: call.gamestate.set
+      position: [5010, 1130]
+      values:
+        key: hub_talk_count
+    - id: 8070000000000000089
+      type: math.add
+      position: [4692, 1130]
+      values:
+        B: 1
+    - id: 8070000000000000090
+      type: call.gamestate.get
+      position: [4692, 1266]
+      values:
+        default: 0
+        key: hub_talk_count
+    - id: 8070000000000000091
+      type: event.on_update
+      position: [226, 2304]
+    - id: 8070000000000000092
+      type: var.get
+      position: [0, 2304]
+      values:
+        variable: followed_id
+    - id: 8070000000000000093
+      type: compare.not_equal
+      position: [226, 2440]
+      values:
+        B: 0
+    - id: 8070000000000000094
+      type: flow.branch
+      position: [504, 2304]
+    - id: 8070000000000000095
+      type: call.transform.get_position
+      position: [504, 2440]
+      values:
+        split.xyz: true
+    - id: 8070000000000000096
+      type: var.get
+      position: [226, 2576]
+      values:
+        variable: followed_id
+    - id: 8070000000000000097
+      type: var.set
+      position: [768, 2304]
+      values:
+        variable: x
+    - id: 8070000000000000098
+      type: var.set
+      position: [1000, 2304]
+      values:
+        variable: y
+    - id: 8070000000000000099
+      type: call.transform.set_position
+      position: [1232, 2304]
+      values:
+        split.xyz: true
+        z: 0.6
+    - id: 8070000000000000100
+      type: var.get
+      position: [1000, 2450]
+      values:
+        variable: x
+    - id: 8070000000000000101
+      type: var.get
+      position: [1000, 2570]
+      values:
+        variable: y
+    - id: 8070000000000000102
+      type: var.get
+      position: [1000, 2690]
+      values:
+        variable: left
+    - id: 8070000000000000103
+      type: compare.greater
+      position: [1232, 2528]
+      values:
+        B: 0
+    - id: 8070000000000000104
+      type: flow.branch
+      position: [1518, 2304]
+    - id: 8070000000000000105
+      type: math.subtract
+      position: [1518, 2440]
+    - id: 8070000000000000106
+      type: var.get
+      position: [1232, 2664]
+      values:
+        variable: left
+    - id: 8070000000000000107
+      type: var.set
+      position: [1782, 2304]
+      values:
+        variable: left
+    - id: 8070000000000000108
+      type: var.get
+      position: [1518, 2576]
+      values:
+        variable: left
+    - id: 8070000000000000109
+      type: compare.less_equal
+      position: [1782, 2450]
+      values:
+        B: 0
+    - id: 8070000000000000110
+      type: call.gamestate.get
+      position: [2052, 2304]
+      values:
+        default: 0
+        key: hub_talk_owner
+    - id: 8070000000000000111
+      type: compare.equal
+      position: [1782, 2586]
+    - id: 8070000000000000112
+      type: value.self
+      position: [1518, 2696]
+    - id: 8070000000000000113
+      type: logic.and
+      position: [2052, 2476]
+    - id: 8070000000000000114
+      type: flow.branch
+      position: [2370, 2304]
+    - id: 8070000000000000115
+      type: call.ui.set_visible
+      position: [2634, 2304]
+      values:
+        visible: false
+    - id: 8070000000000000116
+      type: var.get
+      position: [2370, 2440]
+      values:
+        variable: speech_id
+  links:
+    - {from: 8070000000000000001, fromPin: Then, to: 8070000000000000003, toPin: Exec}
+    - {from: 8070000000000000003, fromPin: value, to: 8070000000000000002, toPin: value}
+    - {from: 8070000000000000003, fromPin: Then, to: 8070000000000000002, toPin: Exec}
+    - {from: 8070000000000000005, fromPin: Value, to: 8070000000000000004, toPin: Text}
+    - {from: 8070000000000000004, fromPin: Result, to: 8070000000000000006, toPin: List}
+    - {from: 8070000000000000002, fromPin: Then, to: 8070000000000000006, toPin: Exec}
+    - {from: 8070000000000000006, fromPin: Item, to: 8070000000000000007, toPin: A}
+    - {from: 8070000000000000008, fromPin: Result, to: 8070000000000000007, toPin: B}
+    - {from: 8070000000000000007, fromPin: Result, to: 8070000000000000009, toPin: Condition}
+    - {from: 8070000000000000006, fromPin: Body, to: 8070000000000000009, toPin: Exec}
+    - {from: 8070000000000000011, fromPin: Value, to: 8070000000000000010, toPin: Table}
+    - {from: 8070000000000000013, fromPin: Value, to: 8070000000000000014, toPin: List}
+    - {from: 8070000000000000014, fromPin: Result, to: 8070000000000000012, toPin: A}
+    - {from: 8070000000000000012, fromPin: Result, to: 8070000000000000010, toPin: Key}
+    - {from: 8070000000000000006, fromPin: Item, to: 8070000000000000010, toPin: Value}
+    - {from: 8070000000000000009, fromPin: True, to: 8070000000000000010, toPin: Exec}
+    - {from: 8070000000000000015, fromPin: entity_id, to: 8070000000000000016, toPin: Value}
+    - {from: 8070000000000000006, fromPin: Completed, to: 8070000000000000016, toPin: Exec}
+    - {from: 8070000000000000017, fromPin: Value, to: 8070000000000000018, toPin: A}
+    - {from: 8070000000000000019, fromPin: Result, to: 8070000000000000018, toPin: B}
+    - {from: 8070000000000000018, fromPin: Result, to: 8070000000000000020, toPin: Condition}
+    - {from: 8070000000000000016, fromPin: Then, to: 8070000000000000020, toPin: Exec}
+    - {from: 8070000000000000022, fromPin: Value, to: 8070000000000000021, toPin: name}
+    - {from: 8070000000000000021, fromPin: entity_id, to: 8070000000000000023, toPin: Value}
+    - {from: 8070000000000000020, fromPin: True, to: 8070000000000000023, toPin: Exec}
+    - {from: 8070000000000000025, fromPin: Value, to: 8070000000000000026, toPin: List}
+    - {from: 8070000000000000026, fromPin: Result, to: 8070000000000000027, toPin: A}
+    - {from: 8070000000000000028, fromPin: Value, to: 8070000000000000029, toPin: A}
+    - {from: 8070000000000000027, fromPin: Result, to: 8070000000000000030, toPin: A}
+    - {from: 8070000000000000029, fromPin: Result, to: 8070000000000000030, toPin: B}
+    - {from: 8070000000000000030, fromPin: Result, to: 8070000000000000031, toPin: Condition}
+    - {from: 8070000000000000024, fromPin: Then, to: 8070000000000000031, toPin: Exec}
+    - {from: 8070000000000000033, fromPin: Value, to: 8070000000000000034, toPin: List}
+    - {from: 8070000000000000034, fromPin: Result, to: 8070000000000000032, toPin: Max}
+    - {from: 8070000000000000032, fromPin: Result, to: 8070000000000000035, toPin: Value}
+    - {from: 8070000000000000031, fromPin: False, to: 8070000000000000035, toPin: Exec}
+    - {from: 8070000000000000036, fromPin: Value, to: 8070000000000000038, toPin: A}
+    - {from: 8070000000000000037, fromPin: Value, to: 8070000000000000038, toPin: B}
+    - {from: 8070000000000000039, fromPin: Value, to: 8070000000000000040, toPin: List}
+    - {from: 8070000000000000040, fromPin: Result, to: 8070000000000000041, toPin: A}
+    - {from: 8070000000000000038, fromPin: Result, to: 8070000000000000042, toPin: A}
+    - {from: 8070000000000000041, fromPin: Result, to: 8070000000000000042, toPin: B}
+    - {from: 8070000000000000042, fromPin: Result, to: 8070000000000000043, toPin: Condition}
+    - {from: 8070000000000000035, fromPin: Then, to: 8070000000000000043, toPin: Exec}
+    - {from: 8070000000000000046, fromPin: Value, to: 8070000000000000045, toPin: A}
+    - {from: 8070000000000000047, fromPin: Value, to: 8070000000000000048, toPin: List}
+    - {from: 8070000000000000048, fromPin: Result, to: 8070000000000000045, toPin: B}
+    - {from: 8070000000000000045, fromPin: Result, to: 8070000000000000044, toPin: A}
+    - {from: 8070000000000000044, fromPin: Result, to: 8070000000000000049, toPin: Value}
+    - {from: 8070000000000000043, fromPin: True, to: 8070000000000000049, toPin: Exec}
+    - {from: 8070000000000000050, fromPin: Value, to: 8070000000000000051, toPin: Value}
+    - {from: 8070000000000000049, fromPin: Then, to: 8070000000000000051, toPin: Exec}
+    - {from: 8070000000000000043, fromPin: False, to: 8070000000000000051, toPin: Exec}
+    - {from: 8070000000000000052, fromPin: Value, to: 8070000000000000053, toPin: A}
+    - {from: 8070000000000000054, fromPin: Result, to: 8070000000000000053, toPin: B}
+    - {from: 8070000000000000053, fromPin: Result, to: 8070000000000000055, toPin: Condition}
+    - {from: 8070000000000000057, fromPin: Value, to: 8070000000000000056, toPin: A}
+    - {from: 8070000000000000059, fromPin: Value, to: 8070000000000000060, toPin: Table}
+    - {from: 8070000000000000061, fromPin: Value, to: 8070000000000000060, toPin: Key}
+    - {from: 8070000000000000060, fromPin: Result, to: 8070000000000000058, toPin: B}
+    - {from: 8070000000000000058, fromPin: Result, to: 8070000000000000056, toPin: B}
+    - {from: 8070000000000000062, fromPin: Value, to: 8070000000000000063, toPin: Table}
+    - {from: 8070000000000000064, fromPin: Value, to: 8070000000000000063, toPin: Key}
+    - {from: 8070000000000000056, fromPin: Result, to: 8070000000000000055, toPin: True}
+    - {from: 8070000000000000063, fromPin: Result, to: 8070000000000000055, toPin: False}
+    - {from: 8070000000000000055, fromPin: Result, to: 8070000000000000065, toPin: Value}
+    - {from: 8070000000000000051, fromPin: Then, to: 8070000000000000065, toPin: Exec}
+    - {from: 8070000000000000067, fromPin: Value, to: 8070000000000000066, toPin: entity_id}
+    - {from: 8070000000000000068, fromPin: Value, to: 8070000000000000066, toPin: text}
+    - {from: 8070000000000000065, fromPin: Then, to: 8070000000000000066, toPin: Exec}
+    - {from: 8070000000000000070, fromPin: Value, to: 8070000000000000069, toPin: entity_id}
+    - {from: 8070000000000000066, fromPin: Then, to: 8070000000000000069, toPin: Exec}
+    - {from: 8070000000000000071, fromPin: Value, to: 8070000000000000072, toPin: A}
+    - {from: 8070000000000000074, fromPin: Value, to: 8070000000000000075, toPin: Text}
+    - {from: 8070000000000000075, fromPin: Result, to: 8070000000000000073, toPin: A}
+    - {from: 8070000000000000076, fromPin: Value, to: 8070000000000000073, toPin: B}
+    - {from: 8070000000000000073, fromPin: Result, to: 8070000000000000072, toPin: B}
+    - {from: 8070000000000000072, fromPin: Result, to: 8070000000000000077, toPin: Value}
+    - {from: 8070000000000000069, fromPin: Then, to: 8070000000000000077, toPin: Exec}
+    - {from: 8070000000000000077, fromPin: Then, to: 8070000000000000079, toPin: Exec}
+    - {from: 8070000000000000079, fromPin: handle, to: 8070000000000000078, toPin: handle}
+    - {from: 8070000000000000079, fromPin: Then, to: 8070000000000000078, toPin: Exec}
+    - {from: 8070000000000000081, fromPin: Result, to: 8070000000000000080, toPin: value}
+    - {from: 8070000000000000078, fromPin: Then, to: 8070000000000000080, toPin: Exec}
+    - {from: 8070000000000000083, fromPin: Value, to: 8070000000000000082, toPin: value}
+    - {from: 8070000000000000080, fromPin: Then, to: 8070000000000000082, toPin: Exec}
+    - {from: 8070000000000000085, fromPin: Value, to: 8070000000000000086, toPin: Table}
+    - {from: 8070000000000000087, fromPin: Value, to: 8070000000000000086, toPin: Key}
+    - {from: 8070000000000000086, fromPin: Result, to: 8070000000000000084, toPin: value}
+    - {from: 8070000000000000082, fromPin: Then, to: 8070000000000000084, toPin: Exec}
+    - {from: 8070000000000000084, fromPin: Then, to: 8070000000000000090, toPin: Exec}
+    - {from: 8070000000000000090, fromPin: value, to: 8070000000000000089, toPin: A}
+    - {from: 8070000000000000089, fromPin: Result, to: 8070000000000000088, toPin: value}
+    - {from: 8070000000000000090, fromPin: Then, to: 8070000000000000088, toPin: Exec}
+    - {from: 8070000000000000092, fromPin: Value, to: 8070000000000000093, toPin: A}
+    - {from: 8070000000000000093, fromPin: Result, to: 8070000000000000094, toPin: Condition}
+    - {from: 8070000000000000091, fromPin: Then, to: 8070000000000000094, toPin: Exec}
+    - {from: 8070000000000000096, fromPin: Value, to: 8070000000000000095, toPin: entity_id}
+    - {from: 8070000000000000095, fromPin: x, to: 8070000000000000097, toPin: Value}
+    - {from: 8070000000000000094, fromPin: True, to: 8070000000000000097, toPin: Exec}
+    - {from: 8070000000000000095, fromPin: y, to: 8070000000000000098, toPin: Value}
+    - {from: 8070000000000000097, fromPin: Then, to: 8070000000000000098, toPin: Exec}
+    - {from: 8070000000000000100, fromPin: Value, to: 8070000000000000099, toPin: x}
+    - {from: 8070000000000000101, fromPin: Value, to: 8070000000000000099, toPin: y}
+    - {from: 8070000000000000098, fromPin: Then, to: 8070000000000000099, toPin: Exec}
+    - {from: 8070000000000000102, fromPin: Value, to: 8070000000000000103, toPin: A}
+    - {from: 8070000000000000103, fromPin: Result, to: 8070000000000000104, toPin: Condition}
+    - {from: 8070000000000000099, fromPin: Then, to: 8070000000000000104, toPin: Exec}
+    - {from: 8070000000000000094, fromPin: False, to: 8070000000000000104, toPin: Exec}
+    - {from: 8070000000000000106, fromPin: Value, to: 8070000000000000105, toPin: A}
+    - {from: 8070000000000000091, fromPin: dt, to: 8070000000000000105, toPin: B}
+    - {from: 8070000000000000105, fromPin: Result, to: 8070000000000000107, toPin: Value}
+    - {from: 8070000000000000104, fromPin: True, to: 8070000000000000107, toPin: Exec}
+    - {from: 8070000000000000108, fromPin: Value, to: 8070000000000000109, toPin: A}
+    - {from: 8070000000000000107, fromPin: Then, to: 8070000000000000110, toPin: Exec}
+    - {from: 8070000000000000110, fromPin: value, to: 8070000000000000111, toPin: A}
+    - {from: 8070000000000000112, fromPin: Result, to: 8070000000000000111, toPin: B}
+    - {from: 8070000000000000109, fromPin: Result, to: 8070000000000000113, toPin: A}
+    - {from: 8070000000000000111, fromPin: Result, to: 8070000000000000113, toPin: B}
+    - {from: 8070000000000000113, fromPin: Result, to: 8070000000000000114, toPin: Condition}
+    - {from: 8070000000000000110, fromPin: Then, to: 8070000000000000114, toPin: Exec}
+    - {from: 8070000000000000116, fromPin: Value, to: 8070000000000000115, toPin: entity_id}
+    - {from: 8070000000000000114, fromPin: True, to: 8070000000000000115, toPin: Exec}

@@ -84,7 +84,7 @@ in the headless session too.
 
 ## Decisions
 
-- **Lua, not Python**: Lua is already embedded (Conan `lua/5.5.0`), sandboxed, and is the language of game scripts:
+- **Lua, not Python**: Lua is already embedded (Luau, Conan `luau/0.746`), sandboxed, and is the language of game scripts:
   one language to learn. Embedding CPython means a runtime and standard library to package, MinGW builds on Windows and
   a second set of bindings. JavaScript is excluded.
 - **No custom language**: the command syntax stays a flat list of commands; loops and conditions are Lua's job.

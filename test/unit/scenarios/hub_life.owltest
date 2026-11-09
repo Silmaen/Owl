@@ -1,6 +1,6 @@
-# The life of the village: the river and the fountain run on animated tiles (hub_water.lua edits them with
-# isometric.set_cell), the church bell rings on a timer (hub_ambient.lua, 12 seconds after the start) and the butterflies
-# flutter round their gardens (hub_critters.lua).
+# The life of the village: the river and the fountain run on animated tiles (hub_water.owlvs edits them with
+# isometric.set_cell), the church bell rings on a timer (hub_ambient.owlvs, 12 seconds after the start) and the butterflies
+# flutter round their gardens (hub_critters.owlvs).
 scene: ../../../engine_demo/scenes/world_map.owl
 steps:
   - frames: 30

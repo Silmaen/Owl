@@ -143,7 +143,7 @@ def hub_ambience() -> None:
 
 
 def hub_birds(index: int) -> None:
-    """One variant of a bird scene (two to four calls over a few seconds), played now and then from ``hub_ambient.lua``."""
+    """One variant of a bird scene (two to four calls over a few seconds), played now and then from ``hub_ambient.owlvs``."""
     rng = random.Random(100 + index)
     length = seconds(rng.uniform(2.5, 4.5))
     track = [0.0] * (length + seconds(1.0))
@@ -162,7 +162,7 @@ def hub_birds(index: int) -> None:
 
 
 def hub_wind(index: int) -> None:
-    """One gust of wind (three to five seconds, fading in and out), played now and then from ``hub_ambient.lua``."""
+    """One gust of wind (three to five seconds, fading in and out), played now and then from ``hub_ambient.owlvs``."""
     rng = random.Random(200 + index)
     count = seconds(rng.uniform(3.0, 5.0))
     gust = bandpass(noise(rng, count), 150 + 60 * index, 700 + 150 * index)

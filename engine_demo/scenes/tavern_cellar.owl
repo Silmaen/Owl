@@ -2,7 +2,7 @@ Scene: TavernCellar
 FormatVersion: 7
 Hud: gid:e94eef5baaf85b8b:huds/tavern.owlhud
 SceneScript:
-  scriptPath: gid:7f243e48bd3747ba:scripts/tavern/cellar.lua
+  scriptPath: gid:7f243e48bd3747ba:scripts/tavern/cellar.owlvs
 EnabledRenderers:
   - Name: world
     Enabled: false
@@ -343,7 +343,7 @@ Entities:
       Name: mesh_world
     Trigger: {Type: Interaction, CallbackName: on_chest_interact}
     LuaScript:
-      scriptPath: gid:a4fa9fe6d7fdd5c1:scripts/tavern/treasure_chest.lua
+      scriptPath: gid:a4fa9fe6d7fdd5c1:scripts/tavern/treasure_chest.owlvs
     Visibility:
       gameVisible: true
   - Entity: 3950000000000000042
@@ -411,7 +411,7 @@ Entities:
       scale: [1, 1, 1]
     Visibility: {gameVisible: true}
     LuaScript:
-      scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.lua
+      scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.owlvs
       properties:
         - {name: hint, type: string, value: HudHint}
         - {name: duration, type: float, value: 4.5}

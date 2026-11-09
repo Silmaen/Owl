@@ -1,0 +1,81 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: damage_per_second, type: float, default: 0.3}
+    - {name: frame_time, type: float, default: 0}
+  nodes:
+    - id: 7360000000000000001
+      type: event.custom
+      position: [0, 0]
+      values:
+        function: on_lava_tick
+    - id: 7360000000000000002
+      type: call.time.delta
+      position: [0, 300]
+    - id: 7360000000000000003
+      type: compare.less_equal
+      position: [202, 300]
+      values:
+        B: 0
+    - id: 7360000000000000004
+      type: flow.branch
+      position: [472, 0]
+    - id: 7360000000000000005
+      type: var.set
+      position: [736, 0]
+      values:
+        Value: 0.016666666666666666
+        variable: frame_time
+    - id: 7360000000000000006
+      type: var.set
+      position: [736, 300]
+      values:
+        variable: frame_time
+    - id: 7360000000000000007
+      type: call.gamestate.get
+      position: [1030, 150]
+      values:
+        default: 1
+        key: health
+    - id: 7360000000000000008
+      type: var.get
+      position: [1030, 450]
+      values:
+        variable: damage_per_second
+    - id: 7360000000000000009
+      type: var.get
+      position: [1030, 600]
+      values:
+        variable: frame_time
+    - id: 7360000000000000010
+      type: math.multiply
+      position: [1348, 450]
+    - id: 7360000000000000011
+      type: math.subtract
+      position: [1556, 300]
+    - id: 7360000000000000012
+      type: math.max
+      position: [1764, 300]
+      values:
+        B: 0
+    - id: 7360000000000000013
+      type: call.gamestate.set
+      position: [2034, 150]
+      values:
+        key: health
+  links:
+    - {from: 7360000000000000001, fromPin: Then, to: 7360000000000000004, toPin: Exec}
+    - {from: 7360000000000000002, fromPin: seconds, to: 7360000000000000003, toPin: A}
+    - {from: 7360000000000000003, fromPin: Result, to: 7360000000000000004, toPin: Condition}
+    - {from: 7360000000000000004, fromPin: True, to: 7360000000000000005, toPin: Exec}
+    - {from: 7360000000000000004, fromPin: False, to: 7360000000000000006, toPin: Exec}
+    - {from: 7360000000000000002, fromPin: seconds, to: 7360000000000000006, toPin: Value}
+    - {from: 7360000000000000005, fromPin: Then, to: 7360000000000000007, toPin: Exec}
+    - {from: 7360000000000000006, fromPin: Then, to: 7360000000000000007, toPin: Exec}
+    - {from: 7360000000000000008, fromPin: Value, to: 7360000000000000010, toPin: A}
+    - {from: 7360000000000000009, fromPin: Value, to: 7360000000000000010, toPin: B}
+    - {from: 7360000000000000007, fromPin: value, to: 7360000000000000011, toPin: A}
+    - {from: 7360000000000000010, fromPin: Result, to: 7360000000000000011, toPin: B}
+    - {from: 7360000000000000011, fromPin: Result, to: 7360000000000000012, toPin: A}
+    - {from: 7360000000000000007, fromPin: Then, to: 7360000000000000013, toPin: Exec}
+    - {from: 7360000000000000012, fromPin: Result, to: 7360000000000000013, toPin: value}

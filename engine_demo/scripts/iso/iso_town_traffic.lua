@@ -75,8 +75,8 @@ local function parse_fleet(text)
         if sprite ~= nil then
             FLEET[#FLEET + 1] = {
                 sprite = sprite, model = tonumber(model), speed = tonumber(speed),
-                start = { math.floor(tonumber(x)), math.floor(tonumber(y)) },
-                color = PALETTE[(#FLEET % #PALETTE) + 1], seed = math.floor(tonumber(seed)),
+                start = { math.floor(tonumber(x) or 0), math.floor(tonumber(y) or 0) },
+                color = PALETTE[(#FLEET % #PALETTE) + 1], seed = math.floor(tonumber(seed) or 0),
             }
         end
     end
@@ -126,9 +126,10 @@ local function anchor(vehicle)
     end
 end
 
--- Next number of the vehicle's generator (a linear congruential one: the same sequence on every run).
+-- Next number of the vehicle's generator (a linear congruential one: the same sequence on every run). Its product
+-- is split in halves of 16 bits so that every step stays exact in a Luau number (a double).
 local function roll(vehicle, count)
-    vehicle.rng = (vehicle.rng * 1103515245 + 12345) % 2147483648
+    vehicle.rng = (vehicle.rng * 20077 + vehicle.rng * 16838 % 32768 * 65536 + 12345) % 2147483648
     return (vehicle.rng // 65536) % count
 end
 

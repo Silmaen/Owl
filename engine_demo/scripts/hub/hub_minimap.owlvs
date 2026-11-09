@@ -1,0 +1,172 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: player, type: string, default: Player}
+    - {name: dot, type: string, default: MinimapPlayer}
+    - {name: origin_x, type: float, default: 16}
+    - {name: origin_y, type: float, default: 16}
+    - {name: scale, type: float, default: 3}
+    - {name: rows, type: int, default: 40}
+    - {name: player_id, type: entity, default: 0}
+    - {name: dot_id, type: entity, default: 0}
+  nodes:
+    - id: 7460000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 7460000000000000002
+      type: var.get
+      position: [0, 150]
+      values:
+        variable: player
+    - id: 7460000000000000003
+      type: call.scene.find_entity
+      position: [210, 150]
+    - id: 7460000000000000004
+      type: var.set
+      position: [488, 0]
+      values:
+        variable: player_id
+    - id: 7460000000000000005
+      type: var.get
+      position: [488, 300]
+      values:
+        variable: dot
+    - id: 7460000000000000006
+      type: call.scene.find_entity
+      position: [720, 300]
+    - id: 7460000000000000007
+      type: var.set
+      position: [984, 0]
+      values:
+        variable: dot_id
+    - id: 7460000000000000008
+      type: event.on_update
+      position: [0, 600]
+    - id: 7460000000000000009
+      type: var.get
+      position: [0, 750]
+      values:
+        variable: player_id
+    - id: 7460000000000000010
+      type: var.get
+      position: [0, 900]
+      values:
+        variable: dot_id
+    - id: 7460000000000000011
+      type: compare.equal
+      position: [210, 750]
+      values:
+        B: 0
+    - id: 7460000000000000012
+      type: compare.equal
+      position: [210, 900]
+      values:
+        B: 0
+    - id: 7460000000000000013
+      type: logic.or
+      position: [488, 750]
+    - id: 7460000000000000014
+      type: flow.branch
+      position: [720, 600]
+    - id: 7460000000000000015
+      type: call.transform.get_position
+      position: [210, 1200]
+      values:
+        split.xyz: true
+    - id: 7460000000000000016
+      type: call.transform.get_position
+      position: [210, 1650]
+      values:
+        split.xyz: true
+    - id: 7460000000000000017
+      type: var.get
+      position: [488, 1500]
+      values:
+        variable: scale
+    - id: 7460000000000000018
+      type: var.get
+      position: [720, 1050]
+      values:
+        variable: origin_x
+    - id: 7460000000000000019
+      type: math.multiply
+      position: [720, 1200]
+    - id: 7460000000000000020
+      type: math.add
+      position: [984, 1050]
+    - id: 7460000000000000021
+      type: var.get
+      position: [488, 1350]
+      values:
+        variable: rows
+    - id: 7460000000000000022
+      type: math.add
+      position: [720, 1350]
+    - id: 7460000000000000023
+      type: math.multiply
+      position: [984, 1350]
+    - id: 7460000000000000024
+      type: var.get
+      position: [984, 1500]
+      values:
+        variable: origin_y
+    - id: 7460000000000000025
+      type: math.add
+      position: [1216, 1350]
+    - id: 7460000000000000026
+      type: call.transform.set_position
+      position: [1424, 600]
+      values:
+        split.xyz: true
+    - id: 7460000000000000027
+      type: math.floor
+      position: [1424, 1050]
+    - id: 7460000000000000028
+      type: math.floor
+      position: [1648, 1050]
+    - id: 7460000000000000029
+      type: call.gamestate.set
+      position: [1648, 600]
+      values:
+        key: minimap_x
+    - id: 7460000000000000030
+      type: call.gamestate.set
+      position: [1926, 600]
+      values:
+        key: minimap_y
+  links:
+    - {from: 7460000000000000001, fromPin: Then, to: 7460000000000000004, toPin: Exec}
+    - {from: 7460000000000000004, fromPin: Then, to: 7460000000000000007, toPin: Exec}
+    - {from: 7460000000000000002, fromPin: Value, to: 7460000000000000003, toPin: name}
+    - {from: 7460000000000000003, fromPin: entity_id, to: 7460000000000000004, toPin: Value}
+    - {from: 7460000000000000005, fromPin: Value, to: 7460000000000000006, toPin: name}
+    - {from: 7460000000000000006, fromPin: entity_id, to: 7460000000000000007, toPin: Value}
+    - {from: 7460000000000000008, fromPin: Then, to: 7460000000000000014, toPin: Exec}
+    - {from: 7460000000000000009, fromPin: Value, to: 7460000000000000011, toPin: A}
+    - {from: 7460000000000000010, fromPin: Value, to: 7460000000000000012, toPin: A}
+    - {from: 7460000000000000011, fromPin: Result, to: 7460000000000000013, toPin: A}
+    - {from: 7460000000000000012, fromPin: Result, to: 7460000000000000013, toPin: B}
+    - {from: 7460000000000000013, fromPin: Result, to: 7460000000000000014, toPin: Condition}
+    - {from: 7460000000000000014, fromPin: False, to: 7460000000000000026, toPin: Exec}
+    - {from: 7460000000000000009, fromPin: Value, to: 7460000000000000015, toPin: entity_id}
+    - {from: 7460000000000000010, fromPin: Value, to: 7460000000000000016, toPin: entity_id}
+    - {from: 7460000000000000015, fromPin: x, to: 7460000000000000019, toPin: A}
+    - {from: 7460000000000000017, fromPin: Value, to: 7460000000000000019, toPin: B}
+    - {from: 7460000000000000018, fromPin: Value, to: 7460000000000000020, toPin: A}
+    - {from: 7460000000000000019, fromPin: Result, to: 7460000000000000020, toPin: B}
+    - {from: 7460000000000000021, fromPin: Value, to: 7460000000000000022, toPin: A}
+    - {from: 7460000000000000015, fromPin: y, to: 7460000000000000022, toPin: B}
+    - {from: 7460000000000000022, fromPin: Result, to: 7460000000000000023, toPin: A}
+    - {from: 7460000000000000017, fromPin: Value, to: 7460000000000000023, toPin: B}
+    - {from: 7460000000000000024, fromPin: Value, to: 7460000000000000025, toPin: A}
+    - {from: 7460000000000000023, fromPin: Result, to: 7460000000000000025, toPin: B}
+    - {from: 7460000000000000010, fromPin: Value, to: 7460000000000000026, toPin: entity_id}
+    - {from: 7460000000000000020, fromPin: Result, to: 7460000000000000026, toPin: x}
+    - {from: 7460000000000000025, fromPin: Result, to: 7460000000000000026, toPin: y}
+    - {from: 7460000000000000016, fromPin: z, to: 7460000000000000026, toPin: z}
+    - {from: 7460000000000000026, fromPin: Then, to: 7460000000000000029, toPin: Exec}
+    - {from: 7460000000000000029, fromPin: Then, to: 7460000000000000030, toPin: Exec}
+    - {from: 7460000000000000020, fromPin: Result, to: 7460000000000000027, toPin: A}
+    - {from: 7460000000000000025, fromPin: Result, to: 7460000000000000028, toPin: A}
+    - {from: 7460000000000000027, fromPin: Result, to: 7460000000000000029, toPin: value}
+    - {from: 7460000000000000028, fromPin: Result, to: 7460000000000000030, toPin: value}

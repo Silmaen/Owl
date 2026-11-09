@@ -44,6 +44,16 @@ Text files open in a code editor with syntax colours for Lua, C, C++, Python, YA
 Slang (`.slang`, `.slangh`, `.hlsl`; `.glsl` opens with the C colours). The footer gives the language, the cursor line
 and column and the insert mode. A Slang shader is checked when the engine loads it: its errors show in the Log.
 
+A Lua script is type-checked as you type (Luau, `script::ScriptTypeChecker`), against the declarations of every engine
+binding (`getScriptDefinitions`, generated from the binding registry): a misspelt table or function, a wrong argument
+type or count, a nil passed where a number is expected. Errors mark their line number in red, lint warnings (unused
+local, shadowed name) in amber, with the message as a tooltip; the footer counts them and unfolds the list, a click on
+a problem selects its line. The properties of the script, the globals the engine sets (`entity_id`, `tr`, the HUD
+values) and the modules it requires (read from the asset folders as `require` reads them) are known. A global the
+script reads without setting it is a warning, an error when it looks like a misspelt engine global. `--!strict` on the
+first line asks for strict typing. Editor scripts (`editor/*.lua`) are not checked: they run against the `editor`
+module of the console.
+
 A double click on an asset reference opens the asset it names: a `gid:<GUID>:<path>` reference of a scene, prefab or
 material opened as text, or the bare GUID of an `.owlmeta`.
 
@@ -81,6 +91,60 @@ open button of a mesh slot.
 - **Save** updates every entity using the material, in every open scene.
 
 ![The material `old_brass.owlmat`: the parameters on the left, the sphere preview on the right](../images/nest/material_editor.png)
+
+### Material graphs
+
+A material graph writes the surface of a root material as nodes (design: [Material graphs](design/material-graphs.md)).
+**New Material Graph** in the Content Browser creates one; **Convert to Graph** in the toolbar of a parameter material
+turns it into the graph of its parameter surface (*Parameter Surface* linked to *Surface*, drawn the same), and
+**Convert to Parameters** drops the graph. Both are undoable.
+
+- **Canvas**: the nodes of the graph, or of the function shown in the scope list of the toolbar (**←** goes back to
+  the graph). Right-click the background for the palette, drag from an output pin to an input pin to link (an input
+  takes one link), **Alt**+click a link to cut it, drag a box or **Ctrl**+click to select many, drag to move them,
+  **Del** deletes, **Ctrl+C** / **Ctrl+V** / **Ctrl+D** copy, paste and duplicate (a paste brings the parameters, custom
+  nodes and functions the nodes name), **Home** frames every node. Pin colours: green number, yellow `Float2`, purple
+  `Float3`, pink `Float4`, grey as wide as the widest input.
+- **Material Graph panel** (the Hierarchy): the **Nodes** palette, searchable, by category, entries dragged onto the
+  canvas; **Parameters**; **Custom**; **Functions**.
+- **Node panel** (the Properties): the settings of the selected node (number, vector, colour picker, choice, name of
+  a parameter, custom node or function of the graph) and the values of its unlinked inputs; an input reading the mesh
+  (`@uv`, `@position`, `@normal`) does so until a value is set, the ↺ gives it back.
+- **Diagnostics**: a node the compiler refuses has a red frame and says why in its tooltip; the list under the preview
+  names every problem, a click selects the node, and the toolbar badge counts them.
+- **Previews**: the sphere or cube on the right draws the material, compiled again a quarter of a second after the last
+  edit; each node with an output shows that output unlit on a small sphere (only the nodes on screen, refreshed on
+  edit), **Node Previews** in the toolbar hides them.
+- **Settings** (under the preview): shading model, alpha mode and cutoff, double sided, IOR, clearcoat IOR, toon
+  bands and rim; the surface itself comes from the graph.
+
+| Category | Nodes                                                                                                                                    |
+|----------|------------------------------------------------------------------------------------------------------------------------------------------|
+| Inputs   | UV, World Position, World Normal, View Direction, Time, Vertex Occlusion, Number, Vector, Color, Parameter                               |
+| Maths    | Add, Subtract, Multiply, Divide, Min, Max, Power, Step, Lerp, Clamp, Smoothstep, Remap, Saturate, One Minus, Negate, Abs, Square Root,   |
+|          | Floor, Ceil, Fraction, Sine, Cosine, Normalize, Length, Distance, Dot, Cross                                                             |
+| Vectors  | Split, Combine, Tiling and Offset, Panner, Rotate UV                                                                                     |
+| Textures | Sample Texture, Triplanar, Parallax                                                                                                      |
+| Effects  | Value Noise, Gradient Noise, Fractal Noise, Voronoi, Fresnel, Height Blend, Detail Blend, Blend Normals, Normal Strength                 |
+| Surface  | Parameter Surface, Surface (the result: base colour, alpha, normal, metallic, roughness, occlusion, emissive, layers, offset)            |
+| Graph    | Custom, Function, Function Inputs, Function Outputs                                                                                      |
+
+- **Parameters**: a name (a Slang identifier; its nodes follow a rename), a kind (`Float`, `Vector`, `Color`,
+  `Texture`) and a default; a texture default is an image dropped from the Content Browser. The palette has a
+  *Parameter* entry per value and a *Sample* entry per texture. A graph exposes 8 number parameters and 6 textures at
+  most: the textures take the 6 map slots of the material.
+- **Custom nodes**: a name, a title, typed inputs and outputs (`Float` to `Float4`, an input with its default) and a
+  Slang body that assigns every output from the inputs.
+- **Functions**: a name, typed inputs and outputs, and a body edited on the canvas (**Edit Body**) between its
+  *Function Inputs* and *Function Outputs* nodes; a *Function* node of the graph calls it.
+- **Instances**: a material whose parent is a graph lists the parameters of that graph under **Graph Parameters**; a
+  checked one is set by the instance (`graphValues`), the others follow the parent, without a recompile.
+- **Limits**: the 8 numbers and 6 textures above; *Triplanar*, *Parallax* and *Parameter Surface* run in the fragment
+  stage only, so the nodes feeding the *World Position Offset* input of the surface (the vertex stage) cannot use
+  them (*Sample Texture* reads the first mip there).
+
+Every gesture runs a `material.*` command (see the [Console](editor_console.md)): it is undoable, journaled and
+reachable from macros and MCP.
 
 ## Sound cues
 

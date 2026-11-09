@@ -16,6 +16,7 @@
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
+#include <script/EntityHandle.h>
 
 #include <algorithm>
 #include <chrono>
@@ -338,12 +339,14 @@ end
 	const auto ball = addBall(scene, {0.f, 0.f, 5.f});
 	scene.createEntity("probe").addComponent<component::LuaScript>().scriptPath = (dir / "probe.lua").generic_string();
 	scene.onStartRuntime();
-	scene.getGameState().set("ball", static_cast<int64_t>(static_cast<uint64_t>(ball.getUUID())));
-	scene.getGameState().set("source", static_cast<int64_t>(static_cast<uint64_t>(source.getUUID())));
+	scene.getGameState().set("ball", static_cast<int64_t>(script::getEntityHandle(scene, ball)));
+	scene.getGameState().set("source", static_cast<int64_t>(script::getEntityHandle(scene, source)));
 	for (int i = 0; i < 3; ++i) scene.onUpdateRuntime(makeFrame(), false);
 	const auto& state = scene.getGameState();
 	const auto read = [&state](const char* iKey) -> float {
 		const auto value = state.get(iKey);
+		if (value && std::holds_alternative<int64_t>(*value))
+			return static_cast<float>(std::get<int64_t>(*value));
 		return value && std::holds_alternative<float>(*value) ? std::get<float>(*value) : -1000.f;
 	};
 	EXPECT_NEAR(read("gx"), 4.f * 4.f / 25.f, 1e-4f);

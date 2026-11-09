@@ -12,6 +12,7 @@
 
 #include "core/external/lua.h"
 #include "script/LuaEngine.h"
+#include "script/LuaValues.h"
 
 #include <algorithm>
 #include <array>
@@ -27,6 +28,19 @@
 
 namespace owl::script {
 namespace {
+
+// The UUID of an entity property, as text (a Lua number cannot hold every UUID) or as an integer.
+auto readEntityDefault(lua_State* iState) -> uint64_t {
+	if (lua_type(iState, -1) == LUA_TSTRING) {
+		const std::string_view text{lua_tostring(iState, -1)};
+		uint64_t uuid = 0;
+		if (const auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), uuid);
+			ec == std::errc{} && ptr == text.data() + text.size())
+			return uuid;
+		return 0;
+	}
+	return isInteger(iState, -1) ? static_cast<uint64_t>(toInteger(iState, -1)) : uint64_t{0};
+}
 
 // `OWL_SCRIPT_TIME_SCALE` multiplies the time quota: tests under an emulator run every call many times slower.
 auto scaledTimeQuota(const uint32_t iTimeMs) -> uint32_t {
@@ -64,7 +78,7 @@ auto readComponents(lua_State* iState, const std::array<float, Count>& iFallback
 	if (lua_type(iState, -1) != LUA_TTABLE)
 		return values;
 	for (size_t index = 0; index < Count; ++index) {
-		lua_rawgeti(iState, -1, static_cast<lua_Integer>(index) + 1);
+		lua_rawgeti(iState, -1, static_cast<int>(index) + 1);
 		if (lua_isnumber(iState, -1) != 0)
 			values[index] = static_cast<float>(lua_tonumber(iState, -1));
 		lua_pop(iState, 1);
@@ -78,7 +92,7 @@ auto readValue(lua_State* iState, const ScriptPropertyType iType) -> ScriptValue
 		case ScriptPropertyType::Float:
 			return lua_isnumber(iState, -1) != 0 ? static_cast<float>(lua_tonumber(iState, -1)) : 0.0f;
 		case ScriptPropertyType::Int:
-			return lua_isinteger(iState, -1) != 0 ? static_cast<int64_t>(lua_tointeger(iState, -1)) : int64_t{0};
+			return isInteger(iState, -1) ? static_cast<int64_t>(toInteger(iState, -1)) : int64_t{0};
 		case ScriptPropertyType::String:
 			return lua_isstring(iState, -1) != 0 ? std::string(lua_tostring(iState, -1)) : std::string{};
 		case ScriptPropertyType::Bool:
@@ -90,13 +104,13 @@ auto readValue(lua_State* iState, const ScriptPropertyType iType) -> ScriptValue
 		case ScriptPropertyType::Vec3:
 			return readComponents<3>(iState, {0.f, 0.f, 0.f});
 		case ScriptPropertyType::Entity:
-			return lua_isinteger(iState, -1) != 0 ? static_cast<uint64_t>(lua_tointeger(iState, -1)) : uint64_t{0};
+			return readEntityDefault(iState);
 		case ScriptPropertyType::Numbers:
 			{
 				std::vector<double> numbers;
 				if (lua_type(iState, -1) == LUA_TTABLE) {
-					for (lua_Integer index = 1;; ++index) {
-						lua_rawgeti(iState, -1, index);
+					for (int64_t index = 1;; ++index) {
+						lua_rawgeti(iState, -1, static_cast<int>(index));
 						const bool isNumber = lua_isnumber(iState, -1) != 0;
 						if (isNumber)
 							numbers.push_back(static_cast<double>(lua_tonumber(iState, -1)));
@@ -111,8 +125,8 @@ auto readValue(lua_State* iState, const ScriptPropertyType iType) -> ScriptValue
 			{
 				std::vector<std::string> strings;
 				if (lua_type(iState, -1) == LUA_TTABLE) {
-					for (lua_Integer index = 1;; ++index) {
-						lua_rawgeti(iState, -1, index);
+					for (int64_t index = 1;; ++index) {
+						lua_rawgeti(iState, -1, static_cast<int>(index));
 						const bool isString = lua_type(iState, -1) == LUA_TSTRING;
 						if (isString)
 							strings.emplace_back(lua_tostring(iState, -1));
@@ -188,9 +202,8 @@ auto readFunctions(lua_State* iState) -> std::vector<ScriptFunction> {
 	while (lua_next(iState, tableIndex) != 0) {
 		if (lua_type(iState, -2) == LUA_TSTRING && lua_type(iState, -1) == LUA_TFUNCTION) {
 			const std::string name = lua_tostring(iState, -2);
-			lua_pushvalue(iState, -1);
 			lua_Debug info{};
-			if (lua_getinfo(iState, ">S", &info) != 0 && std::string_view{info.what} == "Lua")
+			if (lua_getinfo(iState, -1, "s", &info) != 0 && std::string_view{info.what} == "Lua")
 				functions.push_back({.name = name, .line = static_cast<uint32_t>(std::max(info.linedefined, 0))});
 		}
 		lua_pop(iState, 1);

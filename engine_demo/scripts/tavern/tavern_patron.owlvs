@@ -1,0 +1,41 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: dialogue_path, type: string, default: dialogues/barkeeper.owldlg}
+  nodes:
+    - id: 7330000000000000001
+      type: event.custom
+      position: [0, 0]
+      values:
+        function: on_talk
+    - id: 7330000000000000002
+      type: call.gamestate.get
+      position: [200, 0]
+      values:
+        default: 0
+        key: dialogue_open
+    - id: 7330000000000000003
+      type: compare.equal
+      position: [518, 150]
+      values:
+        B: 0
+    - id: 7330000000000000004
+      type: flow.branch
+      position: [796, 0]
+    - id: 7330000000000000005
+      type: var.get
+      position: [796, 300]
+      values:
+        variable: dialogue_path
+    - id: 7330000000000000006
+      type: call.gamestate.set
+      position: [1060, 0]
+      values:
+        key: tavern_talk_request
+  links:
+    - {from: 7330000000000000001, fromPin: Then, to: 7330000000000000002, toPin: Exec}
+    - {from: 7330000000000000002, fromPin: Then, to: 7330000000000000004, toPin: Exec}
+    - {from: 7330000000000000002, fromPin: value, to: 7330000000000000003, toPin: A}
+    - {from: 7330000000000000003, fromPin: Result, to: 7330000000000000004, toPin: Condition}
+    - {from: 7330000000000000004, fromPin: True, to: 7330000000000000006, toPin: Exec}
+    - {from: 7330000000000000005, fromPin: Value, to: 7330000000000000006, toPin: value}

@@ -12,7 +12,7 @@ local clock = 0.0
 local seed = 1
 
 local function next_random()
-    seed = (seed * 1103515245 + 12345) % 2147483648
+    seed = (seed * 20077 + seed * 16838 % 32768 * 65536 + 12345) % 2147483648
     return seed / 2147483648
 end
 

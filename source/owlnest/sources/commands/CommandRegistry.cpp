@@ -21,6 +21,7 @@
 #include "HudCommands.h"
 #include "HudThemeCommands.h"
 #include "Macro.h"
+#include "MaterialCommands.h"
 #include "NavCommands.h"
 #include "PrefabCommands.h"
 #include "SceneSettingsCommands.h"
@@ -1102,6 +1103,8 @@ auto createMaterial(const CommandContext& /*iContext*/, const CommandArgs& iArgs
 			return fail(CommandError::InvalidArgument, "`parent` must be a `.owlmat` file");
 		asset.parent = parent;
 		asset.overrides = 0;
+	} else if (iArgs.getBool("graph")) {
+		asset.graph = renderer::getParameterMaterialGraph();
 	}
 	std::error_code error;
 	std::filesystem::create_directories(path.parent_path(), error);
@@ -1543,8 +1546,9 @@ CommandRegistry::CommandRegistry() {
 				   .defaultValue = std::string{}}},
 		 .factory = assignMaterial});
 	add({.name = "material.create",
-		 .description = "Create a `.owlmat` material file: a root material with the default values, or an instance of "
-						"`parent` inheriting everything.",
+		 .description = "Create a `.owlmat` material file: a root material with the default values (or a material "
+						"graph), or an "
+						"instance of `parent` inheriting everything.",
 		 .args = {{.name = "path",
 				   .type = ArgType::Text,
 				   .required = true,
@@ -1552,7 +1556,11 @@ CommandRegistry::CommandRegistry() {
 				   .projectPath = true},
 				  {.name = "parent",
 				   .type = ArgType::Text,
-				   .description = "Asset path of the parent `.owlmat` (a root material when empty)."}},
+				   .description = "Asset path of the parent `.owlmat` (a root material when empty)."},
+				  {.name = "graph",
+				   .type = ArgType::Bool,
+				   .description = "Give a root material a graph (its parameter surface linked to the surface node).",
+				   .defaultValue = ArgValue{false}}},
 		 .factory = {},
 		 .run = createMaterial,
 		 .allowedInPlay = true});
@@ -1905,6 +1913,7 @@ CommandRegistry::CommandRegistry() {
 	addNavCommands(*this);
 	addDataTableCommands(*this);
 	addHudThemeCommands(*this);
+	addMaterialCommands(*this);
 	addDialogueCommands(*this);
 	addSequenceCommands(*this);
 	addAssetCommands(*this);

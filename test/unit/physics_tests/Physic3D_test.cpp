@@ -15,6 +15,7 @@
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
+#include <script/EntityHandle.h>
 
 #include <array>
 #include <chrono>
@@ -265,15 +266,20 @@ end
 	plane.addComponent<component::LuaScript>().scriptPath = (dir / "probe.lua").generic_string();
 	scene.onStartRuntime();
 	for (int i = 0; i < 30; ++i) scene.onUpdateRuntime(makeFrame(16'667), false);
-	const auto spaceVz = scene.getGameState().get(
-			std::format("vz_{}", static_cast<int64_t>(static_cast<uint64_t>(space.getUUID()))));
-	const auto planeVz = scene.getGameState().get(
-			std::format("vz_{}", static_cast<int64_t>(static_cast<uint64_t>(plane.getUUID()))));
+	const auto spaceVz =
+			scene.getGameState().get(std::format("vz_{}", static_cast<int64_t>(script::getEntityHandle(scene, space))));
+	const auto planeVz =
+			scene.getGameState().get(std::format("vz_{}", static_cast<int64_t>(script::getEntityHandle(scene, plane))));
 	scene.onEndRuntime();
 	std::error_code error;
 	std::filesystem::remove_all(dir, error);
 	ASSERT_TRUE(spaceVz.has_value());
 	ASSERT_TRUE(planeVz.has_value());
-	EXPECT_NEAR(std::get<float>(*spaceVz), 3.f, 1e-3f);
-	EXPECT_NEAR(std::get<float>(*planeVz), -100.f, 1e-3f);
+	// A whole number comes back as an integer: Luau has one number type.
+	const auto number = [](const scene::GameState::Value& iValue) -> float {
+		return std::holds_alternative<int64_t>(iValue) ? static_cast<float>(std::get<int64_t>(iValue))
+													   : std::get<float>(iValue);
+	};
+	EXPECT_NEAR(number(*spaceVz), 3.f, 1e-3f);
+	EXPECT_NEAR(number(*planeVz), -100.f, 1e-3f);
 }

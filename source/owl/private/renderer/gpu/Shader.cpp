@@ -109,6 +109,26 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 	return shader;
 }
 
+auto Shader::createFromSource(const std::string& iShaderName, const std::string& iRenderer,
+							  [[maybe_unused]] const std::string& iSlangSource) -> shared<Shader> {
+	switch (RenderCommand::getApi()) {
+		case RenderAPI::Type::Null:
+			return mkShared<null::Shader>(iShaderName, iRenderer, std::vector<std::filesystem::path>{});
+#if OWL_WITH_RENDER
+		case RenderAPI::Type::OpenGL:
+			return mkShared<opengl::Shader>(iShaderName, iRenderer, iSlangSource);
+		case RenderAPI::Type::Vulkan:
+			return mkShared<vulkan::Shader>(iShaderName, iRenderer, iSlangSource);
+#else
+		case RenderAPI::Type::OpenGL:
+		case RenderAPI::Type::Vulkan:
+			break;
+#endif
+	}
+	OWL_CORE_WARN("Shader: Cannot create '{}' from a source without a render backend.", iShaderName)
+	return nullptr;
+}
+
 Shader::~Shader() = default;
 
 auto Shader::reload() -> bool {

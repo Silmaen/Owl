@@ -22,7 +22,7 @@ local trauma, still = 0.0, false
 local seed = 20261101
 
 local function rand()
-    seed = (seed * 1103515245 + 12345) % 2147483648
+    seed = (seed * 20077 + seed * 16838 % 32768 * 65536 + 12345) % 2147483648
     return seed / 2147483648
 end
 

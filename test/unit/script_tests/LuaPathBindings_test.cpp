@@ -14,6 +14,7 @@
 #include <scene/TilemapAsset.h>
 #include <scene/component/components.h>
 #include <scene/nav/NavWorld.h>
+#include <script/EntityHandle.h>
 #include <script/ScriptInstance.h>
 
 #include <cstdint>
@@ -61,11 +62,10 @@ protected:
 
 	/// Run a script on creation and return the instance holding its globals.
 	auto run(const std::string& iBody, const std::string& iUpdate = "") -> shared<ScriptInstance> {
-		const std::string text =
-				std::format("map = {}\nbare = {}\nfunction on_create()\n{}\nend\n"
-							"function on_update(dt)\n{}\nend\n",
-							static_cast<int64_t>(static_cast<uint64_t>(m_map.getUUID())),
-							static_cast<int64_t>(static_cast<uint64_t>(m_bare.getUUID())), iBody, iUpdate);
+		const std::string text = std::format("map = {}\nbare = {}\nfunction on_create()\n{}\nend\n"
+											 "function on_update(dt)\n{}\nend\n",
+											 static_cast<int64_t>(getEntityHandle(*m_scene, m_map)),
+											 static_cast<int64_t>(getEntityHandle(*m_scene, m_bare)), iBody, iUpdate);
 		const std::vector<uint8_t> data(text.begin(), text.end());
 		auto instance = mkShared<ScriptInstance>();
 		instance->setScene(m_scene.get());
@@ -189,7 +189,7 @@ TEST_F(LuaPath, aRoadAddedInARunningCopyOfTheSceneIsUsed) {
 			std::format("map = {}\nfunction on_create()\ncells = path.find_now(map, 40, 5, 40, 9)\nbefore = #cells\n"
 						"for y = 6, 8 do isometric.set_cell(map, 0, 40, y, -1, 1) end\n"
 						"cells = path.find_now(map, 40, 5, 40, 9)\nafter = #cells\nend\n",
-						static_cast<int64_t>(static_cast<uint64_t>(m_map.getUUID())));
+						static_cast<int64_t>(getEntityHandle(*running, running->findEntityByUUID(m_map.getUUID()))));
 	const std::vector<uint8_t> data(text.begin(), text.end());
 	const ScriptInstance instance;
 	instance.setScene(running.get());

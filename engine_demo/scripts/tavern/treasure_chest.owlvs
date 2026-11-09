@@ -1,0 +1,61 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: hub_scene, type: string, default: scenes/world_map.owl}
+    - {name: opened, type: bool, default: false}
+  nodes:
+    - id: 7370000000000000001
+      type: event.custom
+      position: [0, 0]
+      values:
+        function: on_chest_interact
+    - id: 7370000000000000002
+      type: var.get
+      position: [0, 150]
+      values:
+        variable: opened
+    - id: 7370000000000000003
+      type: flow.branch
+      position: [242, 0]
+    - id: 7370000000000000004
+      type: var.set
+      position: [506, 0]
+      values:
+        Value: true
+        variable: opened
+    - id: 7370000000000000005
+      type: call.gamestate.set
+      position: [762, 0]
+      values:
+        key: level_tavern_done
+        value: 1
+    - id: 7370000000000000006
+      type: call.sound.play
+      position: [1040, 0]
+      values:
+        asset_path: sounds/raycast/treasure.wav
+    - id: 7370000000000000007
+      type: call.sound.play
+      position: [1422, 0]
+      values:
+        asset_path: sounds/ui/victory.wav
+    - id: 7370000000000000008
+      type: var.get
+      position: [1422, 150]
+      values:
+        variable: hub_scene
+    - id: 7370000000000000009
+      type: call.scene.transition_to
+      position: [1804, 0]
+      values:
+        duration: 0.6
+        kind: fade_out
+  links:
+    - {from: 7370000000000000001, fromPin: Then, to: 7370000000000000003, toPin: Exec}
+    - {from: 7370000000000000002, fromPin: Value, to: 7370000000000000003, toPin: Condition}
+    - {from: 7370000000000000003, fromPin: False, to: 7370000000000000004, toPin: Exec}
+    - {from: 7370000000000000004, fromPin: Then, to: 7370000000000000005, toPin: Exec}
+    - {from: 7370000000000000005, fromPin: Then, to: 7370000000000000006, toPin: Exec}
+    - {from: 7370000000000000006, fromPin: Then, to: 7370000000000000007, toPin: Exec}
+    - {from: 7370000000000000007, fromPin: Then, to: 7370000000000000009, toPin: Exec}
+    - {from: 7370000000000000008, fromPin: Value, to: 7370000000000000009, toPin: scene_path}

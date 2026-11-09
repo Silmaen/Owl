@@ -821,6 +821,9 @@ void ContentBrowser::renderCreateItems() {
 		createFolder();
 	if (m_materialCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::paintbrush, .label = "New Material"}))
 		createMaterial();
+	if (m_materialGraphCreateCallback &&
+		gui::widgets::menuItem({.glyph = gui::icon::workflow, .label = "New Material Graph"}))
+		createMaterial(true);
 	if (m_soundCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::volume2, .label = "New Sound Cue"}))
 		createSoundCue();
 	if (m_dataTableCreateCallback && gui::widgets::menuItem({.glyph = gui::icon::rows3, .label = "New Data Table"}))
@@ -993,11 +996,12 @@ void ContentBrowser::createFolder() {
 		m_rescanRequested = true;
 }
 
-void ContentBrowser::createMaterial() {
-	auto materialPath = m_currentPath / "New Material.owlmat";
+void ContentBrowser::createMaterial(const bool iGraph) {
+	const std::string base = iGraph ? "New Material Graph" : "New Material";
+	auto materialPath = m_currentPath / std::format("{}.owlmat", base);
 	for (uint32_t counter = 1; exists(materialPath); ++counter)
-		materialPath = m_currentPath / std::format("New Material {}.owlmat", counter);
-	m_materialCreateCallback(materialPath);
+		materialPath = m_currentPath / std::format("{} {}.owlmat", base, counter);
+	(iGraph ? m_materialGraphCreateCallback : m_materialCreateCallback)(materialPath);
 	m_rescanRequested = true;
 }
 

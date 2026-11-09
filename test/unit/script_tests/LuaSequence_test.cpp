@@ -16,6 +16,7 @@
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/component/components.h>
+#include <script/EntityHandle.h>
 #include <script/ScriptInstance.h>
 
 #include <chrono>
@@ -81,7 +82,7 @@ TEST(LuaBindings, sequenceEventsAndPlayback) {
 	player.playOnStart = false;
 	player.onFinished = "on_done";
 	// Signed, as Lua reads it: an id above 2^63 written unsigned would be a float.
-	const auto id = static_cast<int64_t>(static_cast<uint64_t>(entity.getUUID()));
+	const auto id = static_cast<int64_t>(script::getEntityHandle(*scn, entity));
 	const std::string script = std::format("starts = 0\n"
 										   "cues = 0\n"
 										   "finished = 0\n"

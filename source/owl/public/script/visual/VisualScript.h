@@ -64,11 +64,15 @@ enum struct NodeKind : uint8_t {
 	Branch,///< `if` on a boolean.
 	Sequence,///< Runs its outputs one after the other.
 	ForLoop,///< Numeric `for` loop.
+	ForEach,///< `for` loop over the items of a list (`ipairs`).
+	Statement,///< Lua statement of its inputs (`t[k] = v`), with execution pins.
 	GetVariable,///< Reads a graph variable.
 	SetVariable,///< Writes a graph variable.
 	FunctionEntry,///< Start of a graph function: its parameters as outputs.
 	FunctionReturn,///< End of a graph function: its results as inputs, and the execution output a macro leaves by.
-	FunctionCall///< Call of a graph function, of this graph or of a library graph.
+	FunctionCall,///< Call of a graph function, of this graph or of a library graph.
+	CustomCall,///< Call of a custom node of the graph: Lua written by the author of the graph.
+	LuaCall///< Call of an annotated function of a Lua module.
 };
 
 /**
@@ -111,7 +115,13 @@ struct NodeType {
 	std::string description;
 	/// How the node compiles.
 	NodeKind kind{NodeKind::Operator};
-	/// Lua code of the node: hook name, function to call, or expression with `{0}`, `{1}` for the inputs.
+	/**
+	 * @brief
+	 *  Lua code of the node: hook name, function to call, or expression (statement) with `{0}`, `{1}` for the inputs.
+	 *
+	 * In a template, `[{n}]` becomes `.name` when the input is a string literal that is a Lua name, and an optional
+	 * input left empty at the end of a call or a table (`, {n})`, `, {n} }`) is left out.
+	 */
 	std::string lua;
 	/// Input pins, in order.
 	std::vector<PinSpec> inputs;
@@ -173,15 +183,23 @@ struct GraphLink {
 
 /**
  * @brief
- *  A graph variable: a script property the inspector shows and the scene saves.
+ *  A graph variable: a script property the inspector shows and the scene saves, or the internal state of the script.
  */
 struct GraphVariable {
 	/// Lua name of the property.
 	std::string name;
-	/// Property type: `Float`, `Int`, `String`, `Bool` or `Entity`.
+	/// Property type: `Float`, `Int`, `String`, `Bool`, `Entity`, a vector, a colour, or a list (`Numbers`, `Strings`).
 	ScriptPropertyType type{ScriptPropertyType::Float};
 	/// Default value, as text.
 	std::string defaultValue;
+	/// Smallest value the inspector accepts, when bounded.
+	std::optional<float> min;
+	/// Largest value the inspector accepts, when bounded.
+	std::optional<float> max;
+	/// Step of the inspector field, when set.
+	std::optional<float> step;
+	/// True for a script property; false for internal state, set to its default when the script loads.
+	bool exposed{true};
 
 	/**
 	 * @brief
@@ -229,6 +247,8 @@ struct GraphFunction {
 	bool macro{false};
 	/// Execution outputs of the calls: `Then` for a function, one per exit for a macro.
 	std::vector<std::string> exits{"Then"};
+	/// A global the engine calls by name and reads the results of (dialogue condition); else local to the graph.
+	bool exported{false};
 
 	/**
 	 * @brief
@@ -241,13 +261,45 @@ struct GraphFunction {
 
 /**
  * @brief
- *  A visual script: variables, functions, nodes and links.
+ *  A node the author of the graph writes in Lua: its title, its typed pins and the body of the function it runs.
+ *
+ * The compiler turns it into a local function of the graph's Lua, its inputs as parameters named after them; the body
+ * returns the outputs in order. A pure custom node has no execution pins and runs where its outputs are read.
+ */
+struct CustomNode {
+	/// Lua name, unique in the graph.
+	std::string name;
+	/// Title shown on the node.
+	std::string title;
+	/// Inputs, parameters of the function.
+	std::vector<GraphParameter> inputs;
+	/// Outputs, the values the body returns.
+	std::vector<GraphParameter> outputs;
+	/// Lua body of the function.
+	std::string code;
+	/// Whether the node has no execution pins.
+	bool pure{false};
+
+	/**
+	 * @brief
+	 *  Equality operator.
+	 * @param[in] iOther Node to compare to.
+	 * @return True when both nodes are identical.
+	 */
+	auto operator==(const CustomNode& iOther) const -> bool = default;
+};
+
+/**
+ * @brief
+ *  A visual script: variables, functions, custom nodes, nodes and links.
  */
 struct VisualScript {
 	/// Variables, in declaration order.
 	std::vector<GraphVariable> variables;
 	/// Functions and macros, in declaration order.
 	std::vector<GraphFunction> functions;
+	/// Custom nodes, in declaration order.
+	std::vector<CustomNode> customNodes;
 	/// Nodes.
 	std::vector<GraphNode> nodes;
 	/// Links.
@@ -284,6 +336,14 @@ struct VisualScript {
 	 * @return The function, or nullptr.
 	 */
 	[[nodiscard]] OWL_API auto findFunction(std::string_view iName) const -> const GraphFunction*;
+
+	/**
+	 * @brief
+	 *  Find a custom node.
+	 * @param[in] iName Custom node name.
+	 * @return The custom node, or nullptr.
+	 */
+	[[nodiscard]] OWL_API auto findCustomNode(std::string_view iName) const -> const CustomNode*;
 
 	/**
 	 * @brief
@@ -374,7 +434,7 @@ struct CompileDiagnostic {
  * @brief
  *  Pin type of a graph variable.
  * @param[in] iType Property type of the variable.
- * @return Its pin type, `Table` for the list types graphs do not handle.
+ * @return Its pin type, `Table` for the lists of numbers or strings.
  */
 [[nodiscard]] OWL_API auto getVariablePinType(ScriptPropertyType iType) -> PinType;
 
@@ -397,20 +457,20 @@ struct CompileDiagnostic {
 
 /**
  * @brief
- *  Reads the text of a library graph from its asset path (`scripts/lib/maths.owlvs`).
+ *  Reads the text of a library graph or a Lua module from its asset path (`scripts/lib/maths.owlvs`).
  */
 using LibraryReader = std::function<std::optional<std::string>(std::string_view)>;
 
 /**
  * @brief
- *  Replace how the library graphs are read; by default from the open pack, then the asset folders.
+ *  Replace how the library graphs and the Lua modules are read; by default from the open pack, then the asset folders.
  * @param[in] iReader The reader, or empty for the default one.
  */
 OWL_API void setLibraryReader(LibraryReader iReader);
 
 /**
  * @brief
- *  Forget the library graphs read so far, so that the next use reads them again (after a library is saved).
+ *  Forget the library graphs and the Lua modules read so far, so that the next use reads them again (after a library is saved).
  */
 OWL_API void clearLibraryCache();
 
@@ -431,6 +491,78 @@ OWL_API void clearLibraryCache();
  */
 [[nodiscard]] OWL_API auto findNodeFunction(const VisualScript& iScript, const GraphNode& iNode)
 		-> const GraphFunction*;
+
+/**
+ * @brief
+ *  Custom node a `custom.*` node stands for.
+ * @param[in] iScript The graph holding the node.
+ * @param[in] iNode The node, its `custom` value naming the custom node.
+ * @return The custom node, or nullptr when unknown.
+ */
+[[nodiscard]] OWL_API auto findNodeCustom(const VisualScript& iScript, const GraphNode& iNode) -> const CustomNode*;
+
+/**
+ * @brief
+ *  A function of a Lua module, annotated so that graphs call it.
+ *
+ * Its annotations are comment lines right above `function M.name(...)`: `--- text` the description,
+ * `---\@param name type` each parameter, `---\@return type name` each result, `---\@pure` a function without side
+ * effect, called where its results are read. The types are the pin type names (`number`, `vector3`, `entity`...).
+ */
+struct LuaFunction {
+	/// Function name in its module table.
+	std::string name;
+	/// Description, from the comment lines above the annotations.
+	std::string description;
+	/// Parameters, inputs of the node.
+	std::vector<GraphParameter> inputs;
+	/// Results, outputs of the node.
+	std::vector<GraphParameter> outputs;
+	/// Whether the node has no execution pins.
+	bool pure{false};
+
+	/**
+	 * @brief
+	 *  Equality operator.
+	 * @param[in] iOther Function to compare to.
+	 * @return True when both functions are identical.
+	 */
+	auto operator==(const LuaFunction& iOther) const -> bool = default;
+};
+
+/**
+ * @brief
+ *  The annotated functions of a Lua module, in the order of its source.
+ *
+ * A function with no annotation line stays out: graphs see only what its author typed.
+ * @param[in] iSource The Lua source of the module.
+ * @return Its annotated functions.
+ */
+[[nodiscard]] OWL_API auto parseLuaFunctions(std::string_view iSource) -> std::vector<LuaFunction>;
+
+/**
+ * @brief
+ *  Asset path of a module `require` loads.
+ * @param[in] iModule Module name, words joined by dots (`scripts.lib.maths`).
+ * @return Its path (`scripts/lib/maths.lua`).
+ */
+[[nodiscard]] OWL_API auto getLuaModulePath(std::string_view iModule) -> std::string;
+
+/**
+ * @brief
+ *  The annotated functions of a Lua module, read once with the library reader and kept until `clearLibraryCache`.
+ * @param[in] iModule Module name (`scripts.lib.maths`).
+ * @return Its functions, or nullptr when the module cannot be read.
+ */
+[[nodiscard]] OWL_API auto findLuaModule(std::string_view iModule) -> const std::vector<LuaFunction>*;
+
+/**
+ * @brief
+ *  Lua function a `lua.*` node stands for.
+ * @param[in] iNode The node, its `module` and `function` values naming the function.
+ * @return The function, or nullptr when unknown.
+ */
+[[nodiscard]] OWL_API auto findNodeLuaFunction(const GraphNode& iNode) -> const LuaFunction*;
 
 /**
  * @brief

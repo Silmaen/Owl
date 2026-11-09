@@ -12,6 +12,7 @@
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/component/LuaScript.h>
+#include <script/EntityHandle.h>
 #include <script/ScriptEngine.h>
 #include <script/ScriptInstance.h>
 
@@ -112,6 +113,7 @@ TEST(ScriptProperties, LuaReadsTheValuesAsTablesAndIntegers) {
 	auto scene = mkShared<scene::Scene>();
 	const ScriptInstance instance;
 	instance.setScene(scene.get());
+	const auto targetEntity = scene->createEntity("Target");
 	const std::string source = std::string{g_declaration} + "function on_create()\n"
 															"  gamestate.set('g', tint.g)\n"
 															"  gamestate.set('y', offset.y)\n"
@@ -123,7 +125,7 @@ TEST(ScriptProperties, LuaReadsTheValuesAsTablesAndIntegers) {
 	ASSERT_TRUE(instance.createFromBuffer(buffer(source), "props", 1));
 	for (auto property: ScriptEngine::extractPropertiesFromBuffer(buffer(source), "props")) {
 		if (property.name == "target")
-			property.value = uint64_t{42};
+			property.value = static_cast<uint64_t>(targetEntity.getUUID());
 		instance.setProperty(property);
 	}
 	instance.onCreate();
@@ -143,10 +145,10 @@ TEST(ScriptProperties, LuaReadsTheValuesAsTablesAndIntegers) {
 					 : script::ScriptValue{-1.f};
 	};
 	EXPECT_FLOAT_EQ(std::get<float>(read("g")), 0.5f);
-	EXPECT_FLOAT_EQ(std::get<float>(read("y")), 2.f);
-	EXPECT_FLOAT_EQ(std::get<float>(read("z")), 3.f);
-	EXPECT_EQ(std::get<int64_t>(read("target")), 42);
-	EXPECT_FLOAT_EQ(std::get<float>(read("wp")), 8.f);
+	EXPECT_EQ(std::get<int64_t>(read("y")), 2);
+	EXPECT_EQ(std::get<int64_t>(read("z")), 3);
+	EXPECT_EQ(static_cast<uint64_t>(std::get<int64_t>(read("target"))), getEntityHandle(*scene, targetEntity));
+	EXPECT_EQ(std::get<int64_t>(read("wp")), 8);
 	EXPECT_EQ(std::get<std::string>(read("names")), "b");
 	core::Log::invalidate();
 }
@@ -170,7 +172,7 @@ TEST(ScriptProperties, APropertyTheSceneDoesNotListTakesTheDeclaredDefaultAtRunt
 	const auto lives = scene->getGameState().get("lives");
 	ASSERT_TRUE(speed.has_value());
 	ASSERT_TRUE(lives.has_value());
-	EXPECT_FLOAT_EQ(std::get<float>(*speed), 5.f);
+	EXPECT_EQ(std::get<int64_t>(*speed), 5);
 	EXPECT_EQ(std::get<int64_t>(*lives), 9);
 	scene->onEndRuntime();
 	std::filesystem::remove_all(dir);

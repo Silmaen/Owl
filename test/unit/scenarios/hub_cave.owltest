@@ -1,5 +1,5 @@
 # The cave of the hub, behind the crater of lava: its reverb zone rings, and the adaptive music of the village
-# (`hub_mood`, set by hub_daynight.lua) turns from calm to danger inside it, back to calm outside.
+# (`hub_mood`, set by hub_daynight.owlvs) turns from calm to danger inside it, back to calm outside.
 scene: ../../../engine_demo/scenes/world_map.owl
 steps:
   - frames: 30

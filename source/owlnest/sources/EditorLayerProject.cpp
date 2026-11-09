@@ -651,6 +651,14 @@ auto EditorLayer::openHudTheme(const std::filesystem::path& iPath) -> commands::
 	return findOpenDocument<HudThemeDocument>(m_documents, DocumentType::HudTheme, path);
 }
 
+auto EditorLayer::openMaterial(const std::filesystem::path& iPath) -> commands::MaterialEditor* {
+	const auto path = normalised(iPath);
+	if (auto* doc = findOpenDocument<MaterialDocument>(m_documents, DocumentType::Material, path); doc != nullptr)
+		return doc;
+	openMaterialFile(path);
+	return findOpenDocument<MaterialDocument>(m_documents, DocumentType::Material, path);
+}
+
 void EditorLayer::openDialogueFile(const std::filesystem::path& iPath) {
 	if (iPath.empty() || !exists(iPath))
 		return;

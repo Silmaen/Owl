@@ -1,0 +1,201 @@
+// The pre-coded nodes of the material graphs (noise, triplanar mapping, parallax, height blend, normal blending, the
+// surface of the parameter materials). Included by common/mesh_surface.slangh after the material block's inputs: a
+// graph calls these functions, the parameter materials call none, and Slang drops what nothing calls.
+
+// Integer hash of a lattice cell (PCG-like), in [0, 1).
+float owlHash3(int3 cell) {
+	uint3 v = uint3(cell) * uint3(1597334673u, 3812015801u, 2798796415u);
+	uint h = (v.x ^ v.y ^ v.z) * 1597334673u;
+	h ^= h >> 16;
+	return float(h) * (1.0f / 4294967296.0f);
+}
+
+// A pseudo-random unit vector of a lattice cell.
+float3 owlHashDirection(int3 cell) {
+	float u = owlHash3(cell) * 6.28318530718f;
+	float z = owlHash3(cell + int3(17, 59, 113)) * 2.0f - 1.0f;
+	float r = sqrt(max(1.0f - z * z, 0.0f));
+	return float3(r * cos(u), r * sin(u), z);
+}
+
+float3 owlFade(float3 t) {
+	return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+}
+
+// Value noise in [0, 1].
+float owlValueNoise(float3 p) {
+	int3 cell = int3(floor(p));
+	float3 f = owlFade(frac(p));
+	float c000 = owlHash3(cell);
+	float c100 = owlHash3(cell + int3(1, 0, 0));
+	float c010 = owlHash3(cell + int3(0, 1, 0));
+	float c110 = owlHash3(cell + int3(1, 1, 0));
+	float c001 = owlHash3(cell + int3(0, 0, 1));
+	float c101 = owlHash3(cell + int3(1, 0, 1));
+	float c011 = owlHash3(cell + int3(0, 1, 1));
+	float c111 = owlHash3(cell + int3(1, 1, 1));
+	float x00 = lerp(c000, c100, f.x);
+	float x10 = lerp(c010, c110, f.x);
+	float x01 = lerp(c001, c101, f.x);
+	float x11 = lerp(c011, c111, f.x);
+	return lerp(lerp(x00, x10, f.y), lerp(x01, x11, f.y), f.z);
+}
+
+float owlGradientCorner(int3 cell, float3 f, int3 corner) {
+	return dot(owlHashDirection(cell + corner), f - float3(corner));
+}
+
+// Gradient (Perlin) noise in [0, 1].
+float owlGradientNoise(float3 p) {
+	int3 cell = int3(floor(p));
+	float3 f = frac(p);
+	float3 u = owlFade(f);
+	float x00 = lerp(owlGradientCorner(cell, f, int3(0, 0, 0)), owlGradientCorner(cell, f, int3(1, 0, 0)), u.x);
+	float x10 = lerp(owlGradientCorner(cell, f, int3(0, 1, 0)), owlGradientCorner(cell, f, int3(1, 1, 0)), u.x);
+	float x01 = lerp(owlGradientCorner(cell, f, int3(0, 0, 1)), owlGradientCorner(cell, f, int3(1, 0, 1)), u.x);
+	float x11 = lerp(owlGradientCorner(cell, f, int3(0, 1, 1)), owlGradientCorner(cell, f, int3(1, 1, 1)), u.x);
+	return lerp(lerp(x00, x10, u.y), lerp(x01, x11, u.y), u.z) * 0.5f + 0.5f;
+}
+
+// Fractal sum of gradient noise in [0, 1]: each octave doubles the frequency and scales the amplitude by roughness.
+float owlFbm(float3 p, float octaves, float roughness) {
+	float sum = 0.0f;
+	float amplitude = 1.0f;
+	float total = 0.0f;
+	int count = clamp(int(octaves), 1, 8);
+	for (int octave = 0; octave < count; ++octave) {
+		sum += owlGradientNoise(p) * amplitude;
+		total += amplitude;
+		amplitude *= roughness;
+		p *= 2.0f;
+	}
+	return sum / max(total, 1e-4f);
+}
+
+// Cellular noise: x the distance to the nearest feature point, y a random value of its cell, both in [0, 1].
+float2 owlVoronoi(float3 p) {
+	int3 cell = int3(floor(p));
+	float3 f = frac(p);
+	float best = 8.0f;
+	float id = 0.0f;
+	for (int z = -1; z <= 1; ++z) {
+		for (int y = -1; y <= 1; ++y) {
+			for (int x = -1; x <= 1; ++x) {
+				int3 neighbour = int3(x, y, z);
+				float3 feature = float3(owlHash3(cell + neighbour), owlHash3(cell + neighbour + int3(31, 7, 3)),
+										owlHash3(cell + neighbour + int3(5, 101, 43)));
+				float d = length(float3(neighbour) + feature - f);
+				if (d < best) {
+					best = d;
+					id = owlHash3(cell + neighbour + int3(71, 13, 89));
+				}
+			}
+		}
+	}
+	return float2(saturate(best), id);
+}
+
+// A texture projected along the three world axes, blended by the normal.
+float4 owlTriplanar(int slot, float3 position, float3 normal, float scale, float sharpness) {
+	float3 weights = pow(abs(normal), max(sharpness, 1.0f));
+	weights /= max(weights.x + weights.y + weights.z, 1e-4f);
+	float3 p = position * scale;
+	float4 x = gTextures[NonUniformResourceIndex(slot)].Sample(p.zy);
+	float4 y = gTextures[NonUniformResourceIndex(slot)].Sample(p.xz);
+	float4 z = gTextures[NonUniformResourceIndex(slot)].Sample(p.xy);
+	return x * weights.x + y * weights.y + z * weights.z;
+}
+
+// The uv shifted by a height map towards the eye (parallax occlusion, a few steps).
+float2 owlParallax(int slot, float2 uv, float3 viewTangent, float height) {
+	const int steps = 16;
+	float layer = 1.0f / float(steps);
+	float2 shift = viewTangent.xy / max(viewTangent.z, 0.1f) * height * layer;
+	float depth = 0.0f;
+	float2 current = uv;
+	float sampled = 1.0f - gTextures[NonUniformResourceIndex(slot)].Sample(current).r;
+	for (int step = 0; step < steps && depth < sampled; ++step) {
+		current -= shift;
+		depth += layer;
+		sampled = 1.0f - gTextures[NonUniformResourceIndex(slot)].Sample(current).r;
+	}
+	return current;
+}
+
+// Two tangent-space normals combined (reoriented normal mapping).
+float3 owlBlendNormals(float3 a, float3 b) {
+	float3 t = a + float3(0.0f, 0.0f, 1.0f);
+	float3 u = b * float3(-1.0f, -1.0f, 1.0f);
+	return normalize(t * dot(t, u) / max(t.z, 1e-4f) - u);
+}
+
+// A tangent-space normal made flatter (below 1) or deeper (above 1).
+float3 owlNormalStrength(float3 n, float strength) {
+	return normalize(float3(n.xy * strength, n.z));
+}
+
+// Weight of the second of two layers blended by their heights: the higher one shows, `contrast` sets the transition.
+float owlHeightBlend(float heightA, float heightB, float blend, float contrast) {
+	float a = heightA + (1.0f - blend);
+	float b = heightB + blend;
+	float top = max(a, b) - max(contrast, 1e-4f);
+	float wa = max(a - top, 0.0f);
+	float wb = max(b - top, 0.0f);
+	return wb / max(wa + wb, 1e-4f);
+}
+
+// The surface of the parameter materials, the pre-coded node `surface.parameters`.
+float4 owlParameterBase(float2 uv, int texIndex) {
+	float4 base = float4(authoredColor(gMaterial.baseColor.rgb), gMaterial.baseColor.a);
+	if (hasMap(0)) {
+		float4 texel = gTextures[NonUniformResourceIndex(texIndex)].Sample(uv);
+		base *= float4(authoredColor(texel.rgb), texel.a);
+	}
+	return base;
+}
+
+float3 owlParameterNormal(float2 uv) {
+	if (!hasMap(2))
+		return float3(0.0f, 0.0f, 1.0f);
+	float3 mapped = gTextures[MAP_NORMAL].Sample(uv).xyz * 2.0f - 1.0f;
+	if (gMaterial.channels.w == 1)
+		mapped.y = -mapped.y;
+	mapped.xy *= gMaterial.factors.z;
+	return normalize(mapped);
+}
+
+float owlParameterMetallic(float2 uv) {
+	float metallic = gMaterial.factors.x;
+	if (hasMap(1))
+		metallic *= sampleChannel(MAP_METALLIC, uv, gMaterial.channels.x);
+	return metallic;
+}
+
+float owlParameterRoughness(float2 uv) {
+	float roughness = gMaterial.factors.y;
+	if (hasMap(5))
+		roughness *= sampleChannel(MAP_ROUGHNESS, uv, gMaterial.channels.y);
+	return roughness;
+}
+
+float owlParameterOcclusion(float2 uv) {
+	if (!hasMap(3))
+		return 1.0f;
+	return lerp(1.0f, sampleChannel(MAP_OCCLUSION, uv, gMaterial.channels.z), gMaterial.factors.w);
+}
+
+// Emitted luminance in nits, before the exposure.
+float3 owlParameterEmissive(float2 uv) {
+	float3 emissive = authoredColor(gMaterial.emissive.rgb) * gMaterial.toon.y;
+	if (hasMap(4))
+		emissive *= authoredColor(gTextures[MAP_EMISSIVE].Sample(uv).rgb);
+	return emissive;
+}
+
+// A uv turned about a centre by radians.
+float2 owlRotateUv(float2 uv, float2 center, float angle) {
+	float2 d = uv - center;
+	float c = cos(angle);
+	float s = sin(angle);
+	return center + float2(d.x * c - d.y * s, d.x * s + d.y * c);
+}

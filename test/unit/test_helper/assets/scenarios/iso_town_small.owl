@@ -23,7 +23,7 @@ Entities:
     fixedAspectRatio: false
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: scripts/iso/iso_camera.lua
+    scriptPath: scripts/iso/iso_camera.owlvs
     properties:
     - name: speed
       type: float

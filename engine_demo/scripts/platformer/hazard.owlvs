@@ -1,0 +1,69 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: kind, type: string, default: spike}
+    - {name: damage, type: float, default: 0.34}
+  nodes:
+    - id: 7400000000000000001
+      type: event.on_trigger_enter
+      position: [0, 0]
+    - id: 7400000000000000002
+      type: var.get
+      position: [0, 150]
+      values:
+        variable: kind
+    - id: 7400000000000000003
+      type: compare.equal
+      position: [234, 150]
+      values:
+        B: pit
+    - id: 7400000000000000004
+      type: flow.branch
+      position: [512, 0]
+    - id: 7400000000000000005
+      type: call.gamestate.set
+      position: [776, 0]
+      values:
+        key: platformer_fall
+        value: 1
+    - id: 7400000000000000006
+      type: call.log.info
+      position: [1054, 0]
+      values:
+        message: Fell into a pit
+    - id: 7400000000000000007
+      type: var.get
+      position: [776, 450]
+      values:
+        variable: damage
+    - id: 7400000000000000008
+      type: call.gamestate.set
+      position: [1054, 300]
+      values:
+        key: platformer_hit
+    - id: 7400000000000000009
+      type: call.transform.get_position
+      position: [1054, 600]
+      values:
+        split.xyz: true
+    - id: 7400000000000000010
+      type: call.gamestate.set
+      position: [1364, 300]
+      values:
+        key: platformer_hit_x
+    - id: 7400000000000000011
+      type: call.log.info
+      position: [1642, 300]
+      values:
+        message: Spike hit!
+  links:
+    - {from: 7400000000000000001, fromPin: Then, to: 7400000000000000004, toPin: Exec}
+    - {from: 7400000000000000002, fromPin: Value, to: 7400000000000000003, toPin: A}
+    - {from: 7400000000000000003, fromPin: Result, to: 7400000000000000004, toPin: Condition}
+    - {from: 7400000000000000004, fromPin: True, to: 7400000000000000005, toPin: Exec}
+    - {from: 7400000000000000005, fromPin: Then, to: 7400000000000000006, toPin: Exec}
+    - {from: 7400000000000000004, fromPin: False, to: 7400000000000000008, toPin: Exec}
+    - {from: 7400000000000000007, fromPin: Value, to: 7400000000000000008, toPin: value}
+    - {from: 7400000000000000008, fromPin: Then, to: 7400000000000000010, toPin: Exec}
+    - {from: 7400000000000000010, fromPin: Then, to: 7400000000000000011, toPin: Exec}
+    - {from: 7400000000000000009, fromPin: x, to: 7400000000000000010, toPin: value}

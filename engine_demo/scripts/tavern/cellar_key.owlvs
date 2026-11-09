@@ -1,0 +1,136 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: glint, type: string, default: KeyGlint}
+    - {name: taken, type: bool, default: false}
+  functions:
+    - name: hide_key
+      inputs: []
+      outputs: []
+  nodes:
+    - id: 7450000000000000001
+      type: func.entry
+      position: [0, -600]
+      values:
+        function: hide_key
+    - id: 7450000000000000002
+      type: call.ui.set_visible
+      position: [226, -600]
+      values:
+        visible: false
+    - id: 7450000000000000003
+      type: var.get
+      position: [226, -300]
+      values:
+        variable: glint
+    - id: 7450000000000000004
+      type: call.scene.find_entity
+      position: [544, -300]
+    - id: 7450000000000000005
+      type: compare.not_equal
+      position: [814, -300]
+      values:
+        B: 0
+    - id: 7450000000000000006
+      type: flow.branch
+      position: [814, -600]
+    - id: 7450000000000000007
+      type: call.ui.set_visible
+      position: [1092, -600]
+      values:
+        visible: false
+    - id: 7450000000000000008
+      type: event.on_create
+      position: [0, 0]
+    - id: 7450000000000000009
+      type: call.gamestate.get
+      position: [226, 0]
+      values:
+        default: 0
+        key: tavern_key
+    - id: 7450000000000000010
+      type: compare.greater
+      position: [544, 150]
+      values:
+        B: 0
+    - id: 7450000000000000011
+      type: flow.branch
+      position: [814, 0]
+    - id: 7450000000000000012
+      type: var.set
+      position: [1092, 0]
+      values:
+        Value: true
+        variable: taken
+    - id: 7450000000000000013
+      type: func.call
+      position: [1370, 0]
+      values:
+        function: hide_key
+    - id: 7450000000000000014
+      type: event.custom
+      position: [0, 450]
+      values:
+        function: on_key_interact
+    - id: 7450000000000000015
+      type: var.get
+      position: [0, 600]
+      values:
+        variable: taken
+    - id: 7450000000000000016
+      type: flow.branch
+      position: [226, 450]
+    - id: 7450000000000000017
+      type: var.set
+      position: [544, 450]
+      values:
+        Value: true
+        variable: taken
+    - id: 7450000000000000018
+      type: call.gamestate.set
+      position: [814, 450]
+      values:
+        key: tavern_key
+        value: 1
+    - id: 7450000000000000019
+      type: value.string
+      position: [814, 622]
+      values:
+        Value: ""
+    - id: 7450000000000000020
+      type: call.gamestate.set
+      position: [1092, 450]
+      values:
+        key: tavern_message
+    - id: 7450000000000000021
+      type: call.sound.play
+      position: [1370, 450]
+      values:
+        asset_path: sounds/platformer/coin_collect.wav
+    - id: 7450000000000000022
+      type: func.call
+      position: [1752, 450]
+      values:
+        function: hide_key
+  links:
+    - {from: 7450000000000000001, fromPin: Then, to: 7450000000000000002, toPin: Exec}
+    - {from: 7450000000000000002, fromPin: Then, to: 7450000000000000006, toPin: Exec}
+    - {from: 7450000000000000003, fromPin: Value, to: 7450000000000000004, toPin: name}
+    - {from: 7450000000000000004, fromPin: entity_id, to: 7450000000000000005, toPin: A}
+    - {from: 7450000000000000005, fromPin: Result, to: 7450000000000000006, toPin: Condition}
+    - {from: 7450000000000000006, fromPin: True, to: 7450000000000000007, toPin: Exec}
+    - {from: 7450000000000000004, fromPin: entity_id, to: 7450000000000000007, toPin: entity_id}
+    - {from: 7450000000000000008, fromPin: Then, to: 7450000000000000009, toPin: Exec}
+    - {from: 7450000000000000009, fromPin: Then, to: 7450000000000000011, toPin: Exec}
+    - {from: 7450000000000000009, fromPin: value, to: 7450000000000000010, toPin: A}
+    - {from: 7450000000000000010, fromPin: Result, to: 7450000000000000011, toPin: Condition}
+    - {from: 7450000000000000011, fromPin: True, to: 7450000000000000012, toPin: Exec}
+    - {from: 7450000000000000012, fromPin: Then, to: 7450000000000000013, toPin: Exec}
+    - {from: 7450000000000000014, fromPin: Then, to: 7450000000000000016, toPin: Exec}
+    - {from: 7450000000000000015, fromPin: Value, to: 7450000000000000016, toPin: Condition}
+    - {from: 7450000000000000016, fromPin: False, to: 7450000000000000017, toPin: Exec}
+    - {from: 7450000000000000017, fromPin: Then, to: 7450000000000000018, toPin: Exec}
+    - {from: 7450000000000000018, fromPin: Then, to: 7450000000000000020, toPin: Exec}
+    - {from: 7450000000000000020, fromPin: Then, to: 7450000000000000021, toPin: Exec}
+    - {from: 7450000000000000021, fromPin: Then, to: 7450000000000000022, toPin: Exec}
+    - {from: 7450000000000000019, fromPin: Result, to: 7450000000000000020, toPin: value}

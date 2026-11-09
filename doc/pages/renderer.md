@@ -671,7 +671,7 @@ Convention:
 - Rotation values are stored in **radians** in the `Transform` component
   (matching the rest of Owl Engine's transform pipeline).
 
-`scripts/raycast/raycast_player.lua` of the Engine Demo follows this convention.
+`scripts/raycast/raycast_player.owlvs` of the Engine Demo follows this convention.
 
 ## 3D Forward Renderer {#renderer3d}
 

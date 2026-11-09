@@ -1,0 +1,402 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: toast_seconds, type: float, default: 2.5}
+    - {name: chest_open_frame, type: int, default: 151}
+    - {name: pulled_angle, type: float, default: -0.9}
+    - {name: link_id, type: entity, default: 0, exposed: false}
+    - {name: chest_id, type: entity, default: 0, exposed: false}
+    - {name: toast_id, type: entity, default: 0, exposed: false}
+    - {name: toast_left, type: float, default: 0, exposed: false}
+    - {name: pulled, type: bool, default: false, exposed: false}
+    - {name: target, type: entity, default: 0, exposed: false}
+  functions:
+    - name: toast
+      inputs: [{name: text, type: any}]
+      outputs: []
+    - name: open_gate
+      inputs: [{name: target, type: any}]
+      outputs: []
+  nodes:
+    - id: 8040000000000000001
+      type: func.entry
+      position: [0, 0]
+      values:
+        function: toast
+    - id: 8040000000000000002
+      type: call.ui.set_text
+      position: [202, 0]
+    - id: 8040000000000000003
+      type: var.get
+      position: [0, 146]
+      values:
+        variable: toast_id
+    - id: 8040000000000000004
+      type: call.ui.set_visible
+      position: [426, 0]
+      values:
+        visible: true
+    - id: 8040000000000000005
+      type: var.get
+      position: [202, 172]
+      values:
+        variable: toast_id
+    - id: 8040000000000000006
+      type: var.get
+      position: [426, 172]
+      values:
+        variable: toast_seconds
+    - id: 8040000000000000007
+      type: var.set
+      position: [668, 0]
+      values:
+        variable: toast_left
+    - id: 8040000000000000008
+      type: func.entry
+      position: [0, 452]
+      values:
+        function: open_gate
+    - id: 8040000000000000009
+      type: var.set
+      position: [200, 452]
+      values:
+        Value: true
+        variable: pulled
+    - id: 8040000000000000010
+      type: call.scene.destroy_entity
+      position: [456, 452]
+    - id: 8040000000000000011
+      type: call.transform.set_rotation
+      position: [690, 452]
+      values:
+        rx: 0
+        ry: 0
+        split.rotation: true
+    - id: 8040000000000000012
+      type: var.get
+      position: [456, 598]
+      values:
+        variable: pulled_angle
+    - id: 8040000000000000013
+      type: var.get
+      position: [456, 718]
+      values:
+        variable: chest_id
+    - id: 8040000000000000014
+      type: compare.not_equal
+      position: [690, 676]
+      values:
+        B: 0
+    - id: 8040000000000000015
+      type: flow.branch
+      position: [976, 452]
+    - id: 8040000000000000016
+      type: call.isometric.set_sprite_frame
+      position: [1242, 452]
+    - id: 8040000000000000017
+      type: var.get
+      position: [976, 588]
+      values:
+        variable: chest_id
+    - id: 8040000000000000018
+      type: var.get
+      position: [976, 708]
+      values:
+        variable: chest_open_frame
+    - id: 8040000000000000019
+      type: call.gamestate.set
+      position: [1498, 452]
+      values:
+        key: gate_open
+        value: 1
+    - id: 8040000000000000020
+      type: event.on_create
+      position: [0, 998]
+    - id: 8040000000000000021
+      type: call.scene.find_entity
+      position: [0, 1108]
+      values:
+        name: LeverLink
+    - id: 8040000000000000022
+      type: var.set
+      position: [358, 998]
+      values:
+        variable: link_id
+    - id: 8040000000000000023
+      type: call.scene.find_entity
+      position: [358, 1144]
+      values:
+        name: GateChest
+    - id: 8040000000000000024
+      type: var.set
+      position: [716, 998]
+      values:
+        variable: chest_id
+    - id: 8040000000000000025
+      type: call.ui.find
+      position: [716, 1144]
+      values:
+        name: HubToast
+    - id: 8040000000000000026
+      type: var.set
+      position: [1074, 998]
+      values:
+        variable: toast_id
+    - id: 8040000000000000027
+      type: call.gamestate.get
+      position: [1306, 998]
+      values:
+        default: 0
+        key: gate_open
+    - id: 8040000000000000028
+      type: compare.greater
+      position: [1306, 1170]
+      values:
+        B: 0
+    - id: 8040000000000000029
+      type: flow.branch
+      position: [1624, 998]
+    - id: 8040000000000000030
+      type: call.entity.get_link
+      position: [1624, 1134]
+    - id: 8040000000000000031
+      type: var.get
+      position: [1306, 1306]
+      values:
+        variable: link_id
+    - id: 8040000000000000032
+      type: var.set
+      position: [1920, 998]
+      values:
+        variable: target
+    - id: 8040000000000000033
+      type: var.get
+      position: [1624, 1254]
+      values:
+        variable: target
+    - id: 8040000000000000034
+      type: compare.not_equal
+      position: [1920, 1144]
+      values:
+        B: 0
+    - id: 8040000000000000035
+      type: flow.branch
+      position: [2198, 998]
+    - id: 8040000000000000036
+      type: func.call
+      position: [2462, 998]
+      values:
+        function: open_gate
+    - id: 8040000000000000037
+      type: var.get
+      position: [2198, 1134]
+      values:
+        variable: target
+    - id: 8040000000000000038
+      type: call.gamestate.set
+      position: [1920, 1466]
+      values:
+        key: gate_open
+        value: 0
+    - id: 8040000000000000039
+      type: event.custom
+      position: [0, 1798]
+      values:
+        function: on_lever_interact
+    - id: 8040000000000000040
+      type: var.get
+      position: [0, 1944]
+      values:
+        variable: pulled
+    - id: 8040000000000000041
+      type: flow.branch
+      position: [242, 1798]
+    - id: 8040000000000000042
+      type: call.sound.play
+      position: [506, 1798]
+      values:
+        asset_path: sounds/hub/board.wav
+    - id: 8040000000000000043
+      type: func.call
+      position: [888, 1798]
+      values:
+        function: toast
+        text: The lever is already pulled.
+    - id: 8040000000000000044
+      type: call.entity.get_link
+      position: [888, 1944]
+    - id: 8040000000000000045
+      type: var.get
+      position: [506, 1944]
+      values:
+        variable: link_id
+    - id: 8040000000000000046
+      type: var.set
+      position: [1184, 1798]
+      values:
+        variable: target
+    - id: 8040000000000000047
+      type: var.get
+      position: [888, 2064]
+      values:
+        variable: target
+    - id: 8040000000000000048
+      type: compare.equal
+      position: [1184, 1944]
+      values:
+        B: 0
+    - id: 8040000000000000049
+      type: flow.branch
+      position: [1462, 1798]
+    - id: 8040000000000000050
+      type: func.call
+      position: [1726, 1798]
+      values:
+        function: toast
+        text: The lever moves, nothing answers.
+    - id: 8040000000000000051
+      type: func.call
+      position: [1980, 1798]
+      values:
+        function: open_gate
+    - id: 8040000000000000052
+      type: var.get
+      position: [1726, 1944]
+      values:
+        variable: target
+    - id: 8040000000000000053
+      type: call.sound.play
+      position: [2180, 1798]
+      values:
+        asset_path: sounds/hub/lever.wav
+    - id: 8040000000000000054
+      type: call.sound.play
+      position: [2562, 1798]
+      values:
+        asset_path: sounds/hub/gate.wav
+    - id: 8040000000000000055
+      type: func.call
+      position: [2944, 1798]
+      values:
+        function: toast
+        text: The gate swings open!
+    - id: 8040000000000000056
+      type: event.on_update
+      position: [218, 2344]
+    - id: 8040000000000000057
+      type: var.get
+      position: [0, 2344]
+      values:
+        variable: toast_left
+    - id: 8040000000000000058
+      type: compare.greater
+      position: [218, 2480]
+      values:
+        B: 0
+    - id: 8040000000000000059
+      type: flow.branch
+      position: [488, 2344]
+    - id: 8040000000000000060
+      type: math.subtract
+      position: [488, 2480]
+    - id: 8040000000000000061
+      type: var.get
+      position: [218, 2616]
+      values:
+        variable: toast_left
+    - id: 8040000000000000062
+      type: var.set
+      position: [752, 2344]
+      values:
+        variable: toast_left
+    - id: 8040000000000000063
+      type: var.get
+      position: [488, 2616]
+      values:
+        variable: toast_left
+    - id: 8040000000000000064
+      type: compare.less_equal
+      position: [752, 2490]
+      values:
+        B: 0
+    - id: 8040000000000000065
+      type: flow.branch
+      position: [1022, 2344]
+    - id: 8040000000000000066
+      type: call.ui.set_visible
+      position: [1286, 2344]
+      values:
+        visible: false
+    - id: 8040000000000000067
+      type: var.get
+      position: [1022, 2480]
+      values:
+        variable: toast_id
+  links:
+    - {from: 8040000000000000003, fromPin: Value, to: 8040000000000000002, toPin: entity_id}
+    - {from: 8040000000000000001, fromPin: text, to: 8040000000000000002, toPin: text}
+    - {from: 8040000000000000001, fromPin: Then, to: 8040000000000000002, toPin: Exec}
+    - {from: 8040000000000000005, fromPin: Value, to: 8040000000000000004, toPin: entity_id}
+    - {from: 8040000000000000002, fromPin: Then, to: 8040000000000000004, toPin: Exec}
+    - {from: 8040000000000000006, fromPin: Value, to: 8040000000000000007, toPin: Value}
+    - {from: 8040000000000000004, fromPin: Then, to: 8040000000000000007, toPin: Exec}
+    - {from: 8040000000000000008, fromPin: Then, to: 8040000000000000009, toPin: Exec}
+    - {from: 8040000000000000008, fromPin: target, to: 8040000000000000010, toPin: entity_id}
+    - {from: 8040000000000000009, fromPin: Then, to: 8040000000000000010, toPin: Exec}
+    - {from: 8040000000000000012, fromPin: Value, to: 8040000000000000011, toPin: rz}
+    - {from: 8040000000000000010, fromPin: Then, to: 8040000000000000011, toPin: Exec}
+    - {from: 8040000000000000013, fromPin: Value, to: 8040000000000000014, toPin: A}
+    - {from: 8040000000000000014, fromPin: Result, to: 8040000000000000015, toPin: Condition}
+    - {from: 8040000000000000011, fromPin: Then, to: 8040000000000000015, toPin: Exec}
+    - {from: 8040000000000000017, fromPin: Value, to: 8040000000000000016, toPin: entity_id}
+    - {from: 8040000000000000018, fromPin: Value, to: 8040000000000000016, toPin: frame}
+    - {from: 8040000000000000015, fromPin: True, to: 8040000000000000016, toPin: Exec}
+    - {from: 8040000000000000016, fromPin: Then, to: 8040000000000000019, toPin: Exec}
+    - {from: 8040000000000000015, fromPin: False, to: 8040000000000000019, toPin: Exec}
+    - {from: 8040000000000000021, fromPin: entity_id, to: 8040000000000000022, toPin: Value}
+    - {from: 8040000000000000020, fromPin: Then, to: 8040000000000000022, toPin: Exec}
+    - {from: 8040000000000000023, fromPin: entity_id, to: 8040000000000000024, toPin: Value}
+    - {from: 8040000000000000022, fromPin: Then, to: 8040000000000000024, toPin: Exec}
+    - {from: 8040000000000000025, fromPin: entity_id, to: 8040000000000000026, toPin: Value}
+    - {from: 8040000000000000024, fromPin: Then, to: 8040000000000000026, toPin: Exec}
+    - {from: 8040000000000000026, fromPin: Then, to: 8040000000000000027, toPin: Exec}
+    - {from: 8040000000000000027, fromPin: value, to: 8040000000000000028, toPin: A}
+    - {from: 8040000000000000028, fromPin: Result, to: 8040000000000000029, toPin: Condition}
+    - {from: 8040000000000000027, fromPin: Then, to: 8040000000000000029, toPin: Exec}
+    - {from: 8040000000000000031, fromPin: Value, to: 8040000000000000030, toPin: entity_id}
+    - {from: 8040000000000000030, fromPin: linked_id, to: 8040000000000000032, toPin: Value}
+    - {from: 8040000000000000029, fromPin: True, to: 8040000000000000032, toPin: Exec}
+    - {from: 8040000000000000033, fromPin: Value, to: 8040000000000000034, toPin: A}
+    - {from: 8040000000000000034, fromPin: Result, to: 8040000000000000035, toPin: Condition}
+    - {from: 8040000000000000032, fromPin: Then, to: 8040000000000000035, toPin: Exec}
+    - {from: 8040000000000000037, fromPin: Value, to: 8040000000000000036, toPin: target}
+    - {from: 8040000000000000035, fromPin: True, to: 8040000000000000036, toPin: Exec}
+    - {from: 8040000000000000029, fromPin: False, to: 8040000000000000038, toPin: Exec}
+    - {from: 8040000000000000040, fromPin: Value, to: 8040000000000000041, toPin: Condition}
+    - {from: 8040000000000000039, fromPin: Then, to: 8040000000000000041, toPin: Exec}
+    - {from: 8040000000000000041, fromPin: True, to: 8040000000000000042, toPin: Exec}
+    - {from: 8040000000000000042, fromPin: Then, to: 8040000000000000043, toPin: Exec}
+    - {from: 8040000000000000045, fromPin: Value, to: 8040000000000000044, toPin: entity_id}
+    - {from: 8040000000000000044, fromPin: linked_id, to: 8040000000000000046, toPin: Value}
+    - {from: 8040000000000000041, fromPin: False, to: 8040000000000000046, toPin: Exec}
+    - {from: 8040000000000000047, fromPin: Value, to: 8040000000000000048, toPin: A}
+    - {from: 8040000000000000048, fromPin: Result, to: 8040000000000000049, toPin: Condition}
+    - {from: 8040000000000000046, fromPin: Then, to: 8040000000000000049, toPin: Exec}
+    - {from: 8040000000000000049, fromPin: True, to: 8040000000000000050, toPin: Exec}
+    - {from: 8040000000000000052, fromPin: Value, to: 8040000000000000051, toPin: target}
+    - {from: 8040000000000000049, fromPin: False, to: 8040000000000000051, toPin: Exec}
+    - {from: 8040000000000000051, fromPin: Then, to: 8040000000000000053, toPin: Exec}
+    - {from: 8040000000000000053, fromPin: Then, to: 8040000000000000054, toPin: Exec}
+    - {from: 8040000000000000054, fromPin: Then, to: 8040000000000000055, toPin: Exec}
+    - {from: 8040000000000000057, fromPin: Value, to: 8040000000000000058, toPin: A}
+    - {from: 8040000000000000058, fromPin: Result, to: 8040000000000000059, toPin: Condition}
+    - {from: 8040000000000000056, fromPin: Then, to: 8040000000000000059, toPin: Exec}
+    - {from: 8040000000000000061, fromPin: Value, to: 8040000000000000060, toPin: A}
+    - {from: 8040000000000000056, fromPin: dt, to: 8040000000000000060, toPin: B}
+    - {from: 8040000000000000060, fromPin: Result, to: 8040000000000000062, toPin: Value}
+    - {from: 8040000000000000059, fromPin: True, to: 8040000000000000062, toPin: Exec}
+    - {from: 8040000000000000063, fromPin: Value, to: 8040000000000000064, toPin: A}
+    - {from: 8040000000000000064, fromPin: Result, to: 8040000000000000065, toPin: Condition}
+    - {from: 8040000000000000062, fromPin: Then, to: 8040000000000000065, toPin: Exec}
+    - {from: 8040000000000000067, fromPin: Value, to: 8040000000000000066, toPin: entity_id}
+    - {from: 8040000000000000065, fromPin: True, to: 8040000000000000066, toPin: Exec}

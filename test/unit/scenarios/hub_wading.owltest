@@ -1,4 +1,4 @@
-# The hero wades through the river of the hub (world_player.lua): up the avenue onto the south bridge, then west off
+# The hero wades through the river of the hub (world_player.owlvs): up the avenue onto the south bridge, then west off
 # it into the water, where the walk is much slower than on the ground.
 scene: ../../../engine_demo/scenes/world_map.owl
 steps:

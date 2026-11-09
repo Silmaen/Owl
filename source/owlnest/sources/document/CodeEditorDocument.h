@@ -14,6 +14,8 @@
 #include "codeEditor/MarkdownPreview.h"
 #include "codeEditor/SvgPreview.h"
 
+#include <script/ScriptTypeChecker.h>
+
 #include <cstddef>
 #include <filesystem>
 #include <optional>
@@ -259,6 +261,19 @@ public:
 		return m_language == codeEditor::Language::Markdown || m_language == codeEditor::Language::Xml;
 	}
 
+	/**
+	 * @brief
+	 *  Type-check the text of a Lua script now and mark the lines of its problems; other languages have none.
+	 */
+	void checkTypes();
+
+	/**
+	 * @brief
+	 *  The problems the last type check found, by position.
+	 * @return The diagnostics.
+	 */
+	[[nodiscard]] auto diagnostics() const -> const std::vector<script::ScriptDiagnostic>& { return m_diagnostics; }
+
 private:
 	/// Disk path of the file currently loaded into the editor.
 	std::filesystem::path m_path;
@@ -288,6 +303,24 @@ private:
 	codeEditor::SvgPreview m_svgPreview;
 	/// Breakpoint lines of the script, read from the ScriptDebugger once a frame for the gutter.
 	std::vector<int> m_breakpoints;
+	/// Problems of the last type check.
+	std::vector<script::ScriptDiagnostic> m_diagnostics;
+	/// The text changed since the last type check (set by the editor's delayed change callback).
+	bool m_checkPending = false;
+	/// The problem list under the editor is unfolded.
+	bool m_problemsOpen = false;
+
+	/**
+	 * @brief
+	 *  Arm the delayed type check of a Lua script on every edit.
+	 */
+	void updateTypeChecking();
+
+	/**
+	 * @brief
+	 *  Draw the status line: language, cursor, and the problem count that unfolds the problem list.
+	 */
+	void renderStatusLine();
 
 	/**
 	 * @brief

@@ -1,0 +1,79 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    []
+  nodes:
+    - id: 7380000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 7380000000000000002
+      type: call.log.info
+      position: [226, 0]
+      values:
+        message: Victory! Game completed.
+    - id: 7380000000000000003
+      type: call.ui.transition_fade_in
+      position: [536, 0]
+      values:
+        duration: 0.5
+    - id: 7380000000000000004
+      type: call.gamestate.get
+      position: [870, 0]
+      values:
+        default: 0
+        key: score
+    - id: 7380000000000000005
+      type: call.scene.find_entity
+      position: [870, 300]
+      values:
+        name: ScoreLabel
+    - id: 7380000000000000006
+      type: compare.not_equal
+      position: [1228, 300]
+      values:
+        B: 0
+    - id: 7380000000000000007
+      type: flow.branch
+      position: [1506, 0]
+    - id: 7380000000000000008
+      type: text.concat
+      position: [1506, 300]
+      values:
+        A: "Final Score: "
+    - id: 7380000000000000009
+      type: call.ui.set_text
+      position: [1784, 0]
+    - id: 7380000000000000010
+      type: flow.sequence
+      position: [1228, 0]
+    - id: 7380000000000000011
+      type: call.gamestate.remove
+      position: [1784, 172]
+      values:
+        key: score
+    - id: 7380000000000000012
+      type: event.custom
+      position: [0, 600]
+      values:
+        function: on_menu_clicked
+    - id: 7380000000000000013
+      type: call.scene.transition_to
+      position: [536, 600]
+      values:
+        duration: 0.3
+        kind: fade_out
+        scene_path: scenes/main_menu.owl
+  links:
+    - {from: 7380000000000000001, fromPin: Then, to: 7380000000000000002, toPin: Exec}
+    - {from: 7380000000000000002, fromPin: Then, to: 7380000000000000003, toPin: Exec}
+    - {from: 7380000000000000003, fromPin: Then, to: 7380000000000000004, toPin: Exec}
+    - {from: 7380000000000000005, fromPin: entity_id, to: 7380000000000000006, toPin: A}
+    - {from: 7380000000000000006, fromPin: Result, to: 7380000000000000007, toPin: Condition}
+    - {from: 7380000000000000004, fromPin: value, to: 7380000000000000008, toPin: B}
+    - {from: 7380000000000000007, fromPin: True, to: 7380000000000000009, toPin: Exec}
+    - {from: 7380000000000000005, fromPin: entity_id, to: 7380000000000000009, toPin: entity_id}
+    - {from: 7380000000000000008, fromPin: Result, to: 7380000000000000009, toPin: text}
+    - {from: 7380000000000000004, fromPin: Then, to: 7380000000000000010, toPin: Exec}
+    - {from: 7380000000000000010, fromPin: Then 1, to: 7380000000000000007, toPin: Exec}
+    - {from: 7380000000000000010, fromPin: Then 2, to: 7380000000000000011, toPin: Exec}
+    - {from: 7380000000000000012, fromPin: Then, to: 7380000000000000013, toPin: Exec}

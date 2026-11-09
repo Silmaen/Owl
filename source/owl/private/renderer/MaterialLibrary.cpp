@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <map>
 #include <ranges>
 #include <string>
 #include <utility>
@@ -73,8 +74,19 @@ auto MaterialLibrary::resolve(const std::filesystem::path& iAssetPath, const uin
 	if (!entry.asset)
 		return m_entries[key] = std::move(entry);
 	MaterialParameters values;
+	shared<const MaterialGraph> graph;
+	shared<const MaterialProgram> program;
+	std::map<std::string, std::string> graphValues;
 	if (entry.asset->parent.empty()) {
 		values = entry.asset->values;
+		if (entry.asset->graph.has_value()) {
+			graph = mkShared<const MaterialGraph>(*entry.asset->graph);
+			auto compiled = compileMaterialGraph(*graph);
+			for (const auto& diagnostic: compiled.diagnostics)
+				OWL_CORE_WARN("MaterialLibrary: The graph of '{}' does not compile ({}).", key, diagnostic.message)
+			if (compiled.isValid())
+				program = mkShared<const MaterialProgram>(std::move(compiled));
+		}
 	} else {
 		if (iDepth >= g_maxParentDepth) {
 			OWL_CORE_WARN("MaterialLibrary: '{}' has a parent chain too long or cyclic.", key)
@@ -90,10 +102,15 @@ auto MaterialLibrary::resolve(const std::filesystem::path& iAssetPath, const uin
 		}
 		values = parent.material->getParameters();
 		values.copyFields(entry.asset->values, entry.asset->overrides);
+		graph = parent.material->getGraph();
+		program = parent.material->getProgram();
+		graphValues = parent.material->getGraphValues();
 		entry.ancestors = parent.ancestors;
 		entry.ancestors.push_back(parentKey);
 	}
-	entry.material = mkShared<const Material>(values);
+	for (const auto& [name, value]: entry.asset->graphValues) graphValues[name] = value;
+	entry.material = graph ? mkShared<const Material>(Material{values}.withGraph(graph, program, graphValues))
+						   : mkShared<const Material>(values);
 	return m_entries[key] = std::move(entry);
 }
 

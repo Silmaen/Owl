@@ -96,7 +96,7 @@ end
 ```
 
 The Engine Demo tavern is a complete example: `engine_demo/sequences/tavern_intro.owlseq`, an entity `TavernIntro`
-with its camera `IntroCamera`, and `engine_demo/scripts/mesh/tavern.lua`.
+with its camera `IntroCamera`, and `engine_demo/scripts/mesh/tavern.owlvs`.
 
 ## The sequence file {#sequences-file}
 

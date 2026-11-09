@@ -751,6 +751,11 @@ void EditorLayer::onAttach() {
 		runCommandFromUi("material.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 		openMaterialFile(iPath);
 	});
+	m_contentBrowser.setMaterialGraphCreateCallback([this](const std::filesystem::path& iPath) -> void {
+		runCommandFromUi("material.create", {{"path", iPath.string()}, {"graph", true}},
+						 commands::CommandSource::Gesture);
+		openMaterialFile(iPath);
+	});
 	m_contentBrowser.setLocalisationOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openLocalisationFile(iPath); });
 	m_contentBrowser.setSoundOpenCallback([this](const std::filesystem::path& iPath) -> void { openSoundFile(iPath); });

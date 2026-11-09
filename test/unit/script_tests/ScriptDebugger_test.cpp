@@ -119,7 +119,13 @@ TEST_F(ScriptDebuggerTest, WatchValuesListTheScriptVariablesOnly) {
 TEST_F(ScriptDebuggerTest, VisualScriptsProbeTheirWiresAndMapTheirNodes) {
 	using namespace owl::script::visual;
 	VisualScript script;
-	script.variables.push_back({.name = "total", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	script.variables.push_back({.name = "total",
+								.type = ScriptPropertyType::Float,
+								.defaultValue = "0",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
 	const core::UUID update{1};
 	const core::UUID add{2};
 	const core::UUID set{3};

@@ -1,0 +1,485 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: target_scene, type: string, default: scenes/platformer_house.owl}
+    - {name: transition, type: string, default: fade}
+    - {name: duration, type: float, default: 0.3, min: 0}
+    - {name: done_key, type: string, default: ""}
+    - {name: on_enter, type: string, default: ""}
+    - {name: minimap_dot, type: string, default: ""}
+    - {name: door_sound, type: string, default: sounds/hub/door.wav}
+    - {name: entering, type: bool, default: false, exposed: false}
+    - {name: dot_id, type: entity, default: 0, exposed: false}
+    - {name: player, type: entity, default: 0, exposed: false}
+    - {name: px, type: float, default: 0, exposed: false}
+    - {name: py, type: float, default: 0, exposed: false}
+    - {name: parts, type: numbers, default: "", exposed: false}
+  functions:
+    - name: is_done
+      inputs: []
+      outputs: [{name: result, type: any}]
+  nodes:
+    - id: 8060000000000000001
+      type: func.entry
+      position: [276, 0]
+      values:
+        function: is_done
+    - id: 8060000000000000002
+      type: var.get
+      position: [0, 0]
+      values:
+        variable: done_key
+    - id: 8060000000000000003
+      type: compare.not_equal
+      position: [276, 120]
+    - id: 8060000000000000004
+      type: value.string
+      position: [0, 120]
+      values:
+        Value: ""
+    - id: 8060000000000000005
+      type: call.gamestate.get
+      position: [546, 0]
+      values:
+        default: 0
+    - id: 8060000000000000006
+      type: var.get
+      position: [276, 256]
+      values:
+        variable: done_key
+    - id: 8060000000000000007
+      type: compare.greater
+      position: [276, 376]
+      values:
+        B: 0
+    - id: 8060000000000000008
+      type: logic.and
+      position: [546, 172]
+    - id: 8060000000000000009
+      type: func.return
+      position: [864, 0]
+      values:
+        function: is_done
+    - id: 8060000000000000010
+      type: event.on_create
+      position: [0, 672]
+    - id: 8060000000000000011
+      type: func.call
+      position: [200, 672]
+      values:
+        function: is_done
+    - id: 8060000000000000012
+      type: call.entity.set_hud_marker_enabled
+      position: [476, 672]
+    - id: 8060000000000000013
+      type: logic.not
+      position: [200, 818]
+    - id: 8060000000000000014
+      type: var.get
+      position: [200, 928]
+      values:
+        variable: done_key
+    - id: 8060000000000000015
+      type: compare.not_equal
+      position: [476, 844]
+    - id: 8060000000000000016
+      type: value.string
+      position: [200, 1048]
+      values:
+        Value: ""
+    - id: 8060000000000000017
+      type: flow.branch
+      position: [794, 672]
+    - id: 8060000000000000018
+      type: call.gamestate.set
+      position: [1104, 672]
+    - id: 8060000000000000019
+      type: text.concat
+      position: [794, 808]
+      values:
+        A: marked_
+    - id: 8060000000000000020
+      type: var.get
+      position: [476, 980]
+      values:
+        variable: done_key
+    - id: 8060000000000000021
+      type: logic.select
+      position: [794, 944]
+      values:
+        False: 1
+        True: 0
+    - id: 8060000000000000022
+      type: var.get
+      position: [794, 1106]
+      values:
+        variable: minimap_dot
+    - id: 8060000000000000023
+      type: compare.not_equal
+      position: [1104, 844]
+    - id: 8060000000000000024
+      type: value.string
+      position: [794, 1226]
+      values:
+        Value: ""
+    - id: 8060000000000000025
+      type: flow.branch
+      position: [1330, 672]
+    - id: 8060000000000000026
+      type: call.scene.find_entity
+      position: [1330, 808]
+    - id: 8060000000000000027
+      type: var.get
+      position: [1104, 980]
+      values:
+        variable: minimap_dot
+    - id: 8060000000000000028
+      type: var.set
+      position: [1594, 672]
+      values:
+        variable: dot_id
+    - id: 8060000000000000029
+      type: var.get
+      position: [1330, 928]
+      values:
+        variable: dot_id
+    - id: 8060000000000000030
+      type: compare.not_equal
+      position: [1594, 818]
+      values:
+        B: 0
+    - id: 8060000000000000031
+      type: flow.branch
+      position: [1872, 672]
+    - id: 8060000000000000032
+      type: call.ui.set_visible
+      position: [2136, 672]
+    - id: 8060000000000000033
+      type: var.get
+      position: [1872, 808]
+      values:
+        variable: dot_id
+    - id: 8060000000000000034
+      type: logic.not
+      position: [1872, 928]
+    - id: 8060000000000000035
+      type: event.custom
+      position: [0, 1496]
+      values:
+        function: on_door_interact
+    - id: 8060000000000000036
+      type: var.get
+      position: [0, 1642]
+      values:
+        variable: entering
+    - id: 8060000000000000037
+      type: flow.branch
+      position: [234, 1496]
+    - id: 8060000000000000038
+      type: var.set
+      position: [498, 1496]
+      values:
+        Value: true
+        variable: entering
+    - id: 8060000000000000039
+      type: call.scene.find_entity
+      position: [498, 1642]
+      values:
+        name: Player
+    - id: 8060000000000000040
+      type: var.set
+      position: [856, 1496]
+      values:
+        variable: player
+    - id: 8060000000000000041
+      type: var.get
+      position: [498, 1762]
+      values:
+        variable: player
+    - id: 8060000000000000042
+      type: compare.not_equal
+      position: [856, 1642]
+      values:
+        B: 0
+    - id: 8060000000000000043
+      type: flow.branch
+      position: [1134, 1496]
+    - id: 8060000000000000044
+      type: call.transform.get_position
+      position: [1134, 1632]
+      values:
+        split.xyz: true
+    - id: 8060000000000000045
+      type: var.get
+      position: [856, 1778]
+      values:
+        variable: player
+    - id: 8060000000000000046
+      type: var.set
+      position: [1398, 1496]
+      values:
+        variable: px
+    - id: 8060000000000000047
+      type: var.set
+      position: [1630, 1496]
+      values:
+        variable: py
+    - id: 8060000000000000048
+      type: call.gamestate.set
+      position: [1862, 1496]
+      values:
+        key: world_return_x
+    - id: 8060000000000000049
+      type: var.get
+      position: [1630, 1642]
+      values:
+        variable: px
+    - id: 8060000000000000050
+      type: call.gamestate.set
+      position: [2140, 1496]
+      values:
+        key: world_return_y
+    - id: 8060000000000000051
+      type: var.get
+      position: [1862, 1668]
+      values:
+        variable: py
+    - id: 8060000000000000052
+      type: text.split
+      position: [2140, 1668]
+      values:
+        Separator: ;
+    - id: 8060000000000000053
+      type: var.get
+      position: [1862, 1788]
+      values:
+        variable: on_enter
+    - id: 8060000000000000054
+      type: flow.for_each
+      position: [2514, 1496]
+    - id: 8060000000000000055
+      type: compare.not_equal
+      position: [2514, 2074]
+    - id: 8060000000000000056
+      type: value.string
+      position: [2140, 2074]
+      values:
+        Value: ""
+    - id: 8060000000000000057
+      type: flow.branch
+      position: [2770, 2074]
+    - id: 8060000000000000058
+      type: text.split
+      position: [2770, 2210]
+      values:
+        Separator: =
+    - id: 8060000000000000059
+      type: var.set
+      position: [3144, 2074]
+      values:
+        variable: parts
+    - id: 8060000000000000060
+      type: var.get
+      position: [2514, 2210]
+      values:
+        variable: parts
+    - id: 8060000000000000061
+      type: table.length
+      position: [2770, 2346]
+    - id: 8060000000000000062
+      type: compare.equal
+      position: [3144, 2220]
+      values:
+        B: 2
+    - id: 8060000000000000063
+      type: flow.branch
+      position: [3438, 2074]
+    - id: 8060000000000000064
+      type: call.gamestate.set
+      position: [3732, 2074]
+    - id: 8060000000000000065
+      type: var.get
+      position: [3144, 2356]
+      values:
+        variable: parts
+    - id: 8060000000000000066
+      type: table.get
+      position: [3438, 2210]
+      values:
+        Key: 1
+    - id: 8060000000000000067
+      type: text.to_number
+      position: [3144, 2476]
+    - id: 8060000000000000068
+      type: var.get
+      position: [2514, 2330]
+      values:
+        variable: parts
+    - id: 8060000000000000069
+      type: table.get
+      position: [2770, 2456]
+      values:
+        Key: 2
+    - id: 8060000000000000070
+      type: var.get
+      position: [2770, 2592]
+      values:
+        variable: parts
+    - id: 8060000000000000071
+      type: table.get
+      position: [3144, 2586]
+      values:
+        Key: 2
+    - id: 8060000000000000072
+      type: logic.default
+      position: [3438, 2346]
+    - id: 8060000000000000073
+      type: var.get
+      position: [2140, 1804]
+      values:
+        variable: door_sound
+    - id: 8060000000000000074
+      type: compare.not_equal
+      position: [2514, 1684]
+    - id: 8060000000000000075
+      type: value.string
+      position: [2140, 1924]
+      values:
+        Value: ""
+    - id: 8060000000000000076
+      type: flow.branch
+      position: [2770, 1496]
+    - id: 8060000000000000077
+      type: call.sound.play
+      position: [3144, 1496]
+    - id: 8060000000000000078
+      type: var.get
+      position: [2770, 1632]
+      values:
+        variable: door_sound
+    - id: 8060000000000000079
+      type: call.log.info
+      position: [3438, 1496]
+    - id: 8060000000000000080
+      type: text.concat
+      position: [3144, 1642]
+      values:
+        A: "Entering "
+    - id: 8060000000000000081
+      type: var.get
+      position: [2770, 1752]
+      values:
+        variable: target_scene
+    - id: 8060000000000000082
+      type: call.scene.transition_to
+      position: [3732, 1496]
+      values:
+        split.rgba: true
+    - id: 8060000000000000083
+      type: var.get
+      position: [3438, 1642]
+      values:
+        variable: target_scene
+    - id: 8060000000000000084
+      type: var.get
+      position: [3438, 1762]
+      values:
+        variable: transition
+    - id: 8060000000000000085
+      type: var.get
+      position: [3438, 1882]
+      values:
+        variable: duration
+  links:
+    - {from: 8060000000000000002, fromPin: Value, to: 8060000000000000003, toPin: A}
+    - {from: 8060000000000000004, fromPin: Result, to: 8060000000000000003, toPin: B}
+    - {from: 8060000000000000006, fromPin: Value, to: 8060000000000000005, toPin: key}
+    - {from: 8060000000000000001, fromPin: Then, to: 8060000000000000005, toPin: Exec}
+    - {from: 8060000000000000005, fromPin: value, to: 8060000000000000007, toPin: A}
+    - {from: 8060000000000000003, fromPin: Result, to: 8060000000000000008, toPin: A}
+    - {from: 8060000000000000007, fromPin: Result, to: 8060000000000000008, toPin: B}
+    - {from: 8060000000000000008, fromPin: Result, to: 8060000000000000009, toPin: result}
+    - {from: 8060000000000000005, fromPin: Then, to: 8060000000000000009, toPin: Exec}
+    - {from: 8060000000000000010, fromPin: Then, to: 8060000000000000011, toPin: Exec}
+    - {from: 8060000000000000011, fromPin: result, to: 8060000000000000013, toPin: A}
+    - {from: 8060000000000000013, fromPin: Result, to: 8060000000000000012, toPin: enabled}
+    - {from: 8060000000000000011, fromPin: Then, to: 8060000000000000012, toPin: Exec}
+    - {from: 8060000000000000014, fromPin: Value, to: 8060000000000000015, toPin: A}
+    - {from: 8060000000000000016, fromPin: Result, to: 8060000000000000015, toPin: B}
+    - {from: 8060000000000000015, fromPin: Result, to: 8060000000000000017, toPin: Condition}
+    - {from: 8060000000000000012, fromPin: Then, to: 8060000000000000017, toPin: Exec}
+    - {from: 8060000000000000020, fromPin: Value, to: 8060000000000000019, toPin: B}
+    - {from: 8060000000000000011, fromPin: result, to: 8060000000000000021, toPin: Condition}
+    - {from: 8060000000000000019, fromPin: Result, to: 8060000000000000018, toPin: key}
+    - {from: 8060000000000000021, fromPin: Result, to: 8060000000000000018, toPin: value}
+    - {from: 8060000000000000017, fromPin: True, to: 8060000000000000018, toPin: Exec}
+    - {from: 8060000000000000022, fromPin: Value, to: 8060000000000000023, toPin: A}
+    - {from: 8060000000000000024, fromPin: Result, to: 8060000000000000023, toPin: B}
+    - {from: 8060000000000000023, fromPin: Result, to: 8060000000000000025, toPin: Condition}
+    - {from: 8060000000000000018, fromPin: Then, to: 8060000000000000025, toPin: Exec}
+    - {from: 8060000000000000017, fromPin: False, to: 8060000000000000025, toPin: Exec}
+    - {from: 8060000000000000027, fromPin: Value, to: 8060000000000000026, toPin: name}
+    - {from: 8060000000000000026, fromPin: entity_id, to: 8060000000000000028, toPin: Value}
+    - {from: 8060000000000000025, fromPin: True, to: 8060000000000000028, toPin: Exec}
+    - {from: 8060000000000000029, fromPin: Value, to: 8060000000000000030, toPin: A}
+    - {from: 8060000000000000030, fromPin: Result, to: 8060000000000000031, toPin: Condition}
+    - {from: 8060000000000000028, fromPin: Then, to: 8060000000000000031, toPin: Exec}
+    - {from: 8060000000000000011, fromPin: result, to: 8060000000000000034, toPin: A}
+    - {from: 8060000000000000033, fromPin: Value, to: 8060000000000000032, toPin: entity_id}
+    - {from: 8060000000000000034, fromPin: Result, to: 8060000000000000032, toPin: visible}
+    - {from: 8060000000000000031, fromPin: True, to: 8060000000000000032, toPin: Exec}
+    - {from: 8060000000000000036, fromPin: Value, to: 8060000000000000037, toPin: Condition}
+    - {from: 8060000000000000035, fromPin: Then, to: 8060000000000000037, toPin: Exec}
+    - {from: 8060000000000000037, fromPin: False, to: 8060000000000000038, toPin: Exec}
+    - {from: 8060000000000000039, fromPin: entity_id, to: 8060000000000000040, toPin: Value}
+    - {from: 8060000000000000038, fromPin: Then, to: 8060000000000000040, toPin: Exec}
+    - {from: 8060000000000000041, fromPin: Value, to: 8060000000000000042, toPin: A}
+    - {from: 8060000000000000042, fromPin: Result, to: 8060000000000000043, toPin: Condition}
+    - {from: 8060000000000000040, fromPin: Then, to: 8060000000000000043, toPin: Exec}
+    - {from: 8060000000000000045, fromPin: Value, to: 8060000000000000044, toPin: entity_id}
+    - {from: 8060000000000000044, fromPin: x, to: 8060000000000000046, toPin: Value}
+    - {from: 8060000000000000043, fromPin: True, to: 8060000000000000046, toPin: Exec}
+    - {from: 8060000000000000044, fromPin: y, to: 8060000000000000047, toPin: Value}
+    - {from: 8060000000000000046, fromPin: Then, to: 8060000000000000047, toPin: Exec}
+    - {from: 8060000000000000049, fromPin: Value, to: 8060000000000000048, toPin: value}
+    - {from: 8060000000000000047, fromPin: Then, to: 8060000000000000048, toPin: Exec}
+    - {from: 8060000000000000051, fromPin: Value, to: 8060000000000000050, toPin: value}
+    - {from: 8060000000000000048, fromPin: Then, to: 8060000000000000050, toPin: Exec}
+    - {from: 8060000000000000053, fromPin: Value, to: 8060000000000000052, toPin: Text}
+    - {from: 8060000000000000052, fromPin: Result, to: 8060000000000000054, toPin: List}
+    - {from: 8060000000000000050, fromPin: Then, to: 8060000000000000054, toPin: Exec}
+    - {from: 8060000000000000043, fromPin: False, to: 8060000000000000054, toPin: Exec}
+    - {from: 8060000000000000054, fromPin: Item, to: 8060000000000000055, toPin: A}
+    - {from: 8060000000000000056, fromPin: Result, to: 8060000000000000055, toPin: B}
+    - {from: 8060000000000000055, fromPin: Result, to: 8060000000000000057, toPin: Condition}
+    - {from: 8060000000000000054, fromPin: Body, to: 8060000000000000057, toPin: Exec}
+    - {from: 8060000000000000054, fromPin: Item, to: 8060000000000000058, toPin: Text}
+    - {from: 8060000000000000058, fromPin: Result, to: 8060000000000000059, toPin: Value}
+    - {from: 8060000000000000057, fromPin: True, to: 8060000000000000059, toPin: Exec}
+    - {from: 8060000000000000060, fromPin: Value, to: 8060000000000000061, toPin: List}
+    - {from: 8060000000000000061, fromPin: Result, to: 8060000000000000062, toPin: A}
+    - {from: 8060000000000000062, fromPin: Result, to: 8060000000000000063, toPin: Condition}
+    - {from: 8060000000000000059, fromPin: Then, to: 8060000000000000063, toPin: Exec}
+    - {from: 8060000000000000065, fromPin: Value, to: 8060000000000000066, toPin: Table}
+    - {from: 8060000000000000068, fromPin: Value, to: 8060000000000000069, toPin: Table}
+    - {from: 8060000000000000069, fromPin: Result, to: 8060000000000000067, toPin: Text}
+    - {from: 8060000000000000070, fromPin: Value, to: 8060000000000000071, toPin: Table}
+    - {from: 8060000000000000067, fromPin: Result, to: 8060000000000000072, toPin: Value}
+    - {from: 8060000000000000071, fromPin: Result, to: 8060000000000000072, toPin: Default}
+    - {from: 8060000000000000066, fromPin: Result, to: 8060000000000000064, toPin: key}
+    - {from: 8060000000000000072, fromPin: Result, to: 8060000000000000064, toPin: value}
+    - {from: 8060000000000000063, fromPin: True, to: 8060000000000000064, toPin: Exec}
+    - {from: 8060000000000000073, fromPin: Value, to: 8060000000000000074, toPin: A}
+    - {from: 8060000000000000075, fromPin: Result, to: 8060000000000000074, toPin: B}
+    - {from: 8060000000000000074, fromPin: Result, to: 8060000000000000076, toPin: Condition}
+    - {from: 8060000000000000054, fromPin: Completed, to: 8060000000000000076, toPin: Exec}
+    - {from: 8060000000000000078, fromPin: Value, to: 8060000000000000077, toPin: asset_path}
+    - {from: 8060000000000000076, fromPin: True, to: 8060000000000000077, toPin: Exec}
+    - {from: 8060000000000000081, fromPin: Value, to: 8060000000000000080, toPin: B}
+    - {from: 8060000000000000080, fromPin: Result, to: 8060000000000000079, toPin: message}
+    - {from: 8060000000000000077, fromPin: Then, to: 8060000000000000079, toPin: Exec}
+    - {from: 8060000000000000076, fromPin: False, to: 8060000000000000079, toPin: Exec}
+    - {from: 8060000000000000083, fromPin: Value, to: 8060000000000000082, toPin: scene_path}
+    - {from: 8060000000000000084, fromPin: Value, to: 8060000000000000082, toPin: kind}
+    - {from: 8060000000000000085, fromPin: Value, to: 8060000000000000082, toPin: duration}
+    - {from: 8060000000000000079, fromPin: Then, to: 8060000000000000082, toPin: Exec}

@@ -15,6 +15,8 @@
 #include <data/assets/AssetSearchPaths.h>
 #include <data/assets/pack/GameExporter.h>
 #include <data/assets/pack/PackReader.h>
+#include <renderer/Material.h>
+#include <renderer/MaterialGraph.h>
 #include <renderer/TextureDecoder.h>
 #include <renderer/gpu/Texture.h>
 #include <renderer/utils/shaderFileUtils.h>
@@ -414,6 +416,58 @@ TEST_F(GameExporterFixture, ExportBakesTheShadersOfTheProject) {
 	const auto again = GameExporter::exportGame(settings, {});
 	ASSERT_TRUE(again.has_value());
 	EXPECT_EQ(again->shadersBaked, 1u);
+}
+
+TEST_F(GameExporterFixture, ExportBakesTheShadersOfTheMaterialGraphs) {
+	if (!data::assets::readAssetText("shaders/renderer3D/mesh3d.slang") || m_bakedAssets.empty())
+		GTEST_SKIP() << "No engine shaders baked by the build in the asset directories of the test.";
+	renderer::MaterialAsset glow;
+	glow.graph = renderer::getParameterMaterialGraph();
+	glow.graph->parameters.push_back(
+			{.name = "mask", .type = renderer::MaterialParameterType::Texture, .defaultValue = "nam:textures/b.png"});
+	std::filesystem::create_directories(m_project / "materials");
+	ASSERT_TRUE(glow.save(m_project / "materials" / "glow.owlmat"));
+	renderer::MaterialAsset child;
+	child.parent = "materials/glow.owlmat";
+	child.overrides = 0;
+	child.graphValues = {{"mask", "nam:textures/a.png"}};
+	ASSERT_TRUE(child.save(m_project / "materials" / "glow_red.owlmat"));
+	writeFile(m_project / "scenes" / "level.owl", "Scene: level\nEntities:\n"
+												  "  - Entity: 1\n"
+												  "    MeshRenderer:\n"
+												  "      materials:\n"
+												  "        - material: materials/glow_red.owlmat\n");
+	auto settings = makeSettings();
+	settings.rendererStackYaml = "- Type: RendererMesh\n  Name: meshes\n";
+	settings.cookCacheDirectory = m_root / "cook";
+	const auto exported = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(exported.has_value());
+	for (const auto* packed: {"textures/a.png", "textures/b.png", "materials/glow.owlmat"})
+		EXPECT_FALSE(readPackEntry(exported->packFile, packed).empty()) << packed;
+
+	const auto program = renderer::compileMaterialGraph(*glow.graph);
+	ASSERT_TRUE(program.isValid());
+	for (const auto shader: renderer::g_materialGraphShaders) {
+		const auto name = renderer::getMaterialShaderName(shader, program);
+		const auto base = renderer::utils::readShaderSource(std::format("shaders/renderer3D/{}.slang", shader));
+		const auto source = renderer::insertMaterialProgram(base, program);
+		ASSERT_TRUE(source.has_value());
+		for (const auto& [api, forVulkan]: {std::pair{"vulkan", true}, std::pair{"opengl", false}}) {
+			const auto key = renderer::utils::getShaderCacheKey(*source, "renderer3D/" + name, forVulkan);
+			for (const auto* stage: {"vert", "frag"}) {
+				const auto entry = std::format("shaders/renderer3D/spirv/{}/{}.{}.spv", api, name, stage);
+				EXPECT_FALSE(readPackEntry(exported->packFile, entry).empty()) << entry;
+				EXPECT_EQ(readPackEntry(exported->packFile, entry + ".hash"), renderer::utils::computeShaderHash(key))
+						<< entry;
+			}
+		}
+	}
+	EXPECT_GE(exported->shadersBaked, 2u);
+
+	// A second export serves the variants from the cook cache.
+	const auto again = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(again.has_value());
+	EXPECT_EQ(again->shadersBaked, exported->shadersBaked);
 }
 #endif
 

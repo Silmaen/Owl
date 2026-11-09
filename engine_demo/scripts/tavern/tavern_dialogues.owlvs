@@ -1,0 +1,1296 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: player, type: string, default: TavernCamera}
+    - {name: barkeeper, type: string, default: Barkeeper}
+    - {name: conversation, type: int, default: "", exposed: false}
+    - {name: hud, type: numbers, default: "", exposed: false}
+    - {name: player_id, type: entity, default: 0, exposed: false}
+    - {name: barkeeper_id, type: entity, default: 0, exposed: false}
+    - {name: frame, type: float, default: 0, exposed: false}
+    - {name: started_frame, type: float, default: -1, exposed: false}
+    - {name: line, type: numbers, default: "", exposed: false}
+    - {name: choice, type: float, default: 0, exposed: false}
+  functions:
+    - name: set_walking
+      inputs: [{name: enabled, type: any}]
+      outputs: []
+    - name: close
+      inputs: []
+      outputs: []
+    - name: show
+      inputs: []
+      outputs: []
+    - name: advance
+      inputs: []
+      outputs: []
+    - name: answer
+      inputs: [{name: index, type: any}]
+      outputs: []
+    - name: has_cellar_key
+      inputs: []
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: on_tavern_closed
+      inputs: []
+      outputs: []
+      exported: true
+  nodes:
+    - id: 8210000000000000001
+      type: func.entry
+      position: [210, 0]
+      values:
+        function: set_walking
+    - id: 8210000000000000002
+      type: var.get
+      position: [0, 0]
+      values:
+        variable: player_id
+    - id: 8210000000000000003
+      type: compare.not_equal
+      position: [210, 146]
+      values:
+        B: 0
+    - id: 8210000000000000004
+      type: flow.branch
+      position: [488, 0]
+    - id: 8210000000000000005
+      type: call.entity.set_first_person_enabled
+      position: [752, 0]
+    - id: 8210000000000000006
+      type: var.get
+      position: [488, 136]
+      values:
+        variable: player_id
+    - id: 8210000000000000007
+      type: func.entry
+      position: [0, 442]
+      values:
+        function: close
+    - id: 8210000000000000008
+      type: value.nil
+      position: [0, 562]
+    - id: 8210000000000000009
+      type: var.set
+      position: [200, 442]
+      values:
+        variable: conversation
+    - id: 8210000000000000010
+      type: call.ui.set_visible
+      position: [494, 442]
+      values:
+        visible: false
+    - id: 8210000000000000011
+      type: var.get
+      position: [0, 672]
+      values:
+        variable: hud
+    - id: 8210000000000000012
+      type: table.get
+      position: [200, 588]
+      values:
+        Key: panel
+    - id: 8210000000000000013
+      type: call.gamestate.set
+      position: [726, 442]
+      values:
+        key: dialogue_open
+        value: 0
+    - id: 8210000000000000014
+      type: call.gamestate.set
+      position: [1004, 442]
+      values:
+        key: tavern_choices
+        value: 0
+    - id: 8210000000000000015
+      type: call.gamestate.set
+      position: [1282, 442]
+      values:
+        key: tavern_closed_frame
+    - id: 8210000000000000016
+      type: var.get
+      position: [1004, 614]
+      values:
+        variable: frame
+    - id: 8210000000000000017
+      type: func.call
+      position: [1560, 442]
+      values:
+        enabled: true
+        function: set_walking
+    - id: 8210000000000000018
+      type: func.entry
+      position: [0, 952]
+      values:
+        function: show
+    - id: 8210000000000000019
+      type: value.nil
+      position: [0, 1072]
+    - id: 8210000000000000020
+      type: var.set
+      position: [234, 952]
+      values:
+        variable: line
+    - id: 8210000000000000021
+      type: var.get
+      position: [0, 1182]
+      values:
+        variable: conversation
+    - id: 8210000000000000022
+      type: logic.is_set
+      position: [234, 1098]
+    - id: 8210000000000000023
+      type: flow.branch
+      position: [474, 952]
+    - id: 8210000000000000024
+      type: call.dialogue.get_line
+      position: [474, 1088]
+    - id: 8210000000000000025
+      type: var.get
+      position: [234, 1208]
+      values:
+        variable: conversation
+    - id: 8210000000000000026
+      type: var.set
+      position: [754, 952]
+      values:
+        variable: line
+    - id: 8210000000000000027
+      type: var.get
+      position: [234, 1328]
+      values:
+        variable: line
+    - id: 8210000000000000028
+      type: logic.is_set
+      position: [474, 1208]
+    - id: 8210000000000000029
+      type: logic.not
+      position: [754, 1098]
+    - id: 8210000000000000030
+      type: flow.branch
+      position: [986, 952]
+    - id: 8210000000000000031
+      type: func.call
+      position: [1250, 952]
+      values:
+        function: close
+    - id: 8210000000000000032
+      type: func.return
+      position: [1450, 952]
+      values:
+        function: show
+    - id: 8210000000000000033
+      type: call.ui.set_visible
+      position: [1744, 952]
+      values:
+        visible: true
+    - id: 8210000000000000034
+      type: var.get
+      position: [1250, 1072]
+      values:
+        variable: hud
+    - id: 8210000000000000035
+      type: table.get
+      position: [1450, 1062]
+      values:
+        Key: panel
+    - id: 8210000000000000036
+      type: call.ui.set_window_title
+      position: [2038, 952]
+    - id: 8210000000000000037
+      type: var.get
+      position: [1450, 1198]
+      values:
+        variable: hud
+    - id: 8210000000000000038
+      type: table.get
+      position: [1744, 1124]
+      values:
+        Key: panel
+    - id: 8210000000000000039
+      type: var.get
+      position: [1450, 1318]
+      values:
+        variable: line
+    - id: 8210000000000000040
+      type: table.get
+      position: [1744, 1260]
+      values:
+        Key: speaker
+    - id: 8210000000000000041
+      type: call.ui.set_text
+      position: [2332, 952]
+    - id: 8210000000000000042
+      type: var.get
+      position: [1744, 1396]
+      values:
+        variable: hud
+    - id: 8210000000000000043
+      type: table.get
+      position: [2038, 1124]
+      values:
+        Key: text
+    - id: 8210000000000000044
+      type: var.get
+      position: [1744, 1516]
+      values:
+        variable: line
+    - id: 8210000000000000045
+      type: table.get
+      position: [2038, 1260]
+      values:
+        Key: text
+    - id: 8210000000000000046
+      type: var.get
+      position: [2038, 1396]
+      values:
+        variable: line
+    - id: 8210000000000000047
+      type: table.get
+      position: [2332, 1124]
+      values:
+        Key: choices
+    - id: 8210000000000000048
+      type: table.set
+      position: [2626, 952]
+      values:
+        Key: choices
+    - id: 8210000000000000049
+      type: var.get
+      position: [2332, 1260]
+      values:
+        variable: hud
+    - id: 8210000000000000050
+      type: call.gamestate.set
+      position: [2920, 952]
+      values:
+        key: tavern_choices
+    - id: 8210000000000000051
+      type: var.get
+      position: [2038, 1516]
+      values:
+        variable: line
+    - id: 8210000000000000052
+      type: table.get
+      position: [2332, 1380]
+      values:
+        Key: choices
+    - id: 8210000000000000053
+      type: table.length
+      position: [2626, 1140]
+    - id: 8210000000000000054
+      type: call.ui.set_visible
+      position: [3214, 952]
+    - id: 8210000000000000055
+      type: var.get
+      position: [2626, 1250]
+      values:
+        variable: hud
+    - id: 8210000000000000056
+      type: table.get
+      position: [2920, 1124]
+      values:
+        Key: next
+    - id: 8210000000000000057
+      type: var.get
+      position: [2038, 1636]
+      values:
+        variable: line
+    - id: 8210000000000000058
+      type: table.get
+      position: [2332, 1516]
+      values:
+        Key: choices
+    - id: 8210000000000000059
+      type: table.length
+      position: [2626, 1370]
+    - id: 8210000000000000060
+      type: compare.equal
+      position: [2920, 1260]
+      values:
+        B: 0
+    - id: 8210000000000000061
+      type: flow.for
+      position: [3508, 952]
+      values:
+        First: 1
+        Last: 3
+    - id: 8210000000000000062
+      type: var.get
+      position: [2920, 1812]
+      values:
+        variable: line
+    - id: 8210000000000000063
+      type: table.get
+      position: [3214, 1812]
+      values:
+        Key: choices
+    - id: 8210000000000000064
+      type: table.get
+      position: [3508, 1812]
+    - id: 8210000000000000065
+      type: var.set
+      position: [3834, 1812]
+      values:
+        variable: choice
+    - id: 8210000000000000066
+      type: call.ui.set_visible
+      position: [4114, 1812]
+    - id: 8210000000000000067
+      type: var.get
+      position: [3214, 1948]
+      values:
+        variable: hud
+    - id: 8210000000000000068
+      type: table.get
+      position: [3508, 1948]
+      values:
+        Key: answers
+    - id: 8210000000000000069
+      type: table.get
+      position: [3834, 1958]
+    - id: 8210000000000000070
+      type: var.get
+      position: [3508, 2084]
+      values:
+        variable: choice
+    - id: 8210000000000000071
+      type: logic.is_set
+      position: [3834, 2094]
+    - id: 8210000000000000072
+      type: var.get
+      position: [3834, 2204]
+      values:
+        variable: choice
+    - id: 8210000000000000073
+      type: logic.is_set
+      position: [4114, 1984]
+    - id: 8210000000000000074
+      type: flow.branch
+      position: [4408, 1812]
+    - id: 8210000000000000075
+      type: call.ui.set_text
+      position: [4672, 1812]
+    - id: 8210000000000000076
+      type: var.get
+      position: [3834, 2324]
+      values:
+        variable: hud
+    - id: 8210000000000000077
+      type: table.get
+      position: [4114, 2094]
+      values:
+        Key: answers
+    - id: 8210000000000000078
+      type: table.get
+      position: [4408, 1948]
+    - id: 8210000000000000079
+      type: text.concat
+      position: [4408, 2084]
+    - id: 8210000000000000080
+      type: text.concat
+      position: [4114, 2230]
+      values:
+        A: ". "
+    - id: 8210000000000000081
+      type: var.get
+      position: [3834, 2444]
+      values:
+        variable: choice
+    - id: 8210000000000000082
+      type: call.ui.set_focus
+      position: [3834, 952]
+    - id: 8210000000000000083
+      type: var.get
+      position: [2332, 1652]
+      values:
+        variable: line
+    - id: 8210000000000000084
+      type: table.get
+      position: [2626, 1480]
+      values:
+        Key: choices
+    - id: 8210000000000000085
+      type: table.length
+      position: [2920, 1396]
+    - id: 8210000000000000086
+      type: compare.greater
+      position: [3214, 1124]
+      values:
+        B: 0
+    - id: 8210000000000000087
+      type: logic.select
+      position: [3508, 1114]
+    - id: 8210000000000000088
+      type: var.get
+      position: [2626, 1616]
+      values:
+        variable: hud
+    - id: 8210000000000000089
+      type: table.get
+      position: [2920, 1506]
+      values:
+        Key: answers
+    - id: 8210000000000000090
+      type: table.get
+      position: [3214, 1260]
+      values:
+        Key: 1
+    - id: 8210000000000000091
+      type: var.get
+      position: [2920, 1642]
+      values:
+        variable: hud
+    - id: 8210000000000000092
+      type: table.get
+      position: [3214, 1396]
+      values:
+        Key: next
+    - id: 8210000000000000093
+      type: func.entry
+      position: [1006, 2724]
+      values:
+        function: advance
+    - id: 8210000000000000094
+      type: var.get
+      position: [494, 2724]
+      values:
+        variable: conversation
+    - id: 8210000000000000095
+      type: logic.is_set
+      position: [728, 2724]
+    - id: 8210000000000000096
+      type: var.get
+      position: [0, 2724]
+      values:
+        variable: hud
+    - id: 8210000000000000097
+      type: table.get
+      position: [200, 2724]
+      values:
+        Key: choices
+    - id: 8210000000000000098
+      type: table.length
+      position: [494, 2844]
+    - id: 8210000000000000099
+      type: compare.equal
+      position: [728, 2834]
+      values:
+        B: 0
+    - id: 8210000000000000100
+      type: logic.and
+      position: [1006, 2844]
+    - id: 8210000000000000101
+      type: flow.branch
+      position: [1214, 2724]
+    - id: 8210000000000000102
+      type: call.dialogue.next
+      position: [1478, 2724]
+    - id: 8210000000000000103
+      type: var.get
+      position: [1214, 2860]
+      values:
+        variable: conversation
+    - id: 8210000000000000104
+      type: func.call
+      position: [1782, 2724]
+      values:
+        function: show
+    - id: 8210000000000000105
+      type: func.entry
+      position: [974, 3140]
+      values:
+        function: answer
+    - id: 8210000000000000106
+      type: var.get
+      position: [494, 3140]
+      values:
+        variable: conversation
+    - id: 8210000000000000107
+      type: logic.is_set
+      position: [734, 3140]
+    - id: 8210000000000000108
+      type: var.get
+      position: [0, 3140]
+      values:
+        variable: hud
+    - id: 8210000000000000109
+      type: table.get
+      position: [200, 3140]
+      values:
+        Key: choices
+    - id: 8210000000000000110
+      type: table.get
+      position: [494, 3260]
+    - id: 8210000000000000111
+      type: logic.is_set
+      position: [734, 3250]
+    - id: 8210000000000000112
+      type: logic.and
+      position: [974, 3286]
+    - id: 8210000000000000113
+      type: flow.branch
+      position: [1182, 3140]
+    - id: 8210000000000000114
+      type: call.dialogue.choose
+      position: [1446, 3140]
+    - id: 8210000000000000115
+      type: var.get
+      position: [1182, 3276]
+      values:
+        variable: conversation
+    - id: 8210000000000000116
+      type: func.call
+      position: [1750, 3140]
+      values:
+        function: show
+    - id: 8210000000000000117
+      type: func.entry
+      position: [0, 3582]
+      values:
+        function: has_cellar_key
+    - id: 8210000000000000118
+      type: call.gamestate.get
+      position: [218, 3582]
+      values:
+        default: 0
+        key: tavern_key
+    - id: 8210000000000000119
+      type: compare.greater
+      position: [218, 3754]
+      values:
+        B: 0
+    - id: 8210000000000000120
+      type: func.return
+      position: [536, 3582]
+      values:
+        function: has_cellar_key
+    - id: 8210000000000000121
+      type: func.entry
+      position: [234, 4050]
+      values:
+        function: on_tavern_closed
+    - id: 8210000000000000122
+      type: var.get
+      position: [0, 4050]
+      values:
+        variable: conversation
+    - id: 8210000000000000123
+      type: logic.is_set
+      position: [234, 4170]
+    - id: 8210000000000000124
+      type: flow.branch
+      position: [474, 4050]
+    - id: 8210000000000000125
+      type: call.dialogue.stop
+      position: [738, 4050]
+    - id: 8210000000000000126
+      type: var.get
+      position: [474, 4186]
+      values:
+        variable: conversation
+    - id: 8210000000000000127
+      type: func.call
+      position: [986, 4050]
+      values:
+        function: close
+    - id: 8210000000000000128
+      type: event.on_create
+      position: [0, 4466]
+    - id: 8210000000000000129
+      type: value.nil
+      position: [0, 4576]
+    - id: 8210000000000000130
+      type: var.set
+      position: [200, 4466]
+      values:
+        variable: conversation
+    - id: 8210000000000000131
+      type: call.ui.find
+      position: [200, 4612]
+      values:
+        name: DialoguePanel
+    - id: 8210000000000000132
+      type: table.set
+      position: [558, 4466]
+      values:
+        Key: panel
+    - id: 8210000000000000133
+      type: var.get
+      position: [200, 4732]
+      values:
+        variable: hud
+    - id: 8210000000000000134
+      type: call.ui.find
+      position: [558, 4654]
+      values:
+        name: DialogueText
+    - id: 8210000000000000135
+      type: table.set
+      position: [916, 4466]
+      values:
+        Key: text
+    - id: 8210000000000000136
+      type: var.get
+      position: [558, 4774]
+      values:
+        variable: hud
+    - id: 8210000000000000137
+      type: call.ui.find
+      position: [916, 4654]
+      values:
+        name: DialogueNext
+    - id: 8210000000000000138
+      type: table.set
+      position: [1274, 4466]
+      values:
+        Key: next
+    - id: 8210000000000000139
+      type: var.get
+      position: [916, 4774]
+      values:
+        variable: hud
+    - id: 8210000000000000140
+      type: table.make_list
+      position: [1274, 4654]
+    - id: 8210000000000000141
+      type: call.ui.find
+      position: [916, 4894]
+      values:
+        name: DialogueAnswer1
+    - id: 8210000000000000142
+      type: call.ui.find
+      position: [916, 5014]
+      values:
+        name: DialogueAnswer2
+    - id: 8210000000000000143
+      type: call.ui.find
+      position: [916, 5134]
+      values:
+        name: DialogueAnswer3
+    - id: 8210000000000000144
+      type: table.set
+      position: [1552, 4466]
+      values:
+        Key: answers
+    - id: 8210000000000000145
+      type: var.get
+      position: [1274, 4842]
+      values:
+        variable: hud
+    - id: 8210000000000000146
+      type: value.table
+      position: [1552, 4654]
+      values:
+        Value: ""
+    - id: 8210000000000000147
+      type: table.set
+      position: [1828, 4466]
+      values:
+        Key: choices
+    - id: 8210000000000000148
+      type: var.get
+      position: [1552, 4764]
+      values:
+        variable: hud
+    - id: 8210000000000000149
+      type: call.ui.set_visible
+      position: [2122, 4466]
+      values:
+        visible: false
+    - id: 8210000000000000150
+      type: var.get
+      position: [1552, 4884]
+      values:
+        variable: hud
+    - id: 8210000000000000151
+      type: table.get
+      position: [1828, 4654]
+      values:
+        Key: panel
+    - id: 8210000000000000152
+      type: call.scene.find_entity
+      position: [2122, 4638]
+    - id: 8210000000000000153
+      type: var.get
+      position: [1828, 4790]
+      values:
+        variable: player
+    - id: 8210000000000000154
+      type: var.set
+      position: [2378, 4466]
+      values:
+        variable: player_id
+    - id: 8210000000000000155
+      type: call.scene.find_entity
+      position: [2378, 4612]
+    - id: 8210000000000000156
+      type: var.get
+      position: [2122, 4758]
+      values:
+        variable: barkeeper
+    - id: 8210000000000000157
+      type: var.set
+      position: [2634, 4466]
+      values:
+        variable: barkeeper_id
+    - id: 8210000000000000158
+      type: call.gamestate.set
+      position: [2868, 4466]
+      values:
+        key: dialogue_open
+        value: 0
+    - id: 8210000000000000159
+      type: call.gamestate.set
+      position: [3146, 4466]
+      values:
+        key: tavern_talk_request
+    - id: 8210000000000000160
+      type: value.string
+      position: [2868, 4638]
+      values:
+        Value: ""
+    - id: 8210000000000000161
+      type: call.gamestate.set
+      position: [3424, 4466]
+      values:
+        key: tavern_choices
+        value: 0
+    - id: 8210000000000000162
+      type: call.gamestate.set
+      position: [4020, 4466]
+      values:
+        key: tavern_talks
+    - id: 8210000000000000163
+      type: call.gamestate.get
+      position: [3702, 4466]
+      values:
+        default: 0
+        key: tavern_talks
+    - id: 8210000000000000164
+      type: call.gamestate.set
+      position: [4616, 4466]
+      values:
+        key: tavern_ciders
+    - id: 8210000000000000165
+      type: call.gamestate.get
+      position: [4298, 4466]
+      values:
+        default: 0
+        key: tavern_ciders
+    - id: 8210000000000000166
+      type: event.custom
+      position: [234, 5414]
+      values:
+        function: serve_cider
+    - id: 8210000000000000167
+      type: var.get
+      position: [0, 5414]
+      values:
+        variable: barkeeper_id
+    - id: 8210000000000000168
+      type: compare.not_equal
+      position: [234, 5560]
+      values:
+        B: 0
+    - id: 8210000000000000169
+      type: flow.branch
+      position: [512, 5414]
+    - id: 8210000000000000170
+      type: call.animator.trigger
+      position: [776, 5414]
+      values:
+        name: serve
+    - id: 8210000000000000171
+      type: var.get
+      position: [512, 5550]
+      values:
+        variable: barkeeper_id
+    - id: 8210000000000000172
+      type: call.sound.play
+      position: [1094, 5414]
+      values:
+        asset_path: sounds/raycast/treasure.wav
+    - id: 8210000000000000173
+      type: call.gamestate.set
+      position: [1794, 5414]
+      values:
+        key: tavern_ciders
+    - id: 8210000000000000174
+      type: math.add
+      position: [1476, 5414]
+      values:
+        B: 1
+    - id: 8210000000000000175
+      type: call.gamestate.get
+      position: [1476, 5550]
+      values:
+        default: 0
+        key: tavern_ciders
+    - id: 8210000000000000176
+      type: event.custom
+      position: [0, 5882]
+      values:
+        function: on_tavern_next
+    - id: 8210000000000000177
+      type: func.call
+      position: [218, 5882]
+      values:
+        function: advance
+    - id: 8210000000000000178
+      type: event.custom
+      position: [0, 6188]
+      values:
+        function: on_tavern_answer_1
+    - id: 8210000000000000179
+      type: func.call
+      position: [250, 6188]
+      values:
+        function: answer
+        index: 1
+    - id: 8210000000000000180
+      type: event.custom
+      position: [0, 6494]
+      values:
+        function: on_tavern_answer_2
+    - id: 8210000000000000181
+      type: func.call
+      position: [250, 6494]
+      values:
+        function: answer
+        index: 2
+    - id: 8210000000000000182
+      type: event.custom
+      position: [0, 6800]
+      values:
+        function: on_tavern_answer_3
+    - id: 8210000000000000183
+      type: func.call
+      position: [250, 6800]
+      values:
+        function: answer
+        index: 3
+    - id: 8210000000000000184
+      type: event.on_update
+      position: [200, 7106]
+    - id: 8210000000000000185
+      type: math.add
+      position: [200, 7242]
+      values:
+        B: 1
+    - id: 8210000000000000186
+      type: var.get
+      position: [0, 7106]
+      values:
+        variable: frame
+    - id: 8210000000000000187
+      type: var.set
+      position: [470, 7106]
+      values:
+        variable: frame
+    - id: 8210000000000000188
+      type: call.gamestate.set
+      position: [746, 7106]
+      values:
+        key: tavern_frame
+    - id: 8210000000000000189
+      type: var.get
+      position: [470, 7252]
+      values:
+        variable: frame
+    - id: 8210000000000000190
+      type: call.gamestate.get
+      position: [1024, 7106]
+      values:
+        key: tavern_talk_request
+    - id: 8210000000000000191
+      type: value.string
+      position: [746, 7278]
+      values:
+        Value: ""
+    - id: 8210000000000000192
+      type: var.get
+      position: [200, 7378]
+      values:
+        variable: conversation
+    - id: 8210000000000000193
+      type: logic.is_set
+      position: [470, 7372]
+    - id: 8210000000000000194
+      type: logic.not
+      position: [746, 7388]
+    - id: 8210000000000000195
+      type: compare.not_equal
+      position: [746, 7498]
+    - id: 8210000000000000196
+      type: value.string
+      position: [470, 7482]
+      values:
+        Value: ""
+    - id: 8210000000000000197
+      type: logic.and
+      position: [1024, 7278]
+    - id: 8210000000000000198
+      type: flow.branch
+      position: [1342, 7106]
+    - id: 8210000000000000199
+      type: call.gamestate.set
+      position: [1618, 7106]
+      values:
+        key: tavern_talk_request
+    - id: 8210000000000000200
+      type: value.string
+      position: [1342, 7242]
+      values:
+        Value: ""
+    - id: 8210000000000000201
+      type: call.dialogue.start
+      position: [1896, 7106]
+    - id: 8210000000000000202
+      type: var.set
+      position: [2208, 7106]
+      values:
+        variable: conversation
+    - id: 8210000000000000203
+      type: var.get
+      position: [1896, 7252]
+      values:
+        variable: conversation
+    - id: 8210000000000000204
+      type: logic.is_set
+      position: [2208, 7252]
+    - id: 8210000000000000205
+      type: flow.branch
+      position: [2448, 7106]
+    - id: 8210000000000000206
+      type: var.get
+      position: [2448, 7242]
+      values:
+        variable: frame
+    - id: 8210000000000000207
+      type: var.set
+      position: [2712, 7106]
+      values:
+        variable: started_frame
+    - id: 8210000000000000208
+      type: call.gamestate.set
+      position: [2954, 7106]
+      values:
+        key: dialogue_open
+        value: 1
+    - id: 8210000000000000209
+      type: call.gamestate.set
+      position: [3550, 7106]
+      values:
+        key: tavern_talks
+    - id: 8210000000000000210
+      type: math.add
+      position: [3232, 7106]
+      values:
+        B: 1
+    - id: 8210000000000000211
+      type: call.gamestate.get
+      position: [3232, 7242]
+      values:
+        default: 0
+        key: tavern_talks
+    - id: 8210000000000000212
+      type: func.call
+      position: [3828, 7106]
+      values:
+        enabled: false
+        function: set_walking
+    - id: 8210000000000000213
+      type: func.call
+      position: [4106, 7106]
+      values:
+        function: show
+    - id: 8210000000000000214
+      type: var.get
+      position: [3550, 7278]
+      values:
+        variable: conversation
+    - id: 8210000000000000215
+      type: logic.is_set
+      position: [3828, 7252]
+    - id: 8210000000000000216
+      type: logic.not
+      position: [4106, 7226]
+    - id: 8210000000000000217
+      type: flow.branch
+      position: [4348, 7106]
+    - id: 8210000000000000218
+      type: call.input.is_action_just_pressed
+      position: [4348, 7242]
+      values:
+        action: ui_cancel
+    - id: 8210000000000000219
+      type: flow.branch
+      position: [4706, 7106]
+    - id: 8210000000000000220
+      type: func.call
+      position: [4970, 7106]
+      values:
+        function: on_tavern_closed
+    - id: 8210000000000000221
+      type: call.input.is_action_just_pressed
+      position: [4348, 7674]
+      values:
+        action: interact
+    - id: 8210000000000000222
+      type: var.get
+      position: [4106, 7674]
+      values:
+        variable: frame
+    - id: 8210000000000000223
+      type: var.get
+      position: [4106, 7794]
+      values:
+        variable: started_frame
+    - id: 8210000000000000224
+      type: compare.not_equal
+      position: [4348, 7794]
+    - id: 8210000000000000225
+      type: logic.and
+      position: [4706, 7674]
+    - id: 8210000000000000226
+      type: flow.branch
+      position: [4970, 7674]
+    - id: 8210000000000000227
+      type: func.call
+      position: [5234, 7674]
+      values:
+        function: advance
+  links:
+    - {from: 8210000000000000002, fromPin: Value, to: 8210000000000000003, toPin: A}
+    - {from: 8210000000000000003, fromPin: Result, to: 8210000000000000004, toPin: Condition}
+    - {from: 8210000000000000001, fromPin: Then, to: 8210000000000000004, toPin: Exec}
+    - {from: 8210000000000000006, fromPin: Value, to: 8210000000000000005, toPin: entity_id}
+    - {from: 8210000000000000001, fromPin: enabled, to: 8210000000000000005, toPin: enabled}
+    - {from: 8210000000000000004, fromPin: True, to: 8210000000000000005, toPin: Exec}
+    - {from: 8210000000000000008, fromPin: Result, to: 8210000000000000009, toPin: Value}
+    - {from: 8210000000000000007, fromPin: Then, to: 8210000000000000009, toPin: Exec}
+    - {from: 8210000000000000011, fromPin: Value, to: 8210000000000000012, toPin: Table}
+    - {from: 8210000000000000012, fromPin: Result, to: 8210000000000000010, toPin: entity_id}
+    - {from: 8210000000000000009, fromPin: Then, to: 8210000000000000010, toPin: Exec}
+    - {from: 8210000000000000010, fromPin: Then, to: 8210000000000000013, toPin: Exec}
+    - {from: 8210000000000000013, fromPin: Then, to: 8210000000000000014, toPin: Exec}
+    - {from: 8210000000000000016, fromPin: Value, to: 8210000000000000015, toPin: value}
+    - {from: 8210000000000000014, fromPin: Then, to: 8210000000000000015, toPin: Exec}
+    - {from: 8210000000000000015, fromPin: Then, to: 8210000000000000017, toPin: Exec}
+    - {from: 8210000000000000019, fromPin: Result, to: 8210000000000000020, toPin: Value}
+    - {from: 8210000000000000018, fromPin: Then, to: 8210000000000000020, toPin: Exec}
+    - {from: 8210000000000000021, fromPin: Value, to: 8210000000000000022, toPin: Value}
+    - {from: 8210000000000000022, fromPin: Result, to: 8210000000000000023, toPin: Condition}
+    - {from: 8210000000000000020, fromPin: Then, to: 8210000000000000023, toPin: Exec}
+    - {from: 8210000000000000025, fromPin: Value, to: 8210000000000000024, toPin: conversation}
+    - {from: 8210000000000000024, fromPin: line, to: 8210000000000000026, toPin: Value}
+    - {from: 8210000000000000023, fromPin: True, to: 8210000000000000026, toPin: Exec}
+    - {from: 8210000000000000027, fromPin: Value, to: 8210000000000000028, toPin: Value}
+    - {from: 8210000000000000028, fromPin: Result, to: 8210000000000000029, toPin: A}
+    - {from: 8210000000000000029, fromPin: Result, to: 8210000000000000030, toPin: Condition}
+    - {from: 8210000000000000026, fromPin: Then, to: 8210000000000000030, toPin: Exec}
+    - {from: 8210000000000000023, fromPin: False, to: 8210000000000000030, toPin: Exec}
+    - {from: 8210000000000000030, fromPin: True, to: 8210000000000000031, toPin: Exec}
+    - {from: 8210000000000000031, fromPin: Then, to: 8210000000000000032, toPin: Exec}
+    - {from: 8210000000000000034, fromPin: Value, to: 8210000000000000035, toPin: Table}
+    - {from: 8210000000000000035, fromPin: Result, to: 8210000000000000033, toPin: entity_id}
+    - {from: 8210000000000000030, fromPin: False, to: 8210000000000000033, toPin: Exec}
+    - {from: 8210000000000000037, fromPin: Value, to: 8210000000000000038, toPin: Table}
+    - {from: 8210000000000000039, fromPin: Value, to: 8210000000000000040, toPin: Table}
+    - {from: 8210000000000000038, fromPin: Result, to: 8210000000000000036, toPin: entity_id}
+    - {from: 8210000000000000040, fromPin: Result, to: 8210000000000000036, toPin: title}
+    - {from: 8210000000000000033, fromPin: Then, to: 8210000000000000036, toPin: Exec}
+    - {from: 8210000000000000042, fromPin: Value, to: 8210000000000000043, toPin: Table}
+    - {from: 8210000000000000044, fromPin: Value, to: 8210000000000000045, toPin: Table}
+    - {from: 8210000000000000043, fromPin: Result, to: 8210000000000000041, toPin: entity_id}
+    - {from: 8210000000000000045, fromPin: Result, to: 8210000000000000041, toPin: text}
+    - {from: 8210000000000000036, fromPin: Then, to: 8210000000000000041, toPin: Exec}
+    - {from: 8210000000000000046, fromPin: Value, to: 8210000000000000047, toPin: Table}
+    - {from: 8210000000000000049, fromPin: Value, to: 8210000000000000048, toPin: Table}
+    - {from: 8210000000000000047, fromPin: Result, to: 8210000000000000048, toPin: Value}
+    - {from: 8210000000000000041, fromPin: Then, to: 8210000000000000048, toPin: Exec}
+    - {from: 8210000000000000051, fromPin: Value, to: 8210000000000000052, toPin: Table}
+    - {from: 8210000000000000052, fromPin: Result, to: 8210000000000000053, toPin: List}
+    - {from: 8210000000000000053, fromPin: Result, to: 8210000000000000050, toPin: value}
+    - {from: 8210000000000000048, fromPin: Then, to: 8210000000000000050, toPin: Exec}
+    - {from: 8210000000000000055, fromPin: Value, to: 8210000000000000056, toPin: Table}
+    - {from: 8210000000000000057, fromPin: Value, to: 8210000000000000058, toPin: Table}
+    - {from: 8210000000000000058, fromPin: Result, to: 8210000000000000059, toPin: List}
+    - {from: 8210000000000000059, fromPin: Result, to: 8210000000000000060, toPin: A}
+    - {from: 8210000000000000056, fromPin: Result, to: 8210000000000000054, toPin: entity_id}
+    - {from: 8210000000000000060, fromPin: Result, to: 8210000000000000054, toPin: visible}
+    - {from: 8210000000000000050, fromPin: Then, to: 8210000000000000054, toPin: Exec}
+    - {from: 8210000000000000054, fromPin: Then, to: 8210000000000000061, toPin: Exec}
+    - {from: 8210000000000000062, fromPin: Value, to: 8210000000000000063, toPin: Table}
+    - {from: 8210000000000000063, fromPin: Result, to: 8210000000000000064, toPin: Table}
+    - {from: 8210000000000000061, fromPin: Index, to: 8210000000000000064, toPin: Key}
+    - {from: 8210000000000000064, fromPin: Result, to: 8210000000000000065, toPin: Value}
+    - {from: 8210000000000000061, fromPin: Body, to: 8210000000000000065, toPin: Exec}
+    - {from: 8210000000000000067, fromPin: Value, to: 8210000000000000068, toPin: Table}
+    - {from: 8210000000000000068, fromPin: Result, to: 8210000000000000069, toPin: Table}
+    - {from: 8210000000000000061, fromPin: Index, to: 8210000000000000069, toPin: Key}
+    - {from: 8210000000000000070, fromPin: Value, to: 8210000000000000071, toPin: Value}
+    - {from: 8210000000000000069, fromPin: Result, to: 8210000000000000066, toPin: entity_id}
+    - {from: 8210000000000000071, fromPin: Result, to: 8210000000000000066, toPin: visible}
+    - {from: 8210000000000000065, fromPin: Then, to: 8210000000000000066, toPin: Exec}
+    - {from: 8210000000000000072, fromPin: Value, to: 8210000000000000073, toPin: Value}
+    - {from: 8210000000000000073, fromPin: Result, to: 8210000000000000074, toPin: Condition}
+    - {from: 8210000000000000066, fromPin: Then, to: 8210000000000000074, toPin: Exec}
+    - {from: 8210000000000000076, fromPin: Value, to: 8210000000000000077, toPin: Table}
+    - {from: 8210000000000000077, fromPin: Result, to: 8210000000000000078, toPin: Table}
+    - {from: 8210000000000000061, fromPin: Index, to: 8210000000000000078, toPin: Key}
+    - {from: 8210000000000000061, fromPin: Index, to: 8210000000000000079, toPin: A}
+    - {from: 8210000000000000081, fromPin: Value, to: 8210000000000000080, toPin: B}
+    - {from: 8210000000000000080, fromPin: Result, to: 8210000000000000079, toPin: B}
+    - {from: 8210000000000000078, fromPin: Result, to: 8210000000000000075, toPin: entity_id}
+    - {from: 8210000000000000079, fromPin: Result, to: 8210000000000000075, toPin: text}
+    - {from: 8210000000000000074, fromPin: True, to: 8210000000000000075, toPin: Exec}
+    - {from: 8210000000000000083, fromPin: Value, to: 8210000000000000084, toPin: Table}
+    - {from: 8210000000000000084, fromPin: Result, to: 8210000000000000085, toPin: List}
+    - {from: 8210000000000000085, fromPin: Result, to: 8210000000000000086, toPin: A}
+    - {from: 8210000000000000086, fromPin: Result, to: 8210000000000000087, toPin: Condition}
+    - {from: 8210000000000000088, fromPin: Value, to: 8210000000000000089, toPin: Table}
+    - {from: 8210000000000000089, fromPin: Result, to: 8210000000000000090, toPin: Table}
+    - {from: 8210000000000000091, fromPin: Value, to: 8210000000000000092, toPin: Table}
+    - {from: 8210000000000000090, fromPin: Result, to: 8210000000000000087, toPin: True}
+    - {from: 8210000000000000092, fromPin: Result, to: 8210000000000000087, toPin: False}
+    - {from: 8210000000000000087, fromPin: Result, to: 8210000000000000082, toPin: entity_id}
+    - {from: 8210000000000000061, fromPin: Completed, to: 8210000000000000082, toPin: Exec}
+    - {from: 8210000000000000094, fromPin: Value, to: 8210000000000000095, toPin: Value}
+    - {from: 8210000000000000096, fromPin: Value, to: 8210000000000000097, toPin: Table}
+    - {from: 8210000000000000097, fromPin: Result, to: 8210000000000000098, toPin: List}
+    - {from: 8210000000000000098, fromPin: Result, to: 8210000000000000099, toPin: A}
+    - {from: 8210000000000000095, fromPin: Result, to: 8210000000000000100, toPin: A}
+    - {from: 8210000000000000099, fromPin: Result, to: 8210000000000000100, toPin: B}
+    - {from: 8210000000000000100, fromPin: Result, to: 8210000000000000101, toPin: Condition}
+    - {from: 8210000000000000093, fromPin: Then, to: 8210000000000000101, toPin: Exec}
+    - {from: 8210000000000000103, fromPin: Value, to: 8210000000000000102, toPin: conversation}
+    - {from: 8210000000000000101, fromPin: True, to: 8210000000000000102, toPin: Exec}
+    - {from: 8210000000000000102, fromPin: Then, to: 8210000000000000104, toPin: Exec}
+    - {from: 8210000000000000106, fromPin: Value, to: 8210000000000000107, toPin: Value}
+    - {from: 8210000000000000108, fromPin: Value, to: 8210000000000000109, toPin: Table}
+    - {from: 8210000000000000109, fromPin: Result, to: 8210000000000000110, toPin: Table}
+    - {from: 8210000000000000105, fromPin: index, to: 8210000000000000110, toPin: Key}
+    - {from: 8210000000000000110, fromPin: Result, to: 8210000000000000111, toPin: Value}
+    - {from: 8210000000000000107, fromPin: Result, to: 8210000000000000112, toPin: A}
+    - {from: 8210000000000000111, fromPin: Result, to: 8210000000000000112, toPin: B}
+    - {from: 8210000000000000112, fromPin: Result, to: 8210000000000000113, toPin: Condition}
+    - {from: 8210000000000000105, fromPin: Then, to: 8210000000000000113, toPin: Exec}
+    - {from: 8210000000000000115, fromPin: Value, to: 8210000000000000114, toPin: conversation}
+    - {from: 8210000000000000105, fromPin: index, to: 8210000000000000114, toPin: choice}
+    - {from: 8210000000000000113, fromPin: True, to: 8210000000000000114, toPin: Exec}
+    - {from: 8210000000000000114, fromPin: Then, to: 8210000000000000116, toPin: Exec}
+    - {from: 8210000000000000117, fromPin: Then, to: 8210000000000000118, toPin: Exec}
+    - {from: 8210000000000000118, fromPin: value, to: 8210000000000000119, toPin: A}
+    - {from: 8210000000000000119, fromPin: Result, to: 8210000000000000120, toPin: result}
+    - {from: 8210000000000000118, fromPin: Then, to: 8210000000000000120, toPin: Exec}
+    - {from: 8210000000000000122, fromPin: Value, to: 8210000000000000123, toPin: Value}
+    - {from: 8210000000000000123, fromPin: Result, to: 8210000000000000124, toPin: Condition}
+    - {from: 8210000000000000121, fromPin: Then, to: 8210000000000000124, toPin: Exec}
+    - {from: 8210000000000000126, fromPin: Value, to: 8210000000000000125, toPin: conversation}
+    - {from: 8210000000000000124, fromPin: True, to: 8210000000000000125, toPin: Exec}
+    - {from: 8210000000000000125, fromPin: Then, to: 8210000000000000127, toPin: Exec}
+    - {from: 8210000000000000124, fromPin: False, to: 8210000000000000127, toPin: Exec}
+    - {from: 8210000000000000129, fromPin: Result, to: 8210000000000000130, toPin: Value}
+    - {from: 8210000000000000128, fromPin: Then, to: 8210000000000000130, toPin: Exec}
+    - {from: 8210000000000000133, fromPin: Value, to: 8210000000000000132, toPin: Table}
+    - {from: 8210000000000000131, fromPin: entity_id, to: 8210000000000000132, toPin: Value}
+    - {from: 8210000000000000130, fromPin: Then, to: 8210000000000000132, toPin: Exec}
+    - {from: 8210000000000000136, fromPin: Value, to: 8210000000000000135, toPin: Table}
+    - {from: 8210000000000000134, fromPin: entity_id, to: 8210000000000000135, toPin: Value}
+    - {from: 8210000000000000132, fromPin: Then, to: 8210000000000000135, toPin: Exec}
+    - {from: 8210000000000000139, fromPin: Value, to: 8210000000000000138, toPin: Table}
+    - {from: 8210000000000000137, fromPin: entity_id, to: 8210000000000000138, toPin: Value}
+    - {from: 8210000000000000135, fromPin: Then, to: 8210000000000000138, toPin: Exec}
+    - {from: 8210000000000000141, fromPin: entity_id, to: 8210000000000000140, toPin: A}
+    - {from: 8210000000000000142, fromPin: entity_id, to: 8210000000000000140, toPin: B}
+    - {from: 8210000000000000143, fromPin: entity_id, to: 8210000000000000140, toPin: C}
+    - {from: 8210000000000000145, fromPin: Value, to: 8210000000000000144, toPin: Table}
+    - {from: 8210000000000000140, fromPin: Result, to: 8210000000000000144, toPin: Value}
+    - {from: 8210000000000000138, fromPin: Then, to: 8210000000000000144, toPin: Exec}
+    - {from: 8210000000000000148, fromPin: Value, to: 8210000000000000147, toPin: Table}
+    - {from: 8210000000000000146, fromPin: Result, to: 8210000000000000147, toPin: Value}
+    - {from: 8210000000000000144, fromPin: Then, to: 8210000000000000147, toPin: Exec}
+    - {from: 8210000000000000150, fromPin: Value, to: 8210000000000000151, toPin: Table}
+    - {from: 8210000000000000151, fromPin: Result, to: 8210000000000000149, toPin: entity_id}
+    - {from: 8210000000000000147, fromPin: Then, to: 8210000000000000149, toPin: Exec}
+    - {from: 8210000000000000153, fromPin: Value, to: 8210000000000000152, toPin: name}
+    - {from: 8210000000000000152, fromPin: entity_id, to: 8210000000000000154, toPin: Value}
+    - {from: 8210000000000000149, fromPin: Then, to: 8210000000000000154, toPin: Exec}
+    - {from: 8210000000000000156, fromPin: Value, to: 8210000000000000155, toPin: name}
+    - {from: 8210000000000000155, fromPin: entity_id, to: 8210000000000000157, toPin: Value}
+    - {from: 8210000000000000154, fromPin: Then, to: 8210000000000000157, toPin: Exec}
+    - {from: 8210000000000000157, fromPin: Then, to: 8210000000000000158, toPin: Exec}
+    - {from: 8210000000000000160, fromPin: Result, to: 8210000000000000159, toPin: value}
+    - {from: 8210000000000000158, fromPin: Then, to: 8210000000000000159, toPin: Exec}
+    - {from: 8210000000000000159, fromPin: Then, to: 8210000000000000161, toPin: Exec}
+    - {from: 8210000000000000161, fromPin: Then, to: 8210000000000000163, toPin: Exec}
+    - {from: 8210000000000000163, fromPin: value, to: 8210000000000000162, toPin: value}
+    - {from: 8210000000000000163, fromPin: Then, to: 8210000000000000162, toPin: Exec}
+    - {from: 8210000000000000162, fromPin: Then, to: 8210000000000000165, toPin: Exec}
+    - {from: 8210000000000000165, fromPin: value, to: 8210000000000000164, toPin: value}
+    - {from: 8210000000000000165, fromPin: Then, to: 8210000000000000164, toPin: Exec}
+    - {from: 8210000000000000167, fromPin: Value, to: 8210000000000000168, toPin: A}
+    - {from: 8210000000000000168, fromPin: Result, to: 8210000000000000169, toPin: Condition}
+    - {from: 8210000000000000166, fromPin: Then, to: 8210000000000000169, toPin: Exec}
+    - {from: 8210000000000000171, fromPin: Value, to: 8210000000000000170, toPin: entity_id}
+    - {from: 8210000000000000169, fromPin: True, to: 8210000000000000170, toPin: Exec}
+    - {from: 8210000000000000170, fromPin: Then, to: 8210000000000000172, toPin: Exec}
+    - {from: 8210000000000000169, fromPin: False, to: 8210000000000000172, toPin: Exec}
+    - {from: 8210000000000000172, fromPin: Then, to: 8210000000000000175, toPin: Exec}
+    - {from: 8210000000000000175, fromPin: value, to: 8210000000000000174, toPin: A}
+    - {from: 8210000000000000174, fromPin: Result, to: 8210000000000000173, toPin: value}
+    - {from: 8210000000000000175, fromPin: Then, to: 8210000000000000173, toPin: Exec}
+    - {from: 8210000000000000176, fromPin: Then, to: 8210000000000000177, toPin: Exec}
+    - {from: 8210000000000000178, fromPin: Then, to: 8210000000000000179, toPin: Exec}
+    - {from: 8210000000000000180, fromPin: Then, to: 8210000000000000181, toPin: Exec}
+    - {from: 8210000000000000182, fromPin: Then, to: 8210000000000000183, toPin: Exec}
+    - {from: 8210000000000000186, fromPin: Value, to: 8210000000000000185, toPin: A}
+    - {from: 8210000000000000185, fromPin: Result, to: 8210000000000000187, toPin: Value}
+    - {from: 8210000000000000184, fromPin: Then, to: 8210000000000000187, toPin: Exec}
+    - {from: 8210000000000000189, fromPin: Value, to: 8210000000000000188, toPin: value}
+    - {from: 8210000000000000187, fromPin: Then, to: 8210000000000000188, toPin: Exec}
+    - {from: 8210000000000000191, fromPin: Result, to: 8210000000000000190, toPin: default}
+    - {from: 8210000000000000188, fromPin: Then, to: 8210000000000000190, toPin: Exec}
+    - {from: 8210000000000000192, fromPin: Value, to: 8210000000000000193, toPin: Value}
+    - {from: 8210000000000000193, fromPin: Result, to: 8210000000000000194, toPin: A}
+    - {from: 8210000000000000190, fromPin: value, to: 8210000000000000195, toPin: A}
+    - {from: 8210000000000000196, fromPin: Result, to: 8210000000000000195, toPin: B}
+    - {from: 8210000000000000194, fromPin: Result, to: 8210000000000000197, toPin: A}
+    - {from: 8210000000000000195, fromPin: Result, to: 8210000000000000197, toPin: B}
+    - {from: 8210000000000000197, fromPin: Result, to: 8210000000000000198, toPin: Condition}
+    - {from: 8210000000000000190, fromPin: Then, to: 8210000000000000198, toPin: Exec}
+    - {from: 8210000000000000200, fromPin: Result, to: 8210000000000000199, toPin: value}
+    - {from: 8210000000000000198, fromPin: True, to: 8210000000000000199, toPin: Exec}
+    - {from: 8210000000000000190, fromPin: value, to: 8210000000000000201, toPin: dialogue}
+    - {from: 8210000000000000199, fromPin: Then, to: 8210000000000000201, toPin: Exec}
+    - {from: 8210000000000000201, fromPin: conversation, to: 8210000000000000202, toPin: Value}
+    - {from: 8210000000000000201, fromPin: Then, to: 8210000000000000202, toPin: Exec}
+    - {from: 8210000000000000203, fromPin: Value, to: 8210000000000000204, toPin: Value}
+    - {from: 8210000000000000204, fromPin: Result, to: 8210000000000000205, toPin: Condition}
+    - {from: 8210000000000000202, fromPin: Then, to: 8210000000000000205, toPin: Exec}
+    - {from: 8210000000000000206, fromPin: Value, to: 8210000000000000207, toPin: Value}
+    - {from: 8210000000000000205, fromPin: True, to: 8210000000000000207, toPin: Exec}
+    - {from: 8210000000000000207, fromPin: Then, to: 8210000000000000208, toPin: Exec}
+    - {from: 8210000000000000208, fromPin: Then, to: 8210000000000000211, toPin: Exec}
+    - {from: 8210000000000000211, fromPin: value, to: 8210000000000000210, toPin: A}
+    - {from: 8210000000000000210, fromPin: Result, to: 8210000000000000209, toPin: value}
+    - {from: 8210000000000000211, fromPin: Then, to: 8210000000000000209, toPin: Exec}
+    - {from: 8210000000000000209, fromPin: Then, to: 8210000000000000212, toPin: Exec}
+    - {from: 8210000000000000212, fromPin: Then, to: 8210000000000000213, toPin: Exec}
+    - {from: 8210000000000000205, fromPin: False, to: 8210000000000000213, toPin: Exec}
+    - {from: 8210000000000000214, fromPin: Value, to: 8210000000000000215, toPin: Value}
+    - {from: 8210000000000000215, fromPin: Result, to: 8210000000000000216, toPin: A}
+    - {from: 8210000000000000216, fromPin: Result, to: 8210000000000000217, toPin: Condition}
+    - {from: 8210000000000000198, fromPin: False, to: 8210000000000000217, toPin: Exec}
+    - {from: 8210000000000000218, fromPin: pressed, to: 8210000000000000219, toPin: Condition}
+    - {from: 8210000000000000217, fromPin: False, to: 8210000000000000219, toPin: Exec}
+    - {from: 8210000000000000219, fromPin: True, to: 8210000000000000220, toPin: Exec}
+    - {from: 8210000000000000222, fromPin: Value, to: 8210000000000000224, toPin: A}
+    - {from: 8210000000000000223, fromPin: Value, to: 8210000000000000224, toPin: B}
+    - {from: 8210000000000000221, fromPin: pressed, to: 8210000000000000225, toPin: A}
+    - {from: 8210000000000000224, fromPin: Result, to: 8210000000000000225, toPin: B}
+    - {from: 8210000000000000225, fromPin: Result, to: 8210000000000000226, toPin: Condition}
+    - {from: 8210000000000000219, fromPin: False, to: 8210000000000000226, toPin: Exec}
+    - {from: 8210000000000000226, fromPin: True, to: 8210000000000000227, toPin: Exec}

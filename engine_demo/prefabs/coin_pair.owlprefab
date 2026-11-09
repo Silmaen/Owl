@@ -57,7 +57,7 @@ Entities:
   Hierarchy:
     parentId: 5100000000000000001
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
 - Entity: 5100000000000000003
   Tag:
     tag: CoinRight
@@ -95,4 +95,4 @@ Entities:
   Hierarchy:
     parentId: 5100000000000000001
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs

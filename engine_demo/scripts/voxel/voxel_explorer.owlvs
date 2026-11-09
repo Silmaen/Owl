@@ -1,0 +1,231 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: target_distance, type: int, default: 100}
+    - {name: landing_point, type: vec2, default: "8, 8"}
+    - {name: objective_id, type: entity, default: 0}
+    - {name: leaving, type: bool, default: false}
+    - {name: shown, type: float, default: -1}
+    - {name: distance, type: float, default: 0}
+  nodes:
+    - id: 7500000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 7500000000000000002
+      type: call.ui.find
+      position: [304, 0]
+      values:
+        name: ObjectiveText
+    - id: 7500000000000000003
+      type: var.set
+      position: [672, 0]
+      values:
+        variable: objective_id
+    - id: 7500000000000000004
+      type: call.ui.transition_fade_in
+      position: [952, 0]
+      values:
+        duration: 0.4
+    - id: 7500000000000000005
+      type: event.on_update
+      position: [0, 224]
+    - id: 7500000000000000006
+      type: var.get
+      position: [304, 224]
+      values:
+        variable: leaving
+    - id: 7500000000000000007
+      type: call.ui.is_transition_active
+      position: [304, 344]
+    - id: 7500000000000000008
+      type: logic.or
+      position: [672, 224]
+    - id: 7500000000000000009
+      type: flow.branch
+      position: [952, 224]
+    - id: 7500000000000000010
+      type: call.input.is_action_just_pressed
+      position: [952, 360]
+      values:
+        action: pause
+    - id: 7500000000000000011
+      type: flow.branch
+      position: [1320, 224]
+    - id: 7500000000000000012
+      type: var.set
+      position: [1720, 224]
+      values:
+        Value: true
+        variable: leaving
+    - id: 7500000000000000013
+      type: call.scene.transition_to
+      position: [2064, 224]
+      values:
+        duration: 0.3
+        kind: fade_out
+        scene_path: scenes/world_map.owl
+    - id: 7500000000000000014
+      type: call.transform.get_position
+      position: [0, 560]
+      values:
+        split.xyz: true
+    - id: 7500000000000000015
+      type: var.get
+      position: [0, 736]
+      values:
+        variable: landing_point
+    - id: 7500000000000000016
+      type: math.break_vector2
+      position: [304, 560]
+    - id: 7500000000000000017
+      type: math.subtract
+      position: [304, 696]
+    - id: 7500000000000000018
+      type: math.subtract
+      position: [304, 832]
+    - id: 7500000000000000019
+      type: math.multiply
+      position: [672, 560]
+    - id: 7500000000000000020
+      type: math.multiply
+      position: [672, 696]
+    - id: 7500000000000000021
+      type: math.add
+      position: [952, 560]
+    - id: 7500000000000000022
+      type: math.sqrt
+      position: [952, 696]
+    - id: 7500000000000000023
+      type: math.floor
+      position: [1320, 560]
+    - id: 7500000000000000024
+      type: var.set
+      position: [1720, 560]
+      values:
+        variable: distance
+    - id: 7500000000000000025
+      type: call.gamestate.set
+      position: [2064, 560]
+      values:
+        key: voxel_distance
+    - id: 7500000000000000026
+      type: flow.sequence
+      position: [2408, 560]
+    - id: 7500000000000000027
+      type: var.get
+      position: [0, 1048]
+      values:
+        variable: shown
+    - id: 7500000000000000028
+      type: compare.not_equal
+      position: [0, 1168]
+    - id: 7500000000000000029
+      type: flow.branch
+      position: [304, 1048]
+    - id: 7500000000000000030
+      type: var.set
+      position: [672, 1048]
+      values:
+        variable: shown
+    - id: 7500000000000000031
+      type: var.get
+      position: [672, 1192]
+      values:
+        variable: target_distance
+    - id: 7500000000000000032
+      type: math.min
+      position: [952, 1048]
+    - id: 7500000000000000033
+      type: text.format
+      position: [952, 1184]
+      values:
+        Format: "Objective: explore the terrain, %d / %d blocks from the landing point"
+    - id: 7500000000000000034
+      type: var.get
+      position: [952, 1400]
+      values:
+        variable: objective_id
+    - id: 7500000000000000035
+      type: call.ui.set_text
+      position: [1320, 1048]
+    - id: 7500000000000000036
+      type: compare.greater_equal
+      position: [0, 1600]
+    - id: 7500000000000000037
+      type: flow.branch
+      position: [304, 1600]
+    - id: 7500000000000000038
+      type: var.set
+      position: [672, 1600]
+      values:
+        Value: true
+        variable: leaving
+    - id: 7500000000000000039
+      type: call.gamestate.set
+      position: [952, 1600]
+      values:
+        key: level_voxel_done
+        value: 1
+    - id: 7500000000000000040
+      type: call.sound.play
+      position: [1320, 1600]
+      values:
+        asset_path: sounds/ui/victory.wav
+    - id: 7500000000000000041
+      type: call.scene.transition_to
+      position: [1720, 1600]
+      values:
+        duration: 0.4
+        kind: fade_out
+        scene_path: scenes/world_map.owl
+  links:
+    - {from: 7500000000000000002, fromPin: entity_id, to: 7500000000000000003, toPin: Value}
+    - {from: 7500000000000000001, fromPin: Then, to: 7500000000000000003, toPin: Exec}
+    - {from: 7500000000000000003, fromPin: Then, to: 7500000000000000004, toPin: Exec}
+    - {from: 7500000000000000006, fromPin: Value, to: 7500000000000000008, toPin: A}
+    - {from: 7500000000000000007, fromPin: active, to: 7500000000000000008, toPin: B}
+    - {from: 7500000000000000008, fromPin: Result, to: 7500000000000000009, toPin: Condition}
+    - {from: 7500000000000000010, fromPin: pressed, to: 7500000000000000011, toPin: Condition}
+    - {from: 7500000000000000005, fromPin: Then, to: 7500000000000000009, toPin: Exec}
+    - {from: 7500000000000000009, fromPin: False, to: 7500000000000000011, toPin: Exec}
+    - {from: 7500000000000000011, fromPin: True, to: 7500000000000000012, toPin: Exec}
+    - {from: 7500000000000000012, fromPin: Then, to: 7500000000000000013, toPin: Exec}
+    - {from: 7500000000000000015, fromPin: Value, to: 7500000000000000016, toPin: Value}
+    - {from: 7500000000000000014, fromPin: x, to: 7500000000000000017, toPin: A}
+    - {from: 7500000000000000016, fromPin: X, to: 7500000000000000017, toPin: B}
+    - {from: 7500000000000000014, fromPin: z, to: 7500000000000000018, toPin: A}
+    - {from: 7500000000000000016, fromPin: Y, to: 7500000000000000018, toPin: B}
+    - {from: 7500000000000000017, fromPin: Result, to: 7500000000000000019, toPin: A}
+    - {from: 7500000000000000017, fromPin: Result, to: 7500000000000000019, toPin: B}
+    - {from: 7500000000000000018, fromPin: Result, to: 7500000000000000020, toPin: A}
+    - {from: 7500000000000000018, fromPin: Result, to: 7500000000000000020, toPin: B}
+    - {from: 7500000000000000019, fromPin: Result, to: 7500000000000000021, toPin: A}
+    - {from: 7500000000000000020, fromPin: Result, to: 7500000000000000021, toPin: B}
+    - {from: 7500000000000000021, fromPin: Result, to: 7500000000000000022, toPin: A}
+    - {from: 7500000000000000022, fromPin: Result, to: 7500000000000000023, toPin: A}
+    - {from: 7500000000000000023, fromPin: Result, to: 7500000000000000024, toPin: Value}
+    - {from: 7500000000000000011, fromPin: False, to: 7500000000000000024, toPin: Exec}
+    - {from: 7500000000000000024, fromPin: Value, to: 7500000000000000025, toPin: value}
+    - {from: 7500000000000000024, fromPin: Then, to: 7500000000000000025, toPin: Exec}
+    - {from: 7500000000000000025, fromPin: Then, to: 7500000000000000026, toPin: Exec}
+    - {from: 7500000000000000024, fromPin: Value, to: 7500000000000000028, toPin: A}
+    - {from: 7500000000000000027, fromPin: Value, to: 7500000000000000028, toPin: B}
+    - {from: 7500000000000000028, fromPin: Result, to: 7500000000000000029, toPin: Condition}
+    - {from: 7500000000000000026, fromPin: Then 1, to: 7500000000000000029, toPin: Exec}
+    - {from: 7500000000000000024, fromPin: Value, to: 7500000000000000030, toPin: Value}
+    - {from: 7500000000000000029, fromPin: True, to: 7500000000000000030, toPin: Exec}
+    - {from: 7500000000000000024, fromPin: Value, to: 7500000000000000032, toPin: A}
+    - {from: 7500000000000000031, fromPin: Value, to: 7500000000000000032, toPin: B}
+    - {from: 7500000000000000032, fromPin: Result, to: 7500000000000000033, toPin: A}
+    - {from: 7500000000000000031, fromPin: Value, to: 7500000000000000033, toPin: B}
+    - {from: 7500000000000000034, fromPin: Value, to: 7500000000000000035, toPin: entity_id}
+    - {from: 7500000000000000033, fromPin: Result, to: 7500000000000000035, toPin: text}
+    - {from: 7500000000000000030, fromPin: Then, to: 7500000000000000035, toPin: Exec}
+    - {from: 7500000000000000024, fromPin: Value, to: 7500000000000000036, toPin: A}
+    - {from: 7500000000000000031, fromPin: Value, to: 7500000000000000036, toPin: B}
+    - {from: 7500000000000000036, fromPin: Result, to: 7500000000000000037, toPin: Condition}
+    - {from: 7500000000000000026, fromPin: Then 2, to: 7500000000000000037, toPin: Exec}
+    - {from: 7500000000000000037, fromPin: True, to: 7500000000000000038, toPin: Exec}
+    - {from: 7500000000000000038, fromPin: Then, to: 7500000000000000039, toPin: Exec}
+    - {from: 7500000000000000039, fromPin: Then, to: 7500000000000000040, toPin: Exec}
+    - {from: 7500000000000000040, fromPin: Then, to: 7500000000000000041, toPin: Exec}

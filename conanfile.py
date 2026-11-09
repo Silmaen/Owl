@@ -156,7 +156,7 @@ class OwlEngineConan(ConanFile):
             self.requires("openal-soft/1.25.2")
             self.requires("libsndfile/1.2.2")
         if self.options.script:
-            self.requires("lua/5.5.0")
+            self.requires("luau/0.746")
         if self.options.gui:
             self.requires("imgui/1.92.9b-docking", transitive_headers=True, force=True)
             self.requires("imguizmo/1.10")

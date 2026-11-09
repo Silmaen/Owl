@@ -57,7 +57,13 @@ auto load(ScriptInstance& ioInstance, const VisualScript& iScript, const std::st
 // on_update: counter = counter + dt.
 auto accumulator() -> VisualScript {
 	VisualScript script;
-	script.variables.push_back({.name = "counter", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	script.variables.push_back({.name = "counter",
+								.type = ScriptPropertyType::Float,
+								.defaultValue = "0",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
 	const auto update = addNode(script, "event.on_update");
 	const auto set = addNode(script, "var.set", {{"variable", "counter"}});
 	const auto get = addNode(script, "var.get", {{"variable", "counter"}});
@@ -149,11 +155,107 @@ TEST(VisualScript, CompiledGraphRunsAndExposesProperties) {
 	core::Log::invalidate();
 }
 
+TEST(VisualScript, InternalVariablesAreNotPropertiesAndBoundsReachTheInspector) {
+	core::Log::init(core::Log::Level::Off);
+	auto script = accumulator();
+	script.variables.push_back({.name = "seen",
+								.type = ScriptPropertyType::Numbers,
+								.defaultValue = "",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = false});
+	script.variables.front().min = 0.f;
+	script.variables.front().max = 24.f;
+	const auto update = std::ranges::find(script.nodes, std::string{"event.on_update"}, &GraphNode::type)->id;
+	const auto first = std::ranges::find(script.links, update, &GraphLink::fromNode);
+	const auto next = first->toNode;
+	script.links.erase(first);
+	const auto list = addNode(script, "var.get", {{"variable", "seen"}});
+	const auto append = addNode(script, "table.append");
+	link(script, update, "Then", append, "Exec");
+	link(script, list, "Value", append, "List");
+	link(script, update, "dt", append, "Value");
+	link(script, append, "Then", next, "Exec");
+	const auto loaded = deserialize(serialize(script), "internal.owlvs");
+	ASSERT_TRUE(loaded.has_value());
+	EXPECT_FALSE(loaded->variables.back().exposed);
+	const auto lua = compile(script);
+	ASSERT_TRUE(lua.has_value()) << lua.error().front().message;
+	EXPECT_TRUE(lua->contains("\nseen = {}\n")) << *lua;
+	const auto properties = ScriptEngine::extractPropertiesFromBuffer(toBytes(serialize(script)), "internal.owlvs");
+	ASSERT_EQ(properties.size(), 1u);
+	EXPECT_EQ(properties.front().name, "counter");
+	EXPECT_EQ(properties.front().min, 0.f);
+	EXPECT_EQ(properties.front().max, 24.f);
+	EXPECT_FALSE(properties.front().step.has_value());
+	EXPECT_EQ(loaded->variables.front().max, 24.f);
+	auto scn = mkShared<scene::Scene>();
+	ScriptInstance instance;
+	instance.setScene(scn.get());
+	ASSERT_TRUE(load(instance, script, "internal.owlvs"));
+	instance.onUpdate(0.25f);
+	instance.onUpdate(0.5f);
+	EXPECT_NEAR(instance.getPropertyFloat("counter").value_or(0.f), 0.75f, 1e-5f);
+	core::Log::invalidate();
+}
+
+TEST(VisualScript, NilClearsAVariable) {
+	core::Log::init(core::Log::Level::Off);
+	VisualScript script;
+	script.variables.push_back({.name = "cells",
+								.type = ScriptPropertyType::Numbers,
+								.defaultValue = "1, 2",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = false});
+	script.variables.push_back({.name = "cleared",
+								.type = ScriptPropertyType::Bool,
+								.defaultValue = "false",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
+	const auto create = addNode(script, "event.on_create");
+	const auto clear = addNode(script, "var.set", {{"variable", "cells"}});
+	const auto none = addNode(script, "value.nil");
+	const auto set = addNode(script, "var.set", {{"variable", "cleared"}});
+	const auto read = addNode(script, "var.get", {{"variable", "cells"}});
+	const auto unset = addNode(script, "logic.is_set");
+	const auto negate = addNode(script, "logic.not");
+	link(script, create, "Then", clear, "Exec");
+	link(script, none, "Result", clear, "Value");
+	link(script, clear, "Then", set, "Exec");
+	link(script, read, "Value", unset, "Value");
+	link(script, unset, "Result", negate, "A");
+	link(script, negate, "Result", set, "Value");
+	auto scn = mkShared<scene::Scene>();
+	ScriptInstance instance;
+	instance.setScene(scn.get());
+	ASSERT_TRUE(load(instance, script, "nil.owlvs"));
+	instance.onCreate();
+	EXPECT_TRUE(instance.getPropertyBool("cleared").value_or(false));
+	core::Log::invalidate();
+}
+
 TEST(VisualScript, BranchLoopAndCustomEvent) {
 	core::Log::init(core::Log::Level::Off);
 	VisualScript script;
-	script.variables.push_back({.name = "total", .type = ScriptPropertyType::Int, .defaultValue = "0"});
-	script.variables.push_back({.name = "big", .type = ScriptPropertyType::Bool, .defaultValue = "false"});
+	script.variables.push_back({.name = "total",
+								.type = ScriptPropertyType::Int,
+								.defaultValue = "0",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
+	script.variables.push_back({.name = "big",
+								.type = ScriptPropertyType::Bool,
+								.defaultValue = "false",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
 	const auto custom = addNode(script, "event.custom", {{"function", "add_numbers"}});
 	const auto loop = addNode(script, "flow.for", {{"First", "1"}, {"Last", "4"}});
 	const auto set = addNode(script, "var.set", {{"variable", "total"}});
@@ -186,7 +288,13 @@ TEST(VisualScript, BranchLoopAndCustomEvent) {
 TEST(VisualScript, StringValuesCannotInjectCode) {
 	core::Log::init(core::Log::Level::Off);
 	VisualScript script;
-	script.variables.push_back({.name = "text", .type = ScriptPropertyType::String, .defaultValue = ""});
+	script.variables.push_back({.name = "text",
+								.type = ScriptPropertyType::String,
+								.defaultValue = "",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
 	const auto create = addNode(script, "event.on_create");
 	const auto set = addNode(script, "var.set", {{"variable", "text"}, {"Value", "\"\n text = 'hacked' --\\ \t]]"}});
 	link(script, create, "Then", set, "Exec");
@@ -199,7 +307,13 @@ TEST(VisualScript, StringValuesCannotInjectCode) {
 
 TEST(VisualScript, NegativeNumbersStayNumbers) {
 	VisualScript script;
-	script.variables.push_back({.name = "value", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	script.variables.push_back({.name = "value",
+								.type = ScriptPropertyType::Float,
+								.defaultValue = "0",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
 	const auto create = addNode(script, "event.on_create");
 	const auto set = addNode(script, "var.set", {{"variable", "value"}});
 	const auto sub = addNode(script, "math.subtract", {{"A", "1"}, {"B", "-2"}});
@@ -207,7 +321,7 @@ TEST(VisualScript, NegativeNumbersStayNumbers) {
 	link(script, sub, "Result", set, "Value");
 	const auto lua = compile(script);
 	ASSERT_TRUE(lua.has_value());
-	EXPECT_TRUE(lua->contains("(1 - (-2))"));
+	EXPECT_TRUE(lua->contains("value = 1 - (-2)"));
 }
 
 TEST(VisualScript, UnsetOptionalArgumentsAreLeftOut) {
@@ -258,7 +372,7 @@ TEST(VisualScript, PrefixedComponentsFormANamedGroup) {
 	link(script, create, "Then", set, "Exec");
 	const auto lua = compile(script);
 	ASSERT_TRUE(lua.has_value()) << lua.error().front().message;
-	EXPECT_TRUE(lua->contains("physics.set_velocity(entity_id, 1.5, (-2))")) << *lua;
+	EXPECT_TRUE(lua->contains("physics.set_velocity(entity_id, 1.5, -2)")) << *lua;
 	const auto cell = addNode(script, "call.isometric.pick_cell");
 	const auto outputs = getNodePins(script, *script.findNode(cell)).outputs;
 	EXPECT_TRUE(std::ranges::any_of(
@@ -272,7 +386,13 @@ TEST(VisualScript, ConstantsHaveOnlyAnOutput) {
 	ASSERT_EQ(number->inputs.size(), 1u);
 	EXPECT_TRUE(number->inputs.front().field);
 	VisualScript script;
-	script.variables.push_back({.name = "speed", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	script.variables.push_back({.name = "speed",
+								.type = ScriptPropertyType::Float,
+								.defaultValue = "0",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
 	const auto constant = addNode(script, "value.number", {{"Value", "4"}});
 	const auto other = addNode(script, "value.number", {{"Value", "9"}});
 	const auto create = addNode(script, "event.on_create");
@@ -299,7 +419,7 @@ TEST(VisualScript, GroupedPinsPassOneArgumentPerComponent) {
 	ASSERT_TRUE(lua.has_value()) << lua.error().front().message;
 	EXPECT_TRUE(lua->contains("= { x = ")) << *lua;
 	EXPECT_TRUE(lua->contains(".x, ")) << *lua;
-	EXPECT_TRUE(lua->contains("transform.set_position(entity_id, 1, (-2), 3.5)")) << *lua;
+	EXPECT_TRUE(lua->contains("transform.set_position(entity_id, 1, -2, 3.5)")) << *lua;
 	script.findNode(second)->values["xyz"] = "1, 2";
 	EXPECT_FALSE(compile(script).has_value());
 }
@@ -307,9 +427,27 @@ TEST(VisualScript, GroupedPinsPassOneArgumentPerComponent) {
 TEST(VisualScript, ColorVariablesAndCompoundNodesRun) {
 	core::Log::init(core::Log::Level::Off);
 	VisualScript script;
-	script.variables.push_back({.name = "tint", .type = ScriptPropertyType::Color, .defaultValue = "0.25, 0.5, 1, 1"});
-	script.variables.push_back({.name = "green", .type = ScriptPropertyType::Float, .defaultValue = "0"});
-	script.variables.push_back({.name = "depth", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	script.variables.push_back({.name = "tint",
+								.type = ScriptPropertyType::Color,
+								.defaultValue = "0.25, 0.5, 1, 1",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
+	script.variables.push_back({.name = "green",
+								.type = ScriptPropertyType::Float,
+								.defaultValue = "0",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
+	script.variables.push_back({.name = "depth",
+								.type = ScriptPropertyType::Float,
+								.defaultValue = "0",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
 	const auto create = addNode(script, "event.on_create");
 	const auto setGreen = addNode(script, "var.set", {{"variable", "green"}});
 	const auto setDepth = addNode(script, "var.set", {{"variable", "depth"}});
@@ -366,7 +504,13 @@ TEST(VisualScript, ErrorsPointAtTheFaultyNode) {
 	EXPECT_EQ(errorsOf(literal).front().node, log);
 
 	VisualScript badName;
-	badName.variables.push_back({.name = "end", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	badName.variables.push_back({.name = "end",
+								 .type = ScriptPropertyType::Float,
+								 .defaultValue = "0",
+								 .min = {},
+								 .max = {},
+								 .step = {},
+								 .exposed = true});
 	EXPECT_EQ(errorsOf(badName).size(), 1u);
 
 	VisualScript missingVariable;
@@ -387,7 +531,7 @@ TEST(VisualScript, InvalidGraphFailsToLoad) {
 	core::Log::invalidate();
 }
 
-TEST(VisualScript, EngineDemoGraphsCompile) {
+TEST(VisualScript, EngineDemoGraphsCompileAndLoad) {
 	core::Log::init(core::Log::Level::Off);
 	size_t graphs = 0;
 	for (const auto& entry: std::filesystem::recursive_directory_iterator(test::getRootPath() / "engine_demo")) {
@@ -400,6 +544,8 @@ TEST(VisualScript, EngineDemoGraphsCompile) {
 		ASSERT_TRUE(script.has_value()) << entry.path();
 		const auto lua = compile(*script);
 		EXPECT_TRUE(lua.has_value()) << entry.path() << ": " << (lua ? "" : lua.error().front().message);
+		const ScriptInstance instance;
+		EXPECT_TRUE(instance.createFromBuffer(toBytes(text), entry.path().filename().string(), 0)) << entry.path();
 	}
 	EXPECT_GT(graphs, 0u);
 	core::Log::invalidate();
@@ -410,12 +556,19 @@ namespace {
 // double(x) -> y = x * 2, called from on_create into `result`.
 auto doubler() -> VisualScript {
 	VisualScript script;
-	script.variables.push_back({.name = "result", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	script.variables.push_back({.name = "result",
+								.type = ScriptPropertyType::Float,
+								.defaultValue = "0",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
 	script.functions.push_back({.name = "double",
 								.inputs = {{.name = "x", .type = PinType::Number}},
 								.outputs = {{.name = "y", .type = PinType::Number}},
 								.macro = false,
-								.exits = {"Then"}});
+								.exits = {"Then"},
+								.exported = false});
 	const auto entry = addNode(script, "func.entry", {{"function", "double"}});
 	const auto times = addNode(script, "math.multiply", {{"B", "2"}});
 	const auto ret = addNode(script, "func.return", {{"function", "double"}});
@@ -455,15 +608,58 @@ TEST(VisualScript, FunctionsTakeParametersAndReturnResults) {
 	core::Log::invalidate();
 }
 
+// is_open() -> true, the condition of a dialogue Branch.
+TEST(VisualScript, ExportedFunctionsAreGlobalsTheEngineCalls) {
+	core::Log::init(core::Log::Level::Off);
+	VisualScript script;
+	script.functions.push_back({.name = "is_open",
+								.inputs = {},
+								.outputs = {{.name = "open", .type = PinType::Boolean}},
+								.macro = false,
+								.exits = {"Then"},
+								.exported = false});
+	const auto entry = addNode(script, "func.entry", {{"function", "is_open"}});
+	const auto ret = addNode(script, "func.return", {{"function", "is_open"}, {"open", "true"}});
+	link(script, entry, "Then", ret, "Exec");
+	auto scn = mkShared<scene::Scene>();
+	{
+		ScriptInstance instance;
+		instance.setScene(scn.get());
+		ASSERT_TRUE(load(instance, script, "local.owlvs"));
+		EXPECT_FALSE(instance.callFunction("is_open"));
+	}
+	script.functions.front().exported = true;
+	const auto loaded = deserialize(serialize(script), "exported.owlvs");
+	ASSERT_TRUE(loaded.has_value());
+	EXPECT_TRUE(loaded->functions.front().exported);
+	const auto lua = compile(script);
+	ASSERT_TRUE(lua.has_value()) << lua.error().front().message;
+	EXPECT_FALSE(lua->contains("local is_open")) << *lua;
+	ScriptInstance instance;
+	instance.setScene(scn.get());
+	ASSERT_TRUE(load(instance, script, "exported.owlvs"));
+	EXPECT_TRUE(instance.callFunction("is_open"));
+	script.functions.front().macro = true;
+	EXPECT_FALSE(errorsOf(script).empty());
+	core::Log::invalidate();
+}
+
 TEST(VisualScript, MacrosContinueByTheExitTheirReturnNames) {
 	core::Log::init(core::Log::Level::Off);
 	VisualScript script;
-	script.variables.push_back({.name = "label", .type = ScriptPropertyType::String, .defaultValue = ""});
+	script.variables.push_back({.name = "label",
+								.type = ScriptPropertyType::String,
+								.defaultValue = "",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
 	script.functions.push_back({.name = "classify",
 								.inputs = {{.name = "x", .type = PinType::Number}},
 								.outputs = {},
 								.macro = true,
-								.exits = {"Big", "Small"}});
+								.exits = {"Big", "Small"},
+								.exported = false});
 	const auto entry = addNode(script, "func.entry", {{"function", "classify"}});
 	const auto less = addNode(script, "compare.less", {{"B", "10"}});
 	const auto branch = addNode(script, "flow.branch");
@@ -505,7 +701,13 @@ TEST(VisualScript, LibraryFunctionsCompileIntoTheCaller) {
 		return std::nullopt;
 	});
 	VisualScript script;
-	script.variables.push_back({.name = "result", .type = ScriptPropertyType::Float, .defaultValue = "0"});
+	script.variables.push_back({.name = "result",
+								.type = ScriptPropertyType::Float,
+								.defaultValue = "0",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
 	const auto create = addNode(script, "event.on_create");
 	const auto call =
 			addNode(script, "func.call", {{"function", "double"}, {"library", "scripts/lib/maths.owlvs"}, {"x", "4"}});

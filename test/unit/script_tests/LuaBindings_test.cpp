@@ -18,6 +18,7 @@
 #include <scene/SettingsManager.h>
 #include <scene/component/Transform.h>
 #include <scene/component/components.h>
+#include <script/EntityHandle.h>
 #include <script/ScriptEngine.h>
 #include <script/ScriptInstance.h>
 #include <sound/SoundCommand.h>
@@ -71,7 +72,7 @@ TEST(LuaBindings, sceneFindEntity) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
 	auto entity = scn->createEntity("MyTarget");
-	const auto expectedUuid = static_cast<uint64_t>(entity.getUUID());
+	const auto expectedHandle = getEntityHandle(*scn, entity);
 
 
 	const std::string script = "found_id = 0\n"
@@ -87,7 +88,7 @@ TEST(LuaBindings, sceneFindEntity) {
 
 	const auto foundId = inst.getPropertyInt("found_id");
 	ASSERT_TRUE(foundId.has_value());
-	EXPECT_EQ(static_cast<uint64_t>(foundId.value()), expectedUuid);
+	EXPECT_EQ(static_cast<uint64_t>(foundId.value()), expectedHandle);
 
 	core::Log::invalidate();
 }
@@ -213,8 +214,7 @@ TEST(LuaBindings, entityGetLink) {
 	ASSERT_TRUE(unlinked.createFromBuffer(data, "no_link_test", static_cast<uint64_t>(loose.getUUID())));
 	unlinked.onCreate();
 
-	EXPECT_EQ(linked.getPropertyInt("linked").value_or(-1),
-			  static_cast<int64_t>(static_cast<uint64_t>(target.getUUID())));
+	EXPECT_EQ(linked.getPropertyInt("linked").value_or(-1), static_cast<int64_t>(getEntityHandle(*scn, target)));
 	EXPECT_EQ(unlinked.getPropertyInt("linked").value_or(-1), 0);
 	core::Log::invalidate();
 }
@@ -238,9 +238,9 @@ TEST(LuaBindings, entityTintOfSprites) {
 										   "bare_has = entity.get_tint({2}) ~= nil\n"
 										   "missing = entity.set_tint(12345, 1, 1, 1)\n"
 										   "end\n",
-										   static_cast<int64_t>(static_cast<uint64_t>(animated.getUUID())),
-										   static_cast<int64_t>(static_cast<uint64_t>(plain.getUUID())),
-										   static_cast<int64_t>(static_cast<uint64_t>(bare.getUUID())));
+										   static_cast<int64_t>(getEntityHandle(*scn, animated)),
+										   static_cast<int64_t>(getEntityHandle(*scn, plain)),
+										   static_cast<int64_t>(getEntityHandle(*scn, bare)));
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
 	inst.setScene(scn.get());
@@ -282,8 +282,8 @@ TEST(LuaBindings, entityMeshRenderer) {
 										   "tinted = entity.set_tint({0}, 1, 0, 0, 0.5)\n"
 										   "r, g, b, a = entity.get_tint({0})\n"
 										   "end\n",
-										   static_cast<int64_t>(static_cast<uint64_t>(crate.getUUID())),
-										   static_cast<int64_t>(static_cast<uint64_t>(bare.getUUID())));
+										   static_cast<int64_t>(getEntityHandle(*scn, crate)),
+										   static_cast<int64_t>(getEntityHandle(*scn, bare)));
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
 	inst.setScene(scn.get());
@@ -324,8 +324,8 @@ TEST(LuaBindings, entityMaterial) {
 										   "bare_set = entity.set_material({1}, 0, 'x.owlmat')\n"
 										   "bare_get = entity.get_material({1}, 0) ~= nil\n"
 										   "end\n",
-										   static_cast<int64_t>(static_cast<uint64_t>(crate.getUUID())),
-										   static_cast<int64_t>(static_cast<uint64_t>(bare.getUUID())));
+										   static_cast<int64_t>(getEntityHandle(*scn, crate)),
+										   static_cast<int64_t>(getEntityHandle(*scn, bare)));
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
 	inst.setScene(scn.get());
@@ -371,8 +371,8 @@ TEST(LuaBindings, entityLight) {
 										   "bare_range = entity.set_light_range({1}, 1)\n"
 										   "bare_get = entity.get_light_intensity({1}) ~= nil\n"
 										   "end\n",
-										   static_cast<int64_t>(static_cast<uint64_t>(lamp.getUUID())),
-										   static_cast<int64_t>(static_cast<uint64_t>(bare.getUUID())));
+										   static_cast<int64_t>(getEntityHandle(*scn, lamp)),
+										   static_cast<int64_t>(getEntityHandle(*scn, bare)));
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
 	inst.setScene(scn.get());
@@ -426,8 +426,8 @@ TEST(LuaBindings, entityParticles) {
 										   "bare_emit = entity.particles_emit({1}, 3)\n"
 										   "bare_emitting = entity.particles_is_emitting({1}) ~= nil\n"
 										   "end\n",
-										   static_cast<int64_t>(static_cast<uint64_t>(fire.getUUID())),
-										   static_cast<int64_t>(static_cast<uint64_t>(bare.getUUID())));
+										   static_cast<int64_t>(getEntityHandle(*scn, fire)),
+										   static_cast<int64_t>(getEntityHandle(*scn, bare)));
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
 	inst.setScene(scn.get());
@@ -465,7 +465,7 @@ TEST(LuaBindings, entityTintReachesAParticleEmitter) {
 										   "tinted = entity.set_tint({0}, 0.9, 0.3, 0.1)\n"
 										   "r, g, b, a = entity.get_tint({0})\n"
 										   "end\n",
-										   static_cast<int64_t>(static_cast<uint64_t>(burst.getUUID())));
+										   static_cast<int64_t>(getEntityHandle(*scn, burst)));
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
 	inst.setScene(scn.get());
@@ -497,7 +497,7 @@ TEST(LuaBindings, entityLight2DSharesTheLightBindings) {
 										   "set_off = entity.set_light_enabled({0}, false)\n"
 										   "intensity = entity.get_light_intensity({0})\n"
 										   "end\n",
-										   static_cast<int64_t>(static_cast<uint64_t>(torch.getUUID())));
+										   static_cast<int64_t>(getEntityHandle(*scn, torch)));
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
 	inst.setScene(scn.get());
@@ -650,7 +650,7 @@ TEST(LuaBindings, sceneCreateAndDestroyEntity) {
 	const auto created = inst.getPropertyInt("id");
 	ASSERT_TRUE(created.has_value());
 	EXPECT_NE(created.value(), 0);
-	const core::UUID createdUuid{static_cast<uint64_t>(created.value())};
+	const core::UUID createdUuid = getEntityHandleUuid(*scn, static_cast<uint64_t>(created.value()));
 	// Destruction is deferred to the next flush point.
 	EXPECT_TRUE(scn->isPendingDestruction(scn->findEntityByUUID(createdUuid)));
 	scn->flushPendingDestructions();
@@ -1198,7 +1198,7 @@ TEST(LuaBindings, doorActivateTransitionsIdleToOpening) {
 	auto entity = scn->createEntity("Door");
 	entity.addComponent<scene::component::RaycastDoor>();
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
-	const auto signedUuid = static_cast<int64_t>(uuid);
+	const auto signedUuid = static_cast<int64_t>(getEntityHandle(*scn, entity));
 
 	const std::string script = std::format("state = \"\"\n"
 										   "function on_create()\n"
@@ -1228,7 +1228,7 @@ TEST(LuaBindings, doorIsOpenAndCloseSwitchesState) {
 	door.holdTimer = 10.f;
 	door.currentOffset = 1.f;
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
-	const auto signedUuid = static_cast<int64_t>(uuid);
+	const auto signedUuid = static_cast<int64_t>(getEntityHandle(*scn, entity));
 
 	const std::string script = std::format("opened = false\n"
 										   "function on_create()\n"
@@ -1254,7 +1254,7 @@ TEST(LuaBindings, pushwallActivateAndHasMoved) {
 	auto entity = scn->createEntity("Push");
 	entity.addComponent<scene::component::RaycastPushWall>();
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
-	const auto signedUuid = static_cast<int64_t>(uuid);
+	const auto signedUuid = static_cast<int64_t>(getEntityHandle(*scn, entity));
 
 	const std::string script = std::format("before = false\n"
 										   "state = \"\"\n"
@@ -1386,8 +1386,8 @@ TEST(LuaBindings, sceneReadsTheWorldPartitionAndThePlanetAltitude) {
 										   "  cells = scene.get_loaded_world_cells()\n"
 										   "  scene.set_world_streaming(true)\n"
 										   "end\n",
-										   static_cast<int64_t>(static_cast<uint64_t>(planet.getUUID())),
-										   static_cast<int64_t>(static_cast<uint64_t>(probe.getUUID())));
+										   static_cast<int64_t>(getEntityHandle(*scn, planet)),
+										   static_cast<int64_t>(getEntityHandle(*scn, probe)));
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
 	inst.setScene(scn.get());

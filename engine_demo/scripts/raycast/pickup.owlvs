@@ -1,0 +1,177 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: item, type: string, default: ""}
+    - {name: label, type: string, default: ""}
+    - {name: collected, type: bool, default: false}
+  nodes:
+    - id: 7490000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 7490000000000000002
+      type: call.entity.get_name
+      position: [320, 0]
+    - id: 7490000000000000003
+      type: text.join
+      position: [320, 120]
+      values:
+        A: picked_
+    - id: 7490000000000000004
+      type: call.gamestate.get
+      position: [648, 0]
+      values:
+        default: false
+    - id: 7490000000000000005
+      type: flow.branch
+      position: [984, 0]
+    - id: 7490000000000000006
+      type: var.set
+      position: [1280, 0]
+      values:
+        Value: true
+        variable: collected
+    - id: 7490000000000000007
+      type: call.scene.destroy_entity
+      position: [1576, 0]
+    - id: 7490000000000000008
+      type: event.custom
+      position: [0, 336]
+      values:
+        function: on_pickup
+    - id: 7490000000000000009
+      type: var.get
+      position: [320, 336]
+      values:
+        variable: collected
+    - id: 7490000000000000010
+      type: var.get
+      position: [320, 456]
+      values:
+        variable: item
+    - id: 7490000000000000011
+      type: value.string
+      position: [320, 576]
+    - id: 7490000000000000012
+      type: compare.equal
+      position: [648, 336]
+    - id: 7490000000000000013
+      type: logic.or
+      position: [648, 472]
+    - id: 7490000000000000014
+      type: flow.branch
+      position: [984, 336]
+    - id: 7490000000000000015
+      type: var.set
+      position: [1280, 336]
+      values:
+        Value: true
+        variable: collected
+    - id: 7490000000000000016
+      type: var.get
+      position: [1280, 480]
+      values:
+        variable: item
+    - id: 7490000000000000017
+      type: text.join
+      position: [1576, 336]
+      values:
+        A: inv_
+    - id: 7490000000000000018
+      type: call.gamestate.get
+      position: [1896, 336]
+      values:
+        default: 0
+    - id: 7490000000000000019
+      type: math.add
+      position: [2224, 336]
+      values:
+        B: 1
+    - id: 7490000000000000020
+      type: call.gamestate.set
+      position: [2504, 336]
+    - id: 7490000000000000021
+      type: call.entity.get_name
+      position: [2504, 512]
+    - id: 7490000000000000022
+      type: text.join
+      position: [2504, 632]
+      values:
+        A: picked_
+    - id: 7490000000000000023
+      type: call.gamestate.set
+      position: [2832, 336]
+      values:
+        value: true
+    - id: 7490000000000000024
+      type: var.get
+      position: [0, 848]
+      values:
+        variable: label
+    - id: 7490000000000000025
+      type: text.join
+      position: [0, 968]
+      values:
+        A: "Picked up: "
+    - id: 7490000000000000026
+      type: call.gamestate.set
+      position: [320, 848]
+      values:
+        key: inv_toast
+    - id: 7490000000000000027
+      type: value.table
+      position: [320, 1024]
+      values:
+        Value: cross = sounds/raycast/treasure.wav, chalice = sounds/raycast/treasure.wav, chest = sounds/raycast/treasure.wav, crown = sounds/raycast/treasure.wav, food = sounds/raycast/food.wav, health = sounds/raycast/food.wav, ammo = sounds/raycast/ammo.wav, gun = sounds/raycast/ammo.wav
+    - id: 7490000000000000028
+      type: var.get
+      position: [320, 1136]
+      values:
+        variable: item
+    - id: 7490000000000000029
+      type: table.get
+      position: [648, 848]
+    - id: 7490000000000000030
+      type: logic.default
+      position: [648, 984]
+      values:
+        Default: sounds/platformer/coin_collect.wav
+    - id: 7490000000000000031
+      type: call.sound.play
+      position: [984, 848]
+    - id: 7490000000000000032
+      type: call.scene.destroy_entity
+      position: [1280, 848]
+  links:
+    - {from: 7490000000000000002, fromPin: name, to: 7490000000000000003, toPin: B}
+    - {from: 7490000000000000003, fromPin: Result, to: 7490000000000000004, toPin: key}
+    - {from: 7490000000000000004, fromPin: value, to: 7490000000000000005, toPin: Condition}
+    - {from: 7490000000000000001, fromPin: Then, to: 7490000000000000004, toPin: Exec}
+    - {from: 7490000000000000004, fromPin: Then, to: 7490000000000000005, toPin: Exec}
+    - {from: 7490000000000000005, fromPin: True, to: 7490000000000000006, toPin: Exec}
+    - {from: 7490000000000000006, fromPin: Then, to: 7490000000000000007, toPin: Exec}
+    - {from: 7490000000000000010, fromPin: Value, to: 7490000000000000012, toPin: A}
+    - {from: 7490000000000000011, fromPin: Result, to: 7490000000000000012, toPin: B}
+    - {from: 7490000000000000009, fromPin: Value, to: 7490000000000000013, toPin: A}
+    - {from: 7490000000000000012, fromPin: Result, to: 7490000000000000013, toPin: B}
+    - {from: 7490000000000000013, fromPin: Result, to: 7490000000000000014, toPin: Condition}
+    - {from: 7490000000000000008, fromPin: Then, to: 7490000000000000014, toPin: Exec}
+    - {from: 7490000000000000014, fromPin: False, to: 7490000000000000015, toPin: Exec}
+    - {from: 7490000000000000016, fromPin: Value, to: 7490000000000000017, toPin: B}
+    - {from: 7490000000000000017, fromPin: Result, to: 7490000000000000018, toPin: key}
+    - {from: 7490000000000000018, fromPin: value, to: 7490000000000000019, toPin: A}
+    - {from: 7490000000000000017, fromPin: Result, to: 7490000000000000020, toPin: key}
+    - {from: 7490000000000000019, fromPin: Result, to: 7490000000000000020, toPin: value}
+    - {from: 7490000000000000021, fromPin: name, to: 7490000000000000022, toPin: B}
+    - {from: 7490000000000000022, fromPin: Result, to: 7490000000000000023, toPin: key}
+    - {from: 7490000000000000015, fromPin: Then, to: 7490000000000000018, toPin: Exec}
+    - {from: 7490000000000000018, fromPin: Then, to: 7490000000000000020, toPin: Exec}
+    - {from: 7490000000000000020, fromPin: Then, to: 7490000000000000023, toPin: Exec}
+    - {from: 7490000000000000024, fromPin: Value, to: 7490000000000000025, toPin: B}
+    - {from: 7490000000000000025, fromPin: Result, to: 7490000000000000026, toPin: value}
+    - {from: 7490000000000000023, fromPin: Then, to: 7490000000000000026, toPin: Exec}
+    - {from: 7490000000000000027, fromPin: Result, to: 7490000000000000029, toPin: Table}
+    - {from: 7490000000000000028, fromPin: Value, to: 7490000000000000029, toPin: Key}
+    - {from: 7490000000000000029, fromPin: Result, to: 7490000000000000030, toPin: Value}
+    - {from: 7490000000000000030, fromPin: Result, to: 7490000000000000031, toPin: asset_path}
+    - {from: 7490000000000000026, fromPin: Then, to: 7490000000000000031, toPin: Exec}
+    - {from: 7490000000000000031, fromPin: Then, to: 7490000000000000032, toPin: Exec}

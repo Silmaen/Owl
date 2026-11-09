@@ -1,0 +1,577 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: speed, type: float, default: 3.0}
+    - {name: turn_speed, type: float, default: 1.8}
+    - {name: yaw, type: float, default: 0, exposed: false}
+    - {name: start_yaw, type: float, default: 0, exposed: false}
+    - {name: rz, type: float, default: 0, exposed: false}
+    - {name: turning, type: float, default: 0, exposed: false}
+    - {name: px, type: float, default: 0, exposed: false}
+    - {name: py, type: float, default: 0, exposed: false}
+    - {name: fx, type: float, default: 0, exposed: false}
+    - {name: fy, type: float, default: 0, exposed: false}
+    - {name: walk_value, type: float, default: 0, exposed: false}
+    - {name: mvx, type: float, default: 0, exposed: false}
+    - {name: mvy, type: float, default: 0, exposed: false}
+    - {name: closing, type: bool, default: false, exposed: false}
+  nodes:
+    - id: 8110000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 8110000000000000002
+      type: call.physics.set_gravity_scale
+      position: [200, 0]
+      values:
+        scale: 0
+    - id: 8110000000000000003
+      type: call.transform.get_rotation
+      position: [200, 172]
+      values:
+        split.rotation: true
+    - id: 8110000000000000004
+      type: var.set
+      position: [502, 0]
+      values:
+        variable: start_yaw
+    - id: 8110000000000000005
+      type: var.get
+      position: [502, 146]
+      values:
+        variable: start_yaw
+    - id: 8110000000000000006
+      type: var.set
+      position: [734, 0]
+      values:
+        variable: yaw
+    - id: 8110000000000000007
+      type: call.gamestate.get
+      position: [966, 0]
+      values:
+        default: -1000
+        key: raycast_return_x
+    - id: 8110000000000000008
+      type: compare.not_equal
+      position: [966, 172]
+      values:
+        B: -1000
+    - id: 8110000000000000009
+      type: flow.branch
+      position: [1284, 0]
+    - id: 8110000000000000010
+      type: call.gamestate.get
+      position: [1548, 0]
+      values:
+        default: 0.0
+        key: raycast_return_y
+    - id: 8110000000000000011
+      type: call.gamestate.get
+      position: [1866, 0]
+      values:
+        default: 0.0
+        key: raycast_return_z
+    - id: 8110000000000000012
+      type: call.physics.set_transform
+      position: [2184, 0]
+      values:
+        split.rotation: true
+        split.xy: true
+    - id: 8110000000000000013
+      type: var.set
+      position: [2470, 0]
+      values:
+        variable: yaw
+    - id: 8110000000000000014
+      type: call.gamestate.remove
+      position: [2702, 0]
+      values:
+        key: raycast_return_x
+    - id: 8110000000000000015
+      type: call.gamestate.remove
+      position: [2980, 0]
+      values:
+        key: raycast_return_y
+    - id: 8110000000000000016
+      type: call.gamestate.remove
+      position: [3258, 0]
+      values:
+        key: raycast_return_z
+    - id: 8110000000000000017
+      type: call.log.trace
+      position: [3536, 0]
+      values:
+        message: RaycastPlayer ready
+    - id: 8110000000000000018
+      type: event.on_update
+      position: [0, 504]
+    - id: 8110000000000000019
+      type: call.gamestate.get
+      position: [278, 504]
+      values:
+        default: 0
+        key: inv_window_open
+    - id: 8110000000000000020
+      type: compare.equal
+      position: [0, 640]
+      values:
+        B: 1
+    - id: 8110000000000000021
+      type: call.ui.is_transition_active
+      position: [0, 776]
+    - id: 8110000000000000022
+      type: logic.or
+      position: [278, 676]
+    - id: 8110000000000000023
+      type: flow.branch
+      position: [596, 504]
+    - id: 8110000000000000024
+      type: call.physics.set_velocity
+      position: [860, 504]
+      values:
+        split.velocity: true
+        vx: 0
+        vy: 0
+    - id: 8110000000000000025
+      type: var.get
+      position: [860, 728]
+      values:
+        variable: yaw
+    - id: 8110000000000000026
+      type: var.set
+      position: [1146, 504]
+      values:
+        variable: rz
+    - id: 8110000000000000027
+      type: call.input.get_action_value
+      position: [1146, 650]
+      values:
+        action: turn
+    - id: 8110000000000000028
+      type: var.set
+      position: [1488, 504]
+      values:
+        variable: turning
+    - id: 8110000000000000029
+      type: var.get
+      position: [1146, 770]
+      values:
+        variable: turning
+    - id: 8110000000000000030
+      type: compare.not_equal
+      position: [1488, 650]
+      values:
+        B: 0
+    - id: 8110000000000000031
+      type: flow.branch
+      position: [1766, 504]
+    - id: 8110000000000000032
+      type: math.subtract
+      position: [1766, 640]
+    - id: 8110000000000000033
+      type: math.modulo
+      position: [1488, 786]
+    - id: 8110000000000000034
+      type: math.add
+      position: [1146, 890]
+    - id: 8110000000000000035
+      type: math.add
+      position: [860, 848]
+    - id: 8110000000000000036
+      type: var.get
+      position: [596, 640]
+      values:
+        variable: rz
+    - id: 8110000000000000037
+      type: math.multiply
+      position: [596, 760]
+    - id: 8110000000000000038
+      type: math.multiply
+      position: [278, 812]
+    - id: 8110000000000000039
+      type: var.get
+      position: [0, 896]
+      values:
+        variable: turning
+    - id: 8110000000000000040
+      type: var.get
+      position: [0, 1016]
+      values:
+        variable: turn_speed
+    - id: 8110000000000000041
+      type: math.pi
+      position: [860, 984]
+    - id: 8110000000000000042
+      type: math.multiply
+      position: [1146, 1026]
+      values:
+        A: 2
+    - id: 8110000000000000043
+      type: math.pi
+      position: [860, 1094]
+    - id: 8110000000000000044
+      type: math.pi
+      position: [1488, 922]
+    - id: 8110000000000000045
+      type: var.set
+      position: [2030, 504]
+      values:
+        variable: rz
+    - id: 8110000000000000046
+      type: var.get
+      position: [2030, 650]
+      values:
+        variable: rz
+    - id: 8110000000000000047
+      type: var.set
+      position: [2262, 504]
+      values:
+        variable: yaw
+    - id: 8110000000000000048
+      type: call.transform.get_position
+      position: [2262, 650]
+      values:
+        split.xyz: true
+    - id: 8110000000000000049
+      type: var.set
+      position: [2556, 504]
+      values:
+        variable: px
+    - id: 8110000000000000050
+      type: var.set
+      position: [2788, 504]
+      values:
+        variable: py
+    - id: 8110000000000000051
+      type: call.physics.set_transform
+      position: [3020, 504]
+      values:
+        split.rotation: true
+        split.xy: true
+    - id: 8110000000000000052
+      type: var.get
+      position: [2788, 650]
+      values:
+        variable: px
+    - id: 8110000000000000053
+      type: var.get
+      position: [2788, 770]
+      values:
+        variable: py
+    - id: 8110000000000000054
+      type: var.get
+      position: [2788, 890]
+      values:
+        variable: rz
+    - id: 8110000000000000055
+      type: math.negate
+      position: [3020, 806]
+    - id: 8110000000000000056
+      type: math.sin
+      position: [2788, 1010]
+    - id: 8110000000000000057
+      type: var.get
+      position: [2556, 650]
+      values:
+        variable: rz
+    - id: 8110000000000000058
+      type: var.set
+      position: [3306, 504]
+      values:
+        variable: fx
+    - id: 8110000000000000059
+      type: math.cos
+      position: [3306, 650]
+    - id: 8110000000000000060
+      type: var.get
+      position: [3020, 916]
+      values:
+        variable: rz
+    - id: 8110000000000000061
+      type: var.set
+      position: [3538, 504]
+      values:
+        variable: fy
+    - id: 8110000000000000062
+      type: call.input.get_action_value
+      position: [3538, 650]
+      values:
+        action: walk
+    - id: 8110000000000000063
+      type: var.set
+      position: [3880, 504]
+      values:
+        variable: walk_value
+    - id: 8110000000000000064
+      type: math.multiply
+      position: [3880, 650]
+    - id: 8110000000000000065
+      type: math.multiply
+      position: [3538, 770]
+    - id: 8110000000000000066
+      type: var.get
+      position: [3306, 760]
+      values:
+        variable: fx
+    - id: 8110000000000000067
+      type: var.get
+      position: [3306, 880]
+      values:
+        variable: walk_value
+    - id: 8110000000000000068
+      type: var.get
+      position: [3538, 906]
+      values:
+        variable: speed
+    - id: 8110000000000000069
+      type: math.multiply
+      position: [4112, 504]
+    - id: 8110000000000000070
+      type: math.multiply
+      position: [3880, 786]
+    - id: 8110000000000000071
+      type: var.get
+      position: [3538, 1026]
+      values:
+        variable: fy
+    - id: 8110000000000000072
+      type: var.get
+      position: [3538, 1146]
+      values:
+        variable: walk_value
+    - id: 8110000000000000073
+      type: var.get
+      position: [3880, 922]
+      values:
+        variable: speed
+    - id: 8110000000000000074
+      type: var.set
+      position: [4112, 640]
+      values:
+        variable: mvx
+    - id: 8110000000000000075
+      type: var.set
+      position: [4344, 504]
+      values:
+        variable: mvy
+    - id: 8110000000000000076
+      type: call.physics.set_velocity
+      position: [4576, 504]
+      values:
+        split.velocity: true
+    - id: 8110000000000000077
+      type: var.get
+      position: [4344, 650]
+      values:
+        variable: mvx
+    - id: 8110000000000000078
+      type: var.get
+      position: [4344, 770]
+      values:
+        variable: mvy
+    - id: 8110000000000000079
+      type: math.subtract
+      position: [4862, 504]
+    - id: 8110000000000000080
+      type: call.gamestate.get
+      position: [4862, 640]
+      values:
+        default: 0
+        key: inv_frame
+    - id: 8110000000000000081
+      type: call.gamestate.get
+      position: [5180, 504]
+      values:
+        default: -100
+        key: inv_closed_frame
+    - id: 8110000000000000082
+      type: compare.less_equal
+      position: [5180, 676]
+      values:
+        B: 1
+    - id: 8110000000000000083
+      type: var.set
+      position: [5538, 504]
+      values:
+        variable: closing
+    - id: 8110000000000000084
+      type: call.input.is_action_just_pressed
+      position: [5180, 812]
+      values:
+        action: pause
+    - id: 8110000000000000085
+      type: var.get
+      position: [4862, 812]
+      values:
+        variable: closing
+    - id: 8110000000000000086
+      type: logic.not
+      position: [5180, 932]
+    - id: 8110000000000000087
+      type: logic.and
+      position: [5538, 650]
+    - id: 8110000000000000088
+      type: flow.branch
+      position: [5770, 504]
+    - id: 8110000000000000089
+      type: call.transform.get_position
+      position: [5770, 640]
+      values:
+        split.xyz: true
+    - id: 8110000000000000090
+      type: var.set
+      position: [6064, 504]
+      values:
+        variable: px
+    - id: 8110000000000000091
+      type: var.set
+      position: [6296, 504]
+      values:
+        variable: py
+    - id: 8110000000000000092
+      type: call.gamestate.set
+      position: [6528, 504]
+      values:
+        key: raycast_return_x
+    - id: 8110000000000000093
+      type: var.get
+      position: [6296, 650]
+      values:
+        variable: px
+    - id: 8110000000000000094
+      type: call.gamestate.set
+      position: [6806, 504]
+      values:
+        key: raycast_return_y
+    - id: 8110000000000000095
+      type: var.get
+      position: [6528, 676]
+      values:
+        variable: py
+    - id: 8110000000000000096
+      type: call.gamestate.set
+      position: [7084, 504]
+      values:
+        key: raycast_return_z
+    - id: 8110000000000000097
+      type: var.get
+      position: [6806, 676]
+      values:
+        variable: rz
+    - id: 8110000000000000098
+      type: call.scene.transition_to
+      position: [7362, 504]
+      values:
+        duration: 0.3
+        kind: wipe_right
+        scene_path: scenes/world_map.owl
+        split.rgba: true
+  links:
+    - {from: 8110000000000000001, fromPin: Then, to: 8110000000000000002, toPin: Exec}
+    - {from: 8110000000000000003, fromPin: rz, to: 8110000000000000004, toPin: Value}
+    - {from: 8110000000000000002, fromPin: Then, to: 8110000000000000004, toPin: Exec}
+    - {from: 8110000000000000005, fromPin: Value, to: 8110000000000000006, toPin: Value}
+    - {from: 8110000000000000004, fromPin: Then, to: 8110000000000000006, toPin: Exec}
+    - {from: 8110000000000000006, fromPin: Then, to: 8110000000000000007, toPin: Exec}
+    - {from: 8110000000000000007, fromPin: value, to: 8110000000000000008, toPin: A}
+    - {from: 8110000000000000008, fromPin: Result, to: 8110000000000000009, toPin: Condition}
+    - {from: 8110000000000000007, fromPin: Then, to: 8110000000000000009, toPin: Exec}
+    - {from: 8110000000000000009, fromPin: True, to: 8110000000000000010, toPin: Exec}
+    - {from: 8110000000000000010, fromPin: Then, to: 8110000000000000011, toPin: Exec}
+    - {from: 8110000000000000007, fromPin: value, to: 8110000000000000012, toPin: x}
+    - {from: 8110000000000000010, fromPin: value, to: 8110000000000000012, toPin: y}
+    - {from: 8110000000000000011, fromPin: value, to: 8110000000000000012, toPin: rotation_or_z}
+    - {from: 8110000000000000011, fromPin: Then, to: 8110000000000000012, toPin: Exec}
+    - {from: 8110000000000000011, fromPin: value, to: 8110000000000000013, toPin: Value}
+    - {from: 8110000000000000012, fromPin: Then, to: 8110000000000000013, toPin: Exec}
+    - {from: 8110000000000000013, fromPin: Then, to: 8110000000000000014, toPin: Exec}
+    - {from: 8110000000000000014, fromPin: Then, to: 8110000000000000015, toPin: Exec}
+    - {from: 8110000000000000015, fromPin: Then, to: 8110000000000000016, toPin: Exec}
+    - {from: 8110000000000000016, fromPin: Then, to: 8110000000000000017, toPin: Exec}
+    - {from: 8110000000000000009, fromPin: False, to: 8110000000000000017, toPin: Exec}
+    - {from: 8110000000000000018, fromPin: Then, to: 8110000000000000019, toPin: Exec}
+    - {from: 8110000000000000019, fromPin: value, to: 8110000000000000020, toPin: A}
+    - {from: 8110000000000000020, fromPin: Result, to: 8110000000000000022, toPin: A}
+    - {from: 8110000000000000021, fromPin: active, to: 8110000000000000022, toPin: B}
+    - {from: 8110000000000000022, fromPin: Result, to: 8110000000000000023, toPin: Condition}
+    - {from: 8110000000000000019, fromPin: Then, to: 8110000000000000023, toPin: Exec}
+    - {from: 8110000000000000023, fromPin: True, to: 8110000000000000024, toPin: Exec}
+    - {from: 8110000000000000025, fromPin: Value, to: 8110000000000000026, toPin: Value}
+    - {from: 8110000000000000023, fromPin: False, to: 8110000000000000026, toPin: Exec}
+    - {from: 8110000000000000027, fromPin: value, to: 8110000000000000028, toPin: Value}
+    - {from: 8110000000000000026, fromPin: Then, to: 8110000000000000028, toPin: Exec}
+    - {from: 8110000000000000029, fromPin: Value, to: 8110000000000000030, toPin: A}
+    - {from: 8110000000000000030, fromPin: Result, to: 8110000000000000031, toPin: Condition}
+    - {from: 8110000000000000028, fromPin: Then, to: 8110000000000000031, toPin: Exec}
+    - {from: 8110000000000000036, fromPin: Value, to: 8110000000000000035, toPin: A}
+    - {from: 8110000000000000039, fromPin: Value, to: 8110000000000000038, toPin: A}
+    - {from: 8110000000000000040, fromPin: Value, to: 8110000000000000038, toPin: B}
+    - {from: 8110000000000000038, fromPin: Result, to: 8110000000000000037, toPin: A}
+    - {from: 8110000000000000018, fromPin: dt, to: 8110000000000000037, toPin: B}
+    - {from: 8110000000000000037, fromPin: Result, to: 8110000000000000035, toPin: B}
+    - {from: 8110000000000000035, fromPin: Result, to: 8110000000000000034, toPin: A}
+    - {from: 8110000000000000041, fromPin: Result, to: 8110000000000000034, toPin: B}
+    - {from: 8110000000000000034, fromPin: Result, to: 8110000000000000033, toPin: A}
+    - {from: 8110000000000000043, fromPin: Result, to: 8110000000000000042, toPin: B}
+    - {from: 8110000000000000042, fromPin: Result, to: 8110000000000000033, toPin: B}
+    - {from: 8110000000000000033, fromPin: Result, to: 8110000000000000032, toPin: A}
+    - {from: 8110000000000000044, fromPin: Result, to: 8110000000000000032, toPin: B}
+    - {from: 8110000000000000032, fromPin: Result, to: 8110000000000000045, toPin: Value}
+    - {from: 8110000000000000031, fromPin: True, to: 8110000000000000045, toPin: Exec}
+    - {from: 8110000000000000046, fromPin: Value, to: 8110000000000000047, toPin: Value}
+    - {from: 8110000000000000045, fromPin: Then, to: 8110000000000000047, toPin: Exec}
+    - {from: 8110000000000000048, fromPin: x, to: 8110000000000000049, toPin: Value}
+    - {from: 8110000000000000047, fromPin: Then, to: 8110000000000000049, toPin: Exec}
+    - {from: 8110000000000000048, fromPin: y, to: 8110000000000000050, toPin: Value}
+    - {from: 8110000000000000049, fromPin: Then, to: 8110000000000000050, toPin: Exec}
+    - {from: 8110000000000000052, fromPin: Value, to: 8110000000000000051, toPin: x}
+    - {from: 8110000000000000053, fromPin: Value, to: 8110000000000000051, toPin: y}
+    - {from: 8110000000000000054, fromPin: Value, to: 8110000000000000051, toPin: rotation_or_z}
+    - {from: 8110000000000000050, fromPin: Then, to: 8110000000000000051, toPin: Exec}
+    - {from: 8110000000000000057, fromPin: Value, to: 8110000000000000056, toPin: A}
+    - {from: 8110000000000000056, fromPin: Result, to: 8110000000000000055, toPin: A}
+    - {from: 8110000000000000055, fromPin: Result, to: 8110000000000000058, toPin: Value}
+    - {from: 8110000000000000051, fromPin: Then, to: 8110000000000000058, toPin: Exec}
+    - {from: 8110000000000000031, fromPin: False, to: 8110000000000000058, toPin: Exec}
+    - {from: 8110000000000000060, fromPin: Value, to: 8110000000000000059, toPin: A}
+    - {from: 8110000000000000059, fromPin: Result, to: 8110000000000000061, toPin: Value}
+    - {from: 8110000000000000058, fromPin: Then, to: 8110000000000000061, toPin: Exec}
+    - {from: 8110000000000000062, fromPin: value, to: 8110000000000000063, toPin: Value}
+    - {from: 8110000000000000061, fromPin: Then, to: 8110000000000000063, toPin: Exec}
+    - {from: 8110000000000000066, fromPin: Value, to: 8110000000000000065, toPin: A}
+    - {from: 8110000000000000067, fromPin: Value, to: 8110000000000000065, toPin: B}
+    - {from: 8110000000000000065, fromPin: Result, to: 8110000000000000064, toPin: A}
+    - {from: 8110000000000000068, fromPin: Value, to: 8110000000000000064, toPin: B}
+    - {from: 8110000000000000071, fromPin: Value, to: 8110000000000000070, toPin: A}
+    - {from: 8110000000000000072, fromPin: Value, to: 8110000000000000070, toPin: B}
+    - {from: 8110000000000000070, fromPin: Result, to: 8110000000000000069, toPin: A}
+    - {from: 8110000000000000073, fromPin: Value, to: 8110000000000000069, toPin: B}
+    - {from: 8110000000000000064, fromPin: Result, to: 8110000000000000074, toPin: Value}
+    - {from: 8110000000000000063, fromPin: Then, to: 8110000000000000074, toPin: Exec}
+    - {from: 8110000000000000069, fromPin: Result, to: 8110000000000000075, toPin: Value}
+    - {from: 8110000000000000074, fromPin: Then, to: 8110000000000000075, toPin: Exec}
+    - {from: 8110000000000000077, fromPin: Value, to: 8110000000000000076, toPin: vx}
+    - {from: 8110000000000000078, fromPin: Value, to: 8110000000000000076, toPin: vy}
+    - {from: 8110000000000000075, fromPin: Then, to: 8110000000000000076, toPin: Exec}
+    - {from: 8110000000000000076, fromPin: Then, to: 8110000000000000080, toPin: Exec}
+    - {from: 8110000000000000080, fromPin: value, to: 8110000000000000079, toPin: A}
+    - {from: 8110000000000000080, fromPin: Then, to: 8110000000000000081, toPin: Exec}
+    - {from: 8110000000000000081, fromPin: value, to: 8110000000000000079, toPin: B}
+    - {from: 8110000000000000079, fromPin: Result, to: 8110000000000000082, toPin: A}
+    - {from: 8110000000000000082, fromPin: Result, to: 8110000000000000083, toPin: Value}
+    - {from: 8110000000000000081, fromPin: Then, to: 8110000000000000083, toPin: Exec}
+    - {from: 8110000000000000085, fromPin: Value, to: 8110000000000000086, toPin: A}
+    - {from: 8110000000000000084, fromPin: pressed, to: 8110000000000000087, toPin: A}
+    - {from: 8110000000000000086, fromPin: Result, to: 8110000000000000087, toPin: B}
+    - {from: 8110000000000000087, fromPin: Result, to: 8110000000000000088, toPin: Condition}
+    - {from: 8110000000000000083, fromPin: Then, to: 8110000000000000088, toPin: Exec}
+    - {from: 8110000000000000089, fromPin: x, to: 8110000000000000090, toPin: Value}
+    - {from: 8110000000000000088, fromPin: True, to: 8110000000000000090, toPin: Exec}
+    - {from: 8110000000000000089, fromPin: y, to: 8110000000000000091, toPin: Value}
+    - {from: 8110000000000000090, fromPin: Then, to: 8110000000000000091, toPin: Exec}
+    - {from: 8110000000000000093, fromPin: Value, to: 8110000000000000092, toPin: value}
+    - {from: 8110000000000000091, fromPin: Then, to: 8110000000000000092, toPin: Exec}
+    - {from: 8110000000000000095, fromPin: Value, to: 8110000000000000094, toPin: value}
+    - {from: 8110000000000000092, fromPin: Then, to: 8110000000000000094, toPin: Exec}
+    - {from: 8110000000000000097, fromPin: Value, to: 8110000000000000096, toPin: value}
+    - {from: 8110000000000000094, fromPin: Then, to: 8110000000000000096, toPin: Exec}
+    - {from: 8110000000000000096, fromPin: Then, to: 8110000000000000098, toPin: Exec}

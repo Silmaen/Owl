@@ -20,6 +20,8 @@
 #include "data/fonts/FontSettings.h"
 #include "data/localisation/Localisation.h"
 #include "input/ActionMap.h"
+#include "renderer/Material.h"
+#include "renderer/MaterialGraph.h"
 #include "renderer/RenderStack.h"
 #include "renderer/RendererSet.h"
 #include "renderer/gpu/Shader.h"
@@ -33,6 +35,7 @@
 #include <cstdint>
 #include <fstream>
 #include <iterator>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -208,7 +211,89 @@ void useBakedFile(std::vector<AssetReference>& ioAssets, const std::string& iPac
 		ioAssets.push_back({.packPath = iPackPath, .diskPath = iDiskPath, .assetType = AssetType::Other});
 }
 
-// Compiles every packed shader whose SPIR-V is missing or outdated, into the cook cache; the game compiles none.
+// Compiles a shader source for both APIs when its SPIR-V is missing or outdated, into the cook cache.
+auto bakeShaderSource(std::vector<AssetReference>& ioAssets, const std::filesystem::path& iCacheDir,
+					  const std::string& iSource, const std::string& iName, const std::string& iRenderer)
+		-> expected<bool, ExportError> {
+	const auto moduleName = std::format("{}/{}", iRenderer, iName);
+	bool compiled = false;
+	for (const bool forVulkan: {true, false}) {
+		const std::string api = forVulkan ? "vulkan" : "opengl";
+		const auto cacheKey = renderer::utils::getShaderCacheKey(iSource, moduleName, forVulkan);
+		if (hasCurrentSpirv(ioAssets, iName, iRenderer, api, cacheKey))
+			continue;
+		compiled = true;
+		if (const auto stored = findBakedStages(iCacheDir, iName, iRenderer, api, cacheKey); !stored.empty()) {
+			for (const auto& entry: stored) {
+				useBakedFile(ioAssets, entry.generic_string(), iCacheDir / entry);
+				useBakedFile(ioAssets, entry.generic_string() + ".hash", (iCacheDir / entry).string() + ".hash");
+			}
+			continue;
+		}
+		const auto result = renderer::utils::compileSlangToSpirv(iSource, iName, forVulkan);
+		if (!result.success) {
+			OWL_CORE_ERROR("GameExporter: Cannot compile shader '{}' for {}.", moduleName, api)
+			return unexpected{ExportError::CookFailed};
+		}
+		for (const auto& [stage, spirv]: result.spirvData) {
+			const auto entry = renderer::utils::getPrecompiledShaderPath(iName, iRenderer, api, stage);
+			const auto file = iCacheDir / entry;
+			std::error_code ec;
+			std::filesystem::create_directories(file.parent_path(), ec);
+			if (!renderer::utils::writeCachedShader(file, spirv)) {
+				OWL_CORE_ERROR("GameExporter: Cannot write the SPIR-V '{}'.", file.string())
+				return unexpected{ExportError::CookFailed};
+			}
+			renderer::utils::writeShaderHash(file, cacheKey);
+			useBakedFile(ioAssets, entry.generic_string(), file);
+			useBakedFile(ioAssets, entry.generic_string() + ".hash", file.string() + ".hash");
+		}
+	}
+	return compiled;
+}
+
+// The variants of the mesh shaders the material graphs of the pack draw with, one per root graph and mesh shader.
+auto bakeMaterialGraphs(std::vector<AssetReference>& ioAssets, const std::filesystem::path& iCacheDir)
+		-> expected<size_t, ExportError> {
+	std::vector<std::filesystem::path> materials;
+	for (const auto& ref: ioAssets) {
+		if (std::filesystem::path{ref.packPath}.extension() == ".owlmat")
+			materials.push_back(ref.diskPath);
+	}
+	std::set<std::string> names;
+	size_t baked = 0;
+	for (const auto& file: materials) {
+		const auto asset = renderer::MaterialAsset::load(file);
+		if (!asset.has_value() || !asset->graph.has_value())
+			continue;
+		const auto program = renderer::compileMaterialGraph(*asset->graph);
+		if (!program.isValid()) {
+			OWL_CORE_WARN("GameExporter: The graph of '{}' does not compile, the game draws its parameters.",
+						  file.string())
+			continue;
+		}
+		for (const auto shader: renderer::g_materialGraphShaders) {
+			const auto base = std::format("shaders/{}/{}.slang", renderer::g_materialGraphRenderer, shader);
+			const auto name = renderer::getMaterialShaderName(shader, program);
+			const bool packed = std::ranges::any_of(
+					ioAssets, [&base](const AssetReference& iRef) -> bool { return iRef.packPath == base; });
+			if (!packed || !names.insert(name).second)
+				continue;
+			const auto source = renderer::insertMaterialProgram(renderer::utils::readShaderSource(base), program);
+			if (!source.has_value())
+				continue;
+			const auto compiled = bakeShaderSource(ioAssets, iCacheDir, *source, name,
+												   std::string{renderer::g_materialGraphRenderer});
+			if (!compiled.has_value())
+				return unexpected{compiled.error()};
+			if (*compiled)
+				++baked;
+		}
+	}
+	return baked;
+}
+
+// Compiles the packed shaders and the material graph variants whose SPIR-V is outdated; the game compiles none.
 auto bakeShaders(std::vector<AssetReference>& ioAssets, const std::filesystem::path& iCacheDir)
 		-> expected<size_t, ExportError> {
 	std::vector<AssetReference> sources;
@@ -219,48 +304,18 @@ auto bakeShaders(std::vector<AssetReference>& ioAssets, const std::filesystem::p
 	size_t baked = 0;
 	for (const auto& ref: sources) {
 		const std::filesystem::path packPath{ref.packPath};
-		const auto name = packPath.stem().string();
-		const auto renderer = packPath.parent_path().filename().string();
-		const auto moduleName = std::format("{}/{}", renderer, name);
 		// Expanded as the game expands it from its pack, so that the keys match.
-		const auto source = renderer::utils::readShaderSource(packPath);
-		bool compiled = false;
-		for (const bool forVulkan: {true, false}) {
-			const std::string api = forVulkan ? "vulkan" : "opengl";
-			const auto cacheKey = renderer::utils::getShaderCacheKey(source, moduleName, forVulkan);
-			if (hasCurrentSpirv(ioAssets, name, renderer, api, cacheKey))
-				continue;
-			compiled = true;
-			if (const auto stored = findBakedStages(iCacheDir, name, renderer, api, cacheKey); !stored.empty()) {
-				for (const auto& entry: stored) {
-					useBakedFile(ioAssets, entry.generic_string(), iCacheDir / entry);
-					useBakedFile(ioAssets, entry.generic_string() + ".hash", (iCacheDir / entry).string() + ".hash");
-				}
-				continue;
-			}
-			const auto result = renderer::utils::compileSlangToSpirv(source, name, forVulkan);
-			if (!result.success) {
-				OWL_CORE_ERROR("GameExporter: Cannot compile shader '{}' for {}.", ref.packPath, api)
-				return unexpected{ExportError::CookFailed};
-			}
-			for (const auto& [stage, spirv]: result.spirvData) {
-				const auto entry = renderer::utils::getPrecompiledShaderPath(name, renderer, api, stage);
-				const auto file = iCacheDir / entry;
-				std::error_code ec;
-				std::filesystem::create_directories(file.parent_path(), ec);
-				if (!renderer::utils::writeCachedShader(file, spirv)) {
-					OWL_CORE_ERROR("GameExporter: Cannot write the SPIR-V '{}'.", file.string())
-					return unexpected{ExportError::CookFailed};
-				}
-				renderer::utils::writeShaderHash(file, cacheKey);
-				useBakedFile(ioAssets, entry.generic_string(), file);
-				useBakedFile(ioAssets, entry.generic_string() + ".hash", file.string() + ".hash");
-			}
-		}
-		if (compiled)
+		const auto compiled = bakeShaderSource(ioAssets, iCacheDir, renderer::utils::readShaderSource(packPath),
+											   packPath.stem().string(), packPath.parent_path().filename().string());
+		if (!compiled.has_value())
+			return unexpected{compiled.error()};
+		if (*compiled)
 			++baked;
 	}
-	return baked;
+	const auto graphs = bakeMaterialGraphs(ioAssets, iCacheDir);
+	if (!graphs.has_value())
+		return unexpected{graphs.error()};
+	return baked + *graphs;
 }
 #else
 // Without the render module no shader compiler is built: the shaders are packed as they are.

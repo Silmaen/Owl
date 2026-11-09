@@ -1,0 +1,1279 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: lights_prefix, type: string, default: NightLight_}
+    - {name: cave, type: string, default: Cave}
+    - {name: player, type: string, default: Player}
+    - {name: dusk, type: float, default: 18.5, min: 0, max: 24}
+    - {name: dawn, type: float, default: 6.0, min: 0, max: 24}
+    - {name: mood_key, type: string, default: hub_mood}
+    - {name: probe, type: string, default: hub}
+    - {name: KEYS, type: numbers, default: "", exposed: false}
+    - {name: lights, type: numbers, default: "", exposed: false}
+    - {name: cave_id, type: entity, default: 0, exposed: false}
+    - {name: player_id, type: entity, default: 0, exposed: false}
+    - {name: lit, type: bool, default: "", exposed: false}
+    - {name: mood, type: string, default: "", exposed: false}
+    - {name: found, type: float, default: 0, exposed: false}
+    - {name: a, type: numbers, default: "", exposed: false}
+    - {name: b, type: numbers, default: "", exposed: false}
+    - {name: t, type: float, default: 0, exposed: false}
+    - {name: px, type: float, default: 0, exposed: false}
+    - {name: py, type: float, default: 0, exposed: false}
+    - {name: cx, type: float, default: 0, exposed: false}
+    - {name: cy, type: float, default: 0, exposed: false}
+    - {name: sx, type: float, default: 0, exposed: false}
+    - {name: sy, type: float, default: 0, exposed: false}
+    - {name: record, type: numbers, default: "", exposed: false}
+    - {name: searching, type: bool, default: false, exposed: false}
+    - {name: id, type: entity, default: 0, exposed: false}
+    - {name: hour, type: float, default: 0, exposed: false}
+    - {name: night, type: bool, default: false, exposed: false}
+    - {name: wanted, type: string, default: "", exposed: false}
+  functions:
+    - name: mix
+      inputs: [{name: a, type: any}, {name: b, type: any}, {name: i, type: any}, {name: t, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: ambient_at
+      inputs: [{name: hour, type: any}]
+      outputs: [{name: result_1, type: any}, {name: result_2, type: any}, {name: result_3, type: any}, {name: result_4, type: any}]
+    - name: in_cave
+      inputs: []
+      outputs: [{name: result, type: any}]
+  nodes:
+    - id: 8190000000000000001
+      type: func.entry
+      position: [688, 0]
+      values:
+        function: mix
+    - id: 8190000000000000002
+      type: math.add
+      position: [688, 224]
+    - id: 8190000000000000003
+      type: table.get
+      position: [448, 0]
+    - id: 8190000000000000004
+      type: math.multiply
+      position: [448, 136]
+    - id: 8190000000000000005
+      type: math.subtract
+      position: [240, 0]
+    - id: 8190000000000000006
+      type: table.get
+      position: [0, 0]
+    - id: 8190000000000000007
+      type: table.get
+      position: [0, 136]
+    - id: 8190000000000000008
+      type: func.return
+      position: [896, 0]
+      values:
+        function: mix
+    - id: 8190000000000000009
+      type: func.entry
+      position: [764, 520]
+      values:
+        function: ambient_at
+    - id: 8190000000000000010
+      type: var.set
+      position: [1058, 520]
+      values:
+        Value: 0
+        variable: found
+    - id: 8190000000000000011
+      type: flow.for
+      position: [1352, 520]
+      values:
+        First: 1
+    - id: 8190000000000000012
+      type: math.subtract
+      position: [764, 666]
+      values:
+        B: 1
+    - id: 8190000000000000013
+      type: var.get
+      position: [200, 520]
+      values:
+        variable: KEYS
+    - id: 8190000000000000014
+      type: table.length
+      position: [470, 520]
+    - id: 8190000000000000015
+      type: math.floor
+      position: [1058, 666]
+    - id: 8190000000000000016
+      type: var.get
+      position: [470, 1710]
+      values:
+        variable: found
+    - id: 8190000000000000017
+      type: compare.equal
+      position: [764, 1710]
+      values:
+        B: 0
+    - id: 8190000000000000018
+      type: var.get
+      position: [0, 1710]
+      values:
+        variable: KEYS
+    - id: 8190000000000000019
+      type: table.get
+      position: [200, 1710]
+    - id: 8190000000000000020
+      type: table.get
+      position: [470, 1830]
+      values:
+        Key: 1
+    - id: 8190000000000000021
+      type: compare.greater_equal
+      position: [764, 1846]
+    - id: 8190000000000000022
+      type: logic.and
+      position: [1058, 1710]
+    - id: 8190000000000000023
+      type: var.get
+      position: [200, 1846]
+      values:
+        variable: KEYS
+    - id: 8190000000000000024
+      type: table.get
+      position: [470, 1966]
+    - id: 8190000000000000025
+      type: math.add
+      position: [200, 1966]
+      values:
+        B: 1
+    - id: 8190000000000000026
+      type: table.get
+      position: [764, 1982]
+      values:
+        Key: 1
+    - id: 8190000000000000027
+      type: compare.less_equal
+      position: [1058, 1846]
+    - id: 8190000000000000028
+      type: logic.and
+      position: [1352, 1710]
+    - id: 8190000000000000029
+      type: flow.branch
+      position: [1678, 1710]
+    - id: 8190000000000000030
+      type: var.set
+      position: [1972, 1710]
+      values:
+        variable: found
+    - id: 8190000000000000031
+      type: var.get
+      position: [1058, 776]
+      values:
+        variable: found
+    - id: 8190000000000000032
+      type: compare.equal
+      position: [1352, 682]
+      values:
+        B: 0
+    - id: 8190000000000000033
+      type: flow.branch
+      position: [1678, 520]
+    - id: 8190000000000000034
+      type: func.return
+      position: [1972, 520]
+      values:
+        function: ambient_at
+        result_1: 1
+        result_2: 1
+        result_3: 1
+        result_4: 1
+    - id: 8190000000000000035
+      type: var.get
+      position: [1678, 656]
+      values:
+        variable: KEYS
+    - id: 8190000000000000036
+      type: table.get
+      position: [1972, 734]
+    - id: 8190000000000000037
+      type: var.get
+      position: [1678, 776]
+      values:
+        variable: found
+    - id: 8190000000000000038
+      type: var.get
+      position: [1972, 870]
+      values:
+        variable: KEYS
+    - id: 8190000000000000039
+      type: table.get
+      position: [2266, 520]
+    - id: 8190000000000000040
+      type: math.add
+      position: [1972, 990]
+      values:
+        B: 1
+    - id: 8190000000000000041
+      type: var.get
+      position: [1678, 896]
+      values:
+        variable: found
+    - id: 8190000000000000042
+      type: var.set
+      position: [2266, 656]
+      values:
+        variable: a
+    - id: 8190000000000000043
+      type: var.set
+      position: [2506, 520]
+      values:
+        variable: b
+    - id: 8190000000000000044
+      type: var.get
+      position: [1678, 1016]
+      values:
+        variable: b
+    - id: 8190000000000000045
+      type: table.get
+      position: [1972, 1126]
+      values:
+        Key: 1
+    - id: 8190000000000000046
+      type: var.get
+      position: [1678, 1136]
+      values:
+        variable: a
+    - id: 8190000000000000047
+      type: table.get
+      position: [1972, 1262]
+      values:
+        Key: 1
+    - id: 8190000000000000048
+      type: compare.greater
+      position: [2266, 802]
+    - id: 8190000000000000049
+      type: logic.select
+      position: [2506, 666]
+      values:
+        False: 0
+    - id: 8190000000000000050
+      type: math.divide
+      position: [2266, 938]
+    - id: 8190000000000000051
+      type: math.subtract
+      position: [1972, 1398]
+    - id: 8190000000000000052
+      type: var.get
+      position: [1352, 818]
+      values:
+        variable: a
+    - id: 8190000000000000053
+      type: table.get
+      position: [1678, 1256]
+      values:
+        Key: 1
+    - id: 8190000000000000054
+      type: math.subtract
+      position: [1972, 1534]
+    - id: 8190000000000000055
+      type: var.get
+      position: [1352, 938]
+      values:
+        variable: b
+    - id: 8190000000000000056
+      type: table.get
+      position: [1678, 1392]
+      values:
+        Key: 1
+    - id: 8190000000000000057
+      type: var.get
+      position: [1352, 1058]
+      values:
+        variable: a
+    - id: 8190000000000000058
+      type: table.get
+      position: [1678, 1528]
+      values:
+        Key: 1
+    - id: 8190000000000000059
+      type: var.set
+      position: [2816, 520]
+      values:
+        variable: t
+    - id: 8190000000000000060
+      type: func.call
+      position: [3048, 520]
+      values:
+        function: mix
+        i: 2
+    - id: 8190000000000000061
+      type: var.get
+      position: [2816, 666]
+      values:
+        variable: a
+    - id: 8190000000000000062
+      type: var.get
+      position: [2816, 786]
+      values:
+        variable: b
+    - id: 8190000000000000063
+      type: var.get
+      position: [2816, 906]
+      values:
+        variable: t
+    - id: 8190000000000000064
+      type: func.call
+      position: [3326, 520]
+      values:
+        function: mix
+        i: 3
+    - id: 8190000000000000065
+      type: var.get
+      position: [3048, 744]
+      values:
+        variable: a
+    - id: 8190000000000000066
+      type: var.get
+      position: [3048, 864]
+      values:
+        variable: b
+    - id: 8190000000000000067
+      type: var.get
+      position: [3048, 984]
+      values:
+        variable: t
+    - id: 8190000000000000068
+      type: func.call
+      position: [3604, 520]
+      values:
+        function: mix
+        i: 4
+    - id: 8190000000000000069
+      type: var.get
+      position: [3326, 744]
+      values:
+        variable: a
+    - id: 8190000000000000070
+      type: var.get
+      position: [3326, 864]
+      values:
+        variable: b
+    - id: 8190000000000000071
+      type: var.get
+      position: [3326, 984]
+      values:
+        variable: t
+    - id: 8190000000000000072
+      type: func.call
+      position: [3882, 520]
+      values:
+        function: mix
+        i: 5
+    - id: 8190000000000000073
+      type: var.get
+      position: [3604, 744]
+      values:
+        variable: a
+    - id: 8190000000000000074
+      type: var.get
+      position: [3604, 864]
+      values:
+        variable: b
+    - id: 8190000000000000075
+      type: var.get
+      position: [3604, 984]
+      values:
+        variable: t
+    - id: 8190000000000000076
+      type: func.return
+      position: [4160, 520]
+      values:
+        function: ambient_at
+    - id: 8190000000000000077
+      type: func.entry
+      position: [488, 2278]
+      values:
+        function: in_cave
+    - id: 8190000000000000078
+      type: var.get
+      position: [0, 2278]
+      values:
+        variable: cave_id
+    - id: 8190000000000000079
+      type: compare.equal
+      position: [210, 2278]
+      values:
+        B: 0
+    - id: 8190000000000000080
+      type: var.get
+      position: [0, 2398]
+      values:
+        variable: player_id
+    - id: 8190000000000000081
+      type: compare.equal
+      position: [210, 2414]
+      values:
+        B: 0
+    - id: 8190000000000000082
+      type: logic.or
+      position: [488, 2398]
+    - id: 8190000000000000083
+      type: flow.branch
+      position: [696, 2278]
+    - id: 8190000000000000084
+      type: func.return
+      position: [960, 2278]
+      values:
+        function: in_cave
+        result: false
+    - id: 8190000000000000085
+      type: call.transform.get_position
+      position: [960, 2414]
+      values:
+        split.xyz: true
+    - id: 8190000000000000086
+      type: var.get
+      position: [696, 2414]
+      values:
+        variable: player_id
+    - id: 8190000000000000087
+      type: var.set
+      position: [1192, 2278]
+      values:
+        variable: px
+    - id: 8190000000000000088
+      type: var.set
+      position: [1424, 2278]
+      values:
+        variable: py
+    - id: 8190000000000000089
+      type: call.transform.get_position
+      position: [1424, 2424]
+      values:
+        split.xyz: true
+    - id: 8190000000000000090
+      type: var.get
+      position: [1192, 2424]
+      values:
+        variable: cave_id
+    - id: 8190000000000000091
+      type: var.set
+      position: [1656, 2278]
+      values:
+        variable: cx
+    - id: 8190000000000000092
+      type: var.set
+      position: [1888, 2278]
+      values:
+        variable: cy
+    - id: 8190000000000000093
+      type: call.transform.get_scale
+      position: [1888, 2424]
+      values:
+        split.scale: true
+    - id: 8190000000000000094
+      type: var.get
+      position: [1656, 2424]
+      values:
+        variable: cave_id
+    - id: 8190000000000000095
+      type: var.set
+      position: [2158, 2278]
+      values:
+        variable: sx
+    - id: 8190000000000000096
+      type: var.set
+      position: [2390, 2278]
+      values:
+        variable: sy
+    - id: 8190000000000000097
+      type: math.abs
+      position: [1888, 2596]
+    - id: 8190000000000000098
+      type: math.subtract
+      position: [1656, 2544]
+    - id: 8190000000000000099
+      type: var.get
+      position: [1424, 2596]
+      values:
+        variable: px
+    - id: 8190000000000000100
+      type: var.get
+      position: [1424, 2716]
+      values:
+        variable: cx
+    - id: 8190000000000000101
+      type: math.divide
+      position: [1888, 2706]
+      values:
+        B: 2
+    - id: 8190000000000000102
+      type: var.get
+      position: [1656, 2680]
+      values:
+        variable: sx
+    - id: 8190000000000000103
+      type: compare.less_equal
+      position: [2158, 2424]
+    - id: 8190000000000000104
+      type: math.abs
+      position: [1888, 2842]
+    - id: 8190000000000000105
+      type: math.subtract
+      position: [1656, 2800]
+    - id: 8190000000000000106
+      type: var.get
+      position: [1424, 2836]
+      values:
+        variable: py
+    - id: 8190000000000000107
+      type: var.get
+      position: [1424, 2956]
+      values:
+        variable: cy
+    - id: 8190000000000000108
+      type: math.divide
+      position: [1888, 2952]
+      values:
+        B: 2
+    - id: 8190000000000000109
+      type: var.get
+      position: [1656, 2936]
+      values:
+        variable: sy
+    - id: 8190000000000000110
+      type: compare.less_equal
+      position: [2158, 2560]
+    - id: 8190000000000000111
+      type: logic.and
+      position: [2390, 2424]
+    - id: 8190000000000000112
+      type: func.return
+      position: [2622, 2278]
+      values:
+        function: in_cave
+    - id: 8190000000000000113
+      type: event.on_create
+      position: [0, 3248]
+    - id: 8190000000000000114
+      type: value.table
+      position: [0, 3358]
+      values:
+        Value: ""
+    - id: 8190000000000000115
+      type: var.set
+      position: [276, 3248]
+      values:
+        variable: record
+    - id: 8190000000000000116
+      type: var.get
+      position: [276, 3394]
+      values:
+        variable: record
+    - id: 8190000000000000117
+      type: table.append
+      position: [552, 3248]
+    - id: 8190000000000000118
+      type: value.table
+      position: [276, 3514]
+      values:
+        Value: 0, 0.3, 0.36, 0.68, 0.42
+    - id: 8190000000000000119
+      type: var.get
+      position: [552, 3410]
+      values:
+        variable: record
+    - id: 8190000000000000120
+      type: table.append
+      position: [828, 3248]
+    - id: 8190000000000000121
+      type: value.table
+      position: [552, 3530]
+      values:
+        Value: 5, 0.3, 0.36, 0.68, 0.42
+    - id: 8190000000000000122
+      type: var.get
+      position: [828, 3410]
+      values:
+        variable: record
+    - id: 8190000000000000123
+      type: table.append
+      position: [1104, 3248]
+    - id: 8190000000000000124
+      type: value.table
+      position: [828, 3530]
+      values:
+        Value: 6.5, 1.0, 0.72, 0.55, 0.8
+    - id: 8190000000000000125
+      type: var.get
+      position: [1104, 3410]
+      values:
+        variable: record
+    - id: 8190000000000000126
+      type: table.append
+      position: [1380, 3248]
+    - id: 8190000000000000127
+      type: value.table
+      position: [1104, 3530]
+      values:
+        Value: 8, 1, 1, 1, 1
+    - id: 8190000000000000128
+      type: var.get
+      position: [1380, 3410]
+      values:
+        variable: record
+    - id: 8190000000000000129
+      type: table.append
+      position: [1656, 3248]
+    - id: 8190000000000000130
+      type: value.table
+      position: [1380, 3530]
+      values:
+        Value: 17, 1, 1, 1, 1
+    - id: 8190000000000000131
+      type: var.get
+      position: [1656, 3410]
+      values:
+        variable: record
+    - id: 8190000000000000132
+      type: table.append
+      position: [1932, 3248]
+    - id: 8190000000000000133
+      type: value.table
+      position: [1656, 3530]
+      values:
+        Value: 18.5, 1.0, 0.66, 0.45, 0.85
+    - id: 8190000000000000134
+      type: var.get
+      position: [1932, 3410]
+      values:
+        variable: record
+    - id: 8190000000000000135
+      type: table.append
+      position: [2208, 3248]
+    - id: 8190000000000000136
+      type: value.table
+      position: [1932, 3530]
+      values:
+        Value: 20, 0.3, 0.36, 0.68, 0.42
+    - id: 8190000000000000137
+      type: var.get
+      position: [2208, 3410]
+      values:
+        variable: record
+    - id: 8190000000000000138
+      type: table.append
+      position: [2484, 3248]
+    - id: 8190000000000000139
+      type: value.table
+      position: [2208, 3530]
+      values:
+        Value: 24, 0.3, 0.36, 0.68, 0.42
+    - id: 8190000000000000140
+      type: var.get
+      position: [2484, 3410]
+      values:
+        variable: record
+    - id: 8190000000000000141
+      type: var.set
+      position: [2684, 3248]
+      values:
+        variable: KEYS
+    - id: 8190000000000000142
+      type: value.nil
+      position: [2684, 3394]
+    - id: 8190000000000000143
+      type: var.set
+      position: [2916, 3248]
+      values:
+        variable: lit
+    - id: 8190000000000000144
+      type: call.scene.find_entity
+      position: [2916, 3394]
+    - id: 8190000000000000145
+      type: var.get
+      position: [2684, 3504]
+      values:
+        variable: cave
+    - id: 8190000000000000146
+      type: var.set
+      position: [3172, 3248]
+      values:
+        variable: cave_id
+    - id: 8190000000000000147
+      type: call.scene.find_entity
+      position: [3172, 3394]
+    - id: 8190000000000000148
+      type: var.get
+      position: [2916, 3514]
+      values:
+        variable: player
+    - id: 8190000000000000149
+      type: var.set
+      position: [3428, 3248]
+      values:
+        variable: player_id
+    - id: 8190000000000000150
+      type: var.set
+      position: [3660, 3248]
+      values:
+        Value: true
+        variable: searching
+    - id: 8190000000000000151
+      type: flow.for
+      position: [3916, 3248]
+      values:
+        First: 1
+        Last: 100
+    - id: 8190000000000000152
+      type: var.get
+      position: [3916, 3680]
+      values:
+        variable: searching
+    - id: 8190000000000000153
+      type: flow.branch
+      position: [4242, 3680]
+    - id: 8190000000000000154
+      type: call.scene.find_entity
+      position: [4242, 3816]
+    - id: 8190000000000000155
+      type: text.concat
+      position: [3916, 3800]
+    - id: 8190000000000000156
+      type: var.get
+      position: [3660, 3680]
+      values:
+        variable: lights_prefix
+    - id: 8190000000000000157
+      type: var.set
+      position: [4506, 3680]
+      values:
+        variable: id
+    - id: 8190000000000000158
+      type: var.get
+      position: [4242, 3936]
+      values:
+        variable: id
+    - id: 8190000000000000159
+      type: compare.equal
+      position: [4506, 3826]
+      values:
+        B: 0
+    - id: 8190000000000000160
+      type: flow.branch
+      position: [4784, 3680]
+    - id: 8190000000000000161
+      type: var.set
+      position: [5054, 3680]
+      values:
+        Value: false
+        variable: searching
+    - id: 8190000000000000162
+      type: var.get
+      position: [4784, 4096]
+      values:
+        variable: id
+    - id: 8190000000000000163
+      type: table.set
+      position: [5054, 4096]
+    - id: 8190000000000000164
+      type: var.get
+      position: [4784, 4216]
+      values:
+        variable: lights
+    - id: 8190000000000000165
+      type: math.add
+      position: [4784, 4336]
+      values:
+        B: 1
+    - id: 8190000000000000166
+      type: var.get
+      position: [4242, 4096]
+      values:
+        variable: lights
+    - id: 8190000000000000167
+      type: table.length
+      position: [4506, 4096]
+    - id: 8190000000000000168
+      type: event.on_update
+      position: [326, 4632]
+    - id: 8190000000000000169
+      type: call.entity.get_time_of_day
+      position: [0, 4632]
+    - id: 8190000000000000170
+      type: logic.default
+      position: [326, 4768]
+      values:
+        Default: 12
+    - id: 8190000000000000171
+      type: var.set
+      position: [652, 4632]
+      values:
+        variable: hour
+    - id: 8190000000000000172
+      type: func.call
+      position: [884, 4632]
+      values:
+        function: ambient_at
+    - id: 8190000000000000173
+      type: var.get
+      position: [652, 4778]
+      values:
+        variable: hour
+    - id: 8190000000000000174
+      type: call.entity.set_light_color
+      position: [1132, 4632]
+      values:
+        split.rgb: true
+    - id: 8190000000000000175
+      type: call.entity.set_light_intensity
+      position: [1450, 4632]
+    - id: 8190000000000000176
+      type: var.get
+      position: [884, 4856]
+      values:
+        variable: hour
+    - id: 8190000000000000177
+      type: var.get
+      position: [884, 4976]
+      values:
+        variable: dusk
+    - id: 8190000000000000178
+      type: compare.greater_equal
+      position: [1132, 4856]
+    - id: 8190000000000000179
+      type: var.get
+      position: [884, 5096]
+      values:
+        variable: hour
+    - id: 8190000000000000180
+      type: var.get
+      position: [884, 5216]
+      values:
+        variable: dawn
+    - id: 8190000000000000181
+      type: compare.less
+      position: [1132, 4992]
+    - id: 8190000000000000182
+      type: logic.or
+      position: [1450, 4804]
+    - id: 8190000000000000183
+      type: var.set
+      position: [1768, 4632]
+      values:
+        variable: night
+    - id: 8190000000000000184
+      type: var.get
+      position: [1450, 4940]
+      values:
+        variable: night
+    - id: 8190000000000000185
+      type: var.get
+      position: [1450, 5060]
+      values:
+        variable: lit
+    - id: 8190000000000000186
+      type: compare.not_equal
+      position: [1768, 4778]
+    - id: 8190000000000000187
+      type: flow.branch
+      position: [2000, 4632]
+    - id: 8190000000000000188
+      type: var.get
+      position: [2000, 4768]
+      values:
+        variable: night
+    - id: 8190000000000000189
+      type: var.set
+      position: [2264, 4632]
+      values:
+        variable: lit
+    - id: 8190000000000000190
+      type: var.get
+      position: [2264, 4778]
+      values:
+        variable: lights
+    - id: 8190000000000000191
+      type: flow.for_each
+      position: [2534, 4632]
+    - id: 8190000000000000192
+      type: call.entity.set_light_enabled
+      position: [2812, 5376]
+    - id: 8190000000000000193
+      type: var.get
+      position: [2534, 5376]
+      values:
+        variable: night
+    - id: 8190000000000000194
+      type: call.gamestate.set
+      position: [2812, 4632]
+    - id: 8190000000000000195
+      type: text.concat
+      position: [2534, 4820]
+      values:
+        B: _night
+    - id: 8190000000000000196
+      type: var.get
+      position: [2264, 4898]
+      values:
+        variable: probe
+    - id: 8190000000000000197
+      type: var.get
+      position: [2534, 4956]
+      values:
+        variable: night
+    - id: 8190000000000000198
+      type: call.gamestate.set
+      position: [3090, 4632]
+    - id: 8190000000000000199
+      type: text.concat
+      position: [2812, 4804]
+      values:
+        B: _hour
+    - id: 8190000000000000200
+      type: var.get
+      position: [2534, 5076]
+      values:
+        variable: probe
+    - id: 8190000000000000201
+      type: math.divide
+      position: [2812, 4940]
+      values:
+        B: 10
+    - id: 8190000000000000202
+      type: math.floor
+      position: [2534, 5196]
+    - id: 8190000000000000203
+      type: math.multiply
+      position: [2264, 5018]
+      values:
+        B: 10
+    - id: 8190000000000000204
+      type: var.get
+      position: [2000, 4888]
+      values:
+        variable: hour
+    - id: 8190000000000000205
+      type: var.get
+      position: [2812, 5076]
+      values:
+        variable: mood_key
+    - id: 8190000000000000206
+      type: compare.equal
+      position: [3090, 4804]
+    - id: 8190000000000000207
+      type: value.string
+      position: [2812, 5196]
+      values:
+        Value: ""
+    - id: 8190000000000000208
+      type: flow.branch
+      position: [3298, 4632]
+    - id: 8190000000000000209
+      type: func.call
+      position: [3608, 4632]
+      values:
+        function: in_cave
+    - id: 8190000000000000210
+      type: logic.select
+      position: [3608, 4778]
+      values:
+        True: danger
+    - id: 8190000000000000211
+      type: var.get
+      position: [3090, 4940]
+      values:
+        variable: night
+    - id: 8190000000000000212
+      type: logic.select
+      position: [3298, 4768]
+      values:
+        False: calm
+        True: night
+    - id: 8190000000000000213
+      type: var.set
+      position: [3910, 4632]
+      values:
+        variable: wanted
+    - id: 8190000000000000214
+      type: var.get
+      position: [3608, 4940]
+      values:
+        variable: wanted
+    - id: 8190000000000000215
+      type: var.get
+      position: [3608, 5060]
+      values:
+        variable: mood
+    - id: 8190000000000000216
+      type: compare.not_equal
+      position: [3910, 4778]
+    - id: 8190000000000000217
+      type: flow.branch
+      position: [4142, 4632]
+    - id: 8190000000000000218
+      type: var.get
+      position: [4142, 4768]
+      values:
+        variable: wanted
+    - id: 8190000000000000219
+      type: var.set
+      position: [4406, 4632]
+      values:
+        variable: mood
+    - id: 8190000000000000220
+      type: call.gamestate.set
+      position: [4638, 4632]
+    - id: 8190000000000000221
+      type: var.get
+      position: [4406, 4778]
+      values:
+        variable: mood_key
+    - id: 8190000000000000222
+      type: var.get
+      position: [4406, 4898]
+      values:
+        variable: mood
+  links:
+    - {from: 8190000000000000001, fromPin: a, to: 8190000000000000003, toPin: Table}
+    - {from: 8190000000000000001, fromPin: i, to: 8190000000000000003, toPin: Key}
+    - {from: 8190000000000000003, fromPin: Result, to: 8190000000000000002, toPin: A}
+    - {from: 8190000000000000001, fromPin: b, to: 8190000000000000006, toPin: Table}
+    - {from: 8190000000000000001, fromPin: i, to: 8190000000000000006, toPin: Key}
+    - {from: 8190000000000000006, fromPin: Result, to: 8190000000000000005, toPin: A}
+    - {from: 8190000000000000001, fromPin: a, to: 8190000000000000007, toPin: Table}
+    - {from: 8190000000000000001, fromPin: i, to: 8190000000000000007, toPin: Key}
+    - {from: 8190000000000000007, fromPin: Result, to: 8190000000000000005, toPin: B}
+    - {from: 8190000000000000005, fromPin: Result, to: 8190000000000000004, toPin: A}
+    - {from: 8190000000000000001, fromPin: t, to: 8190000000000000004, toPin: B}
+    - {from: 8190000000000000004, fromPin: Result, to: 8190000000000000002, toPin: B}
+    - {from: 8190000000000000002, fromPin: Result, to: 8190000000000000008, toPin: result}
+    - {from: 8190000000000000001, fromPin: Then, to: 8190000000000000008, toPin: Exec}
+    - {from: 8190000000000000009, fromPin: Then, to: 8190000000000000010, toPin: Exec}
+    - {from: 8190000000000000013, fromPin: Value, to: 8190000000000000014, toPin: List}
+    - {from: 8190000000000000014, fromPin: Result, to: 8190000000000000012, toPin: A}
+    - {from: 8190000000000000012, fromPin: Result, to: 8190000000000000015, toPin: A}
+    - {from: 8190000000000000015, fromPin: Result, to: 8190000000000000011, toPin: Last}
+    - {from: 8190000000000000010, fromPin: Then, to: 8190000000000000011, toPin: Exec}
+    - {from: 8190000000000000016, fromPin: Value, to: 8190000000000000017, toPin: A}
+    - {from: 8190000000000000018, fromPin: Value, to: 8190000000000000019, toPin: Table}
+    - {from: 8190000000000000011, fromPin: Index, to: 8190000000000000019, toPin: Key}
+    - {from: 8190000000000000019, fromPin: Result, to: 8190000000000000020, toPin: Table}
+    - {from: 8190000000000000009, fromPin: hour, to: 8190000000000000021, toPin: A}
+    - {from: 8190000000000000020, fromPin: Result, to: 8190000000000000021, toPin: B}
+    - {from: 8190000000000000017, fromPin: Result, to: 8190000000000000022, toPin: A}
+    - {from: 8190000000000000021, fromPin: Result, to: 8190000000000000022, toPin: B}
+    - {from: 8190000000000000023, fromPin: Value, to: 8190000000000000024, toPin: Table}
+    - {from: 8190000000000000011, fromPin: Index, to: 8190000000000000025, toPin: A}
+    - {from: 8190000000000000025, fromPin: Result, to: 8190000000000000024, toPin: Key}
+    - {from: 8190000000000000024, fromPin: Result, to: 8190000000000000026, toPin: Table}
+    - {from: 8190000000000000009, fromPin: hour, to: 8190000000000000027, toPin: A}
+    - {from: 8190000000000000026, fromPin: Result, to: 8190000000000000027, toPin: B}
+    - {from: 8190000000000000022, fromPin: Result, to: 8190000000000000028, toPin: A}
+    - {from: 8190000000000000027, fromPin: Result, to: 8190000000000000028, toPin: B}
+    - {from: 8190000000000000028, fromPin: Result, to: 8190000000000000029, toPin: Condition}
+    - {from: 8190000000000000011, fromPin: Body, to: 8190000000000000029, toPin: Exec}
+    - {from: 8190000000000000011, fromPin: Index, to: 8190000000000000030, toPin: Value}
+    - {from: 8190000000000000029, fromPin: True, to: 8190000000000000030, toPin: Exec}
+    - {from: 8190000000000000031, fromPin: Value, to: 8190000000000000032, toPin: A}
+    - {from: 8190000000000000032, fromPin: Result, to: 8190000000000000033, toPin: Condition}
+    - {from: 8190000000000000011, fromPin: Completed, to: 8190000000000000033, toPin: Exec}
+    - {from: 8190000000000000033, fromPin: True, to: 8190000000000000034, toPin: Exec}
+    - {from: 8190000000000000035, fromPin: Value, to: 8190000000000000036, toPin: Table}
+    - {from: 8190000000000000037, fromPin: Value, to: 8190000000000000036, toPin: Key}
+    - {from: 8190000000000000038, fromPin: Value, to: 8190000000000000039, toPin: Table}
+    - {from: 8190000000000000041, fromPin: Value, to: 8190000000000000040, toPin: A}
+    - {from: 8190000000000000040, fromPin: Result, to: 8190000000000000039, toPin: Key}
+    - {from: 8190000000000000036, fromPin: Result, to: 8190000000000000042, toPin: Value}
+    - {from: 8190000000000000033, fromPin: False, to: 8190000000000000042, toPin: Exec}
+    - {from: 8190000000000000039, fromPin: Result, to: 8190000000000000043, toPin: Value}
+    - {from: 8190000000000000042, fromPin: Then, to: 8190000000000000043, toPin: Exec}
+    - {from: 8190000000000000044, fromPin: Value, to: 8190000000000000045, toPin: Table}
+    - {from: 8190000000000000046, fromPin: Value, to: 8190000000000000047, toPin: Table}
+    - {from: 8190000000000000045, fromPin: Result, to: 8190000000000000048, toPin: A}
+    - {from: 8190000000000000047, fromPin: Result, to: 8190000000000000048, toPin: B}
+    - {from: 8190000000000000048, fromPin: Result, to: 8190000000000000049, toPin: Condition}
+    - {from: 8190000000000000009, fromPin: hour, to: 8190000000000000051, toPin: A}
+    - {from: 8190000000000000052, fromPin: Value, to: 8190000000000000053, toPin: Table}
+    - {from: 8190000000000000053, fromPin: Result, to: 8190000000000000051, toPin: B}
+    - {from: 8190000000000000051, fromPin: Result, to: 8190000000000000050, toPin: A}
+    - {from: 8190000000000000055, fromPin: Value, to: 8190000000000000056, toPin: Table}
+    - {from: 8190000000000000056, fromPin: Result, to: 8190000000000000054, toPin: A}
+    - {from: 8190000000000000057, fromPin: Value, to: 8190000000000000058, toPin: Table}
+    - {from: 8190000000000000058, fromPin: Result, to: 8190000000000000054, toPin: B}
+    - {from: 8190000000000000054, fromPin: Result, to: 8190000000000000050, toPin: B}
+    - {from: 8190000000000000050, fromPin: Result, to: 8190000000000000049, toPin: True}
+    - {from: 8190000000000000049, fromPin: Result, to: 8190000000000000059, toPin: Value}
+    - {from: 8190000000000000043, fromPin: Then, to: 8190000000000000059, toPin: Exec}
+    - {from: 8190000000000000061, fromPin: Value, to: 8190000000000000060, toPin: a}
+    - {from: 8190000000000000062, fromPin: Value, to: 8190000000000000060, toPin: b}
+    - {from: 8190000000000000063, fromPin: Value, to: 8190000000000000060, toPin: t}
+    - {from: 8190000000000000059, fromPin: Then, to: 8190000000000000060, toPin: Exec}
+    - {from: 8190000000000000065, fromPin: Value, to: 8190000000000000064, toPin: a}
+    - {from: 8190000000000000066, fromPin: Value, to: 8190000000000000064, toPin: b}
+    - {from: 8190000000000000067, fromPin: Value, to: 8190000000000000064, toPin: t}
+    - {from: 8190000000000000060, fromPin: Then, to: 8190000000000000064, toPin: Exec}
+    - {from: 8190000000000000069, fromPin: Value, to: 8190000000000000068, toPin: a}
+    - {from: 8190000000000000070, fromPin: Value, to: 8190000000000000068, toPin: b}
+    - {from: 8190000000000000071, fromPin: Value, to: 8190000000000000068, toPin: t}
+    - {from: 8190000000000000064, fromPin: Then, to: 8190000000000000068, toPin: Exec}
+    - {from: 8190000000000000073, fromPin: Value, to: 8190000000000000072, toPin: a}
+    - {from: 8190000000000000074, fromPin: Value, to: 8190000000000000072, toPin: b}
+    - {from: 8190000000000000075, fromPin: Value, to: 8190000000000000072, toPin: t}
+    - {from: 8190000000000000068, fromPin: Then, to: 8190000000000000072, toPin: Exec}
+    - {from: 8190000000000000060, fromPin: result, to: 8190000000000000076, toPin: result_1}
+    - {from: 8190000000000000064, fromPin: result, to: 8190000000000000076, toPin: result_2}
+    - {from: 8190000000000000068, fromPin: result, to: 8190000000000000076, toPin: result_3}
+    - {from: 8190000000000000072, fromPin: result, to: 8190000000000000076, toPin: result_4}
+    - {from: 8190000000000000072, fromPin: Then, to: 8190000000000000076, toPin: Exec}
+    - {from: 8190000000000000078, fromPin: Value, to: 8190000000000000079, toPin: A}
+    - {from: 8190000000000000080, fromPin: Value, to: 8190000000000000081, toPin: A}
+    - {from: 8190000000000000079, fromPin: Result, to: 8190000000000000082, toPin: A}
+    - {from: 8190000000000000081, fromPin: Result, to: 8190000000000000082, toPin: B}
+    - {from: 8190000000000000082, fromPin: Result, to: 8190000000000000083, toPin: Condition}
+    - {from: 8190000000000000077, fromPin: Then, to: 8190000000000000083, toPin: Exec}
+    - {from: 8190000000000000083, fromPin: True, to: 8190000000000000084, toPin: Exec}
+    - {from: 8190000000000000086, fromPin: Value, to: 8190000000000000085, toPin: entity_id}
+    - {from: 8190000000000000085, fromPin: x, to: 8190000000000000087, toPin: Value}
+    - {from: 8190000000000000083, fromPin: False, to: 8190000000000000087, toPin: Exec}
+    - {from: 8190000000000000085, fromPin: y, to: 8190000000000000088, toPin: Value}
+    - {from: 8190000000000000087, fromPin: Then, to: 8190000000000000088, toPin: Exec}
+    - {from: 8190000000000000090, fromPin: Value, to: 8190000000000000089, toPin: entity_id}
+    - {from: 8190000000000000089, fromPin: x, to: 8190000000000000091, toPin: Value}
+    - {from: 8190000000000000088, fromPin: Then, to: 8190000000000000091, toPin: Exec}
+    - {from: 8190000000000000089, fromPin: y, to: 8190000000000000092, toPin: Value}
+    - {from: 8190000000000000091, fromPin: Then, to: 8190000000000000092, toPin: Exec}
+    - {from: 8190000000000000094, fromPin: Value, to: 8190000000000000093, toPin: entity_id}
+    - {from: 8190000000000000093, fromPin: sx, to: 8190000000000000095, toPin: Value}
+    - {from: 8190000000000000092, fromPin: Then, to: 8190000000000000095, toPin: Exec}
+    - {from: 8190000000000000093, fromPin: sy, to: 8190000000000000096, toPin: Value}
+    - {from: 8190000000000000095, fromPin: Then, to: 8190000000000000096, toPin: Exec}
+    - {from: 8190000000000000099, fromPin: Value, to: 8190000000000000098, toPin: A}
+    - {from: 8190000000000000100, fromPin: Value, to: 8190000000000000098, toPin: B}
+    - {from: 8190000000000000098, fromPin: Result, to: 8190000000000000097, toPin: A}
+    - {from: 8190000000000000102, fromPin: Value, to: 8190000000000000101, toPin: A}
+    - {from: 8190000000000000097, fromPin: Result, to: 8190000000000000103, toPin: A}
+    - {from: 8190000000000000101, fromPin: Result, to: 8190000000000000103, toPin: B}
+    - {from: 8190000000000000106, fromPin: Value, to: 8190000000000000105, toPin: A}
+    - {from: 8190000000000000107, fromPin: Value, to: 8190000000000000105, toPin: B}
+    - {from: 8190000000000000105, fromPin: Result, to: 8190000000000000104, toPin: A}
+    - {from: 8190000000000000109, fromPin: Value, to: 8190000000000000108, toPin: A}
+    - {from: 8190000000000000104, fromPin: Result, to: 8190000000000000110, toPin: A}
+    - {from: 8190000000000000108, fromPin: Result, to: 8190000000000000110, toPin: B}
+    - {from: 8190000000000000103, fromPin: Result, to: 8190000000000000111, toPin: A}
+    - {from: 8190000000000000110, fromPin: Result, to: 8190000000000000111, toPin: B}
+    - {from: 8190000000000000111, fromPin: Result, to: 8190000000000000112, toPin: result}
+    - {from: 8190000000000000096, fromPin: Then, to: 8190000000000000112, toPin: Exec}
+    - {from: 8190000000000000114, fromPin: Result, to: 8190000000000000115, toPin: Value}
+    - {from: 8190000000000000113, fromPin: Then, to: 8190000000000000115, toPin: Exec}
+    - {from: 8190000000000000116, fromPin: Value, to: 8190000000000000117, toPin: List}
+    - {from: 8190000000000000118, fromPin: Result, to: 8190000000000000117, toPin: Value}
+    - {from: 8190000000000000115, fromPin: Then, to: 8190000000000000117, toPin: Exec}
+    - {from: 8190000000000000119, fromPin: Value, to: 8190000000000000120, toPin: List}
+    - {from: 8190000000000000121, fromPin: Result, to: 8190000000000000120, toPin: Value}
+    - {from: 8190000000000000117, fromPin: Then, to: 8190000000000000120, toPin: Exec}
+    - {from: 8190000000000000122, fromPin: Value, to: 8190000000000000123, toPin: List}
+    - {from: 8190000000000000124, fromPin: Result, to: 8190000000000000123, toPin: Value}
+    - {from: 8190000000000000120, fromPin: Then, to: 8190000000000000123, toPin: Exec}
+    - {from: 8190000000000000125, fromPin: Value, to: 8190000000000000126, toPin: List}
+    - {from: 8190000000000000127, fromPin: Result, to: 8190000000000000126, toPin: Value}
+    - {from: 8190000000000000123, fromPin: Then, to: 8190000000000000126, toPin: Exec}
+    - {from: 8190000000000000128, fromPin: Value, to: 8190000000000000129, toPin: List}
+    - {from: 8190000000000000130, fromPin: Result, to: 8190000000000000129, toPin: Value}
+    - {from: 8190000000000000126, fromPin: Then, to: 8190000000000000129, toPin: Exec}
+    - {from: 8190000000000000131, fromPin: Value, to: 8190000000000000132, toPin: List}
+    - {from: 8190000000000000133, fromPin: Result, to: 8190000000000000132, toPin: Value}
+    - {from: 8190000000000000129, fromPin: Then, to: 8190000000000000132, toPin: Exec}
+    - {from: 8190000000000000134, fromPin: Value, to: 8190000000000000135, toPin: List}
+    - {from: 8190000000000000136, fromPin: Result, to: 8190000000000000135, toPin: Value}
+    - {from: 8190000000000000132, fromPin: Then, to: 8190000000000000135, toPin: Exec}
+    - {from: 8190000000000000137, fromPin: Value, to: 8190000000000000138, toPin: List}
+    - {from: 8190000000000000139, fromPin: Result, to: 8190000000000000138, toPin: Value}
+    - {from: 8190000000000000135, fromPin: Then, to: 8190000000000000138, toPin: Exec}
+    - {from: 8190000000000000140, fromPin: Value, to: 8190000000000000141, toPin: Value}
+    - {from: 8190000000000000138, fromPin: Then, to: 8190000000000000141, toPin: Exec}
+    - {from: 8190000000000000142, fromPin: Result, to: 8190000000000000143, toPin: Value}
+    - {from: 8190000000000000141, fromPin: Then, to: 8190000000000000143, toPin: Exec}
+    - {from: 8190000000000000145, fromPin: Value, to: 8190000000000000144, toPin: name}
+    - {from: 8190000000000000144, fromPin: entity_id, to: 8190000000000000146, toPin: Value}
+    - {from: 8190000000000000143, fromPin: Then, to: 8190000000000000146, toPin: Exec}
+    - {from: 8190000000000000148, fromPin: Value, to: 8190000000000000147, toPin: name}
+    - {from: 8190000000000000147, fromPin: entity_id, to: 8190000000000000149, toPin: Value}
+    - {from: 8190000000000000146, fromPin: Then, to: 8190000000000000149, toPin: Exec}
+    - {from: 8190000000000000149, fromPin: Then, to: 8190000000000000150, toPin: Exec}
+    - {from: 8190000000000000150, fromPin: Then, to: 8190000000000000151, toPin: Exec}
+    - {from: 8190000000000000152, fromPin: Value, to: 8190000000000000153, toPin: Condition}
+    - {from: 8190000000000000151, fromPin: Body, to: 8190000000000000153, toPin: Exec}
+    - {from: 8190000000000000156, fromPin: Value, to: 8190000000000000155, toPin: A}
+    - {from: 8190000000000000151, fromPin: Index, to: 8190000000000000155, toPin: B}
+    - {from: 8190000000000000155, fromPin: Result, to: 8190000000000000154, toPin: name}
+    - {from: 8190000000000000154, fromPin: entity_id, to: 8190000000000000157, toPin: Value}
+    - {from: 8190000000000000153, fromPin: True, to: 8190000000000000157, toPin: Exec}
+    - {from: 8190000000000000158, fromPin: Value, to: 8190000000000000159, toPin: A}
+    - {from: 8190000000000000159, fromPin: Result, to: 8190000000000000160, toPin: Condition}
+    - {from: 8190000000000000157, fromPin: Then, to: 8190000000000000160, toPin: Exec}
+    - {from: 8190000000000000160, fromPin: True, to: 8190000000000000161, toPin: Exec}
+    - {from: 8190000000000000164, fromPin: Value, to: 8190000000000000163, toPin: Table}
+    - {from: 8190000000000000166, fromPin: Value, to: 8190000000000000167, toPin: List}
+    - {from: 8190000000000000167, fromPin: Result, to: 8190000000000000165, toPin: A}
+    - {from: 8190000000000000165, fromPin: Result, to: 8190000000000000163, toPin: Key}
+    - {from: 8190000000000000162, fromPin: Value, to: 8190000000000000163, toPin: Value}
+    - {from: 8190000000000000160, fromPin: False, to: 8190000000000000163, toPin: Exec}
+    - {from: 8190000000000000169, fromPin: hours, to: 8190000000000000170, toPin: Value}
+    - {from: 8190000000000000170, fromPin: Result, to: 8190000000000000171, toPin: Value}
+    - {from: 8190000000000000168, fromPin: Then, to: 8190000000000000171, toPin: Exec}
+    - {from: 8190000000000000173, fromPin: Value, to: 8190000000000000172, toPin: hour}
+    - {from: 8190000000000000171, fromPin: Then, to: 8190000000000000172, toPin: Exec}
+    - {from: 8190000000000000172, fromPin: result_1, to: 8190000000000000174, toPin: r}
+    - {from: 8190000000000000172, fromPin: result_2, to: 8190000000000000174, toPin: g}
+    - {from: 8190000000000000172, fromPin: result_3, to: 8190000000000000174, toPin: b}
+    - {from: 8190000000000000172, fromPin: Then, to: 8190000000000000174, toPin: Exec}
+    - {from: 8190000000000000172, fromPin: result_4, to: 8190000000000000175, toPin: intensity}
+    - {from: 8190000000000000174, fromPin: Then, to: 8190000000000000175, toPin: Exec}
+    - {from: 8190000000000000176, fromPin: Value, to: 8190000000000000178, toPin: A}
+    - {from: 8190000000000000177, fromPin: Value, to: 8190000000000000178, toPin: B}
+    - {from: 8190000000000000179, fromPin: Value, to: 8190000000000000181, toPin: A}
+    - {from: 8190000000000000180, fromPin: Value, to: 8190000000000000181, toPin: B}
+    - {from: 8190000000000000178, fromPin: Result, to: 8190000000000000182, toPin: A}
+    - {from: 8190000000000000181, fromPin: Result, to: 8190000000000000182, toPin: B}
+    - {from: 8190000000000000182, fromPin: Result, to: 8190000000000000183, toPin: Value}
+    - {from: 8190000000000000175, fromPin: Then, to: 8190000000000000183, toPin: Exec}
+    - {from: 8190000000000000184, fromPin: Value, to: 8190000000000000186, toPin: A}
+    - {from: 8190000000000000185, fromPin: Value, to: 8190000000000000186, toPin: B}
+    - {from: 8190000000000000186, fromPin: Result, to: 8190000000000000187, toPin: Condition}
+    - {from: 8190000000000000183, fromPin: Then, to: 8190000000000000187, toPin: Exec}
+    - {from: 8190000000000000188, fromPin: Value, to: 8190000000000000189, toPin: Value}
+    - {from: 8190000000000000187, fromPin: True, to: 8190000000000000189, toPin: Exec}
+    - {from: 8190000000000000190, fromPin: Value, to: 8190000000000000191, toPin: List}
+    - {from: 8190000000000000189, fromPin: Then, to: 8190000000000000191, toPin: Exec}
+    - {from: 8190000000000000191, fromPin: Item, to: 8190000000000000192, toPin: entity_id}
+    - {from: 8190000000000000193, fromPin: Value, to: 8190000000000000192, toPin: enabled}
+    - {from: 8190000000000000191, fromPin: Body, to: 8190000000000000192, toPin: Exec}
+    - {from: 8190000000000000196, fromPin: Value, to: 8190000000000000195, toPin: A}
+    - {from: 8190000000000000195, fromPin: Result, to: 8190000000000000194, toPin: key}
+    - {from: 8190000000000000197, fromPin: Value, to: 8190000000000000194, toPin: value}
+    - {from: 8190000000000000191, fromPin: Completed, to: 8190000000000000194, toPin: Exec}
+    - {from: 8190000000000000200, fromPin: Value, to: 8190000000000000199, toPin: A}
+    - {from: 8190000000000000204, fromPin: Value, to: 8190000000000000203, toPin: A}
+    - {from: 8190000000000000203, fromPin: Result, to: 8190000000000000202, toPin: A}
+    - {from: 8190000000000000202, fromPin: Result, to: 8190000000000000201, toPin: A}
+    - {from: 8190000000000000199, fromPin: Result, to: 8190000000000000198, toPin: key}
+    - {from: 8190000000000000201, fromPin: Result, to: 8190000000000000198, toPin: value}
+    - {from: 8190000000000000194, fromPin: Then, to: 8190000000000000198, toPin: Exec}
+    - {from: 8190000000000000187, fromPin: False, to: 8190000000000000198, toPin: Exec}
+    - {from: 8190000000000000205, fromPin: Value, to: 8190000000000000206, toPin: A}
+    - {from: 8190000000000000207, fromPin: Result, to: 8190000000000000206, toPin: B}
+    - {from: 8190000000000000206, fromPin: Result, to: 8190000000000000208, toPin: Condition}
+    - {from: 8190000000000000198, fromPin: Then, to: 8190000000000000208, toPin: Exec}
+    - {from: 8190000000000000208, fromPin: False, to: 8190000000000000209, toPin: Exec}
+    - {from: 8190000000000000209, fromPin: result, to: 8190000000000000210, toPin: Condition}
+    - {from: 8190000000000000211, fromPin: Value, to: 8190000000000000212, toPin: Condition}
+    - {from: 8190000000000000212, fromPin: Result, to: 8190000000000000210, toPin: False}
+    - {from: 8190000000000000210, fromPin: Result, to: 8190000000000000213, toPin: Value}
+    - {from: 8190000000000000209, fromPin: Then, to: 8190000000000000213, toPin: Exec}
+    - {from: 8190000000000000214, fromPin: Value, to: 8190000000000000216, toPin: A}
+    - {from: 8190000000000000215, fromPin: Value, to: 8190000000000000216, toPin: B}
+    - {from: 8190000000000000216, fromPin: Result, to: 8190000000000000217, toPin: Condition}
+    - {from: 8190000000000000213, fromPin: Then, to: 8190000000000000217, toPin: Exec}
+    - {from: 8190000000000000218, fromPin: Value, to: 8190000000000000219, toPin: Value}
+    - {from: 8190000000000000217, fromPin: True, to: 8190000000000000219, toPin: Exec}
+    - {from: 8190000000000000221, fromPin: Value, to: 8190000000000000220, toPin: key}
+    - {from: 8190000000000000222, fromPin: Value, to: 8190000000000000220, toPin: value}
+    - {from: 8190000000000000219, fromPin: Then, to: 8190000000000000220, toPin: Exec}

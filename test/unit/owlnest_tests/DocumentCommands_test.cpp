@@ -8,6 +8,7 @@
 
 #include "commands/DocumentCommands.h"
 #include "commands/CommandRegistry.h"
+#include "commands/MaterialCommands.h"
 #include "document/DataTableDocument.h"
 #include "document/DialogueDocument.h"
 #include "document/HudThemeDocument.h"
@@ -67,6 +68,8 @@ public:
 	auto openHudTheme(const std::filesystem::path& iPath) -> HudThemeEditor* override {
 		return iPath == theme.filePath() ? &theme : nullptr;
 	}
+
+	auto openMaterial(const std::filesystem::path& /*iPath*/) -> MaterialEditor* override { return nullptr; }
 
 	SoundDocument sound;
 	LocalisationDocument localisation;

@@ -24,7 +24,7 @@ Entities:
     scale: [1, 1, 1]
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.lua
+    scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.owlvs
     properties:
     - {name: hint, type: string, value: HudHint}
     - {name: duration, type: float, value: 4.5}
@@ -111,7 +111,7 @@ Entities:
   Player: {primary: true, linearImpulse: 0, jumpImpulse: 0, canJump: false}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:0e92d49b91a88417:scripts/hub/world_player.lua
+    scriptPath: gid:0e92d49b91a88417:scripts/hub/world_player.owlvs
     properties:
     - {name: speed, type: float, value: 5}
 - Entity: 2000000000000000021
@@ -140,7 +140,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.lua
+    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.owlvs
     properties:
     - {name: target_scene, type: string, value: scenes/platformer_house.owl}
     - {name: transition, type: string, value: fade_out}
@@ -233,7 +233,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.lua
+    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.owlvs
     properties:
     - {name: target_scene, type: string, value: scenes/raycast_demo.owl}
     - {name: transition, type: string, value: wipe_left}
@@ -326,7 +326,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.lua
+    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.owlvs
     properties:
     - {name: target_scene, type: string, value: scenes/iso_town.owl}
     - {name: transition, type: string, value: fade}
@@ -419,7 +419,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.lua
+    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.owlvs
     properties:
     - {name: target_scene, type: string, value: scenes/voxel_terrain.owl}
     - {name: transition, type: string, value: fade}
@@ -512,7 +512,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.lua
+    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.owlvs
     properties:
     - {name: target_scene, type: string, value: scenes/tavern.owl}
     - {name: transition, type: string, value: fade}
@@ -603,7 +603,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "Level 5, the tavern: find the key, open the cellar.|Tavern. A 3D room to search, with a cellar under the trapdoor."}
@@ -668,7 +668,7 @@ Entities:
     fade: 0.0500000007
   Trigger: {Type: Interaction, InteractionRange: 1.20000005, CallbackName: on_teleporter_enter}
   Visibility: {gameVisible: false}
-  LuaScript: {scriptPath: scripts/hub/teleporter.lua}
+  LuaScript: {scriptPath: scripts/hub/teleporter.owlvs}
 - Entity: 2000000000000000042
   Tag: {tag: LavaHazard}
   Transform:
@@ -685,7 +685,7 @@ Entities:
     scale: [12.0, 2.0, 1]
   Trigger: {Type: LuaCallback, CallbackName: on_lava_tick}
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/lava_damage.lua}
+  LuaScript: {scriptPath: scripts/hub/lava_damage.owlvs}
 - Entity: 2000000000000000309
   Tag: {tag: River_2}
   Transform:
@@ -694,7 +694,7 @@ Entities:
     scale: [12.0, 2.0, 1]
   Trigger: {Type: LuaCallback, CallbackName: on_lava_tick}
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/lava_damage.lua}
+  LuaScript: {scriptPath: scripts/hub/lava_damage.owlvs}
 - Entity: 2000000000000000310
   Tag: {tag: River_3}
   Transform:
@@ -703,7 +703,7 @@ Entities:
     scale: [7.0, 2.0, 1]
   Trigger: {Type: LuaCallback, CallbackName: on_lava_tick}
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/lava_damage.lua}
+  LuaScript: {scriptPath: scripts/hub/lava_damage.owlvs}
 - Entity: 2000000000000000311
   Tag: {tag: River_4}
   Transform:
@@ -712,7 +712,7 @@ Entities:
     scale: [11.0, 2.0, 1]
   Trigger: {Type: LuaCallback, CallbackName: on_lava_tick}
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/lava_damage.lua}
+  LuaScript: {scriptPath: scripts/hub/lava_damage.owlvs}
 - Entity: 2000000000000000312
   Tag: {tag: River_5}
   Transform:
@@ -721,7 +721,7 @@ Entities:
     scale: [8.0, 2.0, 1]
   Trigger: {Type: LuaCallback, CallbackName: on_lava_tick}
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/lava_damage.lua}
+  LuaScript: {scriptPath: scripts/hub/lava_damage.owlvs}
 - Entity: 2000000000000000313
   Tag: {tag: River_6}
   Transform:
@@ -730,7 +730,7 @@ Entities:
     scale: [11.0, 2.0, 1]
   Trigger: {Type: LuaCallback, CallbackName: on_lava_tick}
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/lava_damage.lua}
+  LuaScript: {scriptPath: scripts/hub/lava_damage.owlvs}
 - Entity: 2000000000000000110
   Tag: {tag: InfoBoard}
   Transform:
@@ -747,7 +747,7 @@ Entities:
     frameDuration: 0.1
     loop: false
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_board_interact}
-  LuaScript: {scriptPath: scripts/hub/info_board.lua}
+  LuaScript: {scriptPath: scripts/hub/info_board.owlvs}
   Visibility: {gameVisible: true}
 - Entity: 2000000000000000120
   Tag: {tag: Lever}
@@ -765,7 +765,7 @@ Entities:
     frameDuration: 0.1
     loop: false
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_lever_interact}
-  LuaScript: {scriptPath: scripts/hub/hub_lever.lua}
+  LuaScript: {scriptPath: scripts/hub/hub_lever.owlvs}
   Visibility: {gameVisible: true}
 - Entity: 2000000000000000121
   Tag: {tag: LeverLink}
@@ -831,7 +831,7 @@ Entities:
     loop: false
     texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   LuaScript:
-    scriptPath: gid:9090f1881ffa4d14:scripts/hub/hub_villager.lua
+    scriptPath: gid:9090f1881ffa4d14:scripts/hub/hub_villager.owlvs
     properties:
     - {name: idle_a, type: float, value: 159.0}
     - {name: idle_b, type: float, value: 242.0}
@@ -857,7 +857,7 @@ Entities:
     loop: false
     texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
   LuaScript:
-    scriptPath: gid:9090f1881ffa4d14:scripts/hub/hub_villager.lua
+    scriptPath: gid:9090f1881ffa4d14:scripts/hub/hub_villager.owlvs
     properties:
     - {name: idle_a, type: float, value: 156.0}
     - {name: idle_b, type: float, value: 233.0}
@@ -893,7 +893,7 @@ Entities:
       - [29.5, -14.5, 0.5]
       - [35.5, -14.5, 0.5]
   LuaScript:
-    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.owlvs
     properties:
     - {name: idle_a, type: float, value: 144}
     - {name: idle_b, type: float, value: 218}
@@ -926,7 +926,7 @@ Entities:
       - [39.5, -21.5, 0.5]
       - [52.5, -21.5, 0.5]
   LuaScript:
-    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.owlvs
     properties:
     - {name: idle_a, type: float, value: 157}
     - {name: idle_b, type: float, value: 236}
@@ -959,7 +959,7 @@ Entities:
       - [8.5, -28.5, 0.5]
       - [19.5, -28.5, 0.5]
   LuaScript:
-    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.owlvs
     properties:
     - {name: idle_a, type: float, value: 145}
     - {name: idle_b, type: float, value: 221}
@@ -991,7 +991,7 @@ Entities:
     waypoints:
       - [42.5, -23.5, 0.5]
   LuaScript:
-    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.owlvs
     properties:
     - {name: idle_a, type: float, value: 146}
     - {name: idle_b, type: float, value: 224}
@@ -1023,7 +1023,7 @@ Entities:
     waypoints:
       - [46.5, -23.5, 0.5]
   LuaScript:
-    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.owlvs
     properties:
     - {name: idle_a, type: float, value: 160}
     - {name: idle_b, type: float, value: 245}
@@ -1055,7 +1055,7 @@ Entities:
     waypoints:
       - [50.5, -23.5, 0.5]
   LuaScript:
-    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.owlvs
     properties:
     - {name: idle_a, type: float, value: 147}
     - {name: idle_b, type: float, value: 227}
@@ -1087,7 +1087,7 @@ Entities:
     waypoints:
       - [30.5, -13.5, 0.5]
   LuaScript:
-    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.owlvs
     properties:
     - {name: idle_a, type: float, value: 158}
     - {name: idle_b, type: float, value: 239}
@@ -1119,7 +1119,7 @@ Entities:
     waypoints:
       - [6.5, -9.5, 0.5]
   LuaScript:
-    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.owlvs
     properties:
     - {name: idle_a, type: float, value: 146}
     - {name: idle_b, type: float, value: 224}
@@ -1152,7 +1152,7 @@ Entities:
       - [10.5, -28.5, 0.5]
       - [12.5, -28.5, 0.5]
   LuaScript:
-    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.owlvs
     properties:
     - {name: idle_a, type: float, value: 216}
     - {name: idle_b, type: float, value: 217}
@@ -1186,7 +1186,7 @@ Entities:
       - [16.5, -28.5, 0.5]
       - [17.5, -28.5, 0.5]
   LuaScript:
-    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.owlvs
     properties:
     - {name: idle_a, type: float, value: 216}
     - {name: idle_b, type: float, value: 217}
@@ -1220,7 +1220,7 @@ Entities:
       - [47.5, -27.5, 0.5]
       - [49.5, -27.5, 0.5]
   LuaScript:
-    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.lua
+    scriptPath: gid:d52e0d2838c73683:scripts/hub/hub_wanderer.owlvs
     properties:
     - {name: idle_a, type: float, value: 216}
     - {name: idle_b, type: float, value: 217}
@@ -1476,7 +1476,7 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/hub_ambient.lua}
+  LuaScript: {scriptPath: scripts/hub/hub_ambient.owlvs}
 - Entity: 2000000000000000344
   Tag: {tag: HubWater}
   Transform:
@@ -1484,7 +1484,7 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1.0, 1.0, 1.0]
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/hub_water.lua}
+  LuaScript: {scriptPath: scripts/hub/hub_water.owlvs}
 - Entity: 2000000000000000345
   Tag: {tag: HubCritters}
   Transform:
@@ -1492,7 +1492,7 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1.0, 1.0, 1.0]
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/hub_critters.lua}
+  LuaScript: {scriptPath: scripts/hub/hub_critters.owlvs}
 - Entity: 2000000000000000346
   Tag: {tag: HubAmbience}
   Transform:
@@ -1565,7 +1565,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "Level 1, the platformer: run and jump over spikes and water, then reach the door at the top of the factory tower.|Platformer house. Keep an eye out for the secret cave behind the farm cliff."}
@@ -1579,7 +1579,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "Level 2, the raycast house: Wolfenstein in first person. Find an elevator, the secrets hide a second one.|Raycast house. Open the doors with E, and the minimap only shows what you have seen."}
@@ -1593,7 +1593,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "Level 3, the isometric town: build roads with the mouse and make the cars drive 100 trips.|Iso Town. Right click bulldozes, the cars follow the road graph."}
@@ -1607,7 +1607,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "Level 4, the voxel terrain: walk 100 blocks away from where you land. Space jumps, double tap flies.|Voxel house. The terrain is generated as you walk."}
@@ -1621,7 +1621,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "Danger! The lava crater is deadly. Keep away from it.|Crater of lava ahead: one step and it is over."}
@@ -1635,7 +1635,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: "Villager"}
     - {name: lines, type: string, value: "Nice day for a walk. Six places of the village wait for you, the markers show them.|I cross the village every day. Mind the fountain, the stones are slippery.|Have you seen the lever in the east meadow? It opens the old gate in the west grove."}
@@ -1649,7 +1649,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: "Guard"}
     - {name: lines, type: string, value: "Halt! Ah, it is only you. Mind the lava in the north west forest, it is deadly.|All quiet on the square. When the six places are done, the shrine will wake up.|The river stings. Cross it by the bridges."}
@@ -1663,7 +1663,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:5be0c27a91d4f368:scripts/hub/hub_wizard.lua
+    scriptPath: gid:5be0c27a91d4f368:scripts/hub/hub_wizard.owlvs
     properties:
     - {name: dialogue_path, type: string, value: "dialogues/wizard.owldlg"}
     - {name: follow, type: string, value: "Wizard"}
@@ -1676,7 +1676,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: "Knight"}
     - {name: lines, type: string, value: "I guard the high street. The raycast house is on the left, the iso town on the right.|A hero walks the village! Try the board near the entrance.|Finish every level and come back: the portal will answer."}
@@ -1690,7 +1690,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: "Farmer"}
     - {name: lines, type: string, value: "Wheat, cabbages and carrots. The hens are not for sale.|Rain is late this year. The river is full, though.|Do not step on my beds, friend."}
@@ -1704,7 +1704,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: "Merchant1"}
     - {name: lines, type: string, value: "Fresh bread! Nothing for sale today, but the smell is free.|The bakery opens before the bell. Come early next time."}
@@ -1718,7 +1718,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: "Merchant2"}
     - {name: lines, type: string, value: "Milk and cheese. The best of the valley.|The market is quiet. Everybody is busy with the levels."}
@@ -1732,7 +1732,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: "Merchant3"}
     - {name: lines, type: string, value: "Cider of the village, stored since the last harvest.|They say the portal glows when the six places are done."}
@@ -1746,7 +1746,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: "Priest"}
     - {name: lines, type: string, value: "Peace be with you. The bell rings now and then, do not mind it.|The shrine in the north east keeps the portal. Only the finished levels wake it.|The church stands here since before the village."}
@@ -1760,7 +1760,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: "Woodcutter"}
     - {name: lines, type: string, value: "I fell trees all day. The crater to the north is none of my business.|The forest is dense here. Stay on the footpath.|A bench of logs, a few mushrooms. That is all I need."}
@@ -1912,7 +1912,7 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1.0, 1.0, 1.0]
   Visibility: {gameVisible: true}
-  LuaScript: {scriptPath: scripts/hub/hub_labels.lua}
+  LuaScript: {scriptPath: scripts/hub/hub_labels.owlvs}
 - Entity: 2100000000000000001
   Tag: {tag: TelescopeDoor}
   Transform:
@@ -1922,7 +1922,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_door_interact}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.lua
+    scriptPath: gid:c178eb560dc26531:scripts/hub/place_door.owlvs
     properties:
     - {name: target_scene, type: string, value: scenes/far_orbit.owl}
     - {name: transition, type: string, value: fade}
@@ -1965,7 +1965,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "The telescope of the observatory looks one astronomical unit away: E at it to fly there.|A debris drifts off the far station. Dock with it, then come back."}
@@ -2025,7 +2025,7 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_talk}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.lua
+    scriptPath: gid:39093c8f1d5cb5d3:scripts/hub/hub_talker.owlvs
     properties:
     - {name: speaker, type: string, value: ""}
     - {name: lines, type: string, value: "The old cave. Listen: every drip rings off its walls.|The music of the village grows darker in there."}
@@ -2066,7 +2066,7 @@ Entities:
   Light2D: {type: Ambient, enabled: true, color: [1, 1, 1], intensity: 1, radius: 5, falloff: 2, height: 1, castShadows: false}
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:c8c56d3674c81cbd:scripts/hub/hub_daynight.lua
+    scriptPath: gid:c8c56d3674c81cbd:scripts/hub/hub_daynight.owlvs
 - Entity: 2100000000000000010
   Tag: {tag: NightLight_1}
   Transform:
@@ -2335,7 +2335,7 @@ Entities:
   RendererTag:
     Name: overlay
   LuaScript:
-    scriptPath: gid:c91123b60c76aeab:scripts/hub/hub_minimap.lua
+    scriptPath: gid:c91123b60c76aeab:scripts/hub/hub_minimap.owlvs
     properties:
     - {name: origin_x, type: float, value: 16}
     - {name: origin_y, type: float, value: 16}

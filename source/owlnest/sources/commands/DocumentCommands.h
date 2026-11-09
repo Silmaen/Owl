@@ -25,6 +25,7 @@ class CommandRegistry;
 class DataTableEditor;
 class DialogueEditor;
 class HudThemeEditor;
+class MaterialEditor;
 class SequenceEditor;
 
 /**
@@ -297,6 +298,14 @@ public:
 	 * @return Its editor, or null when the file cannot be opened.
 	 */
 	virtual auto openHudTheme(const std::filesystem::path& iPath) -> HudThemeEditor* = 0;
+
+	/**
+	 * @brief
+	 *  The editor of a material, opened in a tab when it is not.
+	 * @param[in] iPath The `.owlmat` file.
+	 * @return The editor, null when the file cannot be opened.
+	 */
+	virtual auto openMaterial(const std::filesystem::path& iPath) -> MaterialEditor* = 0;
 };
 
 /**

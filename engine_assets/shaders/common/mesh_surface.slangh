@@ -1,6 +1,9 @@
 // Surface shading shared by the 3D mesh shaders (mesh3d, skinned3d): one material per draw, the shading of
 // pbr.slangh (Standard, Toon or Unlit), the lights, cascaded shadows and image-based lighting of the scene. In a
 // shadow pass it writes the normalized device depth instead. Outputs colour + the entity id.
+// The material is two functions between the `owl:material` markers: `evaluateSurface` (the surface of a fragment)
+// and `evaluateVertexOffset` (the world position offset of a vertex). Here they read the parameters of the material;
+// a material graph replaces the block with the functions it compiles to.
 
 #include "pbr.slangh"
 
@@ -20,15 +23,115 @@ struct FragmentOutput {
 	int entityID : SV_Target1;
 };
 
-FragmentOutput shadeMeshSurface(FragmentInput input, bool frontFace) {
-	FragmentOutput output;
+// What the surface of a material reads at a fragment.
+struct SurfaceInput {
+	float3 position;// camera-relative.
+	float3 normal;  // geometric normal, towards the eye.
+	float3x3 frame; // tangent, bitangent, normal of the uv.
+	float2 uv;
+	int texIndex;   // slot of the base-colour texture the vertices name.
+	float ao;       // baked occlusion of the vertex.
+};
+
+// The surface of a material at a fragment, before the tint of the entity.
+struct MaterialSurface {
+	float4 base;    // linear base colour, alpha.
+	float3 normal;  // shading normal.
+	float metallic;
+	float roughness;
+	float occlusion;
+	float3 emissive;// pre-exposed.
+	float clearcoat;
+	float clearcoatRoughness;
+	float3 sheenColor;// linear.
+	float sheenRoughness;
+	float anisotropy;
+	float anisotropyRotation;// radians, about the normal from the tangent of the uv.
+};
+
+// What the vertex stage of a material reads at a vertex.
+struct VertexSurfaceInput {
+	float3 position;// camera-relative.
+	float3 normal;  // world normal.
+	float2 uv;
+};
+
+#include "material_nodes.slangh"
+
+// owl:material-begin
+MaterialSurface evaluateSurface(SurfaceInput input) {
+	MaterialSurface m;
 	float4 base = float4(authoredColor(gMaterial.baseColor.rgb), gMaterial.baseColor.a);
 	if (hasMap(0)) {
 		// The vertices name the base-colour slot (MAP_BASE_COLOR for the meshes of the mesh cache).
 		float4 texel = gTextures[NonUniformResourceIndex(input.texIndex)].Sample(input.uv);
 		base *= float4(authoredColor(texel.rgb), texel.a);
 	}
-	base *= float4(authoredColor(input.tint.rgb), input.tint.a);
+	m.base = base;
+	float3 normal = input.normal;
+	if (hasMap(2)) {
+		float3 mapped = gTextures[MAP_NORMAL].Sample(input.uv).xyz * 2.0f - 1.0f;
+		if (gMaterial.channels.w == 1)
+			mapped.y = -mapped.y;
+		mapped.xy *= gMaterial.factors.z;
+		normal = normalize(mul(mapped, input.frame));
+	}
+	m.normal = normal;
+	float metallic = gMaterial.factors.x;
+	float roughness = gMaterial.factors.y;
+	if (hasMap(1))
+		metallic *= sampleChannel(MAP_METALLIC, input.uv, gMaterial.channels.x);
+	if (hasMap(5))
+		roughness *= sampleChannel(MAP_ROUGHNESS, input.uv, gMaterial.channels.y);
+	m.metallic = metallic;
+	m.roughness = roughness;
+	float occlusion = input.ao;
+	if (hasMap(3))
+		occlusion *= lerp(1.0f, sampleChannel(MAP_OCCLUSION, input.uv, gMaterial.channels.z), gMaterial.factors.w);
+	m.occlusion = occlusion;
+	float3 emissive = authoredColor(gMaterial.emissive.rgb) * gMaterial.toon.y * gScene.ambient.w;
+	if (hasMap(4))
+		emissive *= authoredColor(gTextures[MAP_EMISSIVE].Sample(input.uv).rgb);
+	m.emissive = emissive;
+	m.clearcoat = gMaterial.layers.x;
+	m.clearcoatRoughness = gMaterial.layers.y;
+	m.sheenColor = authoredColor(gMaterial.sheen.rgb);
+	m.sheenRoughness = gMaterial.sheen.w;
+	m.anisotropy = gMaterial.layers.z;
+	m.anisotropyRotation = gMaterial.layers.w;
+	return m;
+}
+
+float3 evaluateVertexOffset(VertexSurfaceInput input) {
+	return float3(0.0f, 0.0f, 0.0f);
+}
+// owl:material-end
+
+// The normalized device depth a shadow pass writes.
+FragmentOutput shadowDepth(FragmentInput input) {
+	FragmentOutput output;
+	output.color = float4(input.clipDepth.x / input.clipDepth.y, 0.0f, 0.0f, 1.0f);
+	output.entityID = -1;
+	return output;
+}
+
+FragmentOutput shadeMeshSurface(FragmentInput input, bool frontFace) {
+	// An opaque surface casts its shadow without evaluating its material, whose samples cannot be skipped later.
+	if (gScene.ids.z != 0 && gMaterial.model.y == 0)
+		return shadowDepth(input);
+	FragmentOutput output;
+	float3 geometricNormal = normalize(input.normal);
+	if (frontFace == (gScene.origin.w < 0.0f))
+		geometricNormal = -geometricNormal;
+	SurfaceInput surface;
+	surface.position = input.position;
+	surface.normal = geometricNormal;
+	surface.frame = cotangentFrame(geometricNormal, input.position, input.uv);
+	surface.uv = input.uv;
+	surface.texIndex = input.texIndex;
+	surface.ao = input.ao;
+	MaterialSurface m = evaluateSurface(surface);
+	float4 base = m.base * float4(authoredColor(input.tint.rgb), input.tint.a);
 	int alphaMode = gMaterial.model.y;
 	if (alphaMode == 1 && base.a < gMaterial.emissive.w)
 		discard;
@@ -36,37 +139,11 @@ FragmentOutput shadeMeshSurface(FragmentInput input, bool frontFace) {
 		base.a = 1.0f;
 	if (base.a < 0.001f)
 		discard;
-	if (gScene.ids.z != 0) {
-		output.color = float4(input.clipDepth.x / input.clipDepth.y, 0.0f, 0.0f, 1.0f);
-		output.entityID = -1;
-		return output;
-	}
-	float3 geometricNormal = normalize(input.normal);
-	if (frontFace == (gScene.origin.w < 0.0f))
-		geometricNormal = -geometricNormal;
-	float3x3 frame = cotangentFrame(geometricNormal, input.position, input.uv);
-	float3 normal = geometricNormal;
-	if (hasMap(2)) {
-		float3 mapped = gTextures[MAP_NORMAL].Sample(input.uv).xyz * 2.0f - 1.0f;
-		if (gMaterial.channels.w == 1)
-			mapped.y = -mapped.y;
-		mapped.xy *= gMaterial.factors.z;
-		normal = normalize(mul(mapped, frame));
-	}
-	float metallic = gMaterial.factors.x;
-	float roughness = gMaterial.factors.y;
-	if (hasMap(1))
-		metallic *= sampleChannel(MAP_METALLIC, input.uv, gMaterial.channels.x);
-	if (hasMap(5))
-		roughness *= sampleChannel(MAP_ROUGHNESS, input.uv, gMaterial.channels.y);
-	float occlusion = input.ao;
-	if (hasMap(3))
-		occlusion *= lerp(1.0f, sampleChannel(MAP_OCCLUSION, input.uv, gMaterial.channels.z), gMaterial.factors.w);
-	float3 emissive = authoredColor(gMaterial.emissive.rgb) * gMaterial.toon.y * gScene.ambient.w;
-	if (hasMap(4))
-		emissive *= authoredColor(gTextures[MAP_EMISSIVE].Sample(input.uv).rgb);
-	float rotation = gMaterial.layers.w;
-	float3 tangent = normalize(frame[0] * cos(rotation) + frame[1] * sin(rotation));
+	if (gScene.ids.z != 0)
+		return shadowDepth(input);
+	float3 normal = m.normal;
+	float rotation = m.anisotropyRotation;
+	float3 tangent = normalize(surface.frame[0] * cos(rotation) + surface.frame[1] * sin(rotation));
 	tangent = normalize(tangent - normal * dot(normal, tangent));
 	Surface s;
 	s.position = input.position;
@@ -76,16 +153,25 @@ FragmentOutput shadeMeshSurface(FragmentInput input, bool frontFace) {
 	s.view = normalize(-input.position);
 	s.albedo = base.rgb;
 	s.alpha = base.a;
-	s.metallic = saturate(metallic);
-	s.roughness = clamp(roughness, MIN_ROUGHNESS, 1.0f);
-	s.occlusion = occlusion;
-	s.emissive = emissive;
-	s.clearcoat = saturate(gMaterial.layers.x);
-	s.clearcoatRoughness = clamp(gMaterial.layers.y, MIN_ROUGHNESS, 1.0f);
-	s.sheenColor = authoredColor(gMaterial.sheen.rgb);
-	s.sheenRoughness = clamp(gMaterial.sheen.w, MIN_ROUGHNESS, 1.0f);
-	s.anisotropy = clamp(gMaterial.layers.z, -1.0f, 1.0f);
+	s.metallic = saturate(m.metallic);
+	s.roughness = clamp(m.roughness, MIN_ROUGHNESS, 1.0f);
+	s.occlusion = m.occlusion;
+	s.emissive = m.emissive;
+	s.clearcoat = saturate(m.clearcoat);
+	s.clearcoatRoughness = clamp(m.clearcoatRoughness, MIN_ROUGHNESS, 1.0f);
+	s.sheenColor = m.sheenColor;
+	s.sheenRoughness = clamp(m.sheenRoughness, MIN_ROUGHNESS, 1.0f);
+	s.anisotropy = clamp(m.anisotropy, -1.0f, 1.0f);
 	output.color = float4(shadeSurface(s), base.a);
 	output.entityID = input.entityId;
 	return output;
+}
+
+// The camera-relative position of a vertex moved by the vertex stage of the material.
+float3 offsetVertex(float3 position, float3 worldNormal, float2 uv) {
+	VertexSurfaceInput vertex;
+	vertex.position = position;
+	vertex.normal = worldNormal;
+	vertex.uv = uv;
+	return position + evaluateVertexOffset(vertex);
 }

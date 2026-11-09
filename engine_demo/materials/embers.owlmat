@@ -11,3 +11,65 @@ Material:
   normalMap: gid:a45c2e6374164dac:textures/pbr/burned_ground_01/burned_ground_01_nor.jpg
   occlusionMap: gid:6b74f17f7893d516:textures/pbr/burned_ground_01/burned_ground_01_arm.jpg
   emissiveMap: gid:bcf2f52f576ddb5a:textures/fire/embers.png
+  graph:
+    nodes:
+      - id: 7600000000000000001
+        type: surface.parameters
+        position: [0, 0]
+      - id: 7600000000000000002
+        type: output.surface
+        position: [1100, 0]
+      - id: 7600000000000000003
+        type: input.position
+        position: [0, 560]
+      - id: 7600000000000000004
+        type: input.time
+        position: [0, 680]
+      - id: 7600000000000000005
+        type: math.multiply
+        position: [220, 680]
+        values:
+          B: "0.35"
+      - id: 7600000000000000006
+        type: vector.combine
+        position: [440, 640]
+      - id: 7600000000000000007
+        type: math.add
+        position: [660, 560]
+      - id: 7600000000000000008
+        type: noise.fbm
+        position: [860, 560]
+        values:
+          Scale: "2.5"
+          octaves: "4"
+      - id: 7600000000000000009
+        type: math.lerp
+        position: [860, 420]
+        values:
+          A: "0.35"
+          B: "1.8"
+      - id: 7600000000000000010
+        type: math.multiply
+        position: [860, 300]
+    links:
+      - {from: 7600000000000000001, fromPin: Base Color, to: 7600000000000000002, toPin: Base Color}
+      - {from: 7600000000000000001, fromPin: Alpha, to: 7600000000000000002, toPin: Alpha}
+      - {from: 7600000000000000001, fromPin: Normal, to: 7600000000000000002, toPin: Normal}
+      - {from: 7600000000000000001, fromPin: Metallic, to: 7600000000000000002, toPin: Metallic}
+      - {from: 7600000000000000001, fromPin: Roughness, to: 7600000000000000002, toPin: Roughness}
+      - {from: 7600000000000000001, fromPin: Occlusion, to: 7600000000000000002, toPin: Occlusion}
+      - {from: 7600000000000000001, fromPin: Clearcoat, to: 7600000000000000002, toPin: Clearcoat}
+      - {from: 7600000000000000001, fromPin: Clearcoat Roughness, to: 7600000000000000002, toPin: Clearcoat Roughness}
+      - {from: 7600000000000000001, fromPin: Sheen Color, to: 7600000000000000002, toPin: Sheen Color}
+      - {from: 7600000000000000001, fromPin: Sheen Roughness, to: 7600000000000000002, toPin: Sheen Roughness}
+      - {from: 7600000000000000001, fromPin: Anisotropy, to: 7600000000000000002, toPin: Anisotropy}
+      - {from: 7600000000000000001, fromPin: Anisotropy Rotation, to: 7600000000000000002, toPin: Anisotropy Rotation}
+      - {from: 7600000000000000004, fromPin: Time, to: 7600000000000000005, toPin: A}
+      - {from: 7600000000000000005, fromPin: Result, to: 7600000000000000006, toPin: Y}
+      - {from: 7600000000000000003, fromPin: Position, to: 7600000000000000007, toPin: A}
+      - {from: 7600000000000000006, fromPin: XYZ, to: 7600000000000000007, toPin: B}
+      - {from: 7600000000000000007, fromPin: Result, to: 7600000000000000008, toPin: Coordinates}
+      - {from: 7600000000000000008, fromPin: Value, to: 7600000000000000009, toPin: T}
+      - {from: 7600000000000000001, fromPin: Emissive, to: 7600000000000000010, toPin: A}
+      - {from: 7600000000000000009, fromPin: Result, to: 7600000000000000010, toPin: B}
+      - {from: 7600000000000000010, fromPin: Result, to: 7600000000000000002, toPin: Emissive}

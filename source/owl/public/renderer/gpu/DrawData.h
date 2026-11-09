@@ -15,6 +15,8 @@
 #include <vector>
 
 namespace owl::renderer::gpu {
+class Shader;
+
 /**
  * @brief
  *  Abstract class representing what is required for a draw.
@@ -154,14 +156,31 @@ public:
 
 	/**
 	 * @brief
+	 *  Draw with another shader of the same vertex input and bindings until reset: the variant of a mesh shader a
+	 *  material graph compiles to. On Vulkan each variant gets its own pipeline, built on its first bind.
+	 * @param[in] iShader The shader, null to draw with the shader of `init` again.
+	 */
+	virtual void setShaderVariant([[maybe_unused]] const shared<Shader>& iShader) {}
+
+	/**
+	 * @brief
 	 *  Get the fixed-function state given at `init`.
 	 * @return The pipeline state of every draw of this data.
 	 */
 	[[nodiscard]] auto getPipelineState() const -> const PipelineState& { return m_pipelineState; }
 
+	/**
+	 * @brief
+	 *  Get the name of the shader the data draws with.
+	 * @return The shader name given at `init`.
+	 */
+	[[nodiscard]] auto getShaderName() const -> const std::string& { return m_shaderBaseName; }
+
 protected:
 	/// Fixed-function state of the draws, set by `init` / `initInstanced`.
 	PipelineState m_pipelineState;
+	/// Name of the shader given to `setShader`.
+	std::string m_shaderBaseName;
 };
 
 }// namespace owl::renderer::gpu

@@ -10,17 +10,29 @@
 
 #include "Document.h"
 #include "UndoManager.h"
+#include "commands/CommandRegistry.h"
+#include "commands/MaterialCommands.h"
 #include "viewer/MeshPreview.h"
 
+#include <core/UUID.h>
+#include <gui/widgets/NodeCanvas.h>
 #include <math/vectors.h>
 #include <renderer/Material.h>
+#include <renderer/MaterialGraph.h>
 #include <renderer/MeshCache.h>
 #include <renderer/gpu/Framebuffer.h>
 
+#include <array>
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <optional>
+#include <set>
 #include <string>
+#include <string_view>
+#include <tuple>
+#include <vector>
 
 namespace owl::nest {
 
@@ -34,14 +46,16 @@ using MaterialUndoManager = UndoManager<renderer::MaterialAsset>;
 
 /**
  * @brief
- *  A `.owlmat` material edited in a tab: its parent, every value (or, with a parent, every override) and a live
- *  preview on a sphere or a cube, with its own undo stack.
+ *  A `.owlmat` material edited in a tab: its parent, every value (or, with a parent, every override), its graph on a
+ *  node canvas and a live preview on a sphere or a cube, with its own undo stack.
  *
- * Every edit is a method returning whether it changed the asset, so the tab and the tests drive the same code; a
- * drag of a slider merges into one undo step. Saving writes the file atomically and drops the material from the
- * engine's `MaterialLibrary`, so every entity drawing it updates at once.
+ * A gesture of the tab runs a `material.*` command (`commands/MaterialCommands.h`), which edits the document through
+ * `setMaterial`; a drag of a slider merges into one undo step. A graph material shows its nodes on the canvas, the
+ * palette and the Parameters, Custom and Functions tabs in the Hierarchy panel, the selected node in the Properties
+ * panel, the diagnostics of the compiler on their nodes and a thumbnail of each node output. Saving writes the file
+ * atomically and drops the material from the engine's `MaterialLibrary`, so every entity drawing it updates at once.
  */
-class MaterialDocument final : public Document {
+class MaterialDocument final : public Document, public commands::MaterialEditor {
 public:
 	MaterialDocument(const MaterialDocument&) = delete;
 
@@ -101,13 +115,13 @@ public:
 
 	/**
 	 * @brief
-	 *  Detach the document from the editor and free the preview.
+	 *  Detach the document from the editor and free the previews.
 	 */
 	void onDetach() override;
 
 	/**
 	 * @brief
-	 *  Render the preview.
+	 *  Render the preview and the thumbnails of the nodes.
 	 * @param[in] iTimeStep Time since the last frame.
 	 */
 	void onUpdate(const core::Timestep& iTimeStep) override;
@@ -121,7 +135,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Draw the tab: the parameters on the left, the preview on the right.
+	 *  Draw the tab: the parameters (or the graph canvas) on the left, the preview on the right.
 	 */
 	void onImGuiRender() override;
 
@@ -195,6 +209,79 @@ public:
 	 */
 	void performRedo() override;
 
+	/**
+	 * @brief
+	 *  Whether the Hierarchy and Properties panels show the graph (palette, tabs, selected node).
+	 * @return True for a graph material.
+	 */
+	[[nodiscard]] auto overridesGlobalPanels() const -> bool override { return isGraph(); }
+
+	/**
+	 * @brief
+	 *  Draw the Hierarchy panel: the node palette and the Parameters, Custom and Functions tabs.
+	 */
+	void renderHierarchyPanel() override;
+
+	/**
+	 * @brief
+	 *  Draw the Properties panel: the selected node.
+	 */
+	void renderPropertiesPanel() override;
+
+	/**
+	 * @brief
+	 *  Title of the Hierarchy panel.
+	 * @return "Material Graph".
+	 */
+	[[nodiscard]] auto hierarchyPanelTitle() const -> std::string override { return "Material Graph"; }
+
+	/**
+	 * @brief
+	 *  Title of the Properties panel.
+	 * @return "Node".
+	 */
+	[[nodiscard]] auto propertiesPanelTitle() const -> std::string override { return "Node"; }
+
+	// --- MaterialEditor interface ---------------------------------------------
+	/**
+	 * @brief
+	 *  The material being edited.
+	 * @return The asset.
+	 */
+	[[nodiscard]] auto material() const -> const renderer::MaterialAsset& override { return m_asset; }
+
+	/**
+	 * @brief
+	 *  Replace the material as one undoable step.
+	 * @param[in] iAsset The material after the edit.
+	 * @param[in] iDescription Name of the step.
+	 * @param[in] iMerge Whether the step joins the previous one of the same name.
+	 * @return False when nothing changes.
+	 */
+	auto setMaterial(const renderer::MaterialAsset& iAsset, const std::string& iDescription, bool iMerge)
+			-> bool override;
+
+	/**
+	 * @brief
+	 *  Choose the parent material (see `setParent`).
+	 * @param[in] iParent Asset path of the parent `.owlmat`, empty for a root material.
+	 * @return True when it changed.
+	 */
+	auto setMaterialParent(const std::filesystem::path& iParent) -> bool override { return setParent(iParent); }
+
+	/**
+	 * @brief
+	 *  Replace the values (see `setValues`).
+	 * @param[in] iValues The new values.
+	 * @param[in] iOverrides Mask of the fields the material sets.
+	 * @param[in] iMerge True for a drag of a slider.
+	 * @return True when it changed.
+	 */
+	auto setMaterialValues(const renderer::MaterialParameters& iValues, const uint32_t iOverrides, const bool iMerge)
+			-> bool override {
+		return setValues(iValues, iOverrides, iMerge);
+	}
+
 	// --- Material API --------------------------------------------------------
 	/**
 	 * @brief
@@ -238,7 +325,8 @@ public:
 
 	/**
 	 * @brief
-	 *  The material as it is drawn: the parent's resolved material with the overridden fields, or the values alone.
+	 *  The material as it is drawn: the parent's resolved material with the overridden fields and graph values, the
+	 *  compiled graph, or the values alone.
 	 * @return The material.
 	 */
 	[[nodiscard]] auto buildMaterial() const -> renderer::Material;
@@ -257,6 +345,86 @@ public:
 	 */
 	void setPreviewShape(viewer::PreviewShape iShape);
 
+	// --- Graph ---------------------------------------------------------------
+	/**
+	 * @brief
+	 *  Whether the material is a root material with a graph.
+	 * @return True when it has a graph.
+	 */
+	[[nodiscard]] auto isGraph() const -> bool { return m_asset.parent.empty() && m_asset.graph.has_value(); }
+
+	/**
+	 * @brief
+	 *  The graph compiled as it is (its diagnostics say what is wrong), an empty program without a graph.
+	 * @return The program.
+	 */
+	[[nodiscard]] auto getProgram() const -> const renderer::MaterialProgram& { return m_program; }
+
+	/**
+	 * @brief
+	 *  The function whose body the canvas shows.
+	 * @return Its name, empty for the graph itself.
+	 */
+	[[nodiscard]] auto getScope() const -> const std::string& { return m_scope; }
+
+	/**
+	 * @brief
+	 *  Show the body of a function on the canvas, or the graph itself.
+	 * @param[in] iFunction The function, empty for the graph.
+	 * @return False for an unknown function.
+	 */
+	auto setScope(const std::string& iFunction) -> bool;
+
+	/**
+	 * @brief
+	 *  The canvas of the graph (or of the function body shown).
+	 * @return The canvas.
+	 */
+	[[nodiscard]] auto canvas() const -> const gui::widgets::NodeCanvas& { return m_canvas; }
+
+	/**
+	 * @brief
+	 *  Bring the canvas in line with the graph now (it is otherwise rebuilt before it is drawn).
+	 */
+	void syncCanvas();
+
+	/**
+	 * @brief
+	 *  The node shown in the Properties panel.
+	 * @return The node, none when nothing is selected.
+	 */
+	[[nodiscard]] auto getSelectedNode() const -> const std::optional<core::UUID>& { return m_selectedNode; }
+
+	/**
+	 * @brief
+	 *  Select a node of the scope.
+	 * @param[in] iNode The node, none to clear.
+	 */
+	void selectNode(std::optional<core::UUID> iNode);
+
+	/**
+	 * @brief
+	 *  Run a `material.*` command on this material through the editor (journaled, undoable).
+	 * @param[in] iName Command name.
+	 * @param[in] iArgs Arguments, without `path` (and `function`, set to the scope for the node commands).
+	 * @return What the command did, nothing when it failed or there is no editor.
+	 */
+	auto runCommand(std::string_view iName, commands::CommandArgs iArgs) -> std::optional<commands::CommandResult>;
+
+	/**
+	 * @brief
+	 *  Whether the nodes show the thumbnail of their output.
+	 * @return True when shown.
+	 */
+	[[nodiscard]] auto hasThumbnails() const -> bool { return m_showThumbnails; }
+
+	/**
+	 * @brief
+	 *  Show or hide the thumbnails of the nodes.
+	 * @param[in] iShow True to show them.
+	 */
+	void setThumbnails(bool iShow);
+
 	// --- Tab -----------------------------------------------------------------
 	/**
 	 * @brief
@@ -273,6 +441,28 @@ public:
 	void setOpen(const bool iOpen) { m_pOpen = iOpen; }
 
 private:
+	/// A pin of the canvas: its node, name and side.
+	struct PinRef {
+		/// Owning node.
+		core::UUID node{0};
+		/// Pin name.
+		std::string pin;
+		/// Whether it is an output.
+		bool output{false};
+	};
+
+	/// The preview of one node output.
+	struct Thumbnail {
+		/// Image of the node, unlit on a sphere.
+		shared<renderer::gpu::Framebuffer> framebuffer;
+		/// Key of the program drawn into it.
+		std::string key;
+		/// Whether the node output compiles.
+		bool valid{false};
+		/// Edit of the material it shows (`m_editTime` then).
+		std::chrono::steady_clock::time_point revision;
+	};
+
 	/**
 	 * @brief
 	 *  Make an asset the current one and record the step.
@@ -285,6 +475,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Compile the graph again, mark the canvas and the preview stale.
+	 */
+	void onAssetChanged();
+
+	/**
+	 * @brief
 	 *  Draw the parent field and the fields of the material.
 	 */
 	void renderParameters();
@@ -294,6 +490,169 @@ private:
 	 *  Draw the preview, its shape buttons and handle its orbit.
 	 */
 	void renderPreview();
+
+	/**
+	 * @brief
+	 *  Draw the graph view: the canvas on the left, the preview, the settings and the diagnostics on the right.
+	 * @param[in] iFocused Whether the tab has the focus (shortcuts).
+	 */
+	void renderGraphView(bool iFocused);
+
+	/**
+	 * @brief
+	 *  Draw the toolbar of the tab (conversion, scope, thumbnails, diagnostics).
+	 */
+	void renderToolbar();
+
+	/**
+	 * @brief
+	 *  Draw the canvas and handle its gestures.
+	 * @param[in] iFocused Whether the tab has the focus (shortcuts).
+	 */
+	void renderCanvas(bool iFocused);
+
+	/**
+	 * @brief
+	 *  Hook the canvas callbacks to the commands.
+	 */
+	void bindCanvas();
+
+	/**
+	 * @brief
+	 *  Rebuild the canvas from the nodes of the scope.
+	 */
+	void rebuildCanvas();
+
+	/**
+	 * @brief
+	 *  Draw the context menu of the canvas.
+	 */
+	void renderCanvasMenu();
+
+	/**
+	 * @brief
+	 *  Draw the node palette.
+	 * @param[in] iPosition Canvas position a click adds the node at.
+	 * @param[in] iPopup Whether it is the right-click menu (a click closes it) or the panel (entries drag).
+	 */
+	void renderPalette(std::array<float, 2> iPosition, bool iPopup);
+
+	/**
+	 * @brief
+	 *  Add a node of the palette.
+	 * @param[in] iEntry `type` or `type|item` (the parameter, custom node or function it names).
+	 * @param[in] iPosition Canvas position.
+	 */
+	void addPaletteNode(std::string_view iEntry, std::array<float, 2> iPosition);
+
+	/**
+	 * @brief
+	 *  Paste the nodes of the clipboard.
+	 * @param[in] iPosition Canvas position of the top-left node.
+	 */
+	void pasteClipboard(std::array<float, 2> iPosition);
+
+	/**
+	 * @brief
+	 *  Draw the settings of a graph material that are not part of the surface (shading, alpha, IOR, toon).
+	 */
+	void renderGraphSettings();
+
+	/**
+	 * @brief
+	 *  Draw the list of the diagnostics.
+	 */
+	void renderDiagnostics();
+
+	/**
+	 * @brief
+	 *  Draw the parameters of the graph.
+	 */
+	void renderGraphParameters();
+
+	/**
+	 * @brief
+	 *  Draw the custom nodes of the graph.
+	 */
+	void renderCustomNodes();
+
+	/**
+	 * @brief
+	 *  Draw the functions of the graph.
+	 */
+	void renderFunctions();
+
+	/**
+	 * @brief
+	 *  Draw the overrides of the parameters of the parent graph (a child material).
+	 */
+	void renderGraphOverrides();
+
+	/**
+	 * @brief
+	 *  Draw the settings and the unlinked inputs of the selected node.
+	 */
+	void renderNodeInspector();
+
+	/**
+	 * @brief
+	 *  Draw the row of one setting of the selected node.
+	 * @param[in] iNode The node (a copy: an edit replaces the graph).
+	 * @param[in] iSetting The setting.
+	 */
+	void renderNodeSetting(const renderer::MaterialGraphNode& iNode, const renderer::MaterialSettingSpec& iSetting);
+
+	/**
+	 * @brief
+	 *  Draw the row of one input of the selected node: its value while it is not linked.
+	 * @param[in] iNode The node (a copy: an edit replaces the graph).
+	 * @param[in] iInput The input.
+	 */
+	void renderNodeInput(const renderer::MaterialGraphNode& iNode, const renderer::MaterialPinSpec& iInput);
+
+	/**
+	 * @brief
+	 *  Run `material.set_node_value` on a node of the scope.
+	 * @param[in] iNode The node.
+	 * @param[in] iName The setting or input.
+	 * @param[in] iValue The value, none to give back the default.
+	 * @param[in] iMerge Whether the step joins the previous one (a drag).
+	 */
+	void setNodeValue(core::UUID iNode, const std::string& iName, const std::optional<std::string>& iValue,
+					  bool iMerge);
+
+	/**
+	 * @brief
+	 *  Draw the editor of typed pins.
+	 * @param[in] iTitle Title of the list.
+	 * @param[in] iPins The pins.
+	 * @param[in] iBase Name of a new pin.
+	 * @return The pins after an edit, nothing without one.
+	 */
+	auto renderPins(const char* iTitle, const std::vector<renderer::MaterialPinSpec>& iPins, const char* iBase)
+			-> std::optional<std::vector<renderer::MaterialPinSpec>>;
+
+	/**
+	 * @brief
+	 *  Render the thumbnails of the nodes seen on the canvas last frame, one new shader per frame at most.
+	 */
+	void updateThumbnails();
+
+	/**
+	 * @brief
+	 *  Draw the thumbnail of a node in its footer.
+	 * @param[in] iNode The node.
+	 * @param[in] iMin Top-left corner of the footer, in screen pixels.
+	 * @param[in] iMax Bottom-right corner of the footer, in screen pixels.
+	 */
+	void drawThumbnail(core::UUID iNode, const math::vec2f& iMin, const math::vec2f& iMax);
+
+	/**
+	 * @brief
+	 *  Whether a slider edit joins the previous one (the mouse is still down on consecutive frames).
+	 * @return True during a drag.
+	 */
+	auto isDragging() -> bool;
 
 	/// Disk path of the material.
 	std::filesystem::path m_path;
@@ -325,6 +684,46 @@ private:
 	bool m_pOpen{true};
 	/// Whether the tab was focused last frame.
 	bool m_wasFocused{false};
+	/// Graph compiled as it is.
+	renderer::MaterialProgram m_program;
+	/// Shared copy of the graph drawn by the previews, null without a graph.
+	shared<const renderer::MaterialGraph> m_sharedGraph;
+	/// Time of the last edit, for the debounce of the preview shader.
+	std::chrono::steady_clock::time_point m_editTime;
+	/// Seconds of the preview, for the `input.time` node.
+	float m_time{0.f};
+	/// Canvas of the nodes of the scope.
+	gui::widgets::NodeCanvas m_canvas;
+	/// Whether the canvas must be rebuilt from the graph.
+	bool m_canvasStale{true};
+	/// Frames during which the canvas frames every node.
+	uint32_t m_fitFrames{3};
+	/// Function whose body the canvas shows, empty for the graph.
+	std::string m_scope;
+	/// Canvas pins by id.
+	std::map<core::UUID, PinRef> m_pins;
+	/// Canvas pin ids by node, side and name.
+	std::map<std::tuple<core::UUID, bool, std::string>, core::UUID> m_pinIds;
+	/// Node shown in the Properties panel.
+	std::optional<core::UUID> m_selectedNode;
+	/// Node the canvas menu was opened on.
+	std::optional<core::UUID> m_menuNode;
+	/// Canvas position the menu adds nodes at.
+	std::array<float, 2> m_menuPosition{0.f, 0.f};
+	/// Whether the canvas asked for its menu this frame.
+	bool m_openMenu{false};
+	/// Whether nodes are being dragged (their positions are committed on release).
+	bool m_moving{false};
+	/// Whether a link was cut this frame (the Delete key is then not for the nodes).
+	bool m_linkDeleted{false};
+	/// Filter of the palette.
+	std::string m_paletteFilter;
+	/// Whether the nodes show their thumbnail.
+	bool m_showThumbnails{true};
+	/// Thumbnails by node.
+	std::map<core::UUID, Thumbnail> m_thumbnails;
+	/// Nodes whose footer was on screen last frame.
+	std::set<core::UUID> m_visibleNodes;
 	/// Placeholder required by `Document::undoManager()`.
 	SceneUndoManager m_emptySceneUndo;
 };

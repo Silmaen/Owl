@@ -1,0 +1,295 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: hum_period, type: float, default: 2.2}
+    - {name: hum_range, type: float, default: 16}
+    - {name: hum_volume, type: float, default: 0.9}
+    - {name: places, type: int, default: 6}
+    - {name: clock, type: float, default: 0}
+    - {name: hums, type: float, default: 0}
+    - {name: near, type: float, default: 0}
+  nodes:
+    - id: 7470000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 7470000000000000002
+      type: call.log.trace
+      position: [304, 0]
+      values:
+        message: Teleporter standing by
+    - id: 7470000000000000003
+      type: call.gamestate.set
+      position: [632, 0]
+      values:
+        key: portal_hum
+        value: 0
+    - id: 7470000000000000004
+      type: event.on_update
+      position: [0, 256]
+    - id: 7470000000000000005
+      type: call.gamestate.get
+      position: [304, 256]
+      values:
+        default: 0
+        key: levels_done
+    - id: 7470000000000000006
+      type: var.get
+      position: [632, 256]
+      values:
+        variable: places
+    - id: 7470000000000000007
+      type: compare.less
+      position: [632, 376]
+    - id: 7470000000000000008
+      type: flow.branch
+      position: [912, 256]
+    - id: 7470000000000000009
+      type: var.get
+      position: [1192, 256]
+      values:
+        variable: clock
+    - id: 7470000000000000010
+      type: math.subtract
+      position: [1192, 376]
+    - id: 7470000000000000011
+      type: var.set
+      position: [1512, 256]
+      values:
+        variable: clock
+    - id: 7470000000000000012
+      type: compare.greater
+      position: [1912, 256]
+      values:
+        B: 0
+    - id: 7470000000000000013
+      type: flow.branch
+      position: [2192, 256]
+    - id: 7470000000000000014
+      type: var.get
+      position: [2472, 256]
+      values:
+        variable: hum_period
+    - id: 7470000000000000015
+      type: var.set
+      position: [2816, 256]
+      values:
+        variable: clock
+    - id: 7470000000000000016
+      type: call.scene.find_entity
+      position: [3216, 256]
+      values:
+        name: Player
+    - id: 7470000000000000017
+      type: compare.not_equal
+      position: [3216, 376]
+      values:
+        B: 0
+    - id: 7470000000000000018
+      type: flow.branch
+      position: [3584, 256]
+    - id: 7470000000000000019
+      type: call.transform.get_position
+      position: [0, 592]
+      values:
+        split.xyz: true
+    - id: 7470000000000000020
+      type: call.transform.get_position
+      position: [0, 768]
+      values:
+        split.xyz: true
+    - id: 7470000000000000021
+      type: math.subtract
+      position: [304, 592]
+    - id: 7470000000000000022
+      type: math.subtract
+      position: [304, 728]
+    - id: 7470000000000000023
+      type: math.multiply
+      position: [632, 592]
+    - id: 7470000000000000024
+      type: math.multiply
+      position: [632, 728]
+    - id: 7470000000000000025
+      type: math.add
+      position: [912, 592]
+    - id: 7470000000000000026
+      type: math.sqrt
+      position: [912, 728]
+    - id: 7470000000000000027
+      type: var.get
+      position: [1192, 592]
+      values:
+        variable: hum_range
+    - id: 7470000000000000028
+      type: math.divide
+      position: [1192, 712]
+    - id: 7470000000000000029
+      type: math.subtract
+      position: [1512, 592]
+      values:
+        A: 1
+    - id: 7470000000000000030
+      type: var.set
+      position: [1912, 592]
+      values:
+        variable: near
+    - id: 7470000000000000031
+      type: compare.greater
+      position: [2192, 592]
+      values:
+        B: 0
+    - id: 7470000000000000032
+      type: flow.branch
+      position: [2472, 592]
+    - id: 7470000000000000033
+      type: call.sound.play
+      position: [2816, 592]
+      values:
+        asset_path: sounds/hub/portal_hum.wav
+    - id: 7470000000000000034
+      type: math.multiply
+      position: [3216, 592]
+    - id: 7470000000000000035
+      type: var.get
+      position: [3216, 728]
+      values:
+        variable: hum_volume
+    - id: 7470000000000000036
+      type: math.multiply
+      position: [3584, 592]
+    - id: 7470000000000000037
+      type: call.sound.set_volume
+      position: [3864, 592]
+    - id: 7470000000000000038
+      type: var.get
+      position: [4072, 592]
+      values:
+        variable: hums
+    - id: 7470000000000000039
+      type: math.add
+      position: [4072, 712]
+      values:
+        B: 1
+    - id: 7470000000000000040
+      type: var.set
+      position: [4352, 592]
+      values:
+        variable: hums
+    - id: 7470000000000000041
+      type: call.gamestate.set
+      position: [4592, 592]
+      values:
+        key: portal_hum
+    - id: 7470000000000000042
+      type: event.custom
+      position: [0, 1016]
+      values:
+        function: on_teleporter_enter
+    - id: 7470000000000000043
+      type: call.gamestate.get
+      position: [304, 1016]
+      values:
+        default: 0
+        key: levels_done
+    - id: 7470000000000000044
+      type: var.get
+      position: [632, 1016]
+      values:
+        variable: places
+    - id: 7470000000000000045
+      type: compare.less
+      position: [632, 1136]
+    - id: 7470000000000000046
+      type: flow.branch
+      position: [912, 1016]
+    - id: 7470000000000000047
+      type: call.log.info
+      position: [1192, 1016]
+      values:
+        message: Teleporter activated! Loading victory scene.
+    - id: 7470000000000000048
+      type: call.sound.play
+      position: [1512, 1016]
+      values:
+        asset_path: sounds/hub/portal_wake.wav
+    - id: 7470000000000000049
+      type: call.gamestate.set
+      position: [1912, 1016]
+      values:
+        key: has_continue
+        value: false
+    - id: 7470000000000000050
+      type: call.gamestate.remove
+      position: [2192, 1016]
+      values:
+        key: continue_scene
+    - id: 7470000000000000051
+      type: call.scene.transition_to
+      position: [2472, 1016]
+      values:
+        duration: 0.3
+        kind: fade_out
+        scene_path: scenes/victory.owl
+  links:
+    - {from: 7470000000000000001, fromPin: Then, to: 7470000000000000002, toPin: Exec}
+    - {from: 7470000000000000002, fromPin: Then, to: 7470000000000000003, toPin: Exec}
+    - {from: 7470000000000000005, fromPin: value, to: 7470000000000000007, toPin: A}
+    - {from: 7470000000000000006, fromPin: Value, to: 7470000000000000007, toPin: B}
+    - {from: 7470000000000000007, fromPin: Result, to: 7470000000000000008, toPin: Condition}
+    - {from: 7470000000000000004, fromPin: Then, to: 7470000000000000005, toPin: Exec}
+    - {from: 7470000000000000005, fromPin: Then, to: 7470000000000000008, toPin: Exec}
+    - {from: 7470000000000000009, fromPin: Value, to: 7470000000000000010, toPin: A}
+    - {from: 7470000000000000004, fromPin: dt, to: 7470000000000000010, toPin: B}
+    - {from: 7470000000000000010, fromPin: Result, to: 7470000000000000011, toPin: Value}
+    - {from: 7470000000000000011, fromPin: Value, to: 7470000000000000012, toPin: A}
+    - {from: 7470000000000000012, fromPin: Result, to: 7470000000000000013, toPin: Condition}
+    - {from: 7470000000000000014, fromPin: Value, to: 7470000000000000015, toPin: Value}
+    - {from: 7470000000000000016, fromPin: entity_id, to: 7470000000000000017, toPin: A}
+    - {from: 7470000000000000017, fromPin: Result, to: 7470000000000000018, toPin: Condition}
+    - {from: 7470000000000000008, fromPin: False, to: 7470000000000000011, toPin: Exec}
+    - {from: 7470000000000000011, fromPin: Then, to: 7470000000000000013, toPin: Exec}
+    - {from: 7470000000000000013, fromPin: False, to: 7470000000000000015, toPin: Exec}
+    - {from: 7470000000000000015, fromPin: Then, to: 7470000000000000018, toPin: Exec}
+    - {from: 7470000000000000016, fromPin: entity_id, to: 7470000000000000019, toPin: entity_id}
+    - {from: 7470000000000000019, fromPin: x, to: 7470000000000000021, toPin: A}
+    - {from: 7470000000000000020, fromPin: x, to: 7470000000000000021, toPin: B}
+    - {from: 7470000000000000019, fromPin: y, to: 7470000000000000022, toPin: A}
+    - {from: 7470000000000000020, fromPin: y, to: 7470000000000000022, toPin: B}
+    - {from: 7470000000000000021, fromPin: Result, to: 7470000000000000023, toPin: A}
+    - {from: 7470000000000000021, fromPin: Result, to: 7470000000000000023, toPin: B}
+    - {from: 7470000000000000022, fromPin: Result, to: 7470000000000000024, toPin: A}
+    - {from: 7470000000000000022, fromPin: Result, to: 7470000000000000024, toPin: B}
+    - {from: 7470000000000000023, fromPin: Result, to: 7470000000000000025, toPin: A}
+    - {from: 7470000000000000024, fromPin: Result, to: 7470000000000000025, toPin: B}
+    - {from: 7470000000000000025, fromPin: Result, to: 7470000000000000026, toPin: A}
+    - {from: 7470000000000000026, fromPin: Result, to: 7470000000000000028, toPin: A}
+    - {from: 7470000000000000027, fromPin: Value, to: 7470000000000000028, toPin: B}
+    - {from: 7470000000000000028, fromPin: Result, to: 7470000000000000029, toPin: B}
+    - {from: 7470000000000000029, fromPin: Result, to: 7470000000000000030, toPin: Value}
+    - {from: 7470000000000000018, fromPin: True, to: 7470000000000000030, toPin: Exec}
+    - {from: 7470000000000000030, fromPin: Value, to: 7470000000000000031, toPin: A}
+    - {from: 7470000000000000031, fromPin: Result, to: 7470000000000000032, toPin: Condition}
+    - {from: 7470000000000000030, fromPin: Then, to: 7470000000000000032, toPin: Exec}
+    - {from: 7470000000000000032, fromPin: True, to: 7470000000000000033, toPin: Exec}
+    - {from: 7470000000000000030, fromPin: Value, to: 7470000000000000034, toPin: A}
+    - {from: 7470000000000000030, fromPin: Value, to: 7470000000000000034, toPin: B}
+    - {from: 7470000000000000034, fromPin: Result, to: 7470000000000000036, toPin: A}
+    - {from: 7470000000000000035, fromPin: Value, to: 7470000000000000036, toPin: B}
+    - {from: 7470000000000000033, fromPin: handle, to: 7470000000000000037, toPin: handle}
+    - {from: 7470000000000000036, fromPin: Result, to: 7470000000000000037, toPin: volume}
+    - {from: 7470000000000000038, fromPin: Value, to: 7470000000000000039, toPin: A}
+    - {from: 7470000000000000039, fromPin: Result, to: 7470000000000000040, toPin: Value}
+    - {from: 7470000000000000040, fromPin: Value, to: 7470000000000000041, toPin: value}
+    - {from: 7470000000000000033, fromPin: Then, to: 7470000000000000037, toPin: Exec}
+    - {from: 7470000000000000037, fromPin: Then, to: 7470000000000000040, toPin: Exec}
+    - {from: 7470000000000000040, fromPin: Then, to: 7470000000000000041, toPin: Exec}
+    - {from: 7470000000000000043, fromPin: value, to: 7470000000000000045, toPin: A}
+    - {from: 7470000000000000044, fromPin: Value, to: 7470000000000000045, toPin: B}
+    - {from: 7470000000000000045, fromPin: Result, to: 7470000000000000046, toPin: Condition}
+    - {from: 7470000000000000042, fromPin: Then, to: 7470000000000000043, toPin: Exec}
+    - {from: 7470000000000000043, fromPin: Then, to: 7470000000000000046, toPin: Exec}
+    - {from: 7470000000000000046, fromPin: False, to: 7470000000000000047, toPin: Exec}
+    - {from: 7470000000000000047, fromPin: Then, to: 7470000000000000048, toPin: Exec}
+    - {from: 7470000000000000048, fromPin: Then, to: 7470000000000000049, toPin: Exec}
+    - {from: 7470000000000000049, fromPin: Then, to: 7470000000000000050, toPin: Exec}
+    - {from: 7470000000000000050, fromPin: Then, to: 7470000000000000051, toPin: Exec}

@@ -17,6 +17,7 @@
 #include <gui/utils.h>
 #include <gui/widgets/IconButton.h>
 #include <renderer/MaterialLibrary.h>
+#include <renderer/Renderer3D.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -26,10 +27,12 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_POP
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
+#include <map>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -40,6 +43,9 @@ namespace {
 constexpr float g_orbitSpeed = 0.01f;
 constexpr float g_maxPitch = 1.55f;
 constexpr float g_zoomStep = 0.9f;
+constexpr uint32_t g_fitFrames = 3;
+constexpr uint32_t g_thumbnailSize = 96;
+constexpr auto g_previewDebounce = std::chrono::milliseconds{250};
 constexpr const char* g_editDescription = "Edit material";
 
 class ModifyMaterialCommand final : public UndoCommand<renderer::MaterialAsset> {
@@ -75,9 +81,25 @@ private:
 auto libraryOf() -> renderer::MaterialLibrary* {
 	return app::Application::instanced() ? &app::Application::get().getEngineContext().getMaterialLibrary() : nullptr;
 }
+
+auto makePreviewFramebuffer(const math::vec2ui& iSize, const char* iName) -> shared<renderer::gpu::Framebuffer> {
+	using Format = renderer::gpu::AttachmentSpecification::Format;
+	using Tiling = renderer::gpu::AttachmentSpecification::Tiling;
+	return renderer::gpu::Framebuffer::create(
+			{.size = iSize,
+			 .attachments = {{.format = Format::Surface, .tiling = Tiling::Optimal},
+							 {.format = Format::RedInteger, .tiling = Tiling::Optimal},
+							 {.format = Format::Depth32F, .tiling = Tiling::Optimal}},
+			 .samples = 1,
+			 .swapChainTarget = false,
+			 .debugName = iName});
+}
 }// namespace
 
-MaterialDocument::MaterialDocument() { m_undo.markSaved(); }
+MaterialDocument::MaterialDocument() {
+	m_undo.markSaved();
+	bindCanvas();
+}
 
 MaterialDocument::~MaterialDocument() = default;
 
@@ -93,6 +115,7 @@ void MaterialDocument::onDetach() {
 	m_shapeMeshes[0].reset();
 	m_shapeMeshes[1].reset();
 	m_previewMaterial.reset();
+	m_thumbnails.clear();
 }
 
 void MaterialDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {}
@@ -107,7 +130,9 @@ auto MaterialDocument::loadFromFile(const std::filesystem::path& iPath) -> bool 
 	m_path = iPath;
 	m_undo.clear();
 	m_undo.markSaved();
-	m_previewDirty = true;
+	m_scope.clear();
+	m_fitFrames = g_fitFrames;
+	onAssetChanged();
 	return true;
 }
 
@@ -141,7 +166,7 @@ auto MaterialDocument::restoreRecoverySnapshot(const std::string& iSnapshot) -> 
 	m_asset = std::move(*asset);
 	m_undo.clear();
 	m_undo.markUnsaved();
-	m_previewDirty = true;
+	onAssetChanged();
 	return true;
 }
 
@@ -149,14 +174,14 @@ void MaterialDocument::performUndo() {
 	if (!m_undo.canUndo())
 		return;
 	m_undo.undo(m_asset);
-	m_previewDirty = true;
+	onAssetChanged();
 }
 
 void MaterialDocument::performRedo() {
 	if (!m_undo.canRedo())
 		return;
 	m_undo.redo(m_asset);
-	m_previewDirty = true;
+	onAssetChanged();
 }
 
 auto MaterialDocument::commit(renderer::MaterialAsset iNext, const std::string& iDescription, const bool iMerge)
@@ -166,8 +191,33 @@ auto MaterialDocument::commit(renderer::MaterialAsset iNext, const std::string& 
 	auto before = std::move(m_asset);
 	m_asset = iNext;
 	m_undo.push(mkUniq<ModifyMaterialCommand>(std::move(before), std::move(iNext), iDescription, iMerge));
-	m_previewDirty = true;
+	onAssetChanged();
 	return true;
+}
+
+auto MaterialDocument::setMaterial(const renderer::MaterialAsset& iAsset, const std::string& iDescription,
+								   const bool iMerge) -> bool {
+	return commit(iAsset, iDescription, iMerge);
+}
+
+void MaterialDocument::onAssetChanged() {
+	m_previewDirty = true;
+	m_canvasStale = true;
+	m_editTime = std::chrono::steady_clock::now();
+	if (isGraph()) {
+		m_sharedGraph = mkShared<const renderer::MaterialGraph>(*m_asset.graph);
+		m_program = renderer::compileMaterialGraph(*m_sharedGraph);
+	} else {
+		m_sharedGraph.reset();
+		m_program = {};
+	}
+	if (!m_scope.empty() && (!isGraph() || m_asset.graph->findFunction(m_scope) == nullptr))
+		m_scope.clear();
+	if (m_selectedNode) {
+		const auto* nodes = isGraph() ? commands::getMaterialScopeNodes(*m_asset.graph, m_scope) : nullptr;
+		if (nodes == nullptr || !std::ranges::contains(*nodes, *m_selectedNode, &renderer::MaterialGraphNode::id))
+			m_selectedNode.reset();
+	}
 }
 
 auto MaterialDocument::setParent(const std::filesystem::path& iParent) -> bool {
@@ -199,10 +249,20 @@ auto MaterialDocument::setValues(const renderer::MaterialParameters& iValues, co
 auto MaterialDocument::buildMaterial() const -> renderer::Material {
 	if (!m_asset.parent.empty()) {
 		if (auto* library = libraryOf(); library != nullptr) {
-			if (const auto parent = library->get(m_asset.parent))
-				return parent->withOverrides({.fields = m_asset.overrides, .values = m_asset.values});
+			if (const auto parent = library->get(m_asset.parent)) {
+				auto material = parent->withOverrides({.fields = m_asset.overrides, .values = m_asset.values});
+				if (!parent->getGraph())
+					return material;
+				auto values = parent->getGraphValues();
+				for (const auto& [name, value]: m_asset.graphValues) values[name] = value;
+				return material.withGraph(parent->getGraph(), parent->getProgram(), values);
+			}
 		}
+		return renderer::Material{m_asset.values};
 	}
+	if (m_sharedGraph && m_program.isValid())
+		return renderer::Material{m_asset.values}.withGraph(
+				m_sharedGraph, mkShared<const renderer::MaterialProgram>(m_program), m_asset.graphValues);
 	return renderer::Material{m_asset.values};
 }
 
@@ -211,9 +271,20 @@ void MaterialDocument::setPreviewShape(const viewer::PreviewShape iShape) {
 	m_orbit = {};
 }
 
-void MaterialDocument::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
+void MaterialDocument::setThumbnails(const bool iShow) {
+	if (m_showThumbnails == iShow)
+		return;
+	m_showThumbnails = iShow;
+	if (!iShow)
+		m_thumbnails.clear();
+	m_canvasStale = true;
+}
+
+void MaterialDocument::onUpdate(const core::Timestep& iTimeStep) {
 	if (m_canvasSize.x() == 0 || m_canvasSize.y() == 0)
 		return;
+	m_time += iTimeStep.getSeconds();
+	renderer::Renderer3D::setTime(m_time);
 	if (const auto* library = libraryOf(); library != nullptr && library->getGeneration() != m_libraryGeneration) {
 		m_libraryGeneration = library->getGeneration();
 		m_previewDirty = true;
@@ -223,25 +294,107 @@ void MaterialDocument::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep
 		mesh = viewer::makePreviewShape(m_shape);
 	if (!mesh)
 		return;
-	if (!m_framebuffer) {
-		using Format = renderer::gpu::AttachmentSpecification::Format;
-		using Tiling = renderer::gpu::AttachmentSpecification::Tiling;
-		m_framebuffer = renderer::gpu::Framebuffer::create(
-				{.size = m_canvasSize,
-				 .attachments = {{.format = Format::Surface, .tiling = Tiling::Optimal},
-								 {.format = Format::RedInteger, .tiling = Tiling::Optimal},
-								 {.format = Format::Depth32F, .tiling = Tiling::Optimal}},
-				 .samples = 1,
-				 .swapChainTarget = false,
-				 .debugName = "material_viewer"});
-	} else if (m_framebuffer->getSpecification().size != m_canvasSize) {
+	if (!m_framebuffer)
+		m_framebuffer = makePreviewFramebuffer(m_canvasSize, "material_viewer");
+	else if (m_framebuffer->getSpecification().size != m_canvasSize)
 		m_framebuffer->resize(m_canvasSize);
-	}
-	if (m_previewDirty || !m_previewMaterial) {
+	// A graph edit builds a shader: the preview waits for the edits to settle.
+	const bool settled = !isGraph() || std::chrono::steady_clock::now() - m_editTime >= g_previewDebounce;
+	if ((m_previewDirty && settled) || !m_previewMaterial) {
 		m_previewMaterial = buildMaterial();
 		m_previewDirty = false;
 	}
 	viewer::renderMaterialPreview(*m_framebuffer, *mesh, m_orbit, *m_previewMaterial);
+	updateThumbnails();
+}
+
+void MaterialDocument::updateThumbnails() {
+	if (!m_showThumbnails || !isGraph() || !m_scope.empty() || m_visibleNodes.empty()) {
+		m_visibleNodes.clear();
+		return;
+	}
+	auto& sphere = m_shapeMeshes[0];
+	if (!sphere)
+		sphere = viewer::makePreviewShape(viewer::PreviewShape::Sphere);
+	if (!sphere)
+		return;
+	bool built = false;
+	for (const auto node: m_visibleNodes) {
+		auto& thumbnail = m_thumbnails[node];
+		if (thumbnail.revision == m_editTime)
+			continue;
+		auto program = renderer::compileMaterialGraph(*m_sharedGraph,
+													  renderer::MaterialPreviewTarget{.node = node, .pin = {}});
+		const bool newShader = program.isValid() && program.key != thumbnail.key;
+		// One new shader per frame keeps the canvas responsive while the thumbnails fill in.
+		if (newShader && built)
+			continue;
+		thumbnail.revision = m_editTime;
+		thumbnail.valid = program.isValid();
+		if (!thumbnail.valid)
+			continue;
+		thumbnail.key = program.key;
+		if (!thumbnail.framebuffer)
+			thumbnail.framebuffer = makePreviewFramebuffer({g_thumbnailSize, g_thumbnailSize}, "material_node_preview");
+		if (!thumbnail.framebuffer)
+			continue;
+		renderer::MaterialParameters unlit = m_asset.values;
+		unlit.shadingModel = renderer::ShadingModel::Unlit;
+		unlit.alphaMode = renderer::AlphaMode::Opaque;
+		const auto material = renderer::Material{unlit}.withGraph(
+				m_sharedGraph, mkShared<const renderer::MaterialProgram>(std::move(program)), m_asset.graphValues);
+		viewer::renderMaterialPreview(*thumbnail.framebuffer, *sphere, {}, material);
+		built = built || newShader;
+	}
+	std::erase_if(m_thumbnails, [this](const auto& iEntry) -> bool {
+		return !std::ranges::contains(m_asset.graph->nodes, iEntry.first, &renderer::MaterialGraphNode::id);
+	});
+	m_visibleNodes.clear();
+}
+
+void MaterialDocument::drawThumbnail(const core::UUID iNode, const math::vec2f& iMin, const math::vec2f& iMax) {
+	m_visibleNodes.insert(iNode);
+	auto* draw = ImGui::GetWindowDrawList();
+	const float side = std::min(iMax.x() - iMin.x(), iMax.y() - iMin.y());
+	const ImVec2 min{(iMin.x() + iMax.x() - side) * 0.5f, iMin.y()};
+	const ImVec2 max{min.x + side, min.y + side};
+	const auto found = m_thumbnails.find(iNode);
+	if (found == m_thumbnails.end() || !found->second.valid || !found->second.framebuffer) {
+		draw->AddRect(min, max, IM_COL32(110, 110, 120, 160), 4.f);
+		if (found != m_thumbnails.end() && found->second.revision != std::chrono::steady_clock::time_point{} &&
+			!found->second.valid && side > 32.f) {
+			const char* text = "no preview";
+			const auto size = ImGui::CalcTextSize(text);
+			draw->AddText({(min.x + max.x - size.x) * 0.5f, (min.y + max.y - size.y) * 0.5f},
+						  IM_COL32(150, 150, 160, 255), text);
+		}
+		return;
+	}
+	const auto texture = gui::imTexture(found->second.framebuffer, 0);
+	if (!texture.has_value())
+		return;
+	draw->AddImage(*texture, min, max, gui::vec(found->second.framebuffer->getLowerData()),
+				   gui::vec(found->second.framebuffer->getUpperData()));
+}
+
+auto MaterialDocument::runCommand(const std::string_view iName, commands::CommandArgs iArgs)
+		-> std::optional<commands::CommandResult> {
+	if (mp_editorLayer == nullptr) {
+		OWL_WARN("MaterialDocument: '{}' ignored, no editor to run it.", iName)
+		return std::nullopt;
+	}
+	iArgs.set("path", m_path.generic_string());
+	auto result = mp_editorLayer->execute(iName, iArgs, commands::CommandSource::Gesture);
+	if (!result)
+		return std::nullopt;
+	return std::move(*result);
+}
+
+auto MaterialDocument::isDragging() -> bool {
+	const int frame = ImGui::GetFrameCount();
+	const bool dragging = ImGui::IsMouseDown(ImGuiMouseButton_Left) && frame - m_lastEditFrame <= 1;
+	m_lastEditFrame = frame;
+	return dragging;
 }
 
 void MaterialDocument::onImGuiRender() {
@@ -272,15 +425,20 @@ void MaterialDocument::onImGuiRender() {
 		m_wasFocused = windowFocused;
 		if (windowFocused && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false))
 			std::ignore = save();
-		const float listWidth = std::max(320.f, ImGui::GetContentRegionAvail().x * 0.42f);
-		ImGui::BeginChild("##materialParameters", ImVec2{listWidth, 0.f}, ImGuiChildFlags_Borders);
-		renderParameters();
-		ImGui::EndChild();
-		ImGui::SameLine();
-		ImGui::BeginChild("##materialPreview", ImVec2{0.f, 0.f}, ImGuiChildFlags_Borders,
-						  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-		renderPreview();
-		ImGui::EndChild();
+		renderToolbar();
+		if (isGraph()) {
+			renderGraphView(windowFocused);
+		} else {
+			const float listWidth = std::max(320.f, ImGui::GetContentRegionAvail().x * 0.42f);
+			ImGui::BeginChild("##materialParameters", ImVec2{listWidth, 0.f}, ImGuiChildFlags_Borders);
+			renderParameters();
+			ImGui::EndChild();
+			ImGui::SameLine();
+			ImGui::BeginChild("##materialPreview", ImVec2{0.f, 0.f}, ImGuiChildFlags_Borders,
+							  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+			renderPreview();
+			ImGui::EndChild();
+		}
 	}
 	ImGui::End();
 }
@@ -296,8 +454,9 @@ void MaterialDocument::renderParameters() {
 	if (ImGui::BeginDragDropTarget()) {
 		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
 			const auto* const data = static_cast<const char*>(payload->Data);
-			std::ignore = setParent(
-					std::filesystem::path{std::string(data, ::strnlen(data, static_cast<size_t>(payload->DataSize)))});
+			std::ignore = runCommand(
+					"material.set_parent",
+					{{"parent", std::string(data, ::strnlen(data, static_cast<size_t>(payload->DataSize)))}});
 		}
 		ImGui::EndDragDropTarget();
 	}
@@ -306,10 +465,11 @@ void MaterialDocument::renderParameters() {
 												   .tooltip = "Clear",
 												   .description = "Make this a root material again.",
 												   .disabled = parent.empty()}))
-		std::ignore = setParent({});
+		std::ignore = runCommand("material.set_parent", {{"parent", std::string{}}});
 	if (!m_asset.parent.empty())
 		ImGui::TextDisabled("Check a field to override it; the others follow the parent.");
 
+	renderGraphOverrides();
 	auto next = m_asset;
 	std::optional<renderer::MaterialParameters> inherited;
 	if (auto* library = libraryOf(); library != nullptr && !m_asset.parent.empty()) {
@@ -318,10 +478,10 @@ void MaterialDocument::renderParameters() {
 	}
 	if (gui::component::renderMaterialFields(next.values, next.overrides, !m_asset.parent.empty(),
 											 inherited ? &*inherited : nullptr)) {
-		const int frame = ImGui::GetFrameCount();
-		const bool dragging = ImGui::IsMouseDown(ImGuiMouseButton_Left) && frame - m_lastEditFrame <= 1;
-		m_lastEditFrame = frame;
-		std::ignore = setValues(next.values, next.overrides, dragging);
+		const renderer::MaterialOverrides values{.fields = m_asset.parent.empty() ? renderer::g_allMaterialFields
+																				  : next.overrides,
+												 .values = next.values};
+		std::ignore = runCommand("material.set_values", {{"values", values.toYaml()}, {"merge", isDragging()}});
 	}
 }
 

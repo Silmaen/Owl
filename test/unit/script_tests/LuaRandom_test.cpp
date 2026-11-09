@@ -118,8 +118,9 @@ TEST_F(LuaRandom, MathFunctionsUseTheEngineMaths) {
 	const auto state = play(0);
 	EXPECT_EQ(state.get("sin"), (GameState::Value{static_cast<float>(math::sin(0.7))}));
 	EXPECT_EQ(state.get("atan"), (GameState::Value{static_cast<float>(math::atan2(1.0, -2.0))}));
-	EXPECT_EQ(state.get("log"), (GameState::Value{static_cast<float>(math::log(8.0) / math::log(2.0))}));
-	EXPECT_EQ(state.get("pow"), (GameState::Value{1024.f}));
+	// A whole number stays a whole number in the game state: Luau has one number type.
+	EXPECT_EQ(state.get("log"), (GameState::Value{int64_t{3}}));
+	EXPECT_EQ(state.get("pow"), (GameState::Value{int64_t{1024}}));
 }
 
 TEST_F(LuaRandom, SortedKeysGiveAFixedOrder) {

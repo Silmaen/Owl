@@ -10,10 +10,16 @@ the same Lua: see [Visual scripts](visual-scripts.md).
 
 ## Overview
 
-Owl Engine embeds Lua 5.5 as its gameplay scripting language. Scripts are attached to entities
+Owl Engine embeds [Luau](https://luau.org), the typed dialect of Lua, as its gameplay scripting language. Scripts are
+attached to entities
 via the `LuaScript` component, which provides lifecycle callbacks (`on_create`,
 `on_update`, `on_destroy`, `on_collision`) and a property system for exposing
 configurable values in the editor inspector.
+
+Luau follows Lua 5.1 with additions (`+=`, `continue`, `if` expressions, string interpolation, optional types). A
+number is a double: whole numbers stay exact up to 2^53, there are no bitwise operators (`bit32.band`, `bit32.bor`…
+instead) and no `goto`. The sandbox opens `table`, `string`, `math`, `utf8`, `coroutine`, `bit32` and `buffer`;
+`load` takes text only.
 
 Each script instance runs in an **isolated Lua state** — global variables in one
 script do not affect other scripts. The Lua environment is **sandboxed**: no file or
@@ -129,8 +135,8 @@ end
 | `on_update(dt)`               | Every frame during Play mode                                                     | `dt`: delta time (seconds)    |
 | `on_tick(dt)`                 | Every fixed simulation tick (60 Hz)                                              | `dt`: tick duration (seconds) |
 | `on_destroy()`                | Entity destroyed, or Play mode ends                                              | None                          |
-| `on_collision(other_id)`      | Body starts touching another entity's body                                       | `other_id`: UUID              |
-| `on_collision_exit(other_id)` | Last contact with another entity's body ends                                     | `other_id`: UUID              |
+| `on_collision(other_id)`      | Body starts touching another entity's body                                       | `other_id`: handle            |
+| `on_collision_exit(other_id)` | Last contact with another entity's body ends                                     | `other_id`: handle            |
 | `on_demoted()`                | The entity's `SimulationLod` demotes it                                          | None                          |
 | `on_promoted()`               | The entity's `SimulationLod` promotes it                                         | None                          |
 | `on_coarse_tick(dt)`          | Every `coarseInterval` ticks while demoted, instead of `on_update` and `on_tick` | `dt`: seconds covered         |
@@ -171,7 +177,7 @@ end
 component, a collidable tilemap, or the automatic body of a raycast door or pushwall. Only the entity receiving the
 callback needs a `LuaScript`.
 
-- Both entities are notified, each with the other's UUID, right after the physics step of the frame (before
+- Both entities are notified, each with the other's handle, right after the physics step of the frame (before
   triggers).
 - A pair is reported **once** when its first contact begins. It is reported again only after the two bodies have
   fully separated: resting on the ground, or sliding from one tilemap cell to the next, does not call it again.
@@ -187,8 +193,13 @@ callback needs a `LuaScript`.
 ### The `entity_id` Global
 
 Every script instance has a global `entity_id` variable automatically set to the
-owning entity's UUID. Use this to call engine API functions that require an entity
+handle of the owning entity. Use this to call engine API functions that require an entity
 identifier.
+
+A script never sees the UUID of an entity, only its handle: a whole number, `0` for no entity, that compares and keys
+tables like any number. A handle is valid while the entity lives, in the current Play session only: save the tag or
+the data of an entity, not its handle. `scene.find_by_uuid("<uuid>")` gives the handle of a UUID written in a scene
+file.
 
 ### Properties Table
 
@@ -213,7 +224,7 @@ Each entry must have:
 | `color`   | table `{r, g, b, a}`, sRGB components in 0..1  | Colour picker with alpha               | `{1, 0.5, 0, 1}`         |
 | `vec2`    | table `{x, y}`                                 | Two drag fields                        | `{0, 0}`                 |
 | `vec3`    | table `{x, y, z}`                              | Three drag fields                      | `{0, 0, 0}`              |
-| `entity`  | integer UUID of an entity, `0` for none        | Combo of the entities of the scene     | `0`                      |
+| `entity`  | handle of an entity, `0` for none              | Combo of the entities of the scene     | `0`                      |
 | `numbers` | sequence of numbers                            | List with **+** and remove buttons     | `{1, 2, 3}`              |
 | `strings` | sequence of strings                            | List with **+** and remove buttons     | `{'a', 'b'}`             |
 
@@ -238,6 +249,13 @@ A `.owlhud` file can own a scene script too (the `SceneScript` key, set in the S
 Play with every scene that draws the HUD, with the hooks and the `properties` of a scene script (`Scene::getHudScript`).
 A widget callback (button `onClickCallback`, slider, list...) is looked up in the scripts of the widget, then in the HUD
 script and the scene script, then in the entity scripts.
+
+### Type checking
+
+Owl Nest checks a script with the Luau type checker as you edit it ([Code and text](editor_documents.md)). The engine
+tables are declared from the binding registry, so a call matches its reference page: `transform.get_position(entity_id)`
+returns three numbers, and a misspelt function name of a table is an error. Annotations are optional (`local speed: number = 2`);
+a `--!strict` first line makes every value typed.
 
 ## Engine API Reference
 
@@ -412,7 +430,7 @@ existed.
 `entity.has_component(id, name)` and `entity.get_name(id)` query an entity; `entity.set_tint(id, r, g, b, [a])` and
 `entity.get_tint(id)` write and read the colour a `SpriteRenderer` or `AnimatedSpriteRenderer` multiplies into its
 texture, which is how a script flashes a sprite on a hit or fades a coin out (false / nothing for an entity without a
-sprite). See `engine_demo/scripts/platformer/platformer_player.lua` and `coin.lua`.
+sprite). See `engine_demo/scripts/platformer/platformer_player.lua` and `coin.owlvs`.
 
 ### `isometric`
 
@@ -527,7 +545,7 @@ if hit and hit.entity == target_id then log.info("seen at " .. hit.distance) end
 ```
 
 All overlap-based triggers (except Victory, Death, Target) fire edge events, on the trigger entity's script and
-on the player's script. `other_id` is the other side: the player's UUID for the trigger, the trigger's UUID for the
+on the player's script. `other_id` is the other side: the player's handle for the trigger, the trigger's handle for the
 player.
 
 ```lua
@@ -551,7 +569,7 @@ inspector (the **Callback** field); if left empty, the default name is used:
 | **Interaction** | `on_interact`    | When the player presses E in range    |
 | **LuaCallback** | `on_triggered`   | Every frame while the player overlaps |
 
-`on_triggered` receives the player's UUID as its only argument (`on_triggered(other_id)`); `on_timer` and
+`on_triggered` receives the player's handle as its only argument (`on_triggered(other_id)`); `on_timer` and
 `on_interact` take no argument. `on_interact` does not fire while a `UiWindow` is shown (a pause menu, an inventory),
 nor on the frame whose click closes it; the built-in activation of a raycast door or secret wall waits the same way.
 
@@ -699,9 +717,9 @@ instance with `ScriptInstance::setQuotas()`. A value of zero disables the limit.
 The time budget covers one host call: one `on_create`, `on_update`, `on_destroy`, the
 execution of the chunk when the script loads, or the property extraction done by the
 editor. The watchdog costs nothing while scripts behave (each call only bumps a counter);
-when a call overruns, it signals the script thread, which arms a hook that raises
-`time budget exceeded` on the next Lua instruction, in whichever coroutine is running.
-The hook keeps firing until the call returns, so a script cannot swallow the error with
+when a call overruns, it installs the Luau `interrupt` callback, which raises
+`time budget exceeded` at the next loop iteration, call or return, in whichever coroutine is running.
+The callback keeps firing until the call returns, so a script cannot swallow the error with
 `pcall` and loop on.
 
 The environment variable `OWL_SCRIPT_TIME_SCALE` (a whole factor) multiplies the default time budget of the

@@ -13,33 +13,37 @@ and the shading models stay those of the PBR materials.
 
 ## Decisions
 
-| Decision    | Choice                                                                                                       |
-|-------------|--------------------------------------------------------------------------------------------------------------|
-| Asset       | A `Graph` kind of `.owlmat` beside the parameter kind, its graph in the same file                            |
-| Editor      | A `NodeCanvas` document in Owl Nest, like the visual scripts and the PCG graphs                              |
-| Output      | One surface node: base colour, alpha, metallic, roughness, normal, occlusion, emissive                       |
-| Compiler    | The graph becomes a Slang surface function, compiled into the shader of the renderer                         |
-| Small nodes | Maths, texture samples, UV, time, world position and normal, vertex colour                                   |
-| Large nodes | Pre-coded Slang functions: noise, triplanar mapping, parallax, detail maps, height blend                     |
-| Custom node | Its author gives the title, the typed pins and the Slang body                                                |
-| Functions   | Material functions: reusable sub-graphs, on the mechanism of the visual-script functions                     |
-| Parameters  | Values exposed by the graph; a `.owlmat` instance (`Parent`) overrides them without a recompile              |
-| Shaders     | Compiled by Owl Nest on edit, baked by the export like the engine shaders                                    |
-| Renderers   | The mesh renderer (static and skinned) first; voxel, planet and particles once they read the same surface    |
+| Decision       | Choice                                                                                                                                                            |
+|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Asset          | A `graph` section in a `.owlmat` (`MaterialAsset::graph`); a child material takes the graph of its parent                                                         |
+| Editor         | A `NodeCanvas` in the material document of Owl Nest, like the visual scripts and the PCG graphs                                                                   |
+| Output         | One surface node: base colour, alpha, normal, metallic, roughness, occlusion, emissive, the clearcoat, sheen and anisotropy layers, and the world position offset |
+| Compiler       | `compileMaterialGraph` writes the material block of `common/mesh_surface.slangh`: `evaluateSurface` and `evaluateVertexOffset`                                    |
+| Shaders        | A variant of `mesh3d` / `skinned3d` per program (`getMaterialShaderName`), baked by the export, else built on its first draw                                      |
+| Draws          | `DrawData::setShaderVariant`: the mesh keeps its buffers, Vulkan builds one pipeline per variant and layout                                                       |
+| Small nodes    | Maths, vectors and uv, texture sample, inputs (uv, world position and normal, view, time, vertex occlusion)                                                       |
+| Large nodes    | Pre-coded Slang of `common/material_nodes.slangh`: noise, triplanar, parallax, height and detail blends, normal blending                                          |
+| Custom node    | Its author gives the title, the typed pins and the Slang body                                                                                                     |
+| Functions      | Material functions: sub-graphs with a `function.input` and a `function.output` node                                                                               |
+| Parameters     | 8 numbers in `MaterialData.graph`, 6 textures in the map slots; a child overrides them in `graphValues`                                                           |
+| Parameter kind | The pre-coded graph `getParameterMaterialGraph()` (`surface.parameters` into the surface): one shading path                                                       |
+| Preview        | A lit mesh for the whole graph and a thumbnail per node (`MaterialPreviewTarget`, unlit)                                                                          |
+| Renderers      | The mesh renderer (static, skinned, instanced); voxel, planet and particles once they read the same surface                                                       |
 
-## Open questions
+## Limits
 
-- Preview: one lit mesh for the whole graph, or a preview on every node
-- The parameter kind as a pre-coded graph (one shading path), or kept beside the graph kind
-- The clearcoat, sheen and anisotropy layers as outputs of the surface node
-- A vertex stage (world position offset) after the surface
+- Triplanar, parallax and the parameter surface sample with derivatives: fragment stage only, refused in the world
+  position offset; the texture sample reads mip 0 there.
+- Texture parameters take the map slots from the base colour on; the maps of the material keep the slots that follow.
+- The `Time` input wraps every hour.
 
 ## Status
 
-| Part                                               | Status  |
-|----------------------------------------------------|---------|
-| `Graph` kind of `.owlmat`, surface node, compiler  | Planned |
-| Small, large and custom Slang nodes                | Planned |
-| Material functions and parameters                  | Planned |
-| Owl Nest editor and preview                        | Planned |
-| Engine Demo scene and scenario                     | Planned |
+| Part                                                 | Status |
+|------------------------------------------------------|--------|
+| `graph` section of `.owlmat`, surface node, compiler | Done   |
+| Small, large and custom Slang nodes                  | Done   |
+| Material functions and parameters                    | Done   |
+| Owl Nest editor and preview                          | Done   |
+| Graph shaders baked by the export                    | Done   |
+| Engine Demo scene                                    | Done   |

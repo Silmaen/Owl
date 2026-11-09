@@ -118,6 +118,7 @@ auto fieldWidth(const vs::PinType iType) -> float {
 		case vs::PinType::Entity:
 			return 56.f;
 		case vs::PinType::String:
+		case vs::PinType::Table:
 			return 96.f;
 		case vs::PinType::Color:
 			return 36.f;
@@ -128,7 +129,6 @@ auto fieldWidth(const vs::PinType iType) -> float {
 		case vs::PinType::Any:
 			return 64.f;
 		case vs::PinType::Exec:
-		case vs::PinType::Table:
 			break;
 	}
 	return 0.f;
@@ -206,16 +206,20 @@ auto editField(const vs::PinSpec& iPin, const std::string& iValue) -> std::optio
 		case vs::PinType::Number:
 		case vs::PinType::String:
 		case vs::PinType::Entity:
+		case vs::PinType::Table:
 		case vs::PinType::Any:
 			{
 				auto text = iValue;
-				const auto hint = iPin.type == vs::PinType::Entity ? std::string{"self"} : iPin.defaultValue;
+				auto hint = iPin.defaultValue;
+				if (iPin.type == vs::PinType::Entity)
+					hint = "self";
+				else if (iPin.type == vs::PinType::Table)
+					hint = "a, b, key = c";
 				if (ImGui::InputTextWithHint("##v", hint.c_str(), &text))
 					edited = text;
 			}
 			break;
 		case vs::PinType::Exec:
-		case vs::PinType::Table:
 			break;
 	}
 	if (ImGui::IsItemHovered() && !ImGui::IsItemActive())
@@ -242,13 +246,14 @@ auto getNodeGlyph(const vs::NodeType& iType) -> const char* {
 			{"isometric", gui::icon::grid3x3},  {"path", gui::icon::route},         {"engine", gui::icon::settings2},
 			{"Math", gui::icon::calculator},    {"Compare", gui::icon::equal},      {"Logic", gui::icon::binary},
 			{"Text", gui::icon::type},          {"Vector", gui::icon::axis3d},      {"Color", gui::icon::palette},
-			{"Variables", gui::icon::variable}, {"Events", gui::icon::zap}};
+			{"Variables", gui::icon::variable}, {"Events", gui::icon::zap},         {"Table", gui::icon::list}};
 	switch (iType.kind) {
 		case vs::NodeKind::Branch:
 			return gui::icon::gitBranch;
 		case vs::NodeKind::Sequence:
 			return gui::icon::listOrdered;
 		case vs::NodeKind::ForLoop:
+		case vs::NodeKind::ForEach:
 			return gui::icon::repeat;
 		case vs::NodeKind::FunctionEntry:
 			return gui::icon::logOut;
@@ -256,10 +261,14 @@ auto getNodeGlyph(const vs::NodeType& iType) -> const char* {
 			return gui::icon::undo2;
 		case vs::NodeKind::FunctionCall:
 			return gui::icon::component;
+		case vs::NodeKind::CustomCall:
+		case vs::NodeKind::LuaCall:
+			return gui::icon::code;
 		case vs::NodeKind::Event:
 		case vs::NodeKind::CustomEvent:
 		case vs::NodeKind::Call:
 		case vs::NodeKind::Operator:
+		case vs::NodeKind::Statement:
 		case vs::NodeKind::GetVariable:
 		case vs::NodeKind::SetVariable:
 			break;
@@ -339,17 +348,21 @@ auto getNodeIcon(const vs::NodeType& iType) -> const char* {
 		case vs::NodeKind::Branch:
 		case vs::NodeKind::Sequence:
 		case vs::NodeKind::ForLoop:
+		case vs::NodeKind::ForEach:
 			return "vs_node_flow";
 		case vs::NodeKind::GetVariable:
 		case vs::NodeKind::SetVariable:
 			return "vs_node_variable";
 		case vs::NodeKind::Call:
 		case vs::NodeKind::FunctionCall:
+		case vs::NodeKind::CustomCall:
+		case vs::NodeKind::LuaCall:
 			return "vs_node_call";
 		case vs::NodeKind::FunctionEntry:
 		case vs::NodeKind::FunctionReturn:
 			return "vs_node_flow";
 		case vs::NodeKind::Operator:
+		case vs::NodeKind::Statement:
 			break;
 	}
 	return iType.category == "Constant" ? "vs_node_constant" : "vs_node_math";
@@ -428,6 +441,7 @@ auto getNodeColor(const vs::VisualScript& iScript, const vs::GraphNode& iNode, c
 				return scaled(getPinColor(value == pins.outputs.end() ? vs::PinType::Any : value->type), 0.5f);
 			}
 		case vs::NodeKind::Operator:
+		case vs::NodeKind::Statement:
 			if (iType.category == "Constant" && !iType.outputs.empty())
 				return scaled(getPinColor(iType.outputs.front().type), 0.5f);
 			return rgb(0.16f, 0.42f, 0.4f);
@@ -435,9 +449,13 @@ auto getNodeColor(const vs::VisualScript& iScript, const vs::GraphNode& iNode, c
 		case vs::NodeKind::FunctionReturn:
 		case vs::NodeKind::FunctionCall:
 			return rgb(0.42f, 0.24f, 0.62f);
+		case vs::NodeKind::CustomCall:
+		case vs::NodeKind::LuaCall:
+			return iType.pure ? rgb(0.45f, 0.4f, 0.15f) : rgb(0.55f, 0.33f, 0.12f);
 		case vs::NodeKind::Branch:
 		case vs::NodeKind::Sequence:
 		case vs::NodeKind::ForLoop:
+		case vs::NodeKind::ForEach:
 			break;
 	}
 	return rgb(0.3f, 0.31f, 0.35f);
@@ -455,6 +473,10 @@ auto getNodeTitle(const vs::GraphNode& iNode, const vs::NodeType& iType) -> std:
 			return valueOf(iNode, "function");
 		case vs::NodeKind::FunctionReturn:
 			return iNode.values.contains("exit") ? std::format("Exit {}", valueOf(iNode, "exit")) : "Return";
+		case vs::NodeKind::CustomCall:
+			return humanize(valueOf(iNode, "custom"));
+		case vs::NodeKind::LuaCall:
+			return humanize(valueOf(iNode, "function"));
 		case vs::NodeKind::Call:
 			{
 				const auto dot = iType.title.find('.');
@@ -462,9 +484,11 @@ auto getNodeTitle(const vs::GraphNode& iNode, const vs::NodeType& iType) -> std:
 			}
 		case vs::NodeKind::Event:
 		case vs::NodeKind::Operator:
+		case vs::NodeKind::Statement:
 		case vs::NodeKind::Branch:
 		case vs::NodeKind::Sequence:
 		case vs::NodeKind::ForLoop:
+		case vs::NodeKind::ForEach:
 			break;
 	}
 	return iType.title;
@@ -483,12 +507,18 @@ auto getNodeSubtitle(const vs::NodeType& iType) -> std::string {
 			return "Function Entry";
 		case vs::NodeKind::FunctionCall:
 			return "Function";
+		case vs::NodeKind::CustomCall:
+			return "Custom Node";
+		case vs::NodeKind::LuaCall:
+			return "Lua";
 		case vs::NodeKind::FunctionReturn:
 		case vs::NodeKind::Event:
 		case vs::NodeKind::Operator:
+		case vs::NodeKind::Statement:
 		case vs::NodeKind::Branch:
 		case vs::NodeKind::Sequence:
 		case vs::NodeKind::ForLoop:
+		case vs::NodeKind::ForEach:
 			break;
 	}
 	return {};

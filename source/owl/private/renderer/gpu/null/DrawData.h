@@ -46,9 +46,10 @@ public:
 	 * @param[in] iState Fixed-function state of every draw of this data (kept for `getPipelineState`).
 	 */
 	void init([[maybe_unused]] const BufferLayout& iLayout, [[maybe_unused]] const std::string& iRenderer,
-			  [[maybe_unused]] std::vector<uint32_t>& iIndices, [[maybe_unused]] const std::string& iShaderName,
+			  [[maybe_unused]] std::vector<uint32_t>& iIndices, const std::string& iShaderName,
 			  const PipelineState& iState) override {
 		m_pipelineState = iState;
+		m_shaderBaseName = iShaderName;
 	}
 
 	/**
@@ -84,7 +85,8 @@ public:
 	 * @param[in] iShaderName The shader name.
 	 * @param[in] iRenderer Name of the shader's related renderer.
 	 */
-	void setShader([[maybe_unused]] const std::string& iShaderName,
-				   [[maybe_unused]] const std::string& iRenderer) override {}
+	void setShader(const std::string& iShaderName, [[maybe_unused]] const std::string& iRenderer) override {
+		m_shaderBaseName = iShaderName;
+	}
 };
 }// namespace owl::renderer::gpu::null

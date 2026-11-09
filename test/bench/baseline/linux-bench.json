@@ -1924,35 +1924,35 @@
     {
       "name": "script/on_update/empty/1000_instances",
       "items": 1000,
-      "batch": 63,
+      "batch": 39,
       "samples": 15,
-      "median_ns": 188055.1,
-      "p25_ns": 188004.1,
-      "p75_ns": 188076.2,
-      "min_ns": 187899.9,
-      "max_ns": 188581.7
+      "median_ns": 300130.0,
+      "p25_ns": 300047.7,
+      "p75_ns": 300182.0,
+      "min_ns": 299915.1,
+      "max_ns": 300853.5
     },
     {
       "name": "script/on_update/empty/1_instance",
       "items": 1,
-      "batch": 137351,
+      "batch": 99423,
       "samples": 15,
-      "median_ns": 87.6,
-      "p25_ns": 87.6,
-      "p75_ns": 87.8,
-      "min_ns": 87.3,
-      "max_ns": 87.9
+      "median_ns": 120.0,
+      "p25_ns": 119.9,
+      "p75_ns": 120.1,
+      "min_ns": 119.6,
+      "max_ns": 120.2
     },
     {
       "name": "script/on_update/empty/1_instance_no_quota",
       "items": 1,
-      "batch": 135715,
+      "batch": 88023,
       "samples": 15,
-      "median_ns": 88.0,
-      "p25_ns": 88.0,
-      "p75_ns": 88.0,
-      "min_ns": 88.0,
-      "max_ns": 88.1
+      "median_ns": 120.6,
+      "p25_ns": 120.5,
+      "p75_ns": 120.7,
+      "min_ns": 120.3,
+      "max_ns": 123.2
     },
     {
       "name": "script/on_update/get_set_position/1000_instances",
@@ -2635,6 +2635,39 @@
       "p75_ns": 39212.6,
       "min_ns": 39082.4,
       "max_ns": 39230.8
+    },
+    {
+      "name": "nav/bake/room_24x24_36_crates",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 23106535.0,
+      "p25_ns": 23091694.0,
+      "p75_ns": 23148336.0,
+      "min_ns": 23043048.0,
+      "max_ns": 23327938.0
+    },
+    {
+      "name": "nav/find_path/room_24x24_36_crates",
+      "items": 1,
+      "batch": 482,
+      "samples": 15,
+      "median_ns": 24806.0,
+      "p25_ns": 24796.2,
+      "p75_ns": 24810.4,
+      "min_ns": 24787.5,
+      "max_ns": 24874.7
+    },
+    {
+      "name": "nav/avoidance/64_bodies",
+      "items": 64,
+      "batch": 83,
+      "samples": 15,
+      "median_ns": 139229.2,
+      "p25_ns": 139174.1,
+      "p75_ns": 139334.8,
+      "min_ns": 139122.4,
+      "max_ns": 139437.9
     }
   ],
   "metrics": [

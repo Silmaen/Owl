@@ -297,7 +297,7 @@ navigable with the gamepad (now in the raycast level, `scenes/raycast_demo.owl`)
 - **Journal.** A `UiList` under the info text lists every message of the game (pick-ups, doors, saves), grown by
   `inventory.lua` with `ui.list_set_count`, scrolled to the newest, its rows bound on demand (`onBindCallback`); a
   selected line shows in full in the info text.
-- **Scripts.** `pickup.lua` (`Trigger.Type=LuaCallback`), `inventory.lua` (window, toast, save keys), `raycast_player.lua` (still while the window is open). Scenario
+- **Scripts.** `pickup.owlvs` (`Trigger.Type=LuaCallback`), `inventory.lua` (window, toast, save keys), `raycast_player.owlvs` (still while the window is open). Scenario
   `test/unit/scenarios/raycast_level.owltest` picks an ammo clip, opens the window, navigates it and takes the elevator.
 
 ## Demo HUD rules (DemoHudLayout test)
@@ -319,7 +319,7 @@ The Engine Demo HUDs and menu canvases follow one recipe, checked by `DemoHudLay
   modal popup (`UiWindow.modal`, a dialog taking the mouse and the focus while shown) is not compared at all; every
   top-level widget must fit in the viewport.
 - Controls are never on screen for good in game: the main menu lists them (the pause leads there), and a level shows
-  its own keys in a hint that `controls_hint.lua` hides after a few seconds, last in its corner group so that hiding
+  its own keys in a hint that `controls_hint.owlvs` hides after a few seconds, last in its corner group so that hiding
   it moves nothing.
 
 ## Minimap {#minimap}

@@ -214,7 +214,7 @@ def scene_text(seed: int = 1) -> str:
         "      perspectiveNear: 0.00999999978,\n"
         "      perspectiveFar: 1000, orthographicSize: 11, orthographicNear: -1, orthographicFar: 10}\n"
         "    primary: true\n    fixedAspectRatio: false\n  SoundListener:\n    primary: true\n"
-        + _script("iso_camera.lua", {"speed": ("float", 14), "limit": ("float", SIZE)}),
+        + _script("iso_camera.owlvs", {"speed": ("float", 14), "limit": ("float", SIZE)}),
         layer=None,
     )
     out.add(

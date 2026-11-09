@@ -59,7 +59,7 @@ local markers = {}  -- {id, shown} of each entity with a marker
 local markers_shown = 0
 local markers_hidden = false
 
-local function cell_of(x, y)
+local function cell_of(x, y, _z)
     return math.floor(x + MAP_SIZE / 2), math.floor(MAP_SIZE / 2 - y)
 end
 

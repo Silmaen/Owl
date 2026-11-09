@@ -1,0 +1,146 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: hint, type: string, default: HudHint}
+    - {name: duration, type: float, default: 4.5}
+    - {name: hint_id, type: entity, default: 0}
+    - {name: clock, type: float, default: 0}
+    - {name: shown, type: bool, default: false}
+  nodes:
+    - id: 7440000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 7440000000000000002
+      type: var.get
+      position: [0, 150]
+      values:
+        variable: hint
+    - id: 7440000000000000003
+      type: call.ui.find
+      position: [200, 150]
+    - id: 7440000000000000004
+      type: var.set
+      position: [464, 0]
+      values:
+        variable: hint_id
+    - id: 7440000000000000005
+      type: compare.not_equal
+      position: [696, 150]
+      values:
+        B: 0
+    - id: 7440000000000000006
+      type: var.set
+      position: [974, 0]
+      values:
+        variable: shown
+    - id: 7440000000000000007
+      type: flow.sequence
+      position: [1208, 0]
+    - id: 7440000000000000008
+      type: flow.branch
+      position: [1472, -150]
+    - id: 7440000000000000009
+      type: var.get
+      position: [1472, -300]
+      values:
+        variable: hint_id
+    - id: 7440000000000000010
+      type: call.ui.set_visible
+      position: [1736, -150]
+      values:
+        visible: true
+    - id: 7440000000000000011
+      type: var.get
+      position: [1472, 300]
+      values:
+        variable: shown
+    - id: 7440000000000000012
+      type: call.gamestate.set
+      position: [1736, 150]
+      values:
+        key: controls_hint_shown
+    - id: 7440000000000000013
+      type: event.on_update
+      position: [0, 600]
+    - id: 7440000000000000014
+      type: var.get
+      position: [0, 750]
+      values:
+        variable: shown
+    - id: 7440000000000000015
+      type: flow.branch
+      position: [200, 600]
+    - id: 7440000000000000016
+      type: var.get
+      position: [200, 900]
+      values:
+        variable: clock
+    - id: 7440000000000000017
+      type: math.add
+      position: [464, 900]
+    - id: 7440000000000000018
+      type: var.set
+      position: [696, 600]
+      values:
+        variable: clock
+    - id: 7440000000000000019
+      type: var.get
+      position: [696, 900]
+      values:
+        variable: duration
+    - id: 7440000000000000020
+      type: compare.greater_equal
+      position: [974, 750]
+    - id: 7440000000000000021
+      type: flow.branch
+      position: [1208, 600]
+    - id: 7440000000000000022
+      type: var.set
+      position: [1472, 600]
+      values:
+        Value: false
+        variable: shown
+    - id: 7440000000000000023
+      type: var.get
+      position: [1472, 900]
+      values:
+        variable: hint_id
+    - id: 7440000000000000024
+      type: call.ui.set_visible
+      position: [1736, 600]
+      values:
+        visible: false
+    - id: 7440000000000000025
+      type: call.gamestate.set
+      position: [2014, 600]
+      values:
+        key: controls_hint_shown
+        value: false
+  links:
+    - {from: 7440000000000000001, fromPin: Then, to: 7440000000000000004, toPin: Exec}
+    - {from: 7440000000000000004, fromPin: Then, to: 7440000000000000006, toPin: Exec}
+    - {from: 7440000000000000006, fromPin: Then, to: 7440000000000000007, toPin: Exec}
+    - {from: 7440000000000000002, fromPin: Value, to: 7440000000000000003, toPin: name}
+    - {from: 7440000000000000003, fromPin: entity_id, to: 7440000000000000004, toPin: Value}
+    - {from: 7440000000000000004, fromPin: Value, to: 7440000000000000005, toPin: A}
+    - {from: 7440000000000000005, fromPin: Result, to: 7440000000000000006, toPin: Value}
+    - {from: 7440000000000000007, fromPin: Then 1, to: 7440000000000000008, toPin: Exec}
+    - {from: 7440000000000000006, fromPin: Value, to: 7440000000000000008, toPin: Condition}
+    - {from: 7440000000000000008, fromPin: True, to: 7440000000000000010, toPin: Exec}
+    - {from: 7440000000000000009, fromPin: Value, to: 7440000000000000010, toPin: entity_id}
+    - {from: 7440000000000000007, fromPin: Then 2, to: 7440000000000000012, toPin: Exec}
+    - {from: 7440000000000000011, fromPin: Value, to: 7440000000000000012, toPin: value}
+    - {from: 7440000000000000013, fromPin: Then, to: 7440000000000000015, toPin: Exec}
+    - {from: 7440000000000000014, fromPin: Value, to: 7440000000000000015, toPin: Condition}
+    - {from: 7440000000000000015, fromPin: True, to: 7440000000000000018, toPin: Exec}
+    - {from: 7440000000000000016, fromPin: Value, to: 7440000000000000017, toPin: A}
+    - {from: 7440000000000000013, fromPin: dt, to: 7440000000000000017, toPin: B}
+    - {from: 7440000000000000017, fromPin: Result, to: 7440000000000000018, toPin: Value}
+    - {from: 7440000000000000018, fromPin: Then, to: 7440000000000000021, toPin: Exec}
+    - {from: 7440000000000000018, fromPin: Value, to: 7440000000000000020, toPin: A}
+    - {from: 7440000000000000019, fromPin: Value, to: 7440000000000000020, toPin: B}
+    - {from: 7440000000000000020, fromPin: Result, to: 7440000000000000021, toPin: Condition}
+    - {from: 7440000000000000021, fromPin: True, to: 7440000000000000022, toPin: Exec}
+    - {from: 7440000000000000022, fromPin: Then, to: 7440000000000000024, toPin: Exec}
+    - {from: 7440000000000000024, fromPin: Then, to: 7440000000000000025, toPin: Exec}
+    - {from: 7440000000000000023, fromPin: Value, to: 7440000000000000024, toPin: entity_id}

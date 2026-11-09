@@ -10,6 +10,7 @@
 
 #include "script/ScriptInstance.h"
 
+#include "EntityHandle.h"
 #include "script/LuaBindings.h"
 #include "script/LuaEngine.h"
 
@@ -63,6 +64,11 @@ struct ScriptInstance::Impl {
 			return "the scene";
 		return entityName.empty() ? std::format("entity {}", entityId)
 								  : std::format("entity '{}' ({})", entityName, entityId);
+	}
+
+	// Handle scripts see for the entity of a UUID (0 without a scene or for an unknown UUID).
+	[[nodiscard]] auto handleOf(const uint64_t iUuid) const -> uint64_t {
+		return boundScene == nullptr ? 0 : getEntityHandle(*boundScene, core::UUID{iUuid});
 	}
 
 	void bind(const std::string& iName, const uint64_t iEntityId) {
@@ -119,8 +125,8 @@ auto ScriptInstance::create(const std::string& iScriptPath, const uint64_t iEnti
 	// Register bindings in this instance's state.
 	registerBindings(mp_impl->engine.getState());
 	setBoundScene(mp_impl->engine.getState(), mp_impl->boundScene);
-	if (iEntityId != 0)
-		mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
+	if (const auto handle = mp_impl->handleOf(iEntityId); handle != 0)
+		mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(handle));
 	mp_impl->bind(iScriptPath, iEntityId);
 	if (!mp_impl->engine.loadScript(iScriptPath)) {
 		OWL_CORE_ERROR("ScriptInstance: Failed to load script '{}' on {}.", iScriptPath, mp_impl->owner())
@@ -138,8 +144,8 @@ auto ScriptInstance::createFromBuffer(const std::vector<uint8_t>& iData, const s
 		return false;
 	registerBindings(mp_impl->engine.getState());
 	setBoundScene(mp_impl->engine.getState(), mp_impl->boundScene);
-	if (iEntityId != 0)
-		mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
+	if (const auto handle = mp_impl->handleOf(iEntityId); handle != 0)
+		mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(handle));
 	mp_impl->bind(iName, iEntityId);
 	if (!mp_impl->engine.loadBuffer(iData, iName)) {
 		OWL_CORE_ERROR("ScriptInstance: Failed to load buffer '{}' on {}.", iName, mp_impl->owner())
@@ -198,13 +204,13 @@ void ScriptInstance::onDestroy() const {
 void ScriptInstance::onCollision(const uint64_t iOtherEntityId) const {
 	if (!isValid() || mp_impl->disabled)
 		return;
-	mp_impl->checkQuota(g_OnCollision, mp_impl->engine.callFunction(g_OnCollision, iOtherEntityId));
+	mp_impl->checkQuota(g_OnCollision, mp_impl->engine.callFunction(g_OnCollision, mp_impl->handleOf(iOtherEntityId)));
 }
 
 void ScriptInstance::onContact(const std::string_view iCallback, const uint64_t iOtherEntityId) const {
 	if (!isValid() || mp_impl->disabled)
 		return;
-	mp_impl->checkQuota(iCallback, mp_impl->engine.callFunction(iCallback, iOtherEntityId));
+	mp_impl->checkQuota(iCallback, mp_impl->engine.callFunction(iCallback, mp_impl->handleOf(iOtherEntityId)));
 }
 
 auto ScriptInstance::callFunction(const std::string& iName) const -> bool {
@@ -218,7 +224,7 @@ auto ScriptInstance::callFunction(const std::string& iName) const -> bool {
 auto ScriptInstance::callFunction(const std::string& iName, const uint64_t iEntityId) const -> bool {
 	if (!isValid())
 		return false;
-	return mp_impl->engine.callFunction(iName, iEntityId);
+	return mp_impl->engine.callFunction(iName, mp_impl->handleOf(iEntityId));
 }
 
 // ---- Property access ----
@@ -284,7 +290,7 @@ void ScriptInstance::setProperty(const ScriptProperty& iProperty) const {
 			setNumbers(std::get<std::array<float, 3>>(iProperty.value), vectorKeys);
 			break;
 		case ScriptPropertyType::Entity:
-			engine.setGlobal(name, static_cast<int64_t>(std::get<uint64_t>(iProperty.value)));
+			engine.setGlobal(name, static_cast<int64_t>(mp_impl->handleOf(std::get<uint64_t>(iProperty.value))));
 			break;
 		case ScriptPropertyType::Numbers:
 			engine.setGlobalNumbers(name, std::get<std::vector<double>>(iProperty.value));

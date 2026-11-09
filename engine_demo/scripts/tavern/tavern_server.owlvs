@@ -1,0 +1,103 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: body, type: entity, default: 0}
+    - {name: waiting, type: bool, default: false}
+  nodes:
+    - id: 7350000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 7350000000000000002
+      type: call.scene.find_entity
+      position: [0, 150]
+      values:
+        name: Server
+    - id: 7350000000000000003
+      type: var.set
+      position: [358, 0]
+      values:
+        variable: body
+    - id: 7350000000000000004
+      type: event.on_update
+      position: [0, 450]
+    - id: 7350000000000000005
+      type: var.get
+      position: [0, 600]
+      values:
+        variable: body
+    - id: 7350000000000000006
+      type: compare.not_equal
+      position: [358, 600]
+      values:
+        B: 0
+    - id: 7350000000000000007
+      type: call.spline.is_waiting
+      position: [0, 750]
+    - id: 7350000000000000008
+      type: logic.or
+      position: [358, 750]
+      values:
+        B: false
+    - id: 7350000000000000009
+      type: var.get
+      position: [358, 900]
+      values:
+        variable: waiting
+    - id: 7350000000000000010
+      type: compare.not_equal
+      position: [636, 750]
+    - id: 7350000000000000011
+      type: logic.and
+      position: [844, 600]
+    - id: 7350000000000000012
+      type: flow.branch
+      position: [1052, 450]
+    - id: 7350000000000000013
+      type: var.set
+      position: [1316, 450]
+      values:
+        variable: waiting
+    - id: 7350000000000000014
+      type: flow.branch
+      position: [1548, 450]
+    - id: 7350000000000000015
+      type: var.get
+      position: [1316, 750]
+      values:
+        variable: waiting
+    - id: 7350000000000000016
+      type: var.get
+      position: [1548, 900]
+      values:
+        variable: body
+    - id: 7350000000000000017
+      type: call.animator.play
+      position: [1812, 300]
+      values:
+        fade: 0.3
+        state: idle
+    - id: 7350000000000000018
+      type: call.animator.play
+      position: [1812, 600]
+      values:
+        fade: 0.3
+        state: walk
+  links:
+    - {from: 7350000000000000001, fromPin: Then, to: 7350000000000000003, toPin: Exec}
+    - {from: 7350000000000000002, fromPin: entity_id, to: 7350000000000000003, toPin: Value}
+    - {from: 7350000000000000005, fromPin: Value, to: 7350000000000000006, toPin: A}
+    - {from: 7350000000000000007, fromPin: waiting, to: 7350000000000000008, toPin: A}
+    - {from: 7350000000000000008, fromPin: Result, to: 7350000000000000010, toPin: A}
+    - {from: 7350000000000000009, fromPin: Value, to: 7350000000000000010, toPin: B}
+    - {from: 7350000000000000006, fromPin: Result, to: 7350000000000000011, toPin: A}
+    - {from: 7350000000000000010, fromPin: Result, to: 7350000000000000011, toPin: B}
+    - {from: 7350000000000000004, fromPin: Then, to: 7350000000000000012, toPin: Exec}
+    - {from: 7350000000000000011, fromPin: Result, to: 7350000000000000012, toPin: Condition}
+    - {from: 7350000000000000012, fromPin: True, to: 7350000000000000013, toPin: Exec}
+    - {from: 7350000000000000008, fromPin: Result, to: 7350000000000000013, toPin: Value}
+    - {from: 7350000000000000013, fromPin: Then, to: 7350000000000000014, toPin: Exec}
+    - {from: 7350000000000000015, fromPin: Value, to: 7350000000000000014, toPin: Condition}
+    - {from: 7350000000000000014, fromPin: True, to: 7350000000000000017, toPin: Exec}
+    - {from: 7350000000000000014, fromPin: False, to: 7350000000000000018, toPin: Exec}
+    - {from: 7350000000000000016, fromPin: Value, to: 7350000000000000017, toPin: entity_id}
+    - {from: 7350000000000000016, fromPin: Value, to: 7350000000000000018, toPin: entity_id}

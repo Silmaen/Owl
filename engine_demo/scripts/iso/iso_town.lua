@@ -31,10 +31,12 @@ local NORTH, EAST, SOUTH, WEST = 1, 2, 4, 8
 local TILE_OF_MASK = {
     [0] = 12,
     [NORTH] = 13, [EAST] = 14, [SOUTH] = 15, [WEST] = 16,
-    [NORTH | EAST] = 17, [EAST | SOUTH] = 18, [SOUTH | WEST] = 19, [WEST | NORTH] = 20,
-    [NORTH | EAST | SOUTH] = 21, [EAST | SOUTH | WEST] = 22, [SOUTH | WEST | NORTH] = 23, [WEST | NORTH | EAST] = 24,
-    [NORTH | EAST | SOUTH | WEST] = 25,
-    [EAST | WEST] = ROAD_X, [NORTH | SOUTH] = ROAD_Y,
+    [bit32.bor(NORTH, EAST)] = 17, [bit32.bor(EAST, SOUTH)] = 18,
+    [bit32.bor(SOUTH, WEST)] = 19, [bit32.bor(WEST, NORTH)] = 20,
+    [bit32.bor(NORTH, EAST, SOUTH)] = 21, [bit32.bor(EAST, SOUTH, WEST)] = 22,
+    [bit32.bor(SOUTH, WEST, NORTH)] = 23, [bit32.bor(WEST, NORTH, EAST)] = 24,
+    [bit32.bor(NORTH, EAST, SOUTH, WEST)] = 25,
+    [bit32.bor(EAST, WEST)] = ROAD_X, [bit32.bor(NORTH, SOUTH)] = ROAD_Y,
 }
 local FIRST_ROAD_TILE, LAST_ROAD_TILE = 11, 25
 local BUILDABLE = { [0] = true, [1] = true, [4] = true, [6] = true, [7] = true }
@@ -126,10 +128,10 @@ end
 -- The road tile of a cell from which of its four neighbours are roads.
 local function tile_for(x, y)
     local mask = 0
-    if road_at(x, y - 1) then mask = mask | NORTH end
-    if road_at(x + 1, y) then mask = mask | EAST end
-    if road_at(x, y + 1) then mask = mask | SOUTH end
-    if road_at(x - 1, y) then mask = mask | WEST end
+    if road_at(x, y - 1) then mask = bit32.bor(mask, NORTH) end
+    if road_at(x + 1, y) then mask = bit32.bor(mask, EAST) end
+    if road_at(x, y + 1) then mask = bit32.bor(mask, SOUTH) end
+    if road_at(x - 1, y) then mask = bit32.bor(mask, WEST) end
     return TILE_OF_MASK[mask]
 end
 

@@ -8,3 +8,72 @@ Material:
   emissiveLuminance: 5000
   baseColorMap: gid:701842bb56c1c315:textures/fire/flame.png
   emissiveMap: gid:701842bb56c1c315:textures/fire/flame.png
+  graph:
+    nodes:
+      - id: 7610000000000000001
+        type: surface.parameters
+        position: [0, 0]
+      - id: 7610000000000000002
+        type: output.surface
+        position: [1300, 0]
+      - id: 7610000000000000003
+        type: input.time
+        position: [0, 560]
+      - id: 7610000000000000004
+        type: input.position
+        position: [0, 680]
+      - id: 7610000000000000005
+        type: vector.split
+        position: [220, 680]
+      - id: 7610000000000000006
+        type: math.multiply
+        position: [220, 560]
+        values:
+          B: "9"
+      - id: 7610000000000000007
+        type: math.multiply
+        position: [440, 680]
+        values:
+          B: "7"
+      - id: 7610000000000000008
+        type: math.add
+        position: [660, 600]
+      - id: 7610000000000000009
+        type: math.sin
+        position: [860, 560]
+      - id: 7610000000000000010
+        type: math.cos
+        position: [860, 680]
+      - id: 7610000000000000011
+        type: vector.combine
+        position: [1060, 600]
+      - id: 7610000000000000012
+        type: math.multiply
+        position: [1060, 460]
+        values:
+          B: "0.012"
+    links:
+      - {from: 7610000000000000001, fromPin: Base Color, to: 7610000000000000002, toPin: Base Color}
+      - {from: 7610000000000000001, fromPin: Alpha, to: 7610000000000000002, toPin: Alpha}
+      - {from: 7610000000000000001, fromPin: Normal, to: 7610000000000000002, toPin: Normal}
+      - {from: 7610000000000000001, fromPin: Metallic, to: 7610000000000000002, toPin: Metallic}
+      - {from: 7610000000000000001, fromPin: Roughness, to: 7610000000000000002, toPin: Roughness}
+      - {from: 7610000000000000001, fromPin: Occlusion, to: 7610000000000000002, toPin: Occlusion}
+      - {from: 7610000000000000001, fromPin: Emissive, to: 7610000000000000002, toPin: Emissive}
+      - {from: 7610000000000000001, fromPin: Clearcoat, to: 7610000000000000002, toPin: Clearcoat}
+      - {from: 7610000000000000001, fromPin: Clearcoat Roughness, to: 7610000000000000002, toPin: Clearcoat Roughness}
+      - {from: 7610000000000000001, fromPin: Sheen Color, to: 7610000000000000002, toPin: Sheen Color}
+      - {from: 7610000000000000001, fromPin: Sheen Roughness, to: 7610000000000000002, toPin: Sheen Roughness}
+      - {from: 7610000000000000001, fromPin: Anisotropy, to: 7610000000000000002, toPin: Anisotropy}
+      - {from: 7610000000000000001, fromPin: Anisotropy Rotation, to: 7610000000000000002, toPin: Anisotropy Rotation}
+      - {from: 7610000000000000003, fromPin: Time, to: 7610000000000000006, toPin: A}
+      - {from: 7610000000000000004, fromPin: Position, to: 7610000000000000005, toPin: Vector}
+      - {from: 7610000000000000005, fromPin: Y, to: 7610000000000000007, toPin: A}
+      - {from: 7610000000000000006, fromPin: Result, to: 7610000000000000008, toPin: A}
+      - {from: 7610000000000000007, fromPin: Result, to: 7610000000000000008, toPin: B}
+      - {from: 7610000000000000008, fromPin: Result, to: 7610000000000000009, toPin: Value}
+      - {from: 7610000000000000008, fromPin: Result, to: 7610000000000000010, toPin: Value}
+      - {from: 7610000000000000009, fromPin: Result, to: 7610000000000000011, toPin: X}
+      - {from: 7610000000000000010, fromPin: Result, to: 7610000000000000011, toPin: Z}
+      - {from: 7610000000000000011, fromPin: XYZ, to: 7610000000000000012, toPin: A}
+      - {from: 7610000000000000012, fromPin: Result, to: 7610000000000000002, toPin: World Position Offset}

@@ -1,4 +1,4 @@
-# The conversations of the tavern (tavern_dialogues.lua): E on the barkeeper opens his dialogue tree and stops the
+# The conversations of the tavern (tavern_dialogues.owlvs): E on the barkeeper opens his dialogue tree and stops the
 # player; the answers are picked with the UI actions, "a cider" is an Event that plays his serve animation; Escape ends
 # a conversation without leaving the tavern.
 scene: ../../../engine_demo/scenes/tavern.owl

@@ -55,7 +55,7 @@ Entities:
     DayNightCycle: {enabled: true, timeOfDay: 16.5, dayLength: 90, azimuth: 20, maxElevation: 50, sun: 2720930421051300001, sunIlluminance: 100000, sunColor: [1, 0.96, 0.9], sunsetColor: [1, 0.55, 0.3], moonIlluminance: 12000, moonColor: [0.62, 0.72, 1], nightExposure: 0}
     Light2D: {type: Ambient, enabled: true, color: [1, 1, 1], intensity: 1, radius: 5, falloff: 2, height: 1, castShadows: false}
     LuaScript:
-      scriptPath: gid:c8c56d3674c81cbd:scripts/hub/hub_daynight.lua
+      scriptPath: gid:c8c56d3674c81cbd:scripts/hub/hub_daynight.owlvs
       properties:
         - {name: lights_prefix, type: string, value: MenuLight_}
         - {name: mood_key, type: string, value: ''}
@@ -577,7 +577,7 @@ Entities:
     Hierarchy:
       {}
     LuaScript:
-      scriptPath: gid:c88a96679209db15:scripts/ui/main_menu.lua
+      scriptPath: gid:c88a96679209db15:scripts/ui/main_menu.owlvs
   - Entity: 700000000000000021
     Tag: {tag: SaveGroup}
     Transform:

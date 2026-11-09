@@ -10,6 +10,8 @@
 
 #include "LuaBindings.h"
 
+#include "EntityHandle.h"
+
 #include "app/EngineContext.h"
 #include "core/Core.h"
 #include "core/Macros.h"
@@ -48,6 +50,7 @@
 #include "scene/nav/WalkQueries.h"
 #include "scene/ui/HudLayout.h"
 #include "script/LuaEngine.h"
+#include "script/LuaValues.h"
 #include "script/ScriptEngine.h"
 #include "sound/Bus.h"
 #include "sound/SoundCommand.h"
@@ -56,6 +59,7 @@
 
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -67,6 +71,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -105,26 +110,36 @@ auto settingsOf(lua_State* iState) -> scene::SettingsManager* {
 	return context != nullptr ? &context->getSettings() : nullptr;
 }
 
-auto findEntity(lua_State* iState) -> std::optional<scene::Entity> {
-	const auto* activeScene = getBoundScene(iState);
+// The entity of the handle at a stack index: of the bound scene or of its HUD.
+auto entityAt(lua_State* iState, const int iIndex) -> std::optional<scene::Entity> {
+	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return std::nullopt;
-	const auto uuid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	if (auto entity = activeScene->findEntityByUUID(core::UUID{uuid}); entity)
-		return entity;
-	// The widgets of the scene's HUD asset answer to their id like the scene's own entities.
-	if (const auto hud = activeScene->getHud(); hud) {
-		if (auto entity = hud->findEntityByUUID(core::UUID{uuid}); entity)
-			return entity;
-	}
-	return std::nullopt;
+	const auto handle = luaL_checknumber(iState, iIndex);
+	if (handle < 1 || handle != std::floor(handle))
+		return std::nullopt;
+	return resolveEntityHandle(*activeScene, static_cast<uint64_t>(handle));
 }
 
-// First entity of a scene with this tag, as a Lua id (0 when none).
-auto findByTag(const scene::Scene& iScene, const char* iName) -> uint64_t {
+auto findEntity(lua_State* iState) -> std::optional<scene::Entity> { return entityAt(iState, 1); }
+
+void pushHandle(lua_State* iState, const uint64_t iHandle) { pushInteger(iState, static_cast<int64_t>(iHandle)); }
+
+void pushEntity(lua_State* iState, const scene::Entity& iEntity) {
+	const auto* activeScene = getBoundScene(iState);
+	pushHandle(iState, activeScene == nullptr ? 0 : getEntityHandle(*activeScene, iEntity));
+}
+
+void pushEntity(lua_State* iState, const core::UUID iUuid) {
+	const auto* activeScene = getBoundScene(iState);
+	pushHandle(iState, activeScene == nullptr ? 0 : getEntityHandle(*activeScene, iUuid));
+}
+
+// Handle of the first entity of a scene with this tag (0 when none).
+auto findByTag(const scene::Scene& iBound, scene::Scene& iScene, const char* iName) -> uint64_t {
 	for (const auto view = iScene.registry.view<scene::component::Tag>(); const auto entity: view) {
 		if (view.get<scene::component::Tag>(entity).tag == iName)
-			return static_cast<uint64_t>(iScene.registry.get<scene::component::ID>(entity).id);
+			return getEntityHandle(iBound, scene::Entity{entity, &iScene});
 	}
 	return 0;
 }
@@ -218,10 +233,10 @@ auto luaSceneGetWorldOrigin(lua_State* iState) -> int {
 auto luaRandomStream(lua_State* iState) -> math::RandomStream& {
 	if (auto* activeScene = getBoundScene(iState); activeScene != nullptr)
 		return activeScene->getRandomStream("lua");
-	static constexpr char key = 0;
+	static char key = 0;
 	if (lua_rawgetp(iState, LUA_REGISTRYINDEX, &key) != LUA_TUSERDATA) {
 		lua_pop(iState, 1);
-		std::construct_at(static_cast<math::RandomStream*>(lua_newuserdatauv(iState, sizeof(math::RandomStream), 0)), 0,
+		std::construct_at(static_cast<math::RandomStream*>(lua_newuserdata(iState, sizeof(math::RandomStream))), 0,
 						  "lua");
 		lua_pushvalue(iState, -1);
 		lua_rawsetp(iState, LUA_REGISTRYINDEX, &key);
@@ -240,21 +255,21 @@ auto luaMathRandom(lua_State* iState) -> int {
 			lua_pushnumber(iState, static_cast<lua_Number>(stream.nextDouble()));
 			return 1;
 		case 1:
-			high = luaL_checkinteger(iState, 1);
+			high = checkInteger(iState, 1);
 			if (high == 0) {
-				lua_pushinteger(iState, static_cast<lua_Integer>(stream.nextU64()));
+				pushInteger(iState, static_cast<int64_t>(stream.nextU64()));
 				return 1;
 			}
 			break;
 		case 2:
-			low = luaL_checkinteger(iState, 1);
-			high = luaL_checkinteger(iState, 2);
+			low = checkInteger(iState, 1);
+			high = checkInteger(iState, 2);
 			break;
 		default:
-			return luaL_error(iState, "wrong number of arguments");
+			luaL_error(iState, "wrong number of arguments");
 	}
 	luaL_argcheck(iState, low <= high, lua_gettop(iState), "interval is empty");
-	lua_pushinteger(iState, static_cast<lua_Integer>(stream.nextInt(low, high)));
+	pushInteger(iState, static_cast<int64_t>(stream.nextInt(low, high)));
 	return 1;
 }
 
@@ -265,8 +280,7 @@ auto luaMathRandomSeed(lua_State* iState) -> int {
 		stream = math::RandomStream{activeScene != nullptr ? activeScene->getRandomSeed() : 0, "lua"};
 		return 0;
 	}
-	const auto seed = lua_isinteger(iState, 1) != 0 ? lua_tointeger(iState, 1)
-													: static_cast<lua_Integer>(luaL_checknumber(iState, 1));
+	const auto seed = isInteger(iState, 1) ? toInteger(iState, 1) : static_cast<int64_t>(luaL_checknumber(iState, 1));
 	stream.reseed(static_cast<uint64_t>(seed));
 	return 0;
 }
@@ -306,7 +320,7 @@ auto luaMathPow(lua_State* iState) -> int {
 struct SortableKey {
 	int type = LUA_TNIL;
 	bool isInteger = false;
-	lua_Integer integer = 0;
+	int64_t integer = 0;
 	lua_Number number = 0;
 	std::string text;
 	bool boolean = false;
@@ -335,7 +349,7 @@ auto luaTableSortedKeys(lua_State* iState) -> int {
 	while (lua_next(iState, 1) != 0) {
 		lua_pop(iState, 1);
 		if (const int type = lua_type(iState, -1); type != LUA_TBOOLEAN && type != LUA_TNUMBER && type != LUA_TSTRING)
-			return luaL_error(iState, "sorted_keys: a %s key has no stable order", luaL_typename(iState, -1));
+			luaL_error(iState, "sorted_keys: a %s key has no stable order", luaL_typename(iState, -1));
 	}
 	std::vector<SortableKey> keys;
 	lua_pushnil(iState);
@@ -346,8 +360,8 @@ auto luaTableSortedKeys(lua_State* iState) -> int {
 		if (key.type == LUA_TBOOLEAN) {
 			key.boolean = lua_toboolean(iState, -1) != 0;
 		} else if (key.type == LUA_TNUMBER) {
-			key.isInteger = lua_isinteger(iState, -1) != 0;
-			key.integer = key.isInteger ? lua_tointeger(iState, -1) : 0;
+			key.isInteger = isInteger(iState, -1);
+			key.integer = key.isInteger ? toInteger(iState, -1) : 0;
 			key.number = lua_tonumber(iState, -1);
 		} else {
 			size_t length = 0;
@@ -357,17 +371,17 @@ auto luaTableSortedKeys(lua_State* iState) -> int {
 	}
 	std::ranges::sort(keys, isBefore);
 	lua_createtable(iState, static_cast<int>(keys.size()), 0);
-	lua_Integer index = 0;
+	int64_t index = 0;
 	for (const auto& key: keys) {
 		if (key.type == LUA_TBOOLEAN)
 			lua_pushboolean(iState, key.boolean ? 1 : 0);
 		else if (key.type == LUA_TNUMBER && key.isInteger)
-			lua_pushinteger(iState, key.integer);
+			pushInteger(iState, key.integer);
 		else if (key.type == LUA_TNUMBER)
 			lua_pushnumber(iState, key.number);
 		else
 			lua_pushlstring(iState, key.text.data(), key.text.size());
-		lua_rawseti(iState, -2, ++index);
+		lua_rawseti(iState, -2, static_cast<int>(++index));
 	}
 	return 1;
 }
@@ -507,8 +521,8 @@ auto luaPhysicsGetGravity(lua_State* iState) -> int {
 }
 
 auto luaPhysicsPredictTrajectory(lua_State* iState) -> int {
-	const auto steps = static_cast<uint32_t>(std::clamp<lua_Integer>(
-			luaL_checkinteger(iState, 2), 0, static_cast<lua_Integer>(physics::PhysicCommand::maxPredictionSteps)));
+	const auto steps = static_cast<uint32_t>(std::clamp<int64_t>(
+			checkInteger(iState, 2), 0, static_cast<int64_t>(physics::PhysicCommand::maxPredictionSteps)));
 	const auto entity = findEntity(iState);
 	const auto path = entity ? physics::PhysicCommand::predictTrajectory(*entity, steps) : std::vector<math::vec3f>{};
 	const bool space = entity && isSpaceBody(*entity);
@@ -523,7 +537,7 @@ auto luaPhysicsPredictTrajectory(lua_State* iState) -> int {
 			lua_pushnumber(iState, static_cast<lua_Number>(path[i].z()));
 			lua_setfield(iState, -2, "z");
 		}
-		lua_rawseti(iState, -2, static_cast<lua_Integer>(i) + 1);
+		lua_rawseti(iState, -2, static_cast<int>(i) + 1);
 	}
 	return 1;
 }
@@ -549,7 +563,7 @@ auto luaArg(lua_State* iState, const int iIndex) -> float {
 
 auto luaMask(lua_State* iState, const int iIndex) -> uint8_t {
 	return lua_isnoneornil(iState, iIndex) ? scene::SceneBody::allLayers
-										   : static_cast<uint8_t>(luaL_checkinteger(iState, iIndex) & 0xff);
+										   : static_cast<uint8_t>(checkInteger(iState, iIndex) & 0xff);
 }
 
 // A hit as `{entity, x, y, nx, ny, distance}`, with z and nz for a 3D query; nil without one.
@@ -559,7 +573,7 @@ auto pushHit(lua_State* iState, const std::optional<physics::PhysicCommand::Quer
 		return 1;
 	}
 	lua_newtable(iState);
-	lua_pushinteger(iState, static_cast<lua_Integer>(static_cast<uint64_t>(iHit->entity)));
+	pushEntity(iState, core::UUID{static_cast<uint64_t>(iHit->entity)});
 	lua_setfield(iState, -2, "entity");
 	const auto field = [iState](const char* iName, const float iValue) -> void {
 		lua_pushnumber(iState, static_cast<lua_Number>(iValue));
@@ -580,8 +594,8 @@ auto pushHit(lua_State* iState, const std::optional<physics::PhysicCommand::Quer
 auto pushEntities(lua_State* iState, const std::vector<core::UUID>& iEntities) -> int {
 	lua_createtable(iState, static_cast<int>(iEntities.size()), 0);
 	for (size_t i = 0; i < iEntities.size(); ++i) {
-		lua_pushinteger(iState, static_cast<lua_Integer>(static_cast<uint64_t>(iEntities[i])));
-		lua_rawseti(iState, -2, static_cast<lua_Integer>(i) + 1);
+		pushEntity(iState, core::UUID{static_cast<uint64_t>(iEntities[i])});
+		lua_rawseti(iState, -2, static_cast<int>(i) + 1);
 	}
 	return 1;
 }
@@ -713,13 +727,13 @@ auto inputStateOf(lua_State* iState) -> input::InputState {
 }
 
 auto luaInputIsKeyPressed(lua_State* iState) -> int {
-	const auto keyCode = static_cast<input::KeyCode>(luaL_checkinteger(iState, 1));
+	const auto keyCode = static_cast<input::KeyCode>(checkInteger(iState, 1));
 	lua_pushboolean(iState, inputStateOf(iState).isKeyPressed(keyCode) ? 1 : 0);
 	return 1;
 }
 
 auto luaInputIsMouseButtonPressed(lua_State* iState) -> int {
-	const auto button = static_cast<input::MouseCode>(luaL_checkinteger(iState, 1));
+	const auto button = static_cast<input::MouseCode>(checkInteger(iState, 1));
 	lua_pushboolean(iState, inputStateOf(iState).isMouseButtonPressed(button) ? 1 : 0);
 	return 1;
 }
@@ -736,7 +750,7 @@ auto luaInputGetMouseY(lua_State* iState) -> int {
 
 template<bool (input::InputFrame::*Edge)(input::KeyCode) const>
 auto luaInputKeyEdge(lua_State* iState) -> int {
-	const auto keyCode = static_cast<input::KeyCode>(luaL_checkinteger(iState, 1));
+	const auto keyCode = static_cast<input::KeyCode>(checkInteger(iState, 1));
 	const auto* frame = inputFrameOf(iState);
 	lua_pushboolean(iState, frame != nullptr && (frame->*Edge)(keyCode) ? 1 : 0);
 	return 1;
@@ -744,7 +758,7 @@ auto luaInputKeyEdge(lua_State* iState) -> int {
 
 template<bool (input::InputFrame::*Edge)(input::MouseCode) const>
 auto luaInputMouseButtonEdge(lua_State* iState) -> int {
-	const auto button = static_cast<input::MouseCode>(luaL_checkinteger(iState, 1));
+	const auto button = static_cast<input::MouseCode>(checkInteger(iState, 1));
 	const auto* frame = inputFrameOf(iState);
 	lua_pushboolean(iState, frame != nullptr && (frame->*Edge)(button) ? 1 : 0);
 	return 1;
@@ -807,15 +821,15 @@ auto luaInputIsCursorVisible(lua_State* iState) -> int {
 }
 
 auto checkGamepadSlot(lua_State* iState, const int iArg) -> std::size_t {
-	const auto pad = luaL_checkinteger(iState, iArg);
-	return pad >= 0 && pad < static_cast<lua_Integer>(input::g_GamepadCount) ? static_cast<std::size_t>(pad)
-																			 : input::g_GamepadCount;
+	const auto pad = checkInteger(iState, iArg);
+	return pad >= 0 && pad < static_cast<int64_t>(input::g_GamepadCount) ? static_cast<std::size_t>(pad)
+																		 : input::g_GamepadCount;
 }
 
 template<typename Code, std::size_t Count>
 auto checkGamepadCode(lua_State* iState, const int iArg) -> Code {
-	const auto code = luaL_checkinteger(iState, iArg);
-	return code >= 0 && code < static_cast<lua_Integer>(Count) ? static_cast<Code>(code) : static_cast<Code>(Count);
+	const auto code = checkInteger(iState, iArg);
+	return code >= 0 && code < static_cast<int64_t>(Count) ? static_cast<Code>(code) : static_cast<Code>(Count);
 }
 
 auto luaInputIsGamepadConnected(lua_State* iState) -> int {
@@ -856,7 +870,7 @@ auto luaInputGetGamepadAxis(lua_State* iState) -> int {
 
 auto luaInputGetGamepadStick(lua_State* iState) -> int {
 	const auto pad = checkGamepadSlot(iState, 1);
-	const auto stick = luaL_checkinteger(iState, 2) == 1 ? input::gamepad::Stick::Right : input::gamepad::Stick::Left;
+	const auto stick = checkInteger(iState, 2) == 1 ? input::gamepad::Stick::Right : input::gamepad::Stick::Left;
 	const input::AxisResponse response{.deadZone = static_cast<float>(luaL_optnumber(
 											   iState, 3, lua_Number{input::AxisResponse::defaultDeadZone}))};
 	const auto shaped = input::applyStickResponse(inputStateOf(iState).getGamepad(pad).getStick(stick), response);
@@ -868,34 +882,34 @@ auto luaInputGetGamepadStick(lua_State* iState) -> int {
 auto luaSoundPlay(lua_State* iState) -> int {
 	const auto assetPath = data::assets::toAssetPath(luaL_checkstring(iState, 1));
 	if (sound::SoundSystem::getState() != sound::SoundSystem::State::Running) {
-		lua_pushinteger(iState, static_cast<lua_Integer>(sound::invalidSoundHandle));
+		pushInteger(iState, static_cast<int64_t>(sound::invalidSoundHandle));
 		return 1;
 	}
 	const auto handle = sound::SoundHelper::playAsset(assetPath, sound::PlayParams{});
-	lua_pushinteger(iState, static_cast<lua_Integer>(handle));
+	pushInteger(iState, static_cast<int64_t>(handle));
 	return 1;
 }
 
 auto luaSoundStop(lua_State* iState) -> int {
-	const auto handle = static_cast<sound::SoundHandle>(luaL_checkinteger(iState, 1));
+	const auto handle = static_cast<sound::SoundHandle>(checkInteger(iState, 1));
 	sound::SoundCommand::stop(handle);
 	return 0;
 }
 
 auto luaSoundPause(lua_State* iState) -> int {
-	const auto handle = static_cast<sound::SoundHandle>(luaL_checkinteger(iState, 1));
+	const auto handle = static_cast<sound::SoundHandle>(checkInteger(iState, 1));
 	sound::SoundCommand::pause(handle);
 	return 0;
 }
 
 auto luaSoundResume(lua_State* iState) -> int {
-	const auto handle = static_cast<sound::SoundHandle>(luaL_checkinteger(iState, 1));
+	const auto handle = static_cast<sound::SoundHandle>(checkInteger(iState, 1));
 	sound::SoundCommand::resume(handle);
 	return 0;
 }
 
 auto luaSoundSetVolume(lua_State* iState) -> int {
-	const auto handle = static_cast<sound::SoundHandle>(luaL_checkinteger(iState, 1));
+	const auto handle = static_cast<sound::SoundHandle>(checkInteger(iState, 1));
 	const auto vol = static_cast<float>(luaL_checknumber(iState, 2));
 	sound::SoundCommand::setVolume(handle, vol);
 	return 0;
@@ -942,7 +956,7 @@ auto luaSoundIsBusMuted(lua_State* iState) -> int {
 auto luaSoundPlayMusic(lua_State* iState) -> int {
 	const auto assetPath = data::assets::toAssetPath(luaL_checkstring(iState, 1));
 	const auto fade = static_cast<float>(luaL_optnumber(iState, 2, 1.0));
-	lua_pushinteger(iState, static_cast<lua_Integer>(sound::SoundHelper::playMusic(assetPath, fade)));
+	pushInteger(iState, static_cast<int64_t>(sound::SoundHelper::playMusic(assetPath, fade)));
 	return 1;
 }
 
@@ -954,8 +968,8 @@ auto luaSoundStopMusic(lua_State* iState) -> int {
 }
 
 auto luaSoundCrossfade(lua_State* iState) -> int {
-	const auto from = static_cast<sound::SoundHandle>(luaL_checkinteger(iState, 1));
-	const auto to = static_cast<sound::SoundHandle>(luaL_checkinteger(iState, 2));
+	const auto from = static_cast<sound::SoundHandle>(checkInteger(iState, 1));
+	const auto to = static_cast<sound::SoundHandle>(checkInteger(iState, 2));
 	const auto seconds = static_cast<float>(luaL_checknumber(iState, 3));
 	if (auto* mixer = sound::SoundCommand::getMixer(); mixer != nullptr)
 		mixer->crossfade(from, to, seconds);
@@ -979,14 +993,28 @@ auto luaSoundGetMusicState(lua_State* iState) -> int {
 auto luaSceneFindEntity(lua_State* iState) -> int {
 	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr) {
-		lua_pushinteger(iState, 0);
+		pushInteger(iState, 0);
 		return 1;
 	}
 	const char* name = luaL_checkstring(iState, 1);
-	uint64_t found = findByTag(*activeScene, name);
+	uint64_t found = findByTag(*activeScene, *activeScene, name);
 	if (const auto hud = activeScene->getHud(); found == 0 && hud)
-		found = findByTag(*hud, name);
-	lua_pushinteger(iState, static_cast<lua_Integer>(found));
+		found = findByTag(*activeScene, *hud, name);
+	pushHandle(iState, found);
+	return 1;
+}
+
+auto luaSceneFindByUuid(lua_State* iState) -> int {
+	const char* text = luaL_checkstring(iState, 1);
+	const auto* activeScene = getBoundScene(iState);
+	uint64_t uuid = 0;
+	const std::string_view view{text};
+	if (const auto [ptr, ec] = std::from_chars(view.data(), view.data() + view.size(), uuid);
+		activeScene == nullptr || ec != std::errc{} || ptr != view.data() + view.size()) {
+		pushHandle(iState, 0);
+		return 1;
+	}
+	pushHandle(iState, getEntityHandle(*activeScene, core::UUID{uuid}));
 	return 1;
 }
 
@@ -996,12 +1024,12 @@ auto luaSceneFindEntities(lua_State* iState) -> int {
 	if (activeScene == nullptr)
 		return 1;
 	const char* name = luaL_checkstring(iState, 1);
-	lua_Integer index = 0;
+	int64_t index = 0;
 	for (const auto view = activeScene->registry.view<scene::component::Tag>(); const auto entity: view) {
 		if (view.get<scene::component::Tag>(entity).tag != name)
 			continue;
-		lua_pushinteger(iState, static_cast<lua_Integer>(activeScene->registry.get<scene::component::ID>(entity).id));
-		lua_rawseti(iState, -2, ++index);
+		pushEntity(iState, scene::Entity{entity, activeScene});
+		lua_rawseti(iState, -2, static_cast<int>(++index));
 	}
 	return 1;
 }
@@ -1009,28 +1037,28 @@ auto luaSceneFindEntities(lua_State* iState) -> int {
 auto luaUiFind(lua_State* iState) -> int {
 	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr) {
-		lua_pushinteger(iState, 0);
+		pushInteger(iState, 0);
 		return 1;
 	}
 	const char* name = luaL_checkstring(iState, 1);
 	uint64_t found = 0;
 	if (const auto hud = activeScene->getHud(); hud)
-		found = findByTag(*hud, name);
+		found = findByTag(*activeScene, *hud, name);
 	if (found == 0)
-		found = findByTag(*activeScene, name);
-	lua_pushinteger(iState, static_cast<lua_Integer>(found));
+		found = findByTag(*activeScene, *activeScene, name);
+	pushHandle(iState, found);
 	return 1;
 }
 
 auto luaSceneCreateEntity(lua_State* iState) -> int {
 	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr) {
-		lua_pushinteger(iState, 0);
+		pushInteger(iState, 0);
 		return 1;
 	}
 	const char* name = luaL_checkstring(iState, 1);
 	const auto entity = activeScene->createEntity(name);
-	lua_pushinteger(iState, static_cast<lua_Integer>(static_cast<uint64_t>(entity.getUUID())));
+	pushEntity(iState, entity);
 	return 1;
 }
 
@@ -1038,8 +1066,8 @@ auto luaSceneDestroyEntity(lua_State* iState) -> int {
 	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
-	const auto uuid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	activeScene->destroyEntityDeferred(activeScene->findEntityByUUID(core::UUID{uuid}));
+	if (const auto entity = entityAt(iState, 1); entity)
+		activeScene->destroyEntityDeferred(*entity);
 	return 0;
 }
 
@@ -1051,31 +1079,31 @@ auto luaSceneSpawnPrefab(lua_State* iState) -> int {
 	const auto z = static_cast<float>(luaL_optnumber(iState, 4, 0.0));
 	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr) {
-		lua_pushinteger(iState, 0);
+		pushInteger(iState, 0);
 		return 1;
 	}
 	const auto text = data::assets::readAssetText(path);
 	if (!text) {
 		OWL_CORE_WARN("Lua: Prefab '{}' not found, nothing spawned.", path)
-		lua_pushinteger(iState, 0);
+		pushInteger(iState, 0);
 		return 1;
 	}
 	const auto root = scene::PrefabSerializer::instantiateFromString(*text, *activeScene, path);
 	if (!root) {
-		lua_pushinteger(iState, 0);
+		pushInteger(iState, 0);
 		return 1;
 	}
 	if (placed)
 		root.getComponent<scene::component::Transform>().transform.translation() = {x, y, z};
 	activeScene->startSpawnedSubtree(root);
-	lua_pushinteger(iState, static_cast<lua_Integer>(static_cast<uint64_t>(root.getUUID())));
+	pushEntity(iState, root);
 	return 1;
 }
 
 auto luaScenePickEntity(lua_State* iState) -> int {
 	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr) {
-		lua_pushinteger(iState, 0);
+		pushInteger(iState, 0);
 		return 1;
 	}
 	// The viewport mouse of the last HUD update: in Owl Nest the game is drawn inside a panel, not at the window origin.
@@ -1085,14 +1113,13 @@ auto luaScenePickEntity(lua_State* iState) -> int {
 	const auto pointY = static_cast<float>(luaL_optnumber(iState, 2, static_cast<lua_Number>(mouse.y())));
 	const std::string_view tag = luaL_optstring(iState, 3, "");
 	const auto picked = scene::pickEntity(*activeScene, {pointX, pointY}, tag);
-	lua_pushinteger(iState, picked ? static_cast<lua_Integer>(static_cast<uint64_t>(picked.getUUID())) : 0);
+	pushEntity(iState, picked);
 	return 1;
 }
 
 auto luaSceneIsWorldCellLoaded(lua_State* iState) -> int {
-	const math::vec3i cell{static_cast<int32_t>(luaL_checkinteger(iState, 1)),
-						   static_cast<int32_t>(luaL_checkinteger(iState, 2)),
-						   static_cast<int32_t>(luaL_checkinteger(iState, 3))};
+	const math::vec3i cell{static_cast<int32_t>(checkInteger(iState, 1)), static_cast<int32_t>(checkInteger(iState, 2)),
+						   static_cast<int32_t>(checkInteger(iState, 3))};
 	auto* activeScene = getBoundScene(iState);
 	const bool loaded = activeScene != nullptr && activeScene->hasWorldStreamer() &&
 						activeScene->getWorldStreamer().getState(cell) == scene::WorldCellState::Loaded;
@@ -1105,7 +1132,7 @@ auto luaSceneGetLoadedWorldCells(lua_State* iState) -> int {
 	const auto count = activeScene != nullptr && activeScene->hasWorldStreamer()
 							   ? activeScene->getWorldStreamer().getStats().loaded
 							   : 0u;
-	lua_pushinteger(iState, static_cast<lua_Integer>(count));
+	pushInteger(iState, static_cast<int64_t>(count));
 	return 1;
 }
 
@@ -1117,15 +1144,13 @@ auto luaSceneSetWorldStreaming(lua_State* iState) -> int {
 }
 
 auto luaSceneGetPlanetAltitude(lua_State* iState) -> int {
-	const auto planetId = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	const auto entityId = static_cast<uint64_t>(luaL_checkinteger(iState, 2));
+	auto planet = entityAt(iState, 1).value_or(scene::Entity{});
+	const auto entity = entityAt(iState, 2).value_or(scene::Entity{});
 	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr) {
 		lua_pushnumber(iState, 0.0);
 		return 1;
 	}
-	auto planet = activeScene->findEntityByUUID(core::UUID{planetId});
-	const auto entity = activeScene->findEntityByUUID(core::UUID{entityId});
 	if (!planet || !entity || !planet.hasComponent<scene::component::Planet>()) {
 		lua_pushnumber(iState, 0.0);
 		return 1;
@@ -1143,8 +1168,8 @@ auto luaSceneGetPlanetAltitude(lua_State* iState) -> int {
 auto luaSceneGetViewportSize(lua_State* iState) -> int {
 	const auto* activeScene = getBoundScene(iState);
 	const math::vec2ui size = activeScene != nullptr ? activeScene->getViewportSize() : math::vec2ui{0u, 0u};
-	lua_pushinteger(iState, static_cast<lua_Integer>(size.x()));
-	lua_pushinteger(iState, static_cast<lua_Integer>(size.y()));
+	pushInteger(iState, static_cast<int64_t>(size.x()));
+	pushInteger(iState, static_cast<int64_t>(size.y()));
 	return 2;
 }
 
@@ -1399,11 +1424,11 @@ auto luaEntityGetLink(lua_State* iState) -> int {
 		auto& link = entity->getComponent<scene::component::EntityLink>();
 		const auto* activeScene = getBoundScene(iState);
 		if (activeScene != nullptr && activeScene->resolveEntityLink(link)) {
-			lua_pushinteger(iState, static_cast<lua_Integer>(static_cast<uint64_t>(link.linkedEntity.getUUID())));
+			pushEntity(iState, link.linkedEntity);
 			return 1;
 		}
 	}
-	lua_pushinteger(iState, 0);
+	pushInteger(iState, 0);
 	return 1;
 }
 
@@ -1473,7 +1498,7 @@ auto luaEntityGetMesh(lua_State* iState) -> int {
 }
 
 auto luaEntitySetMaterial(lua_State* iState) -> int {
-	const auto slot = static_cast<int64_t>(luaL_checkinteger(iState, 2));
+	const auto slot = static_cast<int64_t>(checkInteger(iState, 2));
 	const std::string path = data::assets::toAssetPath(luaL_checkstring(iState, 3));
 	const auto entity = findEntity(iState);
 	if (!entity || !entity->hasComponent<scene::component::MeshRenderer>() || slot < -1) {
@@ -1499,7 +1524,7 @@ auto luaEntitySetMaterial(lua_State* iState) -> int {
 }
 
 auto luaEntityGetMaterial(lua_State* iState) -> int {
-	const auto slot = static_cast<int64_t>(luaL_checkinteger(iState, 2));
+	const auto slot = static_cast<int64_t>(checkInteger(iState, 2));
 	const auto entity = findEntity(iState);
 	if (!entity || !entity->hasComponent<scene::component::MeshRenderer>() || slot < 0)
 		return 0;
@@ -1589,10 +1614,10 @@ auto luaEntityParticles(lua_State* iState) -> int {
 }
 
 auto luaEntityParticlesEmit(lua_State* iState) -> int {
-	const auto count = luaL_checkinteger(iState, 2);
+	const auto count = checkInteger(iState, 2);
 	auto* const system = particleSystemOf(iState);
 	if (system != nullptr && count > 0)
-		system->emit(static_cast<uint32_t>(std::min<lua_Integer>(count, renderer::g_maxParticles)));
+		system->emit(static_cast<uint32_t>(std::min<int64_t>(count, renderer::g_maxParticles)));
 	lua_pushboolean(iState, system != nullptr ? 1 : 0);
 	return 1;
 }
@@ -1768,7 +1793,7 @@ auto luaAnimatorSetPlaying(lua_State* iState) -> int {
 }
 
 auto luaSocketAttach(lua_State* iState) -> int {
-	const auto ownerId = static_cast<uint64_t>(luaL_checkinteger(iState, 2));
+	const auto owner = entityAt(iState, 2).value_or(scene::Entity{});
 	const char* socket = luaL_checkstring(iState, 3);
 	auto* activeScene = getBoundScene(iState);
 	const auto entity = findEntity(iState);
@@ -1776,7 +1801,6 @@ auto luaSocketAttach(lua_State* iState) -> int {
 		lua_pushboolean(iState, 0);
 		return 1;
 	}
-	const auto owner = activeScene->findEntityByUUID(core::UUID{ownerId});
 	lua_pushboolean(iState, activeScene->attachToSocket(*entity, owner, socket) ? 1 : 0);
 	return 1;
 }
@@ -1939,7 +1963,7 @@ auto luaUiSetImage(lua_State* iState) -> int {
 }
 
 auto luaUiSetImageFrame(lua_State* iState) -> int {
-	const auto frame = luaL_checkinteger(iState, 2);
+	const auto frame = checkInteger(iState, 2);
 	const auto entity = findEntity(iState);
 	if (!entity || !entity->hasComponent<scene::component::UiImage>()) {
 		lua_pushboolean(iState, 0);
@@ -1956,8 +1980,7 @@ auto luaUiSetImageFrame(lua_State* iState) -> int {
 auto luaUiGetImageFrame(lua_State* iState) -> int {
 	const auto entity = findEntity(iState);
 	const bool has = entity && entity->hasComponent<scene::component::UiImage>();
-	lua_pushinteger(iState,
-					has ? static_cast<lua_Integer>(entity->getComponent<scene::component::UiImage>().frame) : 0);
+	pushInteger(iState, has ? static_cast<int64_t>(entity->getComponent<scene::component::UiImage>().frame) : 0);
 	return 1;
 }
 
@@ -2061,7 +2084,7 @@ auto luaUiSetFocus(lua_State* iState) -> int {
 auto luaUiGetFocus(lua_State* iState) -> int {
 	auto* activeScene = getBoundScene(iState);
 	const auto focus = activeScene != nullptr ? scene::UiInputSystem::getFocus(*activeScene) : scene::Entity{};
-	lua_pushinteger(iState, focus ? static_cast<lua_Integer>(static_cast<uint64_t>(focus.getUUID())) : 0);
+	pushEntity(iState, focus);
 	return 1;
 }
 
@@ -2104,23 +2127,22 @@ auto luaUiScrollSet(lua_State* iState) -> int {
 }
 
 auto luaUiListSetCount(lua_State* iState) -> int {
-	const auto count = luaL_checkinteger(iState, 2);
+	const auto count = checkInteger(iState, 2);
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiList>())
-		entity->getComponent<scene::component::UiList>().setCount(
-				static_cast<uint32_t>(std::max<lua_Integer>(count, 0)));
+		entity->getComponent<scene::component::UiList>().setCount(static_cast<uint32_t>(std::max<int64_t>(count, 0)));
 	return 0;
 }
 
 auto luaUiListGetCount(lua_State* iState) -> int {
-	lua_Integer count = 0;
+	int64_t count = 0;
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiList>())
-		count = static_cast<lua_Integer>(entity->getComponent<scene::component::UiList>().itemCount);
-	lua_pushinteger(iState, count);
+		count = static_cast<int64_t>(entity->getComponent<scene::component::UiList>().itemCount);
+	pushInteger(iState, count);
 	return 1;
 }
 
 auto luaUiListSetRow(lua_State* iState) -> int {
-	const auto index = luaL_checkinteger(iState, 2);
+	const auto index = checkInteger(iState, 2);
 	const std::string text = luaL_checkstring(iState, 3);
 	const std::string detail = luaL_optstring(iState, 4, "");
 	const std::string icon = luaL_optstring(iState, 5, "");
@@ -2128,7 +2150,7 @@ auto luaUiListSetRow(lua_State* iState) -> int {
 	if (!entity || !entity->hasComponent<scene::component::UiList>())
 		return 0;
 	auto& list = entity->getComponent<scene::component::UiList>();
-	if (index < 1 || index > static_cast<lua_Integer>(list.itemCount))
+	if (index < 1 || index > static_cast<int64_t>(list.itemCount))
 		return 0;
 	list.rows.resize(list.itemCount);
 	auto& row = list.rows[static_cast<size_t>(index) - 1];
@@ -2146,23 +2168,23 @@ auto luaUiListInvalidate(lua_State* iState) -> int {
 }
 
 auto luaUiListGetSelected(lua_State* iState) -> int {
-	lua_Integer selected = 0;
+	int64_t selected = 0;
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiList>())
-		selected = static_cast<lua_Integer>(entity->getComponent<scene::component::UiList>().selectedIndex) + 1;
-	lua_pushinteger(iState, selected);
+		selected = static_cast<int64_t>(entity->getComponent<scene::component::UiList>().selectedIndex) + 1;
+	pushInteger(iState, selected);
 	return 1;
 }
 
 auto luaUiListSetSelected(lua_State* iState) -> int {
-	const auto index = luaL_checkinteger(iState, 2);
+	const auto index = checkInteger(iState, 2);
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiList>())
 		entity->getComponent<scene::component::UiList>().select(index - 1);
 	return 0;
 }
 
 auto luaUiListGetVisible(lua_State* iState) -> int {
-	lua_Integer first = 0;
-	lua_Integer last = 0;
+	int64_t first = 0;
+	int64_t last = 0;
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiList>()) {
 		const auto& layout = entity->getScene()->getHudLayout();
 		if (const auto* node = layout.findNode(static_cast<entt::entity>(*entity));
@@ -2171,13 +2193,13 @@ auto luaUiListGetVisible(lua_State* iState) -> int {
 			const auto [begin, end] = scene::ui::visibleRows(scroll.offset.y(), scroll.geometry.viewport.size.y(),
 															 scroll.rowHeight, scroll.rowSpacing, scroll.rowCount);
 			if (end > begin) {
-				first = static_cast<lua_Integer>(begin) + 1;
-				last = static_cast<lua_Integer>(end);
+				first = static_cast<int64_t>(begin) + 1;
+				last = static_cast<int64_t>(end);
 			}
 		}
 	}
-	lua_pushinteger(iState, first);
-	lua_pushinteger(iState, last);
+	pushInteger(iState, first);
+	pushInteger(iState, last);
 	return 2;
 }
 
@@ -2253,8 +2275,8 @@ auto luaGamestateSet(lua_State* iState) -> int {
 	// A string stays a string even when it reads as a number ("0101" would become a float).
 	if (lua_isboolean(iState, 2) != 0)
 		activeScene->getGameState().set(key, lua_toboolean(iState, 2) != 0);
-	else if (lua_isinteger(iState, 2) != 0)
-		activeScene->getGameState().set(key, static_cast<int64_t>(lua_tointeger(iState, 2)));
+	else if (isInteger(iState, 2))
+		activeScene->getGameState().set(key, static_cast<int64_t>(toInteger(iState, 2)));
 	else if (lua_type(iState, 2) == LUA_TNUMBER)
 		activeScene->getGameState().set(key, static_cast<float>(lua_tonumber(iState, 2)));
 	else if (lua_type(iState, 2) == LUA_TSTRING)
@@ -2283,7 +2305,7 @@ auto luaGamestateGet(lua_State* iState) -> int {
 			[iState]<typename T0>(const T0& iVal) -> void {
 				using T = std::decay_t<T0>;
 				if constexpr (std::is_same_v<T, int64_t>)
-					lua_pushinteger(iState, static_cast<lua_Integer>(iVal));
+					pushInteger(iState, static_cast<int64_t>(iVal));
 				else if constexpr (std::is_same_v<T, float>)
 					lua_pushnumber(iState, static_cast<lua_Number>(iVal));
 				else if constexpr (std::is_same_v<T, std::string>)
@@ -2313,7 +2335,7 @@ auto luaSaveSaveGame(lua_State* iState) -> int {
 	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
-	const auto slot = static_cast<uint32_t>(luaL_checkinteger(iState, 1));
+	const auto slot = static_cast<uint32_t>(checkInteger(iState, 1));
 	// Deferred save — handled by RunnerLayer/EditorLayer after onUpdateRuntime.
 	activeScene->saveLoadRequest.pending = true;
 	activeScene->saveLoadRequest.isLoad = false;
@@ -2325,7 +2347,7 @@ auto luaSaveLoadGame(lua_State* iState) -> int {
 	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
-	const auto slot = static_cast<uint32_t>(luaL_checkinteger(iState, 1));
+	const auto slot = static_cast<uint32_t>(checkInteger(iState, 1));
 	activeScene->saveLoadRequest.pending = true;
 	activeScene->saveLoadRequest.isLoad = true;
 	activeScene->saveLoadRequest.slot = slot;
@@ -2333,13 +2355,13 @@ auto luaSaveLoadGame(lua_State* iState) -> int {
 }
 
 auto luaSaveHasSave(lua_State* iState) -> int {
-	const auto slot = static_cast<uint32_t>(luaL_checkinteger(iState, 1));
+	const auto slot = static_cast<uint32_t>(checkInteger(iState, 1));
 	lua_pushboolean(iState, scene::SaveManager::hasSave(slot) ? 1 : 0);
 	return 1;
 }
 
 auto luaSaveDeleteSave(lua_State* iState) -> int {
-	const auto slot = static_cast<uint32_t>(luaL_checkinteger(iState, 1));
+	const auto slot = static_cast<uint32_t>(checkInteger(iState, 1));
 	scene::SaveManager::deleteSave(slot);
 	return 0;
 }
@@ -2349,13 +2371,13 @@ auto luaSaveListSaves(lua_State* iState) -> int {
 	lua_newtable(iState);
 	for (size_t i = 0; i < saves.size(); ++i) {
 		lua_newtable(iState);
-		lua_pushinteger(iState, static_cast<lua_Integer>(saves[i].slot));
+		pushInteger(iState, static_cast<int64_t>(saves[i].slot));
 		lua_setfield(iState, -2, "slot");
 		lua_pushstring(iState, saves[i].timestamp.c_str());
 		lua_setfield(iState, -2, "timestamp");
 		lua_pushstring(iState, saves[i].scenePath.c_str());
 		lua_setfield(iState, -2, "scene");
-		lua_rawseti(iState, -2, static_cast<lua_Integer>(i) + 1);
+		lua_rawseti(iState, -2, static_cast<int>(i) + 1);
 	}
 	return 1;
 }
@@ -2364,8 +2386,7 @@ auto luaDoorActivate(lua_State* iState) -> int {
 	const auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
-	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	const auto entity = entityAt(iState, 1).value_or(scene::Entity{});
 	if (!entity || !entity.hasComponent<scene::component::RaycastDoor>())
 		return 0;
 	auto& door = entity.getComponent<scene::component::RaycastDoor>();
@@ -2378,8 +2399,7 @@ auto luaDoorClose(lua_State* iState) -> int {
 	const auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
-	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	const auto entity = entityAt(iState, 1).value_or(scene::Entity{});
 	if (!entity || !entity.hasComponent<scene::component::RaycastDoor>())
 		return 0;
 	auto& door = entity.getComponent<scene::component::RaycastDoor>();
@@ -2397,8 +2417,7 @@ auto luaDoorIsOpen(lua_State* iState) -> int {
 		lua_pushboolean(iState, 0);
 		return 1;
 	}
-	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	const auto entity = entityAt(iState, 1).value_or(scene::Entity{});
 	if (!entity || !entity.hasComponent<scene::component::RaycastDoor>()) {
 		lua_pushboolean(iState, 0);
 		return 1;
@@ -2415,8 +2434,7 @@ auto luaDoorGetState(lua_State* iState) -> int {
 		lua_pushstring(iState, defaultState);
 		return 1;
 	}
-	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	const auto entity = entityAt(iState, 1).value_or(scene::Entity{});
 	if (!entity || !entity.hasComponent<scene::component::RaycastDoor>()) {
 		lua_pushstring(iState, defaultState);
 		return 1;
@@ -2443,8 +2461,7 @@ auto luaPushwallActivate(lua_State* iState) -> int {
 	const auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
-	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	const auto entity = entityAt(iState, 1).value_or(scene::Entity{});
 	if (!entity || !entity.hasComponent<scene::component::RaycastPushWall>())
 		return 0;
 	auto& push = entity.getComponent<scene::component::RaycastPushWall>();
@@ -2459,8 +2476,7 @@ auto luaPushwallHasMoved(lua_State* iState) -> int {
 		lua_pushboolean(iState, 0);
 		return 1;
 	}
-	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	const auto entity = entityAt(iState, 1).value_or(scene::Entity{});
 	if (!entity || !entity.hasComponent<scene::component::RaycastPushWall>()) {
 		lua_pushboolean(iState, 0);
 		return 1;
@@ -2477,8 +2493,7 @@ auto luaPushwallGetState(lua_State* iState) -> int {
 		lua_pushstring(iState, defaultState);
 		return 1;
 	}
-	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	const auto entity = entityAt(iState, 1).value_or(scene::Entity{});
 	if (!entity || !entity.hasComponent<scene::component::RaycastPushWall>()) {
 		lua_pushstring(iState, defaultState);
 		return 1;
@@ -2506,8 +2521,8 @@ auto luaSettingsSet(lua_State* iState) -> int {
 	// A string stays a string even when it reads as a number ("0101" would become a float).
 	if (lua_isboolean(iState, 2) != 0)
 		settings->set(key, lua_toboolean(iState, 2) != 0);
-	else if (lua_isinteger(iState, 2) != 0)
-		settings->set(key, static_cast<int64_t>(lua_tointeger(iState, 2)));
+	else if (isInteger(iState, 2))
+		settings->set(key, static_cast<int64_t>(toInteger(iState, 2)));
 	else if (lua_type(iState, 2) == LUA_TNUMBER)
 		settings->set(key, static_cast<float>(lua_tonumber(iState, 2)));
 	else if (lua_type(iState, 2) == LUA_TSTRING)
@@ -2552,7 +2567,7 @@ auto luaLocaleGetLanguages(lua_State* iState) -> int {
 		lua_setfield(iState, -2, "code");
 		lua_pushstring(iState, languages[i].name.c_str());
 		lua_setfield(iState, -2, "name");
-		lua_rawseti(iState, -2, static_cast<lua_Integer>(i) + 1);
+		lua_rawseti(iState, -2, static_cast<int>(i) + 1);
 	}
 	return 1;
 }
@@ -2572,7 +2587,7 @@ auto luaSettingsGet(lua_State* iState) -> int {
 			[iState]<typename T0>(const T0& iValue) -> void {
 				using T = std::decay_t<T0>;
 				if constexpr (std::is_same_v<T, int64_t>)
-					lua_pushinteger(iState, static_cast<lua_Integer>(iValue));
+					pushInteger(iState, static_cast<int64_t>(iValue));
 				else if constexpr (std::is_same_v<T, float>)
 					lua_pushnumber(iState, static_cast<lua_Number>(iValue));
 				else if constexpr (std::is_same_v<T, std::string>)
@@ -2620,8 +2635,7 @@ auto withTrigger(lua_State* iState, Action&& iAction) -> int {
 	const auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
-	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	if (const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	if (const auto entity = entityAt(iState, 1).value_or(scene::Entity{});
 		entity && entity.hasComponent<scene::component::Trigger>())
 		std::forward<Action>(iAction)(entity.getComponent<scene::component::Trigger>().trigger);
 	return 0;
@@ -2669,8 +2683,8 @@ auto luaIsometricPickCell(lua_State* iState) -> int {
 	}
 	const auto camera = scene::makeRuntimeIsometricCamera(*getBoundScene(iState));
 	if (const auto hit = scene::terrain::pickTerrain(*map->asset, camera, {windowX, windowY}, map->origin); hit) {
-		lua_pushinteger(iState, static_cast<lua_Integer>(hit->cell.x()));
-		lua_pushinteger(iState, static_cast<lua_Integer>(hit->cell.y()));
+		pushInteger(iState, static_cast<int64_t>(hit->cell.x()));
+		pushInteger(iState, static_cast<int64_t>(hit->cell.y()));
 		return 2;
 	}
 	lua_pushnil(iState);
@@ -2678,28 +2692,28 @@ auto luaIsometricPickCell(lua_State* iState) -> int {
 }
 
 auto luaIsometricGetCell(lua_State* iState) -> int {
-	const auto layer = luaL_checkinteger(iState, 2);
-	const auto cellX = luaL_checkinteger(iState, 3);
-	const auto cellY = luaL_checkinteger(iState, 4);
+	const auto layer = checkInteger(iState, 2);
+	const auto cellX = checkInteger(iState, 3);
+	const auto cellY = checkInteger(iState, 4);
 	const auto map = findIsometricMap(iState);
 	if (!map || layer < 0 || cellX < 0 || cellY < 0 || static_cast<size_t>(layer) >= map->asset->layers.size()) {
-		lua_pushinteger(iState, scene::component::g_EmptyTileIndex);
-		lua_pushinteger(iState, scene::component::g_EmptyTileIndex);
+		pushInteger(iState, scene::component::g_EmptyTileIndex);
+		pushInteger(iState, scene::component::g_EmptyTileIndex);
 		return 2;
 	}
 	const auto cell = map->asset->layers[static_cast<size_t>(layer)].getCell(static_cast<uint32_t>(cellX),
 																			 static_cast<uint32_t>(cellY));
-	lua_pushinteger(iState, cell.terrain);
-	lua_pushinteger(iState, cell.overlay);
+	pushInteger(iState, cell.terrain);
+	pushInteger(iState, cell.overlay);
 	return 2;
 }
 
 auto luaIsometricSetCell(lua_State* iState) -> int {
-	const auto layer = luaL_checkinteger(iState, 2);
-	const auto cellX = luaL_checkinteger(iState, 3);
-	const auto cellY = luaL_checkinteger(iState, 4);
-	const auto terrain = luaL_checkinteger(iState, 5);
-	const auto overlay = luaL_checkinteger(iState, 6);
+	const auto layer = checkInteger(iState, 2);
+	const auto cellX = checkInteger(iState, 3);
+	const auto cellY = checkInteger(iState, 4);
+	const auto terrain = checkInteger(iState, 5);
+	const auto overlay = checkInteger(iState, 6);
 	const auto map = findIsometricMap(iState);
 	bool done = false;
 	if (map && layer >= 0 && cellX >= 0 && cellY >= 0 && static_cast<size_t>(layer) < map->asset->layers.size()) {
@@ -2721,20 +2735,19 @@ auto luaIsometricGetSize(lua_State* iState) -> int {
 		lua_pushnil(iState);
 		return 1;
 	}
-	lua_pushinteger(iState, static_cast<lua_Integer>(map->asset->width));
-	lua_pushinteger(iState, static_cast<lua_Integer>(map->asset->height));
+	pushInteger(iState, static_cast<int64_t>(map->asset->width));
+	pushInteger(iState, static_cast<int64_t>(map->asset->height));
 	lua_pushnumber(iState, static_cast<lua_Number>(map->asset->cellSize));
 	return 3;
 }
 
 auto luaIsometricGetSlope(lua_State* iState) -> int {
-	const auto cellX = luaL_checkinteger(iState, 2);
-	const auto cellY = luaL_checkinteger(iState, 3);
+	const auto cellX = checkInteger(iState, 2);
+	const auto cellY = checkInteger(iState, 3);
 	const auto map = findIsometricMap(iState);
 	const bool inside = map && cellX >= 0 && cellY >= 0;
-	lua_pushinteger(iState,
-					inside ? map->asset->getCellSlope(static_cast<uint32_t>(cellX), static_cast<uint32_t>(cellY))
-						   : scene::terrain::flatSlope);
+	pushInteger(iState, inside ? map->asset->getCellSlope(static_cast<uint32_t>(cellX), static_cast<uint32_t>(cellY))
+							   : scene::terrain::flatSlope);
 	return 1;
 }
 
@@ -2754,7 +2767,7 @@ auto luaIsometricGetHeight(lua_State* iState) -> int {
 }
 
 auto luaIsometricSetSpriteFrame(lua_State* iState) -> int {
-	const auto frame = luaL_checkinteger(iState, 2);
+	const auto frame = checkInteger(iState, 2);
 	const auto entity = findEntity(iState);
 	if (!entity || !entity->hasComponent<scene::component::AnimatedSpriteRenderer>()) {
 		lua_pushboolean(iState, 0);
@@ -2775,7 +2788,7 @@ auto luaIsometricGetSpriteFrame(lua_State* iState) -> int {
 	const auto entity = findEntity(iState);
 	if (!entity || !entity->hasComponent<scene::component::AnimatedSpriteRenderer>())
 		return 0;
-	lua_pushinteger(iState, entity->getComponent<scene::component::AnimatedSpriteRenderer>().m_currentFrame);
+	pushInteger(iState, entity->getComponent<scene::component::AnimatedSpriteRenderer>().m_currentFrame);
 	return 1;
 }
 
@@ -2811,8 +2824,8 @@ auto readNavOptions(lua_State* iState, const int iIndex) -> scene::nav::PathOpti
 	options.noReverse = lua_toboolean(iState, -1) != 0;
 	lua_getfield(iState, iIndex, "heading_x");
 	lua_getfield(iState, iIndex, "heading_y");
-	const auto headingX = lua_tointeger(iState, -2);
-	const auto headingY = lua_tointeger(iState, -1);
+	const auto headingX = toInteger(iState, -2);
+	const auto headingY = toInteger(iState, -1);
 	lua_pop(iState, 3);
 	if (headingX > 0 && headingY == 0)
 		options.heading = scene::nav::Direction::East;
@@ -2827,8 +2840,8 @@ auto readNavOptions(lua_State* iState, const int iIndex) -> scene::nav::PathOpti
 
 // A cell from two Lua integers; false when one is negative.
 auto readNavCell(lua_State* iState, const int iIndex) -> std::optional<math::vec2ui> {
-	const auto x = luaL_checkinteger(iState, iIndex);
-	const auto y = luaL_checkinteger(iState, iIndex + 1);
+	const auto x = checkInteger(iState, iIndex);
+	const auto y = checkInteger(iState, iIndex + 1);
 	if (x < 0 || y < 0)
 		return std::nullopt;
 	return math::vec2ui{static_cast<uint32_t>(x), static_cast<uint32_t>(y)};
@@ -2837,12 +2850,12 @@ auto readNavCell(lua_State* iState, const int iIndex) -> std::optional<math::vec
 // The cells as a flat table `{x1, y1, x2, y2, ...}` then the cost in cells.
 auto pushNavPath(lua_State* iState, const scene::nav::PathResult& iPath) -> int {
 	lua_createtable(iState, static_cast<int>(iPath.cells.size() * 2), 0);
-	lua_Integer index = 1;
+	int64_t index = 1;
 	for (const auto& cell: iPath.cells) {
-		lua_pushinteger(iState, static_cast<lua_Integer>(cell.x()));
-		lua_rawseti(iState, -2, index++);
-		lua_pushinteger(iState, static_cast<lua_Integer>(cell.y()));
-		lua_rawseti(iState, -2, index++);
+		pushInteger(iState, static_cast<int64_t>(cell.x()));
+		lua_rawseti(iState, -2, static_cast<int>(index++));
+		pushInteger(iState, static_cast<int64_t>(cell.y()));
+		lua_rawseti(iState, -2, static_cast<int>(index++));
 	}
 	lua_pushnumber(iState, static_cast<lua_Number>(iPath.getCostInCells()));
 	return 2;
@@ -2854,8 +2867,7 @@ auto luaPathFind(lua_State* iState) -> int {
 	const auto mode = readNavMode(iState, 6);
 	const auto options = readNavOptions(iState, lua_istable(iState, 6) ? 6 : 7);
 	auto* navigation = findNavigation(iState);
-	lua_pushinteger(iState,
-					navigation != nullptr && from && to ? navigation->queue.request(*from, *to, mode, options) : 0);
+	pushInteger(iState, navigation != nullptr && from && to ? navigation->queue.request(*from, *to, mode, options) : 0);
 	return 1;
 }
 
@@ -2879,7 +2891,7 @@ auto luaPathFindNow(lua_State* iState) -> int {
 }
 
 auto luaPathPoll(lua_State* iState) -> int {
-	const auto request = static_cast<scene::nav::PathRequestId>(luaL_checkinteger(iState, 2));
+	const auto request = static_cast<scene::nav::PathRequestId>(checkInteger(iState, 2));
 	const auto* navigation = findNavigation(iState);
 	auto status = scene::nav::PathStatus::Unknown;
 	if (navigation != nullptr)
@@ -2902,7 +2914,7 @@ auto luaPathPoll(lua_State* iState) -> int {
 }
 
 auto luaPathGet(lua_State* iState) -> int {
-	const auto request = static_cast<scene::nav::PathRequestId>(luaL_checkinteger(iState, 2));
+	const auto request = static_cast<scene::nav::PathRequestId>(checkInteger(iState, 2));
 	const auto* navigation = findNavigation(iState);
 	const auto* path = navigation != nullptr ? navigation->queue.getResult(request) : nullptr;
 	if (path == nullptr) {
@@ -2913,15 +2925,15 @@ auto luaPathGet(lua_State* iState) -> int {
 }
 
 auto luaPathRelease(lua_State* iState) -> int {
-	const auto request = static_cast<scene::nav::PathRequestId>(luaL_checkinteger(iState, 2));
+	const auto request = static_cast<scene::nav::PathRequestId>(checkInteger(iState, 2));
 	if (auto* navigation = findNavigation(iState); navigation != nullptr)
 		navigation->queue.release(request);
 	return 0;
 }
 
 auto luaPathIsValid(lua_State* iState) -> int {
-	const auto request = static_cast<scene::nav::PathRequestId>(luaL_checkinteger(iState, 2));
-	const auto first = std::max<lua_Integer>(luaL_optinteger(iState, 3, 1), 1);
+	const auto request = static_cast<scene::nav::PathRequestId>(checkInteger(iState, 2));
+	const auto first = std::max<int64_t>(optInteger(iState, 3, 1), 1);
 	const auto* navigation = findNavigation(iState);
 	const auto* path = navigation != nullptr ? navigation->queue.getResult(request) : nullptr;
 	bool valid = false;
@@ -2963,34 +2975,33 @@ auto luaPathIsWalkable(lua_State* iState) -> int {
 
 auto luaPathGetVersion(lua_State* iState) -> int {
 	const auto* navigation = findNavigation(iState);
-	lua_pushinteger(iState, navigation != nullptr ? static_cast<lua_Integer>(navigation->map.getVersion()) : 0);
+	pushInteger(iState, navigation != nullptr ? static_cast<int64_t>(navigation->map.getVersion()) : 0);
 	return 1;
 }
 
 auto luaPathSetBudget(lua_State* iState) -> int {
-	const auto budget = luaL_checkinteger(iState, 1);
-	getBoundScene(iState)->getNavigation().setBudget(
-			static_cast<uint32_t>(std::clamp<lua_Integer>(budget, 1, 1000000)));
+	const auto budget = checkInteger(iState, 1);
+	getBoundScene(iState)->getNavigation().setBudget(static_cast<uint32_t>(std::clamp<int64_t>(budget, 1, 1000000)));
 	return 0;
 }
 
 // Draw (or stop drawing, with no cells) a route of the map in the debug overlay: `path.show_route(map, id, cells, r, g, b)`.
 auto luaPathShowRoute(lua_State* iState) -> int {
-	luaL_checkinteger(iState, 1);
-	const auto routeId = static_cast<uint64_t>(luaL_checkinteger(iState, 2));
+	std::ignore = checkInteger(iState, 1);
+	const auto routeId = static_cast<uint64_t>(checkInteger(iState, 2));
 	const bool hasCells = lua_istable(iState, 3);
 	const auto red = static_cast<float>(luaL_optnumber(iState, 4, 1.));
 	const auto green = static_cast<float>(luaL_optnumber(iState, 5, 1.));
 	const auto blue = static_cast<float>(luaL_optnumber(iState, 6, 1.));
 	std::vector<math::vec2ui> cells;
 	if (hasCells) {
-		const auto count = static_cast<lua_Integer>(lua_rawlen(iState, 3)) / 2;
+		const auto count = static_cast<int64_t>(lua_objlen(iState, 3)) / 2;
 		cells.reserve(static_cast<size_t>(count));
-		for (lua_Integer i = 1; i <= count; ++i) {
-			lua_rawgeti(iState, 3, i * 2 - 1);
-			lua_rawgeti(iState, 3, i * 2);
-			cells.emplace_back(static_cast<uint32_t>(std::max<lua_Integer>(lua_tointeger(iState, -2), 0)),
-							   static_cast<uint32_t>(std::max<lua_Integer>(lua_tointeger(iState, -1), 0)));
+		for (int64_t i = 1; i <= count; ++i) {
+			lua_rawgeti(iState, 3, static_cast<int>(i * 2 - 1));
+			lua_rawgeti(iState, 3, static_cast<int>(i * 2));
+			cells.emplace_back(static_cast<uint32_t>(std::max<int64_t>(toInteger(iState, -2), 0)),
+							   static_cast<uint32_t>(std::max<int64_t>(toInteger(iState, -1), 0)));
 			lua_pop(iState, 2);
 		}
 	}
@@ -3001,7 +3012,7 @@ auto luaPathShowRoute(lua_State* iState) -> int {
 }
 
 auto luaPathClearRoutes(lua_State* iState) -> int {
-	luaL_checkinteger(iState, 1);
+	std::ignore = checkInteger(iState, 1);
 	if (const auto entity = findEntity(iState); entity && findNavigation(iState) != nullptr)
 		getBoundScene(iState)->getNavigation().clearDebugRoutes(static_cast<uint64_t>(entity->getUUID()));
 	return 0;
@@ -3042,12 +3053,12 @@ auto luaWalkFindPath(lua_State* iState) -> int {
 		return 1;
 	}
 	lua_createtable(iState, static_cast<int>(path.size() * 2), 0);
-	lua_Integer index = 1;
+	int64_t index = 1;
 	for (const auto& point: path) {
 		lua_pushnumber(iState, static_cast<lua_Number>(point.x()));
-		lua_rawseti(iState, -2, index++);
+		lua_rawseti(iState, -2, static_cast<int>(index++));
 		lua_pushnumber(iState, static_cast<lua_Number>(point.y()));
-		lua_rawseti(iState, -2, index++);
+		lua_rawseti(iState, -2, static_cast<int>(index++));
 	}
 	return 1;
 }
@@ -3119,9 +3130,8 @@ auto luaWalkSetSpeed(lua_State* iState) -> int {
 }
 
 auto luaWalkSetArea(lua_State* iState) -> int {
-	const auto areaId = static_cast<uint64_t>(luaL_checkinteger(iState, 2));
+	const auto area = entityAt(iState, 2).value_or(scene::Entity{});
 	const auto agent = entityWith<scene::component::WalkAgent>(iState);
-	const auto area = getBoundScene(iState)->findEntityByUUID(core::UUID{areaId});
 	if (!agent || !area || !area.hasComponent<scene::component::WalkArea>()) {
 		lua_pushboolean(iState, 0);
 		return 1;
@@ -3287,12 +3297,12 @@ auto luaSplineGetPointCount(lua_State* iState) -> int {
 	if (!entity)
 		return 0;
 	const auto& curve = entity->getComponent<scene::component::Spline>().curve;
-	lua_pushinteger(iState, static_cast<lua_Integer>(curve.getPoints().size()));
+	pushInteger(iState, static_cast<int64_t>(curve.getPoints().size()));
 	return 1;
 }
 
 auto luaSplineGetPoint(lua_State* iState) -> int {
-	const auto index = luaL_checkinteger(iState, 2);
+	const auto index = checkInteger(iState, 2);
 	const auto entity = splineEntity(iState);
 	if (!entity)
 		return 0;
@@ -3304,7 +3314,7 @@ auto luaSplineGetPoint(lua_State* iState) -> int {
 }
 
 auto luaSplineSetPoint(lua_State* iState) -> int {
-	const auto index = luaL_checkinteger(iState, 2);
+	const auto index = checkInteger(iState, 2);
 	const math::vec3 position{static_cast<float>(luaL_checknumber(iState, 3)),
 							  static_cast<float>(luaL_checknumber(iState, 4)),
 							  static_cast<float>(luaL_checknumber(iState, 5))};
@@ -3402,7 +3412,7 @@ auto tableOf(lua_State* iState, const char* iPath) -> shared<const data::table::
 
 void pushCell(lua_State* iState, const data::table::CellValue& iValue) {
 	if (const auto* integer = std::get_if<int64_t>(&iValue); integer != nullptr)
-		lua_pushinteger(iState, static_cast<lua_Integer>(*integer));
+		pushInteger(iState, static_cast<int64_t>(*integer));
 	else if (const auto* number = std::get_if<double>(&iValue); number != nullptr)
 		lua_pushnumber(iState, static_cast<lua_Number>(*number));
 	else if (const auto* flag = std::get_if<bool>(&iValue); flag != nullptr)
@@ -3446,7 +3456,7 @@ auto luaDataTableGetKeys(lua_State* iState) -> int {
 	lua_newtable(iState);
 	for (size_t index = 0; index < table->rows.size(); ++index) {
 		lua_pushstring(iState, table->rows[index].key.c_str());
-		lua_rawseti(iState, -2, static_cast<lua_Integer>(index) + 1);
+		lua_rawseti(iState, -2, static_cast<int>(index) + 1);
 	}
 	return 1;
 }
@@ -3459,7 +3469,7 @@ auto luaDataTableGetColumns(lua_State* iState) -> int {
 	lua_newtable(iState);
 	for (size_t index = 0; index < table->columns.size(); ++index) {
 		lua_pushstring(iState, table->columns[index].name.c_str());
-		lua_rawseti(iState, -2, static_cast<lua_Integer>(index) + 1);
+		lua_rawseti(iState, -2, static_cast<int>(index) + 1);
 	}
 	return 1;
 }
@@ -3469,7 +3479,7 @@ auto luaDataTableGetCount(lua_State* iState) -> int {
 	const auto table = tableOf(iState, path);
 	if (!table)
 		return 0;
-	lua_pushinteger(iState, static_cast<lua_Integer>(table->rows.size()));
+	pushInteger(iState, static_cast<int64_t>(table->rows.size()));
 	return 1;
 }
 
@@ -3499,8 +3509,8 @@ auto luaDataTableResolve(lua_State* iState) -> int {
 auto readLuaCell(lua_State* iState, const int iIndex) -> data::table::CellValue {
 	if (lua_isboolean(iState, iIndex))
 		return lua_toboolean(iState, iIndex) != 0;
-	if (lua_isinteger(iState, iIndex) != 0)
-		return static_cast<int64_t>(lua_tointeger(iState, iIndex));
+	if (isInteger(iState, iIndex))
+		return static_cast<int64_t>(toInteger(iState, iIndex));
 	if (lua_isnumber(iState, iIndex) != 0)
 		return static_cast<double>(lua_tonumber(iState, iIndex));
 	const char* text = lua_tostring(iState, iIndex);
@@ -3575,12 +3585,12 @@ auto luaDialogueStart(lua_State* iState) -> int {
 	const auto id = dialogues != nullptr ? dialogues->start(path, dialogueHooksOf(iState)) : std::nullopt;
 	if (!id)
 		return 0;
-	lua_pushinteger(iState, static_cast<lua_Integer>(*id));
+	pushInteger(iState, static_cast<int64_t>(*id));
 	return 1;
 }
 
 auto luaDialogueGetLine(lua_State* iState) -> int {
-	const auto id = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto id = static_cast<uint64_t>(checkInteger(iState, 1));
 	auto* dialogues = dialoguesOf(iState);
 	const auto* conversation = dialogues != nullptr ? dialogues->find(id) : nullptr;
 	if (conversation == nullptr)
@@ -3596,25 +3606,25 @@ auto luaDialogueGetLine(lua_State* iState) -> int {
 	lua_pushstring(iState, node.sound.c_str());
 	lua_setfield(iState, -2, "sound");
 	lua_newtable(iState);
-	lua_Integer index = 1;
+	int64_t index = 1;
 	for (const size_t option: conversation->getOfferedOptions()) {
 		pushDialogueText(iState, node.options[option].text);
-		lua_rawseti(iState, -2, index++);
+		lua_rawseti(iState, -2, static_cast<int>(index++));
 	}
 	lua_setfield(iState, -2, "choices");
 	return 1;
 }
 
 auto luaDialogueNext(lua_State* iState) -> int {
-	const auto id = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto id = static_cast<uint64_t>(checkInteger(iState, 1));
 	auto* dialogues = dialoguesOf(iState);
 	lua_pushboolean(iState, dialogues != nullptr && dialogues->advance(id, dialogueHooksOf(iState)) ? 1 : 0);
 	return 1;
 }
 
 auto luaDialogueChoose(lua_State* iState) -> int {
-	const auto id = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	const auto choice = luaL_checkinteger(iState, 2);
+	const auto id = static_cast<uint64_t>(checkInteger(iState, 1));
+	const auto choice = checkInteger(iState, 2);
 	auto* dialogues = dialoguesOf(iState);
 	const bool running = dialogues != nullptr && choice >= 1 &&
 						 dialogues->choose(id, static_cast<size_t>(choice - 1), dialogueHooksOf(iState));
@@ -3623,14 +3633,14 @@ auto luaDialogueChoose(lua_State* iState) -> int {
 }
 
 auto luaDialogueIsRunning(lua_State* iState) -> int {
-	const auto id = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto id = static_cast<uint64_t>(checkInteger(iState, 1));
 	auto* dialogues = dialoguesOf(iState);
 	lua_pushboolean(iState, dialogues != nullptr && dialogues->find(id) != nullptr ? 1 : 0);
 	return 1;
 }
 
 auto luaDialogueStop(lua_State* iState) -> int {
-	const auto id = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto id = static_cast<uint64_t>(checkInteger(iState, 1));
 	if (auto* dialogues = dialoguesOf(iState); dialogues != nullptr)
 		dialogues->stop(id);
 	return 0;
@@ -3982,6 +3992,10 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "First entity with this tag (0 when none), in the scene then in its HUD; scans every entity, "
 						"cache the result.",
 		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},
+		{.table = "scene", .name = "find_by_uuid", .function = guarded<luaSceneFindByUuid>,
+		 .description = "Entity of a UUID written as text, as the scene file saves it (0 when none), in the scene then "
+						"in its HUD.",
+		 .params = {{"uuid", String}}, .returns = {{"entity_id", Entity}}},
 		{.table = "scene", .name = "find_entities", .function = guarded<luaSceneFindEntities>,
 		 .description = "Every entity of the scene with this tag, as an array of ids (empty when none); scans every "
 						"entity, cache the result.",
@@ -4521,11 +4535,11 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .params = {entityId}, .returns = {{"frame", Integer}}},
 		{.table = "path", .name = "find", .function = guarded<luaPathFind>,
 		 .description = "Queue a shortest-path query between two cells of the tilemap's graph (its `navigation` rules); 0 when the entity has no graph. The path is searched over the next frames, `mode` is `auto`, `flat` or `hierarchical`. `options` (a table, which may replace `mode`) is `{no_reverse = true, heading_x = dx, heading_y = dy}`: the route never goes back to the cell it just left, except from a dead end (a cell with a single exit), and its first move goes on in the heading (an axis direction) when there is one; the search is then always flat.",
-		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}, {"options", Table, true}},
+		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", Any, true}, {"options", Table, true}},
 		 .returns = {{"request", Integer}}},
 		{.table = "path", .name = "find_now", .function = guarded<luaPathFindNow>,
 		 .description = "Search a shortest path at once (a long query on a big map costs frame time, prefer `path.find`): the cells as `{x1, y1, x2, y2, ...}` and the cost in cells, nothing when no path joins the cells. `options` as in `path.find`.",
-		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", String, true}, {"options", Table, true}},
+		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", Any, true}, {"options", Table, true}},
 		 .returns = {{"cells", Table}, {"cost", Number}}},
 		{.table = "path", .name = "poll", .function = guarded<luaPathPoll>,
 		 .description = "State of a request: `pending`, `found`, `not_found` or `unknown` (released or never made).",

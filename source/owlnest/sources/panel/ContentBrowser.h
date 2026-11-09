@@ -231,6 +231,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the callback creating a material graph ("New Material Graph" of the folder menu); it runs `material.create`
+	 *  with `graph` and opens the file.
+	 * @param[in] iCallback Function taking the path of the file to create.
+	 */
+	void setMaterialGraphCreateCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_materialGraphCreateCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when a sound cue (`.owlsound`) or an audio file is double-clicked.
 	 * @param[in] iCallback Function taking the cue file path.
 	 */
@@ -575,8 +585,9 @@ private:
 	/**
 	 * @brief
 	 *  Ask for a new material file in the current directory (a free "New Material" name).
+	 * @param[in] iGraph Whether it is a material graph ("New Material Graph").
 	 */
-	void createMaterial();
+	void createMaterial(bool iGraph = false);
 
 	/**
 	 * @brief
@@ -678,6 +689,8 @@ private:
 	std::function<void(const std::filesystem::path&)> m_materialOpenCallback;
 	/// Called with the path of a material file to create.
 	std::function<void(const std::filesystem::path&)> m_materialCreateCallback;
+	/// Creates a material graph file.
+	std::function<void(const std::filesystem::path&)> m_materialGraphCreateCallback;
 	/// Called on double-click of a `.owlsound` sound cue.
 	std::function<void(const std::filesystem::path&)> m_soundOpenCallback;
 	/// Creates a sound cue ("New Sound Cue").

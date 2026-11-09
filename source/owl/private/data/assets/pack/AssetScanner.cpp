@@ -640,6 +640,39 @@ void scanMaterialMaps(const YAML::Node& iMaterial, const std::string& iSource, s
 	}
 }
 
+void scanTexture(const std::string& iSerialized, const std::string& iSource, std::vector<AssetReference>& ioAssets,
+				 std::vector<std::string>* ioWarnings) {
+	if (auto ref = resolveTexture(iSerialized); ref) {
+		if (!hasAsset(ioAssets, ref->packPath))
+			ioAssets.push_back(*ref);
+	} else
+		pushWarning(ioWarnings, "Texture", iSerialized, iSource);
+}
+
+// The textures of a material graph: the defaults of its texture parameters and the texture values a child sets.
+void scanGraphTextures(const YAML::Node& iMaterial, const std::string& iSource, std::vector<AssetReference>& ioAssets,
+					   std::vector<std::string>* ioWarnings) {
+	const auto graph = iMaterial["graph"];
+	if (const auto parameters = graph && graph.IsMap() ? graph["parameters"] : YAML::Node{};
+		parameters && parameters.IsSequence()) {
+		for (const auto& parameter: parameters) {
+			const auto type = parameter["type"];
+			const auto value = parameter["default"];
+			if (type && type.IsScalar() && type.as<std::string>() == "Texture" && value && value.IsScalar() &&
+				!value.as<std::string>().empty())
+				scanTexture(value.as<std::string>(), iSource, ioAssets, ioWarnings);
+		}
+	}
+	if (const auto values = iMaterial["graphValues"]; values && values.IsMap()) {
+		for (const auto& item: values) {
+			const auto text = item.second.IsScalar() ? item.second.as<std::string>() : std::string{};
+			// Numbers are the values of number parameters; anything else names a texture.
+			if (!text.empty() && text.find_first_not_of("0123456789.-+eE ,") != std::string::npos)
+				scanTexture(text, iSource, ioAssets, ioWarnings);
+		}
+	}
+}
+
 // NOLINTNEXTLINE(misc-no-recursion): a `.owlmat` parent chain stops at a material already collected.
 void scanMaterial(const std::string& iPath, const std::string& iSource, std::vector<AssetReference>& ioAssets,
 				  std::vector<std::string>* ioWarnings) {
@@ -662,6 +695,7 @@ void scanMaterial(const std::string& iPath, const std::string& iSource, std::vec
 	if (!material || !material.IsMap())
 		return;
 	scanMaterialMaps(material, iPath, ioAssets, ioWarnings);
+	scanGraphTextures(material, iPath, ioAssets, ioWarnings);
 	if (const auto parent = material["parent"]; parent && parent.IsScalar() && !parent.as<std::string>().empty())
 		scanMaterial(parent.as<std::string>(), iPath, ioAssets, ioWarnings);
 }

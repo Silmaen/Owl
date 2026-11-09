@@ -1,0 +1,515 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: spots, type: string, default: -2.4 0 -1.8; 0.4 0 1.6; 2.1 0 2.9}
+    - {name: pause, type: float, default: 2.5}
+    - {name: points, type: numbers, default: "", exposed: false}
+    - {name: resting, type: float, default: 0, exposed: false}
+    - {name: current, type: float, default: 0, exposed: false}
+    - {name: list, type: numbers, default: "", exposed: false}
+    - {name: spot, type: numbers, default: "", exposed: false}
+    - {name: next_spot, type: float, default: 0, exposed: false}
+    - {name: walk_to_another_spot, type: numbers, default: "", exposed: false}
+  functions:
+    - name: read_spots
+      inputs: [{name: text, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: walk_to_another
+      inputs: []
+      outputs: []
+  nodes:
+    - id: 8120000000000000001
+      type: func.entry
+      position: [0, 0]
+      values:
+        function: read_spots
+    - id: 8120000000000000002
+      type: value.table
+      position: [0, 146]
+      values:
+        Value: ""
+    - id: 8120000000000000003
+      type: var.set
+      position: [276, 0]
+      values:
+        variable: list
+    - id: 8120000000000000004
+      type: text.split
+      position: [276, 146]
+      values:
+        Separator: ;
+    - id: 8120000000000000005
+      type: flow.for_each
+      position: [650, 0]
+    - id: 8120000000000000006
+      type: compare.not_equal
+      position: [650, 348]
+    - id: 8120000000000000007
+      type: value.string
+      position: [276, 348]
+      values:
+        Value: ""
+    - id: 8120000000000000008
+      type: flow.branch
+      position: [906, 348]
+    - id: 8120000000000000009
+      type: value.table
+      position: [906, 484]
+      values:
+        Value: ""
+    - id: 8120000000000000010
+      type: var.set
+      position: [1182, 348]
+      values:
+        variable: spot
+    - id: 8120000000000000011
+      type: text.split
+      position: [1182, 494]
+      values:
+        Separator: " "
+    - id: 8120000000000000012
+      type: flow.for_each
+      position: [1556, 348]
+    - id: 8120000000000000013
+      type: compare.not_equal
+      position: [1556, 780]
+    - id: 8120000000000000014
+      type: value.string
+      position: [1182, 780]
+      values:
+        Value: ""
+    - id: 8120000000000000015
+      type: flow.branch
+      position: [1834, 780]
+    - id: 8120000000000000016
+      type: table.append
+      position: [2098, 780]
+    - id: 8120000000000000017
+      type: var.get
+      position: [1834, 916]
+      values:
+        variable: spot
+    - id: 8120000000000000018
+      type: text.to_number
+      position: [1834, 1036]
+    - id: 8120000000000000019
+      type: var.get
+      position: [906, 594]
+      values:
+        variable: spot
+    - id: 8120000000000000020
+      type: table.length
+      position: [1182, 630]
+    - id: 8120000000000000021
+      type: compare.equal
+      position: [1556, 536]
+      values:
+        B: 3
+    - id: 8120000000000000022
+      type: flow.branch
+      position: [1834, 348]
+    - id: 8120000000000000023
+      type: table.append
+      position: [2098, 348]
+    - id: 8120000000000000024
+      type: var.get
+      position: [1834, 484]
+      values:
+        variable: list
+    - id: 8120000000000000025
+      type: var.get
+      position: [1834, 604]
+      values:
+        variable: spot
+    - id: 8120000000000000026
+      type: var.get
+      position: [650, 188]
+      values:
+        variable: list
+    - id: 8120000000000000027
+      type: func.return
+      position: [906, 0]
+      values:
+        function: read_spots
+    - id: 8120000000000000028
+      type: func.entry
+      position: [432, 1306]
+      values:
+        function: walk_to_another
+    - id: 8120000000000000029
+      type: var.get
+      position: [0, 1306]
+      values:
+        variable: points
+    - id: 8120000000000000030
+      type: table.length
+      position: [200, 1306]
+    - id: 8120000000000000031
+      type: compare.less
+      position: [432, 1426]
+      values:
+        B: 2
+    - id: 8120000000000000032
+      type: flow.branch
+      position: [702, 1306]
+    - id: 8120000000000000033
+      type: func.return
+      position: [966, 1306]
+      values:
+        function: walk_to_another
+    - id: 8120000000000000034
+      type: math.random_integer
+      position: [966, 1416]
+      values:
+        Min: 1
+    - id: 8120000000000000035
+      type: var.get
+      position: [432, 1562]
+      values:
+        variable: points
+    - id: 8120000000000000036
+      type: table.length
+      position: [702, 1442]
+    - id: 8120000000000000037
+      type: var.set
+      position: [1252, 1306]
+      values:
+        variable: next_spot
+    - id: 8120000000000000038
+      type: var.get
+      position: [966, 1552]
+      values:
+        variable: current
+    - id: 8120000000000000039
+      type: compare.not_equal
+      position: [1252, 1452]
+      values:
+        B: 0
+    - id: 8120000000000000040
+      type: flow.branch
+      position: [1530, 1306]
+    - id: 8120000000000000041
+      type: math.random_integer
+      position: [1530, 1442]
+      values:
+        Min: 1
+    - id: 8120000000000000042
+      type: math.subtract
+      position: [966, 1672]
+      values:
+        B: 1
+    - id: 8120000000000000043
+      type: var.get
+      position: [432, 1682]
+      values:
+        variable: points
+    - id: 8120000000000000044
+      type: table.length
+      position: [702, 1552]
+    - id: 8120000000000000045
+      type: math.floor
+      position: [1252, 1588]
+    - id: 8120000000000000046
+      type: var.set
+      position: [1816, 1306]
+      values:
+        variable: next_spot
+    - id: 8120000000000000047
+      type: var.get
+      position: [1530, 1578]
+      values:
+        variable: next_spot
+    - id: 8120000000000000048
+      type: var.get
+      position: [1530, 1698]
+      values:
+        variable: current
+    - id: 8120000000000000049
+      type: compare.greater_equal
+      position: [1816, 1452]
+    - id: 8120000000000000050
+      type: flow.branch
+      position: [2050, 1306]
+    - id: 8120000000000000051
+      type: math.add
+      position: [2050, 1442]
+      values:
+        B: 1
+    - id: 8120000000000000052
+      type: var.get
+      position: [1816, 1588]
+      values:
+        variable: next_spot
+    - id: 8120000000000000053
+      type: var.set
+      position: [2320, 1306]
+      values:
+        variable: next_spot
+    - id: 8120000000000000054
+      type: var.get
+      position: [2320, 1452]
+      values:
+        variable: next_spot
+    - id: 8120000000000000055
+      type: var.set
+      position: [2552, 1306]
+      values:
+        variable: current
+    - id: 8120000000000000056
+      type: var.get
+      position: [2320, 1572]
+      values:
+        variable: points
+    - id: 8120000000000000057
+      type: table.get
+      position: [2552, 1452]
+    - id: 8120000000000000058
+      type: var.get
+      position: [2320, 1692]
+      values:
+        variable: current
+    - id: 8120000000000000059
+      type: var.set
+      position: [2850, 1306]
+      values:
+        variable: walk_to_another_spot
+    - id: 8120000000000000060
+      type: call.nav.go_to
+      position: [3148, 1306]
+      values:
+        split.xyz: true
+    - id: 8120000000000000061
+      type: var.get
+      position: [2552, 1588]
+      values:
+        variable: walk_to_another_spot
+    - id: 8120000000000000062
+      type: table.get
+      position: [2850, 1452]
+      values:
+        Key: 1
+    - id: 8120000000000000063
+      type: var.get
+      position: [2552, 1708]
+      values:
+        variable: walk_to_another_spot
+    - id: 8120000000000000064
+      type: table.get
+      position: [2850, 1588]
+      values:
+        Key: 2
+    - id: 8120000000000000065
+      type: var.get
+      position: [2552, 1828]
+      values:
+        variable: walk_to_another_spot
+    - id: 8120000000000000066
+      type: table.get
+      position: [2850, 1724]
+      values:
+        Key: 3
+    - id: 8120000000000000067
+      type: event.on_create
+      position: [0, 2108]
+    - id: 8120000000000000068
+      type: func.call
+      position: [200, 2108]
+      values:
+        function: read_spots
+    - id: 8120000000000000069
+      type: var.get
+      position: [0, 2218]
+      values:
+        variable: spots
+    - id: 8120000000000000070
+      type: var.set
+      position: [432, 2108]
+      values:
+        variable: points
+    - id: 8120000000000000071
+      type: var.get
+      position: [432, 2254]
+      values:
+        variable: pause
+    - id: 8120000000000000072
+      type: var.set
+      position: [664, 2108]
+      values:
+        variable: resting
+    - id: 8120000000000000073
+      type: event.on_update
+      position: [0, 2534]
+    - id: 8120000000000000074
+      type: call.nav.is_moving
+      position: [0, 2670]
+    - id: 8120000000000000075
+      type: flow.branch
+      position: [334, 2534]
+    - id: 8120000000000000076
+      type: math.subtract
+      position: [334, 2670]
+    - id: 8120000000000000077
+      type: var.get
+      position: [0, 2790]
+      values:
+        variable: resting
+    - id: 8120000000000000078
+      type: var.set
+      position: [598, 2534]
+      values:
+        variable: resting
+    - id: 8120000000000000079
+      type: var.get
+      position: [334, 2806]
+      values:
+        variable: resting
+    - id: 8120000000000000080
+      type: compare.less_equal
+      position: [598, 2680]
+      values:
+        B: 0
+    - id: 8120000000000000081
+      type: flow.branch
+      position: [868, 2534]
+    - id: 8120000000000000082
+      type: var.get
+      position: [868, 2670]
+      values:
+        variable: pause
+    - id: 8120000000000000083
+      type: var.set
+      position: [1132, 2534]
+      values:
+        variable: resting
+    - id: 8120000000000000084
+      type: var.get
+      position: [868, 2790]
+      values:
+        variable: current
+    - id: 8120000000000000085
+      type: compare.not_equal
+      position: [1132, 2680]
+      values:
+        B: 0
+    - id: 8120000000000000086
+      type: flow.branch
+      position: [1410, 2534]
+    - id: 8120000000000000087
+      type: call.gamestate.set
+      position: [1992, 2534]
+      values:
+        key: tavern_strolls
+    - id: 8120000000000000088
+      type: math.add
+      position: [1674, 2534]
+      values:
+        B: 1
+    - id: 8120000000000000089
+      type: call.gamestate.get
+      position: [1674, 2670]
+      values:
+        default: 0
+        key: tavern_strolls
+    - id: 8120000000000000090
+      type: func.call
+      position: [2270, 2534]
+      values:
+        function: walk_to_another
+  links:
+    - {from: 8120000000000000002, fromPin: Result, to: 8120000000000000003, toPin: Value}
+    - {from: 8120000000000000001, fromPin: Then, to: 8120000000000000003, toPin: Exec}
+    - {from: 8120000000000000001, fromPin: text, to: 8120000000000000004, toPin: Text}
+    - {from: 8120000000000000004, fromPin: Result, to: 8120000000000000005, toPin: List}
+    - {from: 8120000000000000003, fromPin: Then, to: 8120000000000000005, toPin: Exec}
+    - {from: 8120000000000000005, fromPin: Item, to: 8120000000000000006, toPin: A}
+    - {from: 8120000000000000007, fromPin: Result, to: 8120000000000000006, toPin: B}
+    - {from: 8120000000000000006, fromPin: Result, to: 8120000000000000008, toPin: Condition}
+    - {from: 8120000000000000005, fromPin: Body, to: 8120000000000000008, toPin: Exec}
+    - {from: 8120000000000000009, fromPin: Result, to: 8120000000000000010, toPin: Value}
+    - {from: 8120000000000000008, fromPin: True, to: 8120000000000000010, toPin: Exec}
+    - {from: 8120000000000000005, fromPin: Item, to: 8120000000000000011, toPin: Text}
+    - {from: 8120000000000000011, fromPin: Result, to: 8120000000000000012, toPin: List}
+    - {from: 8120000000000000010, fromPin: Then, to: 8120000000000000012, toPin: Exec}
+    - {from: 8120000000000000012, fromPin: Item, to: 8120000000000000013, toPin: A}
+    - {from: 8120000000000000014, fromPin: Result, to: 8120000000000000013, toPin: B}
+    - {from: 8120000000000000013, fromPin: Result, to: 8120000000000000015, toPin: Condition}
+    - {from: 8120000000000000012, fromPin: Body, to: 8120000000000000015, toPin: Exec}
+    - {from: 8120000000000000017, fromPin: Value, to: 8120000000000000016, toPin: List}
+    - {from: 8120000000000000012, fromPin: Item, to: 8120000000000000018, toPin: Text}
+    - {from: 8120000000000000018, fromPin: Result, to: 8120000000000000016, toPin: Value}
+    - {from: 8120000000000000015, fromPin: True, to: 8120000000000000016, toPin: Exec}
+    - {from: 8120000000000000019, fromPin: Value, to: 8120000000000000020, toPin: List}
+    - {from: 8120000000000000020, fromPin: Result, to: 8120000000000000021, toPin: A}
+    - {from: 8120000000000000021, fromPin: Result, to: 8120000000000000022, toPin: Condition}
+    - {from: 8120000000000000012, fromPin: Completed, to: 8120000000000000022, toPin: Exec}
+    - {from: 8120000000000000024, fromPin: Value, to: 8120000000000000023, toPin: List}
+    - {from: 8120000000000000025, fromPin: Value, to: 8120000000000000023, toPin: Value}
+    - {from: 8120000000000000022, fromPin: True, to: 8120000000000000023, toPin: Exec}
+    - {from: 8120000000000000026, fromPin: Value, to: 8120000000000000027, toPin: result}
+    - {from: 8120000000000000005, fromPin: Completed, to: 8120000000000000027, toPin: Exec}
+    - {from: 8120000000000000029, fromPin: Value, to: 8120000000000000030, toPin: List}
+    - {from: 8120000000000000030, fromPin: Result, to: 8120000000000000031, toPin: A}
+    - {from: 8120000000000000031, fromPin: Result, to: 8120000000000000032, toPin: Condition}
+    - {from: 8120000000000000028, fromPin: Then, to: 8120000000000000032, toPin: Exec}
+    - {from: 8120000000000000032, fromPin: True, to: 8120000000000000033, toPin: Exec}
+    - {from: 8120000000000000035, fromPin: Value, to: 8120000000000000036, toPin: List}
+    - {from: 8120000000000000036, fromPin: Result, to: 8120000000000000034, toPin: Max}
+    - {from: 8120000000000000034, fromPin: Result, to: 8120000000000000037, toPin: Value}
+    - {from: 8120000000000000032, fromPin: False, to: 8120000000000000037, toPin: Exec}
+    - {from: 8120000000000000038, fromPin: Value, to: 8120000000000000039, toPin: A}
+    - {from: 8120000000000000039, fromPin: Result, to: 8120000000000000040, toPin: Condition}
+    - {from: 8120000000000000037, fromPin: Then, to: 8120000000000000040, toPin: Exec}
+    - {from: 8120000000000000043, fromPin: Value, to: 8120000000000000044, toPin: List}
+    - {from: 8120000000000000044, fromPin: Result, to: 8120000000000000042, toPin: A}
+    - {from: 8120000000000000042, fromPin: Result, to: 8120000000000000045, toPin: A}
+    - {from: 8120000000000000045, fromPin: Result, to: 8120000000000000041, toPin: Max}
+    - {from: 8120000000000000041, fromPin: Result, to: 8120000000000000046, toPin: Value}
+    - {from: 8120000000000000040, fromPin: True, to: 8120000000000000046, toPin: Exec}
+    - {from: 8120000000000000047, fromPin: Value, to: 8120000000000000049, toPin: A}
+    - {from: 8120000000000000048, fromPin: Value, to: 8120000000000000049, toPin: B}
+    - {from: 8120000000000000049, fromPin: Result, to: 8120000000000000050, toPin: Condition}
+    - {from: 8120000000000000046, fromPin: Then, to: 8120000000000000050, toPin: Exec}
+    - {from: 8120000000000000052, fromPin: Value, to: 8120000000000000051, toPin: A}
+    - {from: 8120000000000000051, fromPin: Result, to: 8120000000000000053, toPin: Value}
+    - {from: 8120000000000000050, fromPin: True, to: 8120000000000000053, toPin: Exec}
+    - {from: 8120000000000000054, fromPin: Value, to: 8120000000000000055, toPin: Value}
+    - {from: 8120000000000000053, fromPin: Then, to: 8120000000000000055, toPin: Exec}
+    - {from: 8120000000000000050, fromPin: False, to: 8120000000000000055, toPin: Exec}
+    - {from: 8120000000000000040, fromPin: False, to: 8120000000000000055, toPin: Exec}
+    - {from: 8120000000000000056, fromPin: Value, to: 8120000000000000057, toPin: Table}
+    - {from: 8120000000000000058, fromPin: Value, to: 8120000000000000057, toPin: Key}
+    - {from: 8120000000000000057, fromPin: Result, to: 8120000000000000059, toPin: Value}
+    - {from: 8120000000000000055, fromPin: Then, to: 8120000000000000059, toPin: Exec}
+    - {from: 8120000000000000061, fromPin: Value, to: 8120000000000000062, toPin: Table}
+    - {from: 8120000000000000063, fromPin: Value, to: 8120000000000000064, toPin: Table}
+    - {from: 8120000000000000065, fromPin: Value, to: 8120000000000000066, toPin: Table}
+    - {from: 8120000000000000062, fromPin: Result, to: 8120000000000000060, toPin: x}
+    - {from: 8120000000000000064, fromPin: Result, to: 8120000000000000060, toPin: y}
+    - {from: 8120000000000000066, fromPin: Result, to: 8120000000000000060, toPin: z}
+    - {from: 8120000000000000059, fromPin: Then, to: 8120000000000000060, toPin: Exec}
+    - {from: 8120000000000000069, fromPin: Value, to: 8120000000000000068, toPin: text}
+    - {from: 8120000000000000067, fromPin: Then, to: 8120000000000000068, toPin: Exec}
+    - {from: 8120000000000000068, fromPin: result, to: 8120000000000000070, toPin: Value}
+    - {from: 8120000000000000068, fromPin: Then, to: 8120000000000000070, toPin: Exec}
+    - {from: 8120000000000000071, fromPin: Value, to: 8120000000000000072, toPin: Value}
+    - {from: 8120000000000000070, fromPin: Then, to: 8120000000000000072, toPin: Exec}
+    - {from: 8120000000000000074, fromPin: moving, to: 8120000000000000075, toPin: Condition}
+    - {from: 8120000000000000073, fromPin: Then, to: 8120000000000000075, toPin: Exec}
+    - {from: 8120000000000000077, fromPin: Value, to: 8120000000000000076, toPin: A}
+    - {from: 8120000000000000073, fromPin: dt, to: 8120000000000000076, toPin: B}
+    - {from: 8120000000000000076, fromPin: Result, to: 8120000000000000078, toPin: Value}
+    - {from: 8120000000000000075, fromPin: False, to: 8120000000000000078, toPin: Exec}
+    - {from: 8120000000000000079, fromPin: Value, to: 8120000000000000080, toPin: A}
+    - {from: 8120000000000000080, fromPin: Result, to: 8120000000000000081, toPin: Condition}
+    - {from: 8120000000000000078, fromPin: Then, to: 8120000000000000081, toPin: Exec}
+    - {from: 8120000000000000082, fromPin: Value, to: 8120000000000000083, toPin: Value}
+    - {from: 8120000000000000081, fromPin: True, to: 8120000000000000083, toPin: Exec}
+    - {from: 8120000000000000084, fromPin: Value, to: 8120000000000000085, toPin: A}
+    - {from: 8120000000000000085, fromPin: Result, to: 8120000000000000086, toPin: Condition}
+    - {from: 8120000000000000083, fromPin: Then, to: 8120000000000000086, toPin: Exec}
+    - {from: 8120000000000000086, fromPin: True, to: 8120000000000000089, toPin: Exec}
+    - {from: 8120000000000000089, fromPin: value, to: 8120000000000000088, toPin: A}
+    - {from: 8120000000000000088, fromPin: Result, to: 8120000000000000087, toPin: value}
+    - {from: 8120000000000000089, fromPin: Then, to: 8120000000000000087, toPin: Exec}
+    - {from: 8120000000000000087, fromPin: Then, to: 8120000000000000090, toPin: Exec}
+    - {from: 8120000000000000086, fromPin: False, to: 8120000000000000090, toPin: Exec}

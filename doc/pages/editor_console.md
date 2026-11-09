@@ -100,7 +100,21 @@ A refused command changes nothing and logs why (a bad argument, an edit during P
 | `component.set`                   | `entity`, `component`, `values` (a YAML / JSON map merged into the component), `replace`                |
 | `prefab.instantiate`              | `path` (prefab file), `asset_path`                                                                      |
 | `mesh.create`                     | `path` (mesh file), `asset_path`, `name`, `translation` (world), `parent`, `layer`                      |
-| `material.create`                 | `path` (new `.owlmat` file), `parent` (the parent material, a root material when absent)                |
+| `material.create`                 | `path` (new `.owlmat`), `parent` (an instance when given), `graph` (a material graph)                   |
+| `material.set_parent`             | `path` (an open or openable `.owlmat`), `parent` (empty: a root material)                               |
+| `material.set_values`             | `path`, `values` (a `MaterialOverrides` YAML map), `merge`                                              |
+| `material.convert_to_graph`       | `path`: the parameter surface linked to the surface node; `convert_to_parameters` back                  |
+| `material.add_node`               | `path`, `type` (`math.multiply`...), `x`, `y`, `item` (parameter, custom, function), `function`         |
+| `material.remove_nodes`           | `path`, `nodes` (identifiers, space separated), `function` (a body, the graph when empty)               |
+| `material.move_nodes`             | `path`, `layout` (`node x y; node x y`), `function`                                                     |
+| `material.link`                   | `path`, `from_node`, `from_pin`, `to_node`, `to_pin`, `function`; `material.unlink` (`to_*`)            |
+| `material.set_node_value`         | `path`, `node`, `name` (setting or input), `value`, `reset`, `function`, `merge`                        |
+| `material.paste_nodes`            | `path`, `nodes` (the copied text), `x`, `y`, `function`                                                 |
+| `material.add_parameter`          | `path`, `name`, `type` (`Float`, `Vector`, `Color`, `Texture`), `default`; `remove_parameter`           |
+| `material.set_parameter`          | `path`, `name`, `new_name` (its nodes follow), `type`, `default`, `merge`                               |
+| `material.add_custom_node`        | `path`, `name`; `remove_custom_node`, `set_custom_node` (`title`, `inputs`, `outputs`, `code`)          |
+| `material.add_function`           | `path`, `name`; `remove_function`, `set_function` (`new_name`, `inputs`, `outputs`)                     |
+| `material.set_graph_value`        | `path` (an instance), `name` (a parameter of the parent graph), `value`, `reset`                        |
 | `sound.create`                    | `path` (new `.owlsound` file), `file` (the audio file of a first take, none when absent)                |
 | `sound.set`                       | `path`, `volume`, `volume_change` (0 to 1), `pitch`, `pitch_change` (0 to 0.9), `loop`                  |
 | `sound.add_take`                  | `path`, `file` (an audio file)                                                                          |

@@ -11,6 +11,8 @@
 #include "data/assets/AssetReference.h"
 #include "renderer/Material.h"
 
+#include "MaterialGraphYaml.h"
+
 #include "core/FormatVersionYaml.h"
 #include "core/external/yaml.h"
 #include "math/YamlSerializers.h"
@@ -23,6 +25,9 @@
 #include <array>
 #include <cstdint>
 #include <functional>
+#include <map>
+#include <memory>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -239,6 +244,34 @@ auto Material::withTexture(const MaterialMap iMap, const shared<gpu::Texture2D>&
 	return result;
 }
 
+auto Material::withGraph(const shared<const MaterialGraph>& iGraph, const shared<const MaterialProgram>& iProgram,
+						 const std::map<std::string, std::string>& iValues) const -> Material {
+	auto parameters = m_parameters;
+	std::map<std::string, std::string> values;
+	if (iGraph) {
+		for (const auto& parameter: iGraph->parameters) {
+			const auto found = iValues.find(parameter.name);
+			values[parameter.name] = found != iValues.end() ? found->second : parameter.defaultValue;
+		}
+	}
+	if (iProgram) {
+		for (size_t index = 0; index < iProgram->textures.size() && index < g_materialMapCount; ++index)
+			parameters.maps[index] = values[iProgram->textures[index]];
+	}
+	Material result{parameters};
+	result.m_graph = iGraph;
+	result.m_program = iProgram;
+	if (iProgram) {
+		for (size_t slot = 0; slot < iProgram->values.size() && slot < g_materialGraphValueCount; ++slot) {
+			std::istringstream numbers{values[iProgram->values[slot]]};
+			auto& uniform = result.m_graphUniforms[slot];
+			for (size_t component = 0; component < 4 && numbers >> uniform[component]; ++component) {}
+		}
+	}
+	result.m_graphValues = std::move(values);
+	return result;
+}
+
 auto MaterialAsset::toYaml() const -> std::string {
 	YAML::Emitter out;
 	out << YAML::BeginMap;
@@ -247,6 +280,15 @@ auto MaterialAsset::toYaml() const -> std::string {
 	if (!parent.empty())
 		out << YAML::Key << "parent" << YAML::Value << data::assets::toAssetReference(parent.generic_string());
 	emitFields(out, values, parent.empty() ? g_allMaterialFields : overrides);
+	if (graph.has_value() && parent.empty()) {
+		out << YAML::Key << "graph" << YAML::Value;
+		emitMaterialGraph(out, *graph);
+	}
+	if (!graphValues.empty()) {
+		out << YAML::Key << "graphValues" << YAML::Value << YAML::BeginMap;
+		for (const auto& [name, value]: graphValues) out << YAML::Key << name << YAML::Value << value;
+		out << YAML::EndMap;
+	}
 	out << YAML::EndMap << YAML::EndMap;
 	return out.c_str();
 }
@@ -273,6 +315,17 @@ auto MaterialAsset::fromYaml(const std::string& iYaml) -> std::optional<Material
 		asset.parent = data::assets::toAssetPath(parent.as<std::string>());
 	const uint32_t fields = readFields(node, asset.values);
 	asset.overrides = asset.parent.empty() ? g_allMaterialFields : fields;
+	try {
+		if (const auto graph = node["graph"]; graph && graph.IsMap() && asset.parent.empty())
+			asset.graph = parseMaterialGraph(graph);
+		if (const auto values = node["graphValues"]; values && values.IsMap()) {
+			for (const auto& item: values)
+				asset.graphValues[item.first.as<std::string>()] = item.second.as<std::string>();
+		}
+	} catch (const YAML::Exception& iError) {
+		OWL_CORE_WARN("Material: Invalid graph ({}).", iError.what())
+		return std::nullopt;
+	}
 	return asset;
 }
 

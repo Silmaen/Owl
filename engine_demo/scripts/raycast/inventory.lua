@@ -4,7 +4,7 @@
 --               gamestate as the inventory (kept in saves), save.save_game / save.load_game, scene.transition_to,
 --               a scrolling journal (UiList: ui.list_set_count, onBindCallback + ui.list_set_row, onSelectCallback).
 --
--- The inventory is the gamestate keys `inv_<item>` (counts), written by pickup.lua. One slot per item:
+-- The inventory is the gamestate keys `inv_<item>` (counts), written by pickup.owlvs. One slot per item:
 -- its icon and count show once the count is above zero. `inv_window_open` and `inv_focus` (slot index) mirror the UI
 -- for the other scripts and the scenario test; `inv_closed_frame` is the `inv_frame` at which ui_cancel closed it, so the
 -- player script does not take that Escape for a pause.

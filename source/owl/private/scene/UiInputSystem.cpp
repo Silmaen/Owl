@@ -25,6 +25,7 @@
 #include "scene/component/Visibility.h"
 #include "scene/ui/HudLayout.h"
 #include "scene/ui/ScrollMath.h"
+#include "script/EntityHandle.h"
 #include "script/ScriptInstance.h"
 
 #include <algorithm>
@@ -91,11 +92,17 @@ void invokeCallback(const Scene* iSurface, const Scene* iActive, const Entity& i
 	}
 }
 
+// The handle a script bound to its scene holds for an entity.
+auto handleFor(const script::ScriptInstance& iInstance, const core::UUID iUuid) -> int64_t {
+	const auto* scene = iInstance.getScene();
+	return scene == nullptr ? 0 : static_cast<int64_t>(script::getEntityHandle(*scene, iUuid));
+}
+
 void invokeLuaCallback(const Scene* iSurface, const Scene* iActive, const Entity& iEntity,
 					   const std::string& iCallbackName, const uint64_t iEntityId) {
 	invokeCallback(iSurface, iActive, iEntity, iCallbackName,
 				   [iEntityId](const script::ScriptInstance& iInstance) -> void {
-					   iInstance.setProperty("_clicked_entity", static_cast<int64_t>(iEntityId));
+					   iInstance.setProperty("_clicked_entity", handleFor(iInstance, core::UUID{iEntityId}));
 				   });
 }
 
@@ -109,10 +116,10 @@ void invokeSliderCallback(const Scene* iSurface, const Scene* iActive, const Ent
 
 void invokeListCallback(const Scene* iSurface, const Scene* iActive, const Entity& iEntity,
 						const std::string& iCallbackName, const std::string_view iIndexProperty, const int64_t iIndex) {
-	const auto id = static_cast<int64_t>(static_cast<uint64_t>(iEntity.getUUID()));
+	const auto uuid = iEntity.getUUID();
 	invokeCallback(iSurface, iActive, iEntity, iCallbackName,
-				   [id, iIndexProperty, iIndex](const script::ScriptInstance& iInstance) -> void {
-					   iInstance.setProperty("_list_entity", id);
+				   [uuid, iIndexProperty, iIndex](const script::ScriptInstance& iInstance) -> void {
+					   iInstance.setProperty("_list_entity", handleFor(iInstance, uuid));
 					   iInstance.setProperty(std::string{iIndexProperty}, iIndex);
 				   });
 }
@@ -736,10 +743,11 @@ auto pickWrapped(const std::span<const Candidate> iCandidates, const Candidate& 
 
 void invokeFocusCallback(const Scene& iSurface, const Scene& iActive, const Entity& iWidget,
 						 const std::string& iCallbackName) {
-	const auto id = static_cast<int64_t>(static_cast<uint64_t>(iWidget.getUUID()));
-	invokeCallback(&iSurface, &iActive, iWidget, iCallbackName, [id](const script::ScriptInstance& iInstance) -> void {
-		iInstance.setProperty("_focused_entity", id);
-	});
+	const auto uuid = iWidget.getUUID();
+	invokeCallback(&iSurface, &iActive, iWidget, iCallbackName,
+				   [uuid](const script::ScriptInstance& iInstance) -> void {
+					   iInstance.setProperty("_focused_entity", handleFor(iInstance, uuid));
+				   });
 }
 
 // Put the focus on a widget; a new one runs its `onFocusCallback`.

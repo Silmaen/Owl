@@ -13,9 +13,9 @@
 -- Feel of the level:
 --   * the camera leads in the running direction, follows with a smoothing, snaps to whole screen pixels and shakes
 --     on damage;
---   * hazards (hazard.lua) leave a request in the gamestate that is read here: a hit costs health, flashes the
+--   * hazards (hazard.owlvs) leave a request in the gamestate that is read here: a hit costs health, flashes the
 --     sprite, shakes the camera, kicks the player back and gives a short invulnerability; a fall into a pit costs
---     health and respawns at the last checkpoint behind a fade (checkpoint.lua stores it in the gamestate);
+--     health and respawns at the last checkpoint behind a fade (checkpoint.owlvs stores it in the gamestate);
 --   * `platformer_banner` (a gamestate string) replaces the objective text for a moment.
 
 properties = {

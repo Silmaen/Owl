@@ -12,6 +12,7 @@
 #include <debug/LogSink.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
+#include <script/EntityHandle.h>
 #include <script/ScriptEngine.h>
 #include <script/ScriptInstance.h>
 
@@ -177,10 +178,11 @@ TEST(ScriptInstance, onCollision) {
 	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "collision", 1));
 
-	inst.onCollision(12345);
+	const auto other = scn->createEntity("Other");
+	inst.onCollision(static_cast<uint64_t>(other.getUUID()));
 	const auto val = inst.getPropertyInt("collided_with");
 	ASSERT_TRUE(val.has_value());
-	EXPECT_EQ(val.value(), 12345);
+	EXPECT_EQ(static_cast<uint64_t>(val.value()), getEntityHandle(*scn, other));
 
 	core::Log::invalidate();
 }

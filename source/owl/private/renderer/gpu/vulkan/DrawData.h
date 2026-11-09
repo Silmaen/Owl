@@ -115,6 +115,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Draw with another shader until reset; its pipelines are built on their first bind.
+	 * @param[in] iShader The shader, null for the shader of `init`.
+	 */
+	void setShaderVariant(const shared<gpu::Shader>& iShader) override;
+
+	/**
+	 * @brief
 	 *  Get the name.
 	 * @return The name.
 	 */
@@ -141,9 +148,10 @@ private:
 	 * @brief
 	 *  Create a pipeline for the render pass of the bound framebuffer.
 	 * @param[in] iSetLayout Descriptor set layout to build with; null takes the active renderer block's.
+	 * @param[in] iShader The shader of the pipeline.
 	 * @return The pipeline id, -1 on failure.
 	 */
-	[[nodiscard]] auto createPipeline(VkDescriptorSetLayout iSetLayout) const -> int32_t;
+	[[nodiscard]] auto createPipeline(VkDescriptorSetLayout iSetLayout, Shader& iShader) const -> int32_t;
 
 	/**
 	 * @brief
@@ -152,10 +160,12 @@ private:
 	 */
 	[[nodiscard]] auto getPipelineForCurrentFramebuffer() const -> int32_t;
 
-	/// A pipeline built for another attachment layout (`Framebuffer::getPipelineFamily`).
+	/// A pipeline built for another attachment layout (`Framebuffer::getPipelineFamily`) or another shader.
 	struct PipelineVariant {
 		/// Attachment layout of the render pass the pipeline is compatible with.
 		uint64_t family = 0;
+		/// Shader of the pipeline, null for `mp_shader`.
+		const Shader* shader = nullptr;
 		/// The pipeline id.
 		int32_t pipelineId = -1;
 	};
@@ -168,6 +178,8 @@ private:
 	mutable std::vector<PipelineVariant> m_variants;
 	/// Pointer to the shader/pipeline.
 	shared<Shader> mp_shader;
+	/// Shader drawn with instead of `mp_shader`, null for none.
+	shared<Shader> mp_variant;
 	/// Pointer to the vertex buffer.
 	shared<VertexBuffer> mp_vertexBuffer;
 	/// Pointer to the per-instance vertex buffer (`initInstanced` path only).

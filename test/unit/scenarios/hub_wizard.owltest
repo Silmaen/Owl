@@ -1,4 +1,4 @@
-# The wizard of the hub talks through a dialogue tree (hub_wizard.lua, dialogues/wizard.owldlg): E starts the
+# The wizard of the hub talks through a dialogue tree (hub_wizard.owlvs, dialogues/wizard.owldlg): E starts the
 # conversation and freezes the hero, E shows the next line, Escape ends it without pausing the game.
 scene: ../../../engine_demo/scenes/world_map.owl
 steps:

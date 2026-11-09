@@ -22,6 +22,8 @@ struct MaterialData {
 	int4 model;        // x shading model (0 Standard, 1 Unlit, 2 Toon), y alpha mode (0 Opaque, 1 Mask, 2 Blend), z map mask, w toon bands.
 	float4 toon;       // x toon rim strength, y emissive luminance (nits), z IOR, w clearcoat IOR.
 	int4 channels;     // channel (0 R, 1 G, 2 B, 3 A) read by the x metallic, y roughness, z occlusion maps; w normal map convention (0 OpenGL, 1 DirectX).
+	float4 graphTime;  // x: seconds of the scene, read by the material graphs.
+	float4 graph[8];   // number parameters of a material graph, one per slot.
 };
 
 struct LightData {

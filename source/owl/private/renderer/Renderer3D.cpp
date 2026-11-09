@@ -16,19 +16,27 @@
 #include "renderer/LocalShadows.h"
 #include "renderer/Material.h"
 
+#include "renderer/Renderer.h"
 #include "renderer/gpu/Framebuffer.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/RendererDescriptors.h"
+#include "renderer/gpu/Shader.h"
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/UniformBuffer.h"
+#if OWL_WITH_RENDER
+#include "renderer/utils/shaderFileUtils.h"
+#endif
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <numbers>
 #include <span>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace owl::renderer {
@@ -129,9 +137,13 @@ struct MaterialUbo {
 	// x toon rim, y emissive strength.
 	math::vec4 toon{0.5f, 1.f, 0.f, 0.f};
 	std::array<int32_t, 4> channels{2, 1, 0, 0};
+	// x: seconds of the scene.
+	math::vec4 graphTime{0.f, 0.f, 0.f, 0.f};
+	// Number parameters of a material graph.
+	std::array<math::vec4, g_materialGraphValueCount> graph{};
 };
 
-static_assert(sizeof(MaterialUbo) == 128,
+static_assert(sizeof(MaterialUbo) == 272,
 			  "MaterialUbo must match the std140 layout of MaterialData in the renderer3D shaders.");
 
 constexpr uint32_t g_materialSlotEnd = 1 + g_materialMapCount;
@@ -144,6 +156,8 @@ constexpr uint32_t g_instanceBinding = 5;
 constexpr uint32_t g_visibleBinding = 6;
 
 struct InternalData {
+	// Variants of the mesh shaders a material graph compiles to, by name; null when the variant does not compile.
+	std::unordered_map<std::string, shared<gpu::Shader>> materialShaders;
 	shared<gpu::UniformBuffer> sceneUniformBuffer;
 	shared<gpu::UniformBuffer> materialUniformBuffer;
 	shared<gpu::Texture2D> dfgTexture;
@@ -314,8 +328,74 @@ void setMaterial(const Material* iMaterial, const bool iHasBaseTexture, const bo
 						  std::max(p.clearcoatIor, 1.f)};
 	ubo.channels = {static_cast<int32_t>(p.metallicChannel), static_cast<int32_t>(p.roughnessChannel),
 					static_cast<int32_t>(p.occlusionChannel), static_cast<int32_t>(p.normalConvention)};
+	ubo.graph = material.getGraphUniforms();
 	g_Data->materialUniformBuffer->setData(&ubo, sizeof(MaterialUbo), 0);
 }
+
+auto buildMaterialShader([[maybe_unused]] const std::string& iName, [[maybe_unused]] const std::string& iBaseShader,
+						 [[maybe_unused]] const MaterialProgram& iProgram) -> shared<gpu::Shader> {
+#if OWL_WITH_RENDER
+	const auto file =
+			Renderer::getTextureLibrary().find(std::format("shaders/{}/{}.slang", k_ShaderFolder, iBaseShader));
+	if (!file.has_value()) {
+		OWL_CORE_WARN("Renderer3D: Shader '{}' not found for a material graph.", iBaseShader)
+		return nullptr;
+	}
+	const auto source = insertMaterialProgram(utils::readShaderSource(*file), iProgram);
+	if (!source.has_value())
+		return nullptr;
+	const auto api = gpu::RenderCommand::getApi();
+	if (api != gpu::RenderAPI::Type::Null &&
+		!utils::loadOrCompileSpirv(*source, iName, k_ShaderFolder, api == gpu::RenderAPI::Type::Vulkan,
+								   {gpu::ShaderType::Vertex, gpu::ShaderType::Fragment})
+				 .has_value()) {
+		OWL_CORE_ERROR("Renderer3D: The material graph shader '{}' does not compile, the parameters draw instead.",
+					   iName)
+		return nullptr;
+	}
+	OWL_CORE_DEBUG("Renderer3D: Material graph shader '{}' built.", iName)
+	return gpu::Shader::createFromSource(iName, k_ShaderFolder, *source);
+#else
+	return nullptr;
+#endif
+}
+
+// The variant of a mesh shader drawing a graph material, null for a parameter material or another shader.
+auto getMaterialShader(const Material* iMaterial, const std::string& iBaseShader) -> shared<gpu::Shader> {
+	if (iMaterial == nullptr || !iMaterial->getProgram() ||
+		std::ranges::find(g_materialGraphShaders, iBaseShader) == g_materialGraphShaders.end())
+		return nullptr;
+	const auto& program = *iMaterial->getProgram();
+	const auto name = getMaterialShaderName(iBaseShader, program);
+	if (const auto found = g_Data->materialShaders.find(name); found != g_Data->materialShaders.end())
+		return found->second;
+	return g_Data->materialShaders[name] = buildMaterialShader(name, iBaseShader, program);
+}
+
+// Draws a mesh with the shader variant of its material for the length of a scope.
+class ScopedMaterialShader final {
+public:
+	ScopedMaterialShader(const ScopedMaterialShader&) = delete;
+	ScopedMaterialShader(ScopedMaterialShader&&) = delete;
+	auto operator=(const ScopedMaterialShader&) -> ScopedMaterialShader& = delete;
+	auto operator=(ScopedMaterialShader&&) -> ScopedMaterialShader& = delete;
+
+	ScopedMaterialShader(const Renderer3D::MeshHandle& iMesh, const Material* iMaterial) : m_mesh{iMesh} {
+		if (const auto shader = getMaterialShader(iMaterial, iMesh->getShaderName()); shader) {
+			m_mesh->setShaderVariant(shader);
+			m_active = true;
+		}
+	}
+
+	~ScopedMaterialShader() {
+		if (m_active)
+			m_mesh->setShaderVariant(nullptr);
+	}
+
+private:
+	const Renderer3D::MeshHandle& m_mesh;
+	bool m_active = false;
+};
 
 void setDrawParams(const math::mat4& iModel, const MeshDrawParams& iParams, const bool iHasBaseTexture,
 				   const int32_t iVisibleBase = -1) {
@@ -370,7 +450,7 @@ void Renderer3D::init() {
 			gpu::BindingDecl{.binding = 4,
 							 .type = gpu::BindingType::UniformBuffer,
 							 .count = 1,
-							 .stages = gpu::ShaderStage::Fragment},
+							 .stages = gpu::ShaderStage::VertexFragment},
 			gpu::BindingDecl{.binding = 5,
 							 .type = gpu::BindingType::StorageBuffer,
 							 .count = 1,
@@ -463,6 +543,13 @@ void Renderer3D::shutdown() {
 }
 
 auto Renderer3D::isReady() -> bool { return g_Data != nullptr; }
+
+void Renderer3D::setTime(const float iSeconds) {
+	if (g_Data)
+		g_Data->material.graphTime = math::vec4{iSeconds, 0.f, 0.f, 0.f};
+}
+
+auto Renderer3D::getMaterialShaderCount() -> size_t { return g_Data ? g_Data->materialShaders.size() : 0; }
 
 void Renderer3D::beginScene(const Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
@@ -734,6 +821,7 @@ void Renderer3D::drawSkinnedMesh(const MeshHandle& iMesh, const math::mat4& iMod
 	setDrawParams(iModel, iParams, !iTextures.empty() && iTextures.front(), static_cast<int32_t>(iFirstMatrix));
 	iSkin->bind(g_skinBinding);
 	bindMeshTextures(iTextures, iParams.material);
+	const ScopedMaterialShader variant{iMesh, iParams.material};
 	gpu::RenderCommand::drawData(iMesh, iMesh->getIndexCount());
 }
 
@@ -747,6 +835,7 @@ void Renderer3D::drawMesh(const MeshHandle& iMesh, const math::mat4& iModel,
 
 	setDrawParams(iModel, iParams, !iTextures.empty() && iTextures.front());
 	bindMeshTextures(iTextures, iParams.material);
+	const ScopedMaterialShader variant{iMesh, iParams.material};
 	gpu::RenderCommand::drawData(iMesh, iMesh->getIndexCount());
 }
 
@@ -761,8 +850,10 @@ void Renderer3D::drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat
 	setDrawParams(iModel, iParams, !iTextures.empty() && iTextures.front());
 	bindMeshTextures(iTextures, iParams.material);
 	for (const auto& mesh: iMeshes) {
-		if (mesh && mesh->getIndexCount() > 0)
-			gpu::RenderCommand::drawData(mesh, mesh->getIndexCount());
+		if (!mesh || mesh->getIndexCount() == 0)
+			continue;
+		const ScopedMaterialShader variant{mesh, iParams.material};
+		gpu::RenderCommand::drawData(mesh, mesh->getIndexCount());
 	}
 }
 
@@ -790,6 +881,7 @@ void Renderer3D::drawMeshInstanced(const MeshHandle& iMesh, const MeshInstanceBu
 		return;
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	bindInstances(iBuffers, iTextures, iParams);
+	const ScopedMaterialShader variant{iMesh, iParams.material};
 	gpu::RenderCommand::drawDataInstanced(iMesh, iMesh->getIndexCount(), iInstanceCount);
 }
 
@@ -803,6 +895,7 @@ void Renderer3D::drawMeshIndirect(const MeshHandle& iMesh, const MeshInstanceBuf
 		return;
 	const gpu::RendererDescriptors::ScopedActive scoped{blockId()};
 	bindInstances(iBuffers, iTextures, iParams);
+	const ScopedMaterialShader variant{iMesh, iParams.material};
 	gpu::RenderCommand::drawIndexedIndirectAt(iMesh, iCommands, iCommandIndex);
 }
 

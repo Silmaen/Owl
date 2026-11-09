@@ -3,7 +3,7 @@ scene: scenes/platformer_house.owl
 seed: 7
 tick_rate: 60
 max_ticks_per_frame: 8
-start_hash: 0x171cae5cf497cf31
+start_hash: 0xf47199149413efb8
 start:
   {}
 durations:
@@ -18,9 +18,9 @@ events:
   - {frame: 296, keys: [Space]}
   - {frame: 306, keys: []}
 checkpoints:
-  - [60, 0xa7de1c2fbf4f9b60]
-  - [120, 0xb184a7d78c281b16]
-  - [180, 0xd272fe3d73c9a0bd]
-  - [240, 0xe1244293a753967f]
-  - [300, 0xe6eeb3632ef443b3]
-  - [360, 0x9b9538eea3001d5e]
+  - [60, 0xa6670437bf833921]
+  - [120, 0xc66d02595e414600]
+  - [180, 0x005851e478674503]
+  - [240, 0xc1b95b5694e724fe]
+  - [300, 0x089d6a2857274f84]
+  - [360, 0xc43db6457eb74c51]

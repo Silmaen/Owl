@@ -247,3 +247,14 @@ TEST(NodeCanvas, ZoomLodThresholds) {
 	EXPECT_FALSE(shouldDrawNodeTitles(0.3f));
 	EXPECT_FALSE(shouldDrawNodeTitles(0.05f));
 }
+
+TEST(NodeCanvas, FooterHeightGrowsTheNode) {
+	auto node = makeNode("A", {0.0f, 0.0f}, {"in"}, {"out"});
+	const auto plain = NodeCanvas::measureNode(node);
+	EXPECT_FALSE(node.faulty);
+	EXPECT_TRUE(node.tooltip.empty());
+	node.footerHeight = 96.0f;
+	const auto withFooter = NodeCanvas::measureNode(node);
+	EXPECT_FLOAT_EQ(withFooter.x(), plain.x());
+	EXPECT_FLOAT_EQ(withFooter.y(), plain.y() + 96.0f);
+}

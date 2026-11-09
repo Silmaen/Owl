@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "MaterialGraph.h"
 #include "core/Core.h"
 #include "gpu/Texture.h"
 #include "math/vectors.h"
@@ -16,6 +17,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <optional>
 #include <string>
 
@@ -371,11 +373,62 @@ public:
 	 */
 	[[nodiscard]] auto withTexture(MaterialMap iMap, const shared<gpu::Texture2D>& iTexture) const -> Material;
 
+	/**
+	 * @brief
+	 *  A copy drawn by a material graph: its texture parameters take the map slots from the base colour on, the
+	 *  maps of the material keep the slots that follow.
+	 * @param[in] iGraph The graph.
+	 * @param[in] iProgram The compiled graph.
+	 * @param[in] iValues Values of the parameters that replace the defaults of the graph, by name.
+	 * @return The material.
+	 */
+	[[nodiscard]] auto withGraph(const shared<const MaterialGraph>& iGraph,
+								 const shared<const MaterialProgram>& iProgram,
+								 const std::map<std::string, std::string>& iValues) const -> Material;
+
+	/**
+	 * @brief
+	 *  The graph of the material.
+	 * @return The graph, null for a parameter material.
+	 */
+	[[nodiscard]] auto getGraph() const -> const shared<const MaterialGraph>& { return m_graph; }
+
+	/**
+	 * @brief
+	 *  The compiled graph of the material.
+	 * @return The program, null for a parameter material.
+	 */
+	[[nodiscard]] auto getProgram() const -> const shared<const MaterialProgram>& { return m_program; }
+
+	/**
+	 * @brief
+	 *  The values of the graph parameters, defaults included.
+	 * @return The values by name.
+	 */
+	[[nodiscard]] auto getGraphValues() const -> const std::map<std::string, std::string>& { return m_graphValues; }
+
+	/**
+	 * @brief
+	 *  The number parameters of the graph as the material block reads them.
+	 * @return One vector per slot of the program.
+	 */
+	[[nodiscard]] auto getGraphUniforms() const -> const std::array<math::vec4, g_materialGraphValueCount>& {
+		return m_graphUniforms;
+	}
+
 private:
 	/// Resolved values.
 	MaterialParameters m_parameters;
 	/// Textures, by `MaterialMap`.
 	std::array<shared<gpu::Texture2D>, g_materialMapCount> m_textures{};
+	/// Graph of a graph material.
+	shared<const MaterialGraph> m_graph;
+	/// Compiled graph of a graph material.
+	shared<const MaterialProgram> m_program;
+	/// Values of the graph parameters, by name.
+	std::map<std::string, std::string> m_graphValues;
+	/// Number parameters of the graph, by slot.
+	std::array<math::vec4, g_materialGraphValueCount> m_graphUniforms{};
 };
 
 /**
@@ -389,6 +442,10 @@ struct OWL_API MaterialAsset {
 	MaterialParameters values;
 	/// With a parent: the fields this file sets.
 	uint32_t overrides = g_allMaterialFields;
+	/// Graph of a `Graph` material; a material with a parent takes the graph of its parent.
+	std::optional<MaterialGraph> graph;
+	/// Values of graph parameters this file sets, by name: numbers separated by spaces or a texture path.
+	std::map<std::string, std::string> graphValues;
 
 	/**
 	 * @brief

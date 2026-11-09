@@ -66,6 +66,10 @@ struct Node {
 	/// `gui::icon` glyph drawn before the title, or empty.
 	std::string glyph{};// NOLINT(readability-redundant-member-init) lets designated initializers omit it
 	math::vec4 glyphColor{1.0f, 1.0f, 1.0f, 1.0f};///< Colour of the glyph (the kind of the node).
+	bool faulty{false};///< Drawn with the red frame of a node in error.
+	/// Text shown while the mouse is over the node, or empty.
+	std::string tooltip{};// NOLINT(readability-redundant-member-init) lets designated initializers omit it
+	float footerHeight{0.0f};///< Height in canvas units below the pins, drawn by the footer renderer.
 };
 
 /**
@@ -385,6 +389,16 @@ public:
 	 * specific node was hit.
 	 */
 	void setOnContextMenu(std::function<void(std::optional<core::UUID> iNodeUnderCursor)> iCb);
+
+	/**
+	 * @brief
+	 *  Set the function drawing the footer of the nodes that have one (`Node::footerHeight`), called while the canvas
+	 *  draws, for the footers on screen only.
+	 * @param[in] iRenderer Function `(iNodeId, iMin, iMax, iZoom) -> void`: the footer rectangle in screen pixels and
+	 *  the zoom of the view; it draws into the window draw list.
+	 */
+	void setNodeFooterRenderer(
+			std::function<void(core::UUID iNodeId, math::vec2f iMin, math::vec2f iMax, float iZoom)> iRenderer);
 
 	// --- Rendering -----------------------------------------------------------
 	/**

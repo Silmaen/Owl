@@ -1832,6 +1832,8 @@ private:
 	std::optional<std::string> m_hudThemePath;
 	/// Seconds of simulated time since Play started.
 	double m_runtimeSeconds = 0.0;
+	/// Seconds the material graphs read: the scene time in Play, the real time in the editor.
+	double m_materialSeconds = 0.0;
 	/// Speed of the scene clock (`setTimeScale`).
 	float m_timeScale = 1.f;
 	/// Whether the scene clock is paused.

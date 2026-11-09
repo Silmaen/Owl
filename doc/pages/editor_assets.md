@@ -54,7 +54,7 @@ ignores it.
 | Mesh           | **Open** (the mesh viewer), **Place in Scene**, **Import Settings** (LODs)                                                                                                                                                                |
 | Macro          | **Edit as Text**                                                                                                                                                                                                                          |
 
-**New Material** creates `New Material.owlmat` in the folder shown and opens it in the material editor. **New Sequence** (`sequence.create`) creates `New Sequence.owlseq` and opens it in the
+**New Material** creates `New Material.owlmat` in the folder shown and opens it in the material editor, **New Material Graph** a material graph (`New Material Graph.owlmat`). **New Sequence** (`sequence.create`) creates `New Sequence.owlseq` and opens it in the
 [Sequencer](sequences.md#sequences-editor).
 
 ## Asset identity and import settings {#editor-asset-import}

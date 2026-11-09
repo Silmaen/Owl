@@ -1,0 +1,4 @@
+sources:
+  "0.746":
+    url: "https://github.com/luau-lang/luau/archive/refs/tags/0.746.tar.gz"
+    sha256: "5bdfb1fb6f5bbd0af7056ba07f4e91043dd5615a7a9a61ed1498f8f67b991ac1"

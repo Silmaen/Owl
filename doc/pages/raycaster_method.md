@@ -69,7 +69,7 @@ For an entity with rotation = (0, 0, θ) in **radians**:
 - forward = (-sin θ, cos θ)  — θ = 0 ⇒ +Y, θ = π/2 ⇒ -X (CCW turn).
 - right = (cos θ, sin θ)
 
-The Lua script `raycast_player.lua` in the sample mirrors this exact formula.
+The visual script `raycast_player.owlvs` in the sample mirrors this exact formula.
 
 ## Ray formula
 
@@ -540,4 +540,4 @@ To drive either object from a Lua script instead of the built-in key, set the co
 | `test/unit/renderer_tests/RendererRaycast_test.cpp`                 | Renderer-level unit tests                             |
 | `test/unit/scene_tests/RaycastDynamicWalls_test.cpp`                | Door / pushwall state-machine + serializer tests      |
 | `engine_demo/scenes/raycast_demo.owl`                               | Wolfenstein-inspired demo scene                       |
-| `engine_demo/scripts/raycast/raycast_player.lua`                    | Player input matching the pose convention             |
+| `engine_demo/scripts/raycast/raycast_player.owlvs`                    | Player input matching the pose convention             |

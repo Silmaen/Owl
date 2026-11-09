@@ -126,6 +126,17 @@ public:
 
 	/**
 	 * @brief
+	 *  Create a shader from a Slang source held in memory (a generated shader); its `#include`s are already expanded.
+	 * @param[in] iShaderName Shader's name, unique to the source.
+	 * @param[in] iRenderer Name of the shader's related renderer.
+	 * @param[in] iSlangSource The Slang source.
+	 * @return Pointer to the shader, null when the backend cannot create it.
+	 */
+	static auto createFromSource(const std::string& iShaderName, const std::string& iRenderer,
+								 const std::string& iSlangSource) -> shared<Shader>;
+
+	/**
+	 * @brief
 	 *  Set shader's internal int variable.
 	 * @param[in] iName Shader's variable's name.
 	 * @param[in] iValue Shader's variable's value.

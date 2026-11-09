@@ -22,6 +22,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OwlRunner --record <file>` and `--replay <file>`, and the scenario key `replay:` with the expectations `replay: synced` / `finished` and `world_hash:`.
 - Owl Nest: a Record button and `scene.record` (`Shift+F5`) write a `.owlreplay`, and a double-click in the Content Browser plays it.
 - Engine Demo: a recorded tour of the platformer house, checked by `replay_platformer_house.owltest`.
+- Engine Demo: 15 short gameplay scripts are visual scripts, and a test compiles every demo graph.
+- Engine Demo: 21 more scripts are visual scripts (hub, platformer, raycast, tavern, plaza walkers, main menu), and every demo graph must load.
+- Visual script internal variables (`exposed: false`): state of the script kept out of the inspector, a list holding any table.
+- Visual script variable bounds `min`, `max` and `step`, written to the script property and edited in Owl Nest.
+- Visual script exported functions: a global function the engine calls and reads the results of, such as a dialogue condition.
+- Visual script `Nil` constant: clears a variable or a field.
+- Visual script maths nodes: `Square Root`, `Ceil`, `Round`, `Power`, `Clamp`, `Lerp`, `Sine`, `Cosine`, `Atan2`, `Pi`, `Random` and `Random Integer`.
+- Visual script text nodes: `Join Text`, `Format` (`string.format`, up to four values), `Text Length`, `Split`, `To Number`, `To Text`, `Contains Text`, `Substring`, `Upper Case` and `Lower Case`.
+- Visual script table nodes: a `Table` constant typed as `a, b, key = c`, `Get Field` (written `t.key`), `Has Key`, `Get Item`, `List Length`, `Contains`, `Make List`, `Set Field`, `Add Item`, `Remove Item`, and the `For Each` loop over a list.
+- Visual script logic nodes `Select` (a Luau `if` expression), `Or Default` and `Is Set`.
+- Visual script variables of type `numbers` and `strings`, their default typed as a list, and every unlinked table input typed on its node.
+- Engine Demo: `teleporter`, `barrel_kick`, `pickup`, `voxel_explorer`, `dice_cup`, `heart`, `hub_wanderer` and `iso_camera` are visual scripts.
 - Jolt Physics 5.6.0 as a dependency, built cross-platform deterministic with SSE4.2 on x86_64, and a frozen world-hash test of a Jolt scene.
 - 3D bodies on the same `PhysicBody`: dimension `Space`, box, sphere, capsule and cylinder shapes for 2D and 3D, colliding with 2D bodies, with a Z component in the Lua `physics` functions and stacked barrels to shove in the tavern of the Engine Demo.
 - `PhysicCommand::saveState` and `restoreState`: the whole simulation of a scene in bytes, replayed bit for bit with the same collision events, for rewind and rollback.
@@ -49,9 +61,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua `nav`: `go_to`, `stop`, `is_moving`, `get_target`, `set_speed`, `find_path`, `get_closest_point` and `bake`.
 - Owl Nest navigation support: inspectors of the four components, pickable viewport markers and the mesh drawn by Show > Navigation graph and routes.
 - Engine Demo: two regulars stroll on the baked navigation mesh of the tavern, round the server, the barrels and the player, and hop onto the second table (`tavern_regular.lua`).
+- Custom nodes in visual scripts (`CustomNode`, nodes `custom.call` / `custom.pure`): a title, typed pins and a Lua body, edited in the **Custom** tab of Owl Nest.
+- Annotated functions of a Lua module (`---@param`, `---@return`, `---@pure`, `visual::parseLuaFunctions`) show in the visual script palette as `lua.call` / `lua.pure` nodes.
+- Owl Nest material graphs: **Convert to Graph** and **New Material Graph**, a node canvas with a searchable palette, links coloured by pin type, multi-select, copy / paste and a node inspector, all undoable.
+- Owl Nest material graph tabs: Parameters (texture defaults dropped from the Content Browser), Custom (typed pins and a Slang body) and Functions (a body edited on the canvas).
+- Owl Nest material graph previews: the lit preview draws the compiled graph, each node shows its output unlit on a small sphere, and the compiler diagnostics frame their node in red and fill a list.
+- Owl Nest material instances of a graph override its parameters (`graphValues`) under **Graph Parameters**.
+- `material.*` editor commands for every graph edit (nodes, links, values, parameters, custom nodes, functions, instance values, parent and values), and `material.create graph=true`.
+- `NodeCanvas` nodes take a red error frame (`faulty`), a `tooltip` and a footer drawn by `setNodeFooterRenderer`.
+
+- Material graphs: a `graph` section in a `.owlmat` (`MaterialGraph`) compiled to Slang by `compileMaterialGraph`, drawn by a variant of `mesh3d` / `skinned3d` built on first use.
+- Material graph nodes: inputs, maths, vectors and uv, texture sample, triplanar and parallax, value, gradient, fractal and Voronoi noise, fresnel, height and detail blends, normal blending, the parameter surface and the surface output with its clearcoat, sheen, anisotropy and world position offset.
+- Material graph parameters (8 numbers, 6 textures) a child `.owlmat` overrides in `graphValues` without a recompile, custom Slang nodes and material functions.
+- The export bakes the `mesh3d` / `skinned3d` variants of every material graph of the pack and packs the textures of its parameters, so the game compiles none.
+- `Renderer3D::setTime`, the seconds the material graphs read, from the scene clock in Play and the real time in the editor.
+- Engine Demo: the embers of the tavern fire pulse with a fractal noise and its flame flickers with a vertex offset, both material graphs.
+
+- `script::ScriptTypeChecker` and `getScriptDefinitions`: Luau type checking of a script against declarations generated from the binding registry, with the engine globals, the script properties and the required modules.
+- Owl Nest code editor: Lua scripts are type-checked as you type, errors and lint warnings marked on their line and listed under the editor.
 
 ### Changed
 
+- The visual script compiler joins the two paths of a branch where they meet, so the Lua of a graph follows the shape of hand-written Lua.
+- The mesh shaders read the surface from the material block of `common/mesh_surface.slangh` (`evaluateSurface`, `evaluateVertexOffset`), the parameter materials drawing exactly as before.
 - Every Play in Owl Nest records its inputs in memory for the rewind; the Record button decides whether Stop writes them to a `.owlreplay`.
 - Entities created in Play take their UUIDs from the scene seed, so a replay creates the same entities under the same ids.
 - Every Owl target builds with `-ffp-contract=off -fno-fast-math`, and the scene systems use the engine maths instead of the libm: the simulation gives the same bits on every target.
@@ -67,6 +99,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Every job a pipeline leaves out shows with a ▶ to run it by hand, and `nightly-jobs` offers each nightly job alone.
 - A build job of a push pipeline reuses an earlier success on the same tree instead of building again.
 - Scene time scale goes up to 100000 (`Scene::setTimeScale`, Lua `time.set_scale`).
+- Visual scripts compile to readable Lua: names from the pins, single-use values inlined, locals instead of the shared slot table, no `do` block per node.
+- Execution paths that merge in a visual script run their common nodes from one Lua function instead of a copy per path.
+- Scripts hold entity handles (registry id + 1, exact in a Lua number) instead of UUIDs; `scene.find_by_uuid` converts a UUID written as text.
+- Luau 0.746 replaces Lua 5.5: one VM with an interrupt-based time quota, `lua_breakpoint` breakpoints and the `bit32` and `buffer` libraries.
+- A whole number a script stores in the game state is an integer: Luau numbers are doubles.
 
 ### Removed
 
@@ -74,6 +111,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The visual script compiler hung on a function with two unread results, and could start a statement with a parenthesis Luau read as a call.
+- `path.find` and `path.find_now` declare their `mode` as any value: it takes the options table too.
+- Demo and sample scripts no longer pass a nil `tonumber` result to `math.floor` or a numeric `for`.
 - `Scene::copy` reversed the entity and component order, so the editor's Play could simulate differently from the runner.
 - Lua raw input and the mouse-look of the controllers read the devices directly and escaped the fixed input frame.
 - Owl Nest: stopping a Play that had moved to another level kept that level's renderers, so the edited scene and the next Play drew no meshes.

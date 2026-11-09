@@ -17,6 +17,7 @@
 #include "renderer/gpu/Texture.h"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -323,6 +324,20 @@ public:
 	 * @param[in] iCamera The camera whose view-projection drives the frame.
 	 */
 	static void beginScene(const Camera& iCamera);
+
+	/**
+	 * @brief
+	 *  Set the seconds the material graphs read (`Time`), kept for the draws that follow.
+	 * @param[in] iSeconds Seconds of the scene.
+	 */
+	static void setTime(float iSeconds);
+
+	/**
+	 * @brief
+	 *  Number of material graph shaders built so far, the failed ones included.
+	 * @return The count.
+	 */
+	[[nodiscard]] static auto getMaterialShaderCount() -> size_t;
 
 	/**
 	 * @brief

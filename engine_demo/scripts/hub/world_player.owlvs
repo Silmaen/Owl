@@ -1,0 +1,1931 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: speed, type: float, default: 5.0}
+    - {name: frame_idle, type: int, default: 148, min: 0}
+    - {name: frame_walk, type: int, default: 168, min: 0}
+    - {name: walk_frames, type: int, default: 4, min: 1}
+    - {name: step_time, type: float, default: 0.11, min: 0.01}
+    - {name: wade_factor, type: float, default: 0.4, min: 0, max: 1}
+    - {name: wade_step_time, type: float, default: 0.2, min: 0.01}
+    - {name: transitioning, type: bool, default: false, exposed: false}
+    - {name: teleporter_id, type: entity, default: 0, exposed: false}
+    - {name: teleporter_visible, type: bool, default: false, exposed: false}
+    - {name: health_bar_id, type: entity, default: 0, exposed: false}
+    - {name: camera_id, type: entity, default: 0, exposed: false}
+    - {name: sprite_id, type: entity, default: 0, exposed: false}
+    - {name: sprite_scale, type: float, default: 1.0, exposed: false}
+    - {name: levels_id, type: entity, default: 0, exposed: false}
+    - {name: shown_levels, type: float, default: -1, exposed: false}
+    - {name: LEVELS, type: numbers, default: "", exposed: false}
+    - {name: walk_clock, type: float, default: 0, exposed: false}
+    - {name: shown_frame, type: float, default: -1, exposed: false}
+    - {name: shown_step, type: float, default: -1, exposed: false}
+    - {name: STEP_SOUND, type: string, default: sounds/hub/steps.owlsound, exposed: false}
+    - {name: WADE_SOUND, type: string, default: sounds/hub/wade.owlsound, exposed: false}
+    - {name: WATER_TILES, type: numbers, default: "", exposed: false}
+    - {name: map_id, type: entity, default: 0, exposed: false}
+    - {name: wading, type: bool, default: false, exposed: false}
+    - {name: k_map_width, type: float, default: 64, exposed: false}
+    - {name: k_map_height, type: float, default: 40, exposed: false}
+    - {name: k_view_half_height, type: float, default: 7.5, exposed: false}
+    - {name: k_view_half_width, type: float, default: 0, exposed: false}
+    - {name: record, type: numbers, default: "", exposed: false}
+    - {name: px, type: float, default: 0, exposed: false}
+    - {name: py, type: float, default: 0, exposed: false}
+    - {name: in_water, type: bool, default: false, exposed: false}
+    - {name: pace, type: float, default: 0, exposed: false}
+    - {name: dirx, type: float, default: 0, exposed: false}
+    - {name: diry, type: float, default: 0, exposed: false}
+    - {name: mvx, type: float, default: 0, exposed: false}
+    - {name: mvy, type: float, default: 0, exposed: false}
+    - {name: frame, type: float, default: 0, exposed: false}
+    - {name: step, type: float, default: 0, exposed: false}
+    - {name: cz, type: float, default: 0, exposed: false}
+    - {name: cx, type: float, default: 0, exposed: false}
+    - {name: cy, type: float, default: 0, exposed: false}
+    - {name: done, type: float, default: 0, exposed: false}
+    - {name: all_done, type: bool, default: false, exposed: false}
+    - {name: closing, type: bool, default: false, exposed: false}
+    - {name: pz, type: float, default: 0, exposed: false}
+  nodes:
+    - id: 8170000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 8170000000000000002
+      type: value.table
+      position: [0, 110]
+      values:
+        Value: "\"platformer\", \"raycast\", \"iso\", \"voxel\", \"tavern\", \"orbit\""
+    - id: 8170000000000000003
+      type: var.set
+      position: [276, 0]
+      values:
+        variable: LEVELS
+    - id: 8170000000000000004
+      type: value.table
+      position: [276, 146]
+      values:
+        Value: ""
+    - id: 8170000000000000005
+      type: var.set
+      position: [552, 0]
+      values:
+        variable: record
+    - id: 8170000000000000006
+      type: var.get
+      position: [552, 146]
+      values:
+        variable: record
+    - id: 8170000000000000007
+      type: table.set
+      position: [784, 0]
+      values:
+        Key: 132
+        Value: true
+    - id: 8170000000000000008
+      type: var.get
+      position: [784, 188]
+      values:
+        variable: record
+    - id: 8170000000000000009
+      type: table.set
+      position: [1046, 0]
+      values:
+        Key: 133
+        Value: true
+    - id: 8170000000000000010
+      type: var.get
+      position: [1046, 188]
+      values:
+        variable: record
+    - id: 8170000000000000011
+      type: table.set
+      position: [1308, 0]
+      values:
+        Key: 137
+        Value: true
+    - id: 8170000000000000012
+      type: var.get
+      position: [1308, 188]
+      values:
+        variable: record
+    - id: 8170000000000000013
+      type: table.set
+      position: [1590, 0]
+      values:
+        Key: 138
+        Value: true
+    - id: 8170000000000000014
+      type: var.get
+      position: [1590, 188]
+      values:
+        variable: record
+    - id: 8170000000000000015
+      type: var.set
+      position: [1860, 0]
+      values:
+        variable: WATER_TILES
+    - id: 8170000000000000016
+      type: math.divide
+      position: [1860, 146]
+      values:
+        B: 9
+    - id: 8170000000000000017
+      type: math.multiply
+      position: [1590, 308]
+      values:
+        B: 16
+    - id: 8170000000000000018
+      type: var.get
+      position: [1308, 308]
+      values:
+        variable: k_view_half_height
+    - id: 8170000000000000019
+      type: var.set
+      position: [2130, 0]
+      values:
+        variable: k_view_half_width
+    - id: 8170000000000000020
+      type: call.log.info
+      position: [2408, 0]
+    - id: 8170000000000000021
+      type: text.concat
+      position: [2130, 146]
+      values:
+        A: WorldPlayer created with speed=
+    - id: 8170000000000000022
+      type: var.get
+      position: [1860, 282]
+      values:
+        variable: speed
+    - id: 8170000000000000023
+      type: call.physics.set_gravity_scale
+      position: [2616, 0]
+      values:
+        scale: 0.0
+    - id: 8170000000000000024
+      type: call.gamestate.get
+      position: [2902, 0]
+      values:
+        default: 0
+        key: continue_x
+    - id: 8170000000000000025
+      type: call.gamestate.get
+      position: [3220, 0]
+      values:
+        default: 0
+        key: continue_y
+    - id: 8170000000000000026
+      type: compare.not_equal
+      position: [2902, 172]
+      values:
+        B: 0
+    - id: 8170000000000000027
+      type: compare.not_equal
+      position: [2902, 308]
+      values:
+        B: 0
+    - id: 8170000000000000028
+      type: logic.or
+      position: [3220, 172]
+    - id: 8170000000000000029
+      type: flow.branch
+      position: [3538, 0]
+    - id: 8170000000000000030
+      type: call.physics.set_transform
+      position: [3802, 0]
+      values:
+        rotation_or_z: 0
+        split.rotation: true
+        split.xy: true
+    - id: 8170000000000000031
+      type: call.log.info
+      position: [4120, 0]
+    - id: 8170000000000000032
+      type: text.concat
+      position: [3802, 302]
+      values:
+        A: "Resumed world map at "
+    - id: 8170000000000000033
+      type: text.concat
+      position: [3538, 136]
+    - id: 8170000000000000034
+      type: text.concat
+      position: [3220, 308]
+      values:
+        A: ", "
+    - id: 8170000000000000035
+      type: call.gamestate.remove
+      position: [4438, 0]
+      values:
+        key: continue_x
+    - id: 8170000000000000036
+      type: call.gamestate.remove
+      position: [4716, 0]
+      values:
+        key: continue_y
+    - id: 8170000000000000037
+      type: call.gamestate.remove
+      position: [5034, 0]
+      values:
+        key: continue_z
+    - id: 8170000000000000038
+      type: call.gamestate.remove
+      position: [5312, 0]
+      values:
+        key: continue_scene
+    - id: 8170000000000000039
+      type: call.gamestate.get
+      position: [3802, 484]
+      values:
+        default: 0
+        key: world_return_x
+    - id: 8170000000000000040
+      type: call.gamestate.get
+      position: [4120, 484]
+      values:
+        default: 0
+        key: world_return_y
+    - id: 8170000000000000041
+      type: compare.not_equal
+      position: [3802, 656]
+      values:
+        B: 0
+    - id: 8170000000000000042
+      type: compare.not_equal
+      position: [3802, 792]
+      values:
+        B: 0
+    - id: 8170000000000000043
+      type: logic.or
+      position: [4120, 656]
+    - id: 8170000000000000044
+      type: flow.branch
+      position: [4438, 484]
+    - id: 8170000000000000045
+      type: call.physics.set_transform
+      position: [4716, 484]
+      values:
+        rotation_or_z: 0
+        split.rotation: true
+        split.xy: true
+    - id: 8170000000000000046
+      type: call.log.info
+      position: [5034, 484]
+    - id: 8170000000000000047
+      type: text.concat
+      position: [4716, 786]
+      values:
+        A: "Returned to world after platformer at "
+    - id: 8170000000000000048
+      type: text.concat
+      position: [4438, 620]
+    - id: 8170000000000000049
+      type: text.concat
+      position: [4120, 792]
+      values:
+        A: ", "
+    - id: 8170000000000000050
+      type: call.gamestate.remove
+      position: [5312, 484]
+      values:
+        key: world_return_x
+    - id: 8170000000000000051
+      type: call.gamestate.remove
+      position: [5590, 484]
+      values:
+        key: world_return_y
+    - id: 8170000000000000052
+      type: call.scene.find_entity
+      position: [5590, 0]
+      values:
+        name: Teleporter
+    - id: 8170000000000000053
+      type: var.set
+      position: [5948, 0]
+      values:
+        variable: teleporter_id
+    - id: 8170000000000000054
+      type: call.scene.find_entity
+      position: [5948, 146]
+      values:
+        name: HealthBar
+    - id: 8170000000000000055
+      type: var.set
+      position: [6306, 0]
+      values:
+        variable: health_bar_id
+    - id: 8170000000000000056
+      type: call.ui.find
+      position: [6306, 146]
+      values:
+        name: LevelsText
+    - id: 8170000000000000057
+      type: var.set
+      position: [6664, 0]
+      values:
+        variable: levels_id
+    - id: 8170000000000000058
+      type: call.scene.find_entity
+      position: [6664, 146]
+      values:
+        name: MainCamera
+    - id: 8170000000000000059
+      type: var.set
+      position: [7022, 0]
+      values:
+        variable: camera_id
+    - id: 8170000000000000060
+      type: call.scene.find_entity
+      position: [7022, 146]
+      values:
+        name: WorldTilemap
+    - id: 8170000000000000061
+      type: var.set
+      position: [7380, 0]
+      values:
+        variable: map_id
+    - id: 8170000000000000062
+      type: call.gamestate.set
+      position: [7612, 0]
+      values:
+        key: hub_wading
+        value: false
+    - id: 8170000000000000063
+      type: call.scene.find_entity
+      position: [7612, 172]
+      values:
+        name: PlayerSprite
+    - id: 8170000000000000064
+      type: var.set
+      position: [7970, 0]
+      values:
+        variable: sprite_id
+    - id: 8170000000000000065
+      type: var.get
+      position: [7612, 292]
+      values:
+        variable: sprite_id
+    - id: 8170000000000000066
+      type: compare.not_equal
+      position: [7970, 146]
+      values:
+        B: 0
+    - id: 8170000000000000067
+      type: flow.branch
+      position: [8248, 0]
+    - id: 8170000000000000068
+      type: call.transform.get_scale
+      position: [8248, 136]
+      values:
+        split.scale: true
+    - id: 8170000000000000069
+      type: var.get
+      position: [7970, 282]
+      values:
+        variable: sprite_id
+    - id: 8170000000000000070
+      type: var.set
+      position: [8512, 0]
+      values:
+        variable: sprite_scale
+    - id: 8170000000000000071
+      type: call.gamestate.get
+      position: [8746, 0]
+      values:
+        default: 0
+        key: health
+    - id: 8170000000000000072
+      type: compare.less_equal
+      position: [8746, 172]
+      values:
+        B: 0
+    - id: 8170000000000000073
+      type: flow.branch
+      position: [9064, 0]
+    - id: 8170000000000000074
+      type: call.gamestate.set
+      position: [9328, 0]
+      values:
+        key: health
+        value: 1.0
+    - id: 8170000000000000075
+      type: var.get
+      position: [9064, 136]
+      values:
+        variable: health_bar_id
+    - id: 8170000000000000076
+      type: compare.not_equal
+      position: [9328, 172]
+      values:
+        B: 0
+    - id: 8170000000000000077
+      type: flow.branch
+      position: [9606, 0]
+    - id: 8170000000000000078
+      type: call.ui.set_progress
+      position: [10188, 0]
+    - id: 8170000000000000079
+      type: var.get
+      position: [9870, 0]
+      values:
+        variable: health_bar_id
+    - id: 8170000000000000080
+      type: call.gamestate.get
+      position: [9870, 120]
+      values:
+        default: 1.0
+        key: health
+    - id: 8170000000000000081
+      type: call.ui.transition_fade_in
+      position: [10412, 0]
+      values:
+        duration: 0.4
+    - id: 8170000000000000082
+      type: event.on_update
+      position: [266, 1088]
+    - id: 8170000000000000083
+      type: var.get
+      position: [0, 1088]
+      values:
+        variable: transitioning
+    - id: 8170000000000000084
+      type: call.ui.is_transition_active
+      position: [0, 1208]
+    - id: 8170000000000000085
+      type: logic.or
+      position: [266, 1224]
+    - id: 8170000000000000086
+      type: flow.branch
+      position: [474, 1088]
+    - id: 8170000000000000087
+      type: call.gamestate.get
+      position: [738, 1088]
+      values:
+        default: 0
+        key: board_open
+    - id: 8170000000000000088
+      type: compare.equal
+      position: [738, 1260]
+      values:
+        B: 1
+    - id: 8170000000000000089
+      type: call.gamestate.get
+      position: [1056, 1088]
+      values:
+        default: 0
+        key: dialogue_open
+    - id: 8170000000000000090
+      type: compare.equal
+      position: [738, 1396]
+      values:
+        B: 1
+    - id: 8170000000000000091
+      type: logic.or
+      position: [1056, 1260]
+    - id: 8170000000000000092
+      type: flow.branch
+      position: [1374, 1088]
+    - id: 8170000000000000093
+      type: call.physics.set_velocity
+      position: [1684, 1088]
+      values:
+        split.velocity: true
+        vx: 0
+        vy: 0
+    - id: 8170000000000000094
+      type: call.transform.get_position
+      position: [1684, 1312]
+      values:
+        split.xyz: true
+    - id: 8170000000000000095
+      type: var.set
+      position: [1978, 1088]
+      values:
+        variable: px
+    - id: 8170000000000000096
+      type: var.set
+      position: [2256, 1088]
+      values:
+        variable: py
+    - id: 8170000000000000097
+      type: var.get
+      position: [1684, 1484]
+      values:
+        variable: map_id
+    - id: 8170000000000000098
+      type: compare.not_equal
+      position: [1978, 1234]
+      values:
+        B: 0
+    - id: 8170000000000000099
+      type: var.get
+      position: [1374, 1224]
+      values:
+        variable: WATER_TILES
+    - id: 8170000000000000100
+      type: table.get
+      position: [1684, 1604]
+    - id: 8170000000000000101
+      type: call.isometric.get_cell
+      position: [1374, 1344]
+      values:
+        layer: 0
+        split.cell: true
+    - id: 8170000000000000102
+      type: var.get
+      position: [1056, 1396]
+      values:
+        variable: map_id
+    - id: 8170000000000000103
+      type: math.floor
+      position: [1056, 1516]
+    - id: 8170000000000000104
+      type: var.get
+      position: [738, 1532]
+      values:
+        variable: px
+    - id: 8170000000000000105
+      type: math.floor
+      position: [1056, 1626]
+    - id: 8170000000000000106
+      type: math.negate
+      position: [738, 1652]
+    - id: 8170000000000000107
+      type: var.get
+      position: [474, 1224]
+      values:
+        variable: py
+    - id: 8170000000000000108
+      type: compare.equal
+      position: [1978, 1370]
+      values:
+        B: true
+    - id: 8170000000000000109
+      type: logic.and
+      position: [2256, 1234]
+    - id: 8170000000000000110
+      type: var.set
+      position: [2488, 1088]
+      values:
+        variable: in_water
+    - id: 8170000000000000111
+      type: var.get
+      position: [2256, 1370]
+      values:
+        variable: in_water
+    - id: 8170000000000000112
+      type: var.get
+      position: [2256, 1490]
+      values:
+        variable: wading
+    - id: 8170000000000000113
+      type: compare.not_equal
+      position: [2488, 1234]
+    - id: 8170000000000000114
+      type: flow.branch
+      position: [2720, 1088]
+    - id: 8170000000000000115
+      type: var.get
+      position: [2720, 1224]
+      values:
+        variable: in_water
+    - id: 8170000000000000116
+      type: var.set
+      position: [2984, 1088]
+      values:
+        variable: wading
+    - id: 8170000000000000117
+      type: call.gamestate.set
+      position: [3216, 1088]
+      values:
+        key: hub_wading
+    - id: 8170000000000000118
+      type: var.get
+      position: [2984, 1234]
+      values:
+        variable: wading
+    - id: 8170000000000000119
+      type: var.get
+      position: [2984, 1354]
+      values:
+        variable: wading
+    - id: 8170000000000000120
+      type: logic.select
+      position: [3216, 1260]
+    - id: 8170000000000000121
+      type: math.multiply
+      position: [2984, 1474]
+    - id: 8170000000000000122
+      type: var.get
+      position: [2720, 1344]
+      values:
+        variable: speed
+    - id: 8170000000000000123
+      type: var.get
+      position: [2720, 1464]
+      values:
+        variable: wade_factor
+    - id: 8170000000000000124
+      type: var.get
+      position: [2984, 1610]
+      values:
+        variable: speed
+    - id: 8170000000000000125
+      type: var.set
+      position: [3494, 1088]
+      values:
+        variable: pace
+    - id: 8170000000000000126
+      type: call.input.get_action_vector
+      position: [3494, 1234]
+      values:
+        action: move
+        split.xy: true
+    - id: 8170000000000000127
+      type: var.set
+      position: [3804, 1088]
+      values:
+        variable: dirx
+    - id: 8170000000000000128
+      type: var.set
+      position: [4036, 1088]
+      values:
+        variable: diry
+    - id: 8170000000000000129
+      type: math.multiply
+      position: [4036, 1234]
+    - id: 8170000000000000130
+      type: var.get
+      position: [3804, 1234]
+      values:
+        variable: dirx
+    - id: 8170000000000000131
+      type: var.get
+      position: [3804, 1354]
+      values:
+        variable: pace
+    - id: 8170000000000000132
+      type: math.multiply
+      position: [4268, 1088]
+    - id: 8170000000000000133
+      type: math.negate
+      position: [4036, 1370]
+    - id: 8170000000000000134
+      type: var.get
+      position: [3804, 1474]
+      values:
+        variable: diry
+    - id: 8170000000000000135
+      type: var.get
+      position: [4036, 1480]
+      values:
+        variable: pace
+    - id: 8170000000000000136
+      type: var.set
+      position: [4268, 1224]
+      values:
+        variable: mvx
+    - id: 8170000000000000137
+      type: var.set
+      position: [4500, 1088]
+      values:
+        variable: mvy
+    - id: 8170000000000000138
+      type: call.physics.set_velocity
+      position: [4732, 1088]
+      values:
+        split.velocity: true
+    - id: 8170000000000000139
+      type: var.get
+      position: [4500, 1234]
+      values:
+        variable: mvx
+    - id: 8170000000000000140
+      type: var.get
+      position: [4500, 1354]
+      values:
+        variable: mvy
+    - id: 8170000000000000141
+      type: var.get
+      position: [4500, 1474]
+      values:
+        variable: sprite_id
+    - id: 8170000000000000142
+      type: compare.not_equal
+      position: [4732, 1312]
+      values:
+        B: 0
+    - id: 8170000000000000143
+      type: flow.branch
+      position: [5018, 1088]
+    - id: 8170000000000000144
+      type: var.get
+      position: [4732, 1448]
+      values:
+        variable: mvx
+    - id: 8170000000000000145
+      type: compare.not_equal
+      position: [5018, 1224]
+      values:
+        B: 0
+    - id: 8170000000000000146
+      type: flow.branch
+      position: [5296, 1088]
+    - id: 8170000000000000147
+      type: call.transform.set_scale
+      position: [5568, 1088]
+      values:
+        split.scale: true
+        sz: 1
+    - id: 8170000000000000148
+      type: var.get
+      position: [5296, 1224]
+      values:
+        variable: sprite_id
+    - id: 8170000000000000149
+      type: var.get
+      position: [4732, 1568]
+      values:
+        variable: mvx
+    - id: 8170000000000000150
+      type: compare.less
+      position: [5018, 1360]
+      values:
+        B: 0
+    - id: 8170000000000000151
+      type: logic.select
+      position: [5296, 1344]
+    - id: 8170000000000000152
+      type: math.negate
+      position: [5018, 1496]
+    - id: 8170000000000000153
+      type: var.get
+      position: [4732, 1688]
+      values:
+        variable: sprite_scale
+    - id: 8170000000000000154
+      type: var.get
+      position: [5018, 1606]
+      values:
+        variable: sprite_scale
+    - id: 8170000000000000155
+      type: var.get
+      position: [5296, 1506]
+      values:
+        variable: sprite_scale
+    - id: 8170000000000000156
+      type: var.get
+      position: [5568, 1312]
+      values:
+        variable: frame_idle
+    - id: 8170000000000000157
+      type: var.set
+      position: [5846, 1088]
+      values:
+        variable: frame
+    - id: 8170000000000000158
+      type: var.get
+      position: [5296, 1626]
+      values:
+        variable: mvx
+    - id: 8170000000000000159
+      type: compare.not_equal
+      position: [5568, 1432]
+      values:
+        B: 0
+    - id: 8170000000000000160
+      type: var.get
+      position: [5296, 1746]
+      values:
+        variable: mvy
+    - id: 8170000000000000161
+      type: compare.not_equal
+      position: [5568, 1568]
+      values:
+        B: 0
+    - id: 8170000000000000162
+      type: logic.or
+      position: [5846, 1234]
+    - id: 8170000000000000163
+      type: flow.branch
+      position: [6078, 1088]
+    - id: 8170000000000000164
+      type: math.add
+      position: [6078, 1224]
+    - id: 8170000000000000165
+      type: var.get
+      position: [5846, 1370]
+      values:
+        variable: walk_clock
+    - id: 8170000000000000166
+      type: var.set
+      position: [6342, 1088]
+      values:
+        variable: walk_clock
+    - id: 8170000000000000167
+      type: math.add
+      position: [6342, 1234]
+    - id: 8170000000000000168
+      type: var.get
+      position: [6078, 1360]
+      values:
+        variable: frame_walk
+    - id: 8170000000000000169
+      type: math.modulo
+      position: [6078, 1480]
+    - id: 8170000000000000170
+      type: math.floor
+      position: [5846, 1490]
+    - id: 8170000000000000171
+      type: math.divide
+      position: [5568, 1704]
+    - id: 8170000000000000172
+      type: var.get
+      position: [5296, 1866]
+      values:
+        variable: walk_clock
+    - id: 8170000000000000173
+      type: var.get
+      position: [5018, 1726]
+      values:
+        variable: wading
+    - id: 8170000000000000174
+      type: logic.select
+      position: [5296, 1986]
+    - id: 8170000000000000175
+      type: var.get
+      position: [5018, 1846]
+      values:
+        variable: wade_step_time
+    - id: 8170000000000000176
+      type: var.get
+      position: [5018, 1966]
+      values:
+        variable: step_time
+    - id: 8170000000000000177
+      type: var.get
+      position: [5846, 1600]
+      values:
+        variable: walk_frames
+    - id: 8170000000000000178
+      type: var.set
+      position: [6636, 1088]
+      values:
+        variable: frame
+    - id: 8170000000000000179
+      type: var.set
+      position: [6342, 2344]
+      values:
+        Value: 0
+        variable: walk_clock
+    - id: 8170000000000000180
+      type: var.get
+      position: [6342, 1370]
+      values:
+        variable: frame
+    - id: 8170000000000000181
+      type: var.get
+      position: [6342, 1490]
+      values:
+        variable: shown_frame
+    - id: 8170000000000000182
+      type: compare.not_equal
+      position: [6636, 1234]
+    - id: 8170000000000000183
+      type: flow.branch
+      position: [6868, 1088]
+    - id: 8170000000000000184
+      type: var.get
+      position: [6868, 1224]
+      values:
+        variable: frame
+    - id: 8170000000000000185
+      type: var.set
+      position: [7132, 1088]
+      values:
+        variable: shown_frame
+    - id: 8170000000000000186
+      type: call.isometric.set_sprite_frame
+      position: [7402, 1088]
+    - id: 8170000000000000187
+      type: var.get
+      position: [7132, 1234]
+      values:
+        variable: sprite_id
+    - id: 8170000000000000188
+      type: var.get
+      position: [6868, 1344]
+      values:
+        variable: frame
+    - id: 8170000000000000189
+      type: math.floor
+      position: [7132, 1354]
+    - id: 8170000000000000190
+      type: math.modulo
+      position: [7402, 1260]
+    - id: 8170000000000000191
+      type: math.subtract
+      position: [7132, 1464]
+    - id: 8170000000000000192
+      type: var.get
+      position: [6868, 1464]
+      values:
+        variable: frame
+    - id: 8170000000000000193
+      type: var.get
+      position: [6868, 1584]
+      values:
+        variable: frame_walk
+    - id: 8170000000000000194
+      type: var.get
+      position: [7132, 1600]
+      values:
+        variable: walk_frames
+    - id: 8170000000000000195
+      type: var.set
+      position: [7680, 1088]
+      values:
+        variable: step
+    - id: 8170000000000000196
+      type: var.get
+      position: [6868, 1704]
+      values:
+        variable: frame
+    - id: 8170000000000000197
+      type: var.get
+      position: [6868, 1824]
+      values:
+        variable: frame_walk
+    - id: 8170000000000000198
+      type: compare.greater_equal
+      position: [7132, 1720]
+    - id: 8170000000000000199
+      type: var.get
+      position: [6868, 1944]
+      values:
+        variable: step
+    - id: 8170000000000000200
+      type: var.get
+      position: [6868, 2064]
+      values:
+        variable: shown_step
+    - id: 8170000000000000201
+      type: compare.not_equal
+      position: [7132, 1856]
+    - id: 8170000000000000202
+      type: logic.and
+      position: [7402, 1396]
+    - id: 8170000000000000203
+      type: math.modulo
+      position: [7132, 1992]
+      values:
+        B: 2
+    - id: 8170000000000000204
+      type: var.get
+      position: [6868, 2184]
+      values:
+        variable: step
+    - id: 8170000000000000205
+      type: compare.equal
+      position: [7402, 1532]
+      values:
+        B: 0
+    - id: 8170000000000000206
+      type: logic.and
+      position: [7680, 1234]
+    - id: 8170000000000000207
+      type: flow.branch
+      position: [7912, 1088]
+    - id: 8170000000000000208
+      type: call.sound.play
+      position: [8184, 1088]
+    - id: 8170000000000000209
+      type: var.get
+      position: [7680, 1370]
+      values:
+        variable: wading
+    - id: 8170000000000000210
+      type: logic.select
+      position: [7912, 1224]
+    - id: 8170000000000000211
+      type: var.get
+      position: [7680, 1490]
+      values:
+        variable: WADE_SOUND
+    - id: 8170000000000000212
+      type: var.get
+      position: [7680, 1610]
+      values:
+        variable: STEP_SOUND
+    - id: 8170000000000000213
+      type: var.get
+      position: [7680, 1730]
+      values:
+        variable: frame
+    - id: 8170000000000000214
+      type: var.get
+      position: [7680, 1850]
+      values:
+        variable: frame_walk
+    - id: 8170000000000000215
+      type: compare.greater_equal
+      position: [7912, 1386]
+    - id: 8170000000000000216
+      type: logic.select
+      position: [8184, 1234]
+      values:
+        False: -1
+    - id: 8170000000000000217
+      type: var.get
+      position: [7912, 1522]
+      values:
+        variable: step
+    - id: 8170000000000000218
+      type: var.set
+      position: [8494, 1088]
+      values:
+        variable: shown_step
+    - id: 8170000000000000219
+      type: var.get
+      position: [8184, 1396]
+      values:
+        variable: camera_id
+    - id: 8170000000000000220
+      type: compare.not_equal
+      position: [8494, 1234]
+      values:
+        B: 0
+    - id: 8170000000000000221
+      type: flow.branch
+      position: [8772, 1088]
+    - id: 8170000000000000222
+      type: call.transform.get_position
+      position: [8772, 1224]
+      values:
+        split.xyz: true
+    - id: 8170000000000000223
+      type: var.set
+      position: [9066, 1088]
+      values:
+        variable: px
+    - id: 8170000000000000224
+      type: var.set
+      position: [9348, 1088]
+      values:
+        variable: py
+    - id: 8170000000000000225
+      type: call.transform.get_position
+      position: [9348, 1234]
+      values:
+        split.xyz: true
+    - id: 8170000000000000226
+      type: var.get
+      position: [9066, 1234]
+      values:
+        variable: camera_id
+    - id: 8170000000000000227
+      type: var.set
+      position: [9622, 1088]
+      values:
+        variable: cz
+    - id: 8170000000000000228
+      type: var.get
+      position: [9348, 1406]
+      values:
+        variable: k_view_half_width
+    - id: 8170000000000000229
+      type: math.max
+      position: [9622, 1234]
+    - id: 8170000000000000230
+      type: math.subtract
+      position: [9066, 1354]
+    - id: 8170000000000000231
+      type: var.get
+      position: [8772, 1396]
+      values:
+        variable: k_map_width
+    - id: 8170000000000000232
+      type: var.get
+      position: [8772, 1516]
+      values:
+        variable: k_view_half_width
+    - id: 8170000000000000233
+      type: math.min
+      position: [9348, 1526]
+    - id: 8170000000000000234
+      type: var.get
+      position: [9066, 1490]
+      values:
+        variable: px
+    - id: 8170000000000000235
+      type: var.set
+      position: [9854, 1088]
+      values:
+        variable: cx
+    - id: 8170000000000000236
+      type: math.negate
+      position: [9622, 1370]
+    - id: 8170000000000000237
+      type: math.subtract
+      position: [9348, 1662]
+    - id: 8170000000000000238
+      type: var.get
+      position: [9066, 1610]
+      values:
+        variable: k_map_height
+    - id: 8170000000000000239
+      type: var.get
+      position: [9066, 1730]
+      values:
+        variable: k_view_half_height
+    - id: 8170000000000000240
+      type: math.max
+      position: [9854, 1234]
+    - id: 8170000000000000241
+      type: math.negate
+      position: [9348, 1798]
+    - id: 8170000000000000242
+      type: var.get
+      position: [9066, 1850]
+      values:
+        variable: k_view_half_height
+    - id: 8170000000000000243
+      type: math.min
+      position: [9622, 1480]
+    - id: 8170000000000000244
+      type: var.get
+      position: [9348, 1908]
+      values:
+        variable: py
+    - id: 8170000000000000245
+      type: var.set
+      position: [10086, 1088]
+      values:
+        variable: cy
+    - id: 8170000000000000246
+      type: call.transform.set_position
+      position: [10328, 1088]
+      values:
+        split.xyz: true
+    - id: 8170000000000000247
+      type: var.get
+      position: [10086, 1234]
+      values:
+        variable: camera_id
+    - id: 8170000000000000248
+      type: var.get
+      position: [10086, 1354]
+      values:
+        variable: cx
+    - id: 8170000000000000249
+      type: var.get
+      position: [10086, 1474]
+      values:
+        variable: cy
+    - id: 8170000000000000250
+      type: var.get
+      position: [10086, 1594]
+      values:
+        variable: cz
+    - id: 8170000000000000251
+      type: var.get
+      position: [10086, 1714]
+      values:
+        variable: health_bar_id
+    - id: 8170000000000000252
+      type: compare.not_equal
+      position: [10328, 1312]
+      values:
+        B: 0
+    - id: 8170000000000000253
+      type: flow.branch
+      position: [10606, 1088]
+    - id: 8170000000000000254
+      type: call.ui.set_progress
+      position: [11188, 1088]
+    - id: 8170000000000000255
+      type: var.get
+      position: [10870, 1088]
+      values:
+        variable: health_bar_id
+    - id: 8170000000000000256
+      type: call.gamestate.get
+      position: [10870, 1208]
+      values:
+        default: 1.0
+        key: health
+    - id: 8170000000000000257
+      type: var.set
+      position: [11412, 1088]
+      values:
+        Value: 0
+        variable: done
+    - id: 8170000000000000258
+      type: var.get
+      position: [11412, 1234]
+      values:
+        variable: LEVELS
+    - id: 8170000000000000259
+      type: flow.for_each
+      position: [11706, 1088]
+    - id: 8170000000000000260
+      type: math.add
+      position: [12016, 2530]
+    - id: 8170000000000000261
+      type: var.get
+      position: [11706, 2530]
+      values:
+        variable: done
+    - id: 8170000000000000262
+      type: call.gamestate.get
+      position: [12016, 2666]
+      values:
+        default: 0
+    - id: 8170000000000000263
+      type: text.concat
+      position: [11706, 2650]
+      values:
+        A: level_
+    - id: 8170000000000000264
+      type: text.concat
+      position: [11412, 2530]
+      values:
+        B: _done
+    - id: 8170000000000000265
+      type: compare.greater
+      position: [11412, 2666]
+      values:
+        B: 0
+    - id: 8170000000000000266
+      type: logic.select
+      position: [11706, 2786]
+      values:
+        False: 0
+        True: 1
+    - id: 8170000000000000267
+      type: var.set
+      position: [12334, 2530]
+      values:
+        variable: done
+    - id: 8170000000000000268
+      type: var.get
+      position: [11412, 1354]
+      values:
+        variable: done
+    - id: 8170000000000000269
+      type: var.get
+      position: [11412, 1474]
+      values:
+        variable: shown_levels
+    - id: 8170000000000000270
+      type: compare.not_equal
+      position: [11706, 1276]
+    - id: 8170000000000000271
+      type: flow.branch
+      position: [12016, 1088]
+    - id: 8170000000000000272
+      type: var.get
+      position: [12016, 1224]
+      values:
+        variable: done
+    - id: 8170000000000000273
+      type: var.set
+      position: [12334, 1088]
+      values:
+        variable: shown_levels
+    - id: 8170000000000000274
+      type: call.gamestate.set
+      position: [12568, 1088]
+      values:
+        key: levels_done
+    - id: 8170000000000000275
+      type: var.get
+      position: [12334, 1234]
+      values:
+        variable: done
+    - id: 8170000000000000276
+      type: call.ui.set_text
+      position: [12846, 1088]
+    - id: 8170000000000000277
+      type: var.get
+      position: [12568, 1260]
+      values:
+        variable: levels_id
+    - id: 8170000000000000278
+      type: text.concat
+      position: [12568, 1380]
+      values:
+        A: "Places done: "
+    - id: 8170000000000000279
+      type: text.concat
+      position: [12334, 1354]
+    - id: 8170000000000000280
+      type: var.get
+      position: [12016, 1344]
+      values:
+        variable: done
+    - id: 8170000000000000281
+      type: text.concat
+      position: [12016, 1464]
+      values:
+        A: " / "
+    - id: 8170000000000000282
+      type: var.get
+      position: [11412, 1594]
+      values:
+        variable: LEVELS
+    - id: 8170000000000000283
+      type: table.length
+      position: [11706, 1412]
+    - id: 8170000000000000284
+      type: var.get
+      position: [12568, 1516]
+      values:
+        variable: done
+    - id: 8170000000000000285
+      type: var.get
+      position: [12334, 1490]
+      values:
+        variable: LEVELS
+    - id: 8170000000000000286
+      type: table.length
+      position: [12568, 1636]
+    - id: 8170000000000000287
+      type: compare.greater_equal
+      position: [12846, 1260]
+    - id: 8170000000000000288
+      type: var.set
+      position: [13088, 1088]
+      values:
+        variable: all_done
+    - id: 8170000000000000289
+      type: var.get
+      position: [12846, 1396]
+      values:
+        variable: teleporter_id
+    - id: 8170000000000000290
+      type: compare.not_equal
+      position: [13088, 1234]
+      values:
+        B: 0
+    - id: 8170000000000000291
+      type: flow.branch
+      position: [13370, 1088]
+    - id: 8170000000000000292
+      type: call.ui.set_visible
+      position: [13634, 1088]
+    - id: 8170000000000000293
+      type: var.get
+      position: [13370, 1224]
+      values:
+        variable: teleporter_id
+    - id: 8170000000000000294
+      type: var.get
+      position: [13370, 1344]
+      values:
+        variable: all_done
+    - id: 8170000000000000295
+      type: var.get
+      position: [13370, 1464]
+      values:
+        variable: all_done
+    - id: 8170000000000000296
+      type: var.get
+      position: [13088, 1370]
+      values:
+        variable: teleporter_visible
+    - id: 8170000000000000297
+      type: logic.not
+      position: [13370, 1584]
+    - id: 8170000000000000298
+      type: logic.and
+      position: [13634, 1260]
+    - id: 8170000000000000299
+      type: flow.branch
+      position: [13858, 1088]
+    - id: 8170000000000000300
+      type: call.log.info
+      position: [14122, 1088]
+      values:
+        message: All levels completed - the victory portal has appeared!
+    - id: 8170000000000000301
+      type: call.sound.play
+      position: [14432, 1088]
+      values:
+        asset_path: sounds/hub/portal_wake.wav
+    - id: 8170000000000000302
+      type: var.get
+      position: [14432, 1234]
+      values:
+        variable: all_done
+    - id: 8170000000000000303
+      type: var.set
+      position: [14814, 1088]
+      values:
+        variable: teleporter_visible
+    - id: 8170000000000000304
+      type: math.subtract
+      position: [15096, 1088]
+    - id: 8170000000000000305
+      type: call.gamestate.get
+      position: [15096, 1224]
+      values:
+        default: 0
+        key: board_frame
+    - id: 8170000000000000306
+      type: call.gamestate.get
+      position: [15414, 1088]
+      values:
+        default: -100
+        key: board_closed_frame
+    - id: 8170000000000000307
+      type: compare.less_equal
+      position: [15414, 1260]
+      values:
+        B: 1
+    - id: 8170000000000000308
+      type: var.set
+      position: [15772, 1088]
+      values:
+        variable: closing
+    - id: 8170000000000000309
+      type: call.input.is_action_just_pressed
+      position: [15414, 1396]
+      values:
+        action: pause
+    - id: 8170000000000000310
+      type: var.get
+      position: [15096, 1396]
+      values:
+        variable: closing
+    - id: 8170000000000000311
+      type: logic.not
+      position: [15414, 1516]
+    - id: 8170000000000000312
+      type: logic.and
+      position: [15772, 1234]
+    - id: 8170000000000000313
+      type: flow.branch
+      position: [16004, 1088]
+    - id: 8170000000000000314
+      type: call.transform.get_position
+      position: [16004, 1224]
+      values:
+        split.xyz: true
+    - id: 8170000000000000315
+      type: var.set
+      position: [16298, 1088]
+      values:
+        variable: px
+    - id: 8170000000000000316
+      type: var.set
+      position: [16530, 1088]
+      values:
+        variable: py
+    - id: 8170000000000000317
+      type: var.set
+      position: [16762, 1088]
+      values:
+        variable: pz
+    - id: 8170000000000000318
+      type: call.gamestate.set
+      position: [16994, 1088]
+      values:
+        key: continue_scene
+        value: scenes/world_map.owl
+    - id: 8170000000000000319
+      type: call.gamestate.set
+      position: [17272, 1088]
+      values:
+        key: continue_x
+    - id: 8170000000000000320
+      type: var.get
+      position: [16994, 1260]
+      values:
+        variable: px
+    - id: 8170000000000000321
+      type: call.gamestate.set
+      position: [17550, 1088]
+      values:
+        key: continue_y
+    - id: 8170000000000000322
+      type: var.get
+      position: [17272, 1260]
+      values:
+        variable: py
+    - id: 8170000000000000323
+      type: call.gamestate.set
+      position: [17828, 1088]
+      values:
+        key: continue_z
+    - id: 8170000000000000324
+      type: var.get
+      position: [17550, 1260]
+      values:
+        variable: pz
+    - id: 8170000000000000325
+      type: call.gamestate.set
+      position: [18106, 1088]
+      values:
+        key: has_continue
+        value: true
+    - id: 8170000000000000326
+      type: call.log.info
+      position: [18384, 1088]
+      values:
+        message: "ESC: pausing — saved world position for Continue."
+    - id: 8170000000000000327
+      type: var.set
+      position: [18694, 1088]
+      values:
+        Value: true
+        variable: transitioning
+    - id: 8170000000000000328
+      type: call.scene.transition_to
+      position: [18950, 1088]
+      values:
+        duration: 0.3
+        kind: fade_out
+        scene_path: scenes/main_menu.owl
+        split.rgba: true
+    - id: 8170000000000000329
+      type: event.on_destroy
+      position: [0, 3108]
+    - id: 8170000000000000330
+      type: call.log.trace
+      position: [200, 3108]
+      values:
+        message: WorldPlayer destroyed
+  links:
+    - {from: 8170000000000000002, fromPin: Result, to: 8170000000000000003, toPin: Value}
+    - {from: 8170000000000000001, fromPin: Then, to: 8170000000000000003, toPin: Exec}
+    - {from: 8170000000000000004, fromPin: Result, to: 8170000000000000005, toPin: Value}
+    - {from: 8170000000000000003, fromPin: Then, to: 8170000000000000005, toPin: Exec}
+    - {from: 8170000000000000006, fromPin: Value, to: 8170000000000000007, toPin: Table}
+    - {from: 8170000000000000005, fromPin: Then, to: 8170000000000000007, toPin: Exec}
+    - {from: 8170000000000000008, fromPin: Value, to: 8170000000000000009, toPin: Table}
+    - {from: 8170000000000000007, fromPin: Then, to: 8170000000000000009, toPin: Exec}
+    - {from: 8170000000000000010, fromPin: Value, to: 8170000000000000011, toPin: Table}
+    - {from: 8170000000000000009, fromPin: Then, to: 8170000000000000011, toPin: Exec}
+    - {from: 8170000000000000012, fromPin: Value, to: 8170000000000000013, toPin: Table}
+    - {from: 8170000000000000011, fromPin: Then, to: 8170000000000000013, toPin: Exec}
+    - {from: 8170000000000000014, fromPin: Value, to: 8170000000000000015, toPin: Value}
+    - {from: 8170000000000000013, fromPin: Then, to: 8170000000000000015, toPin: Exec}
+    - {from: 8170000000000000018, fromPin: Value, to: 8170000000000000017, toPin: A}
+    - {from: 8170000000000000017, fromPin: Result, to: 8170000000000000016, toPin: A}
+    - {from: 8170000000000000016, fromPin: Result, to: 8170000000000000019, toPin: Value}
+    - {from: 8170000000000000015, fromPin: Then, to: 8170000000000000019, toPin: Exec}
+    - {from: 8170000000000000022, fromPin: Value, to: 8170000000000000021, toPin: B}
+    - {from: 8170000000000000021, fromPin: Result, to: 8170000000000000020, toPin: message}
+    - {from: 8170000000000000019, fromPin: Then, to: 8170000000000000020, toPin: Exec}
+    - {from: 8170000000000000020, fromPin: Then, to: 8170000000000000023, toPin: Exec}
+    - {from: 8170000000000000023, fromPin: Then, to: 8170000000000000024, toPin: Exec}
+    - {from: 8170000000000000024, fromPin: Then, to: 8170000000000000025, toPin: Exec}
+    - {from: 8170000000000000024, fromPin: value, to: 8170000000000000026, toPin: A}
+    - {from: 8170000000000000025, fromPin: value, to: 8170000000000000027, toPin: A}
+    - {from: 8170000000000000026, fromPin: Result, to: 8170000000000000028, toPin: A}
+    - {from: 8170000000000000027, fromPin: Result, to: 8170000000000000028, toPin: B}
+    - {from: 8170000000000000028, fromPin: Result, to: 8170000000000000029, toPin: Condition}
+    - {from: 8170000000000000025, fromPin: Then, to: 8170000000000000029, toPin: Exec}
+    - {from: 8170000000000000024, fromPin: value, to: 8170000000000000030, toPin: x}
+    - {from: 8170000000000000025, fromPin: value, to: 8170000000000000030, toPin: y}
+    - {from: 8170000000000000029, fromPin: True, to: 8170000000000000030, toPin: Exec}
+    - {from: 8170000000000000024, fromPin: value, to: 8170000000000000033, toPin: A}
+    - {from: 8170000000000000025, fromPin: value, to: 8170000000000000034, toPin: B}
+    - {from: 8170000000000000034, fromPin: Result, to: 8170000000000000033, toPin: B}
+    - {from: 8170000000000000033, fromPin: Result, to: 8170000000000000032, toPin: B}
+    - {from: 8170000000000000032, fromPin: Result, to: 8170000000000000031, toPin: message}
+    - {from: 8170000000000000030, fromPin: Then, to: 8170000000000000031, toPin: Exec}
+    - {from: 8170000000000000031, fromPin: Then, to: 8170000000000000035, toPin: Exec}
+    - {from: 8170000000000000035, fromPin: Then, to: 8170000000000000036, toPin: Exec}
+    - {from: 8170000000000000036, fromPin: Then, to: 8170000000000000037, toPin: Exec}
+    - {from: 8170000000000000037, fromPin: Then, to: 8170000000000000038, toPin: Exec}
+    - {from: 8170000000000000029, fromPin: False, to: 8170000000000000039, toPin: Exec}
+    - {from: 8170000000000000039, fromPin: Then, to: 8170000000000000040, toPin: Exec}
+    - {from: 8170000000000000039, fromPin: value, to: 8170000000000000041, toPin: A}
+    - {from: 8170000000000000040, fromPin: value, to: 8170000000000000042, toPin: A}
+    - {from: 8170000000000000041, fromPin: Result, to: 8170000000000000043, toPin: A}
+    - {from: 8170000000000000042, fromPin: Result, to: 8170000000000000043, toPin: B}
+    - {from: 8170000000000000043, fromPin: Result, to: 8170000000000000044, toPin: Condition}
+    - {from: 8170000000000000040, fromPin: Then, to: 8170000000000000044, toPin: Exec}
+    - {from: 8170000000000000039, fromPin: value, to: 8170000000000000045, toPin: x}
+    - {from: 8170000000000000040, fromPin: value, to: 8170000000000000045, toPin: y}
+    - {from: 8170000000000000044, fromPin: True, to: 8170000000000000045, toPin: Exec}
+    - {from: 8170000000000000039, fromPin: value, to: 8170000000000000048, toPin: A}
+    - {from: 8170000000000000040, fromPin: value, to: 8170000000000000049, toPin: B}
+    - {from: 8170000000000000049, fromPin: Result, to: 8170000000000000048, toPin: B}
+    - {from: 8170000000000000048, fromPin: Result, to: 8170000000000000047, toPin: B}
+    - {from: 8170000000000000047, fromPin: Result, to: 8170000000000000046, toPin: message}
+    - {from: 8170000000000000045, fromPin: Then, to: 8170000000000000046, toPin: Exec}
+    - {from: 8170000000000000046, fromPin: Then, to: 8170000000000000050, toPin: Exec}
+    - {from: 8170000000000000050, fromPin: Then, to: 8170000000000000051, toPin: Exec}
+    - {from: 8170000000000000052, fromPin: entity_id, to: 8170000000000000053, toPin: Value}
+    - {from: 8170000000000000038, fromPin: Then, to: 8170000000000000053, toPin: Exec}
+    - {from: 8170000000000000051, fromPin: Then, to: 8170000000000000053, toPin: Exec}
+    - {from: 8170000000000000044, fromPin: False, to: 8170000000000000053, toPin: Exec}
+    - {from: 8170000000000000054, fromPin: entity_id, to: 8170000000000000055, toPin: Value}
+    - {from: 8170000000000000053, fromPin: Then, to: 8170000000000000055, toPin: Exec}
+    - {from: 8170000000000000056, fromPin: entity_id, to: 8170000000000000057, toPin: Value}
+    - {from: 8170000000000000055, fromPin: Then, to: 8170000000000000057, toPin: Exec}
+    - {from: 8170000000000000058, fromPin: entity_id, to: 8170000000000000059, toPin: Value}
+    - {from: 8170000000000000057, fromPin: Then, to: 8170000000000000059, toPin: Exec}
+    - {from: 8170000000000000060, fromPin: entity_id, to: 8170000000000000061, toPin: Value}
+    - {from: 8170000000000000059, fromPin: Then, to: 8170000000000000061, toPin: Exec}
+    - {from: 8170000000000000061, fromPin: Then, to: 8170000000000000062, toPin: Exec}
+    - {from: 8170000000000000063, fromPin: entity_id, to: 8170000000000000064, toPin: Value}
+    - {from: 8170000000000000062, fromPin: Then, to: 8170000000000000064, toPin: Exec}
+    - {from: 8170000000000000065, fromPin: Value, to: 8170000000000000066, toPin: A}
+    - {from: 8170000000000000066, fromPin: Result, to: 8170000000000000067, toPin: Condition}
+    - {from: 8170000000000000064, fromPin: Then, to: 8170000000000000067, toPin: Exec}
+    - {from: 8170000000000000069, fromPin: Value, to: 8170000000000000068, toPin: entity_id}
+    - {from: 8170000000000000068, fromPin: sx, to: 8170000000000000070, toPin: Value}
+    - {from: 8170000000000000067, fromPin: True, to: 8170000000000000070, toPin: Exec}
+    - {from: 8170000000000000070, fromPin: Then, to: 8170000000000000071, toPin: Exec}
+    - {from: 8170000000000000067, fromPin: False, to: 8170000000000000071, toPin: Exec}
+    - {from: 8170000000000000071, fromPin: value, to: 8170000000000000072, toPin: A}
+    - {from: 8170000000000000072, fromPin: Result, to: 8170000000000000073, toPin: Condition}
+    - {from: 8170000000000000071, fromPin: Then, to: 8170000000000000073, toPin: Exec}
+    - {from: 8170000000000000073, fromPin: True, to: 8170000000000000074, toPin: Exec}
+    - {from: 8170000000000000075, fromPin: Value, to: 8170000000000000076, toPin: A}
+    - {from: 8170000000000000076, fromPin: Result, to: 8170000000000000077, toPin: Condition}
+    - {from: 8170000000000000074, fromPin: Then, to: 8170000000000000077, toPin: Exec}
+    - {from: 8170000000000000073, fromPin: False, to: 8170000000000000077, toPin: Exec}
+    - {from: 8170000000000000077, fromPin: True, to: 8170000000000000080, toPin: Exec}
+    - {from: 8170000000000000079, fromPin: Value, to: 8170000000000000078, toPin: entity_id}
+    - {from: 8170000000000000080, fromPin: value, to: 8170000000000000078, toPin: value}
+    - {from: 8170000000000000080, fromPin: Then, to: 8170000000000000078, toPin: Exec}
+    - {from: 8170000000000000078, fromPin: Then, to: 8170000000000000081, toPin: Exec}
+    - {from: 8170000000000000077, fromPin: False, to: 8170000000000000081, toPin: Exec}
+    - {from: 8170000000000000083, fromPin: Value, to: 8170000000000000085, toPin: A}
+    - {from: 8170000000000000084, fromPin: active, to: 8170000000000000085, toPin: B}
+    - {from: 8170000000000000085, fromPin: Result, to: 8170000000000000086, toPin: Condition}
+    - {from: 8170000000000000082, fromPin: Then, to: 8170000000000000086, toPin: Exec}
+    - {from: 8170000000000000086, fromPin: False, to: 8170000000000000087, toPin: Exec}
+    - {from: 8170000000000000087, fromPin: value, to: 8170000000000000088, toPin: A}
+    - {from: 8170000000000000087, fromPin: Then, to: 8170000000000000089, toPin: Exec}
+    - {from: 8170000000000000089, fromPin: value, to: 8170000000000000090, toPin: A}
+    - {from: 8170000000000000088, fromPin: Result, to: 8170000000000000091, toPin: A}
+    - {from: 8170000000000000090, fromPin: Result, to: 8170000000000000091, toPin: B}
+    - {from: 8170000000000000091, fromPin: Result, to: 8170000000000000092, toPin: Condition}
+    - {from: 8170000000000000089, fromPin: Then, to: 8170000000000000092, toPin: Exec}
+    - {from: 8170000000000000092, fromPin: True, to: 8170000000000000093, toPin: Exec}
+    - {from: 8170000000000000094, fromPin: x, to: 8170000000000000095, toPin: Value}
+    - {from: 8170000000000000092, fromPin: False, to: 8170000000000000095, toPin: Exec}
+    - {from: 8170000000000000094, fromPin: y, to: 8170000000000000096, toPin: Value}
+    - {from: 8170000000000000095, fromPin: Then, to: 8170000000000000096, toPin: Exec}
+    - {from: 8170000000000000097, fromPin: Value, to: 8170000000000000098, toPin: A}
+    - {from: 8170000000000000099, fromPin: Value, to: 8170000000000000100, toPin: Table}
+    - {from: 8170000000000000104, fromPin: Value, to: 8170000000000000103, toPin: A}
+    - {from: 8170000000000000107, fromPin: Value, to: 8170000000000000106, toPin: A}
+    - {from: 8170000000000000106, fromPin: Result, to: 8170000000000000105, toPin: A}
+    - {from: 8170000000000000102, fromPin: Value, to: 8170000000000000101, toPin: entity_id}
+    - {from: 8170000000000000103, fromPin: Result, to: 8170000000000000101, toPin: cell_x}
+    - {from: 8170000000000000105, fromPin: Result, to: 8170000000000000101, toPin: cell_y}
+    - {from: 8170000000000000101, fromPin: terrain, to: 8170000000000000100, toPin: Key}
+    - {from: 8170000000000000100, fromPin: Result, to: 8170000000000000108, toPin: A}
+    - {from: 8170000000000000098, fromPin: Result, to: 8170000000000000109, toPin: A}
+    - {from: 8170000000000000108, fromPin: Result, to: 8170000000000000109, toPin: B}
+    - {from: 8170000000000000109, fromPin: Result, to: 8170000000000000110, toPin: Value}
+    - {from: 8170000000000000096, fromPin: Then, to: 8170000000000000110, toPin: Exec}
+    - {from: 8170000000000000111, fromPin: Value, to: 8170000000000000113, toPin: A}
+    - {from: 8170000000000000112, fromPin: Value, to: 8170000000000000113, toPin: B}
+    - {from: 8170000000000000113, fromPin: Result, to: 8170000000000000114, toPin: Condition}
+    - {from: 8170000000000000110, fromPin: Then, to: 8170000000000000114, toPin: Exec}
+    - {from: 8170000000000000115, fromPin: Value, to: 8170000000000000116, toPin: Value}
+    - {from: 8170000000000000114, fromPin: True, to: 8170000000000000116, toPin: Exec}
+    - {from: 8170000000000000118, fromPin: Value, to: 8170000000000000117, toPin: value}
+    - {from: 8170000000000000116, fromPin: Then, to: 8170000000000000117, toPin: Exec}
+    - {from: 8170000000000000119, fromPin: Value, to: 8170000000000000120, toPin: Condition}
+    - {from: 8170000000000000122, fromPin: Value, to: 8170000000000000121, toPin: A}
+    - {from: 8170000000000000123, fromPin: Value, to: 8170000000000000121, toPin: B}
+    - {from: 8170000000000000121, fromPin: Result, to: 8170000000000000120, toPin: True}
+    - {from: 8170000000000000124, fromPin: Value, to: 8170000000000000120, toPin: False}
+    - {from: 8170000000000000120, fromPin: Result, to: 8170000000000000125, toPin: Value}
+    - {from: 8170000000000000117, fromPin: Then, to: 8170000000000000125, toPin: Exec}
+    - {from: 8170000000000000114, fromPin: False, to: 8170000000000000125, toPin: Exec}
+    - {from: 8170000000000000126, fromPin: x, to: 8170000000000000127, toPin: Value}
+    - {from: 8170000000000000125, fromPin: Then, to: 8170000000000000127, toPin: Exec}
+    - {from: 8170000000000000126, fromPin: y, to: 8170000000000000128, toPin: Value}
+    - {from: 8170000000000000127, fromPin: Then, to: 8170000000000000128, toPin: Exec}
+    - {from: 8170000000000000130, fromPin: Value, to: 8170000000000000129, toPin: A}
+    - {from: 8170000000000000131, fromPin: Value, to: 8170000000000000129, toPin: B}
+    - {from: 8170000000000000134, fromPin: Value, to: 8170000000000000133, toPin: A}
+    - {from: 8170000000000000133, fromPin: Result, to: 8170000000000000132, toPin: A}
+    - {from: 8170000000000000135, fromPin: Value, to: 8170000000000000132, toPin: B}
+    - {from: 8170000000000000129, fromPin: Result, to: 8170000000000000136, toPin: Value}
+    - {from: 8170000000000000128, fromPin: Then, to: 8170000000000000136, toPin: Exec}
+    - {from: 8170000000000000132, fromPin: Result, to: 8170000000000000137, toPin: Value}
+    - {from: 8170000000000000136, fromPin: Then, to: 8170000000000000137, toPin: Exec}
+    - {from: 8170000000000000139, fromPin: Value, to: 8170000000000000138, toPin: vx}
+    - {from: 8170000000000000140, fromPin: Value, to: 8170000000000000138, toPin: vy}
+    - {from: 8170000000000000137, fromPin: Then, to: 8170000000000000138, toPin: Exec}
+    - {from: 8170000000000000141, fromPin: Value, to: 8170000000000000142, toPin: A}
+    - {from: 8170000000000000142, fromPin: Result, to: 8170000000000000143, toPin: Condition}
+    - {from: 8170000000000000138, fromPin: Then, to: 8170000000000000143, toPin: Exec}
+    - {from: 8170000000000000144, fromPin: Value, to: 8170000000000000145, toPin: A}
+    - {from: 8170000000000000145, fromPin: Result, to: 8170000000000000146, toPin: Condition}
+    - {from: 8170000000000000143, fromPin: True, to: 8170000000000000146, toPin: Exec}
+    - {from: 8170000000000000149, fromPin: Value, to: 8170000000000000150, toPin: A}
+    - {from: 8170000000000000150, fromPin: Result, to: 8170000000000000151, toPin: Condition}
+    - {from: 8170000000000000153, fromPin: Value, to: 8170000000000000152, toPin: A}
+    - {from: 8170000000000000152, fromPin: Result, to: 8170000000000000151, toPin: True}
+    - {from: 8170000000000000154, fromPin: Value, to: 8170000000000000151, toPin: False}
+    - {from: 8170000000000000148, fromPin: Value, to: 8170000000000000147, toPin: entity_id}
+    - {from: 8170000000000000151, fromPin: Result, to: 8170000000000000147, toPin: sx}
+    - {from: 8170000000000000155, fromPin: Value, to: 8170000000000000147, toPin: sy}
+    - {from: 8170000000000000146, fromPin: True, to: 8170000000000000147, toPin: Exec}
+    - {from: 8170000000000000156, fromPin: Value, to: 8170000000000000157, toPin: Value}
+    - {from: 8170000000000000147, fromPin: Then, to: 8170000000000000157, toPin: Exec}
+    - {from: 8170000000000000146, fromPin: False, to: 8170000000000000157, toPin: Exec}
+    - {from: 8170000000000000158, fromPin: Value, to: 8170000000000000159, toPin: A}
+    - {from: 8170000000000000160, fromPin: Value, to: 8170000000000000161, toPin: A}
+    - {from: 8170000000000000159, fromPin: Result, to: 8170000000000000162, toPin: A}
+    - {from: 8170000000000000161, fromPin: Result, to: 8170000000000000162, toPin: B}
+    - {from: 8170000000000000162, fromPin: Result, to: 8170000000000000163, toPin: Condition}
+    - {from: 8170000000000000157, fromPin: Then, to: 8170000000000000163, toPin: Exec}
+    - {from: 8170000000000000165, fromPin: Value, to: 8170000000000000164, toPin: A}
+    - {from: 8170000000000000082, fromPin: dt, to: 8170000000000000164, toPin: B}
+    - {from: 8170000000000000164, fromPin: Result, to: 8170000000000000166, toPin: Value}
+    - {from: 8170000000000000163, fromPin: True, to: 8170000000000000166, toPin: Exec}
+    - {from: 8170000000000000168, fromPin: Value, to: 8170000000000000167, toPin: A}
+    - {from: 8170000000000000172, fromPin: Value, to: 8170000000000000171, toPin: A}
+    - {from: 8170000000000000173, fromPin: Value, to: 8170000000000000174, toPin: Condition}
+    - {from: 8170000000000000175, fromPin: Value, to: 8170000000000000174, toPin: True}
+    - {from: 8170000000000000176, fromPin: Value, to: 8170000000000000174, toPin: False}
+    - {from: 8170000000000000174, fromPin: Result, to: 8170000000000000171, toPin: B}
+    - {from: 8170000000000000171, fromPin: Result, to: 8170000000000000170, toPin: A}
+    - {from: 8170000000000000170, fromPin: Result, to: 8170000000000000169, toPin: A}
+    - {from: 8170000000000000177, fromPin: Value, to: 8170000000000000169, toPin: B}
+    - {from: 8170000000000000169, fromPin: Result, to: 8170000000000000167, toPin: B}
+    - {from: 8170000000000000167, fromPin: Result, to: 8170000000000000178, toPin: Value}
+    - {from: 8170000000000000166, fromPin: Then, to: 8170000000000000178, toPin: Exec}
+    - {from: 8170000000000000163, fromPin: False, to: 8170000000000000179, toPin: Exec}
+    - {from: 8170000000000000180, fromPin: Value, to: 8170000000000000182, toPin: A}
+    - {from: 8170000000000000181, fromPin: Value, to: 8170000000000000182, toPin: B}
+    - {from: 8170000000000000182, fromPin: Result, to: 8170000000000000183, toPin: Condition}
+    - {from: 8170000000000000178, fromPin: Then, to: 8170000000000000183, toPin: Exec}
+    - {from: 8170000000000000179, fromPin: Then, to: 8170000000000000183, toPin: Exec}
+    - {from: 8170000000000000184, fromPin: Value, to: 8170000000000000185, toPin: Value}
+    - {from: 8170000000000000183, fromPin: True, to: 8170000000000000185, toPin: Exec}
+    - {from: 8170000000000000187, fromPin: Value, to: 8170000000000000186, toPin: entity_id}
+    - {from: 8170000000000000188, fromPin: Value, to: 8170000000000000189, toPin: A}
+    - {from: 8170000000000000189, fromPin: Result, to: 8170000000000000186, toPin: frame}
+    - {from: 8170000000000000185, fromPin: Then, to: 8170000000000000186, toPin: Exec}
+    - {from: 8170000000000000192, fromPin: Value, to: 8170000000000000191, toPin: A}
+    - {from: 8170000000000000193, fromPin: Value, to: 8170000000000000191, toPin: B}
+    - {from: 8170000000000000191, fromPin: Result, to: 8170000000000000190, toPin: A}
+    - {from: 8170000000000000194, fromPin: Value, to: 8170000000000000190, toPin: B}
+    - {from: 8170000000000000190, fromPin: Result, to: 8170000000000000195, toPin: Value}
+    - {from: 8170000000000000186, fromPin: Then, to: 8170000000000000195, toPin: Exec}
+    - {from: 8170000000000000183, fromPin: False, to: 8170000000000000195, toPin: Exec}
+    - {from: 8170000000000000196, fromPin: Value, to: 8170000000000000198, toPin: A}
+    - {from: 8170000000000000197, fromPin: Value, to: 8170000000000000198, toPin: B}
+    - {from: 8170000000000000199, fromPin: Value, to: 8170000000000000201, toPin: A}
+    - {from: 8170000000000000200, fromPin: Value, to: 8170000000000000201, toPin: B}
+    - {from: 8170000000000000198, fromPin: Result, to: 8170000000000000202, toPin: A}
+    - {from: 8170000000000000201, fromPin: Result, to: 8170000000000000202, toPin: B}
+    - {from: 8170000000000000204, fromPin: Value, to: 8170000000000000203, toPin: A}
+    - {from: 8170000000000000203, fromPin: Result, to: 8170000000000000205, toPin: A}
+    - {from: 8170000000000000202, fromPin: Result, to: 8170000000000000206, toPin: A}
+    - {from: 8170000000000000205, fromPin: Result, to: 8170000000000000206, toPin: B}
+    - {from: 8170000000000000206, fromPin: Result, to: 8170000000000000207, toPin: Condition}
+    - {from: 8170000000000000195, fromPin: Then, to: 8170000000000000207, toPin: Exec}
+    - {from: 8170000000000000209, fromPin: Value, to: 8170000000000000210, toPin: Condition}
+    - {from: 8170000000000000211, fromPin: Value, to: 8170000000000000210, toPin: True}
+    - {from: 8170000000000000212, fromPin: Value, to: 8170000000000000210, toPin: False}
+    - {from: 8170000000000000210, fromPin: Result, to: 8170000000000000208, toPin: asset_path}
+    - {from: 8170000000000000207, fromPin: True, to: 8170000000000000208, toPin: Exec}
+    - {from: 8170000000000000213, fromPin: Value, to: 8170000000000000215, toPin: A}
+    - {from: 8170000000000000214, fromPin: Value, to: 8170000000000000215, toPin: B}
+    - {from: 8170000000000000215, fromPin: Result, to: 8170000000000000216, toPin: Condition}
+    - {from: 8170000000000000217, fromPin: Value, to: 8170000000000000216, toPin: True}
+    - {from: 8170000000000000216, fromPin: Result, to: 8170000000000000218, toPin: Value}
+    - {from: 8170000000000000208, fromPin: Then, to: 8170000000000000218, toPin: Exec}
+    - {from: 8170000000000000207, fromPin: False, to: 8170000000000000218, toPin: Exec}
+    - {from: 8170000000000000219, fromPin: Value, to: 8170000000000000220, toPin: A}
+    - {from: 8170000000000000220, fromPin: Result, to: 8170000000000000221, toPin: Condition}
+    - {from: 8170000000000000218, fromPin: Then, to: 8170000000000000221, toPin: Exec}
+    - {from: 8170000000000000143, fromPin: False, to: 8170000000000000221, toPin: Exec}
+    - {from: 8170000000000000222, fromPin: x, to: 8170000000000000223, toPin: Value}
+    - {from: 8170000000000000221, fromPin: True, to: 8170000000000000223, toPin: Exec}
+    - {from: 8170000000000000222, fromPin: y, to: 8170000000000000224, toPin: Value}
+    - {from: 8170000000000000223, fromPin: Then, to: 8170000000000000224, toPin: Exec}
+    - {from: 8170000000000000226, fromPin: Value, to: 8170000000000000225, toPin: entity_id}
+    - {from: 8170000000000000225, fromPin: z, to: 8170000000000000227, toPin: Value}
+    - {from: 8170000000000000224, fromPin: Then, to: 8170000000000000227, toPin: Exec}
+    - {from: 8170000000000000228, fromPin: Value, to: 8170000000000000229, toPin: A}
+    - {from: 8170000000000000231, fromPin: Value, to: 8170000000000000230, toPin: A}
+    - {from: 8170000000000000232, fromPin: Value, to: 8170000000000000230, toPin: B}
+    - {from: 8170000000000000230, fromPin: Result, to: 8170000000000000233, toPin: A}
+    - {from: 8170000000000000234, fromPin: Value, to: 8170000000000000233, toPin: B}
+    - {from: 8170000000000000233, fromPin: Result, to: 8170000000000000229, toPin: B}
+    - {from: 8170000000000000229, fromPin: Result, to: 8170000000000000235, toPin: Value}
+    - {from: 8170000000000000227, fromPin: Then, to: 8170000000000000235, toPin: Exec}
+    - {from: 8170000000000000238, fromPin: Value, to: 8170000000000000237, toPin: A}
+    - {from: 8170000000000000239, fromPin: Value, to: 8170000000000000237, toPin: B}
+    - {from: 8170000000000000237, fromPin: Result, to: 8170000000000000236, toPin: A}
+    - {from: 8170000000000000236, fromPin: Result, to: 8170000000000000240, toPin: A}
+    - {from: 8170000000000000242, fromPin: Value, to: 8170000000000000241, toPin: A}
+    - {from: 8170000000000000241, fromPin: Result, to: 8170000000000000243, toPin: A}
+    - {from: 8170000000000000244, fromPin: Value, to: 8170000000000000243, toPin: B}
+    - {from: 8170000000000000243, fromPin: Result, to: 8170000000000000240, toPin: B}
+    - {from: 8170000000000000240, fromPin: Result, to: 8170000000000000245, toPin: Value}
+    - {from: 8170000000000000235, fromPin: Then, to: 8170000000000000245, toPin: Exec}
+    - {from: 8170000000000000247, fromPin: Value, to: 8170000000000000246, toPin: entity_id}
+    - {from: 8170000000000000248, fromPin: Value, to: 8170000000000000246, toPin: x}
+    - {from: 8170000000000000249, fromPin: Value, to: 8170000000000000246, toPin: y}
+    - {from: 8170000000000000250, fromPin: Value, to: 8170000000000000246, toPin: z}
+    - {from: 8170000000000000245, fromPin: Then, to: 8170000000000000246, toPin: Exec}
+    - {from: 8170000000000000251, fromPin: Value, to: 8170000000000000252, toPin: A}
+    - {from: 8170000000000000252, fromPin: Result, to: 8170000000000000253, toPin: Condition}
+    - {from: 8170000000000000246, fromPin: Then, to: 8170000000000000253, toPin: Exec}
+    - {from: 8170000000000000221, fromPin: False, to: 8170000000000000253, toPin: Exec}
+    - {from: 8170000000000000253, fromPin: True, to: 8170000000000000256, toPin: Exec}
+    - {from: 8170000000000000255, fromPin: Value, to: 8170000000000000254, toPin: entity_id}
+    - {from: 8170000000000000256, fromPin: value, to: 8170000000000000254, toPin: value}
+    - {from: 8170000000000000256, fromPin: Then, to: 8170000000000000254, toPin: Exec}
+    - {from: 8170000000000000254, fromPin: Then, to: 8170000000000000257, toPin: Exec}
+    - {from: 8170000000000000253, fromPin: False, to: 8170000000000000257, toPin: Exec}
+    - {from: 8170000000000000258, fromPin: Value, to: 8170000000000000259, toPin: List}
+    - {from: 8170000000000000257, fromPin: Then, to: 8170000000000000259, toPin: Exec}
+    - {from: 8170000000000000261, fromPin: Value, to: 8170000000000000260, toPin: A}
+    - {from: 8170000000000000259, fromPin: Item, to: 8170000000000000264, toPin: A}
+    - {from: 8170000000000000264, fromPin: Result, to: 8170000000000000263, toPin: B}
+    - {from: 8170000000000000263, fromPin: Result, to: 8170000000000000262, toPin: key}
+    - {from: 8170000000000000259, fromPin: Body, to: 8170000000000000262, toPin: Exec}
+    - {from: 8170000000000000262, fromPin: value, to: 8170000000000000265, toPin: A}
+    - {from: 8170000000000000265, fromPin: Result, to: 8170000000000000266, toPin: Condition}
+    - {from: 8170000000000000266, fromPin: Result, to: 8170000000000000260, toPin: B}
+    - {from: 8170000000000000260, fromPin: Result, to: 8170000000000000267, toPin: Value}
+    - {from: 8170000000000000262, fromPin: Then, to: 8170000000000000267, toPin: Exec}
+    - {from: 8170000000000000268, fromPin: Value, to: 8170000000000000270, toPin: A}
+    - {from: 8170000000000000269, fromPin: Value, to: 8170000000000000270, toPin: B}
+    - {from: 8170000000000000270, fromPin: Result, to: 8170000000000000271, toPin: Condition}
+    - {from: 8170000000000000259, fromPin: Completed, to: 8170000000000000271, toPin: Exec}
+    - {from: 8170000000000000272, fromPin: Value, to: 8170000000000000273, toPin: Value}
+    - {from: 8170000000000000271, fromPin: True, to: 8170000000000000273, toPin: Exec}
+    - {from: 8170000000000000275, fromPin: Value, to: 8170000000000000274, toPin: value}
+    - {from: 8170000000000000273, fromPin: Then, to: 8170000000000000274, toPin: Exec}
+    - {from: 8170000000000000280, fromPin: Value, to: 8170000000000000279, toPin: A}
+    - {from: 8170000000000000282, fromPin: Value, to: 8170000000000000283, toPin: List}
+    - {from: 8170000000000000283, fromPin: Result, to: 8170000000000000281, toPin: B}
+    - {from: 8170000000000000281, fromPin: Result, to: 8170000000000000279, toPin: B}
+    - {from: 8170000000000000279, fromPin: Result, to: 8170000000000000278, toPin: B}
+    - {from: 8170000000000000277, fromPin: Value, to: 8170000000000000276, toPin: entity_id}
+    - {from: 8170000000000000278, fromPin: Result, to: 8170000000000000276, toPin: text}
+    - {from: 8170000000000000274, fromPin: Then, to: 8170000000000000276, toPin: Exec}
+    - {from: 8170000000000000285, fromPin: Value, to: 8170000000000000286, toPin: List}
+    - {from: 8170000000000000284, fromPin: Value, to: 8170000000000000287, toPin: A}
+    - {from: 8170000000000000286, fromPin: Result, to: 8170000000000000287, toPin: B}
+    - {from: 8170000000000000287, fromPin: Result, to: 8170000000000000288, toPin: Value}
+    - {from: 8170000000000000276, fromPin: Then, to: 8170000000000000288, toPin: Exec}
+    - {from: 8170000000000000289, fromPin: Value, to: 8170000000000000290, toPin: A}
+    - {from: 8170000000000000290, fromPin: Result, to: 8170000000000000291, toPin: Condition}
+    - {from: 8170000000000000288, fromPin: Then, to: 8170000000000000291, toPin: Exec}
+    - {from: 8170000000000000293, fromPin: Value, to: 8170000000000000292, toPin: entity_id}
+    - {from: 8170000000000000294, fromPin: Value, to: 8170000000000000292, toPin: visible}
+    - {from: 8170000000000000291, fromPin: True, to: 8170000000000000292, toPin: Exec}
+    - {from: 8170000000000000296, fromPin: Value, to: 8170000000000000297, toPin: A}
+    - {from: 8170000000000000295, fromPin: Value, to: 8170000000000000298, toPin: A}
+    - {from: 8170000000000000297, fromPin: Result, to: 8170000000000000298, toPin: B}
+    - {from: 8170000000000000298, fromPin: Result, to: 8170000000000000299, toPin: Condition}
+    - {from: 8170000000000000292, fromPin: Then, to: 8170000000000000299, toPin: Exec}
+    - {from: 8170000000000000291, fromPin: False, to: 8170000000000000299, toPin: Exec}
+    - {from: 8170000000000000299, fromPin: True, to: 8170000000000000300, toPin: Exec}
+    - {from: 8170000000000000300, fromPin: Then, to: 8170000000000000301, toPin: Exec}
+    - {from: 8170000000000000302, fromPin: Value, to: 8170000000000000303, toPin: Value}
+    - {from: 8170000000000000301, fromPin: Then, to: 8170000000000000303, toPin: Exec}
+    - {from: 8170000000000000299, fromPin: False, to: 8170000000000000303, toPin: Exec}
+    - {from: 8170000000000000303, fromPin: Then, to: 8170000000000000305, toPin: Exec}
+    - {from: 8170000000000000271, fromPin: False, to: 8170000000000000305, toPin: Exec}
+    - {from: 8170000000000000305, fromPin: value, to: 8170000000000000304, toPin: A}
+    - {from: 8170000000000000305, fromPin: Then, to: 8170000000000000306, toPin: Exec}
+    - {from: 8170000000000000306, fromPin: value, to: 8170000000000000304, toPin: B}
+    - {from: 8170000000000000304, fromPin: Result, to: 8170000000000000307, toPin: A}
+    - {from: 8170000000000000307, fromPin: Result, to: 8170000000000000308, toPin: Value}
+    - {from: 8170000000000000306, fromPin: Then, to: 8170000000000000308, toPin: Exec}
+    - {from: 8170000000000000310, fromPin: Value, to: 8170000000000000311, toPin: A}
+    - {from: 8170000000000000309, fromPin: pressed, to: 8170000000000000312, toPin: A}
+    - {from: 8170000000000000311, fromPin: Result, to: 8170000000000000312, toPin: B}
+    - {from: 8170000000000000312, fromPin: Result, to: 8170000000000000313, toPin: Condition}
+    - {from: 8170000000000000308, fromPin: Then, to: 8170000000000000313, toPin: Exec}
+    - {from: 8170000000000000314, fromPin: x, to: 8170000000000000315, toPin: Value}
+    - {from: 8170000000000000313, fromPin: True, to: 8170000000000000315, toPin: Exec}
+    - {from: 8170000000000000314, fromPin: y, to: 8170000000000000316, toPin: Value}
+    - {from: 8170000000000000315, fromPin: Then, to: 8170000000000000316, toPin: Exec}
+    - {from: 8170000000000000314, fromPin: z, to: 8170000000000000317, toPin: Value}
+    - {from: 8170000000000000316, fromPin: Then, to: 8170000000000000317, toPin: Exec}
+    - {from: 8170000000000000317, fromPin: Then, to: 8170000000000000318, toPin: Exec}
+    - {from: 8170000000000000320, fromPin: Value, to: 8170000000000000319, toPin: value}
+    - {from: 8170000000000000318, fromPin: Then, to: 8170000000000000319, toPin: Exec}
+    - {from: 8170000000000000322, fromPin: Value, to: 8170000000000000321, toPin: value}
+    - {from: 8170000000000000319, fromPin: Then, to: 8170000000000000321, toPin: Exec}
+    - {from: 8170000000000000324, fromPin: Value, to: 8170000000000000323, toPin: value}
+    - {from: 8170000000000000321, fromPin: Then, to: 8170000000000000323, toPin: Exec}
+    - {from: 8170000000000000323, fromPin: Then, to: 8170000000000000325, toPin: Exec}
+    - {from: 8170000000000000325, fromPin: Then, to: 8170000000000000326, toPin: Exec}
+    - {from: 8170000000000000326, fromPin: Then, to: 8170000000000000327, toPin: Exec}
+    - {from: 8170000000000000327, fromPin: Then, to: 8170000000000000328, toPin: Exec}
+    - {from: 8170000000000000329, fromPin: Then, to: 8170000000000000330, toPin: Exec}

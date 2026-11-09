@@ -14,7 +14,7 @@ Entities:
     scale: [1, 1, 1]
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:b6874c2f8f77cd2d:scripts/platformer/dice_cup.lua
+    scriptPath: gid:b6874c2f8f77cd2d:scripts/platformer/dice_cup.owlvs
   Hierarchy: {}
 - Entity: 3300000000000000101
   Tag: {tag: DiceCrate1}
@@ -120,7 +120,7 @@ Entities:
     scale: [1, 1, 1]
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.lua
+    scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.owlvs
     properties:
     - {name: hint, type: string, value: HudHint}
     - {name: duration, type: float, value: 4.5}
@@ -341,7 +341,7 @@ Entities:
   Hierarchy:
     parentId: 3000000000000000501
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
 - Entity: 3000000000000000503
   Tag:
     tag: CoinRight
@@ -379,7 +379,7 @@ Entities:
   Hierarchy:
     parentId: 3000000000000000501
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
 - Entity: 3000000000000000511
   Tag:
     tag: CoinPairB
@@ -448,7 +448,7 @@ Entities:
   Hierarchy:
     parentId: 3000000000000000511
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
 - Entity: 3000000000000000513
   Tag:
     tag: CoinRight
@@ -486,7 +486,7 @@ Entities:
   Hierarchy:
     parentId: 3000000000000000511
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
 - Entity: 3000000000000000050
   Tag:
     tag: VictoryZone
@@ -509,7 +509,7 @@ Entities:
   Visibility:
     gameVisible: true
   LuaScript:
-    scriptPath: gid:1ce7c3eabb3a6066:scripts/platformer/level_complete.lua
+    scriptPath: gid:1ce7c3eabb3a6066:scripts/platformer/level_complete.owlvs
 - Entity: 3100000000000000032
   Tag:
     tag: DoorTop
@@ -643,7 +643,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -775,7 +775,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -850,7 +850,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -944,7 +944,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -1019,7 +1019,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -1151,7 +1151,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -1549,7 +1549,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -1603,7 +1603,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1627,7 +1627,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1651,7 +1651,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1665,7 +1665,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -1716,7 +1716,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1740,7 +1740,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1764,7 +1764,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1788,7 +1788,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1812,7 +1812,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1896,7 +1896,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1920,7 +1920,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1944,7 +1944,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1968,7 +1968,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -1992,7 +1992,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2016,7 +2016,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2030,7 +2030,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -2071,7 +2071,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -2122,7 +2122,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2146,7 +2146,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_heart_touched
   LuaScript:
-    scriptPath: gid:9ba84e61eed9977d:scripts/platformer/heart.lua
+    scriptPath: gid:9ba84e61eed9977d:scripts/platformer/heart.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2179,7 +2179,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:d9d269ae4ff5206e:scripts/platformer/checkpoint.lua
+    scriptPath: gid:d9d269ae4ff5206e:scripts/platformer/checkpoint.owlvs
     properties:
     - name: flag
       type: string
@@ -2249,7 +2249,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -2290,7 +2290,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -2331,7 +2331,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -2382,7 +2382,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2406,7 +2406,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2430,7 +2430,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2454,7 +2454,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2478,7 +2478,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2502,7 +2502,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2526,7 +2526,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2550,7 +2550,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2574,7 +2574,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2598,7 +2598,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2622,7 +2622,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2646,7 +2646,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2670,7 +2670,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2694,7 +2694,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2718,7 +2718,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2742,7 +2742,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2766,7 +2766,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2790,7 +2790,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2814,7 +2814,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2838,7 +2838,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2862,7 +2862,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2886,7 +2886,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2910,7 +2910,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2934,7 +2934,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2958,7 +2958,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -2982,7 +2982,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3006,7 +3006,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3030,7 +3030,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3054,7 +3054,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3087,7 +3087,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:d9d269ae4ff5206e:scripts/platformer/checkpoint.lua
+    scriptPath: gid:d9d269ae4ff5206e:scripts/platformer/checkpoint.owlvs
     properties:
     - name: flag
       type: string
@@ -3105,7 +3105,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -3146,7 +3146,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -3197,7 +3197,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3281,7 +3281,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3305,7 +3305,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3329,7 +3329,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3353,7 +3353,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3377,7 +3377,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_heart_touched
   LuaScript:
-    scriptPath: gid:9ba84e61eed9977d:scripts/platformer/heart.lua
+    scriptPath: gid:9ba84e61eed9977d:scripts/platformer/heart.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3417,7 +3417,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:c90c7fb7c620de70:scripts/platformer/secret_room.lua
+    scriptPath: gid:c90c7fb7c620de70:scripts/platformer/secret_room.owlvs
     properties:
     - name: map
       type: string
@@ -3472,7 +3472,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3496,7 +3496,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3520,7 +3520,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3544,7 +3544,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3568,7 +3568,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3592,7 +3592,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3616,7 +3616,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3640,7 +3640,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3664,7 +3664,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_heart_touched
   LuaScript:
-    scriptPath: gid:9ba84e61eed9977d:scripts/platformer/heart.lua
+    scriptPath: gid:9ba84e61eed9977d:scripts/platformer/heart.owlvs
   Visibility:
     gameVisible: false
   Hierarchy: {}
@@ -3723,7 +3723,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:d9d269ae4ff5206e:scripts/platformer/checkpoint.lua
+    scriptPath: gid:d9d269ae4ff5206e:scripts/platformer/checkpoint.owlvs
     properties:
     - name: flag
       type: string
@@ -3741,7 +3741,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -3792,7 +3792,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3816,7 +3816,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3840,7 +3840,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3864,7 +3864,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3888,7 +3888,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3912,7 +3912,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3936,7 +3936,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3960,7 +3960,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -3974,7 +3974,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -4015,7 +4015,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -4066,7 +4066,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4150,7 +4150,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4174,7 +4174,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4198,7 +4198,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4222,7 +4222,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4236,7 +4236,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -4277,7 +4277,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -4318,7 +4318,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -4369,7 +4369,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4393,7 +4393,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4417,7 +4417,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4501,7 +4501,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4525,7 +4525,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4558,7 +4558,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:d9d269ae4ff5206e:scripts/platformer/checkpoint.lua
+    scriptPath: gid:d9d269ae4ff5206e:scripts/platformer/checkpoint.owlvs
     properties:
     - name: flag
       type: string
@@ -4595,7 +4595,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -4636,7 +4636,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.lua
+    scriptPath: gid:19f1852263d10212:scripts/platformer/hazard.owlvs
     properties:
     - name: kind
       type: string
@@ -4687,7 +4687,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4711,7 +4711,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_heart_touched
   LuaScript:
-    scriptPath: gid:9ba84e61eed9977d:scripts/platformer/heart.lua
+    scriptPath: gid:9ba84e61eed9977d:scripts/platformer/heart.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4754,7 +4754,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4778,7 +4778,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4802,7 +4802,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4826,7 +4826,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4910,7 +4910,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4934,7 +4934,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4958,7 +4958,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -4991,7 +4991,7 @@ Entities:
   Trigger:
     Type: Target
   LuaScript:
-    scriptPath: gid:d9d269ae4ff5206e:scripts/platformer/checkpoint.lua
+    scriptPath: gid:d9d269ae4ff5206e:scripts/platformer/checkpoint.owlvs
     properties:
     - name: flag
       type: string
@@ -5079,7 +5079,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -5103,7 +5103,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}
@@ -5146,7 +5146,7 @@ Entities:
     Type: LuaCallback
     CallbackName: on_coin_collected
   LuaScript:
-    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.lua
+    scriptPath: gid:80b7ecec47393d22:scripts/platformer/coin.owlvs
   Visibility:
     gameVisible: true
   Hierarchy: {}

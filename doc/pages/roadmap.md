@@ -129,8 +129,6 @@ the templates, the shaders per target, Android and the Web.
   ([Crash reporter](design/crash-reporter.md))
 - ![Planned][planned] Mod loading system (`.owlmod` packs, manifest, load order, asset overrides)
 - ![Planned][planned] Lua mod API (custom components, game event hooks, sandboxed)
-- ![Planned][planned] Luau in place of Lua 5.5, with the mod API, if the v0.7.0 evaluation holds
-  ([Visual scripting](design/visual-scripting.md#visual-scripting-luau))
 - ![Planned][planned] In-game mod manager (enable / disable / reorder, conflict detection)
 
 ## v0.7.0 -- Expected 2026-11-22
@@ -171,13 +169,15 @@ deterministic simulation and replay, Jolt, gravity fields.
 - ![Planned][planned] Behaviour trees with a visual editor (`.owlbt`)
 - ![Planned][planned] Steering behaviours and flocking, in 2D and in open 3D space (obstacle avoidance, formations)
 - ![Planned][planned] Engine Demo: enemies demo on the AI modules
-- ![Planned][planned] Material graphs: Slang written as a graph on the surface of the PBR materials, pre-coded and
+- ![Done][done] Material graphs: Slang written as a graph on the surface of the PBR materials, pre-coded and
   custom Slang nodes, material functions and parameters ([Material graphs](design/material-graphs.md))
-- ![Planned][planned] Custom Lua node in visual scripts (title, typed pins, Lua body) and annotated Lua functions as
+- ![Done][done] Material graph shaders baked by the export ([Material graphs](design/material-graphs.md))
+- ![Done][done] Custom Lua node in visual scripts (title, typed pins, Lua body) and annotated Lua functions as
   nodes ([Visual scripting](design/visual-scripting.md#visual-scripting-custom-lua))
-- ![Planned][planned] Entities handed to Lua as userdata instead of 64-bit integers
+- ![Done][done] Entities handed to Lua as handles (registry id) instead of 64-bit UUIDs
   ([Visual scripting](design/visual-scripting.md#visual-scripting-luau))
-- ![To evaluate][evaluate] Luau in place of Lua 5.5: prototype, script benchmarks, types checked in the code editor
+- ![Done][done] Luau in place of Lua 5.5: one VM, the bindings, the sandbox, the quotas and the debugger ported
+- ![Done][done] Luau types checked in the Owl Nest code editor, declarations generated from the binding registry
   ([Visual scripting](design/visual-scripting.md#visual-scripting-luau))
 - ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a
   Zelda-like, a marble or kart game, a lunar lander, an asteroid dogfight, an orbital golf, a bridge builder

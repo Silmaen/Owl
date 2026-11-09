@@ -79,7 +79,8 @@ auto computeNodeSize(const Node& iNode) -> math::vec2f {
 	const float glyph = iNode.glyph.empty() ? 0.f : measure(iNode.glyph) + g_padding * 0.5f;
 	const float width = std::max({g_minWidth, body + 2.f * g_padding, glyph + measure(iNode.title) + 2.f * g_padding});
 	const auto rows = std::max(iNode.inputs.size(), iNode.outputs.size());
-	return {width, g_headerHeight + g_bodyTop + static_cast<float>(rows) * g_rowHeight + g_bodyBottom};
+	return {width,
+			g_headerHeight + g_bodyTop + static_cast<float>(rows) * g_rowHeight + g_bodyBottom + iNode.footerHeight};
 }
 
 auto toIm(const math::vec2f& iPoint) -> ImVec2 { return {iPoint.x(), iPoint.y()}; }
@@ -156,6 +157,7 @@ struct NodeCanvas::Impl final {
 	std::function<void(core::UUID)> m_onNodeSelected;
 	std::function<void(core::UUID)> m_onNodeDoubleClicked;
 	std::function<void(std::optional<core::UUID>)> m_onContextMenu;
+	std::function<void(core::UUID, math::vec2f, math::vec2f, float)> m_footerRenderer;
 	// Per frame.
 	std::unordered_map<uint64_t, PinView> m_pins;
 	std::vector<std::pair<ImVec2, ImVec2>> m_rects;
@@ -354,7 +356,7 @@ struct NodeCanvas::Impl final {
 						   .headerHeight = g_headerHeight,
 						   .selected = isSelected(node.id),
 						   .hovered = m_hoveredNode == index,
-						   .faulty = false},
+						   .faulty = node.faulty},
 						  m_zoom);
 			if (shouldDrawNodeTitles(m_zoom)) {
 				const float titleY = min.y + (g_headerHeight * m_zoom - fontSize) * 0.5f;
@@ -400,7 +402,25 @@ struct NodeCanvas::Impl final {
 			};
 			drawPins(node.inputs);
 			drawPins(node.outputs);
+			drawFooter(node, min, max);
 		}
+	}
+
+	void drawFooter(const Node& iNode, const ImVec2& iMin, const ImVec2& iMax) const {
+		if (iNode.footerHeight <= 0.f || !m_footerRenderer)
+			return;
+		const ImVec2 min{iMin.x + g_padding * 0.5f * m_zoom, iMax.y - (iNode.footerHeight + g_bodyBottom) * m_zoom};
+		const ImVec2 max{iMax.x - g_padding * 0.5f * m_zoom, iMax.y - g_bodyBottom * m_zoom};
+		if (max.x < m_origin.x || max.y < m_origin.y || min.x > m_origin.x + m_size.x || min.y > m_origin.y + m_size.y)
+			return;
+		m_footerRenderer(iNode.id, toVec(min), toVec(max), m_zoom);
+	}
+
+	void showNodeTooltip() const {
+		if (!m_hovered || m_gesture != Gesture::None || !m_hoveredNode.has_value() || m_hoveredPin != 0)
+			return;
+		if (const auto& tooltip = m_owner.m_nodes[*m_hoveredNode].tooltip; !tooltip.empty())
+			ImGui::SetTooltip("%s", tooltip.c_str());
 	}
 
 	void clickNode(const size_t iIndex) {
@@ -838,6 +858,10 @@ void NodeCanvas::setOnContextMenu(std::function<void(std::optional<core::UUID>)>
 	mp_impl->m_onContextMenu = std::move(iCb);
 }
 
+void NodeCanvas::setNodeFooterRenderer(std::function<void(core::UUID, math::vec2f, math::vec2f, float)> iRenderer) {
+	mp_impl->m_footerRenderer = std::move(iRenderer);
+}
+
 void NodeCanvas::setEnabled(bool iEnabled) { mp_impl->m_enabled = iEnabled; }
 
 auto NodeCanvas::getMouseCanvasPosition() const -> math::vec2f {
@@ -874,6 +898,7 @@ void NodeCanvas::onRender() {
 	if (impl.m_enabled)
 		impl.handleMouse();
 	impl.drawOverlays(draw);
+	impl.showNodeTooltip();
 	impl.renderLinkMenu();
 	ImGui::EndChild();
 }

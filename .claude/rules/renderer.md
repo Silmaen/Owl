@@ -117,6 +117,10 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   forces it; check both when touching a shader.
 - **Non-blendable attachment formats.** A Vulkan pipeline turns blending off on a colour attachment whose format
   features lack blending (`RedInteger`, `RedFloat`), and data attachments get nearest samplers.
+- **The surface of `mesh3d` / `skinned3d` is the material block** of `common/mesh_surface.slangh` (`evaluateSurface`,
+  `evaluateVertexOffset` between the `owl:material` markers): a material graph replaces it in a variant shader drawn
+  through `DrawData::setShaderVariant`. The material UBO (`MaterialData`, binding 4, 272 bytes) is read by both stages
+  (world position offset): keep it `VertexFragment` and change `MaterialUbo` with it.
 - **Skinned draws read their palette at binding 5**, the instance binding of `mesh3d` (a skinned draw is never
   instanced): `RendererMesh::pushSkin` fills one storage buffer per pass, `SceneUbo.ids.w` is the first matrix of the
   draw. `mesh3d` and `skinned3d` share `common/mesh_surface.slangh`: change the surface shading there, once.

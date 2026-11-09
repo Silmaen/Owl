@@ -34,9 +34,9 @@ endif ()
 if (${PROJECT_PREFIX}_MODULE_SCRIPT)
     list(APPEND _owl_excluded "/private/script/disabled/")
 else ()
-    list(APPEND _owl_excluded "/private/script/(LuaBindings|LuaEngine|ScriptConsole|ScriptEngine|ScriptInstance|visual/BindingNodes)\\.cpp$"
+    list(APPEND _owl_excluded "/private/script/(LuaBindings|LuaEngine|ScriptConsole|ScriptEngine|ScriptInstance|ScriptTypeChecker|visual/BindingNodes)\\.cpp$"
             "/private/script/(LuaBindings|LuaEngine)\\.h$"
-            "/private/core/external/lua\\.h$")
+            "/private/core/external/(lua|luau_analysis)\\.h$")
 endif ()
 if (NOT ${PROJECT_PREFIX}_MODULE_GUI)
     list(APPEND _owl_excluded "/(private|public)/gui/" "/public/owlgui\\.h$" "/private/core/external/imgui\\.h$")
@@ -160,7 +160,11 @@ endif ()
 
 # script
 if (${PROJECT_PREFIX}_MODULE_SCRIPT)
-    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lua CONFIG REQUIRED)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Luau CONFIG REQUIRED)
+    if (MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        # lld finds std::string constructors both in Luau.Analysis and in the libstdc++ import library: same code.
+        target_link_options(${ENGINE_NAME}Private INTERFACE "LINKER:--allow-multiple-definition")
+    endif ()
 endif ()
 
 # gui: ImGui is private to the engine; the gui/ headers that include it come with Owl::Gui

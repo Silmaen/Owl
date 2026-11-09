@@ -16,7 +16,7 @@ flowchart TD
     Core["OwlEngine core<br/>app, scene, data, event, math, core"] --> Render["render<br/>renderer, window, input"]
     Core --> Phys["physics<br/>Jolt"]
     Core --> Audio["audio<br/>OpenAL, libsndfile"]
-    Core --> Script["script<br/>Lua 5.5"]
+    Core --> Script["script<br/>Luau"]
     Core --> Gui["Gui<br/>ImGui, ImGuizmo"]
     Core --> Deps["EnTT, Taskflow, zstd,<br/>yaml-cpp, spdlog"]
     Render --> Gpu["Vulkan / OpenGL / Null"]
@@ -32,7 +32,7 @@ The engine library (`source/owl/`) is organized into the following modules:
 | `platform` | OS / native-platform services: file dialogs, `fileToString`, open-URL             |
 | `renderer` | Rendering abstraction, buffers, shaders, framebuffers, camera controllers         |
 | `scene`    | Entity-Component-System (EnTT), scene graph, components, save/load                |
-| `script`   | Lua 5.5 embedded scripting (sandboxed `LuaEngine` per entity)                     |
+| `script`   | Luau embedded scripting (sandboxed `LuaEngine` per entity)                        |
 | `physics`  | 2D physics (Jolt integration)                                                     |
 | `sound`    | Audio playback and device management                                              |
 | `input`    | Keyboard, mouse, and gamepad input abstraction                                    |
@@ -429,7 +429,7 @@ Discovered assets are compressed with **zstd** and written to a `.owlpack` binar
 of contents. At start, the game runner opens the pack named by `PackFile` in `runner.yml` with `PackReader`; every loader
 reads its entries in memory through `data::assets::readAssetBytes` (the open pack first, then the asset directories),
 and `AssetLibrary::find` resolves a name to a pack entry before a file. Nothing is extracted nor written next to the
-game: the export bakes the font atlases and the project shaders into the pack. `PackReader::readEntry` is thread-safe,
+game: the export bakes the font atlases, the project shaders and the shader variants of the material graphs into the pack. `PackReader::readEntry` is thread-safe,
 so asynchronous loads decompress their entries in parallel.
 
 A pack is treated as untrusted input: `PackReader::tryOpen` bounds every offset and size by the real file size and

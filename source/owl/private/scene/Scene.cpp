@@ -644,6 +644,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	updateScaledTimeStep(frameStep);
 	const core::Timestep& sceneStep = m_scaledTimeStep;
 	m_runtimeSeconds += static_cast<double>(sceneStep.getSeconds());
+	m_materialSeconds += static_cast<double>(sceneStep.getSeconds());
 	m_inUpdatePass = false;
 	m_worldTransformCacheActive = false;
 	m_frameInput.advance(frameInput);
@@ -898,6 +899,7 @@ void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Came
 	OWL_PROFILE_FUNCTION()
 
 	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
+	m_materialSeconds += static_cast<double>(iTimeStep.getSeconds());
 	syncWorldPositions();
 	// Stream procedural voxel terrain around the editor camera (its world position is the inverse-view translation).
 	const math::mat4 camToWorld = inverse(iCamera.getView());
@@ -1069,6 +1071,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	prepareVoxelRenderData();
 	prepareTilemapRenderData();
 	prepareMeshRenderData();
+	renderer::Renderer3D::setTime(static_cast<float>(std::fmod(m_materialSeconds, 3600.0)));
 	updateSpatialIndex();
 	renderer::RendererMesh::clearOcclusion();
 	mp_renderCamera = &iCamera;

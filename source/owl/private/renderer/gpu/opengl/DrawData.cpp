@@ -46,7 +46,9 @@ void DrawData::initInstanced(const BufferLayout& iVertexLayout, const BufferLayo
 }
 
 void DrawData::bind() const {
-	if (mp_shader)
+	if (mp_variant)
+		mp_variant->bind();
+	else if (mp_shader)
 		mp_shader->bind();
 	if (mp_vertexArray)
 		mp_vertexArray->bind();
@@ -55,7 +57,9 @@ void DrawData::bind() const {
 void DrawData::unbind() const {
 	if (mp_vertexArray)
 		VertexArray::unbind();
-	if (mp_shader)
+	if (mp_variant)
+		mp_variant->unbind();
+	else if (mp_shader)
 		mp_shader->unbind();
 }
 
@@ -76,11 +80,16 @@ auto DrawData::getIndexCount() const -> uint32_t {
 }
 
 void DrawData::setShader(const std::string& iShaderName, const std::string& iRenderer) {
+	m_shaderBaseName = iShaderName;
 	auto& shLib = Renderer::getShaderLibrary();
 	const auto baseName = Shader::composeName({.name = iShaderName, .renderer = iRenderer});
 	if (!shLib.exists(baseName))
 		shLib.load(baseName);
 	mp_shader = static_pointer_cast<Shader>(shLib.get(baseName));
+}
+
+void DrawData::setShaderVariant(const shared<gpu::Shader>& iShader) {
+	mp_variant = static_pointer_cast<Shader>(iShader);
 }
 
 }// namespace owl::renderer::gpu::opengl

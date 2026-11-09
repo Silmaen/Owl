@@ -20,7 +20,7 @@ Entities:
     scale: [1, 1, 1]
   Visibility: {gameVisible: true}
   LuaScript:
-    scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.lua
+    scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.owlvs
     properties:
     - {name: hint, type: string, value: HintText}
     - {name: duration, type: float, value: 7.0}
@@ -39,7 +39,7 @@ Entities:
   SoundListener:
     primary: true
   LuaScript:
-    scriptPath: gid:5196115ebaf13c32:scripts/iso/iso_camera.lua
+    scriptPath: gid:5196115ebaf13c32:scripts/iso/iso_camera.owlvs
     properties:
     - name: speed
       type: float
@@ -8822,7 +8822,7 @@ Entities:
     rotation: [0, 0, 0]
     scale: [1, 1, 1]
   LuaScript:
-    scriptPath: gid:5e81d0c3a9f2b647:scripts/iso/iso_town_walkers.lua
+    scriptPath: gid:5e81d0c3a9f2b647:scripts/iso/iso_town_walkers.owlvs
     properties:
     - {name: walkers, type: int, value: 5}
   Visibility: {gameVisible: true}

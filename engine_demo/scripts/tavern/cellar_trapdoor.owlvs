@@ -1,0 +1,73 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: cellar_scene, type: string, default: scenes/tavern_cellar.owl}
+    - {name: opening, type: bool, default: false}
+  nodes:
+    - id: 7410000000000000001
+      type: event.custom
+      position: [0, 0]
+      values:
+        function: on_trapdoor_interact
+    - id: 7410000000000000002
+      type: var.get
+      position: [0, 150]
+      values:
+        variable: opening
+    - id: 7410000000000000003
+      type: flow.branch
+      position: [266, 0]
+    - id: 7410000000000000004
+      type: call.gamestate.get
+      position: [530, 0]
+      values:
+        default: 0
+        key: tavern_key
+    - id: 7410000000000000005
+      type: compare.equal
+      position: [848, 150]
+      values:
+        B: 0
+    - id: 7410000000000000006
+      type: flow.branch
+      position: [1126, 0]
+    - id: 7410000000000000007
+      type: call.gamestate.set
+      position: [1390, -150]
+      values:
+        key: tavern_message
+        value: "The trapdoor is locked: its key must be somewhere in the room"
+    - id: 7410000000000000008
+      type: var.set
+      position: [1390, 150]
+      values:
+        Value: true
+        variable: opening
+    - id: 7410000000000000009
+      type: call.sound.play
+      position: [1668, 150]
+      values:
+        asset_path: sounds/raycast/door.wav
+    - id: 7410000000000000010
+      type: var.get
+      position: [1668, 300]
+      values:
+        variable: cellar_scene
+    - id: 7410000000000000011
+      type: call.scene.transition_to
+      position: [2050, 150]
+      values:
+        duration: 0.5
+        kind: fade
+  links:
+    - {from: 7410000000000000001, fromPin: Then, to: 7410000000000000003, toPin: Exec}
+    - {from: 7410000000000000002, fromPin: Value, to: 7410000000000000003, toPin: Condition}
+    - {from: 7410000000000000003, fromPin: False, to: 7410000000000000004, toPin: Exec}
+    - {from: 7410000000000000004, fromPin: Then, to: 7410000000000000006, toPin: Exec}
+    - {from: 7410000000000000004, fromPin: value, to: 7410000000000000005, toPin: A}
+    - {from: 7410000000000000005, fromPin: Result, to: 7410000000000000006, toPin: Condition}
+    - {from: 7410000000000000006, fromPin: True, to: 7410000000000000007, toPin: Exec}
+    - {from: 7410000000000000006, fromPin: False, to: 7410000000000000008, toPin: Exec}
+    - {from: 7410000000000000008, fromPin: Then, to: 7410000000000000009, toPin: Exec}
+    - {from: 7410000000000000009, fromPin: Then, to: 7410000000000000011, toPin: Exec}
+    - {from: 7410000000000000010, fromPin: Value, to: 7410000000000000011, toPin: scene_path}

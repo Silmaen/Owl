@@ -65,10 +65,10 @@ flowchart LR
 
 | Component      | Replaces                                                            | Fields                                                                                                       |
 |----------------|---------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
-| `LightFlicker` | `scripts/mesh/tavern.lua` (fire, candles), `platformer/flicker.lua` | Style (`Fire`, `Candle`, `Pulse`), amplitude, speed, seed, colour shift, position jitter, dips (rate, depth) |
-| Flame follow   | The flame-card formulas of `tavern.lua`                             | A `LightFlicker` field on a sprite or mesh: scale and tint follow the flicker factor of a linked light       |
+| `LightFlicker` | `scripts/mesh/tavern.owlvs` (fire, candles), `platformer/flicker.lua` | Style (`Fire`, `Candle`, `Pulse`), amplitude, speed, seed, colour shift, position jitter, dips (rate, depth) |
+| Flame follow   | The flame-card formulas of `tavern.owlvs`                             | A `LightFlicker` field on a sprite or mesh: scale and tint follow the flicker factor of a linked light       |
 | `Oscillator`   | `platformer/moving_platform_h.lua`, `moving_platform_v.lua`         | Axis or offset, amplitude, period, phase, easing; kinematic bodies moved through physics                     |
-| `Patrol`       | `hub/hub_villager.lua`, `hub/hub_wanderer.lua`                      | Waypoints (edited in the viewport), wait time, speed, loop or ping-pong, random wander radius                |
+| `Patrol`       | `hub/hub_villager.owlvs`, `hub/hub_wanderer.owlvs`                      | Waypoints (edited in the viewport), wait time, speed, loop or ping-pong, random wander radius                |
 | `Drift`        | `iso/iso_cloud.lua`                                                 | Velocity, range, wrap, follow-camera factor                                                                  |
 
 Each ships with inspector, viewport gizmos where it has a shape (patrol waypoints, oscillator range), undo
@@ -80,7 +80,7 @@ Measured on 2026-10-22 over `engine_demo/` and `samples/`; each row becomes a mi
 
 | Where                                       | Not reachable in Owl Nest                                                                 | Fix                                      |
 |---------------------------------------------|-------------------------------------------------------------------------------------------|------------------------------------------|
-| Tavern (`scripts/mesh/tavern.lua`)          | Fire and candle flicker, flame scaling, candle lookup by name, exit transition            | `LightFlicker`, properties               |
+| Tavern (`scripts/mesh/tavern.owlvs`)          | Fire and candle flicker, flame scaling, candle lookup by name, exit transition            | `LightFlicker`, properties               |
 | Platformer (`platformer/*.lua`)             | Jump, coyote time, buffers, camera lift; moving platforms; a second flicker               | Properties, `Oscillator`, `LightFlicker` |
 | Hub (`hub/*.lua`)                           | Ambient smoke and bells, critter counts, villager patrols, water tile animation           | Properties, `Patrol`, animated tiles     |
 | Raycast level (`raycast/raycast_level.lua`) | Secret and treasure lists and totals, hearing range                                       | Properties (tag counting)                |

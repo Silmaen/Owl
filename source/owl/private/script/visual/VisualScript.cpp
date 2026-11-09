@@ -21,9 +21,12 @@
 #include <cstdint>
 #include <exception>
 #include <filesystem>
+#include <format>
+#include <functional>
 #include <map>
 #include <mutex>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -145,6 +148,16 @@ void addFlow(std::vector<NodeType>& ioTypes) {
 					   .inputs = {execIn(), pin("First", PinType::Integer, "1"), pin("Last", PinType::Integer, "1")},
 					   .outputs = {execOut("Body"), pin("Index", PinType::Integer), execOut("Completed")},
 					   .pure = false});
+	ioTypes.push_back({.id = "flow.for_each",
+					   .title = "For Each",
+					   .category = "Flow",
+					   .description = "Runs Body for each item of a list, in order, then Completed.",
+					   .kind = NodeKind::ForEach,
+					   .lua = {},
+					   .inputs = {execIn(), pin("List", PinType::Table)},
+					   .outputs = {execOut("Body"), pin("Index", PinType::Integer), pin("Item", PinType::Any),
+								   execOut("Completed")},
+					   .pure = false});
 }
 
 // A constant: its value typed on the node, its only pin an output.
@@ -158,6 +171,8 @@ auto constant(const std::string& iId, const std::string& iTitle, const std::stri
 void addValues(std::vector<NodeType>& ioTypes) {
 	ioTypes.push_back(pureOp("value.self", "Self", "Constant", "The entity running the script.", "entity_id", {},
 							 PinType::Entity));
+	ioTypes.push_back(
+			pureOp("value.nil", "Nil", "Constant", "No value: clears a variable or a field.", "nil", {}, PinType::Any));
 	ioTypes.push_back(constant("value.number", "Number", "A number.", PinType::Number, "0"));
 	ioTypes.push_back(constant("value.integer", "Integer", "An integer.", PinType::Integer, "0"));
 	ioTypes.push_back(constant("value.boolean", "Boolean", "A boolean.", PinType::Boolean, "false"));
@@ -165,6 +180,9 @@ void addValues(std::vector<NodeType>& ioTypes) {
 	ioTypes.push_back(constant("value.vector2", "Vector 2", "A 2D vector.", PinType::Vector2));
 	ioTypes.push_back(constant("value.vector3", "Vector 3", "A 3D vector.", PinType::Vector3));
 	ioTypes.push_back(constant("value.color", "Color", "A colour.", PinType::Color));
+	ioTypes.push_back(constant("value.table", "Table",
+							   "A table: `a, b` is a list, `key = value` a field; text in quotes keeps its commas.",
+							   PinType::Table));
 	ioTypes.push_back({.id = "var.get",
 					   .title = "Get Variable",
 					   .category = "Variables",
@@ -211,9 +229,126 @@ void addOperators(std::vector<NodeType>& ioTypes) {
 	ioTypes.push_back(binaryOp("logic.or", "Or", "Logic", "({0} or {1})", boolean, boolean));
 	ioTypes.push_back(pureOp("logic.not", "Not", "Logic", "Opposite of a boolean.", "(not {0})",
 							 {pin("A", boolean, "false")}, boolean));
+	ioTypes.push_back(pureOp(
+			"logic.select", "Select", "Logic", "One of two values, depending on the condition.",
+			"(if {0} then {1} else {2})",
+			{pin("Condition", boolean, "false"), pin("True", PinType::Any), pin("False", PinType::Any)}, PinType::Any));
+	ioTypes.push_back(pureOp("logic.default", "Or Default", "Logic",
+							 "The value, or the default when it is nil or false.", "({0} or {1})",
+							 {pin("Value", PinType::Any), pin("Default", PinType::Any)}, PinType::Any));
+	ioTypes.push_back(pureOp("logic.is_set", "Is Set", "Logic", "Whether a value is not nil.", "({0} ~= nil)",
+							 {pin("Value", PinType::Any)}, boolean));
 	ioTypes.push_back(pureOp("text.concat", "Concatenate", "Text", "Two values joined as text.",
 							 "(tostring({0}) .. tostring({1}))", {pin("A", PinType::Any), pin("B", PinType::Any)},
 							 PinType::String));
+}
+
+void addMath(std::vector<NodeType>& ioTypes) {
+	constexpr auto num = PinType::Number;
+	constexpr auto integer = PinType::Integer;
+	const auto unary = [&ioTypes](const std::string& iId, const std::string& iTitle, const std::string& iDescription,
+								  const std::string& iFunction, const PinType iResult) -> void {
+		ioTypes.push_back(
+				pureOp(iId, iTitle, "Math", iDescription, iFunction + "({0})", {pin("A", num, "0")}, iResult));
+	};
+	unary("math.sqrt", "Square Root", "Square root of a number.", "math.sqrt", num);
+	unary("math.ceil", "Ceil", "Smallest integer above a number.", "math.ceil", integer);
+	unary("math.round", "Round", "Nearest integer, halves away from zero.", "math.round", integer);
+	unary("math.sin", "Sine", "Sine of an angle in radians.", "math.sin", num);
+	unary("math.cos", "Cosine", "Cosine of an angle in radians.", "math.cos", num);
+	ioTypes.push_back(pureOp("math.power", "Power", "Math", "A number raised to a power.", "math.pow({0}, {1})",
+							 {pin("A", num, "0"), pin("Exponent", num, "2")}, num));
+	ioTypes.push_back(pureOp("math.atan2", "Atan2", "Math", "Angle in radians of the direction (X, Y).",
+							 "math.atan({0}, {1})", {pin("Y", num, "0"), pin("X", num, "1")}, num));
+	ioTypes.push_back(pureOp("math.clamp", "Clamp", "Math", "A number kept between a minimum and a maximum.",
+							 "math.max({1}, math.min({2}, {0}))",
+							 {pin("Value", num, "0"), pin("Min", num, "0"), pin("Max", num, "1")}, num));
+	ioTypes.push_back(pureOp("math.lerp", "Lerp", "Math", "From A to B by Alpha: A at 0, B at 1.",
+							 "{0} + ({1} - {0}) * {2}",
+							 {pin("A", num, "0"), pin("B", num, "1"), pin("Alpha", num, "0")}, num));
+	ioTypes.push_back(pureOp("math.pi", "Pi", "Math", "Half a turn, in radians.", "math.pi", {}, num));
+	ioTypes.push_back(pureOp("math.random", "Random", "Math",
+							 "A number from 0 to 1 of the scene random stream, drawn where it is read.",
+							 "math.random()", {}, num));
+	ioTypes.push_back(pureOp("math.random_integer", "Random Integer", "Math",
+							 "An integer from Min to Max of the scene random stream, drawn where it is read.",
+							 "math.random({0}, {1})", {pin("Min", integer, "1"), pin("Max", integer, "6")}, integer));
+}
+
+void addText(std::vector<NodeType>& ioTypes) {
+	constexpr auto text = PinType::String;
+	ioTypes.push_back(
+			pureOp("text.format", "Format", "Text",
+				   "Text with its `%s`, `%d`, `%.2f` replaced by the values, in order (`string.format`).",
+				   "string.format({0}, {1}, {2}, {3}, {4})",
+				   {pin("Format", text, "%s"), pin("A", PinType::Any, {}, true), pin("B", PinType::Any, {}, true),
+					pin("C", PinType::Any, {}, true), pin("D", PinType::Any, {}, true)},
+				   text));
+	ioTypes.push_back(pureOp("text.join", "Join Text", "Text", "Two texts one after the other.", "({0} .. {1})",
+							 {pin("A", text), pin("B", text)}, text));
+	ioTypes.push_back(pureOp("text.length", "Text Length", "Text", "Number of bytes of a text.", "#{0}",
+							 {pin("Text", text)}, PinType::Integer));
+	ioTypes.push_back(pureOp("text.split", "Split", "Text", "The parts of a text between the separators, as a list.",
+							 "string.split({0}, {1})", {pin("Text", text), pin("Separator", text, ",")},
+							 PinType::Table));
+	ioTypes.push_back(pureOp("text.to_number", "To Number", "Text", "Number a text spells, nil when it spells none.",
+							 "tonumber({0})", {pin("Text", text)}, PinType::Number));
+	ioTypes.push_back(pureOp("text.to_text", "To Text", "Text", "Any value as text.", "tostring({0})",
+							 {pin("Value", PinType::Any)}, text));
+	ioTypes.push_back(pureOp("text.contains", "Contains Text", "Text", "Whether a text holds another, as written.",
+							 "string.find({0}, {1}, 1, true) ~= nil", {pin("Text", text), pin("Search", text)},
+							 PinType::Boolean));
+	ioTypes.push_back(pureOp(
+			"text.substring", "Substring", "Text",
+			"The characters of a text from First to Last, from 1; negative counts from the end.",
+			"string.sub({0}, {1}, {2})",
+			{pin("Text", text), pin("First", PinType::Integer, "1"), pin("Last", PinType::Integer, "-1")}, text));
+	ioTypes.push_back(pureOp("text.upper", "Upper Case", "Text", "A text in capitals.", "string.upper({0})",
+							 {pin("Text", text)}, text));
+	ioTypes.push_back(pureOp("text.lower", "Lower Case", "Text", "A text in small letters.", "string.lower({0})",
+							 {pin("Text", text)}, text));
+}
+
+// An execution node running one Lua statement of its inputs.
+auto statement(const std::string& iId, const std::string& iTitle, const std::string& iDescription,
+			   const std::string& iLua, std::vector<PinSpec> iInputs) -> NodeType {
+	NodeType type{.id = iId,
+				  .title = iTitle,
+				  .category = "Table",
+				  .description = iDescription,
+				  .kind = NodeKind::Statement,
+				  .lua = iLua,
+				  .inputs = {execIn()},
+				  .outputs = {execOut()},
+				  .pure = false};
+	for (auto& input: iInputs) type.inputs.push_back(std::move(input));
+	return type;
+}
+
+void addTables(std::vector<NodeType>& ioTypes) {
+	constexpr auto table = PinType::Table;
+	constexpr auto any = PinType::Any;
+	ioTypes.push_back(pureOp("table.get", "Get Field", "Table", "Value of a key of a table, nil when it has none.",
+							 "{0}[{1}]", {pin("Table", table), pin("Key", any)}, any));
+	ioTypes.push_back(pureOp("table.has_key", "Has Key", "Table", "Whether a table holds a value at a key.",
+							 "{0}[{1}] ~= nil", {pin("Table", table), pin("Key", any)}, PinType::Boolean));
+	ioTypes.push_back(pureOp("table.get_item", "Get Item", "Table", "Item of a list at an index, from 1.", "{0}[{1}]",
+							 {pin("List", table), pin("Index", PinType::Integer, "1")}, any));
+	ioTypes.push_back(pureOp("table.length", "List Length", "Table", "Number of items of a list.", "#{0}",
+							 {pin("List", table)}, PinType::Integer));
+	ioTypes.push_back(pureOp("table.contains", "Contains", "Table", "Whether a list holds a value.",
+							 "table.find({0}, {1}) ~= nil", {pin("List", table), pin("Value", any)}, PinType::Boolean));
+	ioTypes.push_back(
+			pureOp("table.make_list", "Make List", "Table", "A new list of the values given, in order.",
+				   "{ {0}, {1}, {2}, {3} }",
+				   {pin("A", any, {}, true), pin("B", any, {}, true), pin("C", any, {}, true), pin("D", any, {}, true)},
+				   table));
+	ioTypes.push_back(statement("table.set", "Set Field", "Change the value of a key of a table.", "{0}[{1}] = {2}",
+								{pin("Table", table), pin("Key", any), pin("Value", any)}));
+	ioTypes.push_back(statement("table.append", "Add Item", "Add a value at the end of a list.",
+								"table.insert({0}, {1})", {pin("List", table), pin("Value", any)}));
+	ioTypes.push_back(statement("table.remove", "Remove Item", "Remove the item of a list at an index, from 1.",
+								"table.remove({0}, {1})", {pin("List", table), pin("Index", PinType::Integer, "1")}));
 }
 
 void addCompounds(std::vector<NodeType>& ioTypes) {
@@ -371,13 +506,40 @@ void addFunctions(std::vector<NodeType>& ioTypes) {
 					   .pure = false});
 }
 
+// The pins of a custom node and of a Lua function come from their definition; a pure one has no execution pins.
+void addScripted(std::vector<NodeType>& ioTypes) {
+	const auto add = [&ioTypes](std::string iId, std::string iTitle, std::string iCategory, std::string iDescription,
+								const NodeKind iKind, const bool iPure) -> void {
+		ioTypes.push_back({.id = std::move(iId),
+						   .title = std::move(iTitle),
+						   .category = std::move(iCategory),
+						   .description = std::move(iDescription),
+						   .kind = iKind,
+						   .lua = {},
+						   .inputs = iPure ? std::vector<PinSpec>{} : std::vector{execIn()},
+						   .outputs = iPure ? std::vector<PinSpec>{} : std::vector{execOut()},
+						   .pure = iPure});
+	};
+	add("custom.call", "Custom Node", "Custom", "Run the Lua of a custom node of this graph.", NodeKind::CustomCall,
+		false);
+	add("custom.pure", "Custom Value", "Custom", "Compute the outputs of a pure custom node of this graph.",
+		NodeKind::CustomCall, true);
+	add("lua.call", "Lua Function", "Lua", "Run an annotated function of a Lua module.", NodeKind::LuaCall, false);
+	add("lua.pure", "Lua Value", "Lua", "Compute the results of a pure annotated function of a Lua module.",
+		NodeKind::LuaCall, true);
+}
+
 auto buildNodeTypes() -> std::vector<NodeType> {
 	std::vector<NodeType> types;
 	addEvents(types);
 	addFlow(types);
 	addFunctions(types);
+	addScripted(types);
 	addValues(types);
 	addOperators(types);
+	addMath(types);
+	addText(types);
+	addTables(types);
 	addCompounds(types);
 	for (auto& type: getBindingNodeTypes()) types.push_back(std::move(type));
 	return types;
@@ -386,6 +548,32 @@ auto buildNodeTypes() -> std::vector<NodeType> {
 
 auto isNumeric(const PinType iType) -> bool { return iType == PinType::Integer || iType == PinType::Number; }
 
+void emitParameters(YAML::Emitter& ioOut, const char* iKey, const std::vector<GraphParameter>& iParameters) {
+	ioOut << YAML::Key << iKey << YAML::Value << YAML::Flow << YAML::BeginSeq;
+	for (const auto& parameter: iParameters)
+		ioOut << YAML::BeginMap << YAML::Key << "name" << YAML::Value << parameter.name << YAML::Key << "type"
+			  << YAML::Value << std::string{getPinTypeKey(parameter.type)} << YAML::EndMap;
+	ioOut << YAML::EndSeq;
+}
+
+void emitCustomNodes(YAML::Emitter& ioOut, const std::vector<CustomNode>& iNodes) {
+	if (iNodes.empty())
+		return;
+	ioOut << YAML::Key << "customNodes" << YAML::Value << YAML::BeginSeq;
+	for (const auto& custom: iNodes) {
+		ioOut << YAML::BeginMap;
+		ioOut << YAML::Key << "name" << YAML::Value << custom.name;
+		ioOut << YAML::Key << "title" << YAML::Value << custom.title;
+		emitParameters(ioOut, "inputs", custom.inputs);
+		emitParameters(ioOut, "outputs", custom.outputs);
+		if (custom.pure)
+			ioOut << YAML::Key << "pure" << YAML::Value << true;
+		ioOut << YAML::Key << "code" << YAML::Value << YAML::Literal << custom.code;
+		ioOut << YAML::EndMap;
+	}
+	ioOut << YAML::EndSeq;
+}
+
 void emitScript(YAML::Emitter& ioOut, const VisualScript& iScript) {
 	ioOut << YAML::Key << "variables" << YAML::Value << YAML::BeginSeq;
 	for (const auto& variable: iScript.variables) {
@@ -393,31 +581,33 @@ void emitScript(YAML::Emitter& ioOut, const VisualScript& iScript) {
 		ioOut << YAML::Key << "name" << YAML::Value << variable.name;
 		ioOut << YAML::Key << "type" << YAML::Value << std::string{ScriptEngine::propertyTypeName(variable.type)};
 		ioOut << YAML::Key << "default" << YAML::Value << variable.defaultValue;
+		for (const auto& [key, bound]:
+			 {std::pair{"min", variable.min}, std::pair{"max", variable.max}, std::pair{"step", variable.step}})
+			if (bound.has_value())
+				ioOut << YAML::Key << key << YAML::Value << *bound;
+		if (!variable.exposed)
+			ioOut << YAML::Key << "exposed" << YAML::Value << false;
 		ioOut << YAML::EndMap;
 	}
 	ioOut << YAML::EndSeq;
 	if (!iScript.functions.empty()) {
-		const auto emitParameters = [&ioOut](const char* iKey, const std::vector<GraphParameter>& iParameters) -> void {
-			ioOut << YAML::Key << iKey << YAML::Value << YAML::Flow << YAML::BeginSeq;
-			for (const auto& parameter: iParameters)
-				ioOut << YAML::BeginMap << YAML::Key << "name" << YAML::Value << parameter.name << YAML::Key << "type"
-					  << YAML::Value << std::string{getPinTypeKey(parameter.type)} << YAML::EndMap;
-			ioOut << YAML::EndSeq;
-		};
 		ioOut << YAML::Key << "functions" << YAML::Value << YAML::BeginSeq;
 		for (const auto& function: iScript.functions) {
 			ioOut << YAML::BeginMap;
 			ioOut << YAML::Key << "name" << YAML::Value << function.name;
-			emitParameters("inputs", function.inputs);
-			emitParameters("outputs", function.outputs);
+			emitParameters(ioOut, "inputs", function.inputs);
+			emitParameters(ioOut, "outputs", function.outputs);
 			if (function.macro) {
 				ioOut << YAML::Key << "macro" << YAML::Value << true;
 				ioOut << YAML::Key << "exits" << YAML::Value << YAML::Flow << function.exits;
 			}
+			if (function.exported)
+				ioOut << YAML::Key << "exported" << YAML::Value << true;
 			ioOut << YAML::EndMap;
 		}
 		ioOut << YAML::EndSeq;
 	}
+	emitCustomNodes(ioOut, iScript.customNodes);
 	ioOut << YAML::Key << "nodes" << YAML::Value << YAML::BeginSeq;
 	for (const auto& node: iScript.nodes) {
 		ioOut << YAML::BeginMap;
@@ -452,12 +642,22 @@ void emitScript(YAML::Emitter& ioOut, const VisualScript& iScript) {
 	ioOut << YAML::EndSeq;
 }
 
+auto optionalFloat(const YAML::Node& iNode) -> std::optional<float> {
+	if (!iNode)
+		return std::nullopt;
+	return iNode.as<float>();
+}
+
 auto parseVariable(const YAML::Node& iNode) -> std::optional<GraphVariable> {
 	if (!iNode.IsMap() || !iNode["name"])
 		return std::nullopt;
 	GraphVariable variable{.name = iNode["name"].as<std::string>(),
 						   .type = ScriptPropertyType::Float,
-						   .defaultValue = iNode["default"].as<std::string>("")};
+						   .defaultValue = iNode["default"].as<std::string>(""),
+						   .min = optionalFloat(iNode["min"]),
+						   .max = optionalFloat(iNode["max"]),
+						   .step = optionalFloat(iNode["step"]),
+						   .exposed = iNode["exposed"].as<bool>(true)};
 	if (const auto type = ScriptEngine::parsePropertyType(iNode["type"].as<std::string>("float")); type.has_value())
 		variable.type = *type;
 	return variable;
@@ -483,10 +683,25 @@ auto parseFunction(const YAML::Node& iNode) -> std::optional<GraphFunction> {
 						   .inputs = parseParameters(iNode["inputs"]),
 						   .outputs = parseParameters(iNode["outputs"]),
 						   .macro = iNode["macro"].as<bool>(false),
-						   .exits = {"Then"}};
+						   .exits = {"Then"},
+						   .exported = iNode["exported"].as<bool>(false)};
 	if (const auto exits = iNode["exits"]; function.macro && exits && exits.IsSequence() && exits.size() > 0)
 		function.exits = exits.as<std::vector<std::string>>();
 	return function;
+}
+
+// The literal block of the code ends with the line break YAML keeps: the body never needs it.
+auto parseCustomNode(const YAML::Node& iNode) -> std::optional<CustomNode> {
+	if (!iNode.IsMap() || !iNode["name"])
+		return std::nullopt;
+	auto custom = CustomNode{.name = iNode["name"].as<std::string>(),
+							 .title = iNode["title"].as<std::string>(""),
+							 .inputs = parseParameters(iNode["inputs"]),
+							 .outputs = parseParameters(iNode["outputs"]),
+							 .code = iNode["code"].as<std::string>(""),
+							 .pure = iNode["pure"].as<bool>(false)};
+	while (custom.code.ends_with('\n')) custom.code.pop_back();
+	return custom;
 }
 
 auto parseNode(const YAML::Node& iNode) -> std::optional<GraphNode> {
@@ -530,6 +745,9 @@ auto parseScript(const YAML::Node& iRoot) -> VisualScript {
 	for (const auto& entry: iRoot["functions"])
 		if (auto function = parseFunction(entry); function.has_value())
 			script.functions.push_back(std::move(*function));
+	for (const auto& entry: iRoot["customNodes"])
+		if (auto custom = parseCustomNode(entry); custom.has_value())
+			script.customNodes.push_back(std::move(*custom));
 	for (const auto& entry: iRoot["nodes"])
 		if (auto node = parseNode(entry); node.has_value())
 			script.nodes.push_back(std::move(*node));
@@ -547,6 +765,7 @@ struct LibraryCache {
 	std::mutex mutex;
 	LibraryReader reader;
 	std::map<std::string, std::optional<VisualScript>, std::less<>> graphs;
+	std::map<std::string, std::optional<std::vector<LuaFunction>>, std::less<>> modules;
 };
 
 auto libraryCache() -> LibraryCache& {
@@ -573,6 +792,83 @@ constexpr std::array<std::pair<PinType, std::string_view>, 11> g_pinTypeKeys{{{P
 																			  {PinType::Color, "color"},
 																			  {PinType::Any, "any"}}};
 
+auto trimmed(std::string_view iText) -> std::string_view {
+	while (!iText.empty() && std::isspace(static_cast<unsigned char>(iText.front())) != 0) iText.remove_prefix(1);
+	while (!iText.empty() && std::isspace(static_cast<unsigned char>(iText.back())) != 0) iText.remove_suffix(1);
+	return iText;
+}
+
+auto isIdentifierChar(const char iChar) -> bool {
+	return std::isalnum(static_cast<unsigned char>(iChar)) != 0 || iChar == '_';
+}
+
+// Splits off the first word of a text: up to the first space.
+auto nextWord(std::string_view& ioText) -> std::string_view {
+	ioText = trimmed(ioText);
+	const auto end = std::min(ioText.find_first_of(" \t"), ioText.size());
+	const auto word = ioText.substr(0, end);
+	ioText.remove_prefix(end);
+	return word;
+}
+
+// A Lua type of an annotation (`number`, `vector3?`, `string|nil`) as a pin type; `Any` for one graphs do not know.
+auto annotationType(std::string_view iType) -> PinType {
+	if (iType.ends_with('?'))
+		iType.remove_suffix(1);
+	if (iType.ends_with("|nil"))
+		iType.remove_suffix(4);
+	const auto* const found = std::ranges::find(g_pinTypeKeys, iType, &std::pair<PinType, std::string_view>::second);
+	if (found == g_pinTypeKeys.end() || found->first == PinType::Exec)
+		return PinType::Any;
+	return found->first;
+}
+
+void annotate(LuaFunction& ioFunction, bool& ioAnnotated, std::string_view iText) {
+	if (!iText.starts_with('@')) {
+		if (!iText.empty())
+			ioFunction.description += ioFunction.description.empty() ? std::string{iText} : " " + std::string{iText};
+		return;
+	}
+	const auto tag = nextWord(iText);
+	if (tag == "@pure") {
+		ioFunction.pure = true;
+	} else if (tag == "@param") {
+		auto name = nextWord(iText);
+		if (name.ends_with('?'))
+			name.remove_suffix(1);
+		ioFunction.inputs.push_back({.name = std::string{name}, .type = annotationType(nextWord(iText))});
+	} else if (tag == "@return") {
+		const auto type = annotationType(nextWord(iText));
+		auto name = std::string{nextWord(iText)};
+		if (name.empty() || !std::ranges::all_of(name, isIdentifierChar))
+			name = ioFunction.outputs.empty() ? "Result" : std::format("Result{}", ioFunction.outputs.size() + 1);
+		ioFunction.outputs.push_back({.name = std::move(name), .type = type});
+	} else {
+		return;
+	}
+	ioAnnotated = true;
+}
+
+// The name of `function M.name(`, the only form a graph calls: a field of the table the module returns.
+auto moduleFunctionName(std::string_view iLine) -> std::optional<std::string> {
+	if (!iLine.starts_with("function "))
+		return std::nullopt;
+	iLine = trimmed(iLine.substr(9));
+	const auto dot = iLine.find('.');
+	const auto paren = iLine.find('(');
+	if (dot == std::string_view::npos || paren == std::string_view::npos || dot == 0 || paren < dot)
+		return std::nullopt;
+	const auto table = iLine.substr(0, dot);
+	const auto name = trimmed(iLine.substr(dot + 1, paren - dot - 1));
+	if (name.empty() || !std::ranges::all_of(table, isIdentifierChar) || !std::ranges::all_of(name, isIdentifierChar))
+		return std::nullopt;
+	return std::string{name};
+}
+
+void appendPins(std::vector<PinSpec>& ioPins, const std::vector<GraphParameter>& iParameters) {
+	for (const auto& parameter: iParameters) ioPins.push_back(pin(parameter.name, parameter.type));
+}
+
 }// namespace
 
 void setLibraryReader(LibraryReader iReader) {
@@ -580,12 +876,14 @@ void setLibraryReader(LibraryReader iReader) {
 	const std::scoped_lock<std::mutex> lock{cache.mutex};
 	cache.reader = std::move(iReader);
 	cache.graphs.clear();
+	cache.modules.clear();
 }
 
 void clearLibraryCache() {
 	auto& cache = libraryCache();
 	const std::scoped_lock<std::mutex> lock{cache.mutex};
 	cache.graphs.clear();
+	cache.modules.clear();
 }
 
 auto findLibrary(const std::string_view iPath) -> const VisualScript* {
@@ -619,6 +917,67 @@ auto findNodeFunction(const VisualScript& iScript, const GraphNode& iNode) -> co
 	return iScript.findFunction(name->second);
 }
 
+auto findNodeCustom(const VisualScript& iScript, const GraphNode& iNode) -> const CustomNode* {
+	const auto name = iNode.values.find("custom");
+	return name == iNode.values.end() ? nullptr : iScript.findCustomNode(name->second);
+}
+
+auto parseLuaFunctions(const std::string_view iSource) -> std::vector<LuaFunction> {
+	std::vector<LuaFunction> functions;
+	LuaFunction pending;
+	bool annotated = false;
+	for (const auto range: std::views::split(iSource, '\n')) {
+		const auto text = trimmed(std::string_view{range.begin(), range.end()});
+		if (text.starts_with("---")) {
+			annotate(pending, annotated, trimmed(text.substr(3)));
+			continue;
+		}
+		if (annotated)
+			if (auto name = moduleFunctionName(text); name.has_value()) {
+				pending.name = std::move(*name);
+				functions.push_back(std::move(pending));
+			}
+		pending = LuaFunction{};
+		annotated = false;
+	}
+	return functions;
+}
+
+auto getLuaModulePath(const std::string_view iModule) -> std::string {
+	std::string path{iModule};
+	std::ranges::replace(path, '.', '/');
+	return path + ".lua";
+}
+
+auto findLuaModule(const std::string_view iModule) -> const std::vector<LuaFunction>* {
+	if (iModule.empty())
+		return nullptr;
+	auto& cache = libraryCache();
+	const std::scoped_lock<std::mutex> lock{cache.mutex};
+	if (const auto found = cache.modules.find(iModule); found != cache.modules.end())
+		return found->second.has_value() ? &*found->second : nullptr;
+	std::optional<std::vector<LuaFunction>> functions;
+	const auto path = getLuaModulePath(iModule);
+	if (const auto text = cache.reader ? cache.reader(path) : readLibraryText(path); text.has_value())
+		functions = parseLuaFunctions(*text);
+	else
+		OWL_CORE_WARN("VisualScript: The Lua module '{}' is in no asset folder.", iModule)
+	const auto [it, inserted] = cache.modules.emplace(std::string{iModule}, std::move(functions));
+	return it->second.has_value() ? &*it->second : nullptr;
+}
+
+auto findNodeLuaFunction(const GraphNode& iNode) -> const LuaFunction* {
+	const auto module = iNode.values.find("module");
+	const auto name = iNode.values.find("function");
+	if (module == iNode.values.end() || name == iNode.values.end())
+		return nullptr;
+	const auto* functions = findLuaModule(module->second);
+	if (functions == nullptr)
+		return nullptr;
+	const auto found = std::ranges::find(*functions, name->second, &LuaFunction::name);
+	return found == functions->end() ? nullptr : &*found;
+}
+
 auto getPinTypeKey(const PinType iType) -> std::string_view {
 	const auto* const found = std::ranges::find(g_pinTypeKeys, iType, &std::pair<PinType, std::string_view>::first);
 	return found == g_pinTypeKeys.end() ? "any" : found->second;
@@ -634,6 +993,11 @@ auto parsePinTypeKey(const std::string_view iName) -> std::optional<PinType> {
 auto VisualScript::findFunction(const std::string_view iName) const -> const GraphFunction* {
 	const auto it = std::ranges::find(functions, iName, &GraphFunction::name);
 	return it == functions.end() ? nullptr : &*it;
+}
+
+auto VisualScript::findCustomNode(const std::string_view iName) const -> const CustomNode* {
+	const auto it = std::ranges::find(customNodes, iName, &CustomNode::name);
+	return it == customNodes.end() ? nullptr : &*it;
 }
 
 auto VisualScript::findNode(const core::UUID iId) const -> const GraphNode* {
@@ -676,6 +1040,15 @@ auto getNodePins(const VisualScript& iScript, const GraphNode& iNode) -> NodePin
 	if (type->kind == NodeKind::Call) {
 		pins.inputs = groupPins(pins.inputs, iNode);
 		pins.outputs = groupPins(pins.outputs, iNode);
+	}
+	if (type->kind == NodeKind::CustomCall || type->kind == NodeKind::LuaCall) {
+		const auto* custom = type->kind == NodeKind::CustomCall ? findNodeCustom(iScript, iNode) : nullptr;
+		const auto* function = type->kind == NodeKind::LuaCall ? findNodeLuaFunction(iNode) : nullptr;
+		if (custom == nullptr && function == nullptr)
+			return pins;
+		appendPins(pins.inputs, custom != nullptr ? custom->inputs : function->inputs);
+		appendPins(pins.outputs, custom != nullptr ? custom->outputs : function->outputs);
+		return pins;
 	}
 	if (type->kind == NodeKind::FunctionEntry || type->kind == NodeKind::FunctionReturn ||
 		type->kind == NodeKind::FunctionCall) {

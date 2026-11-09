@@ -1,0 +1,210 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: speed, type: float, default: 6}
+    - {name: limit, type: float, default: 0}
+    - {name: leaving, type: bool, default: false}
+  nodes:
+    - id: 7540000000000000001
+      type: event.on_update
+      position: [0, 0]
+    - id: 7540000000000000002
+      type: var.get
+      position: [320, 0]
+      values:
+        variable: leaving
+    - id: 7540000000000000003
+      type: flow.branch
+      position: [608, 0]
+    - id: 7540000000000000004
+      type: call.input.is_action_pressed
+      position: [608, 136]
+      values:
+        action: pause
+    - id: 7540000000000000005
+      type: flow.branch
+      position: [976, 0]
+    - id: 7540000000000000006
+      type: var.set
+      position: [1256, 0]
+      values:
+        Value: true
+        variable: leaving
+    - id: 7540000000000000007
+      type: value.string
+      position: [1256, 144]
+    - id: 7540000000000000008
+      type: call.gamestate.get
+      position: [1536, 0]
+      values:
+        key: iso_return
+    - id: 7540000000000000009
+      type: call.gamestate.remove
+      position: [1864, 0]
+      values:
+        key: iso_return
+    - id: 7540000000000000010
+      type: value.string
+      position: [1864, 144]
+    - id: 7540000000000000011
+      type: compare.not_equal
+      position: [2152, 0]
+    - id: 7540000000000000012
+      type: logic.select
+      position: [2152, 136]
+      values:
+        False: scenes/main_menu.owl
+    - id: 7540000000000000013
+      type: call.scene.transition_to
+      position: [2472, 0]
+      values:
+        duration: 0.3
+        kind: fade
+    - id: 7540000000000000014
+      type: call.input.get_action_vector
+      position: [0, 376]
+      values:
+        action: pan
+        split.xy: true
+    - id: 7540000000000000015
+      type: math.negate
+      position: [320, 376]
+    - id: 7540000000000000016
+      type: compare.equal
+      position: [320, 488]
+      values:
+        B: 0
+    - id: 7540000000000000017
+      type: compare.equal
+      position: [608, 376]
+      values:
+        B: 0
+    - id: 7540000000000000018
+      type: logic.and
+      position: [608, 512]
+    - id: 7540000000000000019
+      type: flow.branch
+      position: [976, 376]
+    - id: 7540000000000000020
+      type: var.get
+      position: [0, 728]
+      values:
+        variable: speed
+    - id: 7540000000000000021
+      type: math.multiply
+      position: [320, 728]
+    - id: 7540000000000000022
+      type: math.multiply
+      position: [608, 728]
+      values:
+        B: 0.5
+    - id: 7540000000000000023
+      type: call.transform.get_position
+      position: [0, 848]
+      values:
+        split.xyz: true
+    - id: 7540000000000000024
+      type: math.subtract
+      position: [320, 864]
+    - id: 7540000000000000025
+      type: math.negate
+      position: [320, 1000]
+    - id: 7540000000000000026
+      type: math.subtract
+      position: [608, 864]
+    - id: 7540000000000000027
+      type: math.multiply
+      position: [976, 728]
+    - id: 7540000000000000028
+      type: math.add
+      position: [1256, 728]
+    - id: 7540000000000000029
+      type: math.multiply
+      position: [976, 864]
+    - id: 7540000000000000030
+      type: math.add
+      position: [1256, 864]
+    - id: 7540000000000000031
+      type: var.get
+      position: [1256, 1000]
+      values:
+        variable: limit
+    - id: 7540000000000000032
+      type: compare.greater
+      position: [1536, 728]
+      values:
+        B: 0
+    - id: 7540000000000000033
+      type: math.clamp
+      position: [1536, 864]
+      values:
+        Min: 0
+    - id: 7540000000000000034
+      type: logic.select
+      position: [1864, 728]
+    - id: 7540000000000000035
+      type: math.clamp
+      position: [1536, 1024]
+      values:
+        Min: 0
+    - id: 7540000000000000036
+      type: logic.select
+      position: [1864, 888]
+    - id: 7540000000000000037
+      type: call.transform.set_position
+      position: [2152, 728]
+      values:
+        split.xyz: true
+  links:
+    - {from: 7540000000000000002, fromPin: Value, to: 7540000000000000003, toPin: Condition}
+    - {from: 7540000000000000004, fromPin: pressed, to: 7540000000000000005, toPin: Condition}
+    - {from: 7540000000000000001, fromPin: Then, to: 7540000000000000003, toPin: Exec}
+    - {from: 7540000000000000003, fromPin: False, to: 7540000000000000005, toPin: Exec}
+    - {from: 7540000000000000007, fromPin: Result, to: 7540000000000000008, toPin: default}
+    - {from: 7540000000000000008, fromPin: value, to: 7540000000000000011, toPin: A}
+    - {from: 7540000000000000010, fromPin: Result, to: 7540000000000000011, toPin: B}
+    - {from: 7540000000000000011, fromPin: Result, to: 7540000000000000012, toPin: Condition}
+    - {from: 7540000000000000008, fromPin: value, to: 7540000000000000012, toPin: True}
+    - {from: 7540000000000000012, fromPin: Result, to: 7540000000000000013, toPin: scene_path}
+    - {from: 7540000000000000005, fromPin: True, to: 7540000000000000006, toPin: Exec}
+    - {from: 7540000000000000006, fromPin: Then, to: 7540000000000000008, toPin: Exec}
+    - {from: 7540000000000000008, fromPin: Then, to: 7540000000000000009, toPin: Exec}
+    - {from: 7540000000000000009, fromPin: Then, to: 7540000000000000013, toPin: Exec}
+    - {from: 7540000000000000014, fromPin: y, to: 7540000000000000015, toPin: A}
+    - {from: 7540000000000000014, fromPin: x, to: 7540000000000000016, toPin: A}
+    - {from: 7540000000000000015, fromPin: Result, to: 7540000000000000017, toPin: A}
+    - {from: 7540000000000000016, fromPin: Result, to: 7540000000000000018, toPin: A}
+    - {from: 7540000000000000017, fromPin: Result, to: 7540000000000000018, toPin: B}
+    - {from: 7540000000000000018, fromPin: Result, to: 7540000000000000019, toPin: Condition}
+    - {from: 7540000000000000005, fromPin: False, to: 7540000000000000019, toPin: Exec}
+    - {from: 7540000000000000020, fromPin: Value, to: 7540000000000000021, toPin: A}
+    - {from: 7540000000000000001, fromPin: dt, to: 7540000000000000021, toPin: B}
+    - {from: 7540000000000000021, fromPin: Result, to: 7540000000000000022, toPin: A}
+    - {from: 7540000000000000014, fromPin: x, to: 7540000000000000024, toPin: A}
+    - {from: 7540000000000000015, fromPin: Result, to: 7540000000000000024, toPin: B}
+    - {from: 7540000000000000014, fromPin: x, to: 7540000000000000025, toPin: A}
+    - {from: 7540000000000000025, fromPin: Result, to: 7540000000000000026, toPin: A}
+    - {from: 7540000000000000015, fromPin: Result, to: 7540000000000000026, toPin: B}
+    - {from: 7540000000000000024, fromPin: Result, to: 7540000000000000027, toPin: A}
+    - {from: 7540000000000000022, fromPin: Result, to: 7540000000000000027, toPin: B}
+    - {from: 7540000000000000023, fromPin: x, to: 7540000000000000028, toPin: A}
+    - {from: 7540000000000000027, fromPin: Result, to: 7540000000000000028, toPin: B}
+    - {from: 7540000000000000026, fromPin: Result, to: 7540000000000000029, toPin: A}
+    - {from: 7540000000000000022, fromPin: Result, to: 7540000000000000029, toPin: B}
+    - {from: 7540000000000000023, fromPin: y, to: 7540000000000000030, toPin: A}
+    - {from: 7540000000000000029, fromPin: Result, to: 7540000000000000030, toPin: B}
+    - {from: 7540000000000000031, fromPin: Value, to: 7540000000000000032, toPin: A}
+    - {from: 7540000000000000028, fromPin: Result, to: 7540000000000000033, toPin: Value}
+    - {from: 7540000000000000031, fromPin: Value, to: 7540000000000000033, toPin: Max}
+    - {from: 7540000000000000032, fromPin: Result, to: 7540000000000000034, toPin: Condition}
+    - {from: 7540000000000000033, fromPin: Result, to: 7540000000000000034, toPin: True}
+    - {from: 7540000000000000028, fromPin: Result, to: 7540000000000000034, toPin: False}
+    - {from: 7540000000000000030, fromPin: Result, to: 7540000000000000035, toPin: Value}
+    - {from: 7540000000000000031, fromPin: Value, to: 7540000000000000035, toPin: Max}
+    - {from: 7540000000000000032, fromPin: Result, to: 7540000000000000036, toPin: Condition}
+    - {from: 7540000000000000035, fromPin: Result, to: 7540000000000000036, toPin: True}
+    - {from: 7540000000000000030, fromPin: Result, to: 7540000000000000036, toPin: False}
+    - {from: 7540000000000000034, fromPin: Result, to: 7540000000000000037, toPin: x}
+    - {from: 7540000000000000036, fromPin: Result, to: 7540000000000000037, toPin: y}
+    - {from: 7540000000000000023, fromPin: z, to: 7540000000000000037, toPin: z}
+    - {from: 7540000000000000019, fromPin: False, to: 7540000000000000037, toPin: Exec}

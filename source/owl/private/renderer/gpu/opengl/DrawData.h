@@ -113,6 +113,13 @@ public:
 	 */
 	void setShader(const std::string& iShaderName, const std::string& iRenderer) override;
 
+	/**
+	 * @brief
+	 *  Draw with another shader until reset.
+	 * @param[in] iShader The shader, null for the shader of `init`.
+	 */
+	void setShaderVariant(const shared<gpu::Shader>& iShader) override;
+
 private:
 	/// Pointer to the vertex array.
 	shared<VertexArray> mp_vertexArray;
@@ -122,5 +129,7 @@ private:
 	shared<VertexBuffer> mp_instanceBuffer;
 	/// Pointer to the shader.
 	shared<Shader> mp_shader;
+	/// Shader drawn with instead of `mp_shader`, null for none.
+	shared<Shader> mp_variant;
 };
 }// namespace owl::renderer::gpu::opengl

@@ -15,6 +15,7 @@
 #include <script/visual/VisualScript.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -316,6 +317,57 @@ public:
 
 	/**
 	 * @brief
+	 *  Add a custom node: a Lua function of the graph with one input and one output, called by a new node at the
+	 *  centre of the view.
+	 * @return Its name.
+	 */
+	auto addCustomNode() -> std::string;
+
+	/**
+	 * @brief
+	 *  Remove a custom node and the nodes that call it.
+	 * @param[in] iName Custom node name.
+	 */
+	void removeCustomNode(const std::string& iName);
+
+	/**
+	 * @brief
+	 *  Rename a custom node and the nodes that call it.
+	 * @param[in] iName Current name.
+	 * @param[in] iNewName New name.
+	 */
+	void renameCustomNode(const std::string& iName, const std::string& iNewName);
+
+	/**
+	 * @brief
+	 *  Replace the definition of a custom node: a pin renamed in place keeps its links, the links of a lost pin go,
+	 *  and its calls follow when it turns pure or not.
+	 * @param[in] iName Custom node name.
+	 * @param[in] iCustom The new definition (its name is kept).
+	 * @param[in] iMerge Merge with the previous edit of the same kind (typing in a field).
+	 */
+	void setCustomNode(const std::string& iName, script::visual::CustomNode iCustom, bool iMerge = false);
+
+	/**
+	 * @brief
+	 *  A Lua module of the project and its annotated functions.
+	 */
+	struct LuaModuleEntry {
+		/// Module name, as `require` takes it (`scripts.lib.maths`).
+		std::string module;
+		/// Its annotated functions.
+		std::vector<script::visual::LuaFunction> functions;
+	};
+
+	/**
+	 * @brief
+	 *  Replace the Lua modules the palette offers (Owl Nest lists the project ones).
+	 * @param[in] iModules The modules.
+	 */
+	void setLuaModules(std::vector<LuaModuleEntry> iModules) { m_luaModules = std::move(iModules); }
+
+	/**
+	 * @brief
 	 *  A library graph of the project and the functions it offers.
 	 */
 	struct LibraryEntry {
@@ -469,6 +521,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Min, max and step rows of a numeric variable: an empty field leaves it unbounded.
+	 * @param[in] iIndex Index of the variable.
+	 */
+	void drawVariableBounds(size_t iIndex);
+
+	/**
+	 * @brief
 	 *  Function and macro list.
 	 */
 	void renderFunctions();
@@ -479,6 +538,26 @@ private:
 	 * @param[in] iFunction The function.
 	 */
 	void renderSignature(const script::visual::GraphFunction& iFunction);
+
+	/**
+	 * @brief
+	 *  Custom node list: name, title, pins, kind and Lua body of each.
+	 */
+	void renderCustomNodes();
+
+	/**
+	 * @brief
+	 *  Editors of a list of typed pins.
+	 * @param[in] iTitle Title of the list.
+	 * @param[in] iParameters The pins.
+	 * @param[in] iAddName Name of a new pin, numbered when taken.
+	 * @param[in] iAddLabel Label of the add button.
+	 * @return The edited list when it changed.
+	 */
+	[[nodiscard]] static auto renderParameters(const char* iTitle,
+											   const std::vector<script::visual::GraphParameter>& iParameters,
+											   const std::string& iAddName, const char* iAddLabel)
+			-> std::optional<std::vector<script::visual::GraphParameter>>;
 
 	/**
 	 * @brief
@@ -553,6 +632,8 @@ private:
 	std::set<core::UUID> m_breakpoints;
 	/// Library graphs offered by the palette.
 	std::vector<LibraryEntry> m_libraries;
+	/// Lua modules offered by the palette.
+	std::vector<LuaModuleEntry> m_luaModules;
 	/// Frame count of the last library scan.
 	int m_libraryScanFrame{-1000};
 

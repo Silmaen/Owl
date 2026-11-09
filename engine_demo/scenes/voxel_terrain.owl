@@ -17,7 +17,7 @@ Entities:
       scale: [1, 1, 1]
     Visibility: {gameVisible: true}
     LuaScript:
-      scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.lua
+      scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.owlvs
       properties:
       - {name: hint, type: string, value: HudHint}
       - {name: duration, type: float, value: 4.5}
@@ -77,7 +77,7 @@ Entities:
       HalfExtents: [0.4, 0.9, 0.4]
       CaptureCursor: true
     LuaScript:
-      scriptPath: gid:c7c7c53907282008:scripts/voxel/voxel_explorer.lua
+      scriptPath: gid:c7c7c53907282008:scripts/voxel/voxel_explorer.owlvs
   - Entity: 3400000000000000005
     Tag:
       tag: MinimapCamera

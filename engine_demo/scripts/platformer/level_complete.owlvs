@@ -1,0 +1,62 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: completed, type: bool, default: false}
+  nodes:
+    - id: 7340000000000000001
+      type: event.custom
+      position: [0, 0]
+      values:
+        function: on_level_complete
+    - id: 7340000000000000002
+      type: var.get
+      position: [0, 150]
+      values:
+        variable: completed
+    - id: 7340000000000000003
+      type: flow.branch
+      position: [242, 0]
+    - id: 7340000000000000004
+      type: var.set
+      position: [506, 0]
+      values:
+        Value: true
+        variable: completed
+    - id: 7340000000000000005
+      type: call.gamestate.set
+      position: [762, 0]
+      values:
+        key: level_platformer_done
+        value: 1
+    - id: 7340000000000000006
+      type: call.gamestate.set
+      position: [1040, 0]
+      values:
+        key: platformer_banner
+        value: Level complete!
+    - id: 7340000000000000007
+      type: call.log.info
+      position: [1318, 0]
+      values:
+        message: Platformer level complete!
+    - id: 7340000000000000008
+      type: call.sound.play
+      position: [1628, 0]
+      values:
+        asset_path: sounds/ui/victory.wav
+    - id: 7340000000000000009
+      type: call.scene.transition_to
+      position: [2010, 0]
+      values:
+        duration: 0.4
+        kind: fade_out
+        scene_path: scenes/world_map.owl
+  links:
+    - {from: 7340000000000000001, fromPin: Then, to: 7340000000000000003, toPin: Exec}
+    - {from: 7340000000000000002, fromPin: Value, to: 7340000000000000003, toPin: Condition}
+    - {from: 7340000000000000003, fromPin: False, to: 7340000000000000004, toPin: Exec}
+    - {from: 7340000000000000004, fromPin: Then, to: 7340000000000000005, toPin: Exec}
+    - {from: 7340000000000000005, fromPin: Then, to: 7340000000000000006, toPin: Exec}
+    - {from: 7340000000000000006, fromPin: Then, to: 7340000000000000007, toPin: Exec}
+    - {from: 7340000000000000007, fromPin: Then, to: 7340000000000000008, toPin: Exec}
+    - {from: 7340000000000000008, fromPin: Then, to: 7340000000000000009, toPin: Exec}

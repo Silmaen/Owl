@@ -134,7 +134,7 @@ TEST(PhysicCommand, Impulse) {
 }
 
 // A dynamic body with `gravityScale = 0` must not accumulate any velocity from world gravity.
-// This is the API the top-down `world_player.lua` uses to opt out of gravity entirely.
+// This is the API the top-down `world_player.owlvs` uses to opt out of gravity entirely.
 TEST(PhysicCommand, GravityScaleZeroCancelsFalling) {
 	Log::init(Log::Level::Off);
 	Scene scene;

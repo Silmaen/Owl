@@ -147,7 +147,7 @@ Done in v0.4.0: `samples/breakout/` (how to play: its `README.md`).
 - Generators in `tools/samples/sokoban/`: `generate_assets.py` (tile sheet, sounds), `generate_levels.py` (tileset,
   tilemaps, level scenes, HUD, from the texts of `levels.py`), `generate_menus.py`; `tools/tests/test_sokoban_levels.py`
   replays a stored solution of each level text.
-- Reuse: the walk frames of `tools/demo/generate_kenney_atlases.py`, `scripts/hub/hub_water.lua` (`get_cell` /
+- Reuse: the walk frames of `tools/demo/generate_kenney_atlases.py`, `scripts/hub/hub_water.owlvs` (`get_cell` /
   `set_cell` on a 2D tilemap), the journal list of `scripts/raycast/inventory.lua`; the menus, first copied from the
   Engine Demo, have a look of their own since the first playthrough.
 - Gaps: G6 (tile bindings named `isometric`), G14 (one scene per level); the music and the effects have their volumes
@@ -319,7 +319,7 @@ against human towers and a human keep, in real 3D, mixing as many rendering styl
 | Saves    | Slots from the pause menu; the roads and stations laid in game are tilemap cells the save keeps (G3)                                                                                            |
 
 - Reuse: `scripts/iso/iso_town.lua` (build tool, road shapes, funds), `scripts/iso/iso_town_traffic.lua` (route
-  following, headings, waits), `scripts/iso/iso_camera.lua`, `scripts/iso/iso_town_life.lua`, `huds/iso_town.owlhud`,
+  following, headings, waits), `scripts/iso/iso_camera.owlvs`, `scripts/iso/iso_town_life.lua`, `huds/iso_town.owlhud`,
   `tilesets/iso_ground.owltileset`, `textures/iso/`, `sounds/town/`, and the small map of the scenarios
   (`test/unit/test_helper/assets/scenarios/iso_town_small.owl`).
 - Gaps, closed in v0.5.0: G1 (trucks spawned from a prefab), G3 (runtime roads kept by a save), G8 (pause, fast
@@ -354,8 +354,8 @@ and the combat come in a later release, once their art exists.
 - Map explored: the fog of `raycast_level.lua` on a 32×32 minimap, set up 8 rows per frame (a single `on_create` loop
   overruns the script time quota on emulated arm64), kept in the gamestate across saves. A slid secret wall shows,
   and stops the fog, in the cell where it stopped (it showed as floor there and the fog saw the room behind it).
-- Reuse: `scripts/raycast/raycast_player.lua`, `scripts/raycast/raycast_level.lua`, `scripts/raycast/pickup.lua`,
-  `scripts/raycast/raycast_exit.lua`, `tilesets/raycast_w3d_walls.owltileset`, `tilesets/minimap.owltileset`,
+- Reuse: `scripts/raycast/raycast_player.owlvs`, `scripts/raycast/raycast_level.lua`, `scripts/raycast/pickup.owlvs`,
+  `scripts/raycast/raycast_exit.owlvs`, `tilesets/raycast_w3d_walls.owltileset`, `tilesets/minimap.owltileset`,
   `sounds/raycast/`; the menus, built from the Engine Demo ones, have a look of their own, and the ratios show
   on the tally, not on the play HUD.
 - Pick-up sparks: a `RendererParticles` layer with `Projection: Raycast` (`raycast_fx`) draws them in the first-person
@@ -385,7 +385,7 @@ and the combat come in a later release, once their art exists.
 | Art      | `textures/atlases/voxel_blocks.png` (home-made by `tools/demo/generate_atlases.py`) plus coal and diamond blocks, icons                                           |
 | Saves    | Slots: a non-procedural world writes its chunks into the save, so the edits come back                                                                             |
 
-- Reuse: `scenes/voxel_terrain.owl`, `huds/voxel.owlhud`, `scripts/voxel/voxel_explorer.lua`,
+- Reuse: `scenes/voxel_terrain.owl`, `huds/voxel.owlhud`, `scripts/voxel/voxel_explorer.owlvs`,
   `tilesets/voxel_blocks.owltileset`, the Voxel Palette and structures of Owl Nest for the island,
   `scripts/raycast/inventory.lua` (window pattern).
 - Gaps: G2 (Lua voxel bindings, blocking), G13 (edits need a captured cursor, blocking), G4 (procedural edits not
@@ -472,7 +472,7 @@ returns to it, none is reached any other way.
 | Item        | What exists                                                                                                                                                  |
 |-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | World map   | The only way in: the main menu starts the hub, no shortcut key leads to a scene                                                                              |
-| Doors       | One script, `scripts/hub/place_door.lua`, with properties (target scene, transition, completion key, entry values) for every place                           |
+| Doors       | One script, `scripts/hub/place_door.owlvs`, with properties (target scene, transition, completion key, entry values) for every place                           |
 | Progress    | Six places: platformer, raycast, iso town, voxel, tavern (cellar included), observatory; the portal wakes at six of six                                      |
 | Hub         | A `HudMarker` on each place left, a minimap, day and night with 2D lights, a reverb cave with adaptive music, Kenney Tiny Farm and Tiny Dungeon tiles        |
 | Tavern      | Kenney Mini Characters: a barkeeper with a tankard on a socket, a server walking a spline, two seated patrons, a dialogue each                               |

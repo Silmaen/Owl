@@ -19,6 +19,7 @@
 #include <scene/SceneSerializer.h>
 #include <scene/UiInputSystem.h>
 #include <scene/component/components.h>
+#include <script/EntityHandle.h>
 #include <script/ScriptInstance.h>
 
 #include <chrono>
@@ -107,7 +108,8 @@ TEST(LuaFocus, setAndGetFocusFromAScript) {
 	EXPECT_EQ(fixture.script().getPropertyInt("before").value_or(-1), 0);
 	EXPECT_EQ(fixture.script().getPropertyBool("accepted").value_or(false), true);
 	EXPECT_EQ(fixture.script().getPropertyBool("refused").value_or(true), false);
-	EXPECT_EQ(fixture.script().getPropertyInt("focused").value_or(-1), static_cast<int64_t>(fixture.second.getUUID()));
+	EXPECT_EQ(fixture.script().getPropertyInt("focused").value_or(-1),
+			  static_cast<int64_t>(getEntityHandle(*fixture.world, fixture.second)));
 	EXPECT_TRUE(fixture.world->getUiInputState().focusVisible);
 }
 
@@ -123,7 +125,8 @@ TEST(LuaFocus, aFocusCallbackReceivesTheWidget) {
 	EXPECT_EQ(fixture.script().getPropertyInt("count").value_or(-1), 0);
 	fixture.press(input::key::Down);
 	fixture.press(input::key::Down);
-	EXPECT_EQ(fixture.script().getPropertyInt("seen").value_or(-1), static_cast<int64_t>(fixture.third.getUUID()));
+	EXPECT_EQ(fixture.script().getPropertyInt("seen").value_or(-1),
+			  static_cast<int64_t>(getEntityHandle(*fixture.world, fixture.third)));
 	EXPECT_EQ(fixture.script().getPropertyInt("count").value_or(-1), 1);
 	// Pressing again on the last widget does not move: no new call.
 	fixture.press(input::key::Down);
@@ -145,7 +148,8 @@ TEST(LuaFocus, acceptClicksTheFocusedButton) {
 	EXPECT_EQ(scene::UiInputSystem::getFocus(*fixture.world).getName(), "Second");
 	fixture.press(input::key::Enter);
 	EXPECT_EQ(fixture.script().getPropertyInt("clicks").value_or(-1), 1);
-	EXPECT_EQ(fixture.script().getPropertyInt("who").value_or(-1), static_cast<int64_t>(fixture.second.getUUID()));
+	EXPECT_EQ(fixture.script().getPropertyInt("who").value_or(-1),
+			  static_cast<int64_t>(getEntityHandle(*fixture.world, fixture.second)));
 }
 
 TEST(LuaFocus, adjustingASliderRunsItsCallback) {

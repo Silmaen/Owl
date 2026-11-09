@@ -66,7 +66,7 @@ void DrawData::buildPipeline(VkDescriptorSetLayout iSetLayout) {
 		vkh.popPipeline(m_pipelineId);
 	for (const auto& variant: m_variants) vkh.popPipeline(variant.pipelineId);
 	m_variants.clear();
-	m_pipelineId = createPipeline(iSetLayout);
+	m_pipelineId = mp_shader ? createPipeline(iSetLayout, *mp_shader) : -1;
 	if (m_pipelineId < 0)
 		return;
 	m_pipelineFamily = vkh.getCurrentFramebuffer()->getPipelineFamily();
@@ -74,11 +74,9 @@ void DrawData::buildPipeline(VkDescriptorSetLayout iSetLayout) {
 }
 
 // NOLINTNEXTLINE(misc-no-recursion): one retry at most, after the rejected SPIR-V is compiled again.
-auto DrawData::createPipeline(VkDescriptorSetLayout iSetLayout) const -> int32_t {
-	if (!mp_shader)
-		return -1;
+auto DrawData::createPipeline(VkDescriptorSetLayout iSetLayout, Shader& iShader) const -> int32_t {
 	auto& vkh = internal::VulkanHandler::get();
-	std::vector<VkPipelineShaderStageCreateInfo> shaderStages = mp_shader->getStagesInfo();
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStages = iShader.getStagesInfo();
 	if (shaderStages.empty())
 		return -1;
 
@@ -105,9 +103,9 @@ auto DrawData::createPipeline(VkDescriptorSetLayout iSetLayout) const -> int32_t
 			.pVertexAttributeDescriptions = attributes.empty() ? nullptr : attributes.data(),
 	};
 	// The generation keeps a reloaded shader out of the deduplication of the pipelines built from its old binaries.
-	const auto pipelineName = mp_shader->getGeneration() == 0
-									  ? mp_shader->getName()
-									  : std::format("{}@{}", mp_shader->getName(), mp_shader->getGeneration());
+	const auto pipelineName = iShader.getGeneration() == 0
+									  ? iShader.getName()
+									  : std::format("{}@{}", iShader.getName(), iShader.getGeneration());
 	const int32_t pipelineId =
 			vkh.pushPipeline(pipelineName, shaderStages, vertexInputInfo, m_pipelineState, iSetLayout);
 	const auto& vkc = internal::VulkanCore::get();
@@ -115,11 +113,11 @@ auto DrawData::createPipeline(VkDescriptorSetLayout iSetLayout) const -> int32_t
 	if (pipelineId < 0) {
 		// Stored SPIR-V the driver refuses at pipeline creation: compile it again once, and retry.
 		if (vkh.getState() == internal::VulkanHandler::State::ErrorCreatingPipeline &&
-			mp_shader->recoverRejectedSpirv("vkCreateGraphicsPipelines failed")) {
+			iShader.recoverRejectedSpirv("vkCreateGraphicsPipelines failed")) {
 			vkh.setState(internal::VulkanHandler::State::Running);
-			return createPipeline(iSetLayout);
+			return createPipeline(iSetLayout, iShader);
 		}
-		OWL_CORE_ERROR("Vulkan: Cannot register the pipeline of shader '{}'.", mp_shader->getName())
+		OWL_CORE_ERROR("Vulkan: Cannot register the pipeline of shader '{}'.", iShader.getName())
 		return -1;
 	}
 	return pipelineId;
@@ -128,28 +126,40 @@ auto DrawData::createPipeline(VkDescriptorSetLayout iSetLayout) const -> int32_t
 auto DrawData::getPipelineForCurrentFramebuffer() const -> int32_t {
 	auto& vkh = internal::VulkanHandler::get();
 	const uint64_t family = vkh.getCurrentFramebuffer()->getPipelineFamily();
-	if (family == m_pipelineFamily)
+	const Shader* shader = mp_variant.get();
+	if (family == m_pipelineFamily && shader == nullptr)
 		return m_pipelineId;
 	for (const auto& variant: m_variants) {
-		if (variant.family == family)
+		if (variant.family == family && variant.shader == shader)
 			return variant.pipelineId;
 	}
-	const int32_t pipelineId = createPipeline(vkh.getPipeline(m_pipelineId).setLayout);
+	const int32_t pipelineId =
+			createPipeline(vkh.getPipeline(m_pipelineId).setLayout, mp_variant ? *mp_variant : *mp_shader);
 	if (pipelineId >= 0)
-		m_variants.push_back({.family = family, .pipelineId = pipelineId});
+		m_variants.push_back({.family = family, .shader = shader, .pipelineId = pipelineId});
 	return pipelineId;
 }
 
 void DrawData::rebuildPipelines(const Shader& iShader) {
 	auto& vkh = internal::VulkanHandler::get();
 	for (auto* draw: liveDrawData()) {
-		if (draw->mp_shader.get() != &iShader || draw->m_pipelineId < 0)
+		if (draw->m_pipelineId < 0)
 			continue;
-		draw->buildPipeline(vkh.getPipeline(draw->m_pipelineId).setLayout);
+		if (draw->mp_shader.get() == &iShader) {
+			draw->buildPipeline(vkh.getPipeline(draw->m_pipelineId).setLayout);
+			continue;
+		}
+		std::erase_if(draw->m_variants, [&vkh, &iShader](const PipelineVariant& iVariant) -> bool {
+			if (iVariant.shader != &iShader)
+				return false;
+			vkh.popPipeline(iVariant.pipelineId);
+			return true;
+		});
 	}
 }
 
 void DrawData::setShader(const std::string& iShaderName, const std::string& iRenderer) {
+	m_shaderBaseName = iShaderName;
 	auto& shLib = Renderer::getShaderLibrary();
 	const auto baseName = Shader::composeName({.name = iShaderName, .renderer = iRenderer});
 	if (!shLib.exists(baseName))
@@ -194,6 +204,10 @@ auto DrawData::getIndexCount() const -> uint32_t {
 	if (mp_indexBuffer)
 		return mp_indexBuffer->getCount();
 	return 0;
+}
+
+void DrawData::setShaderVariant(const shared<gpu::Shader>& iShader) {
+	mp_variant = static_pointer_cast<Shader>(iShader);
 }
 
 }// namespace owl::renderer::gpu::vulkan

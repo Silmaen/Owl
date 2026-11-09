@@ -145,12 +145,11 @@ TEST_F(LuaSandbox, scriptLoadIsTextOnly) {
 }
 
 TEST_F(LuaSandbox, metatablesRestricted) {
-	ASSERT_TRUE(run("local ok = pcall(setmetatable, {}, {__gc = function() end})\n"
-					"gcRefused = not ok\n"
+	ASSERT_TRUE(run("gcIgnored = pcall(setmetatable, {}, {__gc = function() error('ran') end})\n"
 					"plain = getmetatable(setmetatable({}, {__index = {a = 1}})) ~= nil\n"
 					"stringLocked = getmetatable('') == false\n"
 					"stringMethods = ('abc'):upper() == 'ABC'\n"));
-	EXPECT_TRUE(flag("gcRefused"));
+	EXPECT_TRUE(flag("gcIgnored"));
 	EXPECT_TRUE(flag("plain"));
 	EXPECT_TRUE(flag("stringLocked"));
 	EXPECT_TRUE(flag("stringMethods"));
@@ -208,9 +207,9 @@ TEST_F(LuaSandbox, budgetResetBetweenCalls) {
 
 TEST_F(LuaSandbox, massiveAllocationRefused) {
 	engine.setQuotas({.memoryBytes = size_t{8} * 1024 * 1024, .timePerCallMs = 0});
-	ASSERT_TRUE(run("function huge() big = string.rep('x', 1 << 30) end\n"
+	ASSERT_TRUE(run("function huge() big = string.rep('x', 2^30) end\n"
 					"function grow() local t = {} local i = 1 while true do t[i] = {i} i = i + 1 end end\n"
-					"function caught() local ok = pcall(string.rep, 'x', 1 << 30) survived = not ok end\n"));
+					"function caught() local ok = pcall(string.rep, 'x', 2^30) survived = not ok end\n"));
 	EXPECT_FALSE(engine.callFunction("huge"));
 	EXPECT_EQ(engine.getLastStatus(), LuaStatus::MemoryQuota);
 	EXPECT_FALSE(engine.callFunction("grow"));
@@ -224,7 +223,7 @@ TEST_F(LuaSandbox, massiveAllocationRefused) {
 TEST_F(LuaSandbox, memoryCeilingRestoredAfterCaughtBindingError) {
 	engine.setQuotas({.memoryBytes = size_t{8} * 1024 * 1024, .timePerCallMs = 0});
 	registerBindings(engine.getState());
-	ASSERT_TRUE(run("function sneaky() pcall(log.info, {}) big = string.rep('x', 1 << 30) end"));
+	ASSERT_TRUE(run("function sneaky() pcall(log.info, {}) big = string.rep('x', 2^30) end"));
 	EXPECT_FALSE(engine.callFunction("sneaky"));
 	EXPECT_EQ(engine.getLastStatus(), LuaStatus::MemoryQuota);
 }
@@ -340,8 +339,8 @@ TEST_F(LuaSandbox, instanceKeepsRunningAfterRuntimeError) {
 TEST_F(LuaSandbox, instanceDisabledOnMemoryQuota) {
 	const ScriptInstance inst;
 	inst.setQuotas({.memoryBytes = size_t{4} * 1024 * 1024, .timePerCallMs = 0});
-	ASSERT_TRUE(inst.createFromBuffer(toBuffer("function on_update(dt) hoard = string.rep('x', 1 << 28) end\n"),
-									  "hoarder", 1));
+	ASSERT_TRUE(inst.createFromBuffer(toBuffer("function on_update(dt) hoard = string.rep('x', 2^28) end\n"), "hoarder",
+									  1));
 	inst.onUpdate(0.016f);
 	EXPECT_TRUE(inst.isDisabled());
 }

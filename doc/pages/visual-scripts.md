@@ -6,7 +6,8 @@
 
 A visual script (`.owlvs`) is an event graph edited in Owl Nest. Owl compiles it to Lua when it loads. It goes
 wherever a `.lua` script goes: on a `LuaScript` component, as the scene script, in the pack of an exported game. Its
-variables are script properties, shown in the inspector and saved with the scene. The Lua side is described in
+exposed variables are script properties, shown in the inspector and saved with the scene; the others hold the internal
+state of the script. The Lua side is described in
 [Scripting](scripting.md).
 
 ## Create and open
@@ -42,6 +43,7 @@ flowchart LR
 | Gold   | Vector 3 (`x, y, z`)    |
 | Orange | Vector 2 (`x, y`)       |
 | Indigo | Color (`r, g, b, a`)    |
+| Violet | Table, list             |
 | Grey   | Any value               |
 
 - An unlinked input shows its value in a field on the node: a number, a text, a check box, a colour swatch or a
@@ -61,16 +63,33 @@ convert between a value and its components. Variables can be of type `color`, `v
 
 ![The graph of `cellar_ladder.owlvs`: an event, a branch and three actions, with the Nodes and Graph panels](../images/nest/visual_script.png)
 
+## Tables and lists
+
+A table value is typed on its node as `a, b, key = c`: plain items make a list, `key = value` items named fields; a
+number or `true` / `false` stays one, any other text is a string, and text in double quotes keeps its commas. The
+`Table` constant and every unlinked table input take this form; an empty one is an empty table.
+
+- `Get Field` reads a key (`t.key` when the key is a name), `Set Field` writes one; `Get Item` reads a list at an index
+  from 1, `Add Item` and `Remove Item` change a list, `List Length` counts it, `Contains` looks a value up.
+- `For Each` runs its `Body` once per item of a list with the `Index` and the `Item`, then `Completed`.
+- `Split` cuts a text at a separator into a list, `Format` builds a text from up to four values (`%d / %d blocks`).
+- Variables of type `numbers` and `strings` are lists, their default typed as `1, 2, 3`.
+- `Random` and `Random Integer` draw from the scene random stream each time a statement reads them: keep a draw read
+  twice in a variable.
+
 ## Panels
 
 | Panel                     | Content                                                                                       |
 |---------------------------|-----------------------------------------------------------------------------------------------|
 | **Nodes** (Hierarchy)     | Every node by group, with a search field: click one to add it in the view, or drag it in      |
-| **Graph** (Properties)    | **Variables**, **Functions** and **Node** tabs                                                |
+| **Graph** (Properties)    | **Variables**, **Functions**, **Custom** and **Node** tabs                                    |
 
-- **Variables**: one section per variable with its name, type and default; its menu removes it. Renaming a variable
+- **Variables**: one section per variable with its name, type and default, **Min**, **Max** and **Step** for a number
+  (the bounds of its inspector field, empty for none) and **Exposed**: an exposed variable is a script property, the
+  others are internal state, set to their default when the script loads. Its menu removes it. Renaming a variable
   updates its nodes. Drag the header of a variable onto the graph to read it.
 - **Functions**: the functions and macros of the graph, see [Functions and macros](#visual-scripts-functions).
+- **Custom**: the custom nodes of the graph, see [Custom nodes](#visual-scripts-custom).
 - **Node**: the selected node, its description, its errors, its settings (variable, function name), the split of its
   grouped pins and the values of its unlinked inputs.
 - The toolbar switches the document between **Graph** (the nodes), **Split** (the nodes and the generated Lua side by
@@ -86,12 +105,15 @@ Dropping a link on the background opens it too, with only the nodes that take th
 | Group                              | Nodes                                                                                                                                                              |
 |------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Events                             | `On Create`, `On Update`, `On Tick`, `On Destroy`, `On Collision`, the trigger events, `Custom Event` (a function of a chosen name, e.g. a trigger `CallbackName`) |
-| Flow                               | `Branch`, `Sequence`, `For Loop`                                                                                                                                   |
+| Flow                               | `Branch`, `Sequence`, `For Loop`, `For Each` (the items of a list, with their index)                                                                               |
 | Variables                          | `Get Variable`, `Set Variable`                                                                                                                                     |
-| Constant                           | `Self`, and a number, integer, boolean, text, vector or colour typed on the node, its only pin an output                                                         |
-| Math, Compare, Logic, Text         | Arithmetic, `Floor`, `Min`, `Max`, comparisons, `And`, `Or`, `Not`, `Concatenate`                                                                                  |
+| Constant                           | `Self`, `Nil` (no value, to clear a variable), and a number, integer, boolean, text, vector, colour or table typed on the node                                     |
+| Math                               | Arithmetic, `Floor`, `Ceil`, `Round`, `Min`, `Max`, `Clamp`, `Lerp`, `Square Root`, `Power`, `Sine`, `Cosine`, `Atan2`, `Pi`, `Random`, `Random Integer`           |
+| Compare, Logic                     | Comparisons, `And`, `Or`, `Not`, `Select` (one of two values), `Or Default`, `Is Set` (not nil)                                                                    |
+| Text                               | `Concatenate`, `Join Text`, `Format`, `Text Length`, `Split`, `To Number`, `To Text`, `Contains Text`, `Substring`, `Upper Case`, `Lower Case`                     |
+| Table                              | `Get Field`, `Has Key`, `Get Item`, `List Length`, `Contains`, `Make List`, `Set Field`, `Add Item`, `Remove Item`                                                 |
 | Vector, Color                      | `Make` and `Break` nodes of vectors and colours                                                                                                                    |
-| Functions                          | `Call` of each function and macro of the graph, and of the library graphs (`file / name`)                                                                          |
+| Functions                          | `Call` of each function and macro of the graph and of the library graphs (`file / name`), the custom nodes, the annotated Lua functions (`module / name`)          |
 | `transform`, `physics`, `scene`…   | One node per function of the [Lua API](lua-api.md), with its parameters and results                                                                                |
 
 An event appears at most once in a graph.
@@ -130,7 +152,9 @@ is a function with several execution exits.
 - A function is drawn as its own graph: a `func.entry` node holds the parameters, a `func.return` node takes the
   results. In a macro, each `func.return` node picks the exit it leaves by.
 - Drag the header of a function onto the graph to call it (`func.call`), or pick it in the palette (**Functions**).
-- A function compiles to a Lua function of the script.
+- A function compiles to a local Lua function of the script. An **Exported** function is a global function instead: the
+  engine calls it by its name and reads its results, as a dialogue does for the condition of a `Branch`
+  (`has_cellar_key` of `tavern_dialogues.owlvs`). A macro is never exported.
 
 ### Library graphs
 
@@ -140,6 +164,64 @@ Any other `.owlvs` of the project that defines functions is a library: its funct
 - The functions of the library are compiled into the Lua of the caller.
 - A function of a library has no variables and calls no function of another library.
 - The export packs the library files with the scripts that call them.
+
+## Custom nodes {#visual-scripts-custom}
+
+A custom node runs Lua written in the graph: for the few lines a graph of small nodes would make hard to read.
+
+- **Add Custom Node** in the **Custom** tab creates one and drops a call in the view. Its section edits the Lua name,
+  the title, **Pure** (no execution pins: it runs where its outputs are read), the typed inputs and outputs, and the
+  Lua body.
+- The inputs are the parameters of the body; the body returns the outputs in order (`return speed, angle`).
+- Drag the header of a custom node onto the graph, or pick it in the palette (**Functions**), to call it again.
+- Renaming a pin keeps its links; removing one drops them; turning a node pure or not changes every call.
+
+```lua
+-- Body of a pure custom node `clamp_speed`, inputs `speed` and `limit`, output `clamped`.
+if speed > limit then
+	return limit
+end
+return speed
+```
+
+## Lua functions {#visual-scripts-lua}
+
+A function of a Lua module of the project shows in the palette (**Functions**, `module / name`) once its comment lines
+give its types. The code stays a `.lua` file, read and reviewed as code.
+
+```lua
+local M = {}
+
+--- Keeps a value between two bounds.
+---@pure
+---@param value number
+---@param low number
+---@param high number
+---@return number clamped
+function M.clamp(value, low, high)
+	return math.max(low, math.min(high, value))
+end
+
+return M
+```
+
+- `---@param name type` gives an input, `---@return type name` an output, `---@pure` a node without execution pins;
+  the other `---` lines are its description. Only `function M.name(...)` forms are read.
+- The types are those of the pins: `number`, `integer`, `boolean`, `string`, `table`, `entity`, `vector2`, `vector3`,
+  `color`, `any`.
+- The node calls `require("scripts.lib.maths").clamp(...)`: the module loads in the sandbox of the script, and the
+  export packs it.
+
+## Generated Lua
+
+The **Lua** view shows what the graph compiles to. Locals take the names of the pins, a value read once is written
+where it is read, and the two paths of a `Branch` meet again after its `if`, where every path of both runs the same
+node. A node several events reach, or paths that meet nowhere else, becomes one Lua function the paths call
+(`__join1`). A value one event writes and another reads goes through the table `__vs` of the script.
+
+A pure node is computed again in each statement that reads it, so a value read across several statements (a draw of
+`Random`, a slow search) belongs in a variable set once. A trailing optional input left empty is left out of the call
+(`string.format("%d", n)`), and `Get Field` with a name for key reads `t.key`.
 
 ## HUD graphs
 
@@ -168,3 +250,9 @@ The handler rows of the inspector have an **Edit in Graph** button. When the sce
 The cellar ladder of the Engine Demo tavern (`engine_demo/scripts/tavern/cellar_ladder.owlvs`) is a graph: its
 `on_ladder_interact` event checks a `climbing` variable with a `Branch`, sets it, records `tavern_from_cellar`, plays
 a sound and calls `scene.transition_to` with the `tavern_scene` variable.
+
+The other gameplay scripts of the Engine Demo are graphs too (listed in `engine_demo/README.md`): the score
+screens, trigger callbacks, the controls hint, the minimap dot, the coins and checkpoints, the hub's hero, villagers,
+water, critters, ambience and day-night cycle, the main menu and the dialogue windows. `cellar_key.owlvs` calls a graph
+function from two events. The algorithms stay in Lua: the traffic and the life of the isometric town, the raycast
+level, the platformer hero, the inventory, the settings menu and the orbit scene.

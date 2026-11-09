@@ -14,6 +14,7 @@
 #include <scene/PrefabSerializer.h>
 #include <scene/Scene.h>
 #include <scene/component/components.h>
+#include <script/EntityHandle.h>
 #include <script/ScriptInstance.h>
 
 #include <chrono>
@@ -92,7 +93,9 @@ protected:
 };
 
 /// Entity id as Lua reads it: the UUID bits as a signed integer.
-auto luaId(const Entity& iEntity) -> int64_t { return static_cast<int64_t>(static_cast<uint64_t>(iEntity.getUUID())); }
+auto luaId(const Entity& iEntity) -> int64_t {
+	return static_cast<int64_t>(script::getEntityHandle(*iEntity.getScene(), iEntity));
+}
 
 }// namespace
 
@@ -107,8 +110,9 @@ TEST_F(LuaRuntimeGaps, spawnPrefabCreatesThePlacedInstanceAndStartsItsScript) {
 	EXPECT_FALSE(instance->getPropertyBool("created_now").value_or(true));
 	EXPECT_NEAR(instance->getPropertyFloat("x").value_or(0.f), 3.f, 1e-5f);
 	EXPECT_NEAR(instance->getPropertyFloat("y").value_or(0.f), 4.f, 1e-5f);
-	const auto enemy = m_scene->findEntityByUUID(core::UUID{static_cast<uint64_t>(id)});
-	ASSERT_TRUE(enemy);
+	const auto resolved = script::resolveEntityHandle(*m_scene, static_cast<uint64_t>(id));
+	ASSERT_TRUE(resolved.has_value());
+	const auto enemy = *resolved;
 	EXPECT_EQ(enemy.getName(), "Enemy");
 	EXPECT_TRUE(enemy.hasComponent<component::PrefabLink>());
 	step();
@@ -236,7 +240,7 @@ TEST_F(LuaRuntimeGaps, pickEntityFindsTheSpriteUnderAPixel) {
 	sprite.addComponent<component::SpriteRenderer>();
 	const auto instance = run(std::format("hit = scene.pick_entity(400, 300)\nmiss = scene.pick_entity(1, 1)"));
 	EXPECT_EQ(instance->getPropertyInt("hit").value_or(0),
-			  static_cast<int64_t>(static_cast<uint64_t>(sprite.getUUID())));
+			  static_cast<int64_t>(script::getEntityHandle(*sprite.getScene(), sprite)));
 	EXPECT_EQ(instance->getPropertyInt("miss").value_or(-1), 0);
 }
 
@@ -247,9 +251,10 @@ TEST_F(LuaRuntimeGaps, pickEntityWithATagSkipsTheOtherEntities) {
 	ring.getComponent<component::Transform>().transform.translation() = {0.f, 0.f, 1.f};
 	ring.addComponent<component::SpriteRenderer>();
 	const auto instance = run("any = scene.pick_entity(400, 300)\ntower = scene.pick_entity(400, 300, 'Tower')");
-	EXPECT_EQ(instance->getPropertyInt("any").value_or(0), static_cast<int64_t>(static_cast<uint64_t>(ring.getUUID())));
+	EXPECT_EQ(instance->getPropertyInt("any").value_or(0),
+			  static_cast<int64_t>(script::getEntityHandle(*ring.getScene(), ring)));
 	EXPECT_EQ(instance->getPropertyInt("tower").value_or(0),
-			  static_cast<int64_t>(static_cast<uint64_t>(tower.getUUID())));
+			  static_cast<int64_t>(script::getEntityHandle(*tower.getScene(), tower)));
 }
 
 TEST_F(LuaRuntimeGaps, viewportSizeAndMouseAreInViewportPixels) {

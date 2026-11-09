@@ -23,6 +23,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <vector>
 
 using namespace owl;
 using namespace owl::nest;
@@ -172,4 +173,29 @@ TEST_F(CodeEditorDocumentTest, recoverySnapshotRoundTrips) {
 	ASSERT_TRUE(m_document.restoreRecoverySnapshot("return 2\n"));
 	EXPECT_TRUE(m_document.isDirty());
 	EXPECT_EQ(m_document.recoverySnapshot().value_or(""), "return 2\n");
+}
+
+TEST_F(CodeEditorDocumentTest, luaScriptsAreTypeCheckedAndMarked) {
+	const auto errors = [this]() -> std::vector<script::ScriptDiagnostic> {
+		auto found = m_document.diagnostics();
+		std::erase_if(found, [](const script::ScriptDiagnostic& iDiagnostic) -> bool {
+			return iDiagnostic.severity != script::ScriptDiagnostic::Severity::Error;
+		});
+		return found;
+	};
+	ASSERT_TRUE(m_document.loadFromFile(write("typo.lua", "function on_create()\n\tgamestat.set(\"x\", 1)\nend\n")));
+	m_document.checkTypes();
+	ASSERT_EQ(errors().size(), 1u);
+	EXPECT_EQ(errors().front().line, 2u);
+	EXPECT_TRUE(m_document.editor()->HasMarkers());
+
+	m_document.editor()->ReplaceSectionText(TextEditor::DocPos{1, 1}, TextEditor::DocPos{1, 9}, "gamestate");
+	m_document.checkTypes();
+	EXPECT_TRUE(errors().empty());
+	EXPECT_EQ(m_document.editor()->HasMarkers(), !m_document.diagnostics().empty());
+
+	ASSERT_TRUE(m_document.loadFromFile(write("notes.md", "gamestat.set(1)\n")));
+	m_document.checkTypes();
+	EXPECT_TRUE(m_document.diagnostics().empty());
+	EXPECT_FALSE(m_document.editor()->HasMarkers());
 }

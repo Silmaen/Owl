@@ -1,0 +1,868 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: pending_load_save, type: bool, default: false, exposed: false}
+    - {name: save_info_id, type: entity, default: 0, exposed: false}
+    - {name: delete_save_id, type: entity, default: 0, exposed: false}
+    - {name: continue_id, type: entity, default: 0, exposed: false}
+    - {name: mouse_label_id, type: entity, default: 0, exposed: false}
+    - {name: has_save_1, type: bool, default: false, exposed: false}
+    - {name: info_text, type: string, default: "", exposed: false}
+    - {name: readback, type: string, default: "", exposed: false}
+    - {name: version_id, type: entity, default: 0, exposed: false}
+    - {name: play_id, type: entity, default: 0, exposed: false}
+    - {name: mx, type: float, default: 0, exposed: false}
+    - {name: my, type: float, default: 0, exposed: false}
+    - {name: lmb, type: bool, default: false, exposed: false}
+    - {name: indicator, type: string, default: "", exposed: false}
+  functions:
+    - name: refresh_save_info
+      inputs: []
+      outputs: []
+      exported: true
+  nodes:
+    - id: 8200000000000000001
+      type: func.entry
+      position: [0, 0]
+      values:
+        function: refresh_save_info
+    - id: 8200000000000000002
+      type: call.save.list_saves
+      position: [242, 0]
+    - id: 8200000000000000003
+      type: call.save.has_save
+      position: [242, 146]
+      values:
+        slot: 1
+    - id: 8200000000000000004
+      type: var.set
+      position: [536, 0]
+      values:
+        variable: has_save_1
+    - id: 8200000000000000005
+      type: var.get
+      position: [536, 146]
+      values:
+        variable: has_save_1
+    - id: 8200000000000000006
+      type: flow.branch
+      position: [768, 0]
+    - id: 8200000000000000007
+      type: call.gamestate.get
+      position: [1032, 0]
+      values:
+        default: 0
+        key: score
+    - id: 8200000000000000008
+      type: call.log.info
+      position: [1350, 0]
+    - id: 8200000000000000009
+      type: text.concat
+      position: [1032, 172]
+      values:
+        A: "Save found in slot 1! Previous score: "
+    - id: 8200000000000000010
+      type: var.get
+      position: [1032, 308]
+      values:
+        variable: save_info_id
+    - id: 8200000000000000011
+      type: compare.not_equal
+      position: [1350, 146]
+      values:
+        B: 0
+    - id: 8200000000000000012
+      type: flow.branch
+      position: [1628, 0]
+    - id: 8200000000000000013
+      type: text.concat
+      position: [1628, 136]
+      values:
+        A: "Save slot 1 — Score: "
+    - id: 8200000000000000014
+      type: var.set
+      position: [1906, 0]
+      values:
+        variable: info_text
+    - id: 8200000000000000015
+      type: call.ui.set_text
+      position: [2192, 0]
+    - id: 8200000000000000016
+      type: var.get
+      position: [1906, 146]
+      values:
+        variable: save_info_id
+    - id: 8200000000000000017
+      type: var.get
+      position: [1906, 266]
+      values:
+        variable: info_text
+    - id: 8200000000000000018
+      type: call.ui.get_text
+      position: [2192, 172]
+    - id: 8200000000000000019
+      type: var.get
+      position: [1906, 386]
+      values:
+        variable: save_info_id
+    - id: 8200000000000000020
+      type: var.set
+      position: [2456, 0]
+      values:
+        variable: readback
+    - id: 8200000000000000021
+      type: call.log.trace
+      position: [2734, 0]
+    - id: 8200000000000000022
+      type: text.concat
+      position: [2456, 146]
+      values:
+        A: "Save info displayed: "
+    - id: 8200000000000000023
+      type: var.get
+      position: [2192, 292]
+      values:
+        variable: readback
+    - id: 8200000000000000024
+      type: var.get
+      position: [2456, 282]
+      values:
+        variable: continue_id
+    - id: 8200000000000000025
+      type: compare.not_equal
+      position: [2734, 146]
+      values:
+        B: 0
+    - id: 8200000000000000026
+      type: flow.branch
+      position: [3012, 0]
+    - id: 8200000000000000027
+      type: call.ui.set_button_enabled
+      position: [3276, 0]
+      values:
+        enabled: true
+    - id: 8200000000000000028
+      type: var.get
+      position: [3012, 136]
+      values:
+        variable: continue_id
+    - id: 8200000000000000029
+      type: var.get
+      position: [3012, 256]
+      values:
+        variable: delete_save_id
+    - id: 8200000000000000030
+      type: compare.not_equal
+      position: [3276, 172]
+      values:
+        B: 0
+    - id: 8200000000000000031
+      type: flow.branch
+      position: [3554, 0]
+    - id: 8200000000000000032
+      type: call.ui.set_visible
+      position: [3818, 0]
+      values:
+        visible: true
+    - id: 8200000000000000033
+      type: var.get
+      position: [3554, 136]
+      values:
+        variable: delete_save_id
+    - id: 8200000000000000034
+      type: call.log.info
+      position: [1032, 546]
+      values:
+        message: No save found. Starting fresh.
+    - id: 8200000000000000035
+      type: call.gamestate.set
+      position: [1350, 546]
+      values:
+        key: score
+        value: 0
+    - id: 8200000000000000036
+      type: var.get
+      position: [1032, 692]
+      values:
+        variable: save_info_id
+    - id: 8200000000000000037
+      type: compare.not_equal
+      position: [1350, 718]
+      values:
+        B: 0
+    - id: 8200000000000000038
+      type: flow.branch
+      position: [1628, 546]
+    - id: 8200000000000000039
+      type: call.ui.set_text
+      position: [1906, 546]
+      values:
+        text: No save data
+    - id: 8200000000000000040
+      type: var.get
+      position: [1628, 682]
+      values:
+        variable: save_info_id
+    - id: 8200000000000000041
+      type: var.get
+      position: [1628, 802]
+      values:
+        variable: continue_id
+    - id: 8200000000000000042
+      type: compare.not_equal
+      position: [1906, 718]
+      values:
+        B: 0
+    - id: 8200000000000000043
+      type: flow.branch
+      position: [2192, 546]
+    - id: 8200000000000000044
+      type: call.ui.set_button_enabled
+      position: [2456, 546]
+      values:
+        enabled: false
+    - id: 8200000000000000045
+      type: var.get
+      position: [2192, 682]
+      values:
+        variable: continue_id
+    - id: 8200000000000000046
+      type: var.get
+      position: [2192, 802]
+      values:
+        variable: delete_save_id
+    - id: 8200000000000000047
+      type: compare.not_equal
+      position: [2456, 718]
+      values:
+        B: 0
+    - id: 8200000000000000048
+      type: flow.branch
+      position: [2734, 546]
+    - id: 8200000000000000049
+      type: call.ui.set_visible
+      position: [3012, 546]
+      values:
+        visible: false
+    - id: 8200000000000000050
+      type: var.get
+      position: [2734, 682]
+      values:
+        variable: delete_save_id
+    - id: 8200000000000000051
+      type: event.on_create
+      position: [0, 1082]
+    - id: 8200000000000000052
+      type: call.log.info
+      position: [200, 1082]
+      values:
+        message: Main Menu loaded
+    - id: 8200000000000000053
+      type: call.ui.transition_fade_in
+      position: [510, 1082]
+      values:
+        duration: 0.5
+    - id: 8200000000000000054
+      type: call.scene.find_entity
+      position: [510, 1228]
+      values:
+        name: ContinueButton
+    - id: 8200000000000000055
+      type: var.set
+      position: [868, 1082]
+      values:
+        variable: continue_id
+    - id: 8200000000000000056
+      type: call.scene.find_entity
+      position: [868, 1228]
+      values:
+        name: SaveInfoText
+    - id: 8200000000000000057
+      type: var.set
+      position: [1226, 1082]
+      values:
+        variable: save_info_id
+    - id: 8200000000000000058
+      type: call.scene.find_entity
+      position: [1226, 1228]
+      values:
+        name: DeleteSaveButton
+    - id: 8200000000000000059
+      type: var.set
+      position: [1584, 1082]
+      values:
+        variable: delete_save_id
+    - id: 8200000000000000060
+      type: call.scene.find_entity
+      position: [1584, 1228]
+      values:
+        name: MousePosLabel
+    - id: 8200000000000000061
+      type: var.set
+      position: [1942, 1082]
+      values:
+        variable: mouse_label_id
+    - id: 8200000000000000062
+      type: call.scene.find_entity
+      position: [1942, 1228]
+      values:
+        name: VersionLabel
+    - id: 8200000000000000063
+      type: var.set
+      position: [2300, 1082]
+      values:
+        variable: version_id
+    - id: 8200000000000000064
+      type: var.get
+      position: [1942, 1348]
+      values:
+        variable: version_id
+    - id: 8200000000000000065
+      type: compare.not_equal
+      position: [2300, 1228]
+      values:
+        B: 0
+    - id: 8200000000000000066
+      type: flow.branch
+      position: [2578, 1082]
+    - id: 8200000000000000067
+      type: call.ui.set_text
+      position: [2856, 1082]
+    - id: 8200000000000000068
+      type: var.get
+      position: [2578, 1218]
+      values:
+        variable: version_id
+    - id: 8200000000000000069
+      type: text.concat
+      position: [2578, 1338]
+      values:
+        A: v
+    - id: 8200000000000000070
+      type: call.engine.version
+      position: [2300, 1364]
+    - id: 8200000000000000071
+      type: var.get
+      position: [2578, 1474]
+      values:
+        variable: continue_id
+    - id: 8200000000000000072
+      type: compare.not_equal
+      position: [2856, 1254]
+      values:
+        B: 0
+    - id: 8200000000000000073
+      type: flow.branch
+      position: [3134, 1082]
+    - id: 8200000000000000074
+      type: call.ui.set_visible
+      position: [3398, 1082]
+      values:
+        visible: false
+    - id: 8200000000000000075
+      type: var.get
+      position: [3134, 1218]
+      values:
+        variable: continue_id
+    - id: 8200000000000000076
+      type: call.scene.find_entity
+      position: [3398, 1254]
+      values:
+        name: PlayButton
+    - id: 8200000000000000077
+      type: var.set
+      position: [3756, 1082]
+      values:
+        variable: play_id
+    - id: 8200000000000000078
+      type: var.get
+      position: [3398, 1374]
+      values:
+        variable: play_id
+    - id: 8200000000000000079
+      type: compare.not_equal
+      position: [3756, 1228]
+      values:
+        B: 0
+    - id: 8200000000000000080
+      type: flow.branch
+      position: [4034, 1082]
+    - id: 8200000000000000081
+      type: call.gamestate.get
+      position: [4298, 1082]
+      values:
+        default: false
+        key: has_continue
+    - id: 8200000000000000082
+      type: flow.branch
+      position: [4616, 1082]
+    - id: 8200000000000000083
+      type: call.ui.set_text
+      position: [4880, 1082]
+      values:
+        text: Continue
+    - id: 8200000000000000084
+      type: var.get
+      position: [4616, 1218]
+      values:
+        variable: play_id
+    - id: 8200000000000000085
+      type: call.ui.set_text
+      position: [4880, 1634]
+      values:
+        text: Start
+    - id: 8200000000000000086
+      type: var.get
+      position: [4616, 1634]
+      values:
+        variable: play_id
+    - id: 8200000000000000087
+      type: func.call
+      position: [5166, 1082]
+      values:
+        function: refresh_save_info
+    - id: 8200000000000000088
+      type: event.on_update
+      position: [0, 1966]
+    - id: 8200000000000000089
+      type: var.get
+      position: [0, 2102]
+      values:
+        variable: pending_load_save
+    - id: 8200000000000000090
+      type: flow.branch
+      position: [274, 1966]
+    - id: 8200000000000000091
+      type: call.ui.is_transition_active
+      position: [0, 2222]
+    - id: 8200000000000000092
+      type: logic.not
+      position: [274, 2102]
+    - id: 8200000000000000093
+      type: flow.branch
+      position: [538, 1966]
+    - id: 8200000000000000094
+      type: call.save.load_game
+      position: [802, 1966]
+      values:
+        slot: 1
+    - id: 8200000000000000095
+      type: var.set
+      position: [1052, 1966]
+      values:
+        Value: false
+        variable: pending_load_save
+    - id: 8200000000000000096
+      type: var.get
+      position: [802, 2112]
+      values:
+        variable: mouse_label_id
+    - id: 8200000000000000097
+      type: compare.not_equal
+      position: [1052, 2112]
+      values:
+        B: 0
+    - id: 8200000000000000098
+      type: flow.branch
+      position: [1330, 1966]
+    - id: 8200000000000000099
+      type: call.input.get_mouse_x
+      position: [1330, 2102]
+    - id: 8200000000000000100
+      type: var.set
+      position: [1594, 1966]
+      values:
+        variable: mx
+    - id: 8200000000000000101
+      type: call.input.get_mouse_y
+      position: [1594, 2112]
+    - id: 8200000000000000102
+      type: var.set
+      position: [1826, 1966]
+      values:
+        variable: my
+    - id: 8200000000000000103
+      type: call.input.is_action_pressed
+      position: [1826, 2112]
+      values:
+        action: primary
+    - id: 8200000000000000104
+      type: var.set
+      position: [2184, 1966]
+      values:
+        variable: lmb
+    - id: 8200000000000000105
+      type: var.get
+      position: [1826, 2232]
+      values:
+        variable: lmb
+    - id: 8200000000000000106
+      type: logic.select
+      position: [2184, 2112]
+      values:
+        True: " [click]"
+    - id: 8200000000000000107
+      type: value.string
+      position: [1826, 2352]
+      values:
+        Value: ""
+    - id: 8200000000000000108
+      type: var.set
+      position: [2486, 1966]
+      values:
+        variable: indicator
+    - id: 8200000000000000109
+      type: call.ui.set_text
+      position: [2836, 1966]
+    - id: 8200000000000000110
+      type: var.get
+      position: [2486, 2112]
+      values:
+        variable: mouse_label_id
+    - id: 8200000000000000111
+      type: text.format
+      position: [2486, 2232]
+      values:
+        Format: "Mouse: %d, %d%s"
+    - id: 8200000000000000112
+      type: math.floor
+      position: [2184, 2274]
+    - id: 8200000000000000113
+      type: var.get
+      position: [1826, 2462]
+      values:
+        variable: mx
+    - id: 8200000000000000114
+      type: math.floor
+      position: [2184, 2384]
+    - id: 8200000000000000115
+      type: var.get
+      position: [1826, 2582]
+      values:
+        variable: my
+    - id: 8200000000000000116
+      type: var.get
+      position: [2184, 2494]
+      values:
+        variable: indicator
+    - id: 8200000000000000117
+      type: event.custom
+      position: [0, 2862]
+      values:
+        function: on_play_clicked
+    - id: 8200000000000000118
+      type: call.gamestate.get
+      position: [226, 2862]
+      values:
+        default: false
+        key: has_continue
+    - id: 8200000000000000119
+      type: flow.branch
+      position: [544, 2862]
+    - id: 8200000000000000120
+      type: call.gamestate.get
+      position: [822, 2862]
+      values:
+        default: scenes/world_map.owl
+        key: continue_scene
+    - id: 8200000000000000121
+      type: call.log.info
+      position: [1140, 2862]
+    - id: 8200000000000000122
+      type: text.concat
+      position: [822, 3034]
+      values:
+        A: Continue clicked — resuming '
+    - id: 8200000000000000123
+      type: text.concat
+      position: [544, 2998]
+      values:
+        B: "'"
+    - id: 8200000000000000124
+      type: call.sound.play
+      position: [1522, 2862]
+      values:
+        asset_path: sounds/ui/start.wav
+    - id: 8200000000000000125
+      type: call.gamestate.set
+      position: [1904, 2862]
+      values:
+        key: has_continue
+        value: false
+    - id: 8200000000000000126
+      type: call.scene.transition_to
+      position: [2238, 2862]
+      values:
+        duration: 0.3
+        kind: fade_out
+        split.rgba: true
+    - id: 8200000000000000127
+      type: call.log.info
+      position: [822, 3210]
+      values:
+        message: Start clicked — fresh run, loading world map.
+    - id: 8200000000000000128
+      type: call.sound.play
+      position: [1140, 3210]
+      values:
+        asset_path: sounds/ui/start.wav
+    - id: 8200000000000000129
+      type: call.gamestate.clear
+      position: [1522, 3210]
+    - id: 8200000000000000130
+      type: call.scene.transition_to
+      position: [1904, 3210]
+      values:
+        duration: 0.3
+        kind: fade_out
+        scene_path: scenes/world_map.owl
+        split.rgba: true
+    - id: 8200000000000000131
+      type: event.custom
+      position: [0, 3672]
+      values:
+        function: on_continue_clicked
+    - id: 8200000000000000132
+      type: call.log.info
+      position: [258, 3672]
+      values:
+        message: Continue button clicked! Loading save...
+    - id: 8200000000000000133
+      type: call.sound.play
+      position: [568, 3672]
+      values:
+        asset_path: sounds/ui/start.wav
+    - id: 8200000000000000134
+      type: var.set
+      position: [950, 3672]
+      values:
+        Value: true
+        variable: pending_load_save
+    - id: 8200000000000000135
+      type: call.ui.transition_fade_out
+      position: [1224, 3672]
+      values:
+        duration: 0.3
+    - id: 8200000000000000136
+      type: event.custom
+      position: [0, 3978]
+      values:
+        function: on_settings_clicked
+    - id: 8200000000000000137
+      type: call.log.info
+      position: [258, 3978]
+      values:
+        message: Settings button clicked!
+    - id: 8200000000000000138
+      type: call.scene.transition_to
+      position: [568, 3978]
+      values:
+        duration: 0.3
+        kind: fade_out
+        scene_path: scenes/settings_menu.owl
+        split.rgba: true
+    - id: 8200000000000000139
+      type: event.custom
+      position: [294, 4440]
+      values:
+        function: on_delete_save_clicked
+    - id: 8200000000000000140
+      type: call.save.has_save
+      position: [0, 4440]
+      values:
+        slot: 1
+    - id: 8200000000000000141
+      type: logic.not
+      position: [294, 4586]
+    - id: 8200000000000000142
+      type: flow.branch
+      position: [576, 4440]
+    - id: 8200000000000000143
+      type: call.log.error
+      position: [840, 4440]
+      values:
+        message: "Cannot delete: no save in slot 1"
+    - id: 8200000000000000144
+      type: call.log.info
+      position: [1150, 4440]
+      values:
+        message: Deleting save slot 1
+    - id: 8200000000000000145
+      type: call.save.delete_save
+      position: [1460, 4440]
+      values:
+        slot: 1
+    - id: 8200000000000000146
+      type: func.call
+      position: [1706, 4440]
+      values:
+        function: refresh_save_info
+    - id: 8200000000000000147
+      type: event.custom
+      position: [0, 4856]
+      values:
+        function: on_quit_clicked
+    - id: 8200000000000000148
+      type: call.log.info
+      position: [226, 4856]
+      values:
+        message: Quit button clicked!
+    - id: 8200000000000000149
+      type: call.scene.quit
+      position: [536, 4856]
+  links:
+    - {from: 8200000000000000001, fromPin: Then, to: 8200000000000000002, toPin: Exec}
+    - {from: 8200000000000000003, fromPin: exists, to: 8200000000000000004, toPin: Value}
+    - {from: 8200000000000000002, fromPin: Then, to: 8200000000000000004, toPin: Exec}
+    - {from: 8200000000000000005, fromPin: Value, to: 8200000000000000006, toPin: Condition}
+    - {from: 8200000000000000004, fromPin: Then, to: 8200000000000000006, toPin: Exec}
+    - {from: 8200000000000000006, fromPin: True, to: 8200000000000000007, toPin: Exec}
+    - {from: 8200000000000000007, fromPin: value, to: 8200000000000000009, toPin: B}
+    - {from: 8200000000000000009, fromPin: Result, to: 8200000000000000008, toPin: message}
+    - {from: 8200000000000000007, fromPin: Then, to: 8200000000000000008, toPin: Exec}
+    - {from: 8200000000000000010, fromPin: Value, to: 8200000000000000011, toPin: A}
+    - {from: 8200000000000000011, fromPin: Result, to: 8200000000000000012, toPin: Condition}
+    - {from: 8200000000000000008, fromPin: Then, to: 8200000000000000012, toPin: Exec}
+    - {from: 8200000000000000007, fromPin: value, to: 8200000000000000013, toPin: B}
+    - {from: 8200000000000000013, fromPin: Result, to: 8200000000000000014, toPin: Value}
+    - {from: 8200000000000000012, fromPin: True, to: 8200000000000000014, toPin: Exec}
+    - {from: 8200000000000000016, fromPin: Value, to: 8200000000000000015, toPin: entity_id}
+    - {from: 8200000000000000017, fromPin: Value, to: 8200000000000000015, toPin: text}
+    - {from: 8200000000000000014, fromPin: Then, to: 8200000000000000015, toPin: Exec}
+    - {from: 8200000000000000019, fromPin: Value, to: 8200000000000000018, toPin: entity_id}
+    - {from: 8200000000000000018, fromPin: text, to: 8200000000000000020, toPin: Value}
+    - {from: 8200000000000000015, fromPin: Then, to: 8200000000000000020, toPin: Exec}
+    - {from: 8200000000000000023, fromPin: Value, to: 8200000000000000022, toPin: B}
+    - {from: 8200000000000000022, fromPin: Result, to: 8200000000000000021, toPin: message}
+    - {from: 8200000000000000020, fromPin: Then, to: 8200000000000000021, toPin: Exec}
+    - {from: 8200000000000000024, fromPin: Value, to: 8200000000000000025, toPin: A}
+    - {from: 8200000000000000025, fromPin: Result, to: 8200000000000000026, toPin: Condition}
+    - {from: 8200000000000000021, fromPin: Then, to: 8200000000000000026, toPin: Exec}
+    - {from: 8200000000000000012, fromPin: False, to: 8200000000000000026, toPin: Exec}
+    - {from: 8200000000000000028, fromPin: Value, to: 8200000000000000027, toPin: entity_id}
+    - {from: 8200000000000000026, fromPin: True, to: 8200000000000000027, toPin: Exec}
+    - {from: 8200000000000000029, fromPin: Value, to: 8200000000000000030, toPin: A}
+    - {from: 8200000000000000030, fromPin: Result, to: 8200000000000000031, toPin: Condition}
+    - {from: 8200000000000000027, fromPin: Then, to: 8200000000000000031, toPin: Exec}
+    - {from: 8200000000000000026, fromPin: False, to: 8200000000000000031, toPin: Exec}
+    - {from: 8200000000000000033, fromPin: Value, to: 8200000000000000032, toPin: entity_id}
+    - {from: 8200000000000000031, fromPin: True, to: 8200000000000000032, toPin: Exec}
+    - {from: 8200000000000000006, fromPin: False, to: 8200000000000000034, toPin: Exec}
+    - {from: 8200000000000000034, fromPin: Then, to: 8200000000000000035, toPin: Exec}
+    - {from: 8200000000000000036, fromPin: Value, to: 8200000000000000037, toPin: A}
+    - {from: 8200000000000000037, fromPin: Result, to: 8200000000000000038, toPin: Condition}
+    - {from: 8200000000000000035, fromPin: Then, to: 8200000000000000038, toPin: Exec}
+    - {from: 8200000000000000040, fromPin: Value, to: 8200000000000000039, toPin: entity_id}
+    - {from: 8200000000000000038, fromPin: True, to: 8200000000000000039, toPin: Exec}
+    - {from: 8200000000000000041, fromPin: Value, to: 8200000000000000042, toPin: A}
+    - {from: 8200000000000000042, fromPin: Result, to: 8200000000000000043, toPin: Condition}
+    - {from: 8200000000000000039, fromPin: Then, to: 8200000000000000043, toPin: Exec}
+    - {from: 8200000000000000038, fromPin: False, to: 8200000000000000043, toPin: Exec}
+    - {from: 8200000000000000045, fromPin: Value, to: 8200000000000000044, toPin: entity_id}
+    - {from: 8200000000000000043, fromPin: True, to: 8200000000000000044, toPin: Exec}
+    - {from: 8200000000000000046, fromPin: Value, to: 8200000000000000047, toPin: A}
+    - {from: 8200000000000000047, fromPin: Result, to: 8200000000000000048, toPin: Condition}
+    - {from: 8200000000000000044, fromPin: Then, to: 8200000000000000048, toPin: Exec}
+    - {from: 8200000000000000043, fromPin: False, to: 8200000000000000048, toPin: Exec}
+    - {from: 8200000000000000050, fromPin: Value, to: 8200000000000000049, toPin: entity_id}
+    - {from: 8200000000000000048, fromPin: True, to: 8200000000000000049, toPin: Exec}
+    - {from: 8200000000000000051, fromPin: Then, to: 8200000000000000052, toPin: Exec}
+    - {from: 8200000000000000052, fromPin: Then, to: 8200000000000000053, toPin: Exec}
+    - {from: 8200000000000000054, fromPin: entity_id, to: 8200000000000000055, toPin: Value}
+    - {from: 8200000000000000053, fromPin: Then, to: 8200000000000000055, toPin: Exec}
+    - {from: 8200000000000000056, fromPin: entity_id, to: 8200000000000000057, toPin: Value}
+    - {from: 8200000000000000055, fromPin: Then, to: 8200000000000000057, toPin: Exec}
+    - {from: 8200000000000000058, fromPin: entity_id, to: 8200000000000000059, toPin: Value}
+    - {from: 8200000000000000057, fromPin: Then, to: 8200000000000000059, toPin: Exec}
+    - {from: 8200000000000000060, fromPin: entity_id, to: 8200000000000000061, toPin: Value}
+    - {from: 8200000000000000059, fromPin: Then, to: 8200000000000000061, toPin: Exec}
+    - {from: 8200000000000000062, fromPin: entity_id, to: 8200000000000000063, toPin: Value}
+    - {from: 8200000000000000061, fromPin: Then, to: 8200000000000000063, toPin: Exec}
+    - {from: 8200000000000000064, fromPin: Value, to: 8200000000000000065, toPin: A}
+    - {from: 8200000000000000065, fromPin: Result, to: 8200000000000000066, toPin: Condition}
+    - {from: 8200000000000000063, fromPin: Then, to: 8200000000000000066, toPin: Exec}
+    - {from: 8200000000000000070, fromPin: version, to: 8200000000000000069, toPin: B}
+    - {from: 8200000000000000068, fromPin: Value, to: 8200000000000000067, toPin: entity_id}
+    - {from: 8200000000000000069, fromPin: Result, to: 8200000000000000067, toPin: text}
+    - {from: 8200000000000000066, fromPin: True, to: 8200000000000000067, toPin: Exec}
+    - {from: 8200000000000000071, fromPin: Value, to: 8200000000000000072, toPin: A}
+    - {from: 8200000000000000072, fromPin: Result, to: 8200000000000000073, toPin: Condition}
+    - {from: 8200000000000000067, fromPin: Then, to: 8200000000000000073, toPin: Exec}
+    - {from: 8200000000000000066, fromPin: False, to: 8200000000000000073, toPin: Exec}
+    - {from: 8200000000000000075, fromPin: Value, to: 8200000000000000074, toPin: entity_id}
+    - {from: 8200000000000000073, fromPin: True, to: 8200000000000000074, toPin: Exec}
+    - {from: 8200000000000000076, fromPin: entity_id, to: 8200000000000000077, toPin: Value}
+    - {from: 8200000000000000074, fromPin: Then, to: 8200000000000000077, toPin: Exec}
+    - {from: 8200000000000000073, fromPin: False, to: 8200000000000000077, toPin: Exec}
+    - {from: 8200000000000000078, fromPin: Value, to: 8200000000000000079, toPin: A}
+    - {from: 8200000000000000079, fromPin: Result, to: 8200000000000000080, toPin: Condition}
+    - {from: 8200000000000000077, fromPin: Then, to: 8200000000000000080, toPin: Exec}
+    - {from: 8200000000000000080, fromPin: True, to: 8200000000000000081, toPin: Exec}
+    - {from: 8200000000000000081, fromPin: value, to: 8200000000000000082, toPin: Condition}
+    - {from: 8200000000000000081, fromPin: Then, to: 8200000000000000082, toPin: Exec}
+    - {from: 8200000000000000084, fromPin: Value, to: 8200000000000000083, toPin: entity_id}
+    - {from: 8200000000000000082, fromPin: True, to: 8200000000000000083, toPin: Exec}
+    - {from: 8200000000000000086, fromPin: Value, to: 8200000000000000085, toPin: entity_id}
+    - {from: 8200000000000000082, fromPin: False, to: 8200000000000000085, toPin: Exec}
+    - {from: 8200000000000000083, fromPin: Then, to: 8200000000000000087, toPin: Exec}
+    - {from: 8200000000000000085, fromPin: Then, to: 8200000000000000087, toPin: Exec}
+    - {from: 8200000000000000080, fromPin: False, to: 8200000000000000087, toPin: Exec}
+    - {from: 8200000000000000089, fromPin: Value, to: 8200000000000000090, toPin: Condition}
+    - {from: 8200000000000000088, fromPin: Then, to: 8200000000000000090, toPin: Exec}
+    - {from: 8200000000000000091, fromPin: active, to: 8200000000000000092, toPin: A}
+    - {from: 8200000000000000092, fromPin: Result, to: 8200000000000000093, toPin: Condition}
+    - {from: 8200000000000000090, fromPin: True, to: 8200000000000000093, toPin: Exec}
+    - {from: 8200000000000000093, fromPin: True, to: 8200000000000000094, toPin: Exec}
+    - {from: 8200000000000000094, fromPin: Then, to: 8200000000000000095, toPin: Exec}
+    - {from: 8200000000000000096, fromPin: Value, to: 8200000000000000097, toPin: A}
+    - {from: 8200000000000000097, fromPin: Result, to: 8200000000000000098, toPin: Condition}
+    - {from: 8200000000000000090, fromPin: False, to: 8200000000000000098, toPin: Exec}
+    - {from: 8200000000000000099, fromPin: x, to: 8200000000000000100, toPin: Value}
+    - {from: 8200000000000000098, fromPin: True, to: 8200000000000000100, toPin: Exec}
+    - {from: 8200000000000000101, fromPin: y, to: 8200000000000000102, toPin: Value}
+    - {from: 8200000000000000100, fromPin: Then, to: 8200000000000000102, toPin: Exec}
+    - {from: 8200000000000000103, fromPin: pressed, to: 8200000000000000104, toPin: Value}
+    - {from: 8200000000000000102, fromPin: Then, to: 8200000000000000104, toPin: Exec}
+    - {from: 8200000000000000105, fromPin: Value, to: 8200000000000000106, toPin: Condition}
+    - {from: 8200000000000000107, fromPin: Result, to: 8200000000000000106, toPin: False}
+    - {from: 8200000000000000106, fromPin: Result, to: 8200000000000000108, toPin: Value}
+    - {from: 8200000000000000104, fromPin: Then, to: 8200000000000000108, toPin: Exec}
+    - {from: 8200000000000000113, fromPin: Value, to: 8200000000000000112, toPin: A}
+    - {from: 8200000000000000112, fromPin: Result, to: 8200000000000000111, toPin: A}
+    - {from: 8200000000000000115, fromPin: Value, to: 8200000000000000114, toPin: A}
+    - {from: 8200000000000000114, fromPin: Result, to: 8200000000000000111, toPin: B}
+    - {from: 8200000000000000116, fromPin: Value, to: 8200000000000000111, toPin: C}
+    - {from: 8200000000000000110, fromPin: Value, to: 8200000000000000109, toPin: entity_id}
+    - {from: 8200000000000000111, fromPin: Result, to: 8200000000000000109, toPin: text}
+    - {from: 8200000000000000108, fromPin: Then, to: 8200000000000000109, toPin: Exec}
+    - {from: 8200000000000000117, fromPin: Then, to: 8200000000000000118, toPin: Exec}
+    - {from: 8200000000000000118, fromPin: value, to: 8200000000000000119, toPin: Condition}
+    - {from: 8200000000000000118, fromPin: Then, to: 8200000000000000119, toPin: Exec}
+    - {from: 8200000000000000119, fromPin: True, to: 8200000000000000120, toPin: Exec}
+    - {from: 8200000000000000120, fromPin: value, to: 8200000000000000123, toPin: A}
+    - {from: 8200000000000000123, fromPin: Result, to: 8200000000000000122, toPin: B}
+    - {from: 8200000000000000122, fromPin: Result, to: 8200000000000000121, toPin: message}
+    - {from: 8200000000000000120, fromPin: Then, to: 8200000000000000121, toPin: Exec}
+    - {from: 8200000000000000121, fromPin: Then, to: 8200000000000000124, toPin: Exec}
+    - {from: 8200000000000000124, fromPin: Then, to: 8200000000000000125, toPin: Exec}
+    - {from: 8200000000000000120, fromPin: value, to: 8200000000000000126, toPin: scene_path}
+    - {from: 8200000000000000125, fromPin: Then, to: 8200000000000000126, toPin: Exec}
+    - {from: 8200000000000000119, fromPin: False, to: 8200000000000000127, toPin: Exec}
+    - {from: 8200000000000000127, fromPin: Then, to: 8200000000000000128, toPin: Exec}
+    - {from: 8200000000000000128, fromPin: Then, to: 8200000000000000129, toPin: Exec}
+    - {from: 8200000000000000129, fromPin: Then, to: 8200000000000000130, toPin: Exec}
+    - {from: 8200000000000000131, fromPin: Then, to: 8200000000000000132, toPin: Exec}
+    - {from: 8200000000000000132, fromPin: Then, to: 8200000000000000133, toPin: Exec}
+    - {from: 8200000000000000133, fromPin: Then, to: 8200000000000000134, toPin: Exec}
+    - {from: 8200000000000000134, fromPin: Then, to: 8200000000000000135, toPin: Exec}
+    - {from: 8200000000000000136, fromPin: Then, to: 8200000000000000137, toPin: Exec}
+    - {from: 8200000000000000137, fromPin: Then, to: 8200000000000000138, toPin: Exec}
+    - {from: 8200000000000000140, fromPin: exists, to: 8200000000000000141, toPin: A}
+    - {from: 8200000000000000141, fromPin: Result, to: 8200000000000000142, toPin: Condition}
+    - {from: 8200000000000000139, fromPin: Then, to: 8200000000000000142, toPin: Exec}
+    - {from: 8200000000000000142, fromPin: True, to: 8200000000000000143, toPin: Exec}
+    - {from: 8200000000000000142, fromPin: False, to: 8200000000000000144, toPin: Exec}
+    - {from: 8200000000000000144, fromPin: Then, to: 8200000000000000145, toPin: Exec}
+    - {from: 8200000000000000145, fromPin: Then, to: 8200000000000000146, toPin: Exec}
+    - {from: 8200000000000000147, fromPin: Then, to: 8200000000000000148, toPin: Exec}
+    - {from: 8200000000000000148, fromPin: Then, to: 8200000000000000149, toPin: Exec}

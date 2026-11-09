@@ -15,8 +15,10 @@
 
 #include <app/Application.h>
 #include <data/assets/AssetRegistry.h>
+#include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <script/ScriptDebugger.h>
+#include <script/ScriptTypeChecker.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -32,6 +34,22 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_POP
 
 namespace owl::nest {
+
+namespace {
+// One checker for every script document: building it loads the declarations of the engine once.
+auto typeChecker() -> script::ScriptTypeChecker& {
+	static script::ScriptTypeChecker s_checker;
+	return s_checker;
+}
+
+constexpr ImU32 g_errorColor = IM_COL32(229, 72, 77, 255);
+constexpr ImU32 g_warningColor = IM_COL32(230, 170, 50, 255);
+constexpr int g_checkDelayMs = 400;
+
+auto severityColor(const script::ScriptDiagnostic& iDiagnostic) -> ImU32 {
+	return iDiagnostic.severity == script::ScriptDiagnostic::Severity::Error ? g_errorColor : g_warningColor;
+}
+}// namespace
 
 CodeEditorDocument::CodeEditorDocument() = default;
 
@@ -69,6 +87,7 @@ void CodeEditorDocument::onAttach(EditorLayer* iEditor) {
 	mp_editor->SetShowLineNumbersEnabled(true);
 	codeEditor::applyLanguage(*mp_editor, m_language);
 	updateBreakpointGutter();
+	updateTypeChecking();
 }
 
 void CodeEditorDocument::onDetach() {
@@ -77,6 +96,8 @@ void CodeEditorDocument::onDetach() {
 }
 
 void CodeEditorDocument::onUpdate(const core::Timestep& iTimeStep) {
+	if (mp_editor && m_checkPending)
+		checkTypes();
 	if (!mp_editor || !m_previewVisible)
 		return;
 	if (m_language == codeEditor::Language::Markdown) {
@@ -169,13 +190,75 @@ void CodeEditorDocument::onImGuiRender() {
 			else if (m_language == codeEditor::Language::Xml)
 				m_svgPreview.render(ImVec2{previewW, bodyH});
 		}
-		const auto [line, column] = cursorLocation();
-		ImGui::TextDisabled("%s | Line %zu, Col %zu | %s", codeEditor::languageName(m_language), line + 1, column + 1,
-							mp_editor->IsOverwriteEnabled() ? "OVR" : "INS");
+		renderStatusLine();
 	}
 	ImGui::End();
 	if (codeFont != nullptr)
 		ImGui::PopFont();
+}
+
+void CodeEditorDocument::renderStatusLine() {
+	const auto [line, column] = cursorLocation();
+	ImGui::TextDisabled("%s | Line %zu, Col %zu | %s", codeEditor::languageName(m_language), line + 1, column + 1,
+						mp_editor->IsOverwriteEnabled() ? "OVR" : "INS");
+	if (m_language != codeEditor::Language::Lua)
+		return;
+	const auto errors = std::ranges::count(m_diagnostics, script::ScriptDiagnostic::Severity::Error,
+										   &script::ScriptDiagnostic::severity);
+	const auto warnings = static_cast<std::ptrdiff_t>(m_diagnostics.size()) - errors;
+	ImGui::SameLine();
+	ImGui::PushStyleColor(ImGuiCol_Text, errors > 0 ? g_errorColor : ImGui::GetColorU32(ImGuiCol_TextDisabled));
+	const auto label =
+			std::format("{} {} error(s), {} warning(s)##problems", gui::icon::triangleAlert, errors, warnings);
+	if (ImGui::SmallButton(label.c_str()))
+		m_problemsOpen = !m_problemsOpen;
+	ImGui::PopStyleColor();
+	if (!m_problemsOpen || m_diagnostics.empty())
+		return;
+	if (!ImGui::BeginChild("##problems", ImVec2{0.f, ImGui::GetTextLineHeightWithSpacing() * 6.f},
+						   ImGuiChildFlags_Borders)) {
+		ImGui::EndChild();
+		return;
+	}
+	for (size_t index = 0; index < m_diagnostics.size(); ++index) {
+		const auto& diagnostic = m_diagnostics[index];
+		ImGui::PushID(static_cast<int>(index));
+		ImGui::PushStyleColor(ImGuiCol_Text, severityColor(diagnostic));
+		const auto entry = std::format("{}:{}  {}", diagnostic.line, diagnostic.column, diagnostic.message);
+		if (ImGui::Selectable(entry.c_str()))
+			revealLine(diagnostic.line);
+		ImGui::PopStyleColor();
+		ImGui::PopID();
+	}
+	ImGui::EndChild();
+}
+
+void CodeEditorDocument::updateTypeChecking() {
+	if (m_language != codeEditor::Language::Lua) {
+		mp_editor->SetChangeCallback(nullptr);
+		mp_editor->ClearMarkers();
+		m_diagnostics.clear();
+		return;
+	}
+	mp_editor->SetChangeCallback([this]() -> void { m_checkPending = true; }, g_checkDelayMs);
+	m_checkPending = true;
+}
+
+void CodeEditorDocument::checkTypes() {
+	m_checkPending = false;
+	if (!mp_editor)
+		return;
+	mp_editor->ClearMarkers();
+	m_diagnostics.clear();
+	// Editor scripts run in the console against the `editor` module, not in a game: the game declarations do not apply.
+	if (m_language != codeEditor::Language::Lua || m_path.parent_path().filename() == "editor")
+		return;
+	const auto name = m_path.empty() ? std::string{"script.lua"} : m_path.filename().string();
+	m_diagnostics = typeChecker().check(mp_editor->GetText(), name);
+	for (const auto& diagnostic: m_diagnostics) {
+		const auto line = static_cast<size_t>(diagnostic.line > 0 ? diagnostic.line - 1 : 0);
+		mp_editor->AddMarker(line, severityColor(diagnostic), 0, diagnostic.message, diagnostic.message);
+	}
 }
 
 void CodeEditorDocument::openReferenceUnderCursor() const {
@@ -264,6 +347,7 @@ auto CodeEditorDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 	m_language = codeEditor::detectLanguage(m_path);
 	codeEditor::applyLanguage(*mp_editor, m_language);
 	updateBreakpointGutter();
+	updateTypeChecking();
 	if (canShowPreview())
 		m_previewVisible = true;
 	return true;
@@ -286,6 +370,7 @@ auto CodeEditorDocument::loadFromFile(const std::filesystem::path& iPath) -> boo
 	m_language = codeEditor::detectLanguage(m_path);
 	codeEditor::applyLanguage(*mp_editor, m_language);
 	updateBreakpointGutter();
+	updateTypeChecking();
 	if (canShowPreview())
 		m_previewVisible = true;
 	return true;

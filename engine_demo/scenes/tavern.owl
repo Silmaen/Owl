@@ -2,7 +2,7 @@ Scene: Tavern
 FormatVersion: 7
 Hud: gid:e94eef5baaf85b8b:huds/tavern.owlhud
 SceneScript:
-  scriptPath: gid:3e54f245cf8d438a:scripts/mesh/tavern.lua
+  scriptPath: gid:3e54f245cf8d438a:scripts/mesh/tavern.owlvs
 EnabledRenderers:
   - Name: world
     Enabled: false
@@ -1056,7 +1056,7 @@ Entities:
       Name: mesh_world
     Trigger: {Type: Interaction, CallbackName: on_trapdoor_interact}
     LuaScript:
-      scriptPath: gid:2dd17fbdb3fc55a5:scripts/tavern/cellar_trapdoor.lua
+      scriptPath: gid:2dd17fbdb3fc55a5:scripts/tavern/cellar_trapdoor.owlvs
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000111
@@ -1094,7 +1094,7 @@ Entities:
       Name: mesh_world
     Trigger: {Type: Interaction, CallbackName: on_key_interact}
     LuaScript:
-      scriptPath: gid:7af04864368f7cff:scripts/tavern/cellar_key.lua
+      scriptPath: gid:7af04864368f7cff:scripts/tavern/cellar_key.owlvs
     Visibility:
       gameVisible: true
   - Entity: 3900000000000000113
@@ -1337,7 +1337,7 @@ Entities:
           scale: [0.5, 0.5, 0.5]
     Trigger: {Type: Interaction, CallbackName: on_talk}
     LuaScript:
-      scriptPath: gid:f77328372cd37ad7:scripts/tavern/tavern_patron.lua
+      scriptPath: gid:f77328372cd37ad7:scripts/tavern/tavern_patron.owlvs
       properties:
         - {name: dialogue_path, type: string, value: dialogues/barkeeper.owldlg}
     Visibility:
@@ -1434,7 +1434,7 @@ Entities:
       transitions: []
     Trigger: {Type: Interaction, CallbackName: on_talk}
     LuaScript:
-      scriptPath: gid:f77328372cd37ad7:scripts/tavern/tavern_patron.lua
+      scriptPath: gid:f77328372cd37ad7:scripts/tavern/tavern_patron.owlvs
       properties:
         - {name: dialogue_path, type: string, value: dialogues/farmer.owldlg}
     Visibility:
@@ -1462,7 +1462,7 @@ Entities:
       transitions: []
     Trigger: {Type: Interaction, CallbackName: on_talk}
     LuaScript:
-      scriptPath: gid:f77328372cd37ad7:scripts/tavern/tavern_patron.lua
+      scriptPath: gid:f77328372cd37ad7:scripts/tavern/tavern_patron.owlvs
       properties:
         - {name: dialogue_path, type: string, value: dialogues/traveller.owldlg}
     Visibility:
@@ -1512,7 +1512,7 @@ Entities:
         - {point: 4, seconds: 3}
         - {point: 0, seconds: 2.5}
     LuaScript:
-      scriptPath: gid:8468d8979b59a4f7:scripts/tavern/tavern_server.lua
+      scriptPath: gid:8468d8979b59a4f7:scripts/tavern/tavern_server.owlvs
     Visibility:
       gameVisible: true
     NavObstacle: {radius: 0.3, height: 1.4}
@@ -1541,7 +1541,7 @@ Entities:
       transitions: []
     Trigger: {Type: Interaction, CallbackName: on_talk}
     LuaScript:
-      scriptPath: gid:f77328372cd37ad7:scripts/tavern/tavern_patron.lua
+      scriptPath: gid:f77328372cd37ad7:scripts/tavern/tavern_patron.owlvs
       properties:
         - {name: dialogue_path, type: string, value: dialogues/server.owldlg}
     Visibility:
@@ -1554,7 +1554,7 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     LuaScript:
-      scriptPath: gid:d459a1ed859625e7:scripts/tavern/tavern_dialogues.lua
+      scriptPath: gid:d459a1ed859625e7:scripts/tavern/tavern_dialogues.owlvs
     Visibility:
       gameVisible: true
   - Entity: 3900000000000002101
@@ -1658,7 +1658,7 @@ Entities:
       scale: [1, 1, 1]
     Visibility: {gameVisible: true}
     LuaScript:
-      scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.lua
+      scriptPath: gid:a423579b85486cc3:scripts/ui/controls_hint.owlvs
       properties:
         - {name: hint, type: string, value: HudHint}
         - {name: duration, type: float, value: 4.5}
@@ -1883,7 +1883,7 @@ Entities:
       friction: 0.6
     Trigger: {Type: Interaction, CallbackName: on_barrel_kick}
     LuaScript:
-      scriptPath: gid:875dd5ddaa7fe91d:scripts/tavern/barrel_kick.lua
+      scriptPath: gid:875dd5ddaa7fe91d:scripts/tavern/barrel_kick.owlvs
     NavObstacle: {radius: 0.32, height: 0.9}
   - Entity: 3900000000000002417
     Tag:
@@ -1920,7 +1920,7 @@ Entities:
       restitution: 0
       friction: 0.5
     LuaScript:
-      scriptPath: gid:5c1e7a90b3d24f61:scripts/tavern/barrel_line.lua
+      scriptPath: gid:5c1e7a90b3d24f61:scripts/tavern/barrel_line.owlvs
   - Entity: 3900000000000002419
     Tag:
       tag: HangingBucket
@@ -1996,7 +1996,7 @@ Entities:
       scale: [1, 1, 1]
     NavAgent: {volume: 3900000000000002501, speed: 0.9, acceleration: 4, radius: 0.2, stoppingDistance: 0.1, avoidance: true, turn: true, speedParameter: speed}
     LuaScript:
-      scriptPath: gid:5a7e3c19d42b86f0:scripts/tavern/tavern_regular.lua
+      scriptPath: gid:5a7e3c19d42b86f0:scripts/tavern/tavern_regular.owlvs
       properties:
         - {name: spots, type: string, value: "-2.4 0 -1.8; -2.6 0 1.0; 0.6 0 1.6; 2.2 0 2.9; 2.3 0 -2.6"}
         - {name: pause, type: float, value: 2.5}
@@ -2039,7 +2039,7 @@ Entities:
       scale: [1, 1, 1]
     NavAgent: {volume: 3900000000000002501, speed: 0.9, acceleration: 4, radius: 0.2, stoppingDistance: 0.1, avoidance: true, turn: true, speedParameter: speed}
     LuaScript:
-      scriptPath: gid:5a7e3c19d42b86f0:scripts/tavern/tavern_regular.lua
+      scriptPath: gid:5a7e3c19d42b86f0:scripts/tavern/tavern_regular.owlvs
       properties:
         - {name: spots, type: string, value: "-2.0 0 3.6; 0.6 0 3.2; -0.7 0.8 2.2; 1.8 0 1.2; -2.5 0 -0.5"}
         - {name: pause, type: float, value: 2.5}

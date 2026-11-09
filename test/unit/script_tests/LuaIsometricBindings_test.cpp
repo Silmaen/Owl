@@ -14,6 +14,7 @@
 #include <scene/Scene.h>
 #include <scene/TilemapAsset.h>
 #include <scene/component/components.h>
+#include <script/EntityHandle.h>
 #include <script/ScriptInstance.h>
 
 #include <cstdint>
@@ -52,7 +53,7 @@ protected:
 	/// Run a script on creation and return the instance holding its globals.
 	auto run(const std::string& iBody) -> shared<ScriptInstance> {
 		const std::string text = std::format("map = {}\nfunction on_create()\n{}\nend\n",
-											 static_cast<int64_t>(static_cast<uint64_t>(m_map.getUUID())), iBody);
+											 static_cast<int64_t>(getEntityHandle(*m_scene, m_map)), iBody);
 		const std::vector<uint8_t> data(text.begin(), text.end());
 		auto instance = mkShared<ScriptInstance>();
 		instance->setScene(m_scene.get());
@@ -139,7 +140,7 @@ TEST_F(LuaIsometric, aRuntimeEditLeavesTheAssetOfTheEditSceneUntouched) {
 	ASSERT_TRUE(copy);
 	const std::string text =
 			std::format("map = {}\nfunction on_create()\nisometric.set_cell(map, 1, 3, 3, -1, 3)\nend\n",
-						static_cast<int64_t>(static_cast<uint64_t>(m_map.getUUID())));
+						static_cast<int64_t>(getEntityHandle(*running, copy)));
 	const std::vector<uint8_t> data(text.begin(), text.end());
 	const ScriptInstance instance;
 	instance.setScene(running.get());
@@ -179,7 +180,7 @@ TEST_F(LuaIsometric, spriteFrameIsPickedFromTheSheet) {
 	auto& sprite = vehicle.addComponent<scene::component::AnimatedSpriteRenderer>();
 	sprite.columns = 8;
 	sprite.rows = 2;
-	const auto id = static_cast<int64_t>(static_cast<uint64_t>(vehicle.getUUID()));
+	const auto id = static_cast<int64_t>(getEntityHandle(*m_scene, vehicle));
 	const auto instance = run(std::format("start = isometric.get_sprite_frame({0})\n"
 										  "done = isometric.set_sprite_frame({0}, 5)\n"
 										  "shown = isometric.get_sprite_frame({0})\n"
