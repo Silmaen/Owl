@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua raw input and the mouse-look of the controllers read the devices directly and escaped the fixed input frame.
 - Owl Nest: stopping a Play that had moved to another level kept that level's renderers, so the edited scene and the next Play drew no meshes.
 - Published Doxygen documentation: the screenshots of the pages show again, the `fix_md_links.py` filter naming the `doc/images` files Doxygen copies into `html/`.
+- `EngineSystems.h` includes the EnTT header it uses, which the nightly include check reported.
 
 ## [0.6.0] - 2026-11-03
 

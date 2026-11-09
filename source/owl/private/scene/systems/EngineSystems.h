@@ -11,6 +11,8 @@
 #include "core/Core.h"
 #include "scene/SystemSchedule.h"
 
+#include <entt/entity/entity.hpp>
+
 /**
  * @brief
  *  The runtime systems the engine schedules by default (`SystemSchedule::getDefault()`).
