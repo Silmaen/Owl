@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace owl::physics {
@@ -93,6 +94,11 @@ struct BodyDescription {
 	std::vector<math::vec3f> meshVertices;
 	/// Triangles of a `Mesh` collider, three indices into `meshVertices` each.
 	std::vector<uint32_t> meshIndices;
+	/**
+	 * Colliders merged into the body (articulated assembly), placed by their `pose` (2D) or `spacePose` (3D) relative
+	 * to the body; their density adds to its mass, centre of mass and inertia.
+	 */
+	std::vector<BodyDescription> parts;
 };
 
 /**
@@ -444,6 +450,66 @@ public:
 
 	/**
 	 * @brief
+	 *  Push a body over the next step with a force, at its centre of mass or at a world point (which also turns it).
+	 * @param[in] iBody The body.
+	 * @param[in] iForce The force, in newtons (a 2D body keeps X and Y).
+	 * @param[in] iPoint World point where the force applies, none for the centre of mass.
+	 */
+	void addForce(uint32_t iBody, const math::vec3f& iForce, const std::optional<math::vec3f>& iPoint);
+
+	/**
+	 * @brief
+	 *  Turn a body over the next step with a torque.
+	 * @param[in] iBody The body.
+	 * @param[in] iTorque The torque, in newton metres (a 2D body keeps Z).
+	 */
+	void addTorque(uint32_t iBody, const math::vec3f& iTorque);
+
+	/**
+	 * @brief
+	 *  Velocity of a point carried by a body: its linear velocity plus its spin around the centre of mass.
+	 * @param[in] iBody The body.
+	 * @param[in] iPoint The world point.
+	 * @return The velocity of the point.
+	 */
+	[[nodiscard]] auto getPointVelocity(uint32_t iBody, const math::vec3f& iPoint) const -> math::vec3f;
+
+	/**
+	 * @brief
+	 *  Replace the collider of a body (parts joining or leaving it), mass, centre of mass and inertia recomputed; the
+	 *  body keeps its pose and its velocities.
+	 * @param[in] iBody The body.
+	 * @param[in] iDescription The new collider (its type, pose and layers are ignored).
+	 * @return False when the collider is invalid: the body keeps its old one.
+	 */
+	auto setShape(uint32_t iBody, const BodyDescription& iDescription) -> bool;
+
+	/**
+	 * @brief
+	 *  Get the mass of a body.
+	 * @param[in] iBody The body.
+	 * @return The mass, 0 for a static or kinematic body.
+	 */
+	[[nodiscard]] auto getMass(uint32_t iBody) const -> float;
+
+	/**
+	 * @brief
+	 *  Get the centre of mass of a body.
+	 * @param[in] iBody The body.
+	 * @return The centre of mass, in the world.
+	 */
+	[[nodiscard]] auto getCenterOfMass(uint32_t iBody) const -> math::vec3f;
+
+	/**
+	 * @brief
+	 *  Set the solver iterations of every step: more keep long chains of joints stiff.
+	 * @param[in] iVelocitySteps Velocity iterations.
+	 * @param[in] iPositionSteps Position iterations.
+	 */
+	void setSolverIterations(uint32_t iVelocitySteps, uint32_t iPositionSteps);
+
+	/**
+	 * @brief
 	 *  Angular velocity of a body in space.
 	 * @param[in] iBody The body id.
 	 * @return The velocity, in radians per second around each axis.
@@ -525,6 +591,15 @@ public:
 	 * @return The angle in radians or the position; 0 for the other joints.
 	 */
 	[[nodiscard]] auto getJointPosition(uint32_t iJoint) const -> float;
+
+	/**
+	 * @brief
+	 *  Load a joint held during the last step: the force and the torque it applied to keep its bodies together.
+	 * @param[in] iJoint The joint.
+	 * @param[in] iSubStepSeconds Duration of one collision step of the last update.
+	 * @return The force (newtons) and the torque (newton metres), zero for an unknown joint.
+	 */
+	[[nodiscard]] auto getJointLoad(uint32_t iJoint, float iSubStepSeconds) const -> std::pair<float, float>;
 
 	/**
 	 * @brief

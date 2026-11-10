@@ -12,6 +12,7 @@
 #include "math/YamlSerializers.h"
 #include "scene/component/PhysicJoint.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
 
@@ -34,6 +35,10 @@ void PhysicJoint::serialize(const core::Serializer& iOut) const {
 	out << YAML::Key << "motorForce" << YAML::Value << joint.motorForce;
 	out << YAML::Key << "springFrequency" << YAML::Value << joint.springFrequency;
 	out << YAML::Key << "springDamping" << YAML::Value << joint.springDamping;
+	if (joint.breakForce > 0.f)
+		out << YAML::Key << "breakForce" << YAML::Value << joint.breakForce;
+	if (joint.breakTorque > 0.f)
+		out << YAML::Key << "breakTorque" << YAML::Value << joint.breakTorque;
 	out << YAML::EndMap;// PhysicJoint
 }
 
@@ -66,6 +71,10 @@ void PhysicJoint::deserialize(const core::Serializer& iNode) {
 		joint.springFrequency = node["springFrequency"].as<float>();
 	if (node["springDamping"])
 		joint.springDamping = node["springDamping"].as<float>();
+	if (node["breakForce"])
+		joint.breakForce = std::max(node["breakForce"].as<float>(), 0.f);
+	if (node["breakTorque"])
+		joint.breakTorque = std::max(node["breakTorque"].as<float>(), 0.f);
 }
 
 }// namespace owl::scene::component

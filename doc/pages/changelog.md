@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Fair play: `SceneCamera::setMaxAspectRatio` (*Max Aspect Ratio* on the camera) bounds the width of the view, so a wider screen sees no more of the game.
+- Fair play: `Visibility::gameplay` (*Gameplay*) tags an entity that no quality setting may cut; gameplay lights keep their shadows first on every backend.
+- Breakable joints: `breakForce` and `breakTorque` on `PhysicJoint`, the `on_joint_break(other_id)` hook and its visual script event.
+- Physics assemblies: a `PhysicBody` marked `part` merges into its ancestor's body, mass and centre of mass recomputed; Lua `physics.attach`, `detach`, `get_assembly`, `get_mass`, `get_center_of_mass`.
+- Forces and torques at a point: `PhysicCommand::addForce`, `addForceAtPoint`, `addTorque`; Lua `physics.add_force`, `add_force_at`, `add_force_at_3d`, `add_torque`, `add_torque_3d`.
+- Solver iterations per scene (`velocitySteps`, `positionSteps`) in *Scene Settings* and `scene.set_physics_settings`, for long chains of joints.
+- Engine Demo: a salvage tug in the far orbit, an assembly whose booster snaps its mooring then breaks off, checked by `far_orbit_tug.owltest`.
 - `math::RandomStream` and `Scene::getRandomStream`: seeded random streams per system, the same values on every target.
 - Scene random seed (`Simulation: seed:`), edited in Owl Nest's *Scene Settings* and by the `scene.set_random_seed` command.
 - `scene::computeWorldHash`: a hash of the simulated state of a scene, to compare two runs of the same inputs.
@@ -82,6 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fair play: the `Player` impulses run on the fixed tick, and the first person, voxel and ship controllers move by the mean speed of each frame, so jumps and burns no longer depend on the frame rate.
 - The visual script compiler joins the two paths of a branch where they meet, so the Lua of a graph follows the shape of hand-written Lua.
 - The mesh shaders read the surface from the material block of `common/mesh_surface.slangh` (`evaluateSurface`, `evaluateVertexOffset`), the parameter materials drawing exactly as before.
 - Every Play in Owl Nest records its inputs in memory for the rewind; the Record button decides whether Stop writes them to a `.owlreplay`.

@@ -483,13 +483,14 @@ public:
 				.spacePose = {},
 				.boxes = {{.halfExtents = iHalfExtents}},
 				.meshVertices = {},
-				.meshIndices = {}};
+				.meshIndices = {},
+				.parts = {}};
 	}
 
-	void createPhysicBody(scene::Scene& ioScene, const entt::entity iEntity) {
-		const scene::Entity entity{iEntity, &ioScene};
-		auto& [sbody] = entity.getComponent<scene::component::PhysicBody>();
-		const math::Transform worldTransform = ioScene.getWorldTransform(entity);
+	// The collider of an entity's PhysicBody at its world pose, without its parts.
+	[[nodiscard]] static auto describe(scene::Scene& ioScene, const scene::Entity& iEntity) -> BodyDescription {
+		const auto& sbody = iEntity.getComponent<scene::component::PhysicBody>().body;
+		const math::Transform worldTransform = ioScene.getWorldTransform(iEntity);
 		const bool space = sbody.dimension == scene::SceneBody::Dimension::Space;
 		const auto& scale = worldTransform.scale();
 		BodyDescription description{.type = sbody.type,
@@ -509,18 +510,166 @@ public:
 									.layer = sbody.layer,
 									.mask = sbody.mask,
 									.meshVertices = {},
-									.meshIndices = {}};
+									.meshIndices = {},
+									.parts = {}};
 		if (sbody.shape == scene::SceneBody::Shape::ConvexHull || sbody.shape == scene::SceneBody::Shape::Mesh)
-			readMesh(ioScene, entity, scale, description);
+			readMesh(ioScene, iEntity, scale, description);
 		if (!space && sbody.shape == scene::SceneBody::Shape::Box)
 			description.boxes.push_back({.halfExtents = {sbody.colliderSize.x() * scale.x() * 0.5f,
 														 sbody.colliderSize.y() * scale.y() * 0.5f}});
-		sbody.bodyId = create(description, entity);
+		return description;
+	}
+
+	void createPhysicBody(scene::Scene& ioScene, const entt::entity iEntity) {
+		const scene::Entity entity{iEntity, &ioScene};
+		auto& [sbody] = entity.getComponent<scene::component::PhysicBody>();
+		if (sbody.part) {
+			if (const auto root = assemblyRootOf(ioScene, entity); root) {
+				joinPart(ioScene, iEntity, *root);
+				return;
+			}
+			OWL_CORE_WARN("Physics: Part '{}' has no ancestor body to join, it gets a body of its own.",
+						  entity.getName())
+		}
+		const bool space = sbody.dimension == scene::SceneBody::Dimension::Space;
+		sbody.bodyId = create(describe(ioScene, entity), entity);
 		if (sbody.bodyId == 0)
 			return;
 		trackBody(iEntity, sbody.bodyId, bodies[sbody.bodyId], space);
 		if (sbody.type == scene::SceneBody::BodyType::Dynamic && (sbody.gravityScale < 1.f || sbody.gravityScale > 1.f))
 			jolt->setGravityFactor(bodies[sbody.bodyId], sbody.gravityScale);
+		if (const auto it = partsOf.find(iEntity); it != partsOf.end() && !it->second.empty())
+			rebuildAssembly(ioScene, iEntity);
+	}
+
+	// The nearest ancestor holding a body of its own and of the same dimension: the body a part merges into.
+	[[nodiscard]] static auto assemblyRootOf(const scene::Scene& iScene, const scene::Entity& iPart)
+			-> std::optional<entt::entity> {
+		const auto dimension = iPart.getComponent<scene::component::PhysicBody>().body.dimension;
+		core::UUID parentId = iPart.getComponent<scene::component::Hierarchy>().parentId;
+		while (parentId != core::UUID{0}) {
+			const scene::Entity parent = iScene.findEntityByUUID(parentId);
+			if (!parent)
+				return std::nullopt;
+			if (const auto* body =
+						iScene.registry.try_get<scene::component::PhysicBody>(static_cast<entt::entity>(parent));
+				body != nullptr && !body->body.part)
+				return body->body.dimension == dimension ? std::optional{static_cast<entt::entity>(parent)}
+														 : std::nullopt;
+			parentId = parent.getComponent<scene::component::Hierarchy>().parentId;
+		}
+		return std::nullopt;
+	}
+
+	// Merges a part into the body of its root (created first when the root waits for its body).
+	void joinPart(scene::Scene& ioScene, const entt::entity iPart, const entt::entity iRoot) {
+		partRoot[iPart] = iRoot;
+		auto& parts = partsOf[iRoot];
+		const auto uuidOf = [&ioScene](const entt::entity iEntity) -> uint64_t {
+			return static_cast<uint64_t>(scene::Entity{iEntity, &ioScene}.getUUID());
+		};
+		// Parts in UUID order, so the collider is the same whatever order they joined in.
+		parts.insert(std::ranges::upper_bound(parts, uuidOf(iPart), {}, uuidOf), iPart);
+		if (ioScene.registry.get<scene::component::PhysicBody>(iRoot).body.bodyId != 0)
+			rebuildAssembly(ioScene, iRoot);
+	}
+
+	// Takes a part out of its assembly; with `iOwnBody`, the part flies on in a body of its own at the speed of its point.
+	void leavePart(scene::Scene& ioScene, const entt::entity iPart, const bool iOwnBody) {
+		const auto it = partRoot.find(iPart);
+		if (it == partRoot.end())
+			return;
+		const entt::entity root = it->second;
+		partRoot.erase(it);
+		if (const auto parts = partsOf.find(root); parts != partsOf.end()) {
+			std::erase(parts->second, iPart);
+			if (parts->second.empty())
+				partsOf.erase(parts);
+		}
+		const auto* rootBody = ioScene.registry.try_get<scene::component::PhysicBody>(root);
+		const auto rootJolt = rootBody != nullptr ? find(rootBody->body.bodyId) : std::nullopt;
+		if (rootJolt)
+			rebuildAssembly(ioScene, root);
+		if (!iOwnBody)
+			return;
+		const scene::Entity part{iPart, &ioScene};
+		auto& sbody = part.getComponent<scene::component::PhysicBody>().body;
+		sbody.part = false;
+		createPhysicBody(ioScene, iPart);
+		const auto own = find(sbody.bodyId);
+		if (!own || !rootJolt || sbody.type != scene::SceneBody::BodyType::Dynamic)
+			return;
+		const math::vec3f point = ioScene.getWorldTransform(part).translation();
+		const math::vec3f velocity = jolt->getPointVelocity(*rootJolt, point);
+		if (sbody.dimension == scene::SceneBody::Dimension::Space) {
+			jolt->setSpaceVelocity(*own, velocity);
+			jolt->setSpaceAngularVelocity(*own, jolt->getSpaceAngularVelocity(*rootJolt));
+		} else {
+			jolt->setLinearVelocity(*own, {velocity.x(), velocity.y()});
+			jolt->setAngularVelocity(*own, jolt->getAngularVelocity(*rootJolt));
+		}
+	}
+
+	// The collider of a root rebuilt with its parts placed relative to it.
+	void rebuildAssembly(scene::Scene& ioScene, const entt::entity iRoot) {
+		const scene::Entity root{iRoot, &ioScene};
+		const auto body = find(root.getComponent<scene::component::PhysicBody>().body.bodyId);
+		if (!body)
+			return;
+		BodyDescription description = describe(ioScene, root);
+		const math::Transform rootWorld = ioScene.getWorldTransform(root);
+		const math::Transform rootFrame{rootWorld.translation(), rootWorld.rotation()};
+		const math::mat4 toRoot = math::inverse(rootFrame());
+		if (const auto it = partsOf.find(iRoot); it != partsOf.end()) {
+			for (const auto entity: it->second) {
+				const scene::Entity part{entity, &ioScene};
+				BodyDescription shape = describe(ioScene, part);
+				shape.type = description.type;
+				const math::Transform partWorld = ioScene.getWorldTransform(part);
+				const math::vec4 local = toRoot * math::vec4{partWorld.translation().x(), partWorld.translation().y(),
+															 partWorld.translation().z(), 1.f};
+				shape.pose = {.position = {local.x(), local.y()},
+							  .angle = partWorld.rotation().z() - rootWorld.rotation().z()};
+				shape.spacePose = {.position = {local.x(), local.y(), local.z()},
+								   .rotation = JoltWorld::toRotation(JoltWorld::toLocalEuler(
+										   rootWorld.rotation(), JoltWorld::toRotation(partWorld.rotation())))};
+				description.parts.push_back(std::move(shape));
+			}
+		}
+		std::ignore = jolt->setShape(*body, description);
+	}
+
+	// The body an entity moves: its own, or the one of the assembly it is a part of.
+	[[nodiscard]] auto bodyOf(const scene::Scene& iScene, const entt::entity iEntity) const -> std::optional<uint32_t> {
+		const auto it = partRoot.find(iEntity);
+		const entt::entity owner = it != partRoot.end() ? it->second : iEntity;
+		const auto* body = iScene.registry.try_get<scene::component::PhysicBody>(owner);
+		return body != nullptr ? find(body->body.bodyId) : std::nullopt;
+	}
+
+	// Measures the load of the breakable joints after a step; a joint over its threshold breaks.
+	void breakOverloadedJoints(scene::Scene& ioScene, const float iSubStepSeconds) {
+		for (auto it = breakableJoints.begin(); it != breakableJoints.end();) {
+			auto* component = ioScene.registry.try_get<scene::component::PhysicJoint>(it->second);
+			if (component == nullptr || component->joint.jointId != it->first) {
+				it = breakableJoints.erase(it);
+				continue;
+			}
+			auto& sjoint = component->joint;
+			const auto [force, torque] = jolt->getJointLoad(it->first, iSubStepSeconds);
+			if ((sjoint.breakForce <= 0.f || force <= sjoint.breakForce) &&
+				(sjoint.breakTorque <= 0.f || torque <= sjoint.breakTorque)) {
+				++it;
+				continue;
+			}
+			jolt->destroyJoint(it->first);
+			sjoint.jointId = 0;
+			jointBreaks.push_back({.entity = scene::Entity{it->second, &ioScene}.getUUID(),
+								   .connected = sjoint.connected,
+								   .force = force,
+								   .torque = torque});
+			it = breakableJoints.erase(it);
+		}
 	}
 
 	// The collider of a mesh shape is the mesh of the entity's MeshRenderer, scaled like the entity.
@@ -581,7 +730,7 @@ public:
 	auto buildJoint(scene::Scene& ioScene, const scene::Entity& iEntity, scene::component::PhysicJoint& ioJoint)
 			-> JointBuild {
 		const auto& sjoint = ioJoint.joint;
-		const auto self = find(iEntity.getComponent<scene::component::PhysicBody>().body.bodyId);
+		const auto self = bodyOf(ioScene, static_cast<entt::entity>(iEntity));
 		if (!self)
 			return JointBuild::Failed;
 		const math::Transform selfWorld = ioScene.getWorldTransform(iEntity);
@@ -611,16 +760,18 @@ public:
 							  iEntity.getName())
 				return JointBuild::Failed;
 			}
-			if (otherBody->body.bodyId == 0)
+			description.other = bodyOf(ioScene, static_cast<entt::entity>(other));
+			if (!description.other)
 				return std::ranges::contains(pendingBodies, static_cast<entt::entity>(other)) ? JointBuild::Waiting
 																							  : JointBuild::Failed;
-			description.other = find(otherBody->body.bodyId);
 			description.otherPoint = worldPoint(ioScene.getWorldTransform(other), sjoint.connectedAnchor);
 		}
 		const auto id = jolt->createJoint(description);
 		if (!id)
 			return JointBuild::Failed;
 		ioJoint.joint.jointId = *id;
+		if (sjoint.breakForce > 0.f || sjoint.breakTorque > 0.f)
+			breakableJoints[*id] = static_cast<entt::entity>(iEntity);
 		return JointBuild::Built;
 	}
 
@@ -646,8 +797,10 @@ public:
 	void onPhysicJointRemoved(entt::registry& ioRegistry, const entt::entity iEntity) {
 		std::erase(pendingJoints, iEntity);
 		auto& jointId = ioRegistry.get<scene::component::PhysicJoint>(iEntity).joint.jointId;
-		if (jointId != 0)
+		if (jointId != 0) {
+			breakableJoints.erase(static_cast<uint32_t>(jointId));
 			jolt->destroyJoint(static_cast<uint32_t>(std::exchange(jointId, 0)));
+		}
 	}
 
 	void createTilemapBody(scene::Scene& ioScene, const entt::entity iEntity) {
@@ -668,7 +821,8 @@ public:
 									.spacePose = {},
 									.boxes = {},
 									.meshVertices = {},
-									.meshIndices = {}};
+									.meshIndices = {},
+									.parts = {}};
 		for (const auto& layer: assetData.layers) {
 			for (uint32_t y = 0; y < assetData.height; ++y) {
 				for (uint32_t x = 0; x < assetData.width; ++x) {
@@ -688,14 +842,21 @@ public:
 			tilemapBodies[iEntity] = bodyId;
 	}
 
-	// Created a frame late so the entity is fully set up (transform, parent) when its body is placed.
+	// Created a frame late, once the entity is set up; the bodies before the parts that merge into them.
 	void createPendingBodies(scene::Scene& ioScene) {
-		for (const auto entity: std::exchange(pendingBodies, {})) {
-			const auto* physicBody = ioScene.registry.try_get<scene::component::PhysicBody>(entity);
-			if (physicBody != nullptr && physicBody->body.bodyId == 0 &&
-				ioScene.registry.all_of<scene::component::Transform, scene::component::Hierarchy>(entity))
-				createPhysicBody(ioScene, entity);
-		}
+		for (const auto root: std::exchange(reshapedRoots, {}))
+			if (ioScene.registry.valid(root) && ioScene.registry.all_of<scene::component::PhysicBody>(root))
+				rebuildAssembly(ioScene, root);
+		std::erase_if(partsOf, [](const auto& iEntry) -> bool { return iEntry.second.empty(); });
+		const auto pending = std::exchange(pendingBodies, {});
+		for (const bool parts: {false, true})
+			for (const auto entity: pending) {
+				const auto* physicBody = ioScene.registry.try_get<scene::component::PhysicBody>(entity);
+				if (physicBody != nullptr && physicBody->body.part == parts && physicBody->body.bodyId == 0 &&
+					!partRoot.contains(entity) &&
+					ioScene.registry.all_of<scene::component::Transform, scene::component::Hierarchy>(entity))
+					createPhysicBody(ioScene, entity);
+			}
 		createPendingJoints(ioScene);
 	}
 
@@ -715,6 +876,21 @@ public:
 
 	void onPhysicBodyRemoved(entt::registry& ioRegistry, const entt::entity iEntity) {
 		std::erase(pendingBodies, iEntity);
+		if (const auto it = partRoot.find(iEntity); it != partRoot.end()) {
+			// A part leaving: its root's collider is rebuilt on the next step.
+			auto& parts = partsOf[it->second];
+			std::erase(parts, iEntity);
+			reshapedRoots.push_back(it->second);
+			partRoot.erase(it);
+		}
+		// The parts of a root going away wait for an ancestor body again, or get bodies of their own.
+		if (const auto it = partsOf.find(iEntity); it != partsOf.end()) {
+			for (const auto part: it->second) {
+				partRoot.erase(part);
+				pendingBodies.push_back(part);
+			}
+			partsOf.erase(it);
+		}
 		release(ioRegistry.get<scene::component::PhysicBody>(iEntity).body.bodyId);
 	}
 
@@ -947,6 +1123,16 @@ public:
 	std::set<uint32_t> heldBodies;
 	// The last step ran on rails.
 	bool onRails = false;
+	// Parts merged into each root body, in UUID order.
+	std::map<entt::entity, std::vector<entt::entity>> partsOf;
+	// Root body of each merged part.
+	std::unordered_map<entt::entity, entt::entity> partRoot;
+	// Roots that lost a part inside a destruction signal, rebuilt before the next step.
+	std::vector<entt::entity> reshapedRoots;
+	// Built joints with a break threshold, by joint id (checked in id order, deterministic).
+	std::map<uint32_t, entt::entity> breakableJoints;
+	// Joints broken since the last `takeJointBreaks`.
+	std::vector<PhysicCommand::JointBreak> jointBreaks;
 
 	std::vector<SyncedBody> synced;
 	std::unordered_map<uint64_t, size_t> syncedIndex;
@@ -1027,6 +1213,7 @@ void PhysicCommand::init(scene::Scene& ioScene) {
 		world->taskPool = mkUniq<SolverTaskPool>(workers);
 	world->jolt = mkUniq<JoltWorld>(world->taskPool.get());
 	world->jolt->setGravity(world->settings.gravity);
+	world->jolt->setSolverIterations(world->settings.velocitySteps, world->settings.positionSteps);
 	OWL_CORE_DEBUG("Physics: World created ({} workers).", getWorkerCount(ioScene))
 
 	for (const auto e: ioScene.registry.view<scene::component::PhysicBody, scene::component::Transform>())
@@ -1092,6 +1279,9 @@ void PhysicCommand::step(scene::Scene& ioScene) {
 		impl.applyGravityFields(ioScene);
 		impl.jolt->step(static_cast<float>(stepSeconds), impl.settings.solverSubSteps);
 		impl.collectContactEvents();
+		if (!impl.breakableJoints.empty())
+			impl.breakOverloadedJoints(ioScene, static_cast<float>(stepSeconds) /
+														static_cast<float>(std::max(impl.settings.solverSubSteps, 1u)));
 	}
 	impl.captureCurrent();
 	++impl.stepsSinceWrite;
@@ -1596,6 +1786,134 @@ void PhysicCommand::setJointMotor(const scene::Entity& iEntity, const bool iEnab
 auto PhysicCommand::getJointPosition(const scene::Entity& iEntity) -> float {
 	const auto joint = jointOf(iEntity, "getJointPosition");
 	return joint ? joint->first->jolt->getJointPosition(joint->second) : 0.f;
+}
+
+
+namespace {
+
+// The body an entity moves and whether it may be pushed: its own or its assembly's, never a static one.
+auto pushedBody(const scene::Entity& iEntity, const char* iFunc) -> std::optional<std::pair<PhysicsWorld*, uint32_t>> {
+	auto* const world = runningWorld(iEntity, iFunc);
+	if (world == nullptr || !iEntity.hasComponent<scene::component::PhysicBody>())
+		return std::nullopt;
+	const auto body = world->bodyOf(*iEntity.getScene(), static_cast<entt::entity>(iEntity));
+	if (!body)
+		return std::nullopt;
+	const auto it = world->partRoot.find(static_cast<entt::entity>(iEntity));
+	const auto& owner = it != world->partRoot.end()
+								? iEntity.getScene()->registry.get<scene::component::PhysicBody>(it->second).body
+								: iEntity.getComponent<scene::component::PhysicBody>().body;
+	if (owner.type == scene::SceneBody::BodyType::Static)
+		return std::nullopt;
+	return std::pair{world, *body};
+}
+
+// The joints on an entity or linked to it are built again, on the body it moves now.
+void rebindJoints(PhysicsWorld& ioWorld, scene::Scene& ioScene, const scene::Entity& iEntity) {
+	const core::UUID uuid = iEntity.getUUID();
+	for (const auto [handle, component]: ioScene.registry.view<scene::component::PhysicJoint>().each()) {
+		if (handle != static_cast<entt::entity>(iEntity) && component.joint.connected != uuid)
+			continue;
+		if (component.joint.jointId != 0) {
+			ioWorld.breakableJoints.erase(static_cast<uint32_t>(component.joint.jointId));
+			ioWorld.jolt->destroyJoint(static_cast<uint32_t>(component.joint.jointId));
+			component.joint.jointId = 0;
+		}
+		if (!std::ranges::contains(ioWorld.pendingJoints, handle))
+			ioWorld.pendingJoints.push_back(handle);
+	}
+	ioWorld.createPendingJoints(ioScene);
+}
+
+}// namespace
+
+auto PhysicCommand::takeJointBreaks(scene::Scene& ioScene) -> std::vector<JointBreak> {
+	auto* const world = ioScene.getPhysicsWorld();
+	return world != nullptr ? std::exchange(world->jointBreaks, {}) : std::vector<JointBreak>{};
+}
+
+void PhysicCommand::addForce(const scene::Entity& iEntity, const math::vec3f& iForce) {
+	const auto pushed = pushedBody(iEntity, "addForce");
+	if (!pushed)
+		return;
+	const auto& [world, body] = *pushed;
+	std::optional<math::vec3f> point;
+	if (world->partRoot.contains(static_cast<entt::entity>(iEntity)))
+		point = iEntity.getScene()->getWorldTransform(iEntity).translation();
+	world->jolt->addForce(body, iForce, point);
+}
+
+void PhysicCommand::addForceAtPoint(const scene::Entity& iEntity, const math::vec3f& iForce,
+									const math::vec3f& iPoint) {
+	if (const auto pushed = pushedBody(iEntity, "addForceAtPoint"); pushed)
+		pushed->first->jolt->addForce(pushed->second, iForce, iPoint);
+}
+
+void PhysicCommand::addTorque(const scene::Entity& iEntity, const math::vec3f& iTorque) {
+	if (const auto pushed = pushedBody(iEntity, "addTorque"); pushed)
+		pushed->first->jolt->addTorque(pushed->second, iTorque);
+}
+
+auto PhysicCommand::attach(const scene::Entity& iEntity) -> bool {
+	if (!iEntity || !iEntity.hasComponent<scene::component::PhysicBody>())
+		return false;
+	auto& sbody = iEntity.getComponent<scene::component::PhysicBody>().body;
+	auto* const world = worldOf(iEntity);
+	if (world == nullptr) {
+		sbody.part = true;
+		return false;
+	}
+	if (world->partRoot.contains(static_cast<entt::entity>(iEntity)))
+		return true;
+	auto& scene = *iEntity.getScene();
+	sbody.part = true;
+	const auto root = PhysicsWorld::assemblyRootOf(scene, iEntity);
+	if (!root) {
+		OWL_CORE_WARN("Physics: Part '{}' has no ancestor body to join, it keeps its own body.", iEntity.getName())
+		sbody.part = false;
+		return false;
+	}
+	world->release(sbody.bodyId);
+	world->joinPart(scene, static_cast<entt::entity>(iEntity), *root);
+	rebindJoints(*world, scene, iEntity);
+	return true;
+}
+
+void PhysicCommand::detach(const scene::Entity& iEntity) {
+	if (!iEntity || !iEntity.hasComponent<scene::component::PhysicBody>())
+		return;
+	auto* const world = worldOf(iEntity);
+	if (world == nullptr || !world->partRoot.contains(static_cast<entt::entity>(iEntity))) {
+		iEntity.getComponent<scene::component::PhysicBody>().body.part = false;
+		return;
+	}
+	auto& scene = *iEntity.getScene();
+	world->leavePart(scene, static_cast<entt::entity>(iEntity), true);
+	rebindJoints(*world, scene, iEntity);
+}
+
+auto PhysicCommand::getAssemblyRoot(const scene::Entity& iEntity) -> core::UUID {
+	const auto* const world = worldOf(iEntity);
+	if (world == nullptr)
+		return core::UUID{0};
+	const auto it = world->partRoot.find(static_cast<entt::entity>(iEntity));
+	return it != world->partRoot.end() ? scene::Entity{it->second, iEntity.getScene()}.getUUID() : core::UUID{0};
+}
+
+auto PhysicCommand::getMass(const scene::Entity& iEntity) -> float {
+	const auto* const world = worldOf(iEntity);
+	if (world == nullptr)
+		return 0.f;
+	const auto body = world->bodyOf(*iEntity.getScene(), static_cast<entt::entity>(iEntity));
+	return body ? world->jolt->getMass(*body) : 0.f;
+}
+
+auto PhysicCommand::getCenterOfMass(const scene::Entity& iEntity) -> math::vec3f {
+	const auto* const world = worldOf(iEntity);
+	if (world == nullptr)
+		return {0.f, 0.f, 0.f};
+	const auto body = world->bodyOf(*iEntity.getScene(), static_cast<entt::entity>(iEntity));
+	return body ? world->jolt->getCenterOfMass(*body) : math::vec3f{0.f, 0.f, 0.f};
 }
 
 }// namespace owl::physics

@@ -145,7 +145,7 @@ deterministic simulation and replay, Jolt, gravity fields.
 - ![Done][done] Bit-exact simulation on every target, always on: no FMA contraction, deterministic maths,
   deterministic Jolt physics, fixed Lua hash seed
   ([Simulation](design/simulation-networking.md#simulation-cross-platform))
-- ![Planned][planned] Fair play: fixed tick whatever the frame rate, gameplay visibility never cut by quality settings,
+- ![Done][done] Fair play: fixed tick whatever the frame rate, gameplay visibility never cut by quality settings,
   bounded field of view ([Fair play](design/simulation-networking.md#networking-fairness))
 - ![Done][done] Input recording and frame-exact replay (replays double as regression tests)
   ([Replay](design/simulation-networking.md#simulation-replay))
@@ -156,7 +156,7 @@ deterministic simulation and replay, Jolt, gravity fields.
   ([Physics](design/physics-api.md))
 - ![Done][done] 3D physics with Jolt on the shared physics interface, built cross-platform deterministic
   ([Physics API](design/physics-api.md))
-- ![Planned][planned] Articulated bodies: compound bodies rebuilt at runtime, breakable joints, mass recomputed,
+- ![Done][done] Articulated bodies: compound bodies rebuilt at runtime, breakable joints, mass recomputed,
   sub-stepping ([Physics API](design/physics-api.md))
 - ![Done][done] Gravity fields (uniform, point, spherical) in 2D and 3D, with trajectory prediction
   ([Large worlds](design/large-worlds.md))

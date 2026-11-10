@@ -227,6 +227,8 @@ void serializePhysicsSettings(YAML::Emitter& ioEmitter, const PhysicsSettings& i
 	ioEmitter << YAML::Key << "gravity" << YAML::Value << YAML::Flow << YAML::BeginSeq << iSettings.gravity.x()
 			  << iSettings.gravity.y() << iSettings.gravity.z() << YAML::EndSeq;
 	ioEmitter << YAML::Key << "railsTimeScale" << YAML::Value << iSettings.railsTimeScale;
+	ioEmitter << YAML::Key << "velocitySteps" << YAML::Value << iSettings.velocitySteps;
+	ioEmitter << YAML::Key << "positionSteps" << YAML::Value << iSettings.positionSteps;
 	ioEmitter << YAML::EndMap;
 }
 
@@ -242,6 +244,8 @@ auto deserializePhysicsSettings(const core::YamlNode& iNode) -> PhysicsSettings 
 	if (const auto gravityNode = iNode["gravity"]; gravityNode)
 		settings.gravity = gravityNode.as<math::vec3f>();
 	settings.railsTimeScale = iNode["railsTimeScale"].as<float>(settings.railsTimeScale);
+	settings.velocitySteps = iNode["velocitySteps"].as<uint32_t>(settings.velocitySteps);
+	settings.positionSteps = iNode["positionSteps"].as<uint32_t>(settings.positionSteps);
 	return settings.clamped();
 }
 

@@ -166,7 +166,7 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.raycast_walls", SystemPhase::PrePhysics, [](Scene& ioScene, const SystemContext& iContext) -> void {
 		updateRaycastDynamicWalls(ioScene, iContext.timeStep.getSeconds());
 	});
-	add("owl.player_input", SystemPhase::PrePhysics, &updatePlayerInput);
+	add("owl.player_input", SystemPhase::PrePhysics, nullptr, &updatePlayerInput);
 	add("owl.physics", SystemPhase::Physics, &updatePhysics, &tickPhysics);
 	add("owl.drift", SystemPhase::PostPhysics, &updateDrifts);
 	add("owl.follow_target", SystemPhase::PostPhysics, &updateFollowTargets);

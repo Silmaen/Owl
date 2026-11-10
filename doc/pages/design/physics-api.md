@@ -67,12 +67,13 @@ a simulation result.
 | 3D     | Collision shapes: box, sphere, capsule, cylinder, convex hull, mesh                               | Done    |
 | 3D     | Raycasting for gameplay (line-of-sight, ground detection), sphere casts                           | Done    |
 | 2D, 3D | Gravity fields, trajectory prediction, time warp on rails ([Large worlds](large-worlds.md))       | Done    |
-| 3D     | Articulated bodies                                                                                | Planned |
+| 2D, 3D | Articulated bodies: assemblies of parts, breakable joints, solver iterations, forces at a point   | Done    |
 
-### Planned
+Articulated bodies ([Large worlds](large-worlds.md), user reference [Assemblies](../physics.md#assemblies)):
 
-- Articulated bodies ([Large worlds](large-worlds.md))
-    - Compound bodies rebuilt when parts join or leave; mass, centre of mass and inertia recomputed
-    - Breakable joints with force and torque thresholds, an event when they break
-    - Sub-stepping per scene for long chains of joints
-    - Forces and torques applied at a point, from Lua and from systems
+- Compound bodies rebuilt when parts join or leave (`SceneBody::part`, `attach`, `detach`): one Jolt
+  `StaticCompoundShape` replaced through `SetShape`, mass, centre of mass and inertia recomputed
+- Breakable joints with force and torque thresholds, from the solver's impulses of the last collision step, checked in
+  joint order (deterministic), an `on_joint_break` event
+- Solver iterations per scene (`velocitySteps`, `positionSteps`) next to the collision steps, for long chains of joints
+- Forces and torques applied at a point, from Lua and from systems

@@ -100,6 +100,11 @@ public:
 	uint8_t layer = 0;
 	/// Layers the body collides with, one bit per layer; two bodies collide when each one's mask has the other's layer.
 	uint8_t mask = allLayers;
+	/**
+	 * A part: the collider merges into the body of the nearest ancestor with a `PhysicBody` (one rigid assembly, mass
+	 * and centre of mass summed) instead of making a body of its own; its own type is ignored.
+	 */
+	bool part = false;
 	/// Internal body index.
 	uint64_t bodyId = 0;
 	/// The size of the collider (see `Shape`), multiplied by the entity scale; a 2D box ignores Z (unit depth).

@@ -21,6 +21,8 @@ struct OWL_API Visibility {
 	bool gameVisible = true;
 	/// Whether the entity is visible in the editor viewport (NOT serialized, transient).
 	bool editorVisible = true;
+	/// Tagged gameplay (cover, occluder, a shadow that hides a player): no quality setting nor backend budget cuts it.
+	bool gameplay = false;
 
 	/**
 	 * @brief

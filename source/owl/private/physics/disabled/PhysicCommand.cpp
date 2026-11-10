@@ -125,6 +125,39 @@ void PhysicCommand::setJointMotor([[maybe_unused]] const scene::Entity& iEntity,
 
 auto PhysicCommand::getJointPosition([[maybe_unused]] const scene::Entity& iEntity) -> float { return 0.f; }
 
+auto PhysicCommand::takeJointBreaks([[maybe_unused]] scene::Scene& ioScene) -> std::vector<JointBreak> { return {}; }
+
+void PhysicCommand::addForce([[maybe_unused]] const scene::Entity& iEntity,
+							 [[maybe_unused]] const math::vec3f& iForce) {}
+
+void PhysicCommand::addForceAtPoint([[maybe_unused]] const scene::Entity& iEntity,
+									[[maybe_unused]] const math::vec3f& iForce,
+									[[maybe_unused]] const math::vec3f& iPoint) {}
+
+void PhysicCommand::addTorque([[maybe_unused]] const scene::Entity& iEntity,
+							  [[maybe_unused]] const math::vec3f& iTorque) {}
+
+auto PhysicCommand::attach(const scene::Entity& iEntity) -> bool {
+	if (iEntity && iEntity.hasComponent<scene::component::PhysicBody>())
+		iEntity.getComponent<scene::component::PhysicBody>().body.part = true;
+	return false;
+}
+
+void PhysicCommand::detach(const scene::Entity& iEntity) {
+	if (iEntity && iEntity.hasComponent<scene::component::PhysicBody>())
+		iEntity.getComponent<scene::component::PhysicBody>().body.part = false;
+}
+
+auto PhysicCommand::getAssemblyRoot([[maybe_unused]] const scene::Entity& iEntity) -> core::UUID {
+	return core::UUID{0};
+}
+
+auto PhysicCommand::getMass([[maybe_unused]] const scene::Entity& iEntity) -> float { return 0.f; }
+
+auto PhysicCommand::getCenterOfMass([[maybe_unused]] const scene::Entity& iEntity) -> math::vec3f {
+	return {0.f, 0.f, 0.f};
+}
+
 auto PhysicCommand::getGravityAt(const scene::Scene& iScene, const math::vec3f& iPoint) -> math::vec3f {
 	std::vector<FieldSource> sources;
 	gatherFieldSources(iScene, {}, sources);

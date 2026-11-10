@@ -99,11 +99,17 @@ struct ShadowCandidate {
 	float distance = 0.f;
 	/// Strength of the light, for lights at the same distance.
 	float intensity = 0.f;
+	/// The light's entity is tagged gameplay (`Visibility::gameplay`): its shadow is never cut by the backend.
+	bool gameplay = false;
 };
+
+/// Shadows kept first for the gameplay lights: the budget every backend has, so each one draws the same of them.
+constexpr uint32_t g_gameplayShadowSlots = g_openGlLocalShadowBudget.spot;
 
 /**
  * @brief
- *  Keep the lights that get a shadow: the nearest to the camera first, then the strongest, at most `iBudget`.
+ *  Keep the lights that get a shadow: the gameplay lights first (the nearest `g_gameplayShadowSlots` of them, the
+ *  same on every backend), then the nearest to the camera, then the strongest, at most `iBudget`.
  * @param[in,out] ioCandidates The candidates, sorted by importance and cut to the budget.
  * @param[in] iBudget Number of shadows available.
  */

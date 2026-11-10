@@ -287,6 +287,12 @@ The **local** transform; `Scene::getWorldTransform(entity)` gives the world one 
 |-----------------|--------|--------------|------------|------------------------------------------|
 | `gameVisible`   | `bool` | `Visibility` | Yes        | Rendered during gameplay                 |
 | `editorVisible` | `bool` | —            | No         | Rendered in editor (always true on load) |
+| `gameplay`      | `bool` | `Visibility` | Yes        | Matters to the game: never cut by quality |
+
+An entity tagged `gameplay` (inspector *Gameplay*: cover, occluder, a light whose shadow hides a player) is never reduced
+by a quality setting or a backend budget: a gameplay light takes a shadow slot before the others, up to the 4 slots
+every backend has, so OpenGL and Vulkan draw the same gameplay shadows
+([Fair play](design/simulation-networking.md#networking-fairness)).
 
 #### Hierarchy
 

@@ -1131,8 +1131,11 @@ auto Viewport::getFrustumExtent(const scene::component::Camera& iCamera) const -
 	const auto& size = m_framebuffer ? m_framebuffer->getSpecification().size : math::vec2ui{16, 9};
 	const float aspect = size.y() > 0 ? static_cast<float>(size.x()) / static_cast<float>(size.y()) : 1.f;
 	const bool perspective = iCamera.camera.getProjectionType() == scene::SceneCamera::ProjectionType::Perspective;
-	const float halfHeight = perspective ? depth * std::tan(iCamera.camera.getPerspectiveVerticalFov() * 0.5f)
-										 : iCamera.camera.getOrthographicSize() * 0.5f;
+	const float maxAspect = iCamera.camera.getMaxAspectRatio();
+	const float heightScale = maxAspect > 0.f && aspect > maxAspect ? maxAspect / aspect : 1.f;
+	const float halfHeight =
+			heightScale * (perspective ? depth * std::tan(iCamera.camera.getPerspectiveVerticalFov() * 0.5f)
+									   : iCamera.camera.getOrthographicSize() * 0.5f);
 	return {.halfWidth = halfHeight * aspect, .halfHeight = halfHeight, .depth = depth, .perspective = perspective};
 }
 

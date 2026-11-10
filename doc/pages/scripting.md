@@ -137,6 +137,7 @@ end
 | `on_destroy()`                | Entity destroyed, or Play mode ends                                              | None                          |
 | `on_collision(other_id)`      | Body starts touching another entity's body                                       | `other_id`: handle            |
 | `on_collision_exit(other_id)` | Last contact with another entity's body ends                                     | `other_id`: handle            |
+| `on_joint_break(other_id)`    | A breakable joint of the entity, or linked to it, breaks under its load          | `other_id`: handle, 0 = world |
 | `on_demoted()`                | The entity's `SimulationLod` demotes it                                          | None                          |
 | `on_promoted()`               | The entity's `SimulationLod` promotes it                                         | None                          |
 | `on_coarse_tick(dt)`          | Every `coarseInterval` ticks while demoted, instead of `on_update` and `on_tick` | `dt`: seconds covered         |

@@ -439,22 +439,37 @@ auto makeSingleShape(const BodyDescription& iDescription, const float iDensity) 
 	return settings.GetPtr();
 }
 
-auto makeShape(const BodyDescription& iDescription) -> JPH::ShapeSettings::ShapeResult {
+// The collider of one body, without its parts.
+auto makeOwnShape(const BodyDescription& iDescription) -> JPH::Ref<JPH::ShapeSettings> {
 	const float density = std::max(iDescription.density, g_MinDensity);
 	if (iDescription.boxes.empty())
-		return makeSingleShape(iDescription, density)->Create();
+		return makeSingleShape(iDescription, density);
 	if (iDescription.boxes.size() == 1 && iDescription.boxes.front().offset == math::vec2f{0.f, 0.f})
-		return makeBox(iDescription.boxes.front(), density)->Create();
-	JPH::StaticCompoundShapeSettings compound;
+		return makeBox(iDescription.boxes.front(), density).GetPtr();
+	auto compound = JPH::Ref<JPH::StaticCompoundShapeSettings>(new JPH::StaticCompoundShapeSettings);
 	for (const auto& box: iDescription.boxes)
-		compound.AddShape(toVec3(box.offset), JPH::Quat::sIdentity(), makeBox(box, density));
+		compound->AddShape(toVec3(box.offset), JPH::Quat::sIdentity(), makeBox(box, density));
+	return compound.GetPtr();
+}
+
+auto makeShape(const BodyDescription& iDescription) -> JPH::ShapeSettings::ShapeResult {
+	if (iDescription.parts.empty())
+		return makeOwnShape(iDescription)->Create();
+	const bool space = iDescription.dimension == scene::SceneBody::Dimension::Space;
+	JPH::StaticCompoundShapeSettings compound;
+	compound.AddShape(JPH::Vec3::sZero(), JPH::Quat::sIdentity(), makeOwnShape(iDescription));
+	for (const auto& part: iDescription.parts) {
+		const auto& [position, rotation] = part.spacePose;
+		compound.AddShape(space ? JPH::Vec3(position.x(), position.y(), position.z()) : toVec3(part.pose.position),
+						  space ? toQuat(rotation) : planeRotation(part.pose.angle), makeOwnShape(part));
+	}
 	return compound.Create();
 }
 
 // A round 2D body weighs its density times its area, like a box of unit depth, not times its volume.
 auto planeMass(const BodyDescription& iDescription) -> std::optional<float> {
 	if (iDescription.dimension != scene::SceneBody::Dimension::Plane || !iDescription.boxes.empty() ||
-		iDescription.shape == scene::SceneBody::Shape::Box ||
+		!iDescription.parts.empty() || iDescription.shape == scene::SceneBody::Shape::Box ||
 		iDescription.shape == scene::SceneBody::Shape::ConvexHull ||
 		iDescription.shape == scene::SceneBody::Shape::Mesh)
 		return std::nullopt;
@@ -610,6 +625,64 @@ void JoltWorld::destroyBody(const uint32_t iBody) {
 	bodies.ActivateBodiesInAABox(bounds, {}, {});
 	bodies.RemoveBody(id);
 	bodies.DestroyBody(id);
+}
+
+void JoltWorld::addForce(const uint32_t iBody, const math::vec3f& iForce, const std::optional<math::vec3f>& iPoint) {
+	const JPH::Vec3 force{iForce.x(), iForce.y(), iForce.z()};
+	if (iPoint)
+		mp_impl->bodies().AddForce(toBodyId(iBody), force, JPH::RVec3(iPoint->x(), iPoint->y(), iPoint->z()));
+	else
+		mp_impl->bodies().AddForce(toBodyId(iBody), force);
+}
+
+void JoltWorld::addTorque(const uint32_t iBody, const math::vec3f& iTorque) {
+	mp_impl->bodies().AddTorque(toBodyId(iBody), {iTorque.x(), iTorque.y(), iTorque.z()});
+}
+
+auto JoltWorld::getPointVelocity(const uint32_t iBody, const math::vec3f& iPoint) const -> math::vec3f {
+	const auto velocity =
+			mp_impl->bodies().GetPointVelocity(toBodyId(iBody), JPH::RVec3(iPoint.x(), iPoint.y(), iPoint.z()));
+	return {velocity.GetX(), velocity.GetY(), velocity.GetZ()};
+}
+
+auto JoltWorld::setShape(const uint32_t iBody, const BodyDescription& iDescription) -> bool {
+	const auto shape = makeShape(iDescription);
+	if (shape.HasError()) {
+		OWL_CORE_WARN("Physics: Invalid collider ({}), body shape kept.", shape.GetError().c_str())
+		return false;
+	}
+	const auto id = toBodyId(iBody);
+	mp_impl->bodies().SetShape(id, shape.Get(), true, JPH::EActivation::Activate);
+	if (const auto mass = planeMass(iDescription); mass) {
+		const JPH::BodyLockWrite lock(mp_impl->system->GetBodyLockInterfaceNoLock(), id);
+		if (lock.Succeeded() && lock.GetBody().IsDynamic()) {
+			auto properties = shape.Get()->GetMassProperties();
+			properties.ScaleToMass(*mass);
+			auto* motion = lock.GetBody().GetMotionProperties();
+			motion->SetMassProperties(motion->GetAllowedDOFs(), properties);
+		}
+	}
+	return true;
+}
+
+auto JoltWorld::getMass(const uint32_t iBody) const -> float {
+	const JPH::BodyLockRead lock(mp_impl->system->GetBodyLockInterfaceNoLock(), toBodyId(iBody));
+	if (!lock.Succeeded() || !lock.GetBody().IsDynamic())
+		return 0.f;
+	const float inverse = lock.GetBody().GetMotionProperties()->GetInverseMass();
+	return inverse > 0.f ? 1.f / inverse : 0.f;
+}
+
+auto JoltWorld::getCenterOfMass(const uint32_t iBody) const -> math::vec3f {
+	const auto centre = mp_impl->bodies().GetCenterOfMassPosition(toBodyId(iBody));
+	return {static_cast<float>(centre.GetX()), static_cast<float>(centre.GetY()), static_cast<float>(centre.GetZ())};
+}
+
+void JoltWorld::setSolverIterations(const uint32_t iVelocitySteps, const uint32_t iPositionSteps) {
+	auto settings = mp_impl->system->GetPhysicsSettings();
+	settings.mNumVelocitySteps = std::max(iVelocitySteps, 1u);
+	settings.mNumPositionSteps = std::max(iPositionSteps, 1u);
+	mp_impl->system->SetPhysicsSettings(settings);
 }
 
 void JoltWorld::step(const float iSeconds, const uint32_t iCollisionSteps) {
@@ -967,6 +1040,37 @@ auto JoltWorld::getJointPosition(const uint32_t iJoint) const -> float {
 	if (joint->GetSubType() == JPH::EConstraintSubType::Slider)
 		return static_cast<const JPH::SliderConstraint*>(joint)->GetCurrentPosition();
 	return 0.f;
+}
+
+auto JoltWorld::getJointLoad(const uint32_t iJoint, const float iSubStepSeconds) const -> std::pair<float, float> {
+	const auto it = mp_impl->joints.find(iJoint);
+	if (it == mp_impl->joints.end() || iSubStepSeconds <= 0.f)
+		return {0.f, 0.f};
+	// The solver's impulses of the last collision step, over its duration; the motor is wanted, not a load.
+	float force = 0.f;
+	float torque = 0.f;
+	const auto* joint = it->second.GetPtr();
+	const auto subType = joint->GetSubType();
+	if (subType == JPH::EConstraintSubType::Fixed) {
+		const auto* fixed = static_cast<const JPH::FixedConstraint*>(joint);
+		force = fixed->GetTotalLambdaPosition().Length();
+		torque = fixed->GetTotalLambdaRotation().Length();
+	} else if (subType == JPH::EConstraintSubType::Hinge) {
+		const auto* hinge = static_cast<const JPH::HingeConstraint*>(joint);
+		const auto rotation = hinge->GetTotalLambdaRotation();
+		const float limit = hinge->GetTotalLambdaRotationLimits();
+		force = hinge->GetTotalLambdaPosition().Length();
+		torque = JPH::Sqrt(rotation[0] * rotation[0] + rotation[1] * rotation[1] + limit * limit);
+	} else if (subType == JPH::EConstraintSubType::Slider) {
+		const auto* slider = static_cast<const JPH::SliderConstraint*>(joint);
+		const auto position = slider->GetTotalLambdaPosition();
+		const float limit = slider->GetTotalLambdaPositionLimits();
+		force = JPH::Sqrt(position[0] * position[0] + position[1] * position[1] + limit * limit);
+		torque = slider->GetTotalLambdaRotation().Length();
+	} else if (subType == JPH::EConstraintSubType::Distance) {
+		force = std::abs(static_cast<const JPH::DistanceConstraint*>(joint)->GetTotalLambdaPosition());
+	}
+	return {force / iSubStepSeconds, torque / iSubStepSeconds};
 }
 
 auto JoltWorld::toRotation(const math::vec3f& iEuler) -> math::vec4f {

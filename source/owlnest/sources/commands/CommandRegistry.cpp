@@ -913,6 +913,10 @@ auto setPhysicsSettings(const shared<scene::Scene>& ioScene, const CommandArgs& 
 		after.gravity = *gravity;
 	if (const auto rails = iArgs.get<double>("rails_time_scale"); rails)
 		after.railsTimeScale = static_cast<float>(*rails);
+	if (const auto steps = iArgs.get<int64_t>("velocity_steps"); steps)
+		after.velocitySteps = static_cast<uint32_t>(std::max<int64_t>(*steps, 0));
+	if (const auto steps = iArgs.get<int64_t>("position_steps"); steps)
+		after.positionSteps = static_cast<uint32_t>(std::max<int64_t>(*steps, 0));
 	after = after.clamped();
 	if (after == before)
 		return fail(CommandError::NotApplicable, "the scene already has these physics settings");
@@ -1852,7 +1856,13 @@ CommandRegistry::CommandRegistry() {
 				   .description = "World gravity, summed with the gravity sources, in units per second squared."},
 				  {.name = "rails_time_scale",
 				   .type = ArgType::Number,
-				   .description = "Time scale above which the bodies go on rails (time warp), 1 to 64."}},
+				   .description = "Time scale above which the bodies go on rails (time warp), 1 to 64."},
+				  {.name = "velocity_steps",
+				   .type = ArgType::Integer,
+				   .description = "Velocity iterations of the solver, 1 to 64: more keep long chains of joints stiff."},
+				  {.name = "position_steps",
+				   .type = ArgType::Integer,
+				   .description = "Position iterations of the solver, 1 to 64, against the drift of the joints."}},
 		 .factory = setPhysicsSettings});
 	add({.name = "scene.set_script",
 		 .description = "Choose the script the scene owns (`SceneScript`), with its property values; empty removes "

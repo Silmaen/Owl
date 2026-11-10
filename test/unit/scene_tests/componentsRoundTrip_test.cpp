@@ -1187,3 +1187,17 @@ TEST(ComponentRoundTrip, HudMarker) {
 				EXPECT_NEAR(marker.edgeMargin, 12.f, 1e-6f);
 			});
 }
+
+TEST(ComponentRoundTrip, FairPlayBounds) {
+	roundTrip(
+			"FairPlayBounds",
+			[](scene::Entity& iEnt) -> void {
+				iEnt.addComponent<scene::component::Camera>().camera.setMaxAspectRatio(16.f / 9.f);
+				iEnt.getComponent<scene::component::Visibility>().gameplay = true;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				EXPECT_NEAR(iEnt.getComponent<scene::component::Camera>().camera.getMaxAspectRatio(), 16.f / 9.f,
+							1e-5f);
+				EXPECT_TRUE(iEnt.getComponent<scene::component::Visibility>().gameplay);
+			});
+}

@@ -626,7 +626,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 	const auto& tag = iEntity.getComponent<Tag>().tag;
 	const auto& [parentId, childrenIds] = iEntity.getComponent<Hierarchy>();
 	const bool hasChildren = !childrenIds.empty();
-	auto& [gameVisible, editorVisible] = iEntity.getComponent<Visibility>();
+	auto& [gameVisible, editorVisible, gameplay] = iEntity.getComponent<Visibility>();
 	const bool isPartOfPrefab = static_cast<bool>(findPrefabRoot(iEntity, *m_context));
 	const auto kind = entityKind(iEntity, hasChildren);
 	const std::string countText = hasChildren ? std::format("{}", childrenIds.size()) : std::string{};

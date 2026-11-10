@@ -145,7 +145,7 @@ TEST(ScriptEngine, extractFunctionsGivesTheLineOfEachGlobalFunction) {
 
 TEST(ScriptEngine, hookNamesListTheEngineCallbacks) {
 	const auto& hooks = ScriptEngine::getHookNames();
-	EXPECT_EQ(hooks.size(), 14u);
+	EXPECT_EQ(hooks.size(), 15u);
 	EXPECT_EQ(hooks.front(), "on_create");
-	EXPECT_EQ(hooks.back(), "on_coarse_tick");
+	EXPECT_EQ(hooks.back(), "on_joint_break");
 }

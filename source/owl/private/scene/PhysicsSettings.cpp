@@ -20,6 +20,8 @@ auto PhysicsSettings::clamped() const -> PhysicsSettings {
 	PhysicsSettings out = *this;
 	out.solverSubSteps = std::clamp(solverSubSteps, 1U, maxSolverSubSteps);
 	out.workerCount = std::min(workerCount, maxWorkerCount);
+	out.velocitySteps = std::clamp(velocitySteps, 1U, maxSolverIterations);
+	out.positionSteps = std::clamp(positionSteps, 1U, maxSolverIterations);
 	for (size_t axis = 0; axis < 3; ++axis)
 		out.gravity[axis] = std::isfinite(gravity[axis]) ? std::clamp(gravity[axis], -maxGravity, maxGravity) : 0.f;
 	out.railsTimeScale = std::isfinite(railsTimeScale)
@@ -41,7 +43,8 @@ auto PhysicsSettings::operator==(const PhysicsSettings& iOther) const -> bool {
 	return solverSubSteps == iOther.solverSubSteps && interpolate == iOther.interpolate &&
 		   workerCount == iOther.workerCount && same(gravity.x(), iOther.gravity.x()) &&
 		   same(gravity.y(), iOther.gravity.y()) && same(gravity.z(), iOther.gravity.z()) &&
-		   same(railsTimeScale, iOther.railsTimeScale);
+		   same(railsTimeScale, iOther.railsTimeScale) && velocitySteps == iOther.velocitySteps &&
+		   positionSteps == iOther.positionSteps;
 }
 
 }// namespace owl::scene

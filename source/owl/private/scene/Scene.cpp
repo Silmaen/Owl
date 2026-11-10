@@ -1328,9 +1328,11 @@ void Scene::recordLightPasses(renderer::RenderGraph& ioGraph) {
 										  .bias = light.shadowBias,
 										  .lightSize = area.w(),
 										  .point = light.type != component::Light::Type::Spot};
+			const auto* visibility = registry.try_get<component::Visibility>(handle);
 			m_shadowCandidates.push_back({.lightIndex = lightIndex,
 										  .distance = renderer::distanceToLightRange(eye, position, light.range),
-										  .intensity = strength});
+										  .intensity = strength,
+										  .gameplay = visibility != nullptr && visibility->gameplay});
 		}
 		if (shadowLight == nullptr && light.type == component::Light::Type::Directional && light.castShadows) {
 			shadowLight = &light;
@@ -4226,6 +4228,19 @@ void Scene::dispatchCollisionEvents() {
 	for (const auto& event: physics::PhysicCommand::takeCollisionEvents(*this)) {
 		notify(event.entityA, event.entityB, event);
 		notify(event.entityB, event.entityA, event);
+	}
+	const auto notifyBreak = [this](const core::UUID iSelf, const core::UUID iOther) -> void {
+		const Entity self = findEntityByUUID(iSelf);
+		if (!self || !self.hasComponent<component::LuaScript>() || isPendingDestructionInTree(self))
+			return;
+		if (const auto* instance = self.getComponent<component::LuaScript>().instance.get();
+			instance != nullptr && instance->isValid())
+			instance->onContact("on_joint_break", iOther);
+	};
+	for (const auto& broken: physics::PhysicCommand::takeJointBreaks(*this)) {
+		notifyBreak(broken.entity, broken.connected);
+		if (broken.connected != core::UUID{0})
+			notifyBreak(broken.connected, broken.entity);
 	}
 }
 

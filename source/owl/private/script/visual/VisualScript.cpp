@@ -102,6 +102,10 @@ void addEvents(std::vector<NodeType>& ioTypes) {
 			event("on_collision", "On Collision", "Runs when the body starts touching another body.", {other}));
 	ioTypes.push_back(event("on_collision_exit", "On Collision Exit", "Runs when the body stops touching another body.",
 							{other}));
+	ioTypes.push_back(event("on_joint_break", "On Joint Break",
+							"Runs when a breakable joint of the entity, or linked to it, breaks; with the other entity "
+							"(0 for the world).",
+							{other}));
 	ioTypes.push_back(event("on_trigger_enter", "On Trigger Enter",
 							"Runs when an entity enters the trigger or the sensor body.", {other}));
 	ioTypes.push_back(event("on_trigger_exit", "On Trigger Exit",

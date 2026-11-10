@@ -87,15 +87,22 @@ linux-x64, linux-arm64, windows-x64 (MinGW and clang-cl), android-arm64 and the 
 
 A game both multiplayer and multi-platform keeps its players equal; a platform may change the look, never the odds.
 
-| Source of unfairness   | Rule                                                                                                     | Release |
-|------------------------|----------------------------------------------------------------------------------------------------------|---------|
-| Simulation rate        | The fixed tick never depends on the frame rate; inputs sampled per tick                                  | v0.7.0  |
-| Visibility and quality | An entity tagged gameplay (cover, occluder, fog limiting the view) is never reduced by a quality setting | v0.7.0  |
-| Field of view          | The game bounds the gameplay field of view, whatever the aspect ratio of the screen                      | v0.7.0  |
-| Outcome                | The authoritative server decides; a platform difference only costs a prediction correction               | v0.9.0  |
-| Input device           | The input type of each player is known to the lobby: matchmaking filter, optional crossplay              | v0.9.0  |
-| Latency                | Server-side lag compensation (hitboxes rewound to the time of the shot)                                  | v0.9.0  |
-| Performance floor      | A minimum hardware profile, checked when a multiplayer match starts                                      | v0.9.0  |
+| Source of unfairness   | Rule                                                                                                     | Release        |
+|------------------------|----------------------------------------------------------------------------------------------------------|----------------|
+| Simulation rate        | The fixed tick never depends on the frame rate; inputs sampled per tick                                  | v0.7.0, done   |
+| Visibility and quality | An entity tagged gameplay (cover, occluder, fog limiting the view) is never reduced by a quality setting | v0.7.0, done   |
+| Field of view          | The game bounds the gameplay field of view, whatever the aspect ratio of the screen                      | v0.7.0, done   |
+| Outcome                | The authoritative server decides; a platform difference only costs a prediction correction               | v0.9.0         |
+| Input device           | The input type of each player is known to the lobby: matchmaking filter, optional crossplay              | v0.9.0         |
+| Latency                | Server-side lag compensation (hitboxes rewound to the time of the shot)                                  | v0.9.0         |
+| Performance floor      | A minimum hardware profile, checked when a multiplayer match starts                                      | v0.9.0         |
+
+- **Simulation rate:** the `Player` impulses run in the tick (`owl.player_input` has no frame update), and the first
+  person, voxel and ship controllers move by the mean speed of each frame, so a jump, a fall or a burn covers the same
+  distance at 30 or 240 frames per second.
+- **Visibility:** `Visibility::gameplay` ([Scene](../scene.md)); today it keeps the shadows of gameplay lights within
+  the slots every backend has; every quality setting added later honours it.
+- **Field of view:** `SceneCamera::setMaxAspectRatio` ([Renderer](../renderer.md)).
 
 ## Networking and multiplayer (v0.9.0)
 

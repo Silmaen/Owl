@@ -43,6 +43,8 @@ void PhysicBody::serialize(const core::Serializer& iOut) const {
 		iOut.getImpl()->emitter << YAML::Key << "gravityScale" << YAML::Value << body.gravityScale;
 	if (!body.gravityFields)
 		iOut.getImpl()->emitter << YAML::Key << "gravityFields" << YAML::Value << body.gravityFields;
+	if (body.part)
+		iOut.getImpl()->emitter << YAML::Key << "part" << YAML::Value << body.part;
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
@@ -70,6 +72,7 @@ void PhysicBody::deserialize(const core::Serializer& iNode) {
 	body.friction = iNode.getImpl()->node["friction"].as<float>();
 	body.gravityScale = node["gravityScale"] ? node["gravityScale"].as<float>() : 1.f;
 	body.gravityFields = node["gravityFields"] ? node["gravityFields"].as<bool>() : true;
+	body.part = node["part"] ? node["part"].as<bool>() : false;
 }
 
 }// namespace owl::scene::component

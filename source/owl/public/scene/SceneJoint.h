@@ -54,6 +54,10 @@ struct OWL_API SceneJoint {
 	float springFrequency = 0.f;
 	/// Distance joint: damping ratio of the spring, 0 to 1.
 	float springDamping = 0.f;
+	/// Force beyond which the joint breaks, in newtons; 0 for an unbreakable joint.
+	float breakForce = 0.f;
+	/// Torque beyond which the joint breaks, in newton metres; 0 for an unbreakable joint.
+	float breakTorque = 0.f;
 	/// Runtime: the joint in the physics world, 0 when not built.
 	uint64_t jointId = 0;
 };

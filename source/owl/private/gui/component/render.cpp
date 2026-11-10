@@ -936,6 +936,12 @@ void renderProps(Camera& ioComponent) {
 		prop::Checkbox("Fixed Aspect Ratio", &ioComponent.fixedAspectRatio);
 		fieldTooltip("Lock aspect ratio to prevent distortion when the viewport resizes.");
 	}
+	float maxAspect = camera.getMaxAspectRatio();
+	if (prop::DragFloat("Max Aspect Ratio", &maxAspect, 0.01f, 0.f, 8.f))
+		camera.setMaxAspectRatio(maxAspect);
+	fieldTooltip("Fair play: a screen wider than this ratio sees the width of the ratio and less height, so no "
+				 "screen shows more of the game than another (e.g. 1.78 for 16:9). 0 widens the view with the "
+				 "screen.");
 	renderPostProcess(camera);
 }
 
@@ -1576,6 +1582,10 @@ void renderProps(PhysicBody& ioComponent) {
 	prop::Checkbox("Gravity Fields", &ioComponent.body.gravityFields);
 	fieldTooltip("Feel the fields of the Gravity Source components; off leaves the body to the world gravity of the "
 				 "scene (Scene Settings, Physics).");
+	prop::Checkbox("Part of Parent Body", &ioComponent.body.part);
+	fieldTooltip("Merge this collider into the body of the nearest ancestor with a Physical body: one rigid assembly "
+				 "whose mass and centre of mass add the parts up. The type, sensor, layers and surface of the part "
+				 "are the ones of the assembly; Lua physics.detach breaks it off.");
 }
 
 void renderProps(PhysicJoint& ioComponent) {
@@ -1600,6 +1610,11 @@ void renderProps(PhysicJoint& ioComponent) {
 	fieldTooltip("Entity whose Physical body is joined; none joins the body to the world.");
 	drawVec3Control("Anchor", joint.anchor, 0.f);
 	fieldTooltip("Joint point, in the frame of this entity.");
+	prop::DragFloat("Break Force", &joint.breakForce, 1.f, 0.f, 1.e9f, joint.breakForce > 0.f ? "%.1f N" : "never");
+	fieldTooltip("Force beyond which the joint breaks and both entities get on_joint_break; 0 never breaks.");
+	prop::DragFloat("Break Torque", &joint.breakTorque, 1.f, 0.f, 1.e9f,
+					joint.breakTorque > 0.f ? "%.1f N.m" : "never");
+	fieldTooltip("Torque beyond which the joint breaks; 0 never breaks.");
 	if (joint.type == SceneJoint::Type::Distance) {
 		drawVec3Control("Connected Anchor", joint.connectedAnchor, 0.f);
 		fieldTooltip("Point on the connected body, in its frame (in the world without one).");
@@ -1774,6 +1789,9 @@ void renderProps(BackgroundTexture& ioComponent) {
 void renderProps(Visibility& ioComponent) {
 	prop::Checkbox("Game Visible", &ioComponent.gameVisible);
 	prop::Checkbox("Editor Visible", &ioComponent.editorVisible);
+	prop::Checkbox("Gameplay", &ioComponent.gameplay);
+	fieldTooltip("Fair play: the entity matters to the game (cover, occluder, a light whose shadow hides a player). "
+				 "No quality setting nor backend budget cuts it: a gameplay light keeps its shadow on every backend.");
 }
 
 namespace {

@@ -1,0 +1,15 @@
+# The salvage tug of the far orbit: its booster, a part of the tug's body, pulls harder every tick until the mooring (a
+# distance joint with a break force) snaps; two seconds later the spent booster breaks off with a body of its own and
+# the tug, lighter, coasts on.
+scene: ../../../engine_demo/scenes/far_orbit.owl
+steps:
+  - frames: 20
+  - expect: {gamestate: orbit_tether_snapped, equals: 0}
+  - expect: {gamestate: orbit_stage_separated, equals: 0}
+  - frames: 160
+  - expect: {gamestate: orbit_tether_snapped, equals: 1}
+  - expect: {gamestate: orbit_stage_separated, equals: 0}
+  - frames: 160
+  - expect: {gamestate: orbit_stage_separated, equals: 1}
+  - expect: {entity: TugBooster, exists: true}
+  - expect: {entity: Tug, translation.x: {greater: 10}}

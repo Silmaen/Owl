@@ -109,8 +109,10 @@ void applyPlayerMovement(component::VoxelPlayer& ioPlayer, math::Transform& ioTr
 		}
 		if (ioPlayer.grounded && space)
 			ioPlayer.velocityY = ioPlayer.jumpSpeed;
+		// The mean speed of the frame: the height of a jump does not depend on the frame rate.
+		const float startVelocityY = ioPlayer.velocityY;
 		ioPlayer.velocityY -= ioPlayer.gravity * iDt;
-		velocity.y() = ioPlayer.velocityY;
+		velocity.y() = 0.5f * (startVelocityY + ioPlayer.velocityY);
 	}
 	const auto result =
 			data::voxel::moveAabb(iIsSolid, ioTransform.translation(), ioPlayer.halfExtents, velocity * iDt);

@@ -192,3 +192,77 @@ end
 	EXPECT_EQ(getString(scn, "Hero_exit"), "Zone");
 	scn.onEndRuntime();
 }
+
+TEST_F(SceneCollisionTest, BrokenJointCallsOnJointBreakOnBothSides) {
+	const auto path = writeScript("break.lua", R"(
+function on_joint_break(other_id)
+    local other = other_id and entity.get_name(other_id) or "world"
+    gamestate.set(entity.get_name(entity_id) .. "_broke", other)
+    gamestate.set("mass_" .. entity.get_name(entity_id), physics.get_mass(entity_id))
+end
+)");
+	Scene scn;
+	const auto anchor = addBody(scn, "Anchor", SceneBody::BodyType::Static, {0.f, 5.f, 0.f}, path);
+	auto weight = addBody(scn, "Weight", SceneBody::BodyType::Dynamic, {0.f, 3.f, 0.f}, path);
+	auto& [joint] = weight.addComponent<component::PhysicJoint>();
+	joint.type = SceneJoint::Type::Distance;
+	joint.connected = anchor.getUUID();
+	joint.breakForce = 5.f;
+	scn.onStartRuntime();
+	for (int i = 0; i < 20; ++i) scn.onUpdateRuntime(makeStep(16), false);
+	EXPECT_EQ(getString(scn, "Weight_broke"), "Anchor");
+	EXPECT_EQ(getString(scn, "Anchor_broke"), "Weight");
+	EXPECT_EQ(getInt(scn, "mass_Weight"), 1);
+	scn.onEndRuntime();
+}
+
+TEST_F(SceneCollisionTest, LuaPushesAndAssemblesBodies) {
+	const auto path = writeScript("assembly.lua", R"(
+function on_tick(dt)
+    local me = entity.get_name(entity_id)
+    if me == "Hull" then
+        physics.add_force(entity_id, 0, 10)
+        physics.add_force_at(entity_id, 0, 1, 1, 0)
+        physics.add_torque(entity_id, 0.5)
+        gamestate.set("root_is_nil", physics.get_assembly(entity_id) == nil)
+        local x, y = physics.get_center_of_mass(entity_id)
+        gamestate.set("com_x", math.floor(x + 0.5))
+    elseif me == "Wing" then
+        local root = physics.get_assembly(entity_id)
+        if root then
+            gamestate.set("wing_root", entity.get_name(root))
+        end
+        gamestate.set("wing_mass", physics.get_mass(entity_id))
+        if gamestate.get("ticks", 0) == 5 then
+            physics.detach(entity_id)
+        elseif gamestate.get("ticks", 0) == 8 then
+            gamestate.set("attached", physics.attach(entity_id))
+        end
+        gamestate.set("ticks", gamestate.get("ticks", 0) + 1)
+    elseif me == "Probe" then
+        physics.add_force_at_3d(entity_id, 0, 1, 0, 0.5, 0, 0)
+        physics.add_torque_3d(entity_id, 0, 0, 1)
+        local x, y, z = physics.get_center_of_mass(entity_id)
+        gamestate.set("probe_z", math.floor(z + 0.5))
+    end
+end
+)");
+	Scene scn;
+	scn.getPhysicsSettings().gravity = {0.f, 0.f, 0.f};
+	const auto hull = addBody(scn, "Hull", SceneBody::BodyType::Dynamic, {0.f, 0.f, 0.f}, path);
+	auto wing = addBody(scn, "Wing", SceneBody::BodyType::Dynamic, {2.f, 0.f, 0.f}, path);
+	wing.getComponent<component::PhysicBody>().body.part = true;
+	scn.setParent(wing, hull);
+	auto probe = addBody(scn, "Probe", SceneBody::BodyType::Dynamic, {0.f, 0.f, 7.f}, path);
+	probe.getComponent<component::PhysicBody>().body.dimension = SceneBody::Dimension::Space;
+	scn.onStartRuntime();
+	for (int i = 0; i < 12; ++i) scn.onUpdateRuntime(makeStep(17), false);
+	EXPECT_EQ(getString(scn, "wing_root"), "Hull");
+	EXPECT_EQ(getInt(scn, "wing_mass"), 2);
+	EXPECT_EQ(getInt(scn, "com_x"), 1);
+	EXPECT_EQ(getInt(scn, "probe_z"), 7);
+	EXPECT_TRUE(std::get<bool>(scn.getGameState().get("attached", false)));
+	EXPECT_TRUE(std::get<bool>(scn.getGameState().get("root_is_nil", false)));
+	EXPECT_GT(physics::PhysicCommand::getVelocity(hull).y(), 0.f);
+	scn.onEndRuntime();
+}

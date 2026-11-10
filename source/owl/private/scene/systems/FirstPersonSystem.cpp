@@ -235,8 +235,10 @@ void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext)
 		}
 		if (controller.m_grounded && controller.jumpSpeed > 0.f && actions.isJustPressed("jump"))
 			controller.m_velocityY = controller.jumpSpeed;
+		// The mean speed of the frame: the height of a jump does not depend on the frame rate.
+		const float startVelocityY = controller.m_velocityY;
 		controller.m_velocityY -= controller.gravity * dt;
-		velocity.y() = controller.m_velocityY;
+		velocity.y() = 0.5f * (startVelocityY + controller.m_velocityY);
 		const math::vec3 half = controller.getHalfExtents();
 		const math::vec3 body = eye.translation() + controller.getBodyOffset();
 		const math::vec3 delta = velocity * dt;

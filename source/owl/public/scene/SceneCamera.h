@@ -240,12 +240,59 @@ public:
 		recalculateProjection();
 	}
 
+	/**
+	 * @brief
+	 *  Get the widest aspect ratio the camera shows.
+	 * @return The bound, 0 when the view widens with the screen.
+	 */
+	[[nodiscard]] auto getMaxAspectRatio() const -> float { return m_maxAspectRatio; }
+
+	/**
+	 * @brief
+	 *  Bound the width of the view: a screen wider than the ratio sees the width of that ratio and less height, so no
+	 *  screen shape shows more of the game than another (fair play).
+	 * @param[in] iRatio Widest width over height shown, 0 (or less) for no bound.
+	 */
+	void setMaxAspectRatio(const float iRatio) {
+		m_maxAspectRatio = iRatio > 0.f ? iRatio : 0.f;
+		recalculateProjection();
+	}
+
+	/**
+	 * @brief
+	 *  Get the vertical field of view drawn: the perspective one, narrowed by the aspect ratio bound.
+	 * @return The vertical field of view of the projection, in radians.
+	 */
+	[[nodiscard]] auto getEffectiveVerticalFov() const -> float;
+
+	/**
+	 * @brief
+	 *  Get the horizontal field of view drawn, at most the one of the aspect ratio bound.
+	 * @return The horizontal field of view of the projection, in radians.
+	 */
+	[[nodiscard]] auto getEffectiveHorizontalFov() const -> float;
+
+	/**
+	 * @brief
+	 *  Get the height of the orthographic view drawn: the orthographic size, reduced by the aspect ratio bound.
+	 * @return The visible height, in world units.
+	 */
+	[[nodiscard]] auto getEffectiveOrthographicSize() const -> float;
+
 private:
 	/**
 	 * @brief
 	 *  Recompute projections.
 	 */
 	void recalculateProjection();
+	/**
+	 * @brief
+	 *  Share of the authored height kept on a screen wider than the aspect ratio bound.
+	 * @return 1 within the bound, below 1 beyond it.
+	 */
+	[[nodiscard]] auto getHeightScale() const -> float;
+	/// Widest aspect ratio shown, 0 for none.
+	float m_maxAspectRatio = 0.f;
 	/// Actual projection's type.
 	ProjectionType m_projectionType = ProjectionType::Orthographic;
 

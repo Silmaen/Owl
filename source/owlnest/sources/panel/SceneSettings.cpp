@@ -520,6 +520,18 @@ void SceneSettings::renderPhysicsSection() const {
 					"Collision passes inside one physics step: more keeps fast bodies and long chains stable, "
 					"at a cost per pass."))
 			edited.solverSubSteps = static_cast<uint32_t>(subSteps);
+		auto velocitySteps = static_cast<int>(edited.velocitySteps);
+		if (gui::widgets::propertyInt("Velocity Iterations", velocitySteps, static_cast<int>(defaults.velocitySteps), 1,
+									  static_cast<int>(scene::PhysicsSettings::maxSolverIterations), "%d",
+									  "Velocity passes of the solver in each collision step: more keep long chains "
+									  "of joints stiff, at a cost per pass."))
+			edited.velocitySteps = static_cast<uint32_t>(velocitySteps);
+		auto positionSteps = static_cast<int>(edited.positionSteps);
+		if (gui::widgets::propertyInt("Position Iterations", positionSteps, static_cast<int>(defaults.positionSteps), 1,
+									  static_cast<int>(scene::PhysicsSettings::maxSolverIterations), "%d",
+									  "Position passes of the solver in each collision step, against the drift of "
+									  "the joints."))
+			edited.positionSteps = static_cast<uint32_t>(positionSteps);
 		auto workers = static_cast<int>(edited.workerCount);
 		if (gui::widgets::propertyInt("Solver Threads", workers, static_cast<int>(defaults.workerCount), 0,
 									  static_cast<int>(scene::PhysicsSettings::maxWorkerCount),
@@ -551,7 +563,9 @@ void SceneSettings::renderPhysicsSection() const {
 								  {"worker_count", static_cast<int64_t>(edited.workerCount)},
 								  {"interpolate", edited.interpolate},
 								  {"gravity", math::vec3{edited.gravity}},
-								  {"rails_time_scale", static_cast<double>(edited.railsTimeScale)}});
+								  {"rails_time_scale", static_cast<double>(edited.railsTimeScale)},
+								  {"velocity_steps", static_cast<int64_t>(edited.velocitySteps)},
+								  {"position_steps", static_cast<int64_t>(edited.positionSteps)}});
 }
 
 void SceneSettings::renderSimulationSection() const {

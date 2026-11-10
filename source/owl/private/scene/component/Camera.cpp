@@ -119,6 +119,8 @@ void Camera::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "orthographicSize" << YAML::Value << camera.getOrthographicSize();
 	iOut.getImpl()->emitter << YAML::Key << "orthographicNear" << YAML::Value << camera.getOrthographicNearClip();
 	iOut.getImpl()->emitter << YAML::Key << "orthographicFar" << YAML::Value << camera.getOrthographicFarClip();
+	if (camera.getMaxAspectRatio() > 0.f)
+		iOut.getImpl()->emitter << YAML::Key << "maxAspectRatio" << YAML::Value << camera.getMaxAspectRatio();
 	writePostProcess(iOut.getImpl()->emitter, camera.getPostProcess());
 	iOut.getImpl()->emitter << YAML::EndMap;// Camera
 	iOut.getImpl()->emitter << YAML::Key << "primary" << YAML::Value << primary;
@@ -147,6 +149,7 @@ void Camera::deserialize(const core::Serializer& iNode) {
 	camera.setOrthographicSize(cameraProps["orthographicSize"].as<float>());
 	camera.setOrthographicNearClip(cameraProps["orthographicNear"].as<float>());
 	camera.setOrthographicFarClip(cameraProps["orthographicFar"].as<float>());
+	camera.setMaxAspectRatio(cameraProps["maxAspectRatio"] ? cameraProps["maxAspectRatio"].as<float>() : 0.f);
 
 	primary = iNode.getImpl()->node["primary"].as<bool>();
 	fixedAspectRatio = iNode.getImpl()->node["fixedAspectRatio"].as<bool>();

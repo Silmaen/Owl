@@ -1769,6 +1769,13 @@ Attached to entities via the `Camera` component. Supports switchable projection:
 
 `setViewportSize(size)` recomputes the projection for the aspect ratio; only the `Camera::primary` entity renders.
 
+**Fair play:** `maxAspectRatio` (YAML `maxAspectRatio`, inspector *Max Aspect Ratio*, 0 by default for no bound) bounds
+the width of the view in both modes. A screen wider than the ratio sees the width of the ratio and less height (the
+vertical field of view, or the orthographic height, shrinks), so an ultra-wide screen shows no more of the game than a
+16:9 one; a narrower screen keeps the authored height and sees less width. `getEffectiveVerticalFov()`,
+`getEffectiveHorizontalFov()` and `getEffectiveOrthographicSize()` give what is drawn
+([Fair play](design/simulation-networking.md#networking-fairness)).
+
 ## Animated Sprite Rendering {#animated-sprites}
 
 The `AnimatedSpriteRenderer` component draws one frame of a spritesheet, advancing over time.

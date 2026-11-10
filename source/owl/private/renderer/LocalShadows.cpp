@@ -87,9 +87,24 @@ auto computeSpotShadowCamera(const math::vec3& iPosition, const math::vec3& iDir
 }
 
 void rankShadowCandidates(std::vector<ShadowCandidate>& ioCandidates, const uint32_t iBudget) {
-	const auto byImportance = [](const ShadowCandidate& iFirst, const ShadowCandidate& iSecond) -> bool {
+	const auto byDistance = [](const ShadowCandidate& iFirst, const ShadowCandidate& iSecond) -> bool {
 		return std::tuple{iFirst.distance, -iFirst.intensity, iFirst.lightIndex} <
 			   std::tuple{iSecond.distance, -iSecond.intensity, iSecond.lightIndex};
+	};
+	// The gameplay lights beyond the slots every backend has compete as the others do.
+	std::vector<ShadowCandidate> gameplay;
+	for (const auto& candidate: ioCandidates)
+		if (candidate.gameplay)
+			gameplay.push_back(candidate);
+	std::ranges::sort(gameplay, byDistance);
+	for (size_t index = g_gameplayShadowSlots; index < gameplay.size(); ++index) {
+		const uint32_t light = gameplay[index].lightIndex;
+		std::ranges::find(ioCandidates, light, &ShadowCandidate::lightIndex)->gameplay = false;
+	}
+	const auto byImportance = [&byDistance](const ShadowCandidate& iFirst, const ShadowCandidate& iSecond) -> bool {
+		if (iFirst.gameplay != iSecond.gameplay)
+			return iFirst.gameplay;
+		return byDistance(iFirst, iSecond);
 	};
 	const auto kept = std::min<size_t>(iBudget, ioCandidates.size());
 	std::ranges::partial_sort(ioCandidates, ioCandidates.begin() + static_cast<std::ptrdiff_t>(kept), byImportance);

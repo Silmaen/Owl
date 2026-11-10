@@ -201,3 +201,15 @@ TEST_F(SceneSettingsCommandsTest, SetPhysicsSettingsMergesTheFieldsAndUndoes) {
 	EXPECT_FLOAT_EQ(scene->getPhysicsSettings().gravity.y(), -9.81f);
 	EXPECT_FLOAT_EQ(scene->getPhysicsSettings().railsTimeScale, scene::PhysicsSettings::defaultRailsTimeScale);
 }
+
+TEST_F(SceneSettingsCommandsTest, SetPhysicsSettingsTakesTheSolverIterations) {
+	const CommandRegistry registry;
+	auto scene = mkShared<scene::Scene>();
+	SceneUndoManager undo;
+	ASSERT_TRUE(registry.execute("scene.set_physics_settings",
+								 {{"velocity_steps", int64_t{24}}, {"position_steps", int64_t{0}}}, scene, undo));
+	EXPECT_EQ(scene->getPhysicsSettings().velocitySteps, 24u);
+	EXPECT_EQ(scene->getPhysicsSettings().positionSteps, 1u);
+	undo.undo(*scene);
+	EXPECT_EQ(scene->getPhysicsSettings().velocitySteps, scene::PhysicsSettings{}.velocitySteps);
+}

@@ -242,6 +242,119 @@ Entities:
       edgeMargin: 32
     Visibility:
       gameVisible: true
+  - Entity: 4100000000000000090
+    Tag:
+      tag: TugBuoy
+    Transform:
+      translation: [6, -3, -10]
+      rotation: [0, 0, 0]
+      scale: [2, 2, 2]
+    WorldPosition: {position: [149600000006, -3, -10]}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [1, 0.6, 0.2, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissive: [1, 0.5, 0.15], emissiveLuminance: 40000}}
+    PhysicBody:
+      type: Static
+      dimension: Space
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000091
+    Tag:
+      tag: Tug
+    Transform:
+      translation: [9, -3, -10]
+      rotation: [0, 0, 0]
+      scale: [0.8, 0.8, 0.8]
+    WorldPosition: {position: [149600000009, -3, -10]}
+    MeshRenderer:
+      mesh: gid:fbf1cf1eb4d15448:meshes/orbit/rock_b.glb
+      color: [0.75, 0.8, 0.9, 1]
+      transparent: false
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    PhysicJoint:
+      type: Distance
+      connected: 4100000000000000090
+      anchor: [0, 0, 0]
+      connectedAnchor: [0, 0, 0]
+      axis: [0, 0, 1]
+      limited: false
+      lowerLimit: 0
+      upperLimit: 0
+      motor: false
+      motorSpeed: 0
+      motorForce: 100
+      springFrequency: 0
+      springDamping: 0
+      breakForce: 12
+    LuaScript:
+      scriptPath: gid:29bcd357cfdb204c:scripts/orbit/orbit_tug.lua
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000092
+    Tag:
+      tag: TugBooster
+    Transform:
+      translation: [-1.2, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 0.6]
+    Hierarchy: {parentId: 4100000000000000091}
+    MeshRenderer:
+      mesh: gid:fbf1cf1eb4d15448:meshes/orbit/rock_b.glb
+      color: [0.9, 0.45, 0.25, 1]
+      transparent: false
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 2
+      restitution: 0
+      friction: 0.5
+      part: true
+    Visibility:
+      gameVisible: true
+  - Entity: 4100000000000000093
+    Tag:
+      tag: TugPanel
+    Transform:
+      translation: [0, 1.2, 0]
+      rotation: [0, 0, 0]
+      scale: [1.2, 0.2, 1.2]
+    Hierarchy: {parentId: 4100000000000000091}
+    MeshRenderer:
+      mesh: gid:292cf317f81ff140:meshes/orbit/bead.glb
+      color: [0.3, 0.45, 0.9, 1]
+      transparent: false
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+      part: true
+    Visibility:
+      gameVisible: true
   - Entity: 4100000000000000051
     Tag: {tag: ControlsHint}
     Transform:

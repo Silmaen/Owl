@@ -715,6 +715,78 @@ auto luaPhysicsGetJointPosition(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaPhysicsAddForce(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState))
+		physics::PhysicCommand::addForce(
+				*entity, {luaArg(iState, 2), luaArg(iState, 3), lua_isnoneornil(iState, 4) ? 0.f : luaArg(iState, 4)});
+	return 0;
+}
+
+auto luaPhysicsAddForceAt(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState))
+		physics::PhysicCommand::addForceAtPoint(*entity, {luaArg(iState, 2), luaArg(iState, 3), 0.f},
+												{luaArg(iState, 4), luaArg(iState, 5), 0.f});
+	return 0;
+}
+
+auto luaPhysicsAddForceAt3d(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState))
+		physics::PhysicCommand::addForceAtPoint(*entity, {luaArg(iState, 2), luaArg(iState, 3), luaArg(iState, 4)},
+												{luaArg(iState, 5), luaArg(iState, 6), luaArg(iState, 7)});
+	return 0;
+}
+
+auto luaPhysicsAddTorque(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState))
+		physics::PhysicCommand::addTorque(*entity, {0.f, 0.f, luaArg(iState, 2)});
+	return 0;
+}
+
+auto luaPhysicsAddTorque3d(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState))
+		physics::PhysicCommand::addTorque(*entity, {luaArg(iState, 2), luaArg(iState, 3), luaArg(iState, 4)});
+	return 0;
+}
+
+auto luaPhysicsAttach(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	lua_pushboolean(iState, entity && physics::PhysicCommand::attach(*entity) ? 1 : 0);
+	return 1;
+}
+
+auto luaPhysicsDetach(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState))
+		physics::PhysicCommand::detach(*entity);
+	return 0;
+}
+
+auto luaPhysicsGetAssembly(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	const core::UUID root = entity ? physics::PhysicCommand::getAssemblyRoot(*entity) : core::UUID{0};
+	if (root == core::UUID{0})
+		lua_pushnil(iState);
+	else
+		pushEntity(iState, root);
+	return 1;
+}
+
+auto luaPhysicsGetMass(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	lua_pushnumber(iState, entity ? static_cast<lua_Number>(physics::PhysicCommand::getMass(*entity)) : 0.);
+	return 1;
+}
+
+auto luaPhysicsGetCenterOfMass(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	const math::vec3f centre = entity ? physics::PhysicCommand::getCenterOfMass(*entity) : math::vec3f{0.f, 0.f, 0.f};
+	lua_pushnumber(iState, static_cast<lua_Number>(centre.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(centre.y()));
+	if (!entity || !isSpaceBody(*entity))
+		return 2;
+	lua_pushnumber(iState, static_cast<lua_Number>(centre.z()));
+	return 3;
+}
+
 auto inputFrameOf(lua_State* iState) -> const input::InputFrame* {
 	const auto* boundScene = getBoundScene(iState);
 	return boundScene != nullptr ? &boundScene->getInputFrame() : nullptr;
@@ -3827,6 +3899,38 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "physics", .name = "get_joint_position", .function = guarded<luaPhysicsGetJointPosition>,
 		 .description = "Angle of the entity's hinge joint (radians) or position of its slider; 0 otherwise.",
 		 .params = {entityId}, .returns = {{"position", Number}}},
+		{.table = "physics", .name = "add_force", .function = guarded<luaPhysicsAddForce>,
+		 .description = "Push the body with a force (newtons) over the next step, at its centre of mass or at a part; "
+						"call it in `on_tick` for a steady thrust; fz for a 3D body.",
+		 .params = {entityId, {"fx", Number}, {"fy", Number}, {"fz", Number, true}}},
+		{.table = "physics", .name = "add_force_at", .function = guarded<luaPhysicsAddForceAt>,
+		 .description = "Push a 2D body with a force applied at a world point (px, py): off the centre, it turns.",
+		 .params = {entityId, {"fx", Number}, {"fy", Number}, {"px", Number}, {"py", Number}}},
+		{.table = "physics", .name = "add_force_at_3d", .function = guarded<luaPhysicsAddForceAt3d>,
+		 .description = "Push a 3D body with a force applied at a world point.",
+		 .params = {entityId, {"fx", Number}, {"fy", Number}, {"fz", Number}, {"px", Number}, {"py", Number},
+					{"pz", Number}}},
+		{.table = "physics", .name = "add_torque", .function = guarded<luaPhysicsAddTorque>,
+		 .description = "Turn a 2D body with a torque (newton metres) over the next step.",
+		 .params = {entityId, {"torque", Number}}},
+		{.table = "physics", .name = "add_torque_3d", .function = guarded<luaPhysicsAddTorque3d>,
+		 .description = "Turn a 3D body with a torque around each axis over the next step.",
+		 .params = {entityId, {"tx", Number}, {"ty", Number}, {"tz", Number}}},
+		{.table = "physics", .name = "attach", .function = guarded<luaPhysicsAttach>,
+		 .description = "Merge the entity's collider into the body of its nearest ancestor with a body (one rigid "
+						"assembly); false without one.",
+		 .params = {entityId}, .returns = {{"attached", Boolean}}},
+		{.table = "physics", .name = "detach", .function = guarded<luaPhysicsDetach>,
+		 .description = "Take a part out of its assembly: it flies on with a body of its own.", .params = {entityId}},
+		{.table = "physics", .name = "get_assembly", .function = guarded<luaPhysicsGetAssembly>,
+		 .description = "Entity whose body carries the part, nil when the entity is not a merged part.",
+		 .params = {entityId}, .returns = {{"root_id", Entity, true}}},
+		{.table = "physics", .name = "get_mass", .function = guarded<luaPhysicsGetMass>,
+		 .description = "Mass of the body the entity moves (its whole assembly for a part), 0 when static.",
+		 .params = {entityId}, .returns = {{"mass", Number}}},
+		{.table = "physics", .name = "get_center_of_mass", .function = guarded<luaPhysicsGetCenterOfMass>,
+		 .description = "Centre of mass of the body the entity moves, in the world; z for a 3D body.",
+		 .params = {entityId}, .returns = {{"x", Number}, {"y", Number}, {"z", Number, true}}},
 		{.table = "input", .name = "has_action", .function = guarded<luaInputHasAction>,
 		 .description = "Whether the game's action map defines an action (a misspelt name reads as released).",
 		 .params = {{"action", String}}, .returns = {{"exists", Boolean}}},

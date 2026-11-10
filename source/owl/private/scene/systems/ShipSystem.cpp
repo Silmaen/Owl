@@ -179,8 +179,10 @@ void updateShips(Scene& ioScene, const SystemContext& iContext) {
 		steer(ship, basis, actions,
 			  readMouse(ship, cursorCaptured && ship.captureCursor, ioScene.getInputFrame().getCursor()), dt);
 		pose.rotation() = toEuler(basis);
+		// The mean speed of the frame: the distance flown under thrust does not depend on the frame rate.
+		const math::vec3 startVelocity = ship.m_velocity;
 		accelerate(ship, basis, actions, dt);
-		move(ioScene, handle, pose.translation(), ship.m_velocity * dt);
+		move(ioScene, handle, pose.translation(), (startVelocity + ship.m_velocity) * (0.5f * dt));
 	}
 }
 

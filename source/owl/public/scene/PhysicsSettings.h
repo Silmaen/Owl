@@ -39,6 +39,8 @@ struct OWL_API PhysicsSettings {
 	static constexpr float maxRailsTimeScale = 64.f;
 	/// Largest accepted component of `gravity`.
 	static constexpr float maxGravity = 1000.f;
+	/// Highest accepted solver iteration count (velocity or position).
+	static constexpr uint32_t maxSolverIterations = 64;
 
 	/// Jolt collision steps inside one fixed step.
 	uint32_t solverSubSteps = 2;
@@ -50,6 +52,10 @@ struct OWL_API PhysicsSettings {
 	math::vec3f gravity{0.f, -9.81f, 0.f};
 	/// Scene time scale above which the moving bodies leave the solver for their conic arcs (time warp).
 	float railsTimeScale = defaultRailsTimeScale;
+	/// Velocity iterations of the solver in each collision step: more keep long chains of joints stiff.
+	uint32_t velocitySteps = 10;
+	/// Position iterations of the solver in each collision step, against the drift of the joints.
+	uint32_t positionSteps = 2;
 
 	/**
 	 * @brief

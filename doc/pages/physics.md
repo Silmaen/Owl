@@ -169,6 +169,8 @@ not on how frames are cut. The tick rate is a project setting (`simulation:` in 
 | `workerCount`    | `0`         | 0 to 32  | Solver threads: 0 automatic, 1 single-threaded (see below)              |
 | `gravity`        | `0 -9.81 0` | max 1000 | World gravity of every dynamic body, per axis ([Gravity](#gravity))     |
 | `railsTimeScale` | `8`         | 1 to 64  | Time scale above which the bodies go on rails ([Time Warp](#time-warp)) |
+| `velocitySteps`  | `10`        | 1 to 64  | Velocity iterations of the solver: more keep long chains of joints stiff |
+| `positionSteps`  | `2`         | 1 to 64  | Position iterations of the solver, against the drift of the joints      |
 
 The settings belong to the scene (`Scene::getPhysicsSettings()`, `physics::PhysicsSettings`) and are saved in the
 scene file only when they differ from the defaults:
@@ -181,12 +183,14 @@ Physics:
   workerCount: 0
   gravity: [0, -9.81, 0]
   railsTimeScale: 8
+  velocitySteps: 10
+  positionSteps: 2
 Entities: ...
 ```
 
 The `tickRate` and `maxStepsPerFrame` keys a scene may still carry are ignored with a warning: the project's
 tick rate and tick bound replace them. In Owl Nest the settings are edited in the **Physics** section of the *Scene
-Settings* panel (undoable, through the `scene.set_physics_settings` command; `solverSubSteps` is labelled *Collision Steps*, `railsTimeScale` *Rails Time Scale*), the tick rate in *Project Settings*; they are read when Play starts.
+Settings* panel (undoable, through the `scene.set_physics_settings` command; `solverSubSteps` is labelled *Collision Steps*, `railsTimeScale` *Rails Time Scale*, `velocitySteps` and `positionSteps` *Velocity* and *Position Iterations*), the tick rate in *Project Settings*; they are read when Play starts.
 
 - **Step bound.** A long frame (synchronous load, window drag) runs `maxTicksPerFrame` ticks and drops the rest:
   the game slows down for that frame instead of stalling under an ever larger backlog (spiral of death), and no
@@ -374,6 +378,7 @@ the world:
 | Axis                         | Hinge, Slider   | A 2D hinge turns around Z, a 2D slider stays in the plane     |
 | Limited, lower, upper        | Hinge, Slider   | Angle or position limits                                      |
 | Motor, speed, force          | Hinge, Slider   | Drives the joint to the speed, up to the force                |
+| Break force, break torque    | All             | Load beyond which the joint breaks; 0 never breaks            |
 
 A joint is built once both bodies exist; one whose connected entity has no body is not built and a warning is logged.
 Lua `physics.set_joint_motor(id, speed, [enabled])` drives the motor and `physics.get_joint_position(id)` reads the
@@ -381,7 +386,42 @@ hinge angle from the start pose or the slider position, measured on the joint's 
 body. Joints are part of `saveState` / `restoreState`. Owl Nest draws the selected joint in the viewport: anchor
 cross, line to the connected body, axis.
 
-Articulated bodies and breakable joints are not available yet ([Physics API](design/physics-api.md)).
+A joint with a break force or a break torque breaks when the load it held in a step goes beyond it: the force and the
+torque the solver applied in the last collision step, the motor left out. The joint is removed, its `jointId` goes back
+to 0 and both entities get `on_joint_break(other_id)` (`other_id` is 0 for the world); in C++,
+`PhysicCommand::takeJointBreaks(scene)` lists the breaks with the load they held. A broken joint is built again only
+when Play starts again. A long chain of joints sags under its own weight at the default solver iterations: raise
+`velocitySteps` (and `solverSubSteps`) in the scene settings.
+
+## Forces and Torques {#forces}
+
+`PhysicCommand::addForce(entity, force)` pushes a body over the next step at its centre of mass,
+`addForceAtPoint(entity, force, point)` at a world point (off the centre, the body also turns) and
+`addTorque(entity, torque)` turns it; a 2D body keeps X and Y of a force and Z of a torque, a static body is left alone.
+Lua: `physics.add_force(id, fx, fy, [fz])`, `physics.add_force_at(id, fx, fy, px, py)`,
+`physics.add_force_at_3d(id, fx, fy, fz, px, py, pz)`, `physics.add_torque(id, t)`,
+`physics.add_torque_3d(id, tx, ty, tz)`. A force lasts one step: a steady thrust is applied in `on_tick` (or a system's
+`tick`), once per step, so it does not depend on the frame rate.
+
+## Assemblies {#assemblies}
+
+An articulated body made of several entities is one rigid **assembly**: a child entity whose `PhysicBody` has `part`
+set (inspector *Part of Parent Body*) has no body of its own, its collider merges into the body of its nearest ancestor
+with a `PhysicBody` of the same dimension. The assembly weighs its parts (each by its density), its centre of mass and
+its inertia add them up, and the parts follow the root through the hierarchy.
+
+| Call                                          | Effect                                                                                       |
+|-----------------------------------------------|----------------------------------------------------------------------------------------------|
+| `attach(entity)`, Lua `physics.attach(id)`    | Merge the entity into its ancestor's body; false without one (it keeps its own body)          |
+| `detach(entity)`, Lua `physics.detach(id)`    | Break the part off: it gets a body of its own, moving at the speed its point had             |
+| `getAssemblyRoot(entity)`, `get_assembly(id)` | The entity whose body carries the part (0, nil when not a part)                              |
+| `getMass`, `getCenterOfMass`, `get_mass`, `get_center_of_mass` | Mass and world centre of mass of the body the entity moves, its assembly for a part |
+
+A force, an impulse or a velocity read on a part acts on its assembly; `addForce` on a part pushes at the part, so a
+thruster turns the assembly it pushes. A joint on a part, or connected to one, holds the assembly, and moves to the
+part's own body when it is detached. Removing the `PhysicBody` of a part rebuilds its assembly without it; removing the
+root's gives each part a body of its own. The type, sensor flag, layers, friction and restitution of a part are the
+root's, and collisions of a part are reported on the root entity.
 
 ## Gravity {#gravity}
 

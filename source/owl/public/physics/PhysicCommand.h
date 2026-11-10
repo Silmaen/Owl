@@ -275,6 +275,98 @@ public:
 	 */
 	[[nodiscard]] static auto getJointPosition(const scene::Entity& iEntity) -> float;
 
+	/**
+	 * @brief
+	 *  A joint broken by its load (`SceneJoint::breakForce`, `breakTorque`).
+	 */
+	struct JointBreak {
+		/// UUID of the entity carrying the joint.
+		core::UUID entity;
+		/// UUID of the entity it joined, 0 for the world.
+		core::UUID connected;
+		/// Force the joint held when it broke, in newtons.
+		float force = 0.f;
+		/// Torque the joint held when it broke, in newton metres.
+		float torque = 0.f;
+	};
+
+	/**
+	 * @brief
+	 *  Hand over and clear the joints broken during the steps (`on_joint_break`).
+	 * @param[in,out] ioScene The scene.
+	 * @return The broken joints, in the order they broke.
+	 */
+	[[nodiscard]] static auto takeJointBreaks(scene::Scene& ioScene) -> std::vector<JointBreak>;
+
+	/**
+	 * @brief
+	 *  Push the body of an entity with a force over the next step: at its centre of mass, or at the entity for a part
+	 *  of an assembly (a thruster turns the assembly it pushes).
+	 * @param[in] iEntity The entity; a static body is left alone.
+	 * @param[in] iForce The force, in newtons (a 2D body keeps X and Y).
+	 */
+	static void addForce(const scene::Entity& iEntity, const math::vec3f& iForce);
+
+	/**
+	 * @brief
+	 *  Push the body of an entity with a force applied at a world point over the next step: off the centre of mass, it
+	 *  also turns the body.
+	 * @param[in] iEntity The entity; a static body is left alone.
+	 * @param[in] iForce The force, in newtons (a 2D body keeps X and Y).
+	 * @param[in] iPoint The world point where it applies.
+	 */
+	static void addForceAtPoint(const scene::Entity& iEntity, const math::vec3f& iForce, const math::vec3f& iPoint);
+
+	/**
+	 * @brief
+	 *  Turn the body of an entity with a torque over the next step.
+	 * @param[in] iEntity The entity; a static body is left alone.
+	 * @param[in] iTorque The torque, in newton metres (a 2D body keeps Z).
+	 */
+	static void addTorque(const scene::Entity& iEntity, const math::vec3f& iTorque);
+
+	/**
+	 * @brief
+	 *  Merge the collider of an entity into the body of its nearest ancestor with a `PhysicBody` (`SceneBody::part`):
+	 *  its own body goes, the assembly's mass, centre of mass and inertia are recomputed, its joints move to the
+	 *  assembly.
+	 * @param[in] iEntity The entity with a `PhysicBody`.
+	 * @return False without an ancestor body of the same dimension (the entity keeps its own body).
+	 */
+	static auto attach(const scene::Entity& iEntity) -> bool;
+
+	/**
+	 * @brief
+	 *  Take a part out of its assembly: it gets a body of its own, moving at the speed its point had, and the assembly
+	 *  is rebuilt without it.
+	 * @param[in] iEntity The part.
+	 */
+	static void detach(const scene::Entity& iEntity);
+
+	/**
+	 * @brief
+	 *  Get the entity whose body carries a part.
+	 * @param[in] iEntity The entity.
+	 * @return The root of its assembly, 0 when the entity is not a merged part.
+	 */
+	[[nodiscard]] static auto getAssemblyRoot(const scene::Entity& iEntity) -> core::UUID;
+
+	/**
+	 * @brief
+	 *  Get the mass of the body an entity moves (the whole assembly for a part).
+	 * @param[in] iEntity The entity.
+	 * @return The mass, 0 for a static or kinematic body or without a world.
+	 */
+	[[nodiscard]] static auto getMass(const scene::Entity& iEntity) -> float;
+
+	/**
+	 * @brief
+	 *  Get the centre of mass of the body an entity moves (the whole assembly for a part).
+	 * @param[in] iEntity The entity.
+	 * @return The centre of mass in the world, the origin without a body.
+	 */
+	[[nodiscard]] static auto getCenterOfMass(const scene::Entity& iEntity) -> math::vec3f;
+
 
 	/**
 	 * @brief
