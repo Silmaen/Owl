@@ -43,6 +43,7 @@
 #include "scene/TilemapTerrain.h"
 #include "scene/UiInputSystem.h"
 #include "scene/WorldStreamer.h"
+#include "scene/ai/BehaviourTreeInstance.h"
 #include "scene/component/components.h"
 #include "scene/nav/NavBake.h"
 #include "scene/nav/NavWorld.h"
@@ -3294,6 +3295,248 @@ auto luaNavGetTarget(lua_State* iState) -> int {
 	return walker.isMoving() ? pushPoint3(iState, walker.m_path.back().position) : 0;
 }
 
+auto luaSteerSetTarget(lua_State* iState) -> int {
+	const auto target = entityAt(iState, 2);
+	const auto agent = entityWith<scene::component::SteeringAgent>(iState);
+	if (agent)
+		agent->getComponent<scene::component::SteeringAgent>().target = target ? target->getUUID() : core::UUID{0};
+	lua_pushboolean(iState, agent && target ? 1 : 0);
+	return 1;
+}
+
+auto luaSteerSetTargetPoint(lua_State* iState) -> int {
+	const auto point = readPoint3(iState, 2);
+	const auto agent = entityWith<scene::component::SteeringAgent>(iState);
+	if (agent) {
+		auto& steering = agent->getComponent<scene::component::SteeringAgent>();
+		steering.target = core::UUID{0};
+		steering.targetPoint = point;
+	}
+	lua_pushboolean(iState, agent ? 1 : 0);
+	return 1;
+}
+
+auto luaSteerSetWeight(lua_State* iState) -> int {
+	const std::string_view name = luaL_checkstring(iState, 2);
+	const auto weight = static_cast<float>(luaL_checknumber(iState, 3));
+	const auto agent = entityWith<scene::component::SteeringAgent>(iState);
+	float* slot = agent ? agent->getComponent<scene::component::SteeringAgent>().weights.find(name) : nullptr;
+	if (slot != nullptr)
+		*slot = std::max(0.f, weight);
+	lua_pushboolean(iState, slot != nullptr ? 1 : 0);
+	return 1;
+}
+
+auto luaSteerGetWeight(lua_State* iState) -> int {
+	const std::string_view name = luaL_checkstring(iState, 2);
+	const auto agent = entityWith<scene::component::SteeringAgent>(iState);
+	const float* slot = agent ? agent->getComponent<scene::component::SteeringAgent>().weights.find(name) : nullptr;
+	if (slot == nullptr)
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(*slot));
+	return 1;
+}
+
+auto luaSteerGetVelocity(lua_State* iState) -> int {
+	const auto agent = entityWith<scene::component::SteeringAgent>(iState);
+	if (!agent)
+		return 0;
+	return pushPoint3(iState, agent->getComponent<scene::component::SteeringAgent>().m_velocity);
+}
+
+auto luaSteerSetMaxSpeed(lua_State* iState) -> int {
+	const auto speed = static_cast<float>(luaL_checknumber(iState, 2));
+	if (const auto agent = entityWith<scene::component::SteeringAgent>(iState); agent)
+		agent->getComponent<scene::component::SteeringAgent>().maxSpeed = std::max(0.f, speed);
+	return 0;
+}
+
+auto luaSteerSetLeader(lua_State* iState) -> int {
+	const auto slot = readPoint3(iState, 3);
+	const auto leader = entityAt(iState, 2);
+	const auto agent = entityWith<scene::component::SteeringAgent>(iState);
+	if (agent) {
+		auto& steering = agent->getComponent<scene::component::SteeringAgent>();
+		steering.leader = leader ? leader->getUUID() : core::UUID{0};
+		steering.slot = slot;
+	}
+	lua_pushboolean(iState, agent && leader ? 1 : 0);
+	return 1;
+}
+
+// The value a Lua argument holds for a key of the blackboard, read before anything with a destructor exists.
+struct BlackboardArgument {
+	int type = LUA_TNIL;
+	bool flag = false;
+	double number = 0.0;
+	std::string_view text;
+	math::vec3 point;
+};
+
+auto readBlackboardArgument(lua_State* iState, const int iIndex) -> BlackboardArgument {
+	BlackboardArgument argument;
+	argument.type = lua_type(iState, iIndex);
+	switch (argument.type) {
+		case LUA_TBOOLEAN:
+			argument.flag = lua_toboolean(iState, iIndex) != 0;
+			break;
+		case LUA_TNUMBER:
+			argument.number = lua_tonumber(iState, iIndex);
+			break;
+		case LUA_TSTRING:
+			{
+				size_t size = 0;
+				const char* text = lua_tolstring(iState, iIndex, &size);
+				argument.text = {text, size};
+				break;
+			}
+		case LUA_TTABLE:
+			for (int axis = 0; axis < 3; ++axis) {
+				lua_rawgeti(iState, iIndex, axis + 1);
+				argument.point[static_cast<size_t>(axis)] = static_cast<float>(luaL_checknumber(iState, -1));
+				lua_pop(iState, 1);
+			}
+			break;
+		default:
+			luaL_argerror(iState, iIndex, "a boolean, a number, a string or a table {x, y, z}");
+	}
+	return argument;
+}
+
+// The blackboard value of an argument: a number becomes an entity when the key holds one.
+auto toBlackboardValue(lua_State* iState, const BlackboardArgument& iArgument,
+					   const std::optional<scene::ai::BlackboardType> iKeyType)
+		-> std::optional<scene::ai::BlackboardValue> {
+	switch (iArgument.type) {
+		case LUA_TBOOLEAN:
+			return iArgument.flag;
+		case LUA_TNUMBER:
+			if (iKeyType == scene::ai::BlackboardType::Entity) {
+				auto* activeScene = getBoundScene(iState);
+				if (activeScene == nullptr || iArgument.number < 0.0)
+					return std::nullopt;
+				const auto entity = resolveEntityHandle(*activeScene, static_cast<uint64_t>(iArgument.number));
+				return entity ? entity->getUUID() : core::UUID{0};
+			}
+			return iArgument.number;
+		case LUA_TSTRING:
+			return std::string{iArgument.text};
+		case LUA_TTABLE:
+			return iArgument.point;
+		default:
+			break;
+	}
+	return std::nullopt;
+}
+
+auto luaBtSetValue(lua_State* iState) -> int {
+	const std::string_view key = luaL_checkstring(iState, 2);
+	luaL_checkany(iState, 3);
+	const auto argument = readBlackboardArgument(iState, 3);
+	const auto agent = entityWith<scene::component::BehaviourTreeAgent>(iState);
+	if (!agent) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	auto& component = agent->getComponent<scene::component::BehaviourTreeAgent>();
+	std::optional<scene::ai::BlackboardType> keyType;
+	if (component.m_instance) {
+		if (const auto* held = component.m_instance->getValue(key); held != nullptr)
+			keyType = scene::ai::getBlackboardType(*held);
+	} else if (const auto found = std::ranges::find(component.overrides, key, &scene::ai::BlackboardKey::name);
+			   found != component.overrides.end())
+		keyType = scene::ai::getBlackboardType(found->value);
+	auto value = toBlackboardValue(iState, argument, keyType);
+	if (!value.has_value() || (keyType.has_value() && scene::ai::getBlackboardType(*value) != *keyType)) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	if (component.m_instance) {
+		component.m_instance->setValue(key, std::move(*value));
+	} else if (const auto found = std::ranges::find(component.overrides, key, &scene::ai::BlackboardKey::name);
+			   found != component.overrides.end()) {
+		found->value = std::move(*value);
+	} else {
+		component.overrides.push_back({.name = std::string{key}, .value = std::move(*value), .description = {}});
+	}
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaBtGetValue(lua_State* iState) -> int {
+	const std::string_view key = luaL_checkstring(iState, 2);
+	const auto agent = entityWith<scene::component::BehaviourTreeAgent>(iState);
+	if (!agent)
+		return 0;
+	const auto& component = agent->getComponent<scene::component::BehaviourTreeAgent>();
+	const scene::ai::BlackboardValue* value = nullptr;
+	if (component.m_instance)
+		value = component.m_instance->getValue(key);
+	else if (const auto found = std::ranges::find(component.overrides, key, &scene::ai::BlackboardKey::name);
+			 found != component.overrides.end())
+		value = &found->value;
+	if (value == nullptr)
+		return 0;
+	std::visit(
+			[iState]<typename T>(const T& iHeld) -> void {
+				if constexpr (std::is_same_v<T, bool>)
+					lua_pushboolean(iState, iHeld ? 1 : 0);
+				else if constexpr (std::is_same_v<T, double>)
+					lua_pushnumber(iState, iHeld);
+				else if constexpr (std::is_same_v<T, std::string>)
+					lua_pushlstring(iState, iHeld.data(), iHeld.size());
+				else if constexpr (std::is_same_v<T, core::UUID>)
+					pushEntity(iState, iHeld);
+				else {
+					lua_createtable(iState, 3, 0);
+					for (int axis = 0; axis < 3; ++axis) {
+						lua_pushnumber(iState, static_cast<lua_Number>(iHeld[static_cast<size_t>(axis)]));
+						lua_rawseti(iState, -2, axis + 1);
+					}
+				}
+			},
+			*value);
+	return 1;
+}
+
+auto luaBtGetStatus(lua_State* iState) -> int {
+	const auto agent = entityWith<scene::component::BehaviourTreeAgent>(iState);
+	if (!agent)
+		return 0;
+	const auto& instance = agent->getComponent<scene::component::BehaviourTreeAgent>().m_instance;
+	const auto status = instance ? instance->getStatus() : scene::ai::NodeStatus::Idle;
+	static constexpr std::array<const char*, 4> s_names{"idle", "running", "success", "failure"};
+	lua_pushstring(iState, s_names[static_cast<size_t>(status)]);
+	return 1;
+}
+
+auto luaBtRestart(lua_State* iState) -> int {
+	const auto agent = entityWith<scene::component::BehaviourTreeAgent>(iState);
+	if (!agent)
+		return 0;
+	auto& component = agent->getComponent<scene::component::BehaviourTreeAgent>();
+	if (component.m_instance)
+		component.m_instance->halt(*agent);
+	component.m_instance.reset();
+	return 0;
+}
+
+auto luaBtSetTree(lua_State* iState) -> int {
+	const std::string_view tree = luaL_checkstring(iState, 2);
+	const auto agent = entityWith<scene::component::BehaviourTreeAgent>(iState);
+	if (!agent) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	auto& component = agent->getComponent<scene::component::BehaviourTreeAgent>();
+	if (component.m_instance)
+		component.m_instance->halt(*agent);
+	component.m_instance.reset();
+	component.tree = std::string{tree};
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
 auto luaNavSetSpeed(lua_State* iState) -> int {
 	const auto speed = static_cast<float>(luaL_checknumber(iState, 2));
 	if (const auto agent = entityWith<scene::component::NavAgent>(iState); agent)
@@ -4257,6 +4500,24 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Set the range (world units, at least 0.01) of the entity's point or spot `Light`, or the "
 						"radius of its `Light2D`; false when it has neither.",
 		 .params = {entityId, {"range", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "set_behaviour_tree_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::BehaviourTreeAgent>>,
+		 .description = "Switch the entity's `BehaviourTreeAgent` on or off (off stops the tree and its walk); false "
+						"when it has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_behaviour_tree_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::BehaviourTreeAgent>>,
+		 .description = "Whether the entity's `BehaviourTreeAgent` runs; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_steering_enabled",
+		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::SteeringAgent>>,
+		 .description = "Switch the entity's `SteeringAgent` on or off (it stays where it is while off); false when it "
+						"has none.",
+		 .params = {entityId, {"enabled", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "is_steering_enabled",
+		 .function = guarded<luaEntityIsBehaviourEnabled<scene::component::SteeringAgent>>,
+		 .description = "Whether the entity's `SteeringAgent` moves it; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
 		{.table = "entity", .name = "set_flicker_enabled",
 		 .function = guarded<luaEntitySetBehaviourEnabled<scene::component::LightFlicker>>,
 		 .description = "Switch the entity's `LightFlicker` on or off (the light keeps its authored values while off); "
@@ -4736,6 +4997,42 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "nav", .name = "set_speed", .function = guarded<luaNavSetSpeed>,
 		 .description = "Highest speed of a `NavAgent`, in world units per second.",
 		 .params = {entityId, {"speed", Number}}},
+		{.table = "steer", .name = "set_target", .function = guarded<luaSteerSetTarget>,
+		 .description = "Entity a `SteeringAgent` seeks, flees, reaches, pursues or evades; false when the entity has no agent or the target does not exist.",
+		 .params = {entityId, {"target", Entity}}, .returns = {{"done", Boolean}}},
+		{.table = "steer", .name = "set_target_point", .function = guarded<luaSteerSetTargetPoint>,
+		 .description = "World point a `SteeringAgent` seeks, flees or reaches, in place of a target entity; false when the entity has no agent.",
+		 .params = {entityId, {"x", Number}, {"y", Number}, {"z", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "steer", .name = "set_weight", .function = guarded<luaSteerSetWeight>,
+		 .description = "Weight of a behaviour of a `SteeringAgent` (`seek`, `flee`, `arrive`, `pursue`, `evade`, `wander`, `separation`, `alignment`, `cohesion`, `avoidance`, `formation`), 0 to leave it out; false for an unknown behaviour or an entity without agent.",
+		 .params = {entityId, {"behaviour", String}, {"weight", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "steer", .name = "get_weight", .function = guarded<luaSteerGetWeight>,
+		 .description = "Weight of a behaviour of a `SteeringAgent`; nothing for an unknown behaviour or an entity without agent.",
+		 .params = {entityId, {"behaviour", String}}, .returns = {{"weight", Number}}},
+		{.table = "steer", .name = "get_velocity", .function = guarded<luaSteerGetVelocity>,
+		 .description = "Velocity of a `SteeringAgent` at the last tick, in world units per second; nothing without agent.",
+		 .params = {entityId}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "steer", .name = "set_max_speed", .function = guarded<luaSteerSetMaxSpeed>,
+		 .description = "Highest speed of a `SteeringAgent`, in world units per second.",
+		 .params = {entityId, {"speed", Number}}},
+		{.table = "steer", .name = "set_leader", .function = guarded<luaSteerSetLeader>,
+		 .description = "Put a `SteeringAgent` in the formation of a leader, at a slot in the frame of the leader (its weight `formation` must be above 0); false when the leader does not exist.",
+		 .params = {entityId, {"leader", Entity}, {"x", Number}, {"y", Number}, {"z", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "bt", .name = "set_value", .function = guarded<luaBtSetValue>,
+		 .description = "Write a value on the blackboard of a `BehaviourTreeAgent` (a boolean, a number, a string, a table `{x, y, z}`; an entity for a key holding one); false when the key holds another kind or the entity has no agent.",
+		 .params = {entityId, {"key", String}, {"value", Any}}, .returns = {{"done", Boolean}}},
+		{.table = "bt", .name = "get_value", .function = guarded<luaBtGetValue>,
+		 .description = "A value of the blackboard of a `BehaviourTreeAgent`, a vector as a table `{x, y, z}`; nothing when the key holds nothing.",
+		 .params = {entityId, {"key", String}}, .returns = {{"value", Any}}},
+		{.table = "bt", .name = "get_status", .function = guarded<luaBtGetStatus>,
+		 .description = "What the tree of a `BehaviourTreeAgent` returned at the last tick: `idle`, `running`, `success` or `failure`.",
+		 .params = {entityId}, .returns = {{"status", String}}},
+		{.table = "bt", .name = "restart", .function = guarded<luaBtRestart>,
+		 .description = "Stop the tree of a `BehaviourTreeAgent` and start it again from the root at the next tick, its blackboard back to its first values.",
+		 .params = {entityId}},
+		{.table = "bt", .name = "set_tree", .function = guarded<luaBtSetTree>,
+		 .description = "Run another `.owlbt` tree on a `BehaviourTreeAgent` from the next tick; false when the entity has no agent.",
+		 .params = {entityId, {"tree", String}}, .returns = {{"done", Boolean}}},
 		{.table = "animator", .name = "set_float", .function = guarded<luaAnimatorSetFloat>,
 		 .description = "Set a number parameter of the entity's `Animator` state machine; false when it has no such parameter.",
 		 .params = {entityId, {"name", String}, {"value", Number}}, .returns = {{"done", Boolean}}},
@@ -4992,6 +5289,12 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "nav",
 			 .description = "Navigation meshes of the 3D scenes: paths over the floors and the links, the agents "
 							"walking them around each other."},
+			{.name = "bt",
+			 .description = "Behaviour trees of the `BehaviourTreeAgent`s: their blackboard, their status, the tree "
+							"they run."},
+			{.name = "steer",
+			 .description = "Steering behaviours of the `SteeringAgent`s: targets, weights, formations, on the 2D "
+							"plane, the ground or in space."},
 	};
 	return s_tables;
 }
@@ -5016,6 +5319,7 @@ auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 			 .title = "Isometric terrain, paths and walkable areas",
 			 .tables = {"isometric", "path", "walk"}},
 			{.file = "lua-api-navigation.md", .title = "Navigation meshes", .tables = {"nav"}},
+			{.file = "lua-api-ai.md", .title = "Steering and behaviour trees", .tables = {"steer", "bt"}},
 			{.file = "lua-api-animation.md", .title = "Animation and sockets", .tables = {"animator", "socket"}},
 			{.file = "lua-api-data.md", .title = "Splines and data tables", .tables = {"spline", "datatable"}},
 			{.file = "lua-api-dialogue.md", .title = "Dialogues", .tables = {"dialogue"}},

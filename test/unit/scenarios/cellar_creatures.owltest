@@ -1,0 +1,23 @@
+# The creatures of the tavern cellar: three rats run a behaviour tree (sniff around their nest, chase the player who
+# comes close, bite within reach through a Lua leaf, go back home), two ratlings hold their slots behind the first rat,
+# six bats flock under the ceiling and dodge the player.
+scene: ../../../engine_demo/scenes/tavern_cellar.owl
+project: ../../../engine_demo
+steps:
+  - frames: 120
+  - expect: {entity: Rat1, exists: true}
+  - expect: {entity: Bat1, exists: true}
+  # The bats stay under the ceiling, around their roost.
+  - expect: {entity: Bat1, translation.y: {greater: 1.6}}
+  - expect: {entity: Bat1, translation.y: {less: 3.1}}
+  - expect: {entity: Bat4, translation.x: {greater: -2.5}}
+  - expect: {entity: Bat4, translation.x: {less: 3.5}}
+  # The rats sniff around their nest, the ratlings keep close to the first one.
+  - expect: {entity: Rat2, translation.x: {greater: -1.5}}
+  - expect: {entity: Rat2, translation.z: {less: 1.5}}
+  - expect: {entity: Ratling1, translation.x: {less: 1.5}}
+  - expect: {entity: Ratling1, translation.z: {less: 1.5}}
+  # Standing by the nest of the second rat, the player gets bitten.
+  - {command: entity.set_transform, args: {entity: CellarPlayer, translation: [1.6, 1.6, -1.6], rotation: [0, 0, 0]}}
+  - frames: 180
+  - expect: {gamestate: cellar_bites, greater: 0}

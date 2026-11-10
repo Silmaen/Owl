@@ -336,6 +336,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the callback creating a behaviour tree ("New Behaviour Tree" of the folder menu); it runs `bt.create` and
+	 *  opens the file.
+	 * @param[in] iCallback Function taking the path of the file to create.
+	 */
+	void setBehaviourTreeCreateCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_behaviourTreeCreateCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when the project's `localisation.yml` is double-clicked.
 	 * @param[in] iCallback Function taking the file path.
 	 */
@@ -621,6 +631,12 @@ private:
 
 	/**
 	 * @brief
+	 *  Create a behaviour tree in the current folder and open it.
+	 */
+	void createBehaviourTree();
+
+	/**
+	 * @brief
 	 *  Create a starter Lua script in the current folder and open it in the code editor.
 	 */
 	void createLuaScript();
@@ -711,6 +727,8 @@ private:
 	std::function<void(const std::filesystem::path&)> m_sequenceOpenCallback;
 	/// Creates a sequence ("New Sequence").
 	std::function<void(const std::filesystem::path&)> m_sequenceCreateCallback;
+	/// Creates a behaviour tree ("New Behaviour Tree").
+	std::function<void(const std::filesystem::path&)> m_behaviourTreeCreateCallback;
 	/// Called on double-click of `localisation.yml`.
 	std::function<void(const std::filesystem::path&)> m_localisationOpenCallback;
 	/// Called when a macro (`.owlmacro`) is double-clicked or run from its context menu.

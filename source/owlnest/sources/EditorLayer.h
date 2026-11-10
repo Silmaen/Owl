@@ -373,6 +373,14 @@ public:
 
 	/**
 	 * @brief
+	 *  The tab of a behaviour tree, opened when it is not.
+	 * @param[in] iPath The `.owlbt` file.
+	 * @return The editor of the tree, or null when it cannot be opened.
+	 */
+	auto openBehaviourTree(const std::filesystem::path& iPath) -> commands::BehaviourTreeEditor* override;
+
+	/**
+	 * @brief
 	 *  Open an `input_actions.yml` in an `ActionMapDocument` (or switch to it); a missing file starts from the built-in
 	 *  actions and is created by the first save.
 	 * @param[in] iPath Absolute path to the file.

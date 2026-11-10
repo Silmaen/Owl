@@ -103,7 +103,7 @@ What a game plugs in without patching the engine:
 
 **Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
 [Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·
-[Pathfinding](pathfinding.md) · [Lua Scripting](scripting.md) · [Lua API](lua-api.md) · [Editor (Owl Nest)](editor.md) ·
+[Pathfinding](pathfinding.md) · [AI](ai.md) · [Lua Scripting](scripting.md) · [Lua API](lua-api.md) · [Editor (Owl Nest)](editor.md) ·
 [Node Graph Framework](node_graph.md) · [MCP server](mcp.md)
 
 ## Backend System

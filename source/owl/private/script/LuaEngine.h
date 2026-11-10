@@ -273,6 +273,18 @@ public:
 	 */
 	[[nodiscard]] auto callFunction(std::string_view iName, uint64_t iArg) const -> bool;
 
+	/**
+	 * @brief
+	 *  Call a global Lua function with an entity handle and a duration, and read its first returned value.
+	 * @param[in] iName Function name.
+	 * @param[in] iEntity Entity handle passed first.
+	 * @param[in] iSeconds Duration passed second.
+	 * @return The first value as `tostring` writes it (`nil` when it returns nothing); none when the function is
+	 *  missing or failed.
+	 */
+	[[nodiscard]] auto callFunctionForValue(std::string_view iName, uint64_t iEntity, float iSeconds) const
+			-> std::optional<std::string>;
+
 	// ---- Global variable access ----
 	/**
 	 * @brief

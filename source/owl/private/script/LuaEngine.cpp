@@ -925,6 +925,24 @@ auto LuaEngine::callFunction(const std::string_view iName, const uint64_t iArg) 
 	return protectedCall(handler, 1, iName);
 }
 
+auto LuaEngine::callFunctionForValue(const std::string_view iName, const uint64_t iEntity, const float iSeconds) const
+		-> std::optional<std::string> {
+	OWL_PROFILE_FUNCTION()
+
+	if (mp_state == nullptr)
+		return std::nullopt;
+	const int handler = pushGlobalFunction(iName);
+	if (handler == 0)
+		return std::nullopt;
+	pushInteger(mp_state, static_cast<int64_t>(iEntity));
+	lua_pushnumber(mp_state, static_cast<lua_Number>(iSeconds));
+	ChunkResult result;
+	if (!protectedCall(handler, 2, iName, &result))
+		return std::nullopt;
+	// The global table the function was read from stays under its results.
+	return result.values.size() < 2 ? std::string{"nil"} : std::move(result.values[1]);
+}
+
 // NOLINTNEXTLINE(misc-no-recursion) A table describes its entries once, without entering a nested table.
 auto LuaEngine::describeValue(lua_State* iState, const int iIndex) -> WatchValue {
 	WatchValue value{.name = {}, .type = luaL_typename(iState, iIndex), .value = {}};

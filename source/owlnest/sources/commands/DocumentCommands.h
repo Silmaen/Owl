@@ -27,6 +27,7 @@ class DialogueEditor;
 class HudThemeEditor;
 class MaterialEditor;
 class SequenceEditor;
+class BehaviourTreeEditor;
 
 /**
  * @brief
@@ -290,6 +291,14 @@ public:
 	 * @return The editor of the sequence, or null when it cannot be opened.
 	 */
 	virtual auto openSequence(const std::filesystem::path& iPath) -> SequenceEditor* = 0;
+
+	/**
+	 * @brief
+	 *  The tab of a behaviour tree, opened when it is not.
+	 * @param[in] iPath The `.owlbt` file.
+	 * @return The editor of the tree, or null when it cannot be opened.
+	 */
+	virtual auto openBehaviourTree(const std::filesystem::path& iPath) -> BehaviourTreeEditor* = 0;
 
 	/**
 	 * @brief

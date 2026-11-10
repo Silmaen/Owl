@@ -4478,6 +4478,16 @@ OWL_API void Scene::onComponentAdded<component::NavLink>([[maybe_unused]] const 
 														 [[maybe_unused]] component::NavLink& ioComponent) {}
 
 template<>
+OWL_API void
+Scene::onComponentAdded<component::BehaviourTreeAgent>([[maybe_unused]] const Entity& iEntity,
+													   [[maybe_unused]] component::BehaviourTreeAgent& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::SteeringAgent>([[maybe_unused]] const Entity& iEntity,
+															   [[maybe_unused]] component::SteeringAgent& ioComponent) {
+}
+
+template<>
 OWL_API void Scene::onComponentAdded<component::Drift>([[maybe_unused]] const Entity& iEntity,
 													   [[maybe_unused]] component::Drift& ioComponent) {}
 

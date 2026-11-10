@@ -1060,6 +1060,57 @@ around; a `NavLink` joins two floors in a straight crossing. Guide: [Navigation 
 | `bidirectional` | `bool` | `true`      | Crossed both ways                                       |
 | `costScale`     | float  | `1`         | Cost per unit of length, at least 1 (walking costs 1)   |
 
+#### SteeringAgent and BehaviourTreeAgent {#ai-components}
+
+YAML keys: `SteeringAgent` (system `owl.steering`, `PrePhysics`, fixed tick) and `BehaviourTreeAgent` (system
+`owl.behaviour_trees`, `Scripts` phase after `owl.scripts`, fixed tick). A `SteeringAgent` moves its entity by weighted
+steering behaviours (seek, flee, arrive, pursue, evade, wander, flocking, avoidance, formation) on the plane, the ground
+or in open 3D space; a `BehaviourTreeAgent` runs a `.owlbt` behaviour tree that sets those behaviours, walks with the
+`NavAgent` and calls Lua. Guide: [AI: steering and behaviour trees](ai.md).
+
+| `SteeringAgent` field | Type   | Default      | Description                                                                       |
+|-----------------------|--------|--------------|-----------------------------------------------------------------------------------|
+| `enabled`             | `bool` | `true`       | Off leaves the entity where it is; Lua `entity.set_steering_enabled`              |
+| `plane`               | enum   | `Ground`     | `Plane2D` (x, y), `Ground` (x, z) or `Space` (three axes)                         |
+| `maxSpeed`            | float  | `4`          | Highest speed, in world units per second                                          |
+| `maxAcceleration`     | float  | `12`         | Largest change of velocity per second                                             |
+| `radius`              | float  | `0.5`        | Radius of the agent, kept clear of the others                                     |
+| `turn`                | `bool` | `true`       | Turn the entity the way it moves (front: +x in 2D, +z on the ground and in space) |
+| `target`              | UUID   | `0`          | Entity sought, fled, pursued or evaded (`0`: `targetPoint`)                       |
+| `targetPoint`         | vec3   | `[0, 0, 0]`  | World point used when no `target` is set                                          |
+| `weights`             | map    | see below    | Weight of each behaviour, `0` leaves it out                                       |
+| `slowRadius`          | float  | `2`          | Distance from the target at which `arrive` starts to slow down                    |
+| `panicDistance`       | float  | `8`          | Distance under which `flee` and `evade` run (`0`: always)                         |
+| `prediction`          | float  | `1`          | Longest look ahead of `pursue` and `evade`, in seconds                            |
+| `wander`              | map    | see below    | `radius` (`1`), `distance` (`2`), `jitter` (`2`, radians per second)              |
+| `flock`               | string | empty        | Flock name: agents of the same flock flock together                               |
+| `neighbourRadius`     | float  | `4`          | Distance under which the members of the flock are neighbours                      |
+| `separationDistance`  | float  | `1`          | Gap between two members under which `separation` pushes them apart                |
+| `lookAhead`           | float  | `1.5`        | Time ahead `avoidance` looks for a collision, in seconds                          |
+| `leader`              | UUID   | `0`          | Entity leading the formation (`0`: none)                                          |
+| `slot`                | vec3   | `[0, 0, -2]` | Slot in the frame of the leader (front: +z, +x in 2D)                             |
+
+`weights` holds `seek`, `flee`, `arrive`, `pursue`, `evade`, `wander`, `separation`, `alignment`, `cohesion` and
+`formation` (all `0`) and `avoidance` (`1`).
+
+| `BehaviourTreeAgent` field | Type   | Default | Description                                                                   |
+|----------------------------|--------|---------|-------------------------------------------------------------------------------|
+| `enabled`                  | `bool` | `true`  | Off stops the tree and its walk; Lua `entity.set_behaviour_tree_enabled`      |
+| `tree`                     | asset  | empty   | The `.owlbt` file                                                             |
+| `overrides`                | list   | empty   | Start values of blackboard keys in place of the tree's: `{name, type, value}` |
+
+```yaml
+SteeringAgent:
+  plane: Ground
+  maxSpeed: 2.6
+  radius: 0.15
+  weights: {separation: 1, avoidance: 1}
+BehaviourTreeAgent:
+  tree: scripts/tavern/cellar_rat.owlbt
+  overrides:
+    - {name: home, type: Vector, value: "-1.5, 0, -1.2"}
+```
+
 #### SequencePlayer {#sequence-player-component}
 
 YAML key: `SequencePlayer`, system `owl.sequences` (`PostPhysics`, after `follow_target`). Plays a `.owlseq` sequence:

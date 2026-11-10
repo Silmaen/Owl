@@ -1,0 +1,128 @@
+FormatVersion: 1
+BehaviourTree:
+  blackboard:
+    - name: player
+      type: Entity
+      value: 0
+      description: The player, found again at each tick.
+    - name: home
+      type: Vector
+      value: [0, 0, 0]
+      description: Where the rat lives; set on each rat.
+  nodes:
+    - id: 3951000000000000001
+      type: root
+      position: [0, 240]
+    - id: 3951000000000000002
+      type: composite.selector
+      position: [220, 240]
+      values:
+        reactive: "true"
+      comment: The first branch that holds wins, checked at every tick.
+    - id: 3951000000000000003
+      type: composite.sequence
+      position: [440, 0]
+      comment: Bite the player within reach, once in a while.
+    - id: 3951000000000000004
+      type: action.find_player
+      position: [660, -60]
+      values:
+        key: "player"
+    - id: 3951000000000000005
+      type: condition.distance
+      position: [660, 0]
+      values:
+        distance: "0.9"
+        key: "player"
+        op: "closer than"
+        space: "ground"
+    - id: 3951000000000000006
+      type: decorator.cooldown
+      position: [660, 60]
+      values:
+        seconds: "1.5"
+    - id: 3951000000000000007
+      type: action.lua
+      position: [880, 60]
+      values:
+        function: "rat_bite"
+      comment: In cellar_rat.lua.
+    - id: 3951000000000000008
+      type: composite.sequence
+      position: [440, 200]
+      comment: Chase the player who comes close.
+    - id: 3951000000000000009
+      type: action.find_player
+      position: [660, 140]
+      values:
+        key: "player"
+    - id: 3951000000000000010
+      type: condition.distance
+      position: [660, 200]
+      values:
+        distance: "3.5"
+        key: "player"
+        op: "closer than"
+        space: "ground"
+    - id: 3951000000000000011
+      type: action.steer
+      position: [660, 260]
+      values:
+        behaviour: "pursue"
+        key: "player"
+        weight: "1"
+    - id: 3951000000000000012
+      type: action.wait
+      position: [660, 320]
+      values:
+        seconds: "0.25"
+    - id: 3951000000000000013
+      type: composite.sequence
+      position: [440, 420]
+      comment: Back to the nest when strayed.
+    - id: 3951000000000000014
+      type: condition.distance
+      position: [660, 400]
+      values:
+        distance: "2.5"
+        key: "home"
+        op: "farther than"
+    - id: 3951000000000000015
+      type: action.move_to
+      position: [660, 460]
+      values:
+        distance: "0.6"
+        key: "home"
+    - id: 3951000000000000016
+      type: composite.sequence
+      position: [440, 580]
+      comment: Sniff around the nest.
+    - id: 3951000000000000017
+      type: action.steer
+      position: [660, 560]
+      values:
+        behaviour: "wander"
+    - id: 3951000000000000018
+      type: action.wait
+      position: [660, 620]
+      values:
+        seconds: "1"
+        spread: "1.5"
+  links:
+    - {parent: 3951000000000000001, child: 3951000000000000002}
+    - {parent: 3951000000000000002, child: 3951000000000000003}
+    - {parent: 3951000000000000003, child: 3951000000000000004}
+    - {parent: 3951000000000000003, child: 3951000000000000005}
+    - {parent: 3951000000000000003, child: 3951000000000000006}
+    - {parent: 3951000000000000006, child: 3951000000000000007}
+    - {parent: 3951000000000000002, child: 3951000000000000008}
+    - {parent: 3951000000000000008, child: 3951000000000000009}
+    - {parent: 3951000000000000008, child: 3951000000000000010}
+    - {parent: 3951000000000000008, child: 3951000000000000011}
+    - {parent: 3951000000000000008, child: 3951000000000000012}
+    - {parent: 3951000000000000002, child: 3951000000000000013}
+    - {parent: 3951000000000000013, child: 3951000000000000014}
+    - {parent: 3951000000000000013, child: 3951000000000000015}
+    - {parent: 3951000000000000002, child: 3951000000000000016}
+    - {parent: 3951000000000000016, child: 3951000000000000017}
+    - {parent: 3951000000000000016, child: 3951000000000000018}

@@ -540,6 +540,10 @@ void EditorLayer::bindSequenceCallbacks() {
 		runCommandFromUi("sequence.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
 		openSequenceFile(iPath);
 	});
+	m_contentBrowser.setBehaviourTreeCreateCallback([this](const std::filesystem::path& iPath) -> void {
+		runCommandFromUi("bt.create", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
+		openNodeGraphFile(iPath);
+	});
 }
 
 void EditorLayer::onAttach() {

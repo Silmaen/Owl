@@ -97,6 +97,7 @@ auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> 
 																	{".owlflow", {rgb(0x5aa2f0), "Node graph"}},
 																	{".owlvs", {rgb(0xe8c547), "Visual script"}},
 																	{".owlpcg", {rgb(0x7fd18b), "PCG graph"}},
+																	{".owlbt", {rgb(0xf2a65a), "Behaviour tree"}},
 																	{".obj", {rgb(0x7fb83e), "3D model"}},
 																	{".fbx", {rgb(0x7fb83e), "3D model"}},
 																	{".gltf", {rgb(0x7fb83e), "3D model"}},
@@ -675,7 +676,8 @@ void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
 	} else if ((path.extension() == ".owl" || path.extension() == ".owlhud" || path.extension() == ".owlprefab") &&
 			   m_sceneOpenCallback) {
 		m_sceneOpenCallback(path);
-	} else if ((path.extension() == ".owlflow" || path.extension() == ".owlvs" || path.extension() == ".owlpcg") &&
+	} else if ((path.extension() == ".owlflow" || path.extension() == ".owlvs" || path.extension() == ".owlpcg" ||
+				path.extension() == ".owlbt") &&
 			   m_nodeGraphOpenCallback) {
 		m_nodeGraphOpenCallback(path);
 	} else if (path.extension() == ".owlanim" && m_animationOpenCallback) {
@@ -840,6 +842,9 @@ void ContentBrowser::renderCreateItems() {
 		createVisualScript();
 	if (gui::widgets::menuItem({.glyph = gui::icon::sparkles, .label = "New PCG Graph"}))
 		createPcgGraph();
+	if (m_behaviourTreeCreateCallback &&
+		gui::widgets::menuItem({.glyph = gui::icon::gitBranch, .label = "New Behaviour Tree"}))
+		createBehaviourTree();
 	ImGui::Separator();
 	if (gui::widgets::menuItem({.glyph = gui::icon::download, .label = "Import File..."}))
 		importFiles();
@@ -1034,6 +1039,14 @@ void ContentBrowser::createDialogue() {
 	for (uint32_t counter = 1; exists(dialoguePath); ++counter)
 		dialoguePath = m_currentPath / std::format("New Dialogue {}.owldlg", counter);
 	m_dialogueCreateCallback(dialoguePath);
+	m_rescanRequested = true;
+}
+
+void ContentBrowser::createBehaviourTree() {
+	auto treePath = m_currentPath / "New Behaviour Tree.owlbt";
+	for (uint32_t counter = 1; exists(treePath); ++counter)
+		treePath = m_currentPath / std::format("New Behaviour Tree {}.owlbt", counter);
+	m_behaviourTreeCreateCallback(treePath);
 	m_rescanRequested = true;
 }
 

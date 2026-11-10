@@ -27,6 +27,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <variant>
 #include <vector>
 
@@ -803,6 +804,16 @@ void scanWidgetBoxes(const YAML::Node& iEntity, const std::string& iSceneName, s
 			followTexture(node["Box"]["texture"].as<std::string>(), iSceneName, ioAssets, ioWarnings);
 }
 
+// The data files a component names by path: an environment image, a sequence, a behaviour tree.
+void scanDataFields(const YAML::Node& iEntity, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
+					std::vector<std::string>* ioWarnings) {
+	for (const auto& [component, field, kind]:
+		 {std::tuple{"Environment", "hdri", "Environment image"}, std::tuple{"SequencePlayer", "sequence", "Sequence"},
+		  std::tuple{"BehaviourTreeAgent", "tree", "Behaviour tree"}})
+		if (auto node = iEntity[component]; node && node[field] && !node[field].as<std::string>().empty())
+			scanDataFile(node[field].as<std::string>(), kind, iSceneName, ioAssets, ioWarnings);
+}
+
 void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 				const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
 				std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
@@ -830,10 +841,7 @@ void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
 	scanFontsAndSounds(iEntity, iSceneName, ioAssets, ioWarnings);
 	if (auto meshRenderer = iEntity["MeshRenderer"]; meshRenderer)
 		scanMeshRenderer(meshRenderer, iSceneName, ioAssets, ioWarnings);
-	if (auto environment = iEntity["Environment"]; environment && environment["hdri"])
-		scanDataFile(environment["hdri"].as<std::string>(), "Environment image", iSceneName, ioAssets, ioWarnings);
-	if (auto player = iEntity["SequencePlayer"]; player && player["sequence"])
-		scanDataFile(player["sequence"].as<std::string>(), "Sequence", iSceneName, ioAssets, ioWarnings);
+	scanDataFields(iEntity, iSceneName, ioAssets, ioWarnings);
 	if (auto camera = iEntity["Camera"]; camera && camera["camera"] && camera["camera"]["postProcess"]) {
 		if (const auto lut = camera["camera"]["postProcess"]["lut"]; lut && lut.IsScalar())
 			scanDataFile(lut.as<std::string>(), "Colour LUT", iSceneName, ioAssets, ioWarnings);

@@ -9,6 +9,7 @@
 #include "commands/DocumentCommands.h"
 #include "commands/CommandRegistry.h"
 #include "commands/MaterialCommands.h"
+#include "document/BehaviourTreeDocument.h"
 #include "document/DataTableDocument.h"
 #include "document/DialogueDocument.h"
 #include "document/HudThemeDocument.h"
@@ -21,14 +22,18 @@
 #include <core/Timestep.h>
 #include <data/dialogue/Dialogue.h>
 #include <data/sequence/Sequence.h>
+#include <gui/IconFont.h>
 #include <scene/HudTheme.h>
+#include <scene/ai/BehaviourTree.h>
 
 #include <gtest/gtest.h>
 
+#include <charconv>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <format>
 #include <string>
 #include <tuple>
 #include <variant>
@@ -65,6 +70,10 @@ public:
 		return iPath == sequence.filePath() ? &sequence : nullptr;
 	}
 
+	auto openBehaviourTree(const std::filesystem::path& iPath) -> BehaviourTreeEditor* override {
+		return iPath == tree.filePath() ? &tree : nullptr;
+	}
+
 	auto openHudTheme(const std::filesystem::path& iPath) -> HudThemeEditor* override {
 		return iPath == theme.filePath() ? &theme : nullptr;
 	}
@@ -77,6 +86,7 @@ public:
 	DialogueDocument dialogue;
 	SequenceDocument sequence;
 	HudThemeDocument theme;
+	BehaviourTreeDocument tree;
 };
 
 class DocumentCommandsTest : public ::testing::Test {
@@ -107,6 +117,10 @@ protected:
 		m_theme = m_root / "demo.owlhudtheme";
 		ASSERT_TRUE(scene::HudTheme::makeDefault().saveToFile(m_theme));
 		ASSERT_TRUE(m_host.theme.loadFromFile(m_theme));
+		m_tree = m_root / "guard.owlbt";
+		const CommandContext context;
+		ASSERT_TRUE(m_registry.execute("bt.create", {{"path", m_tree.generic_string()}}, context));
+		ASSERT_TRUE(m_host.tree.loadFromFile(m_tree));
 	}
 
 	void TearDown() override {
@@ -116,6 +130,7 @@ protected:
 		m_host.dialogue.onDetach();
 		m_host.sequence.onDetach();
 		m_host.theme.onDetach();
+		m_host.tree.onDetach();
 		std::filesystem::remove_all(m_root);
 		core::Log::invalidate();
 	}
@@ -135,6 +150,7 @@ protected:
 	std::filesystem::path m_dialogue;
 	std::filesystem::path m_sequence;
 	std::filesystem::path m_theme;
+	std::filesystem::path m_tree;
 	TestHost m_host;
 	CommandRegistry m_registry;
 };
@@ -497,4 +513,134 @@ TEST_F(DocumentCommandsTest, SequenceDocumentSelectionAndRecovery) {
 	EXPECT_FALSE(document.restoreRecoverySnapshot("not: a sequence"));
 	EXPECT_EQ(document.title(), "intro");
 	EXPECT_EQ(document.type(), DocumentType::Sequence);
+}
+
+namespace {
+
+auto textOf(const expected<CommandResult, CommandFailure>& iResult, const std::string& iField) -> std::string {
+	if (!iResult)
+		return {};
+	const auto found = iResult->data.find(iField);
+	if (found == iResult->data.end())
+		return {};
+	const auto* text = std::get_if<std::string>(&found->second);
+	return text == nullptr ? std::string{} : *text;
+}
+
+auto idOf(const std::string& iText) -> core::UUID {
+	uint64_t value = 0;
+	std::ignore = std::from_chars(iText.data(), iText.data() + iText.size(), value);
+	return core::UUID{value};
+}
+
+}// namespace
+
+TEST_F(DocumentCommandsTest, TreeCreateWritesARunnableTree) {
+	const auto& tree = m_host.tree.tree();
+	ASSERT_NE(tree.getRoot(), nullptr);
+	EXPECT_EQ(tree.nodes.size(), 3u);
+	EXPECT_TRUE(tree.validate().empty());
+	EXPECT_FALSE(run("bt.create", {}, m_tree));
+	EXPECT_FALSE(run("bt.create", {}, m_root / "guard.txt"));
+}
+
+TEST_F(DocumentCommandsTest, TreeCommandsBuildAndEditATree) {
+	const auto rootId = m_host.tree.tree().getRoot()->id;
+	const auto selectorId = m_host.tree.tree().getChildren(rootId).front();
+	const auto added = run("bt.add_node",
+						   {{"type", std::string{"composite.sequence"}},
+							{"position", math::vec2{200.f, 300.f}},
+							{"parent", std::format("{}", static_cast<uint64_t>(selectorId))}},
+						   m_tree);
+	ASSERT_TRUE(added);
+	const auto sequence = idOf(textOf(added, "node"));
+	EXPECT_EQ(m_host.tree.tree().getParent(sequence), selectorId);
+	const auto wait = run("bt.add_node", {{"type", std::string{"action.wait"}}}, m_tree);
+	const auto waitId = idOf(textOf(wait, "node"));
+	ASSERT_TRUE(run("bt.link", {{"parent", textOf(added, "node")}, {"child", textOf(wait, "node")}}, m_tree));
+	EXPECT_EQ(m_host.tree.tree().getParent(waitId), sequence);
+	// A node is never its own ancestor; a leaf has no child; a second root is refused.
+	EXPECT_FALSE(run("bt.link", {{"parent", textOf(wait, "node")}, {"child", textOf(added, "node")}}, m_tree));
+	EXPECT_FALSE(
+			run("bt.link",
+				{{"parent", textOf(added, "node")}, {"child", std::format("{}", static_cast<uint64_t>(selectorId))}},
+				m_tree));
+	EXPECT_FALSE(run("bt.add_node", {{"type", std::string{"root"}}}, m_tree));
+	EXPECT_FALSE(run("bt.add_node", {{"type", std::string{"action.dance"}}}, m_tree));
+	ASSERT_TRUE(run("bt.set_value",
+					{{"node", textOf(wait, "node")}, {"key", std::string{"seconds"}}, {"value", std::string{"3"}}},
+					m_tree));
+	EXPECT_EQ(scene::ai::BehaviourTree::getValue(*m_host.tree.tree().findNode(waitId), "seconds"), "3");
+	EXPECT_FALSE(run("bt.set_value",
+					 {{"node", textOf(wait, "node")}, {"key", std::string{"speed"}}, {"value", std::string{"3"}}},
+					 m_tree));
+	ASSERT_TRUE(run("bt.set_comment", {{"node", textOf(wait, "node")}, {"comment", std::string{"Catch a breath"}}},
+					m_tree));
+	EXPECT_EQ(m_host.tree.tree().findNode(waitId)->comment, "Catch a breath");
+	ASSERT_TRUE(run("bt.move_nodes", {{"nodes", textOf(wait, "node")}, {"offset", math::vec2{10.f, 5.f}}}, m_tree));
+	EXPECT_FLOAT_EQ(m_host.tree.tree().findNode(waitId)->position[1], 5.f);
+	const auto copies = run("bt.duplicate_nodes",
+							{{"nodes", std::format("{},{}", textOf(added, "node"), textOf(wait, "node"))}}, m_tree);
+	ASSERT_TRUE(copies);
+	EXPECT_EQ(m_host.tree.tree().nodes.size(), 7u);
+	ASSERT_TRUE(run("bt.unlink", {{"child", textOf(wait, "node")}}, m_tree));
+	EXPECT_FALSE(m_host.tree.tree().getParent(waitId).has_value());
+	ASSERT_TRUE(run("bt.remove_nodes", {{"nodes", textOf(copies, "nodes")}}, m_tree));
+	EXPECT_EQ(m_host.tree.tree().nodes.size(), 5u);
+	m_host.tree.performUndo();
+	EXPECT_EQ(m_host.tree.tree().nodes.size(), 7u);
+	m_host.tree.performRedo();
+	EXPECT_EQ(m_host.tree.tree().nodes.size(), 5u);
+	EXPECT_TRUE(m_host.tree.isDirty());
+	EXPECT_TRUE(m_host.tree.save());
+	EXPECT_FALSE(m_host.tree.isDirty());
+}
+
+TEST_F(DocumentCommandsTest, TreeKeyCommandsEditTheBlackboard) {
+	ASSERT_TRUE(run("bt.add_key",
+					{{"name", std::string{"health"}}, {"type", std::string{"Number"}}, {"value", std::string{"10"}}},
+					m_tree));
+	EXPECT_FALSE(run("bt.add_key", {{"name", std::string{"health"}}}, m_tree));
+	EXPECT_FALSE(run("bt.add_key",
+					 {{"name", std::string{"alive"}}, {"type", std::string{"Bool"}}, {"value", std::string{"maybe"}}},
+					 m_tree));
+	const auto guard = run("bt.add_node", {{"type", std::string{"condition.compare"}}}, m_tree);
+	ASSERT_TRUE(run("bt.set_value",
+					{{"node", textOf(guard, "node")}, {"key", std::string{"key"}}, {"value", std::string{"health"}}},
+					m_tree));
+	ASSERT_TRUE(run("bt.set_key",
+					{{"name", std::string{"health"}},
+					 {"rename", std::string{"life"}},
+					 {"value", std::string{"7"}},
+					 {"description", std::string{"Hit points"}}},
+					m_tree));
+	const auto* key = m_host.tree.tree().findKey("life");
+	ASSERT_NE(key, nullptr);
+	EXPECT_EQ(scene::ai::toText(key->value), "7");
+	EXPECT_EQ(key->description, "Hit points");
+	EXPECT_EQ(scene::ai::BehaviourTree::getValue(*m_host.tree.tree().findNode(idOf(textOf(guard, "node"))), "key"),
+			  "life");
+	ASSERT_TRUE(run("bt.set_key", {{"name", std::string{"life"}}, {"type", std::string{"Vector"}}}, m_tree));
+	EXPECT_EQ(scene::ai::getBlackboardType(m_host.tree.tree().findKey("life")->value),
+			  scene::ai::BlackboardType::Vector);
+	ASSERT_TRUE(run("bt.remove_key", {{"name", std::string{"life"}}}, m_tree));
+	EXPECT_EQ(m_host.tree.tree().findKey("life"), nullptr);
+	EXPECT_FALSE(run("bt.remove_key", {{"name", std::string{"life"}}}, m_tree));
+}
+
+TEST_F(DocumentCommandsTest, TreeNodesHaveAGlyphAndASummary) {
+	const scene::ai::TreeNode guard{.id = core::UUID{1},
+									.type = "decorator.guard",
+									.position = {0.f, 0.f},
+									.values = {{"key", "health"}, {"op", ">"}, {"value", "3"}},
+									.comment = {}};
+	EXPECT_EQ(getBehaviourNodeSummary(guard), "health > 3");
+	const scene::ai::TreeNode lua{.id = core::UUID{2},
+								  .type = "action.lua",
+								  .position = {0.f, 0.f},
+								  .values = {{"function", "eat"}},
+								  .comment = {}};
+	EXPECT_EQ(getBehaviourNodeSummary(lua), "eat()");
+	for (const auto& type: scene::ai::getNodeTypes())
+		EXPECT_STRNE(getBehaviourNodeGlyph(type.id), gui::icon::circleHelp) << type.id;
 }

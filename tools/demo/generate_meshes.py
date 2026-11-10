@@ -603,6 +603,26 @@ def bar_counter(length: float = 2.4, height: float = 0.9, depth: float = 0.6) ->
     return m
 
 
+def rat() -> MeshBuilder:
+    """Cellar rat, 0.3 m long nose to rump, on y = 0, its nose towards +Z: body, head, ears and a long tail."""
+    m = box((0.0, 0.06, 0.0), (0.11, 0.1, 0.2), tile=0.3)
+    m.extend(box((0.0, 0.065, 0.13), (0.07, 0.07, 0.08), tile=0.3))
+    m.extend(box((0.0, 0.055, 0.185), (0.03, 0.03, 0.04), tile=0.3))
+    for x in (-0.03, 0.03):
+        m.extend(box((x, 0.11, 0.115), (0.025, 0.03, 0.01), tile=0.3))
+    m.extend(box((0.0, 0.03, -0.2), (0.015, 0.015, 0.22), tile=0.3))
+    return m
+
+
+def bat() -> MeshBuilder:
+    """Bat with open wings, 0.4 m wide, its head towards +Z: a small body and two thin swept wings."""
+    m = box((0.0, 0.0, 0.0), (0.06, 0.05, 0.12), tile=0.3)
+    m.extend(box((0.0, 0.01, 0.07), (0.04, 0.04, 0.04), tile=0.3))
+    for side in (-1.0, 1.0):
+        m.extend(transformed(box((side * 0.11, 0.0, -0.01), (0.16, 0.008, 0.1), tile=0.3), roll=side * 0.25))
+    return m
+
+
 def main() -> None:
     """Write every procedural mesh and texture of the Engine Demo tavern."""
     OUT.mkdir(parents=True, exist_ok=True)
@@ -629,6 +649,8 @@ def main() -> None:
     write_glb(OUT / "wall_sconce.glb", wall_sconce(), "WallSconce", color=(0.1, 0.1, 0.1, 1.0))
     write_glb(OUT / "window_frame.glb", window_frame(), "WindowFrame")
     write_glb(OUT / "window_pane.glb", window_pane(), "WindowPane")
+    write_glb(OUT / "rat.glb", rat(), "Rat", color=(0.32, 0.27, 0.24, 1.0), roughness=0.9)
+    write_glb(OUT / "bat.glb", bat(), "Bat", color=(0.12, 0.1, 0.11, 1.0), roughness=0.9)
     write_glb(OUT / "tankard.glb", tankard(), "Tankard", color=(0.62, 0.64, 0.66, 1.0))
     write_glb(OUT / "bar_counter.glb", bar_counter(), "BarCounter")
     write_glb(OUT / "bar_step.glb", box((0.0, 0.15, 0.0), (0.7, 0.3, 2.4), tile=0.8), "BarStep")

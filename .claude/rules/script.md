@@ -28,7 +28,7 @@ User-facing reference: `doc/pages/scripting.md` (guide), `doc/pages/lua-api.md` 
   failing `LuaBindingRegistry.ReferencePageMatchesTheRegistry` writes to `lua-api/` in its working directory
   (`<build>/test/lua-api/` under ctest) over `doc/pages/`. Every `table.fn(` in `scripting.md` must be bound (tested).
 - Tables (`getLuaTables()`): `transform`, `physics`, `input`, `sound`, `scene`, `time`, `log`, `entity`, `ui`,
-  `gamestate`, `save`, `settings`, `locale`, `trigger`, `door`, `pushwall`, `isometric`, `path`, `walk`, `nav`, `animator`,
+  `gamestate`, `save`, `settings`, `locale`, `trigger`, `door`, `pushwall`, `isometric`, `path`, `walk`, `nav`, `steer`, `bt`, `animator`,
   `socket`, `spline`, `datatable`, `engine`, `math` (`random` / `randomseed` on the scene stream and the engine's
   elementary functions, over the standard table), `table` (`sorted_keys`, over the standard table).
 - Sandbox: only `base`, `table`, `string`, `math`, `utf8`, `coroutine`, `bit32`, `buffer`; never `os` nor `debug`.

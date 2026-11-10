@@ -9,6 +9,8 @@
 #pragma once
 
 #include "core/Core.h"
+#include "math/vectors.h"
+#include "scene/Entity.h"
 #include "scene/SystemSchedule.h"
 
 #include <entt/entity/entity.hpp>
@@ -114,12 +116,46 @@ void tickSimulationLod(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief
+ *  World position of an entity: the translation of its world transform.
+ * @param[in] iScene The scene.
+ * @param[in] iEntity The entity.
+ * @return The position.
+ */
+[[nodiscard]] auto getWorldPosition(const Scene& iScene, const Entity& iEntity) -> math::vec3;
+
+/**
+ * @brief
+ *  Move an entity to a world position, through the transform of its parent.
+ * @param[in] iScene The scene.
+ * @param[in] iEntity The entity.
+ * @param[in] iPosition The world position.
+ */
+void setWorldPosition(const Scene& iScene, const Entity& iEntity, const math::vec3& iPosition);
+
+/**
+ * @brief
  *  Steer the entities with a `NavAgent` along their path on their `NavMeshVolume`, around the other agents and the
  *  `NavObstacle`s, one fixed tick (`owl.nav_agents`).
  * @param[in,out] ioScene The scene.
  * @param[in] iContext The tick context.
  */
 void tickNavAgents(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
+ *  Tick the behaviour tree of every enabled `BehaviourTreeAgent`, in UUID order (`owl.behaviour_trees`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The tick context.
+ */
+void tickBehaviourTrees(Scene& ioScene, const SystemContext& iContext);
+
+/**
+ * @brief
+ *  Move the entities with a `SteeringAgent` by their weighted steering behaviours, one fixed tick (`owl.steering`).
+ * @param[in,out] ioScene The scene.
+ * @param[in] iContext The tick context.
+ */
+void tickSteeringAgents(Scene& ioScene, const SystemContext& iContext);
 
 /**
  * @brief

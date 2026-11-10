@@ -10,8 +10,6 @@
 
 #include "EngineSystems.h"
 #include "math/elementaryFunctions.h"
-#include "math/linAlgebra.h"
-#include "math/matrixCreation.h"
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 #include "scene/component/components.h"
@@ -41,21 +39,6 @@ struct Walker {
 };
 
 auto planar(const math::vec3& iPoint) -> math::vec2 { return {iPoint.x(), iPoint.z()}; }
-
-auto worldPosition(const Scene& iScene, const Entity& iEntity) -> math::vec3 {
-	const math::mat4 world = iScene.getWorldTransform(iEntity)();
-	return {world(0, 3), world(1, 3), world(2, 3)};
-}
-
-void setWorldPosition(const Scene& iScene, const Entity& iEntity, const math::vec3& iPosition) {
-	math::mat4 parent = math::identity<float, 4>();
-	if (const auto parentId = iEntity.getComponent<component::Hierarchy>().parentId; parentId != core::UUID{0}) {
-		if (const auto entity = iScene.findEntityByUUID(parentId); entity)
-			parent = iScene.getWorldTransform(entity)();
-	}
-	const math::vec4 local = math::inverse(parent) * math::vec4{iPosition.x(), iPosition.y(), iPosition.z(), 1.f};
-	iEntity.getComponent<component::Transform>().transform.translation() = {local.x(), local.y(), local.z()};
-}
 
 auto isOnLink(const component::NavAgent& iAgent) -> bool {
 	return iAgent.m_next > 0 && iAgent.m_next < iAgent.m_path.size() && iAgent.m_path[iAgent.m_next - 1].link != -1;
@@ -200,7 +183,7 @@ void trackObstacles(Scene& ioScene, const float iSeconds, std::vector<nav::Avoid
 	for (const auto& [uuid, handle]: sorted) {
 		const Entity entity{handle, &ioScene};
 		auto& obstacle = entity.getComponent<component::NavObstacle>();
-		const math::vec3 position = worldPosition(ioScene, entity);
+		const math::vec3 position = getWorldPosition(ioScene, entity);
 		if (obstacle.m_started && iSeconds > 0.f)
 			obstacle.m_velocity = planar(position - obstacle.m_lastPosition) * (1.f / iSeconds);
 		obstacle.m_lastPosition = position;
@@ -237,7 +220,7 @@ void tickNavAgents(Scene& ioScene, const SystemContext& iContext) {
 		Walker walker{.entity = entity,
 					  .agent = &entity.getComponent<component::NavAgent>(),
 					  .mesh = nullptr,
-					  .position = worldPosition(ioScene, entity),
+					  .position = getWorldPosition(ioScene, entity),
 					  .preferred = {},
 					  .onLink = false};
 		if (prepare(ioScene, walker))

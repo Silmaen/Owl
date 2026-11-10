@@ -227,6 +227,16 @@ auto ScriptInstance::callFunction(const std::string& iName, const uint64_t iEnti
 	return mp_impl->engine.callFunction(iName, mp_impl->handleOf(iEntityId));
 }
 
+auto ScriptInstance::callFunctionForValue(const std::string& iName, const uint64_t iEntityId,
+										  const float iSeconds) const -> std::optional<std::string> {
+	if (!isValid() || mp_impl->disabled)
+		return std::nullopt;
+	mp_impl->engine.setDeltaTime(static_cast<double>(iSeconds));
+	auto value = mp_impl->engine.callFunctionForValue(iName, mp_impl->handleOf(iEntityId), iSeconds);
+	mp_impl->checkQuota(iName, value.has_value());
+	return value;
+}
+
 // ---- Property access ----
 void ScriptInstance::setProperty(const std::string& iName, const float iValue) const {
 	if (!isValid())

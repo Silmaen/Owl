@@ -1596,11 +1596,11 @@
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 266451.0,
-      "p25_ns": 266381.0,
-      "p75_ns": 273644.5,
-      "min_ns": 264914.0,
-      "max_ns": 285169.0
+      "median_ns": 492534.0,
+      "p25_ns": 483419.0,
+      "p75_ns": 494943.0,
+      "min_ns": 481429.0,
+      "max_ns": 527664.0
     },
     {
       "name": "sample/load/victory",
@@ -3628,12 +3628,12 @@
     },
     {
       "name": "sample/entities/tavern_cellar",
-      "value": 23,
+      "value": 34,
       "unit": "entities"
     },
     {
       "name": "sample/file_bytes/tavern_cellar",
-      "value": 11436,
+      "value": 23183,
       "unit": "bytes"
     },
     {

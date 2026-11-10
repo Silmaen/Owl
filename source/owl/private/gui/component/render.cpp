@@ -34,6 +34,7 @@
 #include "scene/HudTheme.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
+#include "scene/ai/BehaviourTreeInstance.h"
 #include "scene/nav/NavBake.h"
 #include "scene/ui/HudLayout.h"
 #include "script/ScriptEngine.h"
@@ -5005,6 +5006,248 @@ void renderProps(NavLink& ioComponent) {
 	resetFloat("Cost Scale", ioComponent.costScale, defaults.costScale, 0.05f, 1.f, 100.f, "%.2f");
 	fieldTooltip("Cost of the crossing per unit of length (walking costs 1): higher makes the agents prefer to walk "
 				 "around.");
+}
+
+void renderProps(SteeringAgent& ioComponent) {
+	const SteeringAgent defaults;
+	resetCheckbox("Enabled", ioComponent.enabled, defaults.enabled);
+	fieldTooltip("Off leaves the agent where it is (Lua `entity.set_steering_enabled`).");
+	enumCombo("Plane", ioComponent.plane);
+	fieldTooltip("Plane2D: the (x, y) plane of a 2D scene. Ground: the (x, z) ground of a 3D scene. Space: the three "
+				 "axes, for ships, birds and fish.");
+	resetFloat("Max Speed", ioComponent.maxSpeed, defaults.maxSpeed, 0.05f, 0.f, 10000.f, "%.2f");
+	fieldTooltip("Highest speed, in world units per second.");
+	resetFloat("Max Acceleration", ioComponent.maxAcceleration, defaults.maxAcceleration, 0.1f, 0.01f, 100000.f,
+			   "%.1f");
+	fieldTooltip("Largest change of velocity per second: lower turns wider.");
+	resetFloat("Radius", ioComponent.radius, defaults.radius, 0.01f, 0.01f, 1000.f, "%.2f");
+	fieldTooltip("Radius of the agent, kept clear of the other agents and of the obstacles.");
+	resetCheckbox("Turn", ioComponent.turn, defaults.turn);
+	fieldTooltip("Turn the entity the way it moves: its front is +x in 2D, +z on the ground and in space.");
+
+	ImGui::SeparatorText("Target");
+	auto target = static_cast<uint64_t>(ioComponent.target);
+	prop::row("Target", [&](const char*) -> bool {
+		if (scriptEntityPicker(target, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.target = core::UUID{target};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Entity sought, fled, reached, pursued or evaded; none: the target point.");
+	drawVec3Control("Target Point", ioComponent.targetPoint);
+	fieldTooltip("World point sought, fled or reached when no target entity is set.");
+	resetFloat("Slow Radius", ioComponent.slowRadius, defaults.slowRadius, 0.05f, 0.f, 1000.f, "%.2f");
+	fieldTooltip("Distance from the target at which Arrive starts to slow down.");
+	resetFloat("Panic Distance", ioComponent.panicDistance, defaults.panicDistance, 0.1f, 0.f, 10000.f, "%.1f");
+	fieldTooltip("Distance under which Flee and Evade run away; 0: always.");
+	resetFloat("Prediction", ioComponent.prediction, defaults.prediction, 0.01f, 0.f, 60.f, "%.2f s");
+	fieldTooltip("Longest look ahead of Pursue and Evade, in seconds.");
+
+	ImGui::SeparatorText("Behaviours");
+	auto& weights = ioComponent.weights;
+	const auto& base = defaults.weights;
+	const auto weight = [](const char* iLabel, float& ioValue, const float iDefault, const char* iTooltip) -> void {
+		resetFloat(iLabel, ioValue, iDefault, 0.01f, 0.f, 100.f, "%.2f");
+		fieldTooltip(iTooltip);
+	};
+	weight("Seek", weights.seek, base.seek, "Go straight to the target. 0 leaves the behaviour out.");
+	weight("Flee", weights.flee, base.flee, "Run away from the target while it is closer than the panic distance.");
+	weight("Arrive", weights.arrive, base.arrive, "Go to the target and stop on it.");
+	weight("Pursue", weights.pursue, base.pursue, "Chase the point the target will reach.");
+	weight("Evade", weights.evade, base.evade, "Run away from the point the target will reach.");
+	weight("Wander", weights.wander, base.wander, "Stroll at random.");
+	weight("Separation", weights.separation, base.separation, "Keep away from the members of the flock.");
+	weight("Alignment", weights.alignment, base.alignment, "Head the way the members of the flock head.");
+	weight("Cohesion", weights.cohesion, base.cohesion, "Stay with the members of the flock.");
+	weight("Avoidance", weights.avoidance, base.avoidance,
+		   "Steer around the other steering agents and the Nav Obstacles in the way.");
+	weight("Formation", weights.formation, base.formation, "Hold the slot of the formation around the leader.");
+
+	ImGui::SeparatorText("Wander");
+	resetFloat("Wander Radius", ioComponent.wanderSettings.radius, defaults.wanderSettings.radius, 0.01f, 0.f, 100.f,
+			   "%.2f");
+	fieldTooltip("Radius of the circle (a sphere in space) the wander point moves on.");
+	resetFloat("Wander Distance", ioComponent.wanderSettings.distance, defaults.wanderSettings.distance, 0.01f, 0.f,
+			   100.f, "%.2f");
+	fieldTooltip("Distance of the circle ahead of the agent: longer walks straighter.");
+	resetFloat("Wander Jitter", ioComponent.wanderSettings.jitter, defaults.wanderSettings.jitter, 0.01f, 0.f, 100.f,
+			   "%.2f");
+	fieldTooltip("Largest turn of the wander point per second, in radians.");
+
+	ImGui::SeparatorText("Flock");
+	prop::InputText("Flock", &ioComponent.flock);
+	fieldTooltip("Name of the flock: the agents of the same flock flock together.");
+	resetFloat("Neighbour Radius", ioComponent.neighbourRadius, defaults.neighbourRadius, 0.05f, 0.f, 1000.f, "%.2f");
+	fieldTooltip("Distance under which the members of the flock are neighbours.");
+	resetFloat("Separation Distance", ioComponent.separationDistance, defaults.separationDistance, 0.01f, 0.f, 100.f,
+			   "%.2f");
+	fieldTooltip("Gap between two members under which Separation pushes them apart.");
+	resetFloat("Look Ahead", ioComponent.lookAhead, defaults.lookAhead, 0.01f, 0.f, 30.f, "%.2f s");
+	fieldTooltip("Time ahead Avoidance looks for a collision, in seconds.");
+
+	ImGui::SeparatorText("Formation");
+	auto leader = static_cast<uint64_t>(ioComponent.leader);
+	prop::row("Leader", [&](const char*) -> bool {
+		if (scriptEntityPicker(leader, ImGui::GetContentRegionAvail().x)) {
+			ioComponent.leader = core::UUID{leader};
+			return true;
+		}
+		return false;
+	});
+	fieldTooltip("Entity leading the formation; none: no formation.");
+	drawVec3Control("Slot", ioComponent.slot);
+	fieldTooltip("Place of the agent in the formation, in the frame of the leader (its front is +z, +x in 2D).");
+}
+
+namespace {
+
+auto statusName(const scene::ai::NodeStatus iStatus) -> const char* {
+	switch (iStatus) {
+		case scene::ai::NodeStatus::Idle:
+			return "Idle";
+		case scene::ai::NodeStatus::Running:
+			return "Running";
+		case scene::ai::NodeStatus::Success:
+			return "Success";
+		case scene::ai::NodeStatus::Failure:
+			return "Failure";
+	}
+	return "";
+}
+
+// An editor of a blackboard value of any kind; true when it changed.
+auto blackboardValueField(const char* iLabel, scene::ai::BlackboardValue& ioValue) -> bool {
+	using scene::ai::BlackboardType;
+	switch (scene::ai::getBlackboardType(ioValue)) {
+		case BlackboardType::Bool:
+			return prop::Checkbox(iLabel, &std::get<bool>(ioValue));
+		case BlackboardType::Number:
+			{
+				auto number = static_cast<float>(std::get<double>(ioValue));
+				if (!prop::DragFloat(iLabel, &number, 0.05f, -1e9f, 1e9f, "%.3f"))
+					return false;
+				ioValue = static_cast<double>(number);
+				return true;
+			}
+		case BlackboardType::String:
+			return prop::InputText(iLabel, &std::get<std::string>(ioValue));
+		case BlackboardType::Entity:
+			{
+				auto target = static_cast<uint64_t>(std::get<core::UUID>(ioValue));
+				return prop::row(iLabel, [&](const char*) -> bool {
+					if (!scriptEntityPicker(target, ImGui::GetContentRegionAvail().x))
+						return false;
+					ioValue = core::UUID{target};
+					return true;
+				});
+			}
+		case BlackboardType::Vector:
+			{
+				const auto before = std::get<math::vec3>(ioValue);
+				drawVec3Control(iLabel, std::get<math::vec3>(ioValue));
+				return (std::get<math::vec3>(ioValue) - before).normSq() > 0.f;
+			}
+	}
+	return false;
+}
+
+
+// The Lua functions the leaves of a tree call, each with the script that defines it: the entity's, else the scene's.
+void treeFunctionRows(const BehaviourTreeAgent& iComponent, const scene::ai::BehaviourTree& iTree) {
+	std::vector<std::string> names;
+	for (const auto& node: iTree.nodes)
+		if (node.type == "action.lua" || node.type == "condition.lua")
+			if (auto name = scene::ai::BehaviourTree::getValue(node, "function");
+				!name.empty() && !std::ranges::contains(names, name))
+				names.push_back(std::move(name));
+	const Scene* scene = inspectedScene();
+	if (names.empty() || scene == nullptr)
+		return;
+	std::string entityScript;
+	for (const auto view = scene->registry.view<BehaviourTreeAgent>(); const auto handle: view)
+		if (&view.get<BehaviourTreeAgent>(handle) == &iComponent && scene->registry.all_of<LuaScript>(handle))
+			entityScript = scene->registry.get<LuaScript>(handle).scriptPath;
+	ImGui::SeparatorText("Lua Functions");
+	for (const auto& name: names) {
+		ImGui::PushID(name.c_str());
+		bool found = false;
+		for (const std::string* path:
+			 {static_cast<const std::string*>(&entityScript), &scene->getSceneScript().scriptPath}) {
+			if (path->empty())
+				continue;
+			if (const auto* function = findFunction(scriptFunctionsOf(*path), name); function != nullptr) {
+				ImGui::TextDisabled("%s: %s, line %u", name.c_str(), path->c_str(), function->line);
+				ImGui::SameLine();
+				openFunctionButton("##open", *path, function->line);
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+			widgets::notice(
+					std::format("Neither the script of this entity nor the scene script defines {}.", name).c_str());
+		ImGui::PopID();
+	}
+}
+
+}// namespace
+
+void renderProps(BehaviourTreeAgent& ioComponent) {
+	const BehaviourTreeAgent defaults;
+	resetCheckbox("Enabled", ioComponent.enabled, defaults.enabled);
+	fieldTooltip("Off stops the tree and its walk (Lua `entity.set_behaviour_tree_enabled`).");
+	if (assetPathRow("Tree", ioComponent.tree, "drop a .owlbt", "Open the tree in its editor."))
+		ioComponent.tree.clear();
+	if (std::filesystem::path dropped; extensionDropTarget({".owlbt"}, dropped))
+		ioComponent.tree = dropped.generic_string();
+	fieldTooltip("Behaviour tree the entity runs, ticked after the scripts on the fixed tick.");
+	shared<const scene::ai::BehaviourTree> tree;
+	if (!ioComponent.tree.empty() && app::Application::instanced())
+		tree = app::Application::get().getEngineContext().getBehaviourTrees().get(ioComponent.tree);
+	if (!ioComponent.tree.empty() && !tree)
+		ImGui::TextDisabled("The tree cannot be read.");
+	if (tree && !tree->blackboard.empty()) {
+		ImGui::SeparatorText("Blackboard");
+		for (const auto& key: tree->blackboard) {
+			ImGui::PushID(key.name.c_str());
+			auto found = std::ranges::find(ioComponent.overrides, key.name, &scene::ai::BlackboardKey::name);
+			bool overridden = found != ioComponent.overrides.end() && found->value.index() == key.value.index();
+			if (prop::Checkbox(std::format("Set {}", key.name).c_str(), &overridden)) {
+				if (overridden && found == ioComponent.overrides.end())
+					ioComponent.overrides.push_back({.name = key.name, .value = key.value, .description = {}});
+				else if (overridden)
+					found->value = key.value;
+				else if (found != ioComponent.overrides.end())
+					ioComponent.overrides.erase(found);
+				found = std::ranges::find(ioComponent.overrides, key.name, &scene::ai::BlackboardKey::name);
+			}
+			fieldTooltip(key.description.empty() ? "Start this key at the value below instead of the tree's."
+												 : key.description.c_str());
+			if (overridden && found != ioComponent.overrides.end())
+				std::ignore = blackboardValueField(key.name.c_str(), found->value);
+			else
+				std::ignore = prop::row(key.name.c_str(), [&](const char*) -> bool {
+					ImGui::TextDisabled("%s", scene::ai::toText(key.value).c_str());
+					return false;
+				});
+			ImGui::PopID();
+		}
+	}
+	if (tree)
+		treeFunctionRows(ioComponent, *tree);
+	if (const auto& instance = ioComponent.m_instance; instance) {
+		ImGui::SeparatorText("Running");
+		std::ignore = prop::row("Status", [&](const char*) -> bool {
+			ImGui::TextUnformatted(statusName(instance->getStatus()));
+			return false;
+		});
+		for (const auto& [name, value]: instance->getBlackboard())
+			std::ignore = prop::row(name.c_str(), [&](const char*) -> bool {
+				ImGui::TextUnformatted(scene::ai::toText(value).c_str());
+				return false;
+			});
+	}
 }
 
 void renderProps(SequencePlayer& ioComponent) {

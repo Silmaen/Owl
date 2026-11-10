@@ -43,6 +43,7 @@ Groups:
       - doc/pages/dialogues.md
       - doc/pages/sequences.md
       - doc/pages/pathfinding.md
+      - doc/pages/ai.md
       - doc/pages/pcg_graphs.md
   - title: Sample games
     pages:
@@ -70,6 +71,7 @@ Groups:
       - doc/pages/lua-api-raycast.md
       - doc/pages/lua-api-isometric.md
       - doc/pages/lua-api-navigation.md
+      - doc/pages/lua-api-ai.md
       - doc/pages/lua-api-animation.md
       - doc/pages/lua-api-data.md
       - doc/pages/lua-api-dialogue.md

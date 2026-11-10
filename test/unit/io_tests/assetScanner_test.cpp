@@ -1058,3 +1058,20 @@ TEST_F(AssetScannerTest, ScanSceneFollowsPlanetGraphsAndWorldCells) {
 	EXPECT_TRUE(names("pcg/none.owlpcg"));
 	EXPECT_TRUE(names("scenes/cells/none.owl"));
 }
+
+TEST_F(AssetScannerTest, ScanSceneFollowsTheTreeOfABehaviourTreeAgent) {
+	const auto scenePath = m_tempDir / "guards.owl";
+	writeFile(scenePath, "Scene: guards\n"
+						 "Entities:\n"
+						 "  - Entity: 1\n"
+						 "    BehaviourTreeAgent:\n"
+						 "      tree: ai/none.owlbt\n"
+						 "  - Entity: 2\n"
+						 "    BehaviourTreeAgent:\n"
+						 "      tree: \"\"\n");
+	std::vector<std::string> warnings;
+	std::ignore = AssetScanner::scanScene(scenePath, &warnings);
+	EXPECT_EQ(std::ranges::count_if(warnings,
+									[](const std::string& iWarning) -> bool { return iWarning.contains(".owlbt"); }),
+			  1);
+}

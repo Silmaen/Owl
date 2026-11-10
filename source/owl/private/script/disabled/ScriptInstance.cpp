@@ -88,6 +88,12 @@ auto ScriptInstance::callFunction([[maybe_unused]] const std::string& iName,
 	return false;
 }
 
+auto ScriptInstance::callFunctionForValue([[maybe_unused]] const std::string& iName,
+										  [[maybe_unused]] const uint64_t iEntityId,
+										  [[maybe_unused]] const float iSeconds) const -> std::optional<std::string> {
+	return std::nullopt;
+}
+
 auto ScriptInstance::getDeclaredProperties() const -> std::vector<ScriptProperty> { return {}; }
 
 void ScriptInstance::setProperty([[maybe_unused]] const ScriptProperty& iProperty) const {}

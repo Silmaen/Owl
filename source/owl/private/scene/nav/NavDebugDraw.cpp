@@ -16,6 +16,7 @@
 #include "scene/TilemapAsset.h"
 #include "scene/TilemapTerrain.h"
 #include "scene/component/NavMeshVolume.h"
+#include "scene/component/SteeringAgent.h"
 #include "scene/component/Tilemap.h"
 #include "scene/component/WalkArea.h"
 #include "scene/nav/NavBake.h"
@@ -340,6 +341,46 @@ void drawLink(const NavMeshLink& iLink, const math::vec4& iColor) {
 	drawLine(iLink.end, iLink.end + back - side, iColor);
 }
 
+
+// A circle on the plane of a steering agent: (x, y) in 2D, (x, z) on the ground and in space.
+void drawPlaneCircle(const math::vec3& iCentre, const float iRadius, const ai::SteeringPlane iPlane,
+					 const math::vec4& iColor) {
+	if (iPlane != ai::SteeringPlane::Plane2D) {
+		drawCircle(iCentre, iRadius, iColor);
+		return;
+	}
+	constexpr size_t segments = 16;
+	for (size_t index = 0; index < segments; ++index) {
+		const float a0 = 2.f * std::numbers::pi_v<float> * static_cast<float>(index) / static_cast<float>(segments);
+		const float a1 = 2.f * std::numbers::pi_v<float> * static_cast<float>(index + 1) / static_cast<float>(segments);
+		drawLine(iCentre + math::vec3{iRadius * std::cos(a0), iRadius * std::sin(a0), 0.f},
+				 iCentre + math::vec3{iRadius * std::cos(a1), iRadius * std::sin(a1), 0.f}, iColor);
+	}
+}
+
+// Every steering agent: its radius, its velocity (one second ahead) and the line to its slot in a formation.
+void drawSteeringAgents(Scene& ioScene) {
+	constexpr math::vec4 agentColor{0.55f, 1.f, 0.45f, 1.f};
+	constexpr math::vec4 slotColor{0.55f, 1.f, 0.45f, 0.4f};
+	for (const auto view = ioScene.registry.view<component::SteeringAgent>(); const auto handle: view) {
+		const auto& agent = view.get<component::SteeringAgent>(handle);
+		const math::mat4 world = ioScene.getWorldTransform(Entity{handle, &ioScene})();
+		const math::vec3 centre{world(0, 3), world(1, 3), world(2, 3)};
+		drawPlaneCircle(centre, agent.radius, agent.plane, agentColor);
+		if (agent.plane == ai::SteeringPlane::Space)
+			drawPlaneCircle(centre, agent.radius, ai::SteeringPlane::Plane2D, agentColor);
+		if (agent.m_velocity.normSq() > 1e-4f)
+			drawLine(centre, centre + agent.m_velocity, agentColor);
+		if (agent.leader == core::UUID{0} || agent.weights.formation <= 0.f)
+			continue;
+		if (const Entity leader = ioScene.findEntityByUUID(agent.leader); leader) {
+			const math::mat4 lead = ioScene.getWorldTransform(leader)();
+			const math::vec4 slot = lead * math::vec4{agent.slot.x(), agent.slot.y(), agent.slot.z(), 1.f};
+			drawLine(centre, {slot.x(), slot.y(), slot.z()}, slotColor);
+		}
+	}
+}
+
 }// namespace
 
 void drawNavMeshes(Scene& ioScene) {
@@ -400,6 +441,7 @@ void drawNavMeshes(Scene& ioScene) {
 			previous = agent.m_path[index].position;
 		}
 	}
+	drawSteeringAgents(ioScene);
 }
 
 }// namespace owl::scene::nav

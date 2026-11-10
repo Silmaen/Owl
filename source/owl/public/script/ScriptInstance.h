@@ -212,6 +212,18 @@ public:
 	 */
 	[[nodiscard]] auto callFunction(const std::string& iName, uint64_t iEntityId) const -> bool;
 
+	/**
+	 * @brief
+	 *  Call a named function with an entity and a duration, and read what it returns (a behaviour tree leaf).
+	 * @param[in] iName The function name.
+	 * @param[in] iEntityId UUID of the entity, passed first as its handle.
+	 * @param[in] iSeconds Duration passed second, in seconds.
+	 * @return The first returned value as `tostring` writes it (`nil` when it returns nothing); none when the function
+	 *  is missing or failed.
+	 */
+	[[nodiscard]] auto callFunctionForValue(const std::string& iName, uint64_t iEntityId, float iSeconds) const
+			-> std::optional<std::string>;
+
 	// ---- Property access ----
 	/**
 	 * @brief

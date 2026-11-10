@@ -41,6 +41,21 @@ User guide: [Pathfinding](../pathfinding.md#pathfinding-navmesh).
 | Tick       | `owl.nav_agents` in `PrePhysics`, fixed tick only, agents in UUID order                        |
 | Editor     | Inspector with a Bake button, `nav.bake` command, pickable markers, overlay                    |
 
+User guide: [AI: steering and behaviour trees](../ai.md).
+
+| Decision             | Choice                                                                                                               |
+|----------------------|----------------------------------------------------------------------------------------------------------------------|
+| Library              | In-house: no dependency, the same bits on every target                                                               |
+| Asset                | `.owlbt` YAML: nodes with their canvas position, links parent to child, blackboard keys with their start value       |
+| Run order            | `owl.behaviour_trees` in `Scripts` after `owl.scripts`, fixed tick, agents in UUID order; Running resumes the node   |
+| Reactivity           | A reactive Selector tries the upper children again each tick and halts the running one; Guard checks a key each tick |
+| Leaves               | Nodes of a fixed catalogue (`getNodeTypes()`); custom ones are Lua functions called with `(entity, dt)`              |
+| Determinism          | Random draws from the scene streams `owl.behaviour_trees` and `owl.steering`                                         |
+| Editor               | `.owlbt` tab on the node graph canvas, `bt.*` commands, live node status and blackboard in Play                      |
+| Steering combination | Weighted sum of the behaviours, times a response rate, kept under `maxAcceleration` then `maxSpeed`                  |
+| Avoidance            | Closest approach of moving spheres within `lookAhead`, other agents and `NavObstacle`s, in the three planes          |
+| Formations           | A slot in the frame of the leader, reached with `arrive` plus the velocity of the leader                             |
+
 ## Audio
 
 - Audio mixer

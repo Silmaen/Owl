@@ -246,6 +246,10 @@ auto entityKind(const scene::Entity& iEntity, const bool iHasChildren) -> Entity
 		return {gui::icon::box, 0xffa94d};
 	if (iEntity.hasComponent<NavAgent>())
 		return {gui::icon::user, 0xf2d24b};
+	if (iEntity.hasComponent<BehaviourTreeAgent>())
+		return {gui::icon::workflow, 0xf2d24b};
+	if (iEntity.hasComponent<SteeringAgent>())
+		return {gui::icon::rabbit, 0xf2d24b};
 	if (iEntity.hasComponent<VoxelWorld>())
 		return {gui::icon::cuboid, 0xe8c15a};
 	if (iEntity.hasComponent<Player>() || iEntity.hasComponent<VoxelPlayer>())

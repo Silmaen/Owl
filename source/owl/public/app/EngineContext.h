@@ -15,6 +15,7 @@
 #include "data/table/DataTableLibrary.h"
 #include "input/ActionMap.h"
 #include "scene/SimulationClock.h"
+#include "scene/ai/BehaviourTreeLibrary.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -182,6 +183,13 @@ public:
 
 	/**
 	 * @brief
+	 *  The `.owlbt` behaviour trees read so far, shared by the agents of every scene.
+	 * @return The behaviour tree library.
+	 */
+	[[nodiscard]] auto getBehaviourTrees() -> scene::ai::BehaviourTreeLibrary& { return m_behaviourTrees; }
+
+	/**
+	 * @brief
 	 *  HUD asset of the scenes that name none (the project's `DefaultHud`).
 	 * @return The asset path, empty for no default HUD.
 	 */
@@ -310,6 +318,8 @@ private:
 	data::dialogue::DialogueLibrary m_dialogues;
 	/// Cutscene sequences of the players.
 	data::sequence::SequenceLibrary m_sequences;
+	/// Behaviour trees of the agents.
+	scene::ai::BehaviourTreeLibrary m_behaviourTrees;
 	/// Loaded HUD scenes (declared last: they hold GPU resources and are destroyed first).
 	uniq<scene::HudLibrary> mp_hudLibrary;
 };

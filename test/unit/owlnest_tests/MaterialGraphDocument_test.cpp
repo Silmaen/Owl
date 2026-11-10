@@ -48,6 +48,8 @@ public:
 
 	auto openSequence(const std::filesystem::path& /*iPath*/) -> SequenceEditor* override { return nullptr; }
 
+	auto openBehaviourTree(const std::filesystem::path& /*iPath*/) -> BehaviourTreeEditor* override { return nullptr; }
+
 	auto openHudTheme(const std::filesystem::path& /*iPath*/) -> HudThemeEditor* override { return nullptr; }
 
 	auto openMaterial(const std::filesystem::path& iPath) -> MaterialEditor* override {

@@ -7,28 +7,29 @@
 Every file you open is a document: a tab in the centre with its own undo history, its unsaved-changes dot and, for a
 scene, its own Play state. The ribbon's last tab holds the commands of the active document.
 
-| Document      | Files                                       | Page or section                                                            |
-|---------------|---------------------------------------------|----------------------------------------------------------------------------|
-| Scene         | `.owl`                                      | [Viewport](editor_viewport.md), [Hierarchy and inspector](editor_scene.md) |
-| Prefab        | `.owlprefab`                                | [Prefabs](editor_scene.md#prefabs)                                         |
-| HUD           | `.owlhud`                                   | [HUD editor](editor_hud.md)                                                |
-| Tilemap       | `.owltilemap`                               | [Tilemaps and tilesets](editor_tilemaps.md)                                |
-| Tileset       | `.owltileset`                               | [Tilemaps and tilesets](editor_tilemaps.md)                                |
-| Code          | `.lua`, `.slang`, `.py`, `.json`, `.yml`... | [Code and text](#code-and-text)                                            |
-| Node graph    | `.owlflow`                                  | [Node graphs](#node-graphs)                                                |
-| Visual script | `.owlvs`                                    | [Visual scripts](visual-scripts.md)                                        |
-| PCG graph     | `.owlpcg`                                   | [PCG graphs](pcg_graphs.md)                                                |
-| Animation     | `.owlanim`                                  | [Animation clips](#animation-clips)                                        |
-| Material      | `.owlmat`                                   | [Materials](#materials)                                                    |
-| Sound cue     | `.owlsound`                                 | [Sound cues](#sound-cues)                                                  |
-| Localisation  | `localisation.yml`                          | [Localisation](languages.md)                                               |
-| Data table    | `.owltable`                                 | [Data tables](data_tables.md#data-tables-editor)                           |
-| Dialogue      | `.owldlg`                                   | [Dialogues](dialogues.md#dialogues-editor)                                 |
-| Sequence      | `.owlseq`                                   | [Cutscene sequences](sequences.md#sequences-editor)                        |
-| Image         | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | [Image viewer](#image-viewer)                                              |
-| Mesh          | `.gltf`, `.glb`, `.obj`                     | [Mesh viewer](#mesh-viewer)                                                |
-| Font          | `.ttf`, `.otf`, `.owlfont`                  | [Fonts](#fonts)                                                            |
-| Action map    | `input_actions.yml`                         | [Input actions](#editor-action-map)                                        |
+| Document       | Files                                       | Page or section                                                            |
+|----------------|---------------------------------------------|----------------------------------------------------------------------------|
+| Scene          | `.owl`                                      | [Viewport](editor_viewport.md), [Hierarchy and inspector](editor_scene.md) |
+| Prefab         | `.owlprefab`                                | [Prefabs](editor_scene.md#prefabs)                                         |
+| HUD            | `.owlhud`                                   | [HUD editor](editor_hud.md)                                                |
+| Tilemap        | `.owltilemap`                               | [Tilemaps and tilesets](editor_tilemaps.md)                                |
+| Tileset        | `.owltileset`                               | [Tilemaps and tilesets](editor_tilemaps.md)                                |
+| Code           | `.lua`, `.slang`, `.py`, `.json`, `.yml`... | [Code and text](#code-and-text)                                            |
+| Node graph     | `.owlflow`                                  | [Node graphs](#node-graphs)                                                |
+| Visual script  | `.owlvs`                                    | [Visual scripts](visual-scripts.md)                                        |
+| PCG graph      | `.owlpcg`                                   | [PCG graphs](pcg_graphs.md)                                                |
+| Behaviour tree | `.owlbt`                                    | [AI](ai.md#ai-editor)                                                      |
+| Animation      | `.owlanim`                                  | [Animation clips](#animation-clips)                                        |
+| Material       | `.owlmat`                                   | [Materials](#materials)                                                    |
+| Sound cue      | `.owlsound`                                 | [Sound cues](#sound-cues)                                                  |
+| Localisation   | `localisation.yml`                          | [Localisation](languages.md)                                               |
+| Data table     | `.owltable`                                 | [Data tables](data_tables.md#data-tables-editor)                           |
+| Dialogue       | `.owldlg`                                   | [Dialogues](dialogues.md#dialogues-editor)                                 |
+| Sequence       | `.owlseq`                                   | [Cutscene sequences](sequences.md#sequences-editor)                        |
+| Image          | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`     | [Image viewer](#image-viewer)                                              |
+| Mesh           | `.gltf`, `.glb`, `.obj`                     | [Mesh viewer](#mesh-viewer)                                                |
+| Font           | `.ttf`, `.otf`, `.owlfont`                  | [Fonts](#fonts)                                                            |
+| Action map     | `input_actions.yml`                         | [Input actions](#editor-action-map)                                        |
 
 - The active document is the one whose tab or content was clicked last. The Hierarchy and Properties panels show
   what it offers (a scene's entities, a tileset's tiles, a visual script's nodes and variables), or an empty state.

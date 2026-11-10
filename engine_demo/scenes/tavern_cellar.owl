@@ -36,6 +36,7 @@ Entities:
     FirstPersonController: {enabled: true, walkSpeed: 2.2, runSpeed: 4, lookSpeed: 1.8, mouseSensitivity: 0.0025, captureCursor: true, eyeHeight: 1.6, height: 1.75, radius: 0.25, stepHeight: 0.3, gravity: 9.81, jumpSpeed: 0}
     Visibility:
       gameVisible: true
+    NavObstacle: {radius: 0.35, height: 1}
   - Entity: 3950000000000000002
     Tag:
       tag: Lantern
@@ -224,6 +225,7 @@ Entities:
       Name: mesh_world
     Visibility:
       gameVisible: true
+    NavObstacle: {radius: 0.35, height: 1}
   - Entity: 3950000000000000031
     Tag:
       tag: Barrel2
@@ -241,6 +243,7 @@ Entities:
       Name: mesh_world
     Visibility:
       gameVisible: true
+    NavObstacle: {radius: 0.35, height: 1}
   - Entity: 3950000000000000032
     Tag:
       tag: Barrel3
@@ -258,6 +261,7 @@ Entities:
       Name: mesh_world
     Visibility:
       gameVisible: true
+    NavObstacle: {radius: 0.35, height: 1}
   - Entity: 3950000000000000033
     Tag:
       tag: Barrel4
@@ -275,6 +279,7 @@ Entities:
       Name: mesh_world
     Visibility:
       gameVisible: true
+    NavObstacle: {radius: 0.35, height: 1}
   - Entity: 3950000000000000034
     Tag:
       tag: Barrel5
@@ -292,6 +297,7 @@ Entities:
       Name: mesh_world
     Visibility:
       gameVisible: true
+    NavObstacle: {radius: 0.35, height: 1}
   - Entity: 3950000000000000035
     Tag:
       tag: Barrel6
@@ -309,6 +315,7 @@ Entities:
       Name: mesh_world
     Visibility:
       gameVisible: true
+    NavObstacle: {radius: 0.35, height: 1}
   - Entity: 3950000000000000040
     Tag:
       tag: LogStack
@@ -326,6 +333,7 @@ Entities:
       Name: mesh_world
     Visibility:
       gameVisible: true
+    NavObstacle: {radius: 0.5, height: 1}
   - Entity: 3950000000000000041
     Tag:
       tag: Chest
@@ -346,6 +354,7 @@ Entities:
       scriptPath: gid:a4fa9fe6d7fdd5c1:scripts/tavern/treasure_chest.owlvs
     Visibility:
       gameVisible: true
+    NavObstacle: {radius: 0.5, height: 1}
   - Entity: 3950000000000000042
     Tag:
       tag: ChestIron
@@ -415,3 +424,409 @@ Entities:
       properties:
         - {name: hint, type: string, value: HudHint}
         - {name: duration, type: float, value: 4.5}
+  - Entity: 3950000000000000050
+    Tag:
+      tag: Rat1
+    Transform:
+      translation: [-1.5, 0, -1.2]
+      rotation: [0, 0.4, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:c614905b0c4b5932:meshes/tavern/rat.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    LuaScript:
+      scriptPath: gid:540147c38c95b46a:scripts/tavern/cellar_rat.lua
+    SteeringAgent:
+      enabled: true
+      plane: Ground
+      maxSpeed: 2.6
+      maxAcceleration: 10
+      radius: 0.15
+      turn: true
+      target: 0
+      targetPoint: [-1.5, 0, -1.2]
+      weights: {seek: 0, flee: 0, arrive: 0, pursue: 0, evade: 0, wander: 0, separation: 1, alignment: 0, cohesion: 0, avoidance: 1, formation: 0}
+      slowRadius: 0.6
+      panicDistance: 8
+      prediction: 0.6
+      wander: {radius: 0.6, distance: 1, jitter: 3}
+      flock: rats
+      neighbourRadius: 1.5
+      separationDistance: 0.3
+      lookAhead: 1
+      leader: 0
+      slot: [0, 0, -2]
+    BehaviourTreeAgent:
+      enabled: true
+      tree: gid:876c3d32cf135c89:scripts/tavern/cellar_rat.owlbt
+      overrides:
+        - {name: home, type: Vector, value: "-1.5, 0, -1.2"}
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000051
+    Tag:
+      tag: Rat2
+    Transform:
+      translation: [1.6, 0, -1.6]
+      rotation: [0, 2.2, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:c614905b0c4b5932:meshes/tavern/rat.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    LuaScript:
+      scriptPath: gid:540147c38c95b46a:scripts/tavern/cellar_rat.lua
+    SteeringAgent:
+      enabled: true
+      plane: Ground
+      maxSpeed: 2.6
+      maxAcceleration: 10
+      radius: 0.15
+      turn: true
+      target: 0
+      targetPoint: [1.6, 0, -1.6]
+      weights: {seek: 0, flee: 0, arrive: 0, pursue: 0, evade: 0, wander: 0, separation: 1, alignment: 0, cohesion: 0, avoidance: 1, formation: 0}
+      slowRadius: 0.6
+      panicDistance: 8
+      prediction: 0.6
+      wander: {radius: 0.6, distance: 1, jitter: 3}
+      flock: rats
+      neighbourRadius: 1.5
+      separationDistance: 0.3
+      lookAhead: 1
+      leader: 0
+      slot: [0, 0, -2]
+    BehaviourTreeAgent:
+      enabled: true
+      tree: gid:876c3d32cf135c89:scripts/tavern/cellar_rat.owlbt
+      overrides:
+        - {name: home, type: Vector, value: "1.6, 0, -1.6"}
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000052
+    Tag:
+      tag: Rat3
+    Transform:
+      translation: [-1.4, 0, 1.2]
+      rotation: [0, 4.0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:c614905b0c4b5932:meshes/tavern/rat.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    LuaScript:
+      scriptPath: gid:540147c38c95b46a:scripts/tavern/cellar_rat.lua
+    SteeringAgent:
+      enabled: true
+      plane: Ground
+      maxSpeed: 2.6
+      maxAcceleration: 10
+      radius: 0.15
+      turn: true
+      target: 0
+      targetPoint: [-1.4, 0, 1.2]
+      weights: {seek: 0, flee: 0, arrive: 0, pursue: 0, evade: 0, wander: 0, separation: 1, alignment: 0, cohesion: 0, avoidance: 1, formation: 0}
+      slowRadius: 0.6
+      panicDistance: 8
+      prediction: 0.6
+      wander: {radius: 0.6, distance: 1, jitter: 3}
+      flock: rats
+      neighbourRadius: 1.5
+      separationDistance: 0.3
+      lookAhead: 1
+      leader: 0
+      slot: [0, 0, -2]
+    BehaviourTreeAgent:
+      enabled: true
+      tree: gid:876c3d32cf135c89:scripts/tavern/cellar_rat.owlbt
+      overrides:
+        - {name: home, type: Vector, value: "-1.4, 0, 1.2"}
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000053
+    Tag:
+      tag: Ratling1
+    Transform:
+      translation: [-1.8, 0, -1.6]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 0.6]
+    MeshRenderer:
+      mesh: gid:c614905b0c4b5932:meshes/tavern/rat.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    SteeringAgent:
+      enabled: true
+      plane: Ground
+      maxSpeed: 3.2
+      maxAcceleration: 14
+      radius: 0.1
+      turn: true
+      target: 0
+      targetPoint: [0, 0, 0]
+      weights: {seek: 0, flee: 0, arrive: 0, pursue: 0, evade: 0, wander: 0, separation: 0.5, alignment: 0, cohesion: 0, avoidance: 0.5, formation: 1}
+      slowRadius: 0.5
+      panicDistance: 8
+      prediction: 1
+      wander: {radius: 1, distance: 2, jitter: 2}
+      flock: rats
+      neighbourRadius: 1
+      separationDistance: 0.1
+      lookAhead: 0.8
+      leader: 3950000000000000050
+      slot: [-0.25, 0, -0.4]
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000054
+    Tag:
+      tag: Ratling2
+    Transform:
+      translation: [-1.2, 0, -1.6]
+      rotation: [0, 0, 0]
+      scale: [0.6, 0.6, 0.6]
+    MeshRenderer:
+      mesh: gid:c614905b0c4b5932:meshes/tavern/rat.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    SteeringAgent:
+      enabled: true
+      plane: Ground
+      maxSpeed: 3.2
+      maxAcceleration: 14
+      radius: 0.1
+      turn: true
+      target: 0
+      targetPoint: [0, 0, 0]
+      weights: {seek: 0, flee: 0, arrive: 0, pursue: 0, evade: 0, wander: 0, separation: 0.5, alignment: 0, cohesion: 0, avoidance: 0.5, formation: 1}
+      slowRadius: 0.5
+      panicDistance: 8
+      prediction: 1
+      wander: {radius: 1, distance: 2, jitter: 2}
+      flock: rats
+      neighbourRadius: 1
+      separationDistance: 0.1
+      lookAhead: 0.8
+      leader: 3950000000000000050
+      slot: [0.25, 0, -0.4]
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000060
+    Tag:
+      tag: Bat1
+    Transform:
+      translation: [1.5, 2.4, 0.0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:82dd12cd34c1def9:meshes/tavern/bat.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    SteeringAgent:
+      enabled: true
+      plane: Space
+      maxSpeed: 2
+      maxAcceleration: 8
+      radius: 0.12
+      turn: true
+      target: 0
+      targetPoint: [0.5, 2.4, 0]
+      weights: {seek: 0, flee: 0, arrive: 0.6, pursue: 0, evade: 0, wander: 0.8, separation: 1.5, alignment: 0.8, cohesion: 0.8, avoidance: 1, formation: 0}
+      slowRadius: 2
+      panicDistance: 8
+      prediction: 1
+      wander: {radius: 0.8, distance: 1.2, jitter: 4}
+      flock: bats
+      neighbourRadius: 1.5
+      separationDistance: 0.25
+      lookAhead: 1
+      leader: 0
+      slot: [0, 0, -2]
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000061
+    Tag:
+      tag: Bat2
+    Transform:
+      translation: [1.0, 2.55, 0.87]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:82dd12cd34c1def9:meshes/tavern/bat.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    SteeringAgent:
+      enabled: true
+      plane: Space
+      maxSpeed: 2
+      maxAcceleration: 8
+      radius: 0.12
+      turn: true
+      target: 0
+      targetPoint: [0.5, 2.4, 0]
+      weights: {seek: 0, flee: 0, arrive: 0.6, pursue: 0, evade: 0, wander: 0.8, separation: 1.5, alignment: 0.8, cohesion: 0.8, avoidance: 1, formation: 0}
+      slowRadius: 2
+      panicDistance: 8
+      prediction: 1
+      wander: {radius: 0.8, distance: 1.2, jitter: 4}
+      flock: bats
+      neighbourRadius: 1.5
+      separationDistance: 0.25
+      lookAhead: 1
+      leader: 0
+      slot: [0, 0, -2]
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000062
+    Tag:
+      tag: Bat3
+    Transform:
+      translation: [0.0, 2.4, 0.87]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:82dd12cd34c1def9:meshes/tavern/bat.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    SteeringAgent:
+      enabled: true
+      plane: Space
+      maxSpeed: 2
+      maxAcceleration: 8
+      radius: 0.12
+      turn: true
+      target: 0
+      targetPoint: [0.5, 2.4, 0]
+      weights: {seek: 0, flee: 0, arrive: 0.6, pursue: 0, evade: 0, wander: 0.8, separation: 1.5, alignment: 0.8, cohesion: 0.8, avoidance: 1, formation: 0}
+      slowRadius: 2
+      panicDistance: 8
+      prediction: 1
+      wander: {radius: 0.8, distance: 1.2, jitter: 4}
+      flock: bats
+      neighbourRadius: 1.5
+      separationDistance: 0.25
+      lookAhead: 1
+      leader: 0
+      slot: [0, 0, -2]
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000063
+    Tag:
+      tag: Bat4
+    Transform:
+      translation: [-0.5, 2.55, 0.0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:82dd12cd34c1def9:meshes/tavern/bat.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    SteeringAgent:
+      enabled: true
+      plane: Space
+      maxSpeed: 2
+      maxAcceleration: 8
+      radius: 0.12
+      turn: true
+      target: 0
+      targetPoint: [0.5, 2.4, 0]
+      weights: {seek: 0, flee: 0, arrive: 0.6, pursue: 0, evade: 0, wander: 0.8, separation: 1.5, alignment: 0.8, cohesion: 0.8, avoidance: 1, formation: 0}
+      slowRadius: 2
+      panicDistance: 8
+      prediction: 1
+      wander: {radius: 0.8, distance: 1.2, jitter: 4}
+      flock: bats
+      neighbourRadius: 1.5
+      separationDistance: 0.25
+      lookAhead: 1
+      leader: 0
+      slot: [0, 0, -2]
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000064
+    Tag:
+      tag: Bat5
+    Transform:
+      translation: [-0.0, 2.4, -0.87]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:82dd12cd34c1def9:meshes/tavern/bat.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    SteeringAgent:
+      enabled: true
+      plane: Space
+      maxSpeed: 2
+      maxAcceleration: 8
+      radius: 0.12
+      turn: true
+      target: 0
+      targetPoint: [0.5, 2.4, 0]
+      weights: {seek: 0, flee: 0, arrive: 0.6, pursue: 0, evade: 0, wander: 0.8, separation: 1.5, alignment: 0.8, cohesion: 0.8, avoidance: 1, formation: 0}
+      slowRadius: 2
+      panicDistance: 8
+      prediction: 1
+      wander: {radius: 0.8, distance: 1.2, jitter: 4}
+      flock: bats
+      neighbourRadius: 1.5
+      separationDistance: 0.25
+      lookAhead: 1
+      leader: 0
+      slot: [0, 0, -2]
+    Visibility:
+      gameVisible: true
+  - Entity: 3950000000000000065
+    Tag:
+      tag: Bat6
+    Transform:
+      translation: [1.0, 2.55, -0.87]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    MeshRenderer:
+      mesh: gid:82dd12cd34c1def9:meshes/tavern/bat.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    SteeringAgent:
+      enabled: true
+      plane: Space
+      maxSpeed: 2
+      maxAcceleration: 8
+      radius: 0.12
+      turn: true
+      target: 0
+      targetPoint: [0.5, 2.4, 0]
+      weights: {seek: 0, flee: 0, arrive: 0.6, pursue: 0, evade: 0, wander: 0.8, separation: 1.5, alignment: 0.8, cohesion: 0.8, avoidance: 1, formation: 0}
+      slowRadius: 2
+      panicDistance: 8
+      prediction: 1
+      wander: {radius: 0.8, distance: 1.2, jitter: 4}
+      flock: bats
+      neighbourRadius: 1.5
+      separationDistance: 0.25
+      lookAhead: 1
+      leader: 0
+      slot: [0, 0, -2]
+    Visibility:
+      gameVisible: true

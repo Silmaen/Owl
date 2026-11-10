@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Steering behaviours: the `SteeringAgent` component and the `owl.steering` system (seek, flee, arrive, pursue, evade, wander, flocking, avoidance of agents and `NavObstacle`s, formations) in 2D, on the ground and in open 3D space, Lua `steer.*` ([AI](ai.md#ai-steering)).
+- Behaviour trees: the `.owlbt` asset, the `BehaviourTreeAgent` component and the `owl.behaviour_trees` system with a blackboard, composites, decorators, conditions, actions and Lua leaves, Lua `bt.*` ([AI](ai.md#ai-trees)).
+- Owl Nest edits `.owlbt` trees in a node graph tab (palette, Blackboard and Node panels, `bt.*` commands) with the status of each node and the blackboard live in Play ([AI](ai.md#ai-editor)).
+- Engine Demo: rats on behaviour trees, ratlings in formation and flocking bats in the tavern cellar, checked by `cellar_creatures.owltest` ([AI](ai.md#ai-demo)).
 - Fair play: `SceneCamera::setMaxAspectRatio` (*Max Aspect Ratio* on the camera) bounds the width of the view, so a wider screen sees no more of the game.
 - Fair play: `Visibility::gameplay` (*Gameplay*) tags an entity that no quality setting may cut; gameplay lights keep their shadows first on every backend.
 - Breakable joints: `breakForce` and `breakTorque` on `PhysicJoint`, the `on_joint_break(other_id)` hook and its visual script event.

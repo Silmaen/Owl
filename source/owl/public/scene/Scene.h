@@ -133,6 +133,8 @@ struct NavMeshVolume;
 struct NavAgent;
 struct NavObstacle;
 struct NavLink;
+struct BehaviourTreeAgent;
+struct SteeringAgent;
 struct SequencePlayer;
 struct Drift;
 struct GravitySource;
@@ -2929,6 +2931,14 @@ OWL_API void Scene::onComponentAdded<component::NavObstacle>(const Entity& iEnti
 
 template<>
 OWL_API void Scene::onComponentAdded<component::NavLink>(const Entity& iEntity, component::NavLink& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::BehaviourTreeAgent>(const Entity& iEntity,
+																	component::BehaviourTreeAgent& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::SteeringAgent>(const Entity& iEntity,
+															   component::SteeringAgent& ioComponent);
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Drift>(const Entity& iEntity, component::Drift& ioComponent);

@@ -11,6 +11,7 @@
 #include "../EntitySnapshot.h"
 #include "../UndoManager.h"
 #include "AssetCommands.h"
+#include "BehaviourTreeCommands.h"
 #include "CommandJournal.h"
 #include "ComponentCommands.h"
 #include "DataTableCommands.h"
@@ -1926,6 +1927,7 @@ CommandRegistry::CommandRegistry() {
 	addMaterialCommands(*this);
 	addDialogueCommands(*this);
 	addSequenceCommands(*this);
+	addBehaviourTreeCommands(*this);
 	addAssetCommands(*this);
 	addDocumentCommands(*this);
 	add(getMacroRunSpec());

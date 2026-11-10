@@ -14,6 +14,8 @@
 
 #include "app/Application.h"
 #include "math/box.h"
+#include "math/linAlgebra.h"
+#include "math/matrixCreation.h"
 #include "physics/PhysicCommand.h"
 #include "renderer/Camera3DController.h"
 #include "renderer/Renderer2D.h"
@@ -154,11 +156,13 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	add("owl.physics_poses", SystemPhase::Scripts, &restorePhysicsPoses);
 	add("owl.simulation_lod", SystemPhase::Scripts, nullptr, &tickSimulationLod);
 	add("owl.scripts", SystemPhase::Scripts, &updateScripts, &tickScripts);
+	add("owl.behaviour_trees", SystemPhase::Scripts, nullptr, &tickBehaviourTrees);
 	add("owl.oscillators", SystemPhase::PrePhysics, &updateOscillators, &tickOscillators);
 	add("owl.patrols", SystemPhase::PrePhysics, &updatePatrols);
 	add("owl.spline_followers", SystemPhase::PrePhysics, &updateSplineFollowers);
 	add("owl.walk_agents", SystemPhase::PrePhysics, &updateWalkAgents);
 	add("owl.nav_agents", SystemPhase::PrePhysics, nullptr, &tickNavAgents);
+	add("owl.steering", SystemPhase::PrePhysics, nullptr, &tickSteeringAgents);
 	add("owl.fly_cameras", SystemPhase::PrePhysics, &updateFlyCameras);
 	add("owl.ships", SystemPhase::PrePhysics, &updateShips);
 	add("owl.voxel_players", SystemPhase::PrePhysics, &updateVoxelPlayers);
@@ -194,6 +198,21 @@ void registerEngineSystems(SystemSchedule& ioSchedule) {
 	});
 	add("owl.sprite_animation", SystemPhase::Late, &updateAnimatedSprites);
 	add("owl.game_over", SystemPhase::Ended, &renderGameOver);
+}
+
+auto getWorldPosition(const Scene& iScene, const Entity& iEntity) -> math::vec3 {
+	const math::mat4 world = iScene.getWorldTransform(iEntity)();
+	return {world(0, 3), world(1, 3), world(2, 3)};
+}
+
+void setWorldPosition(const Scene& iScene, const Entity& iEntity, const math::vec3& iPosition) {
+	math::mat4 parent = math::identity<float, 4>();
+	if (const auto parentId = iEntity.getComponent<component::Hierarchy>().parentId; parentId != core::UUID{0}) {
+		if (const auto entity = iScene.findEntityByUUID(parentId); entity)
+			parent = iScene.getWorldTransform(entity)();
+	}
+	const math::vec4 local = math::inverse(parent) * math::vec4{iPosition.x(), iPosition.y(), iPosition.z(), 1.f};
+	iEntity.getComponent<component::Transform>().transform.translation() = {local.x(), local.y(), local.z()};
 }
 
 void restorePhysicsPoses(Scene& ioScene, [[maybe_unused]] const SystemContext& iContext) {

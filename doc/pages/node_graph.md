@@ -189,17 +189,17 @@ Integration surface:
 
 ## Consumers
 
-| Document type | Target type                                                     | Extension |
-|---------------|-----------------------------------------------------------------|-----------|
-| Visual script | Event graphs compiled to Lua                                    | `.owlvs`  |
-| PCG graph     | Procedural generation of tilemaps ([PCG graphs](pcg_graphs.md)) | `.owlpcg` |
+| Document type  | Target type                                                     | Extension |
+|----------------|-----------------------------------------------------------------|-----------|
+| Visual script  | Event graphs compiled to Lua                                    | `.owlvs`  |
+| PCG graph      | Procedural generation of tilemaps ([PCG graphs](pcg_graphs.md)) | `.owlpcg` |
+| Behaviour tree | AI of enemies and creatures ([AI](ai.md))                       | `.owlbt`  |
 
 ## Planned consumers
 
 | Document type          | Target type                  | Extension  |
 |------------------------|------------------------------|------------|
 | Animation graph        | Anim state machine           | `.owlanim` |
-| Behaviour tree         | AI behaviour trees           | `.owlbt`   |
 | Dialogue tree          | Branching conversations      | `.owldlg`  |
 
 The node canvas is free of domain knowledge so all of these can share a single widget and the single YAML serialization

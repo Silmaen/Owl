@@ -10,6 +10,7 @@
 #include "EditorLayer.h"
 #include "document/ActionMapDocument.h"
 #include "document/AnimationDocument.h"
+#include "document/BehaviourTreeDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/DataTableDocument.h"
 #include "document/DialogueDocument.h"
@@ -274,6 +275,8 @@ void EditorLayer::openNodeGraphFile(const std::filesystem::path& iPath) {
 		doc = mkUniq<VisualScriptDocument>();
 	else if (iPath.extension() == scene::pcg::g_PcgGraphExtension)
 		doc = mkUniq<PcgGraphDocument>();
+	else if (iPath.extension() == scene::ai::g_BehaviourTreeExtension)
+		doc = mkUniq<BehaviourTreeDocument>();
 	else
 		doc = mkUniq<NodeGraphDocument>();
 	doc->onAttach(this);
@@ -723,6 +726,22 @@ auto EditorLayer::openSequence(const std::filesystem::path& iPath) -> commands::
 		return doc;
 	openSequenceFile(path);
 	return findOpenDocument<SequenceDocument>(m_documents, DocumentType::Sequence, path);
+}
+
+auto EditorLayer::openBehaviourTree(const std::filesystem::path& iPath) -> commands::BehaviourTreeEditor* {
+	if (iPath.extension() != scene::ai::g_BehaviourTreeExtension)
+		return nullptr;
+	const auto path = normalised(iPath);
+	const auto find = [this, &path]() -> commands::BehaviourTreeEditor* {
+		for (const auto& docPtr: m_documents.list())
+			if (docPtr && docPtr->type() == DocumentType::NodeGraph && docPtr->filePath() == path)
+				return dynamic_cast<BehaviourTreeDocument*>(docPtr.get());
+		return nullptr;
+	};
+	if (auto* editor = find(); editor != nullptr)
+		return editor;
+	openNodeGraphFile(path);
+	return find();
 }
 
 void EditorLayer::openLocalisationEditor() {

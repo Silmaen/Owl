@@ -166,9 +166,10 @@ deterministic simulation and replay, Jolt, gravity fields.
   ([Large worlds](design/large-worlds.md))
 - ![Done][done] Navigation (NavMesh generation, A*, dynamic avoidance); on top of the tile-graph pathfinding
   ([Pathfinding](pathfinding.md#pathfinding-navmesh))
-- ![Planned][planned] Behaviour trees with a visual editor (`.owlbt`)
-- ![Planned][planned] Steering behaviours and flocking, in 2D and in open 3D space (obstacle avoidance, formations)
-- ![Planned][planned] Engine Demo: enemies demo on the AI modules
+- ![Done][done] Behaviour trees with a visual editor (`.owlbt`) ([AI](ai.md#ai-trees))
+- ![Done][done] Steering behaviours and flocking, in 2D and in open 3D space (obstacle avoidance, formations)
+  ([AI](ai.md#ai-steering))
+- ![Done][done] Engine Demo: enemies demo on the AI modules ([AI](ai.md#ai-demo))
 - ![Done][done] Material graphs: Slang written as a graph on the surface of the PBR materials, pre-coded and
   custom Slang nodes, material functions and parameters ([Material graphs](design/material-graphs.md))
 - ![Done][done] Material graph shaders baked by the export ([Material graphs](design/material-graphs.md))
