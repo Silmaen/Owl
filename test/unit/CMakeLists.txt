@@ -5,6 +5,8 @@ option(${PROJECT_PREFIX}_TEST_SHUFFLE "Run every gtest binary with --gtest_shuff
 option(${PROJECT_PREFIX}_RENDER_TESTS "Build the image tests (OwlRunner on lavapipe / llvmpipe, label render)" ON)
 set(${PROJECT_PREFIX}_RENDER_TEST_SHARDS 6 CACHE STRING "Parallel ctest entries the image tests are split into")
 set(${PROJECT_PREFIX}_TEST_TIMEOUT 600 CACHE STRING "Per test binary ctest timeout in seconds (a hung binary costs this much)")
+# Outside the build tree, which a CI job cleans first: the cache keys are content hashes, every preset shares it.
+set(${PROJECT_PREFIX}_TEST_COOK_CACHE "${CMAKE_SOURCE_DIR}/output/cook_cache" CACHE PATH "Cook cache the end-to-end export tests keep across runs")
 set(${PROJECT_PREFIX}_TEST_EXTRA_ARGS)
 if (${PROJECT_PREFIX}_TEST_SHUFFLE)
     list(APPEND ${PROJECT_PREFIX}_TEST_EXTRA_ARGS --gtest_shuffle)
@@ -106,6 +108,7 @@ foreach (child ${children})
             if (${child} STREQUAL "export_tests")
                 target_compile_definitions(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
                         OWL_BAKED_ASSETS_DIR="${CMAKE_BINARY_DIR}/bin/assets"
+                        OWL_TEST_COOK_CACHE="${${PROJECT_PREFIX}_TEST_COOK_CACHE}"
                         OWL_RENDER_TESTS=$<BOOL:${${PROJECT_PREFIX}_RENDER_TESTS}>)
             endif ()
             # render_tests run OwlRunner on lavapipe / llvmpipe and compare its captures to reference images; they need
@@ -175,6 +178,10 @@ foreach (child ${children})
                 set(exportTimeout 1200)
                 if (${${PROJECT_PREFIX}_TEST_TIMEOUT} GREATER ${exportTimeout})
                     set(exportTimeout ${${PROJECT_PREFIX}_TEST_TIMEOUT})
+                endif ()
+                # Under emulation the Engine Demo case alone encodes its Basis textures for about an hour.
+                if (CMAKE_CROSSCOMPILING_EMULATOR)
+                    math(EXPR exportTimeout "${exportTimeout} * 2")
                 endif ()
                 set_tests_properties(${testNames} PROPERTIES TIMEOUT ${exportTimeout})
                 foreach (app_target ${CMAKE_PROJECT_NAME}Nest ${CMAKE_PROJECT_NAME}Runner)

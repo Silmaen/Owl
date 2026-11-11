@@ -33,7 +33,7 @@ default:
     GIT_CONFIG_COUNT: "1"
     GIT_CONFIG_KEY_0: safe.directory
     GIT_CONFIG_VALUE_0: $CI_PROJECT_DIR
-  cache:
+  cache: &linux-poetry-cache
     key: linux-poetry
     paths: [.cache/]
   before_script:
@@ -48,7 +48,7 @@ default:
     # The runner puts MSYS2 first on PATH, and its Python makes a POSIX-layout venv (`bin/`, no `Scripts/`) that
     # neither Poetry nor cmake/Poetry.cmake can use.
     POETRY_VIRTUALENVS_USE_POETRY_PYTHON: "true"
-  cache:
+  cache: &windows-poetry-cache
     key: windows-poetry
     paths: [.cache/]
   before_script:
@@ -73,15 +73,24 @@ default:
         coverage_format: cobertura
         path: output/build/*/Coverage/cobertura.xml
 
+# The cooked assets of the end-to-end export tests (OWL_TEST_COOK_CACHE), outside the build tree `Clean` removes: a
+# job cooks only what changed. Kept even when the job fails, so a first cold run that times out still fills it.
+.cook-cache: &cook-cache
+  key: cook-$CI_JOB_NAME
+  paths: [output/cook_cache/]
+  when: always
+
 # --- What a job does --------------------------------------------------------------------------------------------
 
 .build-linux:
   extends: [.linux, .build-artifacts]
+  cache: [*linux-poetry-cache, *cook-cache]
   script:
     - poetry run python3 ci_action.py BuildAndTest "$PRESET"
 
 .build-windows:
   extends: [.windows, .build-artifacts]
+  cache: [*windows-poetry-cache, *cook-cache]
   script:
     - poetry run python3 ci_action.py BuildAndTest $env:PRESET
 

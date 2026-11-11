@@ -124,6 +124,12 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
 - `test/unit/lsan.supp` silences LeakSanitizer only inside the uninstrumented GTK stack libdecor loads under weston (GTK,
   GDK, Pango, fontconfig, GLib); never add an Owl symbol there. Locally TSan needs ASLR off: `./docker_run.sh --perf setarch -R ctest …`.
 
+## Export tests
+
+The end-to-end cases (`GameExportEndToEnd`, one per shipped project) cook into `OWL_TEST_COOK_CACHE`
+(`output/cook_cache`, outside the build tree, shared by the presets, kept by the CI jobs as a GitLab cache): a run cooks
+only what changed. The `GameExporterFixture` cases keep a cache of their own, they count its hits.
+
 ## Conventions
 
 - Test names: `TEST(Module, Behavior)` — e.g., `TEST(Scene, CopyCreatesIndependentScene)`
@@ -137,5 +143,5 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
 - Tests link against both `OwlEngine` and `OwlEnginePrivate` (access to private headers)
 - Timeout per test binary: `OWL_TEST_TIMEOUT`, 600 s (1200 s on the coverage presets `linux-gcc-debug` and
   `linux-clang-debug`, 1800 s on the sanitizer presets, 3600 s on `linux-cross-arm64`; `script_tests` 300 s,
-  `export_tests` at least 1200 s): a hang costs minutes, not an hour. The slowest entries are the image test shards
+  `export_tests` at least 1200 s, twice that under emulation): a hang costs minutes, not an hour. The slowest entries are the image test shards
   under GCC Debug + coverage, 250 to 600 s depending on the load of the agent.

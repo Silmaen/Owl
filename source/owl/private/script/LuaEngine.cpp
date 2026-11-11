@@ -602,6 +602,27 @@ void openSandboxedLibraries(lua_State* iState) {
 	lua_pop(iState, 1);
 }
 
+// Lua of a visual script, kept with the graph text it came from: every entity of a scene loads the same few graphs.
+struct CompiledGraph {
+	std::string source;
+	std::string lua;
+};
+
+std::mutex g_compiledGraphsMutex;
+std::map<std::pair<std::string, visual::CompileMode>, CompiledGraph> g_compiledGraphs;
+
+auto compileGraph(const std::string_view iText, const std::string& iName, const visual::CompileMode iMode)
+		-> std::optional<std::string> {
+	const std::scoped_lock<std::mutex> lock{g_compiledGraphsMutex};
+	if (const auto found = g_compiledGraphs.find({iName, iMode});
+		found != g_compiledGraphs.end() && found->second.source == iText)
+		return found->second.lua;
+	auto lua = visual::compileText(iText, iName, iMode);
+	if (lua)
+		g_compiledGraphs.insert_or_assign({iName, iMode}, CompiledGraph{.source = std::string{iText}, .lua = *lua});
+	return lua;
+}
+
 }// namespace
 
 LuaEngine::LuaEngine() : LuaEngine(ScriptEngine::getDefaultQuotas()) {}
@@ -863,9 +884,9 @@ auto LuaEngine::loadBuffer(const std::vector<uint8_t>& iData, const std::string&
 		return false;
 	}
 	if (visual::isVisualScriptPath(iName)) {
-		const auto lua = visual::compileText({reinterpret_cast<const char*>(iData.data()), iData.size()}, iName,
-											 ScriptDebugger::isEnabled() ? visual::CompileMode::Debug
-																		 : visual::CompileMode::Game);
+		const auto lua =
+				compileGraph({reinterpret_cast<const char*>(iData.data()), iData.size()}, iName,
+							 ScriptDebugger::isEnabled() ? visual::CompileMode::Debug : visual::CompileMode::Game);
 		if (!lua.has_value()) {
 			OWL_CORE_ERROR("Lua: Cannot compile the visual script '{}'.", iName)
 			return false;

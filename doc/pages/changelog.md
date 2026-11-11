@@ -145,6 +145,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest: stopping a Play that had moved to another level kept that level's renderers, so the edited scene and the next Play drew no meshes.
 - Published Doxygen documentation: the screenshots of the pages show again, the `fix_md_links.py` filter naming the `doc/images` files Doxygen copies into `html/`.
 - `EngineSystems.h` includes the EnTT header it uses, which the nightly include check reported.
+- A visual script is compiled once per text instead of once per entity running it, so a Play of the platformer house starts about four times faster.
+- Nightly: the editor tests no longer time out under ThreadSanitizer, and the export tests get twice their timeout under arm64 emulation.
+- The end-to-end export tests keep their cooked assets in `OWL_TEST_COOK_CACHE` across runs, and every CI build job keeps it as a cache: an export cooks only what changed.
 
 ## [0.6.0] - 2026-11-03
 

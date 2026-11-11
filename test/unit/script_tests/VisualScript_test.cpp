@@ -155,6 +155,21 @@ TEST(VisualScript, CompiledGraphRunsAndExposesProperties) {
 	core::Log::invalidate();
 }
 
+TEST(VisualScript, AnEditedGraphIsCompiledAgainUnderTheSameName) {
+	core::Log::init(core::Log::Level::Off);
+	auto scn = mkShared<scene::Scene>();
+	auto edited = accumulator();
+	for (const auto* start: {"0", "10", "0"}) {
+		edited.variables.front().defaultValue = start;
+		ScriptInstance instance;
+		instance.setScene(scn.get());
+		ASSERT_TRUE(load(instance, edited, "edited.owlvs"));
+		instance.onUpdate(0.25f);
+		EXPECT_NEAR(instance.getPropertyFloat("counter").value_or(0.f), std::stof(start) + 0.25f, 1e-5f) << start;
+	}
+	core::Log::invalidate();
+}
+
 TEST(VisualScript, InternalVariablesAreNotPropertiesAndBoundsReachTheInspector) {
 	core::Log::init(core::Log::Level::Off);
 	auto script = accumulator();

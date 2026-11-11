@@ -402,7 +402,8 @@ it nothing.
 | `OWL_TEST_SHUFFLE`                         | OFF     | Run every test binary with `--gtest_shuffle`                                                        |
 | `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/unit/render_tests`, label `render`)                                              |
 | `OWL_RENDER_TEST_SHARDS`                   | 6       | Parallel CTest entries the image tests are split into                                               |
-| `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, s (coverage 1200, sanitizers 1800, `export_tests` at least 1200)     |
+| `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, s (coverage 1200, sanitizers 1800, `export_tests` ≥ 1200, ×2 QEMU)   |
+| `OWL_TEST_COOK_CACHE`                      | (auto)  | Cook cache of the end-to-end export tests, default `output/cook_cache` (kept by the CI jobs)        |
 | `OWL_SCRIPT_TIME_SCALE`                    | 1       | Lua quota multiplier, scenario and export tests (8 arm64 on QEMU, 4 sanitizers and coverage builds) |
 | `OWL_CONAN_PROFILE`                        | (auto)  | Conan host profile, default `conan/profiles/<os>-<compiler>[-<arch>]`                               |
 | `OWL_CONAN_BUILD_PROFILE`                  | (auto)  | Conan build profile, default `conan/profiles/<os>-<compiler>`                                       |

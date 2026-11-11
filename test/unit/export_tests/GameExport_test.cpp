@@ -568,7 +568,7 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 
 	ASSERT_EQ(runCommand(std::format("cd '{}' && '{}' --export '{}' '{}' --cook-cache '{}' > export.txt 2>&1",
 									 workDir.string(), (iBinDir / "OwlNest").string(), iProject.string(),
-									 (root / "out").string(), (root / "cook").string())),
+									 (root / "out").string(), OWL_TEST_COOK_CACHE)),
 			  0)
 			<< readFile(workDir / "export.txt");
 	const auto exported = exportedGameFolder(root / "out");

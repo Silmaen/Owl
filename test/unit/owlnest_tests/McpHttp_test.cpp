@@ -81,7 +81,8 @@ auto rpc(const std::string_view iMethod, const json& iParams = nullptr, const in
 auto send(const uint16_t iPort, const Request& iRequest, const std::function<void()>& iLoopStep) -> HttpReply {
 	auto reply = std::async(std::launch::async, [iPort, iRequest]() -> HttpReply {
 		httplib::Client client{"127.0.0.1", iPort};
-		client.set_read_timeout(20s);
+		// A play under a sanitizer or emulation outlasts the usual answer time by far.
+		client.set_read_timeout(120s);
 		const auto result = iRequest(client);
 		if (!result)
 			return {};
