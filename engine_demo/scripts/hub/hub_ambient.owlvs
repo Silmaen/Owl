@@ -45,57 +45,52 @@ VisualScript:
   nodes:
     - id: 8180000000000000001
       type: func.entry
-      position: [796, 0]
+      position: [0, 0]
       values:
         function: between
     - id: 8180000000000000002
       type: math.add
-      position: [796, 146]
-    - id: 8180000000000000003
-      type: table.get
-      position: [502, 0]
-      values:
-        Key: x
+      position: [1072, 96]
     - id: 8180000000000000004
       type: math.multiply
-      position: [502, 136]
+      position: [832, 64]
     - id: 8180000000000000005
       type: math.random
-      position: [294, 0]
+      position: [656, 64]
     - id: 8180000000000000006
       type: math.subtract
-      position: [294, 110]
+      position: [480, 96]
     - id: 8180000000000000007
       type: table.get
-      position: [0, 0]
+      position: [208, 80]
       values:
         Key: y
     - id: 8180000000000000008
       type: table.get
-      position: [0, 136]
+      position: [208, 192]
       values:
         Key: x
     - id: 8180000000000000009
       type: func.return
-      position: [1004, 0]
+      position: [1264, 0]
       values:
         function: between
     - id: 8180000000000000010
       type: func.entry
-      position: [848, 442]
+      position: [16, 448]
       values:
         function: scatter
     - id: 8180000000000000011
       type: var.get
-      position: [640, 442]
+      position: [320, 528]
       values:
         variable: FAMILIES
     - id: 8180000000000000012
       type: table.get
-      position: [848, 640]
+      position: [464, 528]
     - id: 8180000000000000013
       type: var.set
-      position: [1134, 442]
+      position: [688, 448]
       values:
         variable: files
     - id: 8180000000000000014
@@ -106,34 +101,34 @@ VisualScript:
       position: [1374, 442]
     - id: 8180000000000000016
       type: var.get
-      position: [848, 776]
+      position: [928, 528]
       values:
         variable: files
     - id: 8180000000000000017
       type: table.get
-      position: [1134, 588]
+      position: [1088, 512]
     - id: 8180000000000000018
       type: math.random_integer
-      position: [848, 896]
+      position: [816, 576]
       values:
         Min: 1
     - id: 8180000000000000019
       type: math.min
-      position: [432, 442]
+      position: [504, 624]
     - id: 8180000000000000020
       type: var.get
-      position: [0, 442]
+      position: [208, 720]
       values:
         variable: files
     - id: 8180000000000000021
       type: table.length
-      position: [200, 442]
+      position: [320, 688]
     - id: 8180000000000000022
       type: math.floor
-      position: [640, 562]
+      position: [656, 608]
     - id: 8180000000000000023
       type: func.call
-      position: [1654, 442]
+      position: [1648, 416]
       values:
         function: between
     - id: 8180000000000000024
@@ -141,7 +136,7 @@ VisualScript:
       position: [0, 1192]
     - id: 8180000000000000025
       type: value.table
-      position: [0, 1302]
+      position: [48, 1296]
       values:
         Value: ""
     - id: 8180000000000000026
@@ -159,7 +154,7 @@ VisualScript:
       position: [554, 1192]
     - id: 8180000000000000029
       type: table.make_list
-      position: [276, 1458]
+      position: [272, 1392]
       values:
         A: 9.5
         B: -13.2
@@ -173,7 +168,7 @@ VisualScript:
       position: [832, 1192]
     - id: 8180000000000000032
       type: table.make_list
-      position: [554, 1474]
+      position: [544, 1408]
       values:
         A: 20.5
         B: -13.2
@@ -187,7 +182,7 @@ VisualScript:
       position: [1110, 1192]
     - id: 8180000000000000035
       type: table.make_list
-      position: [832, 1474]
+      position: [816, 1424]
       values:
         A: 44.5
         B: -13.2
@@ -201,7 +196,7 @@ VisualScript:
       position: [1388, 1192]
     - id: 8180000000000000038
       type: table.make_list
-      position: [1110, 1474]
+      position: [1072, 1424]
       values:
         A: 54.5
         B: -13.2
@@ -215,7 +210,7 @@ VisualScript:
       position: [1666, 1192]
     - id: 8180000000000000041
       type: table.make_list
-      position: [1388, 1474]
+      position: [1360, 1424]
       values:
         A: 39.5
         B: -12.2
@@ -251,7 +246,7 @@ VisualScript:
         Key: birds
     - id: 8180000000000000048
       type: value.table
-      position: [2142, 1458]
+      position: [2112, 1408]
       values:
         Value: "\"sounds/hub/birds_1.wav\", \"sounds/hub/birds_2.wav\", \"sounds/hub/birds_3.wav\", \"sounds/hub/birds_4.wav\""
     - id: 8180000000000000049
@@ -266,7 +261,7 @@ VisualScript:
         Key: wind
     - id: 8180000000000000051
       type: value.table
-      position: [2418, 1500]
+      position: [2384, 1424]
       values:
         Value: "\"sounds/hub/wind_1.wav\", \"sounds/hub/wind_2.wav\", \"sounds/hub/wind_3.wav\""
     - id: 8180000000000000052
@@ -299,325 +294,315 @@ VisualScript:
       position: [3450, 1192]
     - id: 8180000000000000058
       type: flow.for
-      position: [3728, 1702]
+      position: [4064, 1184]
       values:
         First: 1
     - id: 8180000000000000059
       type: var.get
-      position: [3450, 1702]
+      position: [3856, 1264]
       values:
         variable: puffs_per_chimney
     - id: 8180000000000000060
       type: call.scene.find_entity
-      position: [3728, 1904]
+      position: [5104, 1296]
     - id: 8180000000000000061
       type: text.concat
-      position: [3450, 1904]
+      position: [4848, 1312]
       values:
         A: Smoke_
     - id: 8180000000000000062
       type: text.concat
-      position: [3218, 1904]
+      position: [4656, 1344]
     - id: 8180000000000000063
       type: text.concat
-      position: [2940, 1904]
+      position: [4416, 1440]
       values:
         A: _
     - id: 8180000000000000064
       type: var.set
-      position: [4054, 1904]
+      position: [5312, 1184]
       values:
         variable: id
     - id: 8180000000000000065
       type: var.get
-      position: [3728, 2024]
+      position: [5152, 1424]
       values:
         variable: id
     - id: 8180000000000000066
       type: compare.not_equal
-      position: [4054, 2050]
+      position: [5264, 1392]
       values:
         B: 0
     - id: 8180000000000000067
       type: flow.branch
-      position: [4332, 1904]
+      position: [5520, 1200]
     - id: 8180000000000000068
       type: value.table
-      position: [4332, 2040]
+      position: [5536, 1328]
       values:
         Value: ""
     - id: 8180000000000000069
       type: var.set
-      position: [4608, 1904]
-      values:
-        variable: record_3
-    - id: 8180000000000000070
-      type: var.get
-      position: [4608, 2050]
+      position: [5776, 1232]
       values:
         variable: record_3
     - id: 8180000000000000071
       type: table.set
-      position: [4840, 1904]
+      position: [5968, 1248]
       values:
         Key: id
     - id: 8180000000000000072
       type: var.get
-      position: [4608, 2170]
+      position: [5872, 1360]
       values:
         variable: id
     - id: 8180000000000000073
       type: var.get
-      position: [4840, 2092]
+      position: [6160, 1312]
       values:
         variable: record_3
     - id: 8180000000000000074
       type: table.set
-      position: [5134, 1904]
+      position: [6304, 1248]
       values:
         Key: x
     - id: 8180000000000000075
       type: table.get
-      position: [4840, 2212]
+      position: [5936, 1424]
       values:
         Key: 1
     - id: 8180000000000000076
       type: var.get
-      position: [5134, 2092]
+      position: [6496, 1312]
       values:
         variable: record_3
     - id: 8180000000000000077
       type: table.set
-      position: [5428, 1904]
+      position: [6624, 1248]
       values:
         Key: y
     - id: 8180000000000000078
       type: table.get
-      position: [5134, 2212]
+      position: [5936, 1520]
       values:
         Key: 2
     - id: 8180000000000000079
       type: var.get
-      position: [5428, 2092]
+      position: [6816, 1312]
       values:
         variable: record_3
     - id: 8180000000000000080
       type: table.set
-      position: [5674, 1904]
+      position: [6944, 1248]
       values:
         Key: phase
     - id: 8180000000000000081
       type: math.add
-      position: [5428, 2212]
+      position: [6048, 1680]
     - id: 8180000000000000082
       type: math.divide
-      position: [5134, 2348]
+      position: [5856, 1632]
     - id: 8180000000000000083
       type: math.subtract
-      position: [4840, 2348]
+      position: [5600, 1600]
       values:
         B: 1
     - id: 8180000000000000084
       type: var.get
-      position: [4840, 2484]
+      position: [5584, 1712]
       values:
         variable: puffs_per_chimney
     - id: 8180000000000000085
       type: math.multiply
-      position: [5134, 2484]
+      position: [5568, 1744]
       values:
         B: 0.17
     - id: 8180000000000000086
       type: var.get
-      position: [5674, 2092]
+      position: [7136, 1440]
       values:
         variable: record_3
     - id: 8180000000000000087
       type: table.set
-      position: [5944, 1904]
+      position: [7264, 1248]
     - id: 8180000000000000088
       type: var.get
-      position: [5674, 2212]
+      position: [7152, 1312]
       values:
         variable: puffs
     - id: 8180000000000000089
       type: math.add
-      position: [5674, 2332]
+      position: [6864, 1440]
       values:
         B: 1
     - id: 8180000000000000090
       type: var.get
-      position: [5134, 2620]
+      position: [6576, 1600]
       values:
         variable: puffs
     - id: 8180000000000000091
       type: table.length
-      position: [5428, 2348]
+      position: [6688, 1552]
     - id: 8180000000000000092
       type: var.get
-      position: [3450, 1380]
+      position: [3488, 1968]
       values:
         variable: cloud_speeds
     - id: 8180000000000000093
       type: flow.for_each
-      position: [3728, 1192]
+      position: [3712, 1888]
     - id: 8180000000000000094
       type: call.scene.find_entity
-      position: [3728, 2780]
+      position: [4224, 1968]
     - id: 8180000000000000095
       type: text.concat
-      position: [3450, 2780]
+      position: [3984, 1952]
       values:
         A: Cloud_
     - id: 8180000000000000096
       type: var.set
-      position: [4054, 2780]
+      position: [4432, 1872]
       values:
         variable: id
     - id: 8180000000000000097
       type: var.get
-      position: [3728, 2900]
+      position: [4560, 2000]
       values:
         variable: id
     - id: 8180000000000000098
       type: compare.not_equal
-      position: [4054, 2926]
+      position: [4672, 1968]
       values:
         B: 0
     - id: 8180000000000000099
       type: flow.branch
-      position: [4332, 2780]
+      position: [4896, 1888]
     - id: 8180000000000000100
       type: call.transform.get_position
-      position: [4332, 2916]
+      position: [5024, 2000]
       values:
         split.xyz: true
     - id: 8180000000000000101
       type: var.get
-      position: [4054, 3062]
+      position: [4912, 2048]
       values:
         variable: id
     - id: 8180000000000000102
       type: var.set
-      position: [4608, 2780]
+      position: [5232, 1888]
       values:
         variable: x
     - id: 8180000000000000103
       type: var.set
-      position: [4840, 2780]
+      position: [5424, 1920]
       values:
         variable: y
     - id: 8180000000000000104
       type: var.set
-      position: [5134, 2780]
+      position: [5616, 1952]
       values:
         variable: z
     - id: 8180000000000000105
       type: value.table
-      position: [5134, 2926]
+      position: [5712, 2064]
       values:
         Value: ""
     - id: 8180000000000000106
       type: var.set
-      position: [5428, 2780]
+      position: [6032, 1952]
       values:
         variable: record_4
     - id: 8180000000000000107
       type: var.get
-      position: [5428, 2926]
+      position: [6080, 2064]
       values:
         variable: record_4
     - id: 8180000000000000108
       type: table.set
-      position: [5674, 2780]
+      position: [6256, 2000]
       values:
         Key: id
     - id: 8180000000000000109
       type: var.get
-      position: [5428, 3046]
+      position: [6112, 2112]
       values:
         variable: id
     - id: 8180000000000000110
       type: var.get
-      position: [5674, 2968]
+      position: [6448, 2064]
       values:
         variable: record_4
     - id: 8180000000000000111
       type: table.set
-      position: [5944, 2780]
+      position: [6576, 2000]
       values:
         Key: x
     - id: 8180000000000000112
       type: var.get
-      position: [5674, 3088]
+      position: [6448, 2112]
       values:
         variable: x
     - id: 8180000000000000113
       type: var.get
-      position: [5944, 2968]
+      position: [6768, 2064]
       values:
         variable: record_4
     - id: 8180000000000000114
       type: table.set
-      position: [6190, 2780]
+      position: [6912, 2000]
       values:
         Key: y
     - id: 8180000000000000115
       type: var.get
-      position: [5944, 3088]
+      position: [6768, 2112]
       values:
         variable: y
     - id: 8180000000000000116
       type: var.get
-      position: [6190, 2968]
+      position: [7104, 2064]
       values:
         variable: record_4
     - id: 8180000000000000117
       type: table.set
-      position: [6436, 2780]
+      position: [7248, 2000]
       values:
         Key: z
     - id: 8180000000000000118
       type: var.get
-      position: [6190, 3088]
+      position: [7120, 2112]
       values:
         variable: z
     - id: 8180000000000000119
       type: var.get
-      position: [6436, 2968]
+      position: [7440, 2064]
       values:
         variable: record_4
     - id: 8180000000000000120
       type: table.set
-      position: [6682, 2780]
+      position: [7584, 2000]
       values:
         Key: speed
     - id: 8180000000000000121
       type: var.get
-      position: [6682, 2968]
+      position: [8160, 2240]
       values:
         variable: record_4
     - id: 8180000000000000122
       type: table.set
-      position: [6952, 2780]
+      position: [8304, 2000]
     - id: 8180000000000000123
       type: var.get
-      position: [6682, 3088]
+      position: [7776, 2064]
       values:
         variable: clouds
     - id: 8180000000000000124
       type: math.add
-      position: [6682, 3208]
+      position: [8080, 2096]
       values:
         B: 1
-    - id: 8180000000000000125
-      type: var.get
-      position: [6190, 3208]
-      values:
-        variable: clouds
     - id: 8180000000000000126
       type: table.length
-      position: [6436, 3088]
+      position: [7904, 2096]
     - id: 8180000000000000127
       type: event.on_update
       position: [200, 3504]
@@ -1071,15 +1056,11 @@ VisualScript:
       values:
         Key: z
   links:
-    - {from: 8180000000000000001, fromPin: range, to: 8180000000000000003, toPin: Table}
-    - {from: 8180000000000000003, fromPin: Result, to: 8180000000000000002, toPin: A}
     - {from: 8180000000000000005, fromPin: Result, to: 8180000000000000004, toPin: A}
     - {from: 8180000000000000001, fromPin: range, to: 8180000000000000007, toPin: Table}
-    - {from: 8180000000000000007, fromPin: Result, to: 8180000000000000006, toPin: A}
     - {from: 8180000000000000001, fromPin: range, to: 8180000000000000008, toPin: Table}
     - {from: 8180000000000000008, fromPin: Result, to: 8180000000000000006, toPin: B}
     - {from: 8180000000000000006, fromPin: Result, to: 8180000000000000004, toPin: B}
-    - {from: 8180000000000000004, fromPin: Result, to: 8180000000000000002, toPin: B}
     - {from: 8180000000000000002, fromPin: Result, to: 8180000000000000009, toPin: result}
     - {from: 8180000000000000001, fromPin: Then, to: 8180000000000000009, toPin: Exec}
     - {from: 8180000000000000011, fromPin: Value, to: 8180000000000000012, toPin: Table}
@@ -1095,7 +1076,7 @@ VisualScript:
     - {from: 8180000000000000018, fromPin: Result, to: 8180000000000000017, toPin: Key}
     - {from: 8180000000000000017, fromPin: Result, to: 8180000000000000015, toPin: asset_path}
     - {from: 8180000000000000013, fromPin: Then, to: 8180000000000000015, toPin: Exec}
-    - {from: 8180000000000000010, fromPin: volume, to: 8180000000000000023, toPin: range}
+    - {from: 8180000000000000010, fromPin: volume, to: 8180000000000000023, toPin: range, waypoints: [[240, 784], [1520, 784]]}
     - {from: 8180000000000000015, fromPin: Then, to: 8180000000000000023, toPin: Exec}
     - {from: 8180000000000000015, fromPin: handle, to: 8180000000000000014, toPin: handle}
     - {from: 8180000000000000023, fromPin: result, to: 8180000000000000014, toPin: volume}
@@ -1135,7 +1116,7 @@ VisualScript:
     - {from: 8180000000000000055, fromPin: Then, to: 8180000000000000057, toPin: Exec}
     - {from: 8180000000000000059, fromPin: Value, to: 8180000000000000058, toPin: Last}
     - {from: 8180000000000000057, fromPin: Body, to: 8180000000000000058, toPin: Exec}
-    - {from: 8180000000000000057, fromPin: Index, to: 8180000000000000062, toPin: A}
+    - {from: 8180000000000000057, fromPin: Index, to: 8180000000000000062, toPin: A, waypoints: [[4096, 1376]]}
     - {from: 8180000000000000058, fromPin: Index, to: 8180000000000000063, toPin: B}
     - {from: 8180000000000000063, fromPin: Result, to: 8180000000000000062, toPin: B}
     - {from: 8180000000000000062, fromPin: Result, to: 8180000000000000061, toPin: B}
@@ -1147,23 +1128,22 @@ VisualScript:
     - {from: 8180000000000000064, fromPin: Then, to: 8180000000000000067, toPin: Exec}
     - {from: 8180000000000000068, fromPin: Result, to: 8180000000000000069, toPin: Value}
     - {from: 8180000000000000067, fromPin: True, to: 8180000000000000069, toPin: Exec}
-    - {from: 8180000000000000070, fromPin: Value, to: 8180000000000000071, toPin: Table}
     - {from: 8180000000000000072, fromPin: Value, to: 8180000000000000071, toPin: Value}
     - {from: 8180000000000000069, fromPin: Then, to: 8180000000000000071, toPin: Exec}
     - {from: 8180000000000000073, fromPin: Value, to: 8180000000000000074, toPin: Table}
-    - {from: 8180000000000000057, fromPin: Item, to: 8180000000000000075, toPin: Table}
+    - {from: 8180000000000000057, fromPin: Item, to: 8180000000000000075, toPin: Table, waypoints: [[4432, 1568]]}
     - {from: 8180000000000000075, fromPin: Result, to: 8180000000000000074, toPin: Value}
     - {from: 8180000000000000071, fromPin: Then, to: 8180000000000000074, toPin: Exec}
     - {from: 8180000000000000076, fromPin: Value, to: 8180000000000000077, toPin: Table}
-    - {from: 8180000000000000057, fromPin: Item, to: 8180000000000000078, toPin: Table}
+    - {from: 8180000000000000057, fromPin: Item, to: 8180000000000000078, toPin: Table, waypoints: [[4432, 1568]]}
     - {from: 8180000000000000078, fromPin: Result, to: 8180000000000000077, toPin: Value}
     - {from: 8180000000000000074, fromPin: Then, to: 8180000000000000077, toPin: Exec}
     - {from: 8180000000000000079, fromPin: Value, to: 8180000000000000080, toPin: Table}
-    - {from: 8180000000000000058, fromPin: Index, to: 8180000000000000083, toPin: A}
+    - {from: 8180000000000000058, fromPin: Index, to: 8180000000000000083, toPin: A, waypoints: [[4480, 1648]]}
     - {from: 8180000000000000083, fromPin: Result, to: 8180000000000000082, toPin: A}
     - {from: 8180000000000000084, fromPin: Value, to: 8180000000000000082, toPin: B}
     - {from: 8180000000000000082, fromPin: Result, to: 8180000000000000081, toPin: A}
-    - {from: 8180000000000000057, fromPin: Index, to: 8180000000000000085, toPin: A}
+    - {from: 8180000000000000057, fromPin: Index, to: 8180000000000000085, toPin: A, waypoints: [[4096, 1376], [4512, 1776]]}
     - {from: 8180000000000000085, fromPin: Result, to: 8180000000000000081, toPin: B}
     - {from: 8180000000000000081, fromPin: Result, to: 8180000000000000080, toPin: Value}
     - {from: 8180000000000000077, fromPin: Then, to: 8180000000000000080, toPin: Exec}
@@ -1204,10 +1184,9 @@ VisualScript:
     - {from: 8180000000000000118, fromPin: Value, to: 8180000000000000117, toPin: Value}
     - {from: 8180000000000000114, fromPin: Then, to: 8180000000000000117, toPin: Exec}
     - {from: 8180000000000000119, fromPin: Value, to: 8180000000000000120, toPin: Table}
-    - {from: 8180000000000000093, fromPin: Item, to: 8180000000000000120, toPin: Value}
+    - {from: 8180000000000000093, fromPin: Item, to: 8180000000000000120, toPin: Value, waypoints: [[4032, 2144], [7488, 2176]]}
     - {from: 8180000000000000117, fromPin: Then, to: 8180000000000000120, toPin: Exec}
     - {from: 8180000000000000123, fromPin: Value, to: 8180000000000000122, toPin: Table}
-    - {from: 8180000000000000125, fromPin: Value, to: 8180000000000000126, toPin: List}
     - {from: 8180000000000000126, fromPin: Result, to: 8180000000000000124, toPin: A}
     - {from: 8180000000000000124, fromPin: Result, to: 8180000000000000122, toPin: Key}
     - {from: 8180000000000000121, fromPin: Value, to: 8180000000000000122, toPin: Value}
@@ -1336,3 +1315,13 @@ VisualScript:
     - {from: 8180000000000000225, fromPin: Result, to: 8180000000000000221, toPin: z}
     - {from: 8180000000000000220, fromPin: Then, to: 8180000000000000221, toPin: Exec}
     - {from: 8180000000000000218, fromPin: False, to: 8180000000000000221, toPin: Exec}
+    - {from: 8180000000000000007, fromPin: Result, to: 8180000000000000006, toPin: A}
+    - {from: 8180000000000000008, fromPin: Result, to: 8180000000000000002, toPin: B}
+    - {from: 8180000000000000004, fromPin: Result, to: 8180000000000000002, toPin: A}
+    - {from: 8180000000000000069, fromPin: Value, to: 8180000000000000071, toPin: Table}
+    - {from: 8180000000000000123, fromPin: Value, to: 8180000000000000126, toPin: List}
+  groups:
+    - {id: 6360897740682718480, title: between, position: [-24, -52], size: [1496, 408], color: Red}
+    - {id: 16654787128134699213, title: scatter, position: [-24, 390], size: [2088, 440], color: Yellow}
+    - {id: 17266460551217935891, title: On Create, position: [-24, 1140], size: [8520, 1200], color: Teal}
+    - {id: 16715521403783456281, title: On Update, position: [-24, 3452], size: [6969, 2212], color: Violet}

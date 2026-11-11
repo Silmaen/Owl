@@ -964,3 +964,7 @@ VisualScript:
     - {from: 8090000000000000156, fromPin: True, to: 8090000000000000158, toPin: Exec}
     - {from: 8090000000000000160, fromPin: Value, to: 8090000000000000159, toPin: value}
     - {from: 8090000000000000158, fromPin: Then, to: 8090000000000000159, toPin: Exec}
+  groups:
+    - {id: 12318097526206256220, title: add, position: [-24, -52], size: [5380, 600], color: Red}
+    - {id: 13171498296574719136, title: On Create, position: [-24, 672], size: [1427, 774], color: Yellow}
+    - {id: 16552933984339823745, title: On Update, position: [-24, 1618], size: [6210, 1856], color: Teal}

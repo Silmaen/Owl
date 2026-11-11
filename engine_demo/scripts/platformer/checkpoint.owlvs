@@ -22,152 +22,147 @@ VisualScript:
   nodes:
     - id: 8020000000000000001
       type: func.entry
-      position: [0, 0]
+      position: [-8, 4]
       values:
         function: raise
     - id: 8020000000000000002
       type: var.set
-      position: [200, 0]
+      position: [232, 4]
       values:
         Value: true
         variable: reached
     - id: 8020000000000000003
       type: var.get
-      position: [0, 120]
+      position: [232, 148]
       values:
         variable: flag_id
     - id: 8020000000000000004
       type: compare.not_equal
-      position: [200, 146]
+      position: [368, 112]
       values:
         B: 0
     - id: 8020000000000000005
       type: flow.branch
-      position: [478, 0]
+      position: [600, 20]
     - id: 8020000000000000006
       type: call.isometric.set_sprite_frame
-      position: [772, 0]
+      position: [1120, 16]
     - id: 8020000000000000007
       type: var.get
-      position: [478, 136]
+      position: [824, 84]
       values:
         variable: flag_id
     - id: 8020000000000000008
       type: var.get
-      position: [200, 282]
+      position: [664, 180]
       values:
         variable: frame_wave
     - id: 8020000000000000009
       type: table.get
-      position: [478, 256]
+      position: [864, 144]
       values:
         Key: 1
     - id: 8020000000000000010
       type: event.on_create
-      position: [200, 562]
+      position: [-8, 676]
     - id: 8020000000000000011
       type: call.scene.find_entity
-      position: [200, 672]
+      position: [280, 804]
     - id: 8020000000000000012
       type: var.get
-      position: [0, 562]
+      position: [104, 804]
       values:
         variable: flag
     - id: 8020000000000000013
       type: var.set
-      position: [456, 562]
+      position: [536, 660]
       values:
         variable: flag_id
     - id: 8020000000000000014
       type: var.get
-      position: [200, 792]
+      position: [392, 916]
       values:
         variable: flag_id
     - id: 8020000000000000015
       type: compare.not_equal
-      position: [456, 708]
+      position: [552, 820]
       values:
         B: 0
     - id: 8020000000000000016
       type: flow.branch
-      position: [734, 562]
+      position: [758, 662]
     - id: 8020000000000000017
       type: call.transform.get_scale
-      position: [734, 698]
+      position: [1224, 548]
       values:
         split.scale: true
     - id: 8020000000000000018
       type: var.get
-      position: [456, 844]
+      position: [1048, 548]
       values:
         variable: flag_id
     - id: 8020000000000000019
       type: var.set
-      position: [998, 562]
+      position: [1416, 452]
       values:
         variable: flag_scale
     - id: 8020000000000000020
       type: call.isometric.set_sprite_frame
-      position: [1230, 562]
+      position: [1752, 516]
     - id: 8020000000000000021
       type: var.get
-      position: [998, 708]
+      position: [1432, 580]
       values:
         variable: flag_id
     - id: 8020000000000000022
       type: var.get
-      position: [998, 828]
+      position: [1592, 644]
       values:
         variable: frame_idle
     - id: 8020000000000000023
       type: call.transform.get_position
-      position: [1230, 734]
+      position: [1688, 788]
       values:
         split.xyz: true
     - id: 8020000000000000024
       type: var.set
-      position: [1524, 562]
+      position: [1944, 676]
       values:
         variable: x
     - id: 8020000000000000025
       type: call.gamestate.get
-      position: [1794, 562]
+      position: [2152, 676]
       values:
         default: 0
         key: platformer_checkpoint_x
     - id: 8020000000000000026
       type: math.subtract
-      position: [1524, 708]
+      position: [2360, 884]
       values:
         B: 0.01
-    - id: 8020000000000000027
-      type: var.get
-      position: [1230, 906]
-      values:
-        variable: x
     - id: 8020000000000000028
       type: compare.greater_equal
-      position: [1794, 734]
+      position: [2616, 836]
     - id: 8020000000000000029
       type: call.gamestate.get
-      position: [2112, 562]
+      position: [2504, 676]
       values:
         default: 0
         key: platformer_checkpoint_x
     - id: 8020000000000000030
       type: compare.greater
-      position: [1794, 870]
+      position: [2792, 756]
       values:
         B: 5
     - id: 8020000000000000031
       type: logic.and
-      position: [2112, 734]
+      position: [3048, 804]
     - id: 8020000000000000032
       type: flow.branch
-      position: [2430, 562]
+      position: [3224, 692]
     - id: 8020000000000000033
       type: func.call
-      position: [2694, 562]
+      position: [3448, 692]
       values:
         function: raise
     - id: 8020000000000000034
@@ -175,304 +170,289 @@ VisualScript:
       position: [0, 1186]
     - id: 8020000000000000035
       type: var.get
-      position: [0, 1322]
+      position: [112, 1296]
       values:
         variable: reached
     - id: 8020000000000000036
       type: flow.branch
-      position: [234, 1186]
+      position: [288, 1184]
     - id: 8020000000000000037
       type: call.transform.get_position
-      position: [234, 1322]
+      position: [480, 1296]
       values:
         split.xyz: true
     - id: 8020000000000000038
       type: var.set
-      position: [528, 1186]
+      position: [752, 1168]
       values:
         variable: x
     - id: 8020000000000000039
       type: var.set
-      position: [760, 1186]
+      position: [960, 1200]
       values:
         variable: y
     - id: 8020000000000000040
       type: call.gamestate.set
-      position: [992, 1186]
+      position: [1200, 1184]
       values:
         key: platformer_checkpoint_x
     - id: 8020000000000000041
       type: var.get
-      position: [760, 1332]
+      position: [968, 1330]
       values:
         variable: x
     - id: 8020000000000000042
       type: call.gamestate.set
-      position: [1270, 1186]
+      position: [1478, 1184]
       values:
         key: platformer_checkpoint_y
     - id: 8020000000000000043
       type: math.add
-      position: [992, 1358]
+      position: [1232, 1360]
       values:
         B: 0.1
     - id: 8020000000000000044
       type: var.get
-      position: [760, 1452]
+      position: [1056, 1424]
       values:
         variable: y
     - id: 8020000000000000045
       type: call.gamestate.set
-      position: [1548, 1186]
+      position: [1756, 1184]
       values:
         key: platformer_banner
         value: Checkpoint reached
     - id: 8020000000000000046
       type: call.sound.play
-      position: [1826, 1186]
+      position: [2034, 1184]
       values:
         asset_path: sounds/platformer/coin_collect.wav
     - id: 8020000000000000047
       type: call.log.info
-      position: [2208, 1186]
+      position: [2416, 1184]
     - id: 8020000000000000048
       type: text.concat
-      position: [1826, 1332]
+      position: [2160, 1360]
       values:
         A: "Checkpoint at "
     - id: 8020000000000000049
       type: text.concat
-      position: [1548, 1358]
+      position: [1984, 1408]
     - id: 8020000000000000050
       type: var.get
-      position: [1270, 1358]
+      position: [1808, 1392]
       values:
         variable: x
     - id: 8020000000000000051
       type: text.concat
-      position: [1270, 1478]
+      position: [1760, 1504]
       values:
         A: ", "
     - id: 8020000000000000052
       type: var.get
-      position: [992, 1494]
+      position: [1584, 1520]
       values:
         variable: y
     - id: 8020000000000000053
       type: func.call
-      position: [2416, 1186]
+      position: [2624, 1184]
       values:
         function: raise
     - id: 8020000000000000054
       type: var.get
-      position: [2416, 1306]
+      position: [2624, 1304]
       values:
         variable: pop_time
     - id: 8020000000000000055
       type: var.set
-      position: [2618, 1186]
+      position: [2826, 1184]
       values:
         variable: pop
     - id: 8020000000000000056
       type: event.on_update
-      position: [488, 1774]
+      position: [-8, 1774]
     - id: 8020000000000000057
       type: var.get
-      position: [0, 1774]
+      position: [352, 1824]
       values:
         variable: reached
     - id: 8020000000000000058
       type: logic.not
-      position: [210, 1774]
+      position: [544, 1840]
     - id: 8020000000000000059
       type: var.get
-      position: [0, 1894]
+      position: [288, 1920]
       values:
         variable: flag_id
     - id: 8020000000000000060
       type: compare.equal
-      position: [210, 1884]
+      position: [480, 1920]
       values:
         B: 0
     - id: 8020000000000000061
       type: logic.or
-      position: [488, 1910]
+      position: [704, 1872]
     - id: 8020000000000000062
       type: flow.branch
-      position: [720, 1774]
+      position: [880, 1760]
     - id: 8020000000000000063
       type: math.add
-      position: [720, 1910]
-    - id: 8020000000000000064
-      type: var.get
-      position: [488, 2046]
-      values:
-        variable: clock
+      position: [576, 2016]
     - id: 8020000000000000065
       type: var.set
-      position: [990, 1774]
+      position: [1104, 1776]
       values:
         variable: clock
     - id: 8020000000000000066
       type: math.add
-      position: [990, 1920]
+      position: [1056, 1920]
       values:
         B: 1
     - id: 8020000000000000067
       type: math.modulo
-      position: [720, 2046]
+      position: [896, 2080]
     - id: 8020000000000000068
       type: math.floor
-      position: [488, 2166]
+      position: [704, 2128]
     - id: 8020000000000000069
       type: math.divide
-      position: [210, 2020]
+      position: [544, 2128]
     - id: 8020000000000000070
       type: var.get
-      position: [0, 2014]
+      position: [336, 2096]
       values:
         variable: clock
     - id: 8020000000000000071
       type: var.get
-      position: [0, 2134]
+      position: [336, 2192]
       values:
         variable: wave_time
     - id: 8020000000000000072
       type: var.get
-      position: [210, 2156]
+      position: [512, 2240]
       values:
         variable: frame_wave
     - id: 8020000000000000073
       type: table.length
-      position: [488, 2276]
+      position: [704, 2240]
     - id: 8020000000000000074
       type: var.set
-      position: [1260, 1774]
+      position: [1312, 1776]
       values:
         variable: frame
     - id: 8020000000000000075
       type: call.isometric.set_sprite_frame
-      position: [1500, 1774]
+      position: [1696, 1776]
     - id: 8020000000000000076
       type: var.get
-      position: [1260, 1920]
+      position: [1328, 1920]
       values:
         variable: flag_id
     - id: 8020000000000000077
       type: var.get
-      position: [990, 2056]
+      position: [1280, 2016]
       values:
         variable: frame_wave
     - id: 8020000000000000078
       type: table.get
-      position: [1260, 2040]
+      position: [1472, 2016]
     - id: 8020000000000000079
       type: var.get
-      position: [990, 2176]
+      position: [1312, 2112]
       values:
         variable: frame
     - id: 8020000000000000080
       type: var.get
-      position: [1260, 2176]
+      position: [1696, 1952]
       values:
         variable: pop
     - id: 8020000000000000081
       type: compare.greater
-      position: [1500, 1946]
+      position: [1856, 1952]
       values:
         B: 0
     - id: 8020000000000000082
       type: flow.branch
-      position: [1770, 1774]
+      position: [2112, 1792]
     - id: 8020000000000000083
       type: math.max
-      position: [1770, 1910]
+      position: [1776, 2224]
       values:
         A: 0
     - id: 8020000000000000084
       type: math.subtract
-      position: [1500, 2082]
+      position: [1568, 2288]
     - id: 8020000000000000085
       type: var.get
-      position: [1260, 2296]
+      position: [1408, 2272]
       values:
         variable: pop
     - id: 8020000000000000086
       type: var.set
-      position: [2040, 1774]
+      position: [2368, 1776]
       values:
         variable: pop
     - id: 8020000000000000087
       type: math.multiply
-      position: [2040, 1920]
+      position: [2768, 1856]
     - id: 8020000000000000088
       type: var.get
-      position: [1770, 2046]
+      position: [2560, 1856]
       values:
         variable: flag_scale
     - id: 8020000000000000089
       type: math.add
-      position: [1770, 2166]
+      position: [2128, 2384]
       values:
         A: 1.0
     - id: 8020000000000000090
       type: math.multiply
-      position: [1500, 2218]
+      position: [1888, 2400]
       values:
         A: 0.35
     - id: 8020000000000000091
       type: math.sin
-      position: [1260, 2416]
+      position: [1728, 2416]
     - id: 8020000000000000092
       type: math.multiply
-      position: [990, 2296]
+      position: [1536, 2416]
     - id: 8020000000000000093
       type: math.subtract
-      position: [720, 2182]
+      position: [1296, 2416]
       values:
         A: 1.0
     - id: 8020000000000000094
       type: math.divide
-      position: [488, 2386]
+      position: [1110, 2446]
     - id: 8020000000000000095
       type: var.get
-      position: [210, 2276]
+      position: [912, 2400]
       values:
         variable: pop
     - id: 8020000000000000096
       type: var.get
-      position: [210, 2396]
+      position: [896, 2496]
       values:
         variable: pop_time
     - id: 8020000000000000097
       type: math.pi
-      position: [720, 2318]
+      position: [1376, 2544]
     - id: 8020000000000000098
       type: var.set
-      position: [2272, 1774]
+      position: [2928, 1776]
       values:
         variable: s
     - id: 8020000000000000099
       type: call.transform.set_scale
-      position: [2504, 1774]
+      position: [3184, 1776]
       values:
         split.scale: true
         sz: 1
     - id: 8020000000000000100
       type: var.get
-      position: [2272, 1920]
+      position: [2944, 1888]
       values:
         variable: flag_id
-    - id: 8020000000000000101
-      type: var.get
-      position: [2272, 2040]
-      values:
-        variable: s
-    - id: 8020000000000000102
-      type: var.get
-      position: [2272, 2160]
-      values:
-        variable: s
   links:
     - {from: 8020000000000000001, fromPin: Then, to: 8020000000000000002, toPin: Exec}
     - {from: 8020000000000000003, fromPin: Value, to: 8020000000000000004, toPin: A}
@@ -490,7 +470,7 @@ VisualScript:
     - {from: 8020000000000000013, fromPin: Then, to: 8020000000000000016, toPin: Exec}
     - {from: 8020000000000000018, fromPin: Value, to: 8020000000000000017, toPin: entity_id}
     - {from: 8020000000000000017, fromPin: sx, to: 8020000000000000019, toPin: Value}
-    - {from: 8020000000000000016, fromPin: True, to: 8020000000000000019, toPin: Exec}
+    - {from: 8020000000000000016, fromPin: True, to: 8020000000000000019, toPin: Exec, waypoints: [[1016, 516]]}
     - {from: 8020000000000000021, fromPin: Value, to: 8020000000000000020, toPin: entity_id}
     - {from: 8020000000000000022, fromPin: Value, to: 8020000000000000020, toPin: frame}
     - {from: 8020000000000000019, fromPin: Then, to: 8020000000000000020, toPin: Exec}
@@ -498,13 +478,10 @@ VisualScript:
     - {from: 8020000000000000020, fromPin: Then, to: 8020000000000000024, toPin: Exec}
     - {from: 8020000000000000016, fromPin: False, to: 8020000000000000024, toPin: Exec}
     - {from: 8020000000000000024, fromPin: Then, to: 8020000000000000025, toPin: Exec}
-    - {from: 8020000000000000027, fromPin: Value, to: 8020000000000000026, toPin: A}
     - {from: 8020000000000000025, fromPin: value, to: 8020000000000000028, toPin: A}
     - {from: 8020000000000000026, fromPin: Result, to: 8020000000000000028, toPin: B}
     - {from: 8020000000000000025, fromPin: Then, to: 8020000000000000029, toPin: Exec}
     - {from: 8020000000000000029, fromPin: value, to: 8020000000000000030, toPin: A}
-    - {from: 8020000000000000028, fromPin: Result, to: 8020000000000000031, toPin: A}
-    - {from: 8020000000000000030, fromPin: Result, to: 8020000000000000031, toPin: B}
     - {from: 8020000000000000031, fromPin: Result, to: 8020000000000000032, toPin: Condition}
     - {from: 8020000000000000029, fromPin: Then, to: 8020000000000000032, toPin: Exec}
     - {from: 8020000000000000032, fromPin: True, to: 8020000000000000033, toPin: Exec}
@@ -536,8 +513,6 @@ VisualScript:
     - {from: 8020000000000000060, fromPin: Result, to: 8020000000000000061, toPin: B}
     - {from: 8020000000000000061, fromPin: Result, to: 8020000000000000062, toPin: Condition}
     - {from: 8020000000000000056, fromPin: Then, to: 8020000000000000062, toPin: Exec}
-    - {from: 8020000000000000064, fromPin: Value, to: 8020000000000000063, toPin: A}
-    - {from: 8020000000000000056, fromPin: dt, to: 8020000000000000063, toPin: B}
     - {from: 8020000000000000063, fromPin: Result, to: 8020000000000000065, toPin: Value}
     - {from: 8020000000000000062, fromPin: False, to: 8020000000000000065, toPin: Exec}
     - {from: 8020000000000000070, fromPin: Value, to: 8020000000000000069, toPin: A}
@@ -558,7 +533,7 @@ VisualScript:
     - {from: 8020000000000000081, fromPin: Result, to: 8020000000000000082, toPin: Condition}
     - {from: 8020000000000000075, fromPin: Then, to: 8020000000000000082, toPin: Exec}
     - {from: 8020000000000000085, fromPin: Value, to: 8020000000000000084, toPin: A}
-    - {from: 8020000000000000056, fromPin: dt, to: 8020000000000000084, toPin: B}
+    - {from: 8020000000000000056, fromPin: dt, to: 8020000000000000084, toPin: B, waypoints: [[400, 2368]]}
     - {from: 8020000000000000084, fromPin: Result, to: 8020000000000000083, toPin: B}
     - {from: 8020000000000000083, fromPin: Result, to: 8020000000000000086, toPin: Value}
     - {from: 8020000000000000082, fromPin: True, to: 8020000000000000086, toPin: Exec}
@@ -575,6 +550,16 @@ VisualScript:
     - {from: 8020000000000000087, fromPin: Result, to: 8020000000000000098, toPin: Value}
     - {from: 8020000000000000086, fromPin: Then, to: 8020000000000000098, toPin: Exec}
     - {from: 8020000000000000100, fromPin: Value, to: 8020000000000000099, toPin: entity_id}
-    - {from: 8020000000000000101, fromPin: Value, to: 8020000000000000099, toPin: sx}
-    - {from: 8020000000000000102, fromPin: Value, to: 8020000000000000099, toPin: sy}
     - {from: 8020000000000000098, fromPin: Then, to: 8020000000000000099, toPin: Exec}
+    - {from: 8020000000000000028, fromPin: Result, to: 8020000000000000031, toPin: B}
+    - {from: 8020000000000000030, fromPin: Result, to: 8020000000000000031, toPin: A}
+    - {from: 8020000000000000024, fromPin: Value, to: 8020000000000000026, toPin: A, waypoints: [[2216, 932]]}
+    - {from: 8020000000000000098, fromPin: Value, to: 8020000000000000099, toPin: sx}
+    - {from: 8020000000000000098, fromPin: Value, to: 8020000000000000099, toPin: sy}
+    - {from: 8020000000000000070, fromPin: Value, to: 8020000000000000063, toPin: B}
+    - {from: 8020000000000000056, fromPin: dt, to: 8020000000000000063, toPin: A, waypoints: [[288, 2064]]}
+  groups:
+    - {id: 11828167452974995314, title: On Update, position: [-32, 1708], size: [3409, 930]}
+    - {id: 4132839951084681427, title: On Trigger Enter, position: [-24, 1116], size: [3038, 508], color: Yellow}
+    - {id: 2428327999242501713, title: Raise, position: [-32, -48], size: [1361, 348], color: Violet}
+    - {id: 7547980439670424049, title: On Create, position: [-32, 400], size: [3644, 620], color: Orange}

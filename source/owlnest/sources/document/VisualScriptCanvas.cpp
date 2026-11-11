@@ -36,6 +36,7 @@ OWL_DIAG_POP
 #include <set>
 #include <span>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <tuple>
 #include <unordered_map>
@@ -65,6 +66,11 @@ constexpr float g_fieldZoom = 0.55f;
 constexpr float g_labelZoom = 0.4f;
 constexpr float g_snap = 8.f;
 constexpr float g_dragThreshold = 4.f;
+// Height of the title bar of a group, and the smallest width or height a group keeps, canvas units.
+constexpr float g_groupHeader = 28.f;
+constexpr float g_minGroupSize = 80.f;
+// Size of a reroute node, canvas units.
+constexpr std::array g_rerouteSize{40.f, 22.f};
 
 using PinKey = std::tuple<uint64_t, std::string, bool>;
 
@@ -86,6 +92,10 @@ auto lighter(const math::vec4& iColor, const float iAmount) -> math::vec4 {
 auto valueOf(const vs::GraphNode& iNode, const std::string& iKey) -> std::string {
 	const auto it = iNode.values.find(iKey);
 	return it == iNode.values.end() ? std::string{} : it->second;
+}
+
+auto isCompactNode(const vs::GraphNode& iNode) -> bool {
+	return iNode.type == vs::g_RerouteNode || iNode.type == "var.get";
 }
 
 // `get_position` reads `Get Position`.
@@ -129,6 +139,8 @@ auto fieldWidth(const vs::PinType iType) -> float {
 		case vs::PinType::Any:
 			return 64.f;
 		case vs::PinType::Exec:
+		case vs::PinType::Transform:
+		case vs::PinType::Matrix:
 			break;
 	}
 	return 0.f;
@@ -220,6 +232,8 @@ auto editField(const vs::PinSpec& iPin, const std::string& iValue) -> std::optio
 			}
 			break;
 		case vs::PinType::Exec:
+		case vs::PinType::Transform:
+		case vs::PinType::Matrix:
 			break;
 	}
 	if (ImGui::IsItemHovered() && !ImGui::IsItemActive())
@@ -236,17 +250,137 @@ auto measureWithImGui(const std::string_view iText) -> float {
 
 }// namespace
 
-auto getNodeGlyph(const vs::NodeType& iType) -> const char* {
-	static const std::unordered_map<std::string_view, const char*> tables{
+auto getCategoryGlyph(const std::string_view iCategory) -> const char* {
+	static const std::unordered_map<std::string_view, const char*> categories{
 			{"transform", gui::icon::move3d},   {"physics", gui::icon::atom},       {"input", gui::icon::keyboard},
 			{"sound", gui::icon::volume2},      {"scene", gui::icon::clapperboard}, {"time", gui::icon::timer},
 			{"log", gui::icon::scrollText},     {"entity", gui::icon::box},         {"ui", gui::icon::layoutDashboard},
 			{"gamestate", gui::icon::flag},     {"save", gui::icon::save},          {"settings", gui::icon::settings},
 			{"trigger", gui::icon::scan},       {"door", gui::icon::doorOpen},      {"pushwall", gui::icon::brickWall},
 			{"isometric", gui::icon::grid3x3},  {"path", gui::icon::route},         {"engine", gui::icon::settings2},
+			{"locale", gui::icon::languages},   {"walk", gui::icon::footprints},    {"nav", gui::icon::navigation},
+			{"animator", gui::icon::film},      {"socket", gui::icon::plug},        {"spline", gui::icon::spline},
+			{"datatable", gui::icon::table},    {"math", gui::icon::calculator},    {"table", gui::icon::list},
 			{"Math", gui::icon::calculator},    {"Compare", gui::icon::equal},      {"Logic", gui::icon::binary},
 			{"Text", gui::icon::type},          {"Vector", gui::icon::axis3d},      {"Color", gui::icon::palette},
-			{"Variables", gui::icon::variable}, {"Events", gui::icon::zap},         {"Table", gui::icon::list}};
+			{"Variables", gui::icon::variable}, {"Events", gui::icon::zap},         {"Table", gui::icon::list},
+			{"Flow", gui::icon::workflow},      {"Constant", gui::icon::braces},    {"Matrix", gui::icon::grid3x3},
+			{"Functions", gui::icon::component}};
+	const auto it = categories.find(iCategory);
+	return it == categories.end() ? gui::icon::squareFunction : it->second;
+}
+
+auto getNodeGlyph(const vs::NodeType& iType) -> const char* {
+	static const std::unordered_map<std::string_view, const char*> nodes{
+			{"event.on_create", gui::icon::sparkles},
+			{"event.on_update", gui::icon::refreshCw},
+			{"event.on_tick", gui::icon::timer},
+			{"event.on_destroy", gui::icon::trash2},
+			{"event.on_collision", gui::icon::boxes},
+			{"event.on_collision_exit", gui::icon::boxes},
+			{"event.on_trigger_enter", gui::icon::logIn},
+			{"event.on_trigger_exit", gui::icon::logOut},
+			{"event.on_triggered", gui::icon::scan},
+			{"event.on_interact", gui::icon::hand},
+			{"event.on_timer", gui::icon::alarmClock},
+			{"event.custom", gui::icon::radio},
+			{"flow.reroute", gui::icon::circleDot},
+			{"flow.for_each", gui::icon::repeat2},
+			{"var.set", gui::icon::pencil},
+			{"value.self", gui::icon::userRound},
+			{"value.nil", gui::icon::ban},
+			{"math.add", gui::icon::plus},
+			{"math.subtract", gui::icon::minus},
+			{"math.multiply", gui::icon::x},
+			{"math.divide", gui::icon::divide},
+			{"math.modulo", gui::icon::percent},
+			{"math.negate", gui::icon::circleMinus},
+			{"math.abs", gui::icon::moveHorizontal},
+			{"math.power", gui::icon::superscript},
+			{"math.square", gui::icon::superscript},
+			{"math.sqrt", gui::icon::radical},
+			{"math.exp", gui::icon::trendingUp},
+			{"math.log", gui::icon::trendingDown},
+			{"math.log10", gui::icon::trendingDown},
+			{"math.log_base", gui::icon::trendingDown},
+			{"math.sin", gui::icon::triangleRight},
+			{"math.cos", gui::icon::triangleRight},
+			{"math.tan", gui::icon::triangleRight},
+			{"math.asin", gui::icon::triangleRight},
+			{"math.acos", gui::icon::triangleRight},
+			{"math.atan", gui::icon::triangleRight},
+			{"math.atan2", gui::icon::triangleRight},
+			{"math.deg", gui::icon::compass},
+			{"math.rad", gui::icon::compass},
+			{"math.degrees", gui::icon::compass},
+			{"math.radians", gui::icon::compass},
+			{"math.pi", gui::icon::pi},
+			{"math.random", gui::icon::dices},
+			{"math.random_integer", gui::icon::dices},
+			{"math.floor", gui::icon::arrowDownToLine},
+			{"math.ceil", gui::icon::arrowUpToLine},
+			{"math.round", gui::icon::circle},
+			{"math.fraction", gui::icon::percent},
+			{"math.sign", gui::icon::diff},
+			{"math.min", gui::icon::chevronDown},
+			{"math.max", gui::icon::chevronUp},
+			{"math.clamp", gui::icon::chevronsDownUp},
+			{"math.lerp", gui::icon::moveHorizontal},
+			{"math.distance", gui::icon::ruler},
+			{"math.vector2_add", gui::icon::plus},
+			{"math.vector3_add", gui::icon::plus},
+			{"math.vector2_subtract", gui::icon::minus},
+			{"math.vector3_subtract", gui::icon::minus},
+			{"math.vector2_scale", gui::icon::scaling},
+			{"math.vector3_scale", gui::icon::scaling},
+			{"math.vector2_dot", gui::icon::dot},
+			{"math.vector3_dot", gui::icon::dot},
+			{"math.vector2_length", gui::icon::ruler},
+			{"math.vector3_length", gui::icon::ruler},
+			{"math.vector2_normalize", gui::icon::arrowUpRight},
+			{"math.vector3_normalize", gui::icon::arrowUpRight},
+			{"math.vector3_cross", gui::icon::x},
+			{"compare.equal", gui::icon::equal},
+			{"compare.not_equal", gui::icon::equalNot},
+			{"compare.greater", gui::icon::chevronRight},
+			{"compare.greater_equal", gui::icon::chevronRight},
+			{"compare.less", gui::icon::chevronLeft},
+			{"compare.less_equal", gui::icon::chevronLeft},
+			{"logic.and", gui::icon::ampersand},
+			{"logic.or", gui::icon::gitMerge},
+			{"logic.not", gui::icon::ban},
+			{"logic.select", gui::icon::listFilter},
+			{"logic.default", gui::icon::shield},
+			{"logic.is_set", gui::icon::circleCheck},
+			{"text.concat", gui::icon::link2},
+			{"text.join", gui::icon::combine},
+			{"text.format", gui::icon::textCursorInput},
+			{"text.length", gui::icon::ruler},
+			{"text.split", gui::icon::scissors},
+			{"text.to_number", gui::icon::hash},
+			{"text.to_text", gui::icon::type},
+			{"text.contains", gui::icon::search},
+			{"text.substring", gui::icon::textSelect},
+			{"text.upper", gui::icon::caseUpper},
+			{"text.lower", gui::icon::caseLower},
+			{"table.get", gui::icon::keyRound},
+			{"table.has_key", gui::icon::key},
+			{"table.set", gui::icon::pencil},
+			{"table.get_item", gui::icon::brackets},
+			{"table.length", gui::icon::ruler},
+			{"table.contains", gui::icon::search},
+			{"table.make_list", gui::icon::listPlus},
+			{"table.break_list", gui::icon::listTree},
+			{"table.append", gui::icon::listPlus},
+			{"table.remove", gui::icon::listX},
+			{"matrix.multiply", gui::icon::x},
+			{"matrix.transpose", gui::icon::flipVertical2},
+			{"matrix.inverse", gui::icon::flipHorizontal2},
+			{"matrix.transform_point", gui::icon::locate},
+			{"matrix.transform_direction", gui::icon::navigation},
+			{"matrix.from_transform", gui::icon::move3d}};
+	if (const auto it = nodes.find(iType.id); it != nodes.end())
+		return it->second;
 	switch (iType.kind) {
 		case vs::NodeKind::Branch:
 			return gui::icon::gitBranch;
@@ -273,17 +407,10 @@ auto getNodeGlyph(const vs::NodeType& iType) -> const char* {
 		case vs::NodeKind::SetVariable:
 			break;
 	}
-	if (iType.id == "value.self")
-		return gui::icon::userRound;
-	if (iType.id == "value.color")
-		return gui::icon::palette;
-	if (iType.id == "value.vector3")
-		return gui::icon::axis3d;
-	if (iType.category == "Constant")
-		return gui::icon::braces;
-	if (const auto it = tables.find(iType.category); it != tables.end())
-		return it->second;
-	return gui::icon::squareFunction;
+	// A constant shows the glyph of the type it gives.
+	if (iType.category == "Constant" && !iType.outputs.empty())
+		return getPinGlyph(iType.outputs.front().type);
+	return getCategoryGlyph(iType.category);
 }
 
 auto getPinGlyph(const vs::PinType iType) -> const char* {
@@ -308,6 +435,10 @@ auto getPinGlyph(const vs::PinType iType) -> const char* {
 			return gui::icon::palette;
 		case vs::PinType::Table:
 			return gui::icon::braces;
+		case vs::PinType::Transform:
+			return gui::icon::move3d;
+		case vs::PinType::Matrix:
+			return gui::icon::grid3x3;
 		case vs::PinType::Any:
 			break;
 	}
@@ -334,6 +465,8 @@ auto getPinTypeIcon(const vs::PinType iType) -> const char* {
 			return "vs_type_color";
 		case vs::PinType::Exec:
 		case vs::PinType::Table:
+		case vs::PinType::Transform:
+		case vs::PinType::Matrix:
 		case vs::PinType::Any:
 			break;
 	}
@@ -390,6 +523,10 @@ auto getPinColor(const vs::PinType iType) -> math::vec4 {
 			return rgb(0.35f, 0.45f, 1.f);
 		case vs::PinType::Table:
 			return rgb(0.62f, 0.48f, 0.9f);
+		case vs::PinType::Transform:
+			return rgb(0.96f, 0.45f, 0.2f);
+		case vs::PinType::Matrix:
+			return rgb(0.3f, 0.78f, 0.85f);
 		case vs::PinType::Any:
 			break;
 	}
@@ -418,6 +555,10 @@ auto getPinTypeName(const vs::PinType iType) -> std::string_view {
 			return "vector 3";
 		case vs::PinType::Color:
 			return "color";
+		case vs::PinType::Transform:
+			return "transform";
+		case vs::PinType::Matrix:
+			return "matrix";
 		case vs::PinType::Any:
 			break;
 	}
@@ -429,7 +570,7 @@ auto getNodeColor(const vs::VisualScript& iScript, const vs::GraphNode& iNode, c
 	switch (iType.kind) {
 		case vs::NodeKind::Event:
 		case vs::NodeKind::CustomEvent:
-			return rgb(0.6f, 0.14f, 0.14f);
+			return rgb(0.74f, 0.13f, 0.13f);
 		case vs::NodeKind::Call:
 			return iType.pure ? rgb(0.17f, 0.45f, 0.26f) : rgb(0.15f, 0.33f, 0.6f);
 		case vs::NodeKind::GetVariable:
@@ -533,6 +674,20 @@ auto layoutNode(const vs::VisualScript& iScript, const vs::GraphNode& iNode, con
 		layout.headerHeight = g_headerHeight;
 		return layout;
 	}
+	if (iNode.type == vs::g_RerouteNode) {
+		layout.size = {g_rerouteSize[0], g_rerouteSize[1]};
+		layout.inputs.push_back({g_pinRadius + 3.f, g_rerouteSize[1] * 0.5f});
+		layout.outputs.push_back({g_rerouteSize[0] - g_pinRadius - 3.f, g_rerouteSize[1] * 0.5f});
+		layout.fields.push_back({0.f, 0.f});
+		return layout;
+	}
+	if (iNode.type == "var.get") {
+		const float height = g_rowHeight + g_bodyTop;
+		const float width = std::max(72.f, g_padding + iMeasure(valueOf(iNode, "variable")) + g_columnGap + g_pinSpace);
+		layout.size = {width, height};
+		layout.outputs.push_back({width - g_padding - g_pinRadius * 1.6f + 4.f, height * 0.5f});
+		return layout;
+	}
 	const auto pins = vs::getNodePins(iScript, iNode);
 	std::set<std::string> linked;
 	for (const auto& link: iScript.links)
@@ -597,6 +752,8 @@ struct VisualScriptCanvas::Frame {
 	std::optional<size_t> hoveredNode;
 	std::optional<size_t> hoveredLink;
 	std::optional<std::array<size_t, 2>> hoveredWaypoint;
+	std::optional<size_t> hoveredGroup;
+	bool hoveredGroupCorner{false};
 	bool hovered{false};
 	Result result;
 
@@ -635,6 +792,8 @@ auto VisualScriptCanvas::render(const vs::VisualScript& iScript,
 				.hoveredNode = {},
 				.hoveredLink = {},
 				.hoveredWaypoint = {},
+				.hoveredGroup = {},
+				.hoveredGroupCorner = false,
 				.hovered = false,
 				.result = {}};
 	if (!visible) {
@@ -703,6 +862,7 @@ auto VisualScriptCanvas::render(const vs::VisualScript& iScript,
 			break;
 		}
 	}
+	drawGroups(frame);
 	drawLinks(frame);
 	drawNodes(frame);
 	handleMouse(frame);
@@ -858,9 +1018,59 @@ void VisualScriptCanvas::drawLinks(Frame& ioFrame) const {
 			value != m_debug.values.end()) {
 			const auto segments = gui::widgets::getNodeLinkSegments(start, end, waypoints[i], m_zoom);
 			const auto& middle = segments[segments.size() / 2];
-			drawWireValue(ioFrame, middle[0], middle[3], value->second);
+			const auto entries = m_debug.entries.find(value->first);
+			drawWireValue(ioFrame, middle[0], middle[3], value->second, from->second.second,
+						  entries == m_debug.entries.end()
+								  ? std::span<const std::pair<std::string, std::string>>{}
+								  : std::span<const std::pair<std::string, std::string>>{entries->second});
 		}
 	}
+}
+
+void VisualScriptCanvas::drawGroups(Frame& ioFrame) const {
+	const float header = g_groupHeader * m_zoom;
+	const float corner = 14.f * m_zoom;
+	for (size_t i = 0; i < ioFrame.script.groups.size(); ++i) {
+		const auto& group = ioFrame.script.groups[i];
+		const bool gestured = m_group == group.id;
+		const bool moved = gestured && m_gesture == Gesture::Move;
+		const bool resized = gestured && m_gesture == Gesture::Resize;
+		const std::array offset{m_offset[0] + (moved ? m_moveOffset[0] : 0.f),
+								m_offset[1] + (moved ? m_moveOffset[1] : 0.f)};
+		const float width = std::max(g_minGroupSize, group.size[0] + (resized ? m_moveOffset[0] : 0.f));
+		const float height = std::max(g_minGroupSize, group.size[1] + (resized ? m_moveOffset[1] : 0.f));
+		const auto min = ioFrame.toScreen(group.position[0], group.position[1], offset);
+		const auto max = ioFrame.toScreen(group.position[0] + width, group.position[1] + height, offset);
+		const auto color = gui::widgets::findLinkColor(group.color).value_or(rgb(0.45f, 0.55f, 0.7f));
+		const auto tint = [&color](const float iAlpha) -> ImU32 {
+			return ImGui::ColorConvertFloat4ToU32({color.x(), color.y(), color.z(), iAlpha});
+		};
+		const float rounding = 6.f * m_zoom;
+		ioFrame.draw->AddRectFilled(min, max, tint(0.12f), rounding);
+		ioFrame.draw->AddRectFilled(min, {max.x, min.y + header}, tint(0.45f), rounding, ImDrawFlags_RoundCornersTop);
+		ioFrame.draw->AddRect(min, max, tint(gestured ? 0.95f : 0.6f), rounding, 0, 1.5f);
+		ioFrame.draw->AddTriangleFilled({max.x - corner, max.y}, {max.x, max.y - corner}, max, tint(0.6f));
+		if (m_zoom >= 0.35f) {
+			const float fontSize = ImGui::GetFontSize() * std::min(m_zoom, 1.4f);
+			ioFrame.draw->PushClipRect(min, {max.x, min.y + header}, true);
+			ioFrame.draw->AddText(ImGui::GetFont(), fontSize,
+								  {min.x + 8.f * m_zoom, min.y + (header - fontSize) * 0.5f},
+								  IM_COL32(235, 238, 245, 255), group.title.empty() ? "Group" : group.title.c_str());
+			ioFrame.draw->PopClipRect();
+		}
+		if (ioFrame.hoveredNode.has_value() || ioFrame.hoveredPin.has_value())
+			continue;
+		const auto& mouse = ioFrame.mouse;
+		if (mouse.x >= max.x - corner && mouse.x <= max.x && mouse.y >= max.y - corner && mouse.y <= max.y) {
+			ioFrame.hoveredGroup = i;
+			ioFrame.hoveredGroupCorner = true;
+		} else if (mouse.x >= min.x && mouse.x <= max.x && mouse.y >= min.y && mouse.y <= min.y + header) {
+			ioFrame.hoveredGroup = i;
+			ioFrame.hoveredGroupCorner = false;
+		}
+	}
+	if (ioFrame.hoveredGroup.has_value() && ioFrame.hovered && m_gesture == Gesture::None)
+		ImGui::SetMouseCursor(ioFrame.hoveredGroupCorner ? ImGuiMouseCursor_ResizeNWSE : ImGuiMouseCursor_ResizeAll);
 }
 
 void VisualScriptCanvas::insertWaypoint(Frame& ioFrame, const size_t iLink, const std::array<float, 2>& iPoint) const {
@@ -878,6 +1088,25 @@ void VisualScriptCanvas::insertWaypoint(Frame& ioFrame, const size_t iLink, cons
 	points.insert(points.begin() + static_cast<std::ptrdiff_t>(at), iPoint);
 	ioFrame.result.edit =
 			VisualScriptEdit{.script = std::move(next), .description = "Add Link Waypoint", .merge = false};
+}
+
+void VisualScriptCanvas::insertReroute(Frame& ioFrame, const size_t iLink, const std::array<float, 2>& iPoint) {
+	auto next = ioFrame.script;
+	const core::UUID id{};
+	next.nodes.push_back({.id = id,
+						  .type = std::string{vs::g_RerouteNode},
+						  .position = {iPoint[0] - g_rerouteSize[0] * 0.5f, iPoint[1] - g_rerouteSize[1] * 0.5f},
+						  .values = {}});
+	auto& link = next.links[iLink];
+	next.links.push_back(
+			{.fromNode = id, .fromPin = "Out", .toNode = link.toNode, .toPin = link.toPin, .waypoints = {}});
+	auto& head = next.links[iLink];
+	head.toNode = id;
+	head.toPin = "In";
+	head.waypoints.clear();
+	m_selection = {id};
+	ioFrame.result.edit =
+			VisualScriptEdit{.script = std::move(next), .description = "Add Reroute Node", .merge = false};
 }
 
 void VisualScriptCanvas::renderLinkMenu(Frame& ioFrame) {
@@ -902,6 +1131,9 @@ void VisualScriptCanvas::renderLinkMenu(Frame& ioFrame) {
 	if (gui::widgets::menuItem({.glyph = gui::icon::plus, .label = "Add Waypoint"}))
 		insertWaypoint(ioFrame, index, m_menuPoint);
 	const auto from = ioFrame.pins.find({found->fromNode, found->fromPin, true});
+	if (from != ioFrame.pins.end() && from->second.second != vs::PinType::Exec &&
+		gui::widgets::menuItem({.glyph = gui::icon::circleDot, .label = "Add Reroute Node"}))
+		insertReroute(ioFrame, index, m_menuPoint);
 	if (from != ioFrame.pins.end() && from->second.second == vs::PinType::Exec) {
 		ImGui::SeparatorText("Colour");
 		if (const auto chosen = gui::widgets::linkColorSwatches(found->color);
@@ -923,7 +1155,8 @@ void VisualScriptCanvas::renderLinkMenu(Frame& ioFrame) {
 }
 
 void VisualScriptCanvas::drawWireValue(const Frame& iFrame, const math::vec2f& iFrom, const math::vec2f& iTo,
-									   const std::string& iValue) const {
+									   const std::string& iValue, const vs::PinType iType,
+									   const std::span<const std::pair<std::string, std::string>> iEntries) const {
 	if (m_zoom < 0.4f)
 		return;
 	const auto curve = gui::widgets::getNodeLinkCurve(iFrom, iTo, m_zoom);
@@ -939,6 +1172,27 @@ void VisualScriptCanvas::drawWireValue(const Frame& iFrame, const math::vec2f& i
 	iFrame.draw->AddRect(min, max, IM_COL32(240, 190, 70, 200), size.y, 0, 1.f);
 	iFrame.draw->AddText(ImGui::GetFont(), fontSize, {min.x + pad.x, min.y + pad.y}, IM_COL32(240, 220, 160, 255),
 						 text.c_str());
+	if (iEntries.empty() || m_gesture != Gesture::None || !ImGui::IsWindowHovered() ||
+		!ImGui::IsMouseHoveringRect(min, max))
+		return;
+	ImGui::BeginTooltip();
+	const bool grid = iType == vs::PinType::Matrix && iEntries.size() == 16;
+	if (ImGui::BeginTable("##wireEntries", grid ? 4 : 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit)) {
+		for (const auto& [key, value]: iEntries) {
+			if (grid) {
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(value.c_str());
+				continue;
+			}
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::TextDisabled("%s", key.c_str());
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(value.c_str());
+		}
+		ImGui::EndTable();
+	}
+	ImGui::EndTooltip();
 }
 
 void VisualScriptCanvas::drawNodes(Frame& ioFrame) const {
@@ -968,6 +1222,18 @@ void VisualScriptCanvas::drawNodeFrame(const Frame& iFrame, const size_t iIndex)
 	const auto& theme = gui::UiLayer::getTheme();
 	const float header = view.layout.headerHeight * zoom;
 	const bool faulty = !view.error.empty() || view.type == nullptr;
+	if (view.type != nullptr && isCompactNode(node)) {
+		drawCompactNode(iFrame, iIndex);
+		return;
+	}
+	const bool event = view.type != nullptr &&
+					   (view.type->kind == vs::NodeKind::Event || view.type->kind == vs::NodeKind::CustomEvent);
+	if (event) {
+		const auto color = getNodeColor(iFrame.script, node, *view.type);
+		const float halo = 5.f * zoom;
+		draw->AddRectFilled({min.x - halo, min.y - halo}, {max.x + halo, max.y + halo}, toU32(color, 0.28f),
+							13.f * zoom);
+	}
 	gui::widgets::drawNodeFrame(
 			draw, toVec(min), toVec(max),
 			{.header = view.type == nullptr ? rgb(0.4f, 0.1f, 0.1f) : getNodeColor(iFrame.script, node, *view.type),
@@ -976,6 +1242,9 @@ void VisualScriptCanvas::drawNodeFrame(const Frame& iFrame, const size_t iIndex)
 			 .hovered = iFrame.hoveredNode == iIndex,
 			 .faulty = faulty},
 			zoom);
+	if (event)
+		draw->AddRect(min, max, toU32(lighter(getNodeColor(iFrame.script, node, *view.type), 0.25f)), 8.f * zoom, 0,
+					  2.5f * zoom);
 	if (m_debug.stopped == node.id) {
 		const float grow = 4.f * zoom;
 		draw->AddRect({min.x - grow, min.y - grow}, {max.x + grow, max.y + grow}, IM_COL32(240, 190, 70, 255),
@@ -1004,6 +1273,42 @@ void VisualScriptCanvas::drawNodeFrame(const Frame& iFrame, const size_t iIndex)
 			draw->AddText(font, fontSize, {max.x - (g_padding + 14.f) * zoom, titleY}, toU32(theme.error),
 						  gui::icon::triangleAlert);
 	}
+}
+
+void VisualScriptCanvas::drawCompactNode(const Frame& iFrame, const size_t iIndex) const {
+	auto* draw = iFrame.draw;
+	const float zoom = m_zoom;
+	const auto& view = iFrame.nodes[iIndex];
+	const auto& node = *view.node;
+	const auto& theme = gui::UiLayer::getTheme();
+	const auto outputs = view.pins.outputs;
+	const auto color = getPinColor(outputs.empty() ? vs::PinType::Any : outputs.front().type);
+	const float rounding = (view.max.y - view.min.y) * 0.5f;
+	const bool hovered = iFrame.hoveredNode == iIndex;
+	const ImU32 border = view.selected
+								 ? toU32(theme.accent)
+								 : toU32(hovered ? lighter(color, 0.3f) : color, node.type == "var.get" ? 0.9f : 0.6f);
+	if (node.type == vs::g_RerouteNode) {
+		draw->AddRectFilled(view.min, view.max, IM_COL32(20, 22, 26, 200), rounding);
+		draw->AddRect(view.min, view.max, border, rounding, 0, (view.selected ? 2.f : 1.2f) * zoom);
+		return;
+	}
+	const float shadow = 3.f * zoom;
+	draw->AddRectFilled({view.min.x + shadow, view.min.y + shadow}, {view.max.x + shadow, view.max.y + shadow},
+						IM_COL32(0, 0, 0, 70), rounding);
+	draw->AddRectFilled(view.min, view.max, toU32(scaled(color, 0.42f), 0.95f), rounding);
+	draw->AddRect(view.min, view.max, border, rounding, 0, (view.selected ? 2.5f : 1.5f) * zoom);
+	if (!view.error.empty())
+		draw->AddRect(view.min, view.max, toU32(theme.error), rounding, 0, 2.f * zoom);
+	if (zoom <= 0.3f)
+		return;
+	gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
+	ImFont* strong = ImGui::GetFont();
+	gui::UiLayer::popTextStyle();
+	const float fontSize = ImGui::GetFontSize() * zoom;
+	const auto name = valueOf(node, "variable");
+	draw->AddText(strong, fontSize, {view.min.x + g_padding * zoom, (view.min.y + view.max.y - fontSize) * 0.5f},
+				  IM_COL32(255, 255, 255, 255), name.c_str());
 }
 
 void VisualScriptCanvas::drawNodePins(Frame& ioFrame, const size_t iIndex) const {
@@ -1040,7 +1345,7 @@ void VisualScriptCanvas::drawNodePins(Frame& ioFrame, const size_t iIndex) const
 			gui::widgets::drawExecPin(draw, toVec(iAt), g_pinRadius * 1.15f * zoom, pinColor, linked);
 		else
 			gui::widgets::drawDataPin(draw, toVec(iAt), g_pinRadius * zoom, pinColor, linked);
-		if (!labels || isDefaultExec(iPin))
+		if (!labels || isDefaultExec(iPin) || isCompactNode(node))
 			return;
 		const auto size = font->CalcTextSizeA(fontSize, FLT_MAX, 0.f, iPin.name.c_str());
 		const float x = iOutput ? iAt.x - (g_pinRadius + 8.f) * zoom - size.x : iAt.x + (g_pinRadius + 8.f) * zoom;
@@ -1195,12 +1500,15 @@ void VisualScriptCanvas::handleMouse(Frame& ioFrame) {
 			ioFrame.result.contextNode = id;
 			if (std::ranges::find(m_selection, id) == m_selection.end())
 				m_selection = {id};
+		} else if (ioFrame.hoveredGroup.has_value()) {
+			ioFrame.result.contextGroup = ioFrame.script.groups[*ioFrame.hoveredGroup].id;
 		}
 	}
 
 	if (ioFrame.hovered && !overWidget && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		pressLeft(ioFrame, mouse);
-	if ((m_gesture == Gesture::Move || m_gesture == Gesture::Waypoint) && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+	if ((m_gesture == Gesture::Move || m_gesture == Gesture::Waypoint || m_gesture == Gesture::Resize) &&
+		ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 		m_moveOffset = {mouse[0] - m_gestureStart[0], mouse[1] - m_gestureStart[1]};
 		if (m_snap) {
 			const auto landed =
@@ -1254,6 +1562,20 @@ void VisualScriptCanvas::pressLeft(Frame& ioFrame, const std::array<float, 2>& i
 		else
 			m_pressedNode = id;
 		m_gesture = Gesture::Move;
+	} else if (ioFrame.hoveredGroup.has_value()) {
+		const auto& group = ioFrame.script.groups[*ioFrame.hoveredGroup];
+		m_group = group.id;
+		if (ioFrame.hoveredGroupCorner) {
+			m_anchorStart = {group.position[0] + group.size[0], group.position[1] + group.size[1]};
+			m_gesture = Gesture::Resize;
+		} else {
+			m_selection.clear();
+			for (const auto& node: ioFrame.script.nodes)
+				if (group.holds(node))
+					m_selection.push_back(node.id);
+			m_anchorStart = {group.position[0], group.position[1]};
+			m_gesture = Gesture::Move;
+		}
 	} else {
 		if (!io.KeyCtrl && !io.KeyShift)
 			m_selection.clear();
@@ -1285,10 +1607,15 @@ void VisualScriptCanvas::releaseLeft(Frame& ioFrame, const std::array<float, 2>&
 							x += snapped[0];
 							y += snapped[1];
 						}
+				std::string description = m_selection.size() > 1 ? "Move Nodes" : "Move Node";
+				for (auto& group: next.groups)
+					if (group.id == m_group) {
+						group.position = {round(group.position[0] + m_moveOffset[0]),
+										  round(group.position[1] + m_moveOffset[1])};
+						description = "Move Group";
+					}
 				ioFrame.result.edit =
-						VisualScriptEdit{.script = std::move(next),
-										 .description = m_selection.size() > 1 ? "Move Nodes" : "Move Node",
-										 .merge = false};
+						VisualScriptEdit{.script = std::move(next), .description = description, .merge = false};
 			} else if (m_pressedNode.has_value()) {
 				m_selection = {*m_pressedNode};
 			}
@@ -1326,12 +1653,26 @@ void VisualScriptCanvas::releaseLeft(Frame& ioFrame, const std::array<float, 2>&
 													   .merge = false};
 			}
 			break;
+		case Gesture::Resize:
+			if (std::abs(m_moveOffset[0]) + std::abs(m_moveOffset[1]) > g_dragThreshold / m_zoom) {
+				auto next = ioFrame.script;
+				for (auto& group: next.groups)
+					if (group.id == m_group)
+						group.size = {std::max(g_minGroupSize,
+											   std::round((group.size[0] + m_moveOffset[0]) / g_snap) * g_snap),
+									  std::max(g_minGroupSize,
+											   std::round((group.size[1] + m_moveOffset[1]) / g_snap) * g_snap)};
+				ioFrame.result.edit =
+						VisualScriptEdit{.script = std::move(next), .description = "Resize Group", .merge = false};
+			}
+			break;
 		case Gesture::Pan:
 		case Gesture::None:
 			break;
 	}
 	m_gesture = Gesture::None;
 	m_moveOffset = {0.f, 0.f};
+	m_group.reset();
 }
 
 }// namespace owl::nest

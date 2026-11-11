@@ -451,3 +451,9 @@ VisualScript:
     - {from: 8050000000000000076, fromPin: Value, to: 8050000000000000075, toPin: value}
     - {from: 8050000000000000074, fromPin: Then, to: 8050000000000000075, toPin: Exec}
     - {from: 8050000000000000061, fromPin: False, to: 8050000000000000075, toPin: Exec}
+  groups:
+    - {id: 10062283537925428874, title: set_open, position: [-24, -52], size: [2565, 344], color: Red}
+    - {id: 11370439660481558892, title: On Create, position: [-24, 416], size: [2045, 302], color: Yellow}
+    - {id: 16682605060692742239, title: on_board_interact, position: [-24, 842], size: [951, 292], color: Teal}
+    - {id: 13732161692211602227, title: on_board_closed, position: [-24, 1258], size: [1405, 280], color: Violet}
+    - {id: 16380425338287978515, title: On Update, position: [-24, 1710], size: [4215, 584], color: Red}

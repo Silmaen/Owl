@@ -22,13 +22,13 @@ VisualScript:
       position: [512, 0]
     - id: 7400000000000000005
       type: call.gamestate.set
-      position: [776, 0]
+      position: [880, 0]
       values:
         key: platformer_fall
         value: 1
     - id: 7400000000000000006
       type: call.log.info
-      position: [1054, 0]
+      position: [1200, 0]
       values:
         message: Fell into a pit
     - id: 7400000000000000007
@@ -67,3 +67,5 @@ VisualScript:
     - {from: 7400000000000000008, fromPin: Then, to: 7400000000000000010, toPin: Exec}
     - {from: 7400000000000000010, fromPin: Then, to: 7400000000000000011, toPin: Exec}
     - {from: 7400000000000000009, fromPin: x, to: 7400000000000000010, toPin: value}
+  groups:
+    - {id: 11998313607025245851, title: On Trigger Enter, position: [-24, -52], size: [1933, 808], color: Red}

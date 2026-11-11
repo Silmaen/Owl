@@ -568,7 +568,9 @@ auto doubler() -> VisualScript {
 								.outputs = {{.name = "y", .type = PinType::Number}},
 								.macro = false,
 								.exits = {"Then"},
-								.exported = false});
+								.exported = false,
+								.category = {},
+								.pure = false});
 	const auto entry = addNode(script, "func.entry", {{"function", "double"}});
 	const auto times = addNode(script, "math.multiply", {{"B", "2"}});
 	const auto ret = addNode(script, "func.return", {{"function", "double"}});
@@ -617,7 +619,9 @@ TEST(VisualScript, ExportedFunctionsAreGlobalsTheEngineCalls) {
 								.outputs = {{.name = "open", .type = PinType::Boolean}},
 								.macro = false,
 								.exits = {"Then"},
-								.exported = false});
+								.exported = false,
+								.category = {},
+								.pure = false});
 	const auto entry = addNode(script, "func.entry", {{"function", "is_open"}});
 	const auto ret = addNode(script, "func.return", {{"function", "is_open"}, {"open", "true"}});
 	link(script, entry, "Then", ret, "Exec");
@@ -659,7 +663,9 @@ TEST(VisualScript, MacrosContinueByTheExitTheirReturnNames) {
 								.outputs = {},
 								.macro = true,
 								.exits = {"Big", "Small"},
-								.exported = false});
+								.exported = false,
+								.category = {},
+								.pure = false});
 	const auto entry = addNode(script, "func.entry", {{"function", "classify"}});
 	const auto less = addNode(script, "compare.less", {{"B", "10"}});
 	const auto branch = addNode(script, "flow.branch");
@@ -746,5 +752,5 @@ TEST(VisualScript, FunctionNodesReportTheirMisuse) {
 	noEntry.removeNode(noEntry.nodes[0].id);
 	EXPECT_FALSE(errorsOf(noEntry).empty());
 	EXPECT_EQ(parsePinTypeKey(getPinTypeKey(PinType::Vector3)), PinType::Vector3);
-	EXPECT_FALSE(parsePinTypeKey("matrix").has_value());
+	EXPECT_FALSE(parsePinTypeKey("quaternion").has_value());
 }

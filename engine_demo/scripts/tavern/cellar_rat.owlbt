@@ -17,97 +17,97 @@ BehaviourTree:
       type: composite.selector
       position: [220, 240]
       values:
-        reactive: "true"
+        reactive: true
       comment: The first branch that holds wins, checked at every tick.
     - id: 3951000000000000003
       type: composite.sequence
-      position: [440, 0]
+      position: [656, -16]
       comment: Bite the player within reach, once in a while.
     - id: 3951000000000000004
       type: action.find_player
-      position: [660, -60]
+      position: [880, -96]
       values:
-        key: "player"
+        key: player
     - id: 3951000000000000005
       type: condition.distance
-      position: [660, 0]
+      position: [880, 0]
       values:
-        distance: "0.9"
-        key: "player"
-        op: "closer than"
-        space: "ground"
+        distance: 0.9
+        key: player
+        op: closer than
+        space: ground
     - id: 3951000000000000006
       type: decorator.cooldown
-      position: [660, 60]
+      position: [880, 96]
       values:
-        seconds: "1.5"
+        seconds: 1.5
     - id: 3951000000000000007
       type: action.lua
-      position: [880, 60]
+      position: [1088, 96]
       values:
-        function: "rat_bite"
+        function: rat_bite
       comment: In cellar_rat.lua.
     - id: 3951000000000000008
       type: composite.sequence
-      position: [440, 200]
+      position: [480, 256]
       comment: Chase the player who comes close.
     - id: 3951000000000000009
       type: action.find_player
-      position: [660, 140]
+      position: [688, 112]
       values:
-        key: "player"
+        key: player
     - id: 3951000000000000010
       type: condition.distance
-      position: [660, 200]
+      position: [688, 208]
       values:
-        distance: "3.5"
-        key: "player"
-        op: "closer than"
-        space: "ground"
+        distance: 3.5
+        key: player
+        op: closer than
+        space: ground
     - id: 3951000000000000011
       type: action.steer
-      position: [660, 260]
+      position: [688, 304]
       values:
-        behaviour: "pursue"
-        key: "player"
-        weight: "1"
+        behaviour: pursue
+        key: player
+        weight: 1
     - id: 3951000000000000012
       type: action.wait
-      position: [660, 320]
+      position: [688, 400]
       values:
-        seconds: "0.25"
+        seconds: 0.25
     - id: 3951000000000000013
       type: composite.sequence
-      position: [440, 420]
+      position: [480, 544]
       comment: Back to the nest when strayed.
     - id: 3951000000000000014
       type: condition.distance
-      position: [660, 400]
+      position: [688, 496]
       values:
-        distance: "2.5"
-        key: "home"
-        op: "farther than"
+        distance: 2.5
+        key: home
+        op: farther than
     - id: 3951000000000000015
       type: action.move_to
-      position: [660, 460]
+      position: [688, 592]
       values:
-        distance: "0.6"
-        key: "home"
+        distance: 0.6
+        key: home
     - id: 3951000000000000016
       type: composite.sequence
-      position: [440, 580]
+      position: [480, 736]
       comment: Sniff around the nest.
     - id: 3951000000000000017
       type: action.steer
-      position: [660, 560]
+      position: [688, 688]
       values:
-        behaviour: "wander"
+        behaviour: wander
     - id: 3951000000000000018
       type: action.wait
-      position: [660, 620]
+      position: [688, 784]
       values:
-        seconds: "1"
-        spread: "1.5"
+        seconds: 1
+        spread: 1.5
   links:
     - {parent: 3951000000000000001, child: 3951000000000000002}
     - {parent: 3951000000000000002, child: 3951000000000000003}

@@ -21,12 +21,14 @@
 #include <gui/widgets/EmptyState.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/Menu.h>
+#include <gui/widgets/NodeStyle.h>
 #include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/SearchField.h>
 #include <gui/widgets/SectionHeader.h>
 #include <gui/widgets/Toggle.h>
 #include <platform/AtomicFile.h>
 #include <platform/FileUtils.h>
+#include <script/ScriptTypeChecker.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -39,6 +41,7 @@ OWL_DIAG_POP
 #include <array>
 #include <cctype>
 #include <charconv>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -48,6 +51,7 @@ OWL_DIAG_POP
 #include <iterator>
 #include <limits>
 #include <map>
+#include <numeric>
 #include <optional>
 #include <set>
 #include <span>
@@ -64,6 +68,12 @@ namespace owl::nest {
 namespace {
 
 namespace vs = script::visual;
+
+// One checker for every graph: building it loads the declarations of the engine once.
+auto typeChecker() -> script::ScriptTypeChecker& {
+	static script::ScriptTypeChecker s_checker;
+	return s_checker;
+}
 
 class ModifyVisualScriptCommand final : public UndoCommand<vs::VisualScript> {
 public:
@@ -236,6 +246,132 @@ auto componentField(const char* iId, const vs::PinType iType, const size_t iCoun
 	return out;
 }
 
+// Numbers of a transform or a matrix typed as `a, b; c, d`: as many as asked, the identity where the text has none.
+auto parseCompound(const std::string& iValue, const bool iMatrix) -> std::vector<float> {
+	std::vector<float> values = iMatrix ? std::vector<float>{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
+										: std::vector<float>{0, 0, 0, 0, 0, 0, 1, 1, 1};
+	size_t index = 0;
+	std::string part;
+	for (size_t i = 0; i <= iValue.size() && index < values.size(); ++i) {
+		if (i < iValue.size() && iValue[i] != ',' && iValue[i] != ';' && iValue[i] != ' ') {
+			part += iValue[i];
+			continue;
+		}
+		if (part.empty())
+			continue;
+		float value = 0.f;
+		if (std::from_chars(part.data(), part.data() + part.size(), value).ec == std::errc{})
+			values[index] = value;
+		++index;
+		part.clear();
+	}
+	return values;
+}
+
+// Edits a transform (position, rotation shown in degrees, scale) or a matrix, row by row; the new text when it changed.
+auto compoundField(const char* iId, const bool iMatrix, const std::string& iValue) -> std::optional<std::string> {
+	auto values = parseCompound(iValue, iMatrix);
+	const size_t width = iMatrix ? 4 : 3;
+	bool changed = false;
+	ImGui::PushID(iId);
+	for (size_t row = 0; row < values.size() / width; ++row) {
+		ImGui::PushID(static_cast<int>(row));
+		auto cells = std::span{values}.subspan(row * width, width);
+		const bool degrees = !iMatrix && row == 1;
+		std::array<float, 4> shown{};
+		for (size_t i = 0; i < width; ++i) shown[i] = degrees ? cells[i] * 57.29578f : cells[i];
+		if (!iMatrix)
+			ImGui::TextDisabled("%s", std::array{"Position", "Rotation (deg)", "Scale"}[row]);
+		if (gui::widgets::vectorField("##row", std::span{shown}.first(width), degrees ? 1.f : 0.05f)) {
+			for (size_t i = 0; i < width; ++i) cells[i] = degrees ? shown[i] / 57.29578f : shown[i];
+			changed = true;
+		}
+		ImGui::PopID();
+	}
+	if (iMatrix && ImGui::SmallButton("Identity")) {
+		values = parseCompound({}, true);
+		changed = true;
+	}
+	ImGui::PopID();
+	if (!changed)
+		return std::nullopt;
+	std::string out;
+	for (size_t i = 0; i < values.size(); ++i) {
+		const char* separator = i % width == 0 ? "; " : ", ";
+		out += std::format("{}{:.6g}", i == 0 ? "" : separator, values[i]);
+	}
+	return out;
+}
+
+// Items of a list typed as `a, b, "c, d"`: the commas outside quotes separate them, each item trimmed.
+auto splitListItems(const std::string& iText) -> std::vector<std::string> {
+	std::vector<std::string> items;
+	std::string item;
+	bool quoted = false;
+	const auto flush = [&]() -> void {
+		const auto first = item.find_first_not_of(' ');
+		items.push_back(first == std::string::npos ? std::string{}
+												   : item.substr(first, item.find_last_not_of(' ') - first + 1));
+		item.clear();
+	};
+	for (const char character: iText) {
+		if (character == '"')
+			quoted = !quoted;
+		if (character == ',' && !quoted) {
+			flush();
+			continue;
+		}
+		item += character;
+	}
+	if (!iText.empty())
+		flush();
+	return items;
+}
+
+// Edits a list one item per row: change, move up or down, remove, add at the end; the new text when it changed.
+auto listField(const char* iId, const std::string& iValue) -> std::optional<std::string> {
+	auto items = splitListItems(iValue);
+	bool changed = false;
+	std::optional<size_t> removed;
+	std::optional<size_t> raised;
+	ImGui::PushID(iId);
+	for (size_t i = 0; i < items.size(); ++i) {
+		ImGui::PushID(static_cast<int>(i));
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextDisabled("%zu", i + 1);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(-3.f * ImGui::GetFrameHeight());
+		changed |= ImGui::InputText("##item", &items[i]);
+		ImGui::SameLine();
+		ImGui::BeginDisabled(i == 0);
+		if (ImGui::SmallButton(gui::icon::arrowUp))
+			raised = i;
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		if (ImGui::SmallButton(gui::icon::minus))
+			removed = i;
+		ImGui::PopID();
+	}
+	if (gui::widgets::button("##addItem", {.glyph = gui::icon::plus, .label = "Add Item", .width = -1.f})) {
+		items.emplace_back(items.empty() ? "0" : items.back());
+		changed = true;
+	}
+	ImGui::PopID();
+	if (raised.has_value()) {
+		std::swap(items[*raised], items[*raised - 1]);
+		changed = true;
+	}
+	if (removed.has_value()) {
+		items.erase(items.begin() + static_cast<std::ptrdiff_t>(*removed));
+		changed = true;
+	}
+	if (!changed)
+		return std::nullopt;
+	std::string out;
+	for (const auto& item: items) out += (out.empty() ? "" : ", ") + item;
+	return out;
+}
+
 // Value field of a typed input; returns the new text when it changed.
 auto valueField(const char* iId, const vs::PinType iType, const size_t iCount, const std::string& iValue,
 				const std::string& iDefault) -> std::optional<std::string> {
@@ -251,6 +387,9 @@ auto valueField(const char* iId, const vs::PinType iType, const size_t iCount, c
 		case vs::PinType::Vector2:
 		case vs::PinType::Vector3:
 			return componentField(iId, iType, iCount, iValue);
+		case vs::PinType::Transform:
+		case vs::PinType::Matrix:
+			return compoundField(iId, iType == vs::PinType::Matrix, iValue);
 		case vs::PinType::Exec:
 			return std::nullopt;
 		case vs::PinType::Table:
@@ -261,6 +400,9 @@ auto valueField(const char* iId, const vs::PinType iType, const size_t iCount, c
 		case vs::PinType::Any:
 			break;
 	}
+	// A list is edited item by item; a table with fields (`key = value`) stays a text.
+	if (iType == vs::PinType::Table && iValue.find('=') == std::string::npos)
+		return listField(iId, iValue);
 	auto text = iValue;
 	const auto hint = iType == vs::PinType::Entity ? std::string{"self"} : iDefault;
 	if (ImGui::InputTextWithHint(iId, hint.c_str(), &text))
@@ -371,6 +513,7 @@ void VisualScriptDocument::compileIfStale() {
 	if (!m_compileStale)
 		return;
 	m_compileStale = false;
+	m_checked = false;
 	auto compiled = vs::compile(m_script);
 	m_diagnostics = compiled ? std::vector<vs::CompileDiagnostic>{} : compiled.error();
 	if (!compiled)
@@ -422,8 +565,14 @@ void VisualScriptDocument::revealLine(const int iLine) {
 
 void VisualScriptDocument::setDebugState(const std::vector<script::WatchValue>& iValues,
 										 const std::optional<int> iStoppedLine) {
-	VisualScriptDebugView view{.breakpoints = m_breakpoints, .stopped = std::nullopt, .values = {}};
-	for (const auto& value: iValues) view.values.emplace(value.name, value.value);
+	VisualScriptDebugView view{.breakpoints = m_breakpoints, .stopped = std::nullopt, .values = {}, .entries = {}};
+	for (const auto& value: iValues) {
+		view.values.emplace(value.name, value.value);
+		if (value.entries.empty())
+			continue;
+		auto& entries = view.entries[value.name];
+		for (const auto& entry: value.entries) entries.emplace_back(entry.name, entry.value);
+	}
 	if (iStoppedLine.has_value())
 		view.stopped = findNodeAtLine(*iStoppedLine);
 	m_view.setDebugView(std::move(view));
@@ -625,7 +774,10 @@ void VisualScriptDocument::onImGuiRender() {
 			ImGui::BeginChild("##vsGraphPane", {width, 0.f}, ImGuiChildFlags_ResizeX);
 		}
 		m_view.setSnapToGrid(isGraphSnapOn(mp_editorLayer));
-		const auto result = m_view.render(m_script, m_diagnostics);
+		auto shown = m_diagnostics;
+		if (m_checked)
+			shown.insert(shown.end(), m_checkResults.begin(), m_checkResults.end());
+		const auto result = m_view.render(m_script, shown);
 		if (m_viewMode == VisualScriptViewMode::Split) {
 			ImGui::EndChild();
 			ImGui::SameLine();
@@ -639,6 +791,7 @@ void VisualScriptDocument::onImGuiRender() {
 			std::ignore = addNode(*result.droppedType, result.mouse);
 		if (result.contextMenu || result.linkDropped.has_value()) {
 			m_contextNode = result.contextNode;
+			m_contextGroup = result.contextGroup;
 			m_contextPin = result.contextPin;
 			m_pendingLink = result.linkDropped;
 			m_paletteTarget = result.mouse;
@@ -693,6 +846,39 @@ void VisualScriptDocument::renderToolbar() {
 						.description = "Click to list them; click one to centre its node."})) {
 		ImGui::OpenPopup("##vsErrorList");
 	}
+	ImGui::SameLine();
+	if (gui::widgets::button("##vsCheck", {.glyph = gui::icon::check,
+										   .label = "Check",
+										   .tooltip = "Check the graph",
+										   .description = "Type-check the generated Lua against the engine API; "
+														  "click a problem to centre its node."})) {
+		check();
+		ImGui::OpenPopup("##vsCheckList");
+	}
+	if (ImGui::BeginPopup("##vsCheckList")) {
+		gui::widgets::menuHeader("Check");
+		if (m_checkResults.empty())
+			gui::widgets::badge(std::format("{} No problem found", gui::icon::circleCheck).c_str(),
+								gui::widgets::BadgeKind::Success);
+		for (size_t i = 0; i < m_checkResults.size(); ++i) {
+			const auto& found = m_checkResults[i];
+			ImGui::PushID(static_cast<int>(i));
+			if (gui::widgets::menuItem({.glyph = gui::icon::triangleAlert, .label = found.message.c_str()}) &&
+				found.node != 0) {
+				m_view.setSelection({found.node});
+				m_view.requestFocus(found.node);
+			}
+			ImGui::PopID();
+		}
+		ImGui::EndPopup();
+	}
+	ImGui::SameLine();
+	if (gui::widgets::button("##vsGroupEvents",
+							 {.glyph = gui::icon::layoutGrid,
+							  .label = "Group by Events",
+							  .tooltip = "Group by Events",
+							  .description = "Frame each event and function outside a group with the nodes it runs."}))
+		std::ignore = groupEvents();
 	if (ImGui::BeginPopup("##vsErrorList")) {
 		gui::widgets::menuHeader("Compilation errors");
 		for (size_t i = 0; i < m_diagnostics.size(); ++i) {
@@ -720,6 +906,8 @@ void VisualScriptDocument::handleShortcuts(const bool iDeleteUsed) {
 		m_view.requestFrameAll();
 	if (ImGui::IsKeyPressed(ImGuiKey_F9, false))
 		for (const auto node: selection) toggleBreakpoint(node);
+	if (!ctrl && !ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Q, false) && !selection.empty())
+		std::ignore = straightenNodes(selection);
 	if (!ctrl)
 		return;
 	if (ImGui::IsKeyPressed(ImGuiKey_A, false)) {
@@ -739,6 +927,8 @@ void VisualScriptDocument::handleShortcuts(const bool iDeleteUsed) {
 		}
 	} else if (ImGui::IsKeyPressed(ImGuiKey_D, false) && !selection.empty()) {
 		std::ignore = pasteNodes(copyNodes(selection), {30.f, 30.f});
+	} else if (ImGui::IsKeyPressed(ImGuiKey_G, false) && !selection.empty()) {
+		std::ignore = groupNodes(selection);
 	}
 }
 
@@ -779,6 +969,26 @@ void VisualScriptDocument::renderContextMenu() {
 		ImGui::EndPopup();
 		return;
 	}
+	if (const auto group = m_contextGroup.has_value()
+								   ? std::ranges::find(m_script.groups, *m_contextGroup, &vs::GraphGroup::id)
+								   : m_script.groups.end();
+		group != m_script.groups.end()) {
+		auto edited = *group;
+		gui::widgets::menuHeader(group->title.empty() ? "Group" : group->title.c_str(), "Group");
+		ImGui::SetNextItemWidth(220.f);
+		if (ImGui::InputText("##groupTitle", &edited.title))
+			setGroup(edited);
+		if (const auto chosen = gui::widgets::linkColorSwatches(group->color); chosen.has_value()) {
+			edited.color = *chosen;
+			setGroup(edited);
+		}
+		if (gui::widgets::menuItem({.glyph = gui::icon::squareDashed, .label = "Ungroup"}))
+			removeGroup(group->id, false);
+		if (gui::widgets::menuItem({.glyph = gui::icon::trash2, .label = "Delete with Its Nodes", .danger = true}))
+			removeGroup(group->id, true);
+		ImGui::EndPopup();
+		return;
+	}
 	const auto* node = m_contextNode.has_value() ? m_script.findNode(*m_contextNode) : nullptr;
 	if (node == nullptr) {
 		renderNodeList(true);
@@ -798,9 +1008,50 @@ void VisualScriptDocument::renderContextMenu() {
 								.label = m_breakpoints.contains(node->id) ? "Remove Breakpoint" : "Add Breakpoint",
 								.shortcut = "F9"}))
 		for (const auto id: selection) toggleBreakpoint(id);
+	if (gui::widgets::menuItem({.glyph = gui::icon::minus, .label = "Straighten Links", .shortcut = "Q"}))
+		std::ignore = straightenNodes(selection);
+	if (gui::widgets::menuItem({.glyph = gui::icon::squareDashed, .label = "Group", .shortcut = "Ctrl+G"}))
+		std::ignore = groupNodes(selection);
+	if (gui::widgets::menuItem({.glyph = gui::icon::squareFunction, .label = "Set as Function"}))
+		std::ignore = collapseToFunction(selection);
 	if (gui::widgets::menuItem({.glyph = gui::icon::trash2, .label = "Delete", .shortcut = "Delete", .danger = true}))
 		deleteNodes(selection);
 	ImGui::EndPopup();
+}
+
+void VisualScriptDocument::renderNodeSearch(const std::span<const vs::NodeType* const> iHeads,
+											const PaletteEntry& iEntry,
+											const std::function<void(const vs::NodeType&)>& iItem,
+											const std::function<bool(const vs::NodeType&)>& iAccepts) {
+	const auto& types = vs::getNodeTypes();
+	const auto categoryLabel = [](const std::string& iCategory) -> std::string {
+		return std::format("{}  {}", getCategoryGlyph(iCategory), iCategory);
+	};
+	// The matches stay under their category: a search for `vector` lists every node of the category.
+	const auto matches = [&](const vs::NodeType& iType) -> bool {
+		return containsNoCase(iType.title, m_paletteFilter) || containsNoCase(iType.description, m_paletteFilter) ||
+			   containsNoCase(iType.category, m_paletteFilter);
+	};
+	std::vector<std::tuple<std::string, std::string, vs::NodeType>> functions;
+	renderFunctionEntries([&](const std::string& iKey, const std::string& iLabel, const vs::NodeType& iType) -> void {
+		if (containsNoCase(iLabel, m_paletteFilter))
+			functions.emplace_back(iKey, iLabel, iType);
+	});
+	if (!functions.empty()) {
+		ImGui::SeparatorText(categoryLabel("Functions").c_str());
+		for (const auto& [key, label, type]: functions) iEntry(key, label, type);
+	}
+	for (const auto* head: iHeads) {
+		const auto inCategory = [&](const vs::NodeType& iType) -> bool {
+			return iType.category == head->category && iAccepts(iType) && matches(iType);
+		};
+		if (std::ranges::none_of(types, inCategory))
+			continue;
+		ImGui::SeparatorText(categoryLabel(head->category).c_str());
+		for (const auto& type: types)
+			if (inCategory(type))
+				iItem(type);
+	}
 }
 
 void VisualScriptDocument::renderNodeList(const bool iPopup) {
@@ -876,25 +1127,22 @@ void VisualScriptDocument::renderNodeList(const bool iPopup) {
 	};
 	refreshLibraries();
 	const auto& types = vs::getNodeTypes();
-	if (!m_paletteFilter.empty()) {
-		for (const auto& type: types)
-			if (!isFunctionNode(type) && accepts(type) &&
-				(containsNoCase(type.title, m_paletteFilter) || containsNoCase(type.description, m_paletteFilter)))
-				item(type);
-		renderFunctionEntries(
-				[&](const std::string& iKey, const std::string& iLabel, const vs::NodeType& iType) -> void {
-					if (containsNoCase(iLabel, m_paletteFilter))
-						keyedItem(iKey, iLabel, iType);
-				});
-		ImGui::EndChild();
-		return;
-	}
 	std::vector<const vs::NodeType*> heads;
 	for (const auto& type: types)
 		if (!isFunctionNode(type) && std::ranges::none_of(heads, [&](const vs::NodeType* iHead) -> bool {
 				return iHead->category == type.category;
 			}))
 			heads.push_back(&type);
+	std::ranges::stable_sort(heads, {},
+							 [](const vs::NodeType* iHead) -> size_t { return categoryRank(iHead->category); });
+	const auto categoryLabel = [](const std::string& iCategory) -> std::string {
+		return std::format("{}  {}", getCategoryGlyph(iCategory), iCategory);
+	};
+	if (!m_paletteFilter.empty()) {
+		renderNodeSearch(heads, keyedItem, item, accepts);
+		ImGui::EndChild();
+		return;
+	}
 	if (!m_pendingLink.has_value() &&
 		(!m_script.functions.empty() || !m_script.customNodes.empty() || !m_libraries.empty() ||
 		 !m_luaModules.empty()) &&
@@ -902,16 +1150,12 @@ void VisualScriptDocument::renderNodeList(const bool iPopup) {
 		renderFunctionEntries(keyedItem);
 		ImGui::TreePop();
 	}
-	std::ranges::stable_sort(heads, {},
-							 [](const vs::NodeType* iHead) -> size_t { return categoryRank(iHead->category); });
 	for (const auto* head: heads) {
 		if (m_pendingLink.has_value() && std::ranges::none_of(types, [&](const vs::NodeType& iType) -> bool {
 				return iType.category == head->category && accepts(iType);
 			}))
 			continue;
-		const auto label = std::format(
-				"{}  {}", head->kind == vs::NodeKind::Call ? gui::icon::squareFunction : getNodeGlyph(*head),
-				head->category);
+		const auto label = categoryLabel(head->category);
 		const auto flags = ImGuiTreeNodeFlags_SpanAvailWidth |
 						   (m_pendingLink.has_value() ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None);
 		if (!ImGui::TreeNodeEx(head->category.c_str(), flags, "%s", label.c_str()))
@@ -1112,6 +1356,28 @@ void VisualScriptDocument::setNodeValue(const core::UUID iNode, const std::strin
 	commit(std::move(next), "Edit Node Value", true);
 }
 
+void VisualScriptDocument::setListItemCount(const core::UUID iNode, const size_t iCount) {
+	auto next = m_script;
+	auto* node = next.findNode(iNode);
+	if (node == nullptr)
+		return;
+	node->values["count"] = std::to_string(std::clamp<size_t>(iCount, 1, vs::g_MaxListItems));
+	const auto pins = vs::getNodePins(next, *node);
+	const auto kept = [&pins](const std::string& iPin, const bool iOutput) -> bool {
+		return std::ranges::any_of(iOutput ? pins.outputs : pins.inputs,
+								   [&iPin](const vs::PinSpec& iSpec) -> bool { return iSpec.name == iPin; });
+	};
+	std::erase_if(next.links, [&](const vs::GraphLink& iLink) -> bool {
+		return (iLink.toNode == iNode && !kept(iLink.toPin, false)) ||
+			   (iLink.fromNode == iNode && !kept(iLink.fromPin, true));
+	});
+	std::erase_if(node->values, [&kept](const auto& iValue) -> bool {
+		return iValue.first.size() == 1 && std::isupper(static_cast<unsigned char>(iValue.first.front())) != 0 &&
+			   !kept(iValue.first, false);
+	});
+	commit(std::move(next), "Change List Items", true);
+}
+
 void VisualScriptDocument::renderNodeHeader(const vs::GraphNode& iNode, const vs::NodeType& iType) {
 	const auto* node = &iNode;
 	const auto* type = &iType;
@@ -1145,6 +1411,15 @@ void VisualScriptDocument::renderNodeHeader(const vs::GraphNode& iNode, const vs
 		if (const auto library = node->values.find("library");
 			library != node->values.end() && !library->second.empty())
 			ImGui::TextDisabled("%s Library %s", gui::icon::bookOpen, library->second.c_str());
+		if ((node->type == "table.make_list" || node->type == "table.break_list") &&
+			gui::widgets::beginProperties("##items")) {
+			gui::widgets::propertyLabel("Items", "Number of item pins of the node.");
+			auto count = static_cast<int>(vs::getListItemCount(*node));
+			if (ImGui::SliderInt("##count", &count, 1, static_cast<int>(vs::g_MaxListItems)))
+				setListItemCount(id, static_cast<size_t>(count));
+			std::ignore = gui::widgets::propertyReset(false);
+			gui::widgets::endProperties();
+		}
 		const bool variableNode = type->kind == vs::NodeKind::GetVariable || type->kind == vs::NodeKind::SetVariable;
 		if ((variableNode || type->kind == vs::NodeKind::CustomEvent) && gui::widgets::beginProperties("##settings")) {
 			if (variableNode) {
@@ -1290,7 +1565,9 @@ auto VisualScriptDocument::addFunction(const bool iMacro) -> std::string {
 			 .outputs = {},
 			 .macro = iMacro,
 			 .exits = iMacro ? std::vector<std::string>{"Then", "Else"} : std::vector<std::string>{"Then"},
-			 .exported = false});
+			 .exported = false,
+			 .category = {},
+			 .pure = false});
 	const auto center = m_view.getViewCenter();
 	const vs::GraphNode entry{.id = core::UUID{},
 							  .type = "func.entry",
@@ -1365,11 +1642,11 @@ void VisualScriptDocument::setFunction(const std::string& iName, vs::GraphFuncti
 			return iNode != nullptr && iNode->type == iType && valueOf(*iNode, "function") == iName &&
 				   valueOf(*iNode, "library").empty();
 		};
-		if ((named(from, "func.call") && outputs.contains(link.fromPin)))
+		if (((named(from, "func.call") || named(from, "func.pure")) && outputs.contains(link.fromPin)))
 			link.fromPin = outputs.at(link.fromPin);
 		if ((named(from, "func.entry") && inputs.contains(link.fromPin)))
 			link.fromPin = inputs.at(link.fromPin);
-		if ((named(to, "func.call") && inputs.contains(link.toPin)))
+		if (((named(to, "func.call") || named(to, "func.pure")) && inputs.contains(link.toPin)))
 			link.toPin = inputs.at(link.toPin);
 		if ((named(to, "func.return") && outputs.contains(link.toPin)))
 			link.toPin = outputs.at(link.toPin);
@@ -1579,9 +1856,10 @@ void VisualScriptDocument::renderCustomNodes() {
 auto VisualScriptDocument::renderParameters(const char* iTitle, const std::vector<vs::GraphParameter>& iParameters,
 											const std::string& iAddName, const char* iAddLabel)
 		-> std::optional<std::vector<vs::GraphParameter>> {
-	static constexpr std::array g_parameterTypes{
-			vs::PinType::Number,  vs::PinType::Integer, vs::PinType::Boolean, vs::PinType::String, vs::PinType::Entity,
-			vs::PinType::Vector2, vs::PinType::Vector3, vs::PinType::Color,   vs::PinType::Table,  vs::PinType::Any};
+	static constexpr std::array g_parameterTypes{vs::PinType::Number,    vs::PinType::Integer, vs::PinType::Boolean,
+												 vs::PinType::String,    vs::PinType::Entity,  vs::PinType::Vector2,
+												 vs::PinType::Vector3,   vs::PinType::Color,   vs::PinType::Table,
+												 vs::PinType::Transform, vs::PinType::Matrix,  vs::PinType::Any};
 	if (!gui::widgets::subHeader(iTitle, true))
 		return std::nullopt;
 	std::optional<std::vector<vs::GraphParameter>> result;
@@ -1630,12 +1908,19 @@ auto VisualScriptDocument::renderParameters(const char* iTitle, const std::vecto
 void VisualScriptDocument::renderFunctionEntries(
 		const std::function<void(const std::string&, const std::string&, const vs::NodeType&)>& iItem) const {
 	const auto* call = vs::findNodeType("func.call");
+	const auto* pure = vs::findNodeType("func.pure");
 	const auto* ret = vs::findNodeType("func.return");
-	if (call == nullptr || ret == nullptr)
+	if (call == nullptr || pure == nullptr || ret == nullptr)
 		return;
+	const auto folder = [](const vs::GraphFunction& iFunction) -> std::string {
+		return iFunction.category.empty() ? std::string{} : iFunction.category + " / ";
+	};
 	for (const auto& function: m_script.functions) {
-		iItem(std::format("func.call|{}", function.name), std::format("Call {}", function.name), *call);
-		iItem(std::format("func.return|{}", function.name), std::format("Return from {}", function.name), *ret);
+		const auto& type = function.pure ? *pure : *call;
+		iItem(std::format("{}|{}", type.id, function.name), std::format("{}Call {}", folder(function), function.name),
+			  type);
+		iItem(std::format("func.return|{}", function.name),
+			  std::format("{}Return from {}", folder(function), function.name), *ret);
 	}
 	for (const auto& custom: m_script.customNodes)
 		if (const auto* type = vs::findNodeType(custom.pure ? "custom.pure" : "custom.call"); type != nullptr)
@@ -1643,9 +1928,11 @@ void VisualScriptDocument::renderFunctionEntries(
 				  *type);
 	for (const auto& library: m_libraries) {
 		const auto file = std::filesystem::path{library.path}.stem().string();
-		for (const auto& function: library.functions)
-			iItem(std::format("func.call|{}|{}", function.name, library.path),
-				  std::format("{} / {}", file, function.name), *call);
+		for (const auto& function: library.functions) {
+			const auto& type = function.pure ? *pure : *call;
+			iItem(std::format("{}|{}|{}", type.id, function.name, library.path),
+				  std::format("{} / {}{}", file, folder(function), function.name), type);
+		}
 	}
 	for (const auto& module: m_luaModules) {
 		const auto file = module.module.substr(module.module.rfind('.') + 1);
@@ -1689,15 +1976,519 @@ void VisualScriptDocument::refreshLibraries() {
 	m_luaModules = std::move(modules);
 }
 
+void VisualScriptDocument::setFunctionPure(const std::string& iName, const bool iPure) {
+	auto next = m_script;
+	const auto found = std::ranges::find(next.functions, iName, &vs::GraphFunction::name);
+	if (found == next.functions.end() || found->macro)
+		return;
+	found->pure = iPure;
+	std::set<uint64_t> calls;
+	for (auto& node: next.nodes)
+		if ((node.type == "func.call" || node.type == "func.pure") && valueOf(node, "function") == iName &&
+			valueOf(node, "library").empty()) {
+			node.type = iPure ? "func.pure" : "func.call";
+			calls.insert(static_cast<uint64_t>(node.id));
+		}
+	// A pure call has no execution pins: the links of its old ones go.
+	std::erase_if(next.links, [&](const vs::GraphLink& iLink) -> bool {
+		const auto touches = [&](const core::UUID iNode, const std::string& iPin) -> bool {
+			if (!calls.contains(static_cast<uint64_t>(iNode)))
+				return false;
+			const auto* node = next.findNode(iNode);
+			const auto pins = vs::getNodePins(next, *node);
+			const auto has = [&iPin](const std::vector<vs::PinSpec>& iPins) -> bool {
+				return std::ranges::any_of(iPins,
+										   [&iPin](const vs::PinSpec& iSpec) -> bool { return iSpec.name == iPin; });
+			};
+			return !has(pins.inputs) && !has(pins.outputs);
+		};
+		return touches(iLink.fromNode, iLink.fromPin) || touches(iLink.toNode, iLink.toPin);
+	});
+	commit(std::move(next), iPure ? "Make Function Pure" : "Make Function Not Pure");
+}
+
+namespace {
+
+// Asset folder holding a file, the first one of the project when none does.
+auto assetDirectoryOf(const std::filesystem::path& iFile) -> std::filesystem::path {
+	const auto& directories = app::Application::get().getAssetDirectories();
+	for (const auto& directory: directories)
+		if (const auto relative = iFile.lexically_relative(directory.assetsPath);
+			!relative.empty() && *relative.begin() != "..")
+			return directory.assetsPath;
+	return directories.front().assetsPath;
+}
+
+// Width of a text for the layout of nodes: ImGui's when it runs, a fixed advance otherwise (tests).
+auto measureText(const std::string_view iText) -> float {
+	if (ImGui::GetCurrentContext() == nullptr)
+		return 7.f * static_cast<float>(iText.size());
+	return ImGui::CalcTextSize(iText.data(), iText.data() + iText.size()).x;
+}
+
+// Canvas box around nodes: top-left, bottom-right.
+auto boundsOf(const vs::VisualScript& iScript, std::span<const core::UUID> iNodes)
+		-> std::optional<std::array<std::array<float, 2>, 2>> {
+	std::optional<std::array<std::array<float, 2>, 2>> box;
+	for (const auto id: iNodes) {
+		const auto* node = iScript.findNode(id);
+		if (node == nullptr)
+			continue;
+		const auto size = layoutNode(iScript, *node, measureText).size;
+		const std::array lo = node->position;
+		const std::array hi{node->position[0] + size[0], node->position[1] + size[1]};
+		if (!box.has_value()) {
+			box = {lo, hi};
+			continue;
+		}
+		(*box)[0] = {std::min((*box)[0][0], lo[0]), std::min((*box)[0][1], lo[1])};
+		(*box)[1] = {std::max((*box)[1][0], hi[0]), std::max((*box)[1][1], hi[1])};
+	}
+	return box;
+}
+
+// Name of a parameter or result made unique among those already taken.
+auto uniqueName(std::string iBase, std::set<std::string>& ioTaken) -> std::string {
+	std::ranges::replace(iBase, ' ', '_');
+	if (iBase.empty())
+		iBase = "value";
+	auto name = iBase;
+	for (int i = 2; !ioTaken.insert(name).second; ++i) name = std::format("{}_{}", iBase, i);
+	return name;
+}
+
+
+// Height of a pin of a node above its top edge, canvas units.
+auto pinHeight(const vs::VisualScript& iScript, const vs::GraphNode& iNode, const std::string& iPin, const bool iOutput)
+		-> std::optional<float> {
+	const auto pins = vs::getNodePins(iScript, iNode);
+	const auto layout = layoutNode(iScript, iNode, measureText);
+	const auto& side = iOutput ? pins.outputs : pins.inputs;
+	const auto& at = iOutput ? layout.outputs : layout.inputs;
+	const auto found = std::ranges::find(side, iPin, &vs::PinSpec::name);
+	const auto index = static_cast<size_t>(std::distance(side.begin(), found));
+	if (found == side.end() || index >= at.size())
+		return std::nullopt;
+	return at[index][1];
+}
+
+auto isExecLink(const vs::VisualScript& iScript, const vs::GraphLink& iLink) -> bool {
+	const auto* node = iScript.findNode(iLink.fromNode);
+	if (node == nullptr)
+		return false;
+	const auto outputs = vs::getNodePins(iScript, *node).outputs;
+	const auto found = std::ranges::find(outputs, iLink.fromPin, &vs::PinSpec::name);
+	return found != outputs.end() && found->type == vs::PinType::Exec;
+}
+
+auto isPureNode(const vs::GraphNode& iNode) -> bool {
+	const auto* type = vs::findNodeType(iNode.type);
+	return type != nullptr && type->pure;
+}
+
+auto overlaps(const vs::GraphGroup& iFirst, const vs::GraphGroup& iSecond) -> bool {
+	return iFirst.position[0] < iSecond.position[0] + iSecond.size[0] &&
+		   iSecond.position[0] < iFirst.position[0] + iFirst.size[0] &&
+		   iFirst.position[1] < iSecond.position[1] + iSecond.size[1] &&
+		   iSecond.position[1] < iFirst.position[1] + iFirst.size[1];
+}
+
+// The nodes an event runs: its execution chain, then the pure nodes feeding it, minus those already taken.
+auto collectChain(const vs::VisualScript& iScript, const core::UUID iStart, std::set<core::UUID>& ioTaken)
+		-> std::vector<core::UUID> {
+	std::vector<core::UUID> chain{iStart};
+	ioTaken.insert(iStart);
+	for (size_t i = 0; i < chain.size(); ++i) {
+		const auto current = chain[i];
+		for (const auto& link: iScript.links) {
+			const bool forward = link.fromNode == current && isExecLink(iScript, link);
+			const auto* source = link.toNode == current ? iScript.findNode(link.fromNode) : nullptr;
+			const bool feeding = source != nullptr && isPureNode(*source);
+			auto next = core::UUID{0};
+			if (forward)
+				next = link.toNode;
+			else if (feeding)
+				next = link.fromNode;
+			if (next != 0 && !ioTaken.contains(next)) {
+				ioTaken.insert(next);
+				chain.push_back(next);
+			}
+		}
+	}
+	return chain;
+}
+
+}// namespace
+
+auto VisualScriptDocument::groupNodes(const std::span<const core::UUID> iNodes, const std::string& iTitle)
+		-> core::UUID {
+	constexpr float margin = 24.f;
+	constexpr float header = 28.f;
+	const auto box = boundsOf(m_script, iNodes);
+	if (!box.has_value())
+		return core::UUID{0};
+	auto next = m_script;
+	const core::UUID id{};
+	next.groups.push_back(
+			{.id = id,
+			 .title = iTitle,
+			 .position = {(*box)[0][0] - margin, (*box)[0][1] - margin - header},
+			 .size = {(*box)[1][0] - (*box)[0][0] + 2.f * margin, (*box)[1][1] - (*box)[0][1] + 2.f * margin + header},
+			 .color = {}});
+	commit(std::move(next), "Group Nodes");
+	return id;
+}
+
+void VisualScriptDocument::setGroup(const vs::GraphGroup& iGroup) {
+	auto next = m_script;
+	const auto found = std::ranges::find(next.groups, iGroup.id, &vs::GraphGroup::id);
+	if (found == next.groups.end() || *found == iGroup)
+		return;
+	*found = iGroup;
+	commit(std::move(next), "Edit Group", true);
+}
+
+auto VisualScriptDocument::straightenNodes(const std::span<const core::UUID> iNodes) -> size_t {
+	auto next = m_script;
+	std::vector<vs::GraphNode*> nodes;
+	for (const auto id: iNodes)
+		if (auto* node = next.findNode(id); node != nullptr)
+			nodes.push_back(node);
+	std::ranges::sort(nodes, {}, [](const vs::GraphNode* iNode) -> float { return iNode->position[0]; });
+	size_t moved = 0;
+	for (auto* node: nodes) {
+		const auto incoming = [&](const vs::GraphLink& iLink) -> bool { return iLink.toNode == node->id; };
+		const auto outgoing = [&](const vs::GraphLink& iLink) -> bool { return iLink.fromNode == node->id; };
+		// The execution wire coming in first, else the first value wire coming in, else the first wire leaving.
+		auto link = std::ranges::find_if(next.links, [&](const vs::GraphLink& iLink) -> bool {
+			return incoming(iLink) && isExecLink(next, iLink);
+		});
+		if (link == next.links.end())
+			link = std::ranges::find_if(next.links, incoming);
+		const bool leaving = link == next.links.end();
+		if (leaving)
+			link = std::ranges::find_if(next.links, outgoing);
+		if (link == next.links.end())
+			continue;
+		const auto* other = next.findNode(leaving ? link->toNode : link->fromNode);
+		if (other == nullptr || other == node)
+			continue;
+		const auto otherPin = pinHeight(next, *other, leaving ? link->toPin : link->fromPin, !leaving);
+		const auto ownPin = pinHeight(next, *node, leaving ? link->fromPin : link->toPin, leaving);
+		if (!otherPin.has_value() || !ownPin.has_value())
+			continue;
+		const float target = other->position[1] + *otherPin - *ownPin;
+		if (std::abs(node->position[1] - target) < 0.5f)
+			continue;
+		node->position[1] = target;
+		link->waypoints.clear();
+		++moved;
+	}
+	if (moved > 0)
+		commit(std::move(next), "Straighten Links");
+	return moved;
+}
+
+void VisualScriptDocument::check() {
+	compileIfStale();
+	m_checkResults = vs::checkTypes(m_script, typeChecker());
+	m_checked = true;
+}
+
+auto VisualScriptDocument::groupEvents() -> size_t {
+	constexpr float margin = 24.f;
+	constexpr float header = 28.f;
+	std::set<core::UUID> taken;
+	for (const auto& node: m_script.nodes)
+		if (std::ranges::any_of(m_script.groups,
+								[&](const vs::GraphGroup& iGroup) -> bool { return iGroup.holds(node); }))
+			taken.insert(node.id);
+	std::vector<std::pair<vs::GraphGroup, std::vector<core::UUID>>> made;
+	for (const auto& node: m_script.nodes) {
+		const auto* type = vs::findNodeType(node.type);
+		if (type == nullptr || taken.contains(node.id) ||
+			(type->kind != vs::NodeKind::Event && type->kind != vs::NodeKind::CustomEvent &&
+			 type->kind != vs::NodeKind::FunctionEntry))
+			continue;
+		made.push_back({{.id = {}, .title = getNodeTitle(node, *type), .position = {}, .size = {}, .color = {}},
+						collectChain(m_script, node.id, taken)});
+	}
+	const auto fit = [&](std::pair<vs::GraphGroup, std::vector<core::UUID>>& ioGroup) -> void {
+		const auto box = boundsOf(m_script, ioGroup.second);
+		ioGroup.first.position = {(*box)[0][0] - margin, (*box)[0][1] - margin - header};
+		ioGroup.first.size = {(*box)[1][0] - (*box)[0][0] + 2.f * margin,
+							  (*box)[1][1] - (*box)[0][1] + 2.f * margin + header};
+	};
+	std::ranges::for_each(made, fit);
+	// Chains whose frames cross share one group: two frames over each other would read as nested.
+	for (bool merged = true; merged;) {
+		merged = false;
+		for (size_t i = 0; i < made.size() && !merged; ++i)
+			for (size_t j = i + 1; j < made.size() && !merged; ++j) {
+				if (!overlaps(made[i].first, made[j].first))
+					continue;
+				made[i].first.title += " + " + made[j].first.title;
+				made[i].second.insert(made[i].second.end(), made[j].second.begin(), made[j].second.end());
+				made.erase(made.begin() + static_cast<std::ptrdiff_t>(j));
+				fit(made[i]);
+				merged = true;
+			}
+	}
+	if (made.empty())
+		return 0;
+	auto next = m_script;
+	const auto colors = gui::widgets::getLinkColors();
+	for (size_t i = 0; i < made.size(); ++i) {
+		made[i].first.color = colors[(next.groups.size() + i) % colors.size()].name;
+		next.groups.push_back(made[i].first);
+	}
+	commit(std::move(next), "Group by Events");
+	return made.size();
+}
+
+void VisualScriptDocument::removeGroup(const core::UUID iGroup, const bool iWithNodes) {
+	const auto found = std::ranges::find(m_script.groups, iGroup, &vs::GraphGroup::id);
+	if (found == m_script.groups.end())
+		return;
+	auto next = m_script;
+	if (iWithNodes)
+		for (const auto& node: m_script.nodes)
+			if (found->holds(node))
+				next.removeNode(node.id);
+	std::erase_if(next.groups, [iGroup](const vs::GraphGroup& iEntry) -> bool { return iEntry.id == iGroup; });
+	commit(std::move(next), iWithNodes ? "Delete Group" : "Ungroup");
+}
+
+auto VisualScriptDocument::collapseToFunction(const std::span<const core::UUID> iNodes) -> std::string {
+	const std::set<uint64_t> inside(iNodes.begin(), iNodes.end());
+	const auto isInside = [&inside](const core::UUID iNode) -> bool {
+		return inside.contains(static_cast<uint64_t>(iNode));
+	};
+	bool pure = true;
+	for (const auto id: iNodes) {
+		const auto* node = m_script.findNode(id);
+		const auto* type = node == nullptr ? nullptr : vs::findNodeType(node->type);
+		if (type == nullptr || type->kind == vs::NodeKind::Event || type->kind == vs::NodeKind::CustomEvent ||
+			type->kind == vs::NodeKind::FunctionEntry || type->kind == vs::NodeKind::FunctionReturn) {
+			OWL_WARN("VisualScriptDocument: Events and function entries or returns cannot go into a function.")
+			return {};
+		}
+		pure = pure && type->pure;
+	}
+	const auto box = boundsOf(m_script, iNodes);
+	if (!box.has_value())
+		return {};
+	const auto pinType = [this](const core::UUID iNode, const std::string& iPin, const bool iOutput) -> vs::PinType {
+		const auto* node = m_script.findNode(iNode);
+		if (node == nullptr)
+			return vs::PinType::Any;
+		const auto pins = vs::getNodePins(m_script, *node);
+		const auto& side = iOutput ? pins.outputs : pins.inputs;
+		const auto found = std::ranges::find(side, iPin, &vs::PinSpec::name);
+		return found == side.end() ? vs::PinType::Any : found->type;
+	};
+	using Pin = std::pair<uint64_t, std::string>;
+	std::set<Pin> execTargets;
+	std::set<Pin> execSources;
+	for (const auto& link: m_script.links) {
+		if (pinType(link.fromNode, link.fromPin, true) != vs::PinType::Exec)
+			continue;
+		if (!isInside(link.fromNode) && isInside(link.toNode))
+			execTargets.emplace(static_cast<uint64_t>(link.toNode), link.toPin);
+		if (isInside(link.fromNode) && !isInside(link.toNode))
+			execSources.emplace(static_cast<uint64_t>(link.fromNode), link.fromPin);
+	}
+	if ((!pure && execTargets.size() != 1) || execSources.size() > 1) {
+		OWL_WARN("VisualScriptDocument: A function needs one execution entry and one exit at most.")
+		return {};
+	}
+	std::string name = "new_function";
+	for (int i = 2; m_script.findFunction(name) != nullptr || !vs::isValidName(name); ++i)
+		name = std::format("new_function_{}", i);
+
+	auto next = m_script;
+	vs::GraphFunction function{.name = name,
+							   .inputs = {},
+							   .outputs = {},
+							   .macro = false,
+							   .exits = {"Then"},
+							   .exported = false,
+							   .category = {},
+							   .pure = pure};
+	float bottom = (*box)[1][1];
+	for (const auto& node: m_script.nodes)
+		bottom = std::max(bottom, node.position[1] + layoutNode(m_script, node, measureText).size[1]);
+	const std::array shift{0.f, bottom + 300.f - (*box)[0][1]};
+	const vs::GraphNode entry{.id = core::UUID{},
+							  .type = "func.entry",
+							  .position = {(*box)[0][0] - 260.f, (*box)[0][1] + shift[1]},
+							  .values = {{"function", name}}};
+	const vs::GraphNode ret{.id = core::UUID{},
+							.type = "func.return",
+							.position = {(*box)[1][0] + 80.f, (*box)[0][1] + shift[1]},
+							.values = {{"function", name}}};
+	const vs::GraphNode call{.id = core::UUID{},
+							 .type = pure ? "func.pure" : "func.call",
+							 .position = (*box)[0],
+							 .values = {{"function", name}}};
+	std::set<std::string> parameterNames;
+	std::set<std::string> resultNames;
+	std::map<Pin, std::string> parameters;
+	std::map<Pin, std::string> results;
+	std::vector<vs::GraphLink> links;
+	const auto add = [&links](const core::UUID iFrom, const std::string& iFromPin, const core::UUID iTo,
+							  const std::string& iToPin) -> void {
+		const vs::GraphLink link{.fromNode = iFrom,
+								 .fromPin = iFromPin,
+								 .toNode = iTo,
+								 .toPin = iToPin,
+								 .waypoints = {}};
+		if (std::ranges::find(links, link) == links.end())
+			links.push_back(link);
+	};
+	for (const auto& link: m_script.links) {
+		const bool fromInside = isInside(link.fromNode);
+		const bool toInside = isInside(link.toNode);
+		const Pin source{static_cast<uint64_t>(link.fromNode), link.fromPin};
+		const bool exec = pinType(link.fromNode, link.fromPin, true) == vs::PinType::Exec;
+		if (fromInside == toInside) {
+			auto kept = link;
+			if (fromInside)
+				for (auto& [x, y]: kept.waypoints) y += shift[1];
+			links.push_back(std::move(kept));
+		} else if (exec && toInside) {
+			add(link.fromNode, link.fromPin, call.id, "Exec");
+			add(entry.id, "Then", link.toNode, link.toPin);
+		} else if (exec) {
+			add(call.id, "Then", link.toNode, link.toPin);
+			add(link.fromNode, link.fromPin, ret.id, "Exec");
+		} else if (toInside) {
+			auto [it, added] = parameters.try_emplace(source);
+			if (added) {
+				it->second = uniqueName(link.toPin, parameterNames);
+				function.inputs.push_back({.name = it->second, .type = pinType(link.fromNode, link.fromPin, true)});
+			}
+			add(link.fromNode, link.fromPin, call.id, it->second);
+			add(entry.id, it->second, link.toNode, link.toPin);
+		} else {
+			auto [it, added] = results.try_emplace(source);
+			if (added) {
+				it->second = uniqueName(link.fromPin, resultNames);
+				function.outputs.push_back({.name = it->second, .type = pinType(link.fromNode, link.fromPin, true)});
+			}
+			add(link.fromNode, link.fromPin, ret.id, it->second);
+			add(call.id, it->second, link.toNode, link.toPin);
+		}
+	}
+	if (pure)
+		add(entry.id, "Then", ret.id, "Exec");
+	next.links = std::move(links);
+	for (auto& node: next.nodes)
+		if (isInside(node.id))
+			node.position[1] += shift[1];
+	next.nodes.push_back(entry);
+	next.nodes.push_back(ret);
+	next.nodes.push_back(call);
+	next.functions.push_back(std::move(function));
+	next.groups.push_back({.id = core::UUID{},
+						   .title = name,
+						   .position = {entry.position[0] - 24.f, entry.position[1] - 52.f},
+						   .size = {ret.position[0] + 240.f - entry.position[0], (*box)[1][1] - (*box)[0][1] + 100.f},
+						   .color = {}});
+	commit(std::move(next), "Set as Function");
+	m_view.setSelection({call.id});
+	return name;
+}
+
+auto VisualScriptDocument::moveFunctionToLibrary(const std::string& iName, const std::filesystem::path& iAssetDirectory,
+												 const std::string& iLibrary) -> bool {
+	const auto* function = m_script.findFunction(iName);
+	if (function == nullptr || function->macro || !vs::isVisualScriptPath(iLibrary)) {
+		OWL_WARN("VisualScriptDocument: '{}' cannot move to the library '{}'.", iName, iLibrary)
+		return false;
+	}
+	const auto file = iAssetDirectory / iLibrary;
+	vs::VisualScript library;
+	if (std::filesystem::exists(file)) {
+		auto read = vs::deserialize(platform::fileToString(file), file.string());
+		if (!read || read->findFunction(iName) != nullptr) {
+			OWL_WARN("VisualScriptDocument: The library '{}' cannot take the function '{}'.", iLibrary, iName)
+			return false;
+		}
+		library = std::move(*read);
+	}
+	// The body: what the entry reaches, and the pure nodes that feed it.
+	std::set<uint64_t> body;
+	std::vector<core::UUID> pending;
+	for (const auto& node: m_script.nodes)
+		if (node.type == "func.entry" && valueOf(node, "function") == iName)
+			pending.push_back(node.id);
+	while (!pending.empty()) {
+		const auto id = pending.back();
+		pending.pop_back();
+		if (!body.insert(static_cast<uint64_t>(id)).second)
+			continue;
+		for (const auto& link: m_script.links) {
+			if (link.fromNode == id)
+				pending.push_back(link.toNode);
+			if (link.toNode == id)
+				if (const auto* from = m_script.findNode(link.fromNode); from != nullptr)
+					if (const auto* type = vs::findNodeType(from->type); type != nullptr && type->pure)
+						pending.push_back(link.fromNode);
+		}
+	}
+	const auto inBody = [&body](const core::UUID iNode) -> bool { return body.contains(static_cast<uint64_t>(iNode)); };
+	auto next = m_script;
+	library.functions.push_back(*function);
+	for (const auto& node: m_script.nodes)
+		if (inBody(node.id))
+			library.nodes.push_back(node);
+	for (const auto& link: m_script.links)
+		if (inBody(link.fromNode) && inBody(link.toNode))
+			library.links.push_back(link);
+	std::erase_if(next.nodes, [&inBody](const vs::GraphNode& iNode) -> bool { return inBody(iNode.id); });
+	std::erase_if(next.links, [&inBody](const vs::GraphLink& iLink) -> bool {
+		return inBody(iLink.fromNode) || inBody(iLink.toNode);
+	});
+	std::erase_if(next.functions, [&iName](const vs::GraphFunction& iEntry) -> bool { return iEntry.name == iName; });
+	for (auto& node: next.nodes)
+		if ((node.type == "func.call" || node.type == "func.pure") && valueOf(node, "function") == iName &&
+			valueOf(node, "library").empty())
+			node.values["library"] = iLibrary;
+	std::error_code error;
+	std::filesystem::create_directories(file.parent_path(), error);
+	if (!platform::writeFileAtomic(file, vs::serialize(library))) {
+		OWL_ERROR("VisualScriptDocument: Cannot write the library '{}'.", file.string())
+		return false;
+	}
+	vs::clearLibraryCache();
+	m_libraryScanFrame = -1000;
+	commit(std::move(next), "Move Function to Library");
+	return true;
+}
+
 void VisualScriptDocument::renderFunctions() {
 	std::optional<std::string> removed;
-	for (size_t i = 0; i < m_script.functions.size(); ++i) {
+	std::vector<size_t> order(m_script.functions.size());
+	std::iota(order.begin(), order.end(), size_t{0});
+	std::ranges::stable_sort(order, {}, [this](const size_t iIndex) -> const std::string& {
+		return m_script.functions[iIndex].category;
+	});
+	std::optional<std::string> folder;
+	bool folderOpen = true;
+	for (const size_t i: order) {
+		if (const auto& category = m_script.functions[i].category; folder != category) {
+			folder = category;
+			folderOpen = category.empty() || gui::widgets::subHeader(category.c_str(), true);
+		}
+		if (!folderOpen)
+			continue;
 		ImGui::PushID(static_cast<int>(i));
 		const auto function = m_script.functions[i];
 		const auto section = gui::widgets::sectionHeader(function.name.c_str(),
 														 function.macro ? "vs_node_flow" : "vs_node_call", true, false);
 		if (ImGui::BeginDragDropSource()) {
-			const auto payload = std::format("func.call|{}", function.name);
+			const auto payload = std::format("{}|{}", function.pure ? "func.pure" : "func.call", function.name);
 			ImGui::SetDragDropPayload(g_VisualScriptNodePayload, payload.data(), payload.size());
 			ImGui::Text("%s Call %s", gui::icon::component, function.name.c_str());
 			ImGui::EndDragDropSource();
@@ -1712,6 +2503,20 @@ void VisualScriptDocument::renderFunctions() {
 						m_view.setSelection({node.id});
 						m_view.requestFocus(node.id);
 					}
+			if (!function.macro && app::Application::instanced() &&
+				!app::Application::get().getAssetDirectories().empty() &&
+				ImGui::BeginMenu(std::format("{} Move to Library", gui::icon::bookOpen).c_str())) {
+				if (m_libraryTarget.empty())
+					m_libraryTarget = std::format("scripts/lib/{}.owlvs", m_path.stem().string() + "_lib");
+				ImGui::SetNextItemWidth(260.f);
+				ImGui::InputText("##libraryPath", &m_libraryTarget);
+				ImGui::TextDisabled("Asset path of the library graph; any graph calls its functions.");
+				if (gui::widgets::button("##moveLibrary",
+										 {.glyph = gui::icon::bookOpen, .label = "Move", .width = -1.f}) &&
+					moveFunctionToLibrary(function.name, assetDirectoryOf(m_path), m_libraryTarget))
+					ImGui::CloseCurrentPopup();
+				ImGui::EndMenu();
+			}
 			if (gui::widgets::menuItem({.glyph = gui::icon::trash2, .label = "Remove", .danger = true}))
 				removed = function.name;
 			ImGui::EndPopup();
@@ -1732,6 +2537,19 @@ void VisualScriptDocument::renderFunctions() {
 					edited.exported = exported;
 					setFunction(function.name, edited);
 				}
+				if (auto pure = function.pure;
+					!function.macro && gui::widgets::propertyBool("Pure", pure, false,
+																  "Called without execution pins, where its results "
+																  "are read: its body changes nothing."))
+					setFunctionPure(function.name, pure);
+				auto category = function.category;
+				gui::widgets::propertyLabel("Category", "Folder of the function in this panel and in the palette.");
+				if (ImGui::InputText("##category", &category, ImGuiInputTextFlags_EnterReturnsTrue)) {
+					auto edited = function;
+					edited.category = category;
+					setFunction(function.name, edited);
+				}
+				std::ignore = gui::widgets::propertyReset(false);
 				gui::widgets::endProperties();
 			}
 			renderSignature(function);
@@ -1763,9 +2581,10 @@ void VisualScriptDocument::renderFunctions() {
 }
 
 void VisualScriptDocument::renderSignature(const vs::GraphFunction& iFunction) {
-	static constexpr std::array g_parameterTypes{
-			vs::PinType::Number,  vs::PinType::Integer, vs::PinType::Boolean, vs::PinType::String, vs::PinType::Entity,
-			vs::PinType::Vector2, vs::PinType::Vector3, vs::PinType::Color,   vs::PinType::Table,  vs::PinType::Any};
+	static constexpr std::array g_parameterTypes{vs::PinType::Number,    vs::PinType::Integer, vs::PinType::Boolean,
+												 vs::PinType::String,    vs::PinType::Entity,  vs::PinType::Vector2,
+												 vs::PinType::Vector3,   vs::PinType::Color,   vs::PinType::Table,
+												 vs::PinType::Transform, vs::PinType::Matrix,  vs::PinType::Any};
 	const auto list = [&](const char* iTitle, const bool iOutputs) -> void {
 		if (!gui::widgets::subHeader(iTitle, true))
 			return;

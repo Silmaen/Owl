@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <script/ScriptEngine.h>
+#include <script/ScriptTypeChecker.h>
 #include <script/visual/VisualScript.h>
 
 #include <algorithm>
@@ -57,5 +58,20 @@ TEST(VisualScriptDemo, EveryDemoGraphCompiles) {
 		}
 		EXPECT_EQ(ScriptEngine::extractProperties(path).size(),
 				  static_cast<size_t>(std::ranges::count(script->variables, true, &GraphVariable::exposed)));
+	}
+}
+
+TEST(VisualScriptDemo, EveryDemoGraphPassesTheCheck) {
+	const auto root = test::getRootPath();
+	ScriptTypeChecker checker;
+	checker.addModuleFolder(root / "engine_demo");
+	const auto graphs = findDemoGraphs();
+	ASSERT_FALSE(graphs.empty());
+	for (const auto& path: graphs) {
+		SCOPED_TRACE(path.string());
+		const auto script = deserialize(readText(path), path.string());
+		ASSERT_TRUE(script.has_value());
+		for (const auto& found: checkTypes(*script, checker))
+			ADD_FAILURE() << "Node " << static_cast<uint64_t>(found.node) << ": " << found.message;
 	}
 }

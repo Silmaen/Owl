@@ -86,6 +86,14 @@ using TextMeasure = std::function<float(std::string_view)>;
 
 /**
  * @brief
+ *  Glyph of a palette category: a binding table or a group of built-in nodes.
+ * @param[in] iCategory The category.
+ * @return The UTF-8 glyph, a generic function glyph for an unknown category.
+ */
+[[nodiscard]] auto getCategoryGlyph(std::string_view iCategory) -> const char*;
+
+/**
+ * @brief
  *  Glyph of a node type, shown in its title bar and in the node library.
  * @param[in] iType The node type.
  * @return A Lucide glyph.
@@ -183,6 +191,8 @@ struct VisualScriptDebugView {
 	std::optional<core::UUID> stopped;
 	/// Last value of each wire, by the `visual::getProbeKey` of the output it leaves.
 	std::map<std::string, std::string> values;
+	/// Entries of the wires carrying a table, by the same key: index or field name, then the value as text.
+	std::map<std::string, std::vector<std::pair<std::string, std::string>>> entries;
 };
 
 /**
@@ -206,6 +216,8 @@ public:
 		bool contextMenu{false};
 		/// Node under the right click.
 		std::optional<core::UUID> contextNode;
+		/// Group whose header is under the right click.
+		std::optional<core::UUID> contextGroup;
 		/// Pin under the right click.
 		std::optional<VisualScriptPinRef> contextPin;
 		/// Pin whose link was dropped on the background: the document offers the nodes to link it to.
@@ -321,6 +333,7 @@ private:
 		Move,///< Moving the selected nodes.
 		Link,///< Dragging a link from a pin.
 		Waypoint,///< Moving a waypoint of a link.
+		Resize,///< Resizing a group by its bottom-right corner.
 	};
 
 	/**
@@ -329,6 +342,13 @@ private:
 	 * @param[in] iFrame The frame.
 	 */
 	void drawGrid(const Frame& iFrame) const;
+
+	/**
+	 * @brief
+	 *  Draw the groups behind the links and nodes, and find the header or corner under the mouse.
+	 * @param[in,out] ioFrame The frame.
+	 */
+	void drawGroups(Frame& ioFrame) const;
 
 	/**
 	 * @brief
@@ -351,6 +371,14 @@ private:
 	 * @param[in] iIndex Index of the node in the frame.
 	 */
 	void drawNodeFrame(const Frame& iFrame, size_t iIndex) const;
+
+	/**
+	 * @brief
+	 *  Draw a node without a title bar: a variable read as a pill with its name, a reroute as a small capsule.
+	 * @param[in] iFrame The frame.
+	 * @param[in] iIndex Index of the node in the frame.
+	 */
+	void drawCompactNode(const Frame& iFrame, size_t iIndex) const;
 
 	/**
 	 * @brief
@@ -425,6 +453,15 @@ private:
 
 	/**
 	 * @brief
+	 *  Cut a value link with a reroute node at a canvas point: the link feeds the node, a new one leaves it.
+	 * @param[in,out] ioFrame The frame.
+	 * @param[in] iLink Index of the link.
+	 * @param[in] iPoint Canvas point of the node centre.
+	 */
+	void insertReroute(Frame& ioFrame, size_t iLink, const std::array<float, 2>& iPoint);
+
+	/**
+	 * @brief
 	 *  Apply a pending framing request.
 	 * @param[in] iFrame The frame.
 	 */
@@ -446,6 +483,8 @@ private:
 	std::array<float, 2> m_moveOffset{0.f, 0.f};
 	/// Node pressed by the left button, selected alone when the press ends without a move.
 	std::optional<core::UUID> m_pressedNode;
+	/// Group moved with its nodes or resized by the gesture in progress.
+	std::optional<core::UUID> m_group;
 	/// Pin a dragged link starts from.
 	std::optional<VisualScriptPinRef> m_linkStart;
 	/// Link and index of the waypoint being moved.
@@ -474,9 +513,12 @@ private:
 	 * @param[in] iFrom Output pin on the screen.
 	 * @param[in] iTo Input pin on the screen.
 	 * @param[in] iValue The value as text.
+	 * @param[in] iType Type of the wire.
+	 * @param[in] iEntries Entries of a table the wire carries, shown as a grid when the pill is hovered.
 	 */
-	void drawWireValue(const Frame& iFrame, const math::vec2f& iFrom, const math::vec2f& iTo,
-					   const std::string& iValue) const;
+	void drawWireValue(const Frame& iFrame, const math::vec2f& iFrom, const math::vec2f& iTo, const std::string& iValue,
+					   script::visual::PinType iType,
+					   std::span<const std::pair<std::string, std::string>> iEntries) const;
 };
 
 }// namespace owl::nest

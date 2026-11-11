@@ -9,12 +9,12 @@ VisualScript:
       position: [0, 0]
     - id: 7350000000000000002
       type: call.scene.find_entity
-      position: [0, 150]
+      position: [176, 80]
       values:
         name: Server
     - id: 7350000000000000003
       type: var.set
-      position: [358, 0]
+      position: [496, 0]
       values:
         variable: body
     - id: 7350000000000000004
@@ -22,63 +22,58 @@ VisualScript:
       position: [0, 450]
     - id: 7350000000000000005
       type: var.get
-      position: [0, 600]
+      position: [160, 528]
       values:
         variable: body
     - id: 7350000000000000006
       type: compare.not_equal
-      position: [358, 600]
+      position: [336, 528]
       values:
         B: 0
     - id: 7350000000000000007
       type: call.spline.is_waiting
-      position: [0, 750]
+      position: [192, 736]
     - id: 7350000000000000008
       type: logic.or
-      position: [358, 750]
+      position: [512, 736]
       values:
         B: false
     - id: 7350000000000000009
       type: var.get
-      position: [358, 900]
+      position: [416, 640]
       values:
         variable: waiting
     - id: 7350000000000000010
       type: compare.not_equal
-      position: [636, 750]
+      position: [720, 592]
     - id: 7350000000000000011
       type: logic.and
-      position: [844, 600]
+      position: [912, 528]
     - id: 7350000000000000012
       type: flow.branch
-      position: [1052, 450]
+      position: [1068, 450]
     - id: 7350000000000000013
       type: var.set
-      position: [1316, 450]
+      position: [1296, 508]
       values:
         variable: waiting
     - id: 7350000000000000014
       type: flow.branch
-      position: [1548, 450]
-    - id: 7350000000000000015
-      type: var.get
-      position: [1316, 750]
-      values:
-        variable: waiting
+      position: [1512, 518]
     - id: 7350000000000000016
       type: var.get
-      position: [1548, 900]
+      position: [1552, 668]
       values:
         variable: body
     - id: 7350000000000000017
       type: call.animator.play
-      position: [1812, 300]
+      position: [1776, 368]
       values:
         fade: 0.3
         state: idle
     - id: 7350000000000000018
       type: call.animator.play
-      position: [1812, 600]
+      position: [1776, 668]
       values:
         fade: 0.3
         state: walk
@@ -87,8 +82,6 @@ VisualScript:
     - {from: 7350000000000000002, fromPin: entity_id, to: 7350000000000000003, toPin: Value}
     - {from: 7350000000000000005, fromPin: Value, to: 7350000000000000006, toPin: A}
     - {from: 7350000000000000007, fromPin: waiting, to: 7350000000000000008, toPin: A}
-    - {from: 7350000000000000008, fromPin: Result, to: 7350000000000000010, toPin: A}
-    - {from: 7350000000000000009, fromPin: Value, to: 7350000000000000010, toPin: B}
     - {from: 7350000000000000006, fromPin: Result, to: 7350000000000000011, toPin: A}
     - {from: 7350000000000000010, fromPin: Result, to: 7350000000000000011, toPin: B}
     - {from: 7350000000000000004, fromPin: Then, to: 7350000000000000012, toPin: Exec}
@@ -96,8 +89,13 @@ VisualScript:
     - {from: 7350000000000000012, fromPin: True, to: 7350000000000000013, toPin: Exec}
     - {from: 7350000000000000008, fromPin: Result, to: 7350000000000000013, toPin: Value}
     - {from: 7350000000000000013, fromPin: Then, to: 7350000000000000014, toPin: Exec}
-    - {from: 7350000000000000015, fromPin: Value, to: 7350000000000000014, toPin: Condition}
     - {from: 7350000000000000014, fromPin: True, to: 7350000000000000017, toPin: Exec}
     - {from: 7350000000000000014, fromPin: False, to: 7350000000000000018, toPin: Exec}
     - {from: 7350000000000000016, fromPin: Value, to: 7350000000000000017, toPin: entity_id}
     - {from: 7350000000000000016, fromPin: Value, to: 7350000000000000018, toPin: entity_id}
+    - {from: 7350000000000000013, fromPin: Value, to: 7350000000000000014, toPin: Condition}
+    - {from: 7350000000000000009, fromPin: Value, to: 7350000000000000010, toPin: A}
+    - {from: 7350000000000000008, fromPin: Result, to: 7350000000000000010, toPin: B}
+  groups:
+    - {id: 5017494667813070351, title: On Create, position: [-24, -52], size: [708, 236], color: Red}
+    - {id: 3358742970633428957, title: On Update, position: [-24, 316], size: [2081, 540], color: Orange}

@@ -16,15 +16,15 @@ VisualScript:
         key: dialogue_open
     - id: 7330000000000000003
       type: compare.equal
-      position: [518, 150]
+      position: [512, 112]
       values:
         B: 0
     - id: 7330000000000000004
       type: flow.branch
-      position: [796, 0]
+      position: [800, 16]
     - id: 7330000000000000005
       type: var.get
-      position: [796, 300]
+      position: [816, 160]
       values:
         variable: dialogue_path
     - id: 7330000000000000006
@@ -39,3 +39,5 @@ VisualScript:
     - {from: 7330000000000000003, fromPin: Result, to: 7330000000000000004, toPin: Condition}
     - {from: 7330000000000000004, fromPin: True, to: 7330000000000000006, toPin: Exec}
     - {from: 7330000000000000005, fromPin: Value, to: 7330000000000000006, toPin: value}
+  groups:
+    - {id: 12532055744031089891, title: On Talk, position: [-24, -52], size: [1325, 316], color: Red}

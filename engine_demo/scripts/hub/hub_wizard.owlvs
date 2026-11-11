@@ -1226,3 +1226,19 @@ VisualScript:
     - {from: 8160000000000000211, fromPin: Result, to: 8160000000000000212, toPin: Condition}
     - {from: 8160000000000000205, fromPin: False, to: 8160000000000000212, toPin: Exec}
     - {from: 8160000000000000212, fromPin: True, to: 8160000000000000213, toPin: Exec}
+  groups:
+    - {id: 348438653496397012, title: close, position: [-24, -52], size: [1863, 338], color: Red}
+    - {id: 13899603089061214008, title: show, position: [-24, 458], size: [5585, 1584], color: Yellow}
+    - {id: 12188698859100078468, title: advance, position: [-24, 2214], size: [1970, 292], color: Teal}
+    - {id: 6157863721677014395, title: answer, position: [-24, 2630], size: [1938, 318], color: Violet}
+    - {id: 7439064133322943279, title: is_portal_awake, position: [-24, 3072], size: [732, 344], color: Red}
+    - {id: 3040926665664402594, title: has_met_wizard, position: [-24, 3540], size: [724, 344], color: Yellow}
+    - {id: 16624878520238042042, title: on_wizard_closed, position: [-24, 4008], size: [1174, 266], color: Teal}
+    - {id: 17277646164772627140, title: On Create, position: [-24, 4424], size: [4343, 824], color: Violet}
+    - {id: 11588269805259624725, title: cast_spell, position: [-24, 5372], size: [1163, 344], color: Red}
+    - {id: 2462286983323590483, title: on_talk, position: [-24, 5840], size: [2858, 344], color: Yellow}
+    - {id: 6916058273273938904, title: on_wizard_next, position: [-24, 6308], size: [406, 182], color: Teal}
+    - {id: 9826279979734059066, title: on_wizard_answer_1, position: [-24, 6614], size: [495, 182], color: Violet}
+    - {id: 5884542291616761698, title: on_wizard_answer_2, position: [-24, 6920], size: [495, 182], color: Red}
+    - {id: 4059463109849383347, title: on_wizard_answer_3, position: [-24, 7226], size: [495, 182], color: Yellow}
+    - {id: 10390536478869711290, title: On Update, position: [-24, 7532], size: [2846, 828], color: Teal}

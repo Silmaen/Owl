@@ -175,3 +175,6 @@ VisualScript:
     - {from: 7490000000000000030, fromPin: Result, to: 7490000000000000031, toPin: asset_path}
     - {from: 7490000000000000026, fromPin: Then, to: 7490000000000000031, toPin: Exec}
     - {from: 7490000000000000031, fromPin: Then, to: 7490000000000000032, toPin: Exec}
+  groups:
+    - {id: 16542857473999375012, title: On Create, position: [-24, -52], size: [1841, 292], color: Red}
+    - {id: 8458684123322146002, title: on_pickup, position: [-24, 284], size: [3077, 908], color: Yellow}

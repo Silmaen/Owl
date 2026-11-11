@@ -426,192 +426,192 @@ VisualScript:
       position: [0, 1966]
     - id: 8200000000000000089
       type: var.get
-      position: [0, 2102]
+      position: [160, 2032]
       values:
         variable: pending_load_save
     - id: 8200000000000000090
       type: flow.branch
-      position: [274, 1966]
+      position: [400, 1968]
     - id: 8200000000000000091
       type: call.ui.is_transition_active
-      position: [0, 2222]
+      position: [656, 2032]
     - id: 8200000000000000092
       type: logic.not
-      position: [274, 2102]
+      position: [872, 2048]
     - id: 8200000000000000093
       type: flow.branch
-      position: [538, 1966]
+      position: [1024, 1968]
     - id: 8200000000000000094
       type: call.save.load_game
-      position: [802, 1966]
+      position: [1248, 1952]
       values:
         slot: 1
     - id: 8200000000000000095
       type: var.set
-      position: [1052, 1966]
+      position: [1456, 1952]
       values:
         Value: false
         variable: pending_load_save
     - id: 8200000000000000096
       type: var.get
-      position: [802, 2112]
+      position: [208, 2144]
       values:
         variable: mouse_label_id
     - id: 8200000000000000097
       type: compare.not_equal
-      position: [1052, 2112]
+      position: [432, 2160]
       values:
         B: 0
     - id: 8200000000000000098
       type: flow.branch
-      position: [1330, 1966]
+      position: [672, 2128]
     - id: 8200000000000000099
       type: call.input.get_mouse_x
-      position: [1330, 2102]
+      position: [736, 2256]
     - id: 8200000000000000100
       type: var.set
-      position: [1594, 1966]
+      position: [928, 2128]
       values:
         variable: mx
     - id: 8200000000000000101
       type: call.input.get_mouse_y
-      position: [1594, 2112]
+      position: [752, 2336]
     - id: 8200000000000000102
       type: var.set
-      position: [1826, 1966]
+      position: [1120, 2128]
       values:
         variable: my
     - id: 8200000000000000103
       type: call.input.is_action_pressed
-      position: [1826, 2112]
+      position: [1324, 2232]
       values:
         action: primary
     - id: 8200000000000000104
       type: var.set
-      position: [2184, 1966]
+      position: [1648, 2128]
       values:
         variable: lmb
     - id: 8200000000000000105
       type: var.get
-      position: [1826, 2232]
+      position: [1324, 2352]
       values:
         variable: lmb
     - id: 8200000000000000106
       type: logic.select
-      position: [2184, 2112]
+      position: [1584, 2368]
       values:
         True: " [click]"
     - id: 8200000000000000107
       type: value.string
-      position: [1826, 2352]
+      position: [1324, 2472]
       values:
         Value: ""
     - id: 8200000000000000108
       type: var.set
-      position: [2486, 1966]
+      position: [1888, 2128]
       values:
         variable: indicator
     - id: 8200000000000000109
       type: call.ui.set_text
-      position: [2836, 1966]
+      position: [2192, 2128]
     - id: 8200000000000000110
       type: var.get
-      position: [2486, 2112]
+      position: [1888, 2304]
       values:
         variable: mouse_label_id
     - id: 8200000000000000111
       type: text.format
-      position: [2486, 2232]
+      position: [1728, 2624]
       values:
         Format: "Mouse: %d, %d%s"
     - id: 8200000000000000112
       type: math.floor
-      position: [2184, 2274]
+      position: [1488, 2592]
     - id: 8200000000000000113
       type: var.get
-      position: [1826, 2462]
+      position: [1324, 2582]
       values:
         variable: mx
     - id: 8200000000000000114
       type: math.floor
-      position: [2184, 2384]
+      position: [1488, 2704]
     - id: 8200000000000000115
       type: var.get
-      position: [1826, 2582]
+      position: [1328, 2688]
       values:
         variable: my
     - id: 8200000000000000116
       type: var.get
-      position: [2184, 2494]
+      position: [1312, 2784]
       values:
         variable: indicator
     - id: 8200000000000000117
       type: event.custom
-      position: [0, 2862]
+      position: [-8, 3028]
       values:
         function: on_play_clicked
     - id: 8200000000000000118
       type: call.gamestate.get
-      position: [226, 2862]
+      position: [218, 3028]
       values:
         default: false
         key: has_continue
     - id: 8200000000000000119
       type: flow.branch
-      position: [544, 2862]
+      position: [536, 3028]
     - id: 8200000000000000120
       type: call.gamestate.get
-      position: [822, 2862]
+      position: [814, 3028]
       values:
         default: scenes/world_map.owl
         key: continue_scene
     - id: 8200000000000000121
       type: call.log.info
-      position: [1140, 2862]
+      position: [1640, 3030]
     - id: 8200000000000000122
       type: text.concat
-      position: [822, 3034]
+      position: [1400, 3158]
       values:
         A: Continue clicked — resuming '
     - id: 8200000000000000123
       type: text.concat
-      position: [544, 2998]
+      position: [1176, 3174]
       values:
         B: "'"
     - id: 8200000000000000124
       type: call.sound.play
-      position: [1522, 2862]
+      position: [1832, 3030]
       values:
         asset_path: sounds/ui/start.wav
     - id: 8200000000000000125
       type: call.gamestate.set
-      position: [1904, 2862]
+      position: [2168, 3030]
       values:
         key: has_continue
         value: false
     - id: 8200000000000000126
       type: call.scene.transition_to
-      position: [2238, 2862]
+      position: [2440, 3206]
       values:
         duration: 0.3
         kind: fade_out
         split.rgba: true
     - id: 8200000000000000127
       type: call.log.info
-      position: [822, 3210]
+      position: [814, 3376]
       values:
         message: Start clicked — fresh run, loading world map.
     - id: 8200000000000000128
       type: call.sound.play
-      position: [1140, 3210]
+      position: [1132, 3376]
       values:
         asset_path: sounds/ui/start.wav
     - id: 8200000000000000129
       type: call.gamestate.clear
-      position: [1522, 3210]
+      position: [1514, 3376]
     - id: 8200000000000000130
       type: call.scene.transition_to
-      position: [1904, 3210]
+      position: [1896, 3376]
       values:
         duration: 0.3
         kind: fade_out
@@ -619,43 +619,43 @@ VisualScript:
         split.rgba: true
     - id: 8200000000000000131
       type: event.custom
-      position: [0, 3672]
+      position: [-8, 3828]
       values:
         function: on_continue_clicked
     - id: 8200000000000000132
       type: call.log.info
-      position: [258, 3672]
+      position: [250, 3828]
       values:
         message: Continue button clicked! Loading save...
     - id: 8200000000000000133
       type: call.sound.play
-      position: [568, 3672]
+      position: [560, 3828]
       values:
         asset_path: sounds/ui/start.wav
     - id: 8200000000000000134
       type: var.set
-      position: [950, 3672]
+      position: [942, 3828]
       values:
         Value: true
         variable: pending_load_save
     - id: 8200000000000000135
       type: call.ui.transition_fade_out
-      position: [1224, 3672]
+      position: [1216, 3828]
       values:
         duration: 0.3
     - id: 8200000000000000136
       type: event.custom
-      position: [0, 3978]
+      position: [-8, 4052]
       values:
         function: on_settings_clicked
     - id: 8200000000000000137
       type: call.log.info
-      position: [258, 3978]
+      position: [250, 4052]
       values:
         message: Settings button clicked!
     - id: 8200000000000000138
       type: call.scene.transition_to
-      position: [568, 3978]
+      position: [560, 4052]
       values:
         duration: 0.3
         kind: fade_out
@@ -663,53 +663,53 @@ VisualScript:
         split.rgba: true
     - id: 8200000000000000139
       type: event.custom
-      position: [294, 4440]
+      position: [286, 4476]
       values:
         function: on_delete_save_clicked
     - id: 8200000000000000140
       type: call.save.has_save
-      position: [0, 4440]
+      position: [-8, 4476]
       values:
         slot: 1
     - id: 8200000000000000141
       type: logic.not
-      position: [294, 4586]
+      position: [286, 4622]
     - id: 8200000000000000142
       type: flow.branch
-      position: [576, 4440]
+      position: [568, 4476]
     - id: 8200000000000000143
       type: call.log.error
-      position: [840, 4440]
+      position: [832, 4476]
       values:
         message: "Cannot delete: no save in slot 1"
     - id: 8200000000000000144
       type: call.log.info
-      position: [1150, 4440]
+      position: [1142, 4476]
       values:
         message: Deleting save slot 1
     - id: 8200000000000000145
       type: call.save.delete_save
-      position: [1460, 4440]
+      position: [1452, 4476]
       values:
         slot: 1
     - id: 8200000000000000146
       type: func.call
-      position: [1706, 4440]
+      position: [1698, 4476]
       values:
         function: refresh_save_info
     - id: 8200000000000000147
       type: event.custom
-      position: [0, 4856]
+      position: [0, 4848]
       values:
         function: on_quit_clicked
     - id: 8200000000000000148
       type: call.log.info
-      position: [226, 4856]
+      position: [176, 4848]
       values:
         message: Quit button clicked!
     - id: 8200000000000000149
       type: call.scene.quit
-      position: [536, 4856]
+      position: [544, 4864]
   links:
     - {from: 8200000000000000001, fromPin: Then, to: 8200000000000000002, toPin: Exec}
     - {from: 8200000000000000003, fromPin: exists, to: 8200000000000000004, toPin: Value}
@@ -845,7 +845,7 @@ VisualScript:
     - {from: 8200000000000000120, fromPin: Then, to: 8200000000000000121, toPin: Exec}
     - {from: 8200000000000000121, fromPin: Then, to: 8200000000000000124, toPin: Exec}
     - {from: 8200000000000000124, fromPin: Then, to: 8200000000000000125, toPin: Exec}
-    - {from: 8200000000000000120, fromPin: value, to: 8200000000000000126, toPin: scene_path}
+    - {from: 8200000000000000120, fromPin: value, to: 8200000000000000126, toPin: scene_path, waypoints: [[1192, 3286]]}
     - {from: 8200000000000000125, fromPin: Then, to: 8200000000000000126, toPin: Exec}
     - {from: 8200000000000000119, fromPin: False, to: 8200000000000000127, toPin: Exec}
     - {from: 8200000000000000127, fromPin: Then, to: 8200000000000000128, toPin: Exec}
@@ -866,3 +866,12 @@ VisualScript:
     - {from: 8200000000000000145, fromPin: Then, to: 8200000000000000146, toPin: Exec}
     - {from: 8200000000000000147, fromPin: Then, to: 8200000000000000148, toPin: Exec}
     - {from: 8200000000000000148, fromPin: Then, to: 8200000000000000149, toPin: Exec}
+  groups:
+    - {id: 13626217264993705302, title: refresh_save_info, position: [-24, -52], size: [4031, 910], color: Red}
+    - {id: 10494963117161105021, title: On Create, position: [-24, 1030], size: [5379, 760], color: Yellow}
+    - {id: 2331414904208363841, title: On Update, position: [-24, 1914], size: [2520, 984], color: Teal}
+    - {id: 4837318790058192884, title: on_play_clicked, position: [-32, 2976], size: [2936, 744], color: Violet}
+    - {id: 9692122210442156928, title: on_continue_clicked, position: [-32, 3776], size: [1482, 182], color: Red}
+    - {id: 10595276029160126051, title: on_settings_clicked, position: [-32, 4000], size: [880, 338], color: Yellow}
+    - {id: 2525353705588038128, title: on_delete_save_clicked, position: [-32, 4416], size: [1919, 292], color: Teal}
+    - {id: 13499625472738879109, title: on_quit_clicked, position: [-24, 4804], size: [724, 182], color: Violet}

@@ -153,6 +153,46 @@ auto shortTable(lua_State* iState, const int iIndex) -> std::string {
 	return text + "}";
 }
 
+// The entries of a table for the debugger: numeric keys first in order, then the others by name, nested tables short.
+auto tableEntries(lua_State* iState, const int iIndex) -> std::vector<WatchEntry> {
+	constexpr size_t maxEntries = 64;
+	const int table = lua_absindex(iState, iIndex);
+	std::vector<std::pair<double, WatchEntry>> numbered;
+	std::vector<WatchEntry> named;
+	lua_pushnil(iState);
+	// At the limit the loop leaves the last key on the stack, popped below.
+	while (numbered.size() + named.size() < maxEntries && lua_next(iState, table) != 0) {
+		WatchEntry entry{.name = {},
+						 .value = lua_type(iState, -1) == LUA_TTABLE ? shortTable(iState, -1)
+																	 : LuaEngine::describeValue(iState, -1).value};
+		if (lua_type(iState, -2) == LUA_TNUMBER) {
+			entry.name = LuaEngine::describeValue(iState, -2).value;
+			numbered.emplace_back(lua_tonumber(iState, -2), std::move(entry));
+		} else {
+			entry.name = lua_type(iState, -2) == LUA_TSTRING ? lua_tostring(iState, -2) : luaL_typename(iState, -2);
+			named.push_back(std::move(entry));
+		}
+		lua_pop(iState, 1);
+	}
+	if (numbered.size() + named.size() >= maxEntries)
+		lua_pop(iState, 1);
+	std::ranges::sort(numbered, {}, &std::pair<double, WatchEntry>::first);
+	std::ranges::sort(named, {}, &WatchEntry::name);
+	std::vector<WatchEntry> entries;
+	entries.reserve(numbered.size() + named.size());
+	for (auto& [key, entry]: numbered) entries.push_back(std::move(entry));
+	for (auto& entry: named) entries.push_back(std::move(entry));
+	return entries;
+}
+
+// A value for the debugger, the entries of a table with it.
+auto watchValue(lua_State* iState, const int iIndex) -> WatchValue {
+	auto value = LuaEngine::describeValue(iState, iIndex);
+	if (lua_type(iState, iIndex) == LUA_TTABLE)
+		value.entries = tableEntries(iState, iIndex);
+	return value;
+}
+
 // Called on a line holding a breakpoint: the hit is reported and the call goes on, the game pauses after it.
 void breakCallback(lua_State* iState, lua_Debug* iDebug) {
 	if (lua_getinfo(iState, 0, "sl", iDebug) == 0 || !ScriptDebugger::isBreakpoint(iDebug->source, iDebug->currentline))
@@ -170,7 +210,7 @@ void breakCallback(lua_State* iState, lua_Debug* iDebug) {
 		if (name == nullptr)
 			break;
 		if (name[0] != '(' && !std::string_view{name}.starts_with("__")) {
-			auto value = LuaEngine::describeValue(iState, -1);
+			auto value = watchValue(iState, -1);
 			value.name = name;
 			hit.locals.push_back(std::move(value));
 		}
@@ -945,7 +985,7 @@ auto LuaEngine::callFunctionForValue(const std::string_view iName, const uint64_
 
 // NOLINTNEXTLINE(misc-no-recursion) A table describes its entries once, without entering a nested table.
 auto LuaEngine::describeValue(lua_State* iState, const int iIndex) -> WatchValue {
-	WatchValue value{.name = {}, .type = luaL_typename(iState, iIndex), .value = {}};
+	WatchValue value{.name = {}, .type = luaL_typename(iState, iIndex), .value = {}, .entries = {}};
 	switch (lua_type(iState, iIndex)) {
 		case LUA_TNIL:
 			value.value = "nil";
@@ -984,7 +1024,7 @@ auto LuaEngine::readGlobals() const -> std::vector<WatchValue> {
 	lua_pushnil(mp_state);
 	while (lua_next(mp_state, -2) != 0) {
 		if (lua_type(mp_state, -2) == LUA_TSTRING && lua_type(mp_state, -1) != LUA_TFUNCTION) {
-			auto value = describeValue(mp_state, -1);
+			auto value = watchValue(mp_state, -1);
 			value.name = lua_tostring(mp_state, -2);
 			values.push_back(std::move(value));
 		}
@@ -1004,7 +1044,7 @@ auto LuaEngine::readGlobalTable(const std::string& iName) const -> std::vector<W
 		lua_pushnil(mp_state);
 		while (lua_next(mp_state, -2) != 0) {
 			if (lua_type(mp_state, -2) == LUA_TSTRING) {
-				auto value = describeValue(mp_state, -1);
+				auto value = watchValue(mp_state, -1);
 				value.name = lua_tostring(mp_state, -2);
 				values.push_back(std::move(value));
 			}

@@ -7,25 +7,25 @@ VisualScript:
   nodes:
     - id: 7420000000000000001
       type: event.on_create
-      position: [0, 0]
+      position: [0, 16]
     - id: 7420000000000000002
       type: call.ui.find
-      position: [0, 150]
+      position: [144, 96]
       values:
         name: ObjectiveText
     - id: 7420000000000000003
       type: var.set
-      position: [358, 0]
+      position: [480, 0]
       values:
         variable: objective_id
     - id: 7420000000000000004
       type: call.ui.set_text
-      position: [592, 0]
+      position: [688, 0]
       values:
         text: "Objective: find the treasure of the cellar"
     - id: 7420000000000000005
       type: call.ui.transition_fade_in
-      position: [950, 0]
+      position: [960, 0]
       values:
         duration: 0.6
     - id: 7420000000000000006
@@ -33,40 +33,40 @@ VisualScript:
       position: [0, 450]
     - id: 7420000000000000007
       type: var.get
-      position: [0, 600]
+      position: [160, 528]
       values:
         variable: leaving
     - id: 7420000000000000008
       type: call.ui.is_transition_active
-      position: [0, 750]
+      position: [144, 640]
     - id: 7420000000000000009
       type: logic.or
-      position: [358, 600]
+      position: [336, 544]
     - id: 7420000000000000010
       type: flow.branch
-      position: [592, 450]
+      position: [528, 448]
     - id: 7420000000000000011
       type: call.input.is_action_just_pressed
-      position: [592, 750]
+      position: [416, 656]
       values:
         action: pause
     - id: 7420000000000000012
       type: flow.branch
-      position: [950, 450]
+      position: [816, 480]
     - id: 7420000000000000013
       type: var.set
-      position: [1228, 450]
+      position: [1040, 464]
       values:
         Value: true
         variable: leaving
     - id: 7420000000000000014
       type: var.get
-      position: [1228, 600]
+      position: [1072, 592]
       values:
         variable: hub_scene
     - id: 7420000000000000015
       type: call.scene.transition_to
-      position: [1484, 450]
+      position: [1280, 464]
       values:
         duration: 0.3
         kind: fade_out
@@ -85,3 +85,6 @@ VisualScript:
     - {from: 7420000000000000012, fromPin: True, to: 7420000000000000013, toPin: Exec}
     - {from: 7420000000000000013, fromPin: Then, to: 7420000000000000015, toPin: Exec}
     - {from: 7420000000000000014, fromPin: Value, to: 7420000000000000015, toPin: scene_path}
+  groups:
+    - {id: 1650659944001787795, title: On Create, position: [-24, -52], size: [1214, 252], color: Red}
+    - {id: 9715119318192955507, title: On Update, position: [-24, 396], size: [1549, 364], color: Orange}

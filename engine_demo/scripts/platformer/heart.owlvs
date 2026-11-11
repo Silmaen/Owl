@@ -17,7 +17,7 @@ VisualScript:
       position: [0, 0]
     - id: 7520000000000000002
       type: call.transform.get_scale
-      position: [304, 0]
+      position: [320, 80]
       values:
         split.scale: true
     - id: 7520000000000000003
@@ -32,7 +32,7 @@ VisualScript:
         function: on_heart_touched
     - id: 7520000000000000005
       type: var.get
-      position: [304, 256]
+      position: [400, 352]
       values:
         variable: taken
     - id: 7520000000000000006
@@ -46,7 +46,7 @@ VisualScript:
         key: health
     - id: 7520000000000000008
       type: compare.greater_equal
-      position: [1224, 256]
+      position: [1360, 320]
       values:
         B: 1
     - id: 7520000000000000009
@@ -70,211 +70,211 @@ VisualScript:
         variable: home_x
     - id: 7520000000000000013
       type: var.get
-      position: [2232, 400]
+      position: [2416, 400]
       values:
         variable: bob
     - id: 7520000000000000014
       type: math.subtract
-      position: [2528, 256]
+      position: [2592, 304]
     - id: 7520000000000000015
       type: var.set
-      position: [2528, 392]
+      position: [2784, 224]
       values:
         variable: home_y
     - id: 7520000000000000016
       type: var.set
-      position: [2856, 256]
+      position: [2992, 368]
       values:
         variable: home_z
     - id: 7520000000000000017
       type: var.get
-      position: [0, 656]
+      position: [1424, 560]
       values:
         variable: heal
     - id: 7520000000000000018
       type: math.add
-      position: [0, 776]
+      position: [1728, 544]
     - id: 7520000000000000019
       type: math.min
-      position: [304, 656]
+      position: [2912, 512]
       values:
         A: 1
     - id: 7520000000000000020
       type: call.gamestate.set
-      position: [616, 656]
+      position: [3224, 512]
       values:
         key: health
     - id: 7520000000000000021
       type: call.gamestate.set
-      position: [896, 656]
+      position: [3504, 512]
       values:
         key: platformer_banner
         value: Health restored
     - id: 7520000000000000022
       type: call.sound.play
-      position: [1224, 656]
+      position: [3832, 512]
       values:
         asset_path: sounds/platformer/coin_collect.wav
     - id: 7520000000000000023
       type: var.set
-      position: [1624, 656]
+      position: [4232, 512]
       values:
         Value: 0
         variable: clock
     - id: 7520000000000000024
       type: event.on_update
-      position: [0, 992]
+      position: [-384, 976]
     - id: 7520000000000000025
       type: var.get
-      position: [304, 992]
+      position: [-224, 1088]
       values:
         variable: clock
     - id: 7520000000000000026
       type: math.add
-      position: [304, 1112]
+      position: [-64, 1024]
     - id: 7520000000000000027
       type: var.set
-      position: [616, 992]
+      position: [192, 896]
       values:
         variable: clock
     - id: 7520000000000000028
       type: var.get
-      position: [896, 992]
+      position: [816, 992]
       values:
         variable: taken
     - id: 7520000000000000029
       type: flow.branch
-      position: [1224, 992]
+      position: [1040, 912]
     - id: 7520000000000000030
       type: call.transform.get_position
-      position: [0, 1328]
+      position: [832, 1104]
       values:
         split.xyz: true
     - id: 7520000000000000031
       type: math.multiply
-      position: [0, 1504]
+      position: [736, 1392]
       values:
         B: 3
     - id: 7520000000000000032
       type: math.sin
-      position: [304, 1328]
+      position: [960, 1392]
     - id: 7520000000000000033
       type: math.multiply
-      position: [304, 1440]
+      position: [1120, 1376]
       values:
         A: 0.08
     - id: 7520000000000000034
       type: var.get
-      position: [304, 1576]
+      position: [960, 1264]
       values:
         variable: bob
     - id: 7520000000000000035
       type: math.subtract
-      position: [616, 1328]
+      position: [1184, 1248]
     - id: 7520000000000000036
       type: math.add
-      position: [616, 1464]
+      position: [1360, 1248]
     - id: 7520000000000000037
       type: call.transform.set_position
-      position: [896, 1328]
+      position: [1568, 1056]
       values:
         split.xyz: true
     - id: 7520000000000000038
       type: var.set
-      position: [1224, 1328]
+      position: [1808, 1216]
       values:
         variable: bob
     - id: 7520000000000000039
       type: var.get
-      position: [0, 1776]
+      position: [720, 1584]
       values:
         variable: pop_time
     - id: 7520000000000000040
       type: math.divide
-      position: [0, 1896]
+      position: [960, 1520]
     - id: 7520000000000000041
       type: math.min
-      position: [304, 1776]
+      position: [1760, 1392]
       values:
         A: 1
     - id: 7520000000000000042
       type: var.set
-      position: [616, 1776]
+      position: [2096, 976]
       values:
         variable: pop
     - id: 7520000000000000043
       type: math.multiply
-      position: [616, 1920]
+      position: [2416, 1168]
       values:
         A: 1.1
     - id: 7520000000000000044
       type: math.add
-      position: [896, 1776]
+      position: [2688, 1152]
       values:
         A: 1
     - id: 7520000000000000045
       type: var.get
-      position: [896, 1912]
+      position: [2720, 1072]
       values:
         variable: base_scale
     - id: 7520000000000000046
       type: math.multiply
-      position: [1224, 1776]
+      position: [2960, 1056]
     - id: 7520000000000000047
       type: call.transform.set_scale
-      position: [1624, 1776]
+      position: [3168, 944]
       values:
         split.scale: true
         sz: 1
     - id: 7520000000000000048
       type: var.get
-      position: [1624, 2000]
+      position: [3168, 1152]
       values:
         variable: home_x
     - id: 7520000000000000049
       type: var.get
-      position: [1624, 2120]
+      position: [2928, 1216]
       values:
         variable: home_y
     - id: 7520000000000000050
       type: var.get
-      position: [1624, 2240]
+      position: [3168, 1344]
       values:
         variable: home_z
     - id: 7520000000000000051
       type: math.multiply
-      position: [1624, 2360]
+      position: [2896, 1328]
       values:
         A: 0.8
     - id: 7520000000000000052
       type: math.add
-      position: [1928, 1776]
+      position: [3168, 1248]
     - id: 7520000000000000053
       type: call.transform.set_position
-      position: [2232, 1776]
+      position: [3424, 1088]
       values:
         split.xyz: true
     - id: 7520000000000000054
       type: math.subtract
-      position: [2232, 2000]
+      position: [3104, 1440]
       values:
         A: 1
     - id: 7520000000000000055
       type: call.entity.set_tint
-      position: [2528, 1776]
+      position: [3680, 1136]
       values:
         rgb: 1, 1, 1
     - id: 7520000000000000056
       type: compare.greater_equal
-      position: [2528, 1976]
+      position: [3248, 1552]
       values:
         B: 1
     - id: 7520000000000000057
       type: flow.branch
-      position: [2856, 1776]
+      position: [3952, 1232]
     - id: 7520000000000000058
       type: call.scene.destroy_entity
-      position: [3136, 1776]
+      position: [4208, 1232]
   links:
     - {from: 7520000000000000002, fromPin: sx, to: 7520000000000000003, toPin: Value}
     - {from: 7520000000000000001, fromPin: Then, to: 7520000000000000003, toPin: Exec}
@@ -301,9 +301,7 @@ VisualScript:
     - {from: 7520000000000000020, fromPin: Then, to: 7520000000000000021, toPin: Exec}
     - {from: 7520000000000000021, fromPin: Then, to: 7520000000000000022, toPin: Exec}
     - {from: 7520000000000000022, fromPin: Then, to: 7520000000000000023, toPin: Exec}
-    - {from: 7520000000000000025, fromPin: Value, to: 7520000000000000026, toPin: A}
     - {from: 7520000000000000026, fromPin: Result, to: 7520000000000000027, toPin: Value}
-    - {from: 7520000000000000024, fromPin: dt, to: 7520000000000000026, toPin: B}
     - {from: 7520000000000000028, fromPin: Value, to: 7520000000000000029, toPin: Condition}
     - {from: 7520000000000000024, fromPin: Then, to: 7520000000000000027, toPin: Exec}
     - {from: 7520000000000000027, fromPin: Then, to: 7520000000000000029, toPin: Exec}
@@ -312,15 +310,13 @@ VisualScript:
     - {from: 7520000000000000032, fromPin: Result, to: 7520000000000000033, toPin: B}
     - {from: 7520000000000000030, fromPin: y, to: 7520000000000000035, toPin: A}
     - {from: 7520000000000000034, fromPin: Value, to: 7520000000000000035, toPin: B}
-    - {from: 7520000000000000035, fromPin: Result, to: 7520000000000000036, toPin: A}
-    - {from: 7520000000000000033, fromPin: Result, to: 7520000000000000036, toPin: B}
     - {from: 7520000000000000030, fromPin: x, to: 7520000000000000037, toPin: x}
     - {from: 7520000000000000036, fromPin: Result, to: 7520000000000000037, toPin: y}
     - {from: 7520000000000000030, fromPin: z, to: 7520000000000000037, toPin: z}
     - {from: 7520000000000000029, fromPin: False, to: 7520000000000000037, toPin: Exec}
     - {from: 7520000000000000033, fromPin: Result, to: 7520000000000000038, toPin: Value}
     - {from: 7520000000000000037, fromPin: Then, to: 7520000000000000038, toPin: Exec}
-    - {from: 7520000000000000027, fromPin: Value, to: 7520000000000000040, toPin: A}
+    - {from: 7520000000000000027, fromPin: Value, to: 7520000000000000040, toPin: A, waypoints: [[752, 1536]]}
     - {from: 7520000000000000039, fromPin: Value, to: 7520000000000000040, toPin: B}
     - {from: 7520000000000000040, fromPin: Result, to: 7520000000000000041, toPin: B}
     - {from: 7520000000000000041, fromPin: Result, to: 7520000000000000042, toPin: Value}
@@ -332,17 +328,24 @@ VisualScript:
     - {from: 7520000000000000046, fromPin: Result, to: 7520000000000000047, toPin: sx}
     - {from: 7520000000000000046, fromPin: Result, to: 7520000000000000047, toPin: sy}
     - {from: 7520000000000000042, fromPin: Then, to: 7520000000000000047, toPin: Exec}
-    - {from: 7520000000000000042, fromPin: Value, to: 7520000000000000051, toPin: B}
+    - {from: 7520000000000000042, fromPin: Value, to: 7520000000000000051, toPin: B, waypoints: [[2416, 1392]]}
     - {from: 7520000000000000049, fromPin: Value, to: 7520000000000000052, toPin: A}
     - {from: 7520000000000000051, fromPin: Result, to: 7520000000000000052, toPin: B}
     - {from: 7520000000000000048, fromPin: Value, to: 7520000000000000053, toPin: x}
     - {from: 7520000000000000052, fromPin: Result, to: 7520000000000000053, toPin: y}
     - {from: 7520000000000000050, fromPin: Value, to: 7520000000000000053, toPin: z}
     - {from: 7520000000000000047, fromPin: Then, to: 7520000000000000053, toPin: Exec}
-    - {from: 7520000000000000042, fromPin: Value, to: 7520000000000000054, toPin: B}
+    - {from: 7520000000000000042, fromPin: Value, to: 7520000000000000054, toPin: B, waypoints: [[2416, 1600]]}
     - {from: 7520000000000000054, fromPin: Result, to: 7520000000000000055, toPin: a}
     - {from: 7520000000000000053, fromPin: Then, to: 7520000000000000055, toPin: Exec}
-    - {from: 7520000000000000042, fromPin: Value, to: 7520000000000000056, toPin: A}
+    - {from: 7520000000000000042, fromPin: Value, to: 7520000000000000056, toPin: A, waypoints: [[2416, 1600]]}
     - {from: 7520000000000000056, fromPin: Result, to: 7520000000000000057, toPin: Condition}
     - {from: 7520000000000000055, fromPin: Then, to: 7520000000000000057, toPin: Exec}
     - {from: 7520000000000000057, fromPin: True, to: 7520000000000000058, toPin: Exec}
+    - {from: 7520000000000000025, fromPin: Value, to: 7520000000000000026, toPin: B}
+    - {from: 7520000000000000024, fromPin: dt, to: 7520000000000000026, toPin: A}
+    - {from: 7520000000000000033, fromPin: Result, to: 7520000000000000036, toPin: B}
+    - {from: 7520000000000000035, fromPin: Result, to: 7520000000000000036, toPin: A}
+  groups:
+    - {id: 9299058207309249123, title: On Create + on_heart_touched, position: [-24, -52], size: [4504, 720], color: Red}
+    - {id: 4501948348774528394, title: On Update, position: [-408, 844], size: [4857, 828], color: Yellow}

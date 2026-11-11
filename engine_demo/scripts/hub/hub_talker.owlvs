@@ -648,3 +648,7 @@ VisualScript:
     - {from: 8070000000000000110, fromPin: Then, to: 8070000000000000114, toPin: Exec}
     - {from: 8070000000000000116, fromPin: Value, to: 8070000000000000115, toPin: entity_id}
     - {from: 8070000000000000114, fromPin: True, to: 8070000000000000115, toPin: Exec}
+  groups:
+    - {id: 5655686638560655128, title: On Create, position: [-24, -52], size: [1994, 1006], color: Red}
+    - {id: 17639213180799184992, title: on_talk, position: [-24, 1078], size: [5273, 1002], color: Yellow}
+    - {id: 1014032236609058218, title: On Update, position: [-24, 2252], size: [2847, 538], color: Teal}

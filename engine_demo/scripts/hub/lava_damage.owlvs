@@ -79,3 +79,5 @@ VisualScript:
     - {from: 7360000000000000011, fromPin: Result, to: 7360000000000000012, toPin: A}
     - {from: 7360000000000000007, fromPin: Then, to: 7360000000000000013, toPin: Exec}
     - {from: 7360000000000000012, fromPin: Result, to: 7360000000000000013, toPin: value}
+  groups:
+    - {id: 4018638369564075749, title: on_lava_tick, position: [-24, -52], size: [2297, 708], color: Red}

@@ -14,6 +14,7 @@
 #include "script/ScriptEngine.h"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -21,6 +22,10 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+namespace owl::script {
+class ScriptTypeChecker;
+}// namespace owl::script
 
 /**
  * @brief
@@ -46,8 +51,13 @@ enum struct PinType : uint8_t {
 	Vector2,///< Table `{x, y}`.
 	Vector3,///< Table `{x, y, z}`.
 	Color,///< Table `{r, g, b, a}`.
+	Transform,///< Table `{position, rotation, scale}` of three `Vector3`, the rotation in radians.
+	Matrix,///< List of the 16 numbers of a 4×4 matrix, row after row.
 	Any///< Any value.
 };
+
+/// Node type of a reroute: one value in, passed on to every wire leaving it.
+inline constexpr std::string_view g_RerouteNode = "flow.reroute";
 
 /// Prefix of the node value that splits a grouped pin into its components (`split.rgba` = `true`).
 inline constexpr std::string_view g_SplitPrefix = "split.";
@@ -249,6 +259,10 @@ struct GraphFunction {
 	std::vector<std::string> exits{"Then"};
 	/// A global the engine calls by name and reads the results of (dialogue condition); else local to the graph.
 	bool exported{false};
+	/// Folder of the function in the Functions panel and the palette (`Movement`), empty for none.
+	std::string category{};// NOLINT(readability-redundant-member-init) lets designated initializers omit it
+	/// Called without execution pins (`func.pure`), where its results are read: its body has no side effect.
+	bool pure{false};
 
 	/**
 	 * @brief
@@ -291,7 +305,43 @@ struct CustomNode {
 
 /**
  * @brief
- *  A visual script: variables, functions, custom nodes, nodes and links.
+ *  A frame drawn behind nodes to gather them under a title; moving it moves the nodes inside it.
+ */
+struct GraphGroup {
+	/// Group identifier.
+	core::UUID id;
+	/// Title shown in its header.
+	std::string title;
+	/// Top-left corner on the canvas.
+	std::array<float, 2> position{0.f, 0.f};
+	/// Width and height, canvas units.
+	std::array<float, 2> size{200.f, 120.f};
+	/// Colour name (`Red`, `Green`... as the execution links), empty for the default one.
+	std::string color;
+
+	/**
+	 * @brief
+	 *  Equality operator.
+	 * @param[in] iOther Group to compare to.
+	 * @return True when both groups are identical.
+	 */
+	auto operator==(const GraphGroup& iOther) const -> bool = default;
+
+	/**
+	 * @brief
+	 *  Whether a node lies in the group: its top-left corner inside the frame.
+	 * @param[in] iNode The node.
+	 * @return True when the group holds it.
+	 */
+	[[nodiscard]] auto holds(const GraphNode& iNode) const -> bool {
+		return iNode.position[0] >= position[0] && iNode.position[1] >= position[1] &&
+			   iNode.position[0] <= position[0] + size[0] && iNode.position[1] <= position[1] + size[1];
+	}
+};
+
+/**
+ * @brief
+ *  A visual script: variables, functions, custom nodes, nodes, links and groups.
  */
 struct VisualScript {
 	/// Variables, in declaration order.
@@ -304,6 +354,8 @@ struct VisualScript {
 	std::vector<GraphNode> nodes;
 	/// Links.
 	std::vector<GraphLink> links;
+	/// Groups, drawn in this order behind the nodes.
+	std::vector<GraphGroup> groups;
 
 	/**
 	 * @brief
@@ -421,6 +473,26 @@ struct CompileDiagnostic {
  */
 [[nodiscard]] OWL_API auto getNodePins(const VisualScript& iScript, const GraphNode& iNode) -> NodePins;
 
+/// Largest number of items of a Make List or a Break List node.
+inline constexpr size_t g_MaxListItems = 16;
+
+/**
+ * @brief
+ *  Number of items of a Make List or a Break List node: its `count` value, 4 and 2 when it has none.
+ * @param[in] iNode The node.
+ * @return The number of item pins, from 1 to `g_MaxListItems`.
+ */
+[[nodiscard]] OWL_API auto getListItemCount(const GraphNode& iNode) -> size_t;
+
+/**
+ * @brief
+ *  Lua template of a node: its type's, or the one its item count gives (Make List, Break List).
+ * @param[in] iType Type of the node.
+ * @param[in] iNode The node.
+ * @return The template, `{0}`, `{1}` for the inputs.
+ */
+[[nodiscard]] OWL_API auto getNodeLua(const NodeType& iType, const GraphNode& iNode) -> std::string;
+
 /**
  * @brief
  *  Whether an output of a type may feed an input of another.
@@ -429,6 +501,15 @@ struct CompileDiagnostic {
  * @return True when the link is allowed.
  */
 [[nodiscard]] OWL_API auto canConnect(PinType iFrom, PinType iTo) -> bool;
+
+/**
+ * @brief
+ *  Type a reroute node passes on: the type of the output its input is linked to, through other reroutes.
+ * @param[in] iScript The graph.
+ * @param[in] iNode The reroute node.
+ * @return The type, `Any` when its input is not linked.
+ */
+[[nodiscard]] OWL_API auto getRerouteType(const VisualScript& iScript, const GraphNode& iNode) -> PinType;
 
 /**
  * @brief
@@ -653,6 +734,16 @@ struct DebugBuild {
  */
 [[nodiscard]] OWL_API auto compileForDebug(const VisualScript& iScript)
 		-> expected<DebugBuild, std::vector<CompileDiagnostic>>;
+
+/**
+ * @brief
+ *  Compile a visual script and type-check its Lua against the engine declarations.
+ * @param[in] iScript The script.
+ * @param[in,out] ioChecker The type checker.
+ * @return The compilation errors, else the type errors, each on the node whose Lua line it is on; empty when clean.
+ */
+[[nodiscard]] OWL_API auto checkTypes(const VisualScript& iScript, ScriptTypeChecker& ioChecker)
+		-> std::vector<CompileDiagnostic>;
 
 /**
  * @brief

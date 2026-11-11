@@ -119,3 +119,5 @@ VisualScript:
     - {from: 7430000000000000014, fromPin: Value, to: 7430000000000000015, toPin: B}
     - {from: 7430000000000000015, fromPin: Result, to: 7430000000000000016, toPin: A}
     - {from: 7430000000000000016, fromPin: Result, to: 7430000000000000017, toPin: message}
+  groups:
+    - {id: 10810407508763106052, title: on_elevator_use, position: [-24, -202], size: [3872, 622], color: Red}

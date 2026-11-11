@@ -14,7 +14,7 @@ VisualScript:
         key: barrels_over_line
     - id: 7320000000000000003
       type: math.add
-      position: [552, 150]
+      position: [576, 80]
       values:
         B: 1
     - id: 7320000000000000004
@@ -33,7 +33,7 @@ VisualScript:
         key: barrels_past_line
     - id: 7320000000000000007
       type: math.add
-      position: [552, 600]
+      position: [560, 528]
       values:
         B: 1
     - id: 7320000000000000008
@@ -50,3 +50,6 @@ VisualScript:
     - {from: 7320000000000000006, fromPin: Then, to: 7320000000000000008, toPin: Exec}
     - {from: 7320000000000000006, fromPin: value, to: 7320000000000000007, toPin: A}
     - {from: 7320000000000000007, fromPin: Result, to: 7320000000000000008, toPin: value}
+  groups:
+    - {id: 11044414188991795134, title: On Trigger Enter, position: [-24, -52], size: [1087, 252], color: Red}
+    - {id: 9724999567609090020, title: On Trigger Exit, position: [-24, 398], size: [1087, 250]}

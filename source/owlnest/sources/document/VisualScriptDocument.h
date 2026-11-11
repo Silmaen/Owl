@@ -242,6 +242,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Change the number of item pins of a Make List or a Break List node, dropping the links and values of the pins
+	 *  it loses, as one undoable edit.
+	 * @param[in] iNode The node.
+	 * @param[in] iCount Number of items, kept between 1 and `visual::g_MaxListItems`.
+	 */
+	void setListItemCount(core::UUID iNode, size_t iCount);
+
+	/**
+	 * @brief
 	 *  What the document shows.
 	 * @return The view mode.
 	 */
@@ -314,6 +323,102 @@ public:
 	 * @param[in] iMerge Merge with the previous edit of the same kind (typing in a field).
 	 */
 	void setFunction(const std::string& iName, script::visual::GraphFunction iFunction, bool iMerge = false);
+
+	/**
+	 * @brief
+	 *  Make a function pure or not: its calls of this graph change node type and lose the links of the pins they lose.
+	 * @param[in] iName Function name.
+	 * @param[in] iPure Whether its calls have no execution pins.
+	 */
+	void setFunctionPure(const std::string& iName, bool iPure);
+
+	/**
+	 * @brief
+	 *  Frame nodes in a new group fitted around them.
+	 * @param[in] iNodes The nodes.
+	 * @param[in] iTitle Title of the group.
+	 * @return The group, 0 when no node is given.
+	 */
+	auto groupNodes(std::span<const core::UUID> iNodes, const std::string& iTitle = "Group") -> core::UUID;
+
+	/**
+	 * @brief
+	 *  Replace a group (title, colour, place), as one undoable edit that merges with the next of the same kind.
+	 * @param[in] iGroup The group, found by its identifier.
+	 */
+	void setGroup(const script::visual::GraphGroup& iGroup);
+
+	/**
+	 * @brief
+	 *  Remove a group, its nodes kept or removed with it.
+	 * @param[in] iGroup Group identifier.
+	 * @param[in] iWithNodes Whether the nodes it holds go too.
+	 */
+	void removeGroup(core::UUID iGroup, bool iWithNodes);
+
+	/**
+	 * @brief
+	 *  Move nodes up or down so that their wires run straight, from left to right.
+	 *
+	 * A node lines up the pin of its incoming execution wire, else of its first incoming wire, else of its first
+	 * outgoing wire, with the pin at the other end; the waypoints of that wire go.
+	 * @param[in] iNodes The nodes.
+	 * @return How many nodes moved.
+	 */
+	auto straightenNodes(std::span<const core::UUID> iNodes) -> size_t;
+
+	/**
+	 * @brief
+	 *  Frame each event and function entry outside a group in a group named after it, with its execution chain and
+	 *  the pure nodes feeding it; chains whose frames would cross share one group.
+	 * @return How many groups were made.
+	 */
+	auto groupEvents() -> size_t;
+
+	/**
+	 * @brief
+	 *  Compile the graph and type-check its Lua against the engine API; the problems mark their nodes until the next
+	 *  edit.
+	 */
+	void check();
+
+	/**
+	 * @brief
+	 *  Problems the last check found.
+	 * @return The problems, empty when the graph is clean or changed since.
+	 */
+	[[nodiscard]] auto getCheckResults() const -> std::span<const script::visual::CompileDiagnostic> {
+		return m_checked ? std::span{m_checkResults} : std::span<const script::visual::CompileDiagnostic>{};
+	}
+
+	/**
+	 * @brief
+	 *  Turn nodes into a new function and put its call in their place.
+	 *
+	 * The values the nodes read from outside become the parameters, the values read outside the results; the execution
+	 * enters at one pin and leaves by one output at most. Nodes without execution pins give a pure function. The body
+	 * moves below the graph, framed by a group named after the function.
+	 * @param[in] iNodes The nodes.
+	 * @return The function name, empty when the nodes cannot form one (an event, a function entry or return, several
+	 *  execution entries or exits).
+	 */
+	auto collapseToFunction(std::span<const core::UUID> iNodes) -> std::string;
+
+	/**
+	 * @brief
+	 *  Move a function and its body to a library graph that every graph can call, and make the calls of this graph
+	 *  call the library.
+	 *
+	 * The library file is created, or the function added to it; it is written at once, the edit of this graph is
+	 * undoable. Links between the body and the rest of the graph are dropped: a library function reads its parameters
+	 * only.
+	 * @param[in] iName Function name.
+	 * @param[in] iAssetDirectory Asset folder the library path is relative to.
+	 * @param[in] iLibrary Asset path of the library graph (`scripts/lib/movement.owlvs`).
+	 * @return True when the function moved; false when it is unknown, a macro, or the library holds one of its name.
+	 */
+	auto moveFunctionToLibrary(const std::string& iName, const std::filesystem::path& iAssetDirectory,
+							   const std::string& iLibrary) -> bool;
 
 	/**
 	 * @brief
@@ -513,6 +618,21 @@ private:
 	 */
 	void renderNodeList(bool iPopup);
 
+	/// Entry of the palette: its key (node type, or `func.call|name`), its label and its node type.
+	using PaletteEntry = std::function<void(const std::string&, const std::string&, const script::visual::NodeType&)>;
+
+	/**
+	 * @brief
+	 *  Nodes matching the search of the palette, under the header of their category.
+	 * @param[in] iHeads First node type of each category, in palette order.
+	 * @param[in] iEntry Draws an entry from its key, label and type.
+	 * @param[in] iItem Draws the entry of a node type.
+	 * @param[in] iAccepts Whether a node type takes the link being dropped.
+	 */
+	void renderNodeSearch(std::span<const script::visual::NodeType* const> iHeads, const PaletteEntry& iEntry,
+						  const std::function<void(const script::visual::NodeType&)>& iItem,
+						  const std::function<bool(const script::visual::NodeType&)>& iAccepts);
+
 	/**
 	 * @brief
 	 *  Variable list.
@@ -624,6 +744,10 @@ private:
 	VisualScriptCanvas m_view;
 	/// Errors of the last compilation.
 	std::vector<script::visual::CompileDiagnostic> m_diagnostics;
+	/// Problems the last check found, shown while the graph is unchanged.
+	std::vector<script::visual::CompileDiagnostic> m_checkResults;
+	/// Whether the check results are those of the graph as it is.
+	bool m_checked{false};
 	/// Lua of the last successful compilation.
 	std::string m_compiledLua;
 	/// Lines of the debug build each node runs, from the last successful compilation.
@@ -652,6 +776,10 @@ private:
 	std::array<float, 2> m_paletteTarget{0.f, 0.f};
 	/// Node under the cursor at the last right click.
 	std::optional<core::UUID> m_contextNode;
+	/// Group whose header the context menu was opened on.
+	std::optional<core::UUID> m_contextGroup;
+	/// Asset path typed in the Move to Library popup of a function.
+	std::string m_libraryTarget;
 	/// Pin under the cursor at the last right click.
 	std::optional<VisualScriptPinRef> m_contextPin;
 	/// Pin whose link was dropped on the background: the palette links the new node to it.

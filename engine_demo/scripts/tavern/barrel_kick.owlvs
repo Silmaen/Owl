@@ -12,15 +12,15 @@ VisualScript:
         function: on_barrel_kick
     - id: 7480000000000000002
       type: var.get
-      position: [232, 0]
+      position: [96, 288]
       values:
         variable: player
     - id: 7480000000000000003
       type: call.scene.find_entity
-      position: [232, 120]
+      position: [320, 208]
     - id: 7480000000000000004
       type: compare.not_equal
-      position: [504, 0]
+      position: [528, 128]
       values:
         B: 0
     - id: 7480000000000000005
@@ -28,23 +28,23 @@ VisualScript:
       position: [792, 0]
     - id: 7480000000000000006
       type: call.transform.get_position
-      position: [1072, 0]
+      position: [592, 400]
       values:
         split.xyz: true
     - id: 7480000000000000007
       type: call.transform.get_position
-      position: [1072, 176]
+      position: [608, 240]
       values:
         split.xyz: true
     - id: 7480000000000000008
       type: math.subtract
-      position: [1376, 0]
+      position: [1264, 416]
     - id: 7480000000000000009
       type: math.subtract
-      position: [1376, 136]
+      position: [1264, 560]
     - id: 7480000000000000010
       type: math.subtract
-      position: [1376, 272]
+      position: [1264, 768]
     - id: 7480000000000000011
       type: call.physics.raycast_3d
       position: [1592, 0]
@@ -54,71 +54,71 @@ VisualScript:
         split.xyz: true
     - id: 7480000000000000012
       type: logic.is_set
-      position: [1904, 0]
+      position: [1904, 80]
     - id: 7480000000000000013
       type: table.get
-      position: [1904, 112]
+      position: [1888, 160]
       values:
         Key: entity
     - id: 7480000000000000014
       type: value.self
-      position: [1904, 248]
+      position: [1936, 272]
     - id: 7480000000000000015
       type: compare.equal
-      position: [2208, 0]
+      position: [2208, 176]
     - id: 7480000000000000016
       type: logic.and
-      position: [2208, 136]
+      position: [2384, 64]
     - id: 7480000000000000017
       type: flow.branch
-      position: [2424, 0]
-    - id: 7480000000000000018
-      type: math.multiply
-      position: [0, 488]
-    - id: 7480000000000000019
-      type: math.multiply
-      position: [0, 624]
+      position: [2560, 0]
     - id: 7480000000000000020
       type: math.add
-      position: [232, 488]
+      position: [1888, 496]
     - id: 7480000000000000021
       type: math.sqrt
-      position: [232, 624]
+      position: [2176, 448]
     - id: 7480000000000000022
       type: compare.less
-      position: [504, 488]
+      position: [2544, 144]
       values:
         B: 0.001
     - id: 7480000000000000023
       type: flow.branch
-      position: [792, 488]
+      position: [2912, 0]
     - id: 7480000000000000024
       type: var.get
-      position: [792, 624]
+      position: [2640, 416]
       values:
         variable: strength
     - id: 7480000000000000025
       type: math.divide
-      position: [1072, 488]
+      position: [2496, 288]
     - id: 7480000000000000026
       type: math.multiply
-      position: [1376, 488]
+      position: [2864, 144]
     - id: 7480000000000000027
       type: math.divide
-      position: [1072, 624]
+      position: [2496, 560]
     - id: 7480000000000000028
       type: math.multiply
-      position: [1376, 624]
+      position: [2896, 432]
     - id: 7480000000000000029
       type: var.get
-      position: [1376, 760]
+      position: [2912, 288]
       values:
         variable: lift
     - id: 7480000000000000030
       type: call.physics.impulse
-      position: [1592, 488]
+      position: [3456, 160]
       values:
         split.force: true
+    - id: 6461716007025703469
+      type: math.power
+      position: [1552, 496]
+    - id: 17641882850049918979
+      type: math.power
+      position: [1552, 624]
   links:
     - {from: 7480000000000000002, fromPin: Value, to: 7480000000000000003, toPin: name}
     - {from: 7480000000000000003, fromPin: entity_id, to: 7480000000000000004, toPin: A}
@@ -146,12 +146,6 @@ VisualScript:
     - {from: 7480000000000000015, fromPin: Result, to: 7480000000000000016, toPin: B}
     - {from: 7480000000000000016, fromPin: Result, to: 7480000000000000017, toPin: Condition}
     - {from: 7480000000000000011, fromPin: Then, to: 7480000000000000017, toPin: Exec}
-    - {from: 7480000000000000008, fromPin: Result, to: 7480000000000000018, toPin: A}
-    - {from: 7480000000000000008, fromPin: Result, to: 7480000000000000018, toPin: B}
-    - {from: 7480000000000000010, fromPin: Result, to: 7480000000000000019, toPin: A}
-    - {from: 7480000000000000010, fromPin: Result, to: 7480000000000000019, toPin: B}
-    - {from: 7480000000000000018, fromPin: Result, to: 7480000000000000020, toPin: A}
-    - {from: 7480000000000000019, fromPin: Result, to: 7480000000000000020, toPin: B}
     - {from: 7480000000000000020, fromPin: Result, to: 7480000000000000021, toPin: A}
     - {from: 7480000000000000021, fromPin: Result, to: 7480000000000000022, toPin: A}
     - {from: 7480000000000000022, fromPin: Result, to: 7480000000000000023, toPin: Condition}
@@ -168,3 +162,9 @@ VisualScript:
     - {from: 7480000000000000029, fromPin: Value, to: 7480000000000000030, toPin: fy}
     - {from: 7480000000000000028, fromPin: Result, to: 7480000000000000030, toPin: fz}
     - {from: 7480000000000000023, fromPin: False, to: 7480000000000000030, toPin: Exec}
+    - {from: 7480000000000000008, fromPin: Result, to: 6461716007025703469, toPin: A}
+    - {from: 6461716007025703469, fromPin: Result, to: 7480000000000000020, toPin: A}
+    - {from: 7480000000000000010, fromPin: Result, to: 17641882850049918979, toPin: A}
+    - {from: 17641882850049918979, fromPin: Result, to: 7480000000000000020, toPin: B}
+  groups:
+    - {id: 17503287580915218139, title: On Barrel Kick, position: [-24, -52], size: [3711, 940], color: Red}

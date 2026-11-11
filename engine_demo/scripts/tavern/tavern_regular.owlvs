@@ -513,3 +513,8 @@ VisualScript:
     - {from: 8120000000000000089, fromPin: Then, to: 8120000000000000087, toPin: Exec}
     - {from: 8120000000000000087, fromPin: Then, to: 8120000000000000090, toPin: Exec}
     - {from: 8120000000000000086, fromPin: False, to: 8120000000000000090, toPin: Exec}
+  groups:
+    - {id: 16902014620446501160, title: read_spots, position: [-24, -52], size: [2286, 1182], color: Red}
+    - {id: 13186794836299173013, title: walk_to_another, position: [-24, 1254], size: [3441, 630], color: Yellow}
+    - {id: 16552038704409859130, title: On Create, position: [-24, 2056], size: [874, 254], color: Teal}
+    - {id: 8323515628813789779, title: On Update, position: [-24, 2482], size: [2469, 380], color: Violet}

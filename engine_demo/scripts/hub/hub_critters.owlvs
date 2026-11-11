@@ -1197,3 +1197,7 @@ VisualScript:
     - {from: 8100000000000000200, fromPin: Result, to: 8100000000000000199, toPin: entity_id}
     - {from: 8100000000000000201, fromPin: Result, to: 8100000000000000199, toPin: sx}
     - {from: 8100000000000000195, fromPin: Then, to: 8100000000000000199, toPin: Exec}
+  groups:
+    - {id: 3914794536156061944, title: launch, position: [-24, -52], size: [2113, 684], color: Red}
+    - {id: 15940812062005997618, title: On Create, position: [-24, 756], size: [4478, 1526], color: Yellow}
+    - {id: 13187394332016863346, title: On Update, position: [-24, 2406], size: [3818, 2816], color: Teal}

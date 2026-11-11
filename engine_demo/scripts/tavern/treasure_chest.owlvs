@@ -11,42 +11,42 @@ VisualScript:
         function: on_chest_interact
     - id: 7370000000000000002
       type: var.get
-      position: [0, 150]
+      position: [144, 112]
       values:
         variable: opened
     - id: 7370000000000000003
       type: flow.branch
-      position: [242, 0]
+      position: [328, 0]
     - id: 7370000000000000004
       type: var.set
-      position: [506, 0]
+      position: [592, 0]
       values:
         Value: true
         variable: opened
     - id: 7370000000000000005
       type: call.gamestate.set
-      position: [762, 0]
+      position: [848, 0]
       values:
         key: level_tavern_done
         value: 1
     - id: 7370000000000000006
       type: call.sound.play
-      position: [1040, 0]
+      position: [1126, 0]
       values:
         asset_path: sounds/raycast/treasure.wav
     - id: 7370000000000000007
       type: call.sound.play
-      position: [1422, 0]
+      position: [1508, 0]
       values:
         asset_path: sounds/ui/victory.wav
     - id: 7370000000000000008
       type: var.get
-      position: [1422, 150]
+      position: [1508, 150]
       values:
         variable: hub_scene
     - id: 7370000000000000009
       type: call.scene.transition_to
-      position: [1804, 0]
+      position: [1890, 0]
       values:
         duration: 0.6
         kind: fade_out
@@ -59,3 +59,5 @@ VisualScript:
     - {from: 7370000000000000006, fromPin: Then, to: 7370000000000000007, toPin: Exec}
     - {from: 7370000000000000007, fromPin: Then, to: 7370000000000000009, toPin: Exec}
     - {from: 7370000000000000008, fromPin: Value, to: 7370000000000000009, toPin: scene_path}
+  groups:
+    - {id: 7376126519148069969, title: On Chest Interact, position: [-24, -52], size: [2159, 306], color: Red}

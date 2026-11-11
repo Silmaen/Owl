@@ -1809,3 +1809,12 @@ VisualScript:
     - {from: 8150000000000000314, fromPin: Result, to: 8150000000000000313, toPin: key}
     - {from: 8150000000000000316, fromPin: Value, to: 8150000000000000313, toPin: value}
     - {from: 8150000000000000309, fromPin: Then, to: 8150000000000000313, toPin: Exec}
+  groups:
+    - {id: 1388925774911125642, title: world, position: [-24, -52], size: [866, 480], color: Red}
+    - {id: 11262721476040641364, title: cell_of, position: [-24, 552], size: [804, 428], color: Yellow}
+    - {id: 14874012017655124199, title: show, position: [-24, 1104], size: [1197, 318], color: Teal}
+    - {id: 16168979095997944287, title: ask, position: [-24, 1546], size: [2030, 652], color: Violet}
+    - {id: 15891827160783823494, title: take_route, position: [-24, 2322], size: [2044, 744], color: Red}
+    - {id: 743698458810008000, title: walk_along, position: [-24, 3190], size: [6142, 1688], color: Yellow}
+    - {id: 16157700236835266320, title: On Create, position: [-24, 5050], size: [4192, 1480], color: Teal}
+    - {id: 12905693863807992650, title: On Update, position: [-24, 6654], size: [4760, 2446], color: Violet}

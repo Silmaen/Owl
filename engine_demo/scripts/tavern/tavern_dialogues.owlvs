@@ -1294,3 +1294,18 @@ VisualScript:
     - {from: 8210000000000000225, fromPin: Result, to: 8210000000000000226, toPin: Condition}
     - {from: 8210000000000000219, fromPin: False, to: 8210000000000000226, toPin: Exec}
     - {from: 8210000000000000226, fromPin: True, to: 8210000000000000227, toPin: Exec}
+  groups:
+    - {id: 17426127684344044872, title: set_walking, position: [-24, -52], size: [1014, 318], color: Red}
+    - {id: 16644530010090074598, title: close, position: [-24, 390], size: [1819, 338], color: Yellow}
+    - {id: 1995896644086862004, title: show, position: [-24, 900], size: [4875, 1600], color: Teal}
+    - {id: 5336058724162821148, title: advance, position: [-24, 2672], size: [1970, 292], color: Violet}
+    - {id: 12125706630881969388, title: answer, position: [-24, 3088], size: [1938, 318], color: Red}
+    - {id: 418754935208053415, title: has_cellar_key, position: [-24, 3530], size: [724, 344], color: Yellow}
+    - {id: 14093899518446887772, title: on_tavern_closed, position: [-24, 3998], size: [1174, 266], color: Teal}
+    - {id: 9116226566159806934, title: On Create, position: [-24, 4414], size: [4879, 824], color: Violet}
+    - {id: 16956572905304370569, title: serve_cider, position: [-24, 5362], size: [2057, 344], color: Red}
+    - {id: 10941455231972481257, title: on_tavern_next, position: [-24, 5830], size: [406, 182], color: Yellow}
+    - {id: 4736900595189284153, title: on_tavern_answer_1, position: [-24, 6136], size: [495, 182], color: Teal}
+    - {id: 15504047051739518979, title: on_tavern_answer_2, position: [-24, 6442], size: [495, 182], color: Violet}
+    - {id: 7501483607080190981, title: on_tavern_answer_3, position: [-24, 6748], size: [495, 182], color: Red}
+    - {id: 5868469128728859509, title: On Update, position: [-24, 7054], size: [5422, 860], color: Yellow}

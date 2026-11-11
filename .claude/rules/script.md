@@ -79,7 +79,8 @@ User-facing reference: `doc/pages/scripting.md` (guide), `doc/pages/lua-api.md` 
 - Graph variables: exposed ones are the `properties` (with `min` / `max` / `step`), the others (`exposed: false`) globals
   set at the top of the chunk. An `exported` `GraphFunction` is a global the engine calls (dialogue conditions), never a
   macro. No emitted statement starts with `(` (Luau would read it as a call of the line before).
-- Visual functions and macros: `GraphFunction` / `GraphParameter`, nodes `func.entry`, `func.return`, `func.call`. A call
+- Visual functions and macros: `GraphFunction` / `GraphParameter`, nodes `func.entry`, `func.return`, `func.call`
+  (`func.pure` for a `pure` function: no execution pins, evaluated where read); `category` is a folder of the panel. A call
   with `library` set reads another `.owlvs`, whose functions are compiled into the caller's Lua (no variables, no call
   to another library); `AssetScanner` packs those files.
 - Custom nodes (`CustomNode`, `custom.call` / `custom.pure`, value `custom`) compile to a `local function` of the graph;
@@ -89,6 +90,11 @@ User-facing reference: `doc/pages/scripting.md` (guide), `doc/pages/lua-api.md` 
   the rest in `__vs`; a branch is written as `if … else … end` up to its merge (the nearest post-dominator of
   both paths, `mergeOf`), then the merge once; a node reached otherwise by several exec paths outside a graph
   function becomes a `__joinN` function.
+- Node templates may call compiler helpers `__owl_<name>(` (`g_helpers` in `VisualScriptCompiler.cpp`: transforms,
+  matrices), written once at the top of a graph using them. `getNodeLua` gives the template of a node (Make / Break
+  List from their `count`). `GraphGroup` frames nodes in the editor only, the compiler ignores them.
+  `flow.reroute` (`g_RerouteNode`) passes its input on, its output typed by `getRerouteType`; `visual::checkTypes` runs
+  the `ScriptTypeChecker` on the debug build and maps each error to its node (`VisualScriptDemo.EveryDemoGraphPassesTheCheck`).
 - HUD script: `.owlhud` key `SceneScript`, `Scene::getHudScript`; a widget callback is looked up in the widget's
   scripts, the HUD script and the scene script, then the entity scripts.
 - Type checking: `ScriptTypeChecker` (`script/ScriptTypeChecker.h`, Luau `Analysis`, old solver in non-strict mode)

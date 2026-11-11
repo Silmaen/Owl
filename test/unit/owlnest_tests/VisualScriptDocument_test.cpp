@@ -12,6 +12,7 @@
 
 #include <core/Log.h>
 #include <platform/AtomicFile.h>
+#include <platform/FileUtils.h>
 #include <script/ScriptDebugger.h>
 #include <script/visual/VisualScript.h>
 
@@ -21,6 +22,8 @@
 #include <array>
 #include <filesystem>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <tuple>
 #include <vector>
 
@@ -196,7 +199,8 @@ TEST_F(VisualScriptDocumentTest, NodeBreakpointsBecomeLuaLineBreakpoints) {
 	EXPECT_EQ(m_document.findNodeAtLine(lines.front()), branch);
 	EXPECT_FALSE(m_document.findNodeAtLine(100000).has_value());
 
-	m_document.setDebugState({{.name = vs::getProbeKey(event, "Then"), .type = "number", .value = "1"}}, lines.front());
+	m_document.setDebugState({{.name = vs::getProbeKey(event, "Then"), .type = "number", .value = "1", .entries = {}}},
+							 lines.front());
 	EXPECT_EQ(m_document.getDebugView().stopped, branch);
 	EXPECT_EQ(m_document.getDebugView().values.size(), 1u);
 	m_document.setDebugState({}, std::nullopt);
@@ -301,4 +305,187 @@ TEST_F(VisualScriptDocumentTest, EnsureCustomEventAddsTheHandlerOnce) {
 	EXPECT_EQ(m_document.ensureCustomEvent("on_pause"), first);
 	EXPECT_EQ(m_document.getSelection(), std::vector{first});
 	EXPECT_EQ(m_document.getScript().nodes.size(), 3u);
+}
+
+TEST_F(VisualScriptDocumentTest, ListItemCountDropsTheLinksOfTheLostPins) {
+	const auto make = m_document.addNode("table.make_list", {0.f, 0.f});
+	const auto number = m_document.addNode("value.number", {-200.f, 0.f});
+	auto next = m_document.getScript();
+	next.links.push_back({.fromNode = number, .fromPin = "Result", .toNode = make, .toPin = "D", .waypoints = {}});
+	next.findNode(make)->values["C"] = "3";
+	ASSERT_TRUE(m_document.commit(std::move(next), "Link"));
+	m_document.setListItemCount(make, 2);
+	const auto& script = m_document.getScript();
+	EXPECT_EQ(vs::getListItemCount(*script.findNode(make)), 2u);
+	EXPECT_TRUE(std::ranges::none_of(script.links,
+									 [&](const vs::GraphLink& iLink) -> bool { return iLink.toNode == make; }));
+	EXPECT_FALSE(script.findNode(make)->values.contains("C"));
+	m_document.setListItemCount(make, 40);
+	EXPECT_EQ(vs::getListItemCount(*m_document.getScript().findNode(make)), vs::g_MaxListItems);
+}
+
+TEST_F(VisualScriptDocumentTest, DebugStateKeepsTheEntriesOfTables) {
+	const auto event = m_document.getScript().nodes.front().id;
+	const auto key = vs::getProbeKey(event, "List");
+	script::WatchValue list{.name = key, .type = "table", .value = "{1, 2}", .entries = {}};
+	list.entries.push_back({.name = "1", .value = "1"});
+	list.entries.push_back({.name = "2", .value = "2"});
+	m_document.setDebugState({list}, std::nullopt);
+	const auto& entries = m_document.getDebugView().entries;
+	ASSERT_TRUE(entries.contains(key));
+	EXPECT_EQ(entries.at(key).size(), 2u);
+	EXPECT_EQ(entries.at(key).back().second, "2");
+}
+
+TEST_F(VisualScriptDocumentTest, GroupsFrameMoveWithAndDeleteTheirNodes) {
+	const auto first = m_document.addNode("math.add", {0.f, 0.f});
+	const auto second = m_document.addNode("math.add", {200.f, 100.f});
+	const auto far = m_document.addNode("math.add", {2000.f, 2000.f});
+	const auto group = m_document.groupNodes(std::vector{first, second}, "Sum");
+	ASSERT_NE(group, 0u);
+	ASSERT_EQ(m_document.getScript().groups.size(), 1u);
+	const auto frame = m_document.getScript().groups.front();
+	EXPECT_EQ(frame.title, "Sum");
+	EXPECT_TRUE(frame.holds(*m_document.getScript().findNode(first)));
+	EXPECT_TRUE(frame.holds(*m_document.getScript().findNode(second)));
+	EXPECT_FALSE(frame.holds(*m_document.getScript().findNode(far)));
+	auto renamed = frame;
+	renamed.title = "Total";
+	renamed.color = "Green";
+	m_document.setGroup(renamed);
+	EXPECT_EQ(m_document.getScript().groups.front().color, "Green");
+	m_document.removeGroup(group, true);
+	EXPECT_TRUE(m_document.getScript().groups.empty());
+	EXPECT_EQ(m_document.getScript().findNode(first), nullptr);
+	EXPECT_NE(m_document.getScript().findNode(far), nullptr);
+	m_document.performUndo();
+	EXPECT_NE(m_document.getScript().findNode(first), nullptr);
+	m_document.removeGroup(group, false);
+	EXPECT_NE(m_document.getScript().findNode(first), nullptr);
+	EXPECT_TRUE(m_document.getScript().groups.empty());
+}
+
+TEST_F(VisualScriptDocumentTest, PureNodesBecomeAPureFunction) {
+	auto next = vs::VisualScript{};
+	next.variables.push_back({.name = "result",
+							  .type = script::ScriptPropertyType::Float,
+							  .defaultValue = "0",
+							  .min = {},
+							  .max = {},
+							  .step = {},
+							  .exposed = true});
+	const vs::GraphNode create{.id = core::UUID{1}, .type = "event.on_create", .position = {0.f, 0.f}, .values = {}};
+	const vs::GraphNode two{.id = core::UUID{2},
+							.type = "value.number",
+							.position = {0.f, 200.f},
+							.values = {{"Value", "2"}}};
+	const vs::GraphNode add{.id = core::UUID{3},
+							.type = "math.add",
+							.position = {200.f, 200.f},
+							.values = {{"B", "3"}}};
+	const vs::GraphNode set{.id = core::UUID{4},
+							.type = "var.set",
+							.position = {400.f, 0.f},
+							.values = {{"variable", "result"}}};
+	next.nodes = {create, two, add, set};
+	next.links = {{.fromNode = create.id, .fromPin = "Then", .toNode = set.id, .toPin = "Exec", .waypoints = {}},
+				  {.fromNode = two.id, .fromPin = "Result", .toNode = add.id, .toPin = "A", .waypoints = {}},
+				  {.fromNode = add.id, .fromPin = "Result", .toNode = set.id, .toPin = "Value", .waypoints = {}}};
+	ASSERT_TRUE(m_document.commit(std::move(next), "Graph"));
+	const auto name = m_document.collapseToFunction(std::vector{add.id});
+	ASSERT_FALSE(name.empty());
+	const auto& script = m_document.getScript();
+	const auto* function = script.findFunction(name);
+	ASSERT_NE(function, nullptr);
+	EXPECT_TRUE(function->pure);
+	EXPECT_EQ(function->inputs.size(), 1u);
+	EXPECT_EQ(function->outputs.size(), 1u);
+	EXPECT_TRUE(std::ranges::any_of(script.nodes,
+									[](const vs::GraphNode& iNode) -> bool { return iNode.type == "func.pure"; }));
+	EXPECT_EQ(script.groups.size(), 1u);
+	const auto lua = vs::compile(script);
+	ASSERT_TRUE(lua.has_value()) << (lua.has_value() ? std::string{} : lua.error().front().message);
+	EXPECT_NE(lua->find(name + "("), std::string::npos);
+}
+
+TEST_F(VisualScriptDocumentTest, ExecutionNodesBecomeAFunctionWithOneEntry) {
+	const auto event = m_document.getScript().nodes.front().id;
+	const VisualScriptPinRef from{.node = event, .pin = "Then", .output = true, .type = vs::PinType::Exec};
+	const auto branch = m_document.addNode("flow.branch", {300.f, 0.f}, from);
+	EXPECT_TRUE(m_document.collapseToFunction(std::vector{event}).empty());
+	const auto name = m_document.collapseToFunction(std::vector{branch});
+	ASSERT_FALSE(name.empty());
+	const auto& script = m_document.getScript();
+	EXPECT_FALSE(script.findFunction(name)->pure);
+	const auto call = std::ranges::find(script.nodes, std::string{"func.call"}, &vs::GraphNode::type);
+	ASSERT_NE(call, script.nodes.end());
+	EXPECT_TRUE(std::ranges::any_of(script.links, [&](const vs::GraphLink& iLink) -> bool {
+		return iLink.fromNode == event && iLink.toNode == call->id && iLink.toPin == "Exec";
+	}));
+	EXPECT_TRUE(vs::compile(script).has_value());
+}
+
+TEST_F(VisualScriptDocumentTest, FunctionsMoveToALibraryTheirCallsThenRead) {
+	const auto name = m_document.addFunction(false);
+	auto next = m_document.getScript();
+	const vs::GraphNode call{.id = core::UUID{},
+							 .type = "func.call",
+							 .position = {0.f, 400.f},
+							 .values = {{"function", name}}};
+	next.nodes.push_back(call);
+	ASSERT_TRUE(m_document.commit(std::move(next), "Call"));
+	const auto bodySize = std::ranges::count_if(m_document.getScript().nodes, [&](const vs::GraphNode& iNode) -> bool {
+		return iNode.type == "func.entry" || iNode.type == "func.return";
+	});
+	ASSERT_TRUE(m_document.moveFunctionToLibrary(name, m_root, "scripts/lib/shared.owlvs"));
+	EXPECT_EQ(m_document.getScript().findFunction(name), nullptr);
+	const auto* moved = m_document.getScript().findNode(call.id);
+	ASSERT_NE(moved, nullptr);
+	EXPECT_EQ(moved->values.at("library"), "scripts/lib/shared.owlvs");
+	const auto library = vs::deserialize(platform::fileToString(m_root / "scripts/lib/shared.owlvs"), "shared.owlvs");
+	ASSERT_TRUE(library.has_value());
+	EXPECT_NE(library->findFunction(name), nullptr);
+	EXPECT_EQ(static_cast<long>(library->nodes.size()), bodySize);
+	EXPECT_FALSE(m_document.moveFunctionToLibrary("unknown", m_root, "scripts/lib/shared.owlvs"));
+	m_document.performUndo();
+	EXPECT_NE(m_document.getScript().findFunction(name), nullptr);
+}
+
+TEST_F(VisualScriptDocumentTest, StraightenLinesUpTheLinkedPins) {
+	const auto event = m_document.getScript().nodes.front().id;
+	const VisualScriptPinRef from{.node = event, .pin = "Then", .output = true, .type = vs::PinType::Exec};
+	const auto branch = m_document.addNode("flow.branch", {300.f, 137.f}, from);
+	const auto measure = [](const std::string_view iText) -> float { return 7.f * static_cast<float>(iText.size()); };
+	const auto pinY = [&](const core::UUID iNode, const bool iOutput) -> float {
+		const auto& script = m_document.getScript();
+		const auto* node = script.findNode(iNode);
+		const auto layout = layoutNode(script, *node, measure);
+		return node->position[1] + (iOutput ? layout.outputs.front()[1] : layout.inputs.front()[1]);
+	};
+	EXPECT_NE(pinY(event, true), pinY(branch, false));
+	EXPECT_EQ(m_document.straightenNodes(std::vector{branch}), 1u);
+	EXPECT_FLOAT_EQ(pinY(event, true), pinY(branch, false));
+	EXPECT_EQ(m_document.straightenNodes(std::vector{branch}), 0u);
+	m_document.performUndo();
+	EXPECT_FLOAT_EQ(m_document.getScript().findNode(branch)->position[1], 137.f);
+}
+
+TEST_F(VisualScriptDocumentTest, GroupEventsFramesEachEventWithItsChain) {
+	const auto& nodes = m_document.getScript().nodes;
+	const auto create = nodes.front().id;
+	const VisualScriptPinRef from{.node = create, .pin = "Then", .output = true, .type = vs::PinType::Exec};
+	const auto branch = m_document.addNode("flow.branch", {300.f, -400.f}, from);
+	EXPECT_EQ(m_document.groupEvents(), 2u);
+	const auto& groups = m_document.getScript().groups;
+	ASSERT_EQ(groups.size(), 2u);
+	EXPECT_EQ(groups.front().title, "On Create");
+	EXPECT_TRUE(groups.front().holds(*m_document.getScript().findNode(branch)));
+	EXPECT_EQ(groups.back().title, "On Update");
+	EXPECT_NE(groups.front().color, groups.back().color);
+	EXPECT_EQ(m_document.groupEvents(), 0u);
+}
+
+TEST_F(VisualScriptDocumentTest, CheckMarksNothingOnACleanGraph) {
+	m_document.check();
+	EXPECT_TRUE(m_document.getCheckResults().empty());
 }

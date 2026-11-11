@@ -19,6 +19,17 @@ namespace owl::script {
 
 /**
  * @brief
+ *  An entry of a watched table: its key and its value as short text.
+ */
+struct WatchEntry {
+	/// Index or field name.
+	std::string name;
+	/// Value as text, a nested table in short form.
+	std::string value;
+};
+
+/**
+ * @brief
  *  A value read from a running script: a global, a local at a breakpoint, a visual-script wire.
  */
 struct WatchValue {
@@ -28,6 +39,8 @@ struct WatchValue {
 	std::string type;
 	/// Value as text: a number, a quoted string, `{x=1, y=2}` for a short table, `table (12 entries)` beyond.
 	std::string value;
+	/// Entries of a table, its numeric keys first in order then the others by name, each value as short text; at most 64.
+	std::vector<WatchEntry> entries;
 };
 
 /**

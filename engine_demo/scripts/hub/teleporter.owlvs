@@ -293,3 +293,7 @@ VisualScript:
     - {from: 7470000000000000048, fromPin: Then, to: 7470000000000000049, toPin: Exec}
     - {from: 7470000000000000049, fromPin: Then, to: 7470000000000000050, toPin: Exec}
     - {from: 7470000000000000050, fromPin: Then, to: 7470000000000000051, toPin: Exec}
+  groups:
+    - {id: 432715978182662469, title: On Create, position: [-24, -52], size: [895, 208], color: Red}
+    - {id: 9416897985692577325, title: On Update, position: [-24, 204], size: [4855, 720], color: Yellow}
+    - {id: 10784905616827873114, title: on_teleporter_enter, position: [-24, 964], size: [2784, 292], color: Teal}

@@ -20,23 +20,23 @@ VisualScript:
         visible: false
     - id: 7450000000000000003
       type: var.get
-      position: [226, -300]
+      position: [272, -416]
       values:
         variable: glint
     - id: 7450000000000000004
       type: call.scene.find_entity
-      position: [544, -300]
+      position: [432, -416]
     - id: 7450000000000000005
       type: compare.not_equal
-      position: [814, -300]
+      position: [634, -512]
       values:
         B: 0
     - id: 7450000000000000006
       type: flow.branch
-      position: [814, -600]
+      position: [874, -592]
     - id: 7450000000000000007
       type: call.ui.set_visible
-      position: [1092, -600]
+      position: [1136, -544]
       values:
         visible: false
     - id: 7450000000000000008
@@ -50,7 +50,7 @@ VisualScript:
         key: tavern_key
     - id: 7450000000000000010
       type: compare.greater
-      position: [544, 150]
+      position: [544, 80]
       values:
         B: 0
     - id: 7450000000000000011
@@ -74,42 +74,42 @@ VisualScript:
         function: on_key_interact
     - id: 7450000000000000015
       type: var.get
-      position: [0, 600]
+      position: [112, 576]
       values:
         variable: taken
     - id: 7450000000000000016
       type: flow.branch
-      position: [226, 450]
+      position: [288, 464]
     - id: 7450000000000000017
       type: var.set
-      position: [544, 450]
+      position: [528, 480]
       values:
         Value: true
         variable: taken
     - id: 7450000000000000018
       type: call.gamestate.set
-      position: [814, 450]
+      position: [762, 496]
       values:
         key: tavern_key
         value: 1
     - id: 7450000000000000019
       type: value.string
-      position: [814, 622]
+      position: [784, 656]
       values:
         Value: ""
     - id: 7450000000000000020
       type: call.gamestate.set
-      position: [1092, 450]
+      position: [1040, 496]
       values:
         key: tavern_message
     - id: 7450000000000000021
       type: call.sound.play
-      position: [1370, 450]
+      position: [1318, 496]
       values:
         asset_path: sounds/platformer/coin_collect.wav
     - id: 7450000000000000022
       type: func.call
-      position: [1752, 450]
+      position: [1700, 496]
       values:
         function: hide_key
   links:
@@ -134,3 +134,7 @@ VisualScript:
     - {from: 7450000000000000020, fromPin: Then, to: 7450000000000000021, toPin: Exec}
     - {from: 7450000000000000021, fromPin: Then, to: 7450000000000000022, toPin: Exec}
     - {from: 7450000000000000019, fromPin: Result, to: 7450000000000000020, toPin: value}
+  groups:
+    - {id: 12356252370721841048, title: Hide Key, position: [-24, -652], size: [1340, 340], color: Violet}
+    - {id: 11313008506940256830, title: On Create, position: [-24, -52], size: [1558, 252], color: Red}
+    - {id: 4804376693704592074, title: on key interact, position: [-24, 398], size: [1888, 352], color: Orange}

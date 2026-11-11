@@ -60,3 +60,5 @@ VisualScript:
     - {from: 7340000000000000006, fromPin: Then, to: 7340000000000000007, toPin: Exec}
     - {from: 7340000000000000007, fromPin: Then, to: 7340000000000000008, toPin: Exec}
     - {from: 7340000000000000008, fromPin: Then, to: 7340000000000000009, toPin: Exec}
+  groups:
+    - {id: 8714529855117208198, title: on_level_complete, position: [-24, -52], size: [2322, 260], color: Red}

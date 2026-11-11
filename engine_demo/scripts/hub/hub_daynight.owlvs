@@ -1277,3 +1277,9 @@ VisualScript:
     - {from: 8190000000000000221, fromPin: Value, to: 8190000000000000220, toPin: key}
     - {from: 8190000000000000222, fromPin: Value, to: 8190000000000000220, toPin: value}
     - {from: 8190000000000000219, fromPin: Then, to: 8190000000000000220, toPin: Exec}
+  groups:
+    - {id: 9650830610724883589, title: mix, position: [-24, -52], size: [1084, 396], color: Red}
+    - {id: 16559696766009983804, title: ambient_at, position: [-24, 468], size: [4348, 1634], color: Yellow}
+    - {id: 14498217336073077325, title: in_cave, position: [-24, 2226], size: [2810, 846], color: Teal}
+    - {id: 6138634250651684767, title: On Create, position: [-24, 3196], size: [5288, 1260], color: Violet}
+    - {id: 5063015157557043061, title: On Update, position: [-24, 4580], size: [4826, 952], color: Red}

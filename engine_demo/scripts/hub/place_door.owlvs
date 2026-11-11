@@ -483,3 +483,7 @@ VisualScript:
     - {from: 8060000000000000084, fromPin: Value, to: 8060000000000000082, toPin: kind}
     - {from: 8060000000000000085, fromPin: Value, to: 8060000000000000082, toPin: duration}
     - {from: 8060000000000000079, fromPin: Then, to: 8060000000000000082, toPin: Exec}
+  groups:
+    - {id: 174074265042006967, title: is_done, position: [-24, -52], size: [1052, 548], color: Red}
+    - {id: 3070758579030215121, title: On Create, position: [-24, 620], size: [2339, 700], color: Yellow}
+    - {id: 10691534906478175341, title: on_door_interact, position: [-24, 1444], size: [3942, 1262], color: Teal}

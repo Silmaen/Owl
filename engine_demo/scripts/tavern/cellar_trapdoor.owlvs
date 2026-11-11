@@ -11,35 +11,35 @@ VisualScript:
         function: on_trapdoor_interact
     - id: 7410000000000000002
       type: var.get
-      position: [0, 150]
+      position: [224, 112]
       values:
         variable: opening
     - id: 7410000000000000003
       type: flow.branch
-      position: [266, 0]
+      position: [384, 16]
     - id: 7410000000000000004
       type: call.gamestate.get
-      position: [530, 0]
+      position: [672, 0]
       values:
         default: 0
         key: tavern_key
     - id: 7410000000000000005
       type: compare.equal
-      position: [848, 150]
+      position: [960, 160]
       values:
         B: 0
     - id: 7410000000000000006
       type: flow.branch
-      position: [1126, 0]
+      position: [1232, 16]
     - id: 7410000000000000007
       type: call.gamestate.set
-      position: [1390, -150]
+      position: [1504, -144]
       values:
         key: tavern_message
         value: "The trapdoor is locked: its key must be somewhere in the room"
     - id: 7410000000000000008
       type: var.set
-      position: [1390, 150]
+      position: [1440, 160]
       values:
         Value: true
         variable: opening
@@ -71,3 +71,5 @@ VisualScript:
     - {from: 7410000000000000008, fromPin: Then, to: 7410000000000000009, toPin: Exec}
     - {from: 7410000000000000009, fromPin: Then, to: 7410000000000000011, toPin: Exec}
     - {from: 7410000000000000010, fromPin: Value, to: 7410000000000000011, toPin: scene_path}
+  groups:
+    - {id: 4998633130982087157, title: On Trapdoor Interact, position: [-24, -196], size: [2319, 600], color: Red}

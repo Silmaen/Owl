@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -125,6 +126,15 @@ void addEvents(std::vector<NodeType>& ioTypes) {
 }
 
 void addFlow(std::vector<NodeType>& ioTypes) {
+	ioTypes.push_back({.id = "flow.reroute",
+					   .title = "Reroute",
+					   .category = "Flow",
+					   .description = "Passes a value on: one wire in, as many out as needed, to tidy the wires.",
+					   .kind = NodeKind::Operator,
+					   .lua = "{0}",
+					   .inputs = {pin("In", PinType::Any)},
+					   .outputs = {pin("Out", PinType::Any)},
+					   .pure = true});
 	ioTypes.push_back({.id = "flow.branch",
 					   .title = "Branch",
 					   .category = "Flow",
@@ -184,6 +194,11 @@ void addValues(std::vector<NodeType>& ioTypes) {
 	ioTypes.push_back(constant("value.vector2", "Vector 2", "A 2D vector.", PinType::Vector2));
 	ioTypes.push_back(constant("value.vector3", "Vector 3", "A 3D vector.", PinType::Vector3));
 	ioTypes.push_back(constant("value.color", "Color", "A colour.", PinType::Color));
+	ioTypes.push_back(constant("value.transform", "Transform",
+							   "A transform: position; rotation (radians); scale, three numbers each.",
+							   PinType::Transform));
+	ioTypes.push_back(
+			constant("value.matrix", "Matrix", "A 4×4 matrix: its 16 numbers, row after row.", PinType::Matrix));
 	ioTypes.push_back(constant("value.table", "Table",
 							   "A table: `a, b` is a list, `key = value` a field; text in quotes keeps its commas.",
 							   PinType::Table));
@@ -260,8 +275,28 @@ void addMath(std::vector<NodeType>& ioTypes) {
 	unary("math.round", "Round", "Nearest integer, halves away from zero.", "math.round", integer);
 	unary("math.sin", "Sine", "Sine of an angle in radians.", "math.sin", num);
 	unary("math.cos", "Cosine", "Cosine of an angle in radians.", "math.cos", num);
-	ioTypes.push_back(pureOp("math.power", "Power", "Math", "A number raised to a power.", "math.pow({0}, {1})",
-							 {pin("A", num, "0"), pin("Exponent", num, "2")}, num));
+	unary("math.tan", "Tangent", "Tangent of an angle in radians (tan).", "math.tan", num);
+	unary("math.asin", "Arc Sine", "Angle in radians whose sine is the number (asin).", "math.asin", num);
+	unary("math.acos", "Arc Cosine", "Angle in radians whose cosine is the number (acos).", "math.acos", num);
+	unary("math.atan", "Arc Tangent", "Angle in radians whose tangent is the number (atan).", "math.atan", num);
+	unary("math.exp", "Exponential", "e raised to a number (exp).", "math.exp", num);
+	unary("math.log", "Logarithm", "Natural logarithm of a number (log, ln).", "math.log", num);
+	unary("math.log10", "Logarithm 10", "Base 10 logarithm of a number (log10).", "math.log10", num);
+	unary("math.sign", "Sign", "-1, 0 or 1, the sign of a number.", "math.sign", num);
+	unary("math.degrees", "To Degrees", "An angle in radians, in degrees.", "math.deg", num);
+	unary("math.radians", "To Radians", "An angle in degrees, in radians.", "math.rad", num);
+	ioTypes.push_back(pureOp("math.power", "Power", "Math", "A number raised to a power (pow, square, cube).",
+							 "math.pow({0}, {1})", {pin("A", num, "0"), pin("Exponent", num, "2")}, num));
+	ioTypes.push_back(pureOp("math.square", "Square", "Math", "A number times itself (x², pow 2).", "({0} * {0})",
+							 {pin("A", num, "0")}, num));
+	ioTypes.push_back(pureOp("math.log_base", "Logarithm Base", "Math", "Logarithm of a number in a base (log).",
+							 "math.log({0}, {1})", {pin("A", num, "1"), pin("Base", num, "2")}, num));
+	ioTypes.push_back(pureOp("math.fraction", "Fraction", "Math", "What a number holds above its floor (fract).",
+							 "({0} - math.floor({0}))", {pin("A", num, "0")}, num));
+	ioTypes.push_back(pureOp("math.distance", "Distance", "Math", "Distance between two points (X1, Y1) and (X2, Y2).",
+							 "math.sqrt(({2} - {0}) ^ 2 + ({3} - {1}) ^ 2)",
+							 {pin("X1", num, "0"), pin("Y1", num, "0"), pin("X2", num, "0"), pin("Y2", num, "0")},
+							 num));
 	ioTypes.push_back(pureOp("math.atan2", "Atan2", "Math", "Angle in radians of the direction (X, Y).",
 							 "math.atan({0}, {1})", {pin("Y", num, "0"), pin("X", num, "1")}, num));
 	ioTypes.push_back(pureOp("math.clamp", "Clamp", "Math", "A number kept between a minimum and a maximum.",
@@ -342,11 +377,15 @@ void addTables(std::vector<NodeType>& ioTypes) {
 							 {pin("List", table)}, PinType::Integer));
 	ioTypes.push_back(pureOp("table.contains", "Contains", "Table", "Whether a list holds a value.",
 							 "table.find({0}, {1}) ~= nil", {pin("List", table), pin("Value", any)}, PinType::Boolean));
-	ioTypes.push_back(
-			pureOp("table.make_list", "Make List", "Table", "A new list of the values given, in order.",
-				   "{ {0}, {1}, {2}, {3} }",
-				   {pin("A", any, {}, true), pin("B", any, {}, true), pin("C", any, {}, true), pin("D", any, {}, true)},
-				   table));
+	// The item pins of both list nodes follow their `count` value (getNodePins, getNodeLua).
+	ioTypes.push_back(pureOp("table.make_list", "Make List", "Table",
+							 "A new list of the values given, in order; its number of items is a setting of the node.",
+							 {}, {}, table));
+	NodeType breakList = pureOp("table.break_list", "Break List", "Table",
+								"The first items of a list, one per output; their number is a setting of the node.", {},
+								{pin("List", table)}, any);
+	breakList.outputs.clear();
+	ioTypes.push_back(std::move(breakList));
 	ioTypes.push_back(statement("table.set", "Set Field", "Change the value of a key of a table.", "{0}[{1}] = {2}",
 								{pin("Table", table), pin("Key", any), pin("Value", any)}));
 	ioTypes.push_back(statement("table.append", "Add Item", "Add a value at the end of a list.",
@@ -385,9 +424,92 @@ void addCompounds(std::vector<NodeType>& ioTypes) {
 		}
 		return type;
 	};
+	for (const auto& [suffix, vector]:
+		 {std::pair{std::string{"2"}, PinType::Vector2}, std::pair{std::string{"3"}, PinType::Vector3}}) {
+		const auto id = [&](const std::string_view iName) -> std::string {
+			return std::format("math.vector{}_{}", suffix, iName);
+		};
+		const auto title = [&](const std::string_view iName) -> std::string {
+			return std::format("{} Vector {}", iName, suffix);
+		};
+		ioTypes.push_back(pureOp(id("add"), title("Add"), "Vector", "Sum of two vectors, component by component.",
+								 "__owl_vec_add({0}, {1})", {pin("A", vector), pin("B", vector)}, vector));
+		ioTypes.push_back(pureOp(id("subtract"), title("Subtract"), "Vector",
+								 "Difference A − B of two vectors: the vector from B to A.", "__owl_vec_sub({0}, {1})",
+								 {pin("A", vector), pin("B", vector)}, vector));
+		ioTypes.push_back(pureOp(id("scale"), title("Scale"), "Vector", "A vector times a number.",
+								 "__owl_vec_scale({0}, {1})", {pin("A", vector), pin("Factor", num, "1")}, vector));
+		ioTypes.push_back(pureOp(id("dot"), title("Dot"), "Vector", "Dot product of two vectors.",
+								 "__owl_vec_dot({0}, {1})", {pin("A", vector), pin("B", vector)}, num));
+		ioTypes.push_back(pureOp(id("length"), title("Length of"), "Vector", "Length of a vector.",
+								 "__owl_vec_length({0})", {pin("A", vector)}, num));
+		ioTypes.push_back(pureOp(id("normalize"), title("Normalize"), "Vector",
+								 "The vector of length 1 in the same direction, zero for the zero vector.",
+								 "__owl_vec_normalize({0})", {pin("A", vector)}, vector));
+	}
+	ioTypes.push_back(pureOp("math.vector3_cross", "Cross Vector 3", "Vector",
+							 "Cross product A × B: perpendicular to both, by the right-hand rule.",
+							 "__owl_vec_cross({0}, {1})", {pin("A", PinType::Vector3), pin("B", PinType::Vector3)},
+							 PinType::Vector3));
 	ioTypes.push_back(breakNode("math.break_vector2", "Break Vector 2", "Vector", PinType::Vector2));
 	ioTypes.push_back(breakNode("math.break_vector3", "Break Vector 3", "Vector", PinType::Vector3));
 	ioTypes.push_back(breakNode("math.break_color", "Break Color", "Color", PinType::Color));
+}
+
+void addTransforms(std::vector<NodeType>& ioTypes) {
+	constexpr auto vec = PinType::Vector3;
+	constexpr auto trs = PinType::Transform;
+	ioTypes.push_back(pureOp("transform.get_transform", "Get Transform", "transform",
+							 "Local position, rotation (radians) and scale of an entity, as one transform.",
+							 "__owl_transform_get({0})", {pin("Entity", PinType::Entity)}, trs));
+	ioTypes.push_back({.id = "transform.set_transform",
+					   .title = "Set Transform",
+					   .category = "transform",
+					   .description = "Set the local position, rotation and scale of an entity from a transform.",
+					   .kind = NodeKind::Statement,
+					   .lua = "__owl_transform_set({0}, {1})",
+					   .inputs = {execIn(), pin("Entity", PinType::Entity), pin("Transform", trs)},
+					   .outputs = {execOut()},
+					   .pure = false});
+	ioTypes.push_back(pureOp("transform.make", "Make Transform", "transform",
+							 "A transform from its position, rotation (radians) and scale.",
+							 "{ position = {0}, rotation = {1}, scale = {2} }",
+							 {pin("Position", vec), pin("Rotation", vec), pin("Scale", vec, "1, 1, 1")}, trs));
+	NodeType breakTransform = pureOp("transform.break", "Break Transform", "transform",
+									 "Position, rotation (radians) and scale of a transform.",
+									 "{0}.position, {0}.rotation, {0}.scale", {pin("Transform", trs)}, vec);
+	breakTransform.outputs = {pin("Position", vec), pin("Rotation", vec), pin("Scale", vec)};
+	ioTypes.push_back(std::move(breakTransform));
+}
+
+void addMatrices(std::vector<NodeType>& ioTypes) {
+	constexpr auto mat = PinType::Matrix;
+	constexpr auto vec = PinType::Vector3;
+	ioTypes.push_back(pureOp("matrix.identity", "Identity Matrix", "Matrix", "The 4×4 matrix that changes nothing.",
+							 "__owl_mat_identity()", {}, mat));
+	ioTypes.push_back(
+			pureOp("matrix.from_transform", "Transform Matrix", "Matrix",
+				   "Matrix of a transform: translation × rotation Z × Y × X × scale, as the engine builds it.",
+				   "__owl_mat_from_transform({0})", {pin("Transform", PinType::Transform)}, mat));
+	ioTypes.push_back(pureOp("matrix.multiply", "Multiply Matrices", "Matrix",
+							 "A × B: B applied first, then A (matrix product).", "__owl_mat_mul({0}, {1})",
+							 {pin("A", mat), pin("B", mat)}, mat));
+	ioTypes.push_back(pureOp("matrix.transpose", "Transpose", "Matrix", "Rows and columns of a matrix swapped.",
+							 "__owl_mat_transpose({0})", {pin("Matrix", mat)}, mat));
+	ioTypes.push_back(pureOp("matrix.inverse", "Inverse", "Matrix",
+							 "The matrix that undoes a matrix; nil when it has none (determinant 0).",
+							 "__owl_mat_inverse({0})", {pin("Matrix", mat)}, mat));
+	ioTypes.push_back(pureOp("matrix.transform_point", "Transform Point", "Matrix",
+							 "A point moved by a matrix, its translation included.", "__owl_mat_point({0}, {1}, 1)",
+							 {pin("Matrix", mat), pin("Point", vec)}, vec));
+	ioTypes.push_back(pureOp("matrix.transform_direction", "Transform Direction", "Matrix",
+							 "A direction turned and scaled by a matrix, without its translation.",
+							 "__owl_mat_point({0}, {1}, 0)", {pin("Matrix", mat), pin("Direction", vec)}, vec));
+	ioTypes.push_back(
+			pureOp("matrix.get_element", "Get Element", "Matrix", "Number of a matrix at a row and a column, from 1.",
+				   "{0}[({1} - 1) * 4 + {2}]",
+				   {pin("Matrix", mat), pin("Row", PinType::Integer, "1"), pin("Column", PinType::Integer, "1")},
+				   PinType::Number));
 }
 
 // A run of pins read as one vector or colour.
@@ -490,6 +612,15 @@ void addFunctions(std::vector<NodeType>& ioTypes) {
 					   .inputs = {},
 					   .outputs = {execOut()},
 					   .pure = false});
+	ioTypes.push_back({.id = "func.pure",
+					   .title = "Call Pure Function",
+					   .category = "Functions",
+					   .description = "Value of a pure function, computed where its results are read.",
+					   .kind = NodeKind::FunctionCall,
+					   .lua = {},
+					   .inputs = {},
+					   .outputs = {},
+					   .pure = true});
 	ioTypes.push_back({.id = "func.return",
 					   .title = "Return",
 					   .category = "Functions",
@@ -545,6 +676,8 @@ auto buildNodeTypes() -> std::vector<NodeType> {
 	addText(types);
 	addTables(types);
 	addCompounds(types);
+	addTransforms(types);
+	addMatrices(types);
 	for (auto& type: getBindingNodeTypes()) types.push_back(std::move(type));
 	return types;
 }
@@ -607,6 +740,10 @@ void emitScript(YAML::Emitter& ioOut, const VisualScript& iScript) {
 			}
 			if (function.exported)
 				ioOut << YAML::Key << "exported" << YAML::Value << true;
+			if (!function.category.empty())
+				ioOut << YAML::Key << "category" << YAML::Value << function.category;
+			if (function.pure)
+				ioOut << YAML::Key << "pure" << YAML::Value << true;
 			ioOut << YAML::EndMap;
 		}
 		ioOut << YAML::EndSeq;
@@ -644,6 +781,38 @@ void emitScript(YAML::Emitter& ioOut, const VisualScript& iScript) {
 		ioOut << YAML::EndMap;
 	}
 	ioOut << YAML::EndSeq;
+	if (iScript.groups.empty())
+		return;
+	ioOut << YAML::Key << "groups" << YAML::Value << YAML::BeginSeq;
+	for (const auto& group: iScript.groups) {
+		ioOut << YAML::Flow << YAML::BeginMap;
+		ioOut << YAML::Key << "id" << YAML::Value << static_cast<uint64_t>(group.id);
+		ioOut << YAML::Key << "title" << YAML::Value << group.title;
+		ioOut << YAML::Key << "position" << YAML::Value << YAML::Flow << YAML::BeginSeq << group.position[0]
+			  << group.position[1] << YAML::EndSeq;
+		ioOut << YAML::Key << "size" << YAML::Value << YAML::Flow << YAML::BeginSeq << group.size[0] << group.size[1]
+			  << YAML::EndSeq;
+		if (!group.color.empty())
+			ioOut << YAML::Key << "color" << YAML::Value << group.color;
+		ioOut << YAML::EndMap;
+	}
+	ioOut << YAML::EndSeq;
+}
+
+auto parsePair(const YAML::Node& iNode, const std::array<float, 2> iFallback) -> std::array<float, 2> {
+	if (!iNode.IsSequence() || iNode.size() != 2)
+		return iFallback;
+	return {iNode[0].as<float>(iFallback[0]), iNode[1].as<float>(iFallback[1])};
+}
+
+auto parseGroup(const YAML::Node& iNode) -> std::optional<GraphGroup> {
+	if (!iNode.IsMap() || !iNode["id"])
+		return std::nullopt;
+	return GraphGroup{.id = core::UUID{iNode["id"].as<uint64_t>()},
+					  .title = iNode["title"].as<std::string>(""),
+					  .position = parsePair(iNode["position"], {0.f, 0.f}),
+					  .size = parsePair(iNode["size"], {200.f, 120.f}),
+					  .color = iNode["color"].as<std::string>("")};
 }
 
 auto optionalFloat(const YAML::Node& iNode) -> std::optional<float> {
@@ -688,7 +857,9 @@ auto parseFunction(const YAML::Node& iNode) -> std::optional<GraphFunction> {
 						   .outputs = parseParameters(iNode["outputs"]),
 						   .macro = iNode["macro"].as<bool>(false),
 						   .exits = {"Then"},
-						   .exported = iNode["exported"].as<bool>(false)};
+						   .exported = iNode["exported"].as<bool>(false),
+						   .category = iNode["category"].as<std::string>(""),
+						   .pure = iNode["pure"].as<bool>(false)};
 	if (const auto exits = iNode["exits"]; function.macro && exits && exits.IsSequence() && exits.size() > 0)
 		function.exits = exits.as<std::vector<std::string>>();
 	return function;
@@ -758,6 +929,9 @@ auto parseScript(const YAML::Node& iRoot) -> VisualScript {
 	for (const auto& entry: iRoot["links"])
 		if (auto link = parseLink(entry); link.has_value())
 			script.links.push_back(std::move(*link));
+	for (const auto& entry: iRoot["groups"])
+		if (auto group = parseGroup(entry); group.has_value())
+			script.groups.push_back(std::move(*group));
 	return script;
 }
 
@@ -784,7 +958,7 @@ auto readLibraryText(const std::string_view iPath) -> std::optional<std::string>
 	return std::string{bytes->begin(), bytes->end()};
 }
 
-constexpr std::array<std::pair<PinType, std::string_view>, 11> g_pinTypeKeys{{{PinType::Exec, "exec"},
+constexpr std::array<std::pair<PinType, std::string_view>, 13> g_pinTypeKeys{{{PinType::Exec, "exec"},
 																			  {PinType::Boolean, "boolean"},
 																			  {PinType::Integer, "integer"},
 																			  {PinType::Number, "number"},
@@ -794,6 +968,8 @@ constexpr std::array<std::pair<PinType, std::string_view>, 11> g_pinTypeKeys{{{P
 																			  {PinType::Vector2, "vector2"},
 																			  {PinType::Vector3, "vector3"},
 																			  {PinType::Color, "color"},
+																			  {PinType::Transform, "transform"},
+																			  {PinType::Matrix, "matrix"},
 																			  {PinType::Any, "any"}}};
 
 auto trimmed(std::string_view iText) -> std::string_view {
@@ -1036,11 +1212,50 @@ auto findNodeType(const std::string_view iId) -> const NodeType* {
 	return it == types.end() ? nullptr : &*it;
 }
 
-auto getNodePins(const VisualScript& iScript, const GraphNode& iNode) -> NodePins {
+auto getListItemCount(const GraphNode& iNode) -> size_t {
+	const size_t fallback = iNode.type == "table.break_list" ? 2 : 4;
+	const auto found = iNode.values.find("count");
+	if (found == iNode.values.end())
+		return fallback;
+	size_t count = 0;
+	const auto* end = found->second.data() + found->second.size();
+	if (std::from_chars(found->second.data(), end, count).ptr != end || count == 0)
+		return fallback;
+	return std::min(count, g_MaxListItems);
+}
+
+auto getNodeLua(const NodeType& iType, const GraphNode& iNode) -> std::string {
+	const bool make = iNode.type == "table.make_list";
+	if (!make && iNode.type != "table.break_list")
+		return iType.lua;
+	std::string lua = make ? "{ " : "";
+	for (size_t i = 0; i < getListItemCount(iNode); ++i) {
+		if (i > 0)
+			lua += ", ";
+		lua += make ? std::format("{{{}}}", i) : std::format("{{0}}[{}]", i + 1);
+	}
+	return make ? lua + " }" : lua;
+}
+
+namespace {
+
+// The pins of a node, a reroute output left as `Any`: the type of a reroute comes from these pins of its source.
+auto typedPins(const VisualScript& iScript, const GraphNode& iNode) -> NodePins {
 	const auto* type = findNodeType(iNode.type);
 	if (type == nullptr)
 		return {};
 	NodePins pins{.inputs = type->inputs, .outputs = type->outputs};
+	if (iNode.type == "table.make_list" || iNode.type == "table.break_list") {
+		const auto count = getListItemCount(iNode);
+		for (size_t i = 0; i < count; ++i) {
+			const std::string name(1, static_cast<char>('A' + i));
+			if (iNode.type == "table.make_list")
+				pins.inputs.push_back(pin(name, PinType::Any, {}, true));
+			else
+				pins.outputs.push_back(pin(name, PinType::Any));
+		}
+		return pins;
+	}
 	if (type->kind == NodeKind::Call) {
 		pins.inputs = groupPins(pins.inputs, iNode);
 		pins.outputs = groupPins(pins.outputs, iNode);
@@ -1071,7 +1286,8 @@ auto getNodePins(const VisualScript& iScript, const GraphNode& iNode) -> NodePin
 			for (auto& spec: toPins(function->outputs)) pins.inputs.push_back(std::move(spec));
 		} else {
 			for (auto& spec: toPins(function->inputs)) pins.inputs.push_back(std::move(spec));
-			for (const auto& exit: function->exits) pins.outputs.push_back(execOut(exit));
+			if (!type->pure)
+				for (const auto& exit: function->exits) pins.outputs.push_back(execOut(exit));
 			for (auto& spec: toPins(function->outputs)) pins.outputs.push_back(std::move(spec));
 		}
 		return pins;
@@ -1090,6 +1306,35 @@ auto getNodePins(const VisualScript& iScript, const GraphNode& iNode) -> NodePin
 	return pins;
 }
 
+}// namespace
+
+auto getNodePins(const VisualScript& iScript, const GraphNode& iNode) -> NodePins {
+	auto pins = typedPins(iScript, iNode);
+	if (iNode.type == g_RerouteNode && !pins.outputs.empty())
+		pins.outputs.front().type = getRerouteType(iScript, iNode);
+	return pins;
+}
+
+auto getRerouteType(const VisualScript& iScript, const GraphNode& iNode) -> PinType {
+	// A chain of reroutes is followed to its source; the bound stops a loop of reroutes.
+	const auto* current = &iNode;
+	for (size_t depth = 0; depth < 64; ++depth) {
+		const auto link = std::ranges::find_if(iScript.links, [&](const GraphLink& iLink) -> bool {
+			return iLink.toNode == current->id && iLink.toPin == "In";
+		});
+		const auto* source = link == iScript.links.end() ? nullptr : iScript.findNode(link->fromNode);
+		if (source == nullptr)
+			return PinType::Any;
+		if (source->type != g_RerouteNode) {
+			const auto outputs = typedPins(iScript, *source).outputs;
+			const auto found = std::ranges::find(outputs, link->fromPin, &PinSpec::name);
+			return found == outputs.end() ? PinType::Any : found->type;
+		}
+		current = source;
+	}
+	return PinType::Any;
+}
+
 auto canConnect(const PinType iFrom, const PinType iTo) -> bool {
 	if (iFrom == PinType::Exec || iTo == PinType::Exec)
 		return iFrom == iTo;
@@ -1098,6 +1343,11 @@ auto canConnect(const PinType iFrom, const PinType iTo) -> bool {
 	if (iFrom == PinType::Integer && iTo == PinType::Number)
 		return true;
 	if (iFrom == PinType::Entity && isNumeric(iTo))
+		return true;
+	// A matrix is a list of numbers and a transform a table: the table nodes read them, a list of 16 numbers is a matrix.
+	if ((iFrom == PinType::Matrix || iFrom == PinType::Transform) && iTo == PinType::Table)
+		return true;
+	if (iFrom == PinType::Table && iTo == PinType::Matrix)
 		return true;
 	return iFrom == PinType::Integer && iTo == PinType::Entity;
 }
@@ -1142,6 +1392,8 @@ auto getPinComponents(const PinType iType) -> std::vector<std::string> {
 		case PinType::String:
 		case PinType::Table:
 		case PinType::Entity:
+		case PinType::Transform:
+		case PinType::Matrix:
 		case PinType::Any:
 			break;
 	}

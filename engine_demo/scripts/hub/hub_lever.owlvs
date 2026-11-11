@@ -400,3 +400,9 @@ VisualScript:
     - {from: 8040000000000000062, fromPin: Then, to: 8040000000000000065, toPin: Exec}
     - {from: 8040000000000000067, fromPin: Value, to: 8040000000000000066, toPin: entity_id}
     - {from: 8040000000000000065, fromPin: True, to: 8040000000000000066, toPin: Exec}
+  groups:
+    - {id: 10386459357730956330, title: toast, position: [-24, -52], size: [878, 280], color: Red}
+    - {id: 6654408743136005318, title: open_gate, position: [-24, 400], size: [1761, 396], color: Yellow}
+    - {id: 6381010246914513101, title: On Create, position: [-24, 946], size: [2650, 676], color: Teal}
+    - {id: 3082173046758136582, title: on_lever_interact, position: [-24, 1746], size: [3182, 374], color: Violet}
+    - {id: 4052098324524111074, title: On Update, position: [-24, 2292], size: [1499, 380], color: Red}

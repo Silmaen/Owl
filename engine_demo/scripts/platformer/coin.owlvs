@@ -41,7 +41,7 @@ VisualScript:
         function: on_coin_collected
     - id: 8010000000000000006
       type: var.get
-      position: [0, 624]
+      position: [64, 608]
       values:
         variable: collected
     - id: 8010000000000000007
@@ -91,7 +91,7 @@ VisualScript:
         B: 10
     - id: 8010000000000000016
       type: var.get
-      position: [1496, 650]
+      position: [1584, 656]
       values:
         variable: current_score
     - id: 8010000000000000017
@@ -181,12 +181,7 @@ VisualScript:
       position: [210, 1040]
     - id: 8010000000000000036
       type: math.add
-      position: [210, 1176]
-    - id: 8010000000000000037
-      type: var.get
-      position: [0, 1296]
-      values:
-        variable: pop_clock
+      position: [288, 1152]
     - id: 8010000000000000038
       type: var.set
       position: [480, 1040]
@@ -194,20 +189,20 @@ VisualScript:
         variable: pop_clock
     - id: 8010000000000000039
       type: math.min
-      position: [480, 1186]
+      position: [480, 1168]
       values:
         A: 1.0
     - id: 8010000000000000040
       type: math.divide
-      position: [210, 1312]
+      position: [288, 1264]
     - id: 8010000000000000041
       type: var.get
-      position: [0, 1416]
+      position: [96, 1216]
       values:
         variable: pop_clock
     - id: 8010000000000000042
       type: var.get
-      position: [0, 1536]
+      position: [112, 1312]
       values:
         variable: pop_time
     - id: 8010000000000000043
@@ -217,30 +212,17 @@ VisualScript:
         variable: t
     - id: 8010000000000000044
       type: math.subtract
-      position: [750, 1186]
+      position: [720, 1184]
       values:
         A: 1.0
-    - id: 8010000000000000045
-      type: math.multiply
-      position: [480, 1322]
     - id: 8010000000000000046
       type: math.subtract
-      position: [210, 1448]
+      position: [224, 1360]
       values:
         A: 1.0
     - id: 8010000000000000047
       type: var.get
-      position: [0, 1656]
-      values:
-        variable: t
-    - id: 8010000000000000048
-      type: math.subtract
-      position: [210, 1584]
-      values:
-        A: 1.0
-    - id: 8010000000000000049
-      type: var.get
-      position: [0, 1776]
+      position: [128, 1408]
       values:
         variable: t
     - id: 8010000000000000050
@@ -250,33 +232,33 @@ VisualScript:
         variable: eased
     - id: 8010000000000000051
       type: math.multiply
-      position: [1020, 1186]
+      position: [1096, 1184]
     - id: 8010000000000000052
       type: var.get
-      position: [750, 1322]
+      position: [944, 1216]
       values:
         variable: base_scale
     - id: 8010000000000000053
       type: math.add
-      position: [750, 1442]
+      position: [880, 1296]
       values:
         A: 1.0
     - id: 8010000000000000054
       type: math.multiply
-      position: [480, 1458]
+      position: [728, 1376]
     - id: 8010000000000000055
       type: math.subtract
-      position: [210, 1720]
+      position: [304, 1472]
       values:
         B: 1.0
     - id: 8010000000000000056
       type: var.get
-      position: [0, 1896]
+      position: [128, 1520]
       values:
         variable: pop_scale
     - id: 8010000000000000057
       type: var.get
-      position: [210, 1856]
+      position: [576, 1520]
       values:
         variable: eased
     - id: 8010000000000000058
@@ -286,18 +268,13 @@ VisualScript:
         variable: scale
     - id: 8010000000000000059
       type: call.transform.set_scale
-      position: [1522, 1040]
+      position: [1440, 1040]
       values:
         split.scale: true
         sz: 1
     - id: 8010000000000000060
       type: var.get
-      position: [1252, 1186]
-      values:
-        variable: scale
-    - id: 8010000000000000061
-      type: var.get
-      position: [1252, 1306]
+      position: [1296, 1168]
       values:
         variable: scale
     - id: 8010000000000000062
@@ -307,33 +284,33 @@ VisualScript:
         split.xyz: true
     - id: 8010000000000000063
       type: var.get
-      position: [1522, 1264]
+      position: [1680, 1136]
       values:
         variable: home_x
     - id: 8010000000000000064
       type: math.add
-      position: [1522, 1384]
+      position: [1536, 1248]
     - id: 8010000000000000065
       type: var.get
-      position: [1252, 1426]
+      position: [1392, 1264]
       values:
         variable: home_y
     - id: 8010000000000000066
       type: math.multiply
-      position: [1252, 1546]
+      position: [1360, 1312]
     - id: 8010000000000000067
       type: var.get
-      position: [1020, 1322]
+      position: [1200, 1328]
       values:
         variable: pop_rise
     - id: 8010000000000000068
       type: var.get
-      position: [1020, 1442]
+      position: [1216, 1376]
       values:
         variable: eased
     - id: 8010000000000000069
       type: var.get
-      position: [1522, 1520]
+      position: [1568, 1360]
       values:
         variable: home_z
     - id: 8010000000000000070
@@ -345,50 +322,42 @@ VisualScript:
         split.rgb: true
     - id: 8010000000000000071
       type: math.subtract
-      position: [1808, 1264]
+      position: [1824, 1264]
       values:
         A: 1.0
     - id: 8010000000000000072
       type: math.multiply
-      position: [1522, 1640]
+      position: [1520, 1424]
       values:
         A: 0.5
     - id: 8010000000000000073
       type: math.subtract
-      position: [1252, 1682]
+      position: [1296, 1440]
       values:
         A: 1.0
     - id: 8010000000000000074
       type: var.get
-      position: [1020, 1562]
+      position: [1152, 1520]
       values:
         variable: t
     - id: 8010000000000000075
       type: math.subtract
-      position: [1808, 1400]
+      position: [1824, 1376]
       values:
         A: 1.0
-    - id: 8010000000000000076
-      type: math.multiply
-      position: [1522, 1776]
     - id: 8010000000000000077
       type: var.get
-      position: [1252, 1818]
-      values:
-        variable: t
-    - id: 8010000000000000078
-      type: var.get
-      position: [1252, 1938]
+      position: [1232, 1632]
       values:
         variable: t
     - id: 8010000000000000079
       type: var.get
-      position: [1808, 1536]
+      position: [2080, 1344]
       values:
         variable: t
     - id: 8010000000000000080
       type: compare.greater_equal
-      position: [2094, 1290]
+      position: [2176, 1312]
       values:
         B: 1.0
     - id: 8010000000000000081
@@ -413,6 +382,12 @@ VisualScript:
       position: [200, 2524]
       values:
         message: Coin destroyed
+    - id: 791079823484185316
+      type: math.power
+      position: [448, 1312]
+    - id: 9368909927374372920
+      type: math.power
+      position: [1424, 1552]
   links:
     - {from: 8010000000000000001, fromPin: Then, to: 8010000000000000002, toPin: Exec}
     - {from: 8010000000000000003, fromPin: sx, to: 8010000000000000004, toPin: Value}
@@ -449,8 +424,6 @@ VisualScript:
     - {from: 8010000000000000028, fromPin: True, to: 8010000000000000029, toPin: Exec}
     - {from: 8010000000000000034, fromPin: Value, to: 8010000000000000035, toPin: Condition}
     - {from: 8010000000000000033, fromPin: Then, to: 8010000000000000035, toPin: Exec}
-    - {from: 8010000000000000037, fromPin: Value, to: 8010000000000000036, toPin: A}
-    - {from: 8010000000000000033, fromPin: dt, to: 8010000000000000036, toPin: B}
     - {from: 8010000000000000036, fromPin: Result, to: 8010000000000000038, toPin: Value}
     - {from: 8010000000000000035, fromPin: True, to: 8010000000000000038, toPin: Exec}
     - {from: 8010000000000000041, fromPin: Value, to: 8010000000000000040, toPin: A}
@@ -459,10 +432,6 @@ VisualScript:
     - {from: 8010000000000000039, fromPin: Result, to: 8010000000000000043, toPin: Value}
     - {from: 8010000000000000038, fromPin: Then, to: 8010000000000000043, toPin: Exec}
     - {from: 8010000000000000047, fromPin: Value, to: 8010000000000000046, toPin: B}
-    - {from: 8010000000000000046, fromPin: Result, to: 8010000000000000045, toPin: A}
-    - {from: 8010000000000000049, fromPin: Value, to: 8010000000000000048, toPin: B}
-    - {from: 8010000000000000048, fromPin: Result, to: 8010000000000000045, toPin: B}
-    - {from: 8010000000000000045, fromPin: Result, to: 8010000000000000044, toPin: B}
     - {from: 8010000000000000044, fromPin: Result, to: 8010000000000000050, toPin: Value}
     - {from: 8010000000000000043, fromPin: Then, to: 8010000000000000050, toPin: Exec}
     - {from: 8010000000000000052, fromPin: Value, to: 8010000000000000051, toPin: A}
@@ -474,7 +443,6 @@ VisualScript:
     - {from: 8010000000000000051, fromPin: Result, to: 8010000000000000058, toPin: Value}
     - {from: 8010000000000000050, fromPin: Then, to: 8010000000000000058, toPin: Exec}
     - {from: 8010000000000000060, fromPin: Value, to: 8010000000000000059, toPin: sx}
-    - {from: 8010000000000000061, fromPin: Value, to: 8010000000000000059, toPin: sy}
     - {from: 8010000000000000058, fromPin: Then, to: 8010000000000000059, toPin: Exec}
     - {from: 8010000000000000065, fromPin: Value, to: 8010000000000000064, toPin: A}
     - {from: 8010000000000000067, fromPin: Value, to: 8010000000000000066, toPin: A}
@@ -487,9 +455,6 @@ VisualScript:
     - {from: 8010000000000000074, fromPin: Value, to: 8010000000000000073, toPin: B}
     - {from: 8010000000000000073, fromPin: Result, to: 8010000000000000072, toPin: B}
     - {from: 8010000000000000072, fromPin: Result, to: 8010000000000000071, toPin: B}
-    - {from: 8010000000000000077, fromPin: Value, to: 8010000000000000076, toPin: A}
-    - {from: 8010000000000000078, fromPin: Value, to: 8010000000000000076, toPin: B}
-    - {from: 8010000000000000076, fromPin: Result, to: 8010000000000000075, toPin: B}
     - {from: 8010000000000000071, fromPin: Result, to: 8010000000000000070, toPin: b}
     - {from: 8010000000000000075, fromPin: Result, to: 8010000000000000070, toPin: a}
     - {from: 8010000000000000062, fromPin: Then, to: 8010000000000000070, toPin: Exec}
@@ -499,3 +464,16 @@ VisualScript:
     - {from: 8010000000000000081, fromPin: True, to: 8010000000000000082, toPin: Exec}
     - {from: 8010000000000000083, fromPin: Then, to: 8010000000000000084, toPin: Exec}
     - {from: 8010000000000000085, fromPin: Then, to: 8010000000000000086, toPin: Exec}
+    - {from: 8010000000000000033, fromPin: dt, to: 8010000000000000036, toPin: A}
+    - {from: 8010000000000000041, fromPin: Value, to: 8010000000000000036, toPin: B}
+    - {from: 8010000000000000046, fromPin: Result, to: 791079823484185316, toPin: A}
+    - {from: 791079823484185316, fromPin: Result, to: 8010000000000000044, toPin: B}
+    - {from: 8010000000000000060, fromPin: Value, to: 8010000000000000059, toPin: sy}
+    - {from: 8010000000000000077, fromPin: Value, to: 9368909927374372920, toPin: A}
+    - {from: 9368909927374372920, fromPin: Result, to: 8010000000000000075, toPin: B}
+  groups:
+    - {id: 156923733255136796, title: On Create, position: [-24, -52], size: [720, 354], color: Red}
+    - {id: 7217928323258076947, title: on_coin_collected, position: [-24, 426], size: [3953, 428], color: Yellow}
+    - {id: 16449982543698508775, title: On Update, position: [-24, 988], size: [2952, 744], color: Teal}
+    - {id: 693845796448766750, title: On Trigger Enter, position: [-24, 2166], size: [525, 182], color: Violet}
+    - {id: 14298951442679125611, title: On Destroy, position: [-24, 2472], size: [491, 182], color: Red}

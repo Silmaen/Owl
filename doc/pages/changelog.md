@@ -38,6 +38,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Visual script internal variables (`exposed: false`): state of the script kept out of the inspector, a list holding any table.
 - Visual script variable bounds `min`, `max` and `step`, written to the script property and edited in Owl Nest.
 - Visual script exported functions: a global function the engine calls and reads the results of, such as a dialogue condition.
+- Visual script math nodes `Square`, `Exponential`, `Logarithm` (natural, base 10, any base), `Tangent`, the inverse trigonometry, `Sign`, `Fraction`, `Distance` and the degree conversions.
+- Visual script `Transform` and `Matrix` pin types: get, set, make and break a transform, build, multiply, invert and apply 4×4 matrices as the engine composes them.
+- Visual script `Make List` and `Break List` nodes with 1 to 16 items, lists edited item by item in Owl Nest, and table wire values shown as a grid while debugging.
+- Visual script groups: titled frames gathering nodes, moved and resized with them in Owl Nest (**Ctrl+G**).
+- Visual script **Set as Function**: the selected nodes become a function, their outside values its parameters and results.
+- Visual script pure functions, called where their results are read, and function categories shown as folders.
+- Visual script **Move to Library**: a function and its body move to a library graph every graph can call.
+- Visual script vector nodes: add, subtract, scale, dot, length and normalize of 2D and 3D vectors, and the cross product.
+- Visual script `Reroute` node: one value in, any number of wires out, inserted from the menu of a value link.
+- Owl Nest visual script **Straighten Links** (**Q**): the selected nodes move so that their wires run straight.
+- Owl Nest visual script **Check**: the generated Lua type-checked against the engine API, each problem on its node, and a test checks every demo graph.
+- Owl Nest visual script **Group by Events**: each event and function framed with the nodes it runs, used on 33 Engine Demo graphs.
+- Owl Nest visual script events stand out with a red halo, and variable reads are compact named pills.
+- Owl Nest visual script nodes and palette categories have an icon of their own (operators, comparisons, text, tables, matrices, events, every binding table), and a palette search keeps its results under their categories.
 - Visual script `Nil` constant: clears a variable or a field.
 - Visual script maths nodes: `Square Root`, `Ceil`, `Round`, `Power`, `Clamp`, `Lerp`, `Sine`, `Cosine`, `Atan2`, `Pi`, `Random` and `Random Integer`.
 - Visual script text nodes: `Join Text`, `Format` (`string.format`, up to four values), `Text Length`, `Split`, `To Number`, `To Text`, `Contains Text`, `Substring`, `Upper Case` and `Lower Case`.

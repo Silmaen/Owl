@@ -170,3 +170,6 @@ VisualScript:
     - {from: 7460000000000000025, fromPin: Result, to: 7460000000000000028, toPin: A}
     - {from: 7460000000000000027, fromPin: Result, to: 7460000000000000029, toPin: value}
     - {from: 7460000000000000028, fromPin: Result, to: 7460000000000000030, toPin: value}
+  groups:
+    - {id: 6477842957577198276, title: On Create, position: [-24, -52], size: [1194, 456], color: Red}
+    - {id: 14995109916427127607, title: On Update, position: [-24, 548], size: [2189, 1258], color: Yellow}

@@ -13,226 +13,226 @@ VisualScript:
   nodes:
     - id: 7510000000000000001
       type: event.on_create
-      position: [0, 0]
+      position: [32, -528]
     - id: 7510000000000000002
       type: var.set
-      position: [296, 0]
+      position: [224, -528]
       values:
         variable: crates
     - id: 7510000000000000003
       type: var.get
-      position: [296, 144]
+      position: [336, -400]
       values:
         variable: dice
     - id: 7510000000000000004
       type: text.split
-      position: [640, 0]
+      position: [512, -448]
     - id: 7510000000000000005
       type: flow.for_each
-      position: [1032, 0]
+      position: [848, -528]
     - id: 7510000000000000006
       type: call.scene.find_entity
-      position: [1304, 0]
+      position: [1088, -464]
     - id: 7510000000000000007
       type: compare.not_equal
-      position: [1304, 120]
+      position: [1296, -448]
       values:
         B: 0
     - id: 7510000000000000008
       type: flow.branch
-      position: [1592, 0]
+      position: [1552, -528]
     - id: 7510000000000000009
       type: var.get
-      position: [1592, 136]
+      position: [1552, -416]
       values:
         variable: crates
     - id: 7510000000000000010
       type: table.append
-      position: [1936, 0]
+      position: [1808, -384]
     - id: 7510000000000000011
       type: call.gamestate.set
-      position: [1936, 160]
+      position: [1088, -272]
       values:
         key: dice_total
         value: 0
     - id: 7510000000000000012
       type: event.on_tick
-      position: [0, 416]
+      position: [24, 484]
     - id: 7510000000000000013
       type: var.get
-      position: [296, 416]
+      position: [72, 596]
       values:
         variable: ticks
     - id: 7510000000000000014
       type: math.add
-      position: [296, 536]
+      position: [248, 612]
       values:
         B: 1
     - id: 7510000000000000015
       type: var.set
-      position: [640, 416]
+      position: [472, 468]
       values:
         variable: ticks
     - id: 7510000000000000016
       type: var.get
-      position: [1032, 416]
+      position: [904, 532]
       values:
         variable: thrown
     - id: 7510000000000000017
       type: var.get
-      position: [1032, 536]
+      position: [904, 628]
       values:
         variable: throws
     - id: 7510000000000000018
       type: compare.greater_equal
-      position: [1304, 416]
+      position: [1080, 596]
     - id: 7510000000000000019
       type: var.get
-      position: [1032, 656]
+      position: [504, 612]
       values:
         variable: interval
     - id: 7510000000000000020
       type: math.modulo
-      position: [1304, 552]
+      position: [696, 548]
     - id: 7510000000000000021
       type: compare.not_equal
-      position: [1304, 688]
+      position: [904, 708]
       values:
         B: 0
     - id: 7510000000000000022
       type: logic.or
-      position: [1592, 416]
+      position: [1264, 676]
     - id: 7510000000000000023
       type: flow.branch
-      position: [1936, 416]
+      position: [1432, 484]
     - id: 7510000000000000024
       type: var.get
-      position: [2216, 416]
+      position: [1440, 684]
       values:
         variable: thrown
     - id: 7510000000000000025
       type: math.add
-      position: [2216, 536]
+      position: [1624, 692]
       values:
         B: 1
     - id: 7510000000000000026
       type: var.set
-      position: [2496, 416]
+      position: [1864, 500]
       values:
         variable: thrown
     - id: 7510000000000000027
       type: var.set
-      position: [2736, 416]
+      position: [2136, 500]
       values:
         Value: 0
         variable: total
     - id: 7510000000000000028
       type: var.get
-      position: [2736, 560]
+      position: [2216, 644]
       values:
         variable: crates
     - id: 7510000000000000029
       type: flow.for_each
-      position: [3040, 416]
+      position: [2424, 500]
     - id: 7510000000000000030
       type: math.random_integer
-      position: [0, 904]
+      position: [2856, 404]
       values:
         Max: 6
         Min: 1
     - id: 7510000000000000031
       type: var.set
-      position: [296, 904]
+      position: [3096, 196]
       values:
         variable: roll
     - id: 7510000000000000032
       type: var.get
-      position: [296, 1048]
+      position: [3384, 260]
       values:
         variable: total
     - id: 7510000000000000033
       type: math.add
-      position: [640, 904]
+      position: [3560, 372]
     - id: 7510000000000000034
       type: var.set
-      position: [1032, 904]
+      position: [3736, 196]
       values:
         variable: total
     - id: 7510000000000000035
       type: math.pi
-      position: [1032, 1048]
+      position: [3752, 308]
     - id: 7510000000000000036
       type: math.divide
-      position: [1304, 904]
+      position: [3960, 292]
       values:
         B: 2
     - id: 7510000000000000037
       type: math.random
-      position: [1032, 1160]
+      position: [3752, 388]
     - id: 7510000000000000038
       type: math.subtract
-      position: [1304, 1040]
+      position: [3960, 404]
       values:
         B: 0.5
     - id: 7510000000000000039
       type: math.multiply
-      position: [1592, 904]
+      position: [4184, 404]
       values:
         B: 0.8
     - id: 7510000000000000040
       type: math.add
-      position: [1936, 904]
+      position: [4408, 292]
     - id: 7510000000000000041
       type: math.divide
-      position: [1304, 1176]
+      position: [3320, 484]
       values:
         B: 6
     - id: 7510000000000000042
       type: math.power
-      position: [1592, 1040]
+      position: [3608, 484]
       values:
         Exponent: 0.5
     - id: 7510000000000000043
       type: var.get
-      position: [1592, 1176]
+      position: [4408, 436]
       values:
         variable: strength
     - id: 7510000000000000044
       type: math.multiply
-      position: [1936, 1040]
+      position: [4616, 452]
     - id: 7510000000000000045
       type: math.cos
-      position: [2216, 904]
+      position: [4600, 260]
     - id: 7510000000000000046
       type: math.sin
-      position: [2216, 1016]
+      position: [4600, 340]
     - id: 7510000000000000047
       type: math.multiply
-      position: [2496, 904]
+      position: [4840, 260]
     - id: 7510000000000000048
       type: math.multiply
-      position: [2496, 1040]
+      position: [4840, 356]
     - id: 7510000000000000049
       type: call.physics.impulse
-      position: [2736, 904]
+      position: [5032, 196]
       values:
         split.force: true
     - id: 7510000000000000050
       type: call.gamestate.get
-      position: [3312, 416]
+      position: [2648, 644]
       values:
         key: dice_total
     - id: 7510000000000000051
       type: var.get
-      position: [3312, 592]
+      position: [2760, 788]
       values:
         variable: total
     - id: 7510000000000000052
       type: math.add
-      position: [3640, 416]
+      position: [2920, 724]
     - id: 7510000000000000053
       type: call.gamestate.set
-      position: [3856, 416]
+      position: [3080, 644]
       values:
         key: dice_total
   links:
@@ -245,7 +245,7 @@ VisualScript:
     - {from: 7510000000000000007, fromPin: Result, to: 7510000000000000008, toPin: Condition}
     - {from: 7510000000000000005, fromPin: Body, to: 7510000000000000008, toPin: Exec}
     - {from: 7510000000000000009, fromPin: Value, to: 7510000000000000010, toPin: List}
-    - {from: 7510000000000000006, fromPin: entity_id, to: 7510000000000000010, toPin: Value}
+    - {from: 7510000000000000006, fromPin: entity_id, to: 7510000000000000010, toPin: Value, waypoints: [[1312, -288]]}
     - {from: 7510000000000000008, fromPin: True, to: 7510000000000000010, toPin: Exec}
     - {from: 7510000000000000005, fromPin: Completed, to: 7510000000000000011, toPin: Exec}
     - {from: 7510000000000000013, fromPin: Value, to: 7510000000000000014, toPin: A}
@@ -287,7 +287,7 @@ VisualScript:
     - {from: 7510000000000000044, fromPin: Result, to: 7510000000000000047, toPin: B}
     - {from: 7510000000000000046, fromPin: Result, to: 7510000000000000048, toPin: A}
     - {from: 7510000000000000044, fromPin: Result, to: 7510000000000000048, toPin: B}
-    - {from: 7510000000000000029, fromPin: Item, to: 7510000000000000049, toPin: entity_id}
+    - {from: 7510000000000000029, fromPin: Item, to: 7510000000000000049, toPin: entity_id, waypoints: [[4904, 596]]}
     - {from: 7510000000000000047, fromPin: Result, to: 7510000000000000049, toPin: fx}
     - {from: 7510000000000000048, fromPin: Result, to: 7510000000000000049, toPin: fy}
     - {from: 7510000000000000034, fromPin: Then, to: 7510000000000000049, toPin: Exec}
@@ -296,3 +296,6 @@ VisualScript:
     - {from: 7510000000000000051, fromPin: Value, to: 7510000000000000052, toPin: B}
     - {from: 7510000000000000052, fromPin: Result, to: 7510000000000000053, toPin: value}
     - {from: 7510000000000000050, fromPin: Then, to: 7510000000000000053, toPin: Exec}
+  groups:
+    - {id: 17277885483003039901, title: On Create + On Tick, position: [0, 16], size: [5223, 828], color: Red}
+    - {id: 9945160993195633803, title: On Create, position: [0, -576], size: [1964, 464], color: Orange}

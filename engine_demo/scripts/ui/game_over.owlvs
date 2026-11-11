@@ -88,3 +88,7 @@ VisualScript:
     - {from: 7390000000000000012, fromPin: Then, to: 7390000000000000011, toPin: Exec}
     - {from: 7390000000000000013, fromPin: Then, to: 7390000000000000015, toPin: Exec}
     - {from: 7390000000000000015, fromPin: Then, to: 7390000000000000014, toPin: Exec}
+  groups:
+    - {id: 3251543533061674376, title: On Create, position: [-24, -52], size: [1995, 472], color: Red}
+    - {id: 17186097580629316576, title: on_retry_clicked, position: [-24, 548], size: [856, 260], color: Yellow}
+    - {id: 5675287632706984462, title: on_menu_clicked, position: [-24, 848], size: [856, 260], color: Teal}

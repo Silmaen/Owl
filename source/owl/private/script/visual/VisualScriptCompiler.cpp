@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "script/ScriptTypeChecker.h"
 #include "script/visual/VisualScript.h"
 
 #include <algorithm>
@@ -116,6 +117,136 @@ auto parseComponents(const std::string& iText, const size_t iCount) -> std::opti
 		return std::nullopt;
 	return values;
 }
+
+// Numbers of a transform or a matrix typed as `1, 0, 0; 0, 1, 0`: commas, semicolons and spaces separate them.
+auto parseNumberList(const std::string& iText) -> std::optional<std::vector<double>> {
+	std::vector<double> values;
+	std::string part;
+	for (size_t i = 0; i <= iText.size(); ++i) {
+		if (i < iText.size() && iText[i] != ',' && iText[i] != ';' &&
+			std::isspace(static_cast<unsigned char>(iText[i])) == 0) {
+			part += iText[i];
+			continue;
+		}
+		if (part.empty())
+			continue;
+		const auto value = parseNumber(part);
+		if (!value.has_value())
+			return std::nullopt;
+		values.push_back(*value);
+		part.clear();
+	}
+	return values;
+}
+
+// Lua of the helpers a node template names `__owl_<name>(`, written once at the top of a graph that uses them.
+constexpr std::array<std::pair<std::string_view, std::string_view>, 14> g_helpers{{
+		{"transform_get", R"(local function __owl_transform_get(id)
+	local px, py, pz = transform.get_position(id)
+	local rx, ry, rz = transform.get_rotation(id)
+	local sx, sy, sz = transform.get_scale(id)
+	return { position = { x = px, y = py, z = pz }, rotation = { x = rx, y = ry, z = rz }, scale = { x = sx, y = sy, z = sz } }
+end)"},
+		{"transform_set", R"(local function __owl_transform_set(id, t)
+	transform.set_position(id, t.position.x, t.position.y, t.position.z)
+	transform.set_rotation(id, t.rotation.x, t.rotation.y, t.rotation.z)
+	transform.set_scale(id, t.scale.x, t.scale.y, t.scale.z)
+end)"},
+		{"mat_identity", R"(local function __owl_mat_identity()
+	return { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 }
+end)"},
+		{"mat_from_transform", R"(local function __owl_mat_from_transform(t)
+	local p, r, s = t.position, t.rotation, t.scale
+	local sx, cx = math.sin(r.x), math.cos(r.x)
+	local sy, cy = math.sin(r.y), math.cos(r.y)
+	local sz, cz = math.sin(r.z), math.cos(r.z)
+	return {
+		cz * cy * s.x, (cz * sy * sx - sz * cx) * s.y, (cz * sy * cx + sz * sx) * s.z, p.x,
+		sz * cy * s.x, (sz * sy * sx + cz * cx) * s.y, (sz * sy * cx - cz * sx) * s.z, p.y,
+		-sy * s.x, cy * sx * s.y, cy * cx * s.z, p.z,
+		0, 0, 0, 1,
+	}
+end)"},
+		{"mat_mul", R"(local function __owl_mat_mul(a, b)
+	local m = {}
+	for r = 0, 12, 4 do
+		for c = 1, 4 do
+			m[r + c] = a[r + 1] * b[c] + a[r + 2] * b[4 + c] + a[r + 3] * b[8 + c] + a[r + 4] * b[12 + c]
+		end
+	end
+	return m
+end)"},
+		{"mat_transpose", R"(local function __owl_mat_transpose(a)
+	local m = {}
+	for r = 0, 3 do
+		for c = 0, 3 do
+			m[c * 4 + r + 1] = a[r * 4 + c + 1]
+		end
+	end
+	return m
+end)"},
+		{"mat_point", R"(local function __owl_mat_point(a, v, w)
+	return {
+		x = a[1] * v.x + a[2] * v.y + a[3] * v.z + a[4] * w,
+		y = a[5] * v.x + a[6] * v.y + a[7] * v.z + a[8] * w,
+		z = a[9] * v.x + a[10] * v.y + a[11] * v.z + a[12] * w,
+	}
+end)"},
+		{"vec_add", R"(local function __owl_vec_add(a, b)
+	return { x = a.x + b.x, y = a.y + b.y, z = a.z and a.z + b.z }
+end)"},
+		{"vec_sub", R"(local function __owl_vec_sub(a, b)
+	return { x = a.x - b.x, y = a.y - b.y, z = a.z and a.z - b.z }
+end)"},
+		{"vec_scale", R"(local function __owl_vec_scale(a, s)
+	return { x = a.x * s, y = a.y * s, z = a.z and a.z * s }
+end)"},
+		{"vec_dot", R"(local function __owl_vec_dot(a, b)
+	return a.x * b.x + a.y * b.y + (a.z or 0) * (b.z or 0)
+end)"},
+		{"vec_length", R"(local function __owl_vec_length(a)
+	return math.sqrt(a.x * a.x + a.y * a.y + (a.z or 0) * (a.z or 0))
+end)"},
+		{"vec_normalize", R"(local function __owl_vec_normalize(a)
+	local l = math.sqrt(a.x * a.x + a.y * a.y + (a.z or 0) * (a.z or 0))
+	if l == 0 then
+		return { x = 0, y = 0, z = a.z and 0 }
+	end
+	return { x = a.x / l, y = a.y / l, z = a.z and a.z / l }
+end)"},
+		{"vec_cross", R"(local function __owl_vec_cross(a, b)
+	return { x = a.y * b.z - a.z * b.y, y = a.z * b.x - a.x * b.z, z = a.x * b.y - a.y * b.x }
+end)"},
+}};
+
+// Inverse of a 4×4 matrix by its cofactors, nil when its determinant is 0.
+constexpr std::string_view g_inverseHelper = R"(local function __owl_mat_inverse(m)
+	local inv = {}
+	inv[1] = m[6] * m[11] * m[16] - m[6] * m[12] * m[15] - m[10] * m[7] * m[16] + m[10] * m[8] * m[15] + m[14] * m[7] * m[12] - m[14] * m[8] * m[11]
+	inv[5] = -m[5] * m[11] * m[16] + m[5] * m[12] * m[15] + m[9] * m[7] * m[16] - m[9] * m[8] * m[15] - m[13] * m[7] * m[12] + m[13] * m[8] * m[11]
+	inv[9] = m[5] * m[10] * m[16] - m[5] * m[12] * m[14] - m[9] * m[6] * m[16] + m[9] * m[8] * m[14] + m[13] * m[6] * m[12] - m[13] * m[8] * m[10]
+	inv[13] = -m[5] * m[10] * m[15] + m[5] * m[11] * m[14] + m[9] * m[6] * m[15] - m[9] * m[7] * m[14] - m[13] * m[6] * m[11] + m[13] * m[7] * m[10]
+	inv[2] = -m[2] * m[11] * m[16] + m[2] * m[12] * m[15] + m[10] * m[3] * m[16] - m[10] * m[4] * m[15] - m[14] * m[3] * m[12] + m[14] * m[4] * m[11]
+	inv[6] = m[1] * m[11] * m[16] - m[1] * m[12] * m[15] - m[9] * m[3] * m[16] + m[9] * m[4] * m[15] + m[13] * m[3] * m[12] - m[13] * m[4] * m[11]
+	inv[10] = -m[1] * m[10] * m[16] + m[1] * m[12] * m[14] + m[9] * m[2] * m[16] - m[9] * m[4] * m[14] - m[13] * m[2] * m[12] + m[13] * m[4] * m[10]
+	inv[14] = m[1] * m[10] * m[15] - m[1] * m[11] * m[14] - m[9] * m[2] * m[15] + m[9] * m[3] * m[14] + m[13] * m[2] * m[11] - m[13] * m[3] * m[10]
+	inv[3] = m[2] * m[7] * m[16] - m[2] * m[8] * m[15] - m[6] * m[3] * m[16] + m[6] * m[4] * m[15] + m[14] * m[3] * m[8] - m[14] * m[4] * m[7]
+	inv[7] = -m[1] * m[7] * m[16] + m[1] * m[8] * m[15] + m[5] * m[3] * m[16] - m[5] * m[4] * m[15] - m[13] * m[3] * m[8] + m[13] * m[4] * m[7]
+	inv[11] = m[1] * m[6] * m[16] - m[1] * m[8] * m[14] - m[5] * m[2] * m[16] + m[5] * m[4] * m[14] + m[13] * m[2] * m[8] - m[13] * m[4] * m[6]
+	inv[15] = -m[1] * m[6] * m[15] + m[1] * m[7] * m[14] + m[5] * m[2] * m[15] - m[5] * m[3] * m[14] - m[13] * m[2] * m[7] + m[13] * m[3] * m[6]
+	inv[4] = -m[2] * m[7] * m[12] + m[2] * m[8] * m[11] + m[6] * m[3] * m[12] - m[6] * m[4] * m[11] - m[10] * m[3] * m[8] + m[10] * m[4] * m[7]
+	inv[8] = m[1] * m[7] * m[12] - m[1] * m[8] * m[11] - m[5] * m[3] * m[12] + m[5] * m[4] * m[11] + m[9] * m[3] * m[8] - m[9] * m[4] * m[7]
+	inv[12] = -m[1] * m[6] * m[12] + m[1] * m[8] * m[10] + m[5] * m[2] * m[12] - m[5] * m[4] * m[10] - m[9] * m[2] * m[8] + m[9] * m[4] * m[6]
+	inv[16] = m[1] * m[6] * m[11] - m[1] * m[7] * m[10] - m[5] * m[2] * m[11] + m[5] * m[3] * m[10] + m[9] * m[2] * m[7] - m[9] * m[3] * m[6]
+	local det = m[1] * inv[1] + m[2] * inv[5] + m[3] * inv[9] + m[4] * inv[13]
+	if det == 0 then
+		return nil
+	end
+	for i = 1, 16 do
+		inv[i] = inv[i] / det
+	end
+	return inv
+end)";
 
 // A grouped value when the text is empty: opaque white for a colour, the origin for a vector.
 auto defaultComponents(const PinType iType, const size_t iCount) -> std::vector<double> {
@@ -382,6 +513,7 @@ public:
 		m_part = Part::Header;
 		emitProperties();
 		emitLibraries();
+		emitHelpers();
 		emitCustomNodes();
 		emitFunctions();
 		m_part = Part::Events;
@@ -405,6 +537,7 @@ public:
 
 	// A library graph: its custom nodes and functions only, named with the prefix, and the slot table they share.
 	auto runLibrary() -> expected<std::string, std::vector<CompileDiagnostic>> {
+		emitHelpers();
 		emitCustomNodes();
 		emitFunctions();
 		auto lua = assemble();
@@ -614,9 +747,12 @@ private:
 			case PinType::Vector2:
 			case PinType::Vector3:
 			case PinType::Color:
-				if (const auto values = groupLiteral(iNode, iPin, iValue); values.has_value())
+				if (const auto values = groupLiteral(iNode, iPin, text); values.has_value())
 					return componentTable(iPin.type, *values);
 				return "nil";
+			case PinType::Transform:
+			case PinType::Matrix:
+				return compoundLiteral(iNode, iPin, text);
 			case PinType::Boolean:
 				if (text == "true" || text == "false")
 					return text;
@@ -724,6 +860,51 @@ private:
 		out.reserve(values->size());
 		for (const auto value: *values) out.push_back(numberLiteral(value));
 		return out;
+	}
+
+	// A transform (position; rotation; scale) or a matrix (16 numbers) typed on a node; empty is the identity.
+	auto compoundLiteral(const core::UUID iNode, const PinSpec& iPin, const std::string& iText) -> std::string {
+		const bool matrix = iPin.type == PinType::Matrix;
+		const size_t count = matrix ? 16 : 9;
+		auto values = parseNumberList(iText);
+		if (iText.empty())
+			values = matrix ? std::vector<double>{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
+							: std::vector<double>{0, 0, 0, 0, 0, 0, 1, 1, 1};
+		if (!values.has_value() || values->size() != count) {
+			error(iNode, std::format("Input '{}' holds '{}', which is not {} numbers.", iPin.name, iText, count));
+			return "nil";
+		}
+		std::vector<std::string> numbers;
+		numbers.reserve(count);
+		for (const auto value: *values) numbers.push_back(numberLiteral(value));
+		if (matrix)
+			return std::format("{{ {} }}", joined(numbers));
+		const auto vector = [&numbers](const size_t iFirst) -> std::string {
+			return std::format("{{ x = {}, y = {}, z = {} }}", numbers[iFirst], numbers[iFirst + 1],
+							   numbers[iFirst + 2]);
+		};
+		return std::format("{{ position = {}, rotation = {}, scale = {} }}", vector(0), vector(3), vector(6));
+	}
+
+	// The helpers the node templates of the graph name, each once, in the order of their declaration.
+	void emitHelpers() {
+		const auto saved = std::exchange(m_part, Part::Custom);
+		const auto uses = [this](const std::string_view iName) -> bool {
+			const auto call = std::format("__owl_{}(", iName);
+			return std::ranges::any_of(m_script.nodes, [&call](const GraphNode& iNode) -> bool {
+				const auto* type = findNodeType(iNode.type);
+				return type != nullptr && type->lua.find(call) != std::string::npos;
+			});
+		};
+		const auto write = [this](const std::string_view iCode) -> void {
+			for (const auto range: std::views::split(iCode, '\n')) line(std::string_view{range.begin(), range.end()});
+		};
+		for (const auto& [name, code]: g_helpers)
+			if (uses(name))
+				write(code);
+		if (uses("mat_inverse"))
+			write(g_inverseHelper);
+		m_part = saved;
 	}
 
 	// A value read without cost: a name or a slot of a table (`__vs[3]`, `__vs["12:Result"]`).
@@ -853,7 +1034,8 @@ private:
 			readers != m_outputReaders.end() && readers->second > 1)
 			return false;
 		return iType.kind == NodeKind::Operator || iType.kind == NodeKind::GetVariable ||
-			   iType.kind == NodeKind::Call || iType.kind == NodeKind::CustomCall || iType.kind == NodeKind::LuaCall;
+			   iType.kind == NodeKind::Call || iType.kind == NodeKind::CustomCall || iType.kind == NodeKind::LuaCall ||
+			   (iType.kind == NodeKind::FunctionCall && iType.pure);
 	}
 
 	auto evaluatePure(const GraphNode& iNode, const NodeType& iType, const NodePins& iPins)
@@ -891,7 +1073,7 @@ private:
 				break;
 			case NodeKind::Operator:
 				{
-					const auto lua = withoutTrailingNils(iType.lua, args, iPins);
+					const auto lua = withoutTrailingNils(getNodeLua(iType, iNode), args, iPins);
 					expression = substitute(lua, storeRepeated(lua, args));
 				}
 				break;
@@ -906,11 +1088,23 @@ private:
 			case NodeKind::Sequence:
 			case NodeKind::ForLoop:
 			case NodeKind::ForEach:
+			case NodeKind::FunctionCall:
+				if (iType.pure) {
+					const auto callee = functionCallee(iNode, true);
+					if (!callee.has_value())
+						return none;
+					const auto call = std::format("{}({})", *callee, joined(bareAll(args)));
+					if (!inlined)
+						return m_temps[iNode.id] = evaluateCall(iNode, call, iPins);
+					expression = call;
+					break;
+				}
+				error(iNode.id, "The node cannot be evaluated as a value.");
+				return none;
 			case NodeKind::Statement:
 			case NodeKind::SetVariable:
 			case NodeKind::FunctionEntry:
 			case NodeKind::FunctionReturn:
-			case NodeKind::FunctionCall:
 				error(iNode.id, "The node cannot be evaluated as a value.");
 				return none;
 		}
@@ -1291,7 +1485,7 @@ private:
 			case NodeKind::Statement:
 				{
 					const auto args = arguments(iNode, iPins);
-					const auto lua = withoutTrailingNils(iType.lua, args, iPins);
+					const auto lua = withoutTrailingNils(getNodeLua(iType, iNode), args, iPins);
 					auto stored = storeRepeated(lua, args);
 					// A statement starting with `(` would continue the call of the line before it.
 					const auto statement = unwrapPrefix(substitute(lua, stored));
@@ -1501,8 +1695,8 @@ private:
 	void emitLibraries() {
 		for (const auto& node: m_script.nodes) {
 			const auto library = node.values.find("library");
-			if (node.type != "func.call" || library == node.values.end() || library->second.empty() ||
-				m_libraryPrefixes.contains(library->second))
+			if ((node.type != "func.call" && node.type != "func.pure") || library == node.values.end() ||
+				library->second.empty() || m_libraryPrefixes.contains(library->second))
 				continue;
 			if (m_library) {
 				error(node.id, "A library function calls only the functions of its own library.");
@@ -1630,28 +1824,42 @@ private:
 		return results;
 	}
 
-	// True when the call continues by its exits itself (a macro).
-	auto emitFunctionCall(const GraphNode& iNode, const NodePins& iPins) -> bool {
+	// Lua name a function call node calls, its library prefix included; nothing when the call cannot be made.
+	auto functionCallee(const GraphNode& iNode, const bool iPure) -> std::optional<std::string> {
 		const auto* function = findNodeFunction(m_script, iNode);
 		if (function == nullptr) {
 			error(iNode.id, "The node calls an unknown function.");
-			return true;
+			return std::nullopt;
 		}
-		std::string prefix = m_prefix;
+		if (function->pure != iPure) {
+			error(iNode.id,
+				  std::format("The function '{}' changed between pure and not: place its call again.", function->name));
+			return std::nullopt;
+		}
 		if (const auto library = iNode.values.find("library");
 			library != iNode.values.end() && !library->second.empty()) {
 			const auto found = m_libraryPrefixes.find(library->second);
 			if (found == m_libraryPrefixes.end())
-				return true;
-			prefix = found->second;
-		} else if (std::ranges::none_of(m_script.nodes, [&](const GraphNode& iEntry) -> bool {
-					   return iEntry.type == "func.entry" && iEntry.values.contains("function") &&
-							  iEntry.values.at("function") == function->name;
-				   })) {
-			error(iNode.id, std::format("The function '{}' has no entry node.", function->name));
-			return true;
+				return std::nullopt;
+			return found->second + function->name;
 		}
-		const auto call = std::format("{}{}({})", prefix, function->name, joined(bareAll(arguments(iNode, iPins))));
+		if (std::ranges::none_of(m_script.nodes, [&](const GraphNode& iEntry) -> bool {
+				return iEntry.type == "func.entry" && iEntry.values.contains("function") &&
+					   iEntry.values.at("function") == function->name;
+			})) {
+			error(iNode.id, std::format("The function '{}' has no entry node.", function->name));
+			return std::nullopt;
+		}
+		return m_prefix + function->name;
+	}
+
+	// True when the call continues by its exits itself (a macro).
+	auto emitFunctionCall(const GraphNode& iNode, const NodePins& iPins) -> bool {
+		const auto callee = functionCallee(iNode, false);
+		if (!callee.has_value())
+			return true;
+		const auto* function = findNodeFunction(m_script, iNode);
+		const auto call = std::format("{}({})", *callee, joined(bareAll(arguments(iNode, iPins))));
 		std::vector<std::string> pins;
 		pins.reserve(function->outputs.size());
 		for (const auto& output: function->outputs) pins.push_back(output.name);
@@ -1830,6 +2038,25 @@ auto compileForDebug(const VisualScript& iScript) -> expected<DebugBuild, std::v
 	if (!lua)
 		return unexpected{std::move(lua.error())};
 	return DebugBuild{.lua = std::move(*lua), .nodeLines = std::move(lines)};
+}
+
+auto checkTypes(const VisualScript& iScript, ScriptTypeChecker& ioChecker) -> std::vector<CompileDiagnostic> {
+	auto build = compileForDebug(iScript);
+	if (!build)
+		return std::move(build.error());
+	std::vector<CompileDiagnostic> out;
+	for (const auto& found: ioChecker.check(build->lua, "graph")) {
+		// The probe table exists in the debug build only, the engine declares no such global.
+		if (found.severity != ScriptDiagnostic::Severity::Error || found.message.contains("__owl_probes"))
+			continue;
+		const auto line = static_cast<int>(found.line);
+		const auto node = std::ranges::find_if(build->nodeLines, [line](const auto& iEntry) -> bool {
+			return std::ranges::find(iEntry.second, line) != iEntry.second.end();
+		});
+		out.push_back({.node = node == build->nodeLines.end() ? core::UUID{0} : node->first,
+					   .message = std::format("Lua line {}: {}", line, found.message)});
+	}
+	return out;
 }
 
 auto compileText(const std::string_view iText, const std::string_view iSourceName, const CompileMode iMode)

@@ -24,31 +24,31 @@ VisualScript:
         key: score
     - id: 7380000000000000005
       type: call.scene.find_entity
-      position: [870, 300]
+      position: [1472, 112]
       values:
         name: ScoreLabel
     - id: 7380000000000000006
       type: compare.not_equal
-      position: [1228, 300]
+      position: [1808, 48]
       values:
         B: 0
     - id: 7380000000000000007
       type: flow.branch
-      position: [1506, 0]
+      position: [2080, -16]
     - id: 7380000000000000008
       type: text.concat
-      position: [1506, 300]
+      position: [1328, 320]
       values:
         A: "Final Score: "
     - id: 7380000000000000009
       type: call.ui.set_text
-      position: [1784, 0]
+      position: [2480, 0]
     - id: 7380000000000000010
       type: flow.sequence
-      position: [1228, 0]
+      position: [1200, 0]
     - id: 7380000000000000011
       type: call.gamestate.remove
-      position: [1784, 172]
+      position: [1456, 208]
       values:
         key: score
     - id: 7380000000000000012
@@ -77,3 +77,6 @@ VisualScript:
     - {from: 7380000000000000010, fromPin: Then 1, to: 7380000000000000007, toPin: Exec}
     - {from: 7380000000000000010, fromPin: Then 2, to: 7380000000000000011, toPin: Exec}
     - {from: 7380000000000000012, fromPin: Then, to: 7380000000000000013, toPin: Exec}
+  groups:
+    - {id: 16719236036823841999, title: On Create, position: [-24, -52], size: [2728, 488], color: Red}
+    - {id: 13419437142605027144, title: on_menu_clicked, position: [-24, 548], size: [848, 260], color: Yellow}
